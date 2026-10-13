@@ -2,6 +2,7 @@ package embedding
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
@@ -129,8 +130,8 @@ func compareModels(ctx context.Context, first, second *embedding.Embedder) error
 	// unchecked is a comparison nobody got an answer out of. A run somebody
 	// stopped is owed no answer.
 	unchecked := func(why error) error {
-		if ctx.Err() != nil {
-			return nil //nolint:nilerr // a run somebody stopped is owed no answer
+		if errors.Is(ctx.Err(), context.Canceled) || errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return nil
 		}
 		return fmt.Errorf("%s and %s were not compared as one model: %w",
 			first.GetModel(), second.GetModel(), why)

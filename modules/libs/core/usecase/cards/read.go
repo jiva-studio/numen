@@ -262,9 +262,10 @@ func (u Read) readNote(
 	if !utf8.Valid(raw) {
 		return domain.Note{}, ref, note.NotText, nil
 	}
-	if _, err := markdown.Open(raw); err != nil {
-		//nolint:nilerr // a file that will not read is this file's outcome, not the caller's error
+	if _, err := markdown.Open(raw); errors.Is(err, markdown.ErrUnreadable) {
 		return domain.Note{}, ref, note.Unreadable, nil
+	} else if err != nil {
+		return domain.Note{}, domain.Fingerprint{}, "", fmt.Errorf("read %s: %w", path, err)
 	}
 	return markdown.Parse(ref, raw), ref, note.Ok, nil
 }

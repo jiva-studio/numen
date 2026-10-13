@@ -340,10 +340,11 @@ func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (P
 		out.Outcome = note.NotText
 		return out, nil
 	}
-	if _, err := markdown.Open(raw); err != nil {
+	if _, err := markdown.Open(raw); errors.Is(err, markdown.ErrUnreadable) {
 		out.Outcome = note.Unreadable
-		//nolint:nilerr // a file that will not read is this file's outcome, not the caller's error
 		return out, nil
+	} else if err != nil {
+		return PresetContents{}, fmt.Errorf("read %s: %w", path, err)
 	}
 
 	n := markdown.Parse(ref, raw)

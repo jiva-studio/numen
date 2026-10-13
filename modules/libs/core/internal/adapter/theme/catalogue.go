@@ -8,6 +8,7 @@ package theme
 
 import (
 	"embed"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -16,6 +17,9 @@ import (
 	"path/filepath"
 	"strings"
 )
+
+// ErrNoTheme is a theme name no theme file answers for.
+var ErrNoTheme = errors.New("no such theme")
 
 //go:embed presets/*.css
 var shipped embed.FS
@@ -156,7 +160,7 @@ func (c Catalogue) Text(name string) (string, error) {
 	if origin == Preset {
 		text, err := shipped.ReadFile(path.Join(shippedIn, title+Extension))
 		if err != nil {
-			return "", fmt.Errorf("%s: this build ships no such theme", name)
+			return "", fmt.Errorf("%s: %w", name, ErrNoTheme)
 		}
 		return string(text), nil
 	}
@@ -165,6 +169,9 @@ func (c Catalogue) Text(name string) (string, error) {
 	}
 	text, err := read(filepath.Join(c.dir, title+Extension))
 	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return "", fmt.Errorf("%s: %w", name, ErrNoTheme)
+		}
 		return "", fmt.Errorf("%s: %w", name, err)
 	}
 	return text, nil
@@ -195,7 +202,7 @@ func splitName(name string) (Origin, string, error) {
 			return Origin(origin), title, nil
 		}
 	}
-	return "", "", fmt.Errorf("%s: a theme is named by its origin and one file in the themes folder", name)
+	return "", "", fmt.Errorf("%s: %w", name, ErrNoTheme)
 }
 
 // isPlainName is a name that stays in the folder it is joined to.
