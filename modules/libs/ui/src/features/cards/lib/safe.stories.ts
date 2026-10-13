@@ -223,11 +223,8 @@ const createArrangement = (next: () => number, at: number): string => {
   return out
 }
 
-const createControlPattern = (pattern: string): RegExp => new RegExp(pattern, 'g')
-const CONTROLS = createControlPattern('[\\u0000-\\u0020]')
-
 /** A URL with the spaces and control characters a scheme may be hidden behind dropped. */
-const bare = (url: string): string => url.replace(CONTROLS, '')
+const bare = (url: string): string => url.replace(/[\x00-\x20]/g, '')
 
 /** How many comments the markup holds, wherever they stand. */
 const comments = (root: Node): number => {

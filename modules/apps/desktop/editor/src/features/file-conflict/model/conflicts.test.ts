@@ -157,10 +157,7 @@ describe('a window of real notes', () => {
       ['A.md', 'a'],
       ['B.md', 'b'],
     ])
-    const notes = openNotes(createCore(files), {
-      limits: { quiet: 1000, bound: 5000 },
-      now: () => 1_000,
-    })
+    const notes = openNotes(createCore(files), { limits: { quiet: 1000, bound: 5000 } })
     const going = quit()
     let raisedCount = 0
     raiseConflicts(notes, {

@@ -71,7 +71,7 @@ func (u Drop) Execute(
 	if err != nil {
 		return res, err
 	}
-	defer port.Close(release)
+	defer release()
 
 	// A store the person emptied leaves the index standing on a recognition, and
 	// those rows are this use case's to take away as well.

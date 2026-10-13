@@ -21,7 +21,7 @@ import (
 //go:embed sql/*.sql
 var files embed.FS
 
-var stmt, _ = sqlfile.Load(files, "sql")
+var stmt = sqlfile.Load(files, "sql")
 
 // kind is what a note is among the sources the index holds. Everything this
 // package writes and reads is one, and a path naming a file of another kind

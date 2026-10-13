@@ -42,7 +42,7 @@ func (heldVaults) RecordOpened(domain.VaultID) error { return nil }
 // openLoopback is the socket a player reaches this API over, closed with the test.
 func openLoopback(t *testing.T, api *Services) (*Loopback, http.Handler) {
 	t.Helper()
-	back, err := Listen(t.Context(), api.server, nil)
+	back, err := Listen(api.server, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -200,7 +200,7 @@ func TestTheSocketAnswersAPiece(t *testing.T) {
 // way in is what is asked here.
 func TestARecordingIsReachedOverTheSocket(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
-	back, err := Listen(t.Context(), api.server, nil)
+	back, err := Listen(api.server, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -230,7 +230,7 @@ func TestARecordingIsReachedOverTheSocket(t *testing.T) {
 // socket a recording is played from is the one thing named beside it.
 func TestThePolicyNamesTheSocketAndNothingElse(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
-	back, err := Listen(t.Context(), api.server, nil)
+	back, err := Listen(api.server, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

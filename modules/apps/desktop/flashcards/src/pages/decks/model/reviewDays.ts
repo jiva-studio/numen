@@ -46,12 +46,12 @@ export interface ReviewDaysDeps {
    * every day it has ever been reviewed.
    */
   widest(): number
-  /** What day it is. */
-  now(): Date
+  /** What day it is. The machine's own, where a caller names none. */
+  now?(): Date
 }
 
 export function useReviewDays(deps: ReviewDaysDeps) {
-  const now = deps.now
+  const now = deps.now ?? (() => new Date())
   /** How much was answered on each day, by the day it was answered on. */
   const days = ref<ReadonlyMap<string, HeatmapTally>>(new Map())
   /** How much falls on each day still to come, by the day it falls on. */

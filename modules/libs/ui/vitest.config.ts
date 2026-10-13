@@ -9,7 +9,6 @@ import tailwindcss from '@tailwindcss/vite'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
 
 const src = fileURLToPath(new URL('./src', import.meta.url))
-const testdata = fileURLToPath(new URL('../protocol/testdata', import.meta.url))
 
 /** A place on the page the browser drives the pointer to. */
 interface Position {
@@ -79,7 +78,7 @@ export default defineConfig({
     projects: [
       {
         plugins: [vue()],
-        resolve: { alias: { '@': src, '@numen/protocol/testdata': testdata } },
+        resolve: { alias: { '@': src } },
         test: {
           name: 'unit',
           environment: 'jsdom',
@@ -95,7 +94,7 @@ export default defineConfig({
             configDir: fileURLToPath(new URL('./.storybook', import.meta.url)),
           }),
         ],
-        resolve: { alias: { '@': src, '@numen/protocol/testdata': testdata } },
+        resolve: { alias: { '@': src } },
         test: {
           name: 'stories',
           // Every story is drawn twice, and the frames of all of them come off

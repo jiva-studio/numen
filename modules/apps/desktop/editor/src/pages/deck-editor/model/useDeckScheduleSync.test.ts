@@ -49,13 +49,10 @@ const open = () => {
       throw new Error('unused')
     },
   }
-  const store = openNotes(
-    {
-      read: async () => asValue({ body: '', at: '' }),
-      write: async () => asValue({ body: '', at: '' }),
-    },
-    { now: () => 0 },
-  )
+  const store = openNotes({
+    read: async () => asValue({ body: '', at: '' }),
+    write: async () => asValue({ body: '', at: '' }),
+  })
   return { state, stencils, store, sync: useDeckScheduleSync(cards, presets, store) }
 }
 

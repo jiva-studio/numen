@@ -167,7 +167,7 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 	if err != nil {
 		return res, err
 	}
-	defer port.Close(release)
+	defer release()
 
 	whole, beside, err := u.current(ctx, store, area, hash)
 	if err != nil {

@@ -26,7 +26,7 @@ import (
 //go:embed sql/*.sql
 var files embed.FS
 
-var stmt, _ = sqlfile.Load(files, "sql")
+var stmt = sqlfile.Load(files, "sql")
 
 // Statements exposes the SQL this package runs, for a test that asks the
 // database how it intends to answer each one.

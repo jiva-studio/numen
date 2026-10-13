@@ -43,7 +43,7 @@ func (u WriteTranscript) Execute(
 	if err != nil {
 		return TranscriptWrite{}, err
 	}
-	defer port.Close(release)
+	defer release()
 
 	// The words are a person's, and a proofreader leaves them alone.
 	written := append(transcript.Marshal(cues), transcript.GetHandWrittenMark()...)

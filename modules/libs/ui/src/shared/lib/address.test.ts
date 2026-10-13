@@ -10,14 +10,14 @@ import { parseAddress, isNoteAddress, writeAddress, findWikilink, getWikilinks }
  * The addresses in a note travel on the wire as they were written, so the core
  * reads them too. Both read this one corpus, and neither owns it.
  */
-import corpus from '@numen/protocol/testdata/addresses.json'
+import corpus from '../../../../protocol/testdata/addresses.json'
 
 /**
  * The brackets are read here and again in the core, which finds the links a
  * note carries and the stencil a card is cut by. Both read this one corpus,
  * and neither owns it.
  */
-import brackets from '@numen/protocol/testdata/wikilinks.json'
+import brackets from '../../../../protocol/testdata/wikilinks.json'
 
 describe('an address', () => {
   it('is read the way the schema says it is', () => {

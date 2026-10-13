@@ -338,6 +338,33 @@ linters:
       - path: (_test\.go|(^|/)internal/testsupport/)
         linters: [forbidigo, errcheck, noctx, contextcheck, bodyclose, exhaustive, exhaustruct, depguard, cyclop, gocognit, nestif, funlen, nakedret]
 
+      # What was taken is let go, and the kernel drops a lock and a model's
+      # memory however the process ends. What letting go could not do is nobody's
+      # to act on, the same as the deferred Close the preset above drops.
+      - source: ^\s*(defer )?(release|closeModels)\(\)$
+        linters: [errcheck]
+
+      # A page held in the window's cache is drawn by this file and read by it,
+      # and `container/list` carries it as `any` because the standard library
+      # has no list of one type. The assertion is over what this file put there.
+      - path: (^|/)adapter/window/editor/pagecache/memory\.go$
+        text: Error return value is not checked
+        linters: [errcheck]
+
+      # The four statements a cut prepares are closed by the `defer w.close()`
+      # of whoever prepared them and on the way out of preparing them, through
+      # a `**sql.Stmt` sqlclosecheck cannot follow. The rows a wipe reads are
+      # closed on every path out of its loop, and deferring them would hold
+      # every pass's rows open until the last pass was done.
+      - path: (^|/)adapter/index/(chunk/repository|migrate)\.go$
+        linters: [sqlclosecheck]
+
+      # Binding a listening socket does not block, so there is nothing for a
+      # context to cancel. How long a socket answers for is said where the
+      # server it belongs to is stopped.
+      - source: ^\s*\w+, err := net\.Listen\(
+        linters: [noctx]
+
       # Knowledge of the technology is confined to the adapters and to the
       # composition root, and an entry point is an adapter. These
       # are the places allowed to know what time it is. `internal/adapterlib/onnxruntime`
@@ -347,9 +374,20 @@ linters:
         text: does not know what time it is
         linters: [forbidigo]
 
+      # Three panics over what the build already decided. The SQL is embedded
+      # in the binary, so a file that will not read and a statement named that
+      # is not there are both a build that should not have been produced, and
+      # failing loudly on the first call is what keeps a statement renamed in
+      # one place from going quietly wrong in the other. Every value the
+      # settings file offers is written a few lines above the marshalling of
+      # it. None of the three can be reached by anything a person does.
+      - path: (^|/)(adapter/index/sqlfile/sqlfile|adapter/settings/models)\.go$
+        text: that call's error
+        linters: [forbidigo]
+
       # The command line is a driving adapter whose output is text, and a
       # process that cannot start says so before there is anywhere to say it.
-      - path: (^|/)cmd/
+      - path: (^|/)(adapter/cli|cmd)/
         text: writes to no stream of its own
         linters: [forbidigo]
 
@@ -362,4 +400,7 @@ linters:
       - path: (^|/)(internal/epub/|markdown/|flashcards/format/|internal/adapter/filesystem/debounce\.go)
         linters: [cyclop, gocognit, nestif, funlen]
 
+      # Spaced repetition simulation tracks card queues and review buckets.
+      - path: (^|/)flashcards/review/
+        linters: [cyclop, gocognit, nestif, funlen]
 
