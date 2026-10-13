@@ -451,12 +451,19 @@ describe('what the control stands at', () => {
   // one of those figures. They stand at what the window was last told while
   // the curve of the settings a person is moving is worked out.
   it('keeps the figures the material stands at while a curve is on its way', () => {
-    const { tab } = mountPresetTab({ isHonest: false }, {}, true, {
-      decks: 4,
-      cards: 160,
-      overdue: 45,
-      unbegun: 30,
-    })
+    const { tab } = mountPresetTab(
+      { isHonest: false },
+      {},
+      {
+        isWaiting: true,
+        counts: {
+          decks: 4,
+          cards: 160,
+          overdue: 45,
+          unbegun: 30,
+        },
+      },
+    )
     const tiles = tab
       .findAll('[data-control="material"] [data-control="tile"]')
       .map((one) => [
@@ -487,7 +494,7 @@ describe('what the control stands at', () => {
   // A caption promising work in progress is a promise, and there is nothing
   // behind it once the vault has refused the picture.
   it('says nothing of indexing the vault where no answer is coming', () => {
-    const { tab } = mountPresetTab({ isHonest: false }, {}, false)
+    const { tab } = mountPresetTab({ isHonest: false }, {}, { isWaiting: false })
     expect(tab.findAll('[data-control="waiting"]')).toHaveLength(0)
     expect(tab.text()).not.toContain(words.waiting)
     expect(tab.findAll('[data-control="picture"][role="slider"]')).toHaveLength(0)

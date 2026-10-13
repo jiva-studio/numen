@@ -31,14 +31,16 @@ export function createWriteFlight(): WriteFlight {
   }
 }
 
+export interface FlightOptions {
+  path: string
+  settings: Settings
+  core: Presets
+  writeMessage: MessageWriter
+}
+
 /** Sends the current settings to the file the read came out of. */
-export const sendWrite = async (
-  flight: WriteFlight,
-  path: string,
-  settings: Settings,
-  core: Presets,
-  writeMessage: MessageWriter,
-): Promise<void> => {
+export const sendWrite = async (flight: WriteFlight, options: FlightOptions): Promise<void> => {
+  const { path, settings, core, writeMessage } = options
   writeMessage('')
   let answer
   try {
@@ -63,52 +65,34 @@ export const sendWrite = async (
   flight.isWarned = false
 }
 
-const executeFlight = async (
-  flight: WriteFlight,
-  path: string,
-  settings: Settings,
-  core: Presets,
-  writeMessage: MessageWriter,
-): Promise<void> => {
-  await sendWrite(flight, path, settings, core, writeMessage)
+const executeFlight = async (flight: WriteFlight, options: FlightOptions): Promise<void> => {
+  await sendWrite(flight, options)
   flight.isWriting = false
   const again = flight.isWriteQueued && !flight.hasChanged.value
   flight.isWriteQueued = false
   if (again) {
-    await requestWrite(flight, path, settings, core, writeMessage)
+    await requestWrite(flight, options)
     return
   }
   flight.flight = null
 }
 
 /** Requests a write, queuing behind any write currently in flight. */
-export const requestWrite = (
-  flight: WriteFlight,
-  path: string,
-  settings: Settings,
-  core: Presets,
-  writeMessage: MessageWriter,
-): Promise<void> => {
+export const requestWrite = (flight: WriteFlight, options: FlightOptions): Promise<void> => {
   if (flight.isWriting) {
     flight.isWriteQueued = true
     return flight.flight ?? Promise.resolve()
   }
   flight.isWriting = true
-  const inFlight = executeFlight(flight, path, settings, core, writeMessage)
+  const inFlight = executeFlight(flight, options)
   flight.flight = inFlight
   return inFlight
 }
 
 /** Flushes any unwritten changes or waits for writes in flight to settle. */
-export const flushWrites = async (
-  flight: WriteFlight,
-  path: string,
-  settings: Settings,
-  core: Presets,
-  writeMessage: MessageWriter,
-): Promise<void> => {
+export const flushWrites = async (flight: WriteFlight, options: FlightOptions): Promise<void> => {
   if (flight.theirs.size > 0 && !flight.hasChanged.value) {
-    await requestWrite(flight, path, settings, core, writeMessage)
+    await requestWrite(flight, options)
   } else if (flight.flight) {
     await flight.flight
   }
@@ -117,12 +101,9 @@ export const flushWrites = async (
 /** Checks whether a tab can close, warning once if changes cannot be written. */
 export const canCloseTab = async (
   flight: WriteFlight,
-  path: string,
-  settings: Settings,
-  core: Presets,
-  writeMessage: MessageWriter,
+  options: FlightOptions,
 ): Promise<boolean> => {
-  await flushWrites(flight, path, settings, core, writeMessage)
+  await flushWrites(flight, options)
   if (flight.theirs.size === 0 && !flight.hasChanged.value) return true
   if (flight.isWarned) return true
   flight.isWarned = true

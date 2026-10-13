@@ -11,22 +11,84 @@ import { PRESET } from '@/entities/tab'
 import { NO_BOUNDS, type Presets, type SettingsBounds } from './types'
 import { WORDS as words } from './words'
 import type { PresetTabState, SettingValue } from './types'
-import { createOpenPreset, createPresetState, readPreset, type OpenPreset } from './model/open'
+import {
+  createOpenPreset,
+  createPresetState,
+  readPreset,
+  type OpenPreset,
+  type PresetStateContext,
+} from './model/open'
 import { flushWrites } from './model/writeQueue'
 import PresetTab from './ui/PresetTab.vue'
 
 export type { PresetTabState, SettingValue }
 
+export interface PresetTabDeps {
+  core: Presets
+  handle: WindowHandle
+  tabOpeners: FileOpeners
+  writeMessage: MessageWriter
+  today: () => string
+}
+
+function applyPathRenames(
+  open: Map<string, OpenPreset>,
+  titles: Map<string, string>,
+  renames: readonly PathRename[],
+): void {
+  for (const went of renames) {
+    const title = titles.get(went.from)
+    if (title !== undefined) titles.set(went.to, title)
+    titles.delete(went.from)
+    const one = open.get(went.from)
+    if (!one) continue
+    open.delete(went.from)
+    one.path.value = went.to
+    open.set(went.to, one)
+  }
+}
+
+interface KindDeps {
+  handle: WindowHandle
+  context: PresetStateContext
+  open: Map<string, OpenPreset>
+  titles: Map<string, string>
+  bounds: Ref<SettingsBounds>
+  core: Presets
+  today: () => string
+}
+
+function createPresetKind(deps: KindDeps): TabKind<PresetTabState, typeof PRESET> {
+  const { context, open, titles, bounds, core, today } = deps
+  const getTitle = (path: string): string =>
+    titles.get(path) || getFileName(path) || words.newPreset
+
+  return {
+    kind: PRESET,
+    open: (path) => {
+      const one = createOpenPreset(path, today(), bounds.value)
+      open.set(path, one)
+      void readPreset(one, { core, bounds, titles, today: today() })
+      return createPresetState(one, path, context)
+    },
+    getTitle: (one) => getTitle(one.id),
+    pane: PresetTab,
+    identity: (path) => path,
+    getTarget: (one) => ({ path: one.id, title: getTitle(one.id) }),
+    getOpenTab: (one) => ({ path: one.id }),
+    onClose: (one, id) => {
+      one.close(id)
+      return false
+    },
+    onDestroy: () => {},
+  }
+}
+
 /**
  * The presets one window has open.
  */
-export function usePresetTab(
-  core: Presets,
-  handle: WindowHandle,
-  tabOpeners: FileOpeners,
-  writeMessage: MessageWriter,
-  today: () => string,
-) {
+export function usePresetTab(deps: PresetTabDeps) {
+  const { core, handle, tabOpeners, writeMessage, today } = deps
   const titles = new Map<string, string>()
   const bounds = shallowRef<SettingsBounds>(NO_BOUNDS)
   const open = new Map<string, OpenPreset>()
@@ -35,49 +97,27 @@ export function usePresetTab(
     open.delete(path)
   }
 
+  const context: PresetStateContext = {
+    handle,
+    onClosed: closePreset,
+    core,
+    bounds,
+    writeMessage,
+    today,
+    titles,
+  }
+
   const getState = (id: string): PresetTabState | undefined => {
     const one = open.get(id)
-    return (
-      one &&
-      createPresetState(one, id, handle, closePreset, core, bounds, writeMessage, today, titles)
-    )
+    return one ? createPresetState(one, id, context) : undefined
   }
 
   const getTitle = (path: string): string =>
     titles.get(path) || getFileName(path) || words.newPreset
 
-  const kind: TabKind<PresetTabState, typeof PRESET> = {
-    kind: PRESET,
-    open: (path) => {
-      const one = createOpenPreset(path, today(), bounds.value)
-      open.set(path, one)
-      void readPreset(one, core, bounds, titles, today())
-      return createPresetState(
-        one,
-        path,
-        handle,
-        closePreset,
-        core,
-        bounds,
-        writeMessage,
-        today,
-        titles,
-      )
-    },
-    getTitle: (one) => getTitle(one.id),
-    pane: PresetTab,
-    identity: (path) => path,
-    getTarget: (one) => ({
-      path: one.id,
-      title: getTitle(one.id),
-    }),
-    getOpenTab: (one) => ({ path: one.id }),
-    onClose: (one, id) => {
-      one.close(id)
-      return false
-    },
-    onDestroy: () => {},
-  }
+  const readOne = (one: OpenPreset) => readPreset(one, { core, bounds, titles, today: today() })
+
+  const kind = createPresetKind({ handle, context, open, titles, bounds, core, today })
 
   const openPreset = (path: string, title = '', how: PlexDestination = 'here'): void => {
     if (title) titles.set(path, title)
@@ -91,26 +131,22 @@ export function usePresetTab(
     // Stryker disable next-line ArrayDeclaration: an entry that is not a rename names no file, and every walk over renames skips it.
     renames: readonly PathRename[] = [],
   ): void => {
-    for (const went of renames) {
-      const title = titles.get(went.from)
-      if (title !== undefined) titles.set(went.to, title)
-      titles.delete(went.from)
-      const one = open.get(went.from)
-      if (!one) continue
-      open.delete(went.from)
-      one.path.value = went.to
-      open.set(went.to, one)
-    }
+    applyPathRenames(open, titles, renames)
     for (const path of paths) {
       const one = open.get(path)
-      if (one) void readPreset(one, core, bounds, titles, today())
+      if (one) void readOne(one)
     }
   }
 
   const flush = async (): Promise<void> => {
     await Promise.all(
       [...open.values()].map((one) =>
-        flushWrites(one.writeQueue, one.path.value, one.settings.value, core, writeMessage),
+        flushWrites(one.writeQueue, {
+          path: one.path.value,
+          settings: one.settings.value,
+          core,
+          writeMessage,
+        }),
       ),
     )
   }

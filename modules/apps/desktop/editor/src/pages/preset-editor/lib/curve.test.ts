@@ -121,7 +121,7 @@ describe('what one place of the curve produces', () => {
   // did not name can close their day.
   it('takes the goal’s own value off the grid, and writes nothing else', () => {
     const was = settings({ newADay: 12, reviewsADay: 0, retention: 0.95 })
-    const made = produceSchedule(was, 3, curve, today, BOUNDS)
+    const made = produceSchedule(was, 3, { curve, today, within: BOUNDS })
     expect(made.minutesADay).toBe(30)
     expect(made.newADay).toBe(12)
     expect(made.reviewsADay).toBe(0)
@@ -129,7 +129,9 @@ describe('what one place of the curve produces', () => {
   })
 
   it('leaves the settings as they are where the grid has no such place', () => {
-    expect(produceSchedule(settings(), 9, curve, today, BOUNDS)).toStrictEqual(settings())
+    expect(produceSchedule(settings(), 9, { curve, today, within: BOUNDS })).toStrictEqual(
+      settings(),
+    )
   })
 
   it('names the day of the place for a goal of a date, and nothing else', () => {
@@ -140,7 +142,7 @@ describe('what one place of the curve produces', () => {
       at: curve.at.map((one) => ({ ...one, minutes: 45 })),
     }
     const was = settings({ goal: 'date', minutesADay: 20, reviewsADay: 0 })
-    const made = produceSchedule(was, 3, dated, today, BOUNDS)
+    const made = produceSchedule(was, 3, { curve: dated, today, within: BOUNDS })
     expect(made.byDate).toBe('2026-09-29')
     expect(made.minutesADay).toBe(20)
     expect(made.reviewsADay).toBe(0)
@@ -148,14 +150,18 @@ describe('what one place of the curve produces', () => {
 
   it('moves the target alone under a goal of retention', () => {
     const was = settings({ goal: 'retention', newADay: 12, reviewsADay: 30 })
-    const made = produceSchedule(was, 3, { ...curve, goal: 'retention' }, today, BOUNDS)
+    const made = produceSchedule(was, 3, {
+      curve: { ...curve, goal: 'retention' },
+      today,
+      within: BOUNDS,
+    })
     expect(made.retention).toBe(0.99)
     expect(made.newADay).toBe(12)
     expect(made.reviewsADay).toBe(30)
   })
 
   it('leaves the knob, the field and what is written at one value', () => {
-    const made = produceSchedule(settings(), 2, curve, today, BOUNDS)
+    const made = produceSchedule(settings(), 2, { curve, today, within: BOUNDS })
     expect(made.minutesADay).toBe(curve.grid[2])
   })
 })
@@ -312,10 +318,14 @@ describe('the day a place of a curve of a date produces', () => {
   const was = settings({ goal: 'date', byDate: '2026-09-01' })
 
   it('is the day the curve names for it, whatever the grid says', () => {
-    expect(produceSchedule(was, 3, dated, today, BOUNDS).byDate).toBe('2027-01-04')
+    expect(produceSchedule(was, 3, { curve: dated, today, within: BOUNDS }).byDate).toBe(
+      '2027-01-04',
+    )
   })
 
   it('is the day the grid’s value comes to where the curve names none', () => {
-    expect(produceSchedule(was, 3, { ...dated, days: [] }, today, BOUNDS).byDate).toBe('2026-09-29')
+    expect(
+      produceSchedule(was, 3, { curve: { ...dated, days: [] }, today, within: BOUNDS }).byDate,
+    ).toBe('2026-09-29')
   })
 })

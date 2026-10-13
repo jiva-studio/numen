@@ -106,13 +106,18 @@ const getCounts = (one: Curve): PresetCounts | null =>
     ? { decks: one.decks, cards: one.cards, overdue: one.overdue, unbegun: one.unbegun }
     : null
 
+export interface TabFixtureOptions {
+  isWaiting?: boolean
+  counts?: PresetCounts | null
+}
+
 /** A tab standing at those settings, and everything it was asked to do. */
 const createTab = (
   over: Partial<Curve> = {},
   settings: Partial<Settings> = {},
-  isWaiting = true,
-  counts?: PresetCounts | null,
+  options: TabFixtureOptions = {},
 ) => {
+  const { isWaiting = true, counts } = options
   const done: string[] = []
   const place = ref(2)
   const state: PresetTabState = {
@@ -143,10 +148,9 @@ const createTab = (
 const mountPresetTab = (
   over: Partial<Curve> = {},
   settings: Partial<Settings> = {},
-  isWaiting = true,
-  counts?: PresetCounts | null,
+  options: TabFixtureOptions = {},
 ) => {
-  const one = createTab(over, settings, isWaiting, counts)
+  const one = createTab(over, settings, options)
   return { ...one, tab: mount(PresetTab, { props: { state: one.state } }) }
 }
 

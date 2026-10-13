@@ -46,12 +46,12 @@ describe('applying a typed setting', () => {
   it('leaves the load unchanged where the value given for it is null', () => {
     const was = settings({ load: { mon: 50 } })
     const value = null as unknown as Settings['load']
-    expect(applyTypedSetting(was, 'load', value, NO_BOUNDS)).toBe(was)
+    expect(applyTypedSetting(was, { field: 'load', value }, NO_BOUNDS)).toBe(was)
   })
 
   it('sets the load where the value given for it is a genuine record', () => {
     const was = settings({ load: {} })
-    const after = applyTypedSetting(was, 'load', { mon: 50 }, NO_BOUNDS)
+    const after = applyTypedSetting(was, { field: 'load', value: { mon: 50 } }, NO_BOUNDS)
     expect(after.load).toStrictEqual({ mon: 50 })
   })
 })
@@ -87,48 +87,60 @@ describe('reconciling a read with the edits not yet written', () => {
 
 describe('applying a typed choice', () => {
   it('counts the budget in either unit it names', () => {
-    expect(applyTypedSetting(settings(), 'counts', 'shows', NO_BOUNDS).counts).toBe('shows')
+    expect(
+      applyTypedSetting(settings(), { field: 'counts', value: 'shows' }, NO_BOUNDS).counts,
+    ).toBe('shows')
     const shows = settings({ counts: 'shows' })
-    expect(applyTypedSetting(shows, 'counts', 'cards', NO_BOUNDS).counts).toBe('cards')
+    expect(applyTypedSetting(shows, { field: 'counts', value: 'cards' }, NO_BOUNDS).counts).toBe(
+      'cards',
+    )
   })
 
   it('leaves the budget where the unit given is none of its own', () => {
     const was = settings()
-    expect(applyTypedSetting(was, 'counts', 'minutes', NO_BOUNDS)).toBe(was)
+    expect(applyTypedSetting(was, { field: 'counts', value: 'minutes' }, NO_BOUNDS)).toBe(was)
   })
 
   it('takes either rule for what is learned', () => {
     const ruled = settings({ learned: 'retention' })
-    expect(applyTypedSetting(settings(), 'learned', 'retention', NO_BOUNDS).learned).toBe(
-      'retention',
-    )
-    expect(applyTypedSetting(ruled, 'learned', 'interval', NO_BOUNDS).learned).toBe('interval')
+    expect(
+      applyTypedSetting(settings(), { field: 'learned', value: 'retention' }, NO_BOUNDS).learned,
+    ).toBe('retention')
+    expect(
+      applyTypedSetting(ruled, { field: 'learned', value: 'interval' }, NO_BOUNDS).learned,
+    ).toBe('interval')
   })
 
   it('leaves the rule where the value given is none of its own', () => {
     const was = settings()
-    expect(applyTypedSetting(was, 'learned', 'shows', NO_BOUNDS)).toBe(was)
+    expect(applyTypedSetting(was, { field: 'learned', value: 'shows' }, NO_BOUNDS)).toBe(was)
   })
 
   it('takes a day for the day aimed at, and no number', () => {
     const was = settings()
-    expect(applyTypedSetting(was, 'byDate', '2026-09-29', NO_BOUNDS).byDate).toBe('2026-09-29')
-    expect(applyTypedSetting(was, 'byDate', 5, NO_BOUNDS)).toBe(was)
+    expect(applyTypedSetting(was, { field: 'byDate', value: '2026-09-29' }, NO_BOUNDS).byDate).toBe(
+      '2026-09-29',
+    )
+    expect(applyTypedSetting(was, { field: 'byDate', value: 5 }, NO_BOUNDS)).toBe(was)
   })
 
   it('takes a yes or a no for an even load, and nothing else', () => {
     const was = settings()
-    expect(applyTypedSetting(was, 'hasEvenLoad', false, NO_BOUNDS).hasEvenLoad).toBe(false)
-    expect(applyTypedSetting(was, 'hasEvenLoad', 'no', NO_BOUNDS)).toBe(was)
-    expect(applyTypedSetting(was, 'hasEvenLoad', 0, NO_BOUNDS)).toBe(was)
+    expect(
+      applyTypedSetting(was, { field: 'hasEvenLoad', value: false }, NO_BOUNDS).hasEvenLoad,
+    ).toBe(false)
+    expect(applyTypedSetting(was, { field: 'hasEvenLoad', value: 'no' }, NO_BOUNDS)).toBe(was)
+    expect(applyTypedSetting(was, { field: 'hasEvenLoad', value: 0 }, NO_BOUNDS)).toBe(was)
   })
 
   it('sets no field from a value that belongs to another', () => {
     const was = settings()
-    expect(applyTypedSetting(was, 'newADay', 'shows', NO_BOUNDS)).toBe(was)
-    expect(applyTypedSetting(was, 'interval', 'retention', NO_BOUNDS)).toBe(was)
-    expect(applyTypedSetting(was, 'counts', true, NO_BOUNDS)).toBe(was)
-    expect(applyTypedSetting(was, 'minutesADay', { mon: 50 }, NO_BOUNDS)).toBe(was)
+    expect(applyTypedSetting(was, { field: 'newADay', value: 'shows' }, NO_BOUNDS)).toBe(was)
+    expect(applyTypedSetting(was, { field: 'interval', value: 'retention' }, NO_BOUNDS)).toBe(was)
+    expect(applyTypedSetting(was, { field: 'counts', value: true }, NO_BOUNDS)).toBe(was)
+    expect(applyTypedSetting(was, { field: 'minutesADay', value: { mon: 50 } }, NO_BOUNDS)).toBe(
+      was,
+    )
   })
 })
 

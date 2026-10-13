@@ -197,16 +197,19 @@ export interface Height {
  * extent of no width is one number and is said once, on the foot, where a curve
  * that never moves is drawn. A number the line, a mark or the readout over the
  * knob stands on is dropped: the axis gives way, and the drawing keeps what it
- * has to say.
- */
+export interface AxisLabelsContext {
+  places: readonly Position[]
+  marks: readonly Position[]
+  over?: Box | null
+}
+
 export const createAxisLabels = (
   extent: Extent,
-  places: readonly Position[],
-  marks: readonly Position[],
-  over: Box | null,
+  context: AxisLabelsContext,
   getText: (value: number) => string,
 ): readonly Height[] => {
   const { least, most } = extent
+  const { places, marks, over = null } = context
   const measureHeightAt = (y: number, lift: string, value: number): readonly Height[] => {
     const box = getAxisNumberBox(y, lift)
     if (!isAxisLabelClear(y, places, marks)) return []
