@@ -8,11 +8,10 @@
 import { Notices, StatusBar, WorkspaceLayout } from '@numen/ui'
 import '@numen/ui/styles.css'
 import './app.css'
-import { computed, ref } from 'vue'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
 import CoreFailureNotice from '@/shared/notices/CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
-import { TabLinkIndicator, TabLinkMenu } from '@/features/tab-linking'
+import { TabLinkIndicator, TabLinkMenu, useTabLinkMenu } from '@/features/tab-linking'
 import { WelcomeScreen } from '@/pages/welcome'
 import { useWindow } from './useWindow'
 import { WORDS as words } from '@/shared/words'
@@ -48,32 +47,10 @@ const {
   tabLinks,
 } = useWindow()
 
-const activeMenuTabId = ref<string | null>(null)
-const menuPosition = ref<{ x: number; y: number }>({ x: 0, y: 0 })
-
-const eligibleTabs = computed(() => {
-  if (!activeMenuTabId.value) return []
-  const group = tabLinks.getGroupOf(activeMenuTabId.value)
-  return held.tabs.value
-    .filter((t) => {
-      if (t.id === activeMenuTabId.value) return false
-      if (group && group.tabs.includes(t.id)) return false
-      const kind = held.getTab(t.id)?.kind.kind
-      return kind === 'note' || kind === 'files' || kind === 'plex'
-    })
-    .map((t) => ({
-      id: t.id,
-      title: t.title,
-      kind: held.getTab(t.id)?.kind.kind ?? '',
-      isLinked: tabLinks.getGroupOf(t.id) !== null,
-    }))
-})
-
-const activeLinkedTargetTitle = computed(() => {
-  if (!activeMenuTabId.value) return ''
-  const targets = tabLinks.getLinkedTargets(activeMenuTabId.value)
-  if (targets.length === 0) return ''
-  return targets.map((id) => held.tabs.value.find((t) => t.id === id)?.title || id).join(', ')
+const linkMenu = useTabLinkMenu({
+  tabLinks,
+  getTabs: () => held.tabs.value,
+  getKind: (id) => held.getTab(id)?.kind.kind,
 })
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -90,28 +67,7 @@ function dismissNotice(id: string) {
 }
 
 function onTabContextMenu(tabId: string, at: { x: number; y: number }) {
-  const kind = held.getTab(tabId)?.kind.kind
-  if (kind !== 'note' && kind !== 'files' && kind !== 'plex') return
-  activeMenuTabId.value = tabId
-  menuPosition.value = at
-}
-
-function onLinkTab(targetId: string) {
-  if (activeMenuTabId.value) {
-    tabLinks.linkTabs(activeMenuTabId.value, targetId)
-    activeMenuTabId.value = null
-  }
-}
-
-function onUnlinkTab() {
-  if (activeMenuTabId.value) {
-    tabLinks.unlinkTab(activeMenuTabId.value)
-    activeMenuTabId.value = null
-  }
-}
-
-function onCloseLinkMenu() {
-  activeMenuTabId.value = null
+  linkMenu.open(tabId, at)
 }
 </script>
 
@@ -159,15 +115,15 @@ function onCloseLinkMenu() {
     </WorkspaceLayout>
 
     <TabLinkMenu
-      v-if="activeMenuTabId"
-      :tab-id="activeMenuTabId"
-      :eligible-tabs="eligibleTabs"
-      :at="menuPosition"
-      :is-linked="tabLinks.getGroupOf(activeMenuTabId) !== null"
-      :linked-target-title="activeLinkedTargetTitle"
-      @link="onLinkTab"
-      @unlink="onUnlinkTab"
-      @close="onCloseLinkMenu"
+      v-if="linkMenu.tabId.value"
+      :tab-id="linkMenu.tabId.value"
+      :eligible-tabs="linkMenu.eligibleTabs.value"
+      :at="linkMenu.at.value"
+      :is-linked="linkMenu.isLinked.value"
+      :linked-target-title="linkMenu.linkedTargetTitle.value"
+      @link="linkMenu.link"
+      @unlink="linkMenu.unlink"
+      @close="linkMenu.close"
     />
 
     <StatusBar
