@@ -22,8 +22,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
 
@@ -534,7 +534,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	api := createServices(&State{
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),
-		Window:       &wire.Window{Named: wire.Editor, Tasking: task.New()},
+		Window:       &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()},
 	})
 	bindNotes(api, db)
 	api.state.setVault(v)

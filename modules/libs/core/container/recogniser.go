@@ -5,7 +5,6 @@ import (
 
 	ocrmodels "github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
@@ -54,7 +53,7 @@ func (c Config) Recognise(sources port.SourceRepository, by port.Recogniser) rec
 func (c Config) OpenRecognitionWorker(
 	ctx context.Context,
 	sources port.SourceRepository,
-	tasks *task.Tasks,
+	tasks *run.Tasks,
 	models *run.Lock,
 ) *recognition.Worker {
 	return recognition.NewWorker(ctx, recognition.Config{

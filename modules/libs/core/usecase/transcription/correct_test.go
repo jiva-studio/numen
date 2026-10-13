@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
@@ -228,7 +227,7 @@ func TestATranscriptAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer release()
-	held.with.Tasks.Set(task.Task{
+	held.with.Tasks.Set(run.Task{
 		ID: run.GetProofreadID(recording), Title: "Proofreading a transcript", About: recording,
 		Count: 1, Total: 2,
 	})

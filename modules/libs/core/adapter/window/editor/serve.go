@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/indexing"
@@ -53,7 +52,7 @@ type Installation struct {
 	vaults vaults.Scenarios
 
 	made  Assembly
-	tasks *task.Tasks
+	tasks *run.Tasks
 	out   io.Writer
 	// checkIdentity refuses a vault whose folder no longer carries its identity.
 	checkIdentity vaults.CheckIdentity
@@ -108,7 +107,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	// the window that shows it. One job behind it too: what a person asked for
 	// is one piece of work however they asked for it. It is made before
 	// anything that reports itself into it.
-	tasks := task.New()
+	tasks := run.NewTasks()
 
 	// Opened once, for as long as the window is. A local model is fetched and
 	// compiled behind this, so the window is drawn while it arrives.
@@ -118,7 +117,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		// A provider that made no model is an installation with no vectors for
 		// as long as the window is open. It stands in the list under what
 		// stopped it.
-		tasks.Set(task.Task{ID: makingVectors, Title: "Indexing", Error: why.Error()})
+		tasks.Set(run.Task{ID: makingVectors, Title: "Indexing", Error: why.Error()})
 	}
 	if closeEmbedder == nil {
 		closeEmbedder = func() error { return nil }
@@ -135,7 +134,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	// A search short of a half is said where the person is. A window opened
 	// from a desktop entry has no terminal to write to.
 	finds := made.NewSearch(asking, func(err error) {
-		state.reportTask(task.Task{ID: wordsAlone, Title: "Answering by words alone", Error: err.Error()})
+		state.reportTask(run.Task{ID: wordsAlone, Title: "Answering by words alone", Error: err.Error()})
 	})
 	services.Search.finds = &finds
 
@@ -299,14 +298,14 @@ const (
 // what is being done. A theme the settings name that the catalogue has not is
 // said there.
 func (o *Installation) SayTheme(said string) {
-	o.State.reportTask(task.Task{ID: wearingATheme, Title: "Wearing a theme", Error: said})
+	o.State.reportTask(run.Task{ID: wearingATheme, Title: "Wearing a theme", Error: said})
 }
 
 // Report puts what reading the settings had to tell a person in the list of
 // what is being done, which is where a person is.
 func (o *Installation) Report(said []string) {
 	for at, one := range said {
-		o.State.reportTask(task.Task{
+		o.State.reportTask(run.Task{
 			ID:    fmt.Sprintf("%s %d", readingTheSettings, at),
 			Title: "Reading the settings",
 			Error: one,
@@ -318,7 +317,7 @@ func (o *Installation) Report(said []string) {
 // it, with the pieces that need no vault. The viewer is given back for the
 // installation to close.
 func createWindow(
-	made Assembly, tasks *task.Tasks, embedder port.Embedder,
+	made Assembly, tasks *run.Tasks, embedder port.Embedder,
 ) (*State, *Services, *viewer) {
 	// Where a passage sits on the page is asked of whichever producer made the
 	// text it is a place in, which is what the index records.

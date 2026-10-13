@@ -12,8 +12,8 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
@@ -221,9 +221,9 @@ func (h *artifactHandler) fetchCopy(
 	// A copy is minutes of fetching, so how far it has got is reported as it
 	// arrives.
 	report := func(done, total int64) {
-		h.state.reportTask(task.Task{
+		h.state.reportTask(run.Task{
 			ID: copying + ref.Path, Title: "Downloading a copy", About: ref.Path,
-			Count: done, Total: total, Unit: task.Bytes, IsUserStarted: true,
+			Count: done, Total: total, Unit: run.Bytes, IsUserStarted: true,
 		})
 	}
 	got, err := h.imports.Copy(ctx, v, ref.Path, report)
@@ -258,7 +258,7 @@ const (
 // outside the window, so a tab drawing it reads what now stands. It is the same
 // channel a run reports itself through, and a tab follows both the same way.
 func (h *artifactHandler) ReportArtifactChange(path string) {
-	h.state.reportTask(task.Task{ID: fetching + path, Title: "Correcting a transcript", About: path})
+	h.state.reportTask(run.Task{ID: fetching + path, Title: "Correcting a transcript", About: path})
 	h.state.finishTask(fetching + path)
 }
 
@@ -467,7 +467,7 @@ func (h *artifactHandler) fetchArtifact(
 	}
 	// A person who asks for this asks for the address afresh: what was fetched
 	// before goes, and the site is read again.
-	h.state.reportTask(task.Task{ID: fetching + ref.Path, Title: "Downloading an address", About: ref.Path})
+	h.state.reportTask(run.Task{ID: fetching + ref.Path, Title: "Downloading an address", About: ref.Path})
 	_, err := h.imports.Execute(ctx, v, ref.Path, true)
 	h.state.finishTask(fetching + ref.Path)
 	if err != nil {

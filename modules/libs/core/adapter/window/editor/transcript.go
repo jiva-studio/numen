@@ -12,7 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
@@ -81,7 +81,7 @@ func (h *transcriptHandler) WriteTranscript(
 	}
 	// A write that landed is not refused for a cut that could not be asked for.
 	if written.CutError != nil {
-		h.state.reportTask(task.Task{ID: extractingBooks, Title: "Extracting books", About: ref.Path, Error: written.CutError.Error()})
+		h.state.reportTask(run.Task{ID: extractingBooks, Title: "Extracting books", About: ref.Path, Error: written.CutError.Error()})
 	}
 	return connect.NewResponse(&v1.WriteTranscriptResponse{Cues: newWireCues(cues)}), nil
 }

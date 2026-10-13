@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/onnx"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/openai"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
 
@@ -25,7 +25,7 @@ import (
 // An embedder is optional: an installation naming no provider answers with
 // nothing. A provider that cannot be built — no key, no base URL — is a
 // reason, and nothing is built at all.
-func (c Config) Embedders(ctx context.Context, tasks *task.Tasks) (indexing, asking port.Embedder, closer func() error, why error) {
+func (c Config) Embedders(ctx context.Context, tasks *run.Tasks) (indexing, asking port.Embedder, closer func() error, why error) {
 	first, why := c.getProvider(c.Embedding.Indexing)
 	if why != nil {
 		return nil, nil, nil, why

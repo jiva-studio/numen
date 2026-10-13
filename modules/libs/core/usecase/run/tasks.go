@@ -1,12 +1,4 @@
-// Package task holds what the application is doing behind the window.
-//
-// Anything that takes long enough for a person to wonder about it puts itself
-// here, and whatever shows work to a person reads the whole list. The next
-// kind of work is an entry on it.
-//
-// A task is what is happening, not what happened. Nothing here is a record: a
-// task ends by being taken out.
-package task
+package run
 
 import (
 	"context"
@@ -66,7 +58,11 @@ type Tasks struct {
 	waiting []chan []Task
 }
 
-func New() *Tasks { return &Tasks{held: map[string]Task{}} }
+// NewTasks is what the application is doing now.
+func NewTasks() *Tasks { return &Tasks{held: map[string]Task{}} }
+
+// New is an alias for NewTasks.
+func New() *Tasks { return NewTasks() }
 
 // Set puts one task in the list, or replaces it where it is.
 //

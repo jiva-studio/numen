@@ -20,9 +20,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
@@ -191,16 +191,16 @@ func (a *API) openRun(ctx context.Context, v domain.Vault) (*flashcards.LogWrite
 // NewWindow is this window as the schema answers about it, over the list a
 // build keeps of what it is doing. It is what the API's Window is built from,
 // which is the whole of how a window outside this module names itself.
-func NewWindow(tasks *task.Tasks) *wire.Window {
+func NewWindow(tasks *run.Tasks) *wire.Window {
 	if tasks == nil {
-		tasks = task.New()
+		tasks = run.NewTasks()
 	}
 	return &wire.Window{Named: wire.Review, Tasking: tasks}
 }
 
 // reportTask puts one piece of work in the list of what is being done behind the
 // window, for a window that keeps one.
-func (a *API) reportTask(at task.Task) { a.Window.AddTask(at) }
+func (a *API) reportTask(at run.Task) { a.Window.AddTask(at) }
 
 // finishTask takes one piece of work out of that list.
 func (a *API) finishTask(id string) { a.Window.RemoveTask(id) }

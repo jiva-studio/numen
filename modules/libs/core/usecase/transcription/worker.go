@@ -10,7 +10,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
@@ -47,7 +46,7 @@ type Config struct {
 	Readers port.VaultReaders
 	Derived port.DerivedStores
 	Sources port.SourceRepository
-	Tasks   *task.Tasks
+	Tasks   *run.Tasks
 
 	// Runtime is what a recording is transcribed through.
 	Runtime Runtime
@@ -242,7 +241,7 @@ func (t *Worker) closeResident() { _ = t.resident.close() }
 // bytes somebody else holds mean come back later.
 func (t *Worker) transcribeOne(ctx context.Context, v domain.Vault, path string, isUserStarted bool) error {
 	id := transcriptionID(path)
-	t.reportTask(task.Task{ID: id, Title: "Transcribing a recording", About: path}, isUserStarted)
+	t.reportTask(run.Task{ID: id, Title: "Transcribing a recording", About: path}, isUserStarted)
 
 	res, err := t.transcribe(ctx, v, id, path, isUserStarted)
 	switch {
@@ -254,7 +253,7 @@ func (t *Worker) transcribeOne(ctx context.Context, v domain.Vault, path string,
 		// The recording is left where the next round finds it. A store that
 		// would not write and an index that would not answer are the machine,
 		// and the recording has said nothing about itself.
-		t.reportTask(task.Task{ID: id, Title: "Transcribing a recording", About: path, Error: err.Error()}, isUserStarted)
+		t.reportTask(run.Task{ID: id, Title: "Transcribing a recording", About: path, Error: err.Error()}, isUserStarted)
 	case res.IsBusy:
 		t.finishTask(id)
 	default:
@@ -337,12 +336,12 @@ func (t *Worker) proofreadTranscript(
 
 	id := run.GetProofreadID(path)
 	fail := func(err error) {
-		t.reportTask(task.Task{
+		t.reportTask(run.Task{
 			ID: id, Title: "Proofreading a transcript", About: path, Error: err.Error(),
 		}, isUserStarted)
 	}
 	if isUserStarted {
-		t.reportTask(task.Task{ID: id, Title: "Proofreading a transcript", About: path}, isUserStarted)
+		t.reportTask(run.Task{ID: id, Title: "Proofreading a transcript", About: path}, isUserStarted)
 	}
 
 	right, held, err := CreateProofread(proofreading, t.with.Readers, t.with.Derived)
@@ -366,7 +365,7 @@ func (t *Worker) proofreadTranscript(
 				began(res)
 			}
 		})
-		t.reportTask(task.Task{
+		t.reportTask(run.Task{
 			ID:    id,
 			Title: "Proofreading a transcript",
 			About: path,
@@ -433,17 +432,17 @@ func (t *Worker) transcribe(
 	}
 	defer func() { err = errors.Join(err, finish(err)) }()
 
-	t.reportTask(task.Task{ID: id, Title: "Transcribing a recording", About: path}, isUserStarted)
+	t.reportTask(run.Task{ID: id, Title: "Transcribing a recording", About: path}, isUserStarted)
 	listen := NewTranscribe(t.with.Readers, t.with.Sources, t.with.Derived, by)
 	listen.Cut = t.Cut
 	listen.OnProgress = func(res TranscribeResult) {
-		t.reportTask(task.Task{
+		t.reportTask(run.Task{
 			ID:    id,
 			Title: "Transcribing a recording",
 			About: path,
 			Count: int64(res.Heard / 1000),
 			Total: int64(res.Length / 1000),
-			Unit:  task.Seconds,
+			Unit:  run.Seconds,
 		}, isUserStarted)
 	}
 	return listen.Execute(ctx, v, path)
@@ -465,7 +464,7 @@ func (t *Worker) acquireModels(
 	}
 
 	release, err := t.with.Models.Acquire(ctx, isUserStarted, func() {
-		t.reportTask(task.Task{ID: id, Title: "Waiting for the models", About: path}, isUserStarted)
+		t.reportTask(run.Task{ID: id, Title: "Waiting for the models", About: path}, isUserStarted)
 	})
 	if err != nil {
 		return nil, nil, err
@@ -473,13 +472,13 @@ func (t *Worker) acquireModels(
 
 	// Getting the models is a step of its own and stands under its own name.
 	// Which file is coming down, and how much of it, is known once one is.
-	t.reportTask(task.Task{ID: id, Title: "Fetching models"}, isUserStarted)
+	t.reportTask(run.Task{ID: id, Title: "Fetching models"}, isUserStarted)
 	by, letGo, err := t.with.Runtime.Open(ctx, func(what string, done, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.
-		t.reportTask(task.Task{
+		t.reportTask(run.Task{
 			ID: id, Title: "Fetching models", About: what,
-			Count: done, Total: total, Unit: task.Bytes,
+			Count: done, Total: total, Unit: run.Bytes,
 		}, isUserStarted)
 	})
 	if err != nil {
@@ -535,7 +534,7 @@ func (t *Worker) ClearAnswer(v domain.Vault, path string) {
 // reportTask puts this transcription in the list of what is being done. Work nobody
 // asked for is shown once it has lasted, and work a person started is shown at
 // once.
-func (t *Worker) reportTask(at task.Task, isUserStarted bool) {
+func (t *Worker) reportTask(at run.Task, isUserStarted bool) {
 	t.line.Report(at, isUserStarted)
 }
 

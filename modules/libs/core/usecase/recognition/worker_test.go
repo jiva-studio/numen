@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
@@ -33,13 +32,13 @@ func (b *blank) Close() error {
 // said.
 type watched struct {
 	*Worker
-	tasks *task.Tasks
+	tasks *run.Tasks
 	held  *blank
 
 	mu   sync.Mutex
 	open int
 	// while is the list as it stood when the models were asked for.
-	while []task.Task
+	while []run.Task
 }
 
 func newWatched(t *testing.T, why error) *watched {
@@ -50,7 +49,7 @@ func newWatched(t *testing.T, why error) *watched {
 // newWatchedUnder is a watched worker whose runs end with ctx.
 func newWatchedUnder(t *testing.T, ctx context.Context, why error) *watched {
 	t.Helper()
-	tasks := task.New()
+	tasks := run.NewTasks()
 	w := &watched{tasks: tasks, held: &blank{}}
 	w.Worker = NewWorker(ctx, Config{
 		Readers:   vaults{},
@@ -87,7 +86,7 @@ func (w *watched) countOpens() int {
 }
 
 // opening is the one piece of work in the list while the models were asked for.
-func (w *watched) opening(t *testing.T) task.Task {
+func (w *watched) opening(t *testing.T) run.Task {
 	t.Helper()
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -110,11 +109,11 @@ func (w *watched) waitUntilDone(t *testing.T) {
 }
 
 // getTask is the one task in the list, or nothing.
-func (w *watched) getTask(t *testing.T) (task.Task, bool) {
+func (w *watched) getTask(t *testing.T) (run.Task, bool) {
 	t.Helper()
 	held := w.tasks.List()
 	if len(held) == 0 {
-		return task.Task{}, false
+		return run.Task{}, false
 	}
 	if len(held) != 1 {
 		t.Fatalf("the list holds %d pieces of work: %+v", len(held), held)

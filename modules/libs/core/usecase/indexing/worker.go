@@ -8,8 +8,8 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -30,7 +30,7 @@ const QuietPeriod = 8 * time.Second
 type Events interface {
 	// ReportTask puts one piece of work in the list of what is being done, and
 	// FinishTask takes it out.
-	ReportTask(at task.Task)
+	ReportTask(at run.Task)
 	FinishTask(id string)
 	// ReportError says why a pass could not run.
 	ReportError(err error)
@@ -208,7 +208,7 @@ func (p *pass) readNotes(ctx context.Context, read ReadNotes) bool {
 	events := p.worker.events
 	defer events.FinishTask(WalkingNotes)
 
-	events.ReportTask(task.Task{ID: WalkingNotes, Title: "Indexing the vault"})
+	events.ReportTask(run.Task{ID: WalkingNotes, Title: "Indexing the vault"})
 	notes, err := read(ctx, nil)
 
 	switch {
@@ -252,11 +252,11 @@ func (p *pass) readBooks(ctx context.Context, rebuild bool) {
 	events := p.worker.events
 	making, err := p.worker.reading(ctx, p.worker.embedder, p.v, rebuild)
 	if err != nil {
-		events.ReportTask(task.Task{ID: ExtractingBooks, Title: "Extracting books", Error: err.Error()})
+		events.ReportTask(run.Task{ID: ExtractingBooks, Title: "Extracting books", Error: err.Error()})
 		return
 	}
 	making.OnBooksProgress = func(res source.ExtractResult) {
-		events.ReportTask(task.Task{
+		events.ReportTask(run.Task{
 			ID: ExtractingBooks, Title: "Extracting books", About: res.CurrentSource,
 			// Every book the walk found leaves this pass one of four ways, and all
 			// four count as done.
@@ -265,7 +265,7 @@ func (p *pass) readBooks(ctx context.Context, rebuild bool) {
 		})
 	}
 
-	events.ReportTask(task.Task{ID: ExtractingBooks, Title: "Extracting books"})
+	events.ReportTask(run.Task{ID: ExtractingBooks, Title: "Extracting books"})
 	res, read := making.ReadBooks(ctx, p.v)
 	switch {
 	case read == nil:
@@ -278,7 +278,7 @@ func (p *pass) readBooks(ctx context.Context, rebuild bool) {
 		events.FinishTask(ExtractingBooks)
 	default:
 		// A failed pass stays in the list until whoever is shown it takes it out.
-		events.ReportTask(task.Task{ID: ExtractingBooks, Title: "Extracting books", Error: read.Error()})
+		events.ReportTask(run.Task{ID: ExtractingBooks, Title: "Extracting books", Error: read.Error()})
 	}
 
 	p.embed(ctx)
@@ -289,7 +289,7 @@ func (p *pass) readBooks(ctx context.Context, rebuild bool) {
 func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 	events := p.worker.events
 	failed := func(err error) {
-		events.ReportTask(task.Task{ID: ExtractingBooks, Title: "Extracting books", About: path, Error: err.Error()})
+		events.ReportTask(run.Task{ID: ExtractingBooks, Title: "Extracting books", About: path, Error: err.Error()})
 	}
 
 	making, err := p.worker.reading(ctx, p.worker.embedder, v, false)
@@ -381,7 +381,7 @@ func stopOnWake(ctx context.Context, wake chan struct{}) (context.Context, func(
 func (p *pass) makeVectors(ctx, under context.Context, owing int64) {
 	events := p.worker.events
 	failed := func(err error) {
-		events.ReportTask(task.Task{ID: MakingVectors, Title: "Indexing", Error: err.Error()})
+		events.ReportTask(run.Task{ID: MakingVectors, Title: "Indexing", Error: err.Error()})
 	}
 
 	making, err := p.worker.reading(ctx, p.worker.embedder, p.v, false)
@@ -393,7 +393,7 @@ func (p *pass) makeVectors(ctx, under context.Context, owing int64) {
 	// The pass enters the list when it opens the first of them, and a share is
 	// drawn once a vector has been made, counted over the work in hand.
 	making.OnVectorsProgress = func(res embedding.EmbedResult) {
-		at := task.Task{ID: MakingVectors, Title: "Indexing", About: res.CurrentSource}
+		at := run.Task{ID: MakingVectors, Title: "Indexing", About: res.CurrentSource}
 		if res.Embedded > 0 {
 			at.Count, at.Total = int64(res.Embedded), owing
 		}

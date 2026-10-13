@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
 // A transcript is put right at the profile the settings name for speech, and
@@ -33,7 +33,7 @@ func TestATranscriptIsPutRightWithTheProfileNamedForSpeech(t *testing.T) {
 		return nil, errors.New("nothing on this machine puts a transcript right")
 	}
 
-	held := cfg.OpenTranscriptionWorker(t.Context(), nil, task.New(), nil)
+	held := cfg.OpenTranscriptionWorker(t.Context(), nil, run.NewTasks(), nil)
 	_, _ = held.Proofread(t.Context(), domain.Vault{ID: "v", Path: t.TempDir()}, "talks/one.mp3")
 	held.Wait()
 

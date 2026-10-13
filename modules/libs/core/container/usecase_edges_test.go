@@ -21,13 +21,13 @@ var useCaseEdges = map[string][]string{
 	"source":        nil,
 	"recognition":   {"run"},
 	"transcription": {"run"},
-	"embedding":     nil,
+	"embedding":     {"run"},
 	"file":          nil,
 	"search":        nil,
 	"cards":         {"note"},
 	"flashcards":    {"cards", "note"},
 	"vault":         {"embedding", "note", "source"},
-	"indexing":      {"embedding", "source", "vault"},
+	"indexing":      {"embedding", "run", "source", "vault"},
 }
 
 // getUseCaseName is the use case a package belongs to, and whether it is one.

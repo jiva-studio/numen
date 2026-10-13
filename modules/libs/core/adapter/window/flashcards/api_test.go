@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -22,7 +22,7 @@ func TestAWindowKeepsTheListOfWorkItWasBuiltOver(t *testing.T) {
 		t.Error("a window built over no list keeps none")
 	}
 
-	tasks := task.New()
+	tasks := run.NewTasks()
 	if NewWindow(tasks).Tasking != tasks {
 		t.Error("a window built over a list keeps another")
 	}

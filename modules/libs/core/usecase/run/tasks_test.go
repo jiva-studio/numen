@@ -1,4 +1,4 @@
-package task_test
+package run
 
 import (
 	"context"
@@ -7,14 +7,12 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 )
 
 func TestWhatIsBeingDoneIsWhatIsListed(t *testing.T) {
-	tasks := task.New()
-	tasks.Set(task.Task{ID: "recognition", Title: "Recognising a scan", About: "book.pdf"})
-	tasks.Set(task.Task{ID: "indexing", Title: "Indexing"})
+	tasks := NewTasks()
+	tasks.Set(Task{ID: "recognition", Title: "Recognising a scan", About: "book.pdf"})
+	tasks.Set(Task{ID: "indexing", Title: "Indexing"})
 
 	list := tasks.List()
 	if len(list) != 2 {
@@ -33,9 +31,9 @@ func TestWhatIsBeingDoneIsWhatIsListed(t *testing.T) {
 }
 
 func TestWorkReportedAgainReplacesItself(t *testing.T) {
-	tasks := task.New()
-	tasks.Set(task.Task{ID: "recognition", Title: "Recognising a scan", Count: 1, Total: 9})
-	tasks.Set(task.Task{ID: "recognition", Title: "Recognising a scan", Count: 4, Total: 9})
+	tasks := NewTasks()
+	tasks.Set(Task{ID: "recognition", Title: "Recognising a scan", Count: 1, Total: 9})
+	tasks.Set(Task{ID: "recognition", Title: "Recognising a scan", Count: 4, Total: 9})
 
 	list := tasks.List()
 	if len(list) != 1 {
@@ -47,7 +45,7 @@ func TestWorkReportedAgainReplacesItself(t *testing.T) {
 }
 
 func TestFinishingWhatIsNotThereIsTheOutcomeAskedFor(t *testing.T) {
-	tasks := task.New()
+	tasks := NewTasks()
 	tasks.Remove("nothing")
 	if list := tasks.List(); len(list) != 0 {
 		t.Errorf("listed %+v", list)
@@ -55,9 +53,9 @@ func TestFinishingWhatIsNotThereIsTheOutcomeAskedFor(t *testing.T) {
 }
 
 func TestClearTakesAllTasksOut(t *testing.T) {
-	tasks := task.New()
-	tasks.Set(task.Task{ID: "recognition", Title: "Recognising a scan"})
-	tasks.Set(task.Task{ID: "indexing", Title: "Indexing"})
+	tasks := NewTasks()
+	tasks.Set(Task{ID: "recognition", Title: "Recognising a scan"})
+	tasks.Set(Task{ID: "indexing", Title: "Indexing"})
 
 	if len(tasks.List()) != 2 {
 		t.Fatalf("listed %d, want 2", len(tasks.List()))
@@ -70,8 +68,8 @@ func TestClearTakesAllTasksOut(t *testing.T) {
 }
 
 func TestWatchingSaysWhatIsBeingDoneAndThenWhatChanges(t *testing.T) {
-	tasks := task.New()
-	tasks.Set(task.Task{ID: "recognition", Title: "Recognising a scan"})
+	tasks := NewTasks()
+	tasks.Set(Task{ID: "recognition", Title: "Recognising a scan"})
 
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
@@ -83,7 +81,7 @@ func TestWatchingSaysWhatIsBeingDoneAndThenWhatChanges(t *testing.T) {
 		t.Fatalf("first said %+v", list)
 	}
 
-	tasks.Set(task.Task{ID: "fetching", Title: "Fetching"})
+	tasks.Set(Task{ID: "fetching", Title: "Fetching"})
 	if list := next(t, watching); len(list) != 2 {
 		t.Errorf("after one more: %+v", list)
 	}
@@ -97,13 +95,13 @@ func TestWatchingSaysWhatIsBeingDoneAndThenWhatChanges(t *testing.T) {
 func TestAListenerBehindIsGivenTheNewestAndNotAQueue(t *testing.T) {
 	// What the work was doing a second ago is of no interest to anybody, and a
 	// listener that fell behind must not be made to walk through it.
-	tasks := task.New()
+	tasks := NewTasks()
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 	watching := tasks.Watch(ctx)
 
 	for i := int64(1); i <= 5; i++ {
-		tasks.Set(task.Task{ID: "recognition", Title: "Recognising a scan", Count: i, Total: 5})
+		tasks.Set(Task{ID: "recognition", Title: "Recognising a scan", Count: i, Total: 5})
 	}
 	if list := next(t, watching); len(list) != 1 || list[0].Count != 5 {
 		t.Errorf("said %+v, want the newest", list)
@@ -111,7 +109,7 @@ func TestAListenerBehindIsGivenTheNewestAndNotAQueue(t *testing.T) {
 }
 
 func TestWatchingEndsWithItsContext(t *testing.T) {
-	tasks := task.New()
+	tasks := NewTasks()
 	ctx, stop := context.WithCancel(t.Context())
 	watching := tasks.Watch(ctx)
 	stop()
@@ -134,14 +132,14 @@ func TestWhatAListenerIsToldLastIsTheNewest(t *testing.T) {
 	// Several pieces of work report at once, which is what the list is for. Each
 	// of them only ever gets further on, so a listener told that one has got less
 	// far than it already had has been handed an older list than the one before.
-	tasks := task.New()
+	tasks := NewTasks()
 	ctx, stop := context.WithCancel(t.Context())
 	watching := tasks.Watch(ctx)
 
-	ended := make(chan []task.Task, 1)
+	ended := make(chan []Task, 1)
 	go func() {
 		far := map[string]int64{}
-		var last []task.Task
+		var last []Task
 		for list := range watching {
 			for _, at := range list {
 				if at.Count < far[at.ID] {
@@ -161,7 +159,7 @@ func TestWhatAListenerIsToldLastIsTheNewest(t *testing.T) {
 			defer reporting.Done()
 			id := fmt.Sprintf("recognition-%d", which)
 			for page := int64(1); page <= 200; page++ {
-				tasks.Set(task.Task{ID: id, Title: "Recognising a scan", Count: page, Total: 200})
+				tasks.Set(Task{ID: id, Title: "Recognising a scan", Count: page, Total: 200})
 			}
 		}()
 	}
@@ -176,7 +174,7 @@ func TestWhatAListenerIsToldLastIsTheNewest(t *testing.T) {
 	}
 }
 
-func next(t *testing.T, watching <-chan []task.Task) []task.Task {
+func next(t *testing.T, watching <-chan []Task) []Task {
 	t.Helper()
 	select {
 	case list := <-watching:
@@ -188,7 +186,7 @@ func next(t *testing.T, watching <-chan []task.Task) []task.Task {
 }
 
 // quiet fails when a listener has been told of anything.
-func quiet(t *testing.T, watching <-chan []task.Task, why string) {
+func quiet(t *testing.T, watching <-chan []Task, why string) {
 	t.Helper()
 	select {
 	case list := <-watching:
@@ -198,13 +196,13 @@ func quiet(t *testing.T, watching <-chan []task.Task, why string) {
 }
 
 func TestWorkWithNoNameIsNotListed(t *testing.T) {
-	tasks := task.New()
+	tasks := NewTasks()
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 	watching := tasks.Watch(ctx)
 	next(t, watching)
 
-	tasks.Set(task.Task{Title: "Recognising a scan"})
+	tasks.Set(Task{Title: "Recognising a scan"})
 	if list := tasks.List(); len(list) != 0 {
 		t.Errorf("listed %+v", list)
 	}
@@ -212,7 +210,7 @@ func TestWorkWithNoNameIsNotListed(t *testing.T) {
 }
 
 func TestFinishingWhatIsNotThereTellsNobody(t *testing.T) {
-	tasks := task.New()
+	tasks := NewTasks()
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 	watching := tasks.Watch(ctx)
@@ -223,11 +221,11 @@ func TestFinishingWhatIsNotThereTellsNobody(t *testing.T) {
 }
 
 func TestWorkTakenOutCanBeReportedAgain(t *testing.T) {
-	tasks := task.New()
-	tasks.Set(task.Task{ID: "a"})
-	tasks.Set(task.Task{ID: "b"})
+	tasks := NewTasks()
+	tasks.Set(Task{ID: "a"})
+	tasks.Set(Task{ID: "b"})
 	tasks.Remove("a")
-	tasks.Set(task.Task{ID: "a", Title: "again"})
+	tasks.Set(Task{ID: "a", Title: "again"})
 
 	list := tasks.List()
 	if len(list) != 2 || list[0].ID != "b" || list[1].ID != "a" || list[1].Title != "again" {
@@ -236,27 +234,27 @@ func TestWorkTakenOutCanBeReportedAgain(t *testing.T) {
 }
 
 func TestClearingTakesAllTasksOutAndTellsListeners(t *testing.T) {
-	tasks := task.New()
+	tasks := NewTasks()
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 	watching := tasks.Watch(ctx)
 	next(t, watching)
 
-	tasks.Set(task.Task{ID: "a"})
+	tasks.Set(Task{ID: "a"})
 	next(t, watching)
 	tasks.Clear()
 	if list := next(t, watching); len(list) != 0 {
 		t.Errorf("told %+v after the list was cleared", list)
 	}
 
-	tasks.Set(task.Task{ID: "a", Title: "again"})
+	tasks.Set(Task{ID: "a", Title: "again"})
 	if list := tasks.List(); len(list) != 1 || list[0].Title != "again" {
 		t.Errorf("listed %+v after reporting the work again", list)
 	}
 }
 
 func TestClearingWhatIsEmptyTellsNobody(t *testing.T) {
-	tasks := task.New()
+	tasks := NewTasks()
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 	watching := tasks.Watch(ctx)
@@ -267,8 +265,8 @@ func TestClearingWhatIsEmptyTellsNobody(t *testing.T) {
 }
 
 func TestClearingASingleTaskTakesItOut(t *testing.T) {
-	tasks := task.New()
-	tasks.Set(task.Task{ID: "a"})
+	tasks := NewTasks()
+	tasks.Set(Task{ID: "a"})
 	tasks.Clear()
 	if list := tasks.List(); len(list) != 0 {
 		t.Errorf("listed %+v", list)
@@ -276,7 +274,7 @@ func TestClearingASingleTaskTakesItOut(t *testing.T) {
 }
 
 func TestAListenerThatEndedDoesNotStopTheOthersBeingTold(t *testing.T) {
-	tasks := task.New()
+	tasks := NewTasks()
 	endingCtx, end := context.WithCancel(t.Context())
 	ending := tasks.Watch(endingCtx)
 	ctx, stop := context.WithCancel(t.Context())
@@ -294,7 +292,7 @@ func TestAListenerThatEndedDoesNotStopTheOthersBeingTold(t *testing.T) {
 	}
 
 	// Telling the ended listener would send on a closed channel.
-	tasks.Set(task.Task{ID: "a"})
+	tasks.Set(Task{ID: "a"})
 	if list := next(t, staying); len(list) != 1 {
 		t.Errorf("the listener that stayed was told %+v", list)
 	}

@@ -24,9 +24,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
@@ -142,7 +142,7 @@ func newAPI(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
 		Presets:        running.Presets,
 		GetTitle:       note.NewGetTitle(db.Queries()),
 		IsVaultIndexed: note.NewIsVaultIndexed(db.Queries()),
-		Window:         NewWindow(task.New()),
+		Window:         NewWindow(run.NewTasks()),
 		Day:            running.Day,
 		Now:            time.Now,
 	}

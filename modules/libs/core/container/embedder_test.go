@@ -7,7 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
 // A container nobody configured builds no embedder, and the machine's own
@@ -251,7 +251,7 @@ func makeMissingProvider(t *testing.T) embed.Provider {
 
 // waitForTasks is the list of what is being done, once it holds what is asked
 // of it.
-func waitForTasks(t *testing.T, tasks *task.Tasks, enough func([]task.Task) bool) []task.Task {
+func waitForTasks(t *testing.T, tasks *run.Tasks, enough func([]run.Task) bool) []run.Task {
 	t.Helper()
 	for range 400 {
 		if held := tasks.List(); enough(held) {
@@ -266,7 +266,7 @@ func waitForTasks(t *testing.T, tasks *task.Tasks, enough func([]task.Task) bool
 // makeUncomparedTasks is two providers the comparison between them never got an
 // answer out of: the model the vault would be indexed by is not on this
 // machine, and questions are placed with a service. It answers with the list.
-func makeUncomparedTasks(t *testing.T) *task.Tasks {
+func makeUncomparedTasks(t *testing.T) *run.Tasks {
 	t.Helper()
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 	cfg := embed.Defaults()
@@ -276,7 +276,7 @@ func makeUncomparedTasks(t *testing.T) *task.Tasks {
 	cfg.Query = embed.Provider{}.SetService(
 		embed.ServiceModel{Name: "reached-another-way", BaseURL: nowhere})
 
-	tasks := task.New()
+	tasks := run.NewTasks()
 	_, _, closer, why := container.Config{Embedding: cfg}.Embedders(t.Context(), tasks)
 	if why != nil {
 		t.Fatal(why)
@@ -289,9 +289,9 @@ func makeUncomparedTasks(t *testing.T) *task.Tasks {
 
 // waitForFailures is the list once the number of things that stopped badly is
 // reached.
-func waitForFailures(t *testing.T, tasks *task.Tasks, want int) []task.Task {
+func waitForFailures(t *testing.T, tasks *run.Tasks, want int) []run.Task {
 	t.Helper()
-	return waitForTasks(t, tasks, func(held []task.Task) bool {
+	return waitForTasks(t, tasks, func(held []run.Task) bool {
 		got := 0
 		for _, at := range held {
 			if at.Error != "" {
@@ -346,7 +346,7 @@ func TestAnInstallationSilentAboutQuestionsPreparesNoModelHere(t *testing.T) {
 	cfg := makeEmbedConfig("baai/bge-m3")
 	cfg.Query.Use = ""
 
-	tasks := task.New()
+	tasks := run.NewTasks()
 	indexing, asking, closer, why := container.Config{Embedding: cfg}.Embedders(t.Context(), tasks)
 	if why != nil {
 		t.Fatal(why)

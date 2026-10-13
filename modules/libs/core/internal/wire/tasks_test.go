@@ -9,13 +9,13 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 // openTaskStream is the stream a window would hold, over a list a test drives.
-func openTaskStream(t *testing.T, tasks *task.Tasks) *connect.ServerStreamForClient[v1.WatchTasksResponse] {
+func openTaskStream(t *testing.T, tasks *run.Tasks) *connect.ServerStreamForClient[v1.WatchTasksResponse] {
 	t.Helper()
 
 	route, handler := numenv1connect.NewWindowServiceHandler(&Window{Named: Editor, Tasking: tasks})
@@ -49,14 +49,14 @@ func receiveTasks(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchTa
 // nothing after it is a list nobody is holding: work that ended stands on
 // screen as work still running.
 func TestOneChangeIsSaidTwice(t *testing.T) {
-	tasks := task.New()
+	tasks := run.NewTasks()
 	stream := openTaskStream(t, tasks)
 
 	if first := receiveTasks(t, stream); len(first) != 0 {
 		t.Fatalf("a window that opened with nothing running was told of %d", len(first))
 	}
 
-	tasks.Set(task.Task{ID: "recognition", Title: "Recognising a scan"})
+	tasks.Set(run.Task{ID: "recognition", Title: "Recognising a scan"})
 	for telling := range 2 {
 		list := receiveTasks(t, stream)
 		if len(list) != 1 || list[0].GetId() != "recognition" {
@@ -77,7 +77,7 @@ func TestOneChangeIsSaidTwice(t *testing.T) {
 // is not answered with this one's.
 func TestAQuestionNamingAnotherWindowIsNotAnswered(t *testing.T) {
 	route, handler := numenv1connect.NewWindowServiceHandler(
-		&Window{Named: Review, Tasking: task.New()},
+		&Window{Named: Review, Tasking: run.NewTasks()},
 	)
 	mux := http.NewServeMux()
 	mux.Handle(route, handler)

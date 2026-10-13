@@ -9,8 +9,8 @@ import (
 
 	agreement "github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
 // is the identity a provider's vectors are kept under. Nothing here reads a
@@ -62,7 +62,7 @@ func refuseFetch(context.Context, func(done, total int64)) (port.Embedder, error
 // An installation that places its index nowhere embeds with nothing, and there
 // is nothing to let go of.
 func TestAnInstallationNamingNoProviderEmbedsWithNothing(t *testing.T) {
-	filling, asking, letGo := embedding.Open(t.Context(), task.New(),
+	filling, asking, letGo := embedding.Open(t.Context(), run.NewTasks(),
 		embedding.Provider{}, embedding.Provider{})
 	if filling != nil || asking != nil {
 		t.Errorf("got %v and %v", filling, asking)
@@ -86,7 +86,7 @@ func TestAnInstallationNamingNoProviderEmbedsWithNothing(t *testing.T) {
 func TestOneProviderIsOneModelSeenTwoWays(t *testing.T) {
 	held := newSaying("one-provider", 1, 0, 0)
 
-	filling, asking, letGo := embedding.Open(t.Context(), task.New(),
+	filling, asking, letGo := embedding.Open(t.Context(), run.NewTasks(),
 		embedding.NewReached(held.GetModel(), "one-provider", held), embedding.Provider{})
 	if filling == nil || asking == nil {
 		t.Fatalf("got %v and %v", filling, asking)
@@ -108,7 +108,7 @@ func TestTwoProvidersAnsweringAlikeAreOneModel(t *testing.T) {
 	first := newSaying("indexed-here", 1, 0, 0)
 	second := newSaying("asked-elsewhere", 1, 0, 0)
 
-	tasks := task.New()
+	tasks := run.NewTasks()
 	filling, asking, letGo := embedding.Open(t.Context(), tasks,
 		embedding.NewReached(first.GetModel(), "indexed-here", first),
 		embedding.NewReached(second.GetModel(), "asked-elsewhere", second))
@@ -136,7 +136,7 @@ func TestTwoProvidersThatDisagreeAreNotOneModel(t *testing.T) {
 	first := newSaying("indexed-here", 1, 0, 0)
 	second := newSaying("somewhere-else", 0, 1, 0)
 
-	tasks := task.New()
+	tasks := run.NewTasks()
 	_, asking, letGo := embedding.Open(t.Context(), tasks,
 		embedding.NewReached(first.GetModel(), "indexed-here", first),
 		embedding.NewReached(second.GetModel(), "somewhere-else", second))
@@ -162,7 +162,7 @@ func TestTwoProvidersThatDisagreeAreNotOneModel(t *testing.T) {
 func TestTwoProvidersThatCouldNotBeComparedAreNotOneModel(t *testing.T) {
 	second := newSaying("asked-elsewhere", 1, 0, 0)
 
-	tasks := task.New()
+	tasks := run.NewTasks()
 	_, _, letGo := embedding.Open(t.Context(), tasks,
 		embedding.NewFetched(is("never-arrives"), "never-arrives", refuseFetch),
 		embedding.NewReached(second.GetModel(), "asked-elsewhere", second))
@@ -177,7 +177,7 @@ func TestTwoProvidersThatCouldNotBeComparedAreNotOneModel(t *testing.T) {
 // Two providers naming one repository are two lines, and how far one has got is
 // not written over by the other.
 func TestTwoProvidersOfOneRepositoryAreTwoLines(t *testing.T) {
-	tasks := task.New()
+	tasks := run.NewTasks()
 	_, _, letGo := embedding.Open(t.Context(), tasks,
 		embedding.NewFetched(is("one/repository"), "one/repository", refuseFetch),
 		embedding.NewFetched(is("one/repository"), "one/repository", refuseFetch))
@@ -197,7 +197,7 @@ func TestTwoProvidersOfOneRepositoryAreTwoLines(t *testing.T) {
 func TestAProviderReachedAtOnceStandsInNoList(t *testing.T) {
 	held := newSaying("reached-at-once", 1, 0, 0)
 
-	tasks := task.New()
+	tasks := run.NewTasks()
 	_, _, letGo := embedding.Open(t.Context(), tasks,
 		embedding.NewReached(held.GetModel(), "reached-at-once", held), embedding.Provider{})
 	defer func() { _ = letGo() }()
@@ -219,7 +219,7 @@ func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
 		return nil, errors.New("none of the model is on this machine")
 	}
 
-	tasks := task.New()
+	tasks := run.NewTasks()
 	_, _, letGo := embedding.Open(t.Context(), tasks,
 		embedding.NewFetched(is("a/model"), "a/model", opening), embedding.Provider{})
 	defer func() { _ = letGo() }()
@@ -246,7 +246,7 @@ func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
 	if at.Count != 30_000_000 || at.Total != 90_000_000 {
 		t.Errorf("the model is drawn as %d of %d", at.Count, at.Total)
 	}
-	if at.Unit != task.Bytes {
+	if at.Unit != run.Bytes {
 		t.Errorf("a model is counted as %v", at.Unit)
 	}
 
@@ -266,7 +266,7 @@ func TestAModelThatArrivedIsNoLongerBeingPreparedFor(t *testing.T) {
 		return held, nil
 	}
 
-	tasks := task.New()
+	tasks := run.NewTasks()
 	filling, _, letGo := embedding.Open(t.Context(), tasks,
 		embedding.NewFetched(held.GetModel(), "a/model", opening), embedding.Provider{})
 	defer func() { _ = letGo() }()
@@ -318,7 +318,7 @@ func waitFor(t *testing.T, done func() bool, why string) {
 }
 
 // getOnlyTask is the one piece of work in the list.
-func getOnlyTask(t *testing.T, tasks *task.Tasks) task.Task {
+func getOnlyTask(t *testing.T, tasks *run.Tasks) run.Task {
 	t.Helper()
 	held := tasks.List()
 	if len(held) != 1 {
@@ -329,9 +329,9 @@ func getOnlyTask(t *testing.T, tasks *task.Tasks) task.Task {
 
 // waitForFailures is the list once the number of things that stopped badly is
 // reached.
-func waitForFailures(t *testing.T, tasks *task.Tasks, want int) []task.Task {
+func waitForFailures(t *testing.T, tasks *run.Tasks, want int) []run.Task {
 	t.Helper()
-	var held []task.Task
+	var held []run.Task
 	waitFor(t, func() bool {
 		held = tasks.List()
 		got := 0
