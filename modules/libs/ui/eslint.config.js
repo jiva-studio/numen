@@ -11,12 +11,49 @@ import globals from 'globals'
 import pluginVue from 'eslint-plugin-vue'
 import tseslint from 'typescript-eslint'
 import prettier from 'eslint-config-prettier'
+import boundaries from 'eslint-plugin-boundaries'
+import { createLayerElements, createLayerPolicies } from '../../tools/lint/layers.mjs'
 
 /** The globals a pure core is not allowed to reach for, and the port for each. */
 const lifetimes = [
   { name: 'requestAnimationFrame', port: 'the schedule a Clock carries' },
   { name: 'cancelAnimationFrame', port: 'the cancel a Clock carries' },
   { name: 'matchMedia', port: 'a prop, or CSS where the browser already knows' },
+]
+
+const layerOrder = ['shared', 'features', 'screens']
+const sliceLayers = ['features']
+
+const layerElements = createLayerElements({ order: layerOrder, sliceLayers })
+
+const layerPolicies = createLayerPolicies({ order: layerOrder, sliceLayers, indexOnly: true })
+
+/** The tests that read the wire's fixtures from `libs/protocol/testdata` by relative path. */
+const testdataReaders = [
+  'src/shared/lib/address.test.ts',
+  'src/features/book/ui/spine.test.ts',
+  'src/features/cards/lib/fill.test.ts',
+]
+
+/** The files that stand outside the layers. */
+const outsideLayers = ['src/**/*.stories.ts', 'src/**/fixtures/**', ...testdataReaders]
+
+const domainImports = [
+  {
+    group: [
+      '@numen/*',
+      '@numen/*/**',
+      '!@numen/ui',
+      // The same packages named by the path the install put them at.
+      '**/node_modules/@numen/**',
+    ],
+    message:
+      'a component knows nothing about the domain or the wire — take props in a drawing vocabulary and emit opaque identifiers',
+  },
+  {
+    group: ['**/apps/**', '**/libs/**'],
+    message: 'the dependency runs apps → libs/ui, never back',
+  },
 ]
 
 export default tseslint.config(
@@ -192,28 +229,70 @@ export default tseslint.config(
     files: ['src/**/*.{ts,vue}'],
     ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**'],
     rules: {
+      'no-restricted-imports': ['error', { patterns: domainImports }],
+    },
+  },
+
+  // A slice reaches its own files by relative path, and no other slice at all.
+  {
+    files: ['src/features/**/*.{ts,vue}'],
+    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', ...outsideLayers],
+    rules: {
       'no-restricted-imports': [
         'error',
         {
           patterns: [
+            ...domainImports,
             {
-              group: [
-                '@numen/*',
-                '@numen/*/**',
-                '!@numen/ui',
-                // The same packages named by the path the install put them at.
-                '**/node_modules/@numen/**',
-              ],
-              message:
-                'a component knows nothing about the domain or the wire — take props in a drawing vocabulary and emit opaque identifiers',
-            },
-            {
-              group: ['**/apps/**', '**/libs/**'],
-              message: 'the dependency runs apps → libs/ui, never back',
+              group: ['@/features/**', '@/screens/**'],
+              message: 'a slice imports its own files by relative path and no other slice',
             },
           ],
         },
       ],
+    },
+  },
+  {
+    files: ['src/screens/**/*.{ts,vue}'],
+    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', ...outsideLayers],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            ...domainImports,
+            {
+              group: ['@/screens/**'],
+              message: 'a screen imports its own files by relative path',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // The layers: shared, features, screens, each reaching only what stands below
+  // it, and a feature reached from above through its `index.ts`. Every import is
+  // resolved to the file it names, so `../../features/x` is held to the same
+  // rule as `@/features/x`.
+  //
+  // Stories and fixtures stand outside the layers, and so do the tests that read
+  // `libs/protocol/testdata`. A file under `src` that no element claims fails.
+  {
+    files: ['src/**/*.{ts,vue}'],
+    ignores: outsideLayers,
+    plugins: { boundaries },
+    settings: {
+      'import/resolver': { typescript: { alwaysTryTypes: true } },
+      'boundaries/elements': layerElements,
+      'boundaries/files': [
+        { category: 'public', pattern: 'src/features/*/index.ts' },
+        { category: 'entry', pattern: 'src/index.ts' },
+      ],
+    },
+    rules: {
+      'boundaries/no-unknown-files': 'error',
+      'boundaries/dependencies': ['error', { default: 'disallow', policies: layerPolicies }],
     },
   },
 
