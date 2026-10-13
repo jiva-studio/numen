@@ -10,7 +10,7 @@ import (
 
 	ort "github.com/getcharzp/onnxruntime_purego"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/onnxruntime"
 )
 
 // onnxRuntime is the ONNX Runtime this run listens onnxRuntime, and where it came

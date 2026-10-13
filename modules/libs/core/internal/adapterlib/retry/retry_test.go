@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/retry"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/retry"
 )
 
 var now = time.Date(2026, 10, 11, 12, 0, 0, 0, time.UTC)

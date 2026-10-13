@@ -3,7 +3,7 @@ package recognition
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/onnxruntime"
 )
 
 // Ready says whether everything recognising a page needs is already on this

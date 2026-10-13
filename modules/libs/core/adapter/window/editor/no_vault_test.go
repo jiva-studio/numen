@@ -19,7 +19,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 )
 
 // nothing is an installation holding no vault, the window it opens, and a

@@ -34,7 +34,7 @@ func getRefusedImports(path string) (refuses []string, named bool) {
 		return []string{wire}, true
 	case strings.HasPrefix(held, "adapter/"),
 		strings.HasPrefix(held, "internal/adapter/"),
-		strings.HasPrefix(held, "internal/testsupport"),
+		strings.HasPrefix(held, "internal/test"),
 		isShared(held):
 		return nil, false
 	}
@@ -78,8 +78,8 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 
 		// A shared adapter library speaks the schema; a package that is no adapter
 		// does not.
-		{"internal/wire", wire + "/gen/numen/v1", false},
-		{"internal/onnxruntime", wire + "/gen/numen/v1", false},
+		{"internal/adapterlib/wire", wire + "/gen/numen/v1", false},
+		{"internal/adapterlib/onnxruntime", wire + "/gen/numen/v1", false},
 		{"internal/query", wire + "/gen/numen/v1", true},
 
 		// An adapter, and what only a test builds, answer for nothing.

@@ -3,7 +3,7 @@ package recognition
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/onnxruntime"
 )
 
 // A recogniser that could not be built leaves the runtime where every other one

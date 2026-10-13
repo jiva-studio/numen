@@ -19,7 +19,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/retry"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/retry"
 )
 
 // ErrNoKey is a service configured without a key anywhere to find it.

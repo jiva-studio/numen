@@ -3,7 +3,7 @@ package transcription
 import (
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/onnxruntime"
 )
 
 // Config is what a person may change about listening to a recording: which

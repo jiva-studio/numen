@@ -1110,12 +1110,12 @@ A model is recognised by the inputs and outputs it declares and not by its name:
 
 ```
 cd modules/libs/core
-internal/onnxruntime/bench-sweep.sh <output dir> [max load]
+internal/adapterlib/onnxruntime/bench-sweep.sh <output dir> [max load]
 benchstat <output dir>/cpu_default_t1.txt <output dir>/cpu_default_t8.txt
 ```
 
 The script refuses to start while the 1-minute load average is above the limit it is given (a quarter of the logical CPUs by default), writes `header.txt` with the machine's facts, and writes one file per provider, compute units and thread count. `NUMEN_BENCH_MODELS` names the directory of model files (the model cache by default), `NUMEN_BENCH_EMBEDDING_MODEL` a directory holding an embedding `model.onnx`, and `NUMEN_BENCH_RUNTIME` the `libonnxruntime` to open. A model that is missing, or a provider the machine does not have, skips its benchmark with a message. A single configuration is run by hand with `NUMEN_BENCH_PROVIDER`, `NUMEN_BENCH_THREADS` and `NUMEN_BENCH_COMPUTE`:
 
 ```
-NUMEN_BENCH_PROVIDER=cpu NUMEN_BENCH_THREADS=4 go test ./internal/onnxruntime/ -run XXX -bench Device -benchtime 1x
+NUMEN_BENCH_PROVIDER=cpu NUMEN_BENCH_THREADS=4 go test ./internal/adapterlib/onnxruntime/ -run XXX -bench Device -benchtime 1x
 ```

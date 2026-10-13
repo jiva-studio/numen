@@ -3,7 +3,7 @@ package recognition
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/onnxruntime"
 )
 
 // Preparing makes the runtime out of nothing but the library. A machine holding

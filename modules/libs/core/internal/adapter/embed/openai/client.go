@@ -18,8 +18,8 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/retry"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/retry"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 

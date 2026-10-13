@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/onnxruntime"
 )
 
 // isolate points everything a test could write to at a folder of its own.

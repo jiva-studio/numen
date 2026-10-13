@@ -58,8 +58,7 @@ func TestNoCodeOfTheCoreProbesAValueForAnotherInterface(t *testing.T) {
 			return err
 		}
 		pkg := getPackage("..", at)
-		if strings.HasSuffix(at, "_test.go") || isAdapter(pkg) || isShared(pkg) ||
-			isAmong(machinery, pkg) || isAmong([]string{"internal/testonly"}, pkg) {
+		if strings.HasSuffix(at, "_test.go") || isAdapter(pkg) || isShared(pkg) || isMachinery(pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), at, nil, 0)

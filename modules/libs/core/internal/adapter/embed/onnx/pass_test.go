@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/gomlx/go-huggingface/tokenizers/api"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/onnxruntime"
 )
 
 // The tokens a fake tokenizer opens and ends every text with.

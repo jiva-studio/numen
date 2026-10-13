@@ -3,8 +3,8 @@ package onnx
 import (
 	"sync"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/onnxruntime"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
 // meanPool turns a model's per-token output into one vector per text: the
