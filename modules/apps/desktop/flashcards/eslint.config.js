@@ -243,9 +243,9 @@ export default tseslint.config(
     ignores: [
       'src/**/*.test.ts',
       'src/**/*.stories.ts',
-      // A port's own default, which is where the browser is allowed in.
-      'src/pages/session/model/session.ts',
-      'src/pages/decks/model/reviewDays.ts',
+      // The composition root and entry point, where port defaults are supplied.
+      'src/app/**',
+      'src/main.ts',
     ],
     rules: {
       'no-restricted-globals': [

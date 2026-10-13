@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { useReviewDays } from './reviewDays'
-import type { ReviewDays, ReviewDaysClient } from './reviewDays'
+import { useReviewDays as useReviewDaysUnderTesting } from './reviewDays'
+import type { ReviewDays, ReviewDaysClient, ReviewDaysDeps } from './reviewDays'
+
+const useReviewDays = (deps: Omit<ReviewDaysDeps, 'now'> & { now?: () => Date }) =>
+  useReviewDaysUnderTesting({ now: () => new Date('2026-08-30'), ...deps })
 
 const createReviewDays = (
   days: [string, number][],

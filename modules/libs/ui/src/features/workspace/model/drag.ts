@@ -13,7 +13,6 @@ import {
   getCaretRect,
   findEdgeSide,
   getOverlay,
-  getRect,
   getSide,
   getSlot,
   type TabDropTarget,
@@ -42,6 +41,7 @@ export interface TabDragOptions {
   /** How far the pointer travels before a press becomes a drag. */
   readonly getThreshold: () => number
   readonly getClock: () => Clock
+  readonly getRect: (element: Element) => Rect
 }
 
 export interface TabDragState {
@@ -131,7 +131,7 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
     const held = options.frame.value
     if (!held) return null
 
-    const outer = getRect(held)
+    const outer = options.getRect(held)
     if (!isInside({ x, y }, outer)) return null
 
     const local = (box: Rect): Rect => ({ ...box, x: box.x - outer.x, y: box.y - outer.y })
@@ -141,14 +141,14 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
     const pane = getClosest(under, '[data-workspace-pane]')
     const id = pane?.getAttribute('data-workspace-pane')
 
-    if (strip && id) return getStripDropTarget(x, strip, id, local)
+    if (strip && id) return getStripDropTarget(x, strip, id, local, options.getRect)
 
     const side = findEdgeSide({ x, y }, outer, options.getEdge())
     if (side) return { kind: 'edge', side, box: local(getOverlay(side, outer)) }
 
     if (!pane || !id) return null
 
-    return getPaneDropTarget({ x, y }, pane, id, local)
+    return getPaneDropTarget({ x, y }, pane, id, local, options.getRect)
   }
 
   return { hasMoved, overlay, label, position, dropTarget, press }
@@ -169,6 +169,7 @@ function getStripDropTarget(
   strip: Element,
   pane: NodeId,
   local: ToLocal,
+  getRect: (element: Element) => Rect,
 ): TabDropTarget {
   // A strip holds tabs and nothing else, in the order they are drawn.
   const tabs = [...strip.children].map((tab) => getRect(tab))
@@ -177,7 +178,13 @@ function getStripDropTarget(
 }
 
 /** A pane divided along the side the pointer is nearest. */
-function getPaneDropTarget(at: Position, pane: Element, id: NodeId, local: ToLocal): TabDropTarget {
+function getPaneDropTarget(
+  at: Position,
+  pane: Element,
+  id: NodeId,
+  local: ToLocal,
+  getRect: (element: Element) => Rect,
+): TabDropTarget {
   const box = getRect(pane)
   const side = getSide(at, box)
   return { kind: 'pane', pane: id, side, box: local(getOverlay(side, box)) }

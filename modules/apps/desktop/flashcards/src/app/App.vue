@@ -18,8 +18,14 @@ import { AgentPanel, NotesPanel, Session, SessionSummary } from '@/pages/session
 import { VERSION } from '@/shared/version'
 import { useWindow } from './window'
 
+/* --------------------------------- Props ---------------------------------- */
+const props = defineProps<{
+  now?: () => number
+  today?: () => Date
+}>()
+
 /* --------------------------------- State ---------------------------------- */
-const { on, notices, dismissNotice, vaults, decks, session } = useWindow()
+const { on, notices, dismissNotice, vaults, decks, session } = useWindow(props)
 </script>
 
 <template>

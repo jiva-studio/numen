@@ -61,11 +61,11 @@ export interface SessionDeps {
   cards: SessionClient
   reportError(why: unknown): void
   /** When it is, in milliseconds. How long a card stood there is measured with it. */
-  now?(): number
+  now(): number
 }
 
 export function useReviewSession(deps: SessionDeps) {
-  const now = deps.now ?? (() => Date.now())
+  const now = deps.now
 
   const vault = ref('')
   const run = ref('')

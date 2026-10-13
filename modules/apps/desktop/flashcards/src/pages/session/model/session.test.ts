@@ -94,7 +94,7 @@ describe('what a session is opened over', () => {
       takeBackAnswer: () => Promise.reject(new Error('no')),
     }
     const errors: unknown[] = []
-    const one = useReviewSession({ cards, reportError: (why) => errors.push(why) })
+    const one = useReviewSession({ cards, reportError: (why) => errors.push(why), now: () => 1000 })
 
     expect(await one.start('01VAULT', '', 'Sanskrit.md')).toBeNull()
     expect(String(errors[0])).toContain('this preset schedules nothing today')
@@ -232,7 +232,7 @@ describe('a session', () => {
       takeBackAnswer: () => Promise.reject(new Error('no')),
     }
     const errors: unknown[] = []
-    const one = useReviewSession({ cards, reportError: (why) => errors.push(why) })
+    const one = useReviewSession({ cards, reportError: (why) => errors.push(why), now: () => 1000 })
 
     expect(await one.start('01VAULT', '')).toBeNull()
     expect(errors).toHaveLength(1)
@@ -395,7 +395,7 @@ describe('the cards a session opens on', () => {
       answerCard: () => Promise.reject(new Error('no')),
       takeBackAnswer: () => Promise.reject(new Error('no')),
     }
-    const one = useReviewSession({ cards, reportError: () => {} })
+    const one = useReviewSession({ cards, reportError: () => {}, now: () => 1000 })
 
     await one.start('01VAULT', '')
 
@@ -436,7 +436,7 @@ describe('a session keeping its own time', () => {
         return {}
       },
     }
-    const one = useReviewSession({ cards, reportError: () => {} })
+    const one = useReviewSession({ cards, reportError: () => {}, now: () => Date.now() })
 
     await one.start('01VAULT', '')
     vi.setSystemTime(new Date('2026-03-01T09:00:03Z'))
