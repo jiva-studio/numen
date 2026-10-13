@@ -4,7 +4,7 @@
  */
 import { Role } from '@numen/protocol'
 import type { PlexRelation } from '@numen/ui'
-import { namesOf } from '@numen/wire'
+import { getNames } from '@numen/wire'
 
 /**
  * Which relation each relationship puts a note in. Keyed by the schema, so a role
@@ -24,7 +24,7 @@ const RELATION_BY_ROLE: Record<Role, PlexRelation | null> = {
 export type CreatableRelation = NonNullable<(typeof RELATION_BY_ROLE)[Role]>
 
 /** What a relation writes into a note, as the schema names it. */
-export const ROLE_BY_RELATION = namesOf<CreatableRelation, Role>(RELATION_BY_ROLE)
+export const ROLE_BY_RELATION = getNames<CreatableRelation, Role>(RELATION_BY_ROLE)
 
 /** A gesture may produce a relation exactly where a link can write one. */
 export const CREATABLE_RELATIONS: readonly CreatableRelation[] = Object.keys(

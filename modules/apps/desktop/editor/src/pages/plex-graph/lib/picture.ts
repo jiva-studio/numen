@@ -13,7 +13,7 @@ import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexHeading } fr
  * Which of three each note on a neighbourhood is, by the path it stands at. A
  * plex draws a deck and a stencil as what they are.
  */
-export function typesIn(neighbourhood: Neighbourhood): ReadonlyMap<string, NoteType> {
+export function getNoteTypes(neighbourhood: Neighbourhood): ReadonlyMap<string, NoteType> {
   const found = new Map<string, NoteType>()
   const focus = neighbourhood.focus.path
   if (focus) found.set(focus, neighbourhood.focusType)
@@ -56,7 +56,7 @@ function getEdgeArrow(
   return undefined
 }
 
-export function asPlex(
+export function convertNeighbourhood(
   neighbourhood: Neighbourhood,
   ticket: (path: string) => string,
   directions?: ReadonlyMap<string, string>,
@@ -122,7 +122,7 @@ export function asPlex(
  * A heading is named by the line it stands on: that is what taking someone to it
  * needs, and it tells two headings of one wording apart.
  */
-export function asHeadings(headings: readonly NoteHeading[]): PlexHeading[] {
+export function convertHeadings(headings: readonly NoteHeading[]): PlexHeading[] {
   return headings.map((heading) => ({
     id: `${heading.line}`,
     text: heading.text,

@@ -11,7 +11,7 @@ import type {
   ErrorCode as ProtoErrorCode,
   GetNeighbourhoodResponse as NeighbourhoodMessage,
 } from '@numen/protocol'
-import { asFailure, asValue, namesOf } from '@numen/wire'
+import { asFailure, asValue, getNames } from '@numen/wire'
 import { parseFingerprint, findErrorCode, isStaleAnswer, formatFingerprint } from '@/shared/answers'
 import type {
   Link,
@@ -44,7 +44,7 @@ const called: Record<Roles, Role | null> = {
 }
 
 /** What kind of relationship a link is, as the schema names it. */
-export const roles = namesOf<Role, Roles>(called)
+export const roles = getNames<Role, Roles>(called)
 
 /** Where a note sits around the note in focus, in the words the window uses. */
 export const relationByWire: Record<Relations, NoteRelation | null> = {

@@ -75,7 +75,7 @@ const tab = (
   }
   const state = usePlexTab(plex.view, deps)
   /** What the picture calls a note, which is what a gesture in it carries. */
-  const node = (path: string) => nodeFor(state, path.replace(/\.md$/, ''))
+  const node = (path: string) => getNode(state, path.replace(/\.md$/, ''))
   return {
     state,
     node,
@@ -96,7 +96,7 @@ const tab = (
 }
 
 /** The node of the picture drawn for the note of this title, if it draws one. */
-const nodeFor = (state: PlexTabState, title: string): string =>
+const getNode = (state: PlexTabState, title: string): string =>
   state.picture.value?.nodes.find((node) => node.title === title)?.id ?? ''
 
 describe('a note made from a node', () => {
@@ -431,7 +431,7 @@ describe('the headings a node nests', () => {
 
     await one.state.readHeadings()
 
-    expect(one.state.headingsOf(one.node('Child.md'))).toStrictEqual([
+    expect(one.state.getHeadings(one.node('Child.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
       { id: '9', text: 'Cold', level: 2 },
     ])
@@ -443,7 +443,7 @@ describe('the headings a node nests', () => {
 
     await one.state.readHeadings()
 
-    expect(one.state.headingsOf(one.node('Root.md'))).toStrictEqual([])
+    expect(one.state.getHeadings(one.node('Root.md'))).toStrictEqual([])
   })
 
   it('are each named by the line it stands on', async () => {
@@ -452,7 +452,7 @@ describe('the headings a node nests', () => {
 
     await one.state.readHeadings()
 
-    expect(one.state.headingsOf(one.node('Root.md')).map((heading) => heading.id)).toStrictEqual([
+    expect(one.state.getHeadings(one.node('Root.md')).map((heading) => heading.id)).toStrictEqual([
       '12',
     ])
   })
@@ -464,7 +464,7 @@ describe('the headings a node nests', () => {
     await one.state.view.go('Other.md')
     await settle()
 
-    expect(one.state.headingsOf(one.node('Other.md'))).toStrictEqual([
+    expect(one.state.getHeadings(one.node('Other.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
     ])
   })
@@ -490,7 +490,7 @@ describe('the headings a node nests', () => {
       createUntitledNote: async () => '',
       creatable: ['parent', 'child', 'jump'],
     })
-    const node = () => nodeFor(plex, 'Root')
+    const node = () => getNode(plex, 'Root')
 
     // The picture asks once as it is built, and that answer is left pending.
     const asked = answers.length
@@ -500,7 +500,7 @@ describe('the headings a node nests', () => {
     answers[asked]?.(new Map([['Root.md', [heading('Stale', 1)]]]))
     await settle()
 
-    expect(plex.headingsOf(node())).toStrictEqual([{ id: '2', text: 'Fresh', level: 1 }])
+    expect(plex.getHeadings(node())).toStrictEqual([{ id: '2', text: 'Fresh', level: 1 }])
   })
 
   it('are none for every node while the setting is off', async () => {
@@ -509,8 +509,8 @@ describe('the headings a node nests', () => {
     await one.state.readHeadings()
     one.isNesting.value = false
 
-    expect(one.state.headingsOf(one.node('Child.md'))).toStrictEqual([])
-    expect(one.state.headingsOf(one.node('Root.md'))).toStrictEqual([])
+    expect(one.state.getHeadings(one.node('Child.md'))).toStrictEqual([])
+    expect(one.state.getHeadings(one.node('Root.md'))).toStrictEqual([])
   })
 
   it('are not asked of the vault at all while the setting is off', async () => {
@@ -530,7 +530,7 @@ describe('the headings a node nests', () => {
 
     await one.state.readHeadings()
 
-    expect(one.state.headingsOf(one.node('Animals.md'))).toStrictEqual([])
+    expect(one.state.getHeadings(one.node('Animals.md'))).toStrictEqual([])
     expect(one.headingsAsked).toStrictEqual([['Root.md']])
   })
 
@@ -541,7 +541,7 @@ describe('the headings a node nests', () => {
 
     await one.state.readHeadings()
 
-    expect(one.state.headingsOf(one.node('Animal.md'))).toStrictEqual([])
+    expect(one.state.getHeadings(one.node('Animal.md'))).toStrictEqual([])
     expect(one.headingsAsked).toStrictEqual([['Root.md']])
   })
 
@@ -553,7 +553,7 @@ describe('the headings a node nests', () => {
 
     await one.state.readHeadings()
 
-    expect(one.state.headingsOf(one.node('Child.md'))).toStrictEqual([
+    expect(one.state.getHeadings(one.node('Child.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
     ])
   })
@@ -565,7 +565,7 @@ describe('the headings a node nests', () => {
 
     await one.state.readHeadings()
 
-    expect(one.state.headingsOf(one.node('Animals.md'))).toStrictEqual([])
+    expect(one.state.getHeadings(one.node('Animals.md'))).toStrictEqual([])
     expect(one.headingsAsked).toStrictEqual([])
   })
 
@@ -576,12 +576,12 @@ describe('the headings a node nests', () => {
 
     one.isNesting.value = false
     await settle()
-    expect(one.state.headingsOf(one.node('Child.md'))).toStrictEqual([])
+    expect(one.state.getHeadings(one.node('Child.md'))).toStrictEqual([])
 
     one.isNesting.value = true
     await settle()
 
-    expect(one.state.headingsOf(one.node('Child.md'))).toStrictEqual([
+    expect(one.state.getHeadings(one.node('Child.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
     ])
   })
@@ -629,7 +629,7 @@ describe('a heading of a node chosen', () => {
 type NeighbourRow = readonly [path: string, relation: NoteRelation, through?: string]
 
 /** What a note is shown by, which a move of its file leaves alone. */
-const titleOf = (path: string) => (path.split('/').pop() ?? path).replace(/\.md$/, '')
+const getNoteTitle = (path: string) => (path.split('/').pop() ?? path).replace(/\.md$/, '')
 
 /**
  * A plex standing in a vault whose files a person can move.
@@ -659,11 +659,11 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
       asked.push(path)
       if (holding) await holding
       return {
-        focus: { path, title: titleOf(path) },
+        focus: { path, title: getNoteTitle(path) },
         focusType: 'note' as const,
         related: around.map((one) => ({
           path: one.path,
-          title: titleOf(one.path),
+          title: getNoteTitle(one.path),
           type: 'note' as const,
           relation: one.relation,
           label: '',
@@ -694,7 +694,7 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
   /** The picture as it stands, which is what a drawn window reads. */
   const picture = () => state.picture.value
   /** What the picture calls the note shown by this title. */
-  const node = (title: string) => nodeFor(state, title)
+  const node = (title: string) => getNode(state, title)
   /** Every node of the picture, as the relation it sits in and what it is called. */
   const nodes = () => (picture()?.nodes ?? []).map((one) => `${one.relation} ${one.id}`)
   /** Every edge of the picture, as the two nodes it runs between. */
@@ -983,9 +983,9 @@ describe('what a node stands for', () => {
       'Stencil.md': 'stencil',
     })
 
-    expect(one.state.typeOf(one.node('Deck.md'))).toBe('deck')
-    expect(one.state.typeOf(one.node('Stencil.md'))).toBe('stencil')
-    expect(one.state.typeOf(one.node('Root.md'))).toBe('note')
+    expect(one.state.getType(one.node('Deck.md'))).toBe('deck')
+    expect(one.state.getType(one.node('Stencil.md'))).toBe('stencil')
+    expect(one.state.getType(one.node('Root.md'))).toBe('note')
   })
 })
 
@@ -1640,7 +1640,7 @@ describe('what a note is called where the picture names it nowhere', () => {
 
 describe('what a node the picture never drew stands for', () => {
   it('is a note', () => {
-    expect(tab('Root.md', [], true, { 'Root.md': 'deck' }).state.typeOf('nowhere')).toBe('note')
+    expect(tab('Root.md', [], true, { 'Root.md': 'deck' }).state.getType('nowhere')).toBe('note')
   })
 })
 

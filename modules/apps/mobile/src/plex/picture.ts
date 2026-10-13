@@ -23,7 +23,7 @@ const RELATION_BY_WIRE: Record<Relation, PlexRelation | null> = {
  * A sibling's edge does not touch the focus at all: it hangs off the parent the
  * two share.
  */
-export function asPlex(neighbourhood: GetNeighbourhoodResponse): PlexNeighbourhood {
+export function convertNeighbourhood(neighbourhood: GetNeighbourhoodResponse): PlexNeighbourhood {
   const focus = getFocusNode(neighbourhood.focus)
 
   const nodes: PlexNode[] = [focus]

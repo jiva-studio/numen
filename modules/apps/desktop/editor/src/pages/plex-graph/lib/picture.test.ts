@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Neighbourhood, NoteRelation } from '@/entities/note'
-import { areNeighbourhoodsEqual, asPlex, typesIn } from './picture'
+import { areNeighbourhoodsEqual, convertNeighbourhood, getNoteTypes } from './picture'
 import { createNodeIdMap } from './nodeIdMap'
 
 /** A note and what sits around it: relation, label, the note it comes through, and
@@ -27,14 +27,14 @@ const createNeighbourhood = (focus: string, rows: NeighbourRow[]): Neighbourhood
  */
 const drawing = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
   const map = createNodeIdMap()
-  return { plex: asPlex(neighbourhood, map.getNodeId), note: map.getNodePath }
+  return { plex: convertNeighbourhood(neighbourhood, map.getNodeId), note: map.getNodePath }
 }
 
 /**
  * Every edge, as the notes at its two ends. A ticket no note holds reads as
  * nothing, so an edge drawn under anything else says so here.
  */
-const edgesOf = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
+const getEdges = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
   const { plex, note } = drawing(neighbourhood)
   return plex.edges.map(
     (edge) => `${note(edge.from)} -> ${note(edge.to)}${edge.label ? ` (${edge.label})` : ''}`,
@@ -44,7 +44,7 @@ const edgesOf = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
 describe('what the plex is handed', () => {
   it('runs an edge the way the relationship runs', () => {
     expect(
-      edgesOf(
+      getEdges(
         createNeighbourhood('Here', [
           ['Above', 'parent', 'part of', ''],
           ['Below', 'child', '', ''],
@@ -62,7 +62,7 @@ describe('what the plex is handed', () => {
 
   it('hangs a sibling off the parent, not off the focus', () => {
     expect(
-      edgesOf(
+      getEdges(
         createNeighbourhood('Here', [
           ['Above', 'parent', 'part of', ''],
           ['Beside', 'sibling', '', 'Above'],
@@ -76,7 +76,7 @@ describe('what the plex is handed', () => {
     // knows which. A line drawn from the other one says a note is the child of
     // something the vault never joined it to.
     expect(
-      edgesOf(
+      getEdges(
         createNeighbourhood('Here', [
           ['Machine learning', 'parent', '', ''],
           ['Eigenvector', 'parent', 'needs', ''],
@@ -95,7 +95,7 @@ describe('what the plex is handed', () => {
   it('draws no sibling edge when no parent is shown', () => {
     // It would otherwise fall back to the focus, which says the wrong thing:
     // a sibling is not a child.
-    expect(edgesOf(createNeighbourhood('Here', [['Beside', 'sibling', '', 'Missing']]))).toEqual([])
+    expect(getEdges(createNeighbourhood('Here', [['Beside', 'sibling', '', 'Missing']]))).toEqual([])
   })
 
   it('places every note it was given', () => {
@@ -124,7 +124,7 @@ describe('what a note is drawn under', () => {
 
   it('is the ticket the note holds, and never the file it is filed under', () => {
     const map = createNodeIdMap()
-    const plex = asPlex(held, (path) => `#${path}`)
+    const plex = convertNeighbourhood(held, (path) => `#${path}`)
 
     expect(plex.nodes.map((node) => node.id)).toEqual(['#Here', '#Above', '#Below', '#Beside'])
     expect(map.getNodePath('Here')).toBe('')
@@ -137,7 +137,7 @@ describe('what a note is drawn under', () => {
   })
 
   it('runs an edge between the tickets of the two notes it joins', () => {
-    const plex = asPlex(held, (path) => `#${path}`)
+    const plex = convertNeighbourhood(held, (path) => `#${path}`)
 
     expect(plex.edges.map((edge) => `${edge.from} -> ${edge.to}`)).toEqual([
       '#Above -> #Here',
@@ -150,7 +150,7 @@ describe('what a note is drawn under', () => {
     // A sibling whose parent is off the screen hangs off nothing, and the note
     // it named is one this picture never drew.
     const asked: string[] = []
-    asPlex(createNeighbourhood('Here', [['Beside', 'sibling', '', 'Missing']]), (path) => {
+    convertNeighbourhood(createNeighbourhood('Here', [['Beside', 'sibling', '', 'Missing']]), (path) => {
       asked.push(path)
       return `#${path}`
     })
@@ -244,7 +244,7 @@ describe('whose wording is on the line', () => {
     const undirectedMap = new Map([
       [['Alice Fenn, The Chair', 'Child note'].sort().join(' '), 'undirected'],
     ])
-    const undirectedPlex = asPlex(nh, map.getNodeId, undirectedMap)
+    const undirectedPlex = convertNeighbourhood(nh, map.getNodeId, undirectedMap)
     expect(undirectedPlex.edges[0]?.arrow).toBeUndefined()
 
     // 2. Explicit forward mode (Alice -> Child) sets arrow to 'to'
@@ -254,7 +254,7 @@ describe('whose wording is on the line', () => {
         'Alice Fenn, The Chair->Child note',
       ],
     ])
-    const forwardPlex = asPlex(nh, map.getNodeId, forwardMap)
+    const forwardPlex = convertNeighbourhood(nh, map.getNodeId, forwardMap)
     expect(forwardPlex.edges[0]?.arrow).toBe('to')
 
     // 3. Explicit reverse mode (Child -> Alice) sets arrow to 'from'
@@ -264,7 +264,7 @@ describe('whose wording is on the line', () => {
         'Child note->Alice Fenn, The Chair',
       ],
     ])
-    const reversePlex = asPlex(nh, map.getNodeId, reverseMap)
+    const reversePlex = convertNeighbourhood(nh, map.getNodeId, reverseMap)
     expect(reversePlex.edges[0]?.arrow).toBe('from')
   })
 
@@ -277,14 +277,14 @@ describe('whose wording is on the line', () => {
 
     // From Parent's perspective (Child is child relation)
     const nhFromParent = createNeighbourhood('Parent.md', [['Child.md', 'child', '', '', false]])
-    const plexFromParent = asPlex(nhFromParent, map.getNodeId, forwardMap)
+    const plexFromParent = convertNeighbourhood(nhFromParent, map.getNodeId, forwardMap)
     expect(plexFromParent.edges[0]?.from).toBe(map.getNodeId('Parent.md'))
     expect(plexFromParent.edges[0]?.to).toBe(map.getNodeId('Child.md'))
     expect(plexFromParent.edges[0]?.arrow).toBe('to') // points into Child.md (downwards)
 
     // From Child's perspective (Parent is parent relation)
     const nhFromChild = createNeighbourhood('Child.md', [['Parent.md', 'parent', '', '', false]])
-    const plexFromChild = asPlex(nhFromChild, map.getNodeId, forwardMap)
+    const plexFromChild = convertNeighbourhood(nhFromChild, map.getNodeId, forwardMap)
     expect(plexFromChild.edges[0]?.from).toBe(map.getNodeId('Parent.md'))
     expect(plexFromChild.edges[0]?.to).toBe(map.getNodeId('Child.md'))
     expect(plexFromChild.edges[0]?.arrow).toBe('to') // points into Child.md (downwards)
@@ -293,18 +293,18 @@ describe('whose wording is on the line', () => {
     const reverseMap = new Map([[pairKey, 'Child.md->Parent.md']])
 
     // From Parent's perspective
-    const plexRevFromParent = asPlex(nhFromParent, map.getNodeId, reverseMap)
+    const plexRevFromParent = convertNeighbourhood(nhFromParent, map.getNodeId, reverseMap)
     expect(plexRevFromParent.edges[0]?.arrow).toBe('from') // points into Parent.md (upwards)
 
     // From Child's perspective
-    const plexRevFromChild = asPlex(nhFromChild, map.getNodeId, reverseMap)
+    const plexRevFromChild = convertNeighbourhood(nhFromChild, map.getNodeId, reverseMap)
     expect(plexRevFromChild.edges[0]?.arrow).toBe('from') // points into Parent.md (upwards)
 
     // Undirected: Parent — Child
     const undirectedMap = new Map([[pairKey, 'undirected']])
-    const plexUndirectedParent = asPlex(nhFromParent, map.getNodeId, undirectedMap)
+    const plexUndirectedParent = convertNeighbourhood(nhFromParent, map.getNodeId, undirectedMap)
     expect(plexUndirectedParent.edges[0]?.arrow).toBeUndefined()
-    const plexUndirectedChild = asPlex(nhFromChild, map.getNodeId, undirectedMap)
+    const plexUndirectedChild = convertNeighbourhood(nhFromChild, map.getNodeId, undirectedMap)
     expect(plexUndirectedChild.edges[0]?.arrow).toBeUndefined()
   })
 
@@ -327,7 +327,7 @@ describe('whose wording is on the line', () => {
 
 describe('the ends of a line the person turned', () => {
   it('draws no arrow where the saved direction names neither note of the line', () => {
-    const plex = asPlex(
+    const plex = convertNeighbourhood(
       createNeighbourhood('Here', [['Below', 'child', '', '']]),
       (path) => `#${path}`,
       new Map([['Below Here', 'Elsewhere->Somewhere']]),
@@ -339,7 +339,7 @@ describe('the ends of a line the person turned', () => {
 
 describe('a sibling nested under the note in focus', () => {
   it('runs its line from the focus, which the picture draws', () => {
-    expect(edgesOf(createNeighbourhood('Here', [['Beside', 'sibling', '', 'Here']]))).toEqual([
+    expect(getEdges(createNeighbourhood('Here', [['Beside', 'sibling', '', 'Here']]))).toEqual([
       'Here -> Beside',
     ])
   })
@@ -363,7 +363,7 @@ describe('what each note of a neighbourhood is', () => {
       ],
     }
 
-    expect([...typesIn(around)]).toStrictEqual([
+    expect([...getNoteTypes(around)]).toStrictEqual([
       ['Words.md', 'deck'],
       ['Faces.md', 'stencil'],
     ])
@@ -372,7 +372,7 @@ describe('what each note of a neighbourhood is', () => {
   it('names nothing for a focus with no path', () => {
     const around: Neighbourhood = { focus: { path: '', title: '' }, focusType: 'deck', related: [] }
 
-    expect(typesIn(around).size).toBe(0)
+    expect(getNoteTypes(around).size).toBe(0)
   })
 })
 

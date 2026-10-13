@@ -8,7 +8,7 @@
 import { Code } from '@connectrpc/connect'
 import type { ConnectError } from '@connectrpc/connect'
 import { ArtifactKind as Kinds, State as States } from '@numen/protocol'
-import { namesOf } from '@numen/wire'
+import { getNames } from '@numen/wire'
 import { artifacts } from '@/shared/clients'
 import type { Artifact, ArtifactRunner, ArtifactState } from '../types'
 
@@ -88,7 +88,7 @@ const drawn: Readonly<Record<Kinds, Artifact | null>> = {
 }
 
 /** And back, for asking for one. */
-const asking = namesOf<Artifact, Kinds>(drawn)
+const asking = getNames<Artifact, Kinds>(drawn)
 
 /** What has become of an artifact, in the words the window uses. */
 const become: Record<States, ArtifactState> = {

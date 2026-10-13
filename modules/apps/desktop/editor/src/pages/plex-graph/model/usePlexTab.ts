@@ -6,7 +6,7 @@ import type { PlexNeighbourhood, PlexRelation, PlexDestination } from '@numen/ui
 import type { NoteType } from '@/entities/file'
 import { getFileName, type PathRename } from '@/shared/paths'
 import { NEW_NOTE, OFFERED } from '../lib/menu'
-import { asPlex, typesIn } from '../lib/picture'
+import { convertNeighbourhood, getNoteTypes } from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import type { PlexView } from './usePlexView'
 import { WORDS as words } from '../words'
@@ -51,7 +51,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const picture = computed<PlexNeighbourhood | null>(() => {
     const around = view.neighbourhood.value
     if (!deps.isReady.value || !around) return null
-    return asPlex(around, map.getNodeId, linkDirections.value)
+    return convertNeighbourhood(around, map.getNodeId, linkDirections.value)
   })
 
   /**
@@ -91,10 +91,10 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
   const types = computed<ReadonlyMap<string, NoteType>>(() => {
     const around = view.neighbourhood.value
-    return around ? typesIn(around) : new Map()
+    return around ? getNoteTypes(around) : new Map()
   })
 
-  const typeOf = (node: string): NoteType => types.value.get(map.getNodePath(node)) ?? 'note'
+  const getType = (node: string): NoteType => types.value.get(map.getNodePath(node)) ?? 'note'
 
   const drawn = computed<readonly string[]>(() => {
     const around = view.neighbourhood.value
@@ -349,8 +349,8 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     linkInspector,
     isNavigatingOnCreate,
     creatable: deps.creatable,
-    typeOf,
-    headingsOf: getHeadings,
+    getType,
+    getHeadings,
     maxHeadings: deps.headings,
     readHeadings,
     openHeading,

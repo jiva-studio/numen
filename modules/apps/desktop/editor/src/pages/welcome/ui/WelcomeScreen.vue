@@ -22,7 +22,7 @@ import {
   type VaultRef,
 } from '@/features/command-palette'
 import type { VaultList } from '@/entities/vault'
-import { iconFor } from '@/shared/icons'
+import { findIcon } from '@/shared/icons'
 import { VERSION } from '../lib/version'
 import { COMMANDS, createVaultRows, createWelcomeActions } from '../lib/screen'
 import { WORDS as words } from '@/shared/words'
@@ -43,7 +43,7 @@ const props = defineProps<{
 
 // --- State ---
 const adding = computed(() => {
-  const icon = iconFor('newVault')
+  const icon = findIcon('newVault')
   return {
     text: words.newVault,
     detail: words.newVaultDetail,
@@ -59,7 +59,7 @@ const ways = computed(() => {
     words,
     navigator.userAgent,
   ).map((one) => {
-    const icon = iconFor(one.id)
+    const icon = findIcon(one.id)
     return { ...one, ...(icon ? { icon } : {}) }
   })
 })
