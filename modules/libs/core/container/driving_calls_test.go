@@ -20,9 +20,9 @@ import (
 var wiring = []string{
 	"adapter/cli/deps.go",
 	"adapter/window/editor/agent.go",
-	"adapter/window/editor/api.go",
+	"adapter/window/editor/state.go",
 	"adapter/window/editor/assembly.go",
-	"adapter/window/editor/documents.go",
+	"adapter/window/editor/services.go",
 	"adapter/window/editor/focus.go",
 	"adapter/window/editor/index.go",
 	"adapter/window/editor/pool/documents.go",
@@ -38,7 +38,7 @@ var portCalls = map[string]string{
 	// The window reads notes, links and readers through the ports; issue #903.
 	"adapter/window/editor/loopback.go":      "issue #903",
 	"adapter/window/editor/notes.go":         "issue #903",
-	"adapter/window/editor/recordings.go":    "issue #903",
+	"adapter/window/editor/artifacts.go":     "issue #903",
 	"adapter/window/editor/search.go":        "issue #903",
 	"adapter/window/editor/vault_session.go": "issue #903",
 	// The command records an opened vault on the registry it is handed.
