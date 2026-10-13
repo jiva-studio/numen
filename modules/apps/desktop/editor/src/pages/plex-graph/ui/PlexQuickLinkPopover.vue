@@ -131,6 +131,7 @@ function submitHighlighted() {
     :style="positionStyle"
     role="dialog"
     aria-label="New thought"
+    :aria-busy="isLoading"
   >
     <!-- Plex Thought Node Box -->
     <div class="plex-quick-link__node">
