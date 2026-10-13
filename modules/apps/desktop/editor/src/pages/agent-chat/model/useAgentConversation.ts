@@ -35,10 +35,10 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
   const getInstalledAgents = () =>
     getModelsAt(AGENT_USE_AT).filter((one) => one.name !== '' && one.presence === 'present')
 
-  /** The options of one agent: the models the core lists. */
+  /** The options of one agent: the models the core lists, and the agent's own default where it names none. */
   const getAgentOptions = (agent: Model): readonly AgentModelOption[] =>
     getModelsAt(getModelAt(agent.name))
-      .filter((one) => one.name !== '')
+      .filter((one) => one.name !== '' || one.isDefault)
       .map((one) => ({
         agentId: agent.name,
         agentTitle: agent.title,
