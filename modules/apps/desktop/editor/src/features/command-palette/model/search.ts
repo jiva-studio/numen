@@ -59,6 +59,73 @@ export interface SearchOptions {
   coverage?(): IndexCoverage
 }
 
+interface FillOptions<T> {
+  readonly mine: Question
+  readonly group: SearchGroup
+  readonly question: () => Promise<readonly T[]>
+  readonly into: (found: readonly T[]) => void
+  readonly onFailed: (group: SearchGroup) => void
+  readonly onDone: (group: SearchGroup) => void
+}
+
+async function fillSearchGroup<T>(options: FillOptions<T>) {
+  const { mine, group, question, into, onFailed, onDone } = options
+  try {
+    const found = await question()
+    if (!mine.isCurrent) return
+    into(found)
+  } catch {
+    if (!mine.isCurrent) return
+    into([])
+    onFailed(group)
+  } finally {
+    if (mine.isCurrent) onDone(group)
+  }
+}
+
+interface BuildGroupsDeps {
+  readonly names: readonly NameMatch[]
+  readonly texts: readonly Passage[]
+  readonly meanings: readonly Passage[]
+  readonly words: Words
+  readonly isWorking: Record<SearchGroup, boolean>
+  readonly getSilence: (id: SearchGroup) => string
+}
+
+function buildSearchGroups(deps: BuildGroupsDeps) {
+  const hitsById = new Map<string, SearchHit>()
+  const group = (id: SearchGroup, title: string, rows: readonly SearchRow[]): PaletteGroup => {
+    for (const one of rows) hitsById.set(one.item.id, one.hit)
+    return {
+      id,
+      title,
+      items: rows.map((one) => one.item),
+      isWorking: deps.isWorking[id],
+      silence: deps.getSilence(id),
+    }
+  }
+
+  const groups: readonly PaletteGroup[] = [
+    group(
+      'names',
+      deps.words.names,
+      deps.names.map((one) => createNameItem(one, deps.words)),
+    ),
+    group(
+      'text',
+      deps.words.text,
+      deps.texts.map((one) => createPassageItem('text', one, deps.words)),
+    ),
+    group(
+      'meaning',
+      deps.words.meaning,
+      deps.meanings.map((one) => createPassageItem('meaning', one, deps.words)),
+    ),
+  ]
+
+  return { groups, hitsById }
+}
+
 export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {}) {
   const coverage = how.coverage
   const open = ref(false)
@@ -81,48 +148,41 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     failureMessages.value = {}
   }
 
-  const fill = async <T>(
-    mine: Question,
-    group: SearchGroup,
-    question: () => Promise<readonly T[]>,
-    into: (found: readonly T[]) => void,
-  ) => {
-    try {
-      const found = await question()
-      if (!mine.isCurrent) return
-      into(found)
-    } catch {
-      // The window says what it could not do; what the call carried back adds nothing a person can act on.
-      if (!mine.isCurrent) return
-      into([])
-      failureMessages.value = { ...failureMessages.value, [group]: words.notAsked }
-    } finally {
-      if (mine.isCurrent) isWorking.value = { ...isWorking.value, [group]: false }
-    }
-  }
-
   const ask = async (query: string, mine: Question) => {
     isWorking.value = { names: true, text: true, meaning: true }
     failureMessages.value = {}
+    const onFailed = (g: SearchGroup) => {
+      failureMessages.value = { ...failureMessages.value, [g]: words.notAsked }
+    }
+    const onDone = (g: SearchGroup) => {
+      if (mine.isCurrent) isWorking.value = { ...isWorking.value, [g]: false }
+    }
+
     await Promise.all([
-      fill(
+      fillSearchGroup({
         mine,
-        'names',
-        () => core.names(query, GROUP_RESULT_LIMIT),
-        (found) => (names.value = found),
-      ),
-      fill(
+        group: 'names',
+        question: () => core.names(query, GROUP_RESULT_LIMIT),
+        into: (found) => (names.value = found),
+        onFailed,
+        onDone,
+      }),
+      fillSearchGroup({
         mine,
-        'text',
-        () => core.search(query, 'words', GROUP_RESULT_LIMIT),
-        (found) => (texts.value = found),
-      ),
-      fill(
+        group: 'text',
+        question: () => core.search(query, 'words', GROUP_RESULT_LIMIT),
+        into: (found) => (texts.value = found),
+        onFailed,
+        onDone,
+      }),
+      fillSearchGroup({
         mine,
-        'meaning',
-        () => core.search(query, 'meaning', GROUP_RESULT_LIMIT),
-        (found) => (meanings.value = found),
-      ),
+        group: 'meaning',
+        question: () => core.search(query, 'meaning', GROUP_RESULT_LIMIT),
+        into: (found) => (meanings.value = found),
+        onFailed,
+        onDone,
+      }),
     ])
   }
 
@@ -139,44 +199,20 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     drop()
   }
 
-  const nameItem = (one: NameMatch): SearchRow => createNameItem(one, words)
-  const passageItem = (group: SearchGroup, one: Passage): SearchRow =>
-    createPassageItem(group, one, words)
-
   const getEmptyGroupMessage = (id: SearchGroup): string =>
-    getEmptyGroupReason(id, failureMessages.value[id], words, coverage)
+    getEmptyGroupReason(id, { failureMessage: failureMessages.value[id], words, coverage })
 
   const built = computed(() => {
-    const hitsById = new Map<string, SearchHit>()
-    if (!typed.value.trim()) return { groups: [] as readonly PaletteGroup[], hitsById }
-
-    const group = (id: SearchGroup, title: string, rows: readonly SearchRow[]): PaletteGroup => {
-      for (const one of rows) hitsById.set(one.item.id, one.hit)
-      return {
-        id,
-        title,
-        items: rows.map((one) => one.item),
-        isWorking: isWorking.value[id],
-        silence: getEmptyGroupMessage(id),
-      }
-    }
-
-    return {
-      groups: [
-        group('names', words.names, names.value.map(nameItem)),
-        group(
-          'text',
-          words.text,
-          texts.value.map((one) => passageItem('text', one)),
-        ),
-        group(
-          'meaning',
-          words.meaning,
-          meanings.value.map((one) => passageItem('meaning', one)),
-        ),
-      ] as readonly PaletteGroup[],
-      hitsById,
-    }
+    if (!typed.value.trim())
+      return { groups: [] as readonly PaletteGroup[], hitsById: new Map<string, SearchHit>() }
+    return buildSearchGroups({
+      names: names.value,
+      texts: texts.value,
+      meanings: meanings.value,
+      words,
+      isWorking: isWorking.value,
+      getSilence: getEmptyGroupMessage,
+    })
   })
 
   const groups = computed(() => built.value.groups)

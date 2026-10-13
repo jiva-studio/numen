@@ -28,15 +28,14 @@ function addToGroup(groups: Map<string, TabLinkGroup>, group: TabLinkGroup, tabI
 
 function createGroup(
   groups: Map<string, TabLinkGroup>,
-  sourceTabId: TabId,
-  targetTabId: TabId,
+  tabs: readonly [TabId, TabId],
   colorIndex: number,
 ): void {
   const groupId = crypto.randomUUID()
   groups.set(groupId, {
     id: groupId,
     colorIndex,
-    tabs: [sourceTabId, targetTabId],
+    tabs: [tabs[0], tabs[1]],
   })
 }
 
@@ -44,14 +43,19 @@ function shouldSkipLinking(source: TabId, target: TabId): boolean {
   return !source || !target || source === target
 }
 
+interface ConnectOptions {
+  sourceGroup: TabLinkGroup | null
+  targetGroup: TabLinkGroup | null
+  colorIndex: number
+}
+
 function connectGroups(
   groups: Map<string, TabLinkGroup>,
-  sourceGroup: TabLinkGroup | null,
-  targetGroup: TabLinkGroup | null,
-  sourceTabId: TabId,
-  targetTabId: TabId,
-  colorIndex: number,
+  tabs: readonly [TabId, TabId],
+  options: ConnectOptions,
 ): void {
+  const [sourceTabId, targetTabId] = tabs
+  const { sourceGroup, targetGroup, colorIndex } = options
   if (sourceGroup && targetGroup) {
     mergeIntoGroup(groups, sourceGroup, targetGroup)
   } else if (sourceGroup) {
@@ -59,54 +63,62 @@ function connectGroups(
   } else if (targetGroup) {
     addToGroup(groups, targetGroup, sourceTabId)
   } else {
-    createGroup(groups, sourceTabId, targetTabId, colorIndex)
+    createGroup(groups, [sourceTabId, targetTabId], colorIndex)
   }
+}
+
+function getNextColorIndex(groups: ReadonlyMap<string, TabLinkGroup>): number {
+  const used = new Set<number>()
+  for (const group of groups.values()) {
+    used.add(group.colorIndex)
+  }
+  for (let index = 1; index <= MAX_COLOR_INDEX; index++) {
+    if (!used.has(index)) return index
+  }
+  return 1
+}
+
+function findGroupOf(groups: ReadonlyMap<string, TabLinkGroup>, tabId: TabId): TabLinkGroup | null {
+  for (const group of groups.values()) {
+    if (group.tabs.includes(tabId)) return group
+  }
+  return null
+}
+
+function removeTabFromGroups(
+  groups: ReadonlyMap<string, TabLinkGroup>,
+  tabId: TabId,
+): ReadonlyMap<string, TabLinkGroup> {
+  const group = findGroupOf(groups, tabId)
+  if (!group) return groups
+
+  const remainingTabs = group.tabs.filter((id) => id !== tabId)
+  const nextGroups = new Map(groups)
+
+  if (remainingTabs.length < 2) {
+    nextGroups.delete(group.id)
+  } else {
+    nextGroups.set(group.id, {
+      ...group,
+      tabs: remainingTabs,
+    })
+  }
+
+  return nextGroups
 }
 
 export function useTabLinks(): TabLinksState {
   const groupsState: ShallowRef<ReadonlyMap<string, TabLinkGroup>> = shallowRef(new Map())
 
-  const getNextColorIndex = (): number => {
-    const used = new Set<number>()
-    for (const group of groupsState.value.values()) {
-      used.add(group.colorIndex)
-    }
-    for (let index = 1; index <= MAX_COLOR_INDEX; index++) {
-      if (!used.has(index)) return index
-    }
-    return 1
-  }
-
-  const getGroupOf = (tabId: TabId): TabLinkGroup | null => {
-    for (const group of groupsState.value.values()) {
-      if (group.tabs.includes(tabId)) return group
-    }
-    return null
-  }
+  const getGroupOf = (tabId: TabId): TabLinkGroup | null => findGroupOf(groupsState.value, tabId)
 
   const getLinkedTargets = (tabId: TabId): readonly TabId[] => {
     const group = getGroupOf(tabId)
-    if (!group) return []
-    return group.tabs.filter((id) => id !== tabId)
+    return group ? group.tabs.filter((id) => id !== tabId) : []
   }
 
   const unlinkTab = (tabId: TabId): void => {
-    const group = getGroupOf(tabId)
-    if (!group) return
-
-    const remainingTabs = group.tabs.filter((id) => id !== tabId)
-    const nextGroups = new Map(groupsState.value)
-
-    if (remainingTabs.length < 2) {
-      nextGroups.delete(group.id)
-    } else {
-      nextGroups.set(group.id, {
-        ...group,
-        tabs: remainingTabs,
-      })
-    }
-
-    groupsState.value = nextGroups
+    groupsState.value = removeTabFromGroups(groupsState.value, tabId)
   }
 
   const linkTabs = (sourceTabId: TabId, targetTabId: TabId): void => {
@@ -120,19 +132,12 @@ export function useTabLinks(): TabLinksState {
     }
 
     const nextGroups = new Map(groupsState.value)
-    connectGroups(
-      nextGroups,
+    connectGroups(nextGroups, [sourceTabId, targetTabId], {
       sourceGroup,
       targetGroup,
-      sourceTabId,
-      targetTabId,
-      getNextColorIndex(),
-    )
+      colorIndex: getNextColorIndex(groupsState.value),
+    })
     groupsState.value = nextGroups
-  }
-
-  const removeClosedTab = (tabId: TabId): void => {
-    unlinkTab(tabId)
   }
 
   return {
@@ -143,6 +148,6 @@ export function useTabLinks(): TabLinksState {
     unlinkTab,
     getGroupOf,
     getLinkedTargets,
-    removeClosedTab,
+    removeClosedTab: (tabId: TabId) => unlinkTab(tabId),
   }
 }

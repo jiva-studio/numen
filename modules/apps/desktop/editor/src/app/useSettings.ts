@@ -151,7 +151,7 @@ function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
 export function useSettings({ core, words, log, windowTabs, onSizeChanged }: SettingsDeps) {
   const dayBegins = createReviewSetting(core, words, log.getWriter('reviewed'))
   const nesting = useNestingSetting(core, words, log.getWriter('nesting'))
-  const dressed = createWindowAppearance(themes, words, log.getWriter('worn'))
+  const dressed = createWindowAppearance({ core: themes, words, write: log.getWriter('worn') })
   const sync = syncSetting(core, words, log.getWriter('named'))
   const rest = createSettingsStore(core, words, log.getWriter('configured'))
 

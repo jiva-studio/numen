@@ -196,8 +196,8 @@ describe('taking a vault off the list', () => {
   it('asks to erase the folder only where the command erases', async () => {
     const one = createWindow()
 
-    await removeVault(createRenameInvocation(), true, one.on, words)
-    await removeVault(createRenameInvocation(), false, one.on, words)
+    await removeVault(createRenameInvocation(), one.on, { shouldErase: true, words })
+    await removeVault(createRenameInvocation(), one.on, { shouldErase: false, words })
 
     expect(one.calls.remove.mock.calls).toStrictEqual([
       ['physics', true],
@@ -208,7 +208,7 @@ describe('taking a vault off the list', () => {
   it('says nothing where the list took it off', async () => {
     const one = createWindow()
 
-    await removeVault(createRenameInvocation(), false, one.on, words)
+    await removeVault(createRenameInvocation(), one.on, { shouldErase: false, words })
 
     expect(one.messages).toStrictEqual([])
   })
@@ -216,7 +216,7 @@ describe('taking a vault off the list', () => {
   it('says why the list refused, as an error', async () => {
     const one = createWindow({ removed: 'lastVault' })
 
-    await removeVault(createRenameInvocation(), false, one.on, words)
+    await removeVault(createRenameInvocation(), one.on, { shouldErase: false, words })
 
     expect(one.messages).toStrictEqual([{ text: words.vaultErrors.lastVault, kind: 'error' }])
   })

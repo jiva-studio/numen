@@ -33,17 +33,20 @@ const NOTE_PLACEMENTS: readonly string[] = ['child', 'parent', 'jump']
  * The groups of a search, and the offer to make a note where every one of them
  * answered with nothing. A group still waiting has not answered.
  */
+export interface AppendCreateOfferOptions {
+  readonly text: string
+  readonly words: Words
+  readonly at: CommandTarget
+}
+
 export const appendCreateOffer = (
   groups: readonly PaletteGroup[],
-  text: string,
-  words: Words,
-  at: CommandTarget,
+  options: AppendCreateOfferOptions,
 ): readonly PaletteGroup[] => {
+  const { text, words, at } = options
   const name = text.trim()
   const empty = groups.length > 0 && groups.every((one) => one.items.length === 0 && !one.isWorking)
   if (!name || !empty) return groups
-  // A note made from a search stands on its own, and the note in front is what
-  // it can be joined to as it is made.
   const relations = at.path
     ? [
         { id: 'child', text: words.asChild },

@@ -10,15 +10,17 @@ export type SearchGroup = 'names' | 'text' | 'meaning'
 /** How many answers each group holds. */
 export const GROUP_RESULT_LIMIT = 8
 
+export interface EmptyGroupReasonOptions {
+  readonly failureMessage?: string
+  readonly words: Words
+  readonly coverage?: () => IndexCoverage
+}
+
 /**
  * Why a group holds nothing, based on coverage score and indexing state.
  */
-export function getEmptyGroupReason(
-  id: SearchGroup,
-  failureMessage: string | undefined,
-  words: Words,
-  coverage?: () => IndexCoverage,
-): string {
+export function getEmptyGroupReason(id: SearchGroup, options: EmptyGroupReasonOptions): string {
+  const { failureMessage, words, coverage } = options
   if (failureMessage) return failureMessage
   const read = id === 'meaning' ? coverage?.() : undefined
   if (!read) return ''

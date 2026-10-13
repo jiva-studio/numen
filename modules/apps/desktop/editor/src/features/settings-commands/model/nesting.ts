@@ -31,27 +31,53 @@ export interface NestingDeps {
   setNestingSettings(isNesting: boolean, headings?: number): Promise<string | null>
 }
 
+function createStepRow(id: string, title: string, current: boolean, currentLabel: string): StepRow {
+  return {
+    id,
+    title,
+    ...(current ? { detail: currentLabel, isCurrent: true } : {}),
+  }
+}
+
+function createNestingGroups(isNesting: boolean, words: NestingWords): readonly StepGroup[] {
+  return [
+    {
+      id: NESTING,
+      title: words.nestingGroup,
+      items: [
+        createStepRow(ON, words.on, isNesting, words.current),
+        createStepRow(OFF, words.off, !isNesting, words.current),
+      ],
+    },
+  ]
+}
+
+function createHeadingsGroups(
+  ends: { least: number; most: number },
+  headings: number,
+  words: NestingWords,
+): readonly StepGroup[] {
+  return [
+    {
+      id: HEADINGS,
+      title: words.headingsGroup,
+      items: ladder(ends.least, ends.most).map((count) =>
+        createStepRow(`${count}`, `${count}`, count === headings, words.current),
+      ),
+    },
+  ]
+}
+
 export function useNestingSetting(core: NestingDeps, words: NestingWords, write: MessageWriter) {
-  /**
-   * The two settings. They open on what an installation nobody has configured
-   * does, and are asked of the vault as the window opens.
-   */
   const isNesting = ref(true)
   const headings = ref(DEFAULT_HEADINGS)
-
-  /**
-   * How many the vault takes, which it says when it is asked what it holds.
-   * Nothing is offered until it has, so no count is offered that is refused.
-   */
   const ends = ref({ least: DEFAULT_HEADINGS, most: DEFAULT_HEADINGS })
 
-  /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
     let settings: NestingSettings
     try {
       settings = await core.getNestingSettings()
     } catch {
-      // A vault that cannot be asked leaves both settings where they stand.
       return
     }
     isNesting.value = settings.isNesting
@@ -59,32 +85,9 @@ export function useNestingSetting(core: NestingDeps, words: NestingWords, write:
     ends.value = { least: settings.least, most: settings.most }
   }
 
-  /** One row of a list, saying whether it is the value in force. */
-  const row = (id: string, title: string, current: boolean): StepRow => ({
-    id,
-    title,
-    ...(current ? { detail: words.current, isCurrent: true } : {}),
-  })
-
-  /** The two, in one group named for the setting they are of. */
-  const getNestingGroups = (): readonly StepGroup[] => [
-    {
-      id: NESTING,
-      title: words.nestingGroup,
-      items: [row(ON, words.on, isNesting.value), row(OFF, words.off, !isNesting.value)],
-    },
-  ]
-
-  /** The counts, in one group of their own. */
-  const getHeadingsGroups = (): readonly StepGroup[] => [
-    {
-      id: HEADINGS,
-      title: words.headingsGroup,
-      items: ladder(ends.value.least, ends.value.most).map((count) =>
-        row(`${count}`, `${count}`, count === headings.value),
-      ),
-    },
-  ]
+  const getNestingGroups = (): readonly StepGroup[] => createNestingGroups(isNesting.value, words)
+  const getHeadingsGroups = (): readonly StepGroup[] =>
+    createHeadingsGroups(ends.value, headings.value, words)
 
   /**
    * The row chosen, written into the settings. A setting that could not be
@@ -123,5 +126,14 @@ export function useNestingSetting(core: NestingDeps, words: NestingWords, write:
     headings.value = was
   }
 
-  return { isNesting, headings, ends, start, getNestingGroups, getHeadingsGroups, choose, chooseCount }
+  return {
+    isNesting,
+    headings,
+    ends,
+    start,
+    getNestingGroups,
+    getHeadingsGroups,
+    choose,
+    chooseCount,
+  }
 }

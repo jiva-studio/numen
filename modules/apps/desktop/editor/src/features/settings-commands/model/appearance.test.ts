@@ -136,12 +136,12 @@ const window = (over: Partial<Appearance> = {}, css = SERVED) => {
   /** What the window was told, in the order it was told. */
   const told: { text: string; kind: string }[] = []
   return {
-    worn: createWindowAppearance(
+    worn: createWindowAppearance({
       core,
       words,
-      (text, kind = 'report') => void told.push({ text, kind }),
+      write: (text, kind = 'report') => void told.push({ text, kind }),
       sheet,
-    ),
+    }),
     sheet,
     asked,
     chosen,
@@ -204,8 +204,8 @@ describe('the page as it was served', () => {
 
   it('makes the pair itself, mode first, for a page served in nothing', async () => {
     const sheet = document.implementation.createHTMLDocument('numen')
-    const bare = createWindowAppearance(
-      {
+    const bare = createWindowAppearance({
+      core: {
         getAppearance: async () => APPEARANCE,
         readTheme: async (name) => `:root { --numen-surface: ${name} }`,
         writeAppearance: async () => '',
@@ -214,9 +214,9 @@ describe('the page as it was served', () => {
         },
       },
       words,
-      () => {},
+      write: () => {},
       sheet,
-    )
+    })
     await bare.start()
 
     bare.previewItem('mine:sea')
@@ -812,13 +812,14 @@ const createManual = (waits = Infinity) => {
     },
   }
   const told: string[] = []
-  const worn = createWindowAppearance(
+  const worn = createWindowAppearance({
     core,
     words,
-    (text) => void told.push(text),
+    write: (text) => void told.push(text),
     sheet,
-    () => (waited++ < waits ? new Promise((done) => setTimeout(done, 0)) : new Promise(() => {})),
-  )
+    wait: () =>
+      waited++ < waits ? new Promise((done) => setTimeout(done, 0)) : new Promise(() => {}),
+  })
   return {
     worn,
     sheet,
@@ -968,8 +969,8 @@ describe('the application that cannot list the themes', () => {
   it('is said, as an error, and the window keeps what it wears', async () => {
     const sheet = page()
     const told: { text: string; kind: string }[] = []
-    const worn = createWindowAppearance(
-      {
+    const worn = createWindowAppearance({
+      core: {
         getAppearance: async () => {
           throw new Error('down')
         },
@@ -981,9 +982,9 @@ describe('the application that cannot list the themes', () => {
         },
       },
       words,
-      (text, kind = 'report') => void told.push({ text, kind }),
+      write: (text, kind = 'report') => void told.push({ text, kind }),
       sheet,
-    )
+    })
 
     await worn.start()
 
@@ -1000,8 +1001,8 @@ describe('a folder stream that ended', () => {
   it('is followed again after the wait the window keeps by default', async () => {
     vi.useFakeTimers()
     let watches = 0
-    const worn = createWindowAppearance(
-      {
+    const worn = createWindowAppearance({
+      core: {
         getAppearance: async () => APPEARANCE,
         readTheme: async () => '',
         writeAppearance: async () => '',
@@ -1011,9 +1012,9 @@ describe('a folder stream that ended', () => {
         },
       },
       words,
-      () => {},
-      page(),
-    )
+      write: () => {},
+      sheet: page(),
+    })
     await worn.start()
     await vi.advanceTimersByTimeAsync(0)
     expect(watches).toBe(1)

@@ -38,18 +38,139 @@ const BLANK = {
   failureMessage: '',
 }
 
+export interface CommandPaletteDeps {
+  readonly core: CommandsDeps
+  readonly words: Words
+  readonly at: () => CommandTarget
+  readonly knows: NoteLookup
+  readonly lists: PaletteLists
+  readonly runs: RunSupport
+  readonly wait?: Wait
+}
+
+interface PaletteSearchDeps {
+  readonly core: CommandsDeps
+  readonly words: Words
+  readonly debounced: ReturnType<typeof useDebouncedAsk>
+  readonly found: Ref<readonly NameMatch[]>
+  readonly isWorking: Ref<boolean>
+  readonly failureMessage: Ref<string>
+}
+
+function createNamesSearch(deps: PaletteSearchDeps) {
+  return (query: string) =>
+    deps.debounced.ask(query, {
+      blank: () => {
+        deps.found.value = []
+        deps.isWorking.value = false
+        deps.failureMessage.value = ''
+      },
+      pending: () => {
+        deps.isWorking.value = true
+        deps.failureMessage.value = ''
+      },
+      run: async (trimmed, mine) => {
+        try {
+          const names = await deps.core.names(trimmed, GROUP_RESULT_LIMIT)
+          if (!mine.isCurrent) return
+          deps.found.value = names
+        } catch {
+          if (!mine.isCurrent) return
+          deps.found.value = []
+          deps.failureMessage.value = deps.words.notAsked
+        } finally {
+          if (mine.isCurrent) deps.isWorking.value = false
+        }
+      },
+    })
+}
+
+interface PaletteVaultsDeps {
+  readonly core: CommandsDeps
+  readonly words: Words
+  readonly asked: ReturnType<typeof latest>
+  readonly known: Ref<readonly Vault[]>
+  readonly showing: Ref<string>
+  readonly isWorking: Ref<boolean>
+  readonly failureMessage: Ref<string>
+}
+
+function createVaultsLoader(deps: PaletteVaultsDeps) {
+  return async () => {
+    const mine = deps.asked.ask()
+    deps.isWorking.value = true
+    deps.failureMessage.value = ''
+    try {
+      const listed = await deps.core.vaults()
+      if (!mine.isCurrent) return
+      deps.known.value = listed.vaults
+      deps.showing.value = listed.showing
+    } catch {
+      if (!mine.isCurrent) return
+      deps.known.value = []
+      deps.failureMessage.value = deps.words.notAsked
+    } finally {
+      if (mine.isCurrent) deps.isWorking.value = false
+    }
+  }
+}
+
+interface PaletteCommandsDeps {
+  readonly byId: Map<string, Command>
+  readonly runs: RunSupport
+  readonly open: Ref<boolean>
+  readonly words: Words
+  readonly invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation
+  readonly steps: ReturnType<typeof createPaletteSteps>
+}
+
+function createPaletteCommands(deps: PaletteCommandsDeps) {
+  const startCommand = (id: string, over: CommandTarget): CommandInvocation | null => {
+    const command = deps.byId.get(id)
+    if (!command || !command.isOffered(over, deps.runs)) return null
+    if (!command.needs) return deps.invocation(command.id, over)
+    if (!deps.open.value) {
+      deps.steps.reset()
+      deps.open.value = true
+    }
+    deps.steps.pushStep({ step: command.needs, command, on: over })
+    return null
+  }
+
+  const getObjection = (id: string, over: CommandTarget): string => {
+    const command = deps.byId.get(id)
+    if (!command || command.isOffered(over, deps.runs)) return ''
+    return over.isReady ? deps.words.noNote : deps.words.noVault
+  }
+
+  return { startCommand, getObjection }
+}
+
 export function useCommandPalette(
-  core: CommandsDeps,
-  words: Words,
-  at: () => CommandTarget,
-  knows: NoteLookup,
-  lists: PaletteLists,
-  runs: RunSupport,
-  wait?: Wait,
+  coreOrDeps: CommandsDeps | CommandPaletteDeps,
+  wordsArg?: Words,
+  atArg?: () => CommandTarget,
+  knowsArg?: NoteLookup,
+  listsArg?: PaletteLists,
+  runsArg?: RunSupport,
+  waitArg?: Wait,
 ) {
+  const deps: CommandPaletteDeps =
+    'core' in coreOrDeps
+      ? coreOrDeps
+      : {
+          core: coreOrDeps,
+          words: wordsArg!,
+          at: atArg!,
+          knows: knowsArg!,
+          lists: listsArg!,
+          runs: runsArg!,
+          wait: waitArg,
+        }
+  const { core, words, at, knows, lists, runs, wait } = deps
+
   const open = ref(false)
   const typed = ref('')
-
   const commands = createCommands(words)
   const byId = new Map(commands.map((one) => [one.id, one]))
 
@@ -61,7 +182,6 @@ export function useCommandPalette(
 
   const asked = latest()
   const debounced = useDebouncedAsk({ guard: asked, ...(wait ? { wait } : {}) })
-
   const on = computed<CommandTarget>(() => at())
 
   const invocation = (id: string, over: CommandTarget, name = ''): CommandInvocation =>
@@ -76,6 +196,11 @@ export function useCommandPalette(
     failureMessage.value = BLANK.failureMessage
   }
 
+  const previewItem = (item: string) => {
+    const step = steps.here.value
+    if (step?.step === 'choosing') lists.previewItem(step.command.id, item)
+  }
+
   const setOpen = (now: boolean) => {
     previewItem('')
     open.value = now
@@ -84,68 +209,36 @@ export function useCommandPalette(
     steps.reset()
   }
 
-  const previewItem = (item: string) => {
-    const step = steps.here.value
-    if (step?.step === 'choosing') lists.previewItem(step.command.id, item)
-  }
+  const loadVaults = createVaultsLoader({
+    core,
+    words,
+    asked,
+    known,
+    showing,
+    isWorking,
+    failureMessage,
+  })
 
-  const loadVaults = async () => {
-    const mine = asked.ask()
-    isWorking.value = true
-    failureMessage.value = ''
-    try {
-      const listed = await core.vaults()
-      if (!mine.isCurrent) return
-      known.value = listed.vaults
-      showing.value = listed.showing
-    } catch {
-      // The window says what it could not do; what the call carried back adds nothing a person can act on.
-      if (!mine.isCurrent) return
-      known.value = []
-      failureMessage.value = words.notAsked
-    } finally {
-      if (mine.isCurrent) isWorking.value = false
-    }
-  }
-
-  const steps = createPaletteSteps(
+  const steps = createPaletteSteps({
     words,
     lists,
     knows,
-    typed,
-    drop,
-    previewItem,
-    () => void loadVaults(),
-    () => setOpen(false),
+    text: typed,
+    onDrop: drop,
+    onLights: previewItem,
+    onLists: () => void loadVaults(),
+    onClose: () => setOpen(false),
     invocation,
-  )
+  })
 
-  const searchNames = (query: string) =>
-    debounced.ask(query, {
-      blank: () => {
-        found.value = []
-        isWorking.value = false
-        failureMessage.value = ''
-      },
-      pending: () => {
-        isWorking.value = true
-        failureMessage.value = ''
-      },
-      run: async (trimmed, mine) => {
-        try {
-          const names = await core.names(trimmed, GROUP_RESULT_LIMIT)
-          if (!mine.isCurrent) return
-          found.value = names
-        } catch {
-          // The window says what it could not do; what the call carried back adds nothing a person can act on.
-          if (!mine.isCurrent) return
-          found.value = []
-          failureMessage.value = words.notAsked
-        } finally {
-          if (mine.isCurrent) isWorking.value = false
-        }
-      },
-    })
+  const searchNames = createNamesSearch({
+    core,
+    words,
+    debounced,
+    found,
+    isWorking,
+    failureMessage,
+  })
 
   const setTyped = async (text: string) => {
     typed.value = text
@@ -168,24 +261,14 @@ export function useCommandPalette(
   })
 
   const groups = computed(() => draws.createGroups(steps.here.value, on.value, typed.value))
-
-  const startCommand = (id: string, over: CommandTarget): CommandInvocation | null => {
-    const command = byId.get(id)
-    if (!command || !command.isOffered(over, runs)) return null
-    if (!command.needs) return invocation(command.id, over)
-    if (!open.value) {
-      steps.reset()
-      open.value = true
-    }
-    steps.pushStep({ step: command.needs, command, on: over })
-    return null
-  }
-
-  const getObjection = (id: string, over: CommandTarget): string => {
-    const command = byId.get(id)
-    if (!command || command.isOffered(over, runs)) return ''
-    return over.isReady ? words.noNote : words.noVault
-  }
+  const { startCommand, getObjection } = createPaletteCommands({
+    byId,
+    runs,
+    open,
+    words,
+    invocation,
+    steps,
+  })
 
   const chooseItem = (item: string, action: string): CommandInvocation | null => {
     const step = steps.here.value
