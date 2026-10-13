@@ -136,7 +136,7 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 		return nil, err
 	}
 	// One entry per sequence length the buckets allow, and two to spare.
-	// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is 3: a text of any length fits one of the maxTokens/tokenStep+1 shapes, so a larger cache is never filled"
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="the mutated value is 1 or 3: the lengths a run meets are at most maxTokens/tokenStep+1 shapes, so the cache is never filled at either"
 	e.exec = exec.SetMaxCache(e.maxTokens/tokenStep + 2)
 	return e, nil
 }
