@@ -80,6 +80,7 @@ func (c Config) OpenRecognitionWorker(
 			Prepared: ocrmodels.IsPrepared,
 		},
 		Proofreading: c.getProofreading(c.ScanProofreading),
+		Wait:         c.GetWait(),
 	})
 }
 

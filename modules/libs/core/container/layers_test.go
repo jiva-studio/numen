@@ -282,10 +282,11 @@ func TestATestOfTheCoreBuildingAnAdapterStandsOutsideIt(t *testing.T) {
 var machinery = []string{"container", "internal/testsupport"}
 
 // shared are the adapter libraries more than one adapter is built on: the
-// runtime two of them load their models through, and the package two windows
-// both answer a request for a page out of. Each is held to the adapter rules,
-// and the machine and the clock are open to it as they are to an adapter.
-var shared = []string{"internal/onnxruntime", "internal/wire"}
+// runtime two of them load their models through, the wait two hosted clients
+// retry by, and the package two windows both answer a request for a page out
+// of. Each is held to the adapter rules, and the machine and the clock are open
+// to it as they are to an adapter.
+var shared = []string{"internal/onnxruntime", "internal/retry", "internal/wire"}
 
 // isShared says whether a package is a shared adapter library.
 func isShared(pkg string) bool { return isAmong(shared, pkg) }
@@ -459,14 +460,6 @@ var (
 	}
 )
 
-// timers are the files of the core that arm a timer of the machine's, and the
-// list only shrinks.
-var timers = []string{
-	"internal/retry/retry.go",
-	"usecase/run/worker.go",
-	"usecase/transcription/resident.go",
-}
-
 // getClockReads are the calls in a file that read the machine's clock or arm its
 // timers, each written time.Name. The local name of the import is not read.
 func getClockReads(file *ast.File) (reads, arms []string) {
@@ -501,7 +494,6 @@ func getClockReads(file *ast.File) (reads, arms []string) {
 func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 	var wrong []string
 	var read int
-	armed := map[string]bool{}
 	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
@@ -519,12 +511,8 @@ func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 		for _, one := range reads {
 			wrong = append(wrong, path+" runs "+one+": a scenario is handed a clock and reads no other")
 		}
-		rel := filepath.ToSlash(strings.TrimPrefix(path, "../"))
 		if len(arms) > 0 {
-			armed[rel] = true
-			if !slices.Contains(timers, rel) {
-				wrong = append(wrong, path+" runs "+arms[0]+": the core arms no timer of the machine's")
-			}
+			wrong = append(wrong, path+" runs "+arms[0]+": the core arms no timer of the machine's")
 		}
 		return nil
 	})
@@ -533,11 +521,6 @@ func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 	}
 	for _, one := range wrong {
 		t.Error(one)
-	}
-	for _, one := range timers {
-		if !armed[one] {
-			t.Errorf("timers holds %s and it arms no timer", one)
-		}
 	}
 
 	// A walk that read no file of the core is a rule checked against nothing,

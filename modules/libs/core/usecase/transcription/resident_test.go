@@ -177,6 +177,10 @@ func TestCancellationReleasesTheModels(t *testing.T) {
 func TestIdleModelsAreReleasedAfterTheIdlePeriod(t *testing.T) {
 	listening, models, _, v := newResidentWorker(t, true, "a.mp3")
 	listening.residentIdle = 10 * time.Millisecond
+	listening.with.Delay = func(_ time.Duration, f func()) func() bool {
+		go f()
+		return func() bool { return false }
+	}
 
 	if err := listening.transcribeOne(t.Context(), v, "a.mp3", false); err != nil {
 		t.Fatal(err)

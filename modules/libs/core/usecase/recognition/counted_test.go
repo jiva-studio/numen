@@ -101,3 +101,9 @@ func TestCollectingRunsBehindTheCallerAndIsCountedBeforeIt(t *testing.T) {
 		t.Fatal("the wait did not end with the round it was covering")
 	}
 }
+
+// waitForContext holds the caller until the context ends.
+func waitForContext(ctx context.Context, _ time.Duration) error {
+	<-ctx.Done()
+	return ctx.Err()
+}

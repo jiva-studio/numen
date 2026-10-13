@@ -58,6 +58,9 @@ type Config struct {
 
 	// Proofreading is what a recognition is put right with.
 	Proofreading run.ProofreadingConfig
+
+	// Wait holds the collection of batches between its rounds.
+	Wait port.Wait
 }
 
 // Worker recognises scanned documents behind whoever asked.
@@ -316,7 +319,7 @@ func (r *Worker) CollectBatches(
 		return
 	}
 	r.line.Go(func() {
-		r.line.RepeatRounds(ctx, every, func() {
+		r.line.RepeatRounds(ctx, r.with.Wait, every, func() {
 			for _, v := range vaults {
 				r.collect(ctx, known, queue, queue, v)
 			}
