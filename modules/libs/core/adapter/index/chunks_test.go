@@ -403,7 +403,7 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 		Title:       "Entropy",
 		Body:        "the first body",
 	}
-	if err := db.Notes().Save(ctx, first.ID, []domain.Note{note}); err != nil {
+	if err := saveCut(ctx, db, first.ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -423,7 +423,7 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 
 	note.Fingerprint.Size = 23
 	note.Body = "the second body, longer"
-	if err := db.Notes().Save(ctx, first.ID, []domain.Note{note}); err != nil {
+	if err := saveCut(ctx, db, first.ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -473,7 +473,7 @@ func TestANoteIsCutIntoChunksThatCanCarryAVector(t *testing.T) {
 		Title:       "Entropy",
 		Body:        body,
 	}
-	if err := db.Notes().Save(ctx, first.ID, []domain.Note{note}); err != nil {
+	if err := saveCut(ctx, db, first.ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -539,7 +539,7 @@ func TestRemovingANoteTakesItsIndexedRows(t *testing.T) {
 		Title:       "Entropy",
 		Body:        "a body",
 	}
-	if err := db.Notes().Save(ctx, first.ID, []domain.Note{note}); err != nil {
+	if err := saveCut(ctx, db, first.ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.Chunks().ReplaceChunks(ctx, first.ID, "note", note.Fingerprint.Path, []chunk.Chunk{{
@@ -577,7 +577,7 @@ func TestANoteScanDoesNotSeeABook(t *testing.T) {
 		Title:       "Entropy",
 		Body:        "a body",
 	}
-	if err := db.Notes().Save(ctx, first.ID, []domain.Note{note}); err != nil {
+	if err := saveCut(ctx, db, first.ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
 	}
 

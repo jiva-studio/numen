@@ -32,7 +32,7 @@ func saveTypedNoteWithHeadings(
 		Body:        body,
 		Headings:    headings,
 	}
-	if err := db.Notes().Save(t.Context(), vault.ID, []domain.Note{n}); err != nil {
+	if err := saveCut(t.Context(), db, vault.ID, []domain.Note{n}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -283,7 +283,7 @@ func TestADeckIsANoteInEveryOtherWay(t *testing.T) {
 		}},
 		Headings: []domain.Heading{{Level: 2, Text: "Compost ^k7m2xq9fzp"}},
 	}
-	if err := db.Notes().Save(t.Context(), first.ID, []domain.Note{n}); err != nil {
+	if err := saveCut(t.Context(), db, first.ID, []domain.Note{n}); err != nil {
 		t.Fatal(err)
 	}
 

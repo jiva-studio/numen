@@ -16,7 +16,7 @@ func saveTypedNote(t *testing.T, db *DB, vault domain.Vault, path, title string,
 		Type:        kind,
 		Body:        title,
 	}
-	if err := db.Notes().Save(t.Context(), vault.ID, []domain.Note{n}); err != nil {
+	if err := saveCut(t.Context(), db, vault.ID, []domain.Note{n}); err != nil {
 		t.Fatal(err)
 	}
 }

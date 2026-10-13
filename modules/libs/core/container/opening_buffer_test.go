@@ -19,7 +19,7 @@ type repositoryAnswering struct {
 	err error
 }
 
-func (r repositoryAnswering) Save(context.Context, domain.VaultID, []domain.Note) error {
+func (r repositoryAnswering) Save(context.Context, domain.VaultID, []domain.NoteChunks) error {
 	return r.err
 }
 
@@ -27,10 +27,10 @@ func (r repositoryAnswering) Remove(context.Context, domain.VaultID, []string) e
 	return r.err
 }
 
-func notesAt(paths ...string) []domain.Note {
-	var notes []domain.Note
+func notesAt(paths ...string) []domain.NoteChunks {
+	var notes []domain.NoteChunks
 	for _, path := range paths {
-		notes = append(notes, domain.Note{Fingerprint: domain.Fingerprint{Path: path}})
+		notes = append(notes, domain.NoteChunks{Note: domain.Note{Fingerprint: domain.Fingerprint{Path: path}}})
 	}
 	return notes
 }

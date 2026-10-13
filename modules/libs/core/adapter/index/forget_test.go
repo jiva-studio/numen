@@ -33,7 +33,7 @@ func fillVault(t *testing.T, db *DB, vault domain.Vault, stem string, seed byte)
 		Links:       []domain.Link{{Target: domain.Address{Scheme: domain.SchemeName, Value: stem + " elsewhere"}, Role: domain.RoleRef}},
 		Problems:    []string{stem + " problem"},
 	}
-	if err := db.Notes().Save(ctx, vault.ID, []domain.Note{n}); err != nil {
+	if err := saveCut(ctx, db, vault.ID, []domain.Note{n}); err != nil {
 		t.Fatal(err)
 	}
 
