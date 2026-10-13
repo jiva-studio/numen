@@ -246,3 +246,12 @@ func TestAStencilOfNoFieldsLaysNothingOut(t *testing.T) {
 		t.Errorf("back = %q, want the value the card does hold", back)
 	}
 }
+
+// A face holding a front and no back lays out nothing at all.
+func TestAFaceWithNoBackLaysNothingOut(t *testing.T) {
+	card := format.Card{Values: []format.Value{{Field: "Name", Text: "Llama"}}}
+	front, back := format.Lay(format.FaceTemplate{Name: "Recognise", Front: "{{Name}}"}, card)
+	if front != "" || back != "" {
+		t.Errorf("laid out %q and %q, want nothing", front, back)
+	}
+}
