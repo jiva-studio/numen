@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading/openai"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
 // waits records each wait a client is asked for. The jitter draws the ceiling
@@ -74,7 +74,7 @@ func TestAThrottledPageIsSentAgainAndSucceeds(t *testing.T) {
 	s, calls := failing(t, nil, http.StatusTooManyRequests, http.StatusOK)
 	c, w := retrying(t, s.URL, time.Now())
 
-	got, err := c.Proofread(t.Context(), []proofread.Batch{page(1, "a line")})
+	got, err := c.Proofread(t.Context(), []domain.ProofreadBatch{page(1, "a line")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +95,7 @@ func TestAServerErrorIsSentAgainAndSucceeds(t *testing.T) {
 			s, calls := failing(t, nil, status, status, http.StatusOK)
 			c, _ := retrying(t, s.URL, time.Now())
 
-			got, err := c.Proofread(t.Context(), []proofread.Batch{page(1, "a line")})
+			got, err := c.Proofread(t.Context(), []domain.ProofreadBatch{page(1, "a line")})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -110,7 +110,7 @@ func TestTheWaitDoublesFromTheBaseUpToTheCeiling(t *testing.T) {
 	s, _ := failing(t, nil, http.StatusServiceUnavailable)
 	c, w := retrying(t, s.URL, time.Now())
 
-	if _, err := c.Proofread(t.Context(), []proofread.Batch{page(1, "a line")}); err == nil {
+	if _, err := c.Proofread(t.Context(), []domain.ProofreadBatch{page(1, "a line")}); err == nil {
 		t.Fatal("no error")
 	}
 	base := proofreading.DefaultDelayMS * time.Millisecond
@@ -130,7 +130,7 @@ func TestRetryAfterInSecondsSetsTheWait(t *testing.T) {
 	s, _ := failing(t, http.Header{"Retry-After": {"7"}}, http.StatusTooManyRequests, http.StatusOK)
 	c, w := retrying(t, s.URL, time.Now())
 
-	if _, err := c.Proofread(t.Context(), []proofread.Batch{page(1, "a line")}); err != nil {
+	if _, err := c.Proofread(t.Context(), []domain.ProofreadBatch{page(1, "a line")}); err != nil {
 		t.Fatal(err)
 	}
 	if got := w.all(); len(got) != 1 || got[0] != 7*time.Second {
@@ -144,7 +144,7 @@ func TestRetryAfterAsADateSetsTheWait(t *testing.T) {
 	s, _ := failing(t, http.Header{"Retry-After": {date}}, http.StatusServiceUnavailable, http.StatusOK)
 	c, w := retrying(t, s.URL, now)
 
-	if _, err := c.Proofread(t.Context(), []proofread.Batch{page(1, "a line")}); err != nil {
+	if _, err := c.Proofread(t.Context(), []domain.ProofreadBatch{page(1, "a line")}); err != nil {
 		t.Fatal(err)
 	}
 	if got := w.all(); len(got) != 1 || got[0] != 12*time.Second {
@@ -156,7 +156,7 @@ func TestRetryAfterBeyondTheCeilingIsCutToIt(t *testing.T) {
 	s, _ := failing(t, http.Header{"Retry-After": {"3600"}}, http.StatusTooManyRequests, http.StatusOK)
 	c, w := retrying(t, s.URL, time.Now())
 
-	if _, err := c.Proofread(t.Context(), []proofread.Batch{page(1, "a line")}); err != nil {
+	if _, err := c.Proofread(t.Context(), []domain.ProofreadBatch{page(1, "a line")}); err != nil {
 		t.Fatal(err)
 	}
 	if got := w.all(); len(got) != 1 || got[0] != proofreading.DefaultMaxDelayMS*time.Millisecond {
@@ -169,7 +169,7 @@ func TestExhaustedAttemptsReturnTheLastError(t *testing.T) {
 		http.StatusTooManyRequests, http.StatusInternalServerError)
 	c, _ := retrying(t, s.URL, time.Now())
 
-	got, err := c.Proofread(t.Context(), []proofread.Batch{page(1, "a line")})
+	got, err := c.Proofread(t.Context(), []domain.ProofreadBatch{page(1, "a line")})
 	if err == nil {
 		t.Fatal("no error")
 	}
@@ -190,7 +190,7 @@ func TestAnUnretryableStatusFailsAtOnce(t *testing.T) {
 			s, calls := failing(t, nil, status, http.StatusOK)
 			c, w := retrying(t, s.URL, time.Now())
 
-			if _, err := c.Proofread(t.Context(), []proofread.Batch{page(1, "a line")}); err == nil {
+			if _, err := c.Proofread(t.Context(), []domain.ProofreadBatch{page(1, "a line")}); err == nil {
 				t.Fatal("no error")
 			}
 			if calls.Load() != 1 || len(w.all()) != 0 {
@@ -218,7 +218,7 @@ func TestACancelledContextEndsTheWaitBetweenAttempts(t *testing.T) {
 
 	done := make(chan error, 1)
 	go func() {
-		_, err := c.Proofread(ctx, []proofread.Batch{page(1, "a line")})
+		_, err := c.Proofread(ctx, []domain.ProofreadBatch{page(1, "a line")})
 		done <- err
 	}()
 	select {
@@ -258,7 +258,7 @@ func TestTheConnectionIsReusedAfterASuccess(t *testing.T) {
 	c, _ := retrying(t, s.URL, time.Now())
 
 	for range 3 {
-		if _, err := c.Proofread(t.Context(), []proofread.Batch{page(1, "a line")}); err != nil {
+		if _, err := c.Proofread(t.Context(), []domain.ProofreadBatch{page(1, "a line")}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -275,7 +275,7 @@ func TestTheConnectionIsReusedAfterAnError(t *testing.T) {
 	c, _ := retrying(t, s.URL, time.Now())
 
 	for range 3 {
-		if _, err := c.Proofread(t.Context(), []proofread.Batch{page(1, "a line")}); err == nil {
+		if _, err := c.Proofread(t.Context(), []domain.ProofreadBatch{page(1, "a line")}); err == nil {
 			t.Fatal("no error")
 		}
 	}
@@ -290,7 +290,7 @@ func TestTheProfileSetsAttemptsDelayAndCeiling(t *testing.T) {
 		p.Attempts, p.DelayMS, p.MaxDelayMS = 3, 100, 1000
 	})
 
-	if _, err := c.Proofread(t.Context(), []proofread.Batch{page(1, "a line")}); err == nil {
+	if _, err := c.Proofread(t.Context(), []domain.ProofreadBatch{page(1, "a line")}); err == nil {
 		t.Fatal("no error")
 	}
 	if calls.Load() != 3 {
@@ -304,7 +304,7 @@ func TestTheProfileSetsAttemptsDelayAndCeiling(t *testing.T) {
 
 	s, _ = failing(t, nil, http.StatusServiceUnavailable)
 	c, w = retryingWith(t, s.URL, time.Now(), func(p *proofreading.Profile) { p.DelayMS = 100 })
-	if _, err := c.Proofread(t.Context(), []proofread.Batch{page(1, "a line")}); err == nil {
+	if _, err := c.Proofread(t.Context(), []domain.ProofreadBatch{page(1, "a line")}); err == nil {
 		t.Fatal("no error")
 	}
 	if got := w.all(); len(got) == 0 || got[0] != 100*time.Millisecond {

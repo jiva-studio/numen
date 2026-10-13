@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading/openai"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
@@ -57,7 +58,7 @@ func newInFlightClient(t *testing.T, baseURL string, inFlight int) *openai.Clien
 func TestTheServiceIsAskedAboutAsManyBatchesAsTheProfileNames(t *testing.T) {
 	for _, want := range []int{1, 2, 6} {
 		s, most := crowd(t)
-		var batches []proofread.Batch
+		var batches []domain.ProofreadBatch
 		for at := range 8 {
 			batches = append(batches, page(at, "a line"))
 		}
@@ -74,7 +75,7 @@ func TestTheServiceIsAskedAboutAsManyBatchesAsTheProfileNames(t *testing.T) {
 // A profile naming none takes what the service is asked by default.
 func TestAProfileNamingNoNumberTakesTheDefault(t *testing.T) {
 	s, most := crowd(t)
-	var batches []proofread.Batch
+	var batches []domain.ProofreadBatch
 	for at := range 8 {
 		batches = append(batches, page(at, "a line"))
 	}

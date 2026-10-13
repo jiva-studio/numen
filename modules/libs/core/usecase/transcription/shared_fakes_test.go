@@ -14,7 +14,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
 // puts is a proofreader answering with what it was told to say about a batch,
@@ -28,14 +27,12 @@ type puts struct {
 
 func (p *puts) GetName() string { return "a proofreader" }
 
-func (p *puts) Proofread(_ context.Context, batches []proofread.Batch) (map[int]string, error) {
+func (p *puts) Proofread(_ context.Context, batches []domain.ProofreadBatch) (map[int]string, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	out := map[int]string{}
 	for _, batch := range batches {
-		for _, line := range batch.Lines {
-			p.asked = append(p.asked, line.Number)
-		}
+		p.asked = append(p.asked, batch.Number)
 		if said, held := p.says[batch.Number]; held {
 			out[batch.Number] = said
 		}
@@ -212,11 +209,11 @@ func (c *corrector) GetName() string {
 	return c.name
 }
 
-func (c *corrector) Proofread(ctx context.Context, pages []proofread.Batch) (map[int]string, error) {
+func (c *corrector) Proofread(ctx context.Context, pages []domain.ProofreadBatch) (map[int]string, error) {
 	var at []int
 	for _, page := range pages {
 		at = append(at, page.Number)
-		c.about = append(c.about, page.Context)
+		c.about = append(c.about, page.Prompt)
 	}
 	c.asked = append(c.asked, at)
 	if c.stop != nil {

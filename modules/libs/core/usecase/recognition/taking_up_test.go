@@ -201,11 +201,11 @@ type leaves struct{}
 
 func (leaves) GetName() string { return "a queue" }
 
-func (leaves) Proofread(context.Context, []proofread.Batch) (map[int]string, error) {
+func (leaves) Proofread(context.Context, []domain.ProofreadBatch) (map[int]string, error) {
 	return nil, nil
 }
 
-func (leaves) Submit(context.Context, []proofread.Batch) (string, error) { return "a batch", nil }
+func (leaves) Submit(context.Context, []domain.ProofreadBatch) (string, error) { return "a batch", nil }
 
 func (leaves) GetReplies(context.Context, string) (map[int]string, bool, error) {
 	return nil, false, nil

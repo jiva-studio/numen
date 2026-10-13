@@ -14,7 +14,7 @@ type answering struct{}
 
 func (answering) GetName() string { return "answering" }
 
-func (answering) Proofread(context.Context, []proofread.Batch) (map[int]string, error) {
+func (answering) Proofread(context.Context, []domain.ProofreadBatch) (map[int]string, error) {
 	return nil, nil
 }
 

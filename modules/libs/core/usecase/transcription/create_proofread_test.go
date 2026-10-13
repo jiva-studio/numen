@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
@@ -16,7 +17,7 @@ type replying struct{ told string }
 
 func (r *replying) GetName() string { return "replying" }
 
-func (r *replying) Proofread(context.Context, []proofread.Batch) (map[int]string, error) {
+func (r *replying) Proofread(context.Context, []domain.ProofreadBatch) (map[int]string, error) {
 	return nil, nil
 }
 

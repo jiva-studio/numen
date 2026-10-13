@@ -232,7 +232,7 @@ func (u Proofread) askPages(
 		end := min(at+batch, len(p.pages))
 		asked := p.pages[at:end]
 
-		replies, err := u.by.Proofread(ctx, asked)
+		replies, err := u.by.Proofread(ctx, ask(asked))
 		if err != nil {
 			return fmt.Errorf("proofread %s: %w", p.path, err)
 		}
@@ -417,12 +417,24 @@ func (u Proofread) submitBatch(
 	res *ProofreadResult,
 ) error {
 	end := min(at+run.GetSize(u.Pages, DefaultPages), len(p.pages))
-	name, err := u.Queue.Submit(ctx, p.pages[at:end])
+	name, err := u.Queue.Submit(ctx, ask(p.pages[at:end]))
 	if err != nil {
 		return fmt.Errorf("leave the pages of %s: %w", p.path, err)
 	}
 	res.IsWaiting = true
 	return u.writeCheckpoint(ctx, p.store, p.progressName, checkpoint{Pages: at, Batch: name, Left: end - at})
+}
+
+// ask is the batches with their prompt built for the proofreader.
+func ask(pages []proofread.Batch) []domain.ProofreadBatch {
+	out := make([]domain.ProofreadBatch, len(pages))
+	for i, page := range pages {
+		out[i] = domain.ProofreadBatch{
+			Number: page.Number,
+			Prompt: proofread.Ask(page),
+		}
+	}
+	return out
 }
 
 // dropCorrections drops the corrections of pages no count claims. A line is
