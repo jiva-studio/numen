@@ -112,6 +112,32 @@ func getUnsplittableRanges(line string) [][]int {
 	return append(found, emphasisRe.FindAllIndex(masked, -1)...)
 }
 
+func matchLinkEnd(line string, at int) (int, bool) {
+	depth, to := 0, at
+	for to+1 < len(line) {
+		switch {
+		case line[to] == '[' && line[to+1] == '[':
+			depth, to = depth+1, to+2
+		case line[to] == ']' && line[to+1] == ']':
+			depth, to = depth-1, to+2
+		default:
+			to++
+			continue
+		}
+		if depth == 0 {
+			return to, true
+		}
+	}
+	return to, false
+}
+
+func linkStart(line string, at int) int {
+	if at > 0 && line[at-1] == '!' {
+		return at - 1
+	}
+	return at
+}
+
 // links is every wikilink and embed of the line. The brackets are counted, so a
 // link holding another closes on its own last pair, and a pair that is never
 // closed is no link and neither is anything after it.
@@ -122,26 +148,9 @@ func links(line string) [][]int {
 			at++
 			continue
 		}
-		head := at
-		if head > 0 && line[head-1] == '!' {
-			head--
-		}
-		depth, to := 0, at
-		for to+1 < len(line) {
-			switch {
-			case line[to] == '[' && line[to+1] == '[':
-				depth, to = depth+1, to+2
-			case line[to] == ']' && line[to+1] == ']':
-				depth, to = depth-1, to+2
-			default:
-				to++
-				continue
-			}
-			if depth == 0 {
-				break
-			}
-		}
-		if depth != 0 {
+		head := linkStart(line, at)
+		to, ok := matchLinkEnd(line, at)
+		if !ok {
 			return out
 		}
 		out = append(out, []int{head, to})

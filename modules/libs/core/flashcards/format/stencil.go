@@ -21,20 +21,134 @@ const fieldsKey = "fields"
 //
 // It never fails. A face missing a side and a placeholder nobody declared are
 // problems against the stencil, and everything else in the file is read.
-func ReadStencil(n domain.Note) Stencil {
-	s := Stencil{Ref: n.Fingerprint}
-	s.Fields, s.Problems = fields(n.Frontmatter)
+type stencilReader struct {
+	body     []byte
+	declared map[string]bool
+	read     int
+	stencil  Stencil
+}
 
-	declared := map[string]bool{}
-	for _, f := range s.Fields {
+func findFaceSides(rest []section) []section {
+	under := 0
+	for under < len(rest) && rest[under].level == 3 {
+		under++
+	}
+	return rest[:under]
+}
+
+func findFaceSideOpenings(sides []section) (map[string]bool, []int) {
+	has := map[string]bool{}
+	var opening []int
+	for k, side := range sides {
+		if (side.name != frontHeading && side.name != backHeading) || has[side.name] {
+			continue
+		}
+		has[side.name] = true
+		opening = append(opening, k)
+	}
+	return has, opening
+}
+
+func (r *stencilReader) readFaceSides(face *FaceTemplate, sides []section, opening []int, end int) {
+	for k, opens := range opening {
+		side := sides[opens]
+		to := end
+		if k+1 < len(opening) {
+			to = sides[opening[k+1]].head
+		}
+		value, valueEnd := readTrimmedRun(r.body, side.from, to)
+		r.read = getTrimmedEnd(r.body, side.head, side.from)
+		if value != "" {
+			r.read = valueEnd
+		}
+		if side.name == frontHeading {
+			face.Front = value
+		} else {
+			face.Back = value
+		}
+	}
+}
+
+func (r *stencilReader) validateFacePlaceholders(at int, face FaceTemplate) {
+	for _, name := range placeholders(face.Front + "\n" + face.Back) {
+		if r.declared[name] {
+			continue
+		}
+		problem := onFace(at, FaultPlaceholder, "this face places "+name+", which the stencil does not declare")
+		problem.Field = name
+		r.stencil.Problems = append(r.stencil.Problems, problem)
+	}
+}
+
+func (r *stencilReader) validateFace(at int, has map[string]bool, face FaceTemplate) {
+	if !has[frontHeading] || !has[backHeading] {
+		missing := frontHeading
+		if has[frontHeading] {
+			missing = backHeading
+		}
+		r.stencil.Problems = append(r.stencil.Problems, onFace(at, FaultFaceSide,
+			"this face has no "+missing+", and lays out nothing"))
+		return
+	}
+	r.validateFacePlaceholders(at, face)
+}
+
+func (r *stencilReader) addFace(sec section, secsAfter []section) {
+	at := len(r.stencil.Faces)
+	face := FaceTemplate{Name: sec.name}
+
+	sides := findFaceSides(secsAfter)
+	end := sec.to
+	if len(sides) > 0 {
+		end = sides[len(sides)-1].to
+	}
+
+	has, opening := findFaceSideOpenings(sides)
+
+	leadTo := end
+	if len(opening) > 0 {
+		leadTo = sides[opening[0]].head
+	}
+	lead, leadEnd := readTrimmedRun(r.body, sec.from, leadTo)
+	face.Preamble = lead
+	r.read = getTrimmedEnd(r.body, sec.head, sec.from)
+	if lead != "" {
+		r.read = leadEnd
+	}
+
+	r.readFaceSides(&face, sides, opening, end)
+	r.stencil.Faces = append(r.stencil.Faces, face)
+	r.validateFace(at, has, face)
+}
+
+// ReadStencil reads a note as a stencil: the fields it declares in its
+// frontmatter, and the faces its body lays out.
+//
+// It never fails. A face missing a side and a placeholder nobody declared are
+// problems against the stencil, and everything else in the file is read.
+func ReadStencil(n domain.Note) Stencil {
+	body := []byte(n.Body)
+	declaredFields, problems := fields(n.Frontmatter)
+	declared := make(map[string]bool, len(declaredFields))
+	for _, f := range declaredFields {
 		declared[f] = true
 	}
 
-	body := []byte(n.Body)
-	// A face is a second-level heading and its sides are third; a first-level
-	// heading on a face is text the face lays out.
-	secs := sections(body, 2, 3)
+	r := stencilReader{
+		body:     body,
+		declared: declared,
+		read:     0,
+		stencil: Stencil{
+			Ref:      n.Fingerprint,
+			Fields:   declaredFields,
+			Problems: problems,
+			Preamble: "",
+			Faces:    nil,
+			Tail:     "",
+		},
+	}
 
+	secs := sections(body, 2, 3)
 	firstFace := len(body)
 	for _, sec := range secs {
 		if sec.level == 2 {
@@ -42,96 +156,19 @@ func ReadStencil(n domain.Note) Stencil {
 			break
 		}
 	}
-	s.Preamble = markdown.Normalise(string(body[:firstFace]))
+	r.stencil.Preamble = markdown.Normalise(string(body[:firstFace]))
 
-	read := 0
 	for i, sec := range secs {
 		if sec.level != 2 {
 			continue
 		}
-
-		at := len(s.Faces)
-		face := FaceTemplate{Name: sec.name}
-
-		rest := secs[i+1:]
-		under := 0
-		for under < len(rest) && rest[under].level == 3 {
-			under++
-		}
-		sides := rest[:under]
-
-		end := sec.to
-		if under > 0 {
-			end = sides[under-1].to
-		}
-
-		// A side is opened by the first heading of its name, and it runs to the
-		// side after it. A heading of any other name stands under the side it is
-		// written beneath, and so does a second heading of a name.
-		has := map[string]bool{}
-		var opening []int
-		for k, side := range sides {
-			if (side.name != frontHeading && side.name != backHeading) || has[side.name] {
-				continue
-			}
-			has[side.name] = true
-			opening = append(opening, k)
-		}
-
-		leadTo := end
-		if len(opening) > 0 {
-			leadTo = sides[opening[0]].head
-		}
-		lead, leadEnd := readTrimmedRun(body, sec.from, leadTo)
-		face.Preamble = lead
-		read = getTrimmedEnd(body, sec.head, sec.from)
-		if lead != "" {
-			read = leadEnd
-		}
-
-		for k, opens := range opening {
-			side := sides[opens]
-			to := end
-			if k+1 < len(opening) {
-				to = sides[opening[k+1]].head
-			}
-			value, valueEnd := readTrimmedRun(body, side.from, to)
-			read = getTrimmedEnd(body, side.head, side.from)
-			if value != "" {
-				read = valueEnd
-			}
-			if side.name == frontHeading {
-				face.Front = value
-			} else {
-				face.Back = value
-			}
-		}
-		s.Faces = append(s.Faces, face)
-
-		if !has[frontHeading] || !has[backHeading] {
-			missing := frontHeading
-			if has[frontHeading] {
-				missing = backHeading
-			}
-			s.Problems = append(s.Problems, onFace(at, FaultFaceSide,
-				"this face has no "+missing+", and lays out nothing"))
-			continue
-		}
-
-		for _, name := range placeholders(face.Front + "\n" + face.Back) {
-			if declared[name] {
-				continue
-			}
-			problem := onFace(at, FaultPlaceholder, "this face places "+name+", which the stencil does not declare")
-			problem.Field = name
-			s.Problems = append(s.Problems, problem)
-		}
+		r.addFace(sec, secs[i+1:])
 	}
 
-	if len(s.Faces) > 0 {
-		s.Tail = markdown.Normalise(string(body[read:]))
+	if len(r.stencil.Faces) > 0 {
+		r.stencil.Tail = markdown.Normalise(string(body[r.read:]))
 	}
-	return s
+	return r.stencil
 }
 
 // fields is what the frontmatter declares, in the order a person is asked for

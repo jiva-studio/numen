@@ -99,28 +99,32 @@ func (d *Document) set(key string, rendered []byte) error {
 
 	start, end, found := d.span(node, key)
 	if !found {
-		if len(rendered) == 0 {
-			return nil
-		}
-		front := append([]byte(nil), d.front...)
-		if len(front) > 0 && !endsWithBreak(front) {
-			front = append(front, d.eol...)
-		}
-		if err := d.commit(append(front, rendered...)); err != nil {
-			return err
-		}
-		if node == nil && len(d.open) == 0 {
-			// A note with no frontmatter grows one.
-			d.open = []byte("---" + d.eol)
-			d.shut = []byte("---" + d.eol)
-		}
-		return nil
+		return d.appendKey(node, rendered)
 	}
 
 	front := make([]byte, 0, len(d.front)-(end-start)+len(rendered))
 	front = append(front, d.front[:start]...)
 	front = append(front, rendered...)
 	return d.commit(append(front, d.front[end:]...))
+}
+
+func (d *Document) appendKey(node *yaml.Node, rendered []byte) error {
+	if len(rendered) == 0 {
+		return nil
+	}
+	front := append([]byte(nil), d.front...)
+	if len(front) > 0 && !endsWithBreak(front) {
+		front = append(front, d.eol...)
+	}
+	if err := d.commit(append(front, rendered...)); err != nil {
+		return err
+	}
+	if node == nil && len(d.open) == 0 {
+		// A note with no frontmatter grows one.
+		d.open = []byte("---" + d.eol)
+		d.shut = []byte("---" + d.eol)
+	}
+	return nil
 }
 
 // commit puts a frontmatter block in place of the one standing. A block that
@@ -229,23 +233,35 @@ func (d *Document) endLine(lines []int, node *yaml.Node, column int) int {
 	}
 	switch node.Kind {
 	case yaml.MappingNode:
-		last := node.Line
-		for i := 0; i+1 < len(node.Content); i += 2 {
-			if end := d.endLine(lines, node.Content[i+1], node.Content[i].Column); end > last {
-				last = end
-			}
-		}
-		return last
+		return d.endLineOfMapping(lines, node)
 	case yaml.SequenceNode:
-		last := node.Line
-		for _, item := range node.Content {
-			if end := d.endLine(lines, item, node.Column); end > last {
-				last = end
-			}
-		}
-		return last
+		return d.endLineOfSequence(lines, node)
+	default:
+		return d.endLineOfScalar(lines, node, column)
 	}
+}
 
+func (d *Document) endLineOfMapping(lines []int, node *yaml.Node) int {
+	last := node.Line
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		if end := d.endLine(lines, node.Content[i+1], node.Content[i].Column); end > last {
+			last = end
+		}
+	}
+	return last
+}
+
+func (d *Document) endLineOfSequence(lines []int, node *yaml.Node) int {
+	last := node.Line
+	for _, item := range node.Content {
+		if end := d.endLine(lines, item, node.Column); end > last {
+			last = end
+		}
+	}
+	return last
+}
+
+func (d *Document) endLineOfScalar(lines []int, node *yaml.Node, column int) int {
 	last := node.Line
 	for at := node.Line + 1; at < len(lines); at++ {
 		text := d.front[lines[at-1]:lines[at]]

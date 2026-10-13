@@ -39,26 +39,7 @@ const maxFilename = 120
 // Every name that comes back is one IsNameable accepts, so a link written by it
 // reaches the note back.
 func GetReducedFilename(title string) (name string, exact bool) {
-	var b strings.Builder
-	var last rune
-	for _, r := range strings.TrimSpace(title) {
-		switch {
-		case unicode.IsControl(r):
-			continue
-		case r == '/' || r == '\\' || r == ':' || r == '*' || r == '?' ||
-			r == '"' || r == '<' || r == '>' || r == '|' || r == '#':
-			// Reserved somewhere that matters. A slash names a folder, and a
-			// `#` or a `|` is punctuation of the link a name is written as.
-			r = '-'
-		case (r == '[' || r == ']') && r == last:
-			// A doubled bracket opens or closes a link, so a run of them is one.
-			continue
-		}
-		b.WriteRune(r)
-		last = r
-	}
-
-	name = trimEnds(b.String())
+	name = trimEnds(sanitizeRunes(title))
 	if len(name) > maxFilename {
 		name = trimEnds(truncateAtRuneBoundary(name, maxFilename))
 	}
@@ -69,6 +50,37 @@ func GetReducedFilename(title string) (name string, exact bool) {
 		return name + "-", false
 	}
 	return name, name == strings.TrimSpace(title)
+}
+
+func sanitizeRunes(title string) string {
+	var b strings.Builder
+	var last rune
+	for _, r := range strings.TrimSpace(title) {
+		if unicode.IsControl(r) {
+			continue
+		}
+		if isReservedRune(r) {
+			r = '-'
+		} else if isDuplicateBracket(r, last) {
+			continue
+		}
+		b.WriteRune(r)
+		last = r
+	}
+	return b.String()
+}
+
+func isReservedRune(r rune) bool {
+	switch r {
+	case '/', '\\', ':', '*', '?', '"', '<', '>', '|', '#':
+		return true
+	default:
+		return false
+	}
+}
+
+func isDuplicateBracket(r, last rune) bool {
+	return (r == '[' || r == ']') && r == last
 }
 
 // isDevice reports whether Windows keeps this name for a device, which no file
