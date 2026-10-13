@@ -11,7 +11,7 @@ import type { GestureRole, PlacedNode, Position } from '../lib/node'
 const NODE: PlacedNode = {
   id: 'one',
   title: 'A node',
-  seat: 'child',
+  relation: 'child',
   x: 0,
   y: 0,
   width: 144,

@@ -1,22 +1,22 @@
 /**
  * Something dragged over the plex from outside it. Everything that knows about
- * events and screen pixels is here; which seat a place comes to is worked out
+ * events and screen pixels is here; which relation a place comes to is worked out
  * in `arrange/drop.ts`, as a value.
  */
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
-import { getDropSeat, type PlexOptions, type Size } from '../lib/arrange'
+import { getDropRelation, type PlexOptions, type Size } from '../lib/arrange'
 import { getPosition } from './gesture'
 import type { PlexFrame } from '../lib/frame'
 import type { Position } from '../lib/node'
-import type { PlexRelatedSeat } from '../lib/seat'
+import type { PlexRelation } from '../lib/relation'
 
 const CAPTURE = { capture: true } as const
 
 export interface PlexDragState {
   /** Where the pointer is, in the plex's own coordinates. */
   readonly at: Ref<Position | null>
-  /** The seat letting go here comes to, so it can be shown before it does. */
-  readonly seat: Ref<PlexRelatedSeat | null>
+  /** The relation letting go here comes to, so it can be shown before it does. */
+  readonly relation: Ref<PlexRelation | null>
 }
 
 /** What following a drag takes: the drawing, the picture, and the rules. */
@@ -28,11 +28,11 @@ export interface PlexDragDeps {
   readonly getFrame: () => PlexFrame
   readonly getOptions: () => PlexOptions
   readonly getViewport: () => Size
-  /** Seats a gesture is allowed to produce. */
-  readonly getAllowedSeats: () => readonly PlexRelatedSeat[]
+  /** Relations a gesture is allowed to produce. */
+  readonly getAllowedRelations: () => readonly PlexRelation[]
   /** How far from the focus the pointer stands before it names a direction. */
   readonly getThreshold: () => number
-  readonly commit: (dragged: readonly string[], seat: PlexRelatedSeat) => void
+  readonly commit: (dragged: readonly string[], relation: PlexRelation) => void
 }
 
 /**
@@ -47,15 +47,15 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
   /** Where the pointer is, and nothing at all while nothing is being dragged. */
   const at = ref<Position | null>(null)
 
-  const seat = computed<PlexRelatedSeat | null>(() => {
+  const relation = computed<PlexRelation | null>(() => {
     const now = at.value
     if (!now) return null
-    return getDropSeat({
+    return getDropRelation({
       frame: drag.getFrame(),
       options: drag.getOptions(),
       viewport: drag.getViewport(),
       at: now,
-      seats: drag.getAllowedSeats(),
+      relations: drag.getAllowedRelations(),
       threshold: drag.getThreshold(),
     })
   })
@@ -83,7 +83,7 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
   const finish = (event: PointerEvent) => {
     move(event)
     const dragged = activeDragIds
-    const resolved = seat.value
+    const resolved = relation.value
     stop()
     if (resolved) drag.commit(dragged, resolved)
   }
@@ -123,5 +123,5 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
   // A plex can go while something is still being dragged over it.
   onScopeDispose(stop)
 
-  return { at, seat }
+  return { at, relation }
 }

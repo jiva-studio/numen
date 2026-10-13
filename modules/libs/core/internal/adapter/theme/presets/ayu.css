@@ -8,7 +8,7 @@
  * carried onto the ground it is read on.
  *
  * Yellow is the accent a focused node is painted in, so a jump takes the
- * markup hue and the four seats stand apart from it.
+ * markup hue and the four relations stand apart from it.
  *
  * Mixed here, because the palette does not name it: the alpha the highlight is
  * laid on at.
@@ -23,10 +23,10 @@
   --numen-accent: light-dark(#f29718, #e6b450);
   --numen-accent-ink: light-dark(#804b00, #805600);
 
-  --numen-seat-parent: light-dark(#399ee6, #59c2ff);
-  --numen-seat-child: light-dark(#86b300, #aad94c);
-  --numen-seat-jump: light-dark(#f07171, #f07178);
-  --numen-seat-sibling: light-dark(#a37acc, #d2a6ff);
+  --numen-relation-parent: light-dark(#399ee6, #59c2ff);
+  --numen-relation-child: light-dark(#86b300, #aad94c);
+  --numen-relation-jump: light-dark(#f07171, #f07178);
+  --numen-relation-sibling: light-dark(#a37acc, #d2a6ff);
 
   --numen-edge: light-dark(#6b7d8f1f, #1b1f29);
   --numen-edge-label: light-dark(#828e9f, #555e73);

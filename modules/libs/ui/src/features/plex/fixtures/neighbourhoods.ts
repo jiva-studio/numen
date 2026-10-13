@@ -7,7 +7,7 @@
 import type { PlexEdge } from '../lib/edge'
 import type { PlexNeighbourhood } from '../lib/neighbourhood'
 import type { PlexNode } from '../lib/node'
-import type { PlexSeat } from '../lib/seat'
+import type { PlexNodeRelation } from '../lib/relation'
 
 /**
  * Focus in, everything else out — the shape every fixture below is built as.
@@ -22,13 +22,13 @@ function neighbourhood(
   neighbours: readonly PlexNode[],
   extra: readonly PlexEdge[] = [],
 ): PlexNeighbourhood {
-  const nodes: PlexNode[] = [{ id: 'focus', title: focus, seat: 'focus' }, ...neighbours]
-  const parent = neighbours.find((node) => node.seat === 'parent')
+  const nodes: PlexNode[] = [{ id: 'focus', title: focus, relation: 'focus' }, ...neighbours]
+  const parent = neighbours.find((node) => node.relation === 'parent')
   const edges: PlexEdge[] = neighbours.flatMap((node) => {
-    if (node.seat === 'parent' || node.seat === 'jump') {
+    if (node.relation === 'parent' || node.relation === 'jump') {
       return [{ from: node.id, to: 'focus' }]
     }
-    if (node.seat === 'sibling') {
+    if (node.relation === 'sibling') {
       return parent ? [{ from: parent.id, to: node.id }] : []
     }
     return [{ from: 'focus', to: node.id }]
@@ -36,11 +36,15 @@ function neighbourhood(
   return { nodes, edges: [...edges, ...extra] }
 }
 
-function run(seat: PlexSeat, count: number, title: (index: number) => string): PlexNode[] {
+function run(
+  relation: PlexNodeRelation,
+  count: number,
+  title: (index: number) => string,
+): PlexNode[] {
   return Array.from({ length: count }, (_, index) => ({
-    id: `${seat}-${index}`,
+    id: `${relation}-${index}`,
     title: title(index),
-    seat,
+    relation,
   }))
 }
 
@@ -49,29 +53,29 @@ export const solitary: PlexNeighbourhood = neighbourhood('An orphan note', [])
 
 /** The ordinary case, and the one to judge the proportions by. */
 export const typical: PlexNeighbourhood = neighbourhood('Hexagonal architecture', [
-  { id: 'parent-0', title: 'Software architecture', seat: 'parent' },
-  { id: 'parent-1', title: 'Ports and adapters', seat: 'parent' },
-  { id: 'child-0', title: 'Domain', seat: 'child' },
-  { id: 'child-1', title: 'Port', seat: 'child' },
-  { id: 'child-2', title: 'Adapter', seat: 'child' },
-  { id: 'child-3', title: 'Composition root', seat: 'child' },
-  { id: 'child-4', title: 'Use case', seat: 'child' },
-  { id: 'child-5', title: 'Aggregate', seat: 'child' },
-  { id: 'jump-0', title: 'Dependency inversion', seat: 'jump' },
-  { id: 'jump-1', title: 'Onion architecture', seat: 'jump' },
-  { id: 'jump-2', title: 'Clean architecture', seat: 'jump' },
-  { id: 'sibling-0', title: 'Layered architecture', seat: 'sibling' },
-  { id: 'sibling-1', title: 'Event-driven architecture', seat: 'sibling' },
+  { id: 'parent-0', title: 'Software architecture', relation: 'parent' },
+  { id: 'parent-1', title: 'Ports and adapters', relation: 'parent' },
+  { id: 'child-0', title: 'Domain', relation: 'child' },
+  { id: 'child-1', title: 'Port', relation: 'child' },
+  { id: 'child-2', title: 'Adapter', relation: 'child' },
+  { id: 'child-3', title: 'Composition root', relation: 'child' },
+  { id: 'child-4', title: 'Use case', relation: 'child' },
+  { id: 'child-5', title: 'Aggregate', relation: 'child' },
+  { id: 'jump-0', title: 'Dependency inversion', relation: 'jump' },
+  { id: 'jump-1', title: 'Onion architecture', relation: 'jump' },
+  { id: 'jump-2', title: 'Clean architecture', relation: 'jump' },
+  { id: 'sibling-0', title: 'Layered architecture', relation: 'sibling' },
+  { id: 'sibling-1', title: 'Event-driven architecture', relation: 'sibling' },
 ])
 
 /** Two parents, one a parent of the other: an edge inside a row. */
 export const diamond: PlexNeighbourhood = neighbourhood(
   'Recursive CTE',
   [
-    { id: 'parent-0', title: 'SQL', seat: 'parent' },
-    { id: 'parent-1', title: 'Common table expression', seat: 'parent' },
-    { id: 'child-0', title: 'Cycle detection', seat: 'child' },
-    { id: 'child-1', title: 'Topological order', seat: 'child' },
+    { id: 'parent-0', title: 'SQL', relation: 'parent' },
+    { id: 'parent-1', title: 'Common table expression', relation: 'parent' },
+    { id: 'child-0', title: 'Cycle detection', relation: 'child' },
+    { id: 'child-1', title: 'Topological order', relation: 'child' },
   ],
   [{ from: 'parent-0', to: 'parent-1', label: 'contains' }],
 )
@@ -83,7 +87,7 @@ export const root: PlexNeighbourhood = neighbourhood('Everything', [
 
 /** Nothing below it, and the plex has to stay centred anyway. */
 export const leaf: PlexNeighbourhood = neighbourhood('Nothing below', [
-  { id: 'parent-0', title: 'Inbox', seat: 'parent' },
+  { id: 'parent-0', title: 'Inbox', relation: 'parent' },
 ])
 
 /** One past what a side can hold, where an off-by-one in the overflow shows. */
@@ -102,17 +106,17 @@ export const overcrowded: PlexNeighbourhood = neighbourhood('Everything, again',
 export const awkwardLabels: PlexNeighbourhood = neighbourhood(
   'Заметка про сарай с довольно длинным названием, которое не влезает',
   [
-    { id: 'parent-0', title: 'बगीचा', seat: 'parent' },
-    { id: 'parent-1', title: 'الحديقة', seat: 'parent' },
-    { id: 'child-0', title: 'a', seat: 'child' },
+    { id: 'parent-0', title: 'बगीचा', relation: 'parent' },
+    { id: 'parent-1', title: 'الحديقة', relation: 'parent' },
+    { id: 'child-0', title: 'a', relation: 'child' },
     {
       id: 'child-1',
       title: 'Supercalifragilisticexpialidociousandthensomemore',
-      seat: 'child',
+      relation: 'child',
     },
-    { id: 'child-2', title: '日本語のノート', seat: 'child' },
-    { id: 'child-3', title: '', seat: 'child' },
-    { id: 'jump-0', title: '  leading and trailing  ', seat: 'jump' },
+    { id: 'child-2', title: '日本語のノート', relation: 'child' },
+    { id: 'child-3', title: '', relation: 'child' },
+    { id: 'jump-0', title: '  leading and trailing  ', relation: 'jump' },
   ],
 )
 
@@ -123,17 +127,17 @@ export const awkwardLabels: PlexNeighbourhood = neighbourhood(
  */
 export const labelledRows: PlexNeighbourhood = {
   nodes: [
-    { id: 'focus', title: 'Marrowfield allotments', seat: 'focus' },
-    { id: 'parent-0', title: 'Untitled note 3', seat: 'parent' },
-    { id: 'child-0', title: 'Compost', seat: 'child' },
-    { id: 'child-1', title: 'The question of the rota', seat: 'child' },
-    { id: 'child-2', title: 'The gate is open', seat: 'child' },
-    { id: 'child-3', title: 'A hedge that nobody has cut', seat: 'child' },
-    { id: 'child-4', title: 'Alice Fenn, The Chair', seat: 'child' },
-    { id: 'child-5', title: 'Who waters in August', seat: 'child' },
-    { id: 'jump-0', title: 'xxxx', seat: 'jump' },
-    { id: 'sibling-0', title: 'Untitled note 4', seat: 'sibling' },
-    { id: 'sibling-1', title: 'Untitled note 5', seat: 'sibling' },
+    { id: 'focus', title: 'Marrowfield allotments', relation: 'focus' },
+    { id: 'parent-0', title: 'Untitled note 3', relation: 'parent' },
+    { id: 'child-0', title: 'Compost', relation: 'child' },
+    { id: 'child-1', title: 'The question of the rota', relation: 'child' },
+    { id: 'child-2', title: 'The gate is open', relation: 'child' },
+    { id: 'child-3', title: 'A hedge that nobody has cut', relation: 'child' },
+    { id: 'child-4', title: 'Alice Fenn, The Chair', relation: 'child' },
+    { id: 'child-5', title: 'Who waters in August', relation: 'child' },
+    { id: 'jump-0', title: 'xxxx', relation: 'jump' },
+    { id: 'sibling-0', title: 'Untitled note 4', relation: 'sibling' },
+    { id: 'sibling-1', title: 'Untitled note 5', relation: 'sibling' },
   ],
   edges: [
     { from: 'parent-0', to: 'focus' },

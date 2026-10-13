@@ -106,9 +106,9 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
     headings: ref(6),
     headingsBounds: ref({ least: 2, most: 9 }),
     chooseHeadings: (count) => void done.push(`headings ${count}`),
-    dayStarts: ref('04:00'),
-    latestDayStarts: ref('12:00'),
-    chooseDayStarts: (hour) => void done.push(`day starts ${hour}`),
+    dayStartTime: ref('04:00'),
+    latestDayStartTime: ref('12:00'),
+    chooseDayStartTime: (hour) => void done.push(`day starts ${hour}`),
   }
   const tab = mount(SettingsTab, {
     props: { state: { installation } },
@@ -351,7 +351,7 @@ describe('the settings tab', () => {
     const { tab } = createTab()
     const hour = tab.get('[data-slot="time-field"]').element as HTMLInputElement
     expect(hour.value).toBe('04:00')
-    expect(tab.text()).toContain(words.dayStarts)
+    expect(tab.text()).toContain(words.dayStartTime)
   })
 
   it('writes the hour a day of review begins at', async () => {

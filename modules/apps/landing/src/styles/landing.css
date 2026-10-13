@@ -630,24 +630,24 @@ svg {
   text-anchor: middle;
 }
 
-.drawing__node[data-seat='parent'] rect {
+.drawing__node[data-relation='parent'] rect {
   stroke: var(--parent);
 }
 
-.drawing__node[data-seat='child'] rect {
+.drawing__node[data-relation='child'] rect {
   stroke: var(--child);
 }
 
-.drawing__node[data-seat='jump'] rect {
+.drawing__node[data-relation='jump'] rect {
   stroke: var(--jump);
 }
 
-.drawing__node[data-seat='focus'] rect {
+.drawing__node[data-relation='focus'] rect {
   fill: var(--ink);
   stroke: var(--ink);
 }
 
-.drawing__node[data-seat='focus'] text {
+.drawing__node[data-relation='focus'] text {
   fill: var(--paper);
 }
 

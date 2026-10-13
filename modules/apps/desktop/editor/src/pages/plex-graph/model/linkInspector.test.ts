@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   createMutualInspectorLinks,
   createSingleInspectorLink,
-  getInverseSeat,
+  getInverseRelation,
   resolveInspectorDirectionToggle,
   resolveInspectorDonePayload,
   resolvePopoverPosition,
@@ -22,15 +22,15 @@ const row = (more: Partial<DirectionalLinkItem> = {}): DirectionalLinkItem => ({
 })
 
 describe('linkInspector helper module', () => {
-  describe('getInverseSeat', () => {
+  describe('getInverseRelation', () => {
     it('inverts parent to child and child to parent', () => {
-      expect(getInverseSeat('parent')).toBe('child')
-      expect(getInverseSeat('child')).toBe('parent')
+      expect(getInverseRelation('parent')).toBe('child')
+      expect(getInverseRelation('child')).toBe('parent')
     })
 
-    it('preserves jump and sibling seats', () => {
-      expect(getInverseSeat('jump')).toBe('jump')
-      expect(getInverseSeat('sibling')).toBe('sibling')
+    it('preserves jump and sibling relations', () => {
+      expect(getInverseRelation('jump')).toBe('jump')
+      expect(getInverseRelation('sibling')).toBe('sibling')
     })
   })
 
@@ -53,7 +53,7 @@ describe('linkInspector helper module', () => {
       expect(resolveSingleDirection(undefined, 'jump', true, 'A.md', 'B.md')).toBe('undirected')
     })
 
-    it('defaults hierarchical seats to undirected when unsaved', () => {
+    it('defaults hierarchical relations to undirected when unsaved', () => {
       expect(resolveSingleDirection(undefined, 'parent', true, 'A.md', 'B.md')).toBe('undirected')
       expect(resolveSingleDirection(undefined, 'parent', false, 'A.md', 'B.md')).toBe('undirected')
       expect(resolveSingleDirection(undefined, 'child', true, 'A.md', 'B.md')).toBe('undirected')
@@ -66,7 +66,7 @@ describe('linkInspector helper module', () => {
       const rows = createMutualInspectorLinks(
         'A.md',
         'B.md',
-        { seat: 'child', directLabel: 'desc A->B', reverseLabel: 'desc B->A' },
+        { relation: 'child', directLabel: 'desc A->B', reverseLabel: 'desc B->A' },
         true,
         descriptions,
       )
@@ -95,7 +95,7 @@ describe('linkInspector helper module', () => {
       const rows = createMutualInspectorLinks(
         'A.md',
         'B.md',
-        { seat: 'parent', directLabel: 'desc B->A', reverseLabel: 'desc A->B' },
+        { relation: 'parent', directLabel: 'desc B->A', reverseLabel: 'desc A->B' },
         false,
         descriptions,
       )
@@ -113,7 +113,7 @@ describe('linkInspector helper module', () => {
       const rows = createMutualInspectorLinks(
         'A.md',
         'B.md',
-        { seat: 'jump', directLabel: 'initial', reverseLabel: 'initial' },
+        { relation: 'jump', directLabel: 'initial', reverseLabel: 'initial' },
         true,
         descriptions,
       )
@@ -127,7 +127,7 @@ describe('linkInspector helper module', () => {
       const rows = createMutualInspectorLinks(
         'A.md',
         'B.md',
-        { seat: 'jump', label: 'fallback label' },
+        { relation: 'jump', label: 'fallback label' },
         true,
         descriptions,
       )
@@ -136,8 +136,8 @@ describe('linkInspector helper module', () => {
       expect(rows[1]?.description).toBe('')
     })
 
-    it('makes undescribed jumps both ways of a relationship that names no seat', () => {
-      const rows = createMutualInspectorLinks('A.md', 'B.md', { seat: '' }, true, new Map())
+    it('makes undescribed jumps both ways of a relationship that names no relation', () => {
+      const rows = createMutualInspectorLinks('A.md', 'B.md', { relation: '' }, true, new Map())
 
       expect(rows.map((one) => [one.role, one.description])).toStrictEqual([
         ['jump', ''],
@@ -153,7 +153,7 @@ describe('linkInspector helper module', () => {
       const rows = createSingleInspectorLink(
         'A.md',
         'B.md',
-        { seat: 'child', directLabel: 'child link' },
+        { relation: 'child', directLabel: 'child link' },
         true,
         directions,
         descriptions,
@@ -176,7 +176,7 @@ describe('linkInspector helper module', () => {
       const rows = createSingleInspectorLink(
         'A.md',
         'B.md',
-        { seat: 'child', directLabel: 'reverse child' },
+        { relation: 'child', directLabel: 'reverse child' },
         true,
         directions,
         descriptions,
@@ -216,7 +216,7 @@ describe('linkInspector helper module', () => {
       const rows = createSingleInspectorLink(
         'B.md',
         'A.md',
-        { seat: 'child' },
+        { relation: 'child' },
         true,
         directions,
         new Map(),
@@ -234,7 +234,7 @@ describe('linkInspector helper module', () => {
       const rows = createSingleInspectorLink(
         'A.md',
         'B.md',
-        { seat: 'child', directLabel: 'label' },
+        { relation: 'child', directLabel: 'label' },
         true,
         directions,
         descriptions,

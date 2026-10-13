@@ -26,7 +26,7 @@ import { ring } from '../lib/arrange/ring'
 import type { PlexEdge } from '../lib/edge'
 import type { PlexNeighbourhood } from '../lib/neighbourhood'
 import type { PlexNode, Position } from '../lib/node'
-import type { PlexRelatedSeat } from '../lib/seat'
+import type { PlexRelation } from '../lib/relation'
 import type { PlexDestination } from '../model/showing'
 import type { Clock } from '../model/transition'
 import type { MenuTrigger } from '@/shared/ui/menu'
@@ -39,9 +39,9 @@ interface Knobs {
   dwell: number
   onActivate: (id: string) => void
   onShow: (id: string, showing: PlexDestination) => void
-  onCreate: (from: string, seat: PlexRelatedSeat) => void
-  onLink: (from: string, to: string, seat: PlexRelatedSeat) => void
-  onBring: (dragged: readonly string[], seat: PlexRelatedSeat) => void
+  onCreate: (from: string, relation: PlexRelation) => void
+  onLink: (from: string, to: string, relation: PlexRelation) => void
+  onBring: (dragged: readonly string[], relation: PlexRelation) => void
   onMenu: (id: string, at: Position, trigger: MenuTrigger) => void
   onDismiss: () => void
   headings: (id: string) => readonly PlexHeading[]
@@ -69,7 +69,7 @@ interface Knobs {
   arriveAfter: number
   leaveBefore: number
 
-  /** Playground only: how many of each seat to invent. */
+  /** Playground only: how many of each relation to invent. */
   parents: number
   children: number
   jumps: number
@@ -91,7 +91,7 @@ interface Knobs {
   dragged: readonly string[]
 
   /** What the shape under the pointer says while something is dragged in. */
-  dropName: (seat: PlexRelatedSeat) => string
+  dropName: (relation: PlexRelation) => string
 
   /** Component props the panel has no business showing. */
   options?: PlexOptionsInput
@@ -161,7 +161,7 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
       const base = focus.value
         ? buildAround(focus.value, cameFrom.value, createCounts(args))
         : start(args)
-      const here = focus.value?.id ?? base.nodes.find((n) => n.seat === 'focus')?.id
+      const here = focus.value?.id ?? base.nodes.find((n) => n.relation === 'focus')?.id
       const mine = made.value.filter((node) =>
         links.value.some(
           (edge) =>
@@ -178,48 +178,48 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
     const onActivate = (id: string) => {
       const chosen = neighbourhood.value.nodes.find((node) => node.id === id)
       if (!chosen) return
-      const was = neighbourhood.value.nodes.find((node) => node.seat === 'focus')
+      const was = neighbourhood.value.nodes.find((node) => node.relation === 'focus')
       cameFrom.value = was ? { id: was.id, title: was.title } : null
       focus.value = { id: chosen.id, title: chosen.title }
     }
 
-    /** A node seated beside another one, linked the way that seat is written. */
-    const createSeated = (from: string, title: string, seat: PlexRelatedSeat) => {
+    /** A node related beside another one, linked the way that relation is written. */
+    const createRelated = (from: string, title: string, relation: PlexRelation) => {
       const id = `made/${made.value.length}`
-      made.value = [...made.value, { id, title, seat }]
+      made.value = [...made.value, { id, title, relation }]
       links.value = [
         ...links.value,
-        seat === 'parent' || seat === 'jump'
-          ? { from: id, to: from, label: seat === 'jump' ? 'see also' : 'is a' }
+        relation === 'parent' || relation === 'jump'
+          ? { from: id, to: from, label: relation === 'jump' ? 'see also' : 'is a' }
           : { from, to: id, label: 'contains' },
       ]
     }
 
     /**
-     * A new node arrives finished: seated, linked and already called
+     * A new node arrives finished: related, linked and already called
      * something. The gesture ends where the hand let go, and what the node is
      * really to be called is a later idea and somebody else's screen.
      */
-    const create = (from: string, seat: PlexRelatedSeat) => {
-      createSeated(from, args.naming(), seat)
+    const create = (from: string, relation: PlexRelation) => {
+      createRelated(from, args.naming(), relation)
     }
 
     /**
-     * What was dragged in from outside, each seated beside the focus in the
-     * one seat and called by the identifier it was dragged in as. What those
+     * What was dragged in from outside, each related beside the focus in the
+     * one relation and called by the identifier it was dragged in as. What those
      * identifiers address is the story's to know, and the plex handed them
      * back untouched.
      */
-    const dropOnto = (ids: readonly string[], seat: PlexRelatedSeat) => {
-      const here = neighbourhood.value.nodes.find((node) => node.seat === 'focus')
+    const dropOnto = (ids: readonly string[], relation: PlexRelation) => {
+      const here = neighbourhood.value.nodes.find((node) => node.relation === 'focus')
       if (!here) return
-      for (const one of ids) createSeated(here.id, one, seat)
+      for (const one of ids) createRelated(here.id, one, relation)
     }
 
-    const link = (from: string, to: string, seat: PlexRelatedSeat) => {
+    const link = (from: string, to: string, relation: PlexRelation) => {
       links.value = [
         ...links.value,
-        seat === 'parent' || seat === 'jump' ? { from: to, to: from } : { from, to },
+        relation === 'parent' || relation === 'jump' ? { from: to, to: from } : { from, to },
       ]
     }
 
@@ -248,9 +248,9 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
         @enter="(id, heading) => args.onEnter(id, heading)"
         @activate="onActivate($event); args.onActivate($event)"
         @show="(id, showing) => args.onShow(id, showing)"
-        @create="(from, seat) => { create(from, seat); args.onCreate(from, seat) }"
-        @link="(from, to, seat) => { link(from, to, seat); args.onLink(from, to, seat) }"
-        @bring="(dragged, seat) => { dropOnto(dragged, seat); args.onBring(dragged, seat) }"
+        @create="(from, relation) => { create(from, relation); args.onCreate(from, relation) }"
+        @link="(from, to, relation) => { link(from, to, relation); args.onLink(from, to, relation) }"
+        @bring="(dragged, relation) => { dropOnto(dragged, relation); args.onBring(dragged, relation) }"
         @menu="args.onMenu"
         @dismiss="args.onDismiss"
       />
@@ -300,7 +300,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'One node in focus, everything else placed by its seat: parents ' +
+          'One node in focus, everything else placed by its relation: parents ' +
           'above, children below, jumps to the left, siblings to the right. ' +
           'It takes a neighbourhood and emits an identifier when a node is ' +
           'chosen — it does not fetch anything and does not know what an ' +
@@ -392,7 +392,7 @@ const meta = {
     onEnter: fn(),
     naming: nameNow,
     dragged: [],
-    dropName: (seat: PlexRelatedSeat) => `as ${seat}`,
+    dropName: (relation: PlexRelation) => `as ${relation}`,
 
     focusWidth: 176,
     focusHeight: 44,
@@ -500,7 +500,7 @@ export const MakingOne: Story = {
     // so to the node it was captured from.
     await expect(canvasElement.querySelector('.plex__handle')).toBeNull()
 
-    // The story answers by seating the node, already called what its own
+    // The story answers by relating the node, already called what its own
     // naming said to call it. Nothing is asked for and nothing is typed.
     await waitFor(async () => {
       await expect(canvas.getByLabelText('Reached for, parent')).toBeInTheDocument()
@@ -512,8 +512,8 @@ export const MakingOne: Story = {
  * Something dragged over the picture from outside it.
  *
  * The gesture starts where the plex cannot see it, so all the plex is handed
- * is a list of identifiers and all it answers is a seat, measured from the
- * focus. Several are one line and one seat, and whoever is dragging them says
+ * is a list of identifiers and all it answers is a relation, measured from the
+ * focus. Several are one line and one relation, and whoever is dragging them says
  * how many, at the pointer, in its own words.
  *
  * The line and the words are drawn while the pointer travels, so what letting
@@ -729,12 +729,12 @@ export const Overcrowded: Story = {
  */
 const titledLines: PlexNeighbourhood = {
   nodes: [
-    { id: 'focus', title: 'The meeting', seat: 'focus' },
-    { id: 'parent', title: 'Minutes', seat: 'parent' },
-    { id: 'earlier', title: 'The morning', seat: 'jump' },
-    { id: 'across', title: 'Elsewhere', seat: 'jump' },
-    { id: 'later', title: 'The evening', seat: 'jump' },
-    { id: 'sibling', title: 'The hedge', seat: 'sibling' },
+    { id: 'focus', title: 'The meeting', relation: 'focus' },
+    { id: 'parent', title: 'Minutes', relation: 'parent' },
+    { id: 'earlier', title: 'The morning', relation: 'jump' },
+    { id: 'across', title: 'Elsewhere', relation: 'jump' },
+    { id: 'later', title: 'The evening', relation: 'jump' },
+    { id: 'sibling', title: 'The hedge', relation: 'sibling' },
   ],
   edges: [
     { from: 'parent', to: 'focus', label: 'is a' },
@@ -965,11 +965,11 @@ export const TitlesAcrossRows: Story = {
  */
 const arrowedLines: PlexNeighbourhood = {
   nodes: [
-    { id: 'alice', title: 'Alice Fenn, The Chair', seat: 'focus' },
-    { id: 'allotments', title: 'Marrowfield allotments', seat: 'parent' },
-    { id: 'bram', title: 'Bram Doyle', seat: 'jump' },
-    { id: 'cora', title: 'Cora Hale', seat: 'jump' },
-    { id: 'rota', title: 'The question of the rota', seat: 'sibling' },
+    { id: 'alice', title: 'Alice Fenn, The Chair', relation: 'focus' },
+    { id: 'allotments', title: 'Marrowfield allotments', relation: 'parent' },
+    { id: 'bram', title: 'Bram Doyle', relation: 'jump' },
+    { id: 'cora', title: 'Cora Hale', relation: 'jump' },
+    { id: 'rota', title: 'The question of the rota', relation: 'sibling' },
   ],
   edges: [
     { from: 'allotments', to: 'alice', arrow: 'from' },
@@ -1204,7 +1204,7 @@ export const Walk: Story = {
     await userEvent.tab()
     await expect(canvas.getByLabelText('Hexagonal architecture, focus')).toHaveFocus()
 
-    // Past the handle the node under the keyboard now offers, onto the seat
+    // Past the handle the node under the keyboard now offers, onto the relation
     // above it.
     await userEvent.tab()
     await userEvent.tab()
@@ -1220,7 +1220,7 @@ export const Walk: Story = {
     await userEvent.click(canvas.getByLabelText('Hexagonal architecture, child'))
     await waitForNode('Hexagonal architecture, focus')
 
-    // The node walked away from took the seat above, and the plex is a plex
+    // The node walked away from took the relation above, and the plex is a plex
     // again.
     await expect(canvas.getByLabelText('Architecture, parent')).toBeInTheDocument()
   },
@@ -1264,7 +1264,7 @@ const INSIDE: Record<string, readonly PlexHeading[]> = {
     { id: '6', text: '日本語の見出し', level: 2 },
     { id: '11', text: 'مدخل بالعربية', level: 2 },
   ],
-  // The one node there is exactly one of, so the play can find it by its seat.
+  // The one node there is exactly one of, so the play can find it by its relation.
   'focus/jump-0': Array.from({ length: 30 }, (_, at) => ({
     id: `${at}`,
     text: `Section ${at + 1}`,

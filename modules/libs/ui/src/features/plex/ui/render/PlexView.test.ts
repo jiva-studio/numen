@@ -9,9 +9,9 @@ import type { PlacedNode } from '../../lib/node'
 
 const before: PlexNeighbourhood = {
   nodes: [
-    { id: 'focus', title: 'Start', seat: 'focus' },
-    { id: 'staying', title: 'Staying', seat: 'child' },
-    { id: 'going', title: 'Going', seat: 'child' },
+    { id: 'focus', title: 'Start', relation: 'focus' },
+    { id: 'staying', title: 'Staying', relation: 'child' },
+    { id: 'going', title: 'Going', relation: 'child' },
   ],
   edges: [
     { from: 'focus', to: 'staying' },
@@ -21,9 +21,9 @@ const before: PlexNeighbourhood = {
 
 const after: PlexNeighbourhood = {
   nodes: [
-    { id: 'staying', title: 'Staying', seat: 'focus' },
-    { id: 'focus', title: 'Start', seat: 'parent' },
-    { id: 'arriving', title: 'Arriving', seat: 'child' },
+    { id: 'staying', title: 'Staying', relation: 'focus' },
+    { id: 'focus', title: 'Start', relation: 'parent' },
+    { id: 'arriving', title: 'Arriving', relation: 'child' },
   ],
   edges: [
     { from: 'focus', to: 'staying' },
@@ -34,9 +34,9 @@ const after: PlexNeighbourhood = {
 /** One title down the page and one across it, the second longer than its gap. */
 const titled: PlexNeighbourhood = {
   nodes: [
-    { id: 'focus', title: 'Start', seat: 'focus' },
-    { id: 'below', title: 'Below', seat: 'child' },
-    { id: 'aside', title: 'Aside', seat: 'jump' },
+    { id: 'focus', title: 'Start', relation: 'focus' },
+    { id: 'below', title: 'Below', relation: 'child' },
+    { id: 'aside', title: 'Aside', relation: 'jump' },
   ],
   edges: [
     { from: 'focus', to: 'below', label: 'holds' },
@@ -96,17 +96,17 @@ describe('what each node is to a gesture', () => {
     const view = mountDuring({
       gestureFrom: 'focus',
       gestureAt: { x: 0, y: 200 },
-      gestureOutcome: { kind: 'link', from: 'focus', to: 'going', seat: 'child' },
+      gestureOutcome: { kind: 'link', from: 'focus', to: 'going', relation: 'child' },
     })
     expect(view.findAll('.plex__node--target')).toHaveLength(1)
     expect(view.get('[aria-label^="Going"]').classes()).toContain('plex__node--target')
   })
 
-  it('draws the node it would make where the pointer is, saying which seat', () => {
+  it('draws the node it would make where the pointer is, saying which relation', () => {
     const view = mountDuring({
       gestureFrom: 'focus',
       gestureAt: { x: 40, y: -200 },
-      gestureOutcome: { kind: 'create', from: 'focus', seat: 'parent' },
+      gestureOutcome: { kind: 'create', from: 'focus', relation: 'parent' },
     })
     const ghost = view.get('.plex__node--ghost')
     expect(ghost.attributes('transform')).toBe('translate(40 -200)')
@@ -138,11 +138,11 @@ describe('the window onto the drawing', () => {
     const crowded = getBox(
       arrangePlex({
         nodes: [
-          { id: 'focus', title: 'Start', seat: 'focus' },
+          { id: 'focus', title: 'Start', relation: 'focus' },
           ...Array.from({ length: 40 }, (_, i) => ({
             id: `c${i}`,
             title: `Child ${i}`,
-            seat: 'child' as const,
+            relation: 'child' as const,
           })),
         ],
         edges: [],
@@ -157,7 +157,7 @@ describe('the window onto the drawing', () => {
     const view = mount(PlexView, {
       props: { frame, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
     })
-    const focus = frame.nodes.find((n) => n.seat === 'focus')!
+    const focus = frame.nodes.find((n) => n.relation === 'focus')!
     const rect = view.get('[aria-label^="Start"] rect')
     expect(Number(rect.attributes('width'))).toBe(focus.width)
     expect(Number(rect.attributes('height'))).toBe(focus.height)
@@ -345,8 +345,8 @@ describe('the line under the hand', () => {
 describe('two lines between one pair', () => {
   const paired = arrangePlex({
     nodes: [
-      { id: 'focus', title: 'Start', seat: 'focus' },
-      { id: 'aside', title: 'Aside', seat: 'jump' },
+      { id: 'focus', title: 'Start', relation: 'focus' },
+      { id: 'aside', title: 'Aside', relation: 'jump' },
     ],
     edges: [
       { from: 'focus', to: 'aside', label: 'out' },
@@ -464,10 +464,10 @@ describe('the box the attention has settled on', () => {
 describe('the arrow on a line', () => {
   const named: PlexNeighbourhood = {
     nodes: [
-      { id: 'focus', title: 'Start', seat: 'focus' },
-      { id: 'below', title: 'Below', seat: 'child' },
-      { id: 'above', title: 'Above', seat: 'parent' },
-      { id: 'aside', title: 'Aside', seat: 'jump' },
+      { id: 'focus', title: 'Start', relation: 'focus' },
+      { id: 'below', title: 'Below', relation: 'child' },
+      { id: 'above', title: 'Above', relation: 'parent' },
+      { id: 'aside', title: 'Aside', relation: 'jump' },
     ],
     edges: [
       { from: 'focus', to: 'below', label: 'holds', arrow: 'to' },

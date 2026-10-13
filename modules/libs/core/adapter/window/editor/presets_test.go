@@ -287,7 +287,7 @@ func TestACurveComesBackWithItsTwoPlaces(t *testing.T) {
 	}
 	for _, place := range []struct {
 		what string
-		at   *v1.Place
+		at   *v1.CurvePoint
 	}{
 		{"where the preset stands", curve.GetNow()},
 		{"what is suggested", curve.GetSuggested()},

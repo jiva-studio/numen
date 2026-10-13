@@ -20,7 +20,7 @@ export interface NoteEdit {
 }
 
 /** Where a note joined to the note in focus sits around it. */
-export type Seat = 'parent' | 'child' | 'jump' | 'sibling'
+export type NoteRelation = 'parent' | 'child' | 'jump' | 'sibling'
 
 /** The note a neighbourhood is drawn around. */
 export interface Focus {
@@ -35,7 +35,7 @@ export interface Neighbour {
   readonly title: string
   /** Which of four it is. */
   readonly type: NoteType
-  readonly seat: Seat
+  readonly relation: NoteRelation
   /** What the person wrote on the link, and nothing where they wrote nothing. */
   readonly label: string
   /** What the other note wrote on its link back, when isMutual is true. */
@@ -48,7 +48,7 @@ export interface Neighbour {
 
 /**
  * A neighbourhood of a note, as the vault answers one: the note in focus, and
- * the notes joined to it. A note the window has no seat for is not one of them.
+ * the notes joined to it. A note the window has no relation for is not one of them.
  */
 export interface Neighbourhood {
   readonly focus: Focus

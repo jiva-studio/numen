@@ -35,12 +35,12 @@
   --numen-accent: light-dark(#b45f16, #e9a23b);
   --numen-accent-ink: light-dark(#faf4e8, #2a1d0c);
 
-  /* One hue per seat, carrying the meaning the position already carries: the
+  /* One hue per relation, carrying the meaning the position already carries: the
      arrangement is what a reader learns, the colour is what they use first. */
-  --numen-seat-parent: light-dark(#2f6a94, #7ab4d8);
-  --numen-seat-child: light-dark(#5a7a2e, #a6c46b);
-  --numen-seat-jump: light-dark(#b5522f, #e8836b);
-  --numen-seat-sibling: light-dark(#8a5a86, #c99bd4);
+  --numen-relation-parent: light-dark(#2f6a94, #7ab4d8);
+  --numen-relation-child: light-dark(#5a7a2e, #a6c46b);
+  --numen-relation-jump: light-dark(#b5522f, #e8836b);
+  --numen-relation-sibling: light-dark(#8a5a86, #c99bd4);
 
   --numen-edge: light-dark(#d8ccb8, #423a31);
 

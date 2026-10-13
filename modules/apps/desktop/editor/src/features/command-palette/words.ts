@@ -216,7 +216,7 @@ export interface Words extends EmptyWords {
   /** The note the vault could not find, offered as one to make. */
   readonly creating: string
   readonly creates: string
-  /** The seats it can be made in, off the note in front. */
+  /** The relations it can be made in, off the note in front. */
   readonly asChild: string
   readonly asParent: string
   readonly asJump: string

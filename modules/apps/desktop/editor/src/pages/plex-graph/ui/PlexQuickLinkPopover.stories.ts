@@ -11,7 +11,7 @@ const meta = {
   title: 'Plex/Quick Link Popover',
   component: PlexQuickLinkPopover,
   parameters: { layout: 'fullscreen' },
-  args: { at: { x: 300.4, y: 200.6 }, seat: 'child', search: async () => [] },
+  args: { at: { x: 300.4, y: 200.6 }, relation: 'child', search: async () => [] },
 } satisfies Meta<typeof PlexQuickLinkPopover>
 
 export default meta

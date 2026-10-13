@@ -196,8 +196,8 @@ func ConvertBudgetToWire(name review.BudgetName) v1.BudgetName {
 	return v1.BudgetName_BUDGET_NAME_UNSPECIFIED
 }
 
-func convertCurvePoint(p review.CurvePoint) *v1.Place {
-	return &v1.Place{At: int32(p.Index), Value: p.Value, Day: p.Day}
+func convertCurvePoint(p review.CurvePoint) *v1.CurvePoint {
+	return &v1.CurvePoint{At: int32(p.Index), Value: p.Value, Day: p.Day}
 }
 
 // ConvertGoalToWire is which value the control steers, as the schema names it.

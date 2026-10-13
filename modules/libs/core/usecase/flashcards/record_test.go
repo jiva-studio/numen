@@ -37,6 +37,19 @@ func TestAnAnswerSaysWhichCardAndThroughWhichFace(t *testing.T) {
 	}
 }
 
+// A Record built with no clock refuses an answer and does not panic.
+func TestARecordWithNoClockRefusesAnAnswer(t *testing.T) {
+	t.Parallel()
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+
+	if _, err := (flashcards.Record{}).Answer(t.Context(), nil, on, review.Good, 0); err == nil {
+		t.Error("an answer stamped by no clock was written")
+	}
+	if _, err := (flashcards.Record{}).TakeBack(t.Context(), nil, "a"); err == nil {
+		t.Error("a taking back stamped by no clock was written")
+	}
+}
+
 // Taking back an answer names the one it takes back. Nothing here guesses which
 // of a session's answers a person meant.
 func TestTakingBackNamesTheAnswerItTakesBack(t *testing.T) {
@@ -60,7 +73,7 @@ func TestARunIsKnownByTheFileItWrites(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	record := flashcards.NewRecord(run, func() time.Time { return now })
+	record := newSitting(run, func() time.Time { return now })
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}

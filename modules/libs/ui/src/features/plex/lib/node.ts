@@ -1,17 +1,17 @@
-import type { PlexSeat } from './seat'
+import type { PlexNodeRelation } from './relation'
 import type { Position, Size } from '@/shared/lib/geometry'
 
 export type { Position }
 
 /**
  * A node as the caller describes it. The id is opaque: the plex has no way to
- * ask what it addresses, and the seat is a position in the picture rather than
+ * ask what it addresses, and the relation is a position in the picture rather than
  * a claim about a graph.
  */
 export interface PlexNode {
   readonly id: string
   readonly title: string
-  readonly seat: PlexSeat
+  readonly relation: PlexNodeRelation
 }
 
 /** A node placed on the canvas, in the plex's own coordinates. */
@@ -20,7 +20,7 @@ export interface PlacedNode extends PlexNode {
   readonly y: number
   readonly width: number
   readonly height: number
-  /** Rank within the node's own seat, outward from the focus. */
+  /** Rank within the node's own relation, outward from the focus. */
   readonly order: number
   /** Always 1 except partway through a movement. */
   readonly opacity: number
@@ -29,18 +29,18 @@ export interface PlacedNode extends PlexNode {
 /**
  * The shape of a node that is not one yet, drawn where letting go would leave
  * it. A box like any other: it is only that it has no title of its own, and
- * says the seat it would take instead.
+ * says the relation it would take instead.
  */
 export const ghostNode = (
   id: string,
   title: string,
-  seat: PlexSeat,
+  relation: PlexNodeRelation,
   at: Position,
   size: Size,
 ): PlacedNode => ({
   id,
   title,
-  seat,
+  relation,
   x: at.x,
   y: at.y,
   width: size.width,
@@ -56,7 +56,8 @@ export const ghostNode = (
  * A node that is not fully there is on its way in or out, and choosing it
  * would pick something the reader never saw.
  */
-export const isReachable = (node: PlacedNode): boolean => node.seat !== 'focus' && node.opacity >= 1
+export const isReachable = (node: PlacedNode): boolean =>
+  node.relation !== 'focus' && node.opacity >= 1
 
 /**
  * Whether the keyboard stops on a node.
@@ -82,7 +83,7 @@ export type GestureRole = 'open' | 'closed' | 'source' | 'target' | 'ghost'
 
 /** A title may be empty; an accessible name may not. */
 export const createAriaLabel = (node: PlexNode): string =>
-  `${node.title || 'Untitled'}, ${node.seat}`
+  `${node.title || 'Untitled'}, ${node.relation}`
 
 /**
  * Where the handle sits within a node: on its trailing edge, halfway down.

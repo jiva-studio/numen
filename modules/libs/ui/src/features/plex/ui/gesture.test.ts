@@ -10,10 +10,10 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import Plex from './Plex.vue'
 import { build } from '../fixtures/build'
-import type { PlexRelatedSeat } from '../lib/seat'
+import type { PlexRelation } from '../lib/relation'
 
 const NEIGHBOURHOOD = build('A node', { parent: 1, child: 2, jump: 1 })
-const A_CHILD = NEIGHBOURHOOD.nodes.find((n) => n.seat === 'child')!.title
+const A_CHILD = NEIGHBOURHOOD.nodes.find((n) => n.relation === 'child')!.title
 
 /**
  * One plex unit to the pixel, origin in the middle, as the browser draws it.
@@ -88,7 +88,7 @@ describe('the handle', () => {
     expect(plex.emitted('activate')).toHaveLength(1)
   })
 
-  it('is not offered when the caller allows no seat at all', async () => {
+  it('is not offered when the caller allows no relation at all', async () => {
     const { plex } = mountPlex({ creatable: [] })
     await plex.get('[aria-label^="A node"]').trigger('pointerenter')
     expect(plex.find('.plex__handle').exists()).toBe(false)
@@ -96,7 +96,7 @@ describe('the handle', () => {
 })
 
 describe('letting go', () => {
-  it('asks for a node in the seat the gesture went towards', async () => {
+  it('asks for a node in the relation the gesture went towards', async () => {
     const { plex, svg } = mountPlex()
     await takeHold(plex, 'A node')
 
@@ -139,9 +139,9 @@ describe('letting go', () => {
     expect(plex.emitted('create')).toStrictEqual([['focus', 'child']])
   })
 
-  it('asks for the first seat there is when a child is not one of them', async () => {
+  it('asks for the first relation there is when a child is not one of them', async () => {
     // A click has no direction to read, so it falls back on what the caller
-    // does allow rather than inventing a seat they ruled out.
+    // does allow rather than inventing a relation they ruled out.
     const { plex, svg } = mountPlex({ creatable: ['jump', 'parent'] })
     await takeHold(plex, 'A node')
 
@@ -151,7 +151,7 @@ describe('letting go', () => {
     expect(plex.emitted('create')).toStrictEqual([['focus', 'jump']])
   })
 
-  it('asks for nothing towards a seat the caller left out', async () => {
+  it('asks for nothing towards a relation the caller left out', async () => {
     const { plex, svg } = mountPlex()
     await takeHold(plex, 'A node')
 
@@ -208,7 +208,7 @@ describe('while a gesture is under way', () => {
     expect(plex.find('.plex__thread').exists()).toBe(false)
   })
 
-  it('shows where a new node would go, and says which seat', async () => {
+  it('shows where a new node would go, and says which relation', async () => {
     const { plex, svg } = mountPlex()
     await takeHold(plex, 'A node')
 
@@ -220,10 +220,10 @@ describe('while a gesture is under way', () => {
   })
 
   it('says it in the words it was given, not in its own', async () => {
-    // The one seat the plex has to write into the picture, and the words for
+    // The one relation the plex has to write into the picture, and the words for
     // it are the caller's, as they are for the overflow line.
     const { plex, svg } = mountPlex({
-      seatName: (seat: PlexRelatedSeat) => `→ ${seat.toUpperCase()}`,
+      relationName: (relation: PlexRelation) => `→ ${relation.toUpperCase()}`,
     })
     await takeHold(plex, 'A node')
 

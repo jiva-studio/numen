@@ -14,10 +14,10 @@ import (
 // The window asks the hour a day of review begins at, and sets it from the
 // settings screen.
 
-// dayStarts is the hour the settings hold, read off the settings whole.
-func dayStarts(t *testing.T, f *going) string {
+// dayStartTime is the hour the settings hold, read off the settings whole.
+func dayStartTime(t *testing.T, f *going) string {
 	t.Helper()
-	held, is := getSetting(t, f, "review", "day_starts").(string)
+	held, is := getSetting(t, f, "review", "day_start_time").(string)
 	if !is {
 		t.Fatalf("the hour is not written as an hour")
 	}
@@ -28,7 +28,7 @@ func dayStarts(t *testing.T, f *going) string {
 func begins(t *testing.T, f *going, hour string) error {
 	t.Helper()
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
-		Settings: []*v1.Setting{{At: []string{"review", "day_starts"}, Value: `"` + hour + `"`}},
+		Settings: []*v1.Setting{{At: []string{"review", "day_start_time"}, Value: `"` + hour + `"`}},
 	}))
 	return err
 }
@@ -38,7 +38,7 @@ func begins(t *testing.T, f *going, hour string) error {
 func TestTheHourADayBeginsAtIsAnsweredByTheNextQuestion(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
-	if said := dayStarts(t, f); said != "04:00" {
+	if said := dayStartTime(t, f); said != "04:00" {
 		t.Fatalf("an installation nobody has configured begins the day at %q", said)
 	}
 
@@ -46,7 +46,7 @@ func TestTheHourADayBeginsAtIsAnsweredByTheNextQuestion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if said := dayStarts(t, f); said != "05:30" {
+	if said := dayStartTime(t, f); said != "05:30" {
 		t.Errorf("the day begins at %q", said)
 	}
 }
@@ -62,7 +62,7 @@ func TestAnHourADayOfReviewCannotBeginAtIsNotWritten(t *testing.T) {
 		}
 	}
 
-	if said := dayStarts(t, f); said != "04:00" {
+	if said := dayStartTime(t, f); said != "04:00" {
 		t.Errorf("the day begins at %q", said)
 	}
 }
@@ -87,7 +87,7 @@ func TestSettingTheHourLeavesTheRestOfTheFileAlone(t *testing.T) {
 	if !strings.Contains(string(raw), `"text_scale": 1.5`) {
 		t.Errorf("the file was rewritten\n%s", raw)
 	}
-	if !strings.Contains(string(raw), `"day_starts": "06:00"`) {
+	if !strings.Contains(string(raw), `"day_start_time": "06:00"`) {
 		t.Errorf("the hour was not written\n%s", raw)
 	}
 }

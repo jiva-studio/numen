@@ -8,11 +8,11 @@
 import { getExtent, type PlexFrame } from '../frame'
 import { assertNeighbourhood, type PlexNeighbourhood } from '../neighbourhood'
 import type { PlacedNode, PlexNode } from '../node'
-import { RELATED_SEATS, type PlexRelatedSeat } from '../seat'
+import { RELATION_NAMES, type PlexRelation } from '../relation'
 import { measureCrowding } from './crowding'
 import { getLimits, type Limits } from './limits'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput, type Size } from './options'
-import { rowsAndColumns, type Placement, type Seating, type Widths } from './placement'
+import { rowsAndColumns, type Placement, type NodesByRelation, type Widths } from './placement'
 import { routeEdges, createRouting } from './routing'
 import { findSpacing, type Spacing } from './spacing'
 import { separateTitles } from './titles'
@@ -46,10 +46,10 @@ export function arrangePlex(
 ): PlexFrame {
   const asked = resolveOptions(options)
   const focusNode = assertNeighbourhood(neighbourhood)
-  const counts = countSeats(neighbourhood.nodes)
+  const counts = countRelations(neighbourhood.nodes)
 
   // Packed as closely as this window needs and no closer, so a box narrows
-  // and a gap closes before a seat is given up.
+  // and a gap closes before a relation is given up.
   const resolved = measureCrowding(asked, counts)
   const getWidth = createWidthLookup(resolved, measure)
 
@@ -65,13 +65,13 @@ export function arrangePlex(
 
   const limits = getLimits(resolved, counts)
 
-  const { seating, overflow } = canPlace(neighbourhood.nodes, limits)
+  const { nodesByRelation, overflow } = canPlace(neighbourhood.nodes, limits)
 
   // How much is admitted is settled at that packing, and the gaps then open
   // into the room that is left. The opening is measured against the
   // arrangement itself, so a placement of any shape keeps the window.
   const lay = (spacing: Spacing) =>
-    placement.place(seating, focus, { ...resolved, ...spacing }, limits, getWidth)
+    placement.place(nodesByRelation, focus, { ...resolved, ...spacing }, limits, getWidth)
   const spacing = findSpacing(resolved, (candidate, viewport) =>
     isInsideViewport(lay(candidate), viewport, resolved.margin),
   )
@@ -87,7 +87,7 @@ export function arrangePlex(
 
 /**
  * How wide each box is drawn: what the measurer asks for, held between the
- * minimum and the widest the node's seat allows. The focus is measured as
+ * minimum and the widest the node's relation allows. The focus is measured as
  * every other node is, against its own width.
  */
 function createWidthLookup(
@@ -95,7 +95,7 @@ function createWidthLookup(
   measure: ((node: PlexNode) => number) | undefined,
 ): Widths {
   return (node) => {
-    const widest = node.seat === 'focus' ? options.focusSize.width : options.nodeSize.width
+    const widest = node.relation === 'focus' ? options.focusSize.width : options.nodeSize.width
     if (!measure) return widest
     return Math.min(widest, Math.max(options.minWidth, measure(node)))
   }
@@ -112,32 +112,35 @@ function isInsideViewport(nodes: readonly PlacedNode[], viewport: Size, margin: 
   )
 }
 
-function countSeats(nodes: readonly PlexNode[]): Record<PlexRelatedSeat, number> {
+function countRelations(nodes: readonly PlexNode[]): Record<PlexRelation, number> {
   return Object.fromEntries(
-    RELATED_SEATS.map((seat) => [seat, nodes.filter((node) => node.seat === seat).length]),
-  ) as Record<PlexRelatedSeat, number>
+    RELATION_NAMES.map((relation) => [
+      relation,
+      nodes.filter((node) => node.relation === relation).length,
+    ]),
+  ) as Record<PlexRelation, number>
 }
 
 /**
- * How much of each seat the picture holds. Settled before a strategy is
+ * How much of each relation the picture holds. Settled before a strategy is
  * called, so the overflow count means the same thing whichever one draws it.
  */
 function canPlace(
   nodes: readonly PlexNode[],
   limits: Limits,
-): { seating: Seating; overflow: Partial<Record<PlexRelatedSeat, number>> } {
-  const seating: Partial<Record<PlexRelatedSeat, readonly PlexNode[]>> = {}
-  const overflow: Partial<Record<PlexRelatedSeat, number>> = {}
+): { nodesByRelation: NodesByRelation; overflow: Partial<Record<PlexRelation, number>> } {
+  const nodesByRelation: Partial<Record<PlexRelation, readonly PlexNode[]>> = {}
+  const overflow: Partial<Record<PlexRelation, number>> = {}
 
-  for (const seat of RELATED_SEATS) {
-    const ofSeat = nodes.filter((node) => node.seat === seat)
-    if (ofSeat.length === 0) continue
+  for (const relation of RELATION_NAMES) {
+    const ofRelation = nodes.filter((node) => node.relation === relation)
+    if (ofRelation.length === 0) continue
 
-    const capacity = limits[seat].perLine * limits[seat].lines
-    const shown = ofSeat.slice(0, capacity)
-    if (ofSeat.length > shown.length) overflow[seat] = ofSeat.length - shown.length
-    seating[seat] = shown
+    const capacity = limits[relation].perLine * limits[relation].lines
+    const shown = ofRelation.slice(0, capacity)
+    if (ofRelation.length > shown.length) overflow[relation] = ofRelation.length - shown.length
+    nodesByRelation[relation] = shown
   }
 
-  return { seating, overflow }
+  return { nodesByRelation, overflow }
 }

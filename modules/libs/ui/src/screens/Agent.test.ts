@@ -55,10 +55,10 @@ describe('a question sent', () => {
   it('is carried to whoever answers it', async () => {
     const one = createAgent([createAsked('1'), createAnswered('2')])
 
-    await one.sends('what is a seat')
+    await one.sends('what is a relation')
 
-    expect(one.handed()).toEqual(['what is a seat'])
-    expect(one.wrapper.emitted('submit')).toEqual([['what is a seat']])
+    expect(one.handed()).toEqual(['what is a relation'])
+    expect(one.wrapper.emitted('submit')).toEqual([['what is a relation']])
   })
 
   it('brings the foot of the conversation into view', async () => {

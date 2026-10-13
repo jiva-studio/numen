@@ -40,7 +40,7 @@ func TestAStencilGoesOutWithItsFacesAndProblems(t *testing.T) {
 			{Name: "One", Preamble: "p1", Front: "f1", Back: "b1"},
 			{Name: "Two", Preamble: "p2", Front: "f2", Back: "b2"},
 		},
-		Problems: []*v1.Problem{{Fault: v1.Fault_FAULT_STENCIL_WITHOUT_FIELDS, Face: ptr(1), Field: "Front", Text: "d"}},
+		Problems: []*v1.Problem{{Kind: v1.ProblemKind_PROBLEM_KIND_STENCIL_WITHOUT_FIELDS, Face: ptr(1), Field: "Front", Text: "d"}},
 	})
 }
 
@@ -75,8 +75,8 @@ func TestARenameGoesOutWithEveryDeckItCouldNotWrite(t *testing.T) {
 	requireEqual(t, got, &v1.RenameStencilFieldResponse{
 		Decks: []string{"a.md"}, Cards: 7, At: at,
 		NotWritten: []*v1.UnwrittenDeck{
-			{Path: "x.md", Problem: &v1.Problem{Fault: v1.Fault_FAULT_FIELD_DECLARED_TWICE}},
-			{Path: "y.md", Problem: &v1.Problem{Fault: v1.Fault_FAULT_STENCIL_WITHOUT_FIELDS, Card: ptr(2)}},
+			{Path: "x.md", Problem: &v1.Problem{Kind: v1.ProblemKind_PROBLEM_KIND_FIELD_DECLARED_TWICE}},
+			{Path: "y.md", Problem: &v1.Problem{Kind: v1.ProblemKind_PROBLEM_KIND_STENCIL_WITHOUT_FIELDS, Card: ptr(2)}},
 		},
 	})
 }

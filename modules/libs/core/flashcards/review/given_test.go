@@ -33,7 +33,7 @@ func makeJumbledHistory() []review.Answer {
 // putting in order for itself.
 func TestGivingAHistoryOnceAnswersWhatGivingItFourTimesAnswered(t *testing.T) {
 	answers := makeJumbledHistory()
-	day := review.Day{Starts: review.DayStarts, In: time.UTC}
+	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
 	by := review.NewFSRS()
 	named := day.GetName(answers[0].At)
 	under := map[review.CardFaceID]string{

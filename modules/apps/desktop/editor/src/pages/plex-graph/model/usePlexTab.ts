@@ -2,11 +2,11 @@
  * Tab state, window registration, and interactions for an open plex graph tab.
  */
 import { computed, ref, watch, type Ref } from 'vue'
-import type { PlexNeighbourhood, PlexRelatedSeat, PlexDestination } from '@numen/ui'
+import type { PlexNeighbourhood, PlexRelation, PlexDestination } from '@numen/ui'
 import type { NoteType } from '@/entities/file'
 import { getFileName, type PathRename } from '@/shared/paths'
 import { NEW_NOTE, OFFERED } from '../lib/menu'
-import { asPlex, typesIn } from '../lib/picture'
+import { convertNeighbourhood, getNoteTypes } from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import type { PlexView } from './usePlexView'
 import { WORDS as words } from '../words'
@@ -38,10 +38,10 @@ export type {
 import {
   createMutualInspectorLinks,
   createSingleInspectorLink,
-  getInverseSeat,
+  getInverseRelation,
 } from './linkInspector'
 
-export { getInverseSeat }
+export { getInverseRelation }
 
 export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const map = createNodeIdMap()
@@ -51,7 +51,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const picture = computed<PlexNeighbourhood | null>(() => {
     const around = view.neighbourhood.value
     if (!deps.isReady.value || !around) return null
-    return asPlex(around, map.getNodeId, linkDirections.value)
+    return convertNeighbourhood(around, map.getNodeId, linkDirections.value)
   })
 
   /**
@@ -91,10 +91,10 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
   const types = computed<ReadonlyMap<string, NoteType>>(() => {
     const around = view.neighbourhood.value
-    return around ? typesIn(around) : new Map()
+    return around ? getNoteTypes(around) : new Map()
   })
 
-  const typeOf = (node: string): NoteType => types.value.get(map.getNodePath(node)) ?? 'note'
+  const getType = (node: string): NoteType => types.value.get(map.getNodePath(node)) ?? 'note'
 
   const drawn = computed<readonly string[]>(() => {
     const around = view.neighbourhood.value
@@ -139,7 +139,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     if (!fromPath) return
 
     if (isExisting) {
-      const success = await deps.editor.join(fromPath, titleOrPath, active.seat)
+      const success = await deps.editor.join(fromPath, titleOrPath, active.relation)
       if (success) {
         if (isNavigatingOnCreate.value) {
           await view.go(titleOrPath)
@@ -150,7 +150,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     } else {
       const title = titleOrPath.trim()
       if (!title) return
-      const created = await deps.editor.createWithTitle(title, fromPath, active.seat)
+      const created = await deps.editor.createWithTitle(title, fromPath, active.relation)
       if (created) {
         if (isNavigatingOnCreate.value) {
           await view.go(created.path)
@@ -161,19 +161,23 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     }
   }
 
-  const createNode = async (from: string, seat: PlexRelatedSeat, at?: { x: number; y: number }) => {
+  const createNode = async (
+    from: string,
+    relation: PlexRelation,
+    at?: { x: number; y: number },
+  ) => {
     if (at) {
-      openQuickLink({ from, seat, at })
+      openQuickLink({ from, relation, at })
       return
     }
     const path = map.getNodePath(from)
-    if (path && (await deps.editor.createInSeat(path, seat))) await view.go(path)
+    if (path && (await deps.editor.createInRelation(path, relation))) await view.go(path)
   }
 
-  const joinNodes = async (from: string, to: string, seat: PlexRelatedSeat) => {
+  const joinNodes = async (from: string, to: string, relation: PlexRelation) => {
     const one = map.getNodePath(from)
     const other = map.getNodePath(to)
-    if (one && other && (await deps.editor.join(one, other, seat))) await view.go(one)
+    if (one && other && (await deps.editor.join(one, other, relation))) await view.go(one)
   }
 
   const getName = (path: string): string => {
@@ -183,7 +187,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     return near?.title || getFileName(path).replace(/\.md$/, '')
   }
 
-  const dropNodes = async (nodes: readonly string[], seat: PlexRelatedSeat) => {
+  const dropNodes = async (nodes: readonly string[], relation: PlexRelation) => {
     const here = view.here.value
     if (!here) return
 
@@ -192,7 +196,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
     for (const path of nodes) {
       if (path === here) continue
-      if (await deps.editor.join(here, path, seat)) hasJoinedAny = true
+      if (await deps.editor.join(here, path, relation)) hasJoinedAny = true
       else notJoined.push(getName(path))
     }
 
@@ -345,8 +349,8 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     linkInspector,
     isNavigatingOnCreate,
     creatable: deps.creatable,
-    typeOf,
-    headingsOf: getHeadings,
+    getType,
+    getHeadings,
     maxHeadings: deps.headings,
     readHeadings,
     openHeading,

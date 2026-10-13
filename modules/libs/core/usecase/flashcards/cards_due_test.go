@@ -240,20 +240,20 @@ func (r replaying) Next(
 
 // answer writes down one card answered well, and hands back the line it stands
 // as. Every card of this vault is shown through the one face.
-func answer(t *testing.T, record flashcards.Record, card string, took time.Duration) string {
+func answer(t *testing.T, record sitting, card string, took time.Duration) string {
 	t.Helper()
 	return answerWith(t, record, card, review.Good, took)
 }
 
 // answerAgain writes down one card the person could not recall, which comes round
 // answerAgain in the same session.
-func answerAgain(t *testing.T, record flashcards.Record, card string, took time.Duration) string {
+func answerAgain(t *testing.T, record sitting, card string, took time.Duration) string {
 	t.Helper()
 	return answerWith(t, record, card, review.Again, took)
 }
 
 func answerWith(
-	t *testing.T, record flashcards.Record, card string,
+	t *testing.T, record sitting, card string,
 	rating review.Rating, took time.Duration,
 ) string {
 	t.Helper()

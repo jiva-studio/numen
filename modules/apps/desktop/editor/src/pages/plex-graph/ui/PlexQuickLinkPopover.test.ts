@@ -22,7 +22,7 @@ describe('PlexQuickLinkPopover component', () => {
     return mount(PlexQuickLinkPopover, {
       props: {
         at: { x: 200, y: 150 },
-        seat: 'child',
+        relation: 'child',
         search: async (query: string) => [
           { path: `notes/${query}-topic.md`, title: `Title ${query}` },
           { path: 'notes/existing.md', title: 'Existing Note' },
