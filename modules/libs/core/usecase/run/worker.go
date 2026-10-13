@@ -176,13 +176,11 @@ func (w *Worker) DrainAndRelease(ctx context.Context, beforeStop func()) {
 
 // RepeatRounds runs round, waits every, and runs it again until the context
 // ends.
-func (w *Worker) RepeatRounds(ctx context.Context, every time.Duration, round func()) {
+func (w *Worker) RepeatRounds(ctx context.Context, wait port.Wait, every time.Duration, round func()) {
 	for {
 		round()
-		select {
-		case <-ctx.Done():
+		if wait(ctx, every) != nil {
 			return
-		case <-time.After(every):
 		}
 	}
 }

@@ -63,6 +63,11 @@ type Config struct {
 
 	// Proofreading is what a transcript is put right with.
 	Proofreading run.ProofreadingConfig
+
+	// Wait holds the queue between its rounds, and Delay closes the parked models
+	// once they have been idle.
+	Wait  port.Wait
+	Delay port.Delay
 }
 
 // Worker transcribes recordings behind whoever asked, and behind
@@ -152,7 +157,7 @@ func (t *Worker) Queue(
 	v domain.Vault,
 ) {
 	t.line.Go(func() {
-		t.line.RepeatRounds(ctx, every, func() { t.round(ctx, known, v) })
+		t.line.RepeatRounds(ctx, t.with.Wait, every, func() { t.round(ctx, known, v) })
 	})
 }
 
@@ -506,7 +511,7 @@ func (t *Worker) finishResident(ctx context.Context, ran error) error {
 		}
 		return nil
 	}
-	t.resident.park(t.residentIdle)
+	t.resident.park(t.with.Delay, t.residentIdle)
 	return nil
 }
 

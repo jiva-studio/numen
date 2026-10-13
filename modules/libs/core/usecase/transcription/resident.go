@@ -19,7 +19,7 @@ type resident struct {
 	// generation tells a timer that fired late whether it is still the one
 	// that was armed.
 	generation uint64
-	timer      *time.Timer
+	cancel     func() bool
 }
 
 // hold takes the models in use.
@@ -39,20 +39,20 @@ func (r *resident) take() (port.Transcriber, bool) {
 	}
 	r.isParked = false
 	r.generation++
-	if r.timer != nil {
-		r.timer.Stop()
+	if r.cancel != nil {
+		r.cancel()
 	}
 	return r.by, true
 }
 
 // park leaves the models loaded and closes them when idle passes with no take.
-func (r *resident) park(idle time.Duration) {
+func (r *resident) park(delay port.Delay, idle time.Duration) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.isParked = true
 	r.generation++
 	generation := r.generation
-	r.timer = time.AfterFunc(idle, func() { r.expire(generation) })
+	r.cancel = delay(idle, func() { r.expire(generation) })
 }
 
 // expire closes the models if they have stayed parked since the timer was armed.
@@ -73,9 +73,9 @@ func (r *resident) close() error {
 }
 
 func (r *resident) closeLocked() error {
-	if r.timer != nil {
-		r.timer.Stop()
-		r.timer = nil
+	if r.cancel != nil {
+		r.cancel()
+		r.cancel = nil
 	}
 	if r.by == nil {
 		return nil

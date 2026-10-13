@@ -79,6 +79,8 @@ func (c Config) OpenTranscriptionWorker(
 		},
 		Unasked:      c.TranscribesUnder,
 		Proofreading: c.getProofreading(c.TranscriptProofreading),
+		Wait:         c.GetWait(),
+		Delay:        c.GetDelay(),
 	})
 }
 
