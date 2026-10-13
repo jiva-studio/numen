@@ -18,25 +18,30 @@ const createConversation = (): Conversation => ({
 })
 
 /** A setting the window lists, found at the place given. */
-const model = (namedAt: readonly string[], name: string, presence: Model['presence']): Model => ({
+const model = (
+  namedAt: readonly string[],
+  name: string,
+  presence: Model['presence'] = 'present',
+  isDefault = false,
+): Model => ({
   namedAt,
   name,
-  title: name,
+  title: name.toUpperCase(),
   group: '',
-  isDefault: false,
+  isDefault,
   writes: [],
   presence,
 })
 
 /** An agent tab over the models listed and the settings kept. */
-const open = (models?: readonly Model[], settings: Record<string, string> = {}) =>
+const open = (models: readonly Model[] = [], settings: Record<string, string> = {}) =>
   useAgentConversation(createConversation(), {
     openFileAt: () => {},
     openFileBeside: () => {},
     resolve: async () => new Map(),
     unreachable: () => '',
     getSetting: (path) => settings[path.join('/')],
-    ...(models ? { getModels: () => models } : {}),
+    getModelsAt: (at) => models.filter((one) => one.namedAt.join('/') === at.join('/')),
   })
 
 /** The agents the tab offers, each once, in the order offered. */
@@ -44,96 +49,95 @@ const offered = (state: ReturnType<typeof open>) => [
   ...new Set(state.modelOptions.value.map((one) => one.agentId)),
 ]
 
+const LISTED = [
+  model(['agent', 'use'], 'zeta'),
+  model(['agent', 'use'], 'omega'),
+  model(['agent', 'zeta', 'model'], 'zeta-small'),
+  model(['agent', 'zeta', 'model'], 'zeta-large', 'nothing to fetch', true),
+  model(['agent', 'omega', 'model'], 'omega-one'),
+]
+
 describe('the model an agent tab starts on', () => {
   it('is the one kept for the agent that was kept', () => {
-    const state = open(undefined, {
-      'agent/use': 'claude',
-      'agent/claude/model': 'opus',
-    })
-
-    expect([state.selectedAgentId.value, state.selectedModelId.value]).toEqual(['claude', 'opus'])
-  })
-
-  it('is the one kept for the first agent where no agent was kept', () => {
-    const state = open(undefined, { 'agent/antigravity/model': 'gemini-3.1-pro-high' })
+    const state = open(LISTED, { 'agent/use': 'omega', 'agent/omega/model': 'omega-one' })
 
     expect([state.selectedAgentId.value, state.selectedModelId.value]).toEqual([
-      'antigravity',
-      'gemini-3.1-pro-high',
+      'omega',
+      'omega-one',
     ])
   })
 
-  it('is the first model offered where the one kept is not offered by that agent', () => {
-    const state = open(undefined, {
-      'agent/use': 'claude',
-      'agent/claude/model': 'no-such-model',
-    })
+  it('is the default of the agent kept where the model kept is not listed', () => {
+    const state = open(LISTED, { 'agent/use': 'zeta', 'agent/zeta/model': 'no-such-model' })
 
     expect([state.selectedAgentId.value, state.selectedModelId.value]).toEqual([
-      'antigravity',
-      'gemini-3.7-flash-high',
+      'zeta',
+      'zeta-large',
     ])
   })
 
-  it('is the first model offered where the model kept belongs to another agent', () => {
-    const state = open(undefined, { 'agent/use': 'codex', 'agent/codex/model': 'sonnet' })
+  it('is the first model offered where no agent was kept', () => {
+    const state = open(LISTED)
 
     expect([state.selectedAgentId.value, state.selectedModelId.value]).toEqual([
-      'antigravity',
-      'gemini-3.7-flash-high',
+      'zeta',
+      'zeta-small',
     ])
+  })
+
+  it('is empty where nothing is listed', () => {
+    const state = open([], { 'agent/use': 'zeta' })
+
+    expect([state.selectedAgentId.value, state.selectedModelId.value]).toEqual(['', ''])
+  })
+})
+
+describe('the models an agent tab offers', () => {
+  it('carry the name, title and default the core lists', () => {
+    const state = open(LISTED)
+
+    expect(state.modelOptions.value.filter((one) => one.agentId === 'zeta')).toEqual([
+      expect.objectContaining({ modelId: 'zeta-small', modelTitle: 'ZETA-SMALL' }),
+      expect.objectContaining({ modelId: 'zeta-large', modelTitle: 'ZETA-LARGE', isDefault: true }),
+    ])
+  })
+
+  it('include the model the settings name where the core lists that one alone', () => {
+    const state = open([
+      model(['agent', 'use'], 'zeta'),
+      { ...model(['agent', 'zeta', 'model'], 'my-zeta'), group: 'Named in the settings' },
+    ])
+
+    expect(state.modelOptions.value.map((one) => one.modelId)).toEqual(['my-zeta'])
   })
 })
 
 describe('the agents an agent tab offers', () => {
   it('are those listed under agent/use that are present', () => {
     const state = open([
-      model(['agent', 'use'], 'claude', 'present'),
-      model(['agent', 'use'], 'codex', 'not fetched'),
+      model(['agent', 'use'], 'zeta'),
+      model(['agent', 'use'], 'omega', 'not fetched'),
+      model(['agent', 'zeta', 'model'], 'zeta-small'),
+      model(['agent', 'omega', 'model'], 'omega-one'),
     ])
 
-    expect(offered(state)).toEqual(['claude'])
+    expect(offered(state)).toEqual(['zeta'])
   })
 
-  it('are all of them where nothing is listed under agent/use', () => {
-    const state = open([model(['editor', 'font'], 'claude', 'present')])
+  it('are none where nothing is listed under agent/use', () => {
+    const state = open([model(['agent', 'zeta', 'model'], 'zeta-small')])
 
-    expect(offered(state)).toEqual(['antigravity', 'claude', 'codex'])
+    expect(offered(state)).toEqual([])
   })
 
   it('leave out a setting listed under another name', () => {
     const state = open([
-      model(['agent', 'use'], 'claude', 'present'),
-      model(['agent', 'claude', 'model'], 'codex', 'present'),
+      model(['agent', 'use'], 'zeta'),
+      model(['agent', 'zeta', 'model'], 'zeta-small'),
+      model(['agent', 'other', 'model'], 'stray'),
+      model(['editor', 'font'], 'zeta'),
     ])
 
-    expect(offered(state)).toEqual(['claude'])
-  })
-
-  it('leave out a setting listed deeper than agent/use', () => {
-    const state = open([
-      model(['agent', 'use'], 'claude', 'present'),
-      model(['agent', 'use', 'more'], 'codex', 'present'),
-    ])
-
-    expect(offered(state)).toEqual(['claude'])
-  })
-
-  it('leave out a setting listed under another group', () => {
-    const state = open([
-      model(['agent', 'use'], 'claude', 'present'),
-      model(['other', 'use'], 'antigravity', 'present'),
-    ])
-
-    expect(offered(state)).toEqual(['claude'])
-  })
-
-  it('leave out a setting listed at agent under another key', () => {
-    const state = open([
-      model(['agent', 'use'], 'claude', 'present'),
-      model(['agent', 'model'], 'codex', 'present'),
-    ])
-
-    expect(offered(state)).toEqual(['claude'])
+    expect(state.modelOptions.value.map((one) => one.modelId)).toEqual(['zeta-small'])
   })
 })

@@ -12,7 +12,7 @@ export interface AgentTabDeps {
   unreachable(): string
   writeSetting?(path: readonly string[], value: unknown): Promise<void>
   getSetting?(path: readonly string[]): unknown
-  getModels?: () => readonly Model[]
+  getModelsAt?(path: readonly string[]): readonly Model[]
 }
 
 /** Reference to a note the conversation relates to. */

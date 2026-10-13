@@ -5,11 +5,12 @@
  * answer opens the source it is in.
  */
 import { describe, expect, it } from 'vitest'
-import { nextTick, ref } from 'vue'
+import { nextTick, ref, shallowRef } from 'vue'
 import type { Conversation, Turn } from '@numen/ui'
 import { createTabTitle, useAgentConversation, type AgentTabState } from './useAgentConversation'
 import { createAgentKind } from '../kind'
 import type { Span } from '@/shared/span'
+import type { Model } from '@/entities/settings'
 import { useWindowTabs, type WindowHandle } from '@/entities/tab'
 import { AGENT } from '@/entities/tab'
 
@@ -51,6 +52,17 @@ const tab = (
   })
   return { state, opened, beside, ...fake }
 }
+
+/** A setting the window lists, found at the place given. */
+const listed = (namedAt: readonly string[], name: string, presence: Model['presence']): Model => ({
+  namedAt,
+  name,
+  title: name,
+  group: '',
+  isDefault: false,
+  writes: [],
+  presence,
+})
 
 /** A window of agent tabs, with a conversation of its own for each. */
 const tabs = (about = { path: '', title: '' }) => {
@@ -305,14 +317,14 @@ describe('what a command asked over an agent tab is over', () => {
 })
 
 describe('agent model selection and settings', () => {
-  it('initializes with default agent and model options', () => {
+  it('offers nothing where the settings list nothing', () => {
     const one = tab()
-    expect(one.state.selectedAgentId.value).toBe('antigravity')
-    expect(one.state.selectedModelId.value).toBe('gemini-3.7-flash-high')
-    expect(one.state.modelOptions.value.length).toBeGreaterThan(0)
+    expect(one.state.modelOptions.value).toEqual([])
+    expect(one.state.selectedAgentId.value).toBe('')
+    expect(one.state.selectedModelId.value).toBe('')
   })
 
-  it('initializes from provided getSetting dependency', () => {
+  it('writes the agent and model chosen', () => {
     const fake = createConversation()
     const written: [readonly string[], unknown][] = []
     const state = useAgentConversation(fake.conversation, {
@@ -320,172 +332,79 @@ describe('agent model selection and settings', () => {
       openFileBeside: () => {},
       resolve: async () => new Map(),
       unreachable: () => '',
-      getSetting: (path) => {
-        if (path[1] === 'use') return 'codex'
-        if (path[1] === 'codex' && path[2] === 'model') return 'gpt-5.6-luna'
-        return undefined
-      },
       writeSetting: async (path, value) => {
         written.push([path, value])
       },
     })
 
-    expect(state.selectedAgentId.value).toBe('codex')
-    expect(state.selectedModelId.value).toBe('gpt-5.6-luna')
-
     state.selectModel({
-      agentId: 'claude',
-      agentTitle: 'Claude Code',
-      modelId: 'haiku',
-      modelTitle: 'Haiku 3.5',
+      agentId: 'zeta',
+      agentTitle: 'Zeta Agent',
+      modelId: 'zeta-small',
+      modelTitle: 'Zeta Small',
       isAvailable: true,
     })
 
-    expect(state.selectedAgentId.value).toBe('claude')
-    expect(state.selectedModelId.value).toBe('haiku')
+    expect([state.selectedAgentId.value, state.selectedModelId.value]).toEqual([
+      'zeta',
+      'zeta-small',
+    ])
     expect(written).toEqual([
-      [['agent', 'use'], 'claude'],
-      [['agent', 'claude', 'model'], 'haiku'],
+      [['agent', 'use'], 'zeta'],
+      [['agent', 'zeta', 'model'], 'zeta-small'],
     ])
   })
 
-  it('selects model and handles missing writeSetting cleanly', () => {
+  it('selects a model without a writeSetting dependency', () => {
     const one = tab()
     one.state.selectModel({
-      agentId: 'codex',
-      agentTitle: 'OpenAI Codex',
-      modelId: 'gpt-5.6-terra',
-      modelTitle: 'GPT-5.6 Terra',
+      agentId: 'zeta',
+      agentTitle: 'Zeta Agent',
+      modelId: 'zeta-small',
+      modelTitle: 'Zeta Small',
       isAvailable: true,
     })
 
-    expect(one.state.selectedAgentId.value).toBe('codex')
-    expect(one.state.selectedModelId.value).toBe('gpt-5.6-terra')
+    expect(one.state.selectedModelId.value).toBe('zeta-small')
   })
 
-  it('initializes fallback default models for each agent kind', () => {
+  it('offers the models the settings list, with the core title and default', async () => {
     const fake = createConversation()
-    const stateAntigravity = useAgentConversation(fake.conversation, {
-      openFileAt: () => {},
-      openFileBeside: () => {},
-      resolve: async () => new Map(),
-      unreachable: () => '',
-      getSetting: (path) => (path[1] === 'use' ? 'antigravity' : undefined),
-    })
-    expect(stateAntigravity.selectedModelId.value).toBe('gemini-3.7-flash-high')
-
-    const stateCodex = useAgentConversation(fake.conversation, {
-      openFileAt: () => {},
-      openFileBeside: () => {},
-      resolve: async () => new Map(),
-      unreachable: () => '',
-      getSetting: (path) => (path[1] === 'use' ? 'codex' : undefined),
-    })
-    expect(stateCodex.selectedModelId.value).toBe('gpt-5.6-terra')
-
-    const stateClaude = useAgentConversation(fake.conversation, {
-      openFileAt: () => {},
-      openFileBeside: () => {},
-      resolve: async () => new Map(),
-      unreachable: () => '',
-      getSetting: (path) => (path[1] === 'use' ? 'claude' : undefined),
-    })
-    expect(stateClaude.selectedModelId.value).toBe('sonnet')
-  })
-
-  it('filters out non-installed agents from modelOptions and selects available agent', async () => {
-    const fake = createConversation()
-    const models = ref([
-      {
-        namedAt: ['agent', 'use'],
-        name: 'claude',
-        title: 'Claude Code',
-        group: '',
-        isDefault: false,
-        writes: [],
-        presence: 'present' as const,
-      },
-      {
-        namedAt: ['agent', 'use'],
-        name: 'antigravity',
-        title: 'Antigravity',
-        group: '',
-        isDefault: false,
-        writes: [],
-        presence: 'not fetched' as const,
-      },
-      {
-        namedAt: ['agent', 'use'],
-        name: 'codex',
-        title: 'OpenAI Codex',
-        group: '',
-        isDefault: false,
-        writes: [],
-        presence: 'not fetched' as const,
-      },
-    ])
-
+    const models = shallowRef<readonly Model[]>([])
     const state = useAgentConversation(fake.conversation, {
       openFileAt: () => {},
       openFileBeside: () => {},
       resolve: async () => new Map(),
       unreachable: () => '',
-      getSetting: (path) => (path[1] === 'use' ? 'antigravity' : undefined),
-      getModels: () => models.value,
+      getSetting: (path) => (path[1] === 'use' ? 'zeta' : undefined),
+      getModelsAt: (at) => models.value.filter((one) => one.namedAt.join('.') === at.join('.')),
     })
+    expect(state.selectedAgentId.value).toBe('')
 
-    // Antigravity is not installed, so it should auto-select Claude and omit Antigravity/Codex
-    expect(state.selectedAgentId.value).toBe('claude')
-    expect(state.selectedModelId.value).toBe('sonnet')
-
-    expect(state.modelOptions.value.every((o) => o.agentId === 'claude')).toBe(true)
-    expect(state.modelOptions.value.some((o) => o.agentId === 'antigravity')).toBe(false)
-    expect(state.modelOptions.value.some((o) => o.agentId === 'codex')).toBe(false)
-  })
-
-  it('returns empty modelOptions and resets selection when no agents are installed', () => {
-    const fake = createConversation()
-    const models = [
+    models.value = [
+      { ...listed(['agent', 'use'], 'zeta', 'present'), title: 'Zeta Agent' },
+      listed(['agent', 'use'], 'omega', 'not fetched'),
       {
-        namedAt: ['agent', 'use'],
-        name: 'claude',
-        title: 'Claude Code',
-        group: '',
-        isDefault: false,
-        writes: [],
-        presence: 'not fetched' as const,
+        ...listed(['agent', 'zeta', 'model'], 'zeta-small', 'nothing to fetch'),
+        title: 'Zeta Small',
       },
       {
-        namedAt: ['agent', 'use'],
-        name: 'antigravity',
-        title: 'Antigravity',
-        group: '',
-        isDefault: false,
-        writes: [],
-        presence: 'not fetched' as const,
-      },
-      {
-        namedAt: ['agent', 'use'],
-        name: 'codex',
-        title: 'OpenAI Codex',
-        group: '',
-        isDefault: false,
-        writes: [],
-        presence: 'not fetched' as const,
+        ...listed(['agent', 'zeta', 'model'], 'zeta-large', 'nothing to fetch'),
+        title: 'Zeta Large',
+        isDefault: true,
       },
     ]
+    await nextTick()
 
-    const state = useAgentConversation(fake.conversation, {
-      openFileAt: () => {},
-      openFileBeside: () => {},
-      resolve: async () => new Map(),
-      unreachable: () => '',
-      getModels: () => models,
-    })
-
-    expect(state.modelOptions.value).toHaveLength(0)
-    expect(state.selectedAgentId.value).toBe('')
-    expect(state.selectedModelId.value).toBe('')
+    const shown = state.modelOptions.value.map((o) => [o.agentTitle, o.modelId, o.modelTitle])
+    expect(shown).toEqual([
+      ['Zeta Agent', 'zeta-small', 'Zeta Small'],
+      ['Zeta Agent', 'zeta-large', 'Zeta Large'],
+    ])
+    expect([state.selectedAgentId.value, state.selectedModelId.value]).toEqual([
+      'zeta',
+      'zeta-large',
+    ])
   })
 })
 
