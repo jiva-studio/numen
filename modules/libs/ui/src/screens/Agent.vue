@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /* --------------------------------- Props ---------------------------------- */
-import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
-import { browserViewport } from '@/shared/lib/viewport'
+import { computed, useTemplateRef, watch } from 'vue'
+import { useWholeViewport } from '@/shared/lib/viewport'
 import { Thread } from '@/features/thread'
 import { MessageComposer, type AgentModelOption } from './message-composer'
 import type { Turn } from '@/features/thread'
@@ -51,28 +51,18 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const composer = useTemplateRef<InstanceType<typeof MessageComposer>>('composer')
 const thread = useTemplateRef<InstanceType<typeof Thread>>('thread')
-const room = ref('0px')
+const composerElement = computed(() => (composer.value?.$el as HTMLElement | undefined) ?? null)
+
+// What the conversation has to clear is the whole field, its padding and its
+// edge included.
+const { viewport: whole } = useWholeViewport(composerElement)
+const room = computed(() => `${whole.value.height}px`)
 
 defineExpose({ focus: (how?: FocusOptions) => composer.value?.focus(how) })
 
 /* --------------------------------- Hooks ---------------------------------- */
-/** What stops the watching, held from the moment it begins. */
-let stopWatching: (() => void) | null = null
-
-onMounted(() => {
-  const element = composer.value?.$el as HTMLElement | undefined
-  if (!element) return
-  // What the conversation has to clear is the whole field, its padding and its
-  // edge included.
-  stopWatching = browserViewport.watchWhole(element, (size) => {
-    room.value = `${size.height}px`
-  })
-})
-
 // A field grown taller carries the foot of the conversation up with it.
 watch(room, () => thread.value?.toFoot(), { flush: 'post' })
-
-onBeforeUnmount(() => stopWatching?.())
 
 /* -------------------------------- Handlers -------------------------------- */
 /** Sent. The conversation takes up following its foot, where the question is. */

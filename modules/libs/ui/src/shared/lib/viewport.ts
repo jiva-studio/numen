@@ -1,7 +1,7 @@
 /** How much room a component has, and the only thing in the library that measures it. */
 
-import { onBeforeUnmount, onMounted, ref } from 'vue'
-import type { Ref, ShallowRef } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import type { Ref } from 'vue'
 
 import type { Size } from './geometry'
 
@@ -64,17 +64,45 @@ export const browserViewport: Viewport = {
 }
 
 /**
+ * Follows the element for the component's life: watched from the moment it
+ * stands, and again whenever it is replaced by another. `onFound` hears of each
+ * element before the watching of it begins.
+ */
+const useFollowed = (
+  area: Readonly<Ref<HTMLElement | null>>,
+  watchWith: Viewport['watch'],
+  took: (size: Size) => void,
+  onFound?: () => void,
+): void => {
+  let followed: HTMLElement | null = null
+  let stop: (() => void) | undefined
+
+  const follow = (element: HTMLElement | null): void => {
+    if (element === followed) return
+    stop?.()
+    stop = undefined
+    followed = element
+    if (!element) return
+    onFound?.()
+    stop = watchWith(element, took)
+  }
+
+  onMounted(() => follow(area.value))
+  watch(area, follow, { flush: 'post' })
+  onBeforeUnmount(() => stop?.())
+}
+
+/**
  * The room one element of a drawn component has, held for the component's
  * life: measured where it stands and again at every size it takes. A viewport
  * with no size is not a measurement, and a component drawn out of sight has
  * none until it is drawn where somebody can see it.
  */
-export function useViewport(area: Readonly<ShallowRef<HTMLElement | null>>): {
+export function useViewport(area: Readonly<Ref<HTMLElement | null>>): {
   viewport: Ref<Size>
   measure: () => void
 } {
   const viewport = ref<Size>({ width: 0, height: 0 })
-  let watching: (() => void) | undefined
 
   const measure = (): void => {
     if (!area.value) return
@@ -84,15 +112,53 @@ export function useViewport(area: Readonly<ShallowRef<HTMLElement | null>>): {
     viewport.value = { width, height }
   }
 
-  onMounted(() => {
-    measure()
-    if (!area.value) return
-    watching = browserViewport.watch(area.value, (size) => {
+  useFollowed(
+    area,
+    browserViewport.watch,
+    (size) => {
       viewport.value = size
+    },
+    measure,
+  )
+
+  return { viewport, measure }
+}
+
+/**
+ * The room one element takes up with its padding and its edge, which is what
+ * anything standing clear of it has to clear, held for the component's life.
+ */
+export function useWholeViewport(area: Readonly<Ref<HTMLElement | null>>): {
+  viewport: Ref<Size>
+} {
+  const viewport = ref<Size>({ width: 0, height: 0 })
+
+  useFollowed(area, browserViewport.watchWhole, (size) => {
+    viewport.value = size
+  })
+
+  return { viewport }
+}
+
+/**
+ * The room a component has when nobody hands it one, held for the component's
+ * life and measured at once. `onChange` hears of each size as it is taken.
+ */
+export function useRoom(
+  port: Viewport = browserViewport,
+  onChange?: (size: Size) => void,
+): { room: Ref<Size> } {
+  const room = ref<Size>({ width: 0, height: 0 })
+  let stop: (() => void) | undefined
+
+  onMounted(() => {
+    stop = port.watchRoom((size) => {
+      room.value = size
+      onChange?.(size)
     })
   })
 
-  onBeforeUnmount(() => watching?.())
+  onBeforeUnmount(() => stop?.())
 
-  return { viewport, measure }
+  return { room }
 }
