@@ -56,10 +56,22 @@ const links = createBookLinks(props, {
   reportFollow: (path) => emit('follow', path),
 })
 
-const layout = useBookLayout(area, paper, props, (at) => emit('move', at), links.takeLed, getEdge)
+const layout = useBookLayout({
+  area,
+  paper,
+  props,
+  onMove: (at) => emit('move', at),
+  takeLed: links.takeLed,
+  getEdge,
+})
 const { isMeasured, setting, spreadCount, front, leftInChapter } = layout
 
-const hand = useBookHand(area, paper, layout.turn, getEdge)
+const hand = useBookHand({
+  area,
+  paper,
+  turn: layout.turn,
+  getEdge,
+})
 
 /* -------------------------------- Handlers -------------------------------- */
 const follow = (press: MouseEvent) => links.follow(press, layout.findFragmentOffset)

@@ -111,7 +111,7 @@ export { BookContents } from './features/book'
 export type { ContentsEntry } from './features/book'
 
 export { WorkspaceLayout } from './features/workspace'
-export { closeTab, openTab, openTabBeside } from './features/workspace'
+export { closeTab, openTab, openTabBeside, type OpenBesidePlacement } from './features/workspace'
 
 /** For arranging without drawing, or reading a gesture without this renderer. */
 export { branch, pane } from './features/workspace'

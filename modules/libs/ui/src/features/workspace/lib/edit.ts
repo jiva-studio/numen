@@ -71,13 +71,25 @@ export function openTab(
  *
  * The middle is not a side, and a tab asked for there stays where it is.
  */
+export interface OpenBesidePlacement {
+  readonly side: Side
+  readonly createId: NodeIdFactory
+  readonly onto?: NodeId
+}
+
+/**
+ * A tab opened in a pane of its own, alongside another one. A tab already
+ * open is taken from wherever it was, and one that is alone in the pane it
+ * would be put beside is only shown.
+ *
+ * The middle is not a side, and a tab asked for there stays where it is.
+ */
 export function openTabBeside(
   workspace: Workspace,
   tab: TabId,
-  side: Side,
-  createId: NodeIdFactory,
-  onto: NodeId = workspace.focus,
+  placement: OpenBesidePlacement,
 ): Workspace {
+  const { side, createId, onto = workspace.focus } = placement
   const target = paneById(workspace.root, onto) ?? getPanes(workspace.root)[0]
   if (!target || side === 'center') return workspace
 
@@ -87,7 +99,7 @@ export function openTabBeside(
   }
 
   const root = detach(workspace.root, tab)
-  const landed = putBeside(root, target.id, tab, side, workspace.axis, createId)
+  const landed = putBeside(root, { onto: target.id, tab, side, axis: workspace.axis }, createId)
   return commit({ ...workspace, root: landed.root, axis: landed.axis }, landed.focus)
 }
 
@@ -143,21 +155,30 @@ export function dropTab(workspace: Workspace, drop: TabDrop, createId: NodeIdFac
     return commit({ ...workspace, root: joined }, target.id)
   }
 
-  const landed = putBeside(root, target.id, drop.tab, drop.side, workspace.axis, createId)
+  const landed = putBeside(
+    root,
+    { onto: target.id, tab: drop.tab, side: drop.side, axis: workspace.axis },
+    createId,
+  )
   return commit({ ...workspace, root: landed.root, axis: landed.axis }, landed.focus)
+}
+
+export interface EdgeDrop {
+  readonly tab: TabId
+  readonly side: Side
 }
 
 /** A tab let go on the outer edge divides the whole workspace. */
 export function dropOnEdge(
   workspace: Workspace,
-  tab: TabId,
-  side: Side,
+  drop: EdgeDrop,
   createId: NodeIdFactory,
 ): Workspace {
+  const { tab, side } = drop
   if (!paneWithTab(workspace.root, tab) || side === 'center') return workspace
 
   const root = detach(workspace.root, tab)
-  const landed = putBeside(root, root.id, tab, side, workspace.axis, createId)
+  const landed = putBeside(root, { onto: root.id, tab, side, axis: workspace.axis }, createId)
   return commit({ ...workspace, root: landed.root, axis: landed.axis }, landed.focus)
 }
 

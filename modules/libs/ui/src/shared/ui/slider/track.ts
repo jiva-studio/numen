@@ -30,6 +30,15 @@ export interface SliderStepOptions {
   readonly isBigStep?: boolean
 }
 
+const KEY_STEPS: Record<string, number> = {
+  ArrowRight: 1,
+  ArrowUp: 1,
+  ArrowLeft: -1,
+  ArrowDown: -1,
+  PageUp: PACES,
+  PageDown: -PACES,
+}
+
 /** Where a key leaves the handle, and nothing for a key it does not answer. */
 export const stepForKey = (
   key: string,
@@ -37,12 +46,12 @@ export const stepForKey = (
   options: SliderStepOptions,
 ): number | null => {
   const { bounds, isBigStep = false } = options
-  const paces = isBigStep ? PACES : 1
   if (key === 'Home') return bounds.min
   if (key === 'End') return bounds.max
-  if (key === 'ArrowRight' || key === 'ArrowUp') return stepBy(value, paces, bounds)
-  if (key === 'ArrowLeft' || key === 'ArrowDown') return stepBy(value, -paces, bounds)
-  if (key === 'PageUp') return stepBy(value, PACES, bounds)
-  if (key === 'PageDown') return stepBy(value, -PACES, bounds)
+  const step = KEY_STEPS[key]
+  if (step !== undefined) {
+    const paces = Math.abs(step) === PACES ? step : step * (isBigStep ? PACES : 1)
+    return stepBy(value, paces, bounds)
+  }
   return null
 }

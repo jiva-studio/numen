@@ -23,7 +23,12 @@ const setUp = (edge = 0) => {
   const turn = vi.fn<(way: PageTurn) => void>()
   const areaRef = shallowRef<HTMLElement | null>(area)
   const paperRef = shallowRef<HTMLElement | null>(paper)
-  const hand = useBookHand(areaRef, paperRef, turn, () => edge)
+  const hand = useBookHand({
+    area: areaRef,
+    paper: paperRef,
+    turn,
+    getEdge: () => edge,
+  })
   return { area, areaRef, paper, paperRef, turn, hand }
 }
 

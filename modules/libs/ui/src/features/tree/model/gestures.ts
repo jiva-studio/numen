@@ -50,8 +50,90 @@ export interface TreeGesturesState {
   readonly onKeyDown: (event: KeyboardEvent) => void
 }
 
+function useTreeRenaming(
+  renamingPath: Ref<RowId | null>,
+  rows: DrawnRowsState,
+  tell: TreeGesturesTell,
+) {
+  function onRename(row: RowId, name: string): void {
+    renamingPath.value = null
+    tell('rename', row, name)
+    void rows.focusRow(row)
+  }
+
+  function onAbandon(row: RowId): void {
+    renamingPath.value = null
+    void rows.focusRow(row)
+  }
+
+  function onFieldBlur(): void {
+    renamingPath.value = null
+  }
+
+  return { onRename, onAbandon, onFieldBlur }
+}
+
+interface TreeKeyboardHelpers {
+  readonly activateRow: (row: ShownRow) => void
+  readonly requestMenu: (row: ShownRow | null, at: Position) => void
+}
+
+function useTreeKeyboard(options: TreeGesturesOptions, helpers: TreeKeyboardHelpers) {
+  const { getShownRows, getSelected, rows, selection, tell } = options
+
+  function takeSelectionKey(event: KeyboardEvent): void {
+    const chorded = event.ctrlKey || event.metaKey
+    if (chorded && event.key.toLowerCase() === 'a') {
+      event.preventDefault()
+      selection.selectEveryRow()
+    } else if (event.key === 'Delete' || event.key === 'Backspace') {
+      event.preventDefault()
+      if (getSelected().length > 0) tell('remove', getSelected())
+    }
+  }
+
+  function takeRowKey(event: KeyboardEvent, on: ShownRow): void {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      helpers.activateRow(on)
+    } else if (event.key === ' ') {
+      event.preventDefault()
+      selection.selectRow(on.id, { isJoining: true, isExtending: false })
+    } else if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
+      event.preventDefault()
+      const at = options.getMenuAt(on.id)
+      if (at) helpers.requestMenu(on, at)
+    }
+  }
+
+  function applyStep(step: Step, press: Press): void {
+    if (step.turn?.open) tell('open', step.turn.row)
+    else if (step.turn) tell('close', step.turn.row)
+    if (step.at !== null) selection.selectRow(step.at, press)
+    void rows.focusRow(step.at)
+  }
+
+  function onKeyDown(event: KeyboardEvent): void {
+    takeSelectionKey(event)
+
+    const on = getShownRows().find((row) => row.id === rows.tabbed.value)
+    if (!on) return
+    takeRowKey(event, on)
+
+    if (!isTreeKey(event.key)) return
+    event.preventDefault()
+
+    applyStep(stepTo(getShownRows(), rows.tabbed.value, event.key), {
+      isJoining: false,
+      isExtending: event.shiftKey,
+    })
+  }
+
+  return { onKeyDown }
+}
+
 export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState {
-  const { getShownRows, getSelected, renamingPath, rows, selection, drag, tell } = options
+  const { getSelected, renamingPath, rows, selection, drag, tell } = options
 
   function toggleRow(row: ShownRow): void {
     if (row.open) tell('close', row.id)
@@ -63,7 +145,6 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
     tell('activate', row.id)
   }
 
-  /** A menu asked for on a row, which the selection takes in first, or off every row. */
   function requestMenu(row: ShownRow | null, at: Position): void {
     if (row && !selection.picked.value.has(row.id)) selection.selectRow(row.id, PLAIN)
     tell('menu', row?.id ?? null, at)
@@ -105,73 +186,8 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
     activateRow(row)
   }
 
-  function onRename(row: RowId, name: string): void {
-    renamingPath.value = null
-    tell('rename', row, name)
-    void rows.focusRow(row)
-  }
-
-  function onAbandon(row: RowId): void {
-    renamingPath.value = null
-    void rows.focusRow(row)
-  }
-
-  function onFieldBlur(): void {
-    renamingPath.value = null
-  }
-
-  /** The keys that act on the selection, told apart from the rows. */
-  function takeSelectionKey(event: KeyboardEvent): void {
-    const chorded = event.ctrlKey || event.metaKey
-
-    if (chorded && event.key.toLowerCase() === 'a') {
-      event.preventDefault()
-      selection.selectEveryRow()
-    } else if (event.key === 'Delete' || event.key === 'Backspace') {
-      event.preventDefault()
-      if (getSelected().length > 0) tell('remove', getSelected())
-    }
-  }
-
-  /** The keys that act on the row the keyboard stands on. */
-  function takeRowKey(event: KeyboardEvent, on: ShownRow): void {
-    if (event.key === 'Enter') {
-      event.preventDefault()
-      activateRow(on)
-    } else if (event.key === ' ') {
-      // The row the keyboard stands on joins the selection, or leaves it.
-      event.preventDefault()
-      selection.selectRow(on.id, { isJoining: true, isExtending: false })
-    } else if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
-      event.preventDefault()
-      const at = options.getMenuAt(on.id)
-      if (at) requestMenu(on, at)
-    }
-  }
-
-  /** The turn a step asks for, and the row it lands on. */
-  function applyStep(step: Step, press: Press): void {
-    if (step.turn?.open) tell('open', step.turn.row)
-    else if (step.turn) tell('close', step.turn.row)
-    if (step.at !== null) selection.selectRow(step.at, press)
-    void rows.focusRow(step.at)
-  }
-
-  function onKeyDown(event: KeyboardEvent): void {
-    takeSelectionKey(event)
-
-    const on = getShownRows().find((row) => row.id === rows.tabbed.value)
-    if (!on) return
-    takeRowKey(event, on)
-
-    if (!isTreeKey(event.key)) return
-    event.preventDefault()
-
-    applyStep(stepTo(getShownRows(), rows.tabbed.value, event.key), {
-      isJoining: false,
-      isExtending: event.shiftKey,
-    })
-  }
+  const { onRename, onAbandon, onFieldBlur } = useTreeRenaming(renamingPath, rows, tell)
+  const { onKeyDown } = useTreeKeyboard(options, { activateRow, requestMenu })
 
   return {
     onContextMenu,

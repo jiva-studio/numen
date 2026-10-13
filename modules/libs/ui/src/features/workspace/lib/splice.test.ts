@@ -9,17 +9,29 @@ describe('putBeside', () => {
   const two = split('root', [stack('a', 'one'), stack('b', 'two')])
 
   it('leaves the tree alone for the middle, which is not a side', () => {
-    const split = putBeside(two, 'a', 't', 'center', 'horizontal', createIdFactory())
+    const split = putBeside(
+      two,
+      { onto: 'a', tab: 't', side: 'center', axis: 'horizontal' },
+      createIdFactory(),
+    )
     expect(split).toStrictEqual({ root: two, axis: 'horizontal', focus: 'a' })
   })
 
   it('leaves the tree alone for a node that is not there', () => {
-    const split = putBeside(two, 'missing', 't', 'left', 'horizontal', createIdFactory())
+    const split = putBeside(
+      two,
+      { onto: 'missing', tab: 't', side: 'left', axis: 'horizontal' },
+      createIdFactory(),
+    )
     expect(split).toStrictEqual({ root: two, axis: 'horizontal', focus: 'missing' })
   })
 
   it('divides a root that is one pane into two halves, turning the axis', () => {
-    const split = putBeside(stack('a', 'one'), 'a', 't', 'bottom', 'horizontal', createIdFactory())
+    const split = putBeside(
+      stack('a', 'one'),
+      { onto: 'a', tab: 't', side: 'bottom', axis: 'horizontal' },
+      createIdFactory(),
+    )
 
     expect(split.axis).toBe('vertical')
     expect(split.focus).toBe('made-1')
@@ -31,7 +43,11 @@ describe('putBeside', () => {
   })
 
   it('wraps a pane in two halves when the parent divides the other way', () => {
-    const split = putBeside(two, 'a', 't', 'top', 'horizontal', createIdFactory())
+    const split = putBeside(
+      two,
+      { onto: 'a', tab: 't', side: 'top', axis: 'horizontal' },
+      createIdFactory(),
+    )
     const wrapper = findNode(split.root, [0])
 
     expect(wrapper && isBranch(wrapper) && wrapper.sizes).toStrictEqual([0.5, 0.5])

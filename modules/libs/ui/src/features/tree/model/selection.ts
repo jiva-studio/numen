@@ -46,7 +46,13 @@ export function useRowSelection(
   }
 
   const selectRow = (row: RowId, how: Press): readonly RowId[] =>
-    apply(resolveSelection(getVisibleRows(), getSelection(), anchor.value, row, how))
+    apply(
+      resolveSelection(
+        getVisibleRows(),
+        { rows: getSelection(), anchor: anchor.value },
+        { row, press: how },
+      ),
+    )
 
   const selectEveryRow = (): readonly RowId[] => apply(everyRow(getVisibleRows(), anchor.value))
 

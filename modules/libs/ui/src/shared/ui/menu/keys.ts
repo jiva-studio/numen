@@ -63,7 +63,7 @@ export function useMenuKeys(
   const onKey = (event: KeyboardEvent): void => {
     const step = (by: number, from: number): void => {
       event.preventDefault()
-      goTo(stepTo(items(), from, by, canLandOn))
+      goTo(stepTo(items(), { from, by }, canLandOn))
     }
     const stepForward = (): void => step(1, here.value)
     // Counting back from no item is counting back from the first.

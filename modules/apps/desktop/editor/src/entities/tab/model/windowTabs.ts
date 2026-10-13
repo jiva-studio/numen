@@ -135,7 +135,12 @@ export function useWindowTabs() {
   /** A tab opened beside the pane the person is in. */
   const openTabBesideOfKind = async (kind: string, at = ''): Promise<string> => {
     const id = await createTab(kind, at)
-    if (id) layout.value = openTabBeside(layout.value, id, 'right', generatePaneId)
+    if (id) {
+      layout.value = openTabBeside(layout.value, id, {
+        side: 'right',
+        createId: generatePaneId,
+      })
+    }
     return id
   }
 

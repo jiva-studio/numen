@@ -108,7 +108,14 @@ const room = (options: Options = {}) => {
   const wrapper = mount(
     defineComponent({
       setup() {
-        layout = useBookLayout(area, paper, props, onMove, takeLed, () => 0)
+        layout = useBookLayout({
+          area,
+          paper,
+          props,
+          onMove,
+          takeLed,
+          getEdge: () => 0,
+        })
         return () => null
       },
     }),

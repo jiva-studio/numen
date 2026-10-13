@@ -44,6 +44,11 @@ export function getRowsBetween(
 const inOrder = (visibleRows: readonly ShownRow[], ids: ReadonlySet<RowId>): readonly RowId[] =>
   visibleRows.filter((row) => ids.has(row.id)).map((row) => row.id)
 
+export interface SelectionTarget {
+  readonly row: RowId
+  readonly press: Press
+}
+
 /**
  * What a press on a row makes the selection.
  *
@@ -54,17 +59,19 @@ const inOrder = (visibleRows: readonly ShownRow[], ids: ReadonlySet<RowId>): rea
  */
 export function resolveSelection(
   visibleRows: readonly ShownRow[],
-  selection: readonly RowId[],
-  anchor: RowId | null,
-  row: RowId,
-  press: Press,
+  current: RowSelection,
+  target: SelectionTarget,
 ): RowSelection {
+  const { row, press } = target
   if (press.isExtending) {
-    return { rows: getRowsBetween(visibleRows, anchor ?? row, row), anchor: anchor ?? row }
+    return {
+      rows: getRowsBetween(visibleRows, current.anchor ?? row, row),
+      anchor: current.anchor ?? row,
+    }
   }
 
   if (press.isJoining) {
-    const selectionSet = new Set(selection)
+    const selectionSet = new Set(current.rows)
     if (selectionSet.has(row)) selectionSet.delete(row)
     else selectionSet.add(row)
     return { rows: inOrder(visibleRows, selectionSet), anchor: row }

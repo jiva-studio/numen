@@ -227,7 +227,9 @@ const meta: Meta<Knobs> = {
         tile.value = createTile(written)
       }
 
-      provide(DECK_CONTEXT, { write: (_card, field, nth, text) => onWrite(field, nth, text) })
+      provide(DECK_CONTEXT, {
+        write: (_card, { field, nth }, text) => onWrite(field, nth, text),
+      })
 
       return {
         args,

@@ -135,13 +135,16 @@ export function leftInDocument(flow: Flow, spread: number, marks: readonly Mark[
  * carried over it — an estimate, and the only one that costs nothing. It moves
  * when the reading area does, which is what a page measured on the screen does.
  */
-export function createPages(
-  book: Span,
-  document: Span,
-  flow: Flow,
-  spread: number,
-  marks: readonly Mark[],
-): Pages {
+export interface PagesQuery {
+  readonly book: Span
+  readonly document: Span
+  readonly flow: Flow
+  readonly spread: number
+  readonly marks: readonly Mark[]
+}
+
+export function createPages(query: PagesQuery): Pages {
+  const { book, document, flow, spread, marks } = query
   const here = countFilledColumns(marks, flow)
   const first = spread * flow.columns + 1
   const bytes = document.to - document.from

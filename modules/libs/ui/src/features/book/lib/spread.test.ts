@@ -340,22 +340,25 @@ describe('what turns the page', () => {
 })
 
 describe('a hand put down and lifted', () => {
+  const turn = (from: number, to: number, hasSelection = false) =>
+    handTurn(from, to, { wide: WIDE, hasSelection })
+
   it('turns the way it was drawn', () => {
-    expect(handTurn(500, 500 - SWIPE, WIDE, false)).toBe('next')
-    expect(handTurn(500, 500 + SWIPE, WIDE, false)).toBe('back')
+    expect(turn(500, 500 - SWIPE)).toBe('next')
+    expect(turn(500, 500 + SWIPE)).toBe('back')
   })
 
   it('turns on a press near either edge, having gone nowhere', () => {
-    expect(handTurn(10, 10, WIDE, false)).toBe('back')
-    expect(handTurn(WIDE - 10, WIDE - 10, WIDE, false)).toBe('next')
+    expect(turn(10, 10)).toBe('back')
+    expect(turn(WIDE - 10, WIDE - 10)).toBe('next')
   })
 
   it('turns nothing where words were taken up', () => {
     // A run worth quoting is wider than a swipe, and taking one up ends over
     // the edge as often as not.
-    expect(handTurn(500, 500 - SWIPE, WIDE, true)).toBeUndefined()
-    expect(handTurn(WIDE - 10, WIDE - 10, WIDE, true)).toBeUndefined()
-    expect(handTurn(10, 10, WIDE, true)).toBeUndefined()
+    expect(turn(500, 500 - SWIPE, true)).toBeUndefined()
+    expect(turn(WIDE - 10, WIDE - 10, true)).toBeUndefined()
+    expect(turn(10, 10, true)).toBeUndefined()
   })
 })
 
@@ -375,29 +378,29 @@ describe('the page a person is looking at', () => {
   const here = marks.length
   const perColumn = (document.to - document.from) / here
   const before = Math.round((document.from - book.from) / perColumn)
+  const pages = (b: Span, d: Span, spread: number, m: readonly Mark[] = marks) =>
+    createPages({ book: b, document: d, flow, spread, marks: m })
 
   it('counts the columns on the screen, so a spread of two turns two pages', () => {
-    const first = createPages(book, document, flow, 0, marks)
-    const next = createPages(book, document, flow, 1, marks)
+    const first = pages(book, document, 0)
+    const next = pages(book, document, 1)
     expect(next.page - first.page).toBe(2)
   })
 
   it('counts the columns before this document at what a column of it holds', () => {
-    expect(createPages(book, document, flow, 0, marks).page).toBe(before + 1)
-    expect(createPages(book, document, flow, 0, marks).pages).toBe(
-      Math.round((book.to - book.from) / perColumn),
-    )
+    expect(pages(book, document, 0).page).toBe(before + 1)
+    expect(pages(book, document, 0).pages).toBe(Math.round((book.to - book.from) / perColumn))
   })
 
   it('counts the columns the text fills and not the boxes drawn beside them', () => {
     // A document of one line stands in one column of a spread of two.
     const one = createMarks(1)
     expect(countFilledColumns(one, flow)).toBe(1)
-    expect(createPages({ ...document }, document, flow, 0, one)).toEqual({ page: 1, pages: 1 })
+    expect(pages({ ...document }, document, 0, one)).toEqual({ page: 1, pages: 1 })
   })
 
   it('says one page for a document nothing has been laid out for', () => {
-    expect(createPages(book, document, flow, 0, [])).toEqual({ page: 1, pages: 1 })
+    expect(pages(book, document, 0, [])).toEqual({ page: 1, pages: 1 })
   })
 })
 
@@ -433,25 +436,27 @@ describe('the words the page count is said in', () => {
 describe('where a turn lands', () => {
   const span = { from: 400, to: 900 }
   const book = { from: 0, to: 1400 }
+  const to = (way: PageTurn, spread: number, count: number, s = span, b = book) =>
+    turnTo(way, { spread, count, span: s, book: b })
 
   it('lands on the spread the turn asks for, inside the document', () => {
-    expect(turnTo('next', 0, 3, span, book)).toStrictEqual({ spread: 1 })
-    expect(turnTo('back', 2, 3, span, book)).toStrictEqual({ spread: 1 })
-    expect(turnTo('first', 1, 3, span, book)).toStrictEqual({ spread: 0 })
-    expect(turnTo('first', 2, 3, span, book)).toStrictEqual({ spread: 0 })
-    expect(turnTo('last', 1, 3, span, book)).toStrictEqual({ spread: 2 })
+    expect(to('next', 0, 3)).toStrictEqual({ spread: 1 })
+    expect(to('back', 2, 3)).toStrictEqual({ spread: 1 })
+    expect(to('first', 1, 3)).toStrictEqual({ spread: 0 })
+    expect(to('first', 2, 3)).toStrictEqual({ spread: 0 })
+    expect(to('last', 1, 3)).toStrictEqual({ spread: 2 })
   })
 
   it('asks for the document beside this one, past either end of it', () => {
-    expect(turnTo('next', 2, 3, span, book)).toStrictEqual({ offset: 900 })
-    expect(turnTo('back', 0, 3, span, book)).toStrictEqual({ offset: 399 })
-    expect(turnTo('back', 1, 3, span, book)).toStrictEqual({ spread: 0 })
-    expect(turnTo('back', 0, 3, span, { from: 399, to: 1400 })).toStrictEqual({ offset: 399 })
+    expect(to('next', 2, 3)).toStrictEqual({ offset: 900 })
+    expect(to('back', 0, 3)).toStrictEqual({ offset: 399 })
+    expect(to('back', 1, 3)).toStrictEqual({ spread: 0 })
+    expect(to('back', 0, 3, span, { from: 399, to: 1400 })).toStrictEqual({ offset: 399 })
   })
 
   it('lands nowhere at either end of the book itself', () => {
-    expect(turnTo('next', 2, 3, span, span)).toStrictEqual({})
-    expect(turnTo('back', 0, 3, span, span)).toStrictEqual({})
+    expect(to('next', 2, 3, span, span)).toStrictEqual({})
+    expect(to('back', 0, 3, span, span)).toStrictEqual({})
   })
 })
 
@@ -484,7 +489,9 @@ describe('the page count of a document read against its bytes', () => {
 
   it('says the columns it fills where the document holds no bytes', () => {
     const empty = { from: 100, to: 100 }
-    expect(createPages({ from: 100, to: 5000 }, empty, flow, 0, marks)).toStrictEqual({
+    expect(
+      createPages({ book: { from: 100, to: 5000 }, document: empty, flow, spread: 0, marks }),
+    ).toStrictEqual({
       page: 1,
       pages: 2,
     })
@@ -492,14 +499,22 @@ describe('the page count of a document read against its bytes', () => {
 
   it('never puts the page in front before the first', () => {
     const empty = { from: 100, to: 100 }
-    expect(createPages({ from: 0, to: 1000 }, empty, flow, -1, marks).page).toBe(1)
+    expect(
+      createPages({ book: { from: 0, to: 1000 }, document: empty, flow, spread: -1, marks }).page,
+    ).toBe(1)
   })
 
   it('reaches at least the last column of the document, wherever it stands in the book', () => {
     // 250 bytes to a column: the document begins two columns in, and the book
     // comes to two, short of the four the document ends at.
     expect(
-      createPages({ from: 0, to: 550 }, { from: 500, to: 1000 }, flow, 0, marks),
+      createPages({
+        book: { from: 0, to: 550 },
+        document: { from: 500, to: 1000 },
+        flow,
+        spread: 0,
+        marks,
+      }),
     ).toStrictEqual({
       page: 3,
       pages: 4,
