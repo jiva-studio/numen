@@ -108,7 +108,7 @@ export function useCurveSlider(
 
   const counts = computed(() => {
     const one = props.material
-    return one ? words.material(one.decks, one.cards, one.overdue, one.unbegun) : []
+    return one ? words.material(one) : []
   })
 
   const learning = computed(() => {

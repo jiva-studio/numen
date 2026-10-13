@@ -59,6 +59,13 @@ export function getBuyFacts(goal: Goal, at: BuyInput): readonly BuyFact[] {
   return facts
 }
 
+export interface MaterialCounts {
+  readonly decks: number
+  readonly cards: number
+  readonly overdue: number
+  readonly unbegun: number
+}
+
 export type MaterialFact =
   | { kind: 'decks'; count: number }
   | { kind: 'cards'; count: number }
@@ -66,18 +73,13 @@ export type MaterialFact =
   | { kind: 'unbegun'; count: number }
 
 /** The facts of the material: the decks and cards always, the overdue and new where there are any. */
-export function getMaterialFacts(
-  decks: number,
-  cards: number,
-  overdue: number,
-  unbegun: number,
-): readonly MaterialFact[] {
+export function getMaterialFacts(counts: MaterialCounts): readonly MaterialFact[] {
   const facts: MaterialFact[] = [
-    { kind: 'decks', count: decks },
-    { kind: 'cards', count: cards },
+    { kind: 'decks', count: counts.decks },
+    { kind: 'cards', count: counts.cards },
   ]
-  if (overdue > 0) facts.push({ kind: 'overdue', count: overdue })
-  if (unbegun > 0) facts.push({ kind: 'unbegun', count: unbegun })
+  if (counts.overdue > 0) facts.push({ kind: 'overdue', count: counts.overdue })
+  if (counts.unbegun > 0) facts.push({ kind: 'unbegun', count: counts.unbegun })
   return facts
 }
 

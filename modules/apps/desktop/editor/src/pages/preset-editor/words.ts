@@ -2,7 +2,7 @@
 import type { StopReason } from '@numen/protocol'
 import { formatStopReasonMessage } from '@numen/wire'
 /** What a preset tab says: the one control, the settings under it, and what went wrong. */
-import { many, percent, plural } from '@numen/ui'
+import { many, percent } from '@numen/ui'
 import type { ErrorCode } from '@/shared/errors'
 import { getErrorWords } from '@/shared/words/errors'
 import type { BudgetUnit, Goal, Rule } from './types'
@@ -11,129 +11,17 @@ import {
   getBuyFacts,
   getLearningFacts,
   getMaterialFacts,
-  type BuyFact,
   type BuyInput,
-  type LearningFact,
-  type MaterialFact,
+  type MaterialCounts,
 } from './lib/facts'
-
-/** What each of the three goals is offered as: the value it steers. */
-const GOALS: Record<Goal, string> = {
-  minutes: 'Minutes a day',
-  retention: 'Retention',
-  date: 'A date',
-}
-
-/**
- * What each of the two rules for the learned is offered as: a name, since a
- * control offers names and the row under it says what they mean.
- */
-const RULES: Record<Rule, string> = {
-  interval: 'By days',
-  retention: 'By remembering',
-}
-
-/** What each of the two units a budget is spent in is offered as. */
-const BUDGET_UNITS: Record<BudgetUnit, string> = {
-  cards: 'Cards',
-  shows: 'Showings',
-}
-
-/** What each setting is called, and the one line that says what it is. */
-const FIELDS: Record<Field, readonly [string, string]> = {
-  newADay: ['New a day', 'How many unseen cards a day holds.'],
-  reviewsADay: ['Reviews a day', 'How many returning cards a day holds.'],
-  retention: ['Retention', 'How much of what you are asked you would remember.'],
-  minutesADay: [
-    'Minutes a day',
-    'How long a day of review runs, spent against the time each answer took.',
-  ],
-  byDate: ['The day', 'The day the material is to be in the head.'],
-  counts: ['Counts', "What a day's budget is spent on."],
-  learned: [
-    'Counts as learned',
-    'By days, a card is learned once its reviews stand at least so many days apart. ' +
-      'By remembering, once the chance you would remember it today is at least the target.',
-  ],
-  interval: ['Days apart', 'How far apart reviews stand before a card counts as learned.'],
-  backlog: [
-    'Overdue share',
-    'What part of a session goes to the overdue pile before new material is offered, in per cent. ' +
-      'It moves what fills a day and not how much it holds, and at nothing the new material ' +
-      'goes first while there is any.',
-  ],
-  load: [
-    'Load by day',
-    'What part of a day of review each day of the week carries, in per cent. ' +
-      'A day at nothing admits nothing, and a card falling there stands overdue until a day ' +
-      'that admits it; an even load leans a card off a lighter day where its own interval ' +
-      'leaves room to lean, and nothing holds a day to its share.',
-  ],
-  hasEvenLoad: [
-    'Even load',
-    'Whether a card is leaned towards a lighter day of the days its own interval allows. ' +
-      'A card whose interval allows no other day stays where it fell.',
-  ],
-}
-
-/** An error clause as a sentence. */
-const sayAsSentence = (clause: string): string =>
-  `${clause.charAt(0).toUpperCase()}${clause.slice(1)}.`
-
-/** A count as a person reads one. */
-const count = (value: number): string => `${Math.round(value)}`
-
-/** A fact about what a place buys, said. */
-const formatBuyFact = (fact: BuyFact): string => {
-  switch (fact.kind) {
-    case 'daysOff':
-      return `${many(fact.days, 'day')} off`
-    case 'minutesADay':
-      return `${many(fact.minutes, 'minute')} a day`
-    case 'remembered':
-      return `${percent(fact.share)} remembered`
-    case 'cardsASession':
-      return `${many(fact.cards, 'card')} a session`
-    case 'cannotGetThere':
-      return `${count(fact.short)} of ${count(fact.cards)} cannot get there`
-    case 'overdueGone':
-      return `overdue gone in ${many(fact.days, 'day')}`
-    case 'overdueStays':
-      return `not within ${many(fact.horizon, 'day')}`
-  }
-}
-
-/** A fact about the material, said as a figure and the name under it. */
-const formatMaterialFact = (fact: MaterialFact): { figure: string; name: string } => {
-  const figure = count(fact.count)
-  switch (fact.kind) {
-    case 'decks':
-      return { figure, name: plural(fact.count, 'deck') }
-    case 'cards':
-      return { figure, name: plural(fact.count, 'card') }
-    case 'overdue':
-      return { figure, name: 'overdue' }
-    case 'unbegun':
-      return { figure, name: 'new' }
-  }
-}
-
-/** A fact about what is learned, said as a figure and the name under it. */
-const formatLearningFact = (fact: LearningFact): { figure: string; name: string } => {
-  switch (fact.kind) {
-    case 'notYet':
-      return { figure: 'not yet', name: 'in the days ahead' }
-    case 'allToday':
-      return { figure: 'today', name: 'all of it learned' }
-    case 'daysToLearn':
-      return {
-        figure: count(fact.days),
-        name: plural(fact.days, 'day to learn it', 'days to learn it'),
-      }
-    case 'learnedToday':
-      return { figure: `${count(fact.learned)} of ${count(fact.cards)}`, name: 'learned today' }
-  }
-}
+import { BUDGET_UNITS, FIELDS, GOALS, RULES } from './lib/labels'
+import {
+  count,
+  formatBuyFact,
+  formatLearningFact,
+  formatMaterialFact,
+  sayAsSentence,
+} from './lib/formatFacts'
 
 export const WORDS = {
   preset: 'Preset',
@@ -177,8 +65,7 @@ export const WORDS = {
    * What the control is acting on, said over the picture: the decks that point
    * here and the material they hold between them.
    */
-  material: (decks: number, cards: number, overdue: number, fresh: number) =>
-    getMaterialFacts(decks, cards, overdue, fresh).map(formatMaterialFact),
+  material: (counts: MaterialCounts) => getMaterialFacts(counts).map(formatMaterialFact),
   /**
    * When the material is learned, and how much of it stands learned now, read
    * off the run the picture is drawn from. Where there is no day the whole of
