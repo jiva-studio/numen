@@ -3,8 +3,9 @@
  * draws: what it says of its place among the tiles, and the words it asks for.
  */
 import { mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import Card from './Card.vue'
+import { DECK_CONTEXT } from '../../../model/context'
 import { type DeckSection, type CardWords, type DeckCard } from '../../../lib/deck'
 import { getGrid, type Tile } from '../../../lib/grid'
 import type { Stencil } from '../../../lib/card'
@@ -39,11 +40,18 @@ const createTile = (
   return laid
 }
 
+const write = vi.fn<(card: string, field: string, nth: number, text: string) => void>()
+
 const mountCard = (tile: Tile, props: Record<string, unknown> = {}) =>
-  mount(Card, { attachTo: document.body, props: { tile, ...props } })
+  mount(Card, {
+    attachTo: document.body,
+    props: { tile, ...props },
+    global: { provide: { [DECK_CONTEXT as symbol]: { write } } },
+  })
 
 afterEach(() => {
   document.body.innerHTML = ''
+  write.mockReset()
 })
 
 describe('Card', () => {
@@ -83,7 +91,7 @@ describe('Card', () => {
     expect(press.defaultPrevented).toBe(false)
 
     await box.setValue('Llama\nand alpaca')
-    expect(held.emitted('write')).toEqual([['Name', 1, 'Llama\nand alpaca']])
+    expect(write.mock.calls).toEqual([['llama', 'Name', 1, 'Llama\nand alpaca']])
   })
 
   it('says on the strip which stencil cut the card, and where none did, that none did', () => {

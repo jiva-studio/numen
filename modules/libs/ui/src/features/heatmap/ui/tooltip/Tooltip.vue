@@ -6,11 +6,11 @@
  * It stands on the far side of the thing it is about, takes the near side where
  * the far one has no room, and is brought inside the edge where neither has.
  */
-import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 
 import { getPlaceBeside, type Box } from '@/shared/lib/place'
 import type { Size } from '@/shared/lib/geometry'
-import { browserViewport, type Viewport } from '@/shared/lib/viewport'
+import { browserViewport, useRoom, type Viewport } from '@/shared/lib/viewport'
 
 const props = withDefaults(
   defineProps<{
@@ -30,9 +30,6 @@ const root = useTemplateRef<HTMLElement>('root')
 
 /** Its own size, which only the drawing knows. Placement is worked out from it. */
 const size = ref<Size>({ width: 0, height: 0 })
-
-/** The area to stay inside, measured again whenever it changes. */
-const room = ref<Size>({ width: 0, height: 0 })
 
 /**
  * Across, it stands beside the thing it is about. Down, it begins where that
@@ -67,18 +64,10 @@ const measure = () => {
   if (box) size.value = { width: box.width, height: box.height }
 }
 
-/** What stops the watching, held from the moment it begins. */
-let stopWatching: (() => void) | null = null
+onMounted(measure)
 
-onMounted(() => {
-  measure()
-  stopWatching = props.viewport.watchRoom((size) => {
-    room.value = size
-    measure()
-  })
-})
-
-onBeforeUnmount(() => stopWatching?.())
+/** The area to stay inside, measured again whenever it changes. */
+const { room } = useRoom(props.viewport, measure)
 
 // Measured again once the drawing has caught up with the thing it is about.
 watch(() => props.at, measure, { flush: 'post' })

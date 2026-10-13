@@ -17,20 +17,14 @@ import type { PlexDrawnSlots, PlexViewEvents, PlexViewProps } from './props'
 import { getDraggedShape, getReachGhost, getReachThread } from './threads'
 import type { GestureRole, PlacedNode } from '../../lib/node'
 import { getRelationName } from '../../lib/relation'
-import { DWELL } from '../../model/dwell'
-import { byHandle } from '../../model/reaching'
-import { byDoubleClick } from '../../model/showing'
-import { browserClock } from '../../model/transition'
+import { DEFAULT_BEHAVIOUR } from '../../model/behaviour'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexViewProps>(), {
   showEdgeLabels: true,
   canReach: true,
   relationName: getRelationName,
-  dwell: DWELL,
-  reaching: () => byHandle,
-  showing: () => byDoubleClick,
-  clock: () => browserClock,
+  behaviour: () => DEFAULT_BEHAVIOUR,
   gestureFrom: null,
   gestureAt: null,
   gestureOutcome: null,
@@ -167,10 +161,7 @@ const getRole = (node: PlacedNode): GestureRole => {
       :gesture-role="getRole(node)"
       :wide="widen?.(node) ?? null"
       :hung="hung?.(node) ?? null"
-      :dwell="dwell"
-      :reaching="reaching"
-      :showing="showing"
-      :clock="clock"
+      :behaviour="behaviour"
       :ref="holdNode(node.id)"
       @activate="emit('activate', node.id)"
       @show="emit('show', node.id, $event)"

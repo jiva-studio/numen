@@ -36,7 +36,11 @@ function createPress(gestureRole: GestureRole = 'open', middle: Position | null 
       return {}
     },
   }
-  const props: NodePressProps = { node: NODE, gestureRole, reaching, showing: byDoubleClick }
+  const props: NodePressProps = {
+    node: NODE,
+    gestureRole,
+    behaviour: { reaching, showing: byDoubleClick },
+  }
   const press = useNodePress(props, () => middle, said)
   return { press, said, site }
 }

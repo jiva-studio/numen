@@ -28,6 +28,9 @@ const scrollOffset = ref(0)
 /** The headings, as far out from under the box as they have come. */
 const openHeadings = computed(() => getOpenHeadings(props.hung, props.open, scrollOffset.value))
 
+/** Where the ground under the headings begins across. */
+const groundX = computed(() => props.hung.offset - props.hung.width / 2)
+
 /** What a wheel moved that came to no whole heading, held for the next one. */
 let carried = 0
 
@@ -82,7 +85,7 @@ const arrowLine = (arrow: Arrow) =>
     <!-- One ground under all of them, as deep as they have come. -->
     <rect
       class="plex__ground"
-      :x="hung.offset - hung.width / 2"
+      :x="groundX"
       :y="hung.top"
       :width="hung.width"
       :height="openHeadings.height"

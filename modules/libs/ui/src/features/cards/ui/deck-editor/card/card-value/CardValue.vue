@@ -3,14 +3,18 @@
  * One value of a card: the name of the field it stands in, the box it is typed
  * in, and what is wrong with it said underneath.
  */
+import { inject } from 'vue'
 import { ErrorMessage } from '../../../error-message'
 import { AutosizeTextarea } from '../../../autosize-textarea'
 import { Divider } from '../../../divider'
 import { DECK_WORDS, type CardWords } from '../../../../lib/deck'
+import { DECK_CONTEXT } from '../../../../model/context'
 import type { PlacedFieldValue } from '../../../../lib/grid'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
+    /** The card the value belongs to, by its identifier. */
+    card: string
     /** The value, laid out against the stencil that cuts the card. */
     value: PlacedFieldValue
     /** What the box is named by, which its label points at. */
@@ -23,10 +27,12 @@ withDefaults(
   { wrong: () => [], words: () => DECK_WORDS },
 )
 
-const emit = defineEmits<{
-  /** The value as it now reads. */
-  (event: 'write', text: string): void
-}>()
+const deck = inject(DECK_CONTEXT)
+if (!deck) throw new Error('A card value is drawn outside a deck')
+
+/** The value as it now reads, told to the deck with the card and the place it is in. */
+const onWrite = (text: string): void =>
+  deck.write(props.card, props.value.field, props.value.nth, text)
 </script>
 
 <template>
@@ -43,7 +49,7 @@ const emit = defineEmits<{
       :id="boxId"
       :text="value.text"
       :data-value="value.field"
-      @write="(text: string) => emit('write', text)"
+      @write="onWrite"
     />
 
     <!-- No stencil names a slot for this value, so what was written is read

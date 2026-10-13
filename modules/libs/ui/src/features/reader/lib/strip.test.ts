@@ -9,6 +9,8 @@ import {
   inFront,
   row,
   findPageScroll,
+  getScrollTarget,
+  getTurnTarget,
   type Page,
 } from './strip'
 import type { Size } from '@/shared/lib/geometry'
@@ -194,6 +196,27 @@ describe('where the row stands', () => {
 
     expect(findPageScroll(laid, 9)).toBeUndefined()
   })
+
+  it('holds the scroll inside the row, so the last page stops at the end of it', () => {
+    const laid = row(book(20), VIEWPORT, 1)
+
+    expect(getScrollTarget(laid, VIEWPORT, 0)).toBe(0)
+    expect(getScrollTarget(laid, VIEWPORT, 19)).toBe(laid.length - VIEWPORT.width)
+    expect(getScrollTarget(laid, VIEWPORT, 5)).toBe(laid.starts[5]! - GAP)
+  })
+
+  it('scrolls nowhere for a page the row does not hold', () => {
+    expect(getScrollTarget(row(book(4), VIEWPORT, 1), VIEWPORT, 9)).toBeUndefined()
+  })
+  it('scrolls to the start of a row shorter than the viewport', () => {
+    expect(
+      getScrollTarget(
+        row(book(1), { width: 4000, height: 800 }, 1),
+        { width: 4000, height: 800 },
+        0,
+      ),
+    ).toBe(0)
+  })
 })
 
 describe('how close a page is drawn', () => {
@@ -232,5 +255,28 @@ describe('a viewport nothing has been measured in', () => {
 
     expect(laid.starts).toEqual([])
     expect(laid.widths).toEqual([])
+  })
+})
+
+describe('the page a key turns to', () => {
+  it('turns on and back by one', () => {
+    expect(getTurnTarget('ArrowRight', 2, 5)).toBe(3)
+    expect(getTurnTarget('PageDown', 2, 5)).toBe(3)
+    expect(getTurnTarget('ArrowLeft', 2, 5)).toBe(1)
+  })
+
+  it('goes to the ends under home and end', () => {
+    expect(getTurnTarget('Home', 3, 5)).toBe(0)
+    expect(getTurnTarget('End', 1, 5)).toBe(4)
+  })
+
+  it('turns nowhere past either end of the document', () => {
+    expect(getTurnTarget('ArrowLeft', 0, 5)).toBeUndefined()
+    expect(getTurnTarget('ArrowRight', 4, 5)).toBeUndefined()
+  })
+
+  it('turns nowhere for a key that turns no page, or a document with none', () => {
+    expect(getTurnTarget('k', 1, 5)).toBeUndefined()
+    expect(getTurnTarget('ArrowRight', 0, 0)).toBeUndefined()
   })
 })

@@ -10,21 +10,16 @@ import PlexNodeHandle from './PlexNodeHandle.vue'
 import PlexNodeHeadings from './PlexNodeHeadings.vue'
 import type { PlexDrawnSlots, PlexNodeEvents, PlexNodeProps } from './props'
 import { useHoverFocus } from '../../model/hoverFocus'
-import { DWELL, useOpenBox } from '../../model/dwell'
+import { DEFAULT_BEHAVIOUR } from '../../model/behaviour'
+import { useOpenBox } from '../../model/dwell'
 import { useNodePress } from '../../model/press'
-import { byHandle } from '../../model/reaching'
-import { byDoubleClick } from '../../model/showing'
-import { browserClock } from '../../model/transition'
 import { createAriaLabel, type Position } from '../../lib/node'
 
 const props = withDefaults(defineProps<PlexNodeProps>(), {
   gestureRole: 'open',
   wide: null,
   hung: null,
-  dwell: DWELL,
-  reaching: () => byHandle,
-  showing: () => byDoubleClick,
-  clock: () => browserClock,
+  behaviour: () => DEFAULT_BEHAVIOUR,
 })
 
 const emit = defineEmits<PlexNodeEvents>()
@@ -61,7 +56,7 @@ const { isGhost, canStop, isAnnounced, listening } = press
  */
 const isOffering = computed(
   () =>
-    props.reaching.hasHandle &&
+    props.behaviour.reaching.hasHandle &&
     props.node.opacity >= 1 &&
     (props.gestureRole === 'source' || (props.gestureRole === 'open' && hoverFocus.isOn.value)),
 )
@@ -88,8 +83,8 @@ const { open, box, handle } = useOpenBox(
   () => props.node,
   () => props.wide,
   () => under.value,
-  () => props.dwell,
-  props.clock,
+  () => props.behaviour.dwell,
+  props.behaviour.clock,
 )
 
 // A box that has begun to open is already over its neighbours.

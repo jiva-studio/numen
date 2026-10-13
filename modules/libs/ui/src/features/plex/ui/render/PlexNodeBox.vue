@@ -32,6 +32,9 @@ const hasIcon = computed(() => hasAnything(slots.icon?.({ node: props.node })))
 /** Where the box begins, which everything drawn in it is placed from. */
 const startsAt = computed(() => props.box.offset - props.box.width / 2)
 
+/** Where the box begins down, which is half its height above the middle. */
+const startsDown = computed(() => -props.node.height / 2)
+
 /** Whether anything was drawn at all, which a placeholder and a blank are not. */
 function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
   return (
@@ -47,14 +50,8 @@ function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
 </script>
 
 <template>
-  <rect
-    class="plex__box"
-    :x="startsAt"
-    :y="-node.height / 2"
-    :width="box.width"
-    :height="node.height"
-  />
-  <foreignObject :x="startsAt" :y="-node.height / 2" :width="box.width" :height="node.height">
+  <rect class="plex__box" :x="startsAt" :y="startsDown" :width="box.width" :height="node.height" />
+  <foreignObject :x="startsAt" :y="startsDown" :width="box.width" :height="node.height">
     <div class="plex__title" :class="{ 'caps-numen': $host }">
       <!-- Whatever stands for the thing a node addresses. The plex has no
            way to know what that is, so it is handed one. -->

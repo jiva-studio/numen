@@ -9,9 +9,8 @@ import type { NodeHeadings } from '../../lib/inside'
 import type { GestureRole, PlacedNode, Position } from '../../lib/node'
 import type { PlexRelation } from '../../lib/relation'
 import type { WideBox } from '../../model/dwell'
-import type { ReachStrategy } from '../../model/reaching'
-import type { PlexDestination, ShowStrategy } from '../../model/showing'
-import type { Clock } from '../../model/transition'
+import type { PlexBehaviour } from '../../model/behaviour'
+import type { PlexDestination } from '../../model/showing'
 
 export interface PlexViewProps {
   frame: PlexFrame
@@ -41,14 +40,8 @@ export interface PlexViewProps {
    * picture's to work out.
    */
   hung?: ((node: PlacedNode) => NodeHeadings | null) | undefined
-  /** How long the attention rests on a box before it widens. Milliseconds. */
-  dwell?: number
-  /** How a node offers to be reached out of. The handle by default. */
-  reaching?: ReachStrategy
-  /** How a node is asked for on its own. The second click by default. */
-  showing?: ShowStrategy
-  /** The clock a box opens on. Browser by default; a test hands in its own. */
-  clock?: Clock
+  /** How the nodes behave under a hand and over time. The usual by default. */
+  behaviour?: PlexBehaviour
   /** A gesture in progress: where it started, where it is, what it means. */
   gestureFrom?: string | null
   gestureAt?: Position | null
@@ -98,14 +91,8 @@ export interface PlexNodeProps {
    * for a node with none.
    */
   hung?: NodeHeadings | null
-  /** How long the attention rests before it widens. Milliseconds. */
-  dwell?: number
-  /** How this node offers to be reached out of. The handle by default. */
-  reaching?: ReachStrategy
-  /** How this node is asked for on its own. The second click by default. */
-  showing?: ShowStrategy
-  /** The clock the opening is drawn on. Browser by default. */
-  clock?: Clock
+  /** How this node behaves under a hand and over time. The usual by default. */
+  behaviour?: PlexBehaviour
 }
 
 export interface PlexNodeEvents {

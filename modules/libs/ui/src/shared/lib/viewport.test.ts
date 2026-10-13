@@ -3,10 +3,10 @@
  * observer and the sizes are stood in for.
  */
 import { mount } from '@vue/test-utils'
-import { defineComponent, h, shallowRef } from 'vue'
+import { defineComponent, h, nextTick, shallowRef } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Size } from './geometry'
-import { browserViewport, useViewport } from './viewport'
+import { browserViewport, useRoom, useViewport, useWholeViewport } from './viewport'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -301,5 +301,99 @@ describe('the room of one element of a component', () => {
     one.wrapper.unmount()
 
     expect(one.errors).toStrictEqual([])
+  })
+})
+
+describe('an element that is replaced', () => {
+  it('is let go of, and the one that takes its place is watched', async () => {
+    const watchers = stubResizeObserver()
+    const first = drawn(200, 100)
+    const second = drawn(300, 150)
+    const one = mountViewport(first)
+
+    one.element.value = second
+    await nextTick()
+
+    expect(watchers).toHaveLength(2)
+    expect(watchers[0]!.disconnected).toBe(true)
+    expect(watchers[1]!.observed).toStrictEqual([second])
+    expect(one.viewport.value).toStrictEqual({ width: 300, height: 150 })
+    one.wrapper.unmount()
+  })
+
+  it('is watched once however it comes to stand', async () => {
+    const watchers = stubResizeObserver()
+    const one = mountViewport(null)
+
+    one.element.value = drawn(200, 100)
+    await nextTick()
+
+    expect(watchers).toHaveLength(1)
+    one.wrapper.unmount()
+  })
+})
+
+describe('the whole room of one element of a component', () => {
+  it('is every border box the element takes, and is let go of with the component', () => {
+    const watchers = stubResizeObserver()
+    const held: { viewport?: ReturnType<typeof useWholeViewport> } = {}
+    const element = shallowRef<HTMLElement | null>(drawn(0, 0))
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          held.viewport = useWholeViewport(element)
+          return () => h('div')
+        },
+      }),
+    )
+
+    tellBorder(watchers[0]!, 90, 40)
+    expect(held.viewport!.viewport.value).toStrictEqual({ width: 90, height: 40 })
+
+    wrapper.unmount()
+    expect(watchers[0]!.disconnected).toBe(true)
+  })
+})
+
+describe('the room of the window, held by a component', () => {
+  const mountRoom = (port: Parameters<typeof useRoom>[0], onChange?: (size: Size) => void) => {
+    const held: { room?: ReturnType<typeof useRoom> } = {}
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          held.room = useRoom(port, onChange)
+          return () => h('div')
+        },
+      }),
+    )
+    return { wrapper, ...held.room! }
+  }
+
+  it('is measured when the component is drawn, and at every resize', () => {
+    const onChange = createSizes()
+    const one = mountRoom(undefined, onChange)
+
+    expect(one.room.value).toStrictEqual({ width: window.innerWidth, height: window.innerHeight })
+    expect(onChange).toHaveBeenCalledTimes(1)
+
+    vi.stubGlobal('innerWidth', 411)
+    vi.stubGlobal('innerHeight', 222)
+    window.dispatchEvent(new Event('resize'))
+    expect(one.room.value).toStrictEqual({ width: 411, height: 222 })
+    expect(onChange).toHaveBeenCalledTimes(2)
+    one.wrapper.unmount()
+  })
+
+  it('is watched through the port it is given, and let go of with the component', () => {
+    const stop = vi.fn()
+    const watchRoom = vi.fn<(took: (size: Size) => void) => () => void>((took) => {
+      took({ width: 5, height: 6 })
+      return stop
+    })
+    const one = mountRoom({ ...browserViewport, watchRoom })
+
+    expect(one.room.value).toStrictEqual({ width: 5, height: 6 })
+    one.wrapper.unmount()
+    expect(stop).toHaveBeenCalledTimes(1)
   })
 })

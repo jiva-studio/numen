@@ -6,19 +6,9 @@
  * What was typed stands as it was typed, and the number is written out only
  * once the field is left. Bounds that move under the number bring it in.
  */
-import { computed, nextTick, ref, useTemplateRef, watch, type HTMLAttributes } from 'vue'
-import { clamp } from '@/shared/lib/bounds'
+import { computed, useTemplateRef, type HTMLAttributes } from 'vue'
 import { cn } from '@/shared/lib/classes'
-import {
-  isAllowed,
-  parseNumber,
-  isPartialNumber,
-  snapToBounds,
-  isTextForValue,
-  stepForKey,
-  formatNumber,
-  DEFAULT_BOUNDS,
-} from './number'
+import { DEFAULT_BOUNDS, useNumberEntry } from './number'
 
 const props = withDefaults(
   defineProps<{
@@ -51,81 +41,15 @@ const emit = defineEmits<{
 
 const bounds = computed(() => ({ min: props.min, max: props.max, step: props.step }))
 
-/** What stands in the field, which is what was typed until the field is left. */
-const typed = ref(formatNumber(model.value))
-
-/** The number the field last stood at rest at. Committing is what moves it. */
-let rested = model.value
-
-/**
- * Whether what stands there is refused. Text a number could still be typed out
- * of is left alone; text that is no number, and a number past the bounds, are
- * marked where they stand. A number between two places the step lays is a
- * number on the way to one of them, and stands unmarked until the field is left.
- */
-const isInvalid = computed(() => {
-  const raw = typed.value.trim()
-  if (raw === '') return false
-  if (!isPartialNumber(raw)) return true
-  const value = parseNumber(raw)
-  return value !== null && value !== clamp(value, bounds.value)
-})
-
-/** What a refused line is said as, so it is read out and not only marked. */
-const speechText = computed(() => (isInvalid.value ? typed.value.trim() : undefined))
-
-/** The number in force, which is a number the bounds hold. */
-const inForce = computed(() => (model.value === null ? null : clamp(model.value, bounds.value)))
-
-/** A number the bounds no longer hold is brought in, and stands there written out. */
-watch(
-  inForce,
-  (now) => {
-    if (now === model.value) return
-    model.value = now
-    typed.value = formatNumber(now)
-    rested = now
-  },
-  { immediate: true },
+const { typed, isInvalid, speechText, setText, commit, applyKey } = useNumberEntry(
+  model,
+  () => bounds.value,
+  (value) => emit('commit', value),
 )
 
 const element = useTemplateRef<HTMLInputElement>('element')
 
-/** A number set from outside is written out; typing that means it is left alone. */
-watch(model, (now) => {
-  if (isTextForValue(typed.value, now)) return
-  typed.value = formatNumber(now)
-  rested = now
-})
-
-const onInput = (event: Event) => {
-  typed.value = (event.target as HTMLInputElement).value
-  if (typed.value.trim() === '') model.value = null
-  else if (isAllowed(typed.value, bounds.value)) model.value = parseNumber(typed.value)
-}
-
-/**
- * Leaving writes back what holds: the number on a place of the step, in bounds.
- * A field left standing where it stood has not committed anywhere new.
- *
- * What the caller does with the number is the caller's, and the field stands on
- * whatever the caller holds once it has answered.
- */
-const commit = async () => {
-  const value = parseNumber(typed.value)
-  const now = value === null ? null : snapToBounds(value, bounds.value)
-  model.value = now
-  typed.value = formatNumber(now)
-  if (now !== rested) {
-    rested = now
-    emit('commit', now)
-  }
-  await nextTick()
-  if (!isTextForValue(typed.value, model.value)) {
-    typed.value = formatNumber(model.value)
-    rested = model.value
-  }
-}
+const onInput = (event: Event) => setText((event.target as HTMLInputElement).value)
 
 /**
  * A key the spin button answers: the arrows a step, the page keys ten, and home
@@ -136,12 +60,7 @@ const onKeyDown = (event: KeyboardEvent) => {
     void commit()
     return
   }
-  const steppedValue = stepForKey(event.key, parseNumber(typed.value) ?? model.value, bounds.value)
-  if (steppedValue === null) return
-  event.preventDefault()
-  if (props.disabled) return
-  model.value = steppedValue
-  typed.value = formatNumber(steppedValue)
+  if (applyKey(event.key, props.disabled)) event.preventDefault()
 }
 
 defineExpose({

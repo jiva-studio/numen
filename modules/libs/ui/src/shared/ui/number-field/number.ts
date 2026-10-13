@@ -5,6 +5,7 @@
  * Pure: the same text gives the same answer wherever it is read, so what the
  * field hands on can be named without drawing it.
  */
+import { computed, nextTick, ref, watch, type ComputedRef, type Ref } from 'vue'
 import { clamp, getDecimalPlaces, roundToPlaces, type Bounds } from '@/shared/lib/bounds'
 
 export const DEFAULT_BOUNDS: Bounds = { min: 0, max: 999, step: 1 }
@@ -73,3 +74,113 @@ export const formatNumber = (value: number | null): string => (value === null ? 
 /** Whether what is typed stands for the number in force. An empty field holds none. */
 export const isTextForValue = (text: string, value: number | null): boolean =>
   value === null ? text.trim() === '' : parseNumber(text) === value
+
+/** What the field stands on while a person types, and what each act does with it. */
+export interface NumberEntry {
+  /** What stands in the field, which is what was typed until the field is left. */
+  readonly typed: Ref<string>
+  /** Whether what stands there is refused. */
+  readonly isInvalid: ComputedRef<boolean>
+  /** What a refused line is said as, so it is read out and not only marked. */
+  readonly speechText: ComputedRef<string | undefined>
+  /** The text now in the field. */
+  readonly setText: (text: string) => void
+  /** The field left, or committed with Enter. */
+  readonly commit: () => Promise<void>
+  /** A key pressed; whether it was one the spin button answers. */
+  readonly applyKey: (key: string, isDisabled: boolean) => boolean
+}
+
+/**
+ * The typed, model and rested state of a number field.
+ *
+ * What was typed stands as it was typed, and the number is written out only
+ * once the field is left. A number the bounds no longer hold is brought in, and
+ * stands there written out. `onCommit` hears of a rest at a number other than
+ * the one the field was resting at.
+ */
+export const useNumberEntry = (
+  model: Ref<number | null>,
+  getBounds: () => Bounds,
+  onCommit: (value: number | null) => void,
+): NumberEntry => {
+  const typed = ref(formatNumber(model.value))
+
+  /** The number the field last stood at rest at. Committing is what moves it. */
+  let rested = model.value
+
+  /**
+   * Text a number could still be typed out of is left alone; text that is no
+   * number, and a number past the bounds, are refused. A number between two
+   * places the step lays is on the way to one of them, and stands unmarked
+   * until the field is left.
+   */
+  const isInvalid = computed(() => {
+    const raw = typed.value.trim()
+    if (raw === '') return false
+    if (!isPartialNumber(raw)) return true
+    const value = parseNumber(raw)
+    return value !== null && value !== clamp(value, getBounds())
+  })
+
+  const speechText = computed(() => (isInvalid.value ? typed.value.trim() : undefined))
+
+  /** The number in force, which is a number the bounds hold. */
+  const inForce = computed(() => (model.value === null ? null : clamp(model.value, getBounds())))
+
+  watch(
+    inForce,
+    (now) => {
+      if (now === model.value) return
+      model.value = now
+      typed.value = formatNumber(now)
+      rested = now
+    },
+    { immediate: true },
+  )
+
+  // A number set from outside is written out; typing that means it is left alone.
+  watch(model, (now) => {
+    if (isTextForValue(typed.value, now)) return
+    typed.value = formatNumber(now)
+    rested = now
+  })
+
+  const setText = (text: string): void => {
+    typed.value = text
+    if (text.trim() === '') model.value = null
+    else if (isAllowed(text, getBounds())) model.value = parseNumber(text)
+  }
+
+  /**
+   * Leaving writes back what holds: the number on a place of the step, in
+   * bounds. A field left standing where it stood has not committed anywhere new.
+   * The field stands on whatever the caller holds once it has answered.
+   */
+  const commit = async (): Promise<void> => {
+    const value = parseNumber(typed.value)
+    const now = value === null ? null : snapToBounds(value, getBounds())
+    model.value = now
+    typed.value = formatNumber(now)
+    if (now !== rested) {
+      rested = now
+      onCommit(now)
+    }
+    await nextTick()
+    if (!isTextForValue(typed.value, model.value)) {
+      typed.value = formatNumber(model.value)
+      rested = model.value
+    }
+  }
+
+  const applyKey = (key: string, isDisabled: boolean): boolean => {
+    const stepped = stepForKey(key, parseNumber(typed.value) ?? model.value, getBounds())
+    if (stepped === null) return false
+    if (isDisabled) return true
+    model.value = stepped
+    typed.value = formatNumber(stepped)
+    return true
+  }
+
+  return { typed, isInvalid, speechText, setText, commit, applyKey }
+}
