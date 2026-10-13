@@ -3,7 +3,7 @@
 import { computed, useTemplateRef, watch } from 'vue'
 import { useWholeViewport } from '@/shared/lib/viewport'
 import { Thread } from '@/features/thread'
-import { MessageComposer, type AgentModelOption } from './message-composer'
+import { MessageComposer, type AgentModelOption } from '@/features/message-composer'
 import type { Turn } from '@/features/thread'
 
 withDefaults(
