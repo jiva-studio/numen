@@ -135,6 +135,84 @@ func readPackagePath(files map[string]*zip.File) (string, error) {
 	return first, nil
 }
 
+type rawPackageDocument struct {
+	Metadata struct {
+		Entries []struct {
+			XMLName  xml.Name
+			Property string `xml:"property,attr"`
+			Refines  string `xml:"refines,attr"`
+			Value    string `xml:",chardata"`
+		} `xml:",any"`
+	} `xml:"metadata"`
+	Items []struct {
+		ID         string `xml:"id,attr"`
+		Href       string `xml:"href,attr"`
+		MediaType  string `xml:"media-type,attr"`
+		Properties string `xml:"properties,attr"`
+	} `xml:"manifest>item"`
+	Spine struct {
+		TOC       string `xml:"toc,attr"`
+		Direction string `xml:"page-progression-direction,attr"`
+		ItemRefs  []struct {
+			IDRef      string `xml:"idref,attr"`
+			Linear     string `xml:"linear,attr"`
+			Properties string `xml:"properties,attr"`
+		} `xml:"itemref"`
+	} `xml:"spine"`
+}
+
+type manifestItem struct {
+	path      string
+	mediaType string
+}
+
+func readPackageMetadata(read *packageDoc, doc *rawPackageDocument) {
+	for _, entry := range doc.Metadata.Entries {
+		if entry.XMLName.Local == "title" && titleNamespaces[entry.XMLName.Space] &&
+			read.title == "" {
+			read.title = normaliseSpaces(entry.Value)
+		}
+		if entry.XMLName.Local == "meta" && entry.Refines == "" &&
+			entry.Property == "rendition:layout" {
+			read.layout = parseLayout(entry.Value, read.layout)
+		}
+	}
+}
+
+func readManifest(read *packageDoc, doc *rawPackageDocument) map[string]manifestItem {
+	manifest := make(map[string]manifestItem, len(doc.Items))
+	for _, entry := range doc.Items {
+		if entry.ID == "" || entry.Href == "" {
+			continue
+		}
+		at := resolve(read.base, entry.Href)
+		manifest[entry.ID] = manifestItem{path: at, mediaType: entry.MediaType}
+
+		switch {
+		case entry.MediaType == mediaNCX:
+			read.ncx = at
+		case hasToken(entry.Properties, "nav"):
+			read.nav = at
+		}
+	}
+	if named, ok := manifest[doc.Spine.TOC]; ok && named.mediaType == mediaNCX {
+		read.ncx = named.path
+	}
+	return manifest
+}
+
+func readSpine(read *packageDoc, doc *rawPackageDocument, manifest map[string]manifestItem) {
+	for _, ref := range doc.Spine.ItemRefs {
+		named := manifest[ref.IDRef]
+		read.spine = append(read.spine, spineItem{
+			path:      named.path,
+			mediaType: named.mediaType,
+			isLinear:  !strings.EqualFold(strings.TrimSpace(ref.Linear), "no"),
+			layout:    parseItemLayout(ref.Properties, read.layout),
+		})
+	}
+}
+
 // readPackage reads the manifest and the spine. The order is the spine's: file
 // order inside the archive says nothing about the order of a book.
 func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error) {
@@ -143,31 +221,7 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 		return packageDoc{}, fmt.Errorf("%w: %s is not in the archive", ErrNoPackage, opfPath)
 	}
 
-	var document struct {
-		Metadata struct {
-			Entries []struct {
-				XMLName  xml.Name
-				Property string `xml:"property,attr"`
-				Refines  string `xml:"refines,attr"`
-				Value    string `xml:",chardata"`
-			} `xml:",any"`
-		} `xml:"metadata"`
-		Items []struct {
-			ID         string `xml:"id,attr"`
-			Href       string `xml:"href,attr"`
-			MediaType  string `xml:"media-type,attr"`
-			Properties string `xml:"properties,attr"`
-		} `xml:"manifest>item"`
-		Spine struct {
-			TOC       string `xml:"toc,attr"`
-			Direction string `xml:"page-progression-direction,attr"`
-			ItemRefs  []struct {
-				IDRef      string `xml:"idref,attr"`
-				Linear     string `xml:"linear,attr"`
-				Properties string `xml:"properties,attr"`
-			} `xml:"itemref"`
-		} `xml:"spine"`
-	}
+	var document rawPackageDocument
 	if err := decodeXML(raw, &document); err != nil {
 		return packageDoc{}, fmt.Errorf("%w: %w", ErrNoPackage, err)
 	}
@@ -177,53 +231,10 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 		layout:    Reflowable,
 		direction: parseDirection(document.Spine.Direction),
 	}
-	for _, entry := range document.Metadata.Entries {
-		if entry.XMLName.Local == "title" && titleNamespaces[entry.XMLName.Space] &&
-			read.title == "" {
-			read.title = normaliseSpaces(entry.Value)
-		}
-		// A meta refining another element speaks for that element alone, and
-		// `rendition` is a reserved prefix, read as it is written.
-		if entry.XMLName.Local == "meta" && entry.Refines == "" &&
-			entry.Property == "rendition:layout" {
-			read.layout = parseLayout(entry.Value, read.layout)
-		}
-	}
+	readPackageMetadata(&read, &document)
+	manifest := readManifest(&read, &document)
+	readSpine(&read, &document, manifest)
 
-	type item struct {
-		path      string
-		mediaType string
-	}
-	manifest := make(map[string]item, len(document.Items))
-	for _, entry := range document.Items {
-		if entry.ID == "" || entry.Href == "" {
-			continue
-		}
-		at := resolve(read.base, entry.Href)
-		manifest[entry.ID] = item{path: at, mediaType: entry.MediaType}
-
-		switch {
-		case entry.MediaType == mediaNCX:
-			read.ncx = at
-		case hasToken(entry.Properties, "nav"):
-			read.nav = at
-		}
-	}
-	if named, ok := manifest[document.Spine.TOC]; ok && named.mediaType == mediaNCX {
-		read.ncx = named.path
-	}
-
-	for _, ref := range document.Spine.ItemRefs {
-		// An itemref the manifest does not describe names no path, and the archive
-		// holds no entry under none.
-		named := manifest[ref.IDRef]
-		read.spine = append(read.spine, spineItem{
-			path:      named.path,
-			mediaType: named.mediaType,
-			isLinear:  !strings.EqualFold(strings.TrimSpace(ref.Linear), "no"),
-			layout:    parseItemLayout(ref.Properties, read.layout),
-		})
-	}
 	return read, nil
 }
 

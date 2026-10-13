@@ -61,16 +61,7 @@ func (d *Document) block() (block, error) {
 	}
 	b := block{start: start, end: end, indent: "  ", isFound: true}
 
-	var items *yaml.Node
-	for i := 0; i+1 < len(node.Content); i += 2 {
-		if node.Content[i].Value == "links" {
-			items = node.Content[i+1]
-			break
-		}
-	}
-	// An entry is replaced on its own, which is a line at a time all the way
-	// down. Anything under `links:` but a block sequence, or a key holding
-	// nothing, is refused and the note is left as it stands.
+	items := valueOf(node, "links")
 	switch {
 	case items == nil || isNullValue(items):
 		return b, nil
@@ -78,14 +69,22 @@ func (d *Document) block() (block, error) {
 		return block{}, ErrInline
 	}
 
+	b.entries, indent := d.readBlockEntries(items, end)
+	if indent != "" {
+		b.indent = indent
+	}
+	return b, nil
+}
+
+func (d *Document) readBlockEntries(items *yaml.Node, end int) ([]entry, string) {
 	lines := lineOffsets(d.front)
+	var entries []entry
+	var indent string
 	for i, item := range items.Content {
 		at := item.Line
 		if at < 1 || at >= len(lines) {
 			continue
 		}
-		// An entry ends at the last line of its own value. A comment or a blank
-		// line below that belongs to the entry following it.
 		var bound int
 		if i+1 < len(items.Content) {
 			bound = items.Content[i+1].Line - 1
@@ -99,7 +98,7 @@ func (d *Document) block() (block, error) {
 		if last < at {
 			last = at
 		}
-		b.entries = append(b.entries, entry{
+		entries = append(entries, entry{
 			link:       linkOf(item),
 			start:      lines[at-1],
 			end:        lines[last],
@@ -108,10 +107,10 @@ func (d *Document) block() (block, error) {
 			address:    valueOf(item, "to"),
 		})
 		if i == 0 {
-			b.indent = getIndent(string(d.front[lines[at-1]:lines[at]]))
+			indent = getIndent(string(d.front[lines[at-1]:lines[at]]))
 		}
 	}
-	return b, nil
+	return entries, indent
 }
 
 // AddLink writes one relationship into the block, leaving every other entry as
@@ -191,25 +190,23 @@ func (d *Document) RemoveLink(to domain.Address, role domain.LinkRole) (int, err
 //
 // An entry carrying a key the application does not own is refused, and one it
 // cannot read is left as it was written.
-func (d *Document) SetLinkOfType(kind string, to domain.Address, role domain.LinkRole) error {
-	b, err := d.block()
-	if err != nil {
-		return err
-	}
-
+func findTypedEntries(entries []entry, kind string) ([]int, int, error) {
 	var carrying []int
 	kept := 0
-	for i, e := range b.entries {
+	for i, e := range entries {
 		if e.link.Type != kind || !e.isReadable {
 			kept++
 			continue
 		}
 		if !e.isOwned {
-			return fmt.Errorf("%w: %s", ErrNotOwned, e.link.Target)
+			return nil, 0, fmt.Errorf("%w: %s", ErrNotOwned, e.link.Target)
 		}
 		carrying = append(carrying, i)
 	}
+	return carrying, kept, nil
+}
 
+func (d *Document) replaceTypedEntries(b block, carrying []int, kind string, to domain.Address) error {
 	for at := len(carrying) - 1; at >= 0; at-- {
 		e := b.entries[carrying[at]]
 		if at > 0 || to.Value == "" {
@@ -224,18 +221,11 @@ func (d *Document) SetLinkOfType(kind string, to domain.Address, role domain.Lin
 		}
 		d.splice(e.start, e.end, rendered)
 	}
+	return nil
+}
 
-	switch {
-	case to.Value == "":
-		if len(carrying) > 0 && kept == 0 {
-			return d.set("links", nil)
-		}
-		return nil
-	case len(carrying) > 0:
-		return nil
-	}
-
-	rendered, err := renderEntry(domain.Link{Target: to, Role: role, Type: kind}, b.indent, d.eol)
+func (d *Document) appendEntry(b block, l domain.Link) error {
+	rendered, err := renderEntry(l, b.indent, d.eol)
 	if err != nil {
 		return err
 	}
@@ -246,6 +236,84 @@ func (d *Document) SetLinkOfType(kind string, to domain.Address, role domain.Lin
 	return nil
 }
 
+// SetLinkOfType makes the block name one note under a `type`.
+//
+// The first entry carrying that type is pointed at the address and keeps the
+// role and the words the person wrote on it; any further entry carrying it is
+// taken out, so a note names one place under one type. An empty address takes
+// them all out, and an empty block goes with them.
+//
+// An entry carrying a key the application does not own is refused, and one it
+// cannot read is left as it was written.
+func (d *Document) SetLinkOfType(kind string, to domain.Address, role domain.LinkRole) error {
+	b, err := d.block()
+	if err != nil {
+		return err
+	}
+
+	carrying, kept, err := findTypedEntries(b.entries, kind)
+	if err != nil {
+		return err
+	}
+
+	if err := d.replaceTypedEntries(b, carrying, kind, to); err != nil {
+		return err
+	}
+
+	if to.Value == "" {
+		if len(carrying) > 0 && kept == 0 {
+			return d.set("links", nil)
+		}
+		return nil
+	}
+	if len(carrying) > 0 {
+		return nil
+	}
+	return d.appendEntry(b, domain.Link{Target: to, Role: role, Type: kind})
+}
+
+func applyLinkChange(orig, change domain.Link) domain.Link {
+	next := orig
+	if change.Role != "" {
+		next.Role = change.Role
+	}
+	if change.Type != "" {
+		next.Type = change.Type
+	}
+	if change.Why != "" {
+		next.Why = change.Why
+	}
+	if change.Label != "" {
+		next.Label = change.Label
+	}
+	return next
+}
+
+type linkEdit struct {
+	start, end int
+	rendered   []byte
+}
+
+func (d *Document) collectLinkEdits(b block, to domain.Address, change domain.Link) ([]linkEdit, error) {
+	var edits []linkEdit
+	for i := len(b.entries) - 1; i >= 0; i-- {
+		e := b.entries[i]
+		if e.link.Target != to {
+			continue
+		}
+		if !e.isOwned {
+			return nil, fmt.Errorf("%w: %s", ErrNotOwned, e.link.Target)
+		}
+		next := applyLinkChange(e.link, change)
+		rendered, err := renderEntry(next, b.indent, d.eol)
+		if err != nil {
+			return nil, err
+		}
+		edits = append(edits, linkEdit{start: e.start, end: e.end, rendered: rendered})
+	}
+	return edits, nil
+}
+
 // UpdateLink changes what an entry says about itself without moving where it
 // goes. An entry carrying anything the application does not own is refused,
 // and a refusal is the whole change refused.
@@ -254,42 +322,10 @@ func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error
 	if err != nil {
 		return 0, err
 	}
-
-	type edit struct {
-		start, end int
-		rendered   []byte
+	edits, err := d.collectLinkEdits(b, to, change)
+	if err != nil {
+		return 0, err
 	}
-	var edits []edit
-	for i := len(b.entries) - 1; i >= 0; i-- {
-		e := b.entries[i]
-		if e.link.Target != to {
-			continue
-		}
-		if !e.isOwned {
-			return 0, fmt.Errorf("%w: %s", ErrNotOwned, e.link.Target)
-		}
-		// What was not sent is kept, and every field here behaves the same way.
-		next := e.link
-		if change.Role != "" {
-			next.Role = change.Role
-		}
-		if change.Type != "" {
-			next.Type = change.Type
-		}
-		if change.Why != "" {
-			next.Why = change.Why
-		}
-		if change.Label != "" {
-			next.Label = change.Label
-		}
-
-		rendered, err := renderEntry(next, b.indent, d.eol)
-		if err != nil {
-			return 0, err
-		}
-		edits = append(edits, edit{start: e.start, end: e.end, rendered: rendered})
-	}
-
 	for _, e := range edits {
 		d.splice(e.start, e.end, e.rendered)
 	}

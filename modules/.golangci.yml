@@ -391,14 +391,6 @@ linters:
         text: writes to no stream of its own
         linters: [forbidigo]
 
-      # Filename normalization maps reserved characters and runes.
-      - path: (^|/)domain/filename\.go$
-        linters: [cyclop]
-
-      # Document format decoders, markdown parsers, and debounce workers
-      # traverse token streams and event queues.
-      - path: (^|/)(internal/epub/|markdown/|flashcards/format/|internal/adapter/filesystem/debounce\.go)
-        linters: [cyclop, gocognit, nestif, funlen]
 
       # Spaced repetition simulation tracks card queues and review buckets.
       - path: (^|/)flashcards/review/

@@ -229,23 +229,35 @@ func (d *Document) endLine(lines []int, node *yaml.Node, column int) int {
 	}
 	switch node.Kind {
 	case yaml.MappingNode:
-		last := node.Line
-		for i := 0; i+1 < len(node.Content); i += 2 {
-			if end := d.endLine(lines, node.Content[i+1], node.Content[i].Column); end > last {
-				last = end
-			}
-		}
-		return last
+		return d.endLineOfMapping(lines, node)
 	case yaml.SequenceNode:
-		last := node.Line
-		for _, item := range node.Content {
-			if end := d.endLine(lines, item, node.Column); end > last {
-				last = end
-			}
-		}
-		return last
+		return d.endLineOfSequence(lines, node)
+	default:
+		return d.endLineOfScalar(lines, node, column)
 	}
+}
 
+func (d *Document) endLineOfMapping(lines []int, node *yaml.Node) int {
+	last := node.Line
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		if end := d.endLine(lines, node.Content[i+1], node.Content[i].Column); end > last {
+			last = end
+		}
+	}
+	return last
+}
+
+func (d *Document) endLineOfSequence(lines []int, node *yaml.Node) int {
+	last := node.Line
+	for _, item := range node.Content {
+		if end := d.endLine(lines, item, node.Column); end > last {
+			last = end
+		}
+	}
+	return last
+}
+
+func (d *Document) endLineOfScalar(lines []int, node *yaml.Node, column int) int {
 	last := node.Line
 	for at := node.Line + 1; at < len(lines); at++ {
 		text := d.front[lines[at-1]:lines[at]]

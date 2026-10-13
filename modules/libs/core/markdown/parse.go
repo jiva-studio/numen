@@ -21,18 +21,9 @@ import (
 func Parse(ref domain.Fingerprint, raw []byte) domain.Note {
 	n := domain.Note{Fingerprint: ref}
 
-	body := raw
-	if frontmatter, rest, ok := splitFrontmatter(raw); ok {
-		body = rest
-		if len(bytes.TrimSpace(frontmatter)) > 0 {
-			var parsed map[string]any
-			if err := yaml.Unmarshal(frontmatter, &parsed); err != nil {
-				n.FrontmatterErr = err.Error()
-			} else {
-				n.Frontmatter = parsed
-			}
-		}
-	}
+	body, fm, fmErr := readFrontmatter(raw)
+	n.Frontmatter = fm
+	n.FrontmatterErr = fmErr
 
 	n.Body = string(body)
 	n.Headings = headings(body)
@@ -40,37 +31,69 @@ func Parse(ref domain.Fingerprint, raw []byte) domain.Note {
 	annotated, problems := frontmatterLinks(n.Frontmatter)
 	n.Links = mergeLinks(annotated, bodyLinks(body))
 
-	// An identifier is what other notes point at, across vaults. Anything that
-	// is not one is reported as a problem.
-	if raw, present := n.Frontmatter["id"]; present {
-		id, isText := raw.(string)
-		switch {
-		case !isText:
-			problems = append(problems, "id is not text")
-		case ulid.Valid(id):
-			n.ID = id
-		default:
-			problems = append(problems, "id "+id+" is not a ULID")
-		}
+	if id, problem := parseNoteID(n.Frontmatter); problem != "" {
+		problems = append(problems, problem)
+	} else if id != "" {
+		n.ID = id
 	}
-	// One key says what a note is, out of a closed list. A key with nothing in
-	// it says nothing, and the note is a note.
-	n.Type = domain.TypeNote
-	if raw, present := n.Frontmatter["type"]; present && raw != nil {
-		name, isText := raw.(string)
-		switch {
-		case !isText:
-			problems = append(problems, "type is not text")
-		case strings.TrimSpace(name) == "":
-		case domain.IsKnownNoteType(domain.NoteType(name)):
-			n.Type = domain.NoteType(name)
-		default:
-			problems = append(problems, "type "+name+" is not one of "+describeNoteTypes())
-		}
+
+	noteType, typeProb := parseNoteType(n.Frontmatter)
+	n.Type = noteType
+	if typeProb != "" {
+		problems = append(problems, typeProb)
 	}
 
 	n.Problems = problems
 	return n
+}
+
+func readFrontmatter(raw []byte) ([]byte, map[string]any, string) {
+	frontmatter, body, ok := splitFrontmatter(raw)
+	if !ok {
+		return raw, nil, ""
+	}
+	if len(bytes.TrimSpace(frontmatter)) == 0 {
+		return body, nil, ""
+	}
+	var parsed map[string]any
+	if err := yaml.Unmarshal(frontmatter, &parsed); err != nil {
+		return body, nil, err.Error()
+	}
+	return body, parsed, ""
+}
+
+func parseNoteID(fm map[string]any) (id string, problem string) {
+	raw, present := fm["id"]
+	if !present {
+		return "", ""
+	}
+	text, isText := raw.(string)
+	if !isText {
+		return "", "id is not text"
+	}
+	if !ulid.Valid(text) {
+		return "", "id " + text + " is not a ULID"
+	}
+	return text, ""
+}
+
+func parseNoteType(fm map[string]any) (domain.NoteType, string) {
+	raw, present := fm["type"]
+	if !present || raw == nil {
+		return domain.TypeNote, ""
+	}
+	name, isText := raw.(string)
+	if !isText {
+		return domain.TypeNote, "type is not text"
+	}
+	if strings.TrimSpace(name) == "" {
+		return domain.TypeNote, ""
+	}
+	t := domain.NoteType(name)
+	if domain.IsKnownNoteType(t) {
+		return t, ""
+	}
+	return domain.TypeNote, "type " + name + " is not one of " + describeNoteTypes()
 }
 
 // splitFrontmatter returns the YAML block and the body. The opening delimiter
@@ -142,10 +165,12 @@ func headings(body []byte) []domain.Heading {
 			end = at + next
 		}
 		text := bytes.TrimRight(body[at:end], "\r")
-		if !f.IsCrossedByBytes(text) && !f.IsInside() && len(text) > 0 && text[0] == '#' {
-			if level, headingText, ok := parseHeading(string(text)); ok {
-				out = append(out, domain.Heading{Level: level, Text: headingText, Line: line, Offset: at})
-			}
+		if f.IsCrossedByBytes(text) || f.IsInside() || len(text) == 0 || text[0] != '#' {
+			at = end + 1
+			continue
+		}
+		if level, headingText, ok := parseHeading(string(text)); ok {
+			out = append(out, domain.Heading{Level: level, Text: headingText, Line: line, Offset: at})
 		}
 		at = end + 1
 	}

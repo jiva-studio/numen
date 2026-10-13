@@ -6,6 +6,114 @@ import (
 	"time"
 )
 
+type debounceState struct {
+	pending map[string]bool
+	ready   []string
+	inReady map[string]bool
+	hold    <-chan time.Time
+	queued  []string
+}
+
+func newDebounceState() *debounceState {
+	return &debounceState{
+		pending: make(map[string]bool),
+		ready:   nil,
+		inReady: make(map[string]bool),
+		hold:    nil,
+		queued:  nil,
+	}
+}
+
+func (s *debounceState) reset() {
+	clear(s.pending)
+	clear(s.inReady)
+	s.ready = nil
+	s.hold = nil
+	s.queued = nil
+}
+
+func (s *debounceState) rescan(lost chan<- struct{}) {
+	s.reset()
+	select {
+	case lost <- struct{}{}:
+	default:
+	}
+}
+
+func (s *debounceState) startHold(d time.Duration) {
+	if s.hold == nil && len(s.pending) > 0 {
+		s.hold = time.After(d)
+	}
+}
+
+func (s *debounceState) deliverChan(changes chan<- []string) chan<- []string {
+	if len(s.ready) > 0 {
+		return changes
+	}
+	return nil
+}
+
+func (s *debounceState) walkChan(asked chan<- string) (chan<- string, string) {
+	if len(s.queued) > 0 {
+		return asked, s.queued[0]
+	}
+	return nil, ""
+}
+
+func (s *debounceState) handleWalkResult(one walkResult, delay time.Duration, lost chan<- struct{}) {
+	if one.isWholeVault {
+		s.rescan(lost)
+		return
+	}
+	for _, path := range one.paths {
+		s.pending[path] = true
+	}
+	s.startHold(delay)
+}
+
+func (s *debounceState) handleWaitingEvents(shape *folders, waiting *queue, delay time.Duration, lost chan<- struct{}) bool {
+	events, over, done := waiting.take()
+	if over {
+		s.rescan(lost)
+		shape.reloadShape()
+	}
+	for _, event := range events {
+		paths, whole, folder := shape.getConcernedPaths(event.Path())
+		if whole {
+			s.rescan(lost)
+			continue
+		}
+		if folder != "" {
+			s.queued = append(s.queued, folder)
+		}
+		for _, path := range paths {
+			s.pending[path] = true
+		}
+	}
+	s.startHold(delay)
+	return done
+}
+
+func (s *debounceState) flushPendingToReady() {
+	s.hold = nil
+	for path := range s.pending {
+		if !s.inReady[path] {
+			s.inReady[path] = true
+			s.ready = append(s.ready, path)
+		}
+	}
+	clear(s.pending)
+}
+
+func (s *debounceState) clearReady() {
+	s.ready = nil
+	clear(s.inReady)
+}
+
+func (s *debounceState) popQueued() {
+	s.queued = s.queued[1:]
+}
+
 // debounce collects events for a hold and reports each path once.
 //
 // Reading the events and delivering them are kept apart. Whoever listens takes
@@ -19,17 +127,7 @@ func debounce(
 	changes chan<- []string,
 	lost chan<- struct{},
 ) {
-	pending := map[string]bool{}
-	// ready is what the hold has already closed over, waiting to be taken. It
-	// keeps growing while nobody takes it: one batch, never two.
-	var ready []string
-	inReady := map[string]bool{}
-	var hold <-chan time.Time
-	// queued is the folders new to the watch that are waiting to be walked, and
-	// walked is what a walk of one came to. A walk made here would stop the
-	// backlog emptying for as long as it took, which is the one thing this
-	// goroutine may never do.
-	var queued []string
+	state := newDebounceState()
 	asked := make(chan string)
 	walked := make(chan walkResult)
 
@@ -43,100 +141,31 @@ func debounce(
 	defer walking.Wait()
 	defer close(going)
 
-	clearPending := func() {
-		clear(pending)
-		clear(inReady)
-		ready, hold, queued = nil, nil, nil
-	}
-
-	rescan := func() {
-		clearPending()
-		select {
-		case lost <- struct{}{}:
-		default:
-		}
-	}
-
+	delay := opts.getDebounceDelay()
 	for {
-		// The delivery arm is only in the select when there is something to
-		// deliver; a nil channel is never chosen. The walking arm the same.
-		var out chan<- []string
-		if len(ready) > 0 {
-			out = changes
-		}
-		var walk chan<- string
-		var next string
-		if len(queued) > 0 {
-			walk, next = asked, queued[0]
-		}
+		out := state.deliverChan(changes)
+		walk, next := state.walkChan(asked)
 
 		select {
 		case <-ctx.Done():
 			return
 
-		case out <- ready:
-			ready = nil
-			clear(inReady)
+		case out <- state.ready:
+			state.clearReady()
 
 		case walk <- next:
-			queued = queued[1:]
+			state.popQueued()
 
 		case one := <-walked:
-			if one.isWholeVault {
-				rescan()
-				continue
-			}
-			for _, path := range one.paths {
-				pending[path] = true
-			}
-			if hold == nil && len(pending) > 0 {
-				hold = time.After(opts.getDebounceDelay())
-			}
+			state.handleWalkResult(one, delay, lost)
 
 		case <-waiting.woke:
-			events, over, done := waiting.take()
-			if over {
-				// The backlog filled and what stood in it was dropped. Which
-				// paths those were is unknowable, so the vault is read again,
-				// and the shape with it: an event that made a folder is among
-				// what went.
-				rescan()
-				shape.reloadShape()
-			}
-			for _, event := range events {
-				paths, whole, folder := shape.getConcernedPaths(event.Path())
-				if whole {
-					// A folder that is gone takes sources with it, and their
-					// paths are known only to the index.
-					rescan()
-					continue
-				}
-				if folder != "" {
-					queued = append(queued, folder)
-				}
-				for _, path := range paths {
-					pending[path] = true
-				}
-			}
-			// Measured from the first event of a batch, not the last. A vault
-			// being written to continuously — a sync client, a checkout — never
-			// stops long enough for a deadline that moves with it.
-			if hold == nil && len(pending) > 0 {
-				hold = time.After(opts.getDebounceDelay())
-			}
-			if done {
+			if state.handleWaitingEvents(shape, waiting, delay, lost) {
 				return
 			}
 
-		case <-hold:
-			hold = nil
-			for path := range pending {
-				if !inReady[path] {
-					inReady[path] = true
-					ready = append(ready, path)
-				}
-			}
-			clear(pending)
+		case <-state.hold:
+			state.flushPendingToReady()
 		}
 	}
 }

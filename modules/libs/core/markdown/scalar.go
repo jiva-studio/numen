@@ -20,43 +20,66 @@ import (
 // carried across a line break — is not one token on one line. Its link stays as
 // it was written and shows as a problem.
 func (d *Document) scalarSpan(node *yaml.Node) (start, end int, ok bool) {
-	if node.Kind != yaml.ScalarNode {
+	start, ok = d.readScalarStart(node)
+	if !ok {
 		return 0, 0, false
 	}
-	lines := lineOffsets(d.front)
-	if node.Line < 1 || node.Line >= len(lines) || node.Column < 1 {
+	end, ok = d.findScalarEnd(node, start)
+	if !ok {
 		return 0, 0, false
 	}
-	start = columnOffset(d.front, lines, node.Line, node.Column)
-	if start >= len(d.front) {
-		return 0, 0, false
-	}
-
-	switch {
-	case node.Style == 0:
-		end = start + len(node.Value)
-		if end > len(d.front) || string(d.front[start:end]) != node.Value {
-			return 0, 0, false
-		}
-	case node.Style&yaml.SingleQuotedStyle != 0:
-		if end, ok = findQuotedEnd(d.front, start, '\''); !ok {
-			return 0, 0, false
-		}
-	case node.Style&yaml.DoubleQuotedStyle != 0:
-		if end, ok = findQuotedEnd(d.front, start, '"'); !ok {
-			return 0, 0, false
-		}
-	default:
-		return 0, 0, false
-	}
-
-	// What the token says, read back. A span that does not say what the node
-	// said is the wrong span, and nothing is written over.
-	var parsed string
-	if err := yaml.Unmarshal(d.front[start:end], &parsed); err != nil || parsed != node.Value {
+	if !isValidScalarSpan(d.front, start, end, node.Value) {
 		return 0, 0, false
 	}
 	return start, end, true
+}
+
+func (d *Document) readScalarStart(node *yaml.Node) (int, bool) {
+	if node.Kind != yaml.ScalarNode {
+		return 0, false
+	}
+	lines := lineOffsets(d.front)
+	if node.Line < 1 || node.Line >= len(lines) || node.Column < 1 {
+		return 0, false
+	}
+	start := columnOffset(d.front, lines, node.Line, node.Column)
+	if start >= len(d.front) {
+		return 0, false
+	}
+	return start, true
+}
+
+func (d *Document) findScalarEnd(node *yaml.Node, start int) (int, bool) {
+	switch {
+	case node.Style == 0:
+		end := start + len(node.Value)
+		if end > len(d.front) || string(d.front[start:end]) != node.Value {
+			return 0, false
+		}
+		return end, true
+	case node.Style&yaml.SingleQuotedStyle != 0:
+		return findQuotedEnd(d.front, start, '\'')
+	case node.Style&yaml.DoubleQuotedStyle != 0:
+		return findQuotedEnd(d.front, start, '"')
+	default:
+		return 0, false
+	}
+}
+
+func isValidScalarSpan(front []byte, start, end int, want string) bool {
+	var parsed string
+	if err := yaml.Unmarshal(front[start:end], &parsed); err != nil || parsed != want {
+		return false
+	}
+	return true
+}
+
+func canEscapeBackslash(front []byte, at int, quote byte) bool {
+	return quote == '"' && at+1 < len(front) && breakWidth(front, at+1) == 0
+}
+
+func isEscapedSingleQuote(front []byte, at int, quote byte) bool {
+	return quote == '\'' && at+1 < len(front) && front[at+1] == '\''
 }
 
 // findQuotedEnd is where a quoted scalar ends, counting from the quote it opens
@@ -72,11 +95,11 @@ func findQuotedEnd(front []byte, start int, quote byte) (int, bool) {
 		}
 		switch front[at] {
 		case '\\':
-			if quote == '"' && at+1 < len(front) && breakWidth(front, at+1) == 0 {
+			if canEscapeBackslash(front, at, quote) {
 				at++
 			}
 		case quote:
-			if quote == '\'' && at+1 < len(front) && front[at+1] == '\'' {
+			if isEscapedSingleQuote(front, at, quote) {
 				at++
 				continue
 			}

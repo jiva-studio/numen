@@ -315,34 +315,49 @@ func cardBlock(card Card) string {
 // written where it stands: in front of the cards of the sections after it, or at
 // the end where nothing stands under it. A card standing under a section the
 // deck does not hold is ErrNoSuchSection.
+type deckBodyWriter struct {
+	scratch  *DeckFile
+	sections []Section
+	written  int
+}
+
+func (w *deckBodyWriter) writeSectionsUpTo(to int) error {
+	for w.written < len(w.sections) && w.written <= to {
+		if err := w.scratch.AddSection(w.sections[w.written]); err != nil {
+			return err
+		}
+		w.written++
+	}
+	return nil
+}
+
+func (w *deckBodyWriter) writeCard(card Card) error {
+	// gomutants:disable-next-line INTEGER_DECREMENT reason="0 becomes -1, and the one place the two differ is NoSection, which the first condition already excludes"
+	if card.Section != NoSection && (card.Section < 0 || card.Section >= len(w.sections)) {
+		return fmt.Errorf("%w: %d", ErrNoSuchSection, card.Section)
+	}
+	if err := w.writeSectionsUpTo(card.Section); err != nil {
+		return err
+	}
+	return w.scratch.AddCard(card)
+}
+
 func DeckBody(d Deck) (string, error) {
 	scratch, err := OpenDeck(markdown.Create("", d.Preamble))
 	if err != nil {
 		return "", err
 	}
-	written := 0
-	open := func(to int) error {
-		for written < len(d.Sections) && written <= to {
-			if err := scratch.AddSection(d.Sections[written]); err != nil {
-				return err
-			}
-			written++
-		}
-		return nil
+	w := deckBodyWriter{
+		scratch:  scratch,
+		sections: d.Sections,
+		written:  0,
 	}
 	for _, card := range d.Cards {
-		// gomutants:disable-next-line INTEGER_DECREMENT reason="0 becomes -1, and the one place the two differ is NoSection, which the first condition already excludes"
-		if card.Section != NoSection && (card.Section < 0 || card.Section >= len(d.Sections)) {
-			return "", fmt.Errorf("%w: %d", ErrNoSuchSection, card.Section)
-		}
-		if err := open(card.Section); err != nil {
-			return "", err
-		}
-		if err := scratch.AddCard(card); err != nil {
+		if err := w.writeCard(card); err != nil {
 			return "", err
 		}
 	}
-	if err := open(len(d.Sections)); err != nil {
+	if err := w.writeSectionsUpTo(len(d.Sections)); err != nil {
 		return "", err
 	}
 
