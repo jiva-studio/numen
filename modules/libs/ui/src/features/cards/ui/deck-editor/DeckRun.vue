@@ -43,7 +43,6 @@ const emit = defineEmits<{
   (event: 'lift', card: string, press: DragEvent): void
   (event: 'release'): void
   (event: 'step', card: string, direction: StepDirection, press: KeyboardEvent): void
-  (event: 'write', card: string, field: string, nth: number, text: string): void
   /** The plus was pressed. */
   (event: 'ask'): void
   (event: 'add', stencil: Stencil): void
@@ -115,7 +114,6 @@ const removeSection = (): void => {
         @lift="emit('lift', tile.id, $event)"
         @release="emit('release')"
         @step="(direction, press) => emit('step', tile.id, direction, press)"
-        @write="(field, nth, text) => emit('write', tile.id, field, nth, text)"
       />
     </div>
 
