@@ -7,8 +7,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 // runRecogniseCommand reads one scanned document with a model.
@@ -38,17 +38,14 @@ func runRecogniseCommand(ctx context.Context, out io.Writer, deps Deps, args []s
 	}
 	defer closeIfOpen(open.Close)
 
-	recognise, cut := open.Recognise, open.Cut
+	recognise, cut := open.Recognise, source.NewCutSource(open.Cut)
 	fmt.Fprintf(out, "recognising %s with %s\n", args[1], recognise.By().GetRecognitionModel())
 	started := time.Now()
 
 	// The line of pages is closed once it stops, so what follows it stands on a
 	// line of its own.
 	shown := false
-	recognise.Cut = func(ctx context.Context, v domain.Vault, path string) error {
-		_, err := cut.ExtractOne(ctx, v, path)
-		return err
-	}
+	recognise.Cut = cut.Execute
 	// A terminal that prints nothing for an hour looks broken, and this takes
 	// about that. The line rewrites itself.
 	recognise.OnProgress = func(res recognition.RecogniseResult) {

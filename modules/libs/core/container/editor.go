@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
+	embedmodel "github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
@@ -163,6 +164,15 @@ func (e EditorAssembly) ReadWholeVault(
 	asked := e.cfg
 	asked.ShouldRebuildIndex = rebuild
 	return asked.ReadWholeVault(ctx, e.db, embedder, v)
+}
+
+// GetModelWait blocks until the model behind an embedder has turned up, and is
+// nil for an embedder whose model is always there.
+func (e EditorAssembly) GetModelWait(embedder port.Embedder) func(ctx context.Context) error {
+	if waiting, ok := embedder.(embedmodel.WaitingEmbedder); ok {
+		return waiting.Wait
+	}
+	return nil
 }
 
 // StartVault opens the vault the way both windows open one, and answers with

@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/indexing"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
@@ -61,8 +62,9 @@ type Installation struct {
 	// listening to a recording each hold them, one run at a time.
 	models *run.Lock
 	// under is what every vault's passes run under.
-	under    context.Context
-	triggers indexTriggers
+	under context.Context
+	// indexer brings the index of the vault in the window level with it.
+	indexer *indexing.Worker
 	// embedderError says why this installation embeds nothing, when it does not. It
 	// stands in the list of what is being done, and is put back there when a
 	// vault going takes its own entries out.
@@ -123,10 +125,10 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		closeEmbedder = func() error { return nil }
 	}
 
-	wake := newIndexTriggers(quietPeriod)
-
 	//nolint:contextcheck // a document stays open for the window, not for the request that opened it
-	state, services, shown := createWindow(made, tasks, wake, embedder)
+	state, services, shown := createWindow(made, tasks, embedder)
+	indexer := newIndexWorker(made, state, embedder, quietPeriod, out)
+	state.NotifyNoteWritten = indexer.WakeNotes
 
 	// The search the window offers is the search the application already does.
 	// It is built once the embedder is settled, so a model that could not be
@@ -151,7 +153,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		models:        &run.Lock{},
 		out:           out,
 		under:         ctx,
-		triggers:      wake,
+		indexer:       indexer,
 		embedderError: why,
 		stopEmbedder:  closeEmbedder,
 	}
@@ -280,9 +282,9 @@ func (o *Installation) level(ctx context.Context, v domain.Vault, paths []string
 // What each pass behind the window is called in the list of what is being done.
 // One name each, so a pass that reports itself again replaces itself.
 const (
-	walkingNotes    = "walking the notes"
-	extractingBooks = "extracting the books"
-	makingVectors   = "making the vectors"
+	walkingNotes    = indexing.WalkingNotes
+	extractingBooks = indexing.ExtractingBooks
+	makingVectors   = indexing.MakingVectors
 	// wordsAlone is a search answered short of the half that asks by meaning.
 	wordsAlone = "answering by words alone"
 	// wearingATheme is a theme the settings name that the catalogue has not.
@@ -318,7 +320,7 @@ func (o *Installation) Report(said []string) {
 // it, with the pieces that need no vault. The viewer is given back for the
 // installation to close.
 func createWindow(
-	made Assembly, tasks *task.Tasks, wake indexTriggers, embedder port.Embedder,
+	made Assembly, tasks *task.Tasks, embedder port.Embedder,
 ) (*State, *Services, *viewer) {
 	// Where a passage sits on the page is asked of whichever producer made the
 	// text it is a place in, which is what the index records.
@@ -327,11 +329,10 @@ func createWindow(
 	highlight.Documents = made.GetTextExtractor()
 
 	state := &State{
-		ChangeEvents:      newChangeBroadcaster(),
-		Places:            newPlaceBroadcaster(),
-		Edits:             newEditBroadcaster(),
-		Window:            &wire.Window{Named: wire.Editor, Tasking: tasks},
-		NotifyNoteWritten: func() { fire(wake.notes) },
+		ChangeEvents: newChangeBroadcaster(),
+		Places:       newPlaceBroadcaster(),
+		Edits:        newEditBroadcaster(),
+		Window:       &wire.Window{Named: wire.Editor, Tasking: tasks},
 	}
 	shown := newCachingViewer(made.GetPageRenderer())
 	services := createServices(state)

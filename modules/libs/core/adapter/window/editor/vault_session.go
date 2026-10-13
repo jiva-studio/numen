@@ -146,10 +146,9 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 	// What a recognition writes down is cut where every other cut happens. A
 	// document being read and a vault being scanned are then never two passes
 	// over the index at once.
-	owed := &pendingSources{}
+	indexed := o.indexer.NewSession()
 	recognising.Cut = func(_ context.Context, of domain.Vault, path string) error {
-		owed.add(of, path)
-		fire(o.triggers.read)
+		indexed.RequestCut(of, path)
 		return nil
 	}
 
@@ -178,7 +177,7 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 
 	// Indexing every file again belongs to the vault this window was opened on,
 	// and to nothing built for a vault that arrives later.
-	refresh, ended := startIndexing(watching, v, o.made, o.State, rebuild, o.Embedder, o.triggers, owed, o.out)
+	refresh, ended := startIndexing(watching, v, o.made, o.State, rebuild, o.indexer, indexed, o.out)
 
 	return &vaultSession{
 		refresh:             refresh,

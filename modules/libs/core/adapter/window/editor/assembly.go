@@ -118,6 +118,10 @@ type Assembly interface {
 	// vault. A window showing one asks what that vault was opened with.
 	GetRefresh() vaults.Refresh
 
+	// GetModelWait blocks until the model behind an embedder has turned up, and is
+	// nil for an embedder whose model is always there.
+	GetModelWait(embedder port.Embedder) func(ctx context.Context) error
+
 	// ReadWholeVault is what makes a vault answer: the notes read, the books
 	// read, and the vectors made.
 	ReadWholeVault(

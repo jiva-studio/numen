@@ -27,6 +27,7 @@ var useCaseEdges = map[string][]string{
 	"cards":         {"note"},
 	"flashcards":    {"cards", "note"},
 	"vault":         {"embedding", "note", "source"},
+	"indexing":      {"embedding", "source", "vault"},
 }
 
 // getUseCaseName is the use case a package belongs to, and whether it is one.
