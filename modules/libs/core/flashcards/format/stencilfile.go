@@ -6,7 +6,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 )
 
@@ -41,14 +40,6 @@ func (f *StencilFile) Bytes() []byte { return f.doc.Bytes() }
 // reports whether it wrote one.
 func (f *StencilFile) WriteIdentifier(identifier string) (bool, error) {
 	return writeIdentifier(f.doc, identifier)
-}
-
-// Stencil is what the file now says: the fields of the frontmatter in front of
-// the writer, and the faces of the body in front of it.
-func (f *StencilFile) Stencil(n domain.Note) Stencil {
-	n.Body = f.doc.Body()
-	n.Frontmatter = map[string]any{fieldsKey: readFieldNames(f.doc)}
-	return ReadStencil(n)
 }
 
 // Fields is what the stencil now declares, in the order a person is asked for

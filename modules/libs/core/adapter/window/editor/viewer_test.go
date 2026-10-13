@@ -62,7 +62,7 @@ func sheets(pages int) *paper {
 	return &paper{pages: pages, wide: 612, high: 792}
 }
 
-// openScan is what the viewer is given in place of pdf.Open.
+// openScan is what the viewer is given in place of pdf.OpenReader.
 func (p *paper) openScan(file io.ReadSeekCloser) (port.OpenDocument, error) {
 	defer file.Close()
 	if p.gate != nil {
@@ -627,13 +627,9 @@ func TestTheWindowIsToldWhatItMayLoad(t *testing.T) {
 	}
 }
 
-// pdf.Open is what the application draws with, and what the viewer holds by
+// pdf.OpenReader is what the application draws with, and what the viewer holds by
 // default.
 func TestTheApplicationDrawsWithTheLibrary(t *testing.T) {
-	raw, err := os.ReadFile("../../../internal/adapter/pdf/testdata/labels.pdf")
-	if err != nil {
-		t.Fatal(err)
-	}
 	file, err := os.Open("../../../internal/adapter/pdf/testdata/labels.pdf")
 	if err != nil {
 		t.Fatal(err)
@@ -644,7 +640,11 @@ func TestTheApplicationDrawsWithTheLibrary(t *testing.T) {
 	}
 	defer drawn.Close()
 
-	scan, err := pdf.Open(raw)
+	again, err := os.Open("../../../internal/adapter/pdf/testdata/labels.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	scan, err := pdf.OpenReader(again)
 	if err != nil {
 		t.Fatal(err)
 	}

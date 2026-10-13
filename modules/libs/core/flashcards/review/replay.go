@@ -5,22 +5,6 @@ import (
 	"strings"
 )
 
-// Replay works out where a history leaves every card face it names, each placed
-// on its day by the preset a deck naming none is scheduled by. Day is when a day
-// of review begins.
-//
-// The answers arrive in whatever order the files were read, and the files
-// arrive in whatever order they were synchronised, so they are put in the order
-// they were given first. A schedule depends on that order.
-//
-// An answer some line takes back is left out, and both lines stay in the file.
-// One identifier is one answer however many lines carry it: a synchroniser that
-// met a conflict leaves a second copy of a run beside the first, and a person
-// restoring a backup puts one there by hand.
-func Replay(d Day, by Scheduler, answers []Answer) map[CardFaceID]Schedule {
-	return OrderAnswers(answers).Replay(d, ScheduleBy(by))
-}
-
 // SchedulingPolicy is what one card face is worked out under: the scheduler
 // that spaces it, and the preset that says which day it lands on.
 type SchedulingPolicy struct {
@@ -85,11 +69,6 @@ type RecallTally struct {
 //
 // It is worked out with the replay: whether a card face was spaced is a thing
 // only the answers before it can say.
-func GetRetained(by Scheduler, d Day, answers []Answer) map[string]RecallTally {
-	return OrderAnswers(answers).GetRetained(by, d)
-}
-
-// GetRetained is the same over a history already in order.
 func (h History) GetRetained(by Scheduler, d Day) map[string]RecallTally {
 	out := make(map[string]RecallTally)
 	h.walkAnswers(by, func(before Schedule, a Answer) {

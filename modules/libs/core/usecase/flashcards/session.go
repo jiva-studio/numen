@@ -33,13 +33,6 @@ type Scope struct {
 	IsNamed bool
 }
 
-// CreateDeckScope returns the scope of a session over one deck.
-func CreateDeckScope(path string) Scope { return Scope{Deck: path} }
-
-// CreatePresetScope returns the scope of a session over the cards of every deck pointing at one preset,
-// held to that preset's budget.
-func CreatePresetScope(preset string) Scope { return Scope{Preset: preset, IsNamed: true} }
-
 // QueuedCardFace is one card face as the session queues it: where it stands,
 // how it is laid out, and where the answers so far have left it.
 type QueuedCardFace struct {

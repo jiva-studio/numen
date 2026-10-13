@@ -467,16 +467,6 @@ func Names(from, hash string) []string {
 	}
 }
 
-// AddressNames is every file kept for one address: what each producer that
-// reaches one writes, and the copy of the video where a person asked for one.
-//
-// A sweep works through this list, and it is the one place the copy is named
-// beside the rest — it is the bytes of a video and no producer's text, so
-// Names, which is a producer's own files, does not carry it.
-func AddressNames(hash string) []string {
-	return append([]string{Copy(hash)}, AddressTexts(hash)...)
-}
-
 // AddressTexts is every file a producer wrote for one address, without the
 // copy.
 func AddressTexts(hash string) []string {

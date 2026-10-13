@@ -114,16 +114,6 @@ func Read(raw []byte) (*Book, error) {
 	return readBook(doc), nil
 }
 
-// ReadFile extracts one document from a PDF file. The file is read as the
-// library asks for it and is closed before this returns.
-func ReadFile(path string) (*Book, error) {
-	doc, err := openPath(path)
-	if err != nil {
-		return nil, err
-	}
-	return readBook(doc), nil
-}
-
 // readBook reads the open document and closes it.
 func readBook(doc *document) *Book {
 	defer doc.close()
