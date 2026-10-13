@@ -183,12 +183,11 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 
 	talks := willRun()
 	hl := source.NewHighlight(filesystem.VaultReaders{}, newEmptyIndex(), stores)
-	api := &API{
-		Readers:   filesystem.VaultReaders{},
-		Highlight: &hl,
-		Texts:     source.NewTexts(filesystem.VaultReaders{}, nil, newEmptyIndex(), stores),
-	}
-	api.setVault(vault)
+	api := newBareServices()
+	api.files.readers = filesystem.VaultReaders{}
+	api.Ocr.highlight = &hl
+	api.readTexts(source.NewTexts(filesystem.VaultReaders{}, nil, newEmptyIndex(), stores))
+	api.state.setVault(vault)
 	modifySession(api, func(on *vaultSession) { on.transcriptionRunner = talks })
 
 	made := createArtifact(t, api, talk, transcriptOf)

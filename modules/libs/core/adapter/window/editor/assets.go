@@ -13,6 +13,13 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
+// assetHandler answers with the bytes of one file of the vault, by asking the
+// reader of its kind.
+type assetHandler struct {
+	document *documentHandler
+	book     *bookHandler
+}
+
 // What a file of the vault is made of is bytes, and bytes are what this route
 // answers:
 //
@@ -67,7 +74,7 @@ func parseAssetAddress(r *http.Request) (address, bool) {
 //
 // The reader the file is read by names the places it has, and a file no reader
 // reads has none.
-func (a *API) Asset(w http.ResponseWriter, r *http.Request) {
+func (h *assetHandler) Asset(w http.ResponseWriter, r *http.Request) {
 	at, ok := parseAssetAddress(r)
 	if !ok {
 		http.Error(w, "not an asset", http.StatusBadRequest)
@@ -79,9 +86,9 @@ func (a *API) Asset(w http.ResponseWriter, r *http.Request) {
 	}
 	switch named, _ := derived.ReaderName(domain.Fingerprint{Path: at.path}); named {
 	case derived.ReaderEPUB:
-		a.Entry(w, r, at.path, at.where)
+		h.book.Entry(w, r, at.path, at.where)
 	case derived.ReaderPDF:
-		a.Page(w, r, at.path, at.where)
+		h.document.Page(w, r, at.path, at.where)
 	default:
 		http.Error(w, "no reader reads that file", http.StatusNotFound)
 	}

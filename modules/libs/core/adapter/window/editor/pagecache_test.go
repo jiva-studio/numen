@@ -12,11 +12,11 @@ import (
 )
 
 // newDiskCache gives a window a folder of its own to keep its drawings in.
-func newDiskCache(t *testing.T, api *API) *pagecache.Disk {
+func newDiskCache(t *testing.T, api *Services) *pagecache.Disk {
 	t.Helper()
 	cache := pagecache.NewDiskIn(t.TempDir())
 	t.Cleanup(cache.Close)
-	api.Viewer.disk = cache
+	api.Document.viewer.disk = cache
 	return cache
 }
 
@@ -48,7 +48,7 @@ func TestAPageDrawnBeforeIsNotDrawnAgain(t *testing.T) {
 	}
 
 	// Nothing in memory, the way a window opened again begins.
-	api.Viewer.renderedPages.Store(pagecache.NewMemory(pagecache.MaxMemoryBytes))
+	api.Document.viewer.renderedPages.Store(pagecache.NewMemory(pagecache.MaxMemoryBytes))
 
 	out := ask(handler, getPageAddress(t, api, book, 0, 400))
 	if out.Code != http.StatusOK {
@@ -93,7 +93,7 @@ func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
 	}
 	_, drawn, _ := from.getCounts()
 
-	at := filepath.Join(string(api.GetCurrentVault().Path), book)
+	at := filepath.Join(string(api.state.GetCurrentVault().Path), book)
 	if err := os.WriteFile(at, []byte("the bytes of another scan entirely"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +101,7 @@ func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
 	if err := os.Chtimes(at, later, later); err != nil {
 		t.Fatal(err)
 	}
-	api.Viewer.renderedPages.Store(pagecache.NewMemory(pagecache.MaxMemoryBytes))
+	api.Document.viewer.renderedPages.Store(pagecache.NewMemory(pagecache.MaxMemoryBytes))
 
 	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for the page again and got %d", out.Code)
@@ -150,7 +150,7 @@ func TestTheOldestDrawingsGoWhenTheFolderIsFull(t *testing.T) {
 
 // getFingerprint is what the vault says the book is, which is what a drawing is named
 // from.
-func getFingerprint(t *testing.T, api *API) document.Fingerprint {
+func getFingerprint(t *testing.T, api *Services) document.Fingerprint {
 	t.Helper()
 	_, said, err := api.stat(t.Context(), book)
 	if err != nil {

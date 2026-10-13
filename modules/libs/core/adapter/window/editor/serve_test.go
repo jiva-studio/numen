@@ -26,17 +26,18 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-// askingNotes is the questions a window asks of the index in db about the notes.
-func askingNotes(db *container.Index) Notes {
+// bindNotes gives the handlers the questions a window asks of the index in db
+// about the notes.
+func bindNotes(services *Services, db *container.Index) {
 	queries, links := db.Queries(), db.Links()
 	neighbourhood := note.NewShowNeighbourhood(links, queries)
-	return Notes{
-		Queries:           queries,
-		Links:             links,
-		ShowNeighbourhood: &neighbourhood,
-		GetTitle:          note.NewGetTitle(queries),
-		GetLinkAddress:    note.NewGetLinkAddress(queries),
-	}
+	services.Note.queries = queries
+	services.Note.links = links
+	services.Note.showNeighbourhood = &neighbourhood
+	services.Note.getLinkAddress = note.NewGetLinkAddress(queries)
+	services.Search.queries = queries
+	services.Cards.getTitle = note.NewGetTitle(queries)
+	services.Presets.getTitle = services.Cards.getTitle
 }
 
 // hand is a watch a test drives itself, so what a window is told while a vault
@@ -155,7 +156,7 @@ func (refuses) WalkFiles(context.Context, func(domain.Fingerprint) error) error 
 // it fills, the first scan, the watch beside it, and what a client listening
 // for changes is told.
 type behind struct {
-	api   *API
+	api   *Services
 	vault domain.Vault
 	index *container.Index
 	heard <-chan change
@@ -191,30 +192,29 @@ func openingWith(
 	writing := note.NewWrite(
 		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
 	read := note.NewRead(filesystem.VaultReaders{})
-	asking := askingNotes(db)
-	asking.Read, asking.Write = &read, &writing
-	api := &API{
+	api := createServices(&State{
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),
-		Notes:        asking,
-	}
-	api.setVault(v)
+	})
+	bindNotes(api, db)
+	api.Note.read, api.Note.write = &read, &writing
+	api.state.setVault(v)
 	if embedder != nil {
 		if err := db.FitVectors(t.Context(), embedder.GetModel().Dimensions, embedder.GetModel().Recipe()); err != nil {
 			t.Fatal(err)
 		}
-		api.Indexing.Model.Store(embedder.GetModel().String())
-		api.Indexing.Progress = db.Progress()
+		api.state.Indexing.Model.Store(embedder.GetModel().String())
+		api.state.Indexing.Progress = db.Progress()
 	}
-	line, done := api.ChangeEvents.subscribe()
+	line, done := api.state.ChangeEvents.subscribe()
 	t.Cleanup(done)
 
 	wake := newIndexTriggers(still)
-	api.NotifyNoteWritten = func() { fire(wake.notes) }
+	api.state.NotifyNoteWritten = func() { fire(wake.notes) }
 
 	ctx, stop := context.WithCancel(t.Context())
 	_, wait := startIndexing(ctx, v, newWatched(cfg, db, readers, watcher),
-		api, false, embedder, wake, &pendingSources{}, io.Discard)
+		api.state, false, embedder, wake, &pendingSources{}, io.Discard)
 	t.Cleanup(func() {
 		stop()
 		wait()
@@ -234,7 +234,7 @@ func write(t *testing.T, v domain.Vault, path, body string) {
 // save lands in.
 func save(t *testing.T, f *behind, path, body string) {
 	t.Helper()
-	out, err := f.api.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{Path: path, Body: body}))
+	out, err := f.api.Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{Path: path, Body: body}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -304,7 +304,7 @@ func TestAChangeArrivesWhileTheVaultIsStillBeingRead(t *testing.T) {
 	if path := next(t, readers.begun); path != "Note.md" {
 		t.Fatalf("the scan is reading %q", path)
 	}
-	if f.api.Ready.Load() {
+	if f.api.state.Ready.Load() {
 		t.Fatal("the scan finished with its reads held")
 	}
 
@@ -317,7 +317,7 @@ func TestAChangeArrivesWhileTheVaultIsStillBeingRead(t *testing.T) {
 	if title := titleOf(t, f.index, f.vault, "Note.md"); title != "Renamed" {
 		t.Errorf("the index says %q", title)
 	}
-	if f.api.Ready.Load() {
+	if f.api.state.Ready.Load() {
 		t.Error("the scan finished with its reads held")
 	}
 }
@@ -342,7 +342,7 @@ func TestANoteChangedUnderTheScanIsReadAgain(t *testing.T) {
 
 	// Now the scan writes what it read, and finishes.
 	readers.release()
-	waitFor(t, "the scan did not finish", f.api.Ready.Load)
+	waitFor(t, "the scan did not finish", f.api.state.Ready.Load)
 
 	if title := titleOf(t, f.index, f.vault, "Note.md"); title != "Two" {
 		t.Errorf("the index says %q", title)
@@ -369,7 +369,7 @@ func TestANoteDeletedUnderTheScanStaysDeleted(t *testing.T) {
 	next(t, f.heard)
 
 	readers.release()
-	waitFor(t, "the scan did not finish", f.api.Ready.Load)
+	waitFor(t, "the scan did not finish", f.api.state.Ready.Load)
 
 	if title := titleOf(t, f.index, f.vault, "Note.md"); title != "" {
 		t.Errorf("the index still holds %q", title)
@@ -397,7 +397,7 @@ func TestANoteMadeWhileTheVaultIsBeingReadStays(t *testing.T) {
 	next(t, f.heard)
 
 	readers.release()
-	waitFor(t, "the scan did not finish", f.api.Ready.Load)
+	waitFor(t, "the scan did not finish", f.api.state.Ready.Load)
 
 	if title := titleOf(t, f.index, f.vault, "Later.md"); title != "Later" {
 		t.Errorf("the index says %q of a note made while it was being read", title)
@@ -413,7 +413,7 @@ func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
 	}, watcher, unreadable{VaultReaders: filesystem.VaultReaders{}})
 
 	waitFor(t, "the scan was not reported as failed", func() bool {
-		return f.api.Error.Why() != ""
+		return f.api.state.Error.Why() != ""
 	})
 
 	write(t, f.vault, "Note.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
@@ -432,7 +432,7 @@ func TestAVaultThatCannotBeWatchedSaysSo(t *testing.T) {
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
 	}, unwatchable{}, filesystem.VaultReaders{})
 
-	if why := f.api.WatchError.Why(); why == "" {
+	if why := f.api.state.WatchError.Why(); why == "" {
 		t.Error("a vault whose watch never started is shown as followed")
 	}
 }
@@ -447,19 +447,19 @@ func TestAWatchThatStopsSaysSo(t *testing.T) {
 	close(watcher.changes)
 
 	waitFor(t, "a vault whose watch stopped is shown as followed", func() bool {
-		return f.api.WatchError.Why() != ""
+		return f.api.state.WatchError.Why() != ""
 	})
 }
 
 // modifySession publishes the passes a request is answered through, the way a
 // vault arriving in the window does.
-func modifySession(api *API, change func(*vaultSession)) {
+func modifySession(api *Services, change func(*vaultSession)) {
 	on := vaultSession{}
-	if held := api.session.Load(); held != nil {
+	if held := api.state.session.Load(); held != nil {
 		on = *held
 	}
 	change(&on)
-	api.setSession(&on)
+	api.state.setSession(&on)
 }
 
 // saying is where the reading behind the window writes what it did, kept for a
@@ -526,18 +526,18 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 
 	readers := filesystem.VaultReaders{}
 	watcher := byHand()
-	api := &API{
+	api := createServices(&State{
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),
 		Window:       &wire.Window{Named: wire.Editor, Tasking: task.New()},
-		Notes:        askingNotes(db),
-	}
-	api.setVault(v)
+	})
+	bindNotes(api, db)
+	api.state.setVault(v)
 
 	out := &saying{}
 	ctx, stop := context.WithCancel(t.Context())
 	_, wait := startIndexing(ctx, v, newWatched(cfg, db, readers, watcher),
-		api, true, nil, newIndexTriggers(quietPeriod), &pendingSources{}, out)
+		api.state, true, nil, newIndexTriggers(quietPeriod), &pendingSources{}, out)
 	t.Cleanup(func() {
 		stop()
 		wait()

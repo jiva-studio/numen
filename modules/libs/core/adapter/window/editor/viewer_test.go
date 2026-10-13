@@ -122,17 +122,20 @@ func (p *paper) getPageDraws(index int) int {
 
 // newViewingAPI is a window reading the documents of the vaults the readers open
 // through the viewer.
-func newViewingAPI(readers port.VaultReaders, v *viewer) *API {
-	return &API{Readers: readers, Viewer: v, Documents: newDocuments(readers, v)}
+func newViewingAPI(readers port.VaultReaders, v *viewer) *Services {
+	services := newBareServices()
+	services.files.readers = readers
+	services.readDocuments(readers, v)
+	return services
 }
 
 // stat is what the vault says about the file at a path, as an address names it.
-func (a *API) stat(ctx context.Context, path string) (port.VaultReader, document.Fingerprint, error) {
-	showing := a.GetCurrentVault()
+func (a *Services) stat(ctx context.Context, path string) (port.VaultReader, document.Fingerprint, error) {
+	showing := a.state.GetCurrentVault()
 	if showing.ID == "" {
 		return nil, document.Fingerprint{}, errNoVault
 	}
-	reader, err := a.Readers.Open(showing)
+	reader, err := a.files.readers.Open(showing)
 	if err != nil {
 		return nil, document.Fingerprint{}, err
 	}
@@ -145,7 +148,7 @@ func (a *API) stat(ctx context.Context, path string) (port.VaultReader, document
 
 // openViewerWindow is a window looking at one document, with the pages drawn by the
 // paper it is given.
-func openViewerWindow(t *testing.T, from *paper) (*API, http.Handler) {
+func openViewerWindow(t *testing.T, from *paper) (*Services, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{
 		book:    "the bytes of a scan",
@@ -153,27 +156,27 @@ func openViewerWindow(t *testing.T, from *paper) (*API, http.Handler) {
 		beside:  "a file the vault leaves alone",
 	})
 	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
-	api.setVault(vault)
-	api.Viewer.open = from.openScan
-	t.Cleanup(api.Viewer.close)
+	api.state.setVault(vault)
+	api.Document.viewer.open = from.openScan
+	t.Cleanup(api.Document.viewer.close)
 	return api, api.NewHandler(http.NotFoundHandler())
 }
 
 // stopReadAhead turns off the page drawn ahead, for a test counting what was drawn: a
 // slot with no room in it is a drawing that never starts.
-func stopReadAhead(api *API) { api.Viewer.prefetch.slot = make(chan struct{}) }
+func stopReadAhead(api *Services) { api.Document.viewer.prefetch.slot = make(chan struct{}) }
 
 // fromTheLibrary is a window looking at a file the library itself draws.
 //
 // It is given longer than a page turn is: the library compiles itself the first
 // time anything asks it for a document.
-func fromTheLibrary(t *testing.T, raw string) (*API, http.Handler) {
+func fromTheLibrary(t *testing.T, raw string) (*Services, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{book: raw})
 	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
-	api.setVault(vault)
-	api.Viewer.patience = time.Minute
-	t.Cleanup(api.Viewer.close)
+	api.state.setVault(vault)
+	api.Document.viewer.patience = time.Minute
+	t.Cleanup(api.Document.viewer.close)
 	return api, api.NewHandler(http.NotFoundHandler())
 }
 
@@ -185,7 +188,7 @@ func ask(handler http.Handler, url string) *httptest.ResponseRecorder {
 }
 
 // printOf is which bytes the file at a path is, as an address names them.
-func printOf(t *testing.T, api *API, path string) document.Fingerprint {
+func printOf(t *testing.T, api *Services, path string) document.Fingerprint {
 	t.Helper()
 	_, mark, err := api.stat(t.Context(), path)
 	if err != nil {
@@ -195,7 +198,7 @@ func printOf(t *testing.T, api *API, path string) document.Fingerprint {
 }
 
 // getPageAddress is where one page of a file of this window's vault is drawn.
-func getPageAddress(t *testing.T, api *API, path string, at, wide int) string {
+func getPageAddress(t *testing.T, api *Services, path string, at, wide int) string {
 	t.Helper()
 	return getPageRoute(path, at, wide, printOf(t, api, path))
 }
@@ -251,9 +254,9 @@ func TestWhatADocumentIsIsHowManyPagesAndWhatEachMeasures(t *testing.T) {
 }
 
 // getDocument is what a document is, as the window is told it.
-func getDocument(t *testing.T, api *API) *v1.GetDocumentResponse {
+func getDocument(t *testing.T, api *Services) *v1.GetDocumentResponse {
 	t.Helper()
-	out, err := api.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
+	out, err := api.Document.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 	if err != nil {
 		t.Fatalf("asked what the document is and was refused: %v", err)
 	}
@@ -393,7 +396,7 @@ func TestAPageDroppedForRoomIsDrawnAgain(t *testing.T) {
 	from := sheets(4)
 	api, handler := openViewerWindow(t, from)
 	stopReadAhead(api)
-	api.Viewer.renderedPages.Store(pagecache.NewMemory(1))
+	api.Document.viewer.renderedPages.Store(pagecache.NewMemory(1))
 
 	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
@@ -457,7 +460,7 @@ func TestManyAsksForOneDocumentOpenItOnce(t *testing.T) {
 		asking.Add(1)
 		go func() {
 			defer asking.Done()
-			_, err := api.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
+			_, err := api.Document.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 			if err != nil {
 				t.Errorf("asked what the document is and was refused: %v", err)
 			}
@@ -499,13 +502,13 @@ func TestADocumentThatCannotBeReachedInTimeIsBusy(t *testing.T) {
 	from.gate = make(chan struct{})
 	api, handler := openViewerWindow(t, from)
 	stopReadAhead(api)
-	api.Viewer.patience = 20 * time.Millisecond
+	api.Document.viewer.patience = 20 * time.Millisecond
 	letIn := sync.OnceFunc(func() { close(from.gate) })
 	t.Cleanup(letIn)
 
 	// What a document is is asked of the schema and a page of a URL, and both
 	// answer that the document is busy.
-	_, err := api.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
+	_, err := api.Document.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 	if connect.CodeOf(err) != connect.CodeUnavailable {
 		t.Errorf("what the document is was refused %v, not that it is busy", err)
 	}
@@ -519,9 +522,9 @@ func TestADocumentThatCannotBeReachedInTimeIsBusy(t *testing.T) {
 
 	// The opening went on, so the ask after it finds the document open.
 	letIn()
-	api.Viewer.patience = openTimeout
+	api.Document.viewer.patience = openTimeout
 	waitFor(t, "the document never opened", func() bool {
-		_, err := api.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
+		_, err := api.Document.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 		return err == nil
 	})
 	if opens, _, _ := from.getCounts(); opens != 1 {
@@ -535,7 +538,7 @@ func TestADocumentNobodyIsLookingAtIsClosed(t *testing.T) {
 	from := sheets(4)
 	api, handler := openViewerWindow(t, from)
 	stopReadAhead(api)
-	api.Viewer.docs.Store(pool.NewDocuments(pool.MaxOpenDocuments, 10*time.Millisecond))
+	api.Document.viewer.docs.Store(pool.NewDocuments(pool.MaxOpenDocuments, 10*time.Millisecond))
 
 	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
@@ -559,7 +562,7 @@ func TestOnlySoManyDocumentsAreHeldOpen(t *testing.T) {
 	from := sheets(4)
 	api, handler := openViewerWindow(t, from)
 	stopReadAhead(api)
-	api.Viewer.docs.Store(pool.NewDocuments(1, pool.DocumentIdleTimeout))
+	api.Document.viewer.docs.Store(pool.NewDocuments(1, pool.DocumentIdleTimeout))
 
 	for _, path := range []string{book, another} {
 		if out := ask(handler, getPageAddress(t, api, path, 0, 400)); out.Code != http.StatusOK {
@@ -601,7 +604,7 @@ func TestAPageOfARealDocumentComesBack(t *testing.T) {
 func TestAFileThatIsNotADocumentIsRefused(t *testing.T) {
 	api, _ := fromTheLibrary(t, "not a PDF at all")
 
-	_, err := api.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
+	_, err := api.Document.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Errorf("a file that is not a document was refused %v", err)
 	}
@@ -660,11 +663,11 @@ func TestAFileReplacedWhileOpenIsOpenedAgainAndTheOldOneReleased(t *testing.T) {
 	from := sheets(4)
 	vault := testsupport.NewVault(t, map[string]string{book: "the bytes of a scan"})
 	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
-	api.setVault(vault)
-	api.Viewer.open = from.openScan
+	api.state.setVault(vault)
+	api.Document.viewer.open = from.openScan
 	const idleFor = 20 * time.Millisecond
-	api.Viewer.docs.Store(pool.NewDocuments(pool.MaxOpenDocuments, idleFor))
-	t.Cleanup(api.Viewer.close)
+	api.Document.viewer.docs.Store(pool.NewDocuments(pool.MaxOpenDocuments, idleFor))
+	t.Cleanup(api.Document.viewer.close)
 	handler := api.NewHandler(http.NotFoundHandler())
 	stopReadAhead(api)
 

@@ -192,7 +192,7 @@ func openInstallation(
 	return shownInstallation{pages: pages, opened: opened}, nil
 }
 
-// loadThemes gives the API the installation's themes. A folder that could not
+// loadThemes gives the window the installation's themes. A folder that could not
 // be made leaves the ones this binary ships, and a theme the settings name that
 // the catalogue has not is said where the person is.
 func loadThemes(cfg container.Config, opened *editor.Installation) {
@@ -200,7 +200,7 @@ func loadThemes(cfg container.Config, opened *editor.Installation) {
 	if wrong != nil {
 		fmt.Fprintf(os.Stdout, "themes: %v\n", wrong)
 	}
-	opened.API.Themes = themes
+	opened.Services.Themes = themes
 }
 
 // makeEndpoint is the agents' endpoint on the vault in the window.
@@ -212,8 +212,8 @@ func makeEndpoint(
 			return serveAgents(ctx, cfg, opened, mcp, os.Stdout)
 		},
 		GetVault:       opened.GetCurrentVault,
-		SetAgent:       opened.API.SetAgent,
-		SetUnreachable: func(said string) { opened.API.Unreachable.Store(said) },
+		SetAgent:       opened.State.SetAgent,
+		SetUnreachable: func(said string) { opened.State.Unreachable.Store(said) },
 		ErrorHandler:   func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
 	}
 }
@@ -243,7 +243,7 @@ func makeApplication(
 	return application.New(application.Options{
 		Name: "numen",
 		Assets: application.AssetOptions{
-			Handler: opened.API.NewHandler(pages),
+			Handler: opened.Services.NewHandler(pages),
 		},
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
@@ -263,7 +263,7 @@ func makeApplication(
 // makeWindow is the window the vault is shown in.
 func makeWindow(app *application.App, opened *editor.Installation) *application.WebviewWindow {
 	return app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:  getWindowTitle(opened.GetCurrentVault(), opened.API.GetOpenTabs()),
+		Title:  getWindowTitle(opened.GetCurrentVault(), opened.State.GetOpenTabs()),
 		Width:  1280,
 		Height: 860,
 		URL:    "/",
@@ -279,12 +279,12 @@ func connectWindow(
 	reachable *agents.Endpoint,
 ) {
 	// Choosing a folder is the machine's own, and it opens over this window.
-	opened.API.Vaults.SetFolderDialog(&folderDialog{window: window})
+	opened.Services.SetFolderDialog(&folderDialog{window: window})
 
 	// The window is named after what the person is looking at, and is named
 	// again each time the page says what it has open.
 	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.GetCurrentVault(), open)) }
-	opened.API.NotifyOpenTabs = naming
+	opened.State.NotifyOpenTabs = naming
 
 	window.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
 		importDroppedFiles(ctx, opened, event)
@@ -293,9 +293,9 @@ func connectWindow(
 	// Opening another vault, as a person asks for it. The agents are told which
 	// vault they are working when their session opens, so the endpoint they
 	// reach it through is stopped and started again around the swap.
-	opened.API.OpenVault = func(ctx context.Context, v domain.Vault) error {
+	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
 		err := reachable.RunWhileStopped(func() error { return opened.Show(ctx, v) })
-		naming(opened.API.GetOpenTabs())
+		naming(opened.State.GetOpenTabs())
 		return err
 	}
 

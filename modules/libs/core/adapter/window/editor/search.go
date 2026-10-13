@@ -32,14 +32,14 @@ const (
 // SearchNames hands the client the names in the vault that match what was
 // typed: a note's own title, and the headings inside notes. A window standing
 // on nothing holds no names.
-func (a *API) SearchNames(
+func (h *searchHandler) SearchNames(
 	ctx context.Context, r *connect.Request[v1.SearchNamesRequest],
 ) (*connect.Response[v1.SearchNamesResponse], error) {
-	showing := a.GetCurrentVault()
+	showing := h.state.GetCurrentVault()
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.SearchNamesResponse{}), nil
 	}
-	found, err := a.Notes.Queries.GetNameMatches(ctx, showing.ID, r.Msg.GetQuery(), atMost(r.Msg.GetLimit()))
+	found, err := h.queries.GetNameMatches(ctx, showing.ID, r.Msg.GetQuery(), atMost(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -59,45 +59,6 @@ func (a *API) SearchNames(
 	return connect.NewResponse(out), nil
 }
 
-// ListHeadings hands the client the headings of the notes the filter names. A
-// window standing on nothing holds no note to divide.
-func (a *API) ListHeadings(
-	ctx context.Context,
-	r *connect.Request[v1.ListHeadingsRequest],
-) (*connect.Response[v1.ListHeadingsResponse], error) {
-	showing := a.GetCurrentVault()
-	if showing.ID == "" {
-		return connect.NewResponse(&v1.ListHeadingsResponse{}), nil
-	}
-	paths, err := eachOnce(r.Msg.GetPaths())
-	if err != nil {
-		return nil, err
-	}
-	found, err := a.Notes.Queries.GetHeadings(ctx, showing.ID, paths)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-
-	// In the order the filter named them.
-	out := &v1.ListHeadingsResponse{Headings: make([]*v1.NoteHeadings, 0, len(found))}
-	for _, path := range paths {
-		headings, held := found[path]
-		if !held {
-			continue
-		}
-		one := &v1.NoteHeadings{Path: path, Headings: make([]*v1.Heading, 0, len(headings))}
-		for _, h := range headings {
-			one.Headings = append(one.Headings, &v1.Heading{
-				Text:  h.Text,
-				Line:  int32(h.Line),
-				Level: int32(h.Level),
-			})
-		}
-		out.Headings = append(out.Headings, one)
-	}
-	return connect.NewResponse(out), nil
-}
-
 // SearchPassages hands the client the text the vault holds that answers what
 // was typed.
 //
@@ -105,11 +66,11 @@ func (a *API) ListHeadings(
 // from what it means asks twice and each answer fills its own list.
 //
 // A window standing on nothing holds no text.
-func (a *API) SearchPassages(
+func (h *searchHandler) SearchPassages(
 	ctx context.Context, r *connect.Request[v1.SearchPassagesRequest],
 ) (*connect.Response[v1.SearchPassagesResponse], error) {
 	query := r.Msg.GetQuery()
-	showing := a.GetCurrentVault()
+	showing := h.state.GetCurrentVault()
 	if strings.TrimSpace(query) == "" || showing.ID == "" {
 		return connect.NewResponse(&v1.SearchPassagesResponse{}), nil
 	}
@@ -119,7 +80,7 @@ func (a *API) SearchPassages(
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoMode)
 	}
 
-	found, err := a.Finds.Execute(ctx, showing,
+	found, err := h.finds.Execute(ctx, showing,
 		query, search.GetTypingParameters(mode, atMost(r.Msg.GetLimit())))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -129,13 +90,13 @@ func (a *API) SearchPassages(
 	// source that is not a note is absent, and a window offering to open notes
 	// offers nothing for it.
 	sources := getPassageSources(found)
-	titles, err := a.Notes.Queries.GetNotes(ctx, showing.ID, sources)
+	titles, err := h.queries.GetNotes(ctx, showing.ID, sources)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	// Which of four each of those notes is, so a passage is drawn with the mark
 	// of the note it was read out of.
-	types, err := a.Notes.Queries.GetTypes(ctx, showing.ID, sources)
+	types, err := h.queries.GetTypes(ctx, showing.ID, sources)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}

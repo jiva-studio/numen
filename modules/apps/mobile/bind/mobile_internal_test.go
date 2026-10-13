@@ -222,7 +222,7 @@ func TestStartGivesTheWindowTheInstallationsThemes(t *testing.T) {
 	startIn(t, t.TempDir())
 	mu.Lock()
 	defer mu.Unlock()
-	if running.opened.API.Themes == nil {
+	if running.opened.Services.Themes == nil {
 		t.Error("the installation holds no themes")
 	}
 }

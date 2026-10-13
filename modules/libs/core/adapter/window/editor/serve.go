@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -28,7 +29,11 @@ import (
 // passes behind a vault belong to that vault, and are taken down and built
 // again when another is opened.
 type Installation struct {
-	API *API
+	// State is what every handler reads, and Services the handlers themselves.
+	State    *State
+	Services *Services
+
+	viewer *viewer
 
 	// Embedder fills the index, and Asking turns a query into a vector. They
 	// are one object where the settings name one provider, and two providers
@@ -121,7 +126,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	wake := newIndexTriggers(quietPeriod)
 
 	//nolint:contextcheck // a document stays open for the window, not for the request that opened it
-	api := createAPI(made, tasks, wake, embedder)
+	state, services, shown := createWindow(made, tasks, wake, embedder)
 
 	// The search the window offers is the search the application already does.
 	// It is built once the embedder is settled, so a model that could not be
@@ -129,12 +134,14 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	// A search short of a half is said where the person is. A window opened
 	// from a desktop entry has no terminal to write to.
 	finds := made.NewSearch(asking, func(err error) {
-		api.reportTask(task.Task{ID: wordsAlone, Title: "Answering by words alone", Error: err.Error()})
+		state.reportTask(task.Task{ID: wordsAlone, Title: "Answering by words alone", Error: err.Error()})
 	})
-	api.Finds = &finds
+	services.Search.finds = &finds
 
 	pool := &Installation{
-		API:           api,
+		State:         state,
+		Services:      services,
+		viewer:        shown,
 		Embedder:      embedder,
 		Asking:        asking,
 		made:          made,
@@ -164,10 +171,10 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	// answers through is in place. A machine that refuses one leaves the player
 	// with no address, and the words are still read.
 	stopped := func(why error) { fmt.Fprintf(out, "recordings will no longer play: %v\n", why) }
-	if playing, why := Listen(api, stopped); why != nil {
+	if playing, why := Listen(services.server, stopped); why != nil {
 		fmt.Fprintf(out, "recordings will not play: %v\n", why)
 	} else {
-		api.Playing = playing
+		services.openPlaying(playing)
 	}
 	return pool, nil
 }
@@ -177,14 +184,14 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 func (o *Installation) Close() error {
 	// First: a search, a note and a link are answered straight from the index,
 	// and the index closes here. This stands until the last of them is off it.
-	o.API.Close()
+	o.State.Close()
 	o.stopVault()
-	if o.API.Viewer != nil {
-		o.API.Viewer.close()
+	if o.viewer != nil {
+		o.viewer.close()
 	}
 	// The socket a recording was played over answers with the vault's files, so
 	// it stops before the vault does.
-	_ = o.API.Playing.Close()
+	_ = o.Services.Playing.Close()
 	// The embedder goes after the work that uses it and before the database,
 	// which is the order they depend on each other in.
 	err := o.stopEmbedder()
@@ -205,13 +212,13 @@ func (o *Installation) SourcesKnown() port.SourceQueries {
 }
 
 // GetCurrentVault is the vault the window has open.
-func (o *Installation) GetCurrentVault() domain.Vault { return o.API.GetCurrentVault() }
+func (o *Installation) GetCurrentVault() domain.Vault { return o.State.GetCurrentVault() }
 
 // Notes and Cards are the use cases this window works its vault through.
 // Whatever else works the same vault in the same process is served these, so
 // what one of them refuses the other refuses and neither is built short of
 // something the other has. What a person does to the list of vaults is
-// API.Vaults, where the window itself reaches it.
+// Services.Vaults, where the window itself reaches it.
 //
 // A caller that is not the person draws what it is doing over the note, which
 // is Notes.Drawing and is asked for there.
@@ -235,7 +242,7 @@ func (o *Installation) DraftingLocation(ctx context.Context, path, stood string)
 // Refresh brings named notes up to date. Whatever changes a note calls it, so
 // that what changed is findable before the change is reported done.
 func (o *Installation) Refresh() vaults.Refresh {
-	if on := o.API.session.Load(); on != nil {
+	if on := o.State.session.Load(); on != nil {
 		return on.refresh
 	}
 	return o.made.GetRefresh()
@@ -245,7 +252,7 @@ func (o *Installation) Refresh() vaults.Refresh {
 // for the window and for an agent alike, so that what a person started through
 // one of them is shown by the other. Nothing while the window has no vault.
 func (o *Installation) GetRecognitionWorker() *recognition.Worker {
-	if on := o.API.session.Load(); on != nil {
+	if on := o.State.session.Load(); on != nil {
 		return on.recognitionWorker
 	}
 	return nil
@@ -256,7 +263,7 @@ func (o *Installation) GetRecognitionWorker() *recognition.Worker {
 // that what a person started through one of them is shown by the other. Nothing
 // while the window has no vault.
 func (o *Installation) GetTranscriptionWorker() *transcription.Worker {
-	if on := o.API.session.Load(); on != nil {
+	if on := o.State.session.Load(); on != nil {
 		return on.transcriptionWorker
 	}
 	return nil
@@ -292,14 +299,14 @@ const (
 // what is being done. A theme the settings name that the catalogue has not is
 // said there.
 func (o *Installation) SayTheme(said string) {
-	o.API.reportTask(task.Task{ID: wearingATheme, Title: "Wearing a theme", Error: said})
+	o.State.reportTask(task.Task{ID: wearingATheme, Title: "Wearing a theme", Error: said})
 }
 
 // Report puts what reading the settings had to tell a person in the list of
 // what is being done, which is where a person is.
 func (o *Installation) Report(said []string) {
 	for at, one := range said {
-		o.API.reportTask(task.Task{
+		o.State.reportTask(task.Task{
 			ID:    fmt.Sprintf("%s %d", readingTheSettings, at),
 			Title: "Reading the settings",
 			Error: one,
@@ -307,53 +314,57 @@ func (o *Installation) Report(said []string) {
 	}
 }
 
-// createAPI is the API a window answers through, with the pieces that need no vault.
-func createAPI(made Assembly, tasks *task.Tasks, wake indexTriggers, embedder port.Embedder) *API {
+// createWindow is the state a window answers from and the handlers that read
+// it, with the pieces that need no vault. The viewer is given back for the
+// installation to close.
+func createWindow(
+	made Assembly, tasks *task.Tasks, wake indexTriggers, embedder port.Embedder,
+) (*State, *Services, *viewer) {
 	// Where a passage sits on the page is asked of whichever producer made the
 	// text it is a place in, which is what the index records.
 	highlight := source.NewHighlight(
 		made.GetVaultReaders(), made.GetSourceQueries(), made.GetDerivedStores())
 	highlight.Documents = made.GetTextExtractor()
 
-	api := &API{
+	state := &State{
 		ChangeEvents:      newChangeBroadcaster(),
 		Places:            newPlaceBroadcaster(),
 		Edits:             newEditBroadcaster(),
 		Window:            &wire.Window{Named: wire.Editor, Tasking: tasks},
 		NotifyNoteWritten: func() { fire(wake.notes) },
-		Readers:           made.GetVaultReaders(),
-		Viewer:            newCachingViewer(made.GetPageRenderer()),
-		Highlight:         &highlight,
-		Texts:             made.OpenSourceTexts(),
-		Notes: Notes{
-			Queries: made.GetNoteQueries(),
-			Links:   made.GetLinkQueries(),
-		},
-		Files: Files{
-			GetFolderEntries: file.NewGetFolderEntries(made.GetVaultReaders(), made.GetNoteQueries()),
-			GetFileKinds:     file.NewGetFileKinds(made.GetVaultReaders(), made.GetNoteQueries()),
-			CreateFolder:     file.NewCreateFolder(made.GetVaultWriters()),
-		},
 	}
-	api.Documents = newDocuments(api.Readers, api.Viewer)
+	shown := newCachingViewer(made.GetPageRenderer())
+	services := createServices(state)
+	readers := made.GetVaultReaders()
+	services.files.readers = readers
+	services.readDocuments(readers, shown)
+	services.readTexts(made.OpenSourceTexts())
+	services.Ocr.highlight = &highlight
+	services.Note.queries = made.GetNoteQueries()
+	services.Note.links = made.GetLinkQueries()
+	services.Search.queries = made.GetNoteQueries()
+	services.File.getFolderEntries = file.NewGetFolderEntries(readers, made.GetNoteQueries())
+	services.File.getFileKinds = file.NewGetFileKinds(readers, made.GetNoteQueries())
+	services.File.createFolder = file.NewCreateFolder(made.GetVaultWriters())
+
 	// The editor is open on one vault, and answers which as itself.
-	api.Window.Vault = func() string { return string(api.GetCurrentVault().ID) }
-	api.Indexing.Progress = made.GetIndexProgress()
+	state.Window.Vault = func() string { return string(state.GetCurrentVault().ID) }
+	state.Indexing.Progress = made.GetIndexProgress()
 	// Named before anything is read: it is what decides whether a chunk already
 	// carries a vector, and what tells the window that something is going to
 	// embed what was cut.
 	if embedder != nil {
 		model := embedder.GetModel()
-		api.Indexing.Model.Store(model.String())
-		api.Indexing.Recipe.Store(model.Recipe())
+		state.Indexing.Model.Store(model.String())
+		state.Indexing.Recipe.Store(model.Recipe())
 	}
-	return api
+	return state, services, shown
 }
 
 // wireUseCases builds the use cases the window and everything else working its
-// vault are served, and hands the window the ones it answers through.
+// vault are served, and hands each handler the ones it answers through.
 func (o *Installation) wireUseCases(ctx context.Context) {
-	made, api := o.made, o.API
+	made, services := o.made, o.Services
 
 	// Everything that acts on this installation's notes, cards and vaults, built
 	// once. Whatever else works the same vault — the tools an agent calls — is
@@ -361,58 +372,52 @@ func (o *Installation) wireUseCases(ctx context.Context) {
 	//
 	// A note the person saves is level before the save is answered, so the vault
 	// finds what it now holds without waiting on the watch.
-	o.notes = made.OpenNotes(o.level).FollowMoves(api.GetWindow())
+	o.notes = made.OpenNotes(o.level).FollowMoves(o.State.GetWindow())
 	o.cards = made.OpenCards(o.level)
 	o.vaults = made.OpenVaults(o.notes.Move)
 
 	notes := &o.notes
-	api.Notes.Read = &notes.Read
-	api.Notes.Write = &notes.Write
-	api.Notes.Create = &notes.Create
-	api.Notes.EditLinks = &notes.Linking
-	api.Notes.ReplaceLinks = &notes.ReplaceLinks
-	api.Notes.Rename = &notes.Rename
-	api.Notes.Remove = &notes.Remove
-	api.Notes.ShowNeighbourhood = &notes.Neighbourhood
-	api.Notes.GetTitle = notes.GetTitle
-	api.Notes.GetLinkAddress = notes.GetLinkAddress
+	services.Note.read = &notes.Read
+	services.Note.write = &notes.Write
+	services.Note.create = &notes.Create
+	services.Note.editLinks = &notes.Linking
+	services.Note.replaceLinks = &notes.ReplaceLinks
+	services.Note.rename = &notes.Rename
+	services.Note.showNeighbourhood = &notes.Neighbourhood
+	services.Note.getLinkAddress = notes.GetLinkAddress
+	services.File.remove = &notes.Remove
 
 	cutting := &o.cards
-	api.Cards = Cards{
-		Read:        &cutting.Read,
-		List:        &cutting.List,
-		Write:       &cutting.Write,
-		Create:      &cutting.Create,
-		RenameField: &cutting.RenameField,
-	}
+	services.Cards.read = &cutting.Read
+	services.Cards.list = &cutting.List
+	services.Cards.write = &cutting.Write
+	services.Cards.create = &cutting.Create
+	services.Cards.renameField = &cutting.RenameField
+	services.Cards.getTitle = notes.GetTitle
 	// A preset is a note the editor writes key by key, and the curve beside its
 	// one control is the same simulator the flashcards window runs on.
 	running := made.OpenFlashcards(o.level)
-	api.Presets = &running.Presets
-	api.Curves = &running.Curves
-	api.Settings = Settings{
-		Get:       made.OpenGetSettings(running.Day),
-		Write:     made.OpenWriteSettings(),
-		GetFile:   made.OpenGetSettingsFile(),
-		WriteFile: made.OpenWriteSettingsFile(),
-	}
+	services.Presets.presets = &running.Presets
+	services.Presets.curves = &running.Curves
+	services.Presets.create = &cutting.Create
+	services.Presets.getTitle = notes.GetTitle
+	services.Settings.get = made.OpenGetSettings(running.Day)
+	services.Settings.write = made.OpenWriteSettings()
+	services.Settings.getFile = made.OpenGetSettingsFile()
+	services.Settings.writeFile = made.OpenWriteSettingsFile()
 
 	held := &o.vaults
-	api.Files.Move = &held.Move
-	api.Files.Import = &held.Import
-	api.Files.URLs = &source.CreateURL{Writers: made.GetVaultWriters(), Index: o.level}
-	api.Vaults = Vaults{
-		Registry:    held.Registry,
-		List:        &held.List,
-		Find:        &held.Find,
-		FolderCheck: &held.FolderCheck,
-		Add:         &held.Add,
-		Rename:      &held.Rename,
-		Remove:      &held.Remove,
-		Unregister:  &held.Unregister,
-	}
+	services.File.move = &held.Move
+	services.File.urls = &source.CreateURL{Writers: made.GetVaultWriters(), Index: o.level}
+	services.Vaults.list = &held.List
+	services.Vaults.find = &held.Find
+	services.Vaults.folderCheck = &held.FolderCheck
+	services.Vaults.add = &held.Add
+	services.Vaults.rename = &held.Rename
+	services.Vaults.remove = &held.Remove
+	services.server.find = &held.Find
 
-	api.Drops = &transcription.Drop{
+	services.Artifact.drops = &transcription.Drop{
 		Readers: made.GetVaultReaders(),
 		Sources: made.GetSourceRepository(),
 		Queries: made.GetSourceQueries(),
@@ -423,6 +428,21 @@ func (o *Installation) wireUseCases(ctx context.Context) {
 	// no downloader, and the window is answered that this build cannot do it.
 	if by := made.OpenDownloader(ctx); by != nil {
 		fetching := made.OpenImportURL(ctx, by)
-		api.Imports = &fetching
+		services.readImports(&fetching)
 	}
 }
+
+// Vaults is the use cases that act on the list of vaults, built once. An agent
+// that works the list is served these, so what one of them refuses the other
+// refuses.
+func (o *Installation) Vaults() *vaults.Scenarios { return &o.vaults }
+
+// GetCreateURL is the use case that makes the file a web address is kept in.
+func (o *Installation) GetCreateURL() *source.CreateURL { return o.Services.File.urls }
+
+// GetImportURL is what fetches the text at an address, or nil where this build
+// holds neither of the tools that reach one.
+func (o *Installation) GetImportURL() *source.ImportURL { return o.Services.Artifact.imports }
+
+// GetSearch is the search the window offers.
+func (o *Installation) GetSearch() *search.Search { return o.Services.Search.finds }

@@ -1,4 +1,4 @@
-package editor_test
+package editor
 
 import (
 	"net/http"
@@ -11,7 +11,6 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
@@ -44,7 +43,7 @@ func TestBothWindowsAreToldTheSameDay(t *testing.T) {
 	getting := setting.NewGet(
 		func() (string, string, error) { return "{}", "", nil }, nil, setting.Bounds{}, "", day, clock,
 	)
-	editing := &editor.API{Settings: editor.Settings{Get: getting}}
+	editing := &settingsHandler{get: getting}
 	said, err := editing.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {
 		t.Fatal(err)

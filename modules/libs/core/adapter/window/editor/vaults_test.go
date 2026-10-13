@@ -110,7 +110,7 @@ func (f *folders) getAsked() (string, string) {
 // and a client asking about them the way the window does.
 type onTheList struct {
 	client   numenv1connect.VaultsServiceClient
-	api      *API
+	api      *Services
 	registry port.VaultRegistry
 	rows     *vaultRows
 	bin      *bin
@@ -149,26 +149,22 @@ func onAList(t *testing.T) *onTheList {
 	chooseFolder := vaults.NewChooseFolder(f.dialog)
 	folderCheck := vaults.NewFolderCheck(filesystem.VaultReaders{})
 	remove := vaults.NewRemove(find, forget, erase)
-	f.api = &API{
-		Readers: filesystem.VaultReaders{},
-		Vaults: Vaults{
-			Registry:     registry,
-			List:         &list,
-			Find:         &find,
-			FolderCheck:  &folderCheck,
-			ChooseFolder: &chooseFolder,
-			Add:          &adding,
-			Rename:       &rename,
-			Remove:       &remove,
-		},
-	}
-	f.api.OpenVault = func(_ context.Context, v domain.Vault) error {
+	f.api = newBareServices()
+	f.api.files.readers = filesystem.VaultReaders{}
+	f.api.Vaults.list = &list
+	f.api.Vaults.find = &find
+	f.api.Vaults.folderCheck = &folderCheck
+	f.api.Vaults.chooseFolder = &chooseFolder
+	f.api.Vaults.add = &adding
+	f.api.Vaults.rename = &rename
+	f.api.Vaults.remove = &remove
+	f.api.state.OpenVault = func(_ context.Context, v domain.Vault) error {
 		f.mu.Lock()
 		defer f.mu.Unlock()
 		f.shown = append(f.shown, v)
 		return f.refuses
 	}
-	f.api.setVault(f.first)
+	f.api.state.setVault(f.first)
 
 	server := httptest.NewUnstartedServer(f.api.NewHandler(http.NotFoundHandler()))
 	server.EnableHTTP2 = true
@@ -411,7 +407,7 @@ func TestTheVaultTheWindowIsShowingStaysOnTheList(t *testing.T) {
 func TestTheLastVaultAnInstallationHasStaysOnTheList(t *testing.T) {
 	f := onAList(t)
 	// A window standing on nothing is not what keeps this vault: the list is.
-	f.api.setVault(domain.Vault{})
+	f.api.state.setVault(domain.Vault{})
 
 	gone, err := f.client.RemoveVault(t.Context(),
 		connect.NewRequest(&v1.RemoveVaultRequest{Id: string(f.second.ID)}))
@@ -624,7 +620,7 @@ func TestASecondFolderDialogIsRefusedWhileOneIsUp(t *testing.T) {
 // because nothing serves it and not because a handler standing there has
 // nothing behind it.
 func TestABuildThatDoesNotServeTheListAnswersNothingAboutIt(t *testing.T) {
-	api := &API{}
+	api := newBareServices()
 	server := httptest.NewUnstartedServer(
 		api.NewHandler(http.NotFoundHandler(), numenv1connect.NoteServiceName))
 	server.EnableHTTP2 = true

@@ -14,6 +14,15 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
+// bookHandler answers what a book that reflows is, and the pictures it carries.
+type bookHandler struct {
+	state          *State
+	viewer         *viewer
+	getBook        *document.GetBook
+	getBookMarkup  *document.GetBookMarkup
+	getBookPicture *document.GetBookPicture
+}
+
 // A book that reflows reaches the window as words: the markup of one document
 // at a time, asked for over the schema, and beside it the pictures the archive
 // carries, answered at an address as the bytes they are.
@@ -27,21 +36,21 @@ const mostListed = 10_000
 //
 // A window lays a chapter out itself, so it takes the whole of the book's shape
 // here and then asks for one document at a time.
-func (a *API) GetBook(
+func (h *bookHandler) GetBook(
 	ctx context.Context,
 	r *connect.Request[v1.GetBookRequest],
 ) (*connect.Response[v1.GetBookResponse], error) {
-	if a.Documents.GetBook == nil {
+	if h.getBook == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 	}
-	showing, err := a.getShownVault()
+	showing, err := h.state.getShownVault()
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
-	ctx, cancel := context.WithTimeout(ctx, a.Viewer.patience)
+	ctx, cancel := context.WithTimeout(ctx, h.viewer.patience)
 	defer cancel()
 
-	read, err := a.Documents.GetBook.Execute(ctx, showing, r.Msg.GetPath())
+	read, err := h.getBook.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
@@ -78,25 +87,25 @@ func (a *API) GetBook(
 //
 // The ask names the bytes it was given out for, and is answered while the file
 // is still those bytes: one answer is one reading of one file.
-func (a *API) ReadBookMarkup(
+func (h *bookHandler) ReadBookMarkup(
 	ctx context.Context,
 	r *connect.Request[v1.ReadBookMarkupRequest],
 ) (*connect.Response[v1.ReadBookMarkupResponse], error) {
-	if a.Documents.GetBookMarkup == nil {
+	if h.getBookMarkup == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 	}
-	showing, err := a.getShownVault()
+	showing, err := h.state.getShownVault()
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
-	ctx, cancel := context.WithTimeout(ctx, a.Viewer.patience)
+	ctx, cancel := context.WithTimeout(ctx, h.viewer.patience)
 	defer cancel()
 
 	var baseline *document.Fingerprint
 	if named := r.Msg.GetBaseline(); named != nil {
 		baseline = &document.Fingerprint{Size: named.GetSize(), Mtime: named.GetMtime()}
 	}
-	markup, err := a.Documents.GetBookMarkup.Execute(ctx, showing, r.Msg.GetPath(), baseline, r.Msg.GetDocument())
+	markup, err := h.getBookMarkup.Execute(ctx, showing, r.Msg.GetPath(), baseline, r.Msg.GetDocument())
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
@@ -110,25 +119,25 @@ func (a *API) ReadBookMarkup(
 // whoever synced it, and this route serves it from the window's own origin. So
 // the type is settled by reading the bytes, and an entry that is not one of the
 // pictures a book is drawn from is not served at all.
-func (a *API) Entry(w http.ResponseWriter, r *http.Request, path, entry string) {
+func (h *bookHandler) Entry(w http.ResponseWriter, r *http.Request, path, entry string) {
 	named, err := parseFingerprint(r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if a.Documents.GetBookPicture == nil {
+	if h.getBookPicture == nil {
 		http.Error(w, errNoDocuments.Error(), http.StatusNotImplemented)
 		return
 	}
-	showing, err := a.getShownVault()
+	showing, err := h.state.getShownVault()
 	if err != nil {
 		refuse(w, err)
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), a.Viewer.patience)
+	ctx, cancel := context.WithTimeout(r.Context(), h.viewer.patience)
 	defer cancel()
 
-	picture, err := a.Documents.GetBookPicture.Execute(ctx, showing, path, named, entry)
+	picture, err := h.getBookPicture.Execute(ctx, showing, path, named, entry)
 	if err != nil {
 		refuse(w, err)
 		return

@@ -26,6 +26,14 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
+// documentHandler answers what a document of the vault is, and draws its pages.
+type documentHandler struct {
+	state       *State
+	viewer      *viewer
+	getDocument *document.GetDocument
+	getPage     *document.GetPage
+}
+
 // A document reaches the window as pictures: a page of a scan is pixels, and
 // pixels are what a window asks a URL for. So a page is a handler, and what it
 // answers with is a picture.
@@ -190,21 +198,21 @@ func (v *viewer) GetPage(
 // A window lays out the pages it has not drawn yet, so it needs their shape
 // before it has their pixels: a strip built on one guessed shape moves under
 // the hand as the real ones arrive.
-func (a *API) GetDocument(
+func (h *documentHandler) GetDocument(
 	ctx context.Context,
 	r *connect.Request[v1.GetDocumentRequest],
 ) (*connect.Response[v1.GetDocumentResponse], error) {
-	if a.Documents.GetDocument == nil {
+	if h.getDocument == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 	}
-	showing, err := a.getShownVault()
+	showing, err := h.state.getShownVault()
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
-	ctx, cancel := context.WithTimeout(ctx, a.Viewer.patience)
+	ctx, cancel := context.WithTimeout(ctx, h.viewer.patience)
 	defer cancel()
 
-	got, err := a.Documents.GetDocument.Execute(ctx, showing, r.Msg.GetPath())
+	got, err := h.getDocument.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
@@ -230,22 +238,22 @@ const pagesName = "pages"
 // the file at that path is still those bytes and the picture it answers with
 // never changes. A file rewritten under the same name is a different address,
 // and this one is gone.
-func (a *API) Page(w http.ResponseWriter, r *http.Request, path, where string) {
+func (h *documentHandler) Page(w http.ResponseWriter, r *http.Request, path, where string) {
 	at, wide, named, err := parsePageQuery(where, r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if a.Documents.GetPage == nil {
+	if h.getPage == nil {
 		http.Error(w, errNoDocuments.Error(), http.StatusNotImplemented)
 		return
 	}
-	showing, err := a.getShownVault()
+	showing, err := h.state.getShownVault()
 	if err != nil {
 		refuse(w, err)
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), a.Viewer.patience)
+	ctx, cancel := context.WithTimeout(r.Context(), h.viewer.patience)
 	defer cancel()
 
 	key := document.PageKey{
@@ -253,13 +261,13 @@ func (a *API) Page(w http.ResponseWriter, r *http.Request, path, where string) {
 		Page:     at,
 		Width:    wide,
 	}
-	body, err := a.Documents.GetPage.Execute(ctx, showing, key)
+	body, err := h.getPage.Execute(ctx, showing, key)
 	if err != nil {
 		refuse(w, err)
 		return
 	}
-	//nolint:contextcheck // the page drawn ahead is nobody's request, and runs under a.getBackgroundContext()
-	a.prefetchNextPage(showing, key)
+	//nolint:contextcheck // the page drawn ahead is nobody's request, and runs under h.state.getBackgroundContext()
+	h.prefetchNextPage(showing, key)
 
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("Content-Length", strconv.Itoa(len(body)))
@@ -269,46 +277,25 @@ func (a *API) Page(w http.ResponseWriter, r *http.Request, path, where string) {
 	_, _ = w.Write(body)
 }
 
-// getShownVault is the vault a document is read from. A window standing on
-// nothing holds no file to say anything about.
-func (a *API) getShownVault() (domain.Vault, error) {
-	showing := a.GetCurrentVault()
-	if showing.ID == "" {
-		return domain.Vault{}, errNoVault
-	}
-	return showing, nil
-}
-
 // prefetchNextPage draws the page after this one, so that turning to it finds it
 // drawn. One page is drawn ahead at a time, and an ask being answered now comes
 // first.
-func (a *API) prefetchNextPage(v domain.Vault, key document.PageKey) {
+func (h *documentHandler) prefetchNextPage(v domain.Vault, key document.PageKey) {
 	next := document.PageKey{Document: key.Document, Page: key.Page + 1, Width: key.Width}
-	if a.Viewer.renderedPages.Load().Has(next) {
+	if h.viewer.renderedPages.Load().Has(next) {
 		return
 	}
-	if !a.Viewer.prefetch.tryAcquire() {
+	if !h.viewer.prefetch.tryAcquire() {
 		return
 	}
 	go func() {
-		defer a.Viewer.prefetch.release()
-		ctx, cancel := context.WithTimeout(a.getBackgroundContext(), a.Viewer.prefetch.timeout)
+		defer h.viewer.prefetch.release()
+		ctx, cancel := context.WithTimeout(h.state.getBackgroundContext(), h.viewer.prefetch.timeout)
 		defer cancel()
 		// Nobody asked for this page. One that would not draw is drawn again
 		// when somebody turns to it, and says so then.
-		_, _ = a.Documents.GetPage.Execute(ctx, v, next)
+		_, _ = h.getPage.Execute(ctx, v, next)
 	}()
-}
-
-// getBackgroundContext is what a drawing nobody asked for runs under: the
-// context the passes behind the vault in the window run under. The vault going
-// ends it, so a window that is closing is not held open by a page nobody has
-// turned to. A window standing on no vault has no passes, and nothing to end.
-func (a *API) getBackgroundContext() context.Context {
-	if on := a.session.Load(); on != nil {
-		return on.ctx
-	}
-	return context.Background()
 }
 
 // parsePageQuery is which page the window asks for and how wide, in the pixels of the

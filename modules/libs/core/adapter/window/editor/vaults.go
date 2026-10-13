@@ -15,20 +15,30 @@ import (
 // errNoVaults is what a build that serves no list of vaults answers.
 var errNoVaults = errors.New("this build serves no list of vaults")
 
-// vaultsService answers about the vaults this installation holds, over the API
-// this window serves.
-type vaultsService struct{ api *API }
+// vaultsHandler answers about the vaults this installation holds.
+type vaultsHandler struct {
+	state       *State
+	list        *vaults.List
+	find        *vaults.Find
+	folderCheck *vaults.FolderCheck
+	add         *vaults.Add
+	rename      *vaults.Rename
+	remove      *vaults.Remove
+
+	// chooseFolder is nil where the application has no window to put a dialog in.
+	chooseFolder *vaults.ChooseFolder
+}
 
 // ListVaults is every vault the installation holds. Which of them the window
 // has in front of the person is asked of the window.
-func (s vaultsService) ListVaults(
+func (s *vaultsHandler) ListVaults(
 	_ context.Context,
 	_ *connect.Request[v1.ListVaultsRequest],
 ) (*connect.Response[v1.ListVaultsResponse], error) {
-	if s.api.Vaults.List == nil || s.api.Vaults.FolderCheck == nil {
+	if s.list == nil || s.folderCheck == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
 	}
-	held, err := s.api.Vaults.List.Execute()
+	held, err := s.list.Execute()
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -40,14 +50,14 @@ func (s vaultsService) ListVaults(
 }
 
 // ChooseFolder puts this machine's own folder dialog in front of the person.
-func (s vaultsService) ChooseFolder(
+func (s *vaultsHandler) ChooseFolder(
 	ctx context.Context,
 	r *connect.Request[v1.ChooseFolderRequest],
 ) (*connect.Response[v1.ChooseFolderResponse], error) {
-	if s.api.Vaults.ChooseFolder == nil {
+	if s.chooseFolder == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
 	}
-	chosen, err := s.api.Vaults.ChooseFolder.Execute(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
+	chosen, err := s.chooseFolder.Execute(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
 	if vaults.IsFolderDialogUnavailable(err) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
@@ -60,14 +70,14 @@ func (s vaultsService) ChooseFolder(
 
 // AddVault turns a folder into a vault on the list. A name another vault has
 // gets a number appended, and is not an error here.
-func (s vaultsService) AddVault(
+func (s *vaultsHandler) AddVault(
 	_ context.Context,
 	r *connect.Request[v1.AddVaultRequest],
 ) (*connect.Response[v1.AddVaultResponse], error) {
-	if s.api.Vaults.Add == nil || s.api.Vaults.FolderCheck == nil {
+	if s.add == nil || s.folderCheck == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
 	}
-	added, err := s.api.Vaults.Add.Execute(r.Msg.GetPath(), r.Msg.GetName())
+	added, err := s.add.Execute(r.Msg.GetPath(), r.Msg.GetName())
 	if err != nil {
 		reason, refused := vaultsErrorCodeBy(err)
 		if !refused {
@@ -80,16 +90,16 @@ func (s vaultsService) AddVault(
 
 // RenameVault is what a person calls a vault. The folder keeps the name the
 // filesystem gives it.
-func (s vaultsService) RenameVault(
+func (s *vaultsHandler) RenameVault(
 	ctx context.Context,
 	r *connect.Request[v1.RenameVaultRequest],
 ) (*connect.Response[v1.RenameVaultResponse], error) {
-	if s.api.Vaults.Find == nil || s.api.Vaults.Rename == nil || s.api.Vaults.FolderCheck == nil {
+	if s.find == nil || s.rename == nil || s.folderCheck == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
 	}
-	v, err := s.api.Vaults.Find.Execute(r.Msg.GetId())
+	v, err := s.find.Execute(r.Msg.GetId())
 	if err == nil {
-		v, err = s.api.Vaults.Rename.Execute(ctx, v, r.Msg.GetName())
+		v, err = s.rename.Execute(ctx, v, r.Msg.GetName())
 	}
 	if err != nil {
 		reason, refused := vaultsErrorCodeBy(err)
@@ -103,14 +113,14 @@ func (s vaultsService) RenameVault(
 
 // RemoveVault takes a vault off the list and out of the index, and its folder
 // to the trash when the request asks for it.
-func (s vaultsService) RemoveVault(
+func (s *vaultsHandler) RemoveVault(
 	ctx context.Context,
 	r *connect.Request[v1.RemoveVaultRequest],
 ) (*connect.Response[v1.RemoveVaultResponse], error) {
-	if s.api.Vaults.Remove == nil {
+	if s.remove == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
 	}
-	err := s.api.Vaults.Remove.Execute(ctx, r.Msg.GetId(), s.api.GetCurrentVault().ID, r.Msg.GetTrash())
+	err := s.remove.Execute(ctx, r.Msg.GetId(), s.state.GetCurrentVault().ID, r.Msg.GetTrash())
 	if err != nil {
 		reason, refused := vaultsErrorCodeBy(err)
 		if !refused {
@@ -122,16 +132,16 @@ func (s vaultsService) RemoveVault(
 }
 
 // OpenVault shows another vault in this window.
-func (s vaultsService) OpenVault(
+func (s *vaultsHandler) OpenVault(
 	ctx context.Context,
 	r *connect.Request[v1.OpenVaultRequest],
 ) (*connect.Response[v1.OpenVaultResponse], error) {
-	if s.api.Vaults.Find == nil {
+	if s.find == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
 	}
-	v, err := s.api.Vaults.Find.Execute(r.Msg.GetId())
+	v, err := s.find.Execute(r.Msg.GetId())
 	if err == nil {
-		err = s.api.OpenVault(ctx, v)
+		err = s.state.OpenVault(ctx, v)
 	}
 	if err == nil {
 		return connect.NewResponse(&v1.OpenVaultResponse{}), nil
@@ -150,10 +160,10 @@ func (s vaultsService) OpenVault(
 
 // convertVaultToWire is one vault as the schema carries it. A folder that is not
 // there to be found is marked, and the vault stays on the list.
-func (s vaultsService) convertVaultToWire(v domain.Vault) *v1.Vault {
+func (s *vaultsHandler) convertVaultToWire(v domain.Vault) *v1.Vault {
 	return &v1.Vault{
 		Id: string(v.ID), Name: v.Name, Path: v.Path,
-		IsMissing: s.api.Vaults.FolderCheck.Execute(v),
+		IsMissing: s.folderCheck.Execute(v),
 	}
 }
 

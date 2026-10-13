@@ -15,14 +15,14 @@ import (
 // A change reaches everyone drawing the vault the way a note put in front of
 // the person does.
 func TestAChangeReachesEveryoneDrawing(t *testing.T) {
-	api := &API{Edits: newEditBroadcaster()}
-	line, done := api.Edits.subscribe()
+	state := &State{Edits: newEditBroadcaster()}
+	line, done := state.Edits.subscribe()
 	t.Cleanup(done)
 
 	said := domain.Edit{
 		Change: "one", Path: "Aggressor.md", From: 2, To: 12, Text: "An axe",
 	}
-	if err := api.GetWindow().ShowEdit(t.Context(), said); err != nil {
+	if err := state.GetWindow().ShowEdit(t.Context(), said); err != nil {
 		t.Fatal(err)
 	}
 

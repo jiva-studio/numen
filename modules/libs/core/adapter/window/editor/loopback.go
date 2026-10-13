@@ -15,7 +15,17 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
+
+// fileServer answers with one file of one vault, as it is read.
+type fileServer struct {
+	state    *State
+	files    *artifactFiles
+	find     *vaults.Find
+	openCopy source.OpenCopy
+}
 
 // A Loopback is a socket on the loopback address that answers with the vault's
 // own files.
@@ -30,7 +40,7 @@ import (
 // and what may be played is decided where a player is drawn.
 type Loopback struct {
 	server  *http.Server
-	api     *API
+	files   *fileServer
 	address string
 	// token stands in the address and in no setting. Every process on this
 	// machine can reach a loopback socket, and a vault is the person's own
@@ -48,12 +58,12 @@ type Loopback struct {
 //
 // stopped is told where the socket stops answering under the window, which is
 // nobody's doing and nothing anybody asked for.
-func Listen(api *API, stopped func(error)) (*Loopback, error) {
+func Listen(files *fileServer, stopped func(error)) (*Loopback, error) {
 	held, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, err
 	}
-	back, err := newLoopback(held, api, stopped)
+	back, err := newLoopback(held, files, stopped)
 	if err != nil {
 		held.Close()
 		return nil, err
@@ -62,14 +72,14 @@ func Listen(api *API, stopped func(error)) (*Loopback, error) {
 }
 
 // newLoopback is the socket answering, whichever socket it is.
-func newLoopback(held net.Listener, api *API, stopped func(error)) (*Loopback, error) {
+func newLoopback(held net.Listener, files *fileServer, stopped func(error)) (*Loopback, error) {
 	word := make([]byte, 24)
 	if _, err := rand.Read(word); err != nil {
 		return nil, err
 	}
 
 	back := &Loopback{
-		api:     api,
+		files:   files,
 		address: "http://" + held.Addr().String(),
 		token:   base64.RawURLEncoding.EncodeToString(word),
 	}
@@ -123,7 +133,7 @@ func (l *Loopback) getHandler() http.Handler {
 			http.Error(w, "not a file of a vault", http.StatusBadRequest)
 			return
 		}
-		l.api.File(w, r, id, path)
+		l.files.File(w, r, id, path)
 	})
 }
 
@@ -161,18 +171,18 @@ const errNoVaultNamed = "no vault of that name"
 //
 // A range is answered as a range, so a player seeks in an hour of speech and
 // holds the second it is on. The whole file is never in memory.
-func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
+func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, at string) {
 	named, err := parseFingerprint(r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	held, ok := a.findVault(id)
+	held, ok := h.findVault(id)
 	if !ok {
 		http.Error(w, errNoVaultNamed, http.StatusNotFound)
 		return
 	}
-	if a.Readers == nil {
+	if h.files.readers == nil {
 		refuse(w, errNoVault)
 		return
 	}
@@ -180,10 +190,10 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 	// which the vault's reader is refused, so it is served from the store it
 	// was written to. Every other file of the vault is
 	// served as the file it is.
-	if strings.HasSuffix(at, domain.URLExtension) && a.serveCopy(w, r, held, at, named) {
+	if strings.HasSuffix(at, domain.URLExtension) && h.serveCopy(w, r, held, at, named) {
 		return
 	}
-	reader, err := a.Readers.Open(held)
+	reader, err := h.files.readers.Open(held)
 	if err != nil {
 		refuse(w, err)
 		return
@@ -217,14 +227,14 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 //
 // The size the address carries is the copy's own: a copy fetched again under
 // the same name is a different address.
-func (a *API) serveCopy(
+func (h *fileServer) serveCopy(
 	w http.ResponseWriter, r *http.Request, held domain.Vault, at string, named document.Fingerprint,
 ) bool {
-	points := a.getArtifactAddress(r.Context(), held, domain.Fingerprint{Path: at, Kind: domain.KindURL})
+	points := h.files.getArtifactAddress(r.Context(), held, domain.Fingerprint{Path: at, Kind: domain.KindURL})
 	if getPlayerURL(points) == "" {
 		return false
 	}
-	video, found := a.Texts.OpenCopy.Execute(r.Context(), held, points)
+	video, found := h.openCopy.Execute(r.Context(), held, points)
 	if !found {
 		return false
 	}
@@ -241,14 +251,14 @@ func (a *API) serveCopy(
 
 // findVault is the vault an address names. The one the window shows is answered
 // without asking the list, which is every question but the first.
-func (a *API) findVault(id string) (domain.Vault, bool) {
-	if showing := a.GetCurrentVault(); string(showing.ID) == id {
+func (h *fileServer) findVault(id string) (domain.Vault, bool) {
+	if showing := h.state.GetCurrentVault(); string(showing.ID) == id {
 		return showing, true
 	}
-	if a.Vaults.Find == nil {
+	if h.find == nil {
 		return domain.Vault{}, false
 	}
-	one, err := a.Vaults.Find.Execute(id)
+	one, err := h.find.Execute(id)
 	if err != nil {
 		return domain.Vault{}, false
 	}

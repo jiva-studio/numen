@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
@@ -74,7 +73,7 @@ func openRunWindow(
 	held port.DerivedStore,
 	read indexed,
 	scans, hears Runner,
-) (*API, http.Handler) {
+) (*Services, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{
 		book:    "the bytes of a scan",
@@ -83,24 +82,17 @@ func openRunWindow(
 		pointed: "[InternetShortcut]\nURL=" + pointsAt + "\n",
 	})
 	hl := source.NewHighlight(filesystem.VaultReaders{}, read, storing{held})
-	api := &API{
-		Readers:   filesystem.VaultReaders{},
-		Highlight: &hl,
-		Texts:     source.NewTexts(filesystem.VaultReaders{}, nil, read, storing{held}),
-	}
-	// A note is read to find out where it points, which is what says whether
-	// anything is made from it.
-	api.Notes.Read = &noteRead
+	api := newBareServices()
+	api.files.readers = filesystem.VaultReaders{}
+	api.Ocr.highlight = &hl
+	api.readTexts(source.NewTexts(filesystem.VaultReaders{}, nil, read, storing{held}))
 	// What a url carries follows from what fetches it, so a window that reaches
 	// no address at all says a url carries nothing.
-	api.Imports = &source.ImportURL{By: reachingASite{}}
-	api.setVault(vault)
+	api.readImports(&source.ImportURL{By: reachingASite{}})
+	api.state.setVault(vault)
 	modifySession(api, func(on *vaultSession) { on.recognitionRunner, on.transcriptionRunner = scans, hears })
 	return api, api.NewHandler(http.NotFoundHandler())
 }
-
-// noteRead is how a note is read, which is where a link note says it points.
-var noteRead = note.NewRead(filesystem.VaultReaders{})
 
 // willRun is a run that begins what it is given now, and willQueue one that
 // puts it in line behind the work already going.
@@ -121,15 +113,15 @@ const (
 
 // makes asks for an artifact of a file to be made, and answers with what came
 // back.
-func makes(api *API, path string, of v1.ArtifactKind) (*connect.Response[v1.CreateArtifactResponse], error) {
-	return api.CreateArtifact(context.Background(), connect.NewRequest(&v1.CreateArtifactRequest{
+func makes(api *Services, path string, of v1.ArtifactKind) (*connect.Response[v1.CreateArtifactResponse], error) {
+	return api.Artifact.CreateArtifact(context.Background(), connect.NewRequest(&v1.CreateArtifactRequest{
 		Path: path, Kind: of,
 	}))
 }
 
 // createArtifact asks for one artifact of one file to be made, and fails the test where
 // the window would not.
-func createArtifact(t *testing.T, api *API, path string, of v1.ArtifactKind) *v1.Artifact {
+func createArtifact(t *testing.T, api *Services, path string, of v1.ArtifactKind) *v1.Artifact {
 	t.Helper()
 	out, err := makes(api, path, of)
 	if err != nil {
@@ -139,9 +131,9 @@ func createArtifact(t *testing.T, api *API, path string, of v1.ArtifactKind) *v1
 }
 
 // getArtifactStates is what a file carries, by the artifact each row is of.
-func getArtifactStates(t *testing.T, api *API, path string) map[v1.ArtifactKind]v1.State {
+func getArtifactStates(t *testing.T, api *Services, path string) map[v1.ArtifactKind]v1.State {
 	t.Helper()
-	out, err := api.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: path}))
+	out, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: path}))
 	if err != nil {
 		t.Fatalf("asked what %s carries and was refused: %v", path, err)
 	}
@@ -153,7 +145,7 @@ func getArtifactStates(t *testing.T, api *API, path string) map[v1.ArtifactKind]
 }
 
 // getRefusedCode is the code the window would not make an artifact under.
-func getRefusedCode(t *testing.T, api *API, path string, of v1.ArtifactKind) connect.Code {
+func getRefusedCode(t *testing.T, api *Services, path string, of v1.ArtifactKind) connect.Code {
 	t.Helper()
 	out, err := makes(api, path, of)
 	if err == nil {
@@ -175,7 +167,7 @@ func TestAScanIsReadWhenTheWindowAsksForIt(t *testing.T) {
 	if made.GetKind() != v1.ArtifactKind_ARTIFACT_KIND_OCR {
 		t.Errorf("the answer is about a %s", made.GetKind())
 	}
-	if scans.times != 1 || scans.path != book || scans.vault != string(api.GetCurrentVault().ID) {
+	if scans.times != 1 || scans.path != book || scans.vault != string(api.state.GetCurrentVault().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", scans.path, scans.vault, scans.times)
 	}
 }
@@ -192,7 +184,7 @@ func TestARecordingIsHeardWhenTheWindowAsksForIt(t *testing.T) {
 	if made.GetKind() != v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT {
 		t.Errorf("the answer is about a %s", made.GetKind())
 	}
-	if hears.times != 1 || hears.path != talk || hears.vault != string(api.GetCurrentVault().ID) {
+	if hears.times != 1 || hears.path != talk || hears.vault != string(api.state.GetCurrentVault().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", hears.path, hears.vault, hears.times)
 	}
 }

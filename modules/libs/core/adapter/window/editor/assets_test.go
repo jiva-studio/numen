@@ -55,7 +55,7 @@ func TestWhatIsNotAnAssetIsNotAnAddress(t *testing.T) {
 
 // A file no reader reads has no places, and a file is asked with a place in it.
 func TestAnAssetNoReaderReadsIsNotAnswered(t *testing.T) {
-	handler := (&API{}).NewHandler(http.NotFoundHandler())
+	handler := newBareServices().NewHandler(http.NotFoundHandler())
 
 	for _, one := range []struct {
 		what string
@@ -82,7 +82,7 @@ func TestTheWindowsOwnPiecesAreServed(t *testing.T) {
 	if err != nil {
 		t.Skipf("no interface in this binary: %v", err)
 	}
-	handler := (&API{}).NewHandler(files)
+	handler := newBareServices().NewHandler(files)
 
 	page := ask(handler, "/")
 	if page.Code != http.StatusOK {

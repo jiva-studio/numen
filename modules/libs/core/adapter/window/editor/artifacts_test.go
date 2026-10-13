@@ -41,7 +41,7 @@ func TestABookAModelHasReadCarriesTheRecognition(t *testing.T) {
 		willRun(), willRun(),
 	)
 
-	out, err := api.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: book}))
+	out, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: book}))
 	if err != nil {
 		t.Fatalf("asked what the book carries and was refused: %v", err)
 	}
@@ -62,7 +62,7 @@ func TestABookAModelHasReadCarriesTheRecognition(t *testing.T) {
 func TestARecordingCarriesWhatWasHeardAndWhatWasPutRight(t *testing.T) {
 	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), willRun())
 
-	out, err := api.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: talk}))
+	out, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: talk}))
 	if err != nil {
 		t.Fatalf("asked what the recording carries and was refused: %v", err)
 	}
@@ -99,7 +99,7 @@ func TestAFileNothingIsMadeFromCarriesNothing(t *testing.T) {
 func TestWhatAPathTheVaultDoesNotHoldCarriesIsNotFound(t *testing.T) {
 	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), willRun())
 
-	_, err := api.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{
+	_, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{
 		Path: "library/nothing.pdf",
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
@@ -127,7 +127,7 @@ func TestWhatARunAnsweredIsWhatARecordingCarries(t *testing.T) {
 				willRun(), willRun(),
 			)
 
-			out, err := api.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{
+			out, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{
 				Path: talk,
 			}))
 			if err != nil {
@@ -146,9 +146,9 @@ func TestWhatARunAnsweredIsWhatARecordingCarries(t *testing.T) {
 
 // A window standing on nothing holds no file to carry anything.
 func TestAWindowStandingOnNothingCarriesNothing(t *testing.T) {
-	api := &API{}
+	api := newBareServices()
 
-	_, err := api.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: book}))
+	_, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: book}))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Errorf("a window with no vault was refused %v", err)
 	}
@@ -202,7 +202,7 @@ func TestALinkNoteCarriesTheWordsFetchedForIt(t *testing.T) {
 // fetch nowhere from then on.
 func TestABuildThatCannotFetch(t *testing.T) {
 	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), willRun())
-	api.Imports = nil
+	api.readImports(nil)
 
 	if code := getRefusedCode(t, api, pointed, transcriptOf); code != connect.CodeUnimplemented {
 		t.Errorf("a build with no fetcher refused with %s", code)
@@ -224,7 +224,7 @@ func TestTheWordsOfALinkNoteAreReadBack(t *testing.T) {
 		willRun(), willRun(),
 	)
 
-	out, err := api.ReadTranscript(t.Context(),
+	out, err := api.Transcript.ReadTranscript(t.Context(),
 		connect.NewRequest(&v1.ReadTranscriptRequest{Path: pointed}))
 	if err != nil {
 		t.Fatal(err)
@@ -246,7 +246,7 @@ func TestACopyIsFetchedAndTakenAway(t *testing.T) {
 		t.Fatalf("a note with a copy carries %v", getArtifactStates(t, api, pointed))
 	}
 
-	if _, err := api.DeleteArtifact(t.Context(), connect.NewRequest(&v1.DeleteArtifactRequest{
+	if _, err := api.Artifact.DeleteArtifact(t.Context(), connect.NewRequest(&v1.DeleteArtifactRequest{
 		Path: pointed, Kind: v1.ArtifactKind_ARTIFACT_KIND_COPY,
 	})); err != nil {
 		t.Fatal(err)
@@ -275,7 +275,7 @@ func TestALinkNoteIsAskedWhatItIsBeforeItsWords(t *testing.T) {
 		willRun(), willRun(),
 	)
 
-	out, err := api.GetRecording(t.Context(),
+	out, err := api.Recording.GetRecording(t.Context(),
 		connect.NewRequest(&v1.GetRecordingRequest{Path: pointed}))
 	if err != nil {
 		t.Fatalf("a link note was refused before its words were read: %v", err)

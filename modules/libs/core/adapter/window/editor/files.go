@@ -12,22 +12,37 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
+
+// fileHandler answers what the vault holds and what a person does to it: its tree,
+// its folders and its links to the web.
+type fileHandler struct {
+	state            *State
+	getFolderEntries *file.GetFolderEntries
+	getFileKinds     *file.GetFileKinds
+	createFolder     *file.CreateFolder
+	move             *vaults.Move
+	urls             *source.CreateURL
+	remove           *note.Remove
+}
 
 // ListFiles is what one folder of the vault holds. The vault settles the order
 // the entries come in, and they cross in it.
-func (a *API) ListFiles(
+func (h *fileHandler) ListFiles(
 	ctx context.Context, r *connect.Request[v1.ListFilesRequest],
 ) (*connect.Response[v1.ListFilesResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
-	if a.Files.GetFolderEntries == nil {
+	if h.getFolderEntries == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
-	listing, err := a.Files.GetFolderEntries.Execute(ctx, showing, r.Msg.GetPath())
+	listing, err := h.getFolderEntries.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(getListCode(err), err)
 	}
@@ -52,21 +67,21 @@ func (a *API) ListFiles(
 // The kind is read off the vault and the type off the index, so a path nothing
 // has scanned is answered with the source that stands there. A window standing
 // on nothing holds no source, and a path with nothing at it is left out.
-func (a *API) ListFileKinds(
+func (h *fileHandler) ListFileKinds(
 	ctx context.Context, r *connect.Request[v1.ListFileKindsRequest],
 ) (*connect.Response[v1.ListFileKindsResponse], error) {
-	showing := a.GetCurrentVault()
+	showing := h.state.GetCurrentVault()
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.ListFileKindsResponse{}), nil
 	}
-	if a.Files.GetFileKinds == nil {
+	if h.getFileKinds == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
 	paths, err := eachOnce(r.Msg.GetPaths())
 	if err != nil {
 		return nil, err
 	}
-	listing, err := a.Files.GetFileKinds.Execute(ctx, showing, paths)
+	listing, err := h.getFileKinds.Execute(ctx, showing, paths)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -83,23 +98,23 @@ func (a *API) ListFileKinds(
 }
 
 // CreateFolder puts an empty folder in the vault, with the folders above it.
-func (a *API) CreateFolder(
+func (h *fileHandler) CreateFolder(
 	ctx context.Context, r *connect.Request[v1.CreateFolderRequest],
 ) (*connect.Response[v1.CreateFolderResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
-	if a.Files.CreateFolder == nil {
+	if h.createFolder == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
-	if !a.Writing.begin() {
+	if !h.state.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.finish()
+	defer h.state.Writing.finish()
 
 	out := &v1.CreateFolderResponse{}
-	if err := a.Files.CreateFolder.Execute(ctx, showing, r.Msg.GetPath()); err != nil {
+	if err := h.createFolder.Execute(ctx, showing, r.Msg.GetPath()); err != nil {
 		reason, refused := wire.GetErrorCode(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
@@ -110,24 +125,24 @@ func (a *API) CreateFolder(
 }
 
 // MoveFile puts a file or a folder somewhere else in the vault.
-func (a *API) MoveFile(
+func (h *fileHandler) MoveFile(
 	ctx context.Context, r *connect.Request[v1.MoveFileRequest],
 ) (*connect.Response[v1.MoveFileResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
-	if !a.Writing.begin() {
+	if !h.state.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.finish()
+	defer h.state.Writing.finish()
 
-	moved, err := a.Files.Move.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetTo())
+	moved, err := h.move.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetTo())
 	out := &v1.MoveFileResponse{}
 	if moved.IsLanded {
 		out.Moved = newMoveResult(moved)
 	}
-	out.IsUnlevelled = a.isUnlevelled(err)
+	out.IsUnlevelled = h.state.isUnlevelled(err)
 	if err != nil && !out.GetIsUnlevelled() {
 		reason, refused := wire.GetErrorCode(err)
 		switch {
@@ -146,10 +161,10 @@ func (a *API) MoveFile(
 //
 // What is at the address is not fetched here: the file is made, and a run over
 // it is asked for the way a run over any source is.
-func (a *API) CreateURL(
+func (h *fileHandler) CreateURL(
 	ctx context.Context, r *connect.Request[v1.CreateURLRequest],
 ) (*connect.Response[v1.CreateURLResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -157,12 +172,12 @@ func (a *API) CreateURL(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	if !a.Writing.begin() {
+	if !h.state.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.finish()
+	defer h.state.Writing.finish()
 
-	made, err := a.Files.URLs.Execute(ctx, showing, source.NewURL{
+	made, err := h.urls.Execute(ctx, showing, source.NewURL{
 		Address: at, Path: r.Msg.GetPath(),
 	})
 	if made.Path != "" {
@@ -237,4 +252,50 @@ func convertSourceKindToWire(kind domain.SourceKind) v1.SourceKind {
 	default:
 		return v1.SourceKind_SOURCE_KIND_UNSPECIFIED
 	}
+}
+
+// RemoveFile takes a file or a folder out of the vault. It goes to the trash,
+// and a request that says so destroys a note.
+func (h *fileHandler) RemoveFile(
+	ctx context.Context, r *connect.Request[v1.RemoveFileRequest],
+) (*connect.Response[v1.RemoveFileResponse], error) {
+	showing, err := h.state.getCurrentVault()
+	if err != nil {
+		return nil, err
+	}
+	if !h.state.Writing.begin() {
+		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
+	}
+	defer h.state.Writing.finish()
+
+	removed, err := h.removal(ctx, showing, r.Msg.GetPath(), r.Msg.GetDestroy())
+	behind := h.state.isUnlevelled(err)
+	if err != nil && !behind {
+		reason, refused := wire.GetErrorCode(err)
+		if !refused {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		return connect.NewResponse(&v1.RemoveFileResponse{Error: &reason}), nil
+	}
+	// The watcher reports only the paths the vault holds a source for. What
+	// went is said here, so the tree drops the row whatever stood on it.
+	h.state.ChangeEvents.publish(change{paths: []string{removed.Path}})
+	return connect.NewResponse(&v1.RemoveFileResponse{
+		Trashed:      removed.Trashed,
+		Dangling:     removed.Dangling,
+		IsUnlevelled: behind,
+	}), nil
+}
+
+// removal is the two ways something leaves the vault.
+func (h *fileHandler) removal(
+	ctx context.Context,
+	v domain.Vault,
+	path string,
+	destroy bool,
+) (note.RemoveResult, error) {
+	if destroy {
+		return h.remove.Destroy(ctx, v, path)
+	}
+	return h.remove.Execute(ctx, v, path)
 }
