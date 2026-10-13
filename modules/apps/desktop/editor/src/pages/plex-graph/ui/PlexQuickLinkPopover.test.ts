@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { SEARCH_DEBOUNCE_MS } from '@/features/command-palette'
+import { SEARCH_DEBOUNCE_MS } from '@/shared/search'
 import PlexQuickLinkPopover from './PlexQuickLinkPopover.vue'
 
 describe('PlexQuickLinkPopover component', () => {

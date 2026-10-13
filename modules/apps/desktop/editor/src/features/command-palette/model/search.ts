@@ -3,7 +3,8 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteGroup } from '@numen/ui'
-import { createAnswerGuard, type Question } from '@/shared/questions'
+import type { Question } from '@/shared/questions'
+import { useDebouncedAsk, type Wait } from '@/shared/search'
 import type { NoteType, Source } from '@/entities/file'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import {
@@ -17,12 +18,7 @@ import {
   type SearchRow,
 } from './lookup'
 import type { Span } from '@/shared/span'
-import {
-  getEmptyGroupReason,
-  GROUP_RESULT_LIMIT,
-  SEARCH_DEBOUNCE_MS,
-  type SearchGroup,
-} from './score'
+import { getEmptyGroupReason, GROUP_RESULT_LIMIT, type SearchGroup } from './score'
 
 export type { Span, NameMatch, Passage, SearchDestination, SearchHit, SearchRow, SearchGroup }
 
@@ -57,16 +53,13 @@ export interface Words extends EmptyWords {
   notEmbedded: string
 }
 
-const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
-
 /** What the window hands the palette, beside the vault and its own words. */
 export interface SearchOptions {
-  wait?(ms: number): Promise<unknown>
+  wait?: Wait
   coverage?(): IndexCoverage
 }
 
 export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {}) {
-  const wait = how.wait ?? sleep
   const coverage = how.coverage
   const open = ref(false)
   const typed = ref('')
@@ -78,7 +71,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const isWorking = ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false })
   const failureMessages = ref<Partial<Record<SearchGroup, string>>>({})
 
-  const asks = createAnswerGuard()
+  const debounced = useDebouncedAsk(how.wait ? { wait: how.wait } : {})
 
   const drop = () => {
     names.value = []
@@ -108,7 +101,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     }
   }
 
-  const ask = async (mine: Question, query: string) => {
+  const ask = async (query: string, mine: Question) => {
     isWorking.value = { names: true, text: true, meaning: true }
     failureMessages.value = {}
     await Promise.all([
@@ -135,21 +128,13 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
 
   const setTyped = async (text: string) => {
     typed.value = text
-    const mine = asks.ask()
-    const query = text.trim()
-    if (!query) {
-      drop()
-      return
-    }
-    await wait(SEARCH_DEBOUNCE_MS)
-    if (!mine.isCurrent) return
-    await ask(mine, query)
+    await debounced.ask(text, { blank: drop, run: ask })
   }
 
   const setOpen = (now: boolean) => {
     open.value = now
     if (now) return
-    asks.drop()
+    debounced.drop()
     typed.value = ''
     drop()
   }
