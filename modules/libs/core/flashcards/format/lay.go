@@ -33,6 +33,7 @@ func fillPlaceholders(face string, card Card) string {
 // placeholders is every name a face places, in the order it places them.
 func placeholders(face string) []string {
 	var out []string
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is -2: any negative count returns every match"
 	for _, m := range placeholderRe.FindAllStringSubmatch(face, -1) {
 		out = append(out, m[1])
 	}
