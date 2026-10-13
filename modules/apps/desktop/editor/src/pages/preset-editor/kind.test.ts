@@ -813,7 +813,7 @@ describe('a field the goal does not getGoalField, typed', () => {
     counts: 'shows',
     backlog: 5,
     load: { sat: 50 },
-    evenLoad: false,
+    hasEvenLoad: false,
   }
 
   it('leaves every other setting exactly as it stood, under every goal', async () => {

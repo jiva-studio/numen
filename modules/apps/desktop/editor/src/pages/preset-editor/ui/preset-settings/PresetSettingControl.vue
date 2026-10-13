@@ -69,7 +69,7 @@ function onUpdateSlider(field: Field, share: number) {
 }
 
 function onToggleEvenLoad(on: boolean) {
-  onChooseSetting('evenLoad', on)
+  onChooseSetting('hasEvenLoad', on)
 }
 
 function onChooseUnit(field: Field, unit: string) {
@@ -157,8 +157,8 @@ function getFieldCount(field: Field): number | null {
       @choose="onSelectLoad"
     />
     <Switch
-      v-else-if="field === 'evenLoad'"
-      :model-value="settings.evenLoad"
+      v-else-if="field === 'hasEvenLoad'"
+      :model-value="settings.hasEvenLoad"
       :aria-labelledby="`preset-${field}`"
       @update:model-value="onToggleEvenLoad"
     />

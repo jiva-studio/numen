@@ -1,19 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { ErrorCode, Goal, StopReason } from '@numen/protocol'
+import { DEFAULT_SETTINGS, formatSettings } from '@numen/wire'
+import type { SettingsMessage } from '@numen/wire'
 
 import { readDeckPreset, PRESET_UNREADABLE_MESSAGE } from './presets'
 import type { PresetsClient } from './presets'
-import type { SettingsMessage } from '../types'
 
 const settings = (goal: Goal): SettingsMessage => ({
+  ...formatSettings(DEFAULT_SETTINGS),
   goal,
-  byDate: '',
-  minutesADay: 20,
-  newADay: 10,
   reviewsADay: 45,
-  retention: 0.9,
-  load: {},
-  hasEvenLoad: true,
 })
 
 /** An application answering every deck with what is given here. */

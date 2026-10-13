@@ -1,10 +1,10 @@
 /** What the application answers about the preset one deck is scheduled by. */
 import { StopReason } from '@numen/protocol'
 import type { ErrorCode } from '@numen/protocol'
-import { asFailure, asValue, goalOf, formatErrorCodeMessage } from '@numen/wire'
-import type { Result } from '@numen/wire'
+import { asFailure, asValue, formatErrorCodeMessage, parseSettings } from '@numen/wire'
+import type { Result, SettingsMessage } from '@numen/wire'
 
-import type { Settings, SettingsMessage } from '../types'
+import type { Settings } from '../types'
 
 /**
  * What the application answers about the presets of a vault. Every question
@@ -60,7 +60,7 @@ export const readDeckPreset = async (
       held: {
         path: answer.preset.path,
         name: answer.preset.title,
-        settings: { ...settings, goal: goalOf[settings.goal] ?? 'minutes' },
+        settings: parseSettings(settings),
         problems: answer.preset.problems,
         stopsOn: answer.preset.stopsOn,
       },

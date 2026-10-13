@@ -1,8 +1,10 @@
 // Stryker disable StringLiteral: interface copy
-import { StopReason } from '@numen/protocol'
+import type { StopReason } from '@numen/protocol'
+import { formatStopReasonMessage } from '@numen/wire'
 /** What a preset tab says: the one control, the settings under it, and what went wrong. */
 import { many, percent, plural } from '@numen/ui'
 import type { ErrorCode } from '@/shared/errors'
+import { getErrorWords } from '@/shared/words/errors'
 import type { BudgetUnit, Goal, Rule } from './types'
 import type { Field } from './lib/fields'
 
@@ -58,97 +60,16 @@ const FIELDS: Record<Field, readonly [string, string]> = {
       'that admits it; an even load leans a card off a lighter day where its own interval ' +
       'leaves room to lean, and nothing holds a day to its share.',
   ],
-  evenLoad: [
+  hasEvenLoad: [
     'Even load',
     'Whether a card is leaned towards a lighter day of the days its own interval allows. ' +
       'A card whose interval allows no other day stays where it fell.',
   ],
 }
 
-/**
- * What a read of the preset encountered as an error. An error only a write answers
- * with, and one only a deck or a stencil encounters, has no sentence here
- * and is said in the one line under it.
- */
-const READING: Record<ErrorCode, string | null> = {
-  missing: 'This preset is no longer in the vault, so what stands here is what was last read.',
-  notANote: 'What stands at this path is not a note, so there are no settings in it to read.',
-  notText: 'This file is not text, so there are no settings in it to read.',
-  tooLarge: 'This note is longer than the window reads, so none of its settings were read.',
-  unreadable: 'The frontmatter of this note cannot be read, so none of its settings were read.',
-  notAPreset: 'That note is not a preset, and the defaults stand.',
-  bodyUnwritable: null,
-  occupied: null,
-  unnameable: null,
-  notAStencil: null,
-  notADeck: null,
-  deckTooLarge: null,
-  unreachable: 'The vault would not answer for this preset, and did not say why.',
-}
-
-/** The read encountered an error and the vault named no reason the window knows. */
-const UNREAD = 'This preset could not be read, and the vault named no reason.'
-
-/**
- * What a write of the settings was refused for. Each says where the settings
- * stand, which is in the tab: a failed write leaves the file as it was.
- */
-const WRITING: Record<ErrorCode, string | null> = {
-  missing:
-    'This preset is no longer in the vault, so nothing was written. ' +
-    'These settings are still here.',
-  notANote:
-    'What stands at this path is not a note, so nothing was written. ' +
-    'These settings are still here.',
-  notText: 'This file is not text, so nothing was written. These settings are still here.',
-  tooLarge:
-    'This note is longer than the window writes, so nothing was written. ' +
-    'These settings are still here.',
-  unreadable:
-    'The frontmatter of this note cannot be read, so nothing was written. ' +
-    'These settings are still here.',
-  bodyUnwritable:
-    'This note begins where its frontmatter should, so nothing was written. ' +
-    'These settings are still here.',
-  occupied:
-    'A file stands where this note goes, so nothing was written. ' +
-    'These settings are still here.',
-  notAPreset: 'That note is not a preset, so nothing was written. These settings are still here.',
-  unnameable: null,
-  notAStencil: null,
-  notADeck: null,
-  deckTooLarge: null,
-  unreachable: 'The vault would not answer for this preset, and did not say why.',
-}
-
-/** The write was refused and the vault named no reason the window knows. */
-const UNWRITTEN =
-  'These settings could not be written, and the vault named no reason. They are still here.'
-
-/**
- * Why the preset schedules nothing, one sentence to each verdict the vault may
- * hand over. A verdict scheduling something says nothing. Every value stands
- * here, so a verdict added to the schema is one this window is made to answer.
- */
-const STOPPED: Record<StopReason, string> = {
-  [StopReason.UNSPECIFIED]: '',
-  [StopReason.NOTHING]: '',
-  [StopReason.NO_MINUTES]:
-    'No minutes a day: this preset schedules nothing, and every deck pointing at it stops.',
-  [StopReason.NO_CARDS]:
-    'No cards a day: this preset schedules nothing, and every deck pointing at it stops.',
-  [StopReason.NO_DAY]:
-    'This preset aims at no day, so it schedules nothing. ' +
-    'Name the day the material is to be in the head.',
-  [StopReason.PAST_DAY]:
-    'This preset is past the day it aimed at. Its budget is spent, and it schedules nothing.',
-  [StopReason.NO_LOAD]:
-    'Today carries none of this load, so this preset schedules nothing today. ' +
-    'The next day that carries some picks its cards up.',
-  [StopReason.NO_WEEK]:
-    'No day of the week carries any of this load, so this preset schedules ' +
-    'nothing on any of them, and every deck pointing at it stops.',
-}
+/** An error clause as a sentence. */
+const sayAsSentence = (clause: string): string =>
+  `$1`
 
 /** A count as a person reads one. */
 const count = (value: number): string => `${Math.round(value)}`
@@ -297,16 +218,20 @@ export const WORDS = {
     'so it has nothing to schedule. Raise the new cards a day and its goal has ' +
     'cards to work on.',
   /** Why the preset schedules nothing on the day it was read in. */
-  stopped: (why: StopReason) => STOPPED[why],
+  stopped: (why: StopReason) => {
+    const clause = formatStopReasonMessage(why)
+    return clause ? `This preset schedules nothing: ${clause}.` : ''
+  },
   /** What is wrong with the file, said above the control. */
   problems: 'What is wrong with this preset',
   /** The file moved under the window, and the two answers to that. */
   changed: 'This file changed on disk, so nothing was written.',
   reads: 'Read it again',
   /** What a read failed for. */
-  notRead: (error: ErrorCode) => READING[error] ?? UNREAD,
+  notRead: (error: ErrorCode) => sayAsSentence(getErrorWords(error)),
   /** What a write was refused for, and where the settings stand after it. */
-  notSaved: (error: ErrorCode) => WRITING[error] ?? UNWRITTEN,
+  notSaved: (error: ErrorCode) =>
+    `${sayAsSentence(getErrorWords(error))} These settings are still here.`,
   /** The vault answered a read with neither settings nor a reason. */
   unreachable: 'The vault would not answer for this preset, and did not say why.',
   /** The vault answered a write with neither a file nor a reason. */

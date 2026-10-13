@@ -1,28 +1,15 @@
 /** A preset as this screen holds one: how it schedules, and what its day holds. */
-import type { Goal as Goals } from '@numen/protocol'
-import type { Goal } from '@numen/wire'
+import type { Settings as WireSettings } from '@numen/wire'
 import type { BudgetKeys } from '@/entities/vault'
 
 /** A budget taking no part in the day, which nothing is weighed against. */
 export const CLOSES_NOTHING: BudgetKeys = { new: '', reviews: '', minutes: '' }
 
-/** How the decks pointing at one preset are scheduled. */
-export interface Settings {
-  goal: Goal
-  byDate: string
-  minutesADay: number
-  newADay: number
-  reviewsADay: number
-  retention: number
-  /** What each day of the week carries, in per cent, under the day's own name. */
-  load: Record<string, number>
-  hasEvenLoad: boolean
-}
-
-/** The same, as the schema carries them. */
-export interface SettingsMessage extends Omit<Settings, 'goal'> {
-  goal: Goals
-}
+/** How the decks pointing at one preset are scheduled, as far as this screen reads it. */
+export type Settings = Pick<
+  WireSettings,
+  'goal' | 'byDate' | 'minutesADay' | 'newADay' | 'reviewsADay' | 'retention' | 'load' | 'hasEvenLoad'
+>
 
 /**
  * What one day holds under a preset, the day of the week having had its say:

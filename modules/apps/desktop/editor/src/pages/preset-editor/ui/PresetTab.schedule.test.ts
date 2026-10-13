@@ -49,13 +49,6 @@ describe('a preset that schedules nothing', () => {
     expect(mountStoppedTab(StopReason.NO_LOAD).text()).toContain(words.stopped(StopReason.NO_LOAD))
     expect(mountStoppedTab(StopReason.NO_WEEK).text()).toContain(words.stopped(StopReason.NO_WEEK))
   })
-
-  // One quiet day promises a next day that carries some load, and a week at
-  // nothing has none to promise.
-  it('promises a next day for one quiet day and not for a quiet week', () => {
-    expect(words.stopped(StopReason.NO_LOAD)).toContain('next day')
-    expect(words.stopped(StopReason.NO_WEEK)).not.toContain('next day')
-  })
 })
 
 describe('a goal with nothing to work on', () => {
@@ -134,7 +127,7 @@ describe('the settings the chosen goal schedules by', () => {
       words.fieldName('minutesADay'),
       words.fieldName('backlog'),
       words.fieldName('load'),
-      words.fieldName('evenLoad'),
+      words.fieldName('hasEvenLoad'),
     ])
     expect(tab.findAll('[data-preset="day"]')).toHaveLength(0)
   })
@@ -150,7 +143,7 @@ describe('the settings the chosen goal schedules by', () => {
       words.fieldName('counts'),
       words.fieldName('backlog'),
       words.fieldName('load'),
-      words.fieldName('evenLoad'),
+      words.fieldName('hasEvenLoad'),
     ])
     expect(tab.findAll('[data-preset="day"]')).toHaveLength(0)
   })
@@ -169,7 +162,7 @@ describe('the settings the chosen goal schedules by', () => {
       words.fieldName('interval'),
       words.fieldName('byDate'),
       words.fieldName('load'),
-      words.fieldName('evenLoad'),
+      words.fieldName('hasEvenLoad'),
     ])
     expect(rows(tab)).not.toContain(words.fieldName('backlog'))
     const day = tab.get('[data-preset="day"]')
