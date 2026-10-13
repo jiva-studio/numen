@@ -32,9 +32,9 @@ const createSection = (file: Record<string, unknown> = {}) => {
     headings: ref(6),
     headingsBounds: ref({ least: 2, most: 9 }),
     chooseHeadings: () => {},
-    dayStarts: ref('04:00'),
-    latestDayStarts: ref('12:00'),
-    chooseDayStarts: () => {},
+    dayStartTime: ref('04:00'),
+    latestDayStartTime: ref('12:00'),
+    chooseDayStartTime: () => {},
   }
   const state: SettingsTabState = { installation }
   const wrapper = mount(PerformanceSettingsSection, {

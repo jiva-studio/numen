@@ -7,7 +7,7 @@ import type { Placement, PlexOptionsInput } from '../lib/arrange'
 import type { PlexHeading } from '../lib/inside'
 import type { PlexNeighbourhood } from '../lib/neighbourhood'
 import type { PlacedNode, Position } from '../lib/node'
-import type { PlexRelatedSeat } from '../lib/seat'
+import type { PlexRelation } from '../lib/relation'
 import type { ReachStrategy } from '../model/reaching'
 import type { PlexDestination, ShowStrategy } from '../model/showing'
 import type { Clock } from '../model/transition'
@@ -28,11 +28,11 @@ export interface PlexProps {
    */
   viewport?: Viewport
   /**
-   * Seats a gesture may produce. A sibling is another of the parent's
+   * Relations a gesture may produce. A sibling is another of the parent's
    * children, so it is left out; which relationships exist is the caller's
    * to say.
    */
-  creatable?: readonly PlexRelatedSeat[]
+  creatable?: readonly PlexRelation[]
   /** How far a gesture travels before it is a drag and not a click. */
   dragThreshold?: number
   /**
@@ -51,10 +51,10 @@ export interface PlexProps {
    */
   headings?: (id: string) => readonly PlexHeading[]
   /**
-   * What to call a seat, for the outline a gesture draws and for the
+   * What to call a relation, for the outline a gesture draws and for the
    * overflow line. English by default.
    */
-  seatName?: (seat: PlexRelatedSeat) => string
+  relationName?: (relation: PlexRelation) => string
   /**
    * What is being dragged over the picture from somewhere else. Each
    * identifier is opaque and all of them are handed back untouched; an empty
@@ -65,7 +65,7 @@ export interface PlexProps {
    * What to call what letting go with something dragged in would do. English
    * by default.
    */
-  dropName?: (seat: PlexRelatedSeat) => string
+  dropName?: (relation: PlexRelation) => string
 }
 
 export interface PlexEvents {
@@ -77,16 +77,16 @@ export interface PlexEvents {
    * every other node does.
    */
   (event: 'show', id: string, showing: PlexDestination): void
-  /** Reached out into empty space: make a node in this seat of that one. */
-  (event: 'create', from: string, seat: PlexRelatedSeat): void
-  /** Reached out onto another node: relate the two in this seat. */
-  (event: 'link', from: string, to: string, seat: PlexRelatedSeat): void
+  /** Reached out into empty space: make a node in this relation of that one. */
+  (event: 'create', from: string, relation: PlexRelation): void
+  /** Reached out onto another node: relate the two in this relation. */
+  (event: 'link', from: string, to: string, relation: PlexRelation): void
   /**
    * What was dragged in from outside was let go over the picture: relate each
-   * of them to the focus in this seat. The identifiers are the ones they were
+   * of them to the focus in this relation. The identifiers are the ones they were
    * handed in as.
    */
-  (event: 'bring', dragged: readonly string[], seat: PlexRelatedSeat): void
+  (event: 'bring', dragged: readonly string[], relation: PlexRelation): void
   /**
    * A menu was asked for on a node: which node, where on the screen, and what
    * asked for it. A keypress carries no point, so the middle of the box is
@@ -111,5 +111,5 @@ export interface PlexSlots {
   /** What is drawn beside a node's title. A node with none is drawn narrower. */
   icon?(props: { node: PlacedNode }): unknown
   /** What is said about the neighbours that did not fit, in the caller's words. */
-  overflow?(props: { overflow: readonly [PlexRelatedSeat, number][] }): unknown
+  overflow?(props: { overflow: readonly [PlexRelation, number][] }): unknown
 }

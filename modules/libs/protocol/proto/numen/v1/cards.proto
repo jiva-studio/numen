@@ -181,7 +181,7 @@ message Section {
 // at. The file is read either way, and each one carries where it stands so that
 // the interface marks the card or the face it is against.
 message Problem {
-  Fault fault = 1;
+  ProblemKind kind = 1;
 
   // The card it stands against, counted from the first card the deck answers
   // with. Absent for a problem against no card, and for every problem of a
@@ -200,45 +200,45 @@ message Problem {
   string text = 5;
 }
 
-// Fault is what a problem is. The list is closed: an interface marks a card and
-// a face by what is wrong with them, so a fault nobody decided on is drawn
-// nowhere.
-enum Fault {
-  FAULT_UNSPECIFIED = 0;
+// ProblemKind is what kind of problem it is. The list is closed: an interface
+// marks a card and a face by what is wrong with them, so a kind nobody decided
+// on is drawn nowhere.
+enum ProblemKind {
+  PROBLEM_KIND_UNSPECIFIED = 0;
 
   // `fields` declares a name twice. The first stands.
-  FAULT_FIELD_DECLARED_TWICE = 1;
+  PROBLEM_KIND_FIELD_DECLARED_TWICE = 1;
 
   // `fields` is absent or empty, so a card cut by this stencil has no field to
   // fill in.
-  FAULT_STENCIL_WITHOUT_FIELDS = 2;
+  PROBLEM_KIND_STENCIL_WITHOUT_FIELDS = 2;
 
   // A face carries no front or no back. It lays out nothing.
-  FAULT_FACE_MISSING_A_SIDE = 3;
+  PROBLEM_KIND_FACE_MISSING_A_SIDE = 3;
 
   // A `{{Field}}` names a field outside `fields`. The rest of the face is read
   // as usual.
-  FAULT_PLACEHOLDER_UNDECLARED = 4;
+  PROBLEM_KIND_PLACEHOLDER_UNDECLARED = 4;
 
   // The first paragraph under a card's heading is not a lone wikilink. The
   // values are read.
-  FAULT_CARD_WITHOUT_A_STENCIL = 5;
+  PROBLEM_KIND_CARD_WITHOUT_A_STENCIL = 5;
 
   // A card's wikilink reaches a note that is not a stencil. The values are
   // read.
-  FAULT_STENCIL_IS_NOT_ONE = 6;
+  PROBLEM_KIND_STENCIL_IS_NOT_ONE = 6;
 
   // One card writes a field's heading twice. The first stands, and the second
   // is kept in the file.
-  FAULT_FIELD_WRITTEN_TWICE = 7;
+  PROBLEM_KIND_FIELD_WRITTEN_TWICE = 7;
 
   // A field renamed in a stencil did not reach this deck, so a card holds a
   // heading the stencil no longer declares.
-  FAULT_FIELD_NOT_RENAMED = 8;
+  PROBLEM_KIND_FIELD_NOT_RENAMED = 8;
 
   // Two cards of one deck carry the same mark. Both are read and both are
   // shown marked, and neither is given another.
-  FAULT_MARK_CARRIED_TWICE = 9;
+  PROBLEM_KIND_MARK_CARRIED_TWICE = 9;
 }
 
 // Card is one filled-in set of a stencil's fields.

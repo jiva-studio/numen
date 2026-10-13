@@ -198,7 +198,7 @@ What a day of review is, on this person's clock.
 
 | | | |
 | --- | --- | --- |
-| `day_starts` | text | the hour a day of review begins at, on the clock on the wall, written as hours and minutes. |
+| `day_start_time` | text | the hour a day of review begins at, on the clock on the wall, written as hours and minutes. |
 
 ### `performance`
 

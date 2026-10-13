@@ -7,7 +7,7 @@ import type { Drop } from '../../lib/arrange'
 import type { PlexFrame } from '../../lib/frame'
 import type { NodeHeadings } from '../../lib/inside'
 import type { GestureRole, PlacedNode, Position } from '../../lib/node'
-import type { PlexRelatedSeat } from '../../lib/seat'
+import type { PlexRelation } from '../../lib/relation'
 import type { WideBox } from '../../model/dwell'
 import type { ReachStrategy } from '../../model/reaching'
 import type { PlexDestination, ShowStrategy } from '../../model/showing'
@@ -25,10 +25,10 @@ export interface PlexViewProps {
    *  offer a handle. */
   canReach?: boolean
   /**
-   * What to call a seat, for the one place a seat has to be written into the
+   * What to call a relation, for the one place a relation has to be written into the
    * picture: the outline a gesture draws says which one it would take.
    */
-  seatName?: (seat: PlexRelatedSeat) => string
+  relationName?: (relation: PlexRelation) => string
   /**
    * The box a node widens to while the attention rests on it, and nothing
    * for a node with no more of its title to show. Text is measured where the
@@ -55,16 +55,16 @@ export interface PlexViewProps {
   gestureOutcome?: Drop | null
   /**
    * Something dragged over the picture from outside it: where the pointer
-   * is, and the seat letting go there comes to. Both, or the picture draws
+   * is, and the relation letting go there comes to. Both, or the picture draws
    * none of it.
    */
   draggedAt?: Position | null
-  dropSeat?: PlexRelatedSeat | null
+  dropRelation?: PlexRelation | null
   /**
    * What to call what letting go with something dragged in would do, for the
    * one place it is written into the picture. English by default.
    */
-  dropName?: (seat: PlexRelatedSeat) => string
+  dropName?: (relation: PlexRelation) => string
 }
 
 export interface PlexViewEvents {

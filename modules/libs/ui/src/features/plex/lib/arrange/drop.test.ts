@@ -1,46 +1,50 @@
 /** What a drag away from a node comes to, worked out without a pointer. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
-import { getDropSeat, findNode, resolveDrop, seatTowards } from './drop'
+import { getDropRelation, findNode, resolveDrop, getRelationTowards } from './drop'
 import { DEFAULT_OPTIONS, resolveOptions } from './options'
 import { build } from '../../fixtures/build'
 import type { PlexFrame } from '../frame'
-import type { PlexRelatedSeat } from '../seat'
+import type { PlexRelation } from '../relation'
 
-const ALLOWED: readonly PlexRelatedSeat[] = ['parent', 'child', 'jump']
+const ALLOWED: readonly PlexRelation[] = ['parent', 'child', 'jump']
 
 const frame = arrangePlex(build('A node', { parent: 2, child: 4, jump: 2, sibling: 2 }))
-const focus = frame.nodes.find((n) => n.seat === 'focus')!
-const child = frame.nodes.find((n) => n.seat === 'child')!
+const focus = frame.nodes.find((n) => n.relation === 'focus')!
+const child = frame.nodes.find((n) => n.relation === 'child')!
 
-const drop = (from: string, at: { x: number; y: number }, seats = ALLOWED) =>
-  resolveDrop({ frame, options: DEFAULT_OPTIONS, from, at, seats })
+const drop = (from: string, at: { x: number; y: number }, relations = ALLOWED) =>
+  resolveDrop({ frame, options: DEFAULT_OPTIONS, from, at, relations })
 
-describe('the seat a direction stands for', () => {
+describe('the relation a direction stands for', () => {
   it('reads the arrangement rather than assuming which way is up', () => {
     const origin = { x: 0, y: 0 }
     const upside = resolveOptions({
       direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
     })
 
-    expect(seatTowards(origin, { x: 0, y: -300 }, DEFAULT_OPTIONS)).toBe('parent')
+    expect(getRelationTowards(origin, { x: 0, y: -300 }, DEFAULT_OPTIONS)).toBe('parent')
     // Same gesture, arrangement inverted: up is where the children went.
-    expect(seatTowards(origin, { x: 0, y: -300 }, upside)).toBe('child')
+    expect(getRelationTowards(origin, { x: 0, y: -300 }, upside)).toBe('child')
   })
 
   it('reads the axis a gesture went along, sideways being the harder ask', () => {
     const origin = { x: 0, y: 0 }
-    expect(seatTowards(origin, { x: 40, y: 300 }, DEFAULT_OPTIONS)).toBe('child')
-    expect(seatTowards(origin, { x: 300, y: 40 }, DEFAULT_OPTIONS)).toBe('sibling')
-    expect(seatTowards(origin, { x: -300, y: 40 }, DEFAULT_OPTIONS)).toBe('jump')
+    expect(getRelationTowards(origin, { x: 40, y: 300 }, DEFAULT_OPTIONS)).toBe('child')
+    expect(getRelationTowards(origin, { x: 300, y: 40 }, DEFAULT_OPTIONS)).toBe('sibling')
+    expect(getRelationTowards(origin, { x: -300, y: 40 }, DEFAULT_OPTIONS)).toBe('jump')
   })
 
   it('counts a gesture exactly on the edge of the wedge as vertical', () => {
     const origin = { x: 0, y: 0 }
     const { verticalBias } = DEFAULT_OPTIONS.gesture
-    expect(seatTowards(origin, { x: 10 * verticalBias, y: 10 }, DEFAULT_OPTIONS)).toBe('child')
-    expect(seatTowards(origin, { x: 10 * verticalBias, y: -10 }, DEFAULT_OPTIONS)).toBe('parent')
-    expect(seatTowards(origin, { x: 10 * verticalBias + 1, y: 10 }, DEFAULT_OPTIONS)).toBe(
+    expect(getRelationTowards(origin, { x: 10 * verticalBias, y: 10 }, DEFAULT_OPTIONS)).toBe(
+      'child',
+    )
+    expect(getRelationTowards(origin, { x: 10 * verticalBias, y: -10 }, DEFAULT_OPTIONS)).toBe(
+      'parent',
+    )
+    expect(getRelationTowards(origin, { x: 10 * verticalBias + 1, y: 10 }, DEFAULT_OPTIONS)).toBe(
       'sibling',
     )
   })
@@ -48,12 +52,12 @@ describe('the seat a direction stands for', () => {
   it('reads a straight drag up or down as sideways to the right at a negative bias', () => {
     const origin = { x: 0, y: 0 }
     const backwards = resolveOptions({ gesture: { verticalBias: -1 } })
-    expect(seatTowards(origin, { x: 0, y: 300 }, backwards)).toBe('sibling')
-    expect(seatTowards(origin, { x: 0, y: -300 }, backwards)).toBe('sibling')
+    expect(getRelationTowards(origin, { x: 0, y: 300 }, backwards)).toBe('sibling')
+    expect(getRelationTowards(origin, { x: 0, y: -300 }, backwards)).toBe('sibling')
   })
 
   it('is nothing at all when the gesture went nowhere', () => {
-    expect(seatTowards({ x: 5, y: 5 }, { x: 5, y: 5 }, DEFAULT_OPTIONS)).toBeNull()
+    expect(getRelationTowards({ x: 5, y: 5 }, { x: 5, y: 5 }, DEFAULT_OPTIONS)).toBeNull()
   })
 
   it('counts a wide row as down, though it reaches further sideways', () => {
@@ -61,13 +65,13 @@ describe('the seat a direction stands for', () => {
     // is downwards. Splitting the space on the diagonal would name it a jump,
     // and dragging towards where the children plainly are would miss them.
     const leftmost = frame.nodes
-      .filter((n) => n.seat === 'child')
+      .filter((n) => n.relation === 'child')
       .reduce((a, b) => (a.x <= b.x ? a : b))
     expect(Math.abs(leftmost.x)).toBeGreaterThan(Math.abs(leftmost.y))
-    expect(seatTowards(focus, leftmost, DEFAULT_OPTIONS)).toBe('child')
+    expect(getRelationTowards(focus, leftmost, DEFAULT_OPTIONS)).toBe('child')
 
     const flat = resolveOptions({ gesture: { verticalBias: 1 } })
-    expect(seatTowards(focus, leftmost, flat)).toBe('jump')
+    expect(getRelationTowards(focus, leftmost, flat)).toBe('jump')
   })
 })
 
@@ -93,12 +97,12 @@ describe('letting go on nothing makes a node', () => {
     expect(drop(focus.id, { x: 0, y: -4000 })).toStrictEqual({
       kind: 'create',
       from: focus.id,
-      seat: 'parent',
+      relation: 'parent',
     })
     expect(drop(focus.id, { x: 0, y: 4000 })).toStrictEqual({
       kind: 'create',
       from: focus.id,
-      seat: 'child',
+      relation: 'child',
     })
   })
 
@@ -109,29 +113,29 @@ describe('letting go on nothing makes a node', () => {
     expect(drop(child.id, above)).toStrictEqual({
       kind: 'create',
       from: child.id,
-      seat: 'parent',
+      relation: 'parent',
     })
   })
 
-  it('does nothing towards a seat the caller did not allow', () => {
+  it('does nothing towards a relation the caller did not allow', () => {
     // A sibling is another of the parent's children — not a relationship
     // anybody can make directly — so the story leaves it out.
     expect(drop(focus.id, { x: 4000, y: 0 })).toBeNull()
     expect(drop(focus.id, { x: 4000, y: 0 }, [...ALLOWED, 'sibling'])).toStrictEqual({
       kind: 'create',
       from: focus.id,
-      seat: 'sibling',
+      relation: 'sibling',
     })
   })
 })
 
 describe('letting go on a node makes a link', () => {
-  it('names both ends and the seat between them', () => {
+  it('names both ends and the relation between them', () => {
     expect(drop(focus.id, { x: child.x, y: child.y })).toStrictEqual({
       kind: 'link',
       from: focus.id,
       to: child.id,
-      seat: 'child',
+      relation: 'child',
     })
   })
 
@@ -158,7 +162,7 @@ describe('the node under the pointer', () => {
   const createFrame = (...nodes: { id: string; opacity?: number }[]): PlexFrame => ({
     ...frame,
     nodes: nodes.map((node) => ({
-      seat: 'child' as const,
+      relation: 'child' as const,
       title: node.id,
       x: 0,
       y: 0,
@@ -184,36 +188,36 @@ describe('the node under the pointer', () => {
   })
 })
 
-describe('the seat something dragged in comes to', () => {
+describe('the relation something dragged in comes to', () => {
   const VIEWPORT = { width: 1200, height: 800 }
   const THRESHOLD = 8
 
-  const getSeatAt = (
+  const getRelationAt = (
     at: { x: number; y: number },
-    over: Partial<Parameters<typeof getDropSeat>[0]> = {},
+    over: Partial<Parameters<typeof getDropRelation>[0]> = {},
   ) =>
-    getDropSeat({
+    getDropRelation({
       frame,
       options: DEFAULT_OPTIONS,
       viewport: VIEWPORT,
       at,
-      seats: ALLOWED,
+      relations: ALLOWED,
       threshold: THRESHOLD,
       ...over,
     })
 
   it('is a parent above the focus, a child below it, and a jump to the side', () => {
-    expect(getSeatAt({ x: focus.x, y: focus.y - 300 })).toBe('parent')
-    expect(getSeatAt({ x: focus.x, y: focus.y + 300 })).toBe('child')
-    expect(getSeatAt({ x: focus.x - 500, y: focus.y })).toBe('jump')
+    expect(getRelationAt({ x: focus.x, y: focus.y - 300 })).toBe('parent')
+    expect(getRelationAt({ x: focus.x, y: focus.y + 300 })).toBe('child')
+    expect(getRelationAt({ x: focus.x - 500, y: focus.y })).toBe('jump')
   })
 
-  it('reads which way a seat lies off the arrangement', () => {
+  it('reads which way a relation lies off the arrangement', () => {
     const upside = resolveOptions({
       direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
     })
-    expect(getSeatAt({ x: focus.x, y: focus.y - 300 }, { options: upside })).toBe('child')
-    expect(getSeatAt({ x: focus.x, y: focus.y + 300 }, { options: upside })).toBe('parent')
+    expect(getRelationAt({ x: focus.x, y: focus.y - 300 }, { options: upside })).toBe('child')
+    expect(getRelationAt({ x: focus.x, y: focus.y + 300 }, { options: upside })).toBe('parent')
   })
 
   it('counts a wide row as down, though it reaches further sideways', () => {
@@ -221,19 +225,19 @@ describe('the seat something dragged in comes to', () => {
     // is downwards, and dragging a note to where the children plainly are has
     // to name a child.
     const leftmost = frame.nodes
-      .filter((n) => n.seat === 'child')
+      .filter((n) => n.relation === 'child')
       .reduce((a, b) => (a.x <= b.x ? a : b))
     expect(Math.abs(leftmost.x)).toBeGreaterThan(Math.abs(leftmost.y))
-    expect(getSeatAt(leftmost)).toBe('child')
+    expect(getRelationAt(leftmost)).toBe('child')
 
     const flat = resolveOptions({ gesture: { verticalBias: 1 } })
-    expect(getSeatAt(leftmost, { options: flat })).toBe('jump')
+    expect(getRelationAt(leftmost, { options: flat })).toBe('jump')
   })
 
-  it('is nothing towards a seat the caller did not allow', () => {
+  it('is nothing towards a relation the caller did not allow', () => {
     const beside = { x: focus.x + 500, y: focus.y }
-    expect(getSeatAt(beside)).toBeNull()
-    expect(getSeatAt(beside, { seats: [...ALLOWED, 'sibling'] })).toBe('sibling')
+    expect(getRelationAt(beside)).toBeNull()
+    expect(getRelationAt(beside, { relations: [...ALLOWED, 'sibling'] })).toBe('sibling')
   })
 
   it('is measured from the focus, wherever the focus is drawn', () => {
@@ -243,8 +247,8 @@ describe('the seat something dragged in comes to', () => {
       ...frame,
       nodes: frame.nodes.map((node) => ({ ...node, x: node.x + 300 })),
     }
-    expect(getSeatAt({ x: 0, y: 0 }, { frame: shifted })).toBe('jump')
-    expect(getSeatAt({ x: 0, y: 0 })).toBeNull()
+    expect(getRelationAt({ x: 0, y: 0 }, { frame: shifted })).toBe('jump')
+    expect(getRelationAt({ x: 0, y: 0 })).toBeNull()
   })
 
   it('is nothing until the pointer stands clear of a focus drawn off the middle', () => {
@@ -253,27 +257,27 @@ describe('the seat something dragged in comes to', () => {
       nodes: frame.nodes.map((node) => ({ ...node, x: node.x + 300, y: node.y + 200 })),
     }
     const where = { x: 300, y: 200 }
-    expect(getSeatAt({ x: where.x, y: where.y + THRESHOLD - 1 }, { frame: shifted })).toBeNull()
-    expect(getSeatAt({ x: where.x, y: where.y + THRESHOLD }, { frame: shifted })).toBe('child')
+    expect(getRelationAt({ x: where.x, y: where.y + THRESHOLD - 1 }, { frame: shifted })).toBeNull()
+    expect(getRelationAt({ x: where.x, y: where.y + THRESHOLD }, { frame: shifted })).toBe('child')
   })
 
-  it('is nothing past the edge of the window, and a seat on it', () => {
-    expect(getSeatAt({ x: focus.x, y: 400 })).toBe('child')
-    expect(getSeatAt({ x: focus.x, y: 401 })).toBeNull()
-    expect(getSeatAt({ x: -600, y: focus.y })).toBe('jump')
-    expect(getSeatAt({ x: -601, y: focus.y })).toBeNull()
+  it('is nothing past the edge of the window, and a relation on it', () => {
+    expect(getRelationAt({ x: focus.x, y: 400 })).toBe('child')
+    expect(getRelationAt({ x: focus.x, y: 401 })).toBeNull()
+    expect(getRelationAt({ x: -600, y: focus.y })).toBe('jump')
+    expect(getRelationAt({ x: -601, y: focus.y })).toBeNull()
   })
 
   it('is nothing until the pointer stands clear of the focus', () => {
-    expect(getSeatAt({ x: focus.x, y: focus.y + THRESHOLD - 1 })).toBeNull()
-    expect(getSeatAt({ x: focus.x, y: focus.y + THRESHOLD })).toBe('child')
+    expect(getRelationAt({ x: focus.x, y: focus.y + THRESHOLD - 1 })).toBeNull()
+    expect(getRelationAt({ x: focus.x, y: focus.y + THRESHOLD })).toBe('child')
   })
 
   it('is nothing where there is no focus to measure from', () => {
     const nowhere: PlexFrame = {
       ...frame,
-      nodes: frame.nodes.filter((node) => node.seat !== 'focus'),
+      nodes: frame.nodes.filter((node) => node.relation !== 'focus'),
     }
-    expect(getSeatAt({ x: focus.x, y: focus.y + 300 }, { frame: nowhere })).toBeNull()
+    expect(getRelationAt({ x: focus.x, y: focus.y + 300 }, { frame: nowhere })).toBeNull()
   })
 })

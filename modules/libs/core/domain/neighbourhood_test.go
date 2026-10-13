@@ -8,7 +8,7 @@ import (
 
 // A note can answer to two relations and is shown in one place, so it takes the
 // first it qualifies for.
-func TestASeatIsTakenInOneOrder(t *testing.T) {
+func TestARelationIsTakenInOneOrder(t *testing.T) {
 	order := []domain.Relation{domain.RelationParent, domain.RelationChild, domain.RelationJump, domain.RelationSibling}
 	for i := 1; i < len(order); i++ {
 		if domain.GetRelationRank(order[i-1]) >= domain.GetRelationRank(order[i]) {

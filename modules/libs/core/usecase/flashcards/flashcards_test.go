@@ -142,25 +142,45 @@ func read(t *testing.T, v domain.Vault, path string) string {
 	return string(raw)
 }
 
-func (s vaulted) run(t *testing.T, at time.Time) flashcards.Record {
+// sitting is a run and the time its answers are given at.
+type sitting struct {
+	run    *flashcards.LogWriter
+	record flashcards.Record
+}
+
+func newSitting(run *flashcards.LogWriter, now func() time.Time) sitting {
+	return sitting{run: run, record: flashcards.NewRecord(now)}
+}
+
+func (s sitting) Answer(
+	ctx context.Context, on review.CardFaceID, r review.Rating, took time.Duration,
+) (review.Answer, error) {
+	return s.record.Answer(ctx, s.run, on, r, took)
+}
+
+func (s sitting) TakeBack(ctx context.Context, id string) (review.Answer, error) {
+	return s.record.TakeBack(ctx, s.run, id)
+}
+
+func (s vaulted) run(t *testing.T, at time.Time) sitting {
 	t.Helper()
 	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, at)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return flashcards.NewRecord(run, func() time.Time { return at })
+	return newSitting(run, func() time.Time { return at })
 }
 
 // runNamed is a run whose file is named for one instant and whose answers were
 // given at another, which is what a run written on another machine and carried
 // here by a synchroniser looks like.
-func (s vaulted) runNamed(t *testing.T, named, given time.Time) flashcards.Record {
+func (s vaulted) runNamed(t *testing.T, named, given time.Time) sitting {
 	t.Helper()
 	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, named)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return flashcards.NewRecord(run, func() time.Time { return given })
+	return newSitting(run, func() time.Time { return given })
 }
 
 func (s vaulted) newCountCardsDue(day review.Day) flashcards.CountCardsDue {
@@ -183,7 +203,7 @@ func (s vaulted) session(day review.Day) flashcards.Session {
 }
 
 // today is the day a session is counted in, on this machine.
-var today = review.Day{Starts: review.DayStarts}
+var today = review.Day{Starts: review.DayStartTime}
 
 // A card stands once for each face of the stencil that cuts it, because each
 // face asks a different thing.

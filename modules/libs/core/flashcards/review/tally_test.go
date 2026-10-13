@@ -11,7 +11,7 @@ import (
 // counting is a day as the rest of the application counts one, in a zone a test
 // can say things about.
 var counting = review.Day{
-	Starts: review.DayStarts,
+	Starts: review.DayStartTime,
 	In:     time.FixedZone("test", 0),
 }
 
@@ -280,7 +280,7 @@ func TestAStreakInTheSmallHoursIsTheEveningsStill(t *testing.T) {
 // A day counted in no zone in particular is counted in the machine's own,
 // which is where a person's evening is.
 func TestADayWithNoZoneIsTheMachinesOwn(t *testing.T) {
-	here := review.Day{Starts: review.DayStarts}
+	here := review.Day{Starts: review.DayStartTime}
 	now := time.Now()
 	days := makeTallies(map[string]int{
 		here.GetName(now):                   1,

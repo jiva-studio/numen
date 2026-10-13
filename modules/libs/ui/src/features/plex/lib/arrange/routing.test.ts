@@ -7,13 +7,13 @@ import { neighbourhoods } from '../../fixtures/neighbourhoods'
 import { ARROW_LENGTH, getArrow, getLength, createPointOnCurve, type EdgeArrow } from '../edge'
 import type { PlexNeighbourhood } from '../neighbourhood'
 import type { PlacedNode } from '../node'
-import type { PlexSeat } from '../seat'
+import type { PlexNodeRelation } from '../relation'
 
-const withSeat = (frame: { nodes: readonly PlacedNode[] }, seat: PlexSeat) =>
-  frame.nodes.filter((node) => node.seat === seat)
+const getNodesByRelation = (frame: { nodes: readonly PlacedNode[] }, relation: PlexNodeRelation) =>
+  frame.nodes.filter((node) => node.relation === relation)
 
 const getFocus = (frame: { nodes: readonly PlacedNode[] }) => {
-  const focus = frame.nodes.find((node) => node.seat === 'focus')
+  const focus = frame.nodes.find((node) => node.relation === 'focus')
   if (!focus) throw new Error('unreachable: every frame places a focus')
   return focus
 }
@@ -21,7 +21,7 @@ describe('edges', () => {
   it('leaves the focus by one gate and arrives at the top of each child', () => {
     const layout = arrangePlex(neighbourhoods.typical)
     const focus = getFocus(layout)
-    const children = withSeat(layout, 'child')
+    const children = getNodesByRelation(layout, 'child')
 
     for (const child of children) {
       const edge = layout.edges.find((e) => e.to === child.id)
@@ -36,7 +36,7 @@ describe('edges', () => {
 
   it('sets off and arrives along the axis, never across it', () => {
     const layout = arrangePlex(neighbourhoods.typical)
-    const outermost = withSeat(layout, 'child').reduce((a, b) =>
+    const outermost = getNodesByRelation(layout, 'child').reduce((a, b) =>
       Math.abs(a.x) > Math.abs(b.x) ? a : b,
     )
     const edge = layout.edges.find((e) => e.to === outermost.id)!
@@ -50,10 +50,10 @@ describe('edges', () => {
     expect(edge.control2.y).toBeLessThan(edge.toPoint.y)
   })
 
-  it('runs sideways for a seat that is seated sideways', () => {
+  it('runs sideways for a relation that runs sideways', () => {
     const layout = arrangePlex(neighbourhoods.typical)
     const focus = getFocus(layout)
-    const jump = withSeat(layout, 'jump')[0]!
+    const jump = getNodesByRelation(layout, 'jump')[0]!
     const edge = layout.edges.find((e) => e.from === jump.id)!
 
     expect(edge.fromPoint).toStrictEqual({ x: jump.x + jump.width / 2, y: jump.y })
@@ -85,7 +85,7 @@ describe('edges', () => {
   })
 
   it('joins two nodes on the same line side to side, not under and back', () => {
-    // The seat says vertical, but there is no vertical room between them.
+    // The relation says vertical, but there is no vertical room between them.
     const layout = arrangePlex(neighbourhoods.diamond)
     const edge = layout.edges.find((e) => e.from === 'parent-0' && e.to === 'parent-1')
     expect(edge).toBeDefined()
@@ -99,17 +99,17 @@ describe('edges', () => {
     expect(edge!.control2.x).toBeLessThan(edge!.toPoint.x)
   })
 
-  it('takes the heading from the curve, and not from the seat', () => {
+  it('takes the heading from the curve, and not from the relation', () => {
     const layout = arrangePlex(neighbourhoods.typical)
 
-    // A sibling is seated under a parent, and its line runs left to right.
-    for (const sibling of withSeat(layout, 'sibling')) {
+    // A sibling sits under a parent, and its line runs left to right.
+    for (const sibling of getNodesByRelation(layout, 'sibling')) {
       const edge = layout.edges.find((e) => e.to === sibling.id)!
       expect(edge.heading, `sibling ${sibling.id}`).toBe('along')
     }
 
-    // A jump is seated sideways, and its line arrives from the left.
-    for (const jump of withSeat(layout, 'jump')) {
+    // A jump sits sideways, and its line arrives from the left.
+    for (const jump of getNodesByRelation(layout, 'jump')) {
       const edge = layout.edges.find((e) => e.from === jump.id)!
       expect(edge.heading, `jump ${jump.id}`).toBe('along')
     }
@@ -125,8 +125,8 @@ describe('edges', () => {
     // The same pair written the other way about runs up it, and is read down.
     const up = arrangePlex({
       nodes: [
-        { id: 'focus', title: 'Here', seat: 'focus' },
-        { id: 'over', title: 'Over', seat: 'parent' },
+        { id: 'focus', title: 'Here', relation: 'focus' },
+        { id: 'over', title: 'Over', relation: 'parent' },
       ],
       edges: [{ from: 'focus', to: 'over' }],
     })
@@ -138,8 +138,8 @@ describe('edges', () => {
     // One jump sits level with the focus, so the line between them is straight
     // and runs whichever way the pair was written.
     const nodes = [
-      { id: 'focus', title: 'Here', seat: 'focus' as const },
-      { id: 'aside', title: 'Aside', seat: 'jump' as const },
+      { id: 'focus', title: 'Here', relation: 'focus' as const },
+      { id: 'aside', title: 'Aside', relation: 'jump' as const },
     ]
     const outward = arrangePlex({ nodes, edges: [{ from: 'focus', to: 'aside' }] })
     const inward = arrangePlex({ nodes, edges: [{ from: 'aside', to: 'focus' }] })
@@ -151,7 +151,7 @@ describe('edges', () => {
   })
 
   it('drops an edge from a node to itself', () => {
-    const nodes = [{ id: 'a', title: 'A', seat: 'focus' as const }]
+    const nodes = [{ id: 'a', title: 'A', relation: 'focus' as const }]
     const layout = arrangePlex({ nodes, edges: [{ from: 'a', to: 'a' }] })
     expect(layout.edges).toHaveLength(0)
   })
@@ -164,8 +164,8 @@ describe('edges', () => {
 describe('a title cut to the line it is set on', () => {
   const sideways: PlexNeighbourhood = {
     nodes: [
-      { id: 'focus', title: 'Here', seat: 'focus' },
-      { id: 'aside', title: 'Aside', seat: 'jump' },
+      { id: 'focus', title: 'Here', relation: 'focus' },
+      { id: 'aside', title: 'Aside', relation: 'jump' },
     ],
     edges: [{ from: 'aside', to: 'focus', label: 'the scene in the assembly' }],
   }
@@ -254,8 +254,8 @@ describe('a title cut to the line it is set on', () => {
  */
 describe('the arrowhead a line carries', () => {
   const nodes = [
-    { id: 'focus', title: 'Here', seat: 'focus' as const },
-    { id: 'below', title: 'Below', seat: 'child' as const },
+    { id: 'focus', title: 'Here', relation: 'focus' as const },
+    { id: 'below', title: 'Below', relation: 'child' as const },
   ]
 
   /** One line straight down the page, so its ends are a quarter turn apart. */
@@ -288,10 +288,10 @@ describe('the arrowhead a line carries', () => {
   it('is aimed along the piece of curve it covers', () => {
     const aside = arrangePlex({
       nodes: [
-        { id: 'focus', title: 'Here', seat: 'focus' },
-        { id: 'wide', title: 'Wide', seat: 'child' },
-        { id: 'other', title: 'Other', seat: 'child' },
-        { id: 'third', title: 'Third', seat: 'child' },
+        { id: 'focus', title: 'Here', relation: 'focus' },
+        { id: 'wide', title: 'Wide', relation: 'child' },
+        { id: 'other', title: 'Other', relation: 'child' },
+        { id: 'third', title: 'Third', relation: 'child' },
       ],
       edges: [
         { from: 'focus', to: 'wide', arrow: 'to' },
@@ -355,30 +355,30 @@ describe('the arrowhead a line carries', () => {
   })
 })
 
-describe('the axis a seat is routed along', () => {
+describe('the axis a relation is routed along', () => {
   const getAxis = createRouting(DEFAULT_OPTIONS).getAxis
 
   it('is left to the geometry for the focus', () => {
-    expect(getAxis({ seat: 'focus' })).toBe('auto')
+    expect(getAxis({ relation: 'focus' })).toBe('auto')
   })
 
-  it('runs down the page for the seats that grow up or down', () => {
-    expect(getAxis({ seat: 'parent' })).toBe('vertical')
-    expect(getAxis({ seat: 'child' })).toBe('vertical')
+  it('runs down the page for the relations that grow up or down', () => {
+    expect(getAxis({ relation: 'parent' })).toBe('vertical')
+    expect(getAxis({ relation: 'child' })).toBe('vertical')
   })
 
-  it('runs across the page for the seats that grow left or right', () => {
-    expect(getAxis({ seat: 'jump' })).toBe('horizontal')
-    expect(getAxis({ seat: 'sibling' })).toBe('horizontal')
+  it('runs across the page for the relations that grow left or right', () => {
+    expect(getAxis({ relation: 'jump' })).toBe('horizontal')
+    expect(getAxis({ relation: 'sibling' })).toBe('horizontal')
   })
 
-  it('follows the direction a seat has been given', () => {
+  it('follows the direction a relation has been given', () => {
     const turned = createRouting({
       ...DEFAULT_OPTIONS,
       direction: { ...DEFAULT_OPTIONS.direction, child: 'left', jump: 'up' },
     })
-    expect(turned.getAxis({ seat: 'child' })).toBe('horizontal')
-    expect(turned.getAxis({ seat: 'jump' })).toBe('vertical')
+    expect(turned.getAxis({ relation: 'child' })).toBe('horizontal')
+    expect(turned.getAxis({ relation: 'jump' })).toBe('vertical')
   })
 })
 
@@ -395,14 +395,14 @@ describe('cutting a title to a room', () => {
 })
 
 /**
- * Which way a line runs between two boxes is the axis of their seats, unless
+ * Which way a line runs between two boxes is the axis of their relations, unless
  * the boxes leave no clear space along it and do along the other.
  */
 describe('the run of a line between two boxes', () => {
-  const box = (id: string, seat: PlexSeat, x: number, y: number): PlacedNode => ({
+  const box = (id: string, relation: PlexNodeRelation, x: number, y: number): PlacedNode => ({
     id,
     title: id,
-    seat,
+    relation,
     x,
     y,
     width: 100,
@@ -420,14 +420,14 @@ describe('the run of a line between two boxes', () => {
       using,
     )!
 
-  it('runs down the page for a vertical seat with clear space below', () => {
+  it('runs down the page for a vertical relation with clear space below', () => {
     const edge = route(box('a', 'child', 0, 0), box('b', 'child', 300, 60))
 
     expect(edge.fromPoint).toStrictEqual({ x: 0, y: 20 })
     expect(edge.toPoint).toStrictEqual({ x: 300, y: 40 })
   })
 
-  it('runs across the page where boxes of a vertical seat only touch', () => {
+  it('runs across the page where boxes of a vertical relation only touch', () => {
     const edge = route(box('a', 'child', 0, 0), box('b', 'child', 300, 40))
 
     expect(edge.fromPoint).toStrictEqual({ x: 50, y: 0 })
@@ -441,21 +441,21 @@ describe('the run of a line between two boxes', () => {
     expect(edge.toPoint).toStrictEqual({ x: 30, y: -10 })
   })
 
-  it('runs across the page for a horizontal seat with clear space beside it', () => {
+  it('runs across the page for a horizontal relation with clear space beside it', () => {
     const edge = route(box('a', 'jump', 0, 0), box('b', 'jump', 150, 200))
 
     expect(edge.fromPoint).toStrictEqual({ x: 50, y: 0 })
     expect(edge.toPoint).toStrictEqual({ x: 100, y: 200 })
   })
 
-  it('runs down the page where boxes of a horizontal seat only touch', () => {
+  it('runs down the page where boxes of a horizontal relation only touch', () => {
     const edge = route(box('a', 'jump', 0, 0), box('b', 'jump', 100, 200))
 
     expect(edge.fromPoint).toStrictEqual({ x: 0, y: 20 })
     expect(edge.toPoint).toStrictEqual({ x: 100, y: 180 })
   })
 
-  it('takes the axis of the seat that has one, whichever end it is', () => {
+  it('takes the axis of the relation that has one, whichever end it is', () => {
     // Further across than down, and still a line to a child hangs from below.
     const edge = route(box('focus', 'focus', 0, 0), box('child', 'child', 500, 100))
 
@@ -463,7 +463,7 @@ describe('the run of a line between two boxes', () => {
     expect(edge.toPoint).toStrictEqual({ x: 500, y: 80 })
   })
 
-  it('takes the axis from the geometry where neither seat has one', () => {
+  it('takes the axis from the geometry where neither relation has one', () => {
     const undeclared = { ...routing, getAxis: () => 'auto' as const }
 
     const down = route(box('a', 'focus', 0, 0), box('b', 'focus', 150, 200), undeclared)

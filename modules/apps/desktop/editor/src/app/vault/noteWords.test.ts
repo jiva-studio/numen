@@ -56,7 +56,7 @@ describe('mapNeighbourhood', () => {
     })
   })
 
-  it('carries the focus, and every neighbour that has a seat and a note', () => {
+  it('carries the focus, and every neighbour that has a relation and a note', () => {
     const answer = create(GetNeighbourhoodResponseSchema, {
       focus: { path: 'Here.md', title: 'Here' },
       focusType: NoteType.DECK,
@@ -70,7 +70,7 @@ describe('mapNeighbourhood', () => {
           through: 'Mid.md',
           isMutual: true,
         },
-        { note: { path: 'NoSeat.md', title: 'NoSeat' }, relation: Relation.UNSPECIFIED },
+        { note: { path: 'NoRelation.md', title: 'NoRelation' }, relation: Relation.UNSPECIFIED },
         { relation: Relation.CHILD },
       ],
     })
@@ -83,7 +83,7 @@ describe('mapNeighbourhood', () => {
           path: 'Up.md',
           title: 'Up',
           type: 'preset',
-          seat: 'parent',
+          relation: 'parent',
           label: 'part of',
           reverseLabel: 'holds',
           through: 'Mid.md',

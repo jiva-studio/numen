@@ -34,8 +34,8 @@ func (a *API) GetSettings(
 			Least: got.NestedHeadingLimitBounds.Least,
 			Most:  got.NestedHeadingLimitBounds.Most,
 		},
-		LatestDayStarts: got.LatestDayStarts,
-		Day:             got.Day,
+		LatestDayStartTime: got.LatestDayStartTime,
+		Day:                got.Day,
 	}), nil
 }
 

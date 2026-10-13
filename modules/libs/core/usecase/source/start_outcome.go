@@ -1,0 +1,9 @@
+package source
+
+import "github.com/jiva-studio/numen/modules/libs/core/port"
+
+// StartOutcome is how a start over a named source ended.
+type StartOutcome = port.StartOutcome
+
+// Queued is a named source waiting behind the run already going.
+const Queued = port.Queued

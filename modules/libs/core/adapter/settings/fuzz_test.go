@@ -40,7 +40,7 @@ func FuzzAt(f *testing.F) {
 	f.Add(1, "system", "preset:numen", "04:00", 0.8, 0.8, 1, -1)
 
 	path := filepath.Join(f.TempDir(), "numen.json")
-	f.Fuzz(func(t *testing.T, version int, mode, theme, dayStarts string,
+	f.Fuzz(func(t *testing.T, version int, mode, theme, dayStartTime string,
 		interfaceScale, textScale float64, headings, mb int) {
 		raw, err := json.Marshal(file{
 			Version: version,
@@ -52,7 +52,7 @@ func FuzzAt(f *testing.F) {
 				NestedHeadingLimit: headings,
 			},
 			Indexing: indexing{TranscribeUnderMB: mb},
-			Review:   review{DayStarts: dayStarts},
+			Review:   review{DayStartTime: dayStartTime},
 		})
 		if err != nil {
 			// A size that is not a number is not something a file can hold.
@@ -114,7 +114,7 @@ type indexing struct {
 }
 
 type review struct {
-	DayStarts string `json:"day_starts"`
+	DayStartTime string `json:"day_start_time"`
 }
 
 // byteSeeds are the shapes a settings file arrives in: what the application
@@ -125,7 +125,7 @@ type review struct {
 var byteSeeds = []string{
 	`{"v":1,"appearance":{"interface_scale":1,"text_scale":1,"mode":"dark",` +
 		`"theme":"preset:numen","nest_headings_under_notes":true,"nested_heading_limit":6},` +
-		`"review":{"day_starts":"04:00"}}`,
+		`"review":{"day_start_time":"04:00"}}`,
 	"{\n  \"appearance\": {\n    \"theme\": \"mine:dracula\"\n  }\n}\n",
 	`{"appearance":{"zoom":1.25}}`,
 	`{"appearance":{"interface_scale":1,"interface_scale":9}}`,

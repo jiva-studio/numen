@@ -12,7 +12,7 @@ import type { PlexTabDeps, PlexTabState } from './types'
 import PlexTab from './ui/PlexTab.vue'
 
 /** What a plex tab is called: the note it stands on. */
-const titleOf = (note: string): string => note || words.plex
+const getPlexTitle = (note: string): string => note || words.plex
 
 /**
  * Manages window-level plex tab operations and navigation.
@@ -47,7 +47,7 @@ export function createPlexKind(
       })
       return tabState
     },
-    getTitle: (state) => titleOf(state.view.neighbourhood.value?.focus.title ?? ''),
+    getTitle: (state) => getPlexTitle(state.view.neighbourhood.value?.focus.title ?? ''),
     pane: PlexTab,
     onClose: (state) => {
       state.view.close()

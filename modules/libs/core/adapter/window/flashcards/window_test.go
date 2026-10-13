@@ -87,6 +87,7 @@ func setNow(api *API, now time.Time) {
 	at := func() time.Time { return now }
 	api.Now = at
 	api.Day = reviewDay
+	api.Record = flashcards.NewRecord(at)
 	api.CardsDue = api.CardsDue.WithDay(reviewDay).WithNow(at)
 	api.Session = api.Session.WithDay(reviewDay).WithNow(at)
 	api.GetReviewDays = api.GetReviewDays.WithDay(reviewDay).WithNow(at)

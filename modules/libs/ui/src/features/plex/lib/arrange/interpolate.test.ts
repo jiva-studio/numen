@@ -11,10 +11,10 @@ import type { PlexNeighbourhood } from '../neighbourhood'
 /** Focus on `focus`, with two children and one parent. */
 const before: PlexNeighbourhood = {
   nodes: [
-    { id: 'focus', title: 'Start', seat: 'focus' },
-    { id: 'up', title: 'Above', seat: 'parent' },
-    { id: 'a', title: 'A', seat: 'child' },
-    { id: 'b', title: 'B', seat: 'child' },
+    { id: 'focus', title: 'Start', relation: 'focus' },
+    { id: 'up', title: 'Above', relation: 'parent' },
+    { id: 'a', title: 'A', relation: 'child' },
+    { id: 'b', title: 'B', relation: 'child' },
   ],
   edges: [
     { from: 'up', to: 'focus' },
@@ -25,15 +25,15 @@ const before: PlexNeighbourhood = {
 
 /**
  * `a` was chosen. Three children, not two: with two on each side every new
- * seat has a twin at the old coordinates and a distance test compares 0 to 0.
+ * relation has a twin at the old coordinates and a distance test compares 0 to 0.
  */
 const after: PlexNeighbourhood = {
   nodes: [
-    { id: 'a', title: 'A', seat: 'focus' },
-    { id: 'focus', title: 'Start', seat: 'parent' },
-    { id: 'a1', title: 'A one', seat: 'child' },
-    { id: 'a2', title: 'A two', seat: 'child' },
-    { id: 'a3', title: 'A three', seat: 'child' },
+    { id: 'a', title: 'A', relation: 'focus' },
+    { id: 'focus', title: 'Start', relation: 'parent' },
+    { id: 'a1', title: 'A one', relation: 'child' },
+    { id: 'a2', title: 'A two', relation: 'child' },
+    { id: 'a3', title: 'A three', relation: 'child' },
   ],
   edges: [
     { from: 'focus', to: 'a' },
@@ -67,7 +67,7 @@ describe('the ends of the movement', () => {
   })
 })
 
-describe('a node that is in both pictures travels between its seats', () => {
+describe('a node that is in both pictures travels between its relations', () => {
   it('carries the chosen node from where it was to the middle', () => {
     const start = node(from, 'a')
     const half = node(interpolatePlex(from, to, 0.5), 'a')
@@ -80,7 +80,7 @@ describe('a node that is in both pictures travels between its seats', () => {
     expect(half.y).toBe((start.y + end.y) / 2)
   })
 
-  it('carries the old focus out to its new seat', () => {
+  it('carries the old focus out to its new relation', () => {
     const start = node(from, 'focus')
     const half = node(interpolatePlex(from, to, 0.5), 'focus')
     const end = node(to, 'focus')
@@ -90,7 +90,7 @@ describe('a node that is in both pictures travels between its seats', () => {
     expect(half.y).toBe((start.y + end.y) / 2)
   })
 
-  it('grows and shrinks the box as the seat changes', () => {
+  it('grows and shrinks the box as the relation changes', () => {
     const half = node(interpolatePlex(from, to, 0.5), 'a')
     expect(half.width).toBeGreaterThan(node(from, 'a').width)
     expect(half.width).toBeLessThan(node(to, 'a').width)
@@ -118,7 +118,7 @@ describe('a node that is only in one picture', () => {
     )
   })
 
-  it('puts a new node halfway between the chosen node and its own seat', () => {
+  it('puts a new node halfway between the chosen node and its own relation', () => {
     const source = node(from, 'a')
     const end = node(to, 'a1')
     const middle = node(interpolatePlex(from, to, 0.5), 'a1')
@@ -142,8 +142,8 @@ describe('a node that is only in one picture', () => {
   it('unfolds a new node out of the middle when the chosen node was not in the old picture', () => {
     const stranger = arrangePlex({
       nodes: [
-        { id: 'elsewhere', title: 'Elsewhere', seat: 'focus' },
-        { id: 'e1', title: 'E one', seat: 'child' },
+        { id: 'elsewhere', title: 'Elsewhere', relation: 'focus' },
+        { id: 'e1', title: 'E one', relation: 'child' },
       ],
       edges: [],
     })
@@ -183,7 +183,7 @@ describe('a node that is only in one picture', () => {
 })
 
 describe('the edges follow the boxes', () => {
-  it('meets the border of a box that is halfway to its new seat', () => {
+  it('meets the border of a box that is halfway to its new relation', () => {
     const frame = interpolatePlex(from, to, 0.4)
     const byId = new Map(frame.nodes.map((n) => [n.id, n]))
 
@@ -286,9 +286,9 @@ describe('the title a line carries while the picture moves', () => {
     const fanned: PlexNeighbourhood = {
       nodes: [
         ...after.nodes,
-        { id: 'a4', title: 'A four', seat: 'child' },
-        { id: 'a5', title: 'A five', seat: 'child' },
-        { id: 'a6', title: 'A six', seat: 'child' },
+        { id: 'a4', title: 'A four', relation: 'child' },
+        { id: 'a5', title: 'A five', relation: 'child' },
+        { id: 'a6', title: 'A six', relation: 'child' },
       ],
       edges: [
         ...after.edges,
@@ -404,15 +404,15 @@ describe('a line whose ends swap', () => {
     // reader is following is the one that fades out.
     const here: PlexNeighbourhood = {
       nodes: [
-        { id: 'here', title: 'Here', seat: 'focus' },
-        { id: 'across', title: 'Across', seat: 'jump' },
+        { id: 'here', title: 'Here', relation: 'focus' },
+        { id: 'across', title: 'Across', relation: 'jump' },
       ],
       edges: [{ from: 'across', to: 'here' }],
     }
     const across: PlexNeighbourhood = {
       nodes: [
-        { id: 'across', title: 'Across', seat: 'focus' },
-        { id: 'here', title: 'Here', seat: 'jump' },
+        { id: 'across', title: 'Across', relation: 'focus' },
+        { id: 'here', title: 'Here', relation: 'jump' },
       ],
       edges: [{ from: 'here', to: 'across' }],
     }

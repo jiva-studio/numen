@@ -6,7 +6,7 @@ import { neighbourhoods } from '../../fixtures/neighbourhoods'
 import type { PlexFrame } from '../frame'
 import type { PlexNeighbourhood } from '../neighbourhood'
 import type { PlacedNode, PlexNode } from '../node'
-import type { PlexRelatedSeat, PlexSeat } from '../seat'
+import type { PlexRelation, PlexNodeRelation } from '../relation'
 import { rowsAndColumns, type Placement } from './placement'
 import { build } from '../../fixtures/build'
 
@@ -20,15 +20,15 @@ const every = Object.entries(neighbourhoods)
 const byTitle = (node: PlexNode): number => 40 + node.title.length * 7
 
 /** A neighbourhood whose titles are picked for their lengths alone. */
-const createNeighbourhood = (seat: PlexRelatedSeat, ...titles: string[]): PlexNeighbourhood => ({
+const createNeighbourhood = (relation: PlexRelation, ...titles: string[]): PlexNeighbourhood => ({
   nodes: [
-    { id: 'focus', title: 'Focus', seat: 'focus' },
-    ...titles.map((title, index) => ({ id: `${seat}-${index}`, title, seat })),
+    { id: 'focus', title: 'Focus', relation: 'focus' },
+    ...titles.map((title, index) => ({ id: `${relation}-${index}`, title, relation })),
   ],
   edges: [],
 })
 
-/** The nodes of one seat, cut into the lines they were laid out on. */
+/** The nodes of one relation, cut into the lines they were laid out on. */
 const inLines = (nodes: readonly PlacedNode[], perLine: number): PlacedNode[][] => {
   const lines: PlacedNode[][] = []
   for (const node of nodes) {
@@ -38,11 +38,11 @@ const inLines = (nodes: readonly PlacedNode[], perLine: number): PlacedNode[][] 
   return lines
 }
 
-const withSeat = (layout: { nodes: readonly PlacedNode[] }, seat: PlexSeat) =>
-  layout.nodes.filter((node) => node.seat === seat)
+const getNodesByRelation = (layout: { nodes: readonly PlacedNode[] }, relation: PlexNodeRelation) =>
+  layout.nodes.filter((node) => node.relation === relation)
 
 const getFocus = (layout: { nodes: readonly PlacedNode[] }) => {
-  const focus = layout.nodes.find((node) => node.seat === 'focus')
+  const focus = layout.nodes.find((node) => node.relation === 'focus')
   if (!focus) throw new Error('unreachable: every layout places a focus')
   return focus
 }
@@ -57,29 +57,29 @@ function isOverlapping(a: PlacedNode, b: PlacedNode): boolean {
 
 describe('the contract on the neighbourhood', () => {
   it('refuses a neighbourhood with no focus', () => {
-    const nodes = [{ id: 'a', title: 'A', seat: 'child' as const }]
+    const nodes = [{ id: 'a', title: 'A', relation: 'child' as const }]
     expect(() => arrangePlex({ nodes, edges: [] })).toThrow(/needs a node with the focus/)
   })
 
   it('refuses a neighbourhood with two nodes in focus', () => {
     const nodes = [
-      { id: 'a', title: 'A', seat: 'focus' as const },
-      { id: 'b', title: 'B', seat: 'focus' as const },
+      { id: 'a', title: 'A', relation: 'focus' as const },
+      { id: 'b', title: 'B', relation: 'focus' as const },
     ]
     expect(() => arrangePlex({ nodes, edges: [] })).toThrow(/one focus, not 2/)
   })
 
-  it('refuses the same identifier in two seats', () => {
+  it('refuses the same identifier in two relations', () => {
     const nodes = [
-      { id: 'a', title: 'A', seat: 'focus' as const },
-      { id: 'b', title: 'B', seat: 'parent' as const },
-      { id: 'b', title: 'B again', seat: 'child' as const },
+      { id: 'a', title: 'A', relation: 'focus' as const },
+      { id: 'b', title: 'B', relation: 'parent' as const },
+      { id: 'b', title: 'B again', relation: 'child' as const },
     ]
     expect(() => arrangePlex({ nodes, edges: [] })).toThrow(/appears more than once: b/)
   })
 })
 
-describe('where the seats sit', () => {
+describe('where the relations sit', () => {
   const layout = arrangePlex(neighbourhoods.typical)
   const focus = getFocus(layout)
 
@@ -89,7 +89,7 @@ describe('where the seats sit', () => {
   })
 
   it('puts every parent clear above the focus', () => {
-    const parents = withSeat(layout, 'parent')
+    const parents = getNodesByRelation(layout, 'parent')
     expect(parents.length).toBeGreaterThan(0)
     for (const parent of parents) {
       expect(parent.y + parent.height / 2).toBeLessThan(-focus.height / 2)
@@ -97,7 +97,7 @@ describe('where the seats sit', () => {
   })
 
   it('puts every child clear below the focus', () => {
-    const children = withSeat(layout, 'child')
+    const children = getNodesByRelation(layout, 'child')
     expect(children.length).toBeGreaterThan(0)
     for (const child of children) {
       expect(child.y - child.height / 2).toBeGreaterThan(focus.height / 2)
@@ -105,24 +105,25 @@ describe('where the seats sit', () => {
   })
 
   it('puts every jump clear to the left and every sibling clear to the right', () => {
-    for (const jump of withSeat(layout, 'jump')) {
+    for (const jump of getNodesByRelation(layout, 'jump')) {
       expect(jump.x + jump.width / 2).toBeLessThan(-focus.width / 2)
     }
-    for (const sibling of withSeat(layout, 'sibling')) {
+    for (const sibling of getNodesByRelation(layout, 'sibling')) {
       expect(sibling.x - sibling.width / 2).toBeGreaterThan(focus.width / 2)
     }
-    expect(withSeat(layout, 'jump').length).toBeGreaterThan(0)
-    expect(withSeat(layout, 'sibling').length).toBeGreaterThan(0)
+    expect(getNodesByRelation(layout, 'jump').length).toBeGreaterThan(0)
+    expect(getNodesByRelation(layout, 'sibling').length).toBeGreaterThan(0)
   })
 
   it('clears the rows a column runs alongside, and only those', () => {
     // A column at a fixed distance lands on a row once the row outgrows it.
     const wide = arrangePlex(neighbourhoods.overcrowded)
-    const columns = withSeat(wide, 'jump')
+    const columns = getNodesByRelation(wide, 'jump')
     const columnReach = Math.max(...columns.map((n) => Math.abs(n.y) + n.height / 2))
-    const alongside = [...withSeat(wide, 'parent'), ...withSeat(wide, 'child')].filter(
-      (n) => Math.abs(n.y) - n.height / 2 < columnReach,
-    )
+    const alongside = [
+      ...getNodesByRelation(wide, 'parent'),
+      ...getNodesByRelation(wide, 'child'),
+    ].filter((n) => Math.abs(n.y) - n.height / 2 < columnReach)
     expect(alongside.length).toBeGreaterThan(0)
     const rowsReach = Math.max(...alongside.map((n) => Math.abs(n.x) + n.width / 2))
     for (const column of columns) {
@@ -130,9 +131,9 @@ describe('where the seats sit', () => {
     }
 
     // And a short column is not dragged out to a row it never comes near.
-    const short = Math.min(...withSeat(layout, 'jump').map((n) => Math.abs(n.x)))
+    const short = Math.min(...getNodesByRelation(layout, 'jump').map((n) => Math.abs(n.x)))
     const childrenReach = Math.max(
-      ...withSeat(layout, 'child').map((n) => Math.abs(n.x) + n.width / 2),
+      ...getNodesByRelation(layout, 'child').map((n) => Math.abs(n.x) + n.width / 2),
     )
     expect(short).toBeLessThan(childrenReach)
   })
@@ -144,7 +145,7 @@ describe('a box is as wide as its title needs', () => {
   it('draws every box at its widest when nothing was measured', () => {
     const layout = arrangePlex(neighbourhoods.typical)
     expect(getFocus(layout).width).toBe(focusSize.width)
-    for (const node of withSeat(layout, 'child')) expect(node.width).toBe(nodeSize.width)
+    for (const node of getNodesByRelation(layout, 'child')) expect(node.width).toBe(nodeSize.width)
   })
 
   it('gives each box the width it was measured at', () => {
@@ -160,16 +161,16 @@ describe('a box is as wide as its title needs', () => {
     expect(focus.width).toBeLessThan(focusSize.width)
   })
 
-  it('clamps a title past the maximum, which each seat has its own of', () => {
+  it('clamps a title past the maximum, which each relation has its own of', () => {
     const layout = arrangePlex(neighbourhoods.typical, { measure: () => 4000 })
     expect(getFocus(layout).width).toBe(focusSize.width)
-    for (const node of withSeat(layout, 'child')) expect(node.width).toBe(nodeSize.width)
+    for (const node of getNodesByRelation(layout, 'child')) expect(node.width).toBe(nodeSize.width)
   })
 
   it('gives a title that measures next to nothing the minimum', () => {
     const layout = arrangePlex(createNeighbourhood('child', '', 'A'), { measure: () => 0 })
     expect(getFocus(layout).width).toBe(minWidth)
-    for (const node of withSeat(layout, 'child')) expect(node.width).toBe(minWidth)
+    for (const node of getNodesByRelation(layout, 'child')) expect(node.width).toBe(minWidth)
   })
 
   it('leaves a row packed to one gap between boxes, and centred on the focus', () => {
@@ -181,7 +182,7 @@ describe('a box is as wide as its title needs', () => {
       'Port',
       'Use case',
     )
-    const children = withSeat(arrangePlex(mixed, { measure: byTitle }), 'child')
+    const children = getNodesByRelation(arrangePlex(mixed, { measure: byTitle }), 'child')
 
     expect(new Set(children.map((node) => node.width)).size).toBeGreaterThan(1)
     for (let i = 1; i < children.length; i++) {
@@ -197,7 +198,7 @@ describe('a box is as wide as its title needs', () => {
 
   it('turns one edge of a column towards the focus, whatever the widths', () => {
     const mixed = createNeighbourhood('jump', 'A', 'Dependency inversion', 'Port')
-    const jumps = withSeat(arrangePlex(mixed, { measure: byTitle }), 'jump')
+    const jumps = getNodesByRelation(arrangePlex(mixed, { measure: byTitle }), 'jump')
 
     expect(new Set(jumps.map((node) => node.width)).size).toBeGreaterThan(1)
     const near = jumps.map((node) => Math.abs(node.x) - node.width / 2)
@@ -205,7 +206,10 @@ describe('a box is as wide as its title needs', () => {
   })
 
   it('starts each further column beyond the widest of the one before it', () => {
-    const jumps = withSeat(arrangePlex(neighbourhoods.overcrowded, { measure: byTitle }), 'jump')
+    const jumps = getNodesByRelation(
+      arrangePlex(neighbourhoods.overcrowded, { measure: byTitle }),
+      'jump',
+    )
     const lines = inLines(jumps, maxPerLine)
     expect(lines.length).toBeGreaterThan(1)
 
@@ -232,8 +236,8 @@ describe('a label is as long as its words', () => {
   /** One line, running sideways, with words written along it. */
   const labelled: PlexNeighbourhood = {
     nodes: [
-      { id: 'focus', title: 'Here', seat: 'focus' },
-      { id: 'aside', title: 'Aside', seat: 'jump' },
+      { id: 'focus', title: 'Here', relation: 'focus' },
+      { id: 'aside', title: 'Aside', relation: 'jump' },
     ],
     edges: [{ from: 'aside', to: 'focus', label: 'the scene in the assembly' }],
   }
@@ -303,24 +307,26 @@ describe('the same input gives the same numbers', () => {
     )
   })
 
-  it('does not depend on the order the seats arrive in', () => {
+  it('does not depend on the order the relations arrive in', () => {
     const shuffled = {
       ...neighbourhoods.typical,
       nodes: [...neighbourhoods.typical.nodes].reverse(),
     }
-    const bySeat = (n: PlexNeighbourhood) =>
+    const byRelation = (n: PlexNeighbourhood) =>
       arrangePlex(n)
-        .nodes.filter((node) => node.seat === 'child')
+        .nodes.filter((node) => node.relation === 'child')
         .map((node) => node.id)
-    // Order follows the input rather than a sort; the set of seats is equal.
-    expect(bySeat(shuffled)).toHaveLength(bySeat(neighbourhoods.typical).length)
-    expect([...bySeat(shuffled)].sort()).toStrictEqual([...bySeat(neighbourhoods.typical)].sort())
+    // Order follows the input rather than a sort; the set of relations is equal.
+    expect(byRelation(shuffled)).toHaveLength(byRelation(neighbourhoods.typical).length)
+    expect([...byRelation(shuffled)].sort()).toStrictEqual(
+      [...byRelation(neighbourhoods.typical)].sort(),
+    )
   })
 })
 
-describe('the lines of a seat are shared out evenly', () => {
+describe('the lines of a relation are shared out evenly', () => {
   it('keeps every line within one node of every other', () => {
-    const children = withSeat(
+    const children = getNodesByRelation(
       arrangePlex(neighbourhoods.typical, { options: { maxPerLine: 4 } }),
       'child',
     )
@@ -333,7 +339,7 @@ describe('the lines of a seat are shared out evenly', () => {
 
   it('never puts more on a line than the limit allows', () => {
     for (const maxPerLine of [1, 2, 3, 4, 5]) {
-      const children = withSeat(
+      const children = getNodesByRelation(
         arrangePlex(neighbourhoods.crowded, { options: { maxPerLine } }),
         'child',
       )
@@ -345,13 +351,13 @@ describe('the lines of a seat are shared out evenly', () => {
 })
 
 describe('order along a line follows the order given', () => {
-  it('numbers each seat outward from the focus', () => {
-    const children = withSeat(arrangePlex(neighbourhoods.crowded), 'child')
+  it('numbers each relation outward from the focus', () => {
+    const children = getNodesByRelation(arrangePlex(neighbourhoods.crowded), 'child')
     expect(children.map((node) => node.order)).toStrictEqual(children.map((_, index) => index))
   })
 
   it('lays a row out left to right', () => {
-    const children = withSeat(arrangePlex(neighbourhoods.typical), 'child')
+    const children = getNodesByRelation(arrangePlex(neighbourhoods.typical), 'child')
     const firstLine = children.filter((node) => node.y === children[0]!.y)
     expect(firstLine.length).toBeGreaterThan(1)
     for (let i = 1; i < firstLine.length; i++) {
@@ -363,7 +369,7 @@ describe('order along a line follows the order given', () => {
   })
 
   it('puts the second line further from the focus than the first', () => {
-    const children = withSeat(arrangePlex(neighbourhoods.crowded), 'child')
+    const children = getNodesByRelation(arrangePlex(neighbourhoods.crowded), 'child')
     const first = children[0]
     const onSecondLine = children.find((node) => node.y !== first!.y)
     expect(first).toBeDefined()
@@ -374,16 +380,17 @@ describe('order along a line follows the order given', () => {
   it('keeps the relative order when one more node arrives', () => {
     const before = neighbourhoods.typical
     const after: PlexNeighbourhood = {
-      nodes: [...before.nodes, { id: 'child-6', title: 'One more', seat: 'child' }],
+      nodes: [...before.nodes, { id: 'child-6', title: 'One more', relation: 'child' }],
       edges: [...before.edges, { from: 'focus', to: 'child-6' }],
     }
-    const ids = (n: PlexNeighbourhood) => withSeat(arrangePlex(n), 'child').map((node) => node.id)
+    const ids = (n: PlexNeighbourhood) =>
+      getNodesByRelation(arrangePlex(n), 'child').map((node) => node.id)
     expect(ids(after).slice(0, ids(before).length)).toStrictEqual(ids(before))
   })
 })
 
 describe('what does not fit is reported rather than dropped silently', () => {
-  it('counts the nodes past the last line, per seat', () => {
+  it('counts the nodes past the last line, per relation', () => {
     const { maxPerLine, maxLines } = DEFAULT_OPTIONS
     const capacity = maxPerLine * maxLines
     const { overflow, nodes } = arrangePlex(neighbourhoods.overcrowded)
@@ -391,7 +398,7 @@ describe('what does not fit is reported rather than dropped silently', () => {
     expect(overflow.child).toBe(200 - capacity)
     expect(overflow.jump).toBe(40 - capacity)
     expect(overflow.parent).toBeUndefined() // nine parents fit in four lines of five
-    expect(nodes.filter((node) => node.seat === 'child')).toHaveLength(capacity)
+    expect(nodes.filter((node) => node.relation === 'child')).toHaveLength(capacity)
   })
 
   it('reports nothing when everything fits', () => {
@@ -445,7 +452,7 @@ describe('the extent', () => {
 describe('the options are honoured', () => {
   it('lets the caller change how many fit on a line', () => {
     const narrow = arrangePlex(neighbourhoods.crowded, { options: { maxPerLine: 3 } })
-    const children = withSeat(narrow, 'child')
+    const children = getNodesByRelation(narrow, 'child')
     const onFirstLine = children.filter((node) => node.y === children[0]!.y)
     expect(onFirstLine).toHaveLength(3)
   })
@@ -456,8 +463,8 @@ describe('the options are honoured', () => {
         direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
       },
     })
-    for (const child of withSeat(upside, 'child')) expect(child.y).toBeLessThan(0)
-    for (const parent of withSeat(upside, 'parent')) expect(parent.y).toBeGreaterThan(0)
+    for (const child of getNodesByRelation(upside, 'child')) expect(child.y).toBeLessThan(0)
+    for (const parent of getNodesByRelation(upside, 'parent')) expect(parent.y).toBeGreaterThan(0)
   })
 
   it('takes a curve setting without being told the size of a box', () => {
@@ -473,7 +480,7 @@ describe('the options are honoured', () => {
 describe('the arrangement is a strategy, not a shape baked in', () => {
   it('uses rows and columns unless told otherwise', () => {
     const frame = arrangePlex(neighbourhoods.typical)
-    expect(withSeat(frame, 'parent').every((n) => n.y < 0)).toBe(true)
+    expect(getNodesByRelation(frame, 'parent').every((n) => n.y < 0)).toBe(true)
   })
 
   it('lets another strategy place the nodes, and routes its edges anyway', () => {
@@ -481,8 +488,8 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
     // the limits, the routing and the extent.
     const ring: Placement = {
       name: 'ring',
-      place(seating) {
-        const all = Object.values(seating).flat()
+      place(nodesByRelation) {
+        const all = Object.values(nodesByRelation).flat()
         return all.map((node, index) => {
           const angle = (index / all.length) * Math.PI * 2
           return {
@@ -516,8 +523,8 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
     // whichever arrangement drew it.
     const counting: Placement = {
       name: 'counting',
-      place: (seating) =>
-        Object.values(seating)
+      place: (nodesByRelation) =>
+        Object.values(nodesByRelation)
           .flat()
           .map((node, index) => ({
             ...node,
@@ -535,19 +542,19 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
     expect(frame.overflow.child).toBe(200 - maxPerLine * maxLines)
   })
 
-  it('hands a strategy only the seats that have nodes in them', () => {
+  it('hands a strategy only the relations that have nodes in them', () => {
     const handed: string[][] = []
     const recording: Placement = {
       name: 'recording',
-      place: (seating, focus, options, limits, width) => {
-        handed.push(Object.keys(seating))
-        return rowsAndColumns.place(seating, focus, options, limits, width)
+      place: (nodesByRelation, focus, options, limits, width) => {
+        handed.push(Object.keys(nodesByRelation))
+        return rowsAndColumns.place(nodesByRelation, focus, options, limits, width)
       },
     }
 
     const frame = arrangePlex(build('A node', { child: 2, jump: 1 }), { placement: recording })
 
-    expect(handed.map((seats) => [...seats].sort())).toStrictEqual([['child', 'jump']])
+    expect(handed.map((relations) => [...relations].sort())).toStrictEqual([['child', 'jump']])
     expect(frame.overflow).toStrictEqual({})
   })
 })
@@ -559,7 +566,7 @@ describe('a window that holds the arrangement exactly', () => {
     const viewport = { width: 2000, height: 2 * (reach + margin) }
 
     const frame = arrangePlex(createNeighbourhood('child', 'One', 'Two'), { options: { viewport } })
-    const [first, second] = withSeat(frame, 'child')
+    const [first, second] = getNodesByRelation(frame, 'child')
 
     expect(second!.x - first!.x).toBe(nodeSize.width + gap * spread)
   })

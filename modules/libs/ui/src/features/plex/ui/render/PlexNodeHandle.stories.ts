@@ -9,14 +9,14 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent } from 'storybook/test'
 import { computed } from 'vue'
 import PlexNodeHandle from './PlexNodeHandle.vue'
-import { RELATED_SEATS, type PlexSeat } from '../../lib/seat'
+import { RELATION_NAMES, type PlexNodeRelation } from '../../lib/relation'
 
 interface Knobs {
   /** Where it sits, in the coordinates of whatever draws it. */
   x: number
   y: number
   /** Whose hue it takes. The focus has none, and it falls back to the border. */
-  seat: PlexSeat
+  relation: PlexNodeRelation
   /** How far the drawing is scaled up, to look at nine pixels of it. */
   zoom: number
 
@@ -25,17 +25,23 @@ interface Knobs {
 }
 
 /** What a node puts on itself, and the handle inherits. */
-const hue = (seat: PlexSeat) => ({ '--numen-seat-hue': `var(--numen-seat-${seat})` })
+const hue = (relation: PlexNodeRelation) => ({
+  '--numen-relation-hue': `var(--numen-relation-${relation})`,
+})
 
 const renderScene =
-  (scene: (args: Knobs) => readonly { id: string; x: number; y: number; seat: PlexSeat }[]) =>
+  (
+    scene: (
+      args: Knobs,
+    ) => readonly { id: string; x: number; y: number; relation: PlexNodeRelation }[],
+  ) =>
   (args: Knobs) => ({
     components: { PlexNodeHandle },
     setup: () => ({ args, hue, scene: computed(() => scene(args)) }),
     template: `
       <div style="height:100vh;display:grid;place-items:center;background:var(--numen-surface)">
         <svg width="480" height="200" :viewBox="[-240 / args.zoom, -100 / args.zoom, 480 / args.zoom, 200 / args.zoom].join(' ')">
-          <g v-for="one in scene" :key="one.id" :style="hue(one.seat)">
+          <g v-for="one in scene" :key="one.id" :style="hue(one.relation)">
             <PlexNodeHandle :at="one" @reach="args.onReach" @ask="args.onAsk" />
           </g>
         </svg>
@@ -63,15 +69,15 @@ const meta: Meta<Knobs> = {
   argTypes: {
     x: { control: { type: 'range', min: -100, max: 100, step: 1 } },
     y: { control: { type: 'range', min: -60, max: 60, step: 1 } },
-    seat: { control: 'inline-radio', options: ['focus', ...RELATED_SEATS] },
+    relation: { control: 'inline-radio', options: ['focus', ...RELATION_NAMES] },
     zoom: { control: { type: 'range', min: 1, max: 12, step: 0.5 } },
     onReach: { table: { disable: true } },
     onAsk: { table: { disable: true } },
   },
 
-  args: { x: 0, y: 0, seat: 'child', zoom: 6, onReach: fn(), onAsk: fn() },
+  args: { x: 0, y: 0, relation: 'child', zoom: 6, onReach: fn(), onAsk: fn() },
 
-  render: renderScene((args) => [{ id: 'one', x: args.x, y: args.y, seat: args.seat }]),
+  render: renderScene((args) => [{ id: 'one', x: args.x, y: args.y, relation: args.relation }]),
 }
 
 export default meta
@@ -85,11 +91,11 @@ export const Playground: Story = {}
  */
 export const EveryHue: Story = {
   render: renderScene((args) =>
-    ['focus', ...RELATED_SEATS].map((seat, index) => ({
-      id: seat,
+    ['focus', ...RELATION_NAMES].map((relation, index) => ({
+      id: relation,
       x: (index - 2) * (60 / args.zoom),
       y: 0,
-      seat: seat as PlexSeat,
+      relation: relation as PlexNodeRelation,
     })),
   ),
   args: { zoom: 4 },

@@ -130,7 +130,7 @@ func TestTheLoadOfARunIsOverTheDaysAdmitted(t *testing.T) {
 // falling due later in the day holding now has not had its day, and one nobody
 // has answered has had none.
 func TestWhatStandsOverdue(t *testing.T) {
-	day := review.Day{Starts: review.DayStarts, In: time.UTC}
+	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
 	now := time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
 	open := day.GetEnd(now).AddDate(0, 0, -1)
 	answered := func(name string, since, due int) (review.CardFaceID, review.Schedule) {
@@ -171,7 +171,7 @@ func TestWhatStandsOverdue(t *testing.T) {
 // the material is the figure of the first: what the day got through is the two
 // oldest debts and not two others of the five.
 func TestADayAnswersTheCardFacesWaitingLongest(t *testing.T) {
-	day := review.Day{Starts: review.DayStarts, In: time.UTC}
+	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
 	now := time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
 	open := day.GetEnd(now).AddDate(0, 0, -1)
 	face := func(name string, since, due int) (review.CardFaceID, review.Schedule) {
@@ -287,7 +287,7 @@ func TestAProjectionAnswersTheCallersCancellation(t *testing.T) {
 }
 
 // ahead is the day a projection is counted in, on this machine.
-var ahead = review.Day{Starts: review.DayStarts}
+var ahead = review.Day{Starts: review.DayStartTime}
 
 // getDayStart is the hour a day begins at, which is where a projection puts its
 // answers.

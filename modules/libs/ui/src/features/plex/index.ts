@@ -1,7 +1,7 @@
-/** A neighbourhood of notes drawn as a graph, and the seats its edges run between. */
+/** A neighbourhood of notes drawn as a graph, and the relations its edges run between. */
 export { default as Plex } from './ui/Plex.vue'
-export { RELATED_SEATS, seatWord } from './lib/seat'
-export type { PlexRelatedSeat } from './lib/seat'
+export { RELATION_NAMES, getRelationName } from './lib/relation'
+export type { PlexRelation } from './lib/relation'
 export { optionsForType, useTypeSize } from './model/sizing'
 export { byLongPress } from './model/reaching'
 export { byDoubleTap } from './model/showing'

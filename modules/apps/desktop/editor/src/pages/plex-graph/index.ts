@@ -1,4 +1,4 @@
-/** The plex tab: the graph of notes around one note, and the menu over a seat in it. */
+/** The plex tab: the graph of notes around one note, and the menu over a relation in it. */
 export { default as PlexTab } from './ui/PlexTab.vue'
 export { createPlexKind } from './kind'
 export { ITEMS, NONE } from './lib/menu'

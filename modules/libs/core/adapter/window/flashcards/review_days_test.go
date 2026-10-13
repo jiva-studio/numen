@@ -11,7 +11,7 @@ import (
 )
 
 // counting is the day as the application counts one.
-var counting = review.Day{Starts: review.DayStarts}
+var counting = review.Day{Starts: review.DayStartTime}
 
 // What a vault was answered on comes back a day at a time, oldest first,
 // because what draws it draws it along a line of time.

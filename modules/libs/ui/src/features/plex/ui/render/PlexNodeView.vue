@@ -69,7 +69,7 @@ const isOffering = computed(
 /** A node that is not there yet is announced as nothing; the focus is a picture. */
 const role = computed(() => {
   if (isGhost.value) return undefined
-  return props.node.seat === 'focus' ? 'img' : 'button'
+  return props.node.relation === 'focus' ? 'img' : 'button'
 })
 
 /** Whether there is anything to open: more of the title, or headings to hang. */
@@ -99,10 +99,10 @@ watch(
 )
 
 /**
- * One hue per seat, from a token named after it.
+ * One hue per relation, from a token named after it.
  */
 const hue = computed(() => ({
-  '--numen-seat-hue': `var(--numen-seat-${props.node.seat})`,
+  '--numen-relation-hue': `var(--numen-relation-${props.node.relation})`,
 }))
 </script>
 
@@ -116,7 +116,7 @@ const hue = computed(() => ({
     :tabindex="canStop ? 0 : -1"
     :aria-hidden="isAnnounced ? undefined : 'true'"
     :role="role"
-    :class="[`plex__node--${node.seat}`, `plex__node--${gestureRole}`]"
+    :class="[`plex__node--${node.relation}`, `plex__node--${gestureRole}`]"
     :aria-label="isGhost ? undefined : createAriaLabel(node)"
     @click="press.onClick"
     @dblclick="press.onDoubleClick"
@@ -167,7 +167,7 @@ const hue = computed(() => ({
 
 /* Hover mixes a little of a node's own text into the ground under it, which
    darkens a light node and lightens a dark one. The outline is left to the
-   seat's hue, and the focused node is painted from the pair it wears. */
+   relation's hue, and the focused node is painted from the pair it wears. */
 .plex__node:hover :deep(.plex__box) {
   fill: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 8%);
 }
@@ -180,7 +180,7 @@ const hue = computed(() => ({
   cursor: default;
 }
 
-/* While the plex is moving, the fill is a seat's colour too: the focused node
+/* While the plex is moving, the fill is a relation's colour too: the focused node
    is painted from its own pair, and follows the move as the outline does.
    The node stands between: a `:deep` with nothing of this component's in front
    of it hangs the scope on the ancestor, which is the frame's and not ours. */
@@ -198,7 +198,7 @@ const hue = computed(() => ({
 
 /* Not there yet: an outline where a node would appear, and out of the way of
    everything under it — including the gesture still looking for somewhere to
-   land. What it says is the seat, not a name, because it has none. */
+   land. What it says is the relation, not a name, because it has none. */
 .plex__node--ghost {
   cursor: default;
   pointer-events: none;
@@ -206,7 +206,7 @@ const hue = computed(() => ({
 
 .plex__node--ghost :deep(.plex__box) {
   fill: none;
-  stroke: var(--numen-seat-hue, var(--numen-ring));
+  stroke: var(--numen-relation-hue, var(--numen-ring));
   stroke-dasharray: var(--ghost-dash);
   transition: none;
 }
@@ -234,7 +234,7 @@ const hue = computed(() => ({
   color: var(--numen-accent-ink);
 }
 
-/* The focused node is painted from its own pair, and its seat's hue is the
+/* The focused node is painted from its own pair, and its relation's hue is the
    ground it stands on. What it is drawn before its title takes the ink the
    title is set in. */
 .plex__node--focus :deep(.plex__icon) {

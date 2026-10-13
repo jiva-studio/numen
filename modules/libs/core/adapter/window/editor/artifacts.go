@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
@@ -405,8 +404,8 @@ func (a *API) run(
 }
 
 // getStartState is what a run just set going is, as the schema carries it.
-func getStartState(started port.StartOutcome) v1.State {
-	if started == port.Queued {
+func getStartState(started source.StartOutcome) v1.State {
+	if started == source.Queued {
 		return v1.State_STATE_QUEUED
 	}
 	return v1.State_STATE_RUNNING
@@ -657,9 +656,9 @@ func getDownloadCode(err error) connect.Code {
 // getReachCode is the code a file that could not be reached is answered with.
 func getReachCode(err error) connect.Code {
 	switch {
-	case errors.Is(err, port.ErrOutside):
+	case errors.Is(err, source.ErrOutside):
 		return connect.CodeInvalidArgument
-	case errors.Is(err, fs.ErrNotExist), port.IsNoNote(err):
+	case errors.Is(err, fs.ErrNotExist), source.IsNoNote(err):
 		return connect.CodeNotFound
 	case errors.Is(err, errNoVault):
 		return connect.CodeFailedPrecondition

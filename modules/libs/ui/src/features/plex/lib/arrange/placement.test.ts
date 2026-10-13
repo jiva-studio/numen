@@ -1,17 +1,17 @@
 /** Where the nodes go: parents above, children below, jumps left, siblings right. */
 import { describe, expect, it } from 'vitest'
-import { rowsAndColumns, type Seating, type Widths } from './placement'
+import { rowsAndColumns, type NodesByRelation, type Widths } from './placement'
 import { DEFAULT_OPTIONS, type PlexOptions } from './options'
 import type { Limits, RoleLimits } from './limits'
 import type { PlacedNode, PlexNode } from '../node'
-import { RELATED_SEATS, type PlexRelatedSeat } from '../seat'
+import { RELATION_NAMES, type PlexRelation } from '../relation'
 
 const { nodeSize, focusSize, gap, lineGap, focusGap } = DEFAULT_OPTIONS
 
 const FOCUS: PlacedNode = {
   id: 'focus',
   title: 'The focus',
-  seat: 'focus',
+  relation: 'focus',
   x: 0,
   y: 0,
   width: focusSize.width,
@@ -20,31 +20,35 @@ const FOCUS: PlacedNode = {
   opacity: 1,
 }
 
-/** Nodes of one seat, named after it. */
-const createNodes = (seat: PlexRelatedSeat, count: number): readonly PlexNode[] =>
-  Array.from({ length: count }, (_, at) => ({ id: `${seat}-${at}`, title: `${seat} ${at}`, seat }))
+/** Nodes of one relation, named after it. */
+const createNodes = (relation: PlexRelation, count: number): readonly PlexNode[] =>
+  Array.from({ length: count }, (_, at) => ({
+    id: `${relation}-${at}`,
+    title: `${relation} ${at}`,
+    relation,
+  }))
 
 const limits = (each: RoleLimits): Limits =>
-  Object.fromEntries(RELATED_SEATS.map((seat) => [seat, each])) as Limits
+  Object.fromEntries(RELATION_NAMES.map((relation) => [relation, each])) as Limits
 
-/** Every box the width its seat is drawn at. */
+/** Every box the width its relation is drawn at. */
 const sameWidth: Widths = () => nodeSize.width
 
 const place = (
-  seats: Seating,
+  relations: NodesByRelation,
   perLine = DEFAULT_OPTIONS.maxPerLine,
   options: PlexOptions = DEFAULT_OPTIONS,
 ): PlacedNode[] =>
   rowsAndColumns.place(
-    seats,
+    relations,
     FOCUS,
     options,
     limits({ perLine, lines: DEFAULT_OPTIONS.maxLines }),
     sameWidth,
   )
 
-const of = (nodes: readonly PlacedNode[], seat: PlexRelatedSeat) =>
-  nodes.filter((node) => node.seat === seat)
+const of = (nodes: readonly PlacedNode[], relation: PlexRelation) =>
+  nodes.filter((node) => node.relation === relation)
 
 describe('what comes back', () => {
   it('is every node it was given, and never the focus', () => {
@@ -59,7 +63,7 @@ describe('what comes back', () => {
 
     expect(one?.id).toBe('child-0')
     expect(one?.title).toBe('child 0')
-    expect(one?.seat).toBe('child')
+    expect(one?.relation).toBe('child')
   })
 
   it('draws every box the width it was told and the height of a node', () => {
@@ -69,7 +73,7 @@ describe('what comes back', () => {
     expect(placed.map((node) => node.height)).toStrictEqual([36, 36, 36])
   })
 
-  it('places nothing for a seating holding nothing', () => {
+  it('places nothing for no nodes at all', () => {
     expect(place({})).toStrictEqual([])
   })
 })
@@ -163,7 +167,7 @@ describe('a column', () => {
         limits({ perLine: 5, lines: 4 }),
         widths,
       )
-      .filter((node) => node.seat === 'sibling')
+      .filter((node) => node.relation === 'sibling')
 
     const edges = column.map((node) => node.x - node.width / 2)
     expect(edges[0]).toBeCloseTo(edges[1]!)
@@ -236,8 +240,7 @@ describe('how far a column reaches before it clears the rows', () => {
   const focus: PlacedNode = { ...FOCUS, width: 100, height: 20 }
 
   /** Children from the fourth on are drawn twice as wide as the rest. */
-  const widths: Widths = (node) =>
-    ['child-3', 'child-4', 'child-5'].includes(node.id) ? 200 : 100
+  const widths: Widths = (node) => (['child-3', 'child-4', 'child-5'].includes(node.id) ? 200 : 100)
 
   /** The x of the first sibling, which stands clear of the rows within reach. */
   const siblingX = (focusGapSetting: number): number => {

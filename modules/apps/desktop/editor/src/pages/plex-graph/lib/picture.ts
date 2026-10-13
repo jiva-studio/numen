@@ -2,10 +2,10 @@
  * A neighbourhood of a vault, as something the plex can draw.
  *
  * This is the only file that knows both. The plex is told about nodes with a
- * seat and edges between them; it is not told what a note is, and the schema
+ * relation and edges between them; it is not told what a note is, and the schema
  * says nothing about drawing.
  */
-import type { Neighbourhood, NoteHeading, Seat } from '@/entities/note'
+import type { Neighbourhood, NoteHeading, NoteRelation } from '@/entities/note'
 import type { NoteType } from '@/entities/file'
 import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexHeading } from '@numen/ui'
 
@@ -13,7 +13,7 @@ import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexHeading } fr
  * Which of three each note on a neighbourhood is, by the path it stands at. A
  * plex draws a deck and a stencil as what they are.
  */
-export function typesIn(neighbourhood: Neighbourhood): ReadonlyMap<string, NoteType> {
+export function getNoteTypes(neighbourhood: Neighbourhood): ReadonlyMap<string, NoteType> {
   const found = new Map<string, NoteType>()
   const focus = neighbourhood.focus.path
   if (focus) found.set(focus, neighbourhood.focusType)
@@ -34,29 +34,29 @@ export function typesIn(neighbourhood: Neighbourhood): ReadonlyMap<string, NoteT
  */
 function getSavedArrow(
   saved: string,
-  seat: Seat,
+  relation: NoteRelation,
   focusPath: string,
   targetPath: string,
 ): EdgeArrow | undefined {
   const target = saved.split('->')[1]
-  if (target === focusPath) return seat === 'child' ? 'from' : 'to'
-  if (target === targetPath) return seat === 'child' ? 'to' : 'from'
+  if (target === focusPath) return relation === 'child' ? 'from' : 'to'
+  if (target === targetPath) return relation === 'child' ? 'to' : 'from'
   return undefined
 }
 
 function getEdgeArrow(
-  seat: Seat,
+  relation: NoteRelation,
   isMutual: boolean,
   focusPath: string,
   targetPath: string,
   saved?: string,
 ): EdgeArrow | undefined {
-  if (saved) return getSavedArrow(saved, seat, focusPath, targetPath)
-  if (isMutual) return seat === 'child' ? 'to' : 'from'
+  if (saved) return getSavedArrow(saved, relation, focusPath, targetPath)
+  if (isMutual) return relation === 'child' ? 'to' : 'from'
   return undefined
 }
 
-export function asPlex(
+export function convertNeighbourhood(
   neighbourhood: Neighbourhood,
   ticket: (path: string) => string,
   directions?: ReadonlyMap<string, string>,
@@ -64,14 +64,14 @@ export function asPlex(
   const focus: PlexNode = {
     id: ticket(neighbourhood.focus.path),
     title: neighbourhood.focus.title,
-    seat: 'focus',
+    relation: 'focus',
   }
 
   const nodes: PlexNode[] = [focus]
-  // Stryker disable ArrayDeclaration: an entry that is not a seated note has no seat, and no edge is drawn for it.
-  const seated: {
+  // Stryker disable ArrayDeclaration: an entry that is not a note with a relation has no relation, and no edge is drawn for it.
+  const placed: {
     id: string
-    seat: Seat
+    relation: NoteRelation
     label: string
     through: string
     isMutual: boolean
@@ -83,10 +83,10 @@ export function asPlex(
   for (const related of neighbourhood.related) {
     const id = ticket(related.path)
     shown.add(related.path)
-    nodes.push({ id, title: related.title, seat: related.seat })
-    seated.push({
+    nodes.push({ id, title: related.title, relation: related.relation })
+    placed.push({
       id,
-      seat: related.seat,
+      relation: related.relation,
       // What the person wrote on the link. A line with nothing written on it
       // carries nothing: a word put there by the application would be read as
       // one they had written themselves.
@@ -97,17 +97,17 @@ export function asPlex(
     })
   }
 
-  const edges: PlexEdge[] = seated.flatMap(({ id, seat, label, through, isMutual, path }) => {
+  const edges: PlexEdge[] = placed.flatMap(({ id, relation, label, through, isMutual, path }) => {
     const line = label ? { label } : {}
     const pairKey = [neighbourhood.focus.path, path].sort().join(' ')
     const saved = directions?.get(pairKey)
-    const arrow = getEdgeArrow(seat, isMutual, neighbourhood.focus.path, path, saved)
+    const arrow = getEdgeArrow(relation, isMutual, neighbourhood.focus.path, path, saved)
     const head = arrow ? { arrow } : {}
 
-    if (seat === 'parent' || seat === 'jump') {
+    if (relation === 'parent' || relation === 'jump') {
       return [{ from: id, to: focus.id, ...line, ...head }]
     }
-    if (seat === 'child') {
+    if (relation === 'child') {
       return [{ from: focus.id, to: id, ...line, ...head }]
     }
     return shown.has(through) ? [{ from: ticket(through), to: id, ...line }] : []
@@ -122,7 +122,7 @@ export function asPlex(
  * A heading is named by the line it stands on: that is what taking someone to it
  * needs, and it tells two headings of one wording apart.
  */
-export function asHeadings(headings: readonly NoteHeading[]): PlexHeading[] {
+export function convertHeadings(headings: readonly NoteHeading[]): PlexHeading[] {
   return headings.map((heading) => ({
     id: `${heading.line}`,
     text: heading.text,
@@ -154,7 +154,7 @@ export function areNeighbourhoodsEqual(
       related.path === against.path &&
       related.title === against.title &&
       related.type === against.type &&
-      related.seat === against.seat &&
+      related.relation === against.relation &&
       related.label === against.label &&
       related.through === against.through &&
       related.isMutual === against.isMutual

@@ -11,23 +11,23 @@ const COUNTS = { parent: 3, child: 6, jump: 3, sibling: 3 }
 /** Choose a node and hand back the neighbourhood around it, as a story does. */
 function step(current: ReturnType<typeof build>, id: string) {
   const chosen = current.nodes.find((node) => node.id === id)!
-  const was = current.nodes.find((node) => node.seat === 'focus')!
+  const was = current.nodes.find((node) => node.relation === 'focus')!
   const from: TitledNode = { id: was.id, title: was.title }
   return buildAround({ id: chosen.id, title: chosen.title }, from, COUNTS)
 }
 
 describe('walking', () => {
-  it('never seats the same node twice, however far it goes', () => {
+  it('never places the same node twice, however far it goes', () => {
     let here = build('A node', COUNTS)
 
     // Down, then back up, then down again: the node you came from is already
-    // seated when you arrive back at it, and must not be seated a second time.
+    // placed when you arrive back at it, and must not be placed a second time.
     for (let i = 0; i < 8; i++) {
-      const child = here.nodes.find((node) => node.seat === 'child')!
+      const child = here.nodes.find((node) => node.relation === 'child')!
       here = step(here, child.id)
       expect(() => arrangePlex(here)).not.toThrow()
 
-      const parent = here.nodes.find((node) => node.seat === 'parent')!
+      const parent = here.nodes.find((node) => node.relation === 'parent')!
       here = step(here, parent.id)
       expect(() => arrangePlex(here)).not.toThrow()
     }
@@ -35,11 +35,11 @@ describe('walking', () => {
 
   it('keeps the identifier of the node it came from', () => {
     const start = build('A node', COUNTS)
-    const child = start.nodes.find((node) => node.seat === 'child')!
+    const child = start.nodes.find((node) => node.relation === 'child')!
     const next = step(start, child.id)
 
-    expect(next.nodes.find((node) => node.seat === 'focus')?.id).toBe(child.id)
-    expect(next.nodes.some((node) => node.id === 'focus' && node.seat === 'parent')).toBe(true)
+    expect(next.nodes.find((node) => node.relation === 'focus')?.id).toBe(child.id)
+    expect(next.nodes.some((node) => node.id === 'focus' && node.relation === 'parent')).toBe(true)
   })
 
   it('gives every node a name from the pool rather than a number', () => {

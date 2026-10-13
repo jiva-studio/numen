@@ -5,7 +5,7 @@
  * through these, `vaults.ts` what it does to the vaults, and `../lib/voice.ts`
  * how what it has to say becomes one line.
  */
-import type { PlexRelatedSeat } from '@numen/ui'
+import type { PlexRelation } from '@numen/ui'
 import type { ArtifactRunner } from '@/entities/artifact'
 import type { Movement } from '@/entities/file'
 import type { RemoveResult, RenameResult } from '@/entities/note'
@@ -23,8 +23,8 @@ export interface NewNote {
 
 /** The vault as a command changes what it holds. */
 export interface VaultWriter {
-  /** A note made under the name it is given, in a seat of another one. */
-  createNote(title: string, from: string, seat: PlexRelatedSeat | null): Promise<NewNote | null>
+  /** A note made under the name it is given, in a relation of another one. */
+  createNote(title: string, from: string, relation: PlexRelation | null): Promise<NewNote | null>
   /** A note given a different name, and its file renamed with it where the two are one name. */
   rename(path: string, title: string): Promise<RenameResult>
   /** A note taken out of the vault, into the trash or off the disk. */

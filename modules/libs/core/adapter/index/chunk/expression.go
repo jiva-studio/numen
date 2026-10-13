@@ -23,12 +23,15 @@ import (
 // prefix mark. A question that is finished is asked exactly.
 func Expression(typed string, growing bool) string {
 	var out strings.Builder
+	// gomutants:disable-next-line INTEGER_INCREMENT,INTEGER_DECREMENT,STATEMENT_REMOVE reason="Grow sets capacity only; the mutated values are 1, 3 and 5, and the expression is the same at any size"
 	out.Grow(2*len(typed) + 4)
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is -2: start is only tested against 0, so any negative marks no word"
 	start := -1
 	for i, r := range typed {
 		if unicode.IsSpace(r) {
 			if start >= 0 {
 				writeQuoted(&out, typed[start:i])
+				// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is -2: start is only tested against 0, so any negative marks no word"
 				start = -1
 			}
 		} else if start < 0 {
@@ -51,6 +54,7 @@ func Expression(typed string, growing bool) string {
 // previous word by a space. Doubling is how a quote is escaped inside an FTS5
 // string.
 func writeQuoted(out *strings.Builder, word string) {
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is 1: a builder holding a word is at least 3 bytes long, so its length is never 1"
 	if out.Len() > 0 {
 		out.WriteByte(' ')
 	}

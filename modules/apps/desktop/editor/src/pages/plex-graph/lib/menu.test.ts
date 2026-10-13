@@ -7,17 +7,17 @@
 import { describe, expect, it } from 'vitest'
 
 import { ITEMS, NEW_NOTE, NONE, OFFERED } from './menu'
-import { commandsOf, getNoteCommands } from '@/features/command-palette'
+import { createCommands, getNoteCommands } from '@/features/command-palette'
 import { WORDS as words } from '@/shared/words'
 
 describe('what the menu offers', () => {
   it('offers every command over a note, and nothing the palette does not', () => {
-    const offered = getNoteCommands(commandsOf(words)).map((one) => one.id)
+    const offered = getNoteCommands(createCommands(words)).map((one) => one.id)
     expect([...ITEMS.map((item) => item.id)].sort()).toStrictEqual([...offered].sort())
   })
 
   it('says what each of them does, in the words the palette says it in', () => {
-    const said = new Map(getNoteCommands(commandsOf(words)).map((one) => [one.id, one.text]))
+    const said = new Map(getNoteCommands(createCommands(words)).map((one) => [one.id, one.text]))
     for (const item of ITEMS) {
       expect(item.text).not.toBe('')
       expect(item.text).toBe(said.get(item.id))

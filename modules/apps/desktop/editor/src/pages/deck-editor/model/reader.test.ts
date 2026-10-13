@@ -26,7 +26,7 @@ const createDeck = (...cards: BufferCard[]): BufferDeck => ({
 })
 
 const problem = (over: Partial<DeckProblem>): DeckProblem => ({
-  fault: 'unknown',
+  kind: 'unknown',
   card: null,
   face: null,
   field: '',

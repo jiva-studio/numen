@@ -6,11 +6,11 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { iconFor } from '@/shared/icons'
-import { iconOfNote } from '@/entities/note'
+import { findIcon } from '@/shared/icons'
+import { getNoteIcon } from '@/entities/note'
 import { findTabKindIcon } from '@/entities/tab'
 import { PRESET } from '@/entities/tab'
-import { commandsOf } from '@/features/command-palette'
+import { createCommands } from '@/features/command-palette'
 import { createMenuItems } from '@/pages/file-manager'
 import { ITEMS, NONE } from '@/pages/plex-graph'
 import { createWelcomeActions } from '@/pages/welcome'
@@ -32,33 +32,33 @@ const inTheTree = [
 
 describe('the icon a command is drawn with', () => {
   it('is there for every item the tree offers', () => {
-    for (const item of inTheTree) expect(iconFor(item.id), item.id).not.toBeNull()
+    for (const item of inTheTree) expect(findIcon(item.id), item.id).not.toBeNull()
   })
 
   it('is there for every item the plex offers, on a node and off every node', () => {
-    for (const item of [...ITEMS, ...NONE]) expect(iconFor(item.id), item.id).not.toBeNull()
+    for (const item of [...ITEMS, ...NONE]) expect(findIcon(item.id), item.id).not.toBeNull()
   })
 
   it('is the same one wherever a command is offered', () => {
-    const onANode = new Map(ITEMS.map((item) => [item.id, iconFor(item.id)]))
+    const onANode = new Map(ITEMS.map((item) => [item.id, findIcon(item.id)]))
     for (const item of inTheTree) {
       const drawn = onANode.get(item.id)
-      if (drawn) expect(iconFor(item.id), item.id).toBe(drawn)
+      if (drawn) expect(findIcon(item.id), item.id).toBe(drawn)
     }
   })
 
   it('is there for every command the palette draws', () => {
-    for (const one of commandsOf(words)) expect(iconFor(one.id), one.id).not.toBeNull()
+    for (const one of createCommands(words)) expect(findIcon(one.id), one.id).not.toBeNull()
   })
 
   it('is there for every way into a vault the welcome screen offers', () => {
     const ways = createWelcomeActions({ vault: 'physics', isReady: true }, words, 'Linux')
-    for (const one of ways) expect(iconFor(one.id), one.id).not.toBeNull()
+    for (const one of ways) expect(findIcon(one.id), one.id).not.toBeNull()
   })
 
   it('is nothing for an identity no list carries', () => {
-    expect(iconFor('constructor')).toBeNull()
-    expect(iconFor('nothing of the sort')).toBeNull()
+    expect(findIcon('constructor')).toBeNull()
+    expect(findIcon('nothing of the sort')).toBeNull()
   })
 })
 
@@ -68,14 +68,14 @@ describe('the icon of a kind of note', () => {
   const kinds: readonly NoteType[] = ['note', 'deck', 'stencil', 'preset']
 
   it('is there for every kind a note may be', () => {
-    for (const kind of kinds) expect(iconOfNote(kind), kind).toBeTruthy()
+    for (const kind of kinds) expect(getNoteIcon(kind), kind).toBeTruthy()
   })
 
   it('tells the five kinds apart', () => {
-    expect(new Set(kinds.map(iconOfNote)).size).toBe(kinds.length)
+    expect(new Set(kinds.map(getNoteIcon)).size).toBe(kinds.length)
   })
 
   it('draws a preset as the tab that opens it does', () => {
-    expect(iconOfNote('preset')).toBe(findTabKindIcon(PRESET))
+    expect(getNoteIcon('preset')).toBe(findTabKindIcon(PRESET))
   })
 })

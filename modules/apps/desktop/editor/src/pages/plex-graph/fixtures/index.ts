@@ -5,7 +5,7 @@
  * and everything the editor was asked to do is kept in the order it was asked.
  */
 import { ref } from 'vue'
-import type { PlexRelatedSeat } from '@numen/ui'
+import type { PlexRelation } from '@numen/ui'
 import type { PlexEditor } from '../model/usePlexTab'
 import type { PlexView } from '../model/usePlexView'
 import type { Neighbourhood } from '@/entities/note'
@@ -19,7 +19,7 @@ export type Types = Record<string, NoteType>
 
 export interface RelatedNeighbourSpec {
   path: string
-  seat?: PlexRelatedSeat
+  relation?: PlexRelation
   through?: string
   label?: string
   reverseLabel?: string
@@ -41,7 +41,7 @@ const createNeighbourhood = (
   related: neighbours.map((item) => {
     const spec: RelatedNeighbourSpec = typeof item === 'string' ? { path: item } : item
     return {
-      seat: spec.seat ?? 'child',
+      relation: spec.relation ?? 'child',
       through: spec.through ?? '',
       label: spec.label ?? '',
       reverseLabel: spec.reverseLabel ?? '',
@@ -82,25 +82,25 @@ export const viewOn = (
 export const createVault = (takes = true) => {
   const made: [string, string][] = []
   const joined: [string, string, string, string?][] = []
-  const removed: [string, string, PlexRelatedSeat?][] = []
+  const removed: [string, string, PlexRelation?][] = []
   /** The notes this vault will write no link to, which a test names. */
   const notJoinedPaths = new Set<string>()
   const editor: PlexEditor = {
-    createInSeat: async (from, seat) => {
-      made.push([from, seat])
+    createInRelation: async (from, relation) => {
+      made.push([from, relation])
       return takes ? { path: 'Made.md', title: 'Made' } : null
     },
-    createWithTitle: async (title, from, seat) => {
-      made.push([from, seat])
+    createWithTitle: async (title, from, relation) => {
+      made.push([from, relation])
       return takes ? { path: `${title}.md`, title } : null
     },
-    join: async (from, to, seat, label) => {
-      if (label !== undefined) joined.push([from, to, seat, label])
-      else joined.push([from, to, seat])
+    join: async (from, to, relation, label) => {
+      if (label !== undefined) joined.push([from, to, relation, label])
+      else joined.push([from, to, relation])
       return takes && !notJoinedPaths.has(to)
     },
-    removeLink: async (from, to, seat) => {
-      if (seat !== undefined) removed.push([from, to, seat])
+    removeLink: async (from, to, relation) => {
+      if (relation !== undefined) removed.push([from, to, relation])
       else removed.push([from, to])
       return takes
     },

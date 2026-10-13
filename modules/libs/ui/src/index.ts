@@ -8,7 +8,7 @@ import './shared/tokens/theme.css'
 import './shared/tokens/window.css'
 
 export { Plex } from './features/plex'
-export { seatWord } from './features/plex'
+export { getRelationName } from './features/plex'
 
 export { Menu, groupItems } from './shared/ui/menu'
 export type { MenuItem, MenuTrigger } from './shared/ui/menu'
@@ -159,7 +159,7 @@ export type { PlexHeading } from './features/plex'
 export type { EdgeArrow, PlexEdge } from './features/plex'
 export type { PlexNeighbourhood } from './features/plex'
 export type { PlexNode, Position } from './features/plex'
-export type { PlexRelatedSeat } from './features/plex'
+export type { PlexRelation } from './features/plex'
 export type { PlexDestination } from './features/plex'
 export { createThreadPath } from './features/plex'
 

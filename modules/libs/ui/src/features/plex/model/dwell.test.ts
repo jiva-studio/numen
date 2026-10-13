@@ -11,7 +11,7 @@ const MARGIN = 16
 const createNode = (over: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
   title: 'A node',
-  seat: 'child',
+  relation: 'child',
   x: 0,
   y: 0,
   width: 144,

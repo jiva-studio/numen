@@ -168,15 +168,15 @@ export interface Point {
   readonly backlog: readonly number[]
 }
 
-/** One place on the curve worth pointing at. */
-export interface Place {
+/** One point on the curve worth pointing at. */
+export interface CurvePoint {
   readonly at: number
   readonly value: number
   readonly day: string
 }
 
-/** A place that falls outside the grid. */
-export const NO_PLACE: Place = { at: -1, value: 0, day: '' }
+/** A curve point that falls outside the grid. */
+export const NO_CURVE_POINT: CurvePoint = { at: -1, value: 0, day: '' }
 
 /**
  * What a preset schedules, as the figures over the picture count it.
@@ -193,8 +193,8 @@ export interface Curve extends PresetCounts {
   readonly grid: readonly number[]
   readonly days: readonly string[]
   readonly at: readonly Point[]
-  readonly now: Place
-  readonly suggested: Place
+  readonly now: CurvePoint
+  readonly suggested: CurvePoint
   readonly isValid?: boolean
   readonly isHonest: boolean
 }
