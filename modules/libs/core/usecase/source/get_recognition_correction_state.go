@@ -6,7 +6,6 @@ import (
 	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 )
 
 // GetRecognitionCorrectionState says whether the corrections of a scan's recognition are RunComplete, RunActive or RunNone.
@@ -20,13 +19,13 @@ func (u GetRecognitionCorrectionState) Execute(ctx context.Context, v domain.Vau
 		return RunNone, err
 	}
 	hash := stored.meta.Hash
-	switch _, err := stored.store.Read(ctx, text.Proofread(text.OCR, hash)); {
+	switch _, err := stored.store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactProofread, domain.OCR, hash)); {
 	case err == nil:
 		return RunComplete, nil
 	case !errors.Is(err, fs.ErrNotExist):
 		return RunNone, err
 	}
-	switch _, err := stored.store.Read(ctx, text.Corrections(text.OCR, hash)); {
+	switch _, err := stored.store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactCorrections, domain.OCR, hash)); {
 	case err == nil:
 		return RunActive, nil
 	case !errors.Is(err, fs.ErrNotExist):

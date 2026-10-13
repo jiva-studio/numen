@@ -27,7 +27,7 @@ func (u OpenCopy) Execute(ctx context.Context, v domain.Vault, at domain.URL) (C
 	if err != nil {
 		return CopyFile{}, false
 	}
-	file, size, err := store.Open(ctx, text.Copy(text.Fingerprint([]byte(string(at)))))
+	file, size, err := store.OpenArtifact(ctx, domain.NewCopyName(text.Fingerprint([]byte(string(at)))))
 	if err != nil {
 		return CopyFile{}, false
 	}

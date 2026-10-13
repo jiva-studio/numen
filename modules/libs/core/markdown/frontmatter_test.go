@@ -308,7 +308,7 @@ func TestARenameCannotBreakTheNoteThatPointedAtIt(t *testing.T) {
 			if err != nil {
 				t.Fatalf("the note stopped being readable: %v\n%s", err, d.Bytes())
 			}
-			links, err := after.Links()
+			links, err := readLinks(after)
 			if err != nil {
 				t.Fatalf("links: %v", err)
 			}
@@ -516,7 +516,7 @@ func TestARenameReachesALinkHoweverItIsQuoted(t *testing.T) {
 			if err != nil {
 				t.Fatalf("the note stopped being readable: %v\n%s", err, got)
 			}
-			links, err := after.Links()
+			links, err := readLinks(after)
 			if err != nil {
 				t.Fatalf("links: %v", err)
 			}
@@ -564,7 +564,7 @@ func TestARenameReadsPastAQuoteInsideTheName(t *testing.T) {
 			if err != nil {
 				t.Fatalf("the note stopped being readable: %v\n%s", err, d.Bytes())
 			}
-			links, err := after.Links()
+			links, err := readLinks(after)
 			if err != nil {
 				t.Fatalf("links: %v", err)
 			}

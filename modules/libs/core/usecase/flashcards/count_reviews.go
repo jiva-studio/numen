@@ -157,7 +157,7 @@ func (u CountReviews) countFile(
 	var ran LogFile
 	var opened bool
 	var err error
-	one, kept := run.was[file.Name]
+	one, kept := run.was[file.Name.Hash]
 	stale := !kept || one.Size != file.Size
 	if stale || run.coming {
 		ran, err = log.ReadFile(ctx, store, file)
@@ -168,7 +168,7 @@ func (u CountReviews) countFile(
 	}
 	if stale {
 		one = cachedRun{
-			Name: file.Name,
+			Name: file.Name.Hash,
 			Size: ran.Size,
 			Days: review.GetDayTallies(u.day, ran.Answers),
 			IDs:  collectIdentifiers(ran.Answers),

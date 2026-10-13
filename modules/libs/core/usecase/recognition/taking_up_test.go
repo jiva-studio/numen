@@ -69,10 +69,10 @@ func newHaltedWorker(
 		t.Fatal(err)
 	}
 	artifact, boxes := newScanArtifact(lines)
-	if err := store.Write(t.Context(), text.Artifact("ocr", hash), artifact); err != nil {
+	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, "ocr", hash), artifact); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Write(t.Context(), text.Boxes("ocr", hash), boxes); err != nil {
+	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactBoxes, "ocr", hash), boxes); err != nil {
 		t.Fatal(err)
 	}
 	if through == 0 {
@@ -85,14 +85,14 @@ func newHaltedWorker(
 	for at := range through {
 		put = append(put, correction.Line{Number: at, Text: correctLine(lines[at])})
 	}
-	if err := store.Append(t.Context(), text.Corrections("ocr", hash), correction.Pack(put)); err != nil {
+	if err := store.AppendArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, "ocr", hash), correction.Pack(put)); err != nil {
 		t.Fatal(err)
 	}
 	stood, err := json.Marshal(checkpoint{By: by.GetName(), Pages: through})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Write(t.Context(), text.Proofread("ocr", hash), stood); err != nil {
+	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactProofread, "ocr", hash), stood); err != nil {
 		t.Fatal(err)
 	}
 	return w, v, store, hash
@@ -125,9 +125,9 @@ func newReply(at int, line string) string {
 }
 
 // corrections is the lines the shelf holds a correction for.
-func corrections(t *testing.T, store port.DerivedStore, name string) []int {
+func corrections(t *testing.T, store port.DerivedStore, name domain.ArtifactName) []int {
 	t.Helper()
-	raw, err := store.Read(t.Context(), name)
+	raw, err := store.ReadArtifact(t.Context(), name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +154,7 @@ func TestARecognitionLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testi
 	if got := by.lines(); !slices.Equal(got, []int{1, 2}) {
 		t.Errorf("the proofreader was asked about lines %v", got)
 	}
-	if got := corrections(t, store, text.Corrections("ocr", hash)); !slices.Equal(got, []int{0, 1, 2}) {
+	if got := corrections(t, store, domain.NewArtifactName(domain.ArtifactCorrections, "ocr", hash)); !slices.Equal(got, []int{0, 1, 2}) {
 		t.Errorf("the corrections stand for lines %v", got)
 	}
 	if at, held := w.getTask(t); held {
@@ -218,7 +218,7 @@ func TestARecognitionAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 	lines := []string{"the words one", "the words two"}
 	by := &puts{}
 	w, v, store, hash := newHaltedWorker(t, by, 1, lines...)
-	release, err := store.ClaimName(t.Context(), text.Corrections("ocr", hash))
+	release, err := store.ClaimArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, "ocr", hash))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -256,7 +256,7 @@ func TestTakingUpProofreadingDoesNotReadTheSourceFileWhenHashIsKnown(t *testing.
 	if got := by.lines(); !slices.Equal(got, []int{1, 2}) {
 		t.Errorf("the proofreader was asked about lines %v", got)
 	}
-	if got := corrections(t, store, text.Corrections("ocr", hash)); !slices.Equal(got, []int{0, 1, 2}) {
+	if got := corrections(t, store, domain.NewArtifactName(domain.ArtifactCorrections, "ocr", hash)); !slices.Equal(got, []int{0, 1, 2}) {
 		t.Errorf("the corrections stand for lines %v", got)
 	}
 }

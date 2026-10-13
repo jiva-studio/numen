@@ -423,33 +423,6 @@ func keepLinkNotation(was, to string) string {
 	return "[[" + to + getWikilinkSuffix(was[2:len(was)-2]) + "]]"
 }
 
-// Links are the relationships written in the `links:` block. Links written in
-// prose are not among them: those are the body's.
-//
-// Reading does not need the block to be laid out so that one entry can be
-// changed, so this asks less of it than a write does.
-func (d *Document) Links() ([]domain.Link, error) {
-	node, err := d.readMapping()
-	if err != nil || node == nil {
-		return nil, err
-	}
-	var items *yaml.Node
-	for i := 0; i+1 < len(node.Content); i += 2 {
-		if node.Content[i].Value == "links" {
-			items = node.Content[i+1]
-			break
-		}
-	}
-	if items == nil || items.Kind != yaml.SequenceNode {
-		return nil, nil
-	}
-	out := make([]domain.Link, 0, len(items.Content))
-	for _, item := range items.Content {
-		out = append(out, linkOf(item))
-	}
-	return out, nil
-}
-
 // linkEntry is one record of the `links:` block, in the order the format
 // specification lists the fields.
 type linkEntry struct {

@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
@@ -152,11 +151,12 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 	}
 
 	area := run.GetArea(u.Area, "ocr")
-	corrections, progressPath := text.Corrections(area, hash), text.Proofread(area, hash)
+	corrections := domain.NewArtifactName(domain.ArtifactCorrections, area, hash)
+	progressName := domain.NewArtifactName(domain.ArtifactProofread, area, hash)
 
 	// One run to a recognition. The name is the one the corrections are kept under,
 	// and it is held for as long as the proofreading takes.
-	release, err := store.ClaimName(ctx, corrections)
+	release, err := store.ClaimArtifact(ctx, corrections)
 	if errors.Is(err, port.ErrClaimed) {
 		res.IsBusy = true
 		return res, nil
@@ -176,7 +176,7 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 	}
 	res.Pages = len(pages)
 
-	stood, err := u.readCheckpoint(ctx, store, corrections, progressPath)
+	stood, err := u.readCheckpoint(ctx, store, corrections, progressName)
 	if err != nil {
 		return res, err
 	}
@@ -192,7 +192,9 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 		run.Report(u.OnProgress, res)
 	}
 
-	job := proofreadRecognitionJob{v: v, store: store, path: path, pages: pages, corrections: corrections, progressPath: progressPath}
+	job := proofreadRecognitionJob{
+		v: v, store: store, path: path, pages: pages, corrections: corrections, progressName: progressName,
+	}
 	if u.Queue != nil {
 		err = u.await(ctx, job, stood, &res)
 	} else {
@@ -208,8 +210,8 @@ type proofreadRecognitionJob struct {
 	store        port.DerivedStore
 	path         string
 	pages        []proofread.Batch
-	corrections  string
-	progressPath string
+	corrections  domain.ArtifactName
+	progressName domain.ArtifactName
 }
 
 // askPages asks the proofreader about the pages from at onwards, a batch at a
@@ -255,7 +257,7 @@ func (u Proofread) writeCorrections(
 	put, uncorrected := u.getCorrections(asked, replies)
 	res.UncorrectedPages += uncorrected
 	if len(put) > 0 {
-		if err := p.store.Append(ctx, p.corrections, correction.Pack(put)); err != nil {
+		if err := p.store.AppendArtifact(ctx, p.corrections, correction.Pack(put)); err != nil {
 			return err
 		}
 		res.Fixed += len(put)
@@ -264,7 +266,7 @@ func (u Proofread) writeCorrections(
 	if err := run.Cut(ctx, u.Cut, p.v, p.path); err != nil {
 		return err
 	}
-	if err := u.writeCheckpoint(ctx, p.store, p.progressPath, checkpoint{Pages: end}); err != nil {
+	if err := u.writeCheckpoint(ctx, p.store, p.progressName, checkpoint{Pages: end}); err != nil {
 		return err
 	}
 	run.Report(u.OnProgress, *res)
@@ -279,14 +281,14 @@ func (u Proofread) lines(
 	store port.DerivedStore,
 	area, hash string,
 ) ([]proofread.Batch, error) {
-	artifact, err := store.Read(ctx, text.Artifact(area, hash))
+	artifact, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, area, hash))
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	boxes, err := store.Read(ctx, text.Boxes(area, hash))
+	boxes, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactBoxes, area, hash))
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
 	}
@@ -332,9 +334,9 @@ func (u Proofread) getCorrections(
 func (u Proofread) readCheckpoint(
 	ctx context.Context,
 	store port.DerivedStore,
-	corrections, progressPath string,
+	corrections, progressName domain.ArtifactName,
 ) (checkpoint, error) {
-	raw, err := store.Read(ctx, progressPath)
+	raw, err := store.ReadArtifact(ctx, progressName)
 	if errors.Is(err, fs.ErrNotExist) {
 		return checkpoint{}, nil
 	}
@@ -343,10 +345,10 @@ func (u Proofread) readCheckpoint(
 	}
 	var stood checkpoint
 	if err := json.Unmarshal(raw, &stood); err != nil || stood.By != u.by.GetName() {
-		if err := store.Remove(ctx, corrections); err != nil {
+		if err := store.RemoveArtifact(ctx, corrections); err != nil {
 			return checkpoint{}, err
 		}
-		return checkpoint{}, store.Remove(ctx, progressPath)
+		return checkpoint{}, store.RemoveArtifact(ctx, progressName)
 	}
 	return stood, nil
 }
@@ -391,7 +393,7 @@ func (u Proofread) fetchBatch(
 		// The batch is forgotten, and the pages it covered are left again by the
 		// next run.
 		stood.Batch, stood.Left = "", 0
-		if put := u.writeCheckpoint(ctx, p.store, p.progressPath, stood); put != nil {
+		if put := u.writeCheckpoint(ctx, p.store, p.progressName, stood); put != nil {
 			return stood, false, put
 		}
 		return stood, false, fmt.Errorf("collect the proofreading of %s: %w", p.path, err)
@@ -420,7 +422,7 @@ func (u Proofread) submitBatch(
 		return fmt.Errorf("leave the pages of %s: %w", p.path, err)
 	}
 	res.IsWaiting = true
-	return u.writeCheckpoint(ctx, p.store, p.progressPath, checkpoint{Pages: at, Batch: name, Left: end - at})
+	return u.writeCheckpoint(ctx, p.store, p.progressName, checkpoint{Pages: at, Batch: name, Left: end - at})
 }
 
 // dropCorrections drops the corrections of pages no count claims. A line is
@@ -429,7 +431,7 @@ func (u Proofread) submitBatch(
 func dropCorrections(
 	ctx context.Context,
 	store port.DerivedStore,
-	corrections string,
+	corrections domain.ArtifactName,
 	pages []proofread.Batch,
 	done int,
 ) error {
@@ -437,7 +439,7 @@ func dropCorrections(
 	if !ok {
 		return nil
 	}
-	raw, err := store.Read(ctx, corrections)
+	raw, err := store.ReadArtifact(ctx, corrections)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
@@ -457,7 +459,7 @@ func dropCorrections(
 	// Written back whatever was dropped. An append that did not land whole leaves
 	// bytes that are not a record, and every record appended after them is read
 	// at a shifted offset.
-	return store.Write(ctx, corrections, correction.Pack(kept))
+	return store.WriteArtifact(ctx, corrections, correction.Pack(kept))
 }
 
 // opening is the number of the first line no count claims.
@@ -472,11 +474,13 @@ func opening(pages []proofread.Batch, done int) (int, bool) {
 
 // writeCheckpoint writes down who put this recognition right and how far they got.
 // It stands last and is what makes the batch before it count.
-func (u Proofread) writeCheckpoint(ctx context.Context, store port.DerivedStore, progressPath string, stood checkpoint) error {
+func (u Proofread) writeCheckpoint(
+	ctx context.Context, store port.DerivedStore, progressName domain.ArtifactName, stood checkpoint,
+) error {
 	stood.By = u.by.GetName()
 	raw, err := json.MarshalIndent(stood, "", "  ")
 	if err != nil {
 		return err
 	}
-	return store.Write(ctx, progressPath, append(raw, '\n'))
+	return store.WriteArtifact(ctx, progressName, append(raw, '\n'))
 }

@@ -161,10 +161,6 @@ func TestSimilarityIsTheAngleBetweenTwoVectors(t *testing.T) {
 		{"a vector with no direction", []float32{1, 1}, []int8{0, 0}, 0},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			got := embedding.Similarity(c.query, c.stored)
-			if math.Abs(got-c.want) > 1e-9 {
-				t.Errorf("got %v, want %v", got, c.want)
-			}
 			bytes := make([]byte, len(c.stored))
 			for i, v := range c.stored {
 				bytes[i] = byte(v)
@@ -188,38 +184,14 @@ func TestSimilarityIsOneForAVectorWithItself(t *testing.T) {
 	}
 	embedding.Normalise(v)
 
-	got := embedding.Similarity(v, embedding.Bytes(v))
+	quantised := embedding.Bytes(v)
+	raw := make([]byte, len(quantised))
+	for i, q := range quantised {
+		raw[i] = byte(q)
+	}
+	got := embedding.SimilarityBytes(v, raw)
 	if got < 0.999 {
 		t.Errorf("a vector against its own quantisation stands at %v", got)
-	}
-}
-
-func BenchmarkSimilarity(b *testing.B) {
-	const count = 10_000
-	const dim = 1024
-	rnd := rand.New(rand.NewPCG(42, 99))
-
-	query := make([]float32, dim)
-	for i := range query {
-		query[i] = rnd.Float32()*2 - 1
-	}
-	embedding.Normalise(query)
-
-	vectors := make([][]int8, count)
-	for i := range vectors {
-		v := make([]float32, dim)
-		for j := range v {
-			v[j] = rnd.Float32()*2 - 1
-		}
-		vectors[i] = embedding.Bytes(embedding.Normalise(v))
-	}
-
-	b.ResetTimer()
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		for _, stored := range vectors {
-			_ = embedding.Similarity(query, stored)
-		}
 	}
 }
 
@@ -271,7 +243,7 @@ func TestDimensionsOfAnEmptyVectorAreNone(t *testing.T) {
 	}
 }
 
-// Both forms of the similarity are the cosine, at every width: those the
+// The similarity is the cosine, at every width: those the
 // unrolled loop covers whole and those with dimensions left over.
 func TestSimilarityIsTheCosineAtEveryWidth(t *testing.T) {
 	random := rand.New(rand.NewPCG(3, 5))
@@ -288,9 +260,6 @@ func TestSimilarityIsTheCosineAtEveryWidth(t *testing.T) {
 			raw[i] = byte(stored[i])
 		}
 		want := getCosine(query, stored)
-		if got := embedding.Similarity(query, stored); !(math.Abs(got-want) <= 1e-5) {
-			t.Errorf("width %d: Similarity = %v, want %v", width, got, want)
-		}
 		if got := embedding.SimilarityBytes(query, raw); !(math.Abs(got-want) <= 1e-5) {
 			t.Errorf("width %d: SimilarityBytes = %v, want %v", width, got, want)
 		}
@@ -316,9 +285,6 @@ func TestSimilarityWithNoDirectionIsZero(t *testing.T) {
 			for i, v := range c.stored {
 				raw[i] = byte(v)
 			}
-			if got := embedding.Similarity(c.query, c.stored); got != c.want {
-				t.Errorf("Similarity = %v, want %v", got, c.want)
-			}
 			if got := embedding.SimilarityBytes(c.query, raw); got != c.want {
 				t.Errorf("SimilarityBytes = %v, want %v", got, c.want)
 			}
@@ -343,9 +309,6 @@ func getCosine(query []float32, stored []int8) float64 {
 func TestSimilaritySumsFourElementsAStepInSinglePrecision(t *testing.T) {
 	query := []float32{1 << 24, 1, 0, 0}
 	want := math.Sqrt2 / 2
-	if got := embedding.Similarity(query, []int8{1, 1, 0, 0}); math.Abs(got-want) > 1e-12 {
-		t.Errorf("Similarity = %v, want %v", got, want)
-	}
 	if got := embedding.SimilarityBytes(query, []byte{1, 1, 0, 0}); math.Abs(got-want) > 1e-12 {
 		t.Errorf("SimilarityBytes = %v, want %v", got, want)
 	}

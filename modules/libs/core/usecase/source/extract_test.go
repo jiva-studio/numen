@@ -400,7 +400,7 @@ func TestASourceCutFromAPartialReadsBackFromThePartial(t *testing.T) {
 		whole = "What every page of the document says."
 	)
 	hash := text.Fingerprint(raw)
-	if err := made.Write(ctx, text.Partial("ocr", hash), []byte(read)); err != nil {
+	if err := made.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactPartial, "ocr", hash), []byte(read)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -423,7 +423,7 @@ func TestASourceCutFromAPartialReadsBackFromThePartial(t *testing.T) {
 		t.Errorf("the source reads back as %q, want the pages the run has read", doc.Text)
 	}
 
-	if err := made.Write(ctx, text.Artifact("ocr", hash), []byte(whole)); err != nil {
+	if err := made.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, "ocr", hash), []byte(whole)); err != nil {
 		t.Fatal(err)
 	}
 	doc, err = of.GetDocument(ctx, bookPath, src.Producer, src.Hash)
@@ -447,8 +447,8 @@ func TestABookTakenOutTakesTheFilesOfItsRecognition(t *testing.T) {
 	shelf.hold("library/kept.epub", domain.KindBook, kept, 1)
 
 	for _, raw := range [][]byte{gone, kept} {
-		for _, name := range text.Names("ocr", text.Fingerprint(raw)) {
-			if err := made.Write(ctx, name, []byte("What the pages say.")); err != nil {
+		for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(raw)) {
+			if err := made.WriteArtifact(ctx, name, []byte("What the pages say.")); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -472,13 +472,13 @@ func TestABookTakenOutTakesTheFilesOfItsRecognition(t *testing.T) {
 		t.Fatalf("removed = %d, want the one book the vault no longer holds", res.Removed)
 	}
 
-	for _, name := range text.Names("ocr", text.Fingerprint(gone)) {
-		if _, err := made.Read(ctx, name); !errors.Is(err, fs.ErrNotExist) {
+	for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(gone)) {
+		if _, err := made.ReadArtifact(ctx, name); !errors.Is(err, fs.ErrNotExist) {
 			t.Errorf("%s is still in the store", name)
 		}
 	}
-	for _, name := range text.Names("ocr", text.Fingerprint(kept)) {
-		if _, err := made.Read(ctx, name); err != nil {
+	for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(kept)) {
+		if _, err := made.ReadArtifact(ctx, name); err != nil {
 			t.Errorf("%s went with the other book: %v", name, err)
 		}
 	}
@@ -493,8 +493,8 @@ func TestARenamedBookKeepsItsRecognition(t *testing.T) {
 
 	raw := bookOf(t, "Read", words(sanskrit, 200))
 	shelf.hold("library/before.epub", domain.KindBook, raw, 1)
-	for _, name := range text.Names("ocr", text.Fingerprint(raw)) {
-		if err := made.Write(ctx, name, []byte("What the pages say.")); err != nil {
+	for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(raw)) {
+		if err := made.WriteArtifact(ctx, name, []byte("What the pages say.")); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -514,8 +514,8 @@ func TestARenamedBookKeepsItsRecognition(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, name := range text.Names("ocr", text.Fingerprint(raw)) {
-		if _, err := made.Read(ctx, name); err != nil {
+	for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(raw)) {
+		if _, err := made.ReadArtifact(ctx, name); err != nil {
 			t.Errorf("renaming the book threw away %s: %v", name, err)
 		}
 	}
@@ -533,8 +533,8 @@ func TestOneOfTwoCopiesTakenOutLeavesTheOtherRecognition(t *testing.T) {
 	raw := bookOf(t, "Twice", words(sanskrit, 200))
 	shelf.hold("library/one.epub", domain.KindBook, raw, 1)
 	shelf.hold("shelf/two.epub", domain.KindBook, raw, 1)
-	for _, name := range text.Names("ocr", text.Fingerprint(raw)) {
-		if err := made.Write(ctx, name, []byte("What the pages say.")); err != nil {
+	for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(raw)) {
+		if err := made.WriteArtifact(ctx, name, []byte("What the pages say.")); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -550,8 +550,8 @@ func TestOneOfTwoCopiesTakenOutLeavesTheOtherRecognition(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, name := range text.Names("ocr", text.Fingerprint(raw)) {
-		if _, err := made.Read(ctx, name); err != nil {
+	for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(raw)) {
+		if _, err := made.ReadArtifact(ctx, name); err != nil {
 			t.Errorf("one copy going took %s with it: %v", name, err)
 		}
 	}
@@ -601,7 +601,7 @@ func TestARecordingIsCutFromWhatWasHeardInIt(t *testing.T) {
 
 	raw := []byte("ID3 and then the samples")
 	shelf.hold(talkPath, domain.KindRecording, raw, 1)
-	if err := made.Write(ctx, text.Artifact(text.ASR, text.Fingerprint(raw)), newTranscript()); err != nil {
+	if err := made.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, domain.ASR, text.Fingerprint(raw)), newTranscript()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -616,8 +616,8 @@ func TestARecordingIsCutFromWhatWasHeardInIt(t *testing.T) {
 	}
 
 	src := index.sources[first.ID][talkPath]
-	if src.Producer != text.ASR {
-		t.Errorf("the source names %q as the producer of its text, want %q", src.Producer, text.ASR)
+	if src.Producer != domain.ASR {
+		t.Errorf("the source names %q as the producer of its text, want %q", src.Producer, domain.ASR)
 	}
 	if want := recipe(text.ReaderRecording, extract.sizes()); src.Recipe != want {
 		t.Errorf("recipe = %q, want %q", src.Recipe, want)
@@ -642,10 +642,10 @@ func TestARecordingTakenOutTakesTheFilesOfItsTranscription(t *testing.T) {
 	raw := []byte("ID3 and then the samples")
 	shelf.hold(talkPath, domain.KindRecording, raw, 1)
 	hash := text.Fingerprint(raw)
-	if err := made.Write(ctx, text.Artifact(text.ASR, hash), newTranscript()); err != nil {
+	if err := made.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash), newTranscript()); err != nil {
 		t.Fatal(err)
 	}
-	if err := made.Write(ctx, text.GetProducerFile(text.ASR, hash), []byte(`{"model":"parakeet"}`)); err != nil {
+	if err := made.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactProducer, domain.ASR, hash), []byte(`{"model":"parakeet"}`)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -692,8 +692,5 @@ func TestABookIsCutTheWayItAlwaysWas(t *testing.T) {
 	}
 	if got := extract.producer(domain.Fingerprint{Kind: domain.KindBook}); got != "ocr" {
 		t.Errorf("a book's recognition is kept under %q, want ocr", got)
-	}
-	if got := text.Artifact("ocr", "abc123"); got != "ocr/abc123.txt" {
-		t.Errorf("a recognition is kept under %q", got)
 	}
 }

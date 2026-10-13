@@ -169,16 +169,6 @@ func TestPartsNamingOffsetsPastTheTextAreNotTrusted(t *testing.T) {
 	checkLocation(t, doc, ganges, "page 3 of the file")
 }
 
-func TestAPartsSidecarIsSweptWithTheRest(t *testing.T) {
-	name := text.Parts("ocr", "abc123")
-	if name != "ocr/abc123.parts" {
-		t.Errorf("parts are kept under %q", name)
-	}
-	if !slices.Contains(text.Names("ocr", "abc123"), name) {
-		t.Errorf("a sweep of %v leaves the parts behind", text.Names("ocr", "abc123"))
-	}
-}
-
 func TestAPageIsSaidByWhereItStandsInTheFile(t *testing.T) {
 	// One name to a page, and it is the one a viewer opens at. What the paper
 	// printed is a second number for the same page, and a person shown both has

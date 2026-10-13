@@ -3,19 +3,28 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"io"
 	"io/fs"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
+
+	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 // deck is a vault holding one stencil and one deck.
@@ -31,7 +40,7 @@ var deck = map[string]string{
 // own, an index it may write, and two vaults to sit down to.
 func makeWindow(
 	t *testing.T,
-) (container.Config, *container.Index, *openVaults, *window.API, []domain.Vault) {
+) (container.Config, *container.Index, *container.OpenVaults, *window.API, []domain.Vault) {
 	t.Helper()
 
 	state := t.TempDir()
@@ -49,11 +58,11 @@ func makeWindow(
 		{ID: "one", Name: "One", Path: vaultOf(t, cfg)},
 		{ID: "two", Name: "Two", Path: vaultOf(t, cfg)},
 	}
-	vaults := &openVaults{
-		cfg: cfg, db: db, lifetime: t.Context(),
-		recordVault: func(domain.Vault) {}, out: io.Discard,
+	vaults := &container.OpenVaults{
+		Config: cfg, Index: db, Lifetime: t.Context(),
+		RecordVault: func(domain.Vault) {}, Out: io.Discard,
 	}
-	t.Cleanup(vaults.closeAndWait)
+	t.Cleanup(vaults.CloseAndWait)
 	return cfg, db, vaults, &window.API{}, held
 }
 
@@ -126,6 +135,12 @@ func TestTheFlagShutsTheAgentForOneLaunch(t *testing.T) {
 	if api.GetAgent() != nil {
 		t.Error("a card can be asked about")
 	}
+	if api.Opened != nil {
+		t.Error("a session opening starts an agent")
+	}
+	if api.Unreachable.Why() != errNoAgentNamed {
+		t.Errorf("the page was told %q", api.Unreachable.Why())
+	}
 }
 
 // The file an agent a person runs themselves is configured from names one
@@ -178,5 +193,128 @@ func TestTheAgentFollowsTheVaultTheSessionIsOn(t *testing.T) {
 	api.Opened(t.Context(), vaults[1])
 	if api.GetAgent() == first {
 		t.Error("the agent stayed on the vault the person left")
+	}
+}
+
+// A window that can reach an agent clears what an earlier answer said about why
+// it could not.
+func TestAReachableAgentClearsWhyItWasUnreachable(t *testing.T) {
+	cfg, db, opening, api, _ := makeWindow(t)
+	cfg.Agent = agent.Defaults()
+	api.Unreachable.Store("an earlier reason")
+
+	notes, cards := makeNotesAndCards(cfg, db, opening)
+	away := serveAgents(t.Context(), cfg, db, notes, cards, api, false, io.Discard)
+	t.Cleanup(func() { _ = away() })
+
+	if why := api.Unreachable.Why(); why != "" {
+		t.Errorf("the page was told %q", why)
+	}
+}
+
+// Taking the agents away stops the endpoint a session started, and the panel
+// has nobody to ask.
+func TestTakingTheAgentsAwayStopsTheEndpoint(t *testing.T) {
+	cfg, db, opening, api, vaults := makeWindow(t)
+	cfg.Agent = agent.Defaults()
+
+	notes, cards := makeNotesAndCards(cfg, db, opening)
+	away := serveAgents(t.Context(), cfg, db, notes, cards, api, false, io.Discard)
+	t.Cleanup(func() { _ = away() })
+
+	api.Opened(t.Context(), vaults[0])
+	if api.GetAgent() == nil {
+		t.Fatal("nothing answers about a card once a session is open")
+	}
+
+	if err := away(); err != nil {
+		t.Fatal(err)
+	}
+	if api.GetAgent() != nil {
+		t.Error("a card can still be asked about")
+	}
+}
+
+// answering is a run that has nothing more to say.
+type answering struct{}
+
+func (answering) GetSteps() <-chan port.Step {
+	steps := make(chan port.Step)
+	close(steps)
+	return steps
+}
+
+func (answering) Stop() error { return nil }
+
+// listening is an agent that takes a question and ends it.
+type listening struct{}
+
+func (listening) StartRun(context.Context, port.Task) (port.Run, error) { return answering{}, nil }
+
+func (listening) EndConversation(context.Context, string) error { return nil }
+
+// The tools the review window serves answer from this window's own vault, notes
+// and cards, and name the card the person last asked about.
+func TestTheReviewToolsAreWiredToTheWindow(t *testing.T) {
+	cfg, db, opening, api, vaults := makeWindow(t)
+	notes, cards := makeNotesAndCards(cfg, db, opening)
+	v := vaults[0]
+
+	core := makeReviewCore(cfg, db, notes, cards, api, v, v.Path, io.Discard)
+
+	if core.Showing == nil {
+		t.Fatal("the tools are not told which vault they work")
+	}
+	if got := core.Showing(); got.Vault.ID != v.ID || got.Root != v.Path {
+		t.Errorf("the tools work %+v", got)
+	}
+	wired := map[string]bool{
+		"problems":    !reflect.ValueOf(core.GetProblems).IsZero(),
+		"summary":     !reflect.ValueOf(core.GetSummary).IsZero(),
+		"current":     !reflect.ValueOf(core.GetCurrentCard).IsZero(),
+		"read notes":  !reflect.ValueOf(core.Notes.Read).IsZero(),
+		"titles":      !reflect.ValueOf(core.Notes.GetTitles).IsZero(),
+		"card page":   !reflect.ValueOf(core.Cards.GetCardPage).IsZero(),
+		"add card":    !reflect.ValueOf(core.Cards.AddCard).IsZero(),
+		"list cards":  !reflect.ValueOf(core.Cards.List).IsZero(),
+		"sources":     !reflect.ValueOf(core.Sources.GetDocumentList).IsZero(),
+		"named paths": !reflect.ValueOf(core.Notes.GetNamedPaths).IsZero(),
+	}
+	for name, ok := range wired {
+		if !ok {
+			t.Errorf("the tools have no %s", name)
+		}
+	}
+	if reflect.ValueOf(core.Read).IsZero() {
+		t.Error("the tools read no file")
+	}
+	if reflect.ValueOf(core.Notes.Search).IsZero() {
+		t.Error("the tools search nothing")
+	}
+
+	api.SetAgent(listening{})
+	route, handler := numenv1connect.NewAgentServiceHandler(api)
+	mux := http.NewServeMux()
+	mux.Handle(route, handler)
+	server := httptest.NewUnstartedServer(mux)
+	server.EnableHTTP2 = true
+	server.StartTLS()
+	t.Cleanup(server.Close)
+	client := numenv1connect.NewAgentServiceClient(server.Client(), server.URL)
+
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&v1.AskAgentRequest{
+		Prompt: "why", Focus: "decks/Words.md", Mark: "3f4g5h6j7k", Face: "Back",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { stream.Close() })
+	for stream.Receive() {
+	}
+
+	want := "decks/Words.md 3f4g5h6j7k Back"
+	on := core.GetCurrentCard()
+	if got := on.Deck + " " + on.Card + " " + on.Face; got != want {
+		t.Errorf("the tools say the person is on %q", got)
 	}
 }

@@ -23,7 +23,7 @@ type site struct {
 }
 
 func (s *site) GetDownloadModel(domain.URL) port.DownloadModel {
-	return port.DownloadModel{Tool: "a test", Version: "1", Producer: derived.Captions}
+	return port.DownloadModel{Tool: "a test", Version: "1", Producer: domain.Captions}
 }
 
 func (s *site) GetMetadata(context.Context, domain.URL) (port.Metadata, error) {
@@ -37,7 +37,7 @@ func (s *site) GetText(
 		return port.Text{}, port.ErrNothingDownloaded
 	}
 	return port.Text{
-		Producer: derived.Captions, Cues: s.cues, Title: s.title, Length: 83_500,
+		Producer: domain.Captions, Cues: s.cues, Title: s.title, Length: 83_500,
 	}, nil
 }
 
@@ -46,7 +46,7 @@ func (s *site) Download(_ context.Context, _ domain.URL, into io.Writer) (port.C
 		return port.Copy{}, port.ErrNothingDownloaded
 	}
 	_, err := into.Write(s.bytes)
-	return port.Copy{MediaType: derived.CopyType, Extension: derived.CopyExtension}, err
+	return port.Copy{MediaType: domain.CopyType, Extension: domain.CopyExtension}, err
 }
 
 // newCoreWithImport is the core with one address it can reach.
@@ -56,7 +56,7 @@ func newCoreWithImport(t *testing.T, from *site) (domain.Vault, mcp.Core) {
 	fetcher := &source.ImportURL{
 		Readers: filesystem.VaultReaders{},
 		Derived: filesystem.DerivedStores{
-			Area: derived.Transcript, Areas: []string{derived.Article, derived.Copies},
+			Area: filesystem.TranscriptDir, Areas: []string{domain.Article, filesystem.CopyDir},
 		},
 		By: from,
 	}
@@ -82,7 +82,7 @@ func TestAnAgentImportsAnAddress(t *testing.T) {
 	if out.Refused != "" {
 		t.Fatalf("the address was refused: %s", out.Refused)
 	}
-	if out.Producer != derived.Captions {
+	if out.Producer != domain.Captions {
 		t.Errorf("the words were fetched by %q", out.Producer)
 	}
 	if out.Bytes == 0 {
@@ -142,7 +142,7 @@ func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
 	}}
 	v, core := newCoreWithImport(t, from)
 	stores := filesystem.DerivedStores{
-		Area: derived.Transcript, Areas: []string{derived.Article, derived.Copies},
+		Area: filesystem.TranscriptDir, Areas: []string{domain.Article, filesystem.CopyDir},
 	}
 	queries := &sourced{known: map[string]port.SourceText{}}
 	core.Sources.GetArtifactList = source.NewGetArtifactList(queries, stores)
@@ -158,7 +158,7 @@ func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
 	// what writes it. This is that row.
 	queries.known[made.Path] = port.SourceText{
 		Fingerprint: domain.Fingerprint{Path: made.Path},
-		Producer:    derived.Captions,
+		Producer:    domain.Captions,
 		Hash:        derived.Fingerprint([]byte(aVideo)),
 	}
 

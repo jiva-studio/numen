@@ -17,7 +17,7 @@ import (
 // was closed.
 type closeTrackingStores struct {
 	inner  port.DerivedStores
-	closed map[string]bool
+	closed map[domain.ArtifactName]bool
 }
 
 func (s closeTrackingStores) Open(v domain.Vault) (port.DerivedStore, error) {
@@ -32,11 +32,11 @@ func (s closeTrackingStores) Open(v domain.Vault) (port.DerivedStore, error) {
 // forwards unchanged.
 type closeTrackingStore struct {
 	port.DerivedStore
-	closed map[string]bool
+	closed map[domain.ArtifactName]bool
 }
 
-func (s closeTrackingStore) Open(ctx context.Context, name string) (io.ReadSeekCloser, int64, error) {
-	reader, size, err := s.DerivedStore.Open(ctx, name)
+func (s closeTrackingStore) OpenArtifact(ctx context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
+	reader, size, err := s.DerivedStore.OpenArtifact(ctx, name)
 	if err != nil {
 		return reader, size, err
 	}
@@ -48,8 +48,8 @@ func (s closeTrackingStore) Open(ctx context.Context, name string) (io.ReadSeekC
 // unchanged and only Close is recorded.
 type closeTrackingReader struct {
 	io.ReadSeekCloser
-	name   string
-	closed map[string]bool
+	name   domain.ArtifactName
+	closed map[domain.ArtifactName]bool
 }
 
 func (r closeTrackingReader) Close() error {
@@ -64,10 +64,10 @@ func TestListingClosesTheFileItOpensForACopy(t *testing.T) {
 	from := &site{title: "Entropy explained", bytes: []byte("the bytes of a video")}
 	_, core := newCoreWithImport(t, from)
 
-	closed := map[string]bool{}
+	closed := map[domain.ArtifactName]bool{}
 	stores := closeTrackingStores{
 		inner: filesystem.DerivedStores{
-			Area: derived.Transcript, Areas: []string{derived.Article, derived.Copies},
+			Area: filesystem.TranscriptDir, Areas: []string{domain.Article, filesystem.CopyDir},
 		},
 		closed: closed,
 	}
@@ -84,7 +84,7 @@ func TestListingClosesTheFileItOpensForACopy(t *testing.T) {
 	}
 	queries.known[made.Path] = port.SourceText{
 		Fingerprint: domain.Fingerprint{Path: made.Path},
-		Producer:    derived.Captions,
+		Producer:    domain.Captions,
 		Hash:        derived.Fingerprint([]byte(aVideo)),
 	}
 

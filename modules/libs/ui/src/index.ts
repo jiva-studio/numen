@@ -46,7 +46,6 @@ export type { Words as HeatmapWords } from './features/heatmap'
 /** A day of the calendar, written down, read back and counted against another. */
 export { dayAfter, parseDay, daysBetween, getDayName, isDay } from './shared/lib/day'
 export type { Tally as HeatmapTally } from './features/heatmap'
-export type { HeatmapMetrics } from './features/heatmap'
 export { getStretch as getHeatmapStretch } from './features/heatmap'
 export { WelcomePage } from './features/welcome'
 /** The letter a vault on that screen is opened by, and what a keystroke opens. */
@@ -65,13 +64,8 @@ export { optionsForType, useTypeSize } from './features/plex'
 export { Editor } from './features/editor'
 /** A time against every line of an editor, and the line being said now. */
 export { createTimeGutter } from './features/editor'
-export { createWikilinkCompletion, createWikilinkSource } from './features/editor'
-export type {
-  WikilinkOption,
-  WikilinkCompletionOptions,
-  Extension,
-  EditorExtension,
-} from './features/editor'
+export { createWikilinkCompletion } from './features/editor'
+export type { WikilinkOption, WikilinkCompletionOptions, Extension } from './features/editor'
 
 /** The controls a recording is played by. What plays is somewhere else. */
 export { Player } from './features/player'
@@ -112,12 +106,9 @@ export { Reader } from './features/reader'
 
 /** A book made for a screen, set in columns and turned a page at a time. */
 export { Book } from './features/book'
-/** Where a person is reading, and what a book runs between: bytes of its text. */
-export type { Span } from './features/book'
-
 /** What a book divides into, as a list to reach any of it by. */
 export { BookContents } from './features/book'
-export type { ContentsEntry, ContentsWords } from './features/book'
+export type { ContentsEntry } from './features/book'
 
 export { WorkspaceLayout } from './features/workspace'
 export { closeTab, openTab, openTabBeside } from './features/workspace'
@@ -163,7 +154,6 @@ export type { PlexRelation } from './features/plex'
 export type { PlexDestination } from './features/plex'
 export { createThreadPath } from './features/plex'
 
-export { MessageComposer, AgentModelSelector } from './features/message-composer'
 export type { AgentModelOption } from './features/message-composer'
 
 export { StatusBar } from './features/status-bar'

@@ -64,7 +64,7 @@ const send = (type: string, x = 0, y = 0, pointerId = 1) =>
 
 const scopes: EffectScope[] = []
 
-function setUp() {
+function setUp(relations: readonly PlexRelation[] = RELATIONS_OFFERED) {
   const drawing = createDrawing()
   const commits: Drop[] = []
   const scope = effectScope()
@@ -73,7 +73,7 @@ function setUp() {
     usePlexGesture(
       () => frame,
       () => DEFAULT_OPTIONS,
-      () => RELATIONS_OFFERED,
+      () => relations,
       () => THRESHOLD,
       (drop) => commits.push(drop),
     ),
@@ -380,6 +380,16 @@ describe('a plex that goes while a hand is on it', () => {
     expect(gesture.from.value).toBeNull()
     expect(drawing.releasePointerCapture).toHaveBeenCalledWith(7)
     expect(remove).toHaveBeenCalledTimes(4)
+    expect(commits).toEqual([])
+  })
+})
+
+describe('reaching out where no relation is offered', () => {
+  it('asks for nothing', () => {
+    const { gesture, commits } = setUp([])
+
+    gesture.ask('focus')
+
     expect(commits).toEqual([])
   })
 })

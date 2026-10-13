@@ -481,7 +481,7 @@ func TestWritingFieldsLeavesTheRestOfTheFrontmatterAlone(t *testing.T) {
 	// of every face that places it, so the stencil that comes out declares what
 	// its faces place.
 	n := markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, f.Bytes())
-	read := f.Stencil(n)
+	read := format.ReadStencil(n)
 	if !slices.Equal(read.Fields, []string{"Name", "Shoulder height", "Life span", "Weight"}) {
 		t.Errorf("read fields = %v", read.Fields)
 	}
@@ -539,7 +539,7 @@ func TestAFaceIsWrittenWithTheSidesItHas(t *testing.T) {
 		t.Errorf("face written wrong\n want %q\n  got %q", want, got)
 	}
 
-	read := f.Stencil(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, f.Bytes()))
+	read := format.ReadStencil(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, f.Bytes()))
 	var missing int
 	for _, p := range read.Problems {
 		if p.Fault == format.FaultFaceSide {

@@ -66,7 +66,7 @@ func TestARunPastTheEndOfASourceIsNoRun(t *testing.T) {
 func TestARunIsCutOnWholeCharacters(t *testing.T) {
 	u, shelved := reader(t)
 	names := textNames(t, shelved)
-	if err := shelved.Write(t.Context(), names.artifact, []byte("\x0c\x0c\nЖивёт слово\n")); err != nil {
+	if err := shelved.WriteArtifact(t.Context(), names.artifact, []byte("\x0c\x0c\nЖивёт слово\n")); err != nil {
 		t.Fatal(err)
 	}
 

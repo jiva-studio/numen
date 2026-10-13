@@ -319,7 +319,7 @@ func TestWhatCameBackIsCountedOverWhatWasLearned(t *testing.T) {
 	// Another card met for the first time on that second day.
 	said("01C", other, "2026-08-08T09:05:00", review.Again)
 
-	got := review.GetRetained(by, counting, history)
+	got := review.OrderAnswers(history).GetRetained(by, counting)
 
 	// The first day is a card being learned, so nothing was tested on it.
 	if _, held := got["2026-08-01"]; held {
@@ -337,10 +337,10 @@ func TestACardForgottenIsAskedAndNotRecalled(t *testing.T) {
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	by := review.NewFSRS()
 
-	got := review.GetRetained(by, counting, []review.Answer{
+	got := review.OrderAnswers([]review.Answer{
 		{ID: "01A", CardFace: on, At: moment(t, "2026-08-01T09:00:00"), Rating: review.Easy},
 		{ID: "01B", CardFace: on, At: moment(t, "2026-08-08T09:00:00"), Rating: review.Again},
-	})
+	}).GetRetained(by, counting)
 
 	if want := (review.RecallTally{Asked: 1, Recalled: 0}); got["2026-08-08"] != want {
 		t.Errorf("the day came to %+v, want %+v", got["2026-08-08"], want)
@@ -352,11 +352,11 @@ func TestAnAnswerTakenBackIsNotCountedAsRecall(t *testing.T) {
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	by := review.NewFSRS()
 
-	got := review.GetRetained(by, counting, []review.Answer{
+	got := review.OrderAnswers([]review.Answer{
 		{ID: "01A", CardFace: on, At: moment(t, "2026-08-01T09:00:00"), Rating: review.Easy},
 		{ID: "01B", CardFace: on, At: moment(t, "2026-08-08T09:00:00"), Rating: review.Again},
 		{ID: "01C", At: moment(t, "2026-08-08T09:00:30"), Undoes: "01B"},
-	})
+	}).GetRetained(by, counting)
 
 	if _, held := got["2026-08-08"]; held {
 		t.Errorf("an answer taken back was counted: %+v", got["2026-08-08"])

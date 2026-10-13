@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"runtime"
 	"sync"
 	"time"
@@ -192,14 +191,6 @@ type source struct {
 
 func openBytes(raw []byte) (*document, error) {
 	return open(source{reader: bytes.NewReader(raw), size: int64(len(raw))})
-}
-
-func openPath(path string) (*document, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("pdf: %w", err)
-	}
-	return openReader(file)
 }
 
 // openReader opens a document from a file the caller has open. It takes

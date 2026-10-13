@@ -37,7 +37,7 @@ func (u GetCopyLocation) Execute(ctx context.Context, v domain.Vault, path strin
 	if err != nil {
 		return CopyLocation{}
 	}
-	file, size, err := store.Open(ctx, text.Copy(text.Fingerprint([]byte(string(at)))))
+	file, size, err := store.OpenArtifact(ctx, domain.NewCopyName(text.Fingerprint([]byte(string(at)))))
 	if err != nil {
 		return CopyLocation{}
 	}

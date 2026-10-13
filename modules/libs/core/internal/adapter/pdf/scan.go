@@ -18,25 +18,6 @@ type Scan struct {
 	doc *document
 }
 
-// Open holds a document open for its pages to be drawn.
-func Open(raw []byte) (*Scan, error) {
-	doc, err := openBytes(raw)
-	if err != nil {
-		return nil, err
-	}
-	return &Scan{doc: doc}, nil
-}
-
-// OpenFile holds a PDF file open for its pages to be drawn. The file stays open
-// until the scan is closed.
-func OpenFile(path string) (*Scan, error) {
-	doc, err := openPath(path)
-	if err != nil {
-		return nil, err
-	}
-	return &Scan{doc: doc}, nil
-}
-
 // OpenReader holds a PDF open for its pages to be drawn, read from the file as
 // the library asks for it. The scan owns the file and closes it with the scan,
 // or at once if the document does not open.
