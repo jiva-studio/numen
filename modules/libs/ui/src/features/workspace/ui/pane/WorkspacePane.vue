@@ -23,6 +23,8 @@ const emit = defineEmits<{
   (event: 'choose', tab: TabId): void
   (event: 'close', tab: TabId): void
   (event: 'lift', tab: TabId, at: PointerEvent): void
+  /** A menu asked for on a tab, and where on the screen. */
+  (event: 'menu', tab: TabId, at: { x: number; y: number }): void
   /** This pane asks to be the one a tab opens into. */
   (event: 'claim'): void
   /** The tab that is now the one showing, once it is on screen. */
@@ -82,6 +84,7 @@ watch(
       @choose="emit('choose', $event)"
       @close="emit('close', $event)"
       @lift="(tab, at) => emit('lift', tab, at)"
+      @menu="(tab, at) => emit('menu', tab, at)"
     >
       <template v-if="$slots.icon" #icon="bound">
         <slot name="icon" v-bind="bound" />

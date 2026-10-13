@@ -1,0 +1,257 @@
+package source
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"image"
+	"io"
+	"io/fs"
+	"slices"
+	"strings"
+	"sync"
+	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// A shelf is what a recognition is written to, in memory.
+type shelf struct {
+	mu     sync.Mutex
+	files  map[string][]byte
+	held   map[string]bool
+	opens  int
+	closes int
+}
+
+func newShelf() *shelf { return &shelf{files: map[string][]byte{}, held: map[string]bool{}} }
+
+// shelves hands the one shelf to whatever opens a vault's store.
+type shelves struct{ *shelf }
+
+func (s shelves) Open(domain.Vault) (port.DerivedStore, error) { return s.shelf, nil }
+
+// Open is one file of the store, which a copy of a video is played from.
+func (s *shelf) Open(_ context.Context, name string) (io.ReadSeekCloser, int64, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	raw, held := s.files[name]
+	if !held {
+		return nil, 0, fs.ErrNotExist
+	}
+	s.opens++
+	return trackedCloser{Reader: bytes.NewReader(raw), of: s}, int64(len(raw)), nil
+}
+
+// closeCount is how many files opened from this shelf were closed, so a test
+// can tell a leak from one that was not.
+func (s *shelf) closeCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.closes
+}
+
+// WriteStream puts what a reader gives under a name.
+func (s *shelf) WriteStream(_ context.Context, name string, from io.Reader) (int64, error) {
+	raw, err := io.ReadAll(from)
+	if err != nil {
+		return 0, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.files[name] = raw
+	return int64(len(raw)), nil
+}
+
+// trackedCloser is one file opened from a shelf, counted against it once it
+// is closed.
+type trackedCloser struct {
+	*bytes.Reader
+	of *shelf
+}
+
+func (c trackedCloser) Close() error {
+	c.of.mu.Lock()
+	defer c.of.mu.Unlock()
+	c.of.closes++
+	return nil
+}
+
+func (s *shelf) Read(_ context.Context, name string) ([]byte, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	raw, held := s.files[name]
+	if !held {
+		return nil, fs.ErrNotExist
+	}
+	return raw, nil
+}
+
+func (s *shelf) Write(_ context.Context, name string, content []byte) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.files[name] = append([]byte(nil), content...)
+	return nil
+}
+
+func (s *shelf) Append(_ context.Context, name string, content []byte) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.files[name] = append(s.files[name], content...)
+	return nil
+}
+
+func (s *shelf) List(_ context.Context, name string) ([]port.Entry, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var out []port.Entry
+	for held, content := range s.files {
+		if strings.HasPrefix(held, name+"/") && !strings.Contains(held[len(name)+1:], "/") {
+			out = append(out, port.Entry{Name: held, Size: len(content)})
+		}
+	}
+	slices.SortFunc(out, func(a, b port.Entry) int { return strings.Compare(a.Name, b.Name) })
+	return out, nil
+}
+
+// Remove takes a name out of the store, along with the claim on it: a claim is
+// held on a file, and taking that file away frees the name.
+func (s *shelf) Remove(_ context.Context, name string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.files, name)
+	delete(s.held, name)
+	return nil
+}
+
+func (s *shelf) ClaimName(_ context.Context, name string) (func() error, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.held[name] {
+		return nil, port.ErrClaimed
+	}
+	s.held[name] = true
+	return func() error {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		delete(s.held, name)
+		return nil
+	}, nil
+}
+
+// hold takes a name the way another run holds it.
+func (s *shelf) hold(name string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.held[name] = true
+}
+
+func (s *shelf) names() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var out []string
+	for name := range s.files {
+		out = append(out, name)
+	}
+	return out
+}
+
+// A speaker reads every page as the same thing, or as nothing, and counts how
+// many pages it was shown.
+type speaker struct {
+	says string
+	// heads is what every page says in the region that opens a part of the
+	// document. Empty is a page opening none.
+	heads string
+	// blank is the page, counted from one, that the model reads nothing on.
+	blank int
+	pages int
+	stop  func(int)
+}
+
+func (s *speaker) GetRecognitionModel() port.RecognitionModel {
+	return port.RecognitionModel{Layout: "layout", Recogniser: "reader", DPI: 300, From: "a test"}
+}
+
+func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]ocr.Block, error) {
+	s.pages++
+	if s.stop != nil {
+		s.stop(s.pages)
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if s.says == "" || s.pages == s.blank {
+		return nil, nil
+	}
+	// No two pages say the same thing, so a coordinate read at the wrong offset
+	// names the wrong words.
+	said := fmt.Sprintf("%s %d", s.says, s.pages)
+	var out []ocr.Block
+	if s.heads != "" {
+		out = append(out, ocr.Block{Label: "doc_title", Text: fmt.Sprintf("%s %d", s.heads, s.pages), IsHeading: true, Depth: 1})
+	}
+	return append(out, ocr.Block{
+		Label: "text",
+		Text:  said,
+		Boxes: []ocr.Box{{Rect: image.Rect(10, 20, 30, 40), Span: domain.ByteSpan{To: len(said)}}},
+	}), nil
+}
+
+func (s *speaker) Close() error { return nil }
+
+// documentPath is where the document sits in the vault under test.
+const documentPath = "library/scan.pdf"
+
+// names are what one recognition of the fixture is kept under.
+type names struct {
+	hash        string
+	artifact    string
+	corrections string
+	far         string
+}
+
+// textNames finds the one recognition on the shelf and says what its files are
+// called.
+func textNames(t *testing.T, shelved *shelf) names {
+	t.Helper()
+	for _, name := range shelved.names() {
+		if !strings.HasSuffix(name, ".txt") {
+			continue
+		}
+		hash := strings.TrimSuffix(strings.TrimPrefix(name, "ocr/"), ".txt")
+		return names{
+			hash:        hash,
+			artifact:    text.Artifact("ocr", hash),
+			corrections: text.Corrections("ocr", hash),
+			far:         text.Proofread("ocr", hash),
+		}
+	}
+	t.Fatal("nothing was read")
+	return names{}
+}
+
+// recordingPath is where the recording sits in the vault under test.
+const recordingPath = "library/talk.mp3"
+
+// newRecording is the bytes of the file the words were spoken into. Nothing
+// here reads them: what the recording says comes from the model, and the model
+// is a fake.
+func newRecording(words []string) []byte {
+	return []byte("a recording of " + strings.Join(words, "|"))
+}
+
+// getWords is the words of an artifact, in the order they were said.
+func getWords(t *testing.T, raw []byte) []string {
+	t.Helper()
+	_, cues := transcript.Parse(raw)
+	out := make([]string, 0, len(cues))
+	for _, cue := range cues {
+		out = append(out, cue.Text)
+	}
+	return out
+}

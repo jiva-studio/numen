@@ -3,16 +3,24 @@ package source
 import (
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 )
 
 // reader is a GetDocumentText over a vault whose one document has been read by a model.
 func reader(t *testing.T) (GetDocumentText, *shelf) {
 	t.Helper()
-	read, _, index, shelved, _ := createRecognise(t, "the words", outline)
+	library := newLibrary()
+	library.hold(documentPath, domain.KindBook, printPages(outline), 1)
+	readers := vaults{first.ID: library}
+	index, shelved := newStore(), newShelf()
+	read := recognition.NewRecognise(readers, index, shelves{shelved}, documents{}, &speaker{says: "the words"})
+	read.Batch = 1
 	if _, err := read.Execute(t.Context(), first, documentPath); err != nil {
 		t.Fatal(err)
 	}
-	return GetDocumentText{readers: read.readers, sources: index, derived: shelves{shelved}}, shelved
+	return GetDocumentText{readers: readers, sources: index, derived: shelves{shelved}}, shelved
 }
 
 func TestWhatStandsAfterAChunkIsRead(t *testing.T) {

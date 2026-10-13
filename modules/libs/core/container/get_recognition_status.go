@@ -1,11 +1,11 @@
 package container
 
-import "github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+import "github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 
 // GetRecognitionStatus is nil where there is no worker to ask.
-func (c Config) GetRecognitionStatus(worker *source.RecognitionWorker) *source.GetRecognitionStatus {
+func (c Config) GetRecognitionStatus(worker *recognition.Worker) *recognition.GetStatus {
 	if worker == nil {
 		return nil
 	}
-	return source.NewGetRecognitionStatus(worker)
+	return recognition.NewGetStatus(worker)
 }

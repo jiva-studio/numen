@@ -28,6 +28,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -95,7 +96,7 @@ type API struct {
 	// Drops takes a recording's transcript away, with everything listening to
 	// it produced. It is bound by every build that serves what is made from a
 	// file.
-	Drops *source.DropTranscript
+	Drops *transcription.Drop
 
 	// Imports fetches what is at the address a link note points at. A build on
 	// a machine holding neither of the tools that reach one binds none, and

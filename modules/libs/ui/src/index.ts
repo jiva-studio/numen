@@ -10,7 +10,7 @@ import './shared/tokens/window.css'
 export { Plex } from './features/plex'
 export { getRelationName } from './features/plex'
 
-export { Menu, groupItems } from './shared/ui/menu'
+export { Menu, groupItems, useOutsidePress } from './shared/ui/menu'
 export type { MenuItem, MenuTrigger } from './shared/ui/menu'
 
 export { Button } from './shared/ui/button'
@@ -155,7 +155,7 @@ export type { Stencil } from './features/cards'
 
 export { byLongPress } from './features/plex'
 export { byDoubleTap } from './features/plex'
-export type { PlexHeading } from './features/plex'
+export type { PlexHeading, PlexPending } from './features/plex'
 export type { EdgeArrow, PlexEdge } from './features/plex'
 export type { PlexNeighbourhood } from './features/plex'
 export type { PlexNode, Position } from './features/plex'

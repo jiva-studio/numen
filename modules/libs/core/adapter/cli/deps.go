@@ -7,8 +7,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -138,7 +140,7 @@ type Problems struct {
 
 // Recognise is one scanned document read with a model.
 type Recognise struct {
-	Recognise source.Recognise
+	Recognise recognition.Recognise
 	// Cut makes what a batch of pages wrote searchable before the next batch is
 	// read, so a document stopped part way through answers to the page it
 	// reached.
@@ -148,7 +150,7 @@ type Recognise struct {
 
 // Transcribe is one recording listened to with a model.
 type Transcribe struct {
-	Transcribe source.Transcribe
+	Transcribe transcription.Transcribe
 	// Cut is what it is for a recognition: the speech already written down is
 	// searchable while the rest is still being heard.
 	Cut   source.Extract
@@ -164,7 +166,7 @@ type ImportURL struct {
 
 // ProofreadRecognition is one document's recognition put right with a model.
 type ProofreadRecognition struct {
-	Proofread source.ProofreadRecognition
+	Proofread recognition.Proofread
 	Cut       source.Extract
 	// IsHeld says whether anything is configured to proofread with. Nothing else
 	// here is opened where nothing is.
@@ -174,7 +176,7 @@ type ProofreadRecognition struct {
 
 // ProofreadTranscript is one recording's transcript put right with a model.
 type ProofreadTranscript struct {
-	Proofread source.ProofreadTranscript
+	Proofread transcription.Proofread
 	Cut       source.Extract
 	IsHeld    bool
 	Close     func() error

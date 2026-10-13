@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
 
 // proofreads is the proofreading a test hands the window: whether this
@@ -20,7 +20,7 @@ import (
 // to put right, and what it says came of the ask.
 type proofreads struct {
 	isReady bool
-	came    source.ProofreadTranscriptResult
+	came    transcription.ProofreadResult
 	why     error
 
 	vault string
@@ -34,7 +34,7 @@ func (p *proofreads) Proofread(
 	_ context.Context,
 	v domain.Vault,
 	path string,
-) (source.ProofreadTranscriptResult, error) {
+) (transcription.ProofreadResult, error) {
 	p.times++
 	p.vault, p.path = string(v.ID), path
 	return p.came, p.why
@@ -77,13 +77,13 @@ func TestATranscriptIsProofreadWhenTheWindowAsksForIt(t *testing.T) {
 func TestWhatAProofreadingCameToIsSaid(t *testing.T) {
 	for _, one := range []struct {
 		name  string
-		came  source.ProofreadTranscriptResult
+		came  transcription.ProofreadResult
 		state v1.State
 	}{
-		{"a recording another run holds", source.ProofreadTranscriptResult{IsBusy: true}, v1.State_STATE_RUNNING},
-		{"a transcript already put right", source.ProofreadTranscriptResult{IsAlready: true}, v1.State_STATE_DONE},
-		{"words a person wrote themselves", source.ProofreadTranscriptResult{IsEdited: true}, v1.State_STATE_DONE},
-		{"a transcript holding no words", source.ProofreadTranscriptResult{IsNone: true}, v1.State_STATE_NONE},
+		{"a recording another run holds", transcription.ProofreadResult{IsBusy: true}, v1.State_STATE_RUNNING},
+		{"a transcript already put right", transcription.ProofreadResult{IsAlready: true}, v1.State_STATE_DONE},
+		{"words a person wrote themselves", transcription.ProofreadResult{IsEdited: true}, v1.State_STATE_DONE},
+		{"a transcript holding no words", transcription.ProofreadResult{IsNone: true}, v1.State_STATE_NONE},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			api, _, by := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())

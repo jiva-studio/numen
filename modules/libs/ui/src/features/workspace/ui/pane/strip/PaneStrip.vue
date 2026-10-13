@@ -26,6 +26,7 @@ const emit = defineEmits<{
   (event: 'choose', tab: TabId): void
   (event: 'close', tab: TabId): void
   (event: 'lift', tab: TabId, at: PointerEvent): void
+  (event: 'menu', tab: TabId, at: { x: number; y: number }): void
 }>()
 
 defineSlots<{
@@ -93,6 +94,7 @@ defineExpose({ reach })
       :is-focused="tab === pane.active && isFocused"
       @lift="emit('lift', tab, $event)"
       @close="emit('close', tab)"
+      @menu="emit('menu', tab, $event)"
       @click="emit('choose', tab)"
       @keydown="(event: KeyboardEvent) => onStripKey(at, event)"
     >

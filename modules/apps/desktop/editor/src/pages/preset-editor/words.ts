@@ -7,6 +7,15 @@ import type { ErrorCode } from '@/shared/errors'
 import { getErrorWords } from '@/shared/words/errors'
 import type { BudgetUnit, Goal, Rule } from './types'
 import type { Field } from './lib/fields'
+import {
+  getBuyFacts,
+  getLearningFacts,
+  getMaterialFacts,
+  type BuyFact,
+  type BuyInput,
+  type LearningFact,
+  type MaterialFact,
+} from './lib/facts'
 
 /** What each of the three goals is offered as: the value it steers. */
 const GOALS: Record<Goal, string> = {
@@ -74,6 +83,58 @@ const sayAsSentence = (clause: string): string =>
 /** A count as a person reads one. */
 const count = (value: number): string => `${Math.round(value)}`
 
+/** A fact about what a place buys, said. */
+const formatBuyFact = (fact: BuyFact): string => {
+  switch (fact.kind) {
+    case 'daysOff':
+      return `${many(fact.days, 'day')} off`
+    case 'minutesADay':
+      return `${many(fact.minutes, 'minute')} a day`
+    case 'remembered':
+      return `${percent(fact.share)} remembered`
+    case 'cardsASession':
+      return `${many(fact.cards, 'card')} a session`
+    case 'cannotGetThere':
+      return `${count(fact.short)} of ${count(fact.cards)} cannot get there`
+    case 'overdueGone':
+      return `overdue gone in ${many(fact.days, 'day')}`
+    case 'overdueStays':
+      return `not within ${many(fact.horizon, 'day')}`
+  }
+}
+
+/** A fact about the material, said as a figure and the name under it. */
+const formatMaterialFact = (fact: MaterialFact): { figure: string; name: string } => {
+  const figure = count(fact.count)
+  switch (fact.kind) {
+    case 'decks':
+      return { figure, name: plural(fact.count, 'deck') }
+    case 'cards':
+      return { figure, name: plural(fact.count, 'card') }
+    case 'overdue':
+      return { figure, name: 'overdue' }
+    case 'unbegun':
+      return { figure, name: 'new' }
+  }
+}
+
+/** A fact about what is learned, said as a figure and the name under it. */
+const formatLearningFact = (fact: LearningFact): { figure: string; name: string } => {
+  switch (fact.kind) {
+    case 'notYet':
+      return { figure: 'not yet', name: 'in the days ahead' }
+    case 'allToday':
+      return { figure: 'today', name: 'all of it learned' }
+    case 'daysToLearn':
+      return {
+        figure: count(fact.days),
+        name: plural(fact.days, 'day to learn it', 'days to learn it'),
+      }
+    case 'learnedToday':
+      return { figure: `${count(fact.learned)} of ${count(fact.cards)}`, name: 'learned today' }
+  }
+}
+
 export const WORDS = {
   preset: 'Preset',
   /** What a preset tab is called before the vault has said what the note is. */
@@ -103,39 +164,7 @@ export const WORDS = {
    * got through by that day and the day the pile goes says nothing. Where
    * nothing is overdue there is no such line either.
    */
-  buys: (
-    goal: Goal,
-    at: {
-      value: number
-      reviews: number
-      minutes: number
-      horizon: number
-      /** Null is nothing overdue, and -1 a pile the days projected do not clear. */
-      clears: number | null
-      /** How many card faces no pace reaches by the day, out of how many there are. */
-      short: number
-      cards: number
-    },
-  ): readonly string[] => {
-    if (goal === 'date') {
-      const phrases = [`${many(at.value, 'day')} off`, `${many(at.minutes, 'minute')} a day`]
-      // A day that leaves every card time enough has nothing to say about it.
-      if (at.short > 0) phrases.push(`${count(at.short)} of ${count(at.cards)} cannot get there`)
-      return phrases
-    }
-    const targetSummary =
-      goal === 'minutes' ? `${many(at.value, 'minute')} a day` : `${percent(at.value)} remembered`
-    const sessionSummary =
-      goal === 'minutes'
-        ? `${many(at.reviews, 'card')} a session`
-        : `${many(at.minutes, 'minute')} a day`
-    if (at.clears === null) return [targetSummary, sessionSummary]
-    const clearanceSummary =
-      at.clears < 0
-        ? `not within ${many(at.horizon, 'day')}`
-        : `overdue gone in ${many(at.clears, 'day')}`
-    return [targetSummary, sessionSummary, clearanceSummary]
-  },
+  buys: (goal: Goal, at: BuyInput): readonly string[] => getBuyFacts(goal, at).map(formatBuyFact),
   /** One height of the picture, against the line it is the height of. */
   formatGoalCost: (goal: Goal, value: number) =>
     goal === 'minutes' ? many(value, 'card') : `${count(value)} min`,
@@ -148,16 +177,8 @@ export const WORDS = {
    * What the control is acting on, said over the picture: the decks that point
    * here and the material they hold between them.
    */
-  material: (decks: number, cards: number, overdue: number, fresh: number) => {
-    const items = [
-      { figure: count(decks), name: plural(decks, 'deck') },
-      { figure: count(cards), name: plural(cards, 'card') },
-    ]
-    // A figure standing at nothing is left out.
-    if (overdue > 0) items.push({ figure: count(overdue), name: 'overdue' })
-    if (fresh > 0) items.push({ figure: count(fresh), name: 'new' })
-    return items
-  },
+  material: (decks: number, cards: number, overdue: number, fresh: number) =>
+    getMaterialFacts(decks, cards, overdue, fresh).map(formatMaterialFact),
   /**
    * When the material is learned, and how much of it stands learned now, read
    * off the run the picture is drawn from. Where there is no day the whole of
@@ -165,20 +186,8 @@ export const WORDS = {
    * stands learned today. A pace whose days run out with one still to learn
    * has a day to speak of and says it has not come.
    */
-  learning: (learns: number | undefined, learned: number, cards: number) => {
-    const now = { figure: `${count(learned)} of ${count(cards)}`, name: 'learned today' }
-    if (learns === undefined) return [now]
-    const when =
-      learns < 0
-        ? { figure: 'not yet', name: 'in the days ahead' }
-        : learns === 0
-          ? { figure: 'today', name: 'all of it learned' }
-          : {
-              figure: count(learns),
-              name: plural(learns, 'day to learn it', 'days to learn it'),
-            }
-    return [when, now]
-  },
+  learning: (learns: number | undefined, learned: number, cards: number) =>
+    getLearningFacts(learns, learned, cards).map(formatLearningFact),
   fieldName: (field: Field) => FIELDS[field][0],
   fieldDetail: (field: Field) => FIELDS[field][1],
   /** A share in hundredths, read out beside the track it is moved along. */

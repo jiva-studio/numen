@@ -47,6 +47,8 @@ const emit = defineEmits<{
    */
   (event: 'close', tab: TabId, hold: () => void): void
   (event: 'activate', tab: TabId): void
+  /** A menu asked for on a tab, and where on the screen. */
+  (event: 'tab-context-menu', tab: TabId, at: { x: number; y: number }): void
   /**
    * The tab a pane is now showing, once it is on screen. Every tab of a pane is
    * drawn and the ones not shown are held out of sight, so what a tab holds is
@@ -105,6 +107,10 @@ function onCloseTab(tab: TabId): void {
   workspace.value = closeTab(workspace.value, tab)
 }
 
+function onMenuTab(tab: TabId, at: { x: number; y: number }): void {
+  emit('tab-context-menu', tab, at)
+}
+
 function onClaimPane(pane: NodeId): void {
   workspace.value = focusPane(workspace.value, pane)
 }
@@ -122,6 +128,7 @@ provide(
     choose: onChooseTab,
     close: onCloseTab,
     lift: press,
+    menu: onMenuTab,
     claim: onClaimPane,
     resize: onResizeBranch,
     show: (tab: TabId) => emit('show', tab),
@@ -149,6 +156,7 @@ provide(
       @choose="onChooseTab"
       @close="onCloseTab"
       @lift="press"
+      @menu="onMenuTab"
       @show="emit('show', $event)"
       @claim="onClaimPane(workspace.root.id)"
     >

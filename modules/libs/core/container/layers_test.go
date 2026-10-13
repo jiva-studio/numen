@@ -464,7 +464,7 @@ var (
 var timers = []string{
 	"internal/retry/retry.go",
 	"usecase/run/worker.go",
-	"usecase/source/transcription_resident.go",
+	"usecase/transcription/resident.go",
 }
 
 // getClockReads are the calls in a file that read the machine's clock or arm its

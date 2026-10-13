@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
+
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/gomlx"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/onnx"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/openai"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedders"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
 
@@ -33,7 +34,7 @@ func (c Config) Embedders(ctx context.Context, tasks *task.Tasks) (indexing, ask
 	if why != nil {
 		return nil, nil, nil, why
 	}
-	indexing, asking, closer = embedders.Open(ctx, tasks, first, second)
+	indexing, asking, closer = embedding.Open(ctx, tasks, first, second)
 	return indexing, asking, closer, nil
 }
 
@@ -44,7 +45,7 @@ func (c Config) Embedder(ctx context.Context) (port.Embedder, func() error, erro
 	if err != nil {
 		return nil, nil, err
 	}
-	embedder, closer := embedders.OpenOne(ctx, held)
+	embedder, closer := embedding.OpenOne(ctx, held)
 	return embedder, closer, nil
 }
 
@@ -56,7 +57,7 @@ func (c Config) OpenQuestionEmbedder(ctx context.Context) (port.Embedder, func()
 	if err != nil {
 		return nil, nil, err
 	}
-	embedder, closer := embedders.OpenOne(ctx, held)
+	embedder, closer := embedding.OpenOne(ctx, held)
 	return embedder, closer, nil
 }
 
@@ -83,30 +84,30 @@ func (c Config) NewSearchOver(passages port.PassageQueries, asking port.Embedder
 // Nothing for a getProvider that names neither kind. A word that is neither is a
 // word nobody implements: left to mean nothing, it is a vault searched by its
 // words and no reason given.
-func (c Config) getProvider(where embed.Provider) (embedders.Provider, error) {
+func (c Config) getProvider(where embed.Provider) (embedding.Provider, error) {
 	is := c.Embedding.GetStoredModel()
 	switch where.Use {
 	case embed.UseService:
 		service, _ := where.Service()
 		client, err := c.openServiceClient(is, service)
 		if err != nil {
-			return embedders.Provider{}, err
+			return embedding.Provider{}, err
 		}
-		return embedders.NewReached(is, service.Name, client), nil
+		return embedding.NewReached(is, service.Name, client), nil
 
 	case embed.UseLocal:
 		local, _ := where.Local()
 		local = c.planLocalModel(local)
 		open, err := openLocal(is, local)
 		if err != nil {
-			return embedders.Provider{}, err
+			return embedding.Provider{}, err
 		}
-		return embedders.NewFetched(is, local.Name, open), nil
+		return embedding.NewFetched(is, local.Name, open), nil
 
 	case "":
-		return embedders.Provider{}, nil
+		return embedding.Provider{}, nil
 	}
-	return embedders.Provider{}, fmt.Errorf("vectors are made %q, and they are made %q or %q",
+	return embedding.Provider{}, fmt.Errorf("vectors are made %q, and they are made %q or %q",
 		where.Use, embed.UseLocal, embed.UseService)
 }
 
@@ -147,7 +148,7 @@ func (c Config) openServiceClient(is port.EmbeddingModel, service embed.ServiceM
 // openLocal is the engine that runs the model on this machine. A desktop runs
 // it through ONNX Runtime; a platform the runtime is not published for runs it
 // on the backend written in Go, which the settings may also ask for by name.
-func openLocal(is port.EmbeddingModel, cfg embed.LocalModel) (embedders.OpenModel, error) {
+func openLocal(is port.EmbeddingModel, cfg embed.LocalModel) (embedding.OpenModel, error) {
 	switch cfg.GetEngine() {
 	case embed.EngineRuntime:
 		return func(ctx context.Context, tell func(done, total int64)) (port.Embedder, error) {

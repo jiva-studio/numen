@@ -8,7 +8,8 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -20,8 +21,8 @@ type vaultSession struct {
 	// refresh brings a note of this vault up to date through the opening it is
 	// being followed by.
 	refresh             vaults.Refresh
-	recognitionWorker   *source.RecognitionWorker
-	transcriptionWorker *source.TranscriptionWorker
+	recognitionWorker   *recognition.Worker
+	transcriptionWorker *transcription.Worker
 
 	// recognitionRunner reads a scanned document, transcriptionRunner hears a recording,
 	// proofreads puts a transcript right, and proofreadsRecognition puts a recognition

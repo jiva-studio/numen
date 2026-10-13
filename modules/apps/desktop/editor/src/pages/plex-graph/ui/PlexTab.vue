@@ -3,7 +3,7 @@
  * Displays the graph neighborhood of notes and handles graph interaction gestures.
  */
 import { computed, ref, useTemplateRef } from 'vue'
-import { Menu, optionsForType, Plex, createThreadPath, useTypeSize, Waiting } from '@numen/ui'
+import { Menu, optionsForType, Plex, useTypeSize, Waiting } from '@numen/ui'
 import type { MenuTrigger, PlexRelation, PlexDestination } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 import PlexQuickLinkPopover from './PlexQuickLinkPopover.vue'
@@ -49,19 +49,10 @@ const lastPointer = ref<{ x: number; y: number }>({ x: 300, y: 300 })
 const rootElement = useTemplateRef<HTMLElement>('rootElement')
 const picture = useTemplateRef<{ focusNode: (id: string) => void }>('picture')
 
-const sourceCenter = computed(() => {
-  if (!quickLink.value || !rootElement.value) return null
-  return getSourceHandlePosition(
-    rootElement.value,
-    quickLink.value.from,
-    props.state.picture.value?.nodes,
-  )
-})
-
-const threadPath = computed(() => {
-  if (!sourceCenter.value || !quickLink.value) return ''
-  return createThreadPath(sourceCenter.value, quickLink.value.at)
-})
+/** The node a quick link leaves and the point it is drawn to. */
+const pending = computed(() =>
+  quickLink.value ? { from: quickLink.value.from, at: quickLink.value.at } : null,
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 /**
@@ -179,57 +170,6 @@ function closeMenu(id?: string) {
   else props.state.chooseMenuItem(id)
   if (node !== null) picture.value?.focusNode(node)
 }
-
-function findSourceNodeElement(svg: SVGSVGElement, title: string): Element | null {
-  for (const el of svg.querySelectorAll('g.plex__node')) {
-    const label = el.getAttribute('aria-label')
-    if (label && title && label.startsWith(title)) return el
-  }
-  return svg.querySelector('g.plex__node--focus')
-}
-
-function getHandleFromCTM(
-  boxEl: Element | null,
-  transform: string,
-  svgEl: SVGSVGElement,
-  rootRect: DOMRect,
-): { x: number; y: number } | null {
-  const width = Number(boxEl?.getAttribute('width') || 0)
-  const match = /translate\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/.exec(transform)
-  if (!match?.[1] || !match[2] || width <= 0) return null
-  const ctm = svgEl.getScreenCTM?.()
-  if (!ctm) return null
-  const nodeX = parseFloat(match[1]) + width / 2
-  const nodeY = parseFloat(match[2])
-  return {
-    x: ctm.a * nodeX + ctm.c * nodeY + ctm.e - rootRect.left,
-    y: ctm.b * nodeX + ctm.d * nodeY + ctm.f - rootRect.top,
-  }
-}
-
-function getSourceHandlePosition(
-  root: HTMLElement,
-  fromId: string,
-  nodes?: readonly { readonly id: string; readonly title: string }[],
-): { x: number; y: number } | null {
-  const sourceNode = nodes?.find((n) => n.id === fromId)
-  const svgEl = root.querySelector('svg.plex') as SVGSVGElement | null
-  if (!sourceNode || !svgEl) return null
-
-  const nodeEl = findSourceNodeElement(svgEl, sourceNode.title)
-  if (!nodeEl) return null
-
-  const boxEl = nodeEl.querySelector('.plex__box')
-  const rootRect = root.getBoundingClientRect()
-  const ctmPos = getHandleFromCTM(boxEl, nodeEl.getAttribute('transform') || '', svgEl, rootRect)
-  if (ctmPos) return ctmPos
-
-  const rect = (boxEl ?? nodeEl).getBoundingClientRect()
-  return {
-    x: rect.right - rootRect.left,
-    y: rect.top + rect.height / 2 - rootRect.top,
-  }
-}
 </script>
 
 <template>
@@ -249,6 +189,7 @@ function getSourceHandlePosition(
       :neighbourhood="neighbourhood!"
       :options="options"
       :creatable="props.state.creatable"
+      :pending="pending"
       :dragged="dragged"
       :drop-name="words.dropName"
       :headings="props.state.getHeadings"
@@ -288,10 +229,6 @@ function getSourceHandlePosition(
       </template>
     </Menu>
 
-    <svg v-if="quickLink && threadPath" class="plex__quick-link-thread" aria-hidden="true">
-      <path :d="threadPath" class="plex__thread" />
-    </svg>
-
     <PlexQuickLinkPopover
       v-if="quickLink"
       :at="quickLink.at"
@@ -324,22 +261,6 @@ function getSourceHandlePosition(
 .plex__picture {
   flex: 1;
   min-block-size: 0;
-}
-
-.plex__quick-link-thread {
-  position: absolute;
-  inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
-  pointer-events: none;
-  z-index: 10;
-}
-
-.plex__quick-link-thread .plex__thread {
-  fill: none;
-  stroke: var(--numen-edge);
-  stroke-width: var(--numen-edge-width);
-  stroke-dasharray: var(--numen-thread-dash);
 }
 
 /* Lucide draws on a 24 grid, and the stroke is given in those units.
