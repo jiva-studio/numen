@@ -81,8 +81,10 @@ function createFilesCreators(deps: FileCreatorsDeps) {
       },
     },
     tabOpeners,
-    { errors: words.errors },
-    writeMessage,
+    {
+      words: { errors: words.errors },
+      write: writeMessage,
+    },
   )
 }
 
@@ -155,7 +157,8 @@ function createFilesTabDeps(config: FilesTabConfigDeps): FilesTabDeps {
       ),
     createNote: async (folder) => (await editing.making.createUntitled(folder, []))?.path ?? '',
     createDeck: (folder, name) => made.createFile('deck', folder, name),
-    createStencil: (folder, name) => made.createFile('stencil', folder, name, [cardWords.newField]),
+    createStencil: (folder, name) =>
+      made.createFile('stencil', folder, { name, fields: [cardWords.newField] }),
     createPreset: (folder, name) => made.createFile('preset', folder, name),
     importUrl: (folder, url) => made.createUrl(folder, url),
     showError: (text) => writeMessage(text, 'error'),

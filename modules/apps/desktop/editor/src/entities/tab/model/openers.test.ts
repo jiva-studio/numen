@@ -49,9 +49,11 @@ const unreachable: FileOpenerDeps = {
 const editors = (tabOpeners: ReturnType<typeof fileOpeners>) => {
   const opened: string[] = []
   for (const type of ['note', 'deck', 'stencil'] as const) {
-    tabOpeners.registerEditor(type, (path, title, showing, line) =>
-      opened.push(`${type} ${path} ${title || '—'} ${showing} ${line ?? '—'}`),
-    )
+    tabOpeners.registerEditor(type, (path, title, options) => {
+      const showing = typeof options === 'string' ? options : (options?.where ?? 'here')
+      const line = typeof options === 'object' ? options?.line : undefined
+      opened.push(`${type} ${path} ${title || '—'} ${showing} ${line ?? '—'}`)
+    })
   }
   tabOpeners.registerReader({ kind: 'book' }, (path, runs) =>
     opened.push(`document ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`),
@@ -197,8 +199,8 @@ describe('a path opened', () => {
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
 
-    await tabOpeners.openFile('Entropy.md', 'Entropy', 'here', 12)
-    await tabOpeners.openFile('Animals.md', 'Animals', 'here', 12)
+    await tabOpeners.openFile('Entropy.md', 'Entropy', { where: 'here', line: 12 })
+    await tabOpeners.openFile('Animals.md', 'Animals', { where: 'here', line: 12 })
 
     expect(opened).toStrictEqual([
       'note Entropy.md Entropy here 12',

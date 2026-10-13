@@ -1170,7 +1170,7 @@ describe('a deck opened by a file opener', () => {
   it('is put beside the pane the person is in, where that is asked', () => {
     const { road, openTab, openTabBeside } = spied()
 
-    road.openNewFile('Animals.md', '', 'deck', 'beside')
+    road.openNewFile('Animals.md', '', { type: 'deck', where: 'beside' })
 
     expect(openTabBeside).toHaveBeenCalledTimes(1)
     expect(openTab).not.toHaveBeenCalled()

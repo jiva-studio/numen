@@ -42,7 +42,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
   const destinations: DestinationDeps = {
     travel: (path) => plexes.travel(path),
     openFileAt: (path, run) => tabOpeners.openFileAt(path, [run]),
-    openFile: (path, title, line) => void tabOpeners.openFile(path, title, 'here', line),
+    openFile: (path, title, line) => void tabOpeners.openFile(path, title, { where: 'here', line }),
   }
 
   const { files, made } = createFilesKind({ ...deps, dragged, writeMessage, destinations })

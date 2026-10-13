@@ -15,6 +15,17 @@ import type { Span } from '@/shared/span'
  */
 export type EditorKind = NoteType | 'preset' | 'url'
 
+export interface OpenPlacement {
+  where?: PlexDestination
+  line?: number
+}
+
+export interface OpenNewFileOptions {
+  type: EditorKind
+  where?: PlexDestination
+  line?: number
+}
+
 /**
  * A file put in front of the person in one editor. A line is somewhere inside
  * the file, and what standing there comes to is the editor's own.
@@ -22,8 +33,7 @@ export type EditorKind = NoteType | 'preset' | 'url'
 export type FileOpener = (
   path: string,
   title: string,
-  where: PlexDestination,
-  line?: number,
+  options?: PlexDestination | OpenPlacement,
 ) => void
 
 /**
@@ -105,12 +115,12 @@ export function fileOpeners(vault: FileOpenerDeps) {
   const openNewFile = (
     path: string,
     title: string,
-    type: EditorKind,
-    where: PlexDestination = 'here',
-    line?: number,
+    options: EditorKind | OpenNewFileOptions,
   ): void => {
+    const type = typeof options === 'string' ? options : options.type
+    const placement = typeof options === 'string' ? undefined : options
     vault.reconcileTab?.(path, type)
-    editors.get(type)?.(path, title, where, line)
+    editors.get(type)?.(path, title, placement)
   }
 
   /**
@@ -121,12 +131,14 @@ export function fileOpeners(vault: FileOpenerDeps) {
   const openFile = async (
     path: string,
     title = '',
-    where: PlexDestination = 'here',
-    line?: number,
+    options?: PlexDestination | OpenPlacement,
   ): Promise<void> => {
     const kind = await fetchFileKind(path)
     if (!kind) return
-    if (kind.kind === 'note') return void openNewFile(path, title, kind.type, where, line)
+    if (kind.kind === 'note') {
+      const placement = typeof options === 'string' ? { where: options } : options
+      return void openNewFile(path, title, { type: kind.type, ...placement })
+    }
     vault.reconcileTab?.(path, mapTargetKind(kind))
     findReader(kind)?.(path, [])
   }

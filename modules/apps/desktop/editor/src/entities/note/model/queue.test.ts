@@ -39,10 +39,12 @@ describe('the queue of an open note', () => {
         write: async () => asValue({ body: '' }),
         ...notes,
       },
-      (id, event) => turned.push([id, event]),
-      () => hasTab,
-      (id, address) => addresses.push([id, address]),
-      (id) => resumed.push(id),
+      {
+        dispatch: (id, event) => turned.push([id, event]),
+        hasTab: () => hasTab,
+        setAddress: (id, address) => addresses.push([id, address]),
+        resumeClosing: (id) => resumed.push(id),
+      },
     )
     return { queue, turned, addresses, resumed }
   }
@@ -227,7 +229,7 @@ describe('the queue of an open note', () => {
         write: async () => asValue({ body: '', at: 'v2' }),
       })
 
-      await queue.write('a', 'Note.md', 'text', null)
+      await queue.write('a', { path: 'Note.md', body: 'text', baseline: null })
 
       expect(turned).toEqual([['a', { kind: 'written', answer: { kind: 'ok', at: 'v2' } }]])
       expect(resumed).toEqual(['a'])
@@ -236,7 +238,7 @@ describe('the queue of an open note', () => {
     it('hands an empty file mark where the write names none', async () => {
       const { queue, turned } = setup({ write: async () => asValue({ body: '' }) })
 
-      await queue.write('a', 'Note.md', 'text', null)
+      await queue.write('a', { path: 'Note.md', body: 'text', baseline: null })
 
       expect(turned).toEqual([['a', { kind: 'written', answer: { kind: 'ok', at: '' } }]])
     })
@@ -244,7 +246,7 @@ describe('the queue of an open note', () => {
     it('reports a file that changed as changed', async () => {
       const { queue, turned, resumed } = setup({ write: async () => asFailure('changed') })
 
-      await queue.write('a', 'Note.md', 'text', null)
+      await queue.write('a', { path: 'Note.md', body: 'text', baseline: null })
 
       expect(turned).toEqual([['a', { kind: 'written', answer: { kind: 'changed' } }]])
       expect(resumed).toEqual(['a'])
@@ -253,7 +255,7 @@ describe('the queue of an open note', () => {
     it('reports any other failure by the name the tab knows it by', async () => {
       const { queue, turned } = setup({ write: async () => asFailure('notADeck') })
 
-      await queue.write('a', 'Note.md', 'text', null)
+      await queue.write('a', { path: 'Note.md', body: 'text', baseline: null })
 
       expect(turned).toEqual([
         ['a', { kind: 'written', answer: { kind: 'error', error: 'notANote' } }],
@@ -267,7 +269,7 @@ describe('the queue of an open note', () => {
         },
       })
 
-      await queue.write('a', 'Note.md', 'text', null)
+      await queue.write('a', { path: 'Note.md', body: 'text', baseline: null })
 
       expect(turned).toEqual([
         ['a', { kind: 'written', answer: { kind: 'error', error: 'unreachable' } }],

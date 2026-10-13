@@ -92,7 +92,9 @@ export function useNoteTab(
   // note is a note: what it points at is drawn above the prose, in the tab the
   // prose is in.
   for (const kind of ['note'] as const) {
-    tabOpeners.registerEditor(kind, (path, title, how, line) => {
+    tabOpeners.registerEditor(kind, (path, title, options) => {
+      const how = typeof options === 'string' ? options : (options?.where ?? 'here')
+      const line = typeof options === 'object' ? options?.line : undefined
       openNote(path, title, how)
       focusLine(path, line)
     })

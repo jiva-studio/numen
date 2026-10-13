@@ -59,8 +59,12 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
     const stencil = parseStencil(body)
     const answer = await cards.writeStencil(
       path,
-      stencil.fields,
-      { preamble: stencil.preamble, faces: createVaultFaces(stencil), tail: stencil.tail },
+      {
+        fields: stencil.fields,
+        preamble: stencil.preamble,
+        faces: createVaultFaces(stencil),
+        tail: stencil.tail,
+      },
       baseline?.fingerprint ?? null,
     )
     const currentAnswer = fileAnswers.get(path) ?? NOTHING
@@ -76,15 +80,14 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
 
   const renameField = async (
     path: string,
-    field: string,
-    name: string,
+    field: { from: string; to: string },
     onChanged: (paths: readonly string[]) => void,
   ): Promise<void> => {
-    if (!name || name === field) return
+    const { from, to: name } = field
+    if (!name || name === from) return
     const answer = await cards.renameField(
       path,
-      field,
-      name,
+      { from, to: name },
       (fileAnswers.get(path) ?? NOTHING).at || null,
     )
     if (!answer.ok) {

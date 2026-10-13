@@ -235,8 +235,8 @@ describe('a stencil', () => {
 
     const answer = await cards.writeStencil(
       'Word.md',
-      ['Front', 'Back'],
       {
+        fields: ['Front', 'Back'],
         preamble: 'about',
         tail: '',
         faces: [{ name: 'Reading', preamble: '', front: '{{Front}}', back: '{{Back}}' }],
@@ -260,7 +260,7 @@ describe('renaming a field', () => {
       at: { path: 'Word.md', size: '12', mtime: '34' },
     })
 
-    expect(await cards.renameField('Word.md', 'Front', 'Face', read)).toEqual(
+    expect(await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, read)).toEqual(
       asValue({
         decks: ['Words.md', 'Roots.md'],
         cards: 12,
@@ -273,7 +273,7 @@ describe('renaming a field', () => {
   it('leaves a deck it could not read carrying nothing to say', async () => {
     replyWith({ decks: [], cards: 0, notWritten: [{ path: 'Old.md' }] })
 
-    const answer = await cards.renameField('Word.md', 'Front', 'Face', null)
+    const answer = await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, null)
     expect(answer.ok ? answer.value.notWritten : null).toEqual([{ path: 'Old.md', text: '' }])
   })
 })

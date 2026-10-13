@@ -59,7 +59,9 @@ export const createNoteCommand = async (
   const { relation, words } = options
   const made = await on.files.createNote(invocation.name, relation ? invocation.path : '', relation)
   if (!made) return
-  if (invocation.kind === NOTE) return on.notes.openNewFile(made.path, made.title, 'note', 'beside')
+  if (invocation.kind === NOTE) {
+    return on.notes.openNewFile(made.path, made.title, { type: 'note', where: 'beside' })
+  }
   await navigateToPath(made.path, on, words)
 }
 

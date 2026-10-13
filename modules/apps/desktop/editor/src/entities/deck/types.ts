@@ -205,16 +205,19 @@ export interface StencilService {
    */
   renameField(
     path: string,
-    from: string,
-    to: string,
+    field: { from: string; to: string },
     seen: string | null,
   ): Promise<FieldRenameResult>
   readStencil(path: string): Promise<StencilReadResult>
   /** Fields and faces into a stencil, making the file where there is none. */
   writeStencil(
     path: string,
-    fields: readonly string[],
-    stencil: { preamble: string; faces: readonly VaultFace[]; tail: string },
+    stencil: {
+      fields: readonly string[]
+      preamble: string
+      faces: readonly VaultFace[]
+      tail: string
+    },
     seen: string | null,
   ): Promise<StencilWriteResult>
 }

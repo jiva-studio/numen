@@ -30,7 +30,7 @@ export const transitionTab = (
     case 'read':
       return applyRead(tab, event.generation, event.answer)
     case 'edited':
-      return applyEdit(tab, event.body, event.at, limits)
+      return applyEdit(tab, event, limits)
     case 'written':
       return applyWrite(tab, event.answer)
     case 'changed':
@@ -92,15 +92,20 @@ const applyRead = (tab: Tab, generation: number, answer: ReadResult): Transition
     if (stale) return keepTab(tab)
     return loading ? applyBody(tab, '', null) : keepTab({ ...tab, isDeleted: true })
   }
-  return applyReadBody(tab, stale, answer.body, answer.at)
+  return applyReadBody(tab, answer, stale)
 }
 
 /** The text the file holds, taken where the tab holds nothing unsaved of its own. */
-const applyReadBody = (tab: Tab, stale: boolean, body: string, at: string): Transition => {
+const applyReadBody = (
+  tab: Tab,
+  answer: { body: string; at: string },
+  isStale: boolean,
+): Transition => {
+  const { body, at } = answer
   const state = getState(tab)
   if (state === 'loading') return applyBody(tab, body, at)
   if (state === 'gone') return applyBody({ ...tab, isDeleted: false }, body, at)
-  if (stale) return keepTab(tab)
+  if (isStale) return keepTab(tab)
   if (state === 'stale') return applyBody({ ...tab, isStale: false }, body, at)
   if (isDirty(tab)) return keepTab(tab)
   return applyBody(tab, body, at)
@@ -118,7 +123,12 @@ const getWriteDelay = (since: number, at: number, limits: WriteLimits): number =
 const isRetryable = (tab: Tab): boolean =>
   tab.written !== null && tab.error !== null && RETRYABLE_ERRORS.includes(tab.error)
 
-const applyEdit = (tab: Tab, body: string, at: number, limits: WriteLimits): Transition => {
+const applyEdit = (
+  tab: Tab,
+  edit: { body: string; at: number },
+  limits: WriteLimits,
+): Transition => {
+  const { body, at } = edit
   const state = getState(tab)
   if (state === 'loading') return keepTab(tab)
   const error = isRetryable(tab) ? null : tab.error

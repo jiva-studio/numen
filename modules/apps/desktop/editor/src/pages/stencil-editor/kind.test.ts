@@ -653,7 +653,7 @@ describe('a stencil opened from a file', () => {
     expect(here).toHaveBeenCalledTimes(1)
     expect(beside).not.toHaveBeenCalled()
 
-    one.road.openNewFile('Leaf.md', '', 'stencil', 'beside')
+    one.road.openNewFile('Leaf.md', '', { type: 'stencil', where: 'beside' })
     expect(here).toHaveBeenCalledTimes(1)
     expect(beside).toHaveBeenCalledTimes(1)
   })

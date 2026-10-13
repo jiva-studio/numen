@@ -24,12 +24,10 @@ vi.mock('@/entities/media', () => ({
   createRecordingKind: (
     _handle: unknown,
     createState: unknown,
-    deps: unknown,
-    _openers: unknown,
-    as: unknown,
+    options: { deps: unknown; as: unknown },
   ) => {
     const name = h.made.length === 0 ? 'recorded' : 'pointed'
-    h.made.push({ createState, deps, as })
+    h.made.push({ createState, deps: options.deps, as: options.as })
     return { updateTasks: (tasks: unknown) => h.updated.push([name, tasks]) }
   },
 }))

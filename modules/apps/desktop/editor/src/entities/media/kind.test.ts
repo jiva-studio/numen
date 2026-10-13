@@ -36,13 +36,11 @@ const recording = (path: string, transcript: number, duration: number) =>
 
 /** The kind, made over the one recording tab this test hands it. */
 const kind = (state: MediaTabState) =>
-  createRecordingKind(
-    tabs,
-    () => state as unknown as TranscriptState,
-    { runCommand: () => {} },
-    openers,
-    played,
-  ).kind
+  createRecordingKind(tabs, () => state as unknown as TranscriptState, {
+    deps: { runCommand: () => {} },
+    tabOpeners: openers,
+    as: played,
+  }).kind
 
 describe('what a command asked over a recording tab is over', () => {
   it('is the file it plays, which is what a run is asked over', () => {

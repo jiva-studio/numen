@@ -210,7 +210,11 @@ export interface Notes {
    */
   openFile(path: string, title: string, showing: 'here' | 'beside'): void
   /** A file just made here, put in front of the person as what it was made as. */
-  openNewFile(path: string, title: string, type: EditorKind, showing: 'here' | 'beside'): void
+  openNewFile(
+    path: string,
+    title: string,
+    options: EditorKind | { type: EditorKind; where?: PlexDestination },
+  ): void
 }
 
 /**

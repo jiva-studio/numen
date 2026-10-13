@@ -12,13 +12,35 @@ export const convertErrorCode = (from: ErrorCode): NoteErrorCode => {
   return from === 'missing' || from === 'occupied' || from === 'unnameable' ? 'unreadable' : from
 }
 
-export function createNoteQueue(
-  core: Notes,
-  dispatch: (id: string, event: Event) => void,
-  hasTab: (id: string) => boolean,
-  setAddress: (id: string, address: LinkAddress | null) => void,
-  resumeClosing: (id: string) => void,
-) {
+export interface NoteQueueDeps {
+  dispatch: (id: string, event: Event) => void
+  hasTab: (id: string) => boolean
+  setAddress: (id: string, address: LinkAddress | null) => void
+  resumeClosing: (id: string) => void
+}
+
+export interface NoteWriteRequest {
+  path: string
+  body: string
+  baseline: NoteBaseline | null
+}
+
+function toReadResult(answered: NoteResult): ReadResult {
+  if (answered.ok) {
+    return { kind: 'body', body: answered.value.body, at: answered.value.at ?? '' }
+  }
+  if (answered.error === 'missing') return { kind: 'missing' }
+  return { kind: 'error', error: convertErrorCode(answered.error) }
+}
+
+function toWriteResult(answered: CoreWriteResult): WriteResult {
+  if (answered.ok) return { kind: 'ok', at: answered.value.at ?? '' }
+  if (answered.error === 'changed') return { kind: 'changed' }
+  return { kind: 'error', error: convertErrorCode(answered.error) }
+}
+
+export function createNoteQueue(core: Notes, deps: NoteQueueDeps) {
+  const { dispatch, hasTab, setAddress, resumeClosing } = deps
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
   const flushWaiters = new Map<string, () => void>()
 
@@ -58,45 +80,22 @@ export function createNoteQueue(
     try {
       answered = await core.read(path)
     } catch {
-      // Core read failed.
       dispatch(id, { kind: 'read', generation, answer: { kind: 'error', error: 'unreachable' } })
       return
     }
     setAddress(id, answered.ok ? (answered.value.link ?? null) : null)
-    let answer: ReadResult
-    if (answered.ok) {
-      answer = { kind: 'body', body: answered.value.body, at: answered.value.at ?? '' }
-    } else if (answered.error === 'missing') {
-      answer = { kind: 'missing' }
-    } else {
-      answer = { kind: 'error', error: convertErrorCode(answered.error) }
-    }
-    dispatch(id, { kind: 'read', generation, answer })
+    dispatch(id, { kind: 'read', generation, answer: toReadResult(answered) })
   }
 
-  const write = async (
-    id: string,
-    path: string,
-    body: string,
-    baseline: NoteBaseline | null,
-  ): Promise<void> => {
+  const write = async (id: string, request: NoteWriteRequest): Promise<void> => {
     let answered: CoreWriteResult
     try {
-      answered = await core.write(path, body, baseline)
+      answered = await core.write(request.path, request.body, request.baseline)
     } catch {
-      // Core write failed.
       dispatch(id, { kind: 'written', answer: { kind: 'error', error: 'unreachable' } })
       return
     }
-    let writeAnswer: WriteResult
-    if (answered.ok) {
-      writeAnswer = { kind: 'ok', at: answered.value.at ?? '' }
-    } else if (answered.error === 'changed') {
-      writeAnswer = { kind: 'changed' }
-    } else {
-      writeAnswer = { kind: 'error', error: convertErrorCode(answered.error) }
-    }
-    dispatch(id, { kind: 'written', answer: writeAnswer })
+    dispatch(id, { kind: 'written', answer: toWriteResult(answered) })
     resumeClosing(id)
   }
 

@@ -6,7 +6,15 @@
  * all of them: a kind is added by declaring one, and the window is not told
  * about it twice.
  */
-import { computed, effectScope, ref, shallowRef, type EffectScope, type Ref } from 'vue'
+import {
+  computed,
+  effectScope,
+  ref,
+  shallowRef,
+  type EffectScope,
+  type Ref,
+  type ShallowRef,
+} from 'vue'
 import { closeTab, openTab, openTabBeside, pane, paneById, getPanes } from '@numen/ui'
 import type { Tab, Workspace } from '@numen/ui'
 import type { ActiveTab, AnyTabKind, KindTab, WindowHandle, WindowTab } from '../lib/kinds'
@@ -16,58 +24,15 @@ import { generateId } from '../lib/workspace'
 const generatePaneId = () => crypto.randomUUID()
 
 export function useWindowTabs() {
-  /**
-   * What every kind is given. It is there before any kind is, so a kind is
-   * made with it and declared to the window it already has.
-   */
-  const handle: WindowHandle = {
-    openTab: (kind, at) => openTabOfKind(kind, at),
-    openTabBeside: (kind, at) => openTabBesideOfKind(kind, at),
-    show: (id) => show(id),
-    closeTab: (id) => finishClose(id),
-    each: <TabState>(kind: string) => each<TabState>(kind),
-    last: <TabState>(kind: string) => each<TabState>(kind).at(-1) ?? null,
-    front: () => front(),
-    getTabState: <TabState>(kind: string, id: string) => getTabStateIn<TabState>(id, kind),
-  }
-
-  /** The kinds of tab this window draws, each under the word it is asked for by. */
-  const byKind = new Map<string, AnyTabKind>()
-
-  /**
-   * The kinds this window draws. It is told once, before a tab of any of them
-   * is opened.
-   */
-  const registerKinds = (kinds: readonly AnyTabKind[]) => {
-    for (const one of kinds) byKind.set(one.kind, one)
-  }
-
-  /**
-   * Every tab the window holds, each under the identity it opened with, in the
-   * order the person was last in them.
-   */
+  const { byKind, registerKinds } = createTabRegistry()
+  const { scopes, drop } = createTabScopes()
   const open = shallowRef<ReadonlyMap<string, WindowTab>>(new Map())
-
-  /**
-   * What each open tab watches. A kind makes what its tab holds outside any
-   * component, and the scope is what stops it when the tab goes.
-   */
-  const scopes = new Map<string, EffectScope>()
-
-  /** A tab is gone, and nothing it started keeps answering. */
-  const drop = (id: string) => {
-    scopes.get(id)?.stop()
-    // Stryker disable next-line CallExpression: a stopped scope left in the map is stopped again as a no-op
-    scopes.delete(id)
-  }
-
-  const layout: Ref<Workspace> = ref({
+  const layout = ref<Workspace>({
     root: pane('main', []),
     axis: 'horizontal',
     focus: 'main',
   })
 
-  /** What each tab of the window is called, and the word it carries. */
   const tabs = computed<readonly Tab[]>(() =>
     [...open.value].map(([id, one]): Tab => {
       const mark = one.kind.getMark?.(one.state)
@@ -76,23 +41,77 @@ export function useWindowTabs() {
     }),
   )
 
-  /** What one tab holds, or nothing where the window holds no such tab. */
+  const queries = createTabQueries(open, layout)
+  const openers = createTabOpeners({ open, layout, byKind, scopes, drop })
+  const closers = createTabClosers({ open, layout, drop })
+  const handle = createWindowHandle({ ...openers, ...queries })
+  const onKeyPress = (event: KeyboardEvent): boolean =>
+    dispatchTabKeyPress(layout.value, open.value, event)
+
+  return {
+    layout,
+    tabs,
+    handle,
+    registerKinds,
+    getTab: queries.getTab,
+    getTabStateIn: queries.getTabStateIn,
+    createTab: openers.createTab,
+    openTabOfKind: openers.openTabOfKind,
+    openTabBesideOfKind: openers.openTabBesideOfKind,
+    show: openers.show,
+    finishClose: openers.finishClose,
+    onTabShown: openers.onTabShown,
+    onKeyPress,
+    releaseTab: closers.releaseTab,
+    requestClose: closers.requestClose,
+    reconcileTab: closers.reconcileTab,
+    close: closers.close,
+  }
+}
+
+/** Registry of tab kinds supported by the window. */
+function createTabRegistry() {
+  const byKind = new Map<string, AnyTabKind>()
+  const registerKinds = (kinds: readonly AnyTabKind[]) => {
+    for (const one of kinds) byKind.set(one.kind, one)
+  }
+  return { byKind, registerKinds }
+}
+
+/** Effect scope manager for active tabs. */
+function createTabScopes() {
+  const scopes = new Map<string, EffectScope>()
+  const drop = (id: string) => {
+    scopes.get(id)?.stop()
+    // Stryker disable next-line CallExpression: a stopped scope left in the map is stopped again as a no-op
+    scopes.delete(id)
+  }
+  return { scopes, drop }
+}
+
+interface TabStoreContext {
+  open: ShallowRef<ReadonlyMap<string, WindowTab>>
+  layout: Ref<Workspace>
+  drop: (id: string) => void
+}
+
+interface TabOpenerContext extends TabStoreContext {
+  byKind: Map<string, AnyTabKind>
+  scopes: Map<string, EffectScope>
+}
+
+/** Queries for inspecting tabs in the window. */
+function createTabQueries(
+  open: ShallowRef<ReadonlyMap<string, WindowTab>>,
+  layout: Ref<Workspace>,
+) {
   const getTab = (id: string): WindowTab | null => open.value.get(id) ?? null
 
-  /**
-   * What one tab of a kind holds, for a caller that knows the kind and what
-   * its tabs hold. A tab of another kind is nothing to it.
-   */
   const getTabStateIn = <T>(id: string, kind: string): T | null => {
     const one = open.value.get(id)
     return one && one.kind.kind === kind ? (one.state as T) : null
   }
 
-  /**
-   * The tab the person is looking at, which is the one showing in the pane the
-   * layout is focused on. A tab the window holds answers under its kind, and
-   * one it does not hold answers under none.
-   */
   const front = (): ActiveTab | null => {
     const id = paneById(layout.value.root, layout.value.focus)?.active
     if (!id) return null
@@ -100,148 +119,133 @@ export function useWindowTabs() {
     return one ? { id, kind: one.kind.kind, state: one.state } : { id, kind: null, state: null }
   }
 
-  /** Every tab of a kind, the one the person was last in last. */
   const each = <T>(kind: string): readonly KindTab<T>[] =>
     [...open.value]
       .filter(([, one]) => one.kind.kind === kind)
       .map(([id, one]) => ({ id, state: one.state as T }))
 
-  /**
-   * A tab of a kind, on what it was given. A kind that takes its identity from
-   * that answers with the tab it already has.
-   *
-   * What a kind calls one of its tabs is filed under that kind, so two kinds
-   * that name a tab after the same thing hold a tab each.
-   */
+  return { getTab, getTabStateIn, front, each }
+}
+
+/** Operations for creating and opening tabs. */
+function createTabOpeners(ctx: TabOpenerContext) {
   const createTab = async (kind: string, at = ''): Promise<string> => {
-    const one = byKind.get(kind)
+    const one = ctx.byKind.get(kind)
     if (!one) return ''
     const id = one.identity ? `${kind}:${one.identity(at)}` : generateId(kind)
-    if (open.value.has(id)) return id
+    if (ctx.open.value.has(id)) return id
     const scope = effectScope(true)
     const state = scope.run(() => one.open(at))
-    scopes.set(id, scope)
-    open.value = new Map(open.value).set(id, { kind: one, state })
+    ctx.scopes.set(id, scope)
+    ctx.open.value = new Map(ctx.open.value).set(id, { kind: one, state })
     return id
   }
 
-  /** A tab opened where the person is, and put in front. */
+  const show = (id: string) => {
+    ctx.layout.value = openTab(ctx.layout.value, id)
+  }
+
   const openTabOfKind = async (kind: string, at = ''): Promise<string> => {
     const id = await createTab(kind, at)
     if (id) show(id)
     return id
   }
 
-  /** A tab opened beside the pane the person is in. */
   const openTabBesideOfKind = async (kind: string, at = ''): Promise<string> => {
     const id = await createTab(kind, at)
-    if (id) layout.value = openTabBeside(layout.value, id, 'right', generatePaneId)
+    if (id) ctx.layout.value = openTabBeside(ctx.layout.value, id, 'right', generatePaneId)
     return id
   }
 
-  /** A tab the window already holds, put in front. */
-  const show = (id: string) => {
-    layout.value = openTab(layout.value, id)
-  }
-
-  /** A tab that took its own close, going now. */
   const finishClose = (id: string) => {
-    open.value = without(open.value, id)
-    drop(id)
-    layout.value = closeTab(layout.value, id)
+    ctx.open.value = without(ctx.open.value, id)
+    ctx.drop(id)
+    ctx.layout.value = closeTab(ctx.layout.value, id)
   }
 
-  /**
-   * The tab now on screen, where what it holds has room to measure. It goes to
-   * the end of what the window holds, which is the order they were last in.
-   */
   const onTabShown = (id: string) => {
-    const one = open.value.get(id)
+    const one = ctx.open.value.get(id)
     if (!one) return
-    open.value = new Map([...without(open.value, id), [id, one]])
+    ctx.open.value = new Map([...without(ctx.open.value, id), [id, one]])
     one.kind.onShow?.(one.state, id)
   }
 
-  /**
-   * A key struck, offered to the tabs on screen: the one in the pane the person
-   * is in first, and then the rest, the one they were in last before the one
-   * before that. The first to take it keeps it.
-   *
-   * A pane is what the layout is focused on and not what the person is looking
-   * at, and several panes are drawn at once. A key nobody in the pane it names
-   * reads is one the tab in front of them would have.
-   */
-  const onKeyPress = (event: KeyboardEvent): boolean => {
-    const drawn = getPanes(layout.value.root).map((one) => one.active)
-    const front = paneById(layout.value.root, layout.value.focus)?.active
-    const offered = new Set<string>()
-    for (const id of [front, ...[...open.value.keys()].reverse()]) {
-      if (!id || offered.has(id) || !drawn.includes(id)) continue
-      offered.add(id)
-      const one = open.value.get(id)
-      if (one?.kind.onKeyPress?.(one.state, event)) return true
-    }
-    return false
-  }
+  return { createTab, show, openTabOfKind, openTabBesideOfKind, finishClose, onTabShown }
+}
 
-  /**
-   * A tab lets go of what it held, and says whether it went. A kind that has
-   * something to finish keeps the tab and closes it itself.
-   */
+/** Operations for releasing and closing tabs. */
+function createTabClosers(ctx: TabStoreContext) {
   const releaseTab = (id: string): boolean => {
-    const one = open.value.get(id)
+    const one = ctx.open.value.get(id)
     if (!one) return true
     if (one.kind.onClose && !one.kind.onClose(one.state, id)) return false
-    open.value = without(open.value, id)
-    drop(id)
+    ctx.open.value = without(ctx.open.value, id)
+    ctx.drop(id)
     return true
   }
 
-  /**
-   * A tab let go of from outside and taken off the screen. A kind with
-   * something to finish keeps its tab and closes it itself.
-   */
   const requestClose = (id: string) => {
-    if (releaseTab(id)) layout.value = closeTab(layout.value, id)
+    if (releaseTab(id)) ctx.layout.value = closeTab(ctx.layout.value, id)
   }
 
-  /** Closes open tabs for a file path that are not of the specified kind. */
   const reconcileTab = (path: string, newKind: string) => {
     if (!path) return
-    for (const [id, one] of open.value) {
+    for (const [id, one] of ctx.open.value) {
       if (one.kind.kind === newKind || TOOL_KINDS.has(one.kind.kind)) continue
       if (getTabPath(one) === path) requestClose(id)
     }
   }
 
-  /** The window is going, and nothing a tab holds outlives it. */
   const close = () => {
-    for (const [id, one] of open.value) {
+    for (const [id, one] of ctx.open.value) {
       if (one.kind.onDestroy) one.kind.onDestroy(one.state, id)
       else one.kind.onClose?.(one.state, id)
-      drop(id)
+      ctx.drop(id)
     }
   }
 
+  return { releaseTab, requestClose, reconcileTab, close }
+}
+
+interface WindowHandleDeps {
+  openTabOfKind: (kind: string, at?: string) => Promise<string>
+  openTabBesideOfKind: (kind: string, at?: string) => Promise<string>
+  show: (id: string) => void
+  finishClose: (id: string) => void
+  each: <T>(kind: string) => readonly KindTab<T>[]
+  front: () => ActiveTab | null
+  getTabStateIn: <T>(id: string, kind: string) => T | null
+}
+
+function createWindowHandle(deps: WindowHandleDeps): WindowHandle {
   return {
-    layout,
-    tabs,
-    handle,
-    registerKinds,
-    getTab,
-    getTabStateIn,
-    createTab,
-    openTabOfKind,
-    openTabBesideOfKind,
-    show,
-    finishClose,
-    onTabShown,
-    onKeyPress,
-    releaseTab,
-    requestClose,
-    reconcileTab,
-    close,
+    openTab: (kind, at) => deps.openTabOfKind(kind, at),
+    openTabBeside: (kind, at) => deps.openTabBesideOfKind(kind, at),
+    show: (id) => deps.show(id),
+    closeTab: (id) => deps.finishClose(id),
+    each: <T>(kind: string) => deps.each<T>(kind),
+    last: <T>(kind: string) => deps.each<T>(kind).at(-1) ?? null,
+    front: () => deps.front(),
+    getTabState: <T>(kind: string, id: string) => deps.getTabStateIn<T>(id, kind),
   }
+}
+
+/** Dispatches a key press to the active or most recently used tab. */
+function dispatchTabKeyPress(
+  layout: Workspace,
+  open: ReadonlyMap<string, WindowTab>,
+  event: KeyboardEvent,
+): boolean {
+  const drawn = getPanes(layout.root).map((one) => one.active)
+  const front = paneById(layout.root, layout.focus)?.active
+  const offered = new Set<string>()
+  for (const id of [front, ...[...open.keys()].reverse()]) {
+    if (!id || offered.has(id) || !drawn.includes(id)) continue
+    offered.add(id)
+    const one = open.get(id)
+    if (one?.kind.onKeyPress?.(one.state, event)) return true
+  }
+  return false
 }
 
 /** Non-file tool tabs that are preserved across file tab reconciliations. */

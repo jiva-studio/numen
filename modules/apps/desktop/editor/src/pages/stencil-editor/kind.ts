@@ -45,7 +45,7 @@ export function useStencilTabs(
     (id, body) => store.setBody(id, body),
     (id) => wire.getProblems(store.getPath(id)),
     (id, field, name) =>
-      void wire.renameField(store.getPath(id), field, name, store.applyPathChanges),
+      void wire.renameField(store.getPath(id), { from: field, to: name }, store.applyPathChanges),
   )
 
   const createStencilTabState = (id: string): StencilTabState => {

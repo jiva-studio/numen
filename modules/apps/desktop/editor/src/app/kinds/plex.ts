@@ -59,7 +59,7 @@ export function createPlexKind({
       if (tabId && tabSync?.syncPathFromTab(tabId, path, title)) {
         return
       }
-      void tabOpeners.openFile(path, title, options?.showing, options?.line)
+      void tabOpeners.openFile(path, title, { where: options?.showing, line: options?.line })
     },
     onSelectPath: (path, title, state) => {
       const tabId = findPlexTabId(held, state)

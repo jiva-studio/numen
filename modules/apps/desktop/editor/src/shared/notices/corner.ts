@@ -99,13 +99,18 @@ const dropDuplicateErrors = (tasks: readonly Task[]): readonly Task[] =>
  * arriving must not shift what a person is reading. Within each of the three
  * the order is the order it was first seen in.
  */
+export interface CornerContext {
+  state: State
+  vault: IndexCoverage
+  words: Words
+}
+
 export const getCornerNotices = (
   tasks: readonly Task[],
   messages: readonly WindowMessage[],
-  state: State,
-  vault: IndexCoverage,
-  words: Words,
+  context: CornerContext,
 ): readonly Notice[] => {
+  const { state, vault, words } = context
   const isWorking: readonly Notice[] = dropDuplicateErrors(tasks).map(createNotice)
 
   const so: Notice[] = [
