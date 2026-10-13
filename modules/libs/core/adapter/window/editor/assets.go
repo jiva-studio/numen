@@ -94,15 +94,6 @@ func (h *assetHandler) Asset(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// getAssetRoute is where a file of the vault is asked about, and getPageRoute
-// one page of it. A path is escaped whole, so a file in a folder is one segment and what is
-// asked of it is the next.
-func getAssetRoute(path string) string { return assetsRoute + url.PathEscape(path) }
-
-func getPageRoute(path string, at, wide int, mark document.Fingerprint) string {
-	return fmt.Sprintf("%s/%s/%d?wide=%d&%s", getAssetRoute(path), pagesName, at, wide, formatFingerprint(mark))
-}
-
 // An address that names which bytes it is about answers those bytes or nothing,
 // so what it answers with may be kept for as long as anything keeps anything.
 const immutable = "public, max-age=31536000, immutable"
