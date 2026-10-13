@@ -28,8 +28,15 @@ const layerElements = createLayerElements({ order: layerOrder, sliceLayers })
 
 const layerPolicies = createLayerPolicies({ order: layerOrder, sliceLayers, indexOnly: true })
 
+/** The tests that read the wire's fixtures from `libs/protocol/testdata` by relative path. */
+const testdataReaders = [
+  'src/shared/lib/address.test.ts',
+  'src/features/book/ui/spine.test.ts',
+  'src/features/cards/lib/fill.test.ts',
+]
+
 /** The files that stand outside the layers. */
-const outsideLayers = ['src/**/*.stories.ts', 'src/**/fixtures/**']
+const outsideLayers = ['src/**/*.stories.ts', 'src/**/fixtures/**', ...testdataReaders]
 
 const domainImports = [
   {
@@ -92,6 +99,10 @@ export default tseslint.config(
       // a name here must not do is take a word the barrel already exports as a
       // type: that is the collision, and no rule refuses it.
       'vue/multi-word-component-names': 'off',
+
+      // The one place it fires is the regular expression that strips control
+      // characters out of a URL, where they are the subject.
+      'no-control-regex': 'off',
     },
   },
 
@@ -265,8 +276,8 @@ export default tseslint.config(
   // resolved to the file it names, so `../../features/x` is held to the same
   // rule as `@/features/x`.
   //
-  // Stories and fixtures stand outside the layers. A file under `src` that no
-  // element claims fails.
+  // Stories and fixtures stand outside the layers, and so do the tests that read
+  // `libs/protocol/testdata`. A file under `src` that no element claims fails.
   {
     files: ['src/**/*.{ts,vue}'],
     ignores: outsideLayers,
@@ -298,8 +309,10 @@ export default tseslint.config(
       'src/**/*.test.ts',
       'src/**/*.stories.ts',
       'src/**/fixtures/**',
-      // The port itself, which is where the browser is allowed in.
+      // The port itself, and the one function that turns an element into the
+      // rectangle the pure core reasons about.
       'src/shared/lib/clock.ts',
+      'src/features/workspace/lib/drop.ts',
     ],
     rules: {
       'no-restricted-globals': [

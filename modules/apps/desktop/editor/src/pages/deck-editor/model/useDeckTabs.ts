@@ -38,8 +38,16 @@ export interface DeckTabsOptions {
   now?: () => number
 }
 
-export function useDeckTabs(cards: Cards, presets: Presets, options: DeckTabsOptions) {
-  const { handle, tabOpeners, now = () => 0 } = options
+export function useDeckTabs(
+  cards: Cards,
+  presets: Presets,
+  ...args: [options: DeckTabsOptions] | [handle: WindowHandle, tabOpeners: FileOpeners]
+) {
+  const options: DeckTabsOptions =
+    'handle' in args[0]
+      ? (args[0] as DeckTabsOptions)
+      : { handle: args[0] as WindowHandle, tabOpeners: args[1] as FileOpeners }
+  const { handle, tabOpeners, now } = options
   const vaultAnswers = createDeckAnswers()
   const store = createDeckNoteStore(cards, vaultAnswers, now)
   const read = createDeckReader(store, vaultAnswers.getProblems)
@@ -102,7 +110,7 @@ export function useDeckTabs(cards: Cards, presets: Presets, options: DeckTabsOpt
 function createDeckNoteStore(
   cards: Cards,
   vaultAnswers: ReturnType<typeof createDeckAnswers>,
-  now: () => number,
+  now?: () => number,
 ) {
   return openNotes(
     {
@@ -150,7 +158,7 @@ function createDeckNoteStore(
         return asValue({ body: '', at: answer.value.at })
       },
     },
-    { now },
+    now ? { now } : {},
   )
 }
 

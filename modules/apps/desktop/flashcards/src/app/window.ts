@@ -7,206 +7,311 @@
  * once, as the window opens, and what comes out stands under the screen it
  * belongs to.
  */
-import { computed, ref, useTemplateRef } from 'vue'
+import { computed, ref, useTemplateRef, type ComputedRef, type Ref } from 'vue'
 
 import { cards } from '@/shared/clients'
 import { useScreens } from '@/shared/screens'
-import { getDeckName, useReviewCounter } from '@/entities/vault'
+import { getDeckName, useReviewCounter, type VaultCardsDue } from '@/entities/vault'
 import { useReviewDays, useVaultPresets } from '@/pages/decks'
 import { useReviewSession } from '@/pages/session'
+import type { Tone } from '@numen/ui'
 import { useNotices } from './notices'
 import { usePanels } from './usePanels'
-import { createWindowKeys } from './windowKeys'
+import { createWindowKeys, type WindowScreen } from './windowKeys'
 import { useWindowStreams } from './useWindowStreams'
 import type { Grade } from '@/entities/card'
 import type { NotesPanel, Report } from '@/pages/session'
 
-export interface WindowDeps {
-  now?: (() => number) | undefined
-  today?: (() => Date) | undefined
+/** Everything the window is made of, made once and handed to what draws it. */
+const reportSessionNotice = (report: Report, showNotice: (text: string, tone: Tone) => void) => {
+  if (report.unwritten.length) {
+    showNotice(
+      `Not asked from ${report.unwritten.map(getDeckName).join(', ')}: the deck could not be written.`,
+      'caution',
+    )
+  }
+  if (report.skipped > 0) {
+    showNotice(`${report.skipped} answers in this vault could not be read.`, 'caution')
+  }
 }
 
-/** Everything the window is made of, made once and handed to what draws it. */
-export const useWindow = (deps: WindowDeps = {}) => {
-  const now = deps.now ?? (() => Date.now())
-  const clockDay = deps.today ?? (() => new Date())
+interface WindowActionDeps {
+  vault: Ref<string>
+  chosen: ComputedRef<VaultCardsDue | null>
+  today: Ref<string>
+  on: Ref<WindowScreen>
+  goTo: (screen: WindowScreen) => void
+  stop: () => void
+  count: () => Promise<void>
+  done: ReturnType<typeof useReviewDays>
+  schedules: ReturnType<typeof useVaultPresets>
+  state: ReturnType<typeof useReviewSession>
+  agentPanel: { endConversation: () => void; closePanel: () => void }
+  showNotice: (text: string, tone: Tone) => void
+}
 
-  /** The vault whose decks are open, and whose cards are being asked. */
-  const vault = ref('')
-
-  const { notices, showNotice, reportError, setTasks, dismissNotice } = useNotices()
-  const { vaults, isCounting, day: today, count, stop } = useReviewCounter({ cards, reportError })
-  const state = useReviewSession({ cards, reportError, now })
-  const done = useReviewDays({
-    cards,
-    reportError,
-    // The grid stands inside the page, so the page is what bounds it. A page
-    // zoomed out is wider in the pixels a layout is measured in than the
-    // screen is, and the screen alone would leave the widest grids short.
-    widest: () => Math.max(window.screen.width, document.documentElement.clientWidth),
-    now: clockDay,
-  })
-  const schedules = useVaultPresets({ presets: cards })
-
-  /** Why nothing can be asked here, empty while something can. */
-  const unreachable = ref('')
-
-  const { showing, at, moveTo, agentPanel, notesPanel, toggleNotes, toggleAgent } = usePanels({
-    card: () => state.card.value,
-    unreachable: () => unreachable.value,
-    vault: () => vault.value,
-    showNotice: (text) => showNotice(text, 'caution'),
-  })
-
-  /**
-   * The three screens, and what each of them holds. Everything a screen took up
-   * stands here beside it, which is the whole of what going back lets go of.
-   */
-  const { on, goTo } = useScreens(['vaults', 'decks', 'session'] as const, {
-    decks: [
-      done.forget,
-      schedules.forget,
-      () => {
-        vault.value = ''
-      },
-    ],
-    session: [state.forget, agentPanel.endConversation, notesPanel.endSession],
-  })
-
-  /** What is read, so the keys can scroll it: the caret is nowhere in it. */
-  const page = useTemplateRef<InstanceType<typeof NotesPanel>>('page')
-
-  const chosen = computed(() => vaults.value.find((one) => one.vault === vault.value) ?? null)
-
-  /**
-   * Into a vault. A vault is opened once it has been counted, so what the rest of
-   * them come to is nobody's question any more and the counting is let go of.
-   */
+function useWindowActions(deps: WindowActionDeps) {
   const choose = (id: string) => {
-    stop()
-    vault.value = id
-    goTo('decks')
-    void done.read(id)
-    void schedules.read(chosen.value, today.value)
-  }
-
-  /**
-   * What the session could not act on, said once as it canOpen: a deck whose cards
-   * could not be given marks holds cards this session does not ask, and a line of
-   * the vault's answers that could not be read is a card standing where the rest
-   * of its history left it.
-   */
-  const reportSession = (report: Report) => {
-    if (report.unwritten.length) {
-      showNotice(
-        `Not asked from ${report.unwritten.map(getDeckName).join(', ')}: the deck could not be written.`,
-        'caution',
-      )
-    }
-    if (report.skipped > 0) {
-      showNotice(`${report.skipped} answers in this vault could not be read.`, 'caution')
-    }
+    deps.stop()
+    deps.vault.value = id
+    deps.goTo('decks')
+    void deps.done.read(id)
+    void deps.schedules.read(deps.chosen.value, deps.today.value)
   }
 
   const start = async (deck: string) => {
-    const report = await state.start(vault.value, deck)
+    const report = await deps.state.start(deps.vault.value, deck)
     if (!report) return
-    goTo('session')
-    reportSession(report)
+    deps.goTo('session')
+    reportSessionNotice(report, deps.showNotice)
   }
 
-  /** Sit down to every deck one preset schedules, held to the budget it keeps. */
   const startPreset = async (preset: string) => {
-    const report = await state.start(vault.value, '', preset)
+    const report = await deps.state.start(deps.vault.value, '', preset)
     if (!report) return
-    goTo('session')
-    reportSession(report)
+    deps.goTo('session')
+    reportSessionNotice(report, deps.showNotice)
   }
 
-  /**
-   * Out of a session and back to the decks, with the counts as they now stand and
-   * the days too: what a person just answered is part of what they have done.
-   */
   const leave = async () => {
-    goTo('decks')
-    void done.read(vault.value)
-    await count()
-    void schedules.read(chosen.value, today.value)
+    deps.goTo('decks')
+    void deps.done.read(deps.vault.value)
+    await deps.count()
+    void deps.schedules.read(deps.chosen.value, deps.today.value)
   }
 
-  /** Back to the vaults, which is where a person picks another collection. */
   const goToVaults = async () => {
-    goTo('vaults')
-    await count()
+    deps.goTo('vaults')
+    await deps.count()
   }
 
-  /**
-   * The card answered. The conversation the panel was holding is over with the
-   * card it was about.
-   */
   const answerCard = async (how: Grade) => {
-    agentPanel.endConversation()
-    await state.answer(how)
+    deps.agentPanel.endConversation()
+    await deps.state.answer(how)
   }
 
-  const { onKeyDown } = createWindowKeys({
-    getScreen: () => on.value,
-    getVaults: () => vaults.value,
-    getChosenVault: () => chosen.value,
-    getPresetsByDeck: () => schedules.byDeck.value,
-    isShown: () => state.shown.value,
-    getShowing: () => showing.value,
-    choose,
-    start: (deck) => void start(deck),
-    show: state.show,
-    answer: (how) => void answerCard(how),
-    takeBack: () => void state.takeBack(),
-    leave: () => void leave(),
-    goToVaults: () => void goToVaults(),
-    toggleAgent,
-    toggleNotes,
-    scrollPage: (back) => page.value?.scrollPage(back),
-    closeAgent: agentPanel.closePanel,
-    closeNotes: notesPanel.closePanel,
-  })
-
-  /**
-   * A deck written or a card changed underneath the window. A session is left
-   * alone: its cards were laid out when it opened, and what a deck says now is
-   * read at the next one.
-   */
   const refresh = async () => {
-    if (on.value === 'session') return
-    await count()
-    await done.read(vault.value)
-    await schedules.read(chosen.value, today.value)
+    if (deps.on.value === 'session') return
+    await deps.count()
+    await deps.done.read(deps.vault.value)
+    await deps.schedules.read(deps.chosen.value, deps.today.value)
   }
 
-  useWindowStreams({ reportError, setTasks, onKeyDown, count, stop, refresh, unreachable })
+  return { choose, start, startPreset, leave, goToVaults, answerCard, refresh }
+}
 
+function createWindowKeyboard(deps: {
+  on: Ref<WindowScreen>
+  vaults: Ref<readonly VaultCardsDue[]>
+  chosen: ComputedRef<VaultCardsDue | null>
+  schedules: ReturnType<typeof useVaultPresets>
+  state: ReturnType<typeof useReviewSession>
+  showing: Ref<'reading' | 'here' | 'asking'>
+  actions: ReturnType<typeof useWindowActions>
+  toggleAgent: () => void
+  toggleNotes: () => void
+  page: Readonly<Ref<InstanceType<typeof NotesPanel> | null>>
+  agentPanel: { closePanel: () => void }
+  notesPanel: { closePanel: () => void }
+}) {
+  return createWindowKeys({
+    getScreen: () => deps.on.value,
+    getVaults: () => deps.vaults.value,
+    getChosenVault: () => deps.chosen.value,
+    getPresetsByDeck: () => deps.schedules.byDeck.value,
+    isShown: () => deps.state.shown.value,
+    getShowing: () => deps.showing.value,
+    choose: deps.actions.choose,
+    start: (deck) => void deps.actions.start(deck),
+    show: deps.state.show,
+    answer: (how) => void deps.actions.answerCard(how),
+    takeBack: () => void deps.state.takeBack(),
+    leave: () => void deps.actions.leave(),
+    goToVaults: () => void deps.actions.goToVaults(),
+    toggleAgent: deps.toggleAgent,
+    toggleNotes: deps.toggleNotes,
+    scrollPage: (back) => deps.page.value?.scrollPage(back),
+    closeAgent: deps.agentPanel.closePanel,
+    closeNotes: deps.notesPanel.closePanel,
+  })
+}
+
+function useWindowScreens(deps: {
+  done: ReturnType<typeof useReviewDays>
+  schedules: ReturnType<typeof useVaultPresets>
+  vault: Ref<string>
+  state: ReturnType<typeof useReviewSession>
+  agentPanel: ReturnType<typeof usePanels>['agentPanel']
+  notesPanel: ReturnType<typeof usePanels>['notesPanel']
+}) {
+  return useScreens(['vaults', 'decks', 'session'] as const, {
+    decks: [
+      deps.done.forget,
+      deps.schedules.forget,
+      () => {
+        deps.vault.value = ''
+      },
+    ],
+    session: [deps.state.forget, deps.agentPanel.endConversation, deps.notesPanel.endSession],
+  })
+}
+
+function useWindowState() {
+  const vault = ref('')
+  const notices = useNotices()
+  const counter = useReviewCounter({ cards, reportError: notices.reportError })
+  const state = useReviewSession({ cards, reportError: notices.reportError })
+  const done = useReviewDays({
+    cards,
+    reportError: notices.reportError,
+    widest: () => Math.max(window.screen.width, document.documentElement.clientWidth),
+  })
+  const schedules = useVaultPresets({ presets: cards })
+  const unreachable = ref('')
+
+  return { vault, notices, counter, state, done, schedules, unreachable }
+}
+
+function createWindowView(deps: {
+  on: Ref<WindowScreen>
+  notices: ReturnType<typeof useNotices>
+  actions: ReturnType<typeof useWindowActions>
+  counter: ReturnType<typeof useReviewCounter>
+  done: ReturnType<typeof useReviewDays>
+  schedules: ReturnType<typeof useVaultPresets>
+  chosen: ComputedRef<VaultCardsDue | null>
+  state: ReturnType<typeof useReviewSession>
+  panels: ReturnType<typeof usePanels>
+}) {
   return {
-    /** The window's own: which screen is on, and what it has to say. */
-    on,
-    notices,
-    dismissNotice,
-
-    /** The list of vaults, and the way into one. */
-    vaults: { list: vaults, isCounting, choose },
-
-    /** One vault's decks and presets, and the ways to sit down to them. */
-    decks: { chosen, today, done, schedules, start, startPreset, goToVaults },
-
-    /** The session, and the two panels standing beside the card. */
+    on: deps.on,
+    notices: deps.notices.notices,
+    dismissNotice: deps.notices.dismissNotice,
+    vaults: {
+      list: deps.counter.vaults,
+      isCounting: deps.counter.isCounting,
+      choose: deps.actions.choose,
+    },
+    decks: {
+      chosen: deps.chosen,
+      today: deps.counter.day,
+      done: deps.done,
+      schedules: deps.schedules,
+      start: deps.actions.start,
+      startPreset: deps.actions.startPreset,
+      goToVaults: deps.actions.goToVaults,
+    },
     session: {
-      state,
-      at,
-      moveTo,
-      answerCard,
-      toggleAgent,
-      toggleNotes,
-      leave,
-      agentPanel,
-      notesPanel,
+      state: deps.state,
+      at: deps.panels.at,
+      moveTo: deps.panels.moveTo,
+      answerCard: deps.actions.answerCard,
+      toggleAgent: deps.panels.toggleAgent,
+      toggleNotes: deps.panels.toggleNotes,
+      leave: deps.actions.leave,
+      agentPanel: deps.panels.agentPanel,
+      notesPanel: deps.panels.notesPanel,
     },
   }
+}
+
+function useWindowListeners(deps: {
+  on: Ref<WindowScreen>
+  counter: ReturnType<typeof useReviewCounter>
+  chosen: ComputedRef<VaultCardsDue | null>
+  schedules: ReturnType<typeof useVaultPresets>
+  state: ReturnType<typeof useReviewSession>
+  panels: ReturnType<typeof usePanels>
+  actions: ReturnType<typeof useWindowActions>
+  page: Readonly<Ref<InstanceType<typeof NotesPanel> | null>>
+  notices: ReturnType<typeof useNotices>
+  unreachable: Ref<string>
+}) {
+  const { onKeyDown } = createWindowKeyboard({
+    on: deps.on,
+    vaults: deps.counter.vaults,
+    chosen: deps.chosen,
+    schedules: deps.schedules,
+    state: deps.state,
+    showing: deps.panels.showing,
+    actions: deps.actions,
+    toggleAgent: deps.panels.toggleAgent,
+    toggleNotes: deps.panels.toggleNotes,
+    page: deps.page,
+    agentPanel: deps.panels.agentPanel,
+    notesPanel: deps.panels.notesPanel,
+  })
+
+  useWindowStreams({
+    reportError: deps.notices.reportError,
+    setTasks: deps.notices.setTasks,
+    onKeyDown,
+    count: deps.counter.count,
+    stop: deps.counter.stop,
+    refresh: deps.actions.refresh,
+    unreachable: deps.unreachable,
+  })
+}
+
+export const useWindow = () => {
+  const { vault, notices, counter, state, done, schedules, unreachable } = useWindowState()
+  const panels = usePanels({
+    card: () => state.card.value,
+    unreachable: () => unreachable.value,
+    vault: () => vault.value,
+    showNotice: (text) => notices.showNotice(text, 'caution'),
+  })
+
+  const { on, goTo } = useWindowScreens({
+    done,
+    schedules,
+    vault,
+    state,
+    agentPanel: panels.agentPanel,
+    notesPanel: panels.notesPanel,
+  })
+  const page = useTemplateRef<InstanceType<typeof NotesPanel>>('page')
+  const chosen = computed(
+    () => counter.vaults.value.find((one) => one.vault === vault.value) ?? null,
+  )
+
+  const actions = useWindowActions({
+    vault,
+    chosen,
+    today: counter.day,
+    on,
+    goTo,
+    stop: counter.stop,
+    count: counter.count,
+    done,
+    schedules,
+    state,
+    agentPanel: panels.agentPanel,
+    showNotice: notices.showNotice,
+  })
+
+  useWindowListeners({
+    on,
+    counter,
+    chosen,
+    schedules,
+    state,
+    panels,
+    actions,
+    page,
+    notices,
+    unreachable,
+  })
+
+  return createWindowView({
+    on,
+    notices,
+    actions,
+    counter,
+    done,
+    schedules,
+    chosen,
+    state,
+    panels,
+  })
 }

@@ -242,8 +242,8 @@ export default tseslint.config(
       'src/**/*.test.ts',
       'src/**/*.stories.ts',
       'src/testing/**',
-      // The composition root, where port defaults are supplied.
-      'src/app/**',
+      // The ports' own defaults, which is where the browser is allowed in.
+      'src/entities/note/model/notes.ts',
     ],
     rules: {
       'no-restricted-globals': [

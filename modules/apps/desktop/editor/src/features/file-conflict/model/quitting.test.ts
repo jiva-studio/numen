@@ -7,16 +7,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/wire'
 
-import {
-  openNotes as openNotesUnderTesting,
-  type Notes,
-  type OpenNotesOptions,
-} from '@/entities/note'
+import { openNotes, type Notes } from '@/entities/note'
 import { useFileFlush, type Conflict, type FlushDeps, type FlushResult } from './flush'
 import type { NoteResult } from '@/entities/note'
-
-const openNotes = (core: Notes, how?: Partial<OpenNotesOptions>) =>
-  openNotesUnderTesting(core, { now: () => 1_000, ...how })
 
 /** What the application sends over the quit stream during tests. */
 function createMockStream() {

@@ -14,7 +14,6 @@ import { WorkspacePane } from './pane'
 import WorkspaceOverlay from './WorkspaceOverlay.vue'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../model/context'
 import { useTabDrag } from '../model/drag'
-import { getRect } from '../lib/drop'
 import { createNodeIdFactory } from '../lib/identity'
 import { activateTab, closeTab, focusPane, resizeBranch, type NodeIdFactory } from '../lib/edit'
 import { type NodeId, type Tab, type TabId, type Workspace } from '../lib/node'
@@ -89,7 +88,6 @@ const { hasMoved, overlay, label, position, dropTarget, press } = useTabDrag({
   getEdge: () => props.edge,
   getThreshold: () => props.threshold,
   getClock: () => props.clock,
-  getRect: (element: Element) => getRect(element.getBoundingClientRect()),
 })
 
 /* -------------------------------- Handlers -------------------------------- */

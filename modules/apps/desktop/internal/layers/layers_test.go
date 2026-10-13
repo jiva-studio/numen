@@ -29,12 +29,6 @@ func isAssembled(pkg string) bool {
 		strings.HasPrefix(pkg, "adapter/")
 }
 
-// baseline are the edges the applications still have. Each is a binary doing a
-// piece of the core's work where it should be handed the whole, and the list
-// only shrinks: an edge missing from the tree is not an error here, so the
-// composition root taking one back needs no line changed.
-var baseline = map[string][]string{}
-
 // standing is a file of the applications, under the package it belongs to.
 type standing struct {
 	at   string
@@ -116,7 +110,7 @@ func TestNoApplicationDoesTheCoresWork(t *testing.T) {
 			case strings.HasPrefix(to, core):
 				read++
 				reaches := strings.TrimPrefix(to, core)
-				if isAssembled(reaches) || isAllowed(from, reaches) {
+				if isAssembled(reaches) {
 					continue
 				}
 				wrong = append(wrong, from+" reaches "+reaches+
@@ -140,41 +134,6 @@ func TestNoApplicationDoesTheCoresWork(t *testing.T) {
 	// passes. The floor is well under what the applications hold.
 	if read < 50 {
 		t.Fatalf("%d edges read: the walk is not reading the applications", read)
-	}
-}
-
-// A list that only shrinks has to be made to shrink. An entry naming an edge
-// the tree no longer has is a rule written down for nothing.
-func TestNothingIsBaselinedThatIsNoLongerReached(t *testing.T) {
-	sources := readSources(t)
-	for from, entries := range baseline {
-		for _, to := range entries {
-			var reached bool
-			for _, held := range sources {
-				if held.in != from {
-					continue
-				}
-				for _, one := range held.file.Imports {
-					dep, err := strconv.Unquote(one.Path.Value)
-					if err != nil {
-						continue
-					}
-					if strings.HasPrefix(dep, core) {
-						target := strings.TrimPrefix(dep, core)
-						if target == to || strings.HasPrefix(target, to+"/") {
-							reached = true
-							break
-						}
-					}
-				}
-				if reached {
-					break
-				}
-			}
-			if !reached {
-				t.Errorf("baseline entry %s → %s is no longer reached by any file", from, to)
-			}
-		}
 	}
 }
 
@@ -319,14 +278,4 @@ func getPackage(root, path string) string {
 func application(pkg string) string {
 	held, _, _ := strings.Cut(pkg, "/")
 	return held
-}
-
-// isAllowed says whether the baseline holds the edge a package has.
-func isAllowed(from, to string) bool {
-	for _, held := range baseline[from] {
-		if to == held || strings.HasPrefix(to, held+"/") {
-			return true
-		}
-	}
-	return false
 }

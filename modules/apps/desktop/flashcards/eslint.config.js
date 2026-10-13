@@ -170,20 +170,6 @@ export default tseslint.config(
     },
   },
 
-  // Window composables, application lifecycle, entity stores, and page models coordinate multi-parameter state.
-  {
-    files: [
-      'src/app/**/*.{ts,vue}',
-      'src/entities/**/*.{ts,vue}',
-      'src/features/**/*.{ts,vue}',
-      'src/pages/**/*.{ts,vue}',
-      'src/shared/**/*.{ts,vue}',
-    ],
-    rules: {
-      'max-lines-per-function': 'off',
-      'max-params': 'off',
-    },
-  },
 
   // Package boundaries: no reaching out of the module via relative paths
   {
@@ -243,9 +229,9 @@ export default tseslint.config(
     ignores: [
       'src/**/*.test.ts',
       'src/**/*.stories.ts',
-      // The composition root and entry point, where port defaults are supplied.
-      'src/app/**',
-      'src/main.ts',
+      // A port's own default, which is where the browser is allowed in.
+      'src/pages/session/model/session.ts',
+      'src/pages/decks/model/reviewDays.ts',
     ],
     rules: {
       'no-restricted-globals': [

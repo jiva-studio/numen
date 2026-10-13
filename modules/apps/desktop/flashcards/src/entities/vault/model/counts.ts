@@ -79,33 +79,91 @@ export interface CountsDeps {
   reportError(why: unknown): void
 }
 
-export function useReviewCounter(deps: CountsDeps) {
-  const vaults = shallowRef<readonly VaultCardsDue[]>([])
-  const isCounting = ref(true)
+const createUncountedVault = (one: VaultCounts): VaultCardsDue => ({
+  vault: one.id,
+  name: one.name,
+  path: one.path,
+  isCounted: false,
+  faces: 0,
+  due: 0,
+  new: 0,
+  decks: [],
+  presets: [],
+  unread: one.unread,
+  isIndexing: one.isIndexing,
+})
 
-  /**
-   * The day the counts stand in, and the day a goal is weighed against. A day of
-   * review begins at the hour the settings name, so an hour past midnight is
-   * still the day before.
-   */
+const createCountedVault = (one: VaultCounts): VaultCardsDue => ({
+  vault: one.id,
+  name: one.name,
+  path: one.path,
+  isCounted: true,
+  faces: one.faces,
+  due: one.due,
+  new: one.new,
+  decks: one.decks.map((deck) => ({
+    deck: deck.deck,
+    faces: deck.faces,
+    due: deck.due,
+    new: deck.new,
+    learned: deck.learned,
+    unbegun: deck.unbegun,
+  })),
+  presets: one.presets.map((preset) => ({
+    preset: preset.preset,
+    title: preset.title,
+    decks: preset.decks,
+    cards: preset.cards,
+    owed: preset.owedDue + preset.owedNew,
+    answered: preset.answered,
+    answeredNew: preset.answeredNew,
+    answeredReviews: preset.answeredReviews,
+    took: getMinutes(preset.tookMs),
+    new: preset.new,
+    reviews: preset.reviews,
+    minutes: preset.minutes,
+    closes: {
+      new: preset.closesNew,
+      reviews: preset.closesReviews,
+      minutes: preset.closesMinutes,
+    },
+    stopsOn: preset.stopsOn,
+  })),
+  unread: one.unread,
+  isIndexing: false,
+})
+
+function useVaultRows() {
+  const vaults = shallowRef<readonly VaultCardsDue[]>([])
+
+  const setVaults = (all: readonly VaultCounts[]) => {
+    const held = new Map(vaults.value.map((one) => [one.vault, one]))
+    vaults.value = all.map((one) => {
+      const was = held.get(one.id)
+      return was?.isCounted ? { ...was, name: one.name, path: one.path } : createUncountedVault(one)
+    })
+  }
+
+  const setVaultCount = (one: VaultCounts) => {
+    const now = one.isIndexing ? createUncountedVault(one) : createCountedVault(one)
+    vaults.value = vaults.value.map((row) => (row.vault === one.id ? now : row))
+  }
+
+  return { vaults, setVaults, setVaultCount }
+}
+
+export function useReviewCounter(deps: CountsDeps) {
+  const { vaults, setVaults, setVaultCount } = useVaultRows()
+  const isCounting = ref(true)
   const day = ref('')
 
-  /** The count on its way, so two never run at once and none is asked twice. */
   let underway: Promise<void> | null = null
-
-  /** What ends the count on its way. */
   let taking: AbortController | null = null
-
-  /** Whether the count on its way has begun handing back what it worked out. */
-  let sampled: boolean
-
-  /** Whether it was asked for again after it had. */
-  let again: boolean
+  let sampled = false
+  let again = false
 
   const count = (): Promise<void> => {
     if (underway) {
-      // Asked for before anything was worked out, this count answers the asking
-      // too. Asked for after, it has already passed the row that moved.
       if (sampled) again = true
       return underway
     }
@@ -115,11 +173,6 @@ export function useReviewCounter(deps: CountsDeps) {
     return underway
   }
 
-  /**
-   * The counting, until nothing has asked for it again. A vault read while a
-   * count was running is one whose numbers landed after that count had worked
-   * its row out, so the asking is answered rather than dropped.
-   */
   const countUntilQuiet = async (): Promise<void> => {
     for (;;) {
       again = false
@@ -128,93 +181,10 @@ export function useReviewCounter(deps: CountsDeps) {
     }
   }
 
-  /**
-   * The counting ended where it stands: the window is going, or the person has
-   * chosen the vault they came for. What has not arrived is not waited for.
-   */
   const stop = () => {
     taking?.abort()
   }
 
-  /** A vault on the list before its count has arrived. */
-  const createUncountedVault = (one: VaultCounts): VaultCardsDue => ({
-    vault: one.id,
-    name: one.name,
-    path: one.path,
-    isCounted: false,
-    faces: 0,
-    due: 0,
-    new: 0,
-    decks: [],
-    presets: [],
-    unread: one.unread,
-    isIndexing: one.isIndexing,
-  })
-
-  /** A vault as its own count leaves it. */
-  const createCountedVault = (one: VaultCounts): VaultCardsDue => ({
-    vault: one.id,
-    name: one.name,
-    path: one.path,
-    isCounted: true,
-    faces: one.faces,
-    due: one.due,
-    new: one.new,
-    decks: one.decks.map((deck) => ({
-      deck: deck.deck,
-      faces: deck.faces,
-      due: deck.due,
-      new: deck.new,
-      learned: deck.learned,
-      unbegun: deck.unbegun,
-    })),
-    presets: one.presets.map((preset) => ({
-      preset: preset.preset,
-      title: preset.title,
-      decks: preset.decks,
-      cards: preset.cards,
-      owed: preset.owedDue + preset.owedNew,
-      answered: preset.answered,
-      answeredNew: preset.answeredNew,
-      answeredReviews: preset.answeredReviews,
-      took: getMinutes(preset.tookMs),
-      new: preset.new,
-      reviews: preset.reviews,
-      minutes: preset.minutes,
-      closes: {
-        new: preset.closesNew,
-        reviews: preset.closesReviews,
-        minutes: preset.closesMinutes,
-      },
-      stopsOn: preset.stopsOn,
-    })),
-    unread: one.unread,
-    isIndexing: false,
-  })
-
-  /**
-   * The vaults, over what the window already shows. A vault counted a moment
-   * ago keeps that count until its new one lands, so a list already drawn is
-   * never emptied to be filled again.
-   */
-  const setVaults = (all: readonly VaultCounts[]) => {
-    const held = new Map(vaults.value.map((one) => [one.vault, one]))
-    vaults.value = all.map((one) => {
-      const was = held.get(one.id)
-      return was?.isCounted ? { ...was, name: one.name, path: one.path } : createUncountedVault(one)
-    })
-  }
-
-  /**
-   * One vault's count, into the row it belongs to. A vault being read into the
-   * index has no count yet, and its row goes on waiting for one.
-   */
-  const setVaultCount = (one: VaultCounts) => {
-    const now = one.isIndexing ? createUncountedVault(one) : createCountedVault(one)
-    vaults.value = vaults.value.map((row) => (row.vault === one.id ? now : row))
-  }
-
-  /** One count, answering whether it ran to the end. */
   const ask = async (): Promise<boolean> => {
     isCounting.value = true
     sampled = false
@@ -230,7 +200,6 @@ export function useReviewCounter(deps: CountsDeps) {
         }
       }
     } catch (why) {
-      // A count the window ended is not something to tell a person about.
       if (!ends.signal.aborted) deps.reportError(why)
     } finally {
       taking = null

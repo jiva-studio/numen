@@ -22,4 +22,4 @@ interceptOutwardLinks((href) => {
   void wails.then((it) => it?.Browser.OpenURL(href))
 })
 
-createApp(App, { now: () => Date.now(), today: () => new Date() }).mount('#app')
+createApp(App).mount('#app')

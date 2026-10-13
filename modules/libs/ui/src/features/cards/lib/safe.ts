@@ -10,12 +10,8 @@ import { ANY, DRAWN, OWN, SCHEMES, STRUCK, STYLED } from './tags'
 /** An image standing in the text itself. */
 const INLINE_IMAGE = /^data:image\/(png|jpeg|jpg|gif|webp|avif);base64,/i
 
-const createControlPattern = (pattern: string): RegExp => new RegExp(pattern, 'g')
-
-const CONTROLS = createControlPattern('[\\u0000-\\u0020]')
-
 /** A URL with the spaces and control characters a scheme may be hidden behind dropped. */
-const bare = (url: string): string => url.replace(CONTROLS, '')
+const bare = (url: string): string => url.replace(/[\u0000-\u0020]/g, '')
 
 /** The scheme a URL names, and nothing where it names none. */
 export const scheme = (url: string): string | null =>

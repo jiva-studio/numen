@@ -127,18 +127,22 @@ func (x *extractor) write(text string) {
 	if x.preformattedDepth > 0 {
 		x.out = append(x.out, text...)
 	} else {
-		for _, r := range text {
-			if unicode.IsSpace(r) {
-				if last, ok := x.findLastByte(); ok && last != ' ' && last != '\n' {
-					x.out = append(x.out, ' ')
-				}
-				continue
-			}
-			x.out = utf8.AppendRune(x.out, r)
-		}
+		x.writeNormalized(text)
 	}
 	if len(x.out) > start {
 		x.markup.run(start)
+	}
+}
+
+func (x *extractor) writeNormalized(text string) {
+	for _, r := range text {
+		if unicode.IsSpace(r) {
+			if last, ok := x.findLastByte(); ok && last != ' ' && last != '\n' {
+				x.out = append(x.out, ' ')
+			}
+			continue
+		}
+		x.out = utf8.AppendRune(x.out, r)
 	}
 }
 
@@ -170,176 +174,214 @@ type frame struct {
 	pageLabel   string
 }
 
+type tokenizer struct {
+	x                  *extractor
+	z                  *html.Tokenizer
+	stack              []frame
+	skipAtom           atom.Atom
+	dropLeadingNewline bool
+}
+
+type tagAttrs struct {
+	id          string
+	isPagebreak bool
+	pageLabel   string
+}
+
+func (t *tokenizer) parseTagAttrs(hasAttr bool) tagAttrs {
+	var attrs tagAttrs
+	var titleAttr, ariaLabelAttr string
+	for hasAttr {
+		var key, val []byte
+		key, val, hasAttr = t.z.TagAttr()
+		switch {
+		case bytes.Equal(key, []byte("id")):
+			attrs.id = string(val)
+		case bytes.Equal(key, []byte("epub:type")):
+			if hasTokenBytes(val, "pagebreak") {
+				attrs.isPagebreak = true
+			}
+		case bytes.Equal(key, []byte("role")):
+			if hasTokenBytes(val, "doc-pagebreak") {
+				attrs.isPagebreak = true
+			}
+		case bytes.Equal(key, []byte("title")):
+			titleAttr = string(val)
+		case bytes.Equal(key, []byte("aria-label")):
+			ariaLabelAttr = string(val)
+		}
+	}
+	if attrs.isPagebreak {
+		if s := normaliseSpaces(titleAttr); s != "" {
+			attrs.pageLabel = s
+		} else if al := normaliseSpaces(ariaLabelAttr); al != "" {
+			attrs.pageLabel = al
+		}
+	}
+	return attrs
+}
+
+func (t *tokenizer) handleFinish() {
+	for i := len(t.stack) - 1; i >= 0; i-- {
+		t.x.closeFrame(t.stack[i])
+	}
+	t.x.preformattedDepth = 0
+}
+
+func (t *tokenizer) handleText() {
+	if t.skipAtom == 0 {
+		text := t.z.Text()
+		if t.dropLeadingNewline {
+			text = bytes.TrimPrefix(bytes.TrimPrefix(text, []byte{'\r'}), []byte{'\n'})
+		}
+		t.x.writeBytes(text)
+	}
+	t.dropLeadingNewline = false
+}
+
+func (t *tokenizer) shouldSkipStartTag(tt html.TokenType, a atom.Atom) bool {
+	if t.skipAtom != 0 {
+		if a == atom.Body || blocks[a] {
+			t.skipAtom = 0
+		} else {
+			return true
+		}
+	}
+	if a == atom.Head || a == atom.Script || a == atom.Style || a == atom.Title {
+		if tt == html.StartTagToken {
+			t.skipAtom = a
+		}
+		return true
+	}
+	return false
+}
+
+func (t *tokenizer) adjustElementState(a atom.Atom) {
+	if a == atom.Pre {
+		t.x.preformattedDepth++
+		t.dropLeadingNewline = true
+	}
+	if a == atom.Listing || a == atom.Textarea {
+		t.dropLeadingNewline = true
+	}
+	if a == atom.Td || a == atom.Th {
+		t.x.writeBytes([]byte(" "))
+	}
+}
+
+func (t *tokenizer) handleStartTag(tt html.TokenType) {
+	t.dropLeadingNewline = false
+	name, hasAttr := t.z.TagName()
+	a := atom.Lookup(name)
+
+	if t.shouldSkipStartTag(tt, a) {
+		return
+	}
+	if a == atom.Br {
+		t.x.breakLine()
+		return
+	}
+
+	block := blocks[a]
+	if block {
+		t.x.breakLine()
+	}
+
+	attrs := t.parseTagAttrs(hasAttr)
+	if attrs.id != "" {
+		t.x.anchors[t.x.path+"#"+attrs.id] = len(t.x.out)
+	}
+
+	start := len(t.x.out)
+	t.adjustElementState(a)
+
+	level := parseHeadingLevel(a)
+	if isVoidTag(a) {
+		t.x.closeFrame(frame{start: start, isPagebreak: attrs.isPagebreak, pageLabel: attrs.pageLabel})
+		if block {
+			t.x.breakLine()
+		}
+		return
+	}
+
+	t.stack = append(t.stack, frame{
+		atom:        a,
+		start:       start,
+		block:       block,
+		heading:     level,
+		isPagebreak: attrs.isPagebreak,
+		pageLabel:   attrs.pageLabel,
+	})
+}
+
+func (t *tokenizer) findStackFrame(a atom.Atom) int {
+	for i := len(t.stack) - 1; i >= 0; i-- {
+		if t.stack[i].atom == a {
+			return i
+		}
+	}
+	return -1
+}
+
+func (t *tokenizer) popFramesUntil(target int) {
+	for i := len(t.stack) - 1; i >= target; i-- {
+		t.x.closeFrame(t.stack[i])
+		if t.stack[i].block {
+			t.x.breakLine()
+		}
+	}
+	t.stack = t.stack[:target]
+}
+
+func (t *tokenizer) handleEndTag() {
+	name, _ := t.z.TagName()
+	a := atom.Lookup(name)
+
+	if t.skipAtom != 0 {
+		if a == t.skipAtom {
+			t.skipAtom = 0
+		}
+		return
+	}
+
+	if a == atom.Br || a == atom.Body || a == atom.Html {
+		if a == atom.Br {
+			t.x.breakLine()
+		}
+		return
+	}
+
+	found := t.findStackFrame(a)
+	if found >= 0 {
+		t.popFramesUntil(found)
+	} else if blocks[a] {
+		t.x.breakLine()
+	}
+}
+
 // tokenize reads markup into text using a streaming HTML tokenizer.
 func (x *extractor) tokenize(markup []byte) {
-	z := html.NewTokenizer(bytes.NewReader(markup))
-	var stackBuf [32]frame
-	stack := stackBuf[:0]
-	var skipAtom atom.Atom
-	dropLeadingNewline := false
+	t := tokenizer{
+		x:                  x,
+		z:                  html.NewTokenizer(bytes.NewReader(markup)),
+		stack:              make([]frame, 0, 32),
+		skipAtom:           0,
+		dropLeadingNewline: false,
+	}
 
 	for {
-		tt := z.Next()
+		tt := t.z.Next()
 		switch tt {
 		case html.ErrorToken:
-			for i := len(stack) - 1; i >= 0; i-- {
-				x.closeFrame(stack[i])
-			}
-			x.preformattedDepth = 0
+			t.handleFinish()
 			return
-
 		case html.CommentToken, html.DoctypeToken:
 		case html.TextToken:
-			if skipAtom == 0 {
-				text := z.Text()
-				if dropLeadingNewline {
-					text = bytes.TrimPrefix(bytes.TrimPrefix(text, []byte{'\r'}), []byte{'\n'})
-				}
-				x.writeBytes(text)
-			}
-			dropLeadingNewline = false
-
+			t.handleText()
 		case html.StartTagToken, html.SelfClosingTagToken:
-			dropLeadingNewline = false
-			name, hasAttr := z.TagName()
-			a := atom.Lookup(name)
-
-			if skipAtom != 0 {
-				if a == atom.Body || blocks[a] {
-					skipAtom = 0
-				} else {
-					// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break leaves the switch and ends the iteration like continue"
-					continue
-				}
-			}
-
-			if a == atom.Head || a == atom.Script || a == atom.Style || a == atom.Title {
-				if tt == html.StartTagToken {
-					skipAtom = a
-				}
-				// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break leaves the switch and ends the iteration like continue"
-				continue
-			}
-
-			if a == atom.Br {
-				x.breakLine()
-				// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break leaves the switch and ends the iteration like continue"
-				continue
-			}
-
-			block := blocks[a]
-			if block {
-				x.breakLine()
-			}
-
-			var id string
-			var isPagebreak bool
-			var pageLabel string
-			var titleAttr string
-			var ariaLabelAttr string
-
-			for hasAttr {
-				var key, val []byte
-				key, val, hasAttr = z.TagAttr()
-				switch {
-				case bytes.Equal(key, []byte("id")):
-					id = string(val)
-				case bytes.Equal(key, []byte("epub:type")):
-					if hasTokenBytes(val, "pagebreak") {
-						isPagebreak = true
-					}
-				case bytes.Equal(key, []byte("role")):
-					if hasTokenBytes(val, "doc-pagebreak") {
-						isPagebreak = true
-					}
-				case bytes.Equal(key, []byte("title")):
-					titleAttr = string(val)
-				case bytes.Equal(key, []byte("aria-label")):
-					ariaLabelAttr = string(val)
-				}
-			}
-
-			if id != "" {
-				x.anchors[x.path+"#"+id] = len(x.out)
-			}
-			if isPagebreak {
-				if t := normaliseSpaces(titleAttr); t != "" {
-					pageLabel = t
-				} else if al := normaliseSpaces(ariaLabelAttr); al != "" {
-					pageLabel = al
-				}
-			}
-
-			start := len(x.out)
-
-			if a == atom.Pre {
-				x.preformattedDepth++
-				dropLeadingNewline = true
-			}
-			if a == atom.Listing || a == atom.Textarea {
-				dropLeadingNewline = true
-			}
-			if a == atom.Td || a == atom.Th {
-				x.writeBytes([]byte(" "))
-			}
-
-			level := parseHeadingLevel(a)
-
-			if isVoidTag(a) {
-				x.closeFrame(frame{start: start, isPagebreak: isPagebreak, pageLabel: pageLabel})
-				if block {
-					x.breakLine()
-				}
-			} else {
-				stack = append(stack, frame{
-					atom:        a,
-					start:       start,
-					block:       block,
-					heading:     level,
-					isPagebreak: isPagebreak,
-					pageLabel:   pageLabel,
-				})
-			}
-
+			t.handleStartTag(tt)
 		case html.EndTagToken:
-			name, _ := z.TagName()
-			a := atom.Lookup(name)
-
-			if skipAtom != 0 {
-				if a == skipAtom {
-					skipAtom = 0
-				}
-				// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break leaves the switch and ends the iteration like continue"
-				continue
-			}
-
-			if a == atom.Br || a == atom.Body || a == atom.Html {
-				if a == atom.Br {
-					x.breakLine()
-				}
-				// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break leaves the switch and ends the iteration like continue"
-				continue
-			}
-
-			found := -1
-			for i := len(stack) - 1; i >= 0; i-- {
-				if stack[i].atom == a {
-					found = i
-					break
-				}
-			}
-
-			if found >= 0 {
-				for i := len(stack) - 1; i >= found; i-- {
-					x.closeFrame(stack[i])
-					if stack[i].block {
-						x.breakLine()
-					}
-				}
-				stack = stack[:found]
-			} else if blocks[a] {
-				x.breakLine()
-			}
+			t.handleEndTag()
 		}
 	}
 }

@@ -19,7 +19,7 @@ export type {
   WriteResult,
 } from './lib/note'
 export { openNotes } from './model/notes'
-export type { Notes, OpenNote, OpenNotesOptions } from './lib/noteTypes'
+export type { Notes, OpenNote } from './lib/noteTypes'
 export { getMarkOf } from './lib/tabState'
 export type { NoteBaseline, State } from './lib/tabState'
 export { WORDS } from './words'

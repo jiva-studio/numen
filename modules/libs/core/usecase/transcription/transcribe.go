@@ -119,7 +119,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	if err != nil {
 		return res, err
 	}
-	defer port.Close(release)
+	defer release()
 
 	if u.IsRepeat {
 		// Somebody asked for this recording to be heard afresh. What a run

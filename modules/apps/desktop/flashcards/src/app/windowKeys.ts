@@ -58,76 +58,72 @@ export interface WindowKeysDeps {
   readonly closeNotes: () => void
 }
 
-export const createWindowKeys = (deps: WindowKeysDeps) => {
-  /**
-   * The keys a person picks a vault with: a letter opens the vault standing at
-   * it, which is the letter drawn on that row. A vault whose count has not
-   * arrived carries no letter, and the letter standing at it opens nothing.
-   */
-  const onVaultKey = (press: KeyboardEvent) => {
-    const vaults = deps.getVaults()
-    const at = getVaultForKey(press, vaults.length)
-    const one = vaults[at ?? -1]
-    if (!one?.isCounted) return
-    press.preventDefault()
-    deps.choose(one.vault)
-  }
+const applyVaultKey = (press: KeyboardEvent, deps: WindowKeysDeps) => {
+  const vaults = deps.getVaults()
+  const at = getVaultForKey(press, vaults.length)
+  const one = vaults[at ?? -1]
+  if (!one?.isCounted) return
+  press.preventDefault()
+  deps.choose(one.vault)
+}
 
-  /** The keys a person picks what to sit down to with. */
-  const onDeckKey = (press: KeyboardEvent, vault: VaultCardsDue) => {
-    const asked = getPickerKeyIntent(press, vault.decks.length)
-    if (!asked) return
-    press.preventDefault()
+const applyDeckKey = (press: KeyboardEvent, vault: VaultCardsDue, deps: WindowKeysDeps) => {
+  const asked = getPickerKeyIntent(press, vault.decks.length)
+  if (!asked) return
+  press.preventDefault()
 
-    switch (asked.does) {
-      case 'all':
-        if (vault.due + vault.new > 0) deps.start('')
-        break
-      case 'deck': {
-        const deck = vault.decks[asked.at]
-        if (deck && canStart(deck, deps.getPresetsByDeck())) deps.start(deck.deck)
-        break
-      }
-      case 'back':
-        deps.goToVaults()
-        break
+  switch (asked.does) {
+    case 'all':
+      if (vault.due + vault.new > 0) deps.start('')
+      break
+    case 'deck': {
+      const deck = vault.decks[asked.at]
+      if (deck && canStart(deck, deps.getPresetsByDeck())) deps.start(deck.deck)
+      break
     }
+    case 'back':
+      deps.goToVaults()
+      break
   }
+}
 
-  /** The panel that is up, put away. */
+const applySessionIntent = (
+  intent: SessionKeyIntent,
+  deps: WindowKeysDeps,
+  closeShownPanel: () => void,
+) => {
+  switch (intent.does) {
+    case 'show':
+      deps.show()
+      break
+    case 'answer':
+      deps.answer(intent.how)
+      break
+    case 'takeBack':
+      deps.takeBack()
+      break
+    case 'leave':
+      deps.leave()
+      break
+    case 'ask':
+      deps.toggleAgent()
+      break
+    case 'read':
+      deps.toggleNotes()
+      break
+    case 'scroll':
+      deps.scrollPage(intent.back)
+      break
+    case 'shut':
+      closeShownPanel()
+      break
+  }
+}
+
+export const createWindowKeys = (deps: WindowKeysDeps) => {
   const closeShownPanel = () => {
     if (deps.getShowing() === 'asking') deps.closeAgent()
     else deps.closeNotes()
-  }
-
-  /** What the key asked of the session, done. */
-  const onSessionIntent = (intent: SessionKeyIntent) => {
-    switch (intent.does) {
-      case 'show':
-        deps.show()
-        break
-      case 'answer':
-        deps.answer(intent.how)
-        break
-      case 'takeBack':
-        deps.takeBack()
-        break
-      case 'leave':
-        deps.leave()
-        break
-      case 'ask':
-        deps.toggleAgent()
-        break
-      case 'read':
-        deps.toggleNotes()
-        break
-      case 'scroll':
-        deps.scrollPage(intent.back)
-        break
-      case 'shut':
-        closeShownPanel()
-        break
-    }
   }
 
   const onSessionKey = (press: KeyboardEvent) => {
@@ -138,15 +134,15 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
     })
     if (!asked) return
     if (shouldConsumeKey(asked)) press.preventDefault()
-    onSessionIntent(asked)
+    applySessionIntent(asked, deps, closeShownPanel)
   }
 
   const onKeyDown = (press: KeyboardEvent) => {
     const on = deps.getScreen()
-    if (on === 'vaults') return onVaultKey(press)
+    if (on === 'vaults') return applyVaultKey(press, deps)
     if (on === 'decks') {
       const vault = deps.getChosenVault()
-      return vault ? onDeckKey(press, vault) : undefined
+      return vault ? applyDeckKey(press, vault, deps) : undefined
     }
     onSessionKey(press)
   }

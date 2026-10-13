@@ -6,7 +6,6 @@
 package sqlfile
 
 import (
-	"fmt"
 	"io/fs"
 	"strings"
 )
@@ -14,12 +13,13 @@ import (
 // Statements is a set of statements keyed by filename without the extension.
 type Statements map[string]string
 
-// Load reads every .sql file in dir.
+// Load reads every .sql file in dir. It panics: the files are embedded in the
+// binary, so a failure here is a build that should not have been produced.
 //
 // A file ends in a newline and a statement does not: what follows the semicolon
 // is a second statement to the driver. The text is the file with the whitespace
 // around it taken off.
-func Load(fsys fs.FS, dir string) (Statements, error) {
+func Load(fsys fs.FS, dir string) Statements {
 	out := Statements{}
 	err := fs.WalkDir(fsys, dir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
@@ -34,12 +34,17 @@ func Load(fsys fs.FS, dir string) (Statements, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("sqlfile: %w", err)
+		panic("sqlfile: " + err.Error())
 	}
-	return out, nil
+	return out
 }
 
-// Get returns a statement by name.
+// Get returns a statement by name. A missing name is a programming error,
+// caught on the first call.
 func (s Statements) Get(name string) string {
-	return s[name]
+	stmt, ok := s[name]
+	if !ok {
+		panic("sqlfile: no statement named " + name)
+	}
+	return stmt
 }

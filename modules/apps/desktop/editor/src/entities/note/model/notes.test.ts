@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/wire'
 import { computed, watch } from 'vue'
 
-import { openNotes as openNotesUnderTesting, type Notes, type OpenNotesOptions } from './notes'
+import { openNotes, type Notes } from './notes'
 
 /** A file's fingerprint, which follows what the file holds. */
 const getFingerprint = (body: string): string => `at:${body}`
@@ -43,9 +43,6 @@ const settle = async () => {
 }
 
 const quick = { quiet: 1, bound: 5 }
-
-const openNotes = (core: Notes, how?: Partial<OpenNotesOptions>) =>
-  openNotesUnderTesting(core, { limits: quick, now: () => 1_000, ...how })
 
 describe('opening a note', () => {
   it('reads it, and shows what came back', async () => {

@@ -67,9 +67,92 @@ type valueSpan struct {
 	from, to int
 }
 
+type deckBuilder struct {
+	deck  Deck
+	spans []cardSpan
+	read  int
+	under int
+}
+
+func findNextDeckHeading(secs []section, start int, bodyLen int) int {
+	for _, later := range secs[start:] {
+		if isDeckHeadingLevel(later.level) {
+			return later.head
+		}
+	}
+	return bodyLen
+}
+
+func (b *deckBuilder) addSection(s section, body []byte, end int) {
+	lead, leadEnd := readTrimmedRun(body, s.from, end)
+	b.deck.Sections = append(b.deck.Sections, Section{Name: s.name, Preamble: lead})
+	b.under = len(b.deck.Sections) - 1
+	b.read = getTrimmedEnd(body, s.head, s.from)
+	if lead != "" {
+		b.read = leadEnd
+	}
+}
+
+func (b *deckBuilder) readCardFields(body []byte, secs []section, at int, card *Card, span *cardSpan) {
+	fields := map[string]bool{}
+	for _, f := range secs {
+		if f.level != FieldLevel {
+			break
+		}
+		value, valueEnd := readTrimmedRun(body, f.from, f.to)
+		b.read = getTrimmedEnd(body, f.head, f.from)
+		if value != "" {
+			b.read = valueEnd
+		}
+		card.Values = append(card.Values, Value{Field: f.name, Text: value})
+		span.values = append(span.values, valueSpan{field: f.name, head: f.head, from: f.from, to: f.to})
+		if fields[f.name] {
+			problem := newCardProblem(at, FaultTwoValues, "this card writes "+f.name+" twice")
+			problem.Field = f.name
+			b.deck.Problems = append(b.deck.Problems, problem)
+		}
+		fields[f.name] = true
+	}
+}
+
+func (b *deckBuilder) addCard(body []byte, s section, secsAfter []section, end int) {
+	at := len(b.deck.Cards)
+	heading, carried := ReadHeading(s.name)
+	card := Card{Heading: heading, Mark: carried, Section: b.under}
+	span := cardSpan{
+		name: s.name, mark: carried, head: s.head, from: s.from, end: end,
+		linkFrom: s.from, linkTo: s.from,
+	}
+
+	target, leadFrom := readStencilLink(body, s.from, s.to)
+	card.StencilLink = target
+	b.read = getTrimmedEnd(body, s.head, s.from)
+	if target != "" {
+		b.read = getTrimmedEnd(body, s.from, leadFrom)
+		span.linkFrom, span.linkTo = lineFrom(body, s.from, b.read), b.read
+	}
+	lead, leadEnd := readTrimmedRun(body, leadFrom, s.to)
+	card.Preamble = lead
+	if lead != "" {
+		b.read = leadEnd
+	}
+	if target == "" {
+		b.deck.Problems = append(b.deck.Problems, newCardProblem(at, FaultNoStencil,
+			"the first paragraph of this card is not a lone wikilink, so it names no stencil"))
+	}
+
+	b.readCardFields(body, secsAfter, at, &card, &span)
+
+	b.deck.Cards = append(b.deck.Cards, card)
+	b.spans = append(b.spans, span)
+}
+
 func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
-	d := Deck{Ref: ref}
 	secs := sections(body, SectionLevel, FieldLevel)
+	b := deckBuilder{
+		deck:  Deck{Ref: ref},
+		under: NoSection,
+	}
 
 	first := len(body)
 	for _, s := range secs {
@@ -78,91 +161,25 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 			break
 		}
 	}
-	d.Preamble = markdown.Normalise(string(body[:first]))
+	b.deck.Preamble = markdown.Normalise(string(body[:first]))
 
-	read := 0
-	under := NoSection
-	var spans []cardSpan
 	for i, s := range secs {
 		if !isDeckHeadingLevel(s.level) {
 			continue
 		}
-
-		end := len(body)
-		for _, later := range secs[i+1:] {
-			if isDeckHeadingLevel(later.level) {
-				end = later.head
-				break
-			}
-		}
-
+		end := findNextDeckHeading(secs, i+1, len(body))
 		if s.level == SectionLevel {
-			// Everything down to the section's first card is the person's own
-			// writing about their deck, whatever it is made of.
-			lead, leadEnd := readTrimmedRun(body, s.from, end)
-			d.Sections = append(d.Sections, Section{Name: s.name, Preamble: lead})
-			under = len(d.Sections) - 1
-			read = getTrimmedEnd(body, s.head, s.from)
-			if lead != "" {
-				read = leadEnd
-			}
-			continue
+			b.addSection(s, body, end)
+		} else {
+			b.addCard(body, s, secs[i+1:], end)
 		}
-
-		at := len(d.Cards)
-		heading, carried := ReadHeading(s.name)
-		card := Card{Heading: heading, Mark: carried, Section: under}
-		span := cardSpan{
-			name: s.name, mark: carried, head: s.head, from: s.from, end: end,
-			linkFrom: s.from, linkTo: s.from,
-		}
-
-		target, leadFrom := readStencilLink(body, s.from, s.to)
-		card.StencilLink = target
-		read = getTrimmedEnd(body, s.head, s.from)
-		if target != "" {
-			read = getTrimmedEnd(body, s.from, leadFrom)
-			span.linkFrom, span.linkTo = lineFrom(body, s.from, read), read
-		}
-		lead, leadEnd := readTrimmedRun(body, leadFrom, s.to)
-		card.Preamble = lead
-		if lead != "" {
-			read = leadEnd
-		}
-		if target == "" {
-			d.Problems = append(d.Problems, newCardProblem(at, FaultNoStencil,
-				"the first paragraph of this card is not a lone wikilink, so it names no stencil"))
-		}
-
-		fields := map[string]bool{}
-		for _, f := range secs[i+1:] {
-			if f.level != FieldLevel {
-				break
-			}
-			value, valueEnd := readTrimmedRun(body, f.from, f.to)
-			read = getTrimmedEnd(body, f.head, f.from)
-			if value != "" {
-				read = valueEnd
-			}
-			card.Values = append(card.Values, Value{Field: f.name, Text: value})
-			span.values = append(span.values, valueSpan{field: f.name, head: f.head, from: f.from, to: f.to})
-			if fields[f.name] {
-				problem := newCardProblem(at, FaultTwoValues, "this card writes "+f.name+" twice")
-				problem.Field = f.name
-				d.Problems = append(d.Problems, problem)
-			}
-			fields[f.name] = true
-		}
-
-		d.Cards = append(d.Cards, card)
-		spans = append(spans, span)
 	}
 
-	d.Problems = append(d.Problems, findDuplicateMarks(d.Cards)...)
-	if len(d.Cards) > 0 || len(d.Sections) > 0 {
-		d.Tail = markdown.Normalise(string(body[read:]))
+	b.deck.Problems = append(b.deck.Problems, findDuplicateMarks(b.deck.Cards)...)
+	if len(b.deck.Cards) > 0 || len(b.deck.Sections) > 0 {
+		b.deck.Tail = markdown.Normalise(string(body[b.read:]))
 	}
-	return d, spans
+	return b.deck, b.spans
 }
 
 // findDuplicateMarks is one problem against each card of a mark another card in this deck

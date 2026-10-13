@@ -85,10 +85,10 @@ function applyTabTransition(
   if (next.tab.pendingWrite === null) context.queue.resolveFlush(id)
 }
 
-export function openNotes(core: Notes, how: OpenNotesOptions) {
+export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
   const limits = how.limits ?? DEFAULT_WRITE_LIMITS
   const onReplaced = how.onReplaced ?? (() => {})
-  const now = how.now
+  const now = how.now ?? (() => Date.now())
 
   const tabs = shallowReactive(new Map<string, Tab>())
   const bodies = shallowReactive(new Map<string, string>())

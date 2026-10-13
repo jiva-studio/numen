@@ -18,181 +18,122 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 	p := Defaults()
 	var problems []string
 
-	p.Goal = readGoal(front, p.Goal, &problems)
-	p.Rule = readLearnedRule(front, p.Rule, &problems)
-	p.Counts = readBudgetUnit(front, p.Counts, &problems)
-	p.By = readByDate(front, p.Goal, &problems)
-
-	readLimits(front, &p, &problems)
-
-	p.Retention = readRetention(front, p.Retention, &problems)
-	p.IsEvenLoad = readEvenLoad(front, p.IsEvenLoad, &problems)
-	p.Load = readLoad(front, p.Load, &problems)
-
-	return p, problems
-}
-
-func readGoal(front map[string]any, fallback Goal, problems *[]string) Goal {
-	raw, present := front["goal"]
-	if !present || raw == nil {
-		return fallback
+	if raw, present := front["goal"]; present && raw != nil {
+		name, isText := raw.(string)
+		switch {
+		case !isText:
+			problems = append(problems, "goal is not text")
+		case IsKnownGoal(Goal(name)):
+			p.Goal = Goal(name)
+		default:
+			problems = append(problems, "goal "+name+" is not minutes_a_day, retention or by_date")
+		}
 	}
-	name, isText := raw.(string)
-	switch {
-	case !isText:
-		*problems = append(*problems, "goal is not text")
-	case IsKnownGoal(Goal(name)):
-		return Goal(name)
-	default:
-		*problems = append(*problems, "goal "+name+" is not minutes_a_day, retention or by_date")
-	}
-	return fallback
-}
 
-func readLearnedRule(front map[string]any, fallback LearnedRule, problems *[]string) LearnedRule {
-	raw, present := front["learned"]
-	if !present || raw == nil {
-		return fallback
+	if raw, present := front["learned"]; present && raw != nil {
+		name, isText := raw.(string)
+		switch {
+		case !isText:
+			problems = append(problems, "learned is not text")
+		case IsKnownRule(LearnedRule(name)):
+			p.Rule = LearnedRule(name)
+		default:
+			problems = append(problems, "learned "+name+" is not interval or retention")
+		}
 	}
-	name, isText := raw.(string)
-	switch {
-	case !isText:
-		*problems = append(*problems, "learned is not text")
-	case IsKnownRule(LearnedRule(name)):
-		return LearnedRule(name)
-	default:
-		*problems = append(*problems, "learned "+name+" is not interval or retention")
-	}
-	return fallback
-}
 
-func readBudgetUnit(front map[string]any, fallback BudgetUnit, problems *[]string) BudgetUnit {
-	raw, present := front["counts"]
-	if !present || raw == nil {
-		return fallback
+	if raw, present := front["counts"]; present && raw != nil {
+		name, isText := raw.(string)
+		switch {
+		case !isText:
+			problems = append(problems, "counts is not text")
+		case IsKnownBudgetUnit(BudgetUnit(name)):
+			p.Counts = BudgetUnit(name)
+		default:
+			problems = append(problems, "counts "+name+" is not cards or shows")
+		}
 	}
-	name, isText := raw.(string)
-	switch {
-	case !isText:
-		*problems = append(*problems, "counts is not text")
-	case IsKnownBudgetUnit(BudgetUnit(name)):
-		return BudgetUnit(name)
-	default:
-		*problems = append(*problems, "counts "+name+" is not cards or shows")
-	}
-	return fallback
-}
 
-func readByDate(front map[string]any, goal Goal, problems *[]string) time.Time {
-	var by time.Time
 	if raw, present := front["by_date"]; present && raw != nil {
 		switch value := raw.(type) {
 		case time.Time:
-			by = value
+			p.By = value
 		case string:
 			day, err := time.Parse(DayLayout, strings.TrimSpace(value))
 			if err != nil {
-				*problems = append(*problems, "by_date "+value+" is not a day, written as "+DayLayout)
-			} else {
-				by = day
+				problems = append(problems, "by_date "+value+" is not a day, written as "+DayLayout)
+				break
 			}
+			p.By = day
 		default:
-			*problems = append(*problems, "by_date is not a day")
+			problems = append(problems, "by_date is not a day")
 		}
 	}
-	if goal == GoalDate && by.IsZero() {
-		*problems = append(*problems, "a preset aiming at a day says which day, under by_date")
+	if p.Goal == GoalDate && p.By.IsZero() {
+		problems = append(problems, "a preset aiming at a day says which day, under by_date")
 	}
-	return by
-}
 
-func readLimits(front map[string]any, p *Preset, problems *[]string) {
-	p.MinutesADay = readWholeNumber(front, "minutes_a_day", MinutesADayBounds, p.MinutesADay, problems)
-	p.NewADay = readWholeNumber(front, "new_a_day", NewADayBounds, p.NewADay, problems)
-	p.ReviewsADay = readWholeNumber(front, "reviews_a_day", ReviewsADayBounds, p.ReviewsADay, problems)
-	p.Backlog = readWholeNumber(front, "backlog", BacklogBounds, p.Backlog, problems)
-	p.Interval = readWholeNumber(front, "interval", IntervalBounds, p.Interval, problems)
-}
+	p.MinutesADay = readWholeNumber(front, "minutes_a_day", MinutesADayBounds, p.MinutesADay, &problems)
+	p.NewADay = readWholeNumber(front, "new_a_day", NewADayBounds, p.NewADay, &problems)
+	p.ReviewsADay = readWholeNumber(front, "reviews_a_day", ReviewsADayBounds, p.ReviewsADay, &problems)
+	p.Backlog = readWholeNumber(front, "backlog", BacklogBounds, p.Backlog, &problems)
+	p.Interval = readWholeNumber(front, "interval", IntervalBounds, p.Interval, &problems)
 
-func readRetention(front map[string]any, fallback float64, problems *[]string) float64 {
-	raw, present := front["retention"]
-	if !present || raw == nil {
-		return fallback
-	}
-	value, ok := number(raw)
-	switch {
-	case !ok:
-		*problems = append(*problems, "retention is not a number")
-	case !RetentionBounds.Contains(value):
-		*problems = append(*problems, fmt.Sprintf(
-			"retention %g is outside %g to %g", value, RetentionBounds.Least, RetentionBounds.Most))
-	default:
-		return value
-	}
-	return fallback
-}
-
-func readEvenLoad(front map[string]any, fallback bool, problems *[]string) bool {
-	raw, present := front["even_load"]
-	if !present || raw == nil {
-		return fallback
-	}
-	value, isBool := raw.(bool)
-	if !isBool {
-		*problems = append(*problems, "even_load is neither true nor false")
-		return fallback
-	}
-	return value
-}
-
-func readLoad(front map[string]any, fallback map[time.Weekday]int, problems *[]string) map[time.Weekday]int {
-	raw, present := front["load"]
-	if !present || raw == nil {
-		return fallback
-	}
-	days, isMapping := raw.(map[string]any)
-	if !isMapping {
-		*problems = append(*problems, "load is a day of the week against a share of a day's load")
-		return fallback
-	}
-	var out map[time.Weekday]int
-	for _, name := range slices.Sorted(maps.Keys(days)) {
-		day, known := Weekday(name)
-		if !known {
-			*problems = append(*problems, "the load of "+name+" is not a day of the week")
-			continue
+	if raw, present := front["retention"]; present && raw != nil {
+		value, ok := number(raw)
+		switch {
+		case !ok:
+			problems = append(problems, "retention is not a number")
+		case !RetentionBounds.Contains(value):
+			problems = append(problems, fmt.Sprintf(
+				"retention %g is outside %g to %g", value, RetentionBounds.Least, RetentionBounds.Most))
+		default:
+			p.Retention = value
 		}
-		share, ok := readLoadShare(name, days[name], problems)
-		if !ok {
-			continue
-		}
-		if out == nil {
-			out = make(map[time.Weekday]int, len(days))
-		}
-		out[day] = share
 	}
-	if out == nil {
-		return fallback
-	}
-	return out
-}
 
-func readLoadShare(name string, raw any, problems *[]string) (int, bool) {
-	share, ok := number(raw)
-	switch {
-	case !ok:
-		*problems = append(*problems, "the load of "+name+" is not a number")
-		return 0, false
-	case share != math.Trunc(share):
-		*problems = append(*problems, "the load of "+name+" is counted in whole per cent")
-		return 0, false
-	case !LoadBounds.Contains(share):
-		*problems = append(*problems, fmt.Sprintf("the load of %s, %g, is outside %g to %g",
-			name, share, LoadBounds.Least, LoadBounds.Most))
-		return 0, false
-	default:
-		return int(share), true
+	if raw, present := front["even_load"]; present && raw != nil {
+		value, isBool := raw.(bool)
+		if !isBool {
+			problems = append(problems, "even_load is neither true nor false")
+		} else {
+			p.IsEvenLoad = value
+		}
 	}
+
+	if raw, present := front["load"]; present && raw != nil {
+		days, isMapping := raw.(map[string]any)
+		if !isMapping {
+			problems = append(problems, "load is a day of the week against a share of a day's load")
+		} else {
+			// A map hands its keys over in whatever order it holds them, and a
+			// note read twice says the same both times.
+			for _, name := range slices.Sorted(maps.Keys(days)) {
+				day, known := Weekday(name)
+				if !known {
+					problems = append(problems, "the load of "+name+" is not a day of the week")
+					continue
+				}
+				share, ok := number(days[name])
+				switch {
+				case !ok:
+					problems = append(problems, "the load of "+name+" is not a number")
+				case share != math.Trunc(share):
+					problems = append(problems, "the load of "+name+" is counted in whole per cent")
+				case !LoadBounds.Contains(share):
+					problems = append(problems, fmt.Sprintf("the load of %s, %g, is outside %g to %g",
+						name, share, LoadBounds.Least, LoadBounds.Most))
+				default:
+					if p.Load == nil {
+						p.Load = make(map[time.Weekday]int, len(days))
+					}
+					p.Load[day] = int(share)
+				}
+			}
+		}
+	}
+
+	return p, problems
 }
 
 // weekdays are the days of the week as a preset writes them.

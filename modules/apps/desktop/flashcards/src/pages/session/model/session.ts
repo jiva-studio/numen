@@ -61,149 +61,247 @@ export interface SessionDeps {
   cards: SessionClient
   reportError(why: unknown): void
   /** When it is, in milliseconds. How long a card stood there is measured with it. */
-  now(): number
+  now?(): number
 }
 
-export function useReviewSession(deps: SessionDeps) {
-  const now = deps.now
-
-  const vault = ref('')
-  const run = ref('')
+function useSessionCards() {
   const asked = shallowRef<readonly CardFace[]>([])
   const at = ref(0)
   const shown = ref(false)
   const answers = ref<string[]>([])
 
-  /**
-   * Whether an answer is on its way to the vault. A card is answered once: the
-   * line is written before the next card is put up, and a second press while
-   * that is happening would write the same card twice and skip the one after
-   * it.
-   */
-  const writing = ref(false)
-
-  /** When the card now in front of the person was put there. */
-  let put = now()
-
   const card = computed<CardFace | null>(() => asked.value[at.value] ?? null)
   const left = computed(() => asked.value.length - at.value)
   const over = computed(() => card.value === null)
-
-  /** How many answers this session has written, which is what stands at the end. */
   const done = computed(() => answers.value.length)
 
-  /**
-   * The session let go of. What was answered is in the vault, and the next
-   * session is opened whole: a card kept here is one a screen could fall back
-   * to showing with nothing able to answer it.
-   */
-  const forget = () => {
+  const reset = () => {
     asked.value = []
     at.value = 0
     shown.value = false
     answers.value = []
-    run.value = ''
-    vault.value = ''
   }
 
-  /**
-   * Sit down to a vault, or to one deck of it. What comes back is what the
-   * session could not act on, and nothing when it could not be opened at all.
-   */
-  /**
-   * Preset is the note one preset stands in, and the empty path is the preset
-   * that schedules the decks naming none. Naming none at all sits to the deck.
-   */
-  const start = async (id: string, deck: string, preset?: string): Promise<Report | null> => {
-    try {
-      const opened = await deps.cards.startSession(
-        preset === undefined ? { vault: id, deck } : { vault: id, deck, preset },
-      )
-      vault.value = id
-      run.value = opened.run
-      asked.value = opened.cards.map(createCardFace)
-      at.value = 0
-      shown.value = false
-      answers.value = []
-      put = now()
-      return { unwritten: opened.unwritten, skipped: opened.skipped }
-    } catch (why) {
-      deps.reportError(why)
-      return null
+  return { asked, at, shown, answers, card, left, over, done, reset }
+}
+
+async function openSession(deps: {
+  cards: SessionClient
+  reportError: (why: unknown) => void
+  id: string
+  deck: string
+  preset?: string
+}): Promise<{ run: string; cards: readonly CardFace[]; report: Report } | null> {
+  try {
+    const opened = await deps.cards.startSession(
+      deps.preset === undefined
+        ? { vault: deps.id, deck: deps.deck }
+        : { vault: deps.id, deck: deps.deck, preset: deps.preset },
+    )
+    return {
+      run: opened.run,
+      cards: opened.cards.map(createCardFace),
+      report: { unwritten: opened.unwritten, skipped: opened.skipped },
     }
+  } catch (why) {
+    deps.reportError(why)
+    return null
   }
+}
 
-  const show = () => {
-    shown.value = true
+async function submitAnswer(deps: {
+  cards: SessionClient
+  reportError: (why: unknown) => void
+  vault: string
+  run: string
+  card: CardFace
+  how: Grade
+  elapsedMs: number
+}): Promise<string | null> {
+  try {
+    const response = await deps.cards.answerCard({
+      vault: deps.vault,
+      run: deps.run,
+      mark: deps.card.mark,
+      face: deps.card.face,
+      rating: RATING_BY_GRADE[deps.how],
+      tookMs: BigInt(deps.elapsedMs),
+    })
+    return response.answer
+  } catch (why) {
+    deps.reportError(why)
+    return null
   }
+}
 
-  /**
-   * Answer the card in front of the person. An answer that could not be written
-   * leaves the card where it was: what a person said is theirs, and a card
-   * moved past with nothing recorded is an answer lost.
-   */
+async function revertAnswer(deps: {
+  cards: SessionClient
+  reportError: (why: unknown) => void
+  vault: string
+  run: string
+  answer: string
+}): Promise<boolean> {
+  try {
+    await deps.cards.takeBackAnswer({ vault: deps.vault, run: deps.run, answer: deps.answer })
+    return true
+  } catch (why) {
+    deps.reportError(why)
+    return false
+  }
+}
+
+function useAnswerActions(deps: {
+  cardsClient: SessionClient
+  reportError: (why: unknown) => void
+  now: () => number
+  vault: Ref<string>
+  run: Ref<string>
+  cards: ReturnType<typeof useSessionCards>
+  writing: Ref<boolean>
+  getPut: () => number
+  setPut: (time: number) => void
+}) {
   const answer = async (how: Grade) => {
-    const one = card.value
-    if (!one || !shown.value || writing.value) return
-    const elapsedMs = now() - put
-    writing.value = true
+    const one = deps.cards.card.value
+    if (!one || !deps.cards.shown.value || deps.writing.value) return
+    const elapsedMs = deps.now() - deps.getPut()
+    deps.writing.value = true
     try {
-      const response = await deps.cards.answerCard({
-        vault: vault.value,
-        run: run.value,
-        mark: one.mark,
-        face: one.face,
-        rating: RATING_BY_GRADE[how],
-        tookMs: BigInt(elapsedMs),
+      const ans = await submitAnswer({
+        cards: deps.cardsClient,
+        reportError: deps.reportError,
+        vault: deps.vault.value,
+        run: deps.run.value,
+        card: one,
+        how,
+        elapsedMs,
       })
-      answers.value.push(response.answer)
-    } catch (why) {
-      deps.reportError(why)
-      return
+      if (!ans) return
+      deps.cards.answers.value.push(ans)
     } finally {
-      writing.value = false
+      deps.writing.value = false
     }
-    at.value += 1
-    shown.value = false
-    put = now()
+    deps.cards.at.value += 1
+    deps.cards.shown.value = false
+    deps.setPut(deps.now())
   }
 
-  /**
-   * Take the last answer back. The card comes back with its answer showing,
-   * which is where the person was when they pressed the wrong key.
-   */
   const takeBack = async () => {
-    const last = answers.value[answers.value.length - 1]
-    if (last === undefined || writing.value) return
-    writing.value = true
+    const last = deps.cards.answers.value[deps.cards.answers.value.length - 1]
+    if (last === undefined || deps.writing.value) return
+    deps.writing.value = true
     try {
-      await deps.cards.takeBackAnswer({ vault: vault.value, run: run.value, answer: last })
-    } catch (why) {
-      deps.reportError(why)
-      return
+      const ok = await revertAnswer({
+        cards: deps.cardsClient,
+        reportError: deps.reportError,
+        vault: deps.vault.value,
+        run: deps.run.value,
+        answer: last,
+      })
+      if (!ok) return
     } finally {
-      writing.value = false
+      deps.writing.value = false
     }
-    answers.value.pop()
-    at.value = Math.max(0, at.value - 1)
-    shown.value = true
-    put = now()
+    deps.cards.answers.value.pop()
+    deps.cards.at.value = Math.max(0, deps.cards.at.value - 1)
+    deps.cards.shown.value = true
+    deps.setPut(deps.now())
   }
+
+  return { answer, takeBack }
+}
+
+function useSessionOpener(deps: {
+  cardsClient: SessionClient
+  reportError: (why: unknown) => void
+  now: () => number
+  cards: ReturnType<typeof useSessionCards>
+  vault: Ref<string>
+  run: Ref<string>
+  setPut: (time: number) => void
+}) {
+  const start = async (
+    id: string,
+    deck: string,
+    preset?: string | undefined,
+  ): Promise<Report | null> => {
+    const opened = await openSession({
+      cards: deps.cardsClient,
+      reportError: deps.reportError,
+      id,
+      deck,
+      ...(preset !== undefined ? { preset } : {}),
+    })
+    if (!opened) return null
+    deps.vault.value = id
+    deps.run.value = opened.run
+    deps.cards.asked.value = opened.cards
+    deps.cards.at.value = 0
+    deps.cards.shown.value = false
+    deps.cards.answers.value = []
+    deps.setPut(deps.now())
+    return opened.report
+  }
+
+  const forget = () => {
+    deps.cards.reset()
+    deps.run.value = ''
+    deps.vault.value = ''
+  }
+
+  return { start, forget }
+}
+
+export function useReviewSession(deps: SessionDeps) {
+  const now = deps.now ?? (() => Date.now())
+  const vault = ref('')
+  const run = ref('')
+  const writing = ref(false)
+  let put = now()
+  const cards = useSessionCards()
+
+  const { start, forget } = useSessionOpener({
+    cardsClient: deps.cards,
+    reportError: deps.reportError,
+    now,
+    cards,
+    vault,
+    run,
+    setPut: (time) => {
+      put = time
+    },
+  })
+
+  const { answer, takeBack } = useAnswerActions({
+    cardsClient: deps.cards,
+    reportError: deps.reportError,
+    now,
+    vault,
+    run,
+    cards,
+    writing,
+    getPut: () => put,
+    setPut: (time) => {
+      put = time
+    },
+  })
 
   return {
     vault: vault as Ref<string>,
     run,
-    asked,
-    at,
-    shown,
-    answers,
+    asked: cards.asked,
+    at: cards.at,
+    shown: cards.shown,
+    answers: cards.answers,
     writing,
-    card,
-    left,
-    over,
-    done,
+    card: cards.card,
+    left: cards.left,
+    over: cards.over,
+    done: cards.done,
     start,
-    show,
+    show: () => {
+      cards.shown.value = true
+    },
     answer,
     takeBack,
     forget,
