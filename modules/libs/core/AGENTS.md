@@ -23,10 +23,6 @@ carries a table of what it refuses and a guard against passing vacuously.
 | The composition root hands out no adapter type | `TestTheRootHandsOutNoAdapterTheCompilerHolds` |
 | A package is imported under the name its layer gives it | `TestNoPackageIsImportedUnderItsLayer` |
 
-The layer rule carries a baseline of the edges this installation still has, and
-`container/baseline_test.go` refuses an entry naming an edge nothing reaches any
-more. A baseline only shrinks.
-
 ## What the core may not do
 
 | The rule | The test |
@@ -75,7 +71,7 @@ them are unexported — so no half-built one exists for a method to check.
 |---|---|
 | A use case does not carry a collaborator its constructor takes in an exported field | `TestNoUseCaseCarriesACollaboratorInTheOpen` |
 
-No use case exposes a collaborator: the baseline is zero.
+No use case exposes a collaborator.
 
 A dependency that may genuinely be absent is not a nil left in a field: it is a
 case the composition root decides, and it says so in a word — `ProofreadingConfig.Recognition`
@@ -95,9 +91,8 @@ the format is `markdown`.
 
 ## Writing a new rule
 
-A rule is three things, and a rule missing any of them is not landed:
+A rule is two things, and a rule missing either is not landed:
 
 1. the walk over the tree, with a guard that fails when it reads nothing;
 2. a negative control — a fixture written to be refused, asserting exactly what
-   the rule catches and what it lets through;
-3. a baseline, where the tree does not hold yet, that only shrinks.
+   the rule catches and what it lets through.

@@ -17,14 +17,6 @@ import (
 // module is what every package of the core is named under.
 const module = "github.com/jiva-studio/numen/modules/libs/core/"
 
-// baseline are the edges this installation still has, and the list only
-// shrinks.
-//
-// A package is named by the path it sits at. An adapter the compiler holds sits
-// under internal/, and a name here is not a name there: the two are different
-// packages and an entry for one admits nothing of the other.
-var baseline = map[string][]string{}
-
 // driving are the adapters something outside comes in through. They call the
 // scenarios; a driven adapter stands behind a port and calls none, so what a
 // scenario is written over is a port and never an adapter's own answer.
@@ -1126,12 +1118,6 @@ func isAdapter(pkg string) bool {
 // getRefusal says why one package may not reach another, and nothing where it
 // may.
 func getRefusal(from, to string) string {
-	for _, held := range baseline[from] {
-		if to == held || strings.HasPrefix(to, held+"/") {
-			return ""
-		}
-	}
-
 	switch {
 	case isAdapter(from) || isShared(from):
 		if to == "container" {

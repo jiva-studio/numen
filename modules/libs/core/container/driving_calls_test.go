@@ -32,10 +32,6 @@ var wiring = []string{
 	"adapter/window/flashcards/api.go",
 }
 
-// portCalls are the files outside wiring that call a port through a field, and
-// the list only shrinks.
-var portCalls = map[string]string{}
-
 // getPortFields are the names of the struct fields a file types port.X.
 func getPortFields(file *ast.File) []string {
 	var found []string
@@ -133,7 +129,6 @@ func TestNoDrivingAdapterCallsAPortOutsideItsWiring(t *testing.T) {
 		t.Fatal("no driving adapter holds a port in a field: the walk is not reading them")
 	}
 
-	called := map[string]bool{}
 	for rel, file := range files {
 		if slices.Contains(wiring, rel) {
 			continue
@@ -142,15 +137,7 @@ func TestNoDrivingAdapterCallsAPortOutsideItsWiring(t *testing.T) {
 		if len(calls) == 0 {
 			continue
 		}
-		called[rel] = true
-		if _, is := portCalls[rel]; !is {
-			t.Errorf("%s calls %s: a driving adapter asks a use case, not a port", rel, calls[0])
-		}
-	}
-	for rel := range portCalls {
-		if !called[rel] {
-			t.Errorf("portCalls holds %s and it calls no port", rel)
-		}
+		t.Errorf("%s calls %s: a driving adapter asks a use case, not a port", rel, calls[0])
 	}
 	for _, rel := range wiring {
 		if files[rel] == nil {
