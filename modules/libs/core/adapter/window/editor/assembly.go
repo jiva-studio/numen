@@ -4,9 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -61,7 +59,7 @@ type Assembly interface {
 
 	// The use cases that read and write the settings and the file they stand in.
 	// The day is where one day of review gives way to the next.
-	OpenGetSettings(day review.Day) *settings.Get
+	OpenGetSettings(day flashcards.Day) *settings.Get
 	OpenWriteSettings() *settings.Write
 	OpenGetSettingsFile() *settings.GetFile
 	OpenWriteSettingsFile() *settings.WriteFile
@@ -79,7 +77,7 @@ type Assembly interface {
 	// with, and the one a query is turned into a vector by. The two are one
 	// object where the settings name one provider.
 	OpenEmbedders(
-		ctx context.Context, tasks *task.Tasks,
+		ctx context.Context, tasks *run.Tasks,
 	) (indexing, asking port.Embedder, closer func() error, why error)
 
 	// NewSearch is how the window answers a question about the text the vault
@@ -108,10 +106,10 @@ type Assembly interface {
 	// is what the two take turns at: one run holds this machine's models at a
 	// time.
 	OpenRecognitionWorker(
-		ctx context.Context, tasks *task.Tasks, models *run.Lock,
+		ctx context.Context, tasks *run.Tasks, models *run.Lock,
 	) *recognition.Worker
 	OpenTranscriptionWorker(
-		ctx context.Context, tasks *task.Tasks, models *run.Lock,
+		ctx context.Context, tasks *run.Tasks, models *run.Lock,
 	) *transcription.Worker
 
 	// GetRefresh brings named notes up to date for a window standing on no

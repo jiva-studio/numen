@@ -16,8 +16,12 @@ type Review struct {
 	DayStartTime string `json:"day_start_time"`
 }
 
-// LatestDayStartTime is how far past midnight a day may be made to begin.
-const LatestDayStartTime = 12 * time.Hour
+// LatestDayStartTime is how late in the day a day of review may be made to begin,
+// on the clock on the wall.
+const LatestDayStartTime = "12:00"
+
+// LatestDayStartDuration is how far past midnight a day may be made to begin.
+const LatestDayStartDuration = 12 * time.Hour
 
 // ClockFormat is how an hour of the day is written.
 const ClockFormat = "15:04"
@@ -34,7 +38,7 @@ func (r Review) DayStart() (time.Duration, bool) {
 		return DefaultDayStart(), false
 	}
 	starts := time.Duration(at.Hour())*time.Hour + time.Duration(at.Minute())*time.Minute
-	if starts > LatestDayStartTime {
+	if starts > LatestDayStartDuration {
 		return DefaultDayStart(), false
 	}
 	return starts, true
@@ -52,7 +56,7 @@ func ReadDayStart(written string) (string, error) {
 	starts, hour := Review{DayStartTime: written}.DayStart()
 	if !hour || strings.TrimSpace(written) == "" {
 		return "", fmt.Errorf("%w, 00:00 to %s: %q",
-			review.ErrNotAnHour, review.Clock(LatestDayStartTime), written)
+			review.ErrNotAnHour, LatestDayStartTime, written)
 	}
 	return review.Clock(starts), nil
 }

@@ -129,7 +129,7 @@ func OpenAt(path string, into Document) error {
 	checkMode(into)
 	if _, hour := into.GetReview().DayStart(); !hour {
 		warn(into, "review.day_start_time is an hour of the day, 00:00 to %s, and %s stands",
-			review.Clock(LatestDayStartTime), review.Clock(DefaultDayStart()))
+			LatestDayStartTime, review.Clock(DefaultDayStart()))
 	}
 	return nil
 }

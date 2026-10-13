@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
@@ -72,7 +71,7 @@ func newTranscriptionWorker(t *testing.T, by *deaf, recordings ...string) (*Work
 	held := NewWorker(t.Context(), Config{
 		Readers: vaults{v.ID: shelved},
 		Derived: shelves{newShelf()},
-		Tasks:   task.New(),
+		Tasks:   run.NewTasks(),
 		Wait:    waitForContext,
 		Delay:   neverDelay,
 		Runtime: Runtime{
@@ -132,7 +131,7 @@ func TestTheModelsAreGotUnderTheirOwnNameBeforeARecordingIsHeard(t *testing.T) {
 	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3")
 	known := unheard{recordings: []string{"talks/one.mp3"}}
 
-	var while []task.Task
+	var while []run.Task
 	open := listening.with.Runtime.Open
 	listening.with.Runtime.Open = func(
 		ctx context.Context,

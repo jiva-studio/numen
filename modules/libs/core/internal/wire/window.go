@@ -12,7 +12,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
 // The windows this application opens. A question is asked of one of them by
@@ -56,7 +56,7 @@ type Window struct {
 
 	// Tasking is everything being done behind the window. A window holding none
 	// says there is nothing.
-	Tasking *task.Tasks
+	Tasking *run.Tasks
 
 	// Vault is the identity of the vault this window has in front of the
 	// person. Nil is a window open on the installation, which answers with
@@ -103,7 +103,7 @@ func (w *Window) WatchTasks(
 	repeat := time.NewTicker(Again)
 	defer repeat.Stop()
 
-	var last []task.Task
+	var last []run.Task
 	for {
 		select {
 		case list, ok := <-watch:
@@ -204,7 +204,7 @@ func (w *Window) checkWindowName(named string) error {
 }
 
 // AddTask puts one piece of work in the list.
-func (w *Window) AddTask(at task.Task) {
+func (w *Window) AddTask(at run.Task) {
 	if w != nil && w.Tasking != nil {
 		w.Tasking.Set(at)
 	}
@@ -253,7 +253,7 @@ func (w *Window) WaitForFlush(ctx context.Context) bool {
 func (w *Window) CancelFlush() { w.clients.endRequest() }
 
 // describeTasks is the work as the schema says it.
-func describeTasks(list []task.Task) []*v1.Task {
+func describeTasks(list []run.Task) []*v1.Task {
 	out := make([]*v1.Task, 0, len(list))
 	for _, at := range list {
 		out = append(out, &v1.Task{
@@ -271,13 +271,13 @@ func describeTasks(list []task.Task) []*v1.Task {
 }
 
 // convertUnit is what a task counts, as the schema says it.
-func convertUnit(in task.Unit) v1.Unit {
+func convertUnit(in run.Unit) v1.Unit {
 	switch in {
-	case task.Bytes:
+	case run.Bytes:
 		return v1.Unit_UNIT_BYTES
-	case task.Seconds:
+	case run.Seconds:
 		return v1.Unit_UNIT_SECONDS
-	case task.Things:
+	case run.Things:
 		return v1.Unit_UNIT_THINGS
 	}
 	return v1.Unit_UNIT_THINGS

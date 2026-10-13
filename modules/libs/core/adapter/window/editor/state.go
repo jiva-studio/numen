@@ -19,8 +19,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
 // State is the vault the window is looking at and what every handler of it
@@ -190,7 +190,7 @@ func (s *State) getRecordingForgetter() func(domain.Vault, string) {
 
 // reportTask puts one piece of work in the list of what is being done behind the
 // window, for a build that keeps one.
-func (s *State) reportTask(at task.Task) { s.Window.AddTask(at) }
+func (s *State) reportTask(at run.Task) { s.Window.AddTask(at) }
 
 // finishTask takes one piece of work out of that list.
 func (s *State) finishTask(id string) { s.Window.RemoveTask(id) }
@@ -209,7 +209,7 @@ func (s *State) isUnlevelled(err error) bool {
 	if !errors.Is(err, note.ErrUnlevelled) {
 		return false
 	}
-	s.reportTask(task.Task{ID: levellingTheIndex, Title: "Bringing the index level", Error: err.Error()})
+	s.reportTask(run.Task{ID: levellingTheIndex, Title: "Bringing the index level", Error: err.Error()})
 	return true
 }
 

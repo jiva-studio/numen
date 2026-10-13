@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	asrmodels "github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
@@ -53,7 +52,7 @@ func (c Config) Transcribe(sources port.SourceRepository, by port.Transcriber) t
 func (c Config) OpenTranscriptionWorker(
 	ctx context.Context,
 	sources port.SourceRepository,
-	tasks *task.Tasks,
+	tasks *run.Tasks,
 	models *run.Lock,
 ) *transcription.Worker {
 	return transcription.NewWorker(ctx, transcription.Config{

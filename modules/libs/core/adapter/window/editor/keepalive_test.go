@@ -9,7 +9,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
@@ -57,7 +57,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 
 	for name, open := range streams {
 		t.Run(name, func(t *testing.T) {
-			state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
+			state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
 			services := createServices(state)
 			state.SetAgent(testsupport.SilentAgent{})
 

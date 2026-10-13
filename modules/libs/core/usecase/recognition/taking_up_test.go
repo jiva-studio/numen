@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
@@ -223,7 +222,7 @@ func TestARecognitionAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer release()
-	w.tasks.Set(task.Task{
+	w.tasks.Set(run.Task{
 		ID: run.GetProofreadID(scan), Title: "Proofreading a recognition", About: scan,
 		Count: 1, Total: 2,
 	})

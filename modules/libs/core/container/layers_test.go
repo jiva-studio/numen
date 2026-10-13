@@ -23,13 +23,7 @@ const module = "github.com/jiva-studio/numen/modules/libs/core/"
 // A package is named by the path it sits at. An adapter the compiler holds sits
 // under internal/, and a name here is not a name there: the two are different
 // packages and an entry for one admits nothing of the other.
-var baseline = map[string][]string{
-	// The composition root is compiled from the words the things it binds are
-	// named in. It hands a scenario the day a review begins at and a worker the
-	// list of what is being done; the cutting, the scheduling and the work are
-	// elsewhere.
-	"container": {"flashcards/review", "task"},
-}
+var baseline = map[string][]string{}
 
 // driving are the adapters something outside comes in through. They call the
 // scenarios; a driven adapter stands behind a port and calls none, so what a
@@ -1344,7 +1338,7 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"internal/onnxruntime", "port", false},
 
 		// What is true of a note is worked out from what is true of a note.
-		{"domain", "task", true},
+		{"domain", "usecase/run", true},
 		{"flashcards/review", "port", true},
 		{"flashcards/review", "internal/chunking", true},
 		{"domain", "markdown", false},
@@ -1360,7 +1354,8 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"container", "internal/wire", true},
 		{"container", "internal/text", true},
 		{"container", "adapter/index", false},
-		{"container", "task", false},
+		{"container", "usecase/run", false},
+		{"container", "flashcards/review", true},
 	} {
 		why := getRefusal(one.from, one.to)
 		if one.isRefused && why == "" {

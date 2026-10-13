@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -308,7 +307,7 @@ func TestTheBoundsOnNestedHeadingLimitAreTheSettingsOwn(t *testing.T) {
 }
 
 func TestTheLatestStartOfADayIsSaidAsAClockTime(t *testing.T) {
-	if got, want := (Config{}).GetLatestDayStart(), review.Clock(settings.LatestDayStartTime); got == "" || got != want {
+	if got, want := (Config{}).GetLatestDayStart(), settings.LatestDayStartTime; got == "" || got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }

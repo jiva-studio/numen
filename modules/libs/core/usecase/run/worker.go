@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 )
 
 // Worker runs the sources a person named one at a time, in the order they named
@@ -17,7 +16,7 @@ import (
 // work and says so, and how far it has got is put in the list of what is being
 // done.
 type Worker struct {
-	tasks *task.Tasks
+	tasks *Tasks
 	each  func(ctx context.Context, v domain.Vault, path string)
 
 	// under is what every run is under, and going is every run that has not
@@ -41,7 +40,7 @@ type Worker struct {
 // each, reporting into tasks when there are any.
 func NewWorker(
 	ctx context.Context,
-	tasks *task.Tasks,
+	tasks *Tasks,
 	each func(ctx context.Context, v domain.Vault, path string),
 ) *Worker {
 	return &Worker{tasks: tasks, each: each, under: ctx}
@@ -187,7 +186,7 @@ func (w *Worker) RepeatRounds(ctx context.Context, wait port.Wait, every time.Du
 
 // Report puts one piece of work in the list. Work a person started is shown at
 // once, and work nobody asked for is shown once it has lasted.
-func (w *Worker) Report(at task.Task, isUserStarted bool) {
+func (w *Worker) Report(at Task, isUserStarted bool) {
 	at.IsUserStarted = isUserStarted
 	if w.tasks != nil {
 		w.tasks.Set(at)

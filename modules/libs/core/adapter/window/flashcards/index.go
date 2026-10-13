@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
 // IndexVault is a vault walked into the index.
@@ -120,7 +120,7 @@ func (a *API) startIndexing(ctx context.Context, v domain.Vault) (underway bool,
 // work is drawn the moment it begins; a vault it carries is work drawn once it
 // has lasted.
 func (a *API) runIndexing(ctx context.Context, read IndexVault, v domain.Vault, held bool) {
-	at := task.Task{
+	at := run.Task{
 		ID:            "indexing\t" + string(v.ID),
 		Title:         "Indexing the vault",
 		About:         v.Name,

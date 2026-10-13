@@ -9,7 +9,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -109,57 +108,23 @@ func (c Config) Flashcards(
 		c.handleError(fmt.Errorf("the schedules are worked out at every launch: %w", err))
 	}
 
-	faces := flashcards.NewListCardFaces(c.VaultReaders(), notes, links)
-	faces.Cores = c.getCores()
-	// A deck or stencil this window writes is forgotten before the index is
-	// brought level with it.
-	leveled := func(ctx context.Context, v domain.Vault, paths []string) error {
-		faces.Invalidate(v.ID, paths...)
-		if index == nil {
-			return nil
-		}
-		return index(ctx, v, paths)
-	}
-	marking := flashcards.NewMarkCards(
-		c.VaultReaders(), c.VaultWriters(), notes, links, leveled, now,
-	)
-	day := review.Day{Starts: c.GetDayStartTime()}
-
 	counting, err := c.OpenDayCounts()
 	if err != nil {
 		c.handleError(fmt.Errorf("the days are counted again at every launch: %w", err))
 	}
 
-	presets := flashcards.NewPresets(
-		c.VaultReaders(), c.VaultWriters(), links, notes, leveled, day, now,
-	)
-	// A link the index does not carry is accounted for in what parsing turned
-	// up.
-	presets.Problems = problems
-
-	// Each card is worked out at the share of the cards its own preset asks
-	// for, which is what says which preset a card face stands under.
-	schedules := flashcards.NewSchedules(logs, review.NewFSRS(), day, faces, presets)
-	schedules.Cache = kept
-
-	counted := flashcards.NewCountReviews(logs, schedules, day, now)
-	counted.Cache = counting
-
-	curves := flashcards.NewProjectCurve(faces, schedules, presets, day, now)
-	curves.Cores = c.getCores()
-
-	return flashcards.Scenarios{
-		CardFaces:     faces,
-		Marks:         marking,
-		Schedules:     schedules,
-		CardsDue:      flashcards.NewCountCardsDue(faces, schedules, presets, day, now),
-		Session:       flashcards.NewSession(marking, faces, schedules, presets, day, now),
-		Log:           flashcards.Log{Stores: logs},
-		Record:        flashcards.NewRecord(now),
-		Counted:       counted,
-		GetReviewDays: flashcards.NewGetReviewDays(counted),
-		Presets:       presets,
-		Curves:        curves,
-		Day:           day,
-	}
+	return flashcards.NewScenarios(flashcards.Config{
+		Readers:   c.VaultReaders(),
+		Writers:   c.VaultWriters(),
+		Notes:     notes,
+		Links:     links,
+		Problems:  problems,
+		Index:     index,
+		Logs:      logs,
+		Schedules: kept,
+		DayCounts: counting,
+		DayStart:  c.GetDayStartTime,
+		Now:       now,
+		Cores:     c.getCores(),
+	})
 }

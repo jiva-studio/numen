@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
 // gated is a model that runs passes calls at once. Every call counts itself in,
@@ -59,7 +59,7 @@ func (g *gated) Embed(ctx context.Context, texts []string) ([][]float32, error) 
 func openGated(t *testing.T, passes int) (filling, asking port.Embedder, model *gated) {
 	t.Helper()
 	model = newGated(passes)
-	filling, asking, closer := embedding.Open(t.Context(), task.New(), embedding.NewReached(model.model, "gated", model), embedding.Provider{})
+	filling, asking, closer := embedding.Open(t.Context(), run.NewTasks(), embedding.NewReached(model.model, "gated", model), embedding.Provider{})
 	t.Cleanup(func() { _ = closer() })
 	return filling, asking, model
 }
@@ -214,7 +214,7 @@ func TestTheLaneStartsNoGoroutineThatOutlivesACall(t *testing.T) {
 func TestASeparateQuestionProviderLeavesTheIndexSideUnlimited(t *testing.T) {
 	first, second := newGated(4), newGated(4)
 	second.model = first.model
-	filling, _, closer := embedding.Open(t.Context(), task.New(),
+	filling, _, closer := embedding.Open(t.Context(), run.NewTasks(),
 		embedding.NewReached(first.model, "first", first), embedding.NewReached(second.model, "second", second))
 	t.Cleanup(func() { _ = closer() })
 	if got := filling.(interface{ Concurrency() int }).Concurrency(); got != 4 {
@@ -233,7 +233,7 @@ func TestTheIndexSideIsSizedByTheModelThatArrives(t *testing.T) {
 			return nil, ctx.Err()
 		}
 	}
-	filling, _, closer := embedding.Open(t.Context(), task.New(),
+	filling, _, closer := embedding.Open(t.Context(), run.NewTasks(),
 		embedding.NewFetched(model.model, "gated", opening), embedding.Provider{})
 	t.Cleanup(func() { _ = closer() })
 
@@ -266,7 +266,7 @@ func TestTheIndexSideIsSizedByTheModelThatArrives(t *testing.T) {
 
 func TestTheIndexSideLetsGoOfTheModelAndSaysWhatClosingSaid(t *testing.T) {
 	held := newSaying("closing", 1, 0, 0)
-	filling, _, letGo := embedding.Open(t.Context(), task.New(),
+	filling, _, letGo := embedding.Open(t.Context(), run.NewTasks(),
 		embedding.NewReached(held.model, "closing", closing{saying: held, why: errModelGone}), embedding.Provider{})
 	_ = letGo
 
@@ -279,7 +279,7 @@ func TestTheIndexSideLetsGoOfTheModelAndSaysWhatClosingSaid(t *testing.T) {
 }
 
 func TestTheIndexSideSaysWhyTheModelNeverArrives(t *testing.T) {
-	filling, _, letGo := embedding.Open(t.Context(), task.New(),
+	filling, _, letGo := embedding.Open(t.Context(), run.NewTasks(),
 		embedding.NewFetched(is("never"), "never", failWith(errModelGone)), embedding.Provider{})
 	defer func() { _ = letGo() }()
 

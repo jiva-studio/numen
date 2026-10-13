@@ -1,6 +1,16 @@
 package flashcards
 
-import "github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
+import (
+	"context"
+	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// Day is where one day of review gives way to the next.
+type Day = review.Day
 
 // Scenarios is everything that runs a vault's cards: what stands in it, what it
 // owes, what to ask next, and what an answer is written to.
@@ -25,4 +35,79 @@ type Scenarios struct {
 	Curves ProjectCurve
 	// Day is where one day of review gives way to the next.
 	Day review.Day
+}
+
+// Config is what the scenarios that run a vault's cards are built against.
+type Config struct {
+	Readers   port.VaultReaders
+	Writers   port.VaultWriters
+	Notes     port.NoteQueries
+	Links     port.LinkQueries
+	Problems  port.ProblemQueries
+	Index     func(ctx context.Context, v domain.Vault, paths []string) error
+	Logs      port.DerivedStores
+	Schedules port.ScheduleStore
+	DayCounts port.ScheduleStore
+	DayStart  func() time.Duration
+	Now       port.Clock
+	Cores     int
+}
+
+// New builds the scenarios that run a vault's cards against this installation.
+func New(cfg Config) Scenarios { return NewScenarios(cfg) }
+
+// NewScenarios builds the scenarios that run a vault's cards against this installation.
+func NewScenarios(cfg Config) Scenarios {
+	faces := NewListCardFaces(cfg.Readers, cfg.Notes, cfg.Links)
+	faces.Cores = cfg.Cores
+	// A deck or stencil this window writes is forgotten before the index is
+	// brought level with it.
+	leveled := func(ctx context.Context, v domain.Vault, paths []string) error {
+		faces.Invalidate(v.ID, paths...)
+		if cfg.Index == nil {
+			return nil
+		}
+		return cfg.Index(ctx, v, paths)
+	}
+	marking := NewMarkCards(
+		cfg.Readers, cfg.Writers, cfg.Notes, cfg.Links, leveled, cfg.Now,
+	)
+	var starts time.Duration
+	if cfg.DayStart != nil {
+		starts = cfg.DayStart()
+	}
+	day := review.Day{Starts: starts}
+
+	presets := NewPresets(
+		cfg.Readers, cfg.Writers, cfg.Links, cfg.Notes, leveled, day, cfg.Now,
+	)
+	// A link the index does not carry is accounted for in what parsing turned
+	// up.
+	presets.Problems = cfg.Problems
+
+	// Each card is worked out at the share of the cards its own preset asks
+	// for, which is what says which preset a card face stands under.
+	schedules := NewSchedules(cfg.Logs, review.NewFSRS(), day, faces, presets)
+	schedules.Cache = cfg.Schedules
+
+	counted := NewCountReviews(cfg.Logs, schedules, day, cfg.Now)
+	counted.Cache = cfg.DayCounts
+
+	curves := NewProjectCurve(faces, schedules, presets, day, cfg.Now)
+	curves.Cores = cfg.Cores
+
+	return Scenarios{
+		CardFaces:     faces,
+		Marks:         marking,
+		Schedules:     schedules,
+		CardsDue:      NewCountCardsDue(faces, schedules, presets, day, cfg.Now),
+		Session:       NewSession(marking, faces, schedules, presets, day, cfg.Now),
+		Log:           Log{Stores: cfg.Logs},
+		Record:        NewRecord(cfg.Now),
+		Counted:       counted,
+		GetReviewDays: NewGetReviewDays(counted),
+		Presets:       presets,
+		Curves:        curves,
+		Day:           day,
+	}
 }

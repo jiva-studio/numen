@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
 var errModelGone = errors.New("the model is gone")
@@ -94,7 +94,7 @@ func TestAProviderLetGoOfSaysWhatStoppedTheComparison(t *testing.T) {
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			second := newSaying("second", 1, 0, 0)
-			_, asking, letGo := embedding.Open(t.Context(), task.New(), c.first(second), c.second(second))
+			_, asking, letGo := embedding.Open(t.Context(), run.NewTasks(), c.first(second), c.second(second))
 			defer func() { _ = letGo() }()
 
 			waitForDisowned(t, second)
@@ -109,7 +109,7 @@ func TestAProviderLetGoOfSaysWhatStoppedTheComparison(t *testing.T) {
 // A first model that is known not to come is not waited out by the second: the
 // second is let go of at once.
 func TestASecondProviderIsNotWaitedForOnceTheFirstNeverArrives(t *testing.T) {
-	tasks := task.New()
+	tasks := run.NewTasks()
 	waiting := func(ctx context.Context, _ func(done, total int64)) (port.Embedder, error) {
 		<-ctx.Done()
 		return nil, ctx.Err()
@@ -133,7 +133,7 @@ func TestAFirstProviderIsNotAskedOnceTheSecondNeverArrives(t *testing.T) {
 	t.Cleanup(func() { close(asked) })
 	blocked := blocking{saying: first, until: asked}
 
-	_, asking, letGo := embedding.Open(t.Context(), task.New(),
+	_, asking, letGo := embedding.Open(t.Context(), run.NewTasks(),
 		embedding.NewReached(first.model, "first", blocked),
 		embedding.NewFetched(is("second"), "second", failWith(errModelGone)))
 	defer func() { _ = letGo() }()
@@ -174,7 +174,7 @@ func TestProvidersAnsweringWithOtherThanOneVectorAreNotOneModel(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			first, second := newSaying("first", 1, 0, 0), newSaying("second", 1, 0, 0)
 
-			tasks := task.New()
+			tasks := run.NewTasks()
 			_, asking, letGo := embedding.Open(t.Context(), tasks,
 				embedding.NewReached(first.model, "first", counting{saying: first, vectors: c.said}),
 				embedding.NewReached(second.model, "second", counting{saying: second, vectors: c.backed}))
@@ -200,7 +200,7 @@ func TestAComparisonEndedByTheRunStoppingLetsNobodyGo(t *testing.T) {
 		return nil, ctx.Err()
 	}
 
-	tasks := task.New()
+	tasks := run.NewTasks()
 	_, _, letGo := embedding.Open(ctx, tasks,
 		embedding.NewFetched(is("first"), "first", waiting),
 		embedding.NewReached(second.model, "second", second))
@@ -247,19 +247,19 @@ func TestTheFirstByteOfTheModelIsDrawnAsAShare(t *testing.T) {
 		return nil, errors.New("none of the model is on this machine")
 	}
 
-	tasks := task.New()
+	tasks := run.NewTasks()
 	_, _, letGo := embedding.Open(t.Context(), tasks,
 		embedding.NewFetched(is("a/model"), "a/model", opening), embedding.Provider{})
 	defer func() { _ = letGo() }()
 	defer close(stop)
 
-	if at := getOnlyTask(t, tasks); at.Count != 0 || at.Unit != task.Things {
+	if at := getOnlyTask(t, tasks); at.Count != 0 || at.Unit != run.Things {
 		t.Errorf("a line that has counted nothing is drawn as %d %v", at.Count, at.Unit)
 	}
 
 	(<-told)(1, 10)
 	at := getOnlyTask(t, tasks)
-	if at.Count != 1 || at.Total != 10 || at.Unit != task.Bytes {
+	if at.Count != 1 || at.Total != 10 || at.Unit != run.Bytes {
 		t.Errorf("the first byte is drawn as %d of %d %v", at.Count, at.Total, at.Unit)
 	}
 }
@@ -280,7 +280,7 @@ func TestLettingGoOfTwoProvidersLetsGoOfBothAndSaysWhyOnce(t *testing.T) {
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			first, second := newSaying("first", 1, 0, 0), newSaying("second", 1, 0, 0)
-			_, _, letGo := embedding.Open(t.Context(), task.New(),
+			_, _, letGo := embedding.Open(t.Context(), run.NewTasks(),
 				embedding.NewReached(first.model, "first", closing{saying: first, why: c.first}),
 				embedding.NewReached(second.model, "second", closing{saying: second, why: c.second}))
 

@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
@@ -49,7 +49,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	for name, open := range streams {
 		t.Run(name, func(t *testing.T) {
 			api := newAPIOver(registry{})
-			api.Window = NewWindow(task.New())
+			api.Window = NewWindow(run.NewTasks())
 			api.SetAgent(testsupport.SilentAgent{})
 
 			entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)

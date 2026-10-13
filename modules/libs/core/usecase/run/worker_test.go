@@ -9,7 +9,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 )
 
 var somewhere = domain.Vault{ID: "somewhere"}
@@ -28,7 +27,7 @@ type recorder struct {
 func newRecorder(t *testing.T, ctx context.Context) *recorder {
 	t.Helper()
 	r := &recorder{reached: make(chan int, 8), first: make(chan struct{}), rest: make(chan struct{})}
-	r.Worker = NewWorker(ctx, task.New(), func(_ context.Context, _ domain.Vault, path string) {
+	r.Worker = NewWorker(ctx, NewTasks(), func(_ context.Context, _ domain.Vault, path string) {
 		r.mu.Lock()
 		r.taken = append(r.taken, path)
 		n := len(r.taken)

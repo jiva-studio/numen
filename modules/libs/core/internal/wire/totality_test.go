@@ -7,7 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
 // Every value of every enum this file carries across reaches something.
@@ -44,10 +44,10 @@ func TestEveryVerdictIsWrittenFromOne(t *testing.T) {
 }
 
 func TestEveryUnitIsWrittenFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.Unit]task.Unit{
-		v1.Unit_UNIT_THINGS:  task.Things,
-		v1.Unit_UNIT_BYTES:   task.Bytes,
-		v1.Unit_UNIT_SECONDS: task.Seconds,
+	testsupport.CheckProduced(t, map[v1.Unit]run.Unit{
+		v1.Unit_UNIT_THINGS:  run.Things,
+		v1.Unit_UNIT_BYTES:   run.Bytes,
+		v1.Unit_UNIT_SECONDS: run.Seconds,
 	}, convertUnit)
 }
 

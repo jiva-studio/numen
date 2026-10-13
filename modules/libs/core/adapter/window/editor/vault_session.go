@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -239,7 +239,7 @@ func (o *Installation) resetStatus() {
 		o.State.finishTask(pass)
 	}
 	if o.embedderError != nil {
-		o.State.reportTask(task.Task{ID: makingVectors, Title: "Indexing", Error: o.embedderError.Error()})
+		o.State.reportTask(run.Task{ID: makingVectors, Title: "Indexing", Error: o.embedderError.Error()})
 	}
 }
 

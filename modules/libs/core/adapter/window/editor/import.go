@@ -6,7 +6,7 @@ import (
 	pathpkg "path"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -40,7 +40,7 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	}
 	defer state.Writing.finish()
 
-	at := task.Task{ID: importingFiles + " " + into, Title: "Bringing files in", About: into}
+	at := run.Task{ID: importingFiles + " " + into, Title: "Bringing files in", About: into}
 	state.reportTask(at)
 
 	imported, err := o.vaults.Import.Execute(ctx, showing, into, paths)

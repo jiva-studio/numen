@@ -4,9 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -74,7 +72,7 @@ func (e EditorAssembly) GetPassageQueries() port.PassageQueries     { return e.d
 
 func (e EditorAssembly) CloseIndex() error { return e.db.Close() }
 
-func (e EditorAssembly) OpenGetSettings(day review.Day) *settings.Get {
+func (e EditorAssembly) OpenGetSettings(day flashcards.Day) *settings.Get {
 	held := e.cfg.NestedHeadingLimitBounds()
 	return settings.NewGet(
 		e.cfg.ReadSettings(), e.cfg.Models(), settings.Bounds{Least: held.Least, Most: held.Most},
@@ -98,7 +96,7 @@ func (e EditorAssembly) IsRebuildingIndex() bool     { return e.cfg.ShouldRebuil
 func (e EditorAssembly) IsTranscribingUnasked() bool { return e.cfg.ShouldTranscribe }
 
 func (e EditorAssembly) OpenEmbedders(
-	ctx context.Context, tasks *task.Tasks,
+	ctx context.Context, tasks *run.Tasks,
 ) (indexing, asking port.Embedder, closer func() error, why error) {
 	return e.cfg.Embedders(ctx, tasks)
 }
@@ -140,13 +138,13 @@ func (e EditorAssembly) OpenImportURL(
 }
 
 func (e EditorAssembly) OpenRecognitionWorker(
-	ctx context.Context, tasks *task.Tasks, models *run.Lock,
+	ctx context.Context, tasks *run.Tasks, models *run.Lock,
 ) *recognition.Worker {
 	return e.cfg.OpenRecognitionWorker(ctx, e.db.Sources(), tasks, models)
 }
 
 func (e EditorAssembly) OpenTranscriptionWorker(
-	ctx context.Context, tasks *task.Tasks, models *run.Lock,
+	ctx context.Context, tasks *run.Tasks, models *run.Lock,
 ) *transcription.Worker {
 	return e.cfg.OpenTranscriptionWorker(ctx, e.db.Sources(), tasks, models)
 }

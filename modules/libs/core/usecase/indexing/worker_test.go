@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -35,12 +35,12 @@ func noteWith(vocabulary []string, n int) string {
 
 // recorder keeps the list of what is being done, as the window shows it.
 type recorder struct {
-	tasks *task.Tasks
+	tasks *run.Tasks
 }
 
-func newRecorder() *recorder { return &recorder{tasks: task.New()} }
+func newRecorder() *recorder { return &recorder{tasks: run.NewTasks()} }
 
-func (r *recorder) ReportTask(at task.Task)                        { r.tasks.Set(at) }
+func (r *recorder) ReportTask(at run.Task)                         { r.tasks.Set(at) }
 func (r *recorder) FinishTask(id string)                           { r.tasks.Remove(id) }
 func (r *recorder) ReportError(error)                              {}
 func (r *recorder) ReportNotes(domain.Vault, int)                  {}
@@ -48,7 +48,7 @@ func (r *recorder) ReportBooks(domain.Vault, source.ExtractResult) {}
 
 // findTask is one piece of work as the list holds it, or nothing where the list
 // does not hold it.
-func findTask(t *testing.T, r *recorder, id string) *task.Task {
+func findTask(t *testing.T, r *recorder, id string) *run.Task {
 	t.Helper()
 	for _, at := range r.tasks.List() {
 		if at.ID == id {
@@ -227,10 +227,10 @@ func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
 // vector, which is what a person watching the corner reads.
 type peeking struct {
 	*asked
-	tasks *task.Tasks
+	tasks *run.Tasks
 
 	mu    sync.Mutex
-	while []task.Task
+	while []run.Task
 }
 
 func (p *peeking) Embed(ctx context.Context, texts []string) ([][]float32, error) {
@@ -245,7 +245,7 @@ func (p *peeking) Embed(ctx context.Context, texts []string) ([][]float32, error
 func (*peeking) Concurrency() int { return 1 }
 
 // opening is one piece of work as it stood when the first vector was asked for.
-func (p *peeking) opening(id string) (task.Task, bool) {
+func (p *peeking) opening(id string) (run.Task, bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	for _, at := range p.while {
@@ -253,7 +253,7 @@ func (p *peeking) opening(id string) (task.Task, bool) {
 			return at, true
 		}
 	}
-	return task.Task{}, false
+	return run.Task{}, false
 }
 
 // Indexing is always of something, and a row carrying the word alone leaves a
@@ -371,10 +371,10 @@ func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 // reads.
 type overheard struct {
 	*asked
-	tasks *task.Tasks
+	tasks *run.Tasks
 
 	mu   sync.Mutex
-	seen [][]task.Task
+	seen [][]run.Task
 }
 
 // GetModel is asked at the head of every pass, before a source has been opened.
@@ -396,7 +396,7 @@ func (o *overheard) keep() {
 	o.mu.Unlock()
 }
 
-func (o *overheard) lists() [][]task.Task {
+func (o *overheard) lists() [][]run.Task {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	return o.seen

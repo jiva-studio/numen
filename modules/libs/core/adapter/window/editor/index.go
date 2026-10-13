@@ -12,8 +12,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	embedmodel "github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/indexing"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -30,7 +30,7 @@ type indexEvents struct {
 	out   io.Writer
 }
 
-func (e indexEvents) ReportTask(at task.Task) { e.state.reportTask(at) }
+func (e indexEvents) ReportTask(at run.Task) { e.state.reportTask(at) }
 
 func (e indexEvents) FinishTask(id string) { e.state.finishTask(id) }
 
@@ -99,7 +99,7 @@ func startIndexing(
 ) (vaults.Refresh, func()) {
 	// Said before the goroutine starts, so a window that opens on a fresh vault
 	// is shown the walk from its first moment.
-	state.reportTask(task.Task{ID: walkingNotes, Title: "Indexing the vault"})
+	state.reportTask(run.Task{ID: walkingNotes, Title: "Indexing the vault"})
 
 	var running sync.WaitGroup
 

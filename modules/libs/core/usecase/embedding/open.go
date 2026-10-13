@@ -6,7 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
 // OpenModel is a model on this machine becoming answerable. It is told how far
@@ -63,7 +63,7 @@ const (
 // Naming no provider for the index is embedding with nothing, and there is
 // nothing to close.
 func Open(
-	ctx context.Context, tasks *task.Tasks, indexing, query Provider,
+	ctx context.Context, tasks *run.Tasks, indexing, query Provider,
 ) (filling, asking port.Embedder, closer func() error) {
 	if !indexing.isPlaced() {
 		return nil, nil, nil
@@ -98,7 +98,7 @@ func OpenOne(ctx context.Context, from Provider) (port.Embedder, func() error) {
 // open is one provider held under the identity its vectors are kept under. What
 // it is is known before it is here, so the index is fitted and a vector claimed
 // under the right recipe while the weights are still coming down.
-func open(ctx context.Context, tasks *task.Tasks, at arrival) *embedding.Embedder {
+func open(ctx context.Context, tasks *run.Tasks, at arrival) *embedding.Embedder {
 	held := embedding.NewDeferredEmbedder(at.from.model)
 	if at.from.fetch == nil {
 		held.SetModel(at.from.held, nil)
@@ -179,29 +179,29 @@ func (p Provider) newArrival(role string) arrival {
 // window's to write. A share is drawn once some of the model is here.
 //
 // A run with no list to tell is told nothing and still asks.
-func newProgressReport(tasks *task.Tasks, at arrival) func(done, total int64) {
+func newProgressReport(tasks *run.Tasks, at arrival) func(done, total int64) {
 	if tasks == nil {
 		return func(int64, int64) {}
 	}
 	return func(done, total int64) {
-		held := task.Task{ID: at.id, Title: "Preparing the model", About: at.name}
+		held := run.Task{ID: at.id, Title: "Preparing the model", About: at.name}
 		if done > 0 {
-			held.Count, held.Total, held.Unit = done, total, task.Bytes
+			held.Count, held.Total, held.Unit = done, total, run.Bytes
 		}
 		tasks.Set(held)
 	}
 }
 
-func ready(tasks *task.Tasks, at arrival) {
+func ready(tasks *run.Tasks, at arrival) {
 	if tasks != nil {
 		tasks.Remove(at.id)
 	}
 }
 
 // reportError leaves the model in the list under what stopped it.
-func reportError(tasks *task.Tasks, at arrival, why error) {
+func reportError(tasks *run.Tasks, at arrival, why error) {
 	if tasks != nil {
-		tasks.Set(task.Task{
+		tasks.Set(run.Task{
 			ID: at.id, Title: "Preparing the model", About: at.name,
 			Error: why.Error(),
 		})
