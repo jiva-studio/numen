@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/cardwire"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )

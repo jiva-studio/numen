@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/onnxruntime"
 )
 
 // Where a vector is made.

@@ -8,8 +8,8 @@ import (
 
 	ort "github.com/getcharzp/onnxruntime_purego"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/onnxruntime"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
 // openLayoutOn opens the layout model held in body on the runtime of this

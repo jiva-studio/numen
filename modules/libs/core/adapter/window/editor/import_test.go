@@ -13,7 +13,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 )
 
 // TestAFileLetGoOfOverTheTreeArrivesAndIsSaid is the path a drop takes: the

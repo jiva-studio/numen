@@ -94,7 +94,7 @@ mkdir -p "$out"
 cat "$out/header.txt"
 
 bin=$out/onnxruntime.test
-(cd "$core" && go test -c -o "$bin" ./internal/onnxruntime/)
+(cd "$core" && go test -c -o "$bin" ./internal/adapterlib/onnxruntime/)
 
 failed=0
 for provider in $providers; do

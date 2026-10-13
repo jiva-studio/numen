@@ -9,8 +9,8 @@ import (
 	ort "github.com/getcharzp/onnxruntime_purego"
 	"golang.org/x/image/draw"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/onnxruntime"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
 // The side the layout model reads a page at. Everything it answers is in the

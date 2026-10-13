@@ -3,7 +3,7 @@ package transcription
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/onnxruntime"
 )
 
 func TestOnlyTheEncoderTakesMoreThanOneThread(t *testing.T) {

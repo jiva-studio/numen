@@ -1,7 +1,7 @@
 package recognition
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/onnxruntime"
 )
 
 // Config is what a person may change about recognising a scanned page: which

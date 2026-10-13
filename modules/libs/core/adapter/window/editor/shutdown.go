@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 )
 
 // shutdownState is whether a flush of pending writes is running and whether the

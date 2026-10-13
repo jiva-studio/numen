@@ -38,7 +38,7 @@ var driving = map[string]bool{
 	"adapter/window/editor":     true,
 	"adapter/window/flashcards": true,
 	"internal/adapter/theme":    true,
-	"internal/wire":             true,
+	"internal/adapterlib/wire":  true,
 }
 
 // pure are the packages holding what is true of a note or a card, of a
@@ -268,22 +268,19 @@ func TestATestOfTheCoreBuildingAnAdapterStandsOutsideIt(t *testing.T) {
 	}
 }
 
-// machinery are the packages held to none of the abstinences below, because
-// reaching outward is what they are: the composition root that builds the
-// adapters and the fixtures only a test is compiled from. The adapters
-// themselves are left out by adapting, and the shared adapter libraries by
-// being among shared.
-var machinery = []string{"container", "internal/testsupport"}
+// isMachinery says whether a package is the composition root or a fixture only
+// a test is compiled from. Reaching outward is what they are, so they are held
+// to none of the abstinences below.
+func isMachinery(pkg string) bool {
+	return pkg == "container" || strings.HasPrefix(pkg, "internal/test")
+}
 
-// shared are the adapter libraries more than one adapter is built on: the
-// runtime two of them load their models through, the wait two hosted clients
-// retry by, and the package two windows both answer a request for a page out
-// of. Each is held to the adapter rules, and the machine and the clock are open
-// to it as they are to an adapter.
-var shared = []string{"internal/onnxruntime", "internal/retry", "internal/wire"}
-
-// isShared says whether a package is a shared adapter library.
-func isShared(pkg string) bool { return isAmong(shared, pkg) }
+// isShared says whether a package is a shared adapter library. Each is held to
+// the adapter rules, and the machine and the clock are open to it as they are to
+// an adapter.
+func isShared(pkg string) bool {
+	return strings.HasPrefix(pkg, "internal/adapterlib/")
+}
 
 // theMachine are the packages that are the machine and the world beyond it: the
 // process's files and its children, a socket, and the kernel itself. Each one
@@ -325,7 +322,7 @@ func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
 			return err
 		}
 		pkg := getPackage("..", path)
-		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || isShared(pkg) || isAmong(machinery, pkg) {
+		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || isShared(pkg) || isMachinery(pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -493,7 +490,7 @@ func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 			return err
 		}
 		pkg := getPackage("..", path)
-		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || isShared(pkg) || isAmong(machinery, pkg) {
+		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || isShared(pkg) || isMachinery(pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -1151,7 +1148,7 @@ func getRefusal(from, to string) string {
 			return "the composition root assembles the core and does none of its work"
 		}
 	// Fixtures build the real adapters, and only a test is compiled from them.
-	case isAmong([]string{"internal/testsupport", "internal/testonly"}, from):
+	case strings.HasPrefix(from, "internal/test"):
 	default:
 		if isAdapter(to) || to == "container" {
 			return "the core reaches no adapter and nothing that assembles one"
@@ -1187,7 +1184,7 @@ func sibling(from, to string) bool { return family(from) == family(to) }
 // grouping are the folders that hold adapters and are none themselves: adapter/
 // itself, the folder the compiler holds them in, and the folder holding one
 // adapter to a window. What stands directly under any of them is an adapter.
-var grouping = []string{"adapter", "internal/adapter", "adapter/window"}
+var grouping = []string{"adapter", "internal/adapter", "adapter/window", "internal/adapterlib"}
 
 // family is the adapter a package belongs to: what stands directly under the
 // grouping folder it is in, and every package beneath that.
@@ -1329,13 +1326,17 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"usecase/note", "internal/adapter/trash", true},
 		{"usecase/note", "container", true},
 		{"usecase/note", "port", false},
-		{"internal/wire", "adapter/window/editor", true},
-		{"internal/wire", "container", true},
-		{"internal/wire", "internal/adapter/trash", true},
-		{"internal/wire", "usecase/note", false},
-		{"internal/onnxruntime", "usecase/note", true},
-		{"internal/onnxruntime", "internal/adapter/embed", true},
-		{"internal/onnxruntime", "port", false},
+		{"internal/adapterlib/wire", "adapter/window/editor", true},
+		{"internal/adapterlib/wire", "container", true},
+		{"internal/adapterlib/wire", "internal/adapter/trash", true},
+		{"internal/adapterlib/wire", "usecase/note", false},
+		{"internal/adapterlib/onnxruntime", "usecase/note", true},
+		{"internal/adapterlib/onnxruntime", "internal/adapter/embed", true},
+		{"internal/adapterlib/onnxruntime", "port", false},
+
+		// Fixtures build the real adapters.
+		{"internal/testsupport", "adapter/index", false},
+		{"internal/testonly", "container", false},
 
 		// What is true of a note is worked out from what is true of a note.
 		{"domain", "usecase/run", true},
@@ -1351,7 +1352,7 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"flashcards/format", "domain", false},
 
 		// The composition root does none of the core's work.
-		{"container", "internal/wire", true},
+		{"container", "internal/adapterlib/wire", true},
 		{"container", "internal/text", true},
 		{"container", "adapter/index", false},
 		{"container", "usecase/run", false},
@@ -1370,7 +1371,7 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 // Reading the tree is what the rules are checked against, so the tree has to be
 // where this expects it.
 func TestTheTreeIsWhereTheLayersAreRead(t *testing.T) {
-	for _, at := range []string{"domain", "port", "usecase", "adapter", "internal/adapter"} {
+	for _, at := range []string{"domain", "port", "usecase", "adapter", "internal/adapter", "internal/adapterlib"} {
 		if _, err := os.Stat(filepath.Join("..", at)); err != nil {
 			t.Fatalf("%s: %v", at, err)
 		}

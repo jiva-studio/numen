@@ -9,8 +9,8 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/appearance"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 )
 
 // Appearance is what the window wears: which theme, which half of a colour pair its

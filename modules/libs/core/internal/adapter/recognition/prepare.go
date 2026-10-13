@@ -6,7 +6,7 @@ import (
 
 	"github.com/getcharzp/go-ocr/paddle"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/onnxruntime"
 )
 
 // The recognition library makes an engine of its own and takes none. It is made

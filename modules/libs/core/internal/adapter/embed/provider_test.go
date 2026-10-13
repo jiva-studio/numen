@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/onnxruntime"
 )
 
 // One model name is a repository and something a service answers to, and the
