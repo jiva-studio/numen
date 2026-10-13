@@ -1,9 +1,17 @@
 package main
 
 import (
+	"context"
 	"errors"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // A vault is walked once however many counts ask for it at the same moment.
@@ -69,5 +77,100 @@ func TestUpdateIndexUsesTheVaultsOwnOpenedVault(t *testing.T) {
 	}
 	if len(vaults.opened) != 1 {
 		t.Errorf("levelling and walking opened the vault %d times", len(vaults.opened))
+	}
+}
+
+// closeAndWait holds until the watch over an opened vault has ended.
+func TestClosingHoldsUntilTheWatchHasEnded(t *testing.T) {
+	cfg, db, _, _, held := makeWindow(t)
+	lifetime, end := context.WithCancel(t.Context())
+	defer end()
+	vaults := &openVaults{
+		cfg: cfg, db: db, lifetime: lifetime,
+		recordVault: func(domain.Vault) {}, out: io.Discard,
+	}
+	if err := vaults.indexVault(t.Context(), held[0]); err != nil {
+		t.Fatal(err)
+	}
+
+	closed := make(chan struct{})
+	go func() {
+		vaults.closeAndWait()
+		close(closed)
+	}()
+
+	select {
+	case <-closed:
+		t.Fatal("the window let go of the index while a watch was still running")
+	case <-time.After(300 * time.Millisecond):
+	}
+	end()
+	select {
+	case <-closed:
+	case <-time.After(10 * time.Second):
+		t.Fatal("the window never let go once the watch ended")
+	}
+}
+
+// What a watched vault changes under is reported to the window, through the
+// opening that watches it.
+func TestAChangeInAnOpenedVaultIsRecorded(t *testing.T) {
+	_, _, vaults, _, held := makeWindow(t)
+	v := held[0]
+	told := make(chan domain.Vault, 8)
+	vaults.recordVault = func(v domain.Vault) {
+		select {
+		case told <- v:
+		default:
+		}
+	}
+	if err := vaults.indexVault(t.Context(), v); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(filepath.Join(v.Path, "decks", "Fresh.md"),
+		[]byte("---\ntype: deck\n---\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	select {
+	case got := <-told:
+		if got.ID != v.ID {
+			t.Errorf("the change was recorded against %q", got.ID)
+		}
+	case <-time.After(20 * time.Second):
+		t.Fatal("a change in the vault was not recorded")
+	}
+}
+
+// A vault that is watched says nothing of not being followed, and one whose
+// folder is not there says so.
+func TestAnUnwatchedVaultIsSaidAndAWatchedOneIsNot(t *testing.T) {
+	_, _, vaults, _, held := makeWindow(t)
+	var out syncBuffer
+	vaults.out = &out
+
+	if err := vaults.indexVault(t.Context(), held[0]); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(out.String(), "is not being followed") {
+		t.Errorf("a watched vault was said to be unwatched: %q", out.String())
+	}
+
+	missing := domain.Vault{ID: "missing", Name: "Missing", Path: filepath.Join(t.TempDir(), "nowhere")}
+	vaults.getOpenedVault(missing)
+	if want := "numen-flashcards: Missing is not being followed:"; !strings.Contains(out.String(), want) {
+		t.Errorf("the log says %q", out.String())
+	}
+}
+
+// A levelling that fails answers with what failed.
+func TestUpdateIndexAnswersWithWhatFailed(t *testing.T) {
+	_, _, vaults, _, held := makeWindow(t)
+	ended, end := context.WithCancel(t.Context())
+	end()
+
+	if err := vaults.updateIndex(ended, held[0], []string{"decks/Words.md"}); err == nil {
+		t.Error("a levelling that could not run answered with nothing")
 	}
 }
