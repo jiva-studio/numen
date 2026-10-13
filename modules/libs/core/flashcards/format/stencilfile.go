@@ -98,17 +98,6 @@ func (f *StencilFile) replacePlaceholders(from, to string) error {
 	return nil
 }
 
-// readFieldNames is the list of names under `fields` in the shape reading a
-// stencil takes it.
-func readFieldNames(doc *markdown.Document) []any {
-	names, _ := doc.List(fieldsKey)
-	out := make([]any, 0, len(names))
-	for _, name := range names {
-		out = append(out, name)
-	}
-	return out
-}
-
 // AddFace writes a face at the end of the stencil. A stencil shows a card once
 // through each face it carries, so two faces of one name are two faces.
 func (f *StencilFile) AddFace(face FaceTemplate) error {
