@@ -35,15 +35,15 @@ func TestTheCutAssembledCarriesTheSizes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cut.Sizes != held.GetChunkSizes() {
-		t.Errorf("cut at %+v, and the settings say %+v", cut.Sizes, held.GetChunkSizes())
+	if cut.Sizes != held.CutNotes().Sizes {
+		t.Errorf("cut at %+v, and the settings say %+v", cut.Sizes, held.CutNotes().Sizes)
 	}
 }
 
 func TestAVaultWithNoModelIsCutAtTheDefaultBound(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Indexing.Use = ""
-	if got := (container.Config{Embedding: cfg}).GetChunkSizes(); got != (chunking.Sizes{}) {
+	if got := (container.Config{Embedding: cfg}).CutNotes().Sizes; got != (chunking.Sizes{}) {
 		t.Errorf("got %+v", got)
 	}
 }
@@ -51,7 +51,7 @@ func TestAVaultWithNoModelIsCutAtTheDefaultBound(t *testing.T) {
 func TestTheModelSaidIsWhatAChunkIsCutUnder(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Model.MaxTokens = 512
-	if got := (container.Config{Embedding: cfg}).GetChunkSizes().Limit; got != chunking.GetCharacterBound(512) {
+	if got := (container.Config{Embedding: cfg}).CutNotes().Sizes.Limit; got != chunking.GetCharacterBound(512) {
 		t.Errorf("cut at %d, under %d", got, chunking.GetCharacterBound(512))
 	}
 }
@@ -138,9 +138,10 @@ func (wide) Embed(context.Context, []string) ([][]float32, error) { return nil, 
 
 func (wide) Close() error { return nil }
 
-// Nothing outside this package builds a source.Extract, a chunking.Sizes or a
-// chunking.Legibility of its own. They decide what a chunk is kept under, and a
-// second assembly is a second answer for one settings file.
+// Nothing outside this package builds a source.Extract of its own, and no
+// package but usecase/note, which owns the cutting, builds a chunking.Sizes or a
+// chunking.Legibility. They decide what a chunk is kept under, and a second
+// assembly is a second answer for one settings file.
 func TestNothingElseAssemblesACut(t *testing.T) {
 	root := ".."
 	isWithin := func(path, dir string) bool {
@@ -185,7 +186,8 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 			case pkg.Name == "source" && named.Sel.Name == "Extract" &&
 				!isWithin(path, "usecase/source"):
 				built = append(built, path)
-			case pkg.Name == "chunking" && (named.Sel.Name == "Sizes" || named.Sel.Name == "Legibility"):
+			case pkg.Name == "chunking" && (named.Sel.Name == "Sizes" || named.Sel.Name == "Legibility") &&
+				!isWithin(path, "usecase/note"):
 				sized = append(sized, path)
 			}
 			return true
@@ -199,7 +201,7 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 		t.Errorf("a cut is assembled outside the composition root: %v", built)
 	}
 	if len(sized) != 0 {
-		t.Errorf("a cut's sizes or thresholds are assembled outside the composition root: %v", sized)
+		t.Errorf("a cut's sizes or thresholds are assembled outside usecase/note: %v", sized)
 	}
 	if len(untold) != 0 {
 		t.Errorf("a note repository is taken without being told its sizes: %v", untold)

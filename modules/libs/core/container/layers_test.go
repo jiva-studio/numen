@@ -26,9 +26,9 @@ const module = "github.com/jiva-studio/numen/modules/libs/core/"
 var baseline = map[string][]string{
 	// The composition root is compiled from the words the things it binds are
 	// named in. It hands a scenario the day a review begins at and a worker the
-	// list of what is being done, and it reads off the settings how wide a
-	// chunk is cut; the cutting, the scheduling and the work are elsewhere.
-	"container": {"internal/chunking", "flashcards/review", "task"},
+	// list of what is being done; the cutting, the scheduling and the work are
+	// elsewhere.
+	"container": {"flashcards/review", "task"},
 }
 
 // driving are the adapters something outside comes in through. They call the
@@ -463,8 +463,7 @@ var (
 // list only shrinks.
 var timers = []string{
 	"internal/retry/retry.go",
-	"usecase/source/recognition.go",
-	"usecase/source/transcription.go",
+	"usecase/run/worker.go",
 	"usecase/source/transcription_resident.go",
 }
 

@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
 // errLateRuntime is a document left unrecognised because what would recognise
@@ -74,29 +74,13 @@ type Recognitions struct {
 type RecognitionWorker struct {
 	with Recognitions
 
-	// under is what every recognition runs under, and going is every recognition
-	// that has not ended. A recognition outlives the question that asked for it
-	// and ends with the application, which waits here for what it is still
-	// writing.
-	under context.Context
-	going sync.WaitGroup
+	// line runs the documents a person named, one at a time.
+	line *run.Worker
 
 	// Cut makes a source's chunks from what has been recognised of it. It is
 	// called as pages are written down, so a page is searchable when it is
 	// recognised.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
-
-	mu        sync.Mutex
-	isRunning bool
-	// runs counts the runs that have begun. A run stops the running only while
-	// it is still the one running.
-	runs uint64
-	// queue is the documents a person named that have not been recognised yet.
-	queue queue
-	// idle is called where a run has found the line empty and is about to stop
-	// the running, under the lock both it and the running are held by. A test
-	// names a document there, at the one instant the two could cross.
-	idle func()
 }
 
 // NewRecognitionWorker is the recogniser an installation offers, reporting
@@ -105,7 +89,9 @@ func NewRecognitionWorker(ctx context.Context, with Recognitions) *RecognitionWo
 	if with.Models == nil {
 		with.Models = &Lock{}
 	}
-	return &RecognitionWorker{with: with, under: ctx}
+	r := &RecognitionWorker{with: with}
+	r.line = run.NewWorker(ctx, with.Tasks, r.recogniseOne)
+	return r
 }
 
 // Ready says whether a document could be recognised now without waiting for
@@ -114,14 +100,10 @@ func (r *RecognitionWorker) Ready() bool { return r.with.Runtime.Ready() }
 
 // Wait is every recognition and every collection this started, ended. What they
 // write goes into an index the application still holds open.
-func (r *RecognitionWorker) Wait() { r.going.Wait() }
+func (r *RecognitionWorker) Wait() { r.line.Wait() }
 
 // IsRunning says whether a document is being recognised.
-func (r *RecognitionWorker) IsRunning() bool {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return r.isRunning
-}
+func (r *RecognitionWorker) IsRunning() bool { return r.line.IsRunning() }
 
 // Start recognises one document a person named, and says whether it began now
 // or waits its turn.
@@ -129,68 +111,12 @@ func (r *RecognitionWorker) IsRunning() bool {
 // One at a time: the models hold a worker each. A document named while one is
 // being recognised goes to the back of the line and is recognised as soon as
 // the run before it ends.
-//
-// It runs under the application, so whoever asked is answered at once and goes
-// away while the recognition carries on.
 func (r *RecognitionWorker) Start(v domain.Vault, path string) port.StartOutcome {
-	r.mu.Lock()
-	r.queue.add(v, path)
-	if r.isRunning {
-		r.mu.Unlock()
-		return port.Queued
-	}
-	r.isRunning = true
-	r.runs++
-	mine := r.runs
-	r.mu.Unlock()
-
-	r.going.Add(1)
-	go func() {
-		defer r.going.Done()
-		defer r.stopRun(mine)
-		r.drain(r.context())
-	}()
-	return port.Began
+	return r.line.Start(v, path)
 }
 
 // CountWaiting is how many documents a person named are still in line.
-func (r *RecognitionWorker) CountWaiting() int {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return r.queue.countWaiting()
-}
-
-// drain recognises every document a person named, in the order they named them.
-// A document is out of the line before it is recognised, so one whose
-// recognition ends where nothing expected it to holds nothing afterwards.
-// The line is found empty and the running stopped under one hold of the lock,
-// so a document named at that instant is answered "began" and recognised by the
-// run that answers it.
-//
-// The context is asked before a document is taken, so what the line still holds
-// when the application closes is still in it.
-func (r *RecognitionWorker) drain(ctx context.Context) {
-	for {
-		r.mu.Lock()
-		var (
-			one     wanted
-			waiting bool
-		)
-		if ctx.Err() == nil {
-			one, waiting = r.queue.take()
-		}
-		if !waiting {
-			if r.idle != nil {
-				r.idle()
-			}
-			r.isRunning = false
-			r.mu.Unlock()
-			return
-		}
-		r.mu.Unlock()
-		r.recogniseOne(ctx, one.vault, one.path)
-	}
-}
+func (r *RecognitionWorker) CountWaiting() int { return r.line.CountWaiting() }
 
 // recogniseOne is a single document recognised, put right, and reported.
 func (r *RecognitionWorker) recogniseOne(ctx context.Context, v domain.Vault, path string) {
@@ -210,23 +136,6 @@ func (r *RecognitionWorker) recogniseOne(ctx context.Context, v domain.Vault, pa
 		// A failure stands in the list until whoever is shown it takes it out.
 		r.reportTask(task.Task{ID: id, Title: "Recognising a scan", About: path, Error: err.Error()})
 	}
-}
-
-// stopRun stops the running where this run is still the one running, so a
-// recognition that ended where nothing expected it to leaves nothing running.
-func (r *RecognitionWorker) stopRun(run uint64) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if r.runs == run {
-		r.isRunning = false
-	}
-}
-
-func (r *RecognitionWorker) context() context.Context {
-	if r.under == nil {
-		return context.Background()
-	}
-	return r.under
 }
 
 // recognise is the work itself: what is missing arrives, and then the document
@@ -309,15 +218,13 @@ func (r *RecognitionWorker) Proofread(
 	path string,
 ) (ProofreadRecognitionResult, error) {
 	outcomes := make(chan proofreadOutcome, 2)
-	r.going.Add(1)
-	//nolint:contextcheck // the run outlives the caller and carries r.context()
-	go func() {
-		defer r.going.Done()
-		res, err := r.proofreadRecognition(r.context(), v, path, func(began ProofreadRecognitionResult) {
+	//nolint:contextcheck // the run outlives the caller and carries r.line.Context()
+	r.line.Go(func() {
+		res, err := r.proofreadRecognition(r.line.Context(), v, path, func(began ProofreadRecognitionResult) {
 			outcomes <- proofreadOutcome{res: began}
 		})
 		outcomes <- proofreadOutcome{res: res, err: err}
-	}()
+	})
 
 	select {
 	case one := <-outcomes:
@@ -388,24 +295,11 @@ func (r *RecognitionWorker) proofreadRecognition(
 	return res, err
 }
 
-// reportTask puts this recognition in the list of what is being done. A person asked
-// for it and is waiting to be told it began.
-func (r *RecognitionWorker) reportTask(at task.Task) { r.report(at, true) }
+// reportTask puts this recognition in the list of what is being done, shown at
+// once because a person asked for it.
+func (r *RecognitionWorker) reportTask(at task.Task) { r.line.Report(at, true) }
 
-// report puts one piece of work in the list. Work a person started is shown at
-// once, and work nobody asked for is shown once it has lasted.
-func (r *RecognitionWorker) report(at task.Task, isUserStarted bool) {
-	at.IsUserStarted = isUserStarted
-	if r.with.Tasks != nil {
-		r.with.Tasks.Set(at)
-	}
-}
-
-func (r *RecognitionWorker) finishTask(id string) {
-	if r.with.Tasks != nil {
-		r.with.Tasks.Remove(id)
-	}
-}
+func (r *RecognitionWorker) finishTask(id string) { r.line.Finish(id) }
 
 // CollectBatches asks after the batches left with a proofreader, until the
 // context is done, behind the caller. A batch outlives the run that left it, so
@@ -425,31 +319,13 @@ func (r *RecognitionWorker) CollectBatches(
 	if err != nil || queue == nil {
 		return
 	}
-	r.going.Add(1)
-	go func() {
-		defer r.going.Done()
-		r.repeatRounds(ctx, known, queue, every, vaults)
-	}()
-}
-
-// repeatRounds is the round over every vault, and the wait between rounds.
-func (r *RecognitionWorker) repeatRounds(
-	ctx context.Context,
-	known port.SourceQueries,
-	queue port.ProofreadQueue,
-	every time.Duration,
-	vaults []domain.Vault,
-) {
-	for {
-		for _, v := range vaults {
-			r.collect(ctx, known, queue, queue, v)
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(every):
-		}
-	}
+	r.line.Go(func() {
+		r.line.RepeatRounds(ctx, every, func() {
+			for _, v := range vaults {
+				r.collect(ctx, known, queue, queue, v)
+			}
+		})
+	})
 }
 
 // TakeUp puts right the recognitions of these vaults that stand short of
@@ -468,9 +344,7 @@ func (r *RecognitionWorker) TakeUp(
 	if !proofreading.IsAutomatic {
 		return
 	}
-	r.going.Add(1)
-	go func() {
-		defer r.going.Done()
+	r.line.Go(func() {
 		queue, err := proofreading.Queue(proofread.ScanInstruction)
 		if err != nil || queue != nil {
 			return
@@ -482,7 +356,7 @@ func (r *RecognitionWorker) TakeUp(
 		for _, v := range vaults {
 			r.collect(ctx, known, by, nil, v)
 		}
-	}()
+	})
 }
 
 // collect takes up every recognition of one vault that stands short of its last
@@ -506,7 +380,7 @@ func (r *RecognitionWorker) collect(
 		id := proofreadID(one.Path)
 		right, err := NewProofreadRecognition(r.with.Readers, r.with.Derived, by)
 		if err != nil {
-			r.report(task.Task{
+			r.line.Report(task.Task{
 				ID: id, Title: "Proofreading a recognition",
 				About: one.Path, Error: err.Error(),
 			}, true)
@@ -518,7 +392,7 @@ func (r *RecognitionWorker) collect(
 		right.MaxEditDistance = proofreading.MaxEditDistance
 		right.Cut = r.Cut
 		right.OnProgress = func(res ProofreadRecognitionResult) {
-			r.report(task.Task{
+			r.line.Report(task.Task{
 				ID: id, Title: "Proofreading a recognition", About: one.Path,
 				Count: int64(res.Read), Total: int64(res.Pages),
 			}, false)
@@ -527,7 +401,7 @@ func (r *RecognitionWorker) collect(
 
 		switch {
 		case err != nil:
-			r.report(task.Task{
+			r.line.Report(task.Task{
 				ID: id, Title: "Proofreading a recognition",
 				About: one.Path, Error: err.Error(),
 			}, false)
@@ -539,7 +413,7 @@ func (r *RecognitionWorker) collect(
 			// waiting on.
 			r.finishTask(id)
 		default:
-			r.report(task.Task{
+			r.line.Report(task.Task{
 				ID: id, Title: "Proofreading a recognition", About: one.Path,
 				Count: int64(res.Read), Total: int64(res.Pages),
 			}, false)

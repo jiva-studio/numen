@@ -13,6 +13,15 @@ type CutNotes struct {
 	Legibility chunking.Legibility
 }
 
+// NewCutNotes cuts at the bound a model reading maxTokens tokens allows when the
+// installation embeds, and at the chunking defaults when it does not.
+func NewCutNotes(isEmbedding bool, maxTokens int) CutNotes {
+	if !isEmbedding {
+		return CutNotes{}
+	}
+	return CutNotes{Sizes: chunking.Sizes{Limit: chunking.GetCharacterBound(maxTokens)}}
+}
+
 // Execute gives each note with its indexed headings and the chunks of its body.
 func (u CutNotes) Execute(notes []domain.Note) []domain.NoteChunks {
 	out := make([]domain.NoteChunks, 0, len(notes))

@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
 // errNothingTranscribes is a run that reached nothing: what transcribes a
@@ -73,29 +74,15 @@ type Transcriptions struct {
 type TranscriptionWorker struct {
 	with Transcriptions
 
-	// under is what every transcription runs under, and going is every
-	// transcription that has not ended. One outlives the question that asked
-	// for it and ends with the application, which waits here for what it is
-	// still writing.
-	under context.Context
-	going sync.WaitGroup
+	// line runs the recordings a person named, one at a time.
+	line *run.Worker
 
 	// Cut makes a source's chunks from what has been transcribed of it. It is
 	// called as speech is written down, so the beginning of a recording is
 	// searchable while the end of it is still being transcribed.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
 
-	mu        sync.Mutex
-	isRunning bool
-	// runs counts the runs that have begun. A run stops the running only while
-	// it is still the one running.
-	runs uint64
-	// queue is the recordings a person named that have not been transcribed yet.
-	queue queue
-	// idle is called where a run has found the line empty and is about to stop
-	// the running, under the lock both it and the running are held by. A test
-	// names a recording there, at the one instant the two could cross.
-	idle func()
+	mu sync.Mutex
 	// answered is every recording this run has had an answer about, by vault
 	// and path. Words, silence and a file that will not open are all answers,
 	// and a recording that has answered is not offered again.
@@ -117,9 +104,9 @@ func NewTranscriptionWorker(ctx context.Context, with Transcriptions) *Transcrip
 	if with.Models == nil {
 		with.Models = &Lock{}
 	}
-	return &TranscriptionWorker{
-		with: with, under: ctx, answered: map[string]bool{}, residentIdle: defaultResidentIdle,
-	}
+	t := &TranscriptionWorker{with: with, answered: map[string]bool{}, residentIdle: defaultResidentIdle}
+	t.line = run.NewWorker(ctx, with.Tasks, t.transcribeNamed)
+	return t
 }
 
 // Ready says whether a recording could be transcribed now without waiting for
@@ -128,7 +115,7 @@ func (t *TranscriptionWorker) Ready() bool { return t.with.Runtime.Ready() }
 
 // Wait is every transcription this started, ended. What they write goes into an
 // index the application still holds open.
-func (t *TranscriptionWorker) Wait() { t.going.Wait() }
+func (t *TranscriptionWorker) Wait() { t.line.Wait() }
 
 // Start transcribes one recording a person named, and says whether it began now
 // or waits its turn.
@@ -136,62 +123,17 @@ func (t *TranscriptionWorker) Wait() { t.going.Wait() }
 // One at a time: the models hold a worker each. A recording named while one is
 // being transcribed goes to the back of the line and is transcribed as soon as
 // the run before it ends, ahead of everything the vault set itself.
-//
-// It runs under the application, so whoever asked is answered at once and goes
-// away while the transcription carries on.
 func (t *TranscriptionWorker) Start(v domain.Vault, path string) port.StartOutcome {
-	t.mu.Lock()
-	t.queue.add(v, path)
-	if t.isRunning {
-		t.mu.Unlock()
-		return port.Queued
-	}
-	t.isRunning = true
-	t.runs++
-	mine := t.runs
-	t.mu.Unlock()
-
-	t.going.Add(1)
-	go func() {
-		defer t.going.Done()
-		defer t.release(mine)
-		t.drainAndRelease(t.context())
-	}()
-	return port.Began
+	return t.line.Start(v, path)
 }
 
 // CountWaiting is how many recordings a person named are still in line.
-func (t *TranscriptionWorker) CountWaiting() int {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.queue.countWaiting()
-}
+func (t *TranscriptionWorker) CountWaiting() int { return t.line.CountWaiting() }
 
-// drain transcribes every recording a person named, in the order they named
-// them. A recording is out of the line before it is transcribed, so one whose
-// transcription ends where nothing expected it to holds nothing afterwards.
-//
-// The context is asked before a recording is taken, so what the line still holds
-// when the application closes is still in it: a recording taken and then dropped
-// is one nobody is told about, on a count that fell for nothing.
-func (t *TranscriptionWorker) drain(ctx context.Context) {
-	for {
-		t.mu.Lock()
-		var (
-			one     wanted
-			waiting bool
-		)
-		if ctx.Err() == nil {
-			one, waiting = t.queue.take()
-		}
-		t.mu.Unlock()
-		if !waiting {
-			return
-		}
-		// Every recording a person named is worked, and one that ends in
-		// nothing has already said so under its own line.
-		_ = t.transcribeOne(ctx, one.vault, one.path, true)
-	}
+// transcribeNamed works a recording a person named. One that ends in nothing
+// has already said so under its own line.
+func (t *TranscriptionWorker) transcribeNamed(ctx context.Context, v domain.Vault, path string) {
+	_ = t.transcribeOne(ctx, v, path, true)
 }
 
 // Queue transcribes every recording this vault holds no transcript for, one
@@ -209,28 +151,9 @@ func (t *TranscriptionWorker) Queue(
 	every time.Duration,
 	v domain.Vault,
 ) {
-	t.going.Add(1)
-	go func() {
-		defer t.going.Done()
-		t.repeatRounds(ctx, known, every, v)
-	}()
-}
-
-// repeatRounds is the round, and the wait between rounds.
-func (t *TranscriptionWorker) repeatRounds(
-	ctx context.Context,
-	known port.SourceQueries,
-	every time.Duration,
-	v domain.Vault,
-) {
-	for {
-		t.round(ctx, known, v)
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(every):
-		}
-	}
+	t.line.Go(func() {
+		t.line.RepeatRounds(ctx, every, func() { t.round(ctx, known, v) })
+	})
 }
 
 // round hands over the recordings a person named and then the ones that owe
@@ -238,15 +161,15 @@ func (t *TranscriptionWorker) repeatRounds(
 // was the machine and not the file: the rest of the round would reach the same
 // nothing.
 func (t *TranscriptionWorker) round(ctx context.Context, known port.SourceQueries, v domain.Vault) {
-	mine, free := t.claim()
+	mine, free := t.line.Claim()
 	if !free {
 		// The hand is transcribing something. What this round did not hand over
 		// is handed over by the next one.
 		return
 	}
-	defer t.release(mine)
+	defer t.line.Release(mine)
 
-	t.drain(ctx)
+	t.line.Drain(ctx)
 	for _, path := range t.getUntranscribed(ctx, known, v) {
 		if ctx.Err() != nil {
 			break
@@ -257,9 +180,9 @@ func (t *TranscriptionWorker) round(ctx context.Context, known port.SourceQuerie
 		}
 		// A recording named while this round ran is transcribed before the next
 		// one the vault owes.
-		t.drain(ctx)
+		t.line.Drain(ctx)
 	}
-	t.drainAndRelease(ctx)
+	t.line.DrainAndRelease(ctx, t.closeResident)
 }
 
 // getUntranscribed is the recordings this vault holds that no model has written
@@ -288,7 +211,7 @@ func (t *TranscriptionWorker) getUntranscribed(ctx context.Context, known port.S
 	under := t.with.Unasked
 	out := make([]string, 0, len(held))
 	for path, ref := range held {
-		if t.answered[getKey(v, path)] {
+		if t.answered[run.GetKey(v, path)] {
 			continue
 		}
 		if under > 0 && ref.Size > under {
@@ -302,50 +225,9 @@ func (t *TranscriptionWorker) getUntranscribed(ctx context.Context, known port.S
 	return out
 }
 
-// claim takes this installation's one transcription, and says whether it was
-// free.
-func (t *TranscriptionWorker) claim() (uint64, bool) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	if t.isRunning {
-		return 0, false
-	}
-	t.isRunning = true
-	t.runs++
-	return t.runs, true
-}
-
-// release stops the running where this run is still the one running, so a round
-// that ended where nothing expected it to leaves nothing running.
-func (t *TranscriptionWorker) release(run uint64) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	if t.runs == run {
-		t.isRunning = false
-	}
-}
-
-// drainAndRelease transcribes everything a person named and stops the running.
-// The line is found empty and the running stopped under one hold of the lock,
-// so a recording named at that instant is answered "began" and transcribed by
-// the run that answers it.
-func (t *TranscriptionWorker) drainAndRelease(ctx context.Context) {
-	for {
-		t.drain(ctx)
-		t.mu.Lock()
-		if t.queue.countWaiting() == 0 || ctx.Err() != nil {
-			// A close that fails leaves nothing to retry; the run is over.
-			_ = t.resident.close()
-			if t.idle != nil {
-				t.idle()
-			}
-			t.isRunning = false
-			t.mu.Unlock()
-			return
-		}
-		t.mu.Unlock()
-	}
-}
+// closeResident lets the kept models go when a run ends. A close that fails
+// leaves nothing to retry.
+func (t *TranscriptionWorker) closeResident() { _ = t.resident.close() }
 
 // transcribeOne is a single recording transcribed, put right, and reported.
 //
@@ -400,15 +282,13 @@ func (t *TranscriptionWorker) Proofread(
 	// for both is here, so a run whose caller has gone says them and ends.
 	outcomes := make(chan outcome, 2)
 
-	t.going.Add(1)
-	//nolint:contextcheck // the run outlives the caller and carries t.context()
-	go func() {
-		defer t.going.Done()
-		res, err := t.proofreadTranscript(t.context(), v, path, "", true, func(began ProofreadTranscriptResult) {
+	//nolint:contextcheck // the run outlives the caller and carries t.line.Context()
+	t.line.Go(func() {
+		res, err := t.proofreadTranscript(t.line.Context(), v, path, "", true, func(began ProofreadTranscriptResult) {
 			outcomes <- outcome{res: began}
 		})
 		outcomes <- outcome{res: res, err: err}
-	}()
+	})
 
 	select {
 	case one := <-outcomes:
@@ -518,9 +398,7 @@ func (t *TranscriptionWorker) TakeUp(
 	if !t.with.Proofreading.IsAutomatic || known == nil {
 		return
 	}
-	t.going.Add(1)
-	go func() {
-		defer t.going.Done()
+	t.line.Go(func() {
 		for _, v := range vaults {
 			recognised, err := known.GetRecognisedSources(ctx, v.ID, domain.KindRecording)
 			if err != nil {
@@ -533,7 +411,7 @@ func (t *TranscriptionWorker) TakeUp(
 				t.proofread(ctx, v, sourceItem.Path, sourceItem.Hash, false)
 			}
 		}
-	}()
+	})
 }
 
 // transcribe is the work itself: this machine's models held, what is missing
@@ -638,7 +516,7 @@ func (t *TranscriptionWorker) finishResident(ctx context.Context, ran error) err
 func (t *TranscriptionWorker) recordAnswer(v domain.Vault, path string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.answered[getKey(v, path)] = true
+	t.answered[run.GetKey(v, path)] = true
 }
 
 // ClearAnswer puts a recording back within the queue's reach. The answer it gave is
@@ -646,28 +524,14 @@ func (t *TranscriptionWorker) recordAnswer(v domain.Vault, path string) {
 func (t *TranscriptionWorker) ClearAnswer(v domain.Vault, path string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	delete(t.answered, getKey(v, path))
-}
-
-func (t *TranscriptionWorker) context() context.Context {
-	if t.under == nil {
-		return context.Background()
-	}
-	return t.under
+	delete(t.answered, run.GetKey(v, path))
 }
 
 // reportTask puts this transcription in the list of what is being done. Work nobody
 // asked for is shown once it has lasted, and work a person started is shown at
 // once.
 func (t *TranscriptionWorker) reportTask(at task.Task, isUserStarted bool) {
-	at.IsUserStarted = isUserStarted
-	if t.with.Tasks != nil {
-		t.with.Tasks.Set(at)
-	}
+	t.line.Report(at, isUserStarted)
 }
 
-func (t *TranscriptionWorker) finishTask(id string) {
-	if t.with.Tasks != nil {
-		t.with.Tasks.Remove(id)
-	}
-}
+func (t *TranscriptionWorker) finishTask(id string) { t.line.Finish(id) }
