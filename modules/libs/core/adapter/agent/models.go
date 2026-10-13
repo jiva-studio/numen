@@ -101,24 +101,7 @@ func getAgentModels(at []string, set string, offered []AgentModel) []port.Model 
 	case len(offered) == 0:
 		models = []port.Model{{Path: at, Title: "Whatever this machine answers with", IsDefault: true}}
 	default:
-		isSet := slices.ContainsFunc(offered, func(one AgentModel) bool { return one.Name == set })
-		isReportedDefault := slices.ContainsFunc(offered, func(one AgentModel) bool { return one.IsDefault })
-		for place, one := range offered {
-			title := one.Title
-			if title == "" {
-				title = one.Name
-			}
-			isDefault := one.Name == set
-			if !isSet {
-				isDefault = one.IsDefault || (place == 0 && !isReportedDefault)
-			}
-			models = append(models, port.Model{
-				Path: at, Name: one.Name, Title: title, Group: groupInFull, IsDefault: isDefault,
-			})
-		}
-		if set != "" && !isSet {
-			models = append(models, port.Model{Path: at, Name: set, Title: set, Group: groupConfigured})
-		}
+		models = getReportedModels(at, set, offered)
 	}
 	for place := range models {
 		models[place].Presence = port.NothingToFetch
@@ -181,4 +164,29 @@ func newSetting(at []string, value any) port.Setting {
 		return port.Setting{Path: at, JSON: ""}
 	}
 	return port.Setting{Path: at, JSON: string(said)}
+}
+
+// getReportedModels are the rows of the models an agent reported, the one the settings name
+// last where it is not among them.
+func getReportedModels(at []string, set string, offered []AgentModel) []port.Model {
+	isSet := slices.ContainsFunc(offered, func(one AgentModel) bool { return one.Name == set })
+	isReportedDefault := slices.ContainsFunc(offered, func(one AgentModel) bool { return one.IsDefault })
+	var models []port.Model
+	for place, one := range offered {
+		title := one.Title
+		if title == "" {
+			title = one.Name
+		}
+		isDefault := one.Name == set
+		if !isSet {
+			isDefault = one.IsDefault || (place == 0 && !isReportedDefault)
+		}
+		models = append(models, port.Model{
+			Path: at, Name: one.Name, Title: title, Group: groupInFull, IsDefault: isDefault,
+		})
+	}
+	if set != "" && !isSet {
+		models = append(models, port.Model{Path: at, Name: set, Title: set, Group: groupConfigured})
+	}
+	return models
 }

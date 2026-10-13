@@ -3,6 +3,7 @@ package agent
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -161,7 +162,7 @@ func TestClaudeModelsAreListedFromTheModelsEndpointWithTheKey(t *testing.T) {
 	}))
 	defer server.Close()
 
-	got, err := claudeModels{key: "k-1", base: server.URL + "/"}.GetModels(context.Background())
+	got, err := claudeModels{key: "k-1", base: server.URL + "/"}.GetModels(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,7 +179,7 @@ func TestClaudeModelsWithoutAKeyAskNothing(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { asked = true }))
 	defer server.Close()
 
-	got, err := claudeModels{base: server.URL}.GetModels(context.Background())
+	got, err := claudeModels{base: server.URL}.GetModels(t.Context())
 	if got != nil || err != nil || asked {
 		t.Errorf("got %+v, %v, asked %v", got, err, asked)
 	}
@@ -190,7 +191,7 @@ func TestClaudeModelsRefusedByTheEndpointAreAnError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	if _, err := (claudeModels{key: "bad", base: server.URL}).GetModels(context.Background()); err == nil {
+	if _, err := (claudeModels{key: "bad", base: server.URL}).GetModels(t.Context()); err == nil {
 		t.Error("a refusal was taken for an answer")
 	}
 }
@@ -204,12 +205,14 @@ func serveCodex(t *testing.T, reply func(method string) string) (io.Writer, io.R
 		defer outWrite.Close()
 		lines := bufio.NewScanner(inRead)
 		for lines.Scan() {
-			text := lines.Text()
-			method := text[strings.Index(text, `"method":"`)+len(`"method":"`):]
-			method = method[:strings.Index(method, `"`)]
-			if !strings.Contains(text, `"id"`) {
+			var sent struct {
+				ID     *int   `json:"id"`
+				Method string `json:"method"`
+			}
+			if err := json.Unmarshal(lines.Bytes(), &sent); err != nil || sent.ID == nil {
 				continue
 			}
+			method := sent.Method
 			id := "1"
 			if method == "model/list" {
 				id = "2"
@@ -288,7 +291,7 @@ func TestCodexModelsAreReadFromItsCacheWithoutTheHiddenOnes(t *testing.T) {
 }
 
 func TestAntigravityReportsNoModels(t *testing.T) {
-	if got, err := (antigravityModels{}).GetModels(context.Background()); got != nil || err != nil {
+	if got, err := (antigravityModels{}).GetModels(t.Context()); got != nil || err != nil {
 		t.Errorf("got %+v, %v", got, err)
 	}
 }
