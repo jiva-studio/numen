@@ -31,7 +31,7 @@ var deck = map[string]string{
 // own, an index it may write, and two vaults to sit down to.
 func makeWindow(
 	t *testing.T,
-) (container.Config, *container.Index, *openVaults, *window.API, []domain.Vault) {
+) (container.Config, *container.Index, *container.OpenVaults, *window.API, []domain.Vault) {
 	t.Helper()
 
 	state := t.TempDir()
@@ -49,11 +49,11 @@ func makeWindow(
 		{ID: "one", Name: "One", Path: vaultOf(t, cfg)},
 		{ID: "two", Name: "Two", Path: vaultOf(t, cfg)},
 	}
-	vaults := &openVaults{
-		cfg: cfg, db: db, lifetime: t.Context(),
-		recordVault: func(domain.Vault) {}, out: io.Discard,
+	vaults := &container.OpenVaults{
+		Config: cfg, Index: db, Lifetime: t.Context(),
+		RecordVault: func(domain.Vault) {}, Out: io.Discard,
 	}
-	t.Cleanup(vaults.closeAndWait)
+	t.Cleanup(vaults.CloseAndWait)
 	return cfg, db, vaults, &window.API{}, held
 }
 

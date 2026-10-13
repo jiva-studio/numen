@@ -681,7 +681,7 @@ func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 
-	session, err := s.session(today).Execute(t.Context(), s.vault, flashcards.CreateDeckScope("decks/Words.md"))
+	session, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Scope{Deck: "decks/Words.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -720,7 +720,7 @@ func TestACacheReadBackSaysWhatTheAnswersSay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	replayed := review.Replay(today, review.NewFSRS(), held.Answers)
+	replayed := review.OrderAnswers(held.Answers).Replay(today, review.ScheduleBy(review.NewFSRS()))
 
 	if len(cached) != len(replayed) {
 		t.Fatalf("the cache holds %d card faces and the answers say %d", len(cached), len(replayed))

@@ -1,4 +1,4 @@
-import type { Placement } from './placement'
+import type { Placement } from '../lib/arrange/placement'
 
 /**
  * A stand-in for a real mind map. It sets coordinates and inherits everything

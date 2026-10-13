@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { normalize } from './normalize'
 import { pane } from './node'
 import { isBranch, isPane } from './tree'
-import { arrangeWorkspace } from './arrange'
+import { arrangeWorkspace } from '../fixtures/arrange'
 import { split, stack, createWorkspace } from '../fixtures/build'
 import { getFaults } from '../fixtures/invariants'
 

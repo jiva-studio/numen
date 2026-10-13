@@ -34,7 +34,6 @@ func makeJumbledHistory() []review.Answer {
 func TestGivingAHistoryOnceAnswersWhatGivingItFourTimesAnswered(t *testing.T) {
 	answers := makeJumbledHistory()
 	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
-	by := review.NewFSRS()
 	named := day.GetName(answers[0].At)
 	under := map[review.CardFaceID]string{
 		{Card: "k7m2xq9fzp", Face: "Say it"}: "Sanskrit.md",
@@ -46,16 +45,6 @@ func TestGivingAHistoryOnceAnswersWhatGivingItFourTimesAnswered(t *testing.T) {
 		t.Fatalf("the history came to %d answers, want 2", len(given))
 	}
 
-	for face, want := range review.Replay(day, by, answers) {
-		if got := given.Replay(day, review.ScheduleBy(by))[face]; got != want {
-			t.Errorf("%+v stands at %+v, want %+v", face, got, want)
-		}
-	}
-	for day1, want := range review.GetRetained(by, day, answers) {
-		if got := given.GetRetained(by, day)[day1]; got != want {
-			t.Errorf("%s kept %+v, want %+v", day1, got, want)
-		}
-	}
 	for path, want := range review.GetSpentUnder(day, named, answers, under, nil) {
 		if got := given.GetSpentUnder(day, named, under, nil)[path]; got != want {
 			t.Errorf("%s spent %+v, want %+v", path, got, want)

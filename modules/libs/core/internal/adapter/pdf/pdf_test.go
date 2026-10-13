@@ -280,7 +280,7 @@ func TestReadingIsSafeFromSeveralGoroutines(t *testing.T) {
 // A page is drawn up to a number of pixels and no further. The same page at a
 // resolution that keeps it inside the bound is drawn.
 func TestAPageTooLargeToDrawIsRefused(t *testing.T) {
-	held, err := pdf.Open(fixture(t, vast))
+	held, err := pdf.OpenReader(readerOf(fixture(t, vast)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -304,7 +304,7 @@ func TestAPageTooLargeToDrawIsRefused(t *testing.T) {
 func TestAPageSaysHowBigItIs(t *testing.T) {
 	for _, name := range []string{tiny, turned, labels} {
 		t.Run(name, func(t *testing.T) {
-			held, err := pdf.Open(fixture(t, name))
+			held, err := pdf.OpenReader(readerOf(fixture(t, name)))
 			if err != nil {
 				t.Fatal(err)
 			}
