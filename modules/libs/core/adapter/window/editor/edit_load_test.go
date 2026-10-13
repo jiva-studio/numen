@@ -50,29 +50,28 @@ func TestEditLoad(t *testing.T) {
 	writing := note.NewWrite(
 		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
 	read := note.NewRead(filesystem.VaultReaders{})
-	asking := askingNotes(db)
-	asking.Read, asking.Write = &read, &writing
-	api := &API{
+	api := createServices(&State{
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),
-		Notes:        asking,
-	}
-	api.Indexing.Progress = db.Progress()
-	api.setVault(v)
+	})
+	bindNotes(api, db)
+	api.Note.read, api.Note.write = &read, &writing
+	api.state.Indexing.Progress = db.Progress()
+	api.state.setVault(v)
 
 	reading := time.Now()
 	_, wait := startIndexing(t.Context(), v, container.NewEditorAssembly(cfg, nil, db),
-		api, false, nil, newIndexTriggers(time.Hour), &pendingSources{}, io.Discard)
+		api.state, false, nil, newIndexTriggers(time.Hour), &pendingSources{}, io.Discard)
 	t.Cleanup(wait)
-	for !api.Ready.Load() && api.Error.Why() == "" {
+	for !api.state.Ready.Load() && api.state.Error.Why() == "" {
 		time.Sleep(50 * time.Millisecond)
 	}
-	if why := api.Error.Why(); why != "" {
+	if why := api.state.Error.Why(); why != "" {
 		t.Fatalf("the vault could not be read: %s", why)
 	}
 	t.Logf("read %d notes in %s", notes, time.Since(reading).Round(time.Millisecond))
 
-	line, done := api.ChangeEvents.subscribe()
+	line, done := api.state.ChangeEvents.subscribe()
 	t.Cleanup(done)
 
 	// One save, the way a quiet interval makes it, and then the wait until the
@@ -81,7 +80,7 @@ func TestEditLoad(t *testing.T) {
 	body := "# Heat\n\nA line nobody wrote before, at " + strconv.FormatInt(time.Now().UnixNano(), 10) + ".\n"
 
 	saving := time.Now()
-	if _, err := api.Notes.Write.Save(t.Context(), v, path, body, nil); err != nil {
+	if _, err := api.Note.write.Save(t.Context(), v, path, body, nil); err != nil {
 		t.Fatal(err)
 	}
 	wrote := time.Since(saving)

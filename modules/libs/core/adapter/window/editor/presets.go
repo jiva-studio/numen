@@ -12,18 +12,28 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
+
+// presetsHandler answers about the presets decks are scheduled by.
+type presetsHandler struct {
+	state    *State
+	presets  *flashcards.Presets
+	curves   *flashcards.ProjectCurve
+	create   *cards.Create
+	getTitle *note.GetTitle
+}
 
 // GetDeckPreset is the preset a deck is scheduled by. A deck naming none is
 // answered with the defaults under no path.
-func (a *API) GetDeckPreset(
+func (h *presetsHandler) GetDeckPreset(
 	ctx context.Context, r *connect.Request[v1.GetDeckPresetRequest],
 ) (*connect.Response[v1.GetDeckPresetResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Presets.GetForDeck(ctx, showing, r.Msg.GetDeck())
+	found, err := h.presets.GetForDeck(ctx, showing, r.Msg.GetDeck())
 	if err != nil {
 		return nil, connect.NewError(wire.GetCode(err), err)
 	}
@@ -33,7 +43,7 @@ func (a *API) GetDeckPreset(
 		out.Error = &reason
 		return connect.NewResponse(out), nil
 	}
-	out.Preset = wire.ConvertPresetToWire(found, a.Notes.GetTitle.Execute(ctx, showing, found.Path))
+	out.Preset = wire.ConvertPresetToWire(found, h.getTitle.Execute(ctx, showing, found.Path))
 	// What the file was when this came out of it, for the client to present
 	// when it writes the settings back.
 	out.At = convertFingerprintToWire(found.Fingerprint)
@@ -43,14 +53,14 @@ func (a *API) GetDeckPreset(
 // ListPresets is every preset the vault holds, by path and by what it is
 // called. A deck's preset is chosen from this list, and from the defaults,
 // which are no note and are not in it.
-func (a *API) ListPresets(
+func (h *presetsHandler) ListPresets(
 	ctx context.Context, _ *connect.Request[v1.ListPresetsRequest],
 ) (*connect.Response[v1.ListPresetsResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
-	held, err := a.Presets.List(ctx, showing)
+	held, err := h.presets.List(ctx, showing)
 	if err != nil {
 		return nil, connect.NewError(wire.GetCode(err), err)
 	}
@@ -64,11 +74,11 @@ func (a *API) ListPresets(
 
 // CreatePreset puts a preset naming none of its settings in the vault. A key
 // the file does not carry stands at the default.
-func (a *API) CreatePreset(
+func (h *presetsHandler) CreatePreset(
 	ctx context.Context, r *connect.Request[v1.CreatePresetRequest],
 ) (*connect.Response[v1.CreatePresetResponse], error) {
-	made, code, unlevelled, err := a.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
-		return a.Cards.Create.Preset(ctx, showing, in)
+	made, code, unlevelled, err := h.state.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+		return h.create.Preset(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetPath())
 	if err != nil {
 		return nil, err
@@ -81,27 +91,27 @@ func (a *API) CreatePreset(
 // ScheduleDeck puts a deck on a preset. A deck still holding what the client
 // read is written; one holding something else is left alone and the client is
 // told the deck changed.
-func (a *API) ScheduleDeck(
+func (h *presetsHandler) ScheduleDeck(
 	ctx context.Context, r *connect.Request[v1.ScheduleDeckRequest],
 ) (*connect.Response[v1.ScheduleDeckResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
-	if !a.Writing.begin() {
+	if !h.state.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.finish()
+	defer h.state.Writing.finish()
 
-	at, err := a.Presets.Point(
+	at, err := h.presets.Point(
 		ctx, showing, r.Msg.GetDeck(), r.Msg.GetPreset(), convertFingerprintFromWire(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
-	behind := a.isUnlevelled(err)
+	behind := h.state.isUnlevelled(err)
 	if err == nil || behind {
-		if a.NotifyNoteWritten != nil {
-			a.NotifyNoteWritten()
+		if h.state.NotifyNoteWritten != nil {
+			h.state.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.ScheduleDeckResponse{
 			At: convertFingerprintToWire(at), IsUnlevelled: behind,
@@ -119,14 +129,14 @@ func (a *API) ScheduleDeck(
 }
 
 // ReadPreset is the settings of one preset.
-func (a *API) ReadPreset(
+func (h *presetsHandler) ReadPreset(
 	ctx context.Context, r *connect.Request[v1.ReadPresetRequest],
 ) (*connect.Response[v1.ReadPresetResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Presets.Read(ctx, showing, r.Msg.GetPath())
+	found, err := h.presets.Read(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(wire.GetCode(err), err)
 	}
@@ -136,7 +146,7 @@ func (a *API) ReadPreset(
 		out.Error = &reason
 		return connect.NewResponse(out), nil
 	}
-	out.Preset = wire.ConvertPresetToWire(found, a.Notes.GetTitle.Execute(ctx, showing, found.Path))
+	out.Preset = wire.ConvertPresetToWire(found, h.getTitle.Execute(ctx, showing, found.Path))
 	out.At = convertFingerprintToWire(found.Fingerprint)
 	return connect.NewResponse(out), nil
 }
@@ -144,10 +154,10 @@ func (a *API) ReadPreset(
 // WritePreset puts settings into a preset. A note still holding what the client
 // read is written; one holding something else is left alone and the client is
 // told the note changed.
-func (a *API) WritePreset(
+func (h *presetsHandler) WritePreset(
 	ctx context.Context, r *connect.Request[v1.WritePresetRequest],
 ) (*connect.Response[v1.WritePresetResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -155,19 +165,19 @@ func (a *API) WritePreset(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	if !a.Writing.begin() {
+	if !h.state.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.finish()
+	defer h.state.Writing.finish()
 
-	at, err := a.Presets.Save(ctx, showing, r.Msg.GetPath(), settings, convertFingerprintFromWire(r.Msg.GetBaseline()))
+	at, err := h.presets.Save(ctx, showing, r.Msg.GetPath(), settings, convertFingerprintFromWire(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
-	behind := a.isUnlevelled(err)
+	behind := h.state.isUnlevelled(err)
 	if err == nil || behind {
-		if a.NotifyNoteWritten != nil {
-			a.NotifyNoteWritten()
+		if h.state.NotifyNoteWritten != nil {
+			h.state.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.WritePresetResponse{
 			At: convertFingerprintToWire(at), IsUnlevelled: behind,
@@ -191,10 +201,10 @@ func (a *API) WritePreset(
 // ComputeCurve is what these settings come to over the whole range of the goal
 // they name. Nothing is written: what a curve is asked for is the value a
 // person is moving and has not settled.
-func (a *API) ComputeCurve(
+func (h *presetsHandler) ComputeCurve(
 	ctx context.Context, r *connect.Request[v1.ComputeCurveRequest],
 ) (*connect.Response[v1.ComputeCurveResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +212,7 @@ func (a *API) ComputeCurve(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	held, err := a.Curves.Execute(ctx, showing, r.Msg.GetPath(), settings)
+	held, err := h.curves.Execute(ctx, showing, r.Msg.GetPath(), settings)
 	if err != nil {
 		return nil, connect.NewError(wire.GetCode(err), err)
 	}

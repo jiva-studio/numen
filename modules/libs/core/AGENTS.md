@@ -75,7 +75,7 @@ them are unexported — so no half-built one exists for a method to check.
 |---|---|
 | A use case does not carry a collaborator its constructor takes in an exported field | `TestNoUseCaseCarriesACollaboratorInTheOpen` |
 
-`usecase/source`'s `ProofreadRecognition` and `ProofreadTranscript` are what a
+`usecase/recognition`'s `Proofread` and `usecase/transcription`'s `Proofread` are what a
 closed one looks like. The rest are in the rule's baseline, which only shrinks.
 
 A dependency that may genuinely be absent is not a nil left in a field: it is a

@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
 
 // proofreads is the proofreading a test hands the window: whether this
@@ -20,7 +20,7 @@ import (
 // to put right, and what it says came of the ask.
 type proofreads struct {
 	isReady bool
-	came    source.ProofreadTranscriptResult
+	came    transcription.ProofreadResult
 	why     error
 
 	vault string
@@ -34,7 +34,7 @@ func (p *proofreads) Proofread(
 	_ context.Context,
 	v domain.Vault,
 	path string,
-) (source.ProofreadTranscriptResult, error) {
+) (transcription.ProofreadResult, error) {
 	p.times++
 	p.vault, p.path = string(v.ID), path
 	return p.came, p.why
@@ -42,7 +42,7 @@ func (p *proofreads) Proofread(
 
 // newProofreadWindow is a window over the same vault the runs are asked for over,
 // with a proofreading a test watches.
-func newProofreadWindow(t *testing.T, held port.DerivedStore, read indexed) (*API, http.Handler, *proofreads) {
+func newProofreadWindow(t *testing.T, held port.DerivedStore, read indexed) (*Services, http.Handler, *proofreads) {
 	t.Helper()
 	api, handler := openRunWindow(t, held, read, willRun(), willRun())
 	by := &proofreads{isReady: true}
@@ -67,7 +67,7 @@ func TestATranscriptIsProofreadWhenTheWindowAsksForIt(t *testing.T) {
 	if made.GetKind() != v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED {
 		t.Errorf("the answer is about a %s", made.GetKind())
 	}
-	if by.times != 1 || by.path != talk || by.vault != string(api.GetCurrentVault().ID) {
+	if by.times != 1 || by.path != talk || by.vault != string(api.state.GetCurrentVault().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", by.path, by.vault, by.times)
 	}
 }
@@ -77,13 +77,13 @@ func TestATranscriptIsProofreadWhenTheWindowAsksForIt(t *testing.T) {
 func TestWhatAProofreadingCameToIsSaid(t *testing.T) {
 	for _, one := range []struct {
 		name  string
-		came  source.ProofreadTranscriptResult
+		came  transcription.ProofreadResult
 		state v1.State
 	}{
-		{"a recording another run holds", source.ProofreadTranscriptResult{IsBusy: true}, v1.State_STATE_RUNNING},
-		{"a transcript already put right", source.ProofreadTranscriptResult{IsAlready: true}, v1.State_STATE_DONE},
-		{"words a person wrote themselves", source.ProofreadTranscriptResult{IsEdited: true}, v1.State_STATE_DONE},
-		{"a transcript holding no words", source.ProofreadTranscriptResult{IsNone: true}, v1.State_STATE_NONE},
+		{"a recording another run holds", transcription.ProofreadResult{IsBusy: true}, v1.State_STATE_RUNNING},
+		{"a transcript already put right", transcription.ProofreadResult{IsAlready: true}, v1.State_STATE_DONE},
+		{"words a person wrote themselves", transcription.ProofreadResult{IsEdited: true}, v1.State_STATE_DONE},
+		{"a transcript holding no words", transcription.ProofreadResult{IsNone: true}, v1.State_STATE_NONE},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			api, _, by := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())
@@ -163,7 +163,7 @@ func TestTheCorrectionsARecordingCarriesAreWhatStands(t *testing.T) {
 	held[derived.Corrections(asr, hashed)] = []byte(put)
 	api, _, by := newProofreadWindow(t, held, newTranscriptIndex())
 
-	out, err := api.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: talk}))
+	out, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: talk}))
 	if err != nil {
 		t.Fatalf("asked what the recording carries and was refused: %v", err)
 	}

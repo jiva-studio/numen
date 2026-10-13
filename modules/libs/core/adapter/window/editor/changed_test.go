@@ -26,24 +26,20 @@ func levelNothing(context.Context, domain.Vault, []string) error { return nil }
 
 // openEditor is a vault with a read and a save on it and nothing behind them.
 // What is asked here is what the schema carries.
-func openEditor(t *testing.T, notes map[string]string) *API {
+func openEditor(t *testing.T, notes map[string]string) *Services {
 	t.Helper()
 	writing := note.NewWrite(
 		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
 	read := note.NewRead(filesystem.VaultReaders{})
-	api := &API{
-		Notes: Notes{
-			Read:  &read,
-			Write: &writing,
-		},
-	}
-	api.setVault(testsupport.NewVault(t, notes))
+	api := newBareServices()
+	api.Note.read, api.Note.write = &read, &writing
+	api.state.setVault(testsupport.NewVault(t, notes))
 	return api
 }
 
-func readNote(t *testing.T, api *API, path string) *v1.ReadBaseline {
+func readNote(t *testing.T, api *Services, path string) *v1.ReadBaseline {
 	t.Helper()
-	out, err := api.ReadNote(t.Context(), connect.NewRequest(&v1.ReadNoteRequest{Path: path}))
+	out, err := api.Note.ReadNote(t.Context(), connect.NewRequest(&v1.ReadNoteRequest{Path: path}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,12 +57,12 @@ func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 	baseline := readNote(t, api, "Entropy.md")
 
 	theirs := "# Entropy\n\nTheirs.\n"
-	on := filepath.Join(api.GetCurrentVault().Path, "Entropy.md")
+	on := filepath.Join(api.state.GetCurrentVault().Path, "Entropy.md")
 	if err := os.WriteFile(on, []byte(theirs), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	out, err := api.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
+	out, err := api.Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path:     "Entropy.md",
 		Body:     "# Entropy\n\nMine.\n",
 		Baseline: baseline,
@@ -96,7 +92,7 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	api := openEditor(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	baseline := readNote(t, api, "Entropy.md")
 
-	first, err := api.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
+	first, err := api.Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path:     "Entropy.md",
 		Body:     "# Entropy\n\nOne.\n",
 		Baseline: baseline,
@@ -111,7 +107,7 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 		t.Fatal("the write answered with no fingerprint")
 	}
 
-	second, err := api.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
+	second, err := api.Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path:     "Entropy.md",
 		Body:     "# Entropy\n\nTwo.\n",
 		Baseline: &v1.ReadBaseline{Prose: baseline.GetProse(), At: first.Msg.GetAt()},
@@ -123,7 +119,7 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 		t.Error("the write after a write said the note changed")
 	}
 
-	raw, err := os.ReadFile(filepath.Join(api.GetCurrentVault().Path, "Entropy.md"))
+	raw, err := os.ReadFile(filepath.Join(api.state.GetCurrentVault().Path, "Entropy.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,7 +163,7 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    "# Heat\n",
 	})
-	on := filepath.Join(api.GetCurrentVault().Path, "Heat.md")
+	on := filepath.Join(api.state.GetCurrentVault().Path, "Heat.md")
 
 	var once sync.Once
 	linking := note.NewEditLinks(
@@ -185,9 +181,9 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 		levelNothing,
 		time.Now,
 	)
-	api.Notes.EditLinks = &linking
+	api.Note.editLinks = &linking
 
-	out, err := api.WriteLink(t.Context(), connect.NewRequest(&v1.WriteLinkRequest{
+	out, err := api.Note.WriteLink(t.Context(), connect.NewRequest(&v1.WriteLinkRequest{
 		Path: "Heat.md",
 		Link: &v1.Link{To: "Entropy.md", Role: v1.Role_ROLE_PARENT},
 	}))

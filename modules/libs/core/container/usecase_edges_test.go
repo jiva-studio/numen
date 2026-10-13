@@ -14,17 +14,19 @@ import (
 // useCaseEdges are the use cases each use case may build on. A use case listed
 // with nothing depends on no other.
 var useCaseEdges = map[string][]string{
-	"note":       nil,
-	"settings":   nil,
-	"document":   nil,
-	"run":        nil,
-	"source":     {"run"},
-	"embedders":  nil,
-	"file":       nil,
-	"search":     nil,
-	"cards":      {"note"},
-	"flashcards": {"cards", "note"},
-	"vault":      {"note", "source"},
+	"note":          nil,
+	"settings":      nil,
+	"document":      nil,
+	"run":           nil,
+	"source":        nil,
+	"recognition":   {"run"},
+	"transcription": {"run"},
+	"embedding":     nil,
+	"file":          nil,
+	"search":        nil,
+	"cards":         {"note"},
+	"flashcards":    {"cards", "note"},
+	"vault":         {"embedding", "note", "source"},
 }
 
 // getUseCaseName is the use case a package belongs to, and whether it is one.
@@ -123,23 +125,29 @@ func TestUseCaseEdgeRuleRefusesUndeclaredEdges(t *testing.T) {
 		{"usecase/flashcards", "usecase/note", false},
 		{"usecase/vault", "usecase/note", false},
 		{"usecase/vault", "usecase/source", false},
-		{"usecase/source", "usecase/run", false},
+		{"usecase/vault", "usecase/embedding", false},
+		{"usecase/recognition", "usecase/run", false},
+		{"usecase/transcription", "usecase/run", false},
 
 		// The same edges reversed, and the edges skipping the declaration.
 		{"usecase/note", "usecase/cards", true},
 		{"usecase/cards", "usecase/flashcards", true},
 		{"usecase/note", "usecase/vault", true},
 		{"usecase/source", "usecase/vault", true},
-		{"usecase/run", "usecase/source", true},
+		{"usecase/run", "usecase/recognition", true},
+		{"usecase/recognition", "usecase/transcription", true},
+		{"usecase/transcription", "usecase/recognition", true},
+		{"usecase/source", "usecase/run", true},
+		{"usecase/embedding", "usecase/vault", true},
 		{"usecase/cards", "usecase/vault", true},
 		{"usecase/cards", "usecase/source", true},
 
 		// A use case that builds on none.
-		{"usecase/embedders", "usecase/note", true},
+		{"usecase/embedding", "usecase/note", true},
 		{"usecase/file", "usecase/note", true},
 		{"usecase/search", "usecase/note", true},
 		{"usecase/note", "usecase/search", true},
-		{"usecase/note", "usecase/embedders", true},
+		{"usecase/note", "usecase/embedding", true},
 
 		// A package under a use case is that use case.
 		{"usecase/note/sub", "usecase/vault", true},

@@ -6,7 +6,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading/openai"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
 
 // ProofreaderSpec is what the platform is told to start: the command line,
@@ -88,20 +90,20 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 // GetScanProofreading is what a document's reading is put right with: the
 // profile the settings name for a scan, and the sizes a recognition is asked about
 // at.
-func (c Config) GetScanProofreading() source.ProofreadingConfig {
+func (c Config) GetScanProofreading() run.ProofreadingConfig {
 	return c.getProofreading(c.ScanProofreading)
 }
 
 // GetSpeechProofreading is the same for what a model heard.
-func (c Config) GetSpeechProofreading() source.ProofreadingConfig {
+func (c Config) GetSpeechProofreading() run.ProofreadingConfig {
 	return c.getProofreading(c.TranscriptProofreading)
 }
 
 // getProofreading is what a recognition of one kind is put right with: the profile
 // the settings name for it, opened when there is something to put right.
-func (c Config) getProofreading(config proofreading.Proofread) source.ProofreadingConfig {
+func (c Config) getProofreading(config proofreading.Proofread) run.ProofreadingConfig {
 	profile := c.resolveInFlight(c.Proofreading.Profiles[config.Profile])
-	return source.ProofreadingConfig{
+	return run.ProofreadingConfig{
 		IsNamed:     config.Profile != "",
 		IsAutomatic: config.IsAutomatic,
 		By:          func(what string) (port.Proofreader, error) { return c.Proofreader(config.Profile, what) },
@@ -133,4 +135,16 @@ func (c Config) ProofreadQueue(name, instruction string) (port.ProofreadQueue, e
 		return nil, err
 	}
 	return client, nil
+}
+
+// CreateRecognitionProofread is what puts a document's recognition right, and
+// whether the installation named a proofreader for a scan.
+func (c Config) CreateRecognitionProofread() (recognition.Proofread, bool, error) {
+	return recognition.CreateProofread(c.GetScanProofreading(), c.VaultReaders(), c.GetDerivedStores())
+}
+
+// CreateTranscriptProofread is what puts a transcript right, and whether the
+// installation named a proofreader for speech.
+func (c Config) CreateTranscriptProofread() (transcription.Proofread, bool, error) {
+	return transcription.CreateProofread(c.GetSpeechProofreading(), c.VaultReaders(), c.GetDerivedStores())
 }

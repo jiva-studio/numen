@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -15,14 +16,14 @@ import (
 )
 
 // ReadNote hands the client the prose of a note.
-func (a *API) ReadNote(
+func (h *noteHandler) ReadNote(
 	ctx context.Context, r *connect.Request[v1.ReadNoteRequest],
 ) (*connect.Response[v1.ReadNoteResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Notes.Read.Execute(ctx, showing, r.Msg.GetPath())
+	found, err := h.read.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -40,30 +41,30 @@ func (a *API) ReadNote(
 // WriteNote puts prose into a note. A note still holding the prose the client
 // read is written over; one holding something else is left alone and the client
 // is told the note changed.
-func (a *API) WriteNote(
+func (h *noteHandler) WriteNote(
 	ctx context.Context, r *connect.Request[v1.WriteNoteRequest],
 ) (*connect.Response[v1.WriteNoteResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
 	// Counted around the write and not around the answer, so that closing waits
 	// for what reaches the vault.
-	if !a.Writing.begin() {
+	if !h.state.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.finish()
-	at, err := a.Notes.Write.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newBaseline(r.Msg.GetBaseline()))
+	defer h.state.Writing.finish()
+	at, err := h.write.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newBaseline(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save. It is told in the
 	// same breath where the index did not follow, because the prose is on disk
 	// and search does not hold it.
-	behind := a.isUnlevelled(err)
+	behind := h.state.isUnlevelled(err)
 	if err == nil || behind {
 		// What the person typed owes its vectors. Which chunks owe them is not
 		// carried: the debt is in the index, so several saves are one pass.
-		if a.NotifyNoteWritten != nil {
-			a.NotifyNoteWritten()
+		if h.state.NotifyNoteWritten != nil {
+			h.state.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.WriteNoteResponse{
 			At: convertFingerprintToWire(at), IsUnlevelled: behind,
@@ -81,28 +82,28 @@ func (a *API) WriteNote(
 //
 // The index is brought level before the answer comes back, so the note is in
 // the picture as soon as it is on disk.
-func (a *API) CreateNote(
+func (h *noteHandler) CreateNote(
 	ctx context.Context, r *connect.Request[v1.CreateNoteRequest],
 ) (*connect.Response[v1.CreateNoteResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
-	links, err := a.getLinks(ctx, r.Msg.GetLinks())
+	links, err := h.getLinks(ctx, r.Msg.GetLinks())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	if !a.Writing.begin() {
+	if !h.state.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.finish()
+	defer h.state.Writing.finish()
 
-	made, err := a.Notes.Create.Execute(ctx, showing, note.NewNote{
+	made, err := h.create.Execute(ctx, showing, note.NewNote{
 		Title: r.Msg.GetTitle(),
 		Path:  r.Msg.GetPath(),
 		Links: links,
 	})
-	behind := a.isUnlevelled(err)
+	behind := h.state.isUnlevelled(err)
 	if made.Path != "" {
 		// The note is on disk under that name, so that is the answer. What comes
 		// after the write is the index catching up, and the watcher does it
@@ -123,25 +124,25 @@ func (a *API) CreateNote(
 
 // WriteLink writes one relationship into one note. What is already written
 // there is carried across, and the note at the other end is left alone.
-func (a *API) WriteLink(
+func (h *noteHandler) WriteLink(
 	ctx context.Context, r *connect.Request[v1.WriteLinkRequest],
 ) (*connect.Response[v1.WriteLinkResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
-	link, err := a.toDomainLink(ctx, r.Msg.GetLink())
+	link, err := h.toDomainLink(ctx, r.Msg.GetLink())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	if !a.Writing.begin() {
+	if !h.state.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.finish()
+	defer h.state.Writing.finish()
 
 	// The request names no fingerprint, so the write is held to what the note is
 	// at the moment it is made.
-	if _, err := a.Notes.EditLinks.Add(
+	if _, err := h.editLinks.Add(
 		ctx, showing, r.Msg.GetPath(), domain.Fingerprint{}, link,
 	); err != nil {
 		reason, refused := wire.GetErrorCode(err)
@@ -154,24 +155,24 @@ func (a *API) WriteLink(
 }
 
 // RemoveLink takes one relationship out of one note.
-func (a *API) RemoveLink(
+func (h *noteHandler) RemoveLink(
 	ctx context.Context, r *connect.Request[v1.RemoveLinkRequest],
 ) (*connect.Response[v1.RemoveLinkResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
-	if !a.Writing.begin() {
+	if !h.state.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.finish()
+	defer h.state.Writing.finish()
 
 	role, _ := convertRoleFromWire(r.Msg.GetRole())
-	to, err := a.getAddress(ctx, r.Msg.GetTo())
+	to, err := h.getAddress(ctx, r.Msg.GetTo())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	if _, err := a.Notes.EditLinks.Remove(
+	if _, err := h.editLinks.Remove(
 		ctx, showing, r.Msg.GetPath(), to, role, domain.Fingerprint{},
 	); err != nil {
 		reason, refused := wire.GetErrorCode(err)
@@ -184,10 +185,10 @@ func (a *API) RemoveLink(
 }
 
 // ReplaceLinks makes the links between two notes the ones the request names.
-func (a *API) ReplaceLinks(
+func (h *noteHandler) ReplaceLinks(
 	ctx context.Context, r *connect.Request[v1.ReplaceLinksRequest],
 ) (*connect.Response[v1.ReplaceLinksResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -200,12 +201,12 @@ func (a *API) ReplaceLinks(
 		}
 		links = append(links, note.PairLink{From: l.GetFrom(), To: l.GetTo(), Role: role, Label: l.GetLabel()})
 	}
-	if !a.Writing.begin() {
+	if !h.state.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.finish()
+	defer h.state.Writing.finish()
 
-	if err := a.Notes.ReplaceLinks.Execute(
+	if err := h.replaceLinks.Execute(
 		ctx, showing, r.Msg.GetFirst(), r.Msg.GetSecond(), links,
 	); err != nil {
 		if errors.Is(err, note.ErrNotAPair) {
@@ -220,16 +221,16 @@ func (a *API) ReplaceLinks(
 	return connect.NewResponse(&v1.ReplaceLinksResponse{}), nil
 }
 
-func (a *API) GetOpeningNote(
+func (h *noteHandler) GetOpeningNote(
 	ctx context.Context, _ *connect.Request[v1.GetOpeningNoteRequest],
 ) (*connect.Response[v1.GetOpeningNoteResponse], error) {
-	showing := a.GetCurrentVault()
+	showing := h.state.GetCurrentVault()
 	if showing.ID == "" {
 		// A window standing on nothing opens on no note.
 		return connect.NewResponse(&v1.GetOpeningNoteResponse{}), nil
 	}
 
-	ref, found, err := a.Notes.Queries.GetOpeningNote(ctx, showing.ID)
+	ref, found, err := h.queries.GetOpeningNote(ctx, showing.ID)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -240,14 +241,14 @@ func (a *API) GetOpeningNote(
 	return connect.NewResponse(out), nil
 }
 
-func (a *API) GetNeighbourhood(
+func (h *noteHandler) GetNeighbourhood(
 	ctx context.Context, r *connect.Request[v1.GetNeighbourhoodRequest],
 ) (*connect.Response[v1.GetNeighbourhoodResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Notes.ShowNeighbourhood.Execute(ctx, showing, r.Msg.GetPath())
+	found, err := h.showNeighbourhood.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -258,7 +259,7 @@ func (a *API) GetNeighbourhood(
 	for _, related := range found.Related {
 		paths = append(paths, related.Path)
 	}
-	types, err := a.Notes.Queries.GetTypes(ctx, showing.ID, paths)
+	types, err := h.queries.GetTypes(ctx, showing.ID, paths)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -283,14 +284,14 @@ func (a *API) GetNeighbourhood(
 
 // ResolveAddresses answers where addresses written in one note land. An address
 // that reaches nothing is left out of the answer.
-func (a *API) ResolveAddresses(
+func (h *noteHandler) ResolveAddresses(
 	ctx context.Context, r *connect.Request[v1.ResolveAddressesRequest],
 ) (*connect.Response[v1.ResolveAddressesResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Notes.Links.ResolveLinks(ctx, showing.ID, r.Msg.GetFrom(), r.Msg.GetWritten())
+	found, err := h.links.ResolveLinks(ctx, showing.ID, r.Msg.GetFrom(), r.Msg.GetWritten())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -319,13 +320,13 @@ func (a *API) ResolveAddresses(
 
 // getLinks turns the links a request carries into the links a note is written
 // with, and refuses the lot where one of them cannot be written.
-func (a *API) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Link, error) {
+func (h *noteHandler) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Link, error) {
 	if len(links) == 0 {
 		return nil, nil
 	}
 	out := make([]domain.Link, 0, len(links))
 	for _, l := range links {
-		link, err := a.toDomainLink(ctx, l)
+		link, err := h.toDomainLink(ctx, l)
 		if err != nil {
 			return nil, err
 		}
@@ -339,7 +340,7 @@ func (a *API) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Link, er
 // The window names the note at the other end by the path it is filed under.
 // How much of that path the link carries is `note.GetAddress`: a name where it
 // means one note, and the path where it would mean another.
-func (a *API) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error) {
+func (h *noteHandler) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error) {
 	role, ok := convertRoleFromWire(l.GetRole())
 	if !ok {
 		return domain.Link{}, fmt.Errorf("no link carries the role %v", l.GetRole())
@@ -347,7 +348,7 @@ func (a *API) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error)
 	if l.GetTo() == "" {
 		return domain.Link{}, errors.New("a link needs a note to go to")
 	}
-	target, err := a.getAddress(ctx, l.GetTo())
+	target, err := h.getAddress(ctx, l.GetTo())
 	if err != nil {
 		return domain.Link{}, err
 	}
@@ -355,8 +356,8 @@ func (a *API) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error)
 }
 
 // getAddress is the note at the other end as a link carries it.
-func (a *API) getAddress(ctx context.Context, to string) (domain.Address, error) {
-	return a.Notes.GetLinkAddress.Execute(ctx, a.GetCurrentVault(), to)
+func (h *noteHandler) getAddress(ctx context.Context, to string) (domain.Address, error) {
+	return h.getLinkAddress.Execute(ctx, h.state.GetCurrentVault(), to)
 }
 
 // convertRoleFromWire is the role a link carries, in the core's words. A link is written
@@ -423,4 +424,87 @@ func convertFingerprintFromWire(at *v1.Fingerprint) domain.Fingerprint {
 		return domain.Fingerprint{}
 	}
 	return domain.Fingerprint{Path: at.GetPath(), Size: at.GetSize(), ModTime: instant(at.GetMtime())}
+}
+
+// ListHeadings hands the client the headings of the notes the filter names. A
+// window standing on nothing holds no note to divide.
+func (h *noteHandler) ListHeadings(
+	ctx context.Context,
+	r *connect.Request[v1.ListHeadingsRequest],
+) (*connect.Response[v1.ListHeadingsResponse], error) {
+	showing := h.state.GetCurrentVault()
+	if showing.ID == "" {
+		return connect.NewResponse(&v1.ListHeadingsResponse{}), nil
+	}
+	paths, err := eachOnce(r.Msg.GetPaths())
+	if err != nil {
+		return nil, err
+	}
+	found, err := h.queries.GetHeadings(ctx, showing.ID, paths)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	// In the order the filter named them.
+	out := &v1.ListHeadingsResponse{Headings: make([]*v1.NoteHeadings, 0, len(found))}
+	for _, path := range paths {
+		headings, held := found[path]
+		if !held {
+			continue
+		}
+		one := &v1.NoteHeadings{Path: path, Headings: make([]*v1.Heading, 0, len(headings))}
+		for _, h := range headings {
+			one.Headings = append(one.Headings, &v1.Heading{
+				Text:  h.Text,
+				Line:  int32(h.Line),
+				Level: int32(h.Level),
+			})
+		}
+		out.Headings = append(out.Headings, one)
+	}
+	return connect.NewResponse(out), nil
+}
+
+// WatchEdits reports a change being made to a note's prose while it is being
+// made, for as long as the client listens.
+func (h *noteHandler) WatchEdits(
+	ctx context.Context,
+	_ *connect.Request[v1.WatchEditsRequest],
+	out *connect.ServerStream[v1.WatchEditsResponse],
+) error {
+	line, done := h.state.Edits.subscribe()
+	defer done()
+
+	// A stream that says nothing until a note is changed is indistinguishable
+	// from one that never opened.
+	if err := out.Send(&v1.WatchEditsResponse{}); err != nil {
+		return err
+	}
+
+	repeat := time.NewTicker(wire.Again)
+	defer repeat.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-repeat.C:
+			if err := out.Send(&v1.WatchEditsResponse{}); err != nil {
+				return err
+			}
+		case said, open := <-line:
+			if !open {
+				return nil
+			}
+			if err := out.Send(&v1.WatchEditsResponse{
+				Change:  said.Change,
+				Path:    said.Path,
+				Span:    &v1.Span{From: int32(said.From), To: int32(said.To)},
+				Text:    said.Text,
+				IsFinal: said.IsDone,
+			}); err != nil {
+				return err
+			}
+		}
+	}
 }

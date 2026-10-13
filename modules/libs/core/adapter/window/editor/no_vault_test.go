@@ -57,9 +57,9 @@ func openEmptyWindow(t *testing.T) *nothing {
 	t.Cleanup(func() { installation.Close() })
 
 	// The welcome screen's way into a vault: the list opens one in this window.
-	installation.API.OpenVault = installation.Show
+	installation.State.OpenVault = installation.Show
 
-	server := httptest.NewUnstartedServer(installation.API.NewHandler(http.NotFoundHandler()))
+	server := httptest.NewUnstartedServer(installation.Services.NewHandler(http.NotFoundHandler()))
 	server.EnableHTTP2 = true
 	server.StartTLS()
 	t.Cleanup(server.CloseClientConnections)
@@ -209,7 +209,7 @@ func TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 			case <-asking.Done():
 				return
 			case <-time.After(20 * time.Millisecond):
-				_ = f.installation.API.GetWindow().FocusPlace(asking, domain.Place{Path: "Somewhere.md"})
+				_ = f.installation.State.GetWindow().FocusPlace(asking, domain.Place{Path: "Somewhere.md"})
 			}
 		}
 	}()

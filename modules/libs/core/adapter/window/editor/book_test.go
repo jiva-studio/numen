@@ -100,8 +100,8 @@ func TestAFileThatIsNoBook(t *testing.T) {
 		reflowed: "this is not an archive at all",
 	})
 	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
-	api.setVault(vault)
-	t.Cleanup(api.Viewer.close)
+	api.state.setVault(vault)
+	t.Cleanup(api.Document.viewer.close)
 
 	for _, one := range []struct {
 		path string
@@ -112,7 +112,7 @@ func TestAFileThatIsNoBook(t *testing.T) {
 		{"../outside.epub", connect.CodeNotFound},
 	} {
 		t.Run(one.path, func(t *testing.T) {
-			_, err := api.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: one.path}))
+			_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: one.path}))
 			if got := connect.CodeOf(err); got != one.want {
 				t.Errorf("%s was refused %v, want %v", one.path, got, one.want)
 			}
@@ -139,7 +139,7 @@ func TestOneDocumentOfABookIsAnsweredAsMarkup(t *testing.T) {
 	}
 
 	// A document the book was not read from is not one to ask for.
-	_, err := api.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
+	_, err := api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
 		Path: reflowed, Document: "OEBPS/gone.xhtml",
 		Baseline: newWireFingerprint(mark),
 	}))
@@ -150,9 +150,9 @@ func TestOneDocumentOfABookIsAnsweredAsMarkup(t *testing.T) {
 
 // markupOf is the markup of one document of a book, asked as the schema asks it
 // with the bytes it was given out for.
-func markupOf(t *testing.T, api *API, path, document string, mark document.Fingerprint) string {
+func markupOf(t *testing.T, api *Services, path, document string, mark document.Fingerprint) string {
 	t.Helper()
-	out, err := api.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
+	out, err := api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
 		Path: path, Document: document, Baseline: newWireFingerprint(mark),
 	}))
 	if err != nil {
@@ -210,8 +210,8 @@ func TestAnEntryThatIsNotAPictureIsNotServed(t *testing.T) {
 func TestACoverIsDrawnFromThePictureItWraps(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{reflowed: string(newCoveredBook(t))})
 	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
-	api.setVault(vault)
-	t.Cleanup(api.Viewer.close)
+	api.state.setVault(vault)
+	t.Cleanup(api.Document.viewer.close)
 	handler := api.NewHandler(http.NotFoundHandler())
 	mark := printOf(t, api, reflowed)
 
@@ -233,7 +233,7 @@ func TestAnAddressIntoABookThatChanged(t *testing.T) {
 	stale := printOf(t, api, reflowed)
 	stale.Size++
 
-	_, err := api.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
+	_, err := api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
 		Path: reflowed, Document: firstDoc, Baseline: newWireFingerprint(stale),
 	}))
 	if got := connect.CodeOf(err); got != connect.CodeNotFound {
@@ -252,7 +252,7 @@ func TestAPathTheVaultDoesNotHoldIsNoBook(t *testing.T) {
 
 	for _, path := range []string{"../outside.epub", "/etc/passwd", "library/nothing.epub"} {
 		t.Run(path, func(t *testing.T) {
-			_, err := api.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
+			_, err := api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
 				Path: path, Document: firstDoc, Baseline: newWireFingerprint(mark),
 			}))
 			if err == nil {
@@ -359,17 +359,17 @@ func TestABookNobodyIsReadingIsLetGo(t *testing.T) {
 func TestTheBooksOfAVaultAreLetGoWhenAnotherComesIn(t *testing.T) {
 	api, _ := readFrom(t)
 	whatBook(t, api)
-	if openBooks(api.Viewer.books.Load()) == 0 {
+	if openBooks(api.Document.viewer.books.Load()) == 0 {
 		t.Fatal("reading a book left none held")
 	}
 
-	before := api.Viewer.books.Load()
-	api.Viewer.reset()
+	before := api.Document.viewer.books.Load()
+	api.Document.viewer.reset()
 
 	if got := openBooks(before); got != 0 {
 		t.Errorf("%d books of the vault that went are still held", got)
 	}
-	if got := openBooks(api.Viewer.books.Load()); got != 0 {
+	if got := openBooks(api.Document.viewer.books.Load()); got != 0 {
 		t.Errorf("the window came back to %d books open", got)
 	}
 }
@@ -378,12 +378,12 @@ func TestTheBooksOfAVaultAreLetGoWhenAnotherComesIn(t *testing.T) {
 func openBooks(held *pool.Books) int { return held.Len() }
 
 // readFrom is a window looking at one book of its vault.
-func readFrom(t *testing.T) (*API, http.Handler) {
+func readFrom(t *testing.T) (*Services, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{reflowed: string(bookOf(t))})
 	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
-	api.setVault(vault)
-	t.Cleanup(api.Viewer.close)
+	api.state.setVault(vault)
+	t.Cleanup(api.Document.viewer.close)
 	return api, api.NewHandler(http.NotFoundHandler())
 }
 
@@ -398,9 +398,9 @@ func pictureOf(path, entry string, mark document.Fingerprint) string {
 }
 
 // whatBook is what the book is, as the window is told it.
-func whatBook(t *testing.T, api *API) *v1.GetBookResponse {
+func whatBook(t *testing.T, api *Services) *v1.GetBookResponse {
 	t.Helper()
-	out, err := api.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: reflowed}))
+	out, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: reflowed}))
 	if err != nil {
 		t.Fatalf("asked what the book is and was refused: %v", err)
 	}

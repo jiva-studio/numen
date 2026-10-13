@@ -12,6 +12,11 @@ import type { WideBox } from '../../model/dwell'
 import type { PlexBehaviour } from '../../model/behaviour'
 import type { PlexDestination } from '../../model/showing'
 
+export interface PlexPending {
+  from: string
+  at: Position
+}
+
 export interface PlexViewProps {
   frame: PlexFrame
   /** The window to centre on. Measured by whoever owns the element. */
@@ -46,6 +51,11 @@ export interface PlexViewProps {
   gestureFrom?: string | null
   gestureAt?: Position | null
   gestureOutcome?: Drop | null
+  /**
+   * A node awaiting a partner: the node a line leaves, and the point it ends
+   * at, in the plex's own pixels from its top left corner.
+   */
+  pending?: PlexPending | null
   /**
    * Something dragged over the picture from outside it: where the pointer
    * is, and the relation letting go there comes to. Both, or the picture draws

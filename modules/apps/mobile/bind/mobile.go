@@ -92,7 +92,7 @@ func Start(dir string) (int, error) {
 	if wrong != nil {
 		fmt.Fprintln(os.Stderr, "themes:", wrong)
 	}
-	opened.API.Themes = themes
+	opened.Services.Themes = themes
 	listener, err := listenLocal()
 	if err != nil {
 		stop()
@@ -108,7 +108,7 @@ func Start(dir string) (int, error) {
 	// beside the notes, which is a book read off the disk and a model set
 	// running over one.
 	server := &http.Server{
-		Handler: allowOrigin(opened.API.NewHandler(
+		Handler: allowOrigin(opened.Services.NewHandler(
 			http.NotFoundHandler(),
 			numenv1connect.VaultServiceName,
 			numenv1connect.NoteServiceName,

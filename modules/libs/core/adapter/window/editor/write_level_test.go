@@ -58,7 +58,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 	installation := openInstallation(t)
 
 	const body = "tetragrammaton is a word nothing else in this vault holds"
-	written, err := installation.API.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
+	written, err := installation.Services.Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Kept.md",
 		Body: body,
 	}))

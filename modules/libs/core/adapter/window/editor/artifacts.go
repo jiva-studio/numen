@@ -14,8 +14,26 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
+
+// artifactHandler lists, makes and takes away what a model wrote about a file
+// of the vault.
+type artifactHandler struct {
+	state *State
+	files *artifactFiles
+
+	imports                       *source.ImportURL
+	drops                         *transcription.Drop
+	getRunProgress                source.GetRunProgress
+	getTranscript                 source.GetTranscript
+	getCopyLocation               source.GetCopyLocation
+	deleteCopy                    source.RemoveCopy
+	getTranscriptCorrectionState  source.GetTranscriptCorrectionState
+	getRecognitionCorrectionState source.GetRecognitionCorrectionState
+}
 
 // What a model wrote about a file of the vault is asked for as a resource: it
 // is listed, made and taken away, and what has become of it is a state.
@@ -78,17 +96,17 @@ func getArtifactKinds(kind domain.SourceKind, produces string) []v1.ArtifactKind
 // getArtifactFile is the vault the window is showing and the file at a path, where
 // that file carries the artifact asked about. A file carrying none of that kind
 // holds nothing to read.
-func (a *API) getArtifactFile(
+func (f *artifactFiles) getArtifactFile(
 	ctx context.Context,
 	path string,
 	of v1.ArtifactKind,
 ) (domain.Vault, domain.Fingerprint, error) {
-	showing, ref, err := a.getShownFile(ctx, path)
+	showing, ref, err := f.getShownFile(ctx, path)
 	if err != nil {
 		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(getReachCode(err), err)
 	}
-	at := a.getArtifactAddress(ctx, showing, ref)
-	if !slices.Contains(getArtifactKinds(ref.Kind, a.getProducer(at)), of) {
+	at := f.getArtifactAddress(ctx, showing, ref)
+	if !slices.Contains(getArtifactKinds(ref.Kind, f.getProducer(at)), of) {
 		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(
 			connect.CodeInvalidArgument, errNotCarried)
 	}
@@ -98,11 +116,11 @@ func (a *API) getArtifactFile(
 // getProducer is what fetching an address would keep its text under, and nothing
 // where this build reaches no address at all. What is at an address is the
 // fetcher's to say, so nothing here reads the address itself.
-func (a *API) getProducer(at domain.URL) string {
-	if a.Imports == nil || a.Imports.By == nil || at == "" {
+func (f *artifactFiles) getProducer(at domain.URL) string {
+	if f.imports == nil || f.imports.By == nil || at == "" {
 		return ""
 	}
-	return a.Imports.By.GetDownloadModel(at).Producer
+	return f.imports.By.GetDownloadModel(at).Producer
 }
 
 // getArtifactID is the name one artifact stands under in the store, and whether the
@@ -128,24 +146,24 @@ func getArtifactID(of v1.ArtifactKind) (string, bool) {
 
 // getArtifactAddress is the address the file at a path holds, and nothing for every other
 // file. What is made from it follows from that.
-func (a *API) getArtifactAddress(ctx context.Context, v domain.Vault, ref domain.Fingerprint) domain.URL {
+func (f *artifactFiles) getArtifactAddress(ctx context.Context, v domain.Vault, ref domain.Fingerprint) domain.URL {
 	if ref.Kind != domain.KindURL {
 		return domain.URL("")
 	}
-	return a.Texts.GetNoteAddress.Execute(ctx, v, ref.Path)
+	return f.getNoteAddress.Execute(ctx, v, ref.Path)
 }
 
 // getLinkedArtifact is the text of what a note points at, as it now stands. What kind of
 // text that is follows from the address: a video is a transcript, and every
 // other page is an article.
-func (a *API) getLinkedArtifact(
+func (h *artifactHandler) getLinkedArtifact(
 	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.URL,
 ) (*v1.Artifact, error) {
-	of := getTextKind(a.getProducer(at))
+	of := getTextKind(h.files.getProducer(at))
 	if at == "" {
 		return newArtifact(of, source.RunNone, 0), nil
 	}
-	progress, err := a.Texts.GetRunProgress.Execute(ctx, v, ref.Path, ref.Kind)
+	progress, err := h.getRunProgress.Execute(ctx, v, ref.Path, ref.Kind)
 	if err != nil {
 		return nil, err
 	}
@@ -154,10 +172,10 @@ func (a *API) getLinkedArtifact(
 
 // removeCopy takes the copy of a video off this disk. The note stands as it did,
 // pointing at the address, and the tab frames it again.
-func (a *API) removeCopy(
+func (h *artifactHandler) removeCopy(
 	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.URL,
 ) (*connect.Response[v1.DeleteArtifactResponse], error) {
-	if err := a.Texts.RemoveCopy.Execute(ctx, v, ref.Path, at); err != nil {
+	if err := h.deleteCopy.Execute(ctx, v, ref.Path, at); err != nil {
 		if errors.Is(err, source.ErrNotReady) {
 			return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 		}
@@ -168,14 +186,14 @@ func (a *API) removeCopy(
 
 // getVideoCopy is whether a copy of the video at an address stands on this disk, and
 // how large it is.
-func (a *API) getVideoCopy(
+func (h *artifactHandler) getVideoCopy(
 	ctx context.Context, v domain.Vault, path string, at domain.URL,
 ) *v1.Artifact {
 	out := &v1.Artifact{
 		Kind:  v1.ArtifactKind_ARTIFACT_KIND_COPY,
 		State: v1.State_STATE_NONE,
 	}
-	location := a.Texts.GetCopyLocation.Execute(ctx, v, path, at)
+	location := h.getCopyLocation.Execute(ctx, v, path, at)
 	if !location.Exists {
 		return out
 	}
@@ -186,24 +204,24 @@ func (a *API) getVideoCopy(
 // fetchCopy fetches a copy of what is at an address and answers with what stands
 // once it has. A copy over the size the settings name is not fetched, and the
 // size it was refused at is said.
-func (a *API) fetchCopy(
+func (h *artifactHandler) fetchCopy(
 	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.URL,
 ) (*v1.Artifact, error) {
-	if a.Imports == nil {
+	if h.imports == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDownloader)
 	}
 	// A copy is minutes of fetching, so how far it has got is reported as it
 	// arrives.
-	asked := *a.Imports
+	asked := *h.imports
 	asked.Progress = func(done, total int64) {
-		a.reportTask(task.Task{
+		h.state.reportTask(task.Task{
 			ID: copying + ref.Path, Title: "Downloading a copy", About: ref.Path,
 			Count: done, Total: total, Unit: task.Bytes, IsUserStarted: true,
 		})
 	}
 	got, err := asked.Copy(ctx, v, ref.Path)
-	a.finishTask(copying + ref.Path)
-	out := a.getVideoCopy(ctx, v, ref.Path, at)
+	h.state.finishTask(copying + ref.Path)
+	out := h.getVideoCopy(ctx, v, ref.Path, at)
 	if errors.Is(err, source.ErrBeingDownloaded) {
 		out.State = v1.State_STATE_RUNNING
 		return out, nil
@@ -232,9 +250,9 @@ const (
 // ReportArtifactChange says an artifact of the file at a path was written from
 // outside the window, so a tab drawing it reads what now stands. It is the same
 // channel a run reports itself through, and a tab follows both the same way.
-func (a *API) ReportArtifactChange(path string) {
-	a.reportTask(task.Task{ID: fetching + path, Title: "Correcting a transcript", About: path})
-	a.finishTask(fetching + path)
+func (h *artifactHandler) ReportArtifactChange(path string) {
+	h.state.reportTask(task.Task{ID: fetching + path, Title: "Correcting a transcript", About: path})
+	h.state.finishTask(fetching + path)
 }
 
 // ListArtifacts is every artifact the file at a path can carry and what has
@@ -244,18 +262,18 @@ func (a *API) ReportArtifactChange(path string) {
 // book has been read is a question about the book, and a client that reads it
 // off an absence cannot tell a book nobody has read from one this build knows
 // nothing about.
-func (a *API) ListArtifacts(
+func (h *artifactHandler) ListArtifacts(
 	ctx context.Context,
 	r *connect.Request[v1.ListArtifactsRequest],
 ) (*connect.Response[v1.ListArtifactsResponse], error) {
-	showing, ref, err := a.getShownFile(ctx, r.Msg.GetPath())
+	showing, ref, err := h.files.getShownFile(ctx, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
-	at := a.getArtifactAddress(ctx, showing, ref)
+	at := h.files.getArtifactAddress(ctx, showing, ref)
 	out := &v1.ListArtifactsResponse{}
-	for _, of := range getArtifactKinds(ref.Kind, a.getProducer(at)) {
-		one, err := a.artifact(ctx, showing, ref, at, of)
+	for _, of := range getArtifactKinds(ref.Kind, h.files.getProducer(at)) {
+		one, err := h.artifact(ctx, showing, ref, at, of)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -270,7 +288,7 @@ func (a *API) ListArtifacts(
 // A file already carrying it is left alone and answered with what stands, so
 // asking twice is the same as asking once. A run that stopped part way is begun
 // afresh.
-func (a *API) CreateArtifact(
+func (h *artifactHandler) CreateArtifact(
 	ctx context.Context,
 	r *connect.Request[v1.CreateArtifactRequest],
 ) (*connect.Response[v1.CreateArtifactResponse], error) {
@@ -278,40 +296,40 @@ func (a *API) CreateArtifact(
 	if _, named := getArtifactID(of); !named {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoArtifact)
 	}
-	showing, ref, err := a.getShownFile(ctx, r.Msg.GetPath())
+	showing, ref, err := h.files.getShownFile(ctx, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
 	// What a url carries is what fetches it, so a build that reaches no address
 	// says it cannot rather than that the file carries nothing.
-	at := a.getArtifactAddress(ctx, showing, ref)
-	if ref.Kind == domain.KindURL && a.getProducer(at) == "" {
+	at := h.files.getArtifactAddress(ctx, showing, ref)
+	if ref.Kind == domain.KindURL && h.files.getProducer(at) == "" {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDownloader)
 	}
 	// The kind of the file decides what is made from it, so an artifact the file
 	// does not carry is a client asking for a run over the wrong thing.
-	if !slices.Contains(getArtifactKinds(ref.Kind, a.getProducer(at)), of) {
+	if !slices.Contains(getArtifactKinds(ref.Kind, h.files.getProducer(at)), of) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNotCarried)
 	}
 
 	var made *v1.Artifact
 	switch of {
 	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED:
-		made, err = a.proofreadTranscript(ctx, showing, ref)
+		made, err = h.proofreadTranscript(ctx, showing, ref)
 	case v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED:
-		made, err = a.proofreadRecognition(ctx, showing, ref)
+		made, err = h.proofreadRecognition(ctx, showing, ref)
 	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT, v1.ArtifactKind_ARTIFACT_KIND_ARTICLE:
 		// A recording's transcript is heard by a model here; a note's is
 		// fetched from the address it points at.
 		if ref.Kind == domain.KindURL {
-			made, err = a.fetchArtifact(ctx, showing, ref, at)
+			made, err = h.fetchArtifact(ctx, showing, ref, at)
 			break
 		}
-		made, err = a.run(ctx, showing, ref, of)
+		made, err = h.run(ctx, showing, ref, of)
 	case v1.ArtifactKind_ARTIFACT_KIND_COPY:
-		made, err = a.fetchCopy(ctx, showing, ref, at)
+		made, err = h.fetchCopy(ctx, showing, ref, at)
 	default:
-		made, err = a.run(ctx, showing, ref, of)
+		made, err = h.run(ctx, showing, ref, of)
 	}
 	if err != nil {
 		return nil, err
@@ -322,11 +340,11 @@ func (a *API) CreateArtifact(
 // DeleteArtifact takes away everything listening to a recording produced: the
 // words a model heard, the words a person put right, and the chunks cut from
 // them. The recording stands as it did before anything listened to it.
-func (a *API) DeleteArtifact(
+func (h *artifactHandler) DeleteArtifact(
 	ctx context.Context,
 	r *connect.Request[v1.DeleteArtifactRequest],
 ) (*connect.Response[v1.DeleteArtifactResponse], error) {
-	showing, ref, err := a.getShownFile(ctx, r.Msg.GetPath())
+	showing, ref, err := h.files.getShownFile(ctx, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
@@ -337,13 +355,13 @@ func (a *API) DeleteArtifact(
 	// A copy is bytes and no words: taking it away leaves the url as it was,
 	// pointing at the address it points at.
 	if of == v1.ArtifactKind_ARTIFACT_KIND_COPY {
-		return a.removeCopy(ctx, showing, ref, a.getArtifactAddress(ctx, showing, ref))
+		return h.removeCopy(ctx, showing, ref, h.files.getArtifactAddress(ctx, showing, ref))
 	}
 	if ref.Kind == domain.KindURL {
-		if a.Imports == nil {
+		if h.imports == nil {
 			return nil, connect.NewError(connect.CodeUnimplemented, errNoDownloader)
 		}
-		if err := a.Imports.DeleteText(ctx, showing, ref.Path); err != nil {
+		if err := h.imports.DeleteText(ctx, showing, ref.Path); err != nil {
 			return nil, connect.NewError(getReachCode(err), err)
 		}
 		return connect.NewResponse(&v1.DeleteArtifactResponse{}), nil
@@ -354,8 +372,8 @@ func (a *API) DeleteArtifact(
 
 	// The queue told about it is the one behind the vault the recording was
 	// found in.
-	drops := *a.Drops
-	drops.Forgets = a.getRecordingForgetter()
+	drops := *h.drops
+	drops.Forgets = h.state.getRecordingForgetter()
 
 	res, err := drops.Execute(ctx, showing, ref.Path)
 	switch {
@@ -371,17 +389,17 @@ func (a *API) DeleteArtifact(
 
 // run begins reading a scan or hearing a recording, and answers with what the
 // artifact now is.
-func (a *API) run(
+func (h *artifactHandler) run(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
 	of v1.ArtifactKind,
 ) (*v1.Artifact, error) {
-	by := a.runner(of)
+	by := h.runner(of)
 	if by == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
-	progress, err := a.Texts.GetRunProgress.Execute(ctx, v, ref.Path, ref.Kind)
+	progress, err := h.getRunProgress.Execute(ctx, v, ref.Path, ref.Kind)
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
@@ -413,11 +431,11 @@ func getStartState(started source.StartOutcome) v1.State {
 
 // runner is what reads a scan or hears a recording. Nothing while the passes
 // behind the vault the window is showing are still coming up.
-func (a *API) runner(of v1.ArtifactKind) Runner {
+func (h *artifactHandler) runner(of v1.ArtifactKind) Runner {
 	if of == v1.ArtifactKind_ARTIFACT_KIND_OCR {
-		return a.getRecogniser()
+		return h.state.getRecogniser()
 	}
-	return a.getTranscriber()
+	return h.state.getTranscriber()
 }
 
 // errComingUp is a run asked for over a vault whose passes are not up yet. The
@@ -434,38 +452,38 @@ var errNoDownloader = errors.New("this build cannot download what an address hol
 //
 // It is waited for: a video's words are one request and a page is one page, and
 // both are over in the time a person waits for a window to answer.
-func (a *API) fetchArtifact(
+func (h *artifactHandler) fetchArtifact(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
 	at domain.URL,
 ) (*v1.Artifact, error) {
-	if a.Imports == nil {
+	if h.imports == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDownloader)
 	}
 	// A person who asks for this asks for the address afresh: what was fetched
 	// before goes, and the site is read again.
-	asked := *a.Imports
+	asked := *h.imports
 	asked.IsRepeat = true
-	a.reportTask(task.Task{ID: fetching + ref.Path, Title: "Downloading an address", About: ref.Path})
+	h.state.reportTask(task.Task{ID: fetching + ref.Path, Title: "Downloading an address", About: ref.Path})
 	_, err := asked.Execute(ctx, v, ref.Path)
-	a.finishTask(fetching + ref.Path)
+	h.state.finishTask(fetching + ref.Path)
 	if err != nil {
 		return nil, connect.NewError(getDownloadCode(err), err)
 	}
-	return a.getLinkedArtifact(ctx, v, ref, at)
+	return h.getLinkedArtifact(ctx, v, ref, at)
 }
 
 // proofreadTranscript begins putting the transcript of a recording right, and
 // answers with what the corrections now are.
-func (a *API) proofreadTranscript(
+func (h *artifactHandler) proofreadTranscript(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
 ) (*v1.Artifact, error) {
 	// Taken once, so the whole answer is the work of the vault the window was
 	// showing when it was asked.
-	puts := a.getProofreader()
+	puts := h.state.getProofreader()
 	if puts == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
@@ -474,7 +492,7 @@ func (a *API) proofreadTranscript(
 	if !puts.ProofreaderReady() {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoProofreading)
 	}
-	standing, err := a.Texts.GetTranscript.Execute(ctx, v, ref.Path)
+	standing, err := h.getTranscript.Execute(ctx, v, ref.Path)
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
@@ -501,7 +519,7 @@ func (a *API) proofreadTranscript(
 // them: nothing runs over them either way. One run to a recording, by the name
 // it writes under: a run listening to this recording holds that name, and so
 // does a proofreading of it.
-func getProofreadState(res source.ProofreadTranscriptResult) v1.State {
+func getProofreadState(res transcription.ProofreadResult) v1.State {
 	switch {
 	case res.IsBusy:
 		return v1.State_STATE_RUNNING
@@ -515,19 +533,19 @@ func getProofreadState(res source.ProofreadTranscriptResult) v1.State {
 
 // proofreadRecognition begins putting the recognition of a scanned document right, and
 // answers with what the corrections now are.
-func (a *API) proofreadRecognition(
+func (h *artifactHandler) proofreadRecognition(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
 ) (*v1.Artifact, error) {
-	puts := a.getRecognitionProofreader()
+	puts := h.state.getRecognitionProofreader()
 	if puts == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
 	if !puts.ProofreaderReady() {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoProofreading)
 	}
-	progress, err := a.Texts.GetRunProgress.Execute(ctx, v, ref.Path, ref.Kind)
+	progress, err := h.getRunProgress.Execute(ctx, v, ref.Path, ref.Kind)
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
@@ -545,7 +563,7 @@ func (a *API) proofreadRecognition(
 	}, nil
 }
 
-func getRecognitionProofreadState(res source.ProofreadRecognitionResult) v1.State {
+func getRecognitionProofreadState(res recognition.ProofreadResult) v1.State {
 	switch {
 	case res.IsBusy, res.IsWaiting:
 		return v1.State_STATE_RUNNING
@@ -558,7 +576,7 @@ func getRecognitionProofreadState(res source.ProofreadRecognitionResult) v1.Stat
 }
 
 // artifact is one artifact of one file, as it now stands.
-func (a *API) artifact(
+func (h *artifactHandler) artifact(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
@@ -566,22 +584,22 @@ func (a *API) artifact(
 	of v1.ArtifactKind,
 ) (*v1.Artifact, error) {
 	if of == v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED {
-		return a.corrections(ctx, v, ref)
+		return h.corrections(ctx, v, ref)
 	}
 	if of == v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED {
-		return a.recognitionCorrections(ctx, v, ref)
+		return h.recognitionCorrections(ctx, v, ref)
 	}
 	// A url's transcript is the text at the address it holds, and a
 	// recording's is what a model heard: the same kind, made two ways.
 	if ref.Kind == domain.KindURL &&
 		(of == v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT ||
 			of == v1.ArtifactKind_ARTIFACT_KIND_ARTICLE) {
-		return a.getLinkedArtifact(ctx, v, ref, at)
+		return h.getLinkedArtifact(ctx, v, ref, at)
 	}
 	if of == v1.ArtifactKind_ARTIFACT_KIND_COPY {
-		return a.getVideoCopy(ctx, v, ref.Path, at), nil
+		return h.getVideoCopy(ctx, v, ref.Path, at), nil
 	}
-	progress, err := a.Texts.GetRunProgress.Execute(ctx, v, ref.Path, ref.Kind)
+	progress, err := h.getRunProgress.Execute(ctx, v, ref.Path, ref.Kind)
 	if err != nil {
 		return nil, err
 	}
@@ -589,12 +607,12 @@ func (a *API) artifact(
 }
 
 // recognitionCorrections is what putting a document's recognition right has come to.
-func (a *API) recognitionCorrections(
+func (h *artifactHandler) recognitionCorrections(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
 ) (*v1.Artifact, error) {
-	state, err := a.Texts.GetRecognitionCorrectionState.Execute(ctx, v, ref.Path)
+	state, err := h.getRecognitionCorrectionState.Execute(ctx, v, ref.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -602,12 +620,12 @@ func (a *API) recognitionCorrections(
 }
 
 // corrections is what putting a recording's transcript right has come to.
-func (a *API) corrections(
+func (h *artifactHandler) corrections(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
 ) (*v1.Artifact, error) {
-	state, err := a.Texts.GetTranscriptCorrectionState.Execute(ctx, v, ref.Path)
+	state, err := h.getTranscriptCorrectionState.Execute(ctx, v, ref.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -674,4 +692,48 @@ func getTextKind(produces string) v1.ArtifactKind {
 		return v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT
 	}
 	return v1.ArtifactKind_ARTIFACT_KIND_ARTICLE
+}
+
+// recording is the vault the window is showing and the recording it holds at a
+// path. A file that is not one carries no transcript.
+func (f *artifactFiles) recording(
+	ctx context.Context,
+	path string,
+) (domain.Vault, domain.Fingerprint, error) {
+	showing, ref, err := f.getShownFile(ctx, path)
+	if err != nil {
+		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(getReachCode(err), err)
+	}
+	// A url pointing at a video has words with times in them, as a
+	// recording does, and they are read back the same way.
+	if ref.Kind == domain.KindURL {
+		return showing, ref, nil
+	}
+	if ref.Kind != domain.KindRecording {
+		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(
+			connect.CodeInvalidArgument, errNotARecording)
+	}
+	return showing, ref, nil
+}
+
+// getShownFile is the vault the window is showing and what it holds at a path. It is
+// the one read of the vault a request gets, and everything the request goes
+// on to do is done to that vault.
+//
+// Everything from outside reaches the vault through a reader, so a path leaving
+// it is refused there.
+func (f *artifactFiles) getShownFile(ctx context.Context, path string) (domain.Vault, domain.Fingerprint, error) {
+	showing := f.state.GetCurrentVault()
+	if showing.ID == "" || f.readers == nil {
+		return domain.Vault{}, domain.Fingerprint{}, errNoVault
+	}
+	reader, err := f.readers.Open(showing)
+	if err != nil {
+		return domain.Vault{}, domain.Fingerprint{}, err
+	}
+	ref, err := reader.GetFingerprint(ctx, path)
+	if err != nil {
+		return domain.Vault{}, domain.Fingerprint{}, err
+	}
+	return showing, ref, nil
 }

@@ -7,6 +7,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -53,7 +54,7 @@ func runScanCommand(ctx context.Context, out io.Writer, deps Deps, args []string
 			fmt.Fprintf(out, "  extracting %s\r", res.CurrentSource)
 		}
 	}
-	making.OnVectorsProgress = func(res source.EmbedResult) {
+	making.OnVectorsProgress = func(res embedding.EmbedResult) {
 		fmt.Fprintf(out, "  %d embedded\r", res.Embedded)
 	}
 

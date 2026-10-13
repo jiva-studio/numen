@@ -27,37 +27,37 @@ const namedInAnError = 3
 // The watcher reports a picture or an archive to nobody, so what arrived is
 // named to the listeners here.
 func (o *Installation) Imports(ctx context.Context, into string, paths []string) {
-	api := o.API
-	if api.Files.Import == nil || len(paths) == 0 {
+	state := o.State
+	if len(paths) == 0 {
 		return
 	}
-	showing := api.GetCurrentVault()
+	showing := state.GetCurrentVault()
 	if showing.ID == "" {
 		return
 	}
-	if !api.Writing.begin() {
+	if !state.Writing.begin() {
 		return
 	}
-	defer api.Writing.finish()
+	defer state.Writing.finish()
 
 	at := task.Task{ID: importingFiles + " " + into, Title: "Bringing files in", About: into}
-	api.reportTask(at)
+	state.reportTask(at)
 
-	imported, err := api.Files.Import.Execute(ctx, showing, into, paths)
+	imported, err := o.vaults.Import.Execute(ctx, showing, into, paths)
 	if direct := getDirectChildren(into, imported.Landed); len(direct) > 0 {
-		api.ChangeEvents.publish(change{paths: direct})
+		state.ChangeEvents.publish(change{paths: direct})
 	}
 	if err != nil {
 		at.Error = err.Error()
-		api.reportTask(at)
+		state.reportTask(at)
 		return
 	}
 	if failureText := describeImportFailures(imported.Errors); failureText != "" {
 		at.Error = failureText
-		api.reportTask(at)
+		state.reportTask(at)
 		return
 	}
-	api.finishTask(at.ID)
+	state.finishTask(at.ID)
 }
 
 // getDirectChildren returns items in the target folder.

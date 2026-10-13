@@ -34,7 +34,7 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Insta
 	// panel puts them there, and so does a person asking for the port itself.
 	// An installation asking for neither opens no port and mints no token.
 	if !cfg.Agent.IsServingTools() {
-		opened.API.Unreachable.Store(unnamed)
+		opened.State.Unreachable.Store(unnamed)
 		return func() error { return nil }, nil
 	}
 
@@ -82,9 +82,9 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Insta
 	// The panel answers with the agent the settings name. An installation
 	// naming none is served the tools alone, and the panel says so.
 	if served.Agent == nil {
-		opened.API.Unreachable.Store(unnamed)
+		opened.State.Unreachable.Store(unnamed)
 	} else {
-		opened.API.SetAgent(served.Agent)
+		opened.State.SetAgent(served.Agent)
 	}
 	return served.Close, nil
 }
@@ -94,7 +94,7 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Insta
 func makeEditPreview(opened *editor.Installation) claudecode.EditPreview {
 	return claudecode.EditPreview{
 		Emit: func(ctx context.Context, said domain.Edit) {
-			_ = opened.API.GetWindow().ShowEdit(ctx, said)
+			_ = opened.State.GetWindow().ShowEdit(ctx, said)
 		},
 		Locate: opened.DraftingLocation,
 	}
@@ -110,7 +110,7 @@ func makeEditPreview(opened *editor.Installation) claudecode.EditPreview {
 // as the stretch that changed, and a note the person writes is not, because
 // they are looking at the text they typed.
 func makeAgentCore(cfg container.Config, opened *editor.Installation, root string, out io.Writer) mcp.Core {
-	notes := opened.Notes().ShowEdits(opened.API.GetWindow())
+	notes := opened.Notes().ShowEdits(opened.State.GetWindow())
 	cards := opened.Cards()
 
 	return mcp.Core{
@@ -118,18 +118,18 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 		GetProblems: cfg.GetProblems(opened.Problems()),
 		GetSummary:  cfg.GetSummary(opened.Queries()),
 		Read:        cfg.Read(),
-		Attending:   opened.API.GetOpenTabs,
+		Attending:   opened.State.GetOpenTabs,
 
 		// The list is the window's own, and an agent does not erase a vault:
 		// the folder that goes is a person's to ask for.
 		Vaults: mcp.Vaults{
-			GetKnownVaults: cfg.GetKnownVaults(opened.API.Vaults.Registry),
-			Find:           opened.API.Vaults.Find,
-			PickFolder:     opened.API.Vaults.GetPickFolder(),
-			Add:            opened.API.Vaults.Add,
+			GetKnownVaults: cfg.GetKnownVaults(opened.Vaults().Registry),
+			Find:           &opened.Vaults().Find,
+			PickFolder:     opened.Services.GetPickFolder(),
+			Add:            &opened.Vaults().Add,
 			CheckRoot:      cfg.CheckRoot(),
-			Rename:         opened.API.Vaults.Rename,
-			Unregister:     opened.API.Vaults.Unregister,
+			Rename:         &opened.Vaults().Rename,
+			Unregister:     &opened.Vaults().Unregister,
 			Opens:          makeOpenVault(opened, out),
 		},
 
@@ -140,11 +140,11 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 			GetRecognitionStatus:      cfg.GetRecognitionStatus(opened.GetRecognitionWorker()),
 			StartTranscription:        cfg.StartTranscription(opened.GetTranscriptionWorker()),
 			GetTranscriptionReadiness: cfg.GetTranscriptionReadiness(opened.GetTranscriptionWorker()),
-			CreateAndImportURL:        cfg.CreateAndImportURL(opened.API.Files.URLs, opened.API.Imports),
+			CreateAndImportURL:        cfg.CreateAndImportURL(opened.GetCreateURL(), opened.GetImportURL()),
 			GetArtifactList:           cfg.GetArtifactList(opened.SourcesKnown()),
 			GetArtifactText:           cfg.GetArtifactText(opened.SourcesKnown()),
-			WriteCorrections:          cfg.WriteCorrections(opened.SourcesKnown(), opened.API.ReportArtifactChange),
-			FocusPassage:              cfg.FocusPassage(opened.API.GetWindow()),
+			WriteCorrections:          cfg.WriteCorrections(opened.SourcesKnown(), opened.Services.Artifact.ReportArtifactChange),
+			FocusPassage:              cfg.FocusPassage(opened.State.GetWindow()),
 		},
 
 		Cards: mcp.Cards{
@@ -165,7 +165,7 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 			GetNamedPaths: cfg.GetNamedPaths(opened.Queries()),
 			// The one search the window offers. A model that could not be
 			// fitted is said where the person is, and not twice.
-			Search:        *opened.API.Finds,
+			Search:        *opened.GetSearch(),
 			Neighbourhood: notes.Neighbourhood,
 			Links:         notes.Links,
 
@@ -180,7 +180,7 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 			Read:       notes.Read,
 			GetTitles:  notes.GetTitles,
 			RemoveNote: notes.RemoveNote,
-			FocusNote:  cfg.FocusNote(opened.Queries(), opened.API.GetWindow()),
+			FocusNote:  cfg.FocusNote(opened.Queries(), opened.State.GetWindow()),
 		},
 	}
 }
@@ -191,11 +191,11 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 // it, so what went wrong is said here. A window that cannot be moved serves no
 // tool that would move it.
 func makeOpenVault(opened *editor.Installation, out io.Writer) func(context.Context, domain.Vault) error {
-	if opened.API.OpenVault == nil {
+	if opened.State.OpenVault == nil {
 		return nil
 	}
 	return func(ctx context.Context, v domain.Vault) error {
-		err := opened.API.OpenVault(ctx, v)
+		err := opened.State.OpenVault(ctx, v)
 		if err != nil {
 			fmt.Fprintln(out, "agents:", err)
 		}

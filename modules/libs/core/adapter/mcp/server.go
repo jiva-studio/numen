@@ -15,8 +15,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -127,12 +129,12 @@ type Sources struct {
 	GetDocumentText *source.GetDocumentText
 	// StartRecognition is held even on a machine holding none of the models: what
 	// is missing is fetched behind whoever asked.
-	StartRecognition     *source.StartRecognition
-	GetRecognitionStatus *source.GetRecognitionStatus
+	StartRecognition     *recognition.Start
+	GetRecognitionStatus *recognition.GetStatus
 	// StartTranscription queues the transcription of a recording. Without it the
 	// tool that asks for one is served and answers that this installation cannot.
-	StartTranscription        *source.StartTranscription
-	GetTranscriptionReadiness *source.GetTranscriptionReadiness
+	StartTranscription        *transcription.Start
+	GetTranscriptionReadiness *transcription.GetReadiness
 	// CreateAndImportURL makes the file a web address is kept in and fetches what is
 	// at that address. Without it the tool that imports one is not added.
 	CreateAndImportURL *source.CreateAndImportURL

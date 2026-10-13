@@ -9,7 +9,7 @@ import SettingRow from './setting-row/SettingRow.vue'
 import { OcrSettings } from './ocr-settings'
 import type { SettingsTabState } from '../types'
 import paths from '../paths.json'
-import { write } from '@/entities/settings'
+import { createSettingFields } from '@/entities/settings'
 import { WORDS as words } from '../words'
 
 // --- Props & Emits ---
@@ -17,6 +17,7 @@ const props = defineProps<{ state: SettingsTabState }>()
 
 // --- State ---
 const installation = computed(() => props.state.installation)
+const fields = createSettingFields(() => props.state.installation)
 
 const WHOLE = Number.MAX_SAFE_INTEGER
 const UNDER = { least: -1, most: WHOLE }
@@ -30,38 +31,19 @@ const profiles = computed<readonly SelectChoice[]>(() => {
 
 // --- Handlers ---
 function onTranscribingChange(value: boolean) {
-  setSetting(paths.transcribing, value)
+  fields.setValue(paths.transcribing, value)
 }
 
 function onTranscribeUnderChange(size: number | null) {
-  if (size !== null) setSetting(paths.transcribeUnder, size)
+  if (size !== null) fields.setValue(paths.transcribeUnder, size)
 }
 
 function onTranscriptProofreadChange(name: string) {
-  setSetting(paths.transcriptProofread, name)
+  fields.setValue(paths.transcriptProofread, name)
 }
 
 function onTranscriptProofreadAlwaysChange(value: boolean) {
-  setSetting(paths.transcriptProofreadAlways, value)
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-function getSettingString(at: readonly string[]): string {
-  const value = installation.value.getSetting(at)
-  return typeof value === 'string' ? value : ''
-}
-
-function isSettingEnabled(at: readonly string[]): boolean {
-  return installation.value.getSetting(at) === true
-}
-
-function getSettingNumber(at: readonly string[]): number | null {
-  const value = installation.value.getSetting(at)
-  return typeof value === 'number' ? value : null
-}
-
-function setSetting(at: readonly string[], value: unknown): void {
-  installation.value.write([{ at, value: write(value) }])
+  fields.setValue(paths.transcriptProofreadAlways, value)
 }
 </script>
 
@@ -76,7 +58,7 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.transcribingDetail"
     >
       <Switch
-        :model-value="isSettingEnabled(paths.transcribing)"
+        :model-value="fields.isEnabled(paths.transcribing)"
         :aria-labelledby="labelledBy"
         @update:model-value="onTranscribingChange"
       />
@@ -89,7 +71,7 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.transcribeUnderDetail"
     >
       <NumberField
-        :model-value="getSettingNumber(paths.transcribeUnder)"
+        :model-value="fields.getNumber(paths.transcribeUnder)"
         :min="UNDER.least"
         :max="UNDER.most"
         :step="1"
@@ -106,7 +88,7 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.transcriptProofreadDetail"
     >
       <Select
-        :model-value="getSettingString(paths.transcriptProofread)"
+        :model-value="fields.getString(paths.transcriptProofread)"
         :choices="profiles"
         :name="words.transcriptProofread"
         :aria-labelledby="labelledBy"
@@ -122,7 +104,7 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.transcriptProofreadAlwaysDetail"
     >
       <Switch
-        :model-value="isSettingEnabled(paths.transcriptProofreadAlways)"
+        :model-value="fields.isEnabled(paths.transcriptProofreadAlways)"
         :aria-labelledby="labelledBy"
         @update:model-value="onTranscriptProofreadAlwaysChange"
       />

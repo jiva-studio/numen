@@ -1,4 +1,4 @@
-package editor_test
+package editor
 
 import (
 	"context"
@@ -12,15 +12,14 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// asking is an agent that keeps the task it was given and takes the steps a
+// askedAgent is an agent that keeps the task it was given and takes the steps a
 // test told it to take. What is asked of it is the hop: what a client sends
 // arrives as a task, and what the agent does arrives back as steps.
-type asking struct {
+type askedAgent struct {
 	took  chan port.Task
 	takes []port.Step
 	// over is the conversations this agent was told are finished.
@@ -29,7 +28,7 @@ type asking struct {
 	refuses error
 }
 
-func (a *asking) StartRun(_ context.Context, task port.Task) (port.Run, error) {
+func (a *askedAgent) StartRun(_ context.Context, task port.Task) (port.Run, error) {
 	a.took <- task
 	steps := make(chan port.Step, len(a.takes))
 	for _, step := range a.takes {
@@ -39,7 +38,7 @@ func (a *asking) StartRun(_ context.Context, task port.Task) (port.Run, error) {
 	return answering{steps}, nil
 }
 
-func (a *asking) EndConversation(_ context.Context, conversation string) error {
+func (a *askedAgent) EndConversation(_ context.Context, conversation string) error {
 	a.over <- conversation
 	return a.refuses
 }
@@ -51,15 +50,15 @@ func (a answering) GetSteps() <-chan port.Step { return a.steps }
 func (a answering) Stop() error                { return nil }
 
 // newAgentAPI is a vault whose panel one agent answers.
-func newAgentAPI(taking port.Agent) *editor.API {
-	api := &editor.API{}
-	api.SetAgent(taking)
-	return api
+func newAgentAPI(taking port.Agent) *agentHandler {
+	state := &State{}
+	state.SetAgent(taking)
+	return &agentHandler{state: state}
 }
 
 // newAgentClient is one vault's panel and a client talking to it the way the window
 // does.
-func newAgentClient(t *testing.T, api *editor.API) numenv1connect.AgentServiceClient {
+func newAgentClient(t *testing.T, api *agentHandler) numenv1connect.AgentServiceClient {
 	t.Helper()
 
 	route, handler := numenv1connect.NewAgentServiceHandler(api)
@@ -98,7 +97,7 @@ func getSteps(t *testing.T, client numenv1connect.AgentServiceClient, ask *v1.As
 // the question, the note in front of the person, and which conversation they
 // asked it in.
 func TestWhatTheClientAsksReachesTheAgent(t *testing.T) {
-	taking := &asking{took: make(chan port.Task, 1), takes: []port.Step{{Kind: domain.StepStop}}}
+	taking := &askedAgent{took: make(chan port.Task, 1), takes: []port.Step{{Kind: domain.StepStop}}}
 	client := newAgentClient(t, newAgentAPI(taking))
 
 	getSteps(t, client, &v1.AskAgentRequest{
@@ -122,7 +121,7 @@ func TestWhatTheClientAsksReachesTheAgent(t *testing.T) {
 // TestEveryStepTheAgentTakesReachesTheClient, in the words the schema carries
 // and in the order they were taken.
 func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
-	taking := &asking{took: make(chan port.Task, 1), takes: []port.Step{
+	taking := &askedAgent{took: make(chan port.Task, 1), takes: []port.Step{
 		{Kind: domain.StepModelStart},
 		{Kind: domain.StepToolCall, Tool: "note_rewrite", About: "notes/Fugue.md", Count: 240},
 		{Kind: domain.StepToolDone},
@@ -157,7 +156,7 @@ func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
 // place it stands on. A call the vault serves is drawn as a tool in hand
 // whatever that tool does to the vault.
 func TestACallSaysWhereItIsWorking(t *testing.T) {
-	taking := &asking{took: make(chan port.Task, 1), takes: []port.Step{
+	taking := &askedAgent{took: make(chan port.Task, 1), takes: []port.Step{
 		{
 			Kind: domain.StepRead, Tool: "Show the person a passage of a document",
 			About: "library/A Book.epub",
@@ -178,7 +177,7 @@ func TestACallSaysWhereItIsWorking(t *testing.T) {
 // TestAConversationSaidToBeOverReachesTheAgent, under the name its questions
 // carried. A tab closes, and what was kept for it is let go of.
 func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
-	taking := &asking{over: make(chan string, 1)}
+	taking := &askedAgent{over: make(chan string, 1)}
 	client := newAgentClient(t, newAgentAPI(taking))
 
 	if _, err := client.FinishConversation(t.Context(),
@@ -194,7 +193,7 @@ func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 // TestAConversationThatCouldNotBeFinishedSaysSo. The client hears it and the
 // agent is the one that could not let go.
 func TestAConversationThatCouldNotBeFinishedSaysSo(t *testing.T) {
-	taking := &asking{over: make(chan string, 1), refuses: errors.New("the child would not go")}
+	taking := &askedAgent{over: make(chan string, 1), refuses: errors.New("the child would not go")}
 	client := newAgentClient(t, newAgentAPI(taking))
 
 	_, err := client.FinishConversation(t.Context(),
@@ -208,7 +207,7 @@ func TestAConversationThatCouldNotBeFinishedSaysSo(t *testing.T) {
 // TestAVaultWithNoAgentHasNoConversationToFinish. Nothing is kept for one, and
 // the panel is told there is nobody to ask.
 func TestAVaultWithNoAgentHasNoConversationToFinish(t *testing.T) {
-	client := newAgentClient(t, &editor.API{})
+	client := newAgentClient(t, &agentHandler{state: &State{}})
 
 	_, err := client.FinishConversation(t.Context(),
 		connect.NewRequest(&v1.FinishConversationRequest{Conversation: "8f2c1e"}))
@@ -220,7 +219,7 @@ func TestAVaultWithNoAgentHasNoConversationToFinish(t *testing.T) {
 // TestAVaultWithNoAgentSaysSo. The rest of the window works as it did, and the
 // panel is told there is nobody to ask.
 func TestAVaultWithNoAgentSaysSo(t *testing.T) {
-	client := newAgentClient(t, &editor.API{})
+	client := newAgentClient(t, &agentHandler{state: &State{}})
 
 	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&v1.AskAgentRequest{Prompt: "anyone?"}))
 	if err != nil {

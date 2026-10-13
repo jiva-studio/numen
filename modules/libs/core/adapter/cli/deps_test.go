@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
@@ -84,7 +85,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 
 			// No vectors: a test reaches no model, and a vault answers by its
 			// words alone.
-			vectors := source.NewEmbed(readers, db.Sources(), db.Sources())
+			vectors := embedding.NewEmbed(readers, db.Sources(), db.Sources())
 			vectors.Derived, vectors.Documents = store, pdf.Documents{}
 
 			return cli.Scan{

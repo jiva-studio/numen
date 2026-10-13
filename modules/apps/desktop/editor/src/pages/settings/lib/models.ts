@@ -5,7 +5,7 @@
  * build offers. What the file holds is always on the list and always the one in
  * force; a preset the file does not name is an offer beside it.
  */
-import type { Model, Presence } from '@/entities/settings'
+import type { Model, Presence, SettingFields } from '@/entities/settings'
 import type { SelectChoice } from '@numen/ui'
 
 /** What this says in the window's voice. */
@@ -92,3 +92,10 @@ export const createChoices = (
   }
   return [own, ...presets]
 }
+
+/** The choices for one setting of the fields, read from what the file holds there. */
+export const createModelChoices = (
+  fields: Pick<SettingFields, 'getModels' | 'getString'>,
+  at: readonly string[],
+  words: Words,
+): readonly SelectChoice[] => createChoices(fields.getModels(at), fields.getString(at), words)

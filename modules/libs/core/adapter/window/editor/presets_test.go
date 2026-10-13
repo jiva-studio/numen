@@ -31,7 +31,7 @@ func newScheduling(t *testing.T, notes map[string]string) *scheduling {
 	f := openWindow(t, nil, notes)
 	waitForScan(t, f)
 
-	route, handler := numenv1connect.NewPresetsServiceHandler(f.installation.API)
+	route, handler := numenv1connect.NewPresetsServiceHandler(f.installation.Services.Presets)
 	mux := http.NewServeMux()
 	mux.Handle(route, handler)
 	server := httptest.NewUnstartedServer(mux)

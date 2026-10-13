@@ -1,0 +1,55 @@
+package run
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/proofread"
+)
+
+type answering struct{}
+
+func (answering) GetName() string { return "answering" }
+
+func (answering) Proofread(context.Context, []proofread.Batch) (map[int]string, error) {
+	return nil, nil
+}
+
+type readers struct{}
+
+func (readers) Open(domain.Vault) (port.VaultReader, error) { return nil, nil }
+
+type stores struct{}
+
+func (stores) Open(domain.Vault) (port.DerivedStore, error) { return nil, nil }
+
+// A proofreading is made only out of a vault, a store and a proofreader, and
+// each missing one is a fault of its own.
+func TestAProofreadingNeedsAVaultAStoreAndAProofreader(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		readers port.VaultReaders
+		derived port.DerivedStores
+		by      port.Proofreader
+		want    error
+	}{
+		{"no vault", nil, stores{}, answering{}, ErrNoVaultToProofread},
+		{"no store", readers{}, nil, answering{}, ErrNoStoreToProofread},
+		{"no proofreader", readers{}, stores{}, nil, ErrNothingProofreads},
+		{"everything", readers{}, stores{}, answering{}, nil},
+	} {
+		if got := CheckProofread(tc.readers, tc.derived, tc.by); !errors.Is(got, tc.want) {
+			t.Errorf("%s: got %v, want %v", tc.name, got, tc.want)
+		}
+	}
+}
+
+// Nothing is opened where an installation placed nothing to open.
+func TestNothingIsOpenedWhereNothingWasPlaced(t *testing.T) {
+	if by, err := OpenProofreader(nil, proofread.ScanInstruction); by != nil || err != nil {
+		t.Errorf("got %v, %v", by, err)
+	}
+}

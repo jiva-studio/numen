@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { PlexFrame } from '../../lib/frame'
 import type { PlacedNode } from '../../lib/node'
 import type { PlexRelation } from '../../lib/relation'
-import { getDraggedShape, getReachGhost, getReachThread } from './threads'
+import { getDraggedShape, getPendingThread, getReachGhost, getReachThread } from './threads'
 
 const SIZE = { width: 40, height: 20 }
 
@@ -46,6 +46,22 @@ describe('the line dragged from a node', () => {
 
   it('is nothing without a pointer', () => {
     expect(getReachThread(frame, 'b', null)).toBeNull()
+  })
+})
+
+describe('the line to a point awaiting a node', () => {
+  const viewport = { width: 400, height: 200 }
+
+  it('runs from the handle of the node to the point measured from the corner', () => {
+    expect(getPendingThread(frame, 'b', { x: 420, y: 250 }, viewport)).toBe(
+      'M 120 50 C 170 50 170 150 220 150',
+    )
+  })
+
+  it('is nothing off a node or without a point', () => {
+    expect(getPendingThread(frame, 'missing', { x: 420, y: 250 }, viewport)).toBeNull()
+    expect(getPendingThread(frame, null, { x: 420, y: 250 }, viewport)).toBeNull()
+    expect(getPendingThread(frame, 'b', null, viewport)).toBeNull()
   })
 })
 

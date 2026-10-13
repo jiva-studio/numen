@@ -40,7 +40,7 @@ func TestAnInstallationNamingNoAgentOpensNoPort(t *testing.T) {
 	if _, written := readAnnouncement(t, cfg); written {
 		t.Error("an endpoint was announced")
 	}
-	if opened.API.Unreachable.Why() == "" {
+	if opened.State.Unreachable.Why() == "" {
 		t.Error("the panel was told nothing about why it has no agent")
 	}
 }
@@ -74,7 +74,7 @@ func TestTheAgentTheSettingsNameIsServedAndTakenAway(t *testing.T) {
 	if said.Token == "" {
 		t.Error("the announcement carries no token")
 	}
-	if opened.API.GetAgent() == nil {
+	if opened.State.GetAgent() == nil {
 		t.Error("the panel has no agent to ask")
 	}
 
@@ -108,10 +108,10 @@ func TestTheToolsAreServedToAnAgentAPersonRunsThemselves(t *testing.T) {
 	if !written || said.Token == "" {
 		t.Fatal("an agent has nothing to be configured from")
 	}
-	if opened.API.GetAgent() != nil {
+	if opened.State.GetAgent() != nil {
 		t.Error("the panel was given an agent the settings do not name")
 	}
-	if opened.API.Unreachable.Why() == "" {
+	if opened.State.Unreachable.Why() == "" {
 		t.Error("the panel was told nothing about why it has no agent")
 	}
 

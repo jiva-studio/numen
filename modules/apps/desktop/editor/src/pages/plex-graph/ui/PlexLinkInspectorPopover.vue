@@ -4,6 +4,7 @@
  */
 import { computed, nextTick, onMounted, onScopeDispose, ref, useTemplateRef, watch } from 'vue'
 import { ArrowLeftRight, X } from '@lucide/vue'
+import { useOutsidePress } from '@numen/ui'
 import type { DirectionalLinkItem, LinkInspectorRequest } from '../types'
 import {
   addReverseLink,
@@ -50,7 +51,6 @@ const positionStyle = computed(() => ({
 let resizeObserver: ResizeObserver | null = null
 
 onMounted(() => {
-  window.addEventListener('pointerdown', onWindowPointerDown)
   window.addEventListener('resize', onWindowResize)
   void nextTick(() => {
     updatePosition()
@@ -66,7 +66,6 @@ onMounted(() => {
 })
 
 onScopeDispose(() => {
-  window.removeEventListener('pointerdown', onWindowPointerDown)
   window.removeEventListener('resize', onWindowResize)
   resizeObserver?.disconnect()
 })
@@ -87,13 +86,9 @@ watch(
   },
 )
 
-/* -------------------------------- Handlers -------------------------------- */
-function onWindowPointerDown(event: PointerEvent) {
-  if (!popover.value?.contains(event.target as Node)) {
-    onDone()
-  }
-}
+useOutsidePress(popover, onDone)
 
+/* -------------------------------- Handlers -------------------------------- */
 function onWindowResize() {
   updatePosition()
 }

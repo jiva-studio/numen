@@ -57,20 +57,21 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 
 	for name, open := range streams {
 		t.Run(name, func(t *testing.T) {
-			api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
-			api.SetAgent(testsupport.SilentAgent{})
+			state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
+			services := createServices(state)
+			state.SetAgent(testsupport.SilentAgent{})
 
 			entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
 			mux := http.NewServeMux()
-			vault, vaults := numenv1connect.NewVaultServiceHandler(api)
+			vault, vaults := numenv1connect.NewVaultServiceHandler(services.Vault)
 			mux.Handle(vault, testsupport.NewRootedHandler(vaults, entered, returned))
-			standing, workspace := numenv1connect.NewWorkspaceServiceHandler(api)
+			standing, workspace := numenv1connect.NewWorkspaceServiceHandler(services.Workspace)
 			mux.Handle(standing, testsupport.NewRootedHandler(workspace, entered, returned))
-			filed, notes := numenv1connect.NewNoteServiceHandler(api)
+			filed, notes := numenv1connect.NewNoteServiceHandler(services.Note)
 			mux.Handle(filed, testsupport.NewRootedHandler(notes, entered, returned))
-			agent, agents := numenv1connect.NewAgentServiceHandler(api)
+			agent, agents := numenv1connect.NewAgentServiceHandler(services.Agent)
 			mux.Handle(agent, testsupport.NewRootedHandler(agents, entered, returned))
-			drawn, itself := numenv1connect.NewWindowServiceHandler(api.Window)
+			drawn, itself := numenv1connect.NewWindowServiceHandler(state.Window)
 			mux.Handle(drawn, testsupport.NewRootedHandler(itself, entered, returned))
 			server := httptest.NewServer(mux)
 			t.Cleanup(server.Close)

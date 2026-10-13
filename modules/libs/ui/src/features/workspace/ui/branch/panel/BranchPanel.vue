@@ -81,6 +81,7 @@ const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: str
       @choose="workspace.choose"
       @close="workspace.close"
       @lift="workspace.lift"
+      @menu="workspace.menu"
       @show="workspace.show"
       @claim="workspace.claim(node.id)"
     >
