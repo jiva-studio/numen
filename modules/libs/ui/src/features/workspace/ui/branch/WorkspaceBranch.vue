@@ -6,23 +6,14 @@
  * model holds, and a handle that moves reports shares back; the model is the
  * only place they are kept.
  */
-import {
-  computed,
-  inject,
-  onBeforeUnmount,
-  ref,
-  resolveComponent,
-  useTemplateRef,
-  watch,
-  type Component,
-  type Ref,
-} from 'vue'
+import { computed, inject, resolveComponent, useTemplateRef, type Component, type Ref } from 'vue'
 import { SplitterGroup } from 'reka-ui'
 import { BranchPanel } from './panel'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import { getOrientation, type Branch, type Orientation, type TabId } from '../../lib/node'
 import { atLeast, fit } from '../../lib/shares'
-import { browserViewport } from '@/shared/lib/viewport'
+import { useViewport } from '@/shared/lib/viewport'
+import { useBranchResize } from '../../model/resize'
 
 const props = defineProps<{
   node: Branch
@@ -55,100 +46,35 @@ const direction = computed(() => getOrientation(props.axis, props.depth))
 
 const sizes = computed(() => fit(props.node.sizes, props.node.children.length))
 
+/** What each child is told, in percent. */
+const percents = computed(() => sizes.value.map((share) => share * 100))
+
 /**
  * The smallest share a handle may leave a child, worked out from how long the
  * branch is on screen. A splitter counts in percent, and a pane is only worth
  * drawing above a certain number of pixels.
  */
 const frame = useTemplateRef<InstanceType<typeof SplitterGroup>>('frame')
-const length = ref(0)
+const frameElement = computed(() => (frame.value?.$el as HTMLElement | undefined) ?? null)
+const { viewport } = useViewport(frameElement)
+
+const length = computed(() =>
+  direction.value === 'horizontal' ? viewport.value.width : viewport.value.height,
+)
 
 const floor = computed(
   () => atLeast(workspace.value.minimum, length.value, props.node.children.length) * 100,
 )
 
-/** What stops the watching, held from the moment it begins. */
-let stopWatching: (() => void) | null = null
-
-// The element is followed: a change of shape gives the pane a new one.
-watch(
-  () => frame.value?.$el as HTMLElement | undefined,
-  (element) => {
-    stopWatching?.()
-    stopWatching = null
-    if (!element) return
-
-    stopWatching = browserViewport.watch(element, (size) => {
-      length.value = direction.value === 'horizontal' ? size.width : size.height
-    })
-  },
-  { immediate: true, flush: 'post' },
-)
-
-onBeforeUnmount(() => {
-  stopWatching?.()
-  // The branch is going, and where its handle reached is not news about a node
-  // that will not be there to hear it.
-  pendingShares = null
-  putDown()
-})
-
 /** Which children there are, so that a change of shape starts the pane afresh. */
 const shape = computed(() => props.node.children.map((child) => child.id).join(' '))
 
-/**
- * Whether a handle is under the pointer, and where it has reached. The splitter
- * moves the panels itself while it is held, and the model is told where it came
- * to rest.
- */
-let isDragging = false
-let pendingShares: readonly number[] | null = null
-
-/**
- * A splitter reports the shares it settled on, including the ones it worked
- * out for itself when a panel arrived or left. Only a difference is passed on.
- */
-function onLayout(percents: number[]): void {
-  const shares = percents.map((size) => size / 100)
-  const currentSizes = sizes.value
-  const same =
-    shares.length === currentSizes.length &&
-    shares.every((share, index) => Math.abs(share - (currentSizes[index] ?? 0)) < 1e-6)
-
-  if (same) return
-  if (isDragging) pendingShares = shares
-  else workspace.value.resize(props.node.id, shares)
-}
-
-/**
- * What a held handle is marked by, on the branch so that it reaches the panels
- * the drag divides.
- */
-const RESIZING = 'data-resizing'
-
-/** The branch's own element, which carries that mark. */
-const getFrameElement = (): HTMLElement | undefined => frame.value?.$el as HTMLElement | undefined
-
-/** The handle put down, wherever the pointer had reached by then. */
-const putDown = () => {
-  if (!isDragging) return
-  isDragging = false
-  getFrameElement()?.removeAttribute(RESIZING)
-
-  const settled = pendingShares
-  pendingShares = null
-  if (settled) workspace.value.resize(props.node.id, settled)
-}
-
-/** A handle taken up, and put down where it stopped. */
-function onSplitterHold(isHeld: boolean): void {
-  if (!isHeld) {
-    putDown()
-    return
-  }
-  isDragging = true
-  getFrameElement()?.setAttribute(RESIZING, '')
-}
+const { onLayout, onHold: onSplitterHold } = useBranchResize({
+  getBranchId: () => props.node.id,
+  getShares: () => sizes.value,
+  getFrame: () => frameElement.value ?? undefined,
+  resize: (id, shares) => workspace.value.resize(id, shares),
+})
 </script>
 
 <template>
@@ -165,7 +91,7 @@ function onSplitterHold(isHeld: boolean): void {
       :key="child.id"
       :node="child"
       :index="index"
-      :share="(sizes[index] ?? 0) * 100"
+      :share="percents[index] ?? 0"
       :floor="floor"
       :axis="axis"
       :depth="depth"
