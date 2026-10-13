@@ -90,10 +90,10 @@ func TestSideHeadingsThatOpenNothingStandUnderTheSideAboveThem(t *testing.T) {
 // The tail starts where the last thing the stencil read ends.
 func TestTheTailOfAStencilStartsWhereTheLastFaceEnds(t *testing.T) {
 	for name, tc := range map[string]struct{ body, tail string }{
-		"a lead and no sides": {"## Recognise\n\nLead text.\n\n\n", "\n"},
+		"a lead and no sides": {"## Recognise\n\nLead text.\n\n\n", "\n\n\n"},
 		"a face and nothing":  {"## Recognise\n\n\n", "\n\n\n"},
 		"an empty back":       {"## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n\n", "\n\n\n"},
-		"a filled back":       {"## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\nanswer\n\n\n", "\n"},
+		"a filled back":       {"## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\nanswer\n\n\n", "\n\n\n"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			s := format.ReadStencil(note(t, stencilHead+"\n"+tc.body))
