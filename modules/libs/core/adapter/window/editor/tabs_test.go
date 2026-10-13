@@ -15,9 +15,10 @@ import (
 // reads the last of it.
 
 func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
-	api := &API{}
+	state := &State{}
+	api := &workspaceHandler{state: state}
 
-	if open := api.GetOpenTabs(); len(open.Tabs) != 0 || open.FrontID != "" {
+	if open := state.GetOpenTabs(); len(open.Tabs) != 0 || open.FrontID != "" {
 		t.Fatalf("a window that has said nothing has %+v open", open)
 	}
 
@@ -45,14 +46,15 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 				Book: &domain.BookProgress{Offset: 145203, Page: 142, PageCount: 960}},
 		},
 	}
-	if got := api.GetOpenTabs(); !reflect.DeepEqual(got, want) {
+	if got := state.GetOpenTabs(); !reflect.DeepEqual(got, want) {
 		t.Errorf("the window has %+v open", got)
 	}
 }
 
 func TestAttendingTellsWhoeverIsListening(t *testing.T) {
 	var heard []domain.OpenTabs
-	api := &API{NotifyOpenTabs: func(open domain.OpenTabs) { heard = append(heard, open) }}
+	state := &State{NotifyOpenTabs: func(open domain.OpenTabs) { heard = append(heard, open) }}
+	api := &workspaceHandler{state: state}
 
 	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
 		Front: "one",

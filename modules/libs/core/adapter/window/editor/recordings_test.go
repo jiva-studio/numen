@@ -100,13 +100,13 @@ const (
 
 // openRecordingWindow is a window holding one recording, with what a model wrote of it
 // in the store. Nothing written down is a recording nobody has listened to.
-func openRecordingWindow(t *testing.T, held stored) (*API, http.Handler) {
+func openRecordingWindow(t *testing.T, held stored) (*Services, http.Handler) {
 	t.Helper()
 	return windowOn(t, held)
 }
 
 // windowOn is the same window, with whatever store the test hands it.
-func windowOn(t *testing.T, held port.DerivedStore) (*API, http.Handler) {
+func windowOn(t *testing.T, held port.DerivedStore) (*Services, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{talk: sound, book: "the bytes of a scan"})
 	hl := source.NewHighlight(
@@ -114,16 +114,15 @@ func windowOn(t *testing.T, held port.DerivedStore) (*API, http.Handler) {
 		indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}},
 		storing{held},
 	)
-	api := &API{
-		Readers:   filesystem.VaultReaders{},
-		Highlight: &hl,
-		Texts: source.NewTexts(
-			filesystem.VaultReaders{}, nil,
-			indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}},
-			storing{held},
-		),
-	}
-	api.setVault(vault)
+	api := newBareServices()
+	api.files.readers = filesystem.VaultReaders{}
+	api.Ocr.highlight = &hl
+	api.readTexts(source.NewTexts(
+		filesystem.VaultReaders{}, nil,
+		indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}},
+		storing{held},
+	))
+	api.state.setVault(vault)
 	return api, api.NewHandler(http.NotFoundHandler())
 }
 
@@ -152,7 +151,7 @@ func TestARecordingIsPlayedFromItsOwnBytes(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	back, handler := openLoopback(t, api)
 
-	out := ask(handler, back.Address(api.GetCurrentVault(), statOf(t, api, api.GetCurrentVault(), talk)))
+	out := ask(handler, back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)))
 	if out.Code != http.StatusOK {
 		t.Fatalf("asked for the recording and got %d: %s", out.Code, out.Body)
 	}
@@ -174,7 +173,7 @@ func TestAPlayerAsksForOnePieceOfARecording(t *testing.T) {
 	back, handler := openLoopback(t, api)
 
 	out := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, back.Address(api.GetCurrentVault(), statOf(t, api, api.GetCurrentVault(), talk)), nil)
+	r := httptest.NewRequest(http.MethodGet, back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)), nil)
 	r.Header.Set("Range", "bytes=4-12")
 	handler.ServeHTTP(out, r)
 
@@ -223,7 +222,7 @@ func TestARecordingNobodyHasListenedToHoldsNoWords(t *testing.T) {
 		t.Errorf("a recording nobody heard says %+v", told.GetCues())
 	}
 	back, playing := openLoopback(t, api)
-	if out := ask(playing, back.Address(api.GetCurrentVault(), statOf(t, api, api.GetCurrentVault(), talk))); out.Code != http.StatusOK {
+	if out := ask(playing, back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk))); out.Code != http.StatusOK {
 		t.Errorf("the recording itself was answered %d", out.Code)
 	}
 }
@@ -244,7 +243,7 @@ func TestWhatARecordingIsIsHowLongItRuns(t *testing.T) {
 		t.Run(one.what, func(t *testing.T) {
 			api, _ := openRecordingWindow(t, one.held)
 
-			out, err := api.GetRecording(t.Context(), connect.NewRequest(&v1.GetRecordingRequest{
+			out, err := api.Recording.GetRecording(t.Context(), connect.NewRequest(&v1.GetRecordingRequest{
 				Path: talk,
 			}))
 			if err != nil {
@@ -267,7 +266,7 @@ func TestOnlyARecordingIsHeard(t *testing.T) {
 		book:             connect.CodeInvalidArgument,
 		"talks/none.mp3": connect.CodeNotFound,
 	} {
-		_, err := api.ReadTranscript(t.Context(), connect.NewRequest(&v1.ReadTranscriptRequest{
+		_, err := api.Transcript.ReadTranscript(t.Context(), connect.NewRequest(&v1.ReadTranscriptRequest{
 			Path: path,
 		}))
 		if connect.CodeOf(err) != want {
@@ -281,12 +280,13 @@ func TestOnlyARecordingIsHeard(t *testing.T) {
 // not over the service that says what was heard in them.
 func TestABuildThatServesNoArtifactPlaysTheRecording(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
-	api := &API{Readers: filesystem.VaultReaders{}}
-	api.setVault(vault)
+	api := newBareServices()
+	api.files.readers = filesystem.VaultReaders{}
+	api.state.setVault(vault)
 	_ = api.NewHandler(http.NotFoundHandler(), numenv1connect.VaultServiceName)
 
 	back, playing := openLoopback(t, api)
-	if out := ask(playing, back.Address(api.GetCurrentVault(), statOf(t, api, api.GetCurrentVault(), talk))); out.Code != http.StatusOK {
+	if out := ask(playing, back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk))); out.Code != http.StatusOK {
 		t.Errorf("the recording itself was answered %d", out.Code)
 	}
 }
@@ -339,8 +339,8 @@ func (h heldBy) ClaimName(ctx context.Context, name string) (func() error, error
 }
 
 // writeTranscript sends a transcript as the window sends one.
-func writeTranscript(api *API, cues ...*v1.Cue) error {
-	_, err := api.WriteTranscript(context.Background(), connect.NewRequest(&v1.WriteTranscriptRequest{
+func writeTranscript(api *Services, cues ...*v1.Cue) error {
+	_, err := api.Transcript.WriteTranscript(context.Background(), connect.NewRequest(&v1.WriteTranscriptRequest{
 		Path: talk, Cues: cues,
 	}))
 	return err
@@ -452,9 +452,9 @@ func TestATranscriptPutRightIsWhatTheWindowIsToldNext(t *testing.T) {
 }
 
 // readTranscript is the transcript the window is told about.
-func readTranscript(t *testing.T, api *API) *v1.ReadTranscriptResponse {
+func readTranscript(t *testing.T, api *Services) *v1.ReadTranscriptResponse {
 	t.Helper()
-	out, err := api.ReadTranscript(t.Context(), connect.NewRequest(&v1.ReadTranscriptRequest{
+	out, err := api.Transcript.ReadTranscript(t.Context(), connect.NewRequest(&v1.ReadTranscriptRequest{
 		Path: talk,
 	}))
 	if err != nil {
@@ -552,8 +552,8 @@ func TestARecordingNobodyHasListenedToHasNoTranscriptToPutRight(t *testing.T) {
 	held := stored{}
 	api, _ := openRecordingWindow(t, held)
 	hl := source.NewHighlight(filesystem.VaultReaders{}, indexed{}, storing{held})
-	api.Highlight = &hl
-	api.Texts = source.NewTexts(filesystem.VaultReaders{}, nil, indexed{}, storing{held})
+	api.Ocr.highlight = &hl
+	api.readTexts(source.NewTexts(filesystem.VaultReaders{}, nil, indexed{}, storing{held}))
 
 	err := writeTranscript(api, cueOf("what was said", 1500, 4200))
 	if connect.CodeOf(err) != connect.CodeNotFound {
@@ -624,10 +624,10 @@ func (s stating) GetFingerprint(ctx context.Context, path string) (domain.Finger
 func TestATranscriptIsCutAgainInTheVaultItBelongsTo(t *testing.T) {
 	held := whole(newCues())
 	api, _ := openRecordingWindow(t, held)
-	showing := api.GetCurrentVault()
+	showing := api.state.GetCurrentVault()
 	elsewhere := testsupport.NewVault(t, map[string]string{talk: sound})
 
-	api.Readers = swapping{VaultReaders: filesystem.VaultReaders{}, then: func() { api.setVault(elsewhere) }}
+	api.files.readers = swapping{VaultReaders: filesystem.VaultReaders{}, then: func() { api.state.setVault(elsewhere) }}
 
 	var cutIn []domain.Vault
 	modifySession(api, func(on *vaultSession) {

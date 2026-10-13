@@ -73,9 +73,9 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 	}
 	t.Cleanup(func() { installation.Close() })
 
-	drawn, itself := numenv1connect.NewWindowServiceHandler(installation.API.Window)
+	drawn, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
-	answers(mux, installation.API)
+	answers(mux, installation.Services)
 	mux.Handle(drawn, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true

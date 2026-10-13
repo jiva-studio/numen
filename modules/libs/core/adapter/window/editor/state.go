@@ -15,29 +15,20 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
-	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// API is the vault a client is looking at and what can be asked about it, in
-// the things a window works a vault as. Every field of every group is a use
-// case or a query the rest of the application already has.
-type API struct {
+// State is the vault the window is looking at and what every handler of it
+// reads: the vault shown, the door on every question, the writes and tasks in
+// the air, and who is drawing what changes.
+type State struct {
 	// vault is the vault the window has open. It is replaced while requests are
-	// being served, so every reader takes it through Showing.
+	// being served, so every reader takes it through GetCurrentVault.
 	vault atomic.Pointer[domain.Vault]
 
 	// closed is the door on every question. It is closed before the index and the
@@ -67,53 +58,13 @@ type API struct {
 	// agent is the agent the panel's tasks go to. A vault without one answers
 	// that it has none, and the rest of the window works as it did. It is
 	// replaced while requests are being served, so it is taken through
-	// Answering.
+	// GetAgent.
 	agent atomic.Pointer[port.Agent]
 
-	// Readers open the vault a document is drawn from and a folder is listed
-	// out of. The notes, the documents, the recordings and the window are all
-	// read out of them. A path from outside arrives at the vault through them,
-	// and one leaving the vault is refused there.
-	Readers port.VaultReaders
-	// Viewer holds the documents the window has open and the pages it has
-	// drawn, and Highlight says where a run of a source's text sits on the
-	// pages it was read from. They are bound by every build that serves what a
-	// file of the vault is.
-	Viewer    *viewer
-	Highlight *source.Highlight
-	// Documents reads the pages and books of the vault through the viewer.
-	Documents DocumentScenarios
-	// Texts reads and writes what was made from a file of the vault.
-	Texts source.Texts
-	// Playing is the socket a recording is played from. A build without one
-	// answers with no address, and the window says the recording cannot be
-	// played here.
-	Playing *Loopback
 	// NotifyNoteWritten is what a save raises: the reading behind the window asks the index
 	// what owes a vector, once the vault has been still. Nil for a build with
 	// nothing reading behind it, and then a save changes no vectors.
 	NotifyNoteWritten func()
-	// Drops takes a recording's transcript away, with everything listening to
-	// it produced. It is bound by every build that serves what is made from a
-	// file.
-	Drops *transcription.Drop
-
-	// Imports fetches what is at the address a link note points at. A build on
-	// a machine holding neither of the tools that reach one binds none, and
-	// asking for a fetch is answered that this build cannot do it.
-	Imports *source.ImportURL
-
-	// Presets is the preset a deck is scheduled by, and how one is read,
-	// written and made. Curves is what the one control of a preset comes to
-	// over the whole range of its goal. They are bound by every build that
-	// serves the presets.
-	Presets *flashcards.Presets
-	Curves  *flashcards.ProjectCurve
-
-	// Finds is how the window searches the text the vault holds, by the words
-	// in it and by what it means. It is bound by every build that serves the
-	// search, and the names a vault holds are answered beside it.
-	Finds *search.Search
 
 	// Edits is everyone drawing this vault, for a change to a note being made
 	// while they may be showing it.
@@ -125,7 +76,7 @@ type API struct {
 
 	// openTabs is what the person has open, as the window last said. It is
 	// replaced while requests are being served, so every reader takes it
-	// through Attended.
+	// through GetOpenTabs.
 	openTabs atomic.Pointer[domain.OpenTabs]
 
 	// NotifyOpenTabs hears what the person has open each time the window says it,
@@ -149,104 +100,7 @@ type API struct {
 	// moment it goes.
 	Window *wire.Window
 
-	// Themes are the stylesheets the window may be dressed in. They belong to
-	// the installation, so they arrive here from whatever put the window
-	// together. A build put together without a catalogue serves no ThemeService.
-	Themes numenv1connect.ThemeServiceHandler
-
-	Notes    Notes
-	Files    Files
-	Vaults   Vaults
-	Cards    Cards
-	Settings Settings
 	Indexing IndexState
-}
-
-// Notes is a vault's notes: what is asked of them, and what changes them.
-//
-// Read and Write are how the window opens a note and puts it back, Create makes
-// one and EditLinks writes a relationship into one, Rename gives one a different
-// name and Remove takes it out of the vault. They are bound by every build that
-// serves a note.
-type Notes struct {
-	Queries port.NoteQueries
-	Links   port.LinkQueries
-
-	Read              *note.Read
-	Write             *note.Write
-	Create            *note.Create
-	EditLinks         *note.EditLinks
-	ReplaceLinks      *note.ReplaceLinks
-	Rename            *note.Rename
-	Remove            *note.Remove
-	ShowNeighbourhood *note.ShowNeighbourhood
-	GetTitle          *note.GetTitle
-	GetLinkAddress    *note.GetLinkAddress
-}
-
-// Files is the vault's tree: what a folder holds, and what a person does to it.
-type Files struct {
-	GetFolderEntries *file.GetFolderEntries
-	GetFileKinds     *file.GetFileKinds
-	CreateFolder     *file.CreateFolder
-	Move             *vaults.Move
-	Import           *vaults.Import
-	// URLs makes the file a web address is kept in.
-	URLs *source.CreateURL
-}
-
-// Vaults is the list of vaults this installation holds and what a person does to it.
-type Vaults struct {
-	Registry port.VaultRegistry
-
-	List        *vaults.List
-	Find        *vaults.Find
-	FolderCheck *vaults.FolderCheck
-	Add         *vaults.Add
-	Rename      *vaults.Rename
-	Remove      *vaults.Remove
-	Unregister  *vaults.Unregister
-
-	// ChooseFolder is nil where the application has no window to put a dialog in.
-	ChooseFolder *vaults.ChooseFolder
-}
-
-// SetFolderDialog puts the machine's folder dialog in front of the person when a
-// client asks for one.
-func (v *Vaults) SetFolderDialog(dialog port.FolderDialog) {
-	choose := vaults.NewChooseFolder(dialog)
-	v.ChooseFolder = &choose
-}
-
-// GetPickFolder is the use case that lets an agent put the same dialog in front
-// of the person, or nil where the window has none.
-func (v *Vaults) GetPickFolder() *vaults.PickFolder {
-	if v.ChooseFolder == nil {
-		return nil
-	}
-	pick := v.ChooseFolder.GetPickFolder()
-	return &pick
-}
-
-// Cards is the decks and stencils a vault is arranged into. Read takes a deck
-// or a stencil, List the stencils the vault holds, and Write puts either back.
-// Create makes a deck, a stencil or a preset, and RenameField gives one of a
-// stencil's fields a different name everywhere it is written. They are bound by
-// every build that serves the cards.
-type Cards struct {
-	Read        *cards.Read
-	List        *cards.List
-	Write       *cards.Write
-	Create      *cards.Create
-	RenameField *cards.RenameField
-}
-
-// Settings is every setting read and written, and the settings file read and replaced whole.
-type Settings struct {
-	Get       *settings.Get
-	Write     *settings.Write
-	GetFile   *settings.GetFile
-	WriteFile *settings.WriteFile
 }
 
 // IndexState is how far the vault has been read for meaning.
@@ -266,49 +120,49 @@ type IndexState struct {
 
 // GetCurrentVault is the vault the window has open. A window standing on nothing
 // answers with no vault at all.
-func (a *API) GetCurrentVault() domain.Vault {
-	if v := a.vault.Load(); v != nil {
+func (s *State) GetCurrentVault() domain.Vault {
+	if v := s.vault.Load(); v != nil {
 		return *v
 	}
 	return domain.Vault{}
 }
 
 // setVault puts a vault in front of whoever asks from now on.
-func (a *API) setVault(v domain.Vault) { a.vault.Store(&v) }
+func (s *State) setVault(v domain.Vault) { s.vault.Store(&v) }
 
 // setSession sets the session a run, a rechunk and a drop are taken through from now
 // on. They arrive together, after the vault they belong to.
-func (a *API) setSession(on *vaultSession) { a.session.Store(on) }
+func (s *State) setSession(on *vaultSession) { s.session.Store(on) }
 
 // getRecogniser reads a scanned document and getTranscriber hears a recording,
 // each for whoever asks. They are the jobs an agent asks through too, so what a
 // person started in the window is shown to both. Nothing where the window has
 // no vault, and where this build does no such run.
-func (a *API) getRecogniser() Runner {
-	if on := a.session.Load(); on != nil {
+func (s *State) getRecogniser() Runner {
+	if on := s.session.Load(); on != nil {
 		return on.recognitionRunner
 	}
 	return nil
 }
 
-func (a *API) getTranscriber() Runner {
-	if on := a.session.Load(); on != nil {
+func (s *State) getTranscriber() Runner {
+	if on := s.session.Load(); on != nil {
 		return on.transcriptionRunner
 	}
 	return nil
 }
 
 // getProofreader puts a recording's transcript right, for whoever asks.
-func (a *API) getProofreader() Proofreader {
-	if on := a.session.Load(); on != nil {
+func (s *State) getProofreader() Proofreader {
+	if on := s.session.Load(); on != nil {
 		return on.transcriptProofreader
 	}
 	return nil
 }
 
 // getRecognitionProofreader puts a document's recognition right, for whoever asks.
-func (a *API) getRecognitionProofreader() RecognitionProofreader {
-	if on := a.session.Load(); on != nil {
+func (s *State) getRecognitionProofreader() RecognitionProofreader {
+	if on := s.session.Load(); on != nil {
 		return on.proofreadsRecognition
 	}
 	return nil
@@ -318,8 +172,8 @@ func (a *API) getRecognitionProofreader() RecognitionProofreader {
 // window that put a transcript right calls it, so search answers with the words
 // as they now read. Nothing while the window has no vault, and then a
 // correction is baseline in the tab alone.
-func (a *API) getRechunker() func(context.Context, domain.Vault, string) error {
-	if on := a.session.Load(); on != nil {
+func (s *State) getRechunker() func(context.Context, domain.Vault, string) error {
+	if on := s.session.Load(); on != nil {
 		return on.rechunk
 	}
 	return nil
@@ -327,8 +181,8 @@ func (a *API) getRechunker() func(context.Context, domain.Vault, string) error {
 
 // getRecordingForgetter takes a recording out of what the queue behind the vault has
 // already had an answer about, so one that gave no words is offered again.
-func (a *API) getRecordingForgetter() func(domain.Vault, string) {
-	if on := a.session.Load(); on != nil {
+func (s *State) getRecordingForgetter() func(domain.Vault, string) {
+	if on := s.session.Load(); on != nil {
 		return on.forgetRecording
 	}
 	return nil
@@ -336,10 +190,10 @@ func (a *API) getRecordingForgetter() func(domain.Vault, string) {
 
 // reportTask puts one piece of work in the list of what is being done behind the
 // window, for a build that keeps one.
-func (a *API) reportTask(at task.Task) { a.Window.AddTask(at) }
+func (s *State) reportTask(at task.Task) { s.Window.AddTask(at) }
 
 // finishTask takes one piece of work out of that list.
-func (a *API) finishTask(id string) { a.Window.RemoveTask(id) }
+func (s *State) finishTask(id string) { s.Window.RemoveTask(id) }
 
 // isUnlevelled says whether a write reached the vault and the index did not
 // follow.
@@ -347,32 +201,32 @@ func (a *API) finishTask(id string) { a.Window.RemoveTask(id) }
 // caught up with what it saved, and it stands in the list of what is being done
 // until a write levels the index again, so a person who is not looking at that
 // note is told too.
-func (a *API) isUnlevelled(err error) bool {
+func (s *State) isUnlevelled(err error) bool {
 	if err == nil {
-		a.finishTask(levellingTheIndex)
+		s.finishTask(levellingTheIndex)
 		return false
 	}
 	if !errors.Is(err, note.ErrUnlevelled) {
 		return false
 	}
-	a.reportTask(task.Task{ID: levellingTheIndex, Title: "Bringing the index level", Error: err.Error()})
+	s.reportTask(task.Task{ID: levellingTheIndex, Title: "Bringing the index level", Error: err.Error()})
 	return true
 }
 
 // Close refuses every question from now on, and there is no opening it again. It
 // answers once the questions already taken have been answered, so everything an
 // answer reaches into is still there for the whole of it.
-func (a *API) Close() {
-	a.closed.Store(true)
-	<-a.questions.seal()
+func (s *State) Close() {
+	s.closed.Store(true)
+	<-s.questions.seal()
 }
 
-func (a *API) isClosed() bool { return a.closed.Load() }
+func (s *State) isClosed() bool { return s.closed.Load() }
 
 // getCurrentVault is the vault a question is answered over. A window standing on nothing
 // has none, and every question that would reach into a vault is refused there.
-func (a *API) getCurrentVault() (domain.Vault, error) {
-	v := a.GetCurrentVault()
+func (s *State) getCurrentVault() (domain.Vault, error) {
+	v := s.GetCurrentVault()
 	if v.ID == "" {
 		return domain.Vault{}, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
 	}
@@ -381,8 +235,8 @@ func (a *API) getCurrentVault() (domain.Vault, error) {
 
 // GetAgent is the agent the panel's tasks go to, and nothing where the vault
 // has none.
-func (a *API) GetAgent() port.Agent {
-	if taking := a.agent.Load(); taking != nil {
+func (s *State) GetAgent() port.Agent {
+	if taking := s.agent.Load(); taking != nil {
 		return *taking
 	}
 	return nil
@@ -390,8 +244,8 @@ func (a *API) GetAgent() port.Agent {
 
 // SetAgent names who takes the panel's tasks from now on. Nil leaves the vault
 // with no agent.
-func (a *API) SetAgent(taking port.Agent) {
-	a.agent.Store(&taking)
+func (s *State) SetAgent(taking port.Agent) {
+	s.agent.Store(&taking)
 }
 
 func text(v *atomic.Value) string {
@@ -399,26 +253,51 @@ func text(v *atomic.Value) string {
 	return s
 }
 
-func (a *API) GetVaultState(
+// getShownVault is the vault a document is read from. A window standing on
+// nothing holds no file to say anything about.
+func (s *State) getShownVault() (domain.Vault, error) {
+	showing := s.GetCurrentVault()
+	if showing.ID == "" {
+		return domain.Vault{}, errNoVault
+	}
+	return showing, nil
+}
+
+// getBackgroundContext is what a drawing nobody asked for runs under: the
+// context the passes behind the vault in the window run under. The vault going
+// ends it, so a window that is closing is not held open by a page nobody has
+// turned to. A window standing on no vault has no passes, and nothing to end.
+func (s *State) getBackgroundContext() context.Context {
+	if on := s.session.Load(); on != nil {
+		return on.ctx
+	}
+	return context.Background()
+}
+
+// vaultHandler answers what the vault in the window is doing: whether it has
+// been scanned, and what moved in it.
+type vaultHandler struct{ state *State }
+
+func (h *vaultHandler) GetVaultState(
 	ctx context.Context, _ *connect.Request[v1.GetVaultStateRequest],
 ) (*connect.Response[v1.GetVaultStateResponse], error) {
-	showing := a.GetCurrentVault()
+	showing := h.state.GetCurrentVault()
 	out := &v1.GetVaultStateResponse{
 		Id:   string(showing.ID),
 		Name: showing.Name,
 		Path: showing.Path,
 		Scan: &v1.Scan{
-			IsReady:    a.Ready.Load(),
-			Error:      a.Error.Why(),
-			WatchError: a.WatchError.Why(),
+			IsReady:    h.state.Ready.Load(),
+			Error:      h.state.Error.Why(),
+			WatchError: h.state.WatchError.Why(),
 		},
-		Coverage: &v1.IndexCoverage{IsEmbedding: text(&a.Indexing.Model) != ""},
+		Coverage: &v1.IndexCoverage{IsEmbedding: text(&h.state.Indexing.Model) != ""},
 	}
 	// A count that cannot be taken leaves the pair at nothing, and the rest of
 	// the state is answered as it stands. A window standing on nothing holds no
 	// chunks and counts none.
-	if a.Indexing.Progress != nil && showing.ID != "" {
-		if held, embedded, err := a.Indexing.Progress.GetProgress(ctx, showing.ID, text(&a.Indexing.Recipe)); err == nil {
+	if h.state.Indexing.Progress != nil && showing.ID != "" {
+		if held, embedded, err := h.state.Indexing.Progress.GetProgress(ctx, showing.ID, text(&h.state.Indexing.Recipe)); err == nil {
 			out.Coverage.ChunkCount, out.Coverage.EmbeddedCount = held, embedded
 		}
 	}
@@ -426,12 +305,12 @@ func (a *API) GetVaultState(
 }
 
 // WatchVaultChanges reports what moved, for as long as the caller listens.
-func (a *API) WatchVaultChanges(
+func (h *vaultHandler) WatchVaultChanges(
 	ctx context.Context,
 	_ *connect.Request[v1.WatchVaultChangesRequest],
 	out *connect.ServerStream[v1.WatchVaultChangesResponse],
 ) error {
-	line, done := a.ChangeEvents.subscribe()
+	line, done := h.state.ChangeEvents.subscribe()
 	defer done()
 
 	// Named as following before anything has changed. A stream that says

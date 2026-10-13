@@ -2,19 +2,25 @@ package editor
 
 import (
 	"context"
+	"time"
 
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 )
+
+// workspaceHandler answers where the person is in the window: what they have open,
+// and what is put in front of them.
+type workspaceHandler struct{ state *State }
 
 // WriteOpenTabs takes what the person has open, as the window last said it.
 //
 // It is the other direction to WatchFocus: a place is put in front of the
 // person there, and here the window says what is in front of them now.
-func (a *API) WriteOpenTabs(
+func (h *workspaceHandler) WriteOpenTabs(
 	_ context.Context, r *connect.Request[v1.WriteOpenTabsRequest],
 ) (*connect.Response[v1.WriteOpenTabsResponse], error) {
 	told := r.Msg.GetTabs()
@@ -47,18 +53,55 @@ func (a *API) WriteOpenTabs(
 		}
 		open.Tabs = append(open.Tabs, tab)
 	}
-	a.openTabs.Store(&open)
-	if a.NotifyOpenTabs != nil {
-		a.NotifyOpenTabs(open)
+	h.state.openTabs.Store(&open)
+	if h.state.NotifyOpenTabs != nil {
+		h.state.NotifyOpenTabs(open)
 	}
 	return connect.NewResponse(&v1.WriteOpenTabsResponse{}), nil
 }
 
 // GetOpenTabs is what the person has open, as the window last said. A window
 // that has said nothing has nothing open as far as anyone here knows.
-func (a *API) GetOpenTabs() domain.OpenTabs {
-	if open := a.openTabs.Load(); open != nil {
+func (s *State) GetOpenTabs() domain.OpenTabs {
+	if open := s.openTabs.Load(); open != nil {
 		return *open
 	}
 	return domain.OpenTabs{}
+}
+
+// WatchFocus reports what something else asked to be put in front of the
+// person, for as long as the client listens.
+func (h *workspaceHandler) WatchFocus(
+	ctx context.Context,
+	_ *connect.Request[v1.WatchFocusRequest],
+	out *connect.ServerStream[v1.WatchFocusResponse],
+) error {
+	line, done := h.state.Places.subscribe()
+	defer done()
+
+	repeat := time.NewTicker(wire.Again)
+	defer repeat.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-repeat.C:
+			// A place nobody asked for names nothing, and is here to fail when
+			// the client has gone.
+			if err := out.Send(&v1.WatchFocusResponse{}); err != nil {
+				return err
+			}
+		case at, open := <-line:
+			if !open {
+				return nil
+			}
+			if err := out.Send(&v1.WatchFocusResponse{
+				Path:  at.Path,
+				Spans: convertByteSpansToWire(at.Spans),
+			}); err != nil {
+				return err
+			}
+		}
+	}
 }

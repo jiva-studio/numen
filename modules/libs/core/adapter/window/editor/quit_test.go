@@ -134,12 +134,12 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 		unlevelled,
 		time.Now,
 	)
-	installation.API.Notes.Write = &writing
+	installation.Services.SetNoteWrite(&writing)
 
-	turning, settings := numenv1connect.NewSettingsServiceHandler(installation.API)
-	drawn, itself := numenv1connect.NewWindowServiceHandler(installation.API.Window)
+	turning, settings := numenv1connect.NewSettingsServiceHandler(installation.Services.Settings)
+	drawn, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
-	answers(mux, installation.API)
+	answers(mux, installation.Services)
 	mux.Handle(turning, settings)
 	mux.Handle(drawn, itself)
 	server := httptest.NewUnstartedServer(mux)
@@ -165,10 +165,10 @@ func (f *going) read(t *testing.T) {
 	t.Helper()
 
 	for range 500 {
-		if f.installation.API.Ready.Load() {
+		if f.installation.State.Ready.Load() {
 			return
 		}
-		if why := f.installation.API.Error.Why(); why != "" {
+		if why := f.installation.State.Error.Why(); why != "" {
 			t.Fatalf("the vault could not be read: %v", why)
 		}
 		time.Sleep(10 * time.Millisecond)

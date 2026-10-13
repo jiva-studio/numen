@@ -51,7 +51,7 @@ func (i indexed) GetSourcesUnder(context.Context, domain.VaultID, string) ([]dom
 
 // openHighlightWindow is a window over a vault holding one document with a text layer, and
 // that document read, so a test can name a word and ask where it is.
-func openHighlightWindow(t *testing.T) (*API, http.Handler, *pdf.Book) {
+func openHighlightWindow(t *testing.T) (*Services, http.Handler, *pdf.Book) {
 	t.Helper()
 	raw, err := os.ReadFile("../../../internal/adapter/pdf/testdata/tiny.pdf")
 	if err != nil {
@@ -71,15 +71,14 @@ func openHighlightWindow(t *testing.T) (*API, http.Handler, *pdf.Book) {
 		nil,
 	)
 	hl.Documents = pdf.Documents{}
-	api := &API{
-		Readers:   filesystem.VaultReaders{},
-		Highlight: &hl,
-		Texts: source.NewTexts(
-			filesystem.VaultReaders{}, nil,
-			indexed{book: {Fingerprint: domain.Fingerprint{Path: book}}}, nil,
-		),
-	}
-	api.setVault(vault)
+	api := newBareServices()
+	api.files.readers = filesystem.VaultReaders{}
+	api.Ocr.highlight = &hl
+	api.readTexts(source.NewTexts(
+		filesystem.VaultReaders{}, nil,
+		indexed{book: {Fingerprint: domain.Fingerprint{Path: book}}}, nil,
+	))
+	api.state.setVault(vault)
 	return api, api.NewHandler(http.NotFoundHandler()), doc
 }
 
@@ -95,8 +94,8 @@ func where(t *testing.T, doc *pdf.Book, word string) *v1.Span {
 
 // reads is what the runs of a source's text say and where they sit, as the
 // window is told it.
-func reads(api *API, path string, at ...*v1.Span) ([]*v1.Run, error) {
-	out, err := api.ReadOcr(context.Background(), connect.NewRequest(&v1.ReadOcrRequest{
+func reads(api *Services, path string, at ...*v1.Span) ([]*v1.Run, error) {
+	out, err := api.Ocr.ReadOcr(context.Background(), connect.NewRequest(&v1.ReadOcrRequest{
 		Path: path, Spans: at,
 	}))
 	if err != nil {
@@ -144,7 +143,7 @@ func TestASourceNothingIsKnownAboutComesBackEmpty(t *testing.T) {
 	api, _, doc := openHighlightWindow(t)
 	hl := source.NewHighlight(filesystem.VaultReaders{}, indexed{}, nil)
 	hl.Documents = pdf.Documents{}
-	api.Highlight = &hl
+	api.Ocr.highlight = &hl
 
 	runs, err := reads(api, book, where(t, doc, "Delta"))
 	if err != nil {

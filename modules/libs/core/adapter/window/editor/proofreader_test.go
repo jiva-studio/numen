@@ -42,7 +42,7 @@ func (p *proofreads) Proofread(
 
 // newProofreadWindow is a window over the same vault the runs are asked for over,
 // with a proofreading a test watches.
-func newProofreadWindow(t *testing.T, held port.DerivedStore, read indexed) (*API, http.Handler, *proofreads) {
+func newProofreadWindow(t *testing.T, held port.DerivedStore, read indexed) (*Services, http.Handler, *proofreads) {
 	t.Helper()
 	api, handler := openRunWindow(t, held, read, willRun(), willRun())
 	by := &proofreads{isReady: true}
@@ -67,7 +67,7 @@ func TestATranscriptIsProofreadWhenTheWindowAsksForIt(t *testing.T) {
 	if made.GetKind() != v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED {
 		t.Errorf("the answer is about a %s", made.GetKind())
 	}
-	if by.times != 1 || by.path != talk || by.vault != string(api.GetCurrentVault().ID) {
+	if by.times != 1 || by.path != talk || by.vault != string(api.state.GetCurrentVault().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", by.path, by.vault, by.times)
 	}
 }
@@ -163,7 +163,7 @@ func TestTheCorrectionsARecordingCarriesAreWhatStands(t *testing.T) {
 	held[derived.Corrections(asr, hashed)] = []byte(put)
 	api, _, by := newProofreadWindow(t, held, newTranscriptIndex())
 
-	out, err := api.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: talk}))
+	out, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: talk}))
 	if err != nil {
 		t.Fatalf("asked what the recording carries and was refused: %v", err)
 	}

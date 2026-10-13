@@ -34,7 +34,7 @@ func isGone(t *testing.T, root, path string) bool {
 // already on disk into the index and the links they carry with them.
 func waitForScan(t *testing.T, f *going) {
 	t.Helper()
-	testsupport.WaitFor(t, f.installation.API.Ready.Load)
+	testsupport.WaitFor(t, f.installation.State.Ready.Load)
 }
 
 // TestRenamingWritesTheNoteAndMovesTheFile. A note is shown by its title, so
@@ -629,9 +629,9 @@ func TestRenamingANoteWrittenElsewhereIsAQuestion(t *testing.T) {
 		"Old.md": "---\ntitle: Old\n---\n\n# Old\n",
 	})
 	waitForScan(t, f)
-	*f.installation.API.Notes.Rename = f.installation.API.Notes.Rename.WithWriters(staleWriters{VaultWriters: f.installation.API.Notes.Rename.Writers()})
+	*f.installation.Services.NoteRename() = f.installation.Services.NoteRename().WithWriters(staleWriters{VaultWriters: f.installation.Services.NoteRename().Writers()})
 
-	out, err := f.installation.API.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
+	out, err := f.installation.Services.Note.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path:  "Old.md",
 		Title: "New",
 	}))
@@ -641,7 +641,7 @@ func TestRenamingANoteWrittenElsewhereIsAQuestion(t *testing.T) {
 	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Errorf("a note that changed was answered %v", code)
 	}
-	if isGone(t, f.installation.API.GetCurrentVault().Path, "Old.md") {
+	if isGone(t, f.installation.State.GetCurrentVault().Path, "Old.md") {
 		t.Error("the file moved for a rename that wrote nothing")
 	}
 }

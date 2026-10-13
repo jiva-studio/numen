@@ -16,17 +16,28 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
+// cardsHandler answers about the decks and stencils a vault is arranged into.
+type cardsHandler struct {
+	state       *State
+	read        *cards.Read
+	list        *cards.List
+	write       *cards.Write
+	create      *cards.Create
+	renameField *cards.RenameField
+	getTitle    *note.GetTitle
+}
+
 // ListStencils is every stencil the vault holds, by what it is called and what
 // it asks for. A vault holding more than one answer carries is answered with as
 // many as it carries, and told how many it holds.
-func (a *API) ListStencils(
+func (h *cardsHandler) ListStencils(
 	ctx context.Context, r *connect.Request[v1.ListStencilsRequest],
 ) (*connect.Response[v1.ListStencilsResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
-	held, count, err := a.Cards.List.Execute(ctx, showing, getStencilLimit(r.Msg.GetLimit()))
+	held, count, err := h.list.Execute(ctx, showing, getStencilLimit(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -50,12 +61,12 @@ func getStencilLimit(limit int32) int {
 
 // CreateStencil puts a stencil declaring these fields in the vault, showing no
 // face.
-func (a *API) CreateStencil(
+func (h *cardsHandler) CreateStencil(
 	ctx context.Context, r *connect.Request[v1.CreateStencilRequest],
 ) (*connect.Response[v1.CreateStencilResponse], error) {
-	made, code, unlevelled, err := a.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+	made, code, unlevelled, err := h.state.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		in.Fields = r.Msg.GetFields()
-		return a.Cards.Create.Stencil(ctx, showing, in)
+		return h.create.Stencil(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetPath())
 	if err != nil {
 		return nil, err
@@ -66,11 +77,11 @@ func (a *API) CreateStencil(
 }
 
 // CreateDeck puts a deck of no cards in the vault.
-func (a *API) CreateDeck(
+func (h *cardsHandler) CreateDeck(
 	ctx context.Context, r *connect.Request[v1.CreateDeckRequest],
 ) (*connect.Response[v1.CreateDeckResponse], error) {
-	made, code, unlevelled, err := a.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
-		return a.Cards.Create.Deck(ctx, showing, in)
+	made, code, unlevelled, err := h.state.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+		return h.create.Deck(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetPath())
 	if err != nil {
 		return nil, err
@@ -83,26 +94,26 @@ func (a *API) CreateDeck(
 // createCardNote is what making a deck and making a stencil have in common: the vault
 // being shown, the window's hold on writing, and the error codes a file that
 // could not be made comes back as.
-func (a *API) createCardNote(
+func (s *State) createCardNote(
 	ctx context.Context, cut func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
 ) (cards.CreateNoteResult, *v1.ErrorCode, bool, error) {
-	showing, err := a.getCurrentVault()
+	showing, err := s.getCurrentVault()
 	if err != nil {
 		return cards.CreateNoteResult{}, nil, false, err
 	}
-	if !a.Writing.begin() {
+	if !s.Writing.begin() {
 		return cards.CreateNoteResult{}, nil, false, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.finish()
+	defer s.Writing.finish()
 
 	made, err := cut(showing, cards.New{Title: title, Path: folder})
 	if err == nil || errors.Is(err, note.ErrUnlevelled) {
-		if a.NotifyNoteWritten != nil {
-			a.NotifyNoteWritten()
+		if s.NotifyNoteWritten != nil {
+			s.NotifyNoteWritten()
 		}
 		// The file is on disk under that name and nothing renumbers a second
 		// attempt, so the path is the only way back to it.
-		return made, nil, a.isUnlevelled(err), nil
+		return made, nil, s.isUnlevelled(err), nil
 	}
 	if errors.Is(err, cards.ErrNoFields) {
 		return cards.CreateNoteResult{}, nil, false, connect.NewError(connect.CodeInvalidArgument, err)
@@ -118,28 +129,28 @@ func (a *API) createCardNote(
 // stencil and in every card of every deck that stencil cuts. A stencil still
 // holding what the client read is written; one holding something else is left
 // alone and the client is told the stencil changed.
-func (a *API) RenameStencilField(
+func (h *cardsHandler) RenameStencilField(
 	ctx context.Context, r *connect.Request[v1.RenameStencilFieldRequest],
 ) (*connect.Response[v1.RenameStencilFieldResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
-	if !a.Writing.begin() {
+	if !h.state.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.finish()
+	defer h.state.Writing.finish()
 
-	renamed, err := a.Cards.RenameField.Execute(ctx, showing, cards.Rename{
+	renamed, err := h.renameField.Execute(ctx, showing, cards.Rename{
 		Stencil: r.Msg.GetPath(), From: r.Msg.GetFrom(), To: r.Msg.GetTo(),
 		Fingerprint: convertFingerprintFromWire(r.Msg.GetBaseline()),
 	})
 	if err == nil || errors.Is(err, note.ErrUnlevelled) {
-		if a.NotifyNoteWritten != nil {
-			a.NotifyNoteWritten()
+		if h.state.NotifyNoteWritten != nil {
+			h.state.NotifyNoteWritten()
 		}
 		out := cardwire.NewRenameResponse(renamed, convertFingerprintToWire(renamed.Stencil))
-		out.IsUnlevelled = a.isUnlevelled(err)
+		out.IsUnlevelled = h.state.isUnlevelled(err)
 		return connect.NewResponse(out), nil
 	}
 	// The name a rename is given is the client's: one the stencil does not
@@ -155,14 +166,14 @@ func (a *API) RenameStencilField(
 }
 
 // ReadStencil is the fields and the faces of one stencil.
-func (a *API) ReadStencil(
+func (h *cardsHandler) ReadStencil(
 	ctx context.Context, r *connect.Request[v1.ReadStencilRequest],
 ) (*connect.Response[v1.ReadStencilResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Cards.Read.Stencil(ctx, showing, r.Msg.GetPath())
+	found, err := h.read.Stencil(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(wire.GetCode(err), err)
 	}
@@ -172,7 +183,7 @@ func (a *API) ReadStencil(
 		out.Error = &code
 		return connect.NewResponse(out), nil
 	}
-	title := a.Notes.GetTitle.Execute(ctx, showing, found.Path)
+	title := h.getTitle.Execute(ctx, showing, found.Path)
 	out.Stencil = cardwire.NewWireStencil(found.Path, title, found.Body)
 	// What the file was when this came out of it, for the client to present
 	// when it writes the stencil back.
@@ -181,14 +192,14 @@ func (a *API) ReadStencil(
 }
 
 // ReadDeck is the cards of one deck, in the order they stand in the file.
-func (a *API) ReadDeck(
+func (h *cardsHandler) ReadDeck(
 	ctx context.Context, r *connect.Request[v1.ReadDeckRequest],
 ) (*connect.Response[v1.ReadDeckResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Cards.Read.Deck(ctx, showing, r.Msg.GetPath())
+	found, err := h.read.Deck(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(wire.GetCode(err), err)
 	}
@@ -203,7 +214,7 @@ func (a *API) ReadDeck(
 		}
 		return connect.NewResponse(out), nil
 	}
-	title := a.Notes.GetTitle.Execute(ctx, showing, found.Path)
+	title := h.getTitle.Execute(ctx, showing, found.Path)
 	out.Deck = cardwire.NewWireDeck(found.Path, title, found.Body, found.Stencils)
 	out.At = convertFingerprintToWire(found.Fingerprint)
 	return connect.NewResponse(out), nil
@@ -212,10 +223,10 @@ func (a *API) ReadDeck(
 // WriteDeck puts cards into a deck. A deck still holding what the client read
 // is written over; one holding something else is left alone and the client is
 // told the deck changed.
-func (a *API) WriteDeck(
+func (h *cardsHandler) WriteDeck(
 	ctx context.Context, r *connect.Request[v1.WriteDeckRequest],
 ) (*connect.Response[v1.WriteDeckResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -223,19 +234,19 @@ func (a *API) WriteDeck(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	if !a.Writing.begin() {
+	if !h.state.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.finish()
+	defer h.state.Writing.finish()
 
-	wrote, err := a.Cards.Write.Deck(ctx, showing, r.Msg.GetPath(), body, convertFingerprintFromWire(r.Msg.GetBaseline()))
+	wrote, err := h.write.Deck(ctx, showing, r.Msg.GetPath(), body, convertFingerprintFromWire(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
-	behind := a.isUnlevelled(err)
+	behind := h.state.isUnlevelled(err)
 	if err == nil || behind {
-		if a.NotifyNoteWritten != nil {
-			a.NotifyNoteWritten()
+		if h.state.NotifyNoteWritten != nil {
+			h.state.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.WriteDeckResponse{
 			At: convertFingerprintToWire(wrote.Fingerprint), IsUnlevelled: behind,
@@ -257,10 +268,10 @@ func (a *API) WriteDeck(
 // WriteStencil puts fields and faces into a stencil. A stencil still holding
 // what the client read is written over; one holding something else is left
 // alone and the client is told the stencil changed.
-func (a *API) WriteStencil(
+func (h *cardsHandler) WriteStencil(
 	ctx context.Context, r *connect.Request[v1.WriteStencilRequest],
 ) (*connect.Response[v1.WriteStencilResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -269,20 +280,20 @@ func (a *API) WriteStencil(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	if !a.Writing.begin() {
+	if !h.state.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.finish()
+	defer h.state.Writing.finish()
 
-	at, err := a.Cards.Write.Stencil(
+	at, err := h.write.Stencil(
 		ctx, showing, r.Msg.GetPath(), body, r.Msg.GetFields(), convertFingerprintFromWire(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
-	behind := a.isUnlevelled(err)
+	behind := h.state.isUnlevelled(err)
 	if err == nil || behind {
-		if a.NotifyNoteWritten != nil {
-			a.NotifyNoteWritten()
+		if h.state.NotifyNoteWritten != nil {
+			h.state.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.WriteStencilResponse{
 			At: convertFingerprintToWire(at), IsUnlevelled: behind,

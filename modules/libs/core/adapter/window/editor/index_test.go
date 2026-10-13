@@ -32,7 +32,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	}
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
+	api := &State{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.setVault(v)
 	api.Indexing.Recipe.Store(model.GetModel().Recipe())
@@ -59,7 +59,7 @@ func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
 	}
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
+	api := &State{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.setVault(v)
 	api.Indexing.Recipe.Store(model.GetModel().Recipe())
@@ -83,7 +83,7 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	}
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
+	api := &State{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.setVault(v)
 	api.Indexing.Recipe.Store(model.GetModel().Recipe())
@@ -112,7 +112,7 @@ func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
 	// The notes are on disk and nothing has cut them, so the index holds no
 	// chunk and owes no vector.
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
+	api := &State{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.setVault(v)
 	api.Indexing.Recipe.Store(model.GetModel().Recipe())
@@ -144,7 +144,7 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	}
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
+	api := &State{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.setVault(v)
 	api.Indexing.Recipe.Store(model.GetModel().Recipe())
@@ -212,7 +212,7 @@ func (p *peeking) opening(id string) (task.Task, bool) {
 func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 	made, db := reading(t)
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
+	api := &State{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.setVault(v)
 	// The index the pass asks what owes its text is gone, which is what it
 	// looks like from here when the answer cannot be had.
@@ -247,7 +247,7 @@ func reading(t *testing.T) (Assembly, *container.Index) {
 
 // cut reads the vault's notes, so that its chunks are in the index owing their
 // vectors.
-func cut(t *testing.T, db *container.Index, api *API) {
+func cut(t *testing.T, db *container.Index, api *State) {
 	t.Helper()
 
 	scan := vaults.NewScan(
@@ -264,7 +264,7 @@ func cut(t *testing.T, db *container.Index, api *API) {
 
 // findTask is one piece of work as the list holds it, or nothing where the list
 // does not hold it.
-func findTask(t *testing.T, api *API, id string) *task.Task {
+func findTask(t *testing.T, api *State, id string) *task.Task {
 	t.Helper()
 
 	for _, at := range api.Window.Tasking.List() {
@@ -287,7 +287,7 @@ func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 	}
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
+	api := &State{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.setVault(v)
 	api.Indexing.Recipe.Store(model.GetModel().Recipe())
@@ -362,7 +362,7 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	}
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
+	api := &State{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.setVault(v)
 	api.Indexing.Recipe.Store(model.GetModel().Recipe())

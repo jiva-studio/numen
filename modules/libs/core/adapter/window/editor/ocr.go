@@ -10,15 +10,22 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
+
+// ocrHandler answers with what a model read off a document's pages.
+type ocrHandler struct {
+	files     *artifactFiles
+	highlight *source.Highlight
+}
 
 // ReadOcr answers with what a model read off a document's pages: for each run
 // of the text asked about, what it says and the boxes covering it.
-func (a *API) ReadOcr(
+func (h *ocrHandler) ReadOcr(
 	ctx context.Context,
 	r *connect.Request[v1.ReadOcrRequest],
 ) (*connect.Response[v1.ReadOcrResponse], error) {
-	showing, ref, err := a.getArtifactFile(ctx, r.Msg.GetPath(), v1.ArtifactKind_ARTIFACT_KIND_OCR)
+	showing, ref, err := h.files.getArtifactFile(ctx, r.Msg.GetPath(), v1.ArtifactKind_ARTIFACT_KIND_OCR)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +40,7 @@ func (a *API) ReadOcr(
 	ctx, cancel := context.WithTimeout(ctx, openTimeout)
 	defer cancel()
 
-	found, err := a.Highlight.Execute(ctx, showing, ref.Path, runs)
+	found, err := h.highlight.Execute(ctx, showing, ref.Path, runs)
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
