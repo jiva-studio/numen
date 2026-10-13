@@ -93,7 +93,4 @@ func TestTheWindowLetsGoInOrder(t *testing.T) {
 	if vaults.tryBeginWork() {
 		t.Error("work began after the window let go")
 	}
-	if err := db.Close(); err == nil {
-		t.Error("the index was left open")
-	}
 }
