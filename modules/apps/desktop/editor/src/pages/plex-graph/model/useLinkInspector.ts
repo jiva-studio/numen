@@ -5,7 +5,7 @@ import { ref } from 'vue'
 import type { NodeIdMap } from '../lib/nodeIdMap'
 import type { DirectionalLinkItem, LinkInspectorRequest, PlexEditor } from '../types'
 import type { PlexView } from './usePlexView'
-import { areLinksEqual, createInspectorLinks, getLinksToSave } from './linkInspector'
+import { areLinksEqual, createInspectorLinks } from './linkInspector'
 
 export function useLinkInspector(
   view: PlexView,
@@ -37,8 +37,7 @@ export function useLinkInspector(
     const open = linkInspector.value
     if (!open) return
 
-    const links = getLinksToSave(rows)
-    if (areLinksEqual(links, open.links)) {
+    if (areLinksEqual(rows, open.links)) {
       dismissLinkInspector()
       return
     }
@@ -46,7 +45,7 @@ export function useLinkInspector(
     const isReplaced = await editor.replaceLinks(
       open.nodeA.path,
       open.nodeB.path,
-      links.map(({ from, to, role, label }) => ({ from, to, relation: role, label })),
+      rows.map(({ from, to, role, label }) => ({ from, to, relation: role, label })),
     )
     const here = view.here.value
     if (here) await view.go(here)

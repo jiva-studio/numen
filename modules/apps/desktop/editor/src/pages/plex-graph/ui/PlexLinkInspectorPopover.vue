@@ -7,6 +7,7 @@ import { ArrowLeftRight, X } from '@lucide/vue'
 import type { DirectionalLinkItem, LinkInspectorRequest } from '../types'
 import {
   addReverseLink,
+  getLinksToSave,
   removeLink,
   resolvePopoverPosition,
   setLinkLabel,
@@ -139,7 +140,7 @@ function onRemoveRow(row: DirectionalLinkItem) {
 }
 
 function onDone() {
-  emit('save', localRows.value)
+  emit('save', getLinksToSave(localRows.value))
 }
 
 /* -------------------------------- Helpers --------------------------------- */

@@ -109,20 +109,6 @@ describe('saving the link inspector', () => {
     expect(one.linkInspector.value).toBeNull()
   })
 
-  it('leaves out the one of two links that says nothing', async () => {
-    const one = inspecting()
-    one.open()
-
-    await one.saveLinkInspector([
-      link('Root.md', 'Child.md', 'child', 'forward', 'owns'),
-      link('Child.md', 'Root.md', 'parent', 'reverse'),
-    ])
-
-    expect(one.replaced[0]?.links).toEqual([
-      { from: 'Root.md', to: 'Child.md', relation: 'child', label: 'owns' },
-    ])
-  })
-
   it('asks nothing of the core where the rows are what the core reported', async () => {
     const one = inspecting([{ path: 'Child.md', label: 'subtask' }])
     const request = one.open()
