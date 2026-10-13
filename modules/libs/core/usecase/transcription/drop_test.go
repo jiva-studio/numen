@@ -67,7 +67,7 @@ func TestDroppingATranscriptLeavesTheRecordingAsItWas(t *testing.T) {
 		t.Fatal("the recording was not cut from what was heard in it")
 	}
 
-	res, err := drop.Execute(t.Context(), v, recordingPath)
+	res, err := drop.Execute(t.Context(), v, recordingPath, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func TestARecordingIsHeardAgainAfterItsTranscriptIsDropped(t *testing.T) {
 	if _, err := listen.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := drop.Execute(t.Context(), v, recordingPath); err != nil {
+	if _, err := drop.Execute(t.Context(), v, recordingPath, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -145,7 +145,7 @@ func TestTheAnswerOfARecordingWithNoSpeechIsDropped(t *testing.T) {
 		t.Fatalf("nothing says what the recording answered: %v", err)
 	}
 
-	res, err := drop.Execute(t.Context(), v, recordingPath)
+	res, err := drop.Execute(t.Context(), v, recordingPath, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +163,7 @@ func TestTheAnswerOfARecordingWithNoSpeechIsDropped(t *testing.T) {
 func TestARecordingNobodyHasListenedToHasNoTranscriptToDrop(t *testing.T) {
 	_, drop, v, index, kept, _, _ := newDrop(t, "one")
 
-	res, err := drop.Execute(t.Context(), v, recordingPath)
+	res, err := drop.Execute(t.Context(), v, recordingPath, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,7 +203,7 @@ func TestTheRecordingIsHeldUntilTheIndexIsWritten(t *testing.T) {
 	partial := domain.NewArtifactName(domain.ArtifactPartial, domain.ASR, hash)
 	drop.Sources = watching{store: index, saw: func() { free = !kept.claims(partial) }}
 
-	if _, err := drop.Execute(t.Context(), v, recordingPath); err != nil {
+	if _, err := drop.Execute(t.Context(), v, recordingPath, nil); err != nil {
 		t.Fatal(err)
 	}
 	if free {
@@ -228,7 +228,7 @@ func TestARecordingWhoseStoreWasEmptiedIsDroppedFromTheIndex(t *testing.T) {
 		}
 	}
 
-	res, err := drop.Execute(t.Context(), v, recordingPath)
+	res, err := drop.Execute(t.Context(), v, recordingPath, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,9 +252,8 @@ func TestDroppingAnAnswerPutsTheRecordingBackInReach(t *testing.T) {
 		t.Fatal(err)
 	}
 	var forgotten []string
-	drop.Forgets = func(_ domain.Vault, path string) { forgotten = append(forgotten, path) }
-
-	if _, err := drop.Execute(t.Context(), v, recordingPath); err != nil {
+	forget := func(_ domain.Vault, path string) { forgotten = append(forgotten, path) }
+	if _, err := drop.Execute(t.Context(), v, recordingPath, forget); err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Equal(forgotten, []string{recordingPath}) {
@@ -270,7 +269,7 @@ func TestATranscriptBeingWrittenIsNotDropped(t *testing.T) {
 	}
 	kept.hold(domain.NewArtifactName(domain.ArtifactPartial, domain.ASR, hash))
 
-	res, err := drop.Execute(t.Context(), v, recordingPath)
+	res, err := drop.Execute(t.Context(), v, recordingPath, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

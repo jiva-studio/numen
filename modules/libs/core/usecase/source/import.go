@@ -52,15 +52,6 @@ type ImportURL struct {
 	// answers where it is filed afterwards. A run given none leaves it called
 	// what it was called.
 	Names func(ctx context.Context, v domain.Vault, path, title string) (string, error)
-
-	// IsRepeat throws away what a run before this one downloaded and asks the address
-	// afresh. It is how a person asks for a site's words again, and nothing
-	// sets it on its own.
-	IsRepeat bool
-
-	// Progress is told how much of a copy has arrived out of how much the site
-	// declared. A run given none is not followed.
-	Progress func(done, total int64)
 }
 
 // ErrBeingDownloaded is another run holding this address. Nothing was done, and
@@ -82,7 +73,11 @@ type ImportURLResult struct {
 }
 
 // Execute downloads what is at one url's address.
-func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (ImportURLResult, error) {
+//
+// A repeat throws away what a run before this one downloaded and asks the address afresh. It is how a person asks for a site's words again, and nothing sets it on its own.
+func (u ImportURL) Execute(
+	ctx context.Context, v domain.Vault, path string, isRepeat bool,
+) (ImportURLResult, error) {
 	res := ImportURLResult{Path: path}
 	at, ref, store, err := u.readURLFile(ctx, v, path)
 	if err != nil {
@@ -101,7 +96,7 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 	}
 	defer release()
 
-	if u.IsRepeat {
+	if isRepeat {
 		if err := dropDownloads(ctx, store, hash); err != nil {
 			return res, err
 		}

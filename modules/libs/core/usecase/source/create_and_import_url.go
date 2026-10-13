@@ -41,7 +41,7 @@ func (u *CreateAndImportURL) Execute(
 	if err != nil {
 		return ImportedURL{ImportURLResult: ImportURLResult{Path: made.Path}}, err
 	}
-	fetched, err := u.fetch.Execute(ctx, v, made.Path)
+	fetched, err := u.fetch.Execute(ctx, v, made.Path, false)
 	if err != nil {
 		return ImportedURL{ImportURLResult: ImportURLResult{Path: made.Path}}, err
 	}
@@ -49,7 +49,7 @@ func (u *CreateAndImportURL) Execute(
 	if !shouldCopy {
 		return res, nil
 	}
-	res.Copy, err = u.fetch.Copy(ctx, v, fetched.Path)
+	res.Copy, err = u.fetch.Copy(ctx, v, fetched.Path, nil)
 	if err != nil {
 		return res, &CopyError{Err: err}
 	}
