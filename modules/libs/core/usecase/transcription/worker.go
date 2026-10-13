@@ -49,6 +49,12 @@ type Config struct {
 	Sources port.SourceRepository
 	Tasks   *task.Tasks
 
+	// Wait sleeps for d or until ctx is done.
+	Wait port.Wait
+
+	// After runs f after d passes unless stopped first.
+	After port.DelayedCall
+
 	// Runtime is what a recording is transcribed through.
 	Runtime Runtime
 
@@ -152,7 +158,7 @@ func (t *Worker) Queue(
 	v domain.Vault,
 ) {
 	t.line.Go(func() {
-		t.line.RepeatRounds(ctx, every, func() { t.round(ctx, known, v) })
+		t.line.RepeatRounds(ctx, t.with.Wait, every, func() { t.round(ctx, known, v) })
 	})
 }
 
@@ -506,7 +512,7 @@ func (t *Worker) finishResident(ctx context.Context, ran error) error {
 		}
 		return nil
 	}
-	t.resident.park(t.residentIdle)
+	t.resident.park(t.with.After, t.residentIdle)
 	return nil
 }
 

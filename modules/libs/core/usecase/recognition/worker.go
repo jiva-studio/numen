@@ -49,6 +49,9 @@ type Config struct {
 	Sources   port.SourceRepository
 	Tasks     *task.Tasks
 
+	// Wait sleeps for d or until ctx is done.
+	Wait port.Wait
+
 	// Runtime is what a page is recognised through.
 	Runtime Runtime
 
@@ -316,7 +319,7 @@ func (r *Worker) CollectBatches(
 		return
 	}
 	r.line.Go(func() {
-		r.line.RepeatRounds(ctx, every, func() {
+		r.line.RepeatRounds(ctx, r.with.Wait, every, func() {
 			for _, v := range vaults {
 				r.collect(ctx, known, queue, queue, v)
 			}

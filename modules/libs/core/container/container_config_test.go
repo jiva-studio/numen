@@ -1,6 +1,7 @@
 package container
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"os"
@@ -47,6 +48,32 @@ func TestAnInstallationNamingNoClockReadsTheMachinesOwn(t *testing.T) {
 	got := Config{}.Clock()()
 	if got.Before(before) || got.After(time.Now()) {
 		t.Errorf("the clock reads %v, and it is %v", got, before)
+	}
+}
+
+func TestTheWaitIsTheOneTheInstallationNamed(t *testing.T) {
+	named := func(ctx context.Context, d time.Duration) error { return nil }
+	if got := (Config{Sleep: named}).Wait(); got == nil {
+		t.Fatal("the wait is nil")
+	}
+}
+
+func TestAnInstallationNamingNoWaitArmsTheMachinesTimer(t *testing.T) {
+	if got := (Config{}).Wait(); got == nil {
+		t.Fatal("the wait is nil")
+	}
+}
+
+func TestTheDelayedCallIsTheOneTheInstallationNamed(t *testing.T) {
+	named := func(d time.Duration, f func()) func() bool { return func() bool { return true } }
+	if got := (Config{After: named}).DelayedCall(); got == nil {
+		t.Fatal("the delayed call is nil")
+	}
+}
+
+func TestAnInstallationNamingNoDelayedCallArmsTheMachinesTimer(t *testing.T) {
+	if got := (Config{}).DelayedCall(); got == nil {
+		t.Fatal("the delayed call is nil")
 	}
 }
 

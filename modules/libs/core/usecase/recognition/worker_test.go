@@ -58,6 +58,16 @@ func newWatchedUnder(t *testing.T, ctx context.Context, why error) *watched {
 		Sources:   newStore(),
 		Documents: documents{},
 		Tasks:     tasks,
+		Wait: func(ctx context.Context, d time.Duration) error {
+			t := time.NewTimer(d)
+			defer t.Stop()
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-t.C:
+				return nil
+			}
+		},
 		Proofreading: run.ProofreadingConfig{
 			Queue: func(string) (port.ProofreadQueue, error) { return nil, nil },
 		},

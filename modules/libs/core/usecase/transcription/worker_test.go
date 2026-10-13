@@ -73,6 +73,19 @@ func newTranscriptionWorker(t *testing.T, by *deaf, recordings ...string) (*Work
 		Readers: vaults{v.ID: shelved},
 		Derived: shelves{newShelf()},
 		Tasks:   task.New(),
+		Wait: func(ctx context.Context, d time.Duration) error {
+			t := time.NewTimer(d)
+			defer t.Stop()
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-t.C:
+				return nil
+			}
+		},
+		After: func(d time.Duration, f func()) func() bool {
+			return time.AfterFunc(d, f).Stop
+		},
 		Runtime: Runtime{
 			Ready: func() bool { return true },
 			Open: func(context.Context, func(string, int64, int64)) (port.Transcriber, func() error, error) {

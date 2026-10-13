@@ -64,6 +64,7 @@ func (c Config) OpenRecognitionWorker(
 		Sources:   sources,
 		Tasks:     tasks,
 		Models:    models,
+		Wait:      c.Wait(),
 		Runtime: recognition.Runtime{
 			Open: func(
 				ctx context.Context, tell func(what string, done, total int64),

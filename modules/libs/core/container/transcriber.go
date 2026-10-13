@@ -62,6 +62,8 @@ func (c Config) OpenTranscriptionWorker(
 		Sources: sources,
 		Tasks:   tasks,
 		Models:  models,
+		Wait:    c.Wait(),
+		After:   c.DelayedCall(),
 		Runtime: transcription.Runtime{
 			Open: func(
 				ctx context.Context, tell func(what string, done, total int64),

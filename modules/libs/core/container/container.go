@@ -22,6 +22,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/timer"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/trash"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -123,6 +124,14 @@ type Config struct {
 	// what is due today. An installation that names none reads this machine's
 	// clock, and this is the one place in the core allowed to.
 	Now port.Clock
+
+	// Sleep is how a scenario waits for a duration or until its context ends.
+	// An installation that names none arms this machine's timer.
+	Sleep port.Wait
+
+	// After is how a scenario runs a call after a duration passes unless
+	// stopped first. An installation that names none arms this machine's timer.
+	After port.DelayedCall
 }
 
 // Clock is the clock every scenario assembled here is handed.
@@ -131,6 +140,22 @@ func (c Config) Clock() port.Clock {
 		return c.Now
 	}
 	return time.Now
+}
+
+// Wait is the wait every scenario assembled here is handed.
+func (c Config) Wait() port.Wait {
+	if c.Sleep != nil {
+		return c.Sleep
+	}
+	return timer.Wait
+}
+
+// DelayedCall is the delayed call every scenario assembled here is handed.
+func (c Config) DelayedCall() port.DelayedCall {
+	if c.After != nil {
+		return c.After
+	}
+	return timer.After
 }
 
 // handleError says what went wrong to whoever asked to be told.

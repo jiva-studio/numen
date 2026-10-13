@@ -206,8 +206,16 @@ func TestRoundsRepeatUntilTheContextEnds(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
 	w := NewWorker(ctx, nil, nil)
 	var rounds atomic.Int32
+	wait := func(ctx context.Context, d time.Duration) error {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			return nil
+		}
+	}
 	w.Go(func() {
-		w.RepeatRounds(ctx, time.Millisecond, func() {
+		w.RepeatRounds(ctx, wait, time.Millisecond, func() {
 			if rounds.Add(1) == 3 {
 				stop()
 			}
