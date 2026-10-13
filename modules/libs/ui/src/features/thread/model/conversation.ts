@@ -50,7 +50,7 @@ export interface ConversationOptions {
   readonly words: ConversationStrings
   /** What this thread of talk is called, for as long as it is open. */
   readonly conversation: string
-  readonly paint?: Paint
+  readonly paint?: Paint | undefined
 }
 
 export function useConversation(options: ConversationOptions): Conversation {
