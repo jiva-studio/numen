@@ -212,7 +212,7 @@ func (f *DeckFile) RenameSection(at int, name string) error {
 		return fmt.Errorf("%w: %d", ErrNoSuchSection, at)
 	}
 	line := headingLine(1, name)
-	if heads[at].from < len(body) {
+	if from := heads[at].from; from > 0 && body[from-1] == '\n' {
 		line += "\n"
 	}
 	return f.doc.SpliceBody(heads[at].head, heads[at].from, line)
