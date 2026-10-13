@@ -145,14 +145,6 @@ func internalTypes(file *ast.File) []string {
 	return found
 }
 
-// portInternals are the types from internal/ that port/ still names, by the
-// file naming them, and the list only shrinks.
-var portInternals = map[string][]string{
-	"port/document.go":   {"highlight.Box"},
-	"port/downloader.go": {"transcript.Cue"},
-	"port/recogniser.go": {"ocr.Block"},
-}
-
 // An adapter outside the core cannot name a package under internal/, so a port
 // that does is a port it cannot answer. What a port speaks in is declared in
 // domain/ or beside the port.
@@ -163,7 +155,6 @@ func TestNoPortNamesATypeFromInternal(t *testing.T) {
 		t.Fatal(err)
 	}
 	var read int
-	named := map[string][]string{}
 	for _, at := range entries {
 		if strings.HasSuffix(at, "_test.go") {
 			continue
@@ -175,25 +166,13 @@ func TestNoPortNamesATypeFromInternal(t *testing.T) {
 		read++
 		rel := "port/" + filepath.Base(at)
 		for _, one := range internalTypes(file) {
-			if !slices.Contains(named[rel], one) {
-				named[rel] = append(named[rel], one)
-			}
-			if !slices.Contains(portInternals[rel], one) {
-				t.Errorf("%s names %s: a port speaks in the core's own types", rel, one)
-			}
+			t.Errorf("%s names %s: a port speaks in the core's own types", rel, one)
 		}
 	}
 
 	// A walk that read no file of port/ is a rule checked against nothing.
 	if read < 20 {
 		t.Fatalf("%d files of port/ read: the walk is not reading it", read)
-	}
-	for rel, listed := range portInternals {
-		for _, one := range listed {
-			if !slices.Contains(named[rel], one) {
-				t.Errorf("portInternals holds %s for %s and it names nothing of the kind", one, rel)
-			}
-		}
 	}
 }
 

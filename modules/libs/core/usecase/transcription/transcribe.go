@@ -287,19 +287,19 @@ func (u Transcribe) transcribeBatch(
 	recording port.Recording,
 	path string,
 	from int,
-) ([]transcript.Cue, int, error) {
+) ([]domain.TranscriptCue, int, error) {
 	segments, err := recording.GetSegments(ctx, from, run.GetSize(u.Batch, DefaultHeard))
 	if err != nil {
 		return nil, from, fmt.Errorf("transcribe %s at %s: %w", path, transcript.FormatTimestamp(from), err)
 	}
 	reached := from
-	cues := make([]transcript.Cue, 0, len(segments))
+	cues := make([]domain.TranscriptCue, 0, len(segments))
 	for _, audio := range segments {
 		words, err := u.by.Transcribe(ctx, audio)
 		if err != nil {
 			return nil, from, fmt.Errorf("hear %s at %s: %w", path, transcript.FormatTimestamp(audio.From), err)
 		}
-		cues = append(cues, transcript.Cue{Text: words, From: audio.From, To: audio.To})
+		cues = append(cues, domain.TranscriptCue{Text: words, From: audio.From, To: audio.To})
 		reached = max(reached, audio.To)
 	}
 	return cues, reached, nil

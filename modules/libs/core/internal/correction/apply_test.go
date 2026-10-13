@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 )
 
@@ -18,18 +17,18 @@ const perPage = 3
 // begins, one box for each line, and the two parts it divides into. The
 // rectangle follows the line's number, so a box that keeps its place keeps its
 // rectangle too.
-func createRecognition(lines []string) (string, []ocr.PageStart, []highlight.Box, []ocr.Part) {
+func createRecognition(lines []string) (string, []ocr.PageStart, []domain.HighlightBox, []ocr.Part) {
 	var marks []ocr.PageStart
-	var boxes []highlight.Box
+	var boxes []domain.HighlightBox
 	at := 0
 	for i, line := range lines {
 		if i%perPage == 0 {
 			marks = append(marks, ocr.PageStart{Offset: at})
 		}
-		boxes = append(boxes, highlight.Box{
+		boxes = append(boxes, domain.HighlightBox{
 			Page:     i / perPage,
 			ByteSpan: domain.ByteSpan{From: at, To: at + len(line)},
-			Rect: highlight.Rect{
+			Rect: domain.Rect{
 				MinX: 0.1, MinY: float32(i) / 100, MaxX: 0.9, MaxY: float32(i+1) / 100,
 			},
 		})

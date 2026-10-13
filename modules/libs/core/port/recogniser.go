@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"image"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // RecognitionModel names what read a page. It is recorded beside what it produced,
@@ -47,7 +47,7 @@ type Recogniser interface {
 	// Recognise is one page: its parts, in the order the page is read, and what
 	// each of them says. A page that carries nothing readable is an empty page
 	// and not an error.
-	Recognise(ctx context.Context, page image.Image) ([]ocr.Block, error)
+	Recognise(ctx context.Context, page image.Image) ([]domain.OCRBlock, error)
 
 	// Close releases whatever the models hold.
 	Close() error

@@ -24,7 +24,7 @@ func (u WriteTranscript) Execute(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
-	cues []transcript.Cue,
+	cues []domain.TranscriptCue,
 	cut func(context.Context, domain.Vault, string) error,
 ) (TranscriptWrite, error) {
 	stored, err := u.texts.getStoredText(ctx, v, path)

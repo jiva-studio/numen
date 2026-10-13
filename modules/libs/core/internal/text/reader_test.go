@@ -18,7 +18,7 @@ const (
 
 // writeTranscript is the artifact a transcription of the talk leaves.
 func writeTranscript() []byte {
-	return transcript.Marshal([]transcript.Cue{
+	return transcript.Marshal([]domain.TranscriptCue{
 		{Text: opening, From: 1500, To: 4200},
 		{Text: middle, From: 5025000, To: 5028000},
 		{Text: closing, From: 5400000, To: 5403500},
@@ -59,7 +59,7 @@ func TestATranscriptIsComposedFromItsOwnBytes(t *testing.T) {
 // A transcript is composed from what it was put right to, and what was heard
 // stands under its own name.
 func TestATranscriptIsComposedFromWhatItWasPutRightTo(t *testing.T) {
-	put := transcript.Marshal([]transcript.Cue{
+	put := transcript.Marshal([]domain.TranscriptCue{
 		{Text: opening, From: 1500, To: 4200},
 		{Text: "The name and the Named are not two.", From: 5025000, To: 5028000},
 		{Text: closing, From: 5400000, To: 5403500},

@@ -79,10 +79,10 @@ func TestSilenceIsNotPutRight(t *testing.T) {
 }
 
 // cues is the words as the cues a model wrote them down as, one second apart.
-func cues(words []string) []transcript.Cue {
-	out := make([]transcript.Cue, 0, len(words))
+func cues(words []string) []domain.TranscriptCue {
+	out := make([]domain.TranscriptCue, 0, len(words))
 	for at, said := range words {
-		out = append(out, transcript.Cue{Text: said, From: at * 1000, To: at*1000 + 800})
+		out = append(out, domain.TranscriptCue{Text: said, From: at * 1000, To: at*1000 + 800})
 	}
 	return out
 }

@@ -5,7 +5,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // How much of a transcript the digest carries: the words of its opening it
@@ -20,7 +20,7 @@ const (
 // the speech opens, and the words that recur through it.
 //
 // A transcript saying nothing is described as nothing.
-func Describe(cues []transcript.Cue) string {
+func Describe(cues []domain.TranscriptCue) string {
 	var said []string
 	for _, cue := range cues {
 		said = append(said, strings.Fields(cue.Text)...)

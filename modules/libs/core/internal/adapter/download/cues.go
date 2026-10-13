@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // published is the format a site hands its captions over in: one event to a
@@ -31,12 +31,12 @@ type published struct {
 //
 // A cue ends where the next begins, so that a moment on the player belongs to
 // one stretch of speech.
-func parseCues(raw []byte) ([]transcript.Cue, error) {
+func parseCues(raw []byte) ([]domain.TranscriptCue, error) {
 	var captions published
 	if err := json.Unmarshal(raw, &captions); err != nil {
 		return nil, fmt.Errorf("what the captions said: %w", err)
 	}
-	cues := make([]transcript.Cue, 0, len(captions.Events))
+	cues := make([]domain.TranscriptCue, 0, len(captions.Events))
 	for _, event := range captions.Events {
 		if event.Appended != 0 {
 			continue
@@ -49,7 +49,7 @@ func parseCues(raw []byte) ([]transcript.Cue, error) {
 		if text == "" {
 			continue
 		}
-		cues = append(cues, transcript.Cue{
+		cues = append(cues, domain.TranscriptCue{
 			Text: text,
 			From: event.Start,
 			To:   event.Start + event.Duration,
@@ -65,7 +65,7 @@ func parseCues(raw []byte) ([]transcript.Cue, error) {
 // What was said first stands first, whatever order it arrived in: the words are
 // read as one text, and a moment on the player is found in them by looking
 // forward.
-func trimOverlaps(cues []transcript.Cue) []transcript.Cue {
+func trimOverlaps(cues []domain.TranscriptCue) []domain.TranscriptCue {
 	sort.SliceStable(cues, func(i, j int) bool { return cues[i].From < cues[j].From })
 	for i := range cues {
 		if i+1 < len(cues) && cues[i].To > cues[i+1].From {

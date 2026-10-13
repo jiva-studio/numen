@@ -564,7 +564,7 @@ const talkPath = "talks/a lecture.mp3"
 
 // newTranscript is the transcript a model leaves of one talk.
 func newTranscript() []byte {
-	return transcript.Marshal([]transcript.Cue{
+	return transcript.Marshal([]domain.TranscriptCue{
 		{Text: words(sanskrit, 200), From: 1500, To: 5025000},
 		{Text: words(latin, 200), From: 5025000, To: 5400000},
 	})

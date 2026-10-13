@@ -12,7 +12,7 @@ import (
 func TestTranscriptWriteKeepsWhatWasHeard(t *testing.T) {
 	s := newTextScene(t)
 	s.write(t, domain.NewArtifactName(domain.ArtifactText, domain.ASR, talkHash), "heard")
-	cues := []transcript.Cue{{Text: "put right", From: 0, To: 500}}
+	cues := []domain.TranscriptCue{{Text: "put right", From: 0, To: 500}}
 	var cutAt string
 
 	_, err := s.texts.WriteTranscript.Execute(t.Context(), s.vault, recordingPath, cues,
@@ -40,7 +40,7 @@ func TestTranscriptWriteSurvivesACutFailure(t *testing.T) {
 	failure := errors.New("no cutter")
 
 	written, err := s.texts.WriteTranscript.Execute(t.Context(), s.vault, recordingPath,
-		[]transcript.Cue{{Text: "right", From: 0, To: 1}},
+		[]domain.TranscriptCue{{Text: "right", From: 0, To: 1}},
 		func(context.Context, domain.Vault, string) error { return failure })
 	if err != nil {
 		t.Fatal(err)

@@ -17,7 +17,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/operation"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -198,7 +197,7 @@ func (v *ytDLP) GetText(
 // language.
 func (v *ytDLP) subtitles(
 	ctx context.Context, at domain.URL, language string,
-) ([]transcript.Cue, error) {
+) ([]domain.TranscriptCue, error) {
 	if language == "" {
 		return nil, port.ErrNothingDownloaded
 	}

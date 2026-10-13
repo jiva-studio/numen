@@ -30,9 +30,9 @@ func newScanArtifact(lines []string) ([]byte, []byte) {
 		pages = append(pages, ocr.Page{
 			Index: at,
 			Size:  image.Point{X: 100, Y: 100},
-			Blocks: []ocr.Block{{
+			Blocks: []domain.OCRBlock{{
 				Text:  said,
-				Boxes: []ocr.Box{{Rect: image.Rect(0, 0, 100, 10), Span: domain.ByteSpan{To: len(said)}}},
+				Boxes: []domain.OCRBox{{Rect: image.Rect(0, 0, 100, 10), Span: domain.ByteSpan{To: len(said)}}},
 			}},
 		})
 	}

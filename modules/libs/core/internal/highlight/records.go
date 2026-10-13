@@ -17,7 +17,7 @@ const record = 28
 
 // Pack is boxes as bytes: fixed-width records, so a reader wanting one page
 // seeks to it and reads no more.
-func Pack(boxes []Box) []byte {
+func Pack(boxes []domain.HighlightBox) []byte {
 	raw := make([]byte, len(boxes)*record)
 	for i, box := range boxes {
 		offset := i * record
@@ -34,21 +34,21 @@ func Pack(boxes []Box) []byte {
 
 // Unpack is the boxes bytes hold. Bytes that are not a whole number of records
 // give back the records they do hold.
-func Unpack(raw []byte) []Box {
+func Unpack(raw []byte) []domain.HighlightBox {
 	if len(raw) < record {
 		return nil
 	}
-	boxes := make([]Box, 0, len(raw)/record)
+	boxes := make([]domain.HighlightBox, 0, len(raw)/record)
 	for at := 0; at+record <= len(raw); at += record {
 		one := raw[at : at+record]
 		from := int(int32(binary.LittleEndian.Uint32(one[4:])))
-		boxes = append(boxes, Box{
+		boxes = append(boxes, domain.HighlightBox{
 			Page: int(int32(binary.LittleEndian.Uint32(one[0:]))),
 			ByteSpan: domain.ByteSpan{
 				From: from,
 				To:   from + int(int32(binary.LittleEndian.Uint32(one[8:]))),
 			},
-			Rect: Rect{
+			Rect: domain.Rect{
 				MinX: math.Float32frombits(binary.LittleEndian.Uint32(one[12:])),
 				MinY: math.Float32frombits(binary.LittleEndian.Uint32(one[16:])),
 				MaxX: math.Float32frombits(binary.LittleEndian.Uint32(one[20:])),

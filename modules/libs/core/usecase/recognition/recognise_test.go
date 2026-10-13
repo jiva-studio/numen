@@ -33,7 +33,7 @@ func (s *speaker) GetRecognitionModel() port.RecognitionModel {
 	return port.RecognitionModel{Layout: "layout", Recogniser: "reader", DPI: 300, From: "a test"}
 }
 
-func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]ocr.Block, error) {
+func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]domain.OCRBlock, error) {
 	s.pages++
 	if s.stop != nil {
 		s.stop(s.pages)
@@ -47,14 +47,14 @@ func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]ocr.Block, er
 	// No two pages say the same thing, so a coordinate read at the wrong offset
 	// names the wrong words.
 	said := fmt.Sprintf("%s %d", s.says, s.pages)
-	var out []ocr.Block
+	var out []domain.OCRBlock
 	if s.heads != "" {
-		out = append(out, ocr.Block{Label: "doc_title", Text: fmt.Sprintf("%s %d", s.heads, s.pages), IsHeading: true, Depth: 1})
+		out = append(out, domain.OCRBlock{Label: "doc_title", Text: fmt.Sprintf("%s %d", s.heads, s.pages), IsHeading: true, Depth: 1})
 	}
-	return append(out, ocr.Block{
+	return append(out, domain.OCRBlock{
 		Label: "text",
 		Text:  said,
-		Boxes: []ocr.Box{{Rect: image.Rect(10, 20, 30, 40), Span: domain.ByteSpan{To: len(said)}}},
+		Boxes: []domain.OCRBox{{Rect: image.Rect(10, 20, 30, 40), Span: domain.ByteSpan{To: len(said)}}},
 	}), nil
 }
 
@@ -274,7 +274,7 @@ func documentHash() string { return text.Fingerprint(printPages(outline)) }
 //
 // The offsets rise, because the prose of every page written before this one
 // stands in front of it.
-func reads(t *testing.T, prose string, boxes []highlight.Box, says string) {
+func reads(t *testing.T, prose string, boxes []domain.HighlightBox, says string) {
 	t.Helper()
 	at := -1
 	for i, box := range boxes {
@@ -364,7 +364,7 @@ func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
 	if _, err := u.Execute(ctx, v, documentPath); !errors.Is(err, context.Canceled) {
 		t.Fatalf("stopping gave %v", err)
 	}
-	stray := highlight.Pack([]highlight.Box{{Page: 2, ByteSpan: domain.ByteSpan{From: 9000, To: 9007}}})
+	stray := highlight.Pack([]domain.HighlightBox{{Page: 2, ByteSpan: domain.ByteSpan{From: 9000, To: 9007}}})
 	if err := shelf.AppendArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactBoxes, "ocr", documentHash()), stray); err != nil {
 		t.Fatal(err)
 	}

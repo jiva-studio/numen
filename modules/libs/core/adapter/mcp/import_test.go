@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
@@ -18,7 +17,7 @@ import (
 // A site answering what a test puts in it. Nothing here reaches a network.
 type site struct {
 	title string
-	cues  []transcript.Cue
+	cues  []domain.TranscriptCue
 	bytes []byte
 }
 
@@ -71,7 +70,7 @@ const aVideo = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 // published with the video stand under the note's own prose, and a search over
 // the vault answers about them from then on.
 func TestAnAgentImportsAnAddress(t *testing.T) {
-	from := &site{title: "Entropy explained", cues: []transcript.Cue{
+	from := &site{title: "Entropy explained", cues: []domain.TranscriptCue{
 		{Text: "what was said", From: 1500, To: 4200},
 	}}
 	_, core := newCoreWithImport(t, from)
@@ -137,7 +136,7 @@ func TestABuildThatReachesNoAddressServesNoImport(t *testing.T) {
 // at stands beside it and is asked for by kind. An agent handed only the prose
 // is handed a note about a video with the video missing.
 func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
-	from := &site{title: "Entropy explained", cues: []transcript.Cue{
+	from := &site{title: "Entropy explained", cues: []domain.TranscriptCue{
 		{Text: "what was said", From: 1500, To: 4200},
 	}}
 	v, core := newCoreWithImport(t, from)
@@ -197,7 +196,7 @@ func (s *sourced) GetSourceText(
 
 // A copy that cannot be made is said beside the file it followed, which stands.
 func TestACopyThatFailsLeavesTheImportStanding(t *testing.T) {
-	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "what was said", From: 1500, To: 4200}}}
+	from := &site{title: "Entropy explained", cues: []domain.TranscriptCue{{Text: "what was said", From: 1500, To: 4200}}}
 	_, core := newCoreWithImport(t, from)
 	session := sessionOf(t, mcp.New(core))
 

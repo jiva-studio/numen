@@ -11,10 +11,10 @@ import (
 )
 
 func TestBoxesComeBackAsTheyWereWritten(t *testing.T) {
-	boxes := []highlight.Box{
-		testsupport.Box(0, 0, 5, highlight.Rect{MinX: 0, MinY: 0.25, MaxX: 0.5, MaxY: 0.75}),
-		testsupport.Box(1, 25, 32, highlight.Rect{MinX: 0.125, MinY: 0.5, MaxX: 1, MaxY: 1}),
-		testsupport.Box(17, 4096, 4097, highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.3, MaxY: 0.4}),
+	boxes := []domain.HighlightBox{
+		testsupport.Box(0, 0, 5, domain.Rect{MinX: 0, MinY: 0.25, MaxX: 0.5, MaxY: 0.75}),
+		testsupport.Box(1, 25, 32, domain.Rect{MinX: 0.125, MinY: 0.5, MaxX: 1, MaxY: 1}),
+		testsupport.Box(17, 4096, 4097, domain.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.3, MaxY: 0.4}),
 	}
 	raw := highlight.Pack(boxes)
 
@@ -29,9 +29,9 @@ func TestBoxesComeBackAsTheyWereWritten(t *testing.T) {
 func TestATornTailGivesBackTheWholeRecords(t *testing.T) {
 	// A run stopped part way through writing leaves a record half written.
 	// What was written whole is still a box.
-	boxes := []highlight.Box{
-		testsupport.Box(0, 0, 5, highlight.Rect{MaxX: 0.5, MaxY: 0.5}),
-		testsupport.Box(0, 6, 10, highlight.Rect{MaxX: 0.75, MaxY: 0.5}),
+	boxes := []domain.HighlightBox{
+		testsupport.Box(0, 0, 5, domain.Rect{MaxX: 0.5, MaxY: 0.5}),
+		testsupport.Box(0, 6, 10, domain.Rect{MaxX: 0.75, MaxY: 0.5}),
 	}
 	raw := highlight.Pack(boxes)
 
@@ -50,15 +50,15 @@ func TestATornTailGivesBackTheWholeRecords(t *testing.T) {
 func BenchmarkPackBox(b *testing.B) {
 	for _, count := range []int{10, 100, 1000} {
 		b.Run(fmt.Sprintf("Boxes_%d", count), func(b *testing.B) {
-			boxes := make([]highlight.Box, count)
+			boxes := make([]domain.HighlightBox, count)
 			for i := range count {
-				boxes[i] = highlight.Box{
+				boxes[i] = domain.HighlightBox{
 					Page: i / 10,
 					ByteSpan: domain.ByteSpan{
 						From: i * 20,
 						To:   i*20 + 15,
 					},
-					Rect: highlight.Rect{
+					Rect: domain.Rect{
 						MinX: 0.1,
 						MinY: 0.2,
 						MaxX: 0.8,

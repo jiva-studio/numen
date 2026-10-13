@@ -16,25 +16,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// A Box is one run of prose and where it was read: the page it is on, the run
-// of bytes in the text, and the rectangle it covers.
-type Box struct {
-	Page int
-	domain.ByteSpan
-	Rect
-}
-
-// A Rect is a place on a page, in fractions of it.
-type Rect struct {
-	MinX, MinY, MaxX, MaxY float32
-}
-
 // GetBoxesOver is the boxes covering a run of the prose, in the order they were
 // read. A run standing nowhere is covered by none.
 //
 // The boxes are in the order they were read, so the run is found by halving and
 // then walked to its end. A run crossing a page carries boxes from both of them.
-func GetBoxesOver(boxes []Box, span domain.ByteSpan) []Box {
+func GetBoxesOver(boxes []domain.HighlightBox, span domain.ByteSpan) []domain.HighlightBox {
 	if span.Empty() || len(boxes) == 0 {
 		return nil
 	}
@@ -45,7 +32,7 @@ func GetBoxesOver(boxes []Box, span domain.ByteSpan) []Box {
 		return boxes[i].To > span.From
 	})
 
-	var out []Box
+	var out []domain.HighlightBox
 	for ; at < len(boxes) && boxes[at].From < span.To; at++ {
 		out = append(out, boxes[at])
 	}

@@ -17,15 +17,15 @@ import (
 // with what the test put in.
 type layered struct {
 	port.TextExtractor
-	where func(raw []byte, pages []int) ([]highlight.Box, error)
+	where func(raw []byte, pages []int) ([]domain.HighlightBox, error)
 }
 
-func (l layered) GetHighlights(_ context.Context, raw []byte, _ []int, pages []int) ([]highlight.Box, error) {
+func (l layered) GetHighlights(_ context.Context, raw []byte, _ []int, pages []int) ([]domain.HighlightBox, error) {
 	return l.where(raw, pages)
 }
 
 // setPlacer is the use case with the test's own answer for where words sit.
-func setPlacer(u Highlight, where func(raw []byte, pages []int) ([]highlight.Box, error)) Highlight {
+func setPlacer(u Highlight, where func(raw []byte, pages []int) ([]domain.HighlightBox, error)) Highlight {
 	u.Documents = layered{TextExtractor: documents{}, where: where}
 	return u
 }
@@ -73,7 +73,7 @@ func locate(t *testing.T, book document, word string) (start, length int) {
 
 // litOn is where one run of a source's text sits, asked about on its own. A
 // source with no recognition and no layer is lit nowhere.
-func litOn(t *testing.T, u Highlight, path string, start, length int) []highlight.Box {
+func litOn(t *testing.T, u Highlight, path string, start, length int) []domain.HighlightBox {
 	t.Helper()
 	found, err := u.Execute(t.Context(), first, path, []domain.ByteSpan{{From: start, To: start + length}})
 	if err != nil {
@@ -87,7 +87,7 @@ func litOn(t *testing.T, u Highlight, path string, start, length int) []highligh
 
 // pages is the pages a run was lit on, each of them once and in the order the
 // boxes were read.
-func pages(boxes []highlight.Box) []int {
+func pages(boxes []domain.HighlightBox) []int {
 	var out []int
 	for _, box := range boxes {
 		if len(out) == 0 || out[len(out)-1] != box.Page {
@@ -103,17 +103,17 @@ func pages(boxes []highlight.Box) []int {
 func TestARecognisedSourceIsLitFromWhatWasReadInIt(t *testing.T) {
 	u, index, store, _, shelved := newHighlight(t, tiny)
 	recordSource(t, index, shelved, "ocr", "abc123")
-	u = setPlacer(u, func([]byte, []int) ([]highlight.Box, error) {
+	u = setPlacer(u, func([]byte, []int) ([]domain.HighlightBox, error) {
 		t.Error("the document's own layer was read for a source standing on a recognition")
 		return nil, nil
 	})
 
 	// Two words on one page and a third on the next, as a model reading the
 	// pages wrote them down.
-	written := []highlight.Box{
-		testsupport.Box(4, 0, 5, highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}),
-		testsupport.Box(4, 6, 10, highlight.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
-		testsupport.Box(5, 11, 16, highlight.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
+	written := []domain.HighlightBox{
+		testsupport.Box(4, 0, 5, domain.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}),
+		testsupport.Box(4, 6, 10, domain.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
+		testsupport.Box(5, 11, 16, domain.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
 	}
 	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactBoxes, "ocr", "abc123"), highlight.Pack(written)); err != nil {
 		t.Fatal(err)
@@ -123,7 +123,7 @@ func TestARecognisedSourceIsLitFromWhatWasReadInIt(t *testing.T) {
 	if len(found) != 2 || !slices.Equal(pages(found), []int{4}) {
 		t.Fatalf("the run was lit at %+v", found)
 	}
-	want := highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}
+	want := domain.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}
 	if found[0].Rect != want {
 		t.Errorf("the first word is at %+v, want %+v", found[0].Rect, want)
 	}
@@ -142,10 +142,10 @@ func TestASourceWithNoRecognitionIsLitFromItsOwnLayer(t *testing.T) {
 	}
 
 	// The rectangle is the one the document puts that word in.
-	var want highlight.Rect
+	var want domain.Rect
 	for _, box := range book.boxes([]int{0}) {
 		if box.From == start {
-			want = highlight.Rect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
+			want = domain.Rect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
 		}
 	}
 	if found[0].Rect != want {
@@ -189,7 +189,7 @@ func TestOnlyThePagesARunFallsOnAreLit(t *testing.T) {
 	recordSource(t, index, shelved, "", "abc123")
 
 	var asked []int
-	u = setPlacer(u, func(_ []byte, pages []int) ([]highlight.Box, error) {
+	u = setPlacer(u, func(_ []byte, pages []int) ([]domain.HighlightBox, error) {
 		asked = pages
 		return book.boxes(pages), nil
 	})
@@ -212,7 +212,7 @@ func TestSeveralPlacesAreAskedAboutAtOnce(t *testing.T) {
 	recordSource(t, index, shelved, "", "abc123")
 
 	var asked [][]int
-	u = setPlacer(u, func(_ []byte, pages []int) ([]highlight.Box, error) {
+	u = setPlacer(u, func(_ []byte, pages []int) ([]domain.HighlightBox, error) {
 		asked = append(asked, pages)
 		return book.boxes(pages), nil
 	})
@@ -295,7 +295,7 @@ func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 // text is what says where its offsets are, and nothing has said.
 func TestASourceTheIndexDoesNotHoldIsLitNowhere(t *testing.T) {
 	u, _, _, book, _ := newHighlight(t, tiny)
-	u = setPlacer(u, func([]byte, []int) ([]highlight.Box, error) {
+	u = setPlacer(u, func([]byte, []int) ([]domain.HighlightBox, error) {
 		t.Error("a source the index does not hold was read")
 		return nil, nil
 	})
@@ -338,8 +338,8 @@ func TestAFileRewrittenSinceItWasReadIsLitFromItself(t *testing.T) {
 	recordSource(t, index, shelved, "ocr", "abc123")
 
 	// A recognition whose words sit at the top of the first page.
-	if err := store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactBoxes, "ocr", "abc123"), highlight.Pack([]highlight.Box{
-		testsupport.Box(0, 0, 400, highlight.Rect{MinX: 0.1, MinY: 0.1, MaxX: 0.9, MaxY: 0.2}),
+	if err := store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactBoxes, "ocr", "abc123"), highlight.Pack([]domain.HighlightBox{
+		testsupport.Box(0, 0, 400, domain.Rect{MinX: 0.1, MinY: 0.1, MaxX: 0.9, MaxY: 0.2}),
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -366,10 +366,10 @@ func TestAProofreadRecognitionIsLitWhereItsWordsNowStand(t *testing.T) {
 	u, index, store, _, shelved := newHighlight(t, tiny)
 	recordSource(t, index, shelved, "ocr", "abc123")
 
-	written := []highlight.Box{
-		testsupport.Box(4, 0, 5, highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}),
-		testsupport.Box(4, 6, 10, highlight.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
-		testsupport.Box(5, 11, 16, highlight.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
+	written := []domain.HighlightBox{
+		testsupport.Box(4, 0, 5, domain.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}),
+		testsupport.Box(4, 6, 10, domain.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
+		testsupport.Box(5, 11, 16, domain.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
 	}
 	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactBoxes, "ocr", "abc123"), highlight.Pack(written)); err != nil {
 		t.Fatal(err)

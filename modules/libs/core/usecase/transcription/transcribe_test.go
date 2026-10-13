@@ -203,9 +203,9 @@ func TestABatchThatDidNotLandWholeIsCutBack(t *testing.T) {
 	// note are a batch nothing claims.
 	u, v, _, shelf, model, hash := listener(t, "one", "two", "three")
 
-	torn := transcript.Marshal([]transcript.Cue{{Text: "one", From: 0, To: 800}})
+	torn := transcript.Marshal([]domain.TranscriptCue{{Text: "one", From: 0, To: 800}})
 	torn = append(torn, transcript.GetReachMarker(800)...)
-	loose := transcript.Marshal([]transcript.Cue{{Text: "half a thought", From: 1000, To: 1800}})
+	loose := transcript.Marshal([]domain.TranscriptCue{{Text: "half a thought", From: 1000, To: 1800}})
 	torn = append(torn, bytes.TrimPrefix(loose, []byte(transcript.Head+"\n"))...)
 	if err := shelf.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactPartial, "asr", hash), torn); err != nil {
 		t.Fatal(err)

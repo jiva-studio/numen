@@ -1,8 +1,7 @@
 package proofread
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // GetScanBatches is the printed lines of a recognition, gathered by the page they
@@ -17,7 +16,7 @@ import (
 // batch is asked about and answered for by its page, and two batches under one
 // page would take one reply between them, writing one page's corrections onto
 // the other's lines.
-func GetScanBatches(prose string, boxes []highlight.Box) []Batch {
+func GetScanBatches(prose string, boxes []domain.HighlightBox) []Batch {
 	var out []Batch
 	for at, box := range boxes {
 		if box.Empty() {
@@ -51,7 +50,7 @@ func GetScanBatches(prose string, boxes []highlight.Box) []Batch {
 //
 // A run of lines is answered for inside one batch, so a sentence broken over a
 // cut is put back together here where the overlap carries it whole.
-func GetSpeechBatches(cues []transcript.Cue, size, overlap int) []Batch {
+func GetSpeechBatches(cues []domain.TranscriptCue, size, overlap int) []Batch {
 	if size <= 0 {
 		return nil
 	}
@@ -79,7 +78,7 @@ func GetSpeechBatches(cues []transcript.Cue, size, overlap int) []Batch {
 //
 // A transcript of one batch has no cut, and a batch of one line has no room
 // for a line on either side of one. The last batch is followed by no cut.
-func CutIntoBatches(cues []transcript.Cue, size, overlap int, cuts []int) []Batch {
+func CutIntoBatches(cues []domain.TranscriptCue, size, overlap int, cuts []int) []Batch {
 	batches := GetSpeechBatches(cues, size, overlap)
 	if size < 2 || len(batches) < 2 {
 		return nil
@@ -112,7 +111,7 @@ func CutIntoBatches(cues []transcript.Cue, size, overlap int, cuts []int) []Batc
 
 // getTranscriptLines returns every cue that says something, as a line known by the index
 // of its cue in the transcript.
-func getTranscriptLines(cues []transcript.Cue) []Line {
+func getTranscriptLines(cues []domain.TranscriptCue) []Line {
 	var out []Line
 	for at, cue := range cues {
 		if cue.Text == "" {

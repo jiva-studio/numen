@@ -8,19 +8,17 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
 // box is one printed line on a page, over a run of the prose.
-func box(page, start, length int) highlight.Box {
-	return highlight.Box{Page: page, ByteSpan: domain.ByteSpan{From: start, To: start + length}}
+func box(page, start, length int) domain.HighlightBox {
+	return domain.HighlightBox{Page: page, ByteSpan: domain.ByteSpan{From: start, To: start + length}}
 }
 
 func TestALineIsKnownByItsPlaceInTheWholeRecognition(t *testing.T) {
 	prose := "one two three four "
-	boxes := []highlight.Box{
+	boxes := []domain.HighlightBox{
 		box(4, 0, 4), box(4, 4, 4),
 		box(5, 8, 6), box(5, 14, 5),
 	}
@@ -55,7 +53,7 @@ func TestALineIsKnownByItsPlaceInTheWholeRecognition(t *testing.T) {
 
 func TestBoxesWrittenForOtherBytesGiveNothing(t *testing.T) {
 	prose := "one two"
-	boxes := []highlight.Box{box(1, 0, 4), box(1, 4, 90)}
+	boxes := []domain.HighlightBox{box(1, 0, 4), box(1, 4, 90)}
 
 	if batches := proofread.GetScanBatches(prose, boxes); batches != nil {
 		t.Errorf("a recognition of other bytes came back as %v", batches)
@@ -67,7 +65,7 @@ func TestBoxesWrittenForOtherBytesGiveNothing(t *testing.T) {
 // written onto the other page's lines.
 func TestBoxesOutOfReadingOrderGiveNothing(t *testing.T) {
 	prose := "one two three "
-	boxes := []highlight.Box{box(1, 0, 4), box(2, 4, 4), box(1, 8, 6)}
+	boxes := []domain.HighlightBox{box(1, 0, 4), box(2, 4, 4), box(1, 8, 6)}
 
 	batches := proofread.GetScanBatches(prose, boxes)
 	if batches != nil {
@@ -84,7 +82,7 @@ func TestBoxesOutOfReadingOrderGiveNothing(t *testing.T) {
 
 func TestABoxWithNoLengthCarriesNoLine(t *testing.T) {
 	prose := "one two "
-	boxes := []highlight.Box{box(1, 0, 4), box(1, 4, 0), box(1, 4, 4)}
+	boxes := []domain.HighlightBox{box(1, 0, 4), box(1, 4, 0), box(1, 4, 4)}
 
 	batches := proofread.GetScanBatches(prose, boxes)
 	if len(batches) != 1 {
@@ -99,12 +97,12 @@ func TestABoxWithNoLengthCarriesNoLine(t *testing.T) {
 }
 
 // cue is one stretch of speech, at the place in the transcript it was heard.
-func cue(at int, text string) transcript.Cue {
-	return transcript.Cue{Text: text, Offset: at}
+func cue(at int, text string) domain.TranscriptCue {
+	return domain.TranscriptCue{Text: text, Offset: at}
 }
 
 func TestSpeechIsCutIntoBatchesOfSize(t *testing.T) {
-	cues := []transcript.Cue{
+	cues := []domain.TranscriptCue{
 		cue(0, "one"), cue(4, "two"), cue(8, "three"),
 		cue(14, "four"), cue(19, "five"),
 	}
@@ -140,8 +138,8 @@ func numbers(batches []proofread.Batch) [][]int {
 }
 
 // makeTranscript is a transcript of count cues, each saying something.
-func makeTranscript(count int) []transcript.Cue {
-	var cues []transcript.Cue
+func makeTranscript(count int) []domain.TranscriptCue {
+	var cues []domain.TranscriptCue
 	for i := 0; i < count; i++ {
 		cues = append(cues, cue(i*4, strconv.Itoa(i)))
 	}
@@ -246,14 +244,14 @@ func TestSpeechOfNoLinesIsNoBatches(t *testing.T) {
 		if batches := proofread.GetSpeechBatches(nil, 3, overlap); batches != nil {
 			t.Errorf("sharing %d gave back %v", overlap, batches)
 		}
-		if batches := proofread.GetSpeechBatches([]transcript.Cue{cue(0, "")}, 3, overlap); batches != nil {
+		if batches := proofread.GetSpeechBatches([]domain.TranscriptCue{cue(0, "")}, 3, overlap); batches != nil {
 			t.Errorf("sharing %d over silence gave back %v", overlap, batches)
 		}
 	}
 }
 
 func TestACueSayingNothingCarriesNoLine(t *testing.T) {
-	batches := proofread.GetSpeechBatches([]transcript.Cue{cue(0, "one"), cue(4, ""), cue(4, "two")}, 8, 0)
+	batches := proofread.GetSpeechBatches([]domain.TranscriptCue{cue(0, "one"), cue(4, ""), cue(4, "two")}, 8, 0)
 	if len(batches) != 1 {
 		t.Fatalf("%d batches, want one", len(batches))
 	}
@@ -266,7 +264,7 @@ func TestACueSayingNothingCarriesNoLine(t *testing.T) {
 }
 
 func TestABatchOfNoLinesHoldsNothing(t *testing.T) {
-	if batches := proofread.GetSpeechBatches([]transcript.Cue{cue(0, "one")}, 0, 0); batches != nil {
+	if batches := proofread.GetSpeechBatches([]domain.TranscriptCue{cue(0, "one")}, 0, 0); batches != nil {
 		t.Errorf("a size of nothing gave back %v", batches)
 	}
 }

@@ -13,7 +13,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -178,7 +177,7 @@ func (s *speaker) GetRecognitionModel() port.RecognitionModel {
 	return port.RecognitionModel{Layout: "layout", Recogniser: "reader", DPI: 300, From: "a test"}
 }
 
-func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]ocr.Block, error) {
+func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]domain.OCRBlock, error) {
 	s.pages++
 	if s.stop != nil {
 		s.stop(s.pages)
@@ -192,14 +191,14 @@ func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]ocr.Block, er
 	// No two pages say the same thing, so a coordinate read at the wrong offset
 	// names the wrong words.
 	said := fmt.Sprintf("%s %d", s.says, s.pages)
-	var out []ocr.Block
+	var out []domain.OCRBlock
 	if s.heads != "" {
-		out = append(out, ocr.Block{Label: "doc_title", Text: fmt.Sprintf("%s %d", s.heads, s.pages), IsHeading: true, Depth: 1})
+		out = append(out, domain.OCRBlock{Label: "doc_title", Text: fmt.Sprintf("%s %d", s.heads, s.pages), IsHeading: true, Depth: 1})
 	}
-	return append(out, ocr.Block{
+	return append(out, domain.OCRBlock{
 		Label: "text",
 		Text:  said,
-		Boxes: []ocr.Box{{Rect: image.Rect(10, 20, 30, 40), Span: domain.ByteSpan{To: len(said)}}},
+		Boxes: []domain.OCRBox{{Rect: image.Rect(10, 20, 30, 40), Span: domain.ByteSpan{To: len(said)}}},
 	}), nil
 }
 

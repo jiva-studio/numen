@@ -127,19 +127,19 @@ func windowOn(t *testing.T, held port.DerivedStore) (*Services, http.Handler) {
 
 // whole is the store holding a finished transcript of the recording, and partly
 // is one a run is still writing.
-func whole(cues []transcript.Cue) stored {
+func whole(cues []domain.TranscriptCue) stored {
 	return stored{domain.NewArtifactName(domain.ArtifactText, asr, hashed): transcript.Marshal(cues)}
 }
 
-func newPartialStore(cues []transcript.Cue, reached int) stored {
+func newPartialStore(cues []domain.TranscriptCue, reached int) stored {
 	return stored{
 		domain.NewArtifactName(domain.ArtifactPartial, asr, hashed): append(transcript.Marshal(cues), transcript.GetReachMarker(reached)...),
 	}
 }
 
 // newCues is what a test writes down of the recording.
-func newCues() []transcript.Cue {
-	return []transcript.Cue{
+func newCues() []domain.TranscriptCue {
+	return []domain.TranscriptCue{
 		{Text: "what was said", From: 1500, To: 4200},
 		{Text: "what was said next", From: 4200, To: 9100},
 	}
@@ -293,7 +293,7 @@ func TestABuildThatServesNoArtifactPlaysTheRecording(t *testing.T) {
 // A question about a run of the words is answered with the speech those bytes
 // were said in, so a search hit is played from where it was said.
 func TestCuesNarrowToARunOfTheWords(t *testing.T) {
-	spoke := []transcript.Cue{
+	spoke := []domain.TranscriptCue{
 		{Text: "first", From: 0, To: 1000},
 		{Text: "second", From: 1000, To: 2000},
 		{Text: "third", From: 2000, To: 3000},

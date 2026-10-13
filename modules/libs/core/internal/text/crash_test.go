@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -21,7 +20,7 @@ func (wild) Read(context.Context, []byte) (domain.TextLayer, error) {
 	panic("page 3 of 2")
 }
 
-func (wild) GetHighlights(context.Context, []byte, []int, []int) ([]highlight.Box, error) {
+func (wild) GetHighlights(context.Context, []byte, []int, []int) ([]domain.HighlightBox, error) {
 	panic("page 3 of 2")
 }
 

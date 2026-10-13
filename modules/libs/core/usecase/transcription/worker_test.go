@@ -476,7 +476,7 @@ func TestTakingUpTranscriptProofreadingDoesNotReadTheSourceFileWhenHashIsKnown(t
 	if err != nil {
 		t.Fatal(err)
 	}
-	raw := transcript.Marshal([]transcript.Cue{
+	raw := transcript.Marshal([]domain.TranscriptCue{
 		{Text: "first thing", From: 0, To: 1000},
 	})
 	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash), raw); err != nil {

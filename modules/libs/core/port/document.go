@@ -7,7 +7,6 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 )
 
 // TextExtractor takes the text out of a file whose text is laid out on printed
@@ -23,7 +22,7 @@ type TextExtractor interface {
 	// GetHighlights is where the words of the pages named sit, as fractions of the
 	// page, one box a word. Starts is where each page begins, as Read answered,
 	// and pages are the ones wanted, by index.
-	GetHighlights(ctx context.Context, raw []byte, starts []int, pages []int) ([]highlight.Box, error)
+	GetHighlights(ctx context.Context, raw []byte, starts []int, pages []int) ([]domain.HighlightBox, error)
 }
 
 // PageRenderer draws the pages of such a document as pictures, for a screen to

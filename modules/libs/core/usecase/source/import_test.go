@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/operation"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -18,7 +17,7 @@ import (
 type site struct {
 	title  string
 	length int
-	cues   []transcript.Cue
+	cues   []domain.TranscriptCue
 	prose  string
 	bytes  []byte
 	asked  []string
@@ -104,7 +103,7 @@ const pointsAtAVideo = aPastedAddress
 // The words published with a video are written down as the format a player
 // opens, under the address they were published at.
 func TestTheWordsPublishedWithAVideo(t *testing.T) {
-	from := &site{title: "Entropy explained", length: 83_500, cues: []transcript.Cue{
+	from := &site{title: "Entropy explained", length: 83_500, cues: []domain.TranscriptCue{
 		{Text: "what was said", From: 1500, To: 4200},
 		{Text: "what was said next", From: 4200, To: 9100},
 	}}
@@ -137,7 +136,7 @@ func TestTheWordsPublishedWithAVideo(t *testing.T) {
 // An address already downloaded is not downloaded again: what a person asked
 // for is what stands until they ask for it afresh.
 func TestAnAddressAlreadyDownloaded(t *testing.T) {
-	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "said", To: 1000}}}
+	from := &site{title: "Entropy explained", cues: []domain.TranscriptCue{{Text: "said", To: 1000}}}
 	u, _, _ := newImportURL(t, aPastedAddress, from)
 
 	if _, err := u.Execute(t.Context(), first, videoNote, false); err != nil {
@@ -214,7 +213,7 @@ func TestANoteThatPointsNowhere(t *testing.T) {
 // A note still called by the address it points at was named by the paste and by
 // nobody. What is there has a name, and the note takes it.
 func TestANoteStillCalledByItsAddressTakesTheTitle(t *testing.T) {
-	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "said", To: 1000}}}
+	from := &site{title: "Entropy explained", cues: []domain.TranscriptCue{{Text: "said", To: 1000}}}
 	u, _, _ := newImportURL(t, aPastedAddress, from)
 	named := []string{}
 	u.Names = func(_ context.Context, _ domain.Vault, path, title string) (string, error) {
@@ -237,7 +236,7 @@ func TestANoteStillCalledByItsAddressTakesTheTitle(t *testing.T) {
 // A file the person named themselves keeps the name they gave it.
 func TestAFilePersonNamedKeepsItsName(t *testing.T) {
 	const theirs = "notes/Entropy.url"
-	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "said", To: 1000}}}
+	from := &site{title: "Entropy explained", cues: []domain.TranscriptCue{{Text: "said", To: 1000}}}
 	u, _, _ := newImportURL(t,
 		"[InternetShortcut]\nURL=https://youtu.be/dQw4w9WgXcQ\n", from)
 	u.Readers.(vaults)[first.ID].hold(theirs, domain.KindURL, []byte(pointsAtAVideo), 1)

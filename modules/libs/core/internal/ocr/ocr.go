@@ -39,26 +39,6 @@ type Line struct {
 	Score float32
 }
 
-// A Box is one box of a region, in what was written from it: the rectangle it
-// covers on the page, and the run of bytes it produced.
-type Box struct {
-	Rect image.Rectangle
-	Span domain.ByteSpan
-}
-
-// A Block is one region of a page, written out.
-type Block struct {
-	Label string
-	Text  string
-	// IsHeading says the region is a heading, and Depth is how far in the part it
-	// opens sits. A document title stands above the section titles within it.
-	IsHeading bool
-	Depth     int
-	// Boxes are where on the page each run of Text was read. A recogniser that
-	// reports no rectangles leaves them empty.
-	Boxes []Box
-}
-
 // A Page is one page of a document, read.
 //
 // It carries no name of its own. What a page is called is where it stands in
@@ -70,7 +50,7 @@ type Page struct {
 	// from. A zero size is a page nothing was measured on.
 	Size image.Point
 	// Blocks are what it says, in the order it is read.
-	Blocks []Block
+	Blocks []domain.OCRBlock
 }
 
 // Distinct drops a region that covers one already kept.
@@ -138,7 +118,7 @@ func isInside(a, b image.Rectangle) bool {
 
 // Assemble writes one region out as running prose, and says where on the page
 // each run of it was read.
-func Assemble(lines []Line) (string, []Box) {
+func Assemble(lines []Line) (string, []domain.OCRBox) {
 	// A line holds at most one box per input line, and a joining space adds at
 	// most one byte per line to the text.
 	size := len(lines)
@@ -146,7 +126,7 @@ func Assemble(lines []Line) (string, []Box) {
 		size += len(one.Text)
 	}
 	out := make([]byte, 0, size)
-	kept := make([]Box, 0, len(lines))
+	kept := make([]domain.OCRBox, 0, len(lines))
 	for line := range group(lines) {
 		text, boxes := writeLine(line)
 		if text == "" {
@@ -249,14 +229,14 @@ func measureVerticalOverlap(line []Line, box Line) float64 {
 // line are two words. The gap itself is not measurable here: a detector widens
 // every box it returns by a fixed number of pixels, and neighbours therefore
 // overlap however far apart the words were.
-func writeLine(line []Line) (string, []Box) {
+func writeLine(line []Line) (string, []domain.OCRBox) {
 	size := len(line)
 	for _, one := range line {
 		size += len(one.Text)
 	}
 	var out strings.Builder
 	out.Grow(size)
-	kept := make([]Box, 0, len(line))
+	kept := make([]domain.OCRBox, 0, len(line))
 	for _, one := range line {
 		// A box the recogniser read as nothing is not a word.
 		text := strings.TrimSpace(one.Text)
@@ -267,7 +247,7 @@ func writeLine(line []Line) (string, []Box) {
 			out.WriteString(" ")
 		}
 		at := out.Len()
-		kept = append(kept, Box{Rect: one.Box, Span: domain.ByteSpan{From: at, To: at + len(text)}})
+		kept = append(kept, domain.OCRBox{Rect: one.Box, Span: domain.ByteSpan{From: at, To: at + len(text)}})
 		out.WriteString(text)
 	}
 	return out.String(), kept

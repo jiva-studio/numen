@@ -7,7 +7,6 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -36,7 +35,7 @@ func (Documents) Read(ctx context.Context, raw []byte) (out domain.TextLayer, er
 }
 
 // GetHighlights is where the words of the pages named sit on them.
-func (Documents) GetHighlights(ctx context.Context, raw []byte, starts []int, pages []int) (boxes []highlight.Box, err error) {
+func (Documents) GetHighlights(ctx context.Context, raw []byte, starts []int, pages []int) (boxes []domain.HighlightBox, err error) {
 	defer recoverPanic("highlighting a page", &boxes, &err)
 	if err := ctx.Err(); err != nil {
 		return nil, err

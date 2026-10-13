@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 )
 
@@ -33,7 +33,7 @@ type walk struct {
 // plan is the corrections a recognition's boxes answer to, in reading order. A
 // number no box answers to is dropped, a line named twice keeps what came last,
 // and a box reaching back into the one before it is left as it was.
-func plan(boxes []highlight.Box, lines []Line) walk {
+func plan(boxes []domain.HighlightBox, lines []Line) walk {
 	named := make([]Line, 0, len(lines))
 	for _, line := range lines {
 		if line.Number < 0 || line.Number >= len(boxes) {
@@ -109,12 +109,12 @@ func (w walk) getGrowthInside(start, length int) int {
 }
 
 // Boxes are where the runs of a recognition sit once its corrections are in it.
-func Boxes(boxes []highlight.Box, lines []Line) []highlight.Box {
+func Boxes(boxes []domain.HighlightBox, lines []Line) []domain.HighlightBox {
 	w := plan(boxes, lines)
 	if len(w.changes) == 0 {
 		return boxes
 	}
-	out := make([]highlight.Box, len(boxes))
+	out := make([]domain.HighlightBox, len(boxes))
 	copy(out, boxes)
 	next := 0
 	for i := range out {
@@ -131,7 +131,7 @@ func Boxes(boxes []highlight.Box, lines []Line) []highlight.Box {
 
 // Prose is a recognition's text with its corrections in it, and the pages and the
 // parts where they now stand.
-func Prose(prose string, marks []ocr.PageStart, boxes []highlight.Box, parts []ocr.Part, lines []Line) (string, []ocr.PageStart, []ocr.Part) {
+func Prose(prose string, marks []ocr.PageStart, boxes []domain.HighlightBox, parts []ocr.Part, lines []Line) (string, []ocr.PageStart, []ocr.Part) {
 	w := plan(boxes, lines)
 	if len(w.changes) == 0 {
 		return prose, marks, parts

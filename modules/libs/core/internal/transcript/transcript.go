@@ -28,6 +28,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // Head is the line every WebVTT file begins with.
@@ -36,21 +38,11 @@ const Head = "WEBVTT"
 // arrow separates the two timings of a cue.
 const arrow = "-->"
 
-// A Cue is one stretch of speech: what was said, when it was said, and where it
-// stands in the words a transcript reads as. At is filled by reading, because
-// only then is there a text for it to be an offset into.
-type Cue struct {
-	Text   string
-	From   int
-	To     int
-	Offset int
-}
-
 // Marshal is the artifact for a run of cues.
 //
 // A cue carrying no words is not written: silence is not something a person
 // scrolls past, and a timing over nothing is a moment the recording never had.
-func Marshal(cues []Cue) []byte {
+func Marshal(cues []domain.TranscriptCue) []byte {
 	size := len(Head) + 1
 	for _, cue := range cues {
 		size += 33 + len(cue.Text)
@@ -80,14 +72,14 @@ func Marshal(cues []Cue) []byte {
 //
 // The words of a cue stand one to a line, which is what a person reading the
 // transcript sees and what a chunk is cut out of.
-func Parse(raw []byte) (string, []Cue) {
+func Parse(raw []byte) (string, []domain.TranscriptCue) {
 	var outBuf []byte
-	var cues []Cue
+	var cues []domain.TranscriptCue
 	var cueLens []int
 
 	if len(raw) > 0 {
 		estCues := len(raw) / 60
-		cues = make([]Cue, 0, estCues)
+		cues = make([]domain.TranscriptCue, 0, estCues)
 		cueLens = make([]int, 0, estCues)
 		outBuf = make([]byte, 0, len(raw)/2)
 	}
@@ -134,7 +126,7 @@ func Parse(raw []byte) (string, []Cue) {
 
 // parseBlock is one block of the file as a cue, and whether it is one. The
 // header, a note and anything a later version of the format adds are not.
-func parseBlock(lines [][]byte, outBuf []byte, cues []Cue, cueLens []int) ([]byte, []Cue, []int) {
+func parseBlock(lines [][]byte, outBuf []byte, cues []domain.TranscriptCue, cueLens []int) ([]byte, []domain.TranscriptCue, []int) {
 	at, from, to, ok := findTiming(lines)
 	if !ok {
 		return outBuf, cues, cueLens
@@ -144,7 +136,7 @@ func parseBlock(lines [][]byte, outBuf []byte, cues []Cue, cueLens []int) ([]byt
 	if !ok {
 		return outBuf, cues, cueLens
 	}
-	cues = append(cues, Cue{From: from, To: to, Offset: offset})
+	cues = append(cues, domain.TranscriptCue{From: from, To: to, Offset: offset})
 	cueLens = append(cueLens, length)
 	return outBuf, cues, cueLens
 }
@@ -358,7 +350,7 @@ func parseUint(b []byte) (int, bool) {
 
 // GetCuesAt is where a run of the words sits: the cues it falls in, in the
 // order they were spoken. A run crossing a silence is in both of them.
-func GetCuesAt(cues []Cue, start, length int) []Cue {
+func GetCuesAt(cues []domain.TranscriptCue, start, length int) []domain.TranscriptCue {
 	if length <= 0 || len(cues) == 0 {
 		return nil
 	}
@@ -370,7 +362,7 @@ func GetCuesAt(cues []Cue, start, length int) []Cue {
 		return cues[i].Offset+len(cues[i].Text) > start
 	})
 
-	var out []Cue
+	var out []domain.TranscriptCue
 	for ; at < len(cues) && cues[at].Offset < end; at++ {
 		out = append(out, cues[at])
 	}
