@@ -6,7 +6,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading/openai"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
 
 // ProofreaderSpec is what the platform is told to start: the command line,
@@ -133,4 +135,16 @@ func (c Config) ProofreadQueue(name, instruction string) (port.ProofreadQueue, e
 		return nil, err
 	}
 	return client, nil
+}
+
+// CreateRecognitionProofread is what puts a document's recognition right, and
+// whether the installation named a proofreader for a scan.
+func (c Config) CreateRecognitionProofread() (recognition.Proofread, bool, error) {
+	return recognition.CreateProofread(c.GetScanProofreading(), c.VaultReaders(), c.GetDerivedStores())
+}
+
+// CreateTranscriptProofread is what puts a transcript right, and whether the
+// installation named a proofreader for speech.
+func (c Config) CreateTranscriptProofread() (transcription.Proofread, bool, error) {
+	return transcription.CreateProofread(c.GetSpeechProofreading(), c.VaultReaders(), c.GetDerivedStores())
 }
