@@ -48,7 +48,7 @@ describe('calculateAggregate', () => {
 
   it('counts failed tasks and treats them as non-idle', () => {
     const tasks: StatusBarTask[] = [
-      { id: '1', label: 'Book 1', group: 'Books', state: 'failed', errorReason: 'Corrupted' },
+      { id: '1', label: 'Book 1', group: 'Books', state: 'failed', error: 'Corrupted' },
     ]
     const aggregate = calculateAggregate(tasks)
     expect(aggregate.isIdle).toBe(false)

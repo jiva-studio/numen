@@ -166,19 +166,5 @@ export { createThreadPath } from './features/plex'
 export { MessageComposer, AgentModelSelector } from './screens/message-composer'
 export type { AgentModelOption } from './screens/message-composer'
 
-export {
-  StatusBar,
-  TaskPopover,
-  TaskGroup,
-  TaskItem,
-  CircularProgress,
-  calculateAggregate,
-  formatEta,
-  groupTasks,
-} from './features/status-bar'
-export type {
-  StatusBarTask,
-  TaskState,
-  TaskGroupData,
-  StatusBarAggregate,
-} from './features/status-bar'
+export { StatusBar } from './features/status-bar'
+export type { StatusBarTask, TaskState } from './features/status-bar'
