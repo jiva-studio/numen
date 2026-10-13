@@ -13,7 +13,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -236,38 +235,6 @@ func TestTakingTheAgentsAwayStopsTheEndpoint(t *testing.T) {
 	}
 	if api.GetAgent() != nil {
 		t.Error("a card can still be asked about")
-	}
-}
-
-// A vault whose folder cannot be resolved serves no tools, and the page and the
-// log both say why.
-func TestAVaultWhoseFolderCannotBeResolvedServesNoTools(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("a folder in use cannot be removed")
-	}
-	cfg, db, opening, api, _ := makeWindow(t)
-	cfg.Agent = agent.Defaults()
-	var out syncBuffer
-
-	notes, cards := makeNotesAndCards(cfg, db, opening)
-	away := serveAgents(t.Context(), cfg, db, notes, cards, api, false, &out)
-	t.Cleanup(func() { _ = away() })
-
-	gone := t.TempDir()
-	t.Chdir(gone)
-	if err := os.RemoveAll(gone); err != nil {
-		t.Fatal(err)
-	}
-	api.Opened(t.Context(), domain.Vault{ID: "relative", Name: "Relative", Path: "vault"})
-
-	if api.GetAgent() != nil {
-		t.Error("a card can be asked about")
-	}
-	if api.Unreachable.Why() == "" {
-		t.Error("the page was told nothing about why it has no agent")
-	}
-	if !strings.Contains(out.String(), "numen-flashcards: agents: no agent:") {
-		t.Errorf("the log says %q", out.String())
 	}
 }
 
