@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 )
 
 // The artifact is plain text with the pages marked in it:
@@ -41,9 +40,9 @@ type PageStart struct {
 // A box and a part are both placed in the prose, which is what Read gives back.
 // The mark and the newline closing it are bookkeeping and are counted in none of
 // them.
-func Write(pages []Page) ([]byte, []highlight.Box, []Part) {
+func Write(pages []Page) ([]byte, []domain.HighlightBox, []Part) {
 	var out strings.Builder
-	var boxes []highlight.Box
+	var boxes []domain.HighlightBox
 	var parts []Part
 	prose := 0
 	for _, page := range pages {
@@ -71,17 +70,17 @@ func Write(pages []Page) ([]byte, []highlight.Box, []Part) {
 // getBoxesWithin is where each box of a block sits: at its offset from base in
 // the prose, and over the fraction of the page its rectangle covers. A page
 // nothing was measured on gives no boxes, having no size to take a fraction of.
-func getBoxesWithin(page Page, block Block, base int) []highlight.Box {
+func getBoxesWithin(page Page, block domain.OCRBlock, base int) []domain.HighlightBox {
 	if page.Size.X <= 0 || page.Size.Y <= 0 {
 		return nil
 	}
 	wide, high := float32(page.Size.X), float32(page.Size.Y)
-	boxes := make([]highlight.Box, 0, len(block.Boxes))
+	boxes := make([]domain.HighlightBox, 0, len(block.Boxes))
 	for _, one := range block.Boxes {
-		boxes = append(boxes, highlight.Box{
+		boxes = append(boxes, domain.HighlightBox{
 			Page:     page.Index,
 			ByteSpan: domain.ByteSpan{From: base + one.Span.From, To: base + one.Span.To},
-			Rect: highlight.Rect{
+			Rect: domain.Rect{
 				MinX: float32(one.Rect.Min.X) / wide,
 				MinY: float32(one.Rect.Min.Y) / high,
 				MaxX: float32(one.Rect.Max.X) / wide,

@@ -18,6 +18,7 @@ import (
 	read "github.com/getcharzp/go-ocr"
 	"github.com/getcharzp/go-ocr/paddle"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -122,7 +123,7 @@ func (r *Recogniser) Close() error {
 //
 // A part the configuration calls a head opens a part of the document, and
 // carries how deep that part sits.
-func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Block, error) {
+func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]domain.OCRBlock, error) {
 	regions, err := r.layout(page)
 	if err != nil {
 		return nil, err
@@ -144,7 +145,7 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Blo
 		return nil, err
 	}
 
-	var out []ocr.Block
+	var out []domain.OCRBlock
 	// What could not be read, and the last of it. A page whose every part was
 	// refused says nothing, and a page that says nothing is a blank page to
 	// everything downstream.
@@ -203,7 +204,7 @@ func (r *Recogniser) getTargets(page image.Image, regions []ocr.Region) []recogn
 
 // makeBlock is what a target says, set in the page's own coordinates, and
 // whether it says anything at all.
-func (r *Recogniser) makeBlock(t recogniseTarget, found []read.RecResult) (ocr.Block, bool) {
+func (r *Recogniser) makeBlock(t recogniseTarget, found []read.RecResult) (domain.OCRBlock, bool) {
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="a leading zero line has no text and Assemble drops it"
 	lines := make([]ocr.Line, 0, len(found))
 	for _, line := range found {
@@ -218,10 +219,10 @@ func (r *Recogniser) makeBlock(t recogniseTarget, found []read.RecResult) (ocr.B
 	}
 	text, boxes := ocr.Assemble(lines)
 	if text == "" {
-		return ocr.Block{}, false
+		return domain.OCRBlock{}, false
 	}
 	depth, head := r.head[t.region.Label]
-	return ocr.Block{
+	return domain.OCRBlock{
 		Label:     t.region.Label,
 		Text:      text,
 		IsHeading: head,

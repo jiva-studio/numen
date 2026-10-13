@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/responses"
 )
@@ -27,7 +26,7 @@ const (
 //
 // A page whose text layer says nothing gives no boxes, and a scan gives none at
 // all.
-func (b *Book) Highlights(raw []byte, pages []int) ([]highlight.Box, error) {
+func (b *Book) Highlights(raw []byte, pages []int) ([]domain.HighlightBox, error) {
 	wanted := getOrderedPages(pages, len(b.Pages))
 	if len(wanted) == 0 {
 		return nil, nil
@@ -39,7 +38,7 @@ func (b *Book) Highlights(raw []byte, pages []int) ([]highlight.Box, error) {
 	}
 	defer doc.close()
 
-	var boxes []highlight.Box
+	var boxes []domain.HighlightBox
 	for _, page := range wanted {
 		boxes = append(boxes, doc.words(page, b.Pages[page].Offset)...)
 	}
@@ -67,7 +66,7 @@ func getOrderedPages(pages []int, most int) []int {
 //
 // A page that cannot be measured, or cannot be read, says nothing about where
 // its words are.
-func (d *document) words(index, offset int) []highlight.Box {
+func (d *document) words(index, offset int) []domain.HighlightBox {
 	page := requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}}
 	sheet, ok := d.getSheet(page)
 	if !ok {
@@ -101,7 +100,7 @@ func (d *document) words(index, offset int) []highlight.Box {
 type wordReading struct {
 	sheet  pageGeometry
 	index  int
-	boxes  []highlight.Box
+	boxes  []domain.HighlightBox
 	word   responses.CharPosition
 	start  int
 	length int
@@ -182,13 +181,13 @@ func (d *document) getSheet(page requests.Page) (pageGeometry, bool) {
 }
 
 // getWordBox is one word of a page, over the fraction of it the word covers.
-func (p pageGeometry) getWordBox(page, start, length int, word responses.CharPosition) highlight.Box {
+func (p pageGeometry) getWordBox(page, start, length int, word responses.CharPosition) domain.HighlightBox {
 	x0, y0 := p.getPagePoint(word.Left, word.Top)
 	x1, y1 := p.getPagePoint(word.Right, word.Bottom)
-	return highlight.Box{
+	return domain.HighlightBox{
 		Page:     page,
 		ByteSpan: domain.ByteSpan{From: start, To: start + length},
-		Rect: highlight.Rect{
+		Rect: domain.Rect{
 			MinX: clampToPage(min(x0, x1)),
 			MinY: clampToPage(min(y0, y1)),
 			MaxX: clampToPage(max(x0, x1)),

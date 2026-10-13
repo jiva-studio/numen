@@ -55,16 +55,16 @@ func newTranscriptProofreading(
 }
 
 // newCues is the words as the cues a model wrote them down as.
-func newCues(words []string) []transcript.Cue {
-	out := make([]transcript.Cue, 0, len(words))
+func newCues(words []string) []domain.TranscriptCue {
+	out := make([]domain.TranscriptCue, 0, len(words))
 	for n, said := range words {
-		out = append(out, transcript.Cue{Text: said, From: getSpan(n).From, To: getSpan(n).To})
+		out = append(out, domain.TranscriptCue{Text: said, From: getSpan(n).From, To: getSpan(n).To})
 	}
 	return out
 }
 
 // readCues is what a transcript on the shelf says, cue by cue.
-func readCues(t *testing.T, shelved *shelf, name domain.ArtifactName) []transcript.Cue {
+func readCues(t *testing.T, shelved *shelf, name domain.ArtifactName) []domain.TranscriptCue {
 	t.Helper()
 	_, cues := transcript.Parse(readShelf(t, shelved, name))
 	return cues

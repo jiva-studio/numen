@@ -13,7 +13,7 @@ const artifactHash = "abc123"
 
 // newArtifactShelf is one vault whose recording is indexed under a hash, with
 // the transcript a model heard kept in the store.
-func newArtifactShelf(t *testing.T, cues ...transcript.Cue) (*store, *shelf) {
+func newArtifactShelf(t *testing.T, cues ...domain.TranscriptCue) (*store, *shelf) {
 	t.Helper()
 	index := newStore()
 	index.sources[first.ID] = map[string]domain.Source{
@@ -30,7 +30,7 @@ func newArtifactShelf(t *testing.T, cues ...transcript.Cue) (*store, *shelf) {
 	return index, kept
 }
 
-func getCueTexts(cues []transcript.Cue) []string {
+func getCueTexts(cues []domain.TranscriptCue) []string {
 	out := make([]string, 0, len(cues))
 	for _, one := range cues {
 		out = append(out, one.Text)
@@ -39,7 +39,7 @@ func getCueTexts(cues []transcript.Cue) []string {
 }
 
 func TestListingArtifactsNamesWhatWasMadeFromAFile(t *testing.T) {
-	index, kept := newArtifactShelf(t, transcript.Cue{Text: "one", From: 0, To: 1000})
+	index, kept := newArtifactShelf(t, domain.TranscriptCue{Text: "one", From: 0, To: 1000})
 
 	held, err := NewGetArtifactList(index, shelves{kept}).Execute(t.Context(), first, recordingPath)
 	if err != nil {
@@ -55,7 +55,7 @@ func TestListingArtifactsNamesWhatWasMadeFromAFile(t *testing.T) {
 }
 
 func TestListingArtifactsOfAFileTheIndexDoesNotHoldIsEmpty(t *testing.T) {
-	index, kept := newArtifactShelf(t, transcript.Cue{Text: "one", From: 0, To: 1000})
+	index, kept := newArtifactShelf(t, domain.TranscriptCue{Text: "one", From: 0, To: 1000})
 
 	held, err := NewGetArtifactList(index, shelves{kept}).Execute(t.Context(), first, "library/other.mp3")
 	if err != nil {
@@ -67,7 +67,7 @@ func TestListingArtifactsOfAFileTheIndexDoesNotHoldIsEmpty(t *testing.T) {
 }
 
 func TestACopyIsListedAndIsNotReadable(t *testing.T) {
-	index, kept := newArtifactShelf(t, transcript.Cue{Text: "one", From: 0, To: 1000})
+	index, kept := newArtifactShelf(t, domain.TranscriptCue{Text: "one", From: 0, To: 1000})
 	if err := kept.WriteArtifact(t.Context(), domain.NewCopyName(artifactHash), []byte("video")); err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func TestACopyIsListedAndIsNotReadable(t *testing.T) {
 }
 
 func TestReadingAnArtifactGivesTheRangeAsItStandsOnDisk(t *testing.T) {
-	index, kept := newArtifactShelf(t, transcript.Cue{Text: "one", From: 0, To: 1000})
+	index, kept := newArtifactShelf(t, domain.TranscriptCue{Text: "one", From: 0, To: 1000})
 	read := NewGetArtifactText(index, shelves{kept})
 
 	whole, err := read.Execute(t.Context(), first, recordingPath, KindTranscript, 0, 0)
@@ -106,7 +106,7 @@ func TestReadingAnArtifactGivesTheRangeAsItStandsOnDisk(t *testing.T) {
 }
 
 func TestReadingAKindNothingWasMadeAsIsRefused(t *testing.T) {
-	index, kept := newArtifactShelf(t, transcript.Cue{Text: "one", From: 0, To: 1000})
+	index, kept := newArtifactShelf(t, domain.TranscriptCue{Text: "one", From: 0, To: 1000})
 
 	_, err := NewGetArtifactText(index, shelves{kept}).Execute(t.Context(), first, recordingPath, KindArticle, 0, 0)
 	if err == nil || !strings.Contains(err.Error(), "nothing of the kind") {
@@ -116,14 +116,14 @@ func TestReadingAKindNothingWasMadeAsIsRefused(t *testing.T) {
 
 func TestACorrectionReplacesTheCuesBeginningInsideItsSpan(t *testing.T) {
 	index, kept := newArtifactShelf(t,
-		transcript.Cue{Text: "a", From: 0, To: 1000},
-		transcript.Cue{Text: "b", From: 1000, To: 2000},
-		transcript.Cue{Text: "c", From: 2000, To: 3000},
+		domain.TranscriptCue{Text: "a", From: 0, To: 1000},
+		domain.TranscriptCue{Text: "b", From: 1000, To: 2000},
+		domain.TranscriptCue{Text: "c", From: 2000, To: 3000},
 	)
 	var changed []string
 	write := NewWriteCorrections(index, shelves{kept}, func(path string) { changed = append(changed, path) })
 
-	words := string(transcript.Marshal([]transcript.Cue{{Text: "B", From: 1000, To: 2000}}))
+	words := string(transcript.Marshal([]domain.TranscriptCue{{Text: "B", From: 1000, To: 2000}}))
 	n, err := write.Execute(t.Context(), first, Correction{Path: recordingPath, Kind: KindTranscript, Words: words})
 	if err != nil {
 		t.Fatal(err)
@@ -149,11 +149,11 @@ func TestACorrectionReplacesTheCuesBeginningInsideItsSpan(t *testing.T) {
 
 func TestACorrectionNamingASpanReplacesEveryCueInIt(t *testing.T) {
 	index, kept := newArtifactShelf(t,
-		transcript.Cue{Text: "a", From: 0, To: 1000},
-		transcript.Cue{Text: "b", From: 1000, To: 2000},
-		transcript.Cue{Text: "c", From: 2000, To: 3000},
+		domain.TranscriptCue{Text: "a", From: 0, To: 1000},
+		domain.TranscriptCue{Text: "b", From: 1000, To: 2000},
+		domain.TranscriptCue{Text: "c", From: 2000, To: 3000},
 	)
-	words := string(transcript.Marshal([]transcript.Cue{{Text: "X", From: 0, To: 1000}}))
+	words := string(transcript.Marshal([]domain.TranscriptCue{{Text: "X", From: 0, To: 1000}}))
 
 	n, err := NewWriteCorrections(index, shelves{kept}, nil).Execute(t.Context(), first, Correction{
 		Path: recordingPath, Kind: KindTranscript, Words: words, Start: 0, Length: 2000,
@@ -167,9 +167,9 @@ func TestACorrectionNamingASpanReplacesEveryCueInIt(t *testing.T) {
 }
 
 func TestACorrectionIsRefusedWhereItCannotBeWritten(t *testing.T) {
-	index, kept := newArtifactShelf(t, transcript.Cue{Text: "a", From: 0, To: 1000})
+	index, kept := newArtifactShelf(t, domain.TranscriptCue{Text: "a", From: 0, To: 1000})
 	write := NewWriteCorrections(index, shelves{kept}, nil)
-	words := string(transcript.Marshal([]transcript.Cue{{Text: "A", From: 0, To: 1000}}))
+	words := string(transcript.Marshal([]domain.TranscriptCue{{Text: "A", From: 0, To: 1000}}))
 
 	if _, err := write.Execute(t.Context(), first, Correction{
 		Path: recordingPath, Kind: KindRecognition, Words: words,

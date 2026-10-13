@@ -80,8 +80,8 @@ func FuzzWriteArtifact(f *testing.F) {
 		pages := []ocr.Page{{
 			Index: 0,
 			Size:  image.Point{X: 100, Y: 200},
-			Blocks: []ocr.Block{
-				{Text: first, Boxes: []ocr.Box{{
+			Blocks: []domain.OCRBlock{
+				{Text: first, Boxes: []domain.OCRBox{{
 					Rect: image.Rect(0, 0, 10, 10),
 					Span: domain.ByteSpan{From: 0, To: len(first)},
 				}}},
@@ -89,7 +89,7 @@ func FuzzWriteArtifact(f *testing.F) {
 			},
 		}, {
 			Index:  1,
-			Blocks: []ocr.Block{{Text: second}},
+			Blocks: []domain.OCRBlock{{Text: second}},
 		}}
 
 		raw, boxes, parts := ocr.Write(pages)

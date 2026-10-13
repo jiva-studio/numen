@@ -2,13 +2,12 @@ package testsupport
 
 import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 )
 
 // Box is one run of prose on a page: where it stands in the text, and the
 // fraction of the page it covers.
-func Box(page, from, to int, over highlight.Rect) highlight.Box {
-	return highlight.Box{
+func Box(page, from, to int, over domain.Rect) domain.HighlightBox {
+	return domain.HighlightBox{
 		Page:     page,
 		ByteSpan: domain.ByteSpan{From: from, To: to},
 		Rect:     over,

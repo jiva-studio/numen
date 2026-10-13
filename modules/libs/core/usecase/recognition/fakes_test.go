@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -397,8 +396,8 @@ func documentOf(raw []byte) document {
 
 // boxes is where the words of the pages named sit, one box a word, printed one
 // line under another. They ascend, which is how a run of the text is found.
-func (d document) boxes(pages []int) []highlight.Box {
-	var out []highlight.Box
+func (d document) boxes(pages []int) []domain.HighlightBox {
+	var out []domain.HighlightBox
 	for _, index := range slices.Sorted(slices.Values(pages)) {
 		if index < 0 || index >= len(d.pages) {
 			continue
@@ -406,10 +405,10 @@ func (d document) boxes(pages []int) []highlight.Box {
 		at := d.Pages[index]
 		for i, word := range d.pages[index] {
 			down := 0.05 + 0.1*float32(i)
-			out = append(out, highlight.Box{
+			out = append(out, domain.HighlightBox{
 				Page:     index,
 				ByteSpan: domain.ByteSpan{From: at, To: at + len(word)},
-				Rect:     highlight.Rect{MinX: 0.1, MinY: down, MaxX: 0.9, MaxY: down + 0.05},
+				Rect:     domain.Rect{MinX: 0.1, MinY: down, MaxX: 0.9, MaxY: down + 0.05},
 			})
 			at += len(word) + 1
 		}
@@ -427,7 +426,7 @@ func (documents) Read(_ context.Context, raw []byte) (domain.TextLayer, error) {
 
 func (documents) GetHighlights(
 	_ context.Context, raw []byte, _ []int, pages []int,
-) ([]highlight.Box, error) {
+) ([]domain.HighlightBox, error) {
 	return documentOf(raw).boxes(pages), nil
 }
 

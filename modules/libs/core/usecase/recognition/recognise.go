@@ -346,7 +346,7 @@ func dropBoxes(ctx context.Context, store port.DerivedStore, name domain.Artifac
 		return err
 	}
 	held := highlight.Unpack(raw)
-	kept := make([]highlight.Box, 0, len(held))
+	kept := make([]domain.HighlightBox, 0, len(held))
 	for _, box := range held {
 		if box.Page < done {
 			kept = append(kept, box)

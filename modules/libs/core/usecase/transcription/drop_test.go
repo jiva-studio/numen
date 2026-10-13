@@ -59,7 +59,7 @@ func TestDroppingATranscriptLeavesTheRecordingAsItWas(t *testing.T) {
 		t.Fatal(err)
 	}
 	// A person put the words right, so the file beside the artifact stands too.
-	right := transcript.Marshal([]transcript.Cue{{Text: "first thing said", From: 0, To: 800}})
+	right := transcript.Marshal([]domain.TranscriptCue{{Text: "first thing said", From: 0, To: 800}})
 	if err := kept.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash), right); err != nil {
 		t.Fatal(err)
 	}

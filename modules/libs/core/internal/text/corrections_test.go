@@ -76,7 +76,7 @@ func (b shelf) ClaimArtifact(context.Context, domain.ArtifactName) (func() error
 
 // writeCorrections is the transcript of the talk as somebody put it right.
 func writeCorrections() []byte {
-	return transcript.Marshal([]transcript.Cue{
+	return transcript.Marshal([]domain.TranscriptCue{
 		{Text: opening, From: 1500, To: 4200},
 		{Text: putRight, From: 5025000, To: 5028000},
 		{Text: closing, From: 5400000, To: 5403500},

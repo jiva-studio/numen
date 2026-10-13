@@ -230,10 +230,10 @@ type transcriptProofreadJob struct {
 	// count of what has been asked about is kept.
 	correctionsName, progressName domain.ArtifactName
 
-	cues []transcript.Cue
+	cues []domain.TranscriptCue
 	// original is the transcript as this run found it, so the batch a line falls
 	// in does not move as sentences are put back together.
-	original []transcript.Cue
+	original []domain.TranscriptCue
 	about    string
 	// mainBatches covers the whole transcript, and batches is mainBatches and,
 	// after it, the batches over the cuts a sentence was answered for past the end
@@ -257,7 +257,7 @@ func (u Proofread) newTranscriptJob(
 	store port.DerivedStore,
 	path string,
 	correctionsName, progressName domain.ArtifactName,
-	cues []transcript.Cue,
+	cues []domain.TranscriptCue,
 	stood putting,
 ) *transcriptProofreadJob {
 	about := proofread.Describe(cues)
@@ -473,7 +473,7 @@ func countUncorrected(asked []proofread.Batch, replies map[int]string, apart flo
 }
 
 // getFirstUnaskedBatch is the first batch holding a line no run has asked about.
-func getFirstUnaskedBatch(batches []proofread.Batch, cues []transcript.Cue, ms int) int {
+func getFirstUnaskedBatch(batches []proofread.Batch, cues []domain.TranscriptCue, ms int) int {
 	from := getFirstUnasked(cues, ms)
 	at := 0
 	for at < len(batches) && last(batches[at]) < from {
@@ -484,7 +484,7 @@ func getFirstUnaskedBatch(batches []proofread.Batch, cues []transcript.Cue, ms i
 
 // getFirstUnasked is the first line no run has asked about. A line ending at
 // the moment a run reached is one that run asked about.
-func getFirstUnasked(cues []transcript.Cue, ms int) int {
+func getFirstUnasked(cues []domain.TranscriptCue, ms int) int {
 	for at, cue := range cues {
 		if cue.To > ms {
 			return at
@@ -508,7 +508,7 @@ func isJoined(merged map[int]bool, said proofread.Line) bool {
 // answered. The first spoken of them are the pass over the whole transcript and
 // the rest the pass over its batchesAcrossCuts, and each batch of a pass reaches further
 // into the transcript than the one before it.
-func getProgress(batches []proofread.Batch, mainBatches, end int, cues []transcript.Cue) putting {
+func getProgress(batches []proofread.Batch, mainBatches, end int, cues []domain.TranscriptCue) putting {
 	var stood putting
 	if done := min(end, mainBatches); done > 0 {
 		stood.At = cues[last(batches[done-1])].To
@@ -527,7 +527,7 @@ func getProgress(batches []proofread.Batch, mainBatches, end int, cues []transcr
 
 // batchesAcrossCuts is a batch over each cut, carrying what the recording holds
 // on both sides of it, so a sentence broken in two is put right whole.
-func (u Proofread) batchesAcrossCuts(cues []transcript.Cue, cuts []int, about string) []proofread.Batch {
+func (u Proofread) batchesAcrossCuts(cues []domain.TranscriptCue, cuts []int, about string) []proofread.Batch {
 	size, overlap := run.GetSize(u.BatchSize, DefaultBatchSize), run.GetSize(u.Overlap, DefaultOverlap)
 	return setContext(proofread.CutIntoBatches(cues, size, overlap, cuts), about)
 }
@@ -567,7 +567,7 @@ func last(batch proofread.Batch) int {
 
 // linesBefore is how many of the cues before one carry a line. A cue saying
 // nothing is no line.
-func linesBefore(cues []transcript.Cue, at int) int {
+func linesBefore(cues []domain.TranscriptCue, at int) int {
 	out := 0
 	for _, cue := range cues[:min(at, len(cues))] {
 		if cue.Text != "" {

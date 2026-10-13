@@ -87,7 +87,7 @@ func (h *transcriptHandler) WriteTranscript(
 }
 
 // newWireCues is a transcript as a caller reads it.
-func newWireCues(cues []transcript.Cue) []*v1.Cue {
+func newWireCues(cues []domain.TranscriptCue) []*v1.Cue {
 	out := make([]*v1.Cue, 0, len(cues))
 	for _, one := range cues {
 		out = append(out, &v1.Cue{Text: one.Text, From: int32(one.From), To: int32(one.To)})
@@ -103,9 +103,9 @@ func newWireCues(cues []transcript.Cue) []*v1.Cue {
 // timings still bound the cue after it.
 //
 // A transcript carrying no words at all is refused.
-func parseCues(cues []*v1.Cue) ([]transcript.Cue, error) {
-	out := make([]transcript.Cue, 0, len(cues))
-	last := transcript.Cue{From: -1, To: -1}
+func parseCues(cues []*v1.Cue) ([]domain.TranscriptCue, error) {
+	out := make([]domain.TranscriptCue, 0, len(cues))
+	last := domain.TranscriptCue{From: -1, To: -1}
 	for at, one := range cues {
 		from, to := int(one.GetFrom()), int(one.GetTo())
 		switch {
@@ -121,7 +121,7 @@ func parseCues(cues []*v1.Cue) ([]transcript.Cue, error) {
 			// edit and one the recording would play.
 			return nil, fmt.Errorf("cue %d: a cue stands on one line", at)
 		}
-		last = transcript.Cue{Text: one.GetText(), From: from, To: to}
+		last = domain.TranscriptCue{Text: one.GetText(), From: from, To: to}
 		if strings.TrimSpace(one.GetText()) == "" {
 			continue
 		}
@@ -138,8 +138,8 @@ func parseCues(cues []*v1.Cue) ([]transcript.Cue, error) {
 // The run is a span of the words, which is how a passage is addressed
 // everywhere else, and what comes back is the speech those bytes were said in.
 // A search hit is played from the first of them.
-func selectSpan(at *v1.Span) func([]transcript.Cue) ([]transcript.Cue, error) {
-	return func(cues []transcript.Cue) ([]transcript.Cue, error) {
+func selectSpan(at *v1.Span) func([]domain.TranscriptCue) ([]domain.TranscriptCue, error) {
+	return func(cues []domain.TranscriptCue) ([]domain.TranscriptCue, error) {
 		span := domain.ByteSpan{From: int(at.GetFrom()), To: int(at.GetTo())}
 		if span.From < 0 {
 			return nil, fmt.Errorf("from: %d is not a place in the words", span.From)

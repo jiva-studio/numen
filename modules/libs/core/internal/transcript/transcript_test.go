@@ -8,13 +8,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 )
 
 // What is written is read back as the same cues, and the words come back
 // without a timing in them.
 func TestWhatIsWrittenIsReadBack(t *testing.T) {
-	written := transcript.Marshal([]transcript.Cue{
+	written := transcript.Marshal([]domain.TranscriptCue{
 		{Text: "первая реплика", From: 1500, To: 4200},
 		{Text: "вторая реплика", From: 4200, To: 9100},
 	})
@@ -40,7 +41,7 @@ func TestWhatIsWrittenIsReadBack(t *testing.T) {
 
 // A cue carrying no words is not a moment the recording had.
 func TestSilenceIsNotWritten(t *testing.T) {
-	written := transcript.Marshal([]transcript.Cue{
+	written := transcript.Marshal([]domain.TranscriptCue{
 		{Text: "  ", From: 0, To: 1000},
 		{Text: "said", From: 1000, To: 2000},
 	})
@@ -52,7 +53,7 @@ func TestSilenceIsNotWritten(t *testing.T) {
 
 // A note says how far a run got, and is not part of what was said.
 func TestANoteIsNotSpeech(t *testing.T) {
-	written := transcript.Marshal([]transcript.Cue{{Text: "said", From: 0, To: 2000}})
+	written := transcript.Marshal([]domain.TranscriptCue{{Text: "said", From: 0, To: 2000}})
 	written = append(written, transcript.GetReachMarker(2000)...)
 
 	said, cues := transcript.Parse(written)
@@ -67,7 +68,7 @@ func TestANoteIsNotSpeech(t *testing.T) {
 // A batch that did not land whole is one no note claims, and the run before it
 // is what the next run takes up.
 func TestABatchNoNoteClaims(t *testing.T) {
-	whole := transcript.Marshal([]transcript.Cue{{Text: "said", From: 0, To: 2000}})
+	whole := transcript.Marshal([]domain.TranscriptCue{{Text: "said", From: 0, To: 2000}})
 	whole = append(whole, transcript.GetReachMarker(2000)...)
 	torn := slices.Concat(whole, []byte("\n00:00:02.000 --> 00:00:0"))
 
@@ -94,7 +95,7 @@ func TestTimingsOtherToolsWrite(t *testing.T) {
 // A run of the words is in the cues it crosses, and in none where it is past
 // them.
 func TestARunIsInTheCuesItCrosses(t *testing.T) {
-	_, cues := transcript.Parse(transcript.Marshal([]transcript.Cue{
+	_, cues := transcript.Parse(transcript.Marshal([]domain.TranscriptCue{
 		{Text: "first", From: 0, To: 1000},
 		{Text: "second", From: 1000, To: 2000},
 		{Text: "third", From: 2000, To: 3000},
@@ -128,7 +129,7 @@ func TestStampIsWhatTheFormatWrites(t *testing.T) {
 // The mark a person's own words carry is a note of its own. The same words
 // spoken in a cue are speech, and a proofreader is not stopped by them.
 func TestTheMarkOfAPersonsWordsIsANoteAndNotSpeech(t *testing.T) {
-	spoken := transcript.Marshal([]transcript.Cue{
+	spoken := transcript.Marshal([]domain.TranscriptCue{
 		{Text: transcript.HandWrittenNote, From: 0, To: 2000},
 		{Text: "and then he said it again", From: 2000, To: 4000},
 	})
@@ -151,11 +152,11 @@ func TestTheMarkOfAPersonsWordsIsANoteAndNotSpeech(t *testing.T) {
 // How far a run got is a note of its own. A cue saying the same words is
 // speech, and nothing is cut away behind it.
 func TestHowFarARunGotIsANoteAndNotSpeech(t *testing.T) {
-	claimed := transcript.Marshal([]transcript.Cue{{Text: "said", From: 0, To: 2000}})
+	claimed := transcript.Marshal([]domain.TranscriptCue{{Text: "said", From: 0, To: 2000}})
 	claimed = append(claimed, transcript.GetReachMarker(2000)...)
 
 	// A batch that did not land whole, speaking the words a note is written in.
-	spoken := transcript.Marshal([]transcript.Cue{{Text: "NOTE heard 9999", From: 2000, To: 4000}})
+	spoken := transcript.Marshal([]domain.TranscriptCue{{Text: "NOTE heard 9999", From: 2000, To: 4000}})
 	whole := slices.Concat(claimed, bytes.TrimPrefix(spoken, []byte(transcript.Head+"\n")))
 
 	ms, end := transcript.ReadReached(whole)
@@ -187,7 +188,7 @@ func TestClockIsAMomentAsAPlayerWritesOne(t *testing.T) {
 // A note stands at the top of its own block, so the same words spoken inside a
 // cue say nothing about how far a run got.
 func TestANoteInsideALineIsNotANote(t *testing.T) {
-	whole := transcript.Marshal([]transcript.Cue{
+	whole := transcript.Marshal([]domain.TranscriptCue{
 		{Text: "he said NOTE heard 999 and sat down", From: 0, To: 2000},
 	})
 	whole = append(whole, transcript.GetReachMarker(2000)...)
@@ -222,10 +223,10 @@ func TestReachedReadsALargeTranscriptAtOnce(t *testing.T) {
 	}
 }
 
-func makeBenchmarkCues(n int) []transcript.Cue {
-	cues := make([]transcript.Cue, n)
+func makeBenchmarkCues(n int) []domain.TranscriptCue {
+	cues := make([]domain.TranscriptCue, n)
 	for i := range n {
-		cues[i] = transcript.Cue{
+		cues[i] = domain.TranscriptCue{
 			Text: "This is a sample cue text spoken during the recording session.",
 			From: i * 3000,
 			To:   (i + 1) * 3000,

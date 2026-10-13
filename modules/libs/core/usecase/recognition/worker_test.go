@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
@@ -23,7 +22,7 @@ func (blank) GetRecognitionModel() port.RecognitionModel {
 	return port.RecognitionModel{Recogniser: "blank"}
 }
 
-func (blank) Recognise(context.Context, image.Image) ([]ocr.Block, error) { return nil, nil }
+func (blank) Recognise(context.Context, image.Image) ([]domain.OCRBlock, error) { return nil, nil }
 
 func (b *blank) Close() error {
 	b.isClosed = true

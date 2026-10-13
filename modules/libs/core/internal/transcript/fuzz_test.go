@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 )
 
@@ -83,11 +84,11 @@ func FuzzMarshal(f *testing.F) {
 		if strings.ContainsRune(first+second, '\r') {
 			return
 		}
-		want := []transcript.Cue{
+		want := []domain.TranscriptCue{
 			{Text: strings.TrimSpace(first), From: times[0], To: times[1]},
 			{Text: strings.TrimSpace(second), From: times[1], To: times[2]},
 		}
-		var written []transcript.Cue
+		var written []domain.TranscriptCue
 		for _, cue := range want {
 			// A cue whose words hold a blank line is two blocks of the format
 			// and comes back as something else. Nothing writes one: a cue is

@@ -293,7 +293,7 @@ func TestASourceStandingOnARecognitionIsEmbeddedFromIt(t *testing.T) {
 
 	raw := bookOf(t, "Scanned", words(sanskrit, 400))
 	shelf.hold(bookPath, domain.KindBook, raw, 1)
-	read, _, _ := ocr.Write([]ocr.Page{{Index: 0, Blocks: []ocr.Block{{Label: "text", Text: words(sanskrit, 400)}}}})
+	read, _, _ := ocr.Write([]ocr.Page{{Index: 0, Blocks: []domain.OCRBlock{{Label: "text", Text: words(sanskrit, 400)}}}})
 	if err := made.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, "ocr", text.Fingerprint(raw)), read); err != nil {
 		t.Fatal(err)
 	}

@@ -38,7 +38,7 @@ type Highlight struct {
 // pages it was read from.
 type Run struct {
 	Text  string
-	Boxes []highlight.Box
+	Boxes []domain.HighlightBox
 }
 
 // NewHighlight is what a run of text says and where it stands on the pages it
@@ -95,7 +95,7 @@ func (u Highlight) Execute(
 	// A recognition is of the bytes the index last saw, and its text and
 	// coordinates describe those. A file rewritten since is read from its own
 	// layer, which is the words that are there now.
-	var boxes []highlight.Box
+	var boxes []domain.HighlightBox
 	if sourceText.Producer != "" && ref.IsUnchanged(sourceText.Fingerprint) {
 		boxes, err = u.read(ctx, store, sourceText)
 	} else {
@@ -136,7 +136,7 @@ func (u Highlight) prose(
 // getRuns is what each run says and where it sits, in the order the runs were
 // asked about. A run standing nowhere is lit nowhere and keeps its place in the
 // answer.
-func getRuns(prose string, boxes []highlight.Box, runs []domain.ByteSpan) []Run {
+func getRuns(prose string, boxes []domain.HighlightBox, runs []domain.ByteSpan) []Run {
 	out := make([]Run, 0, len(runs))
 	for _, one := range runs {
 		start, length := getRuneBounds(prose, one.From, one.Len())
@@ -155,7 +155,7 @@ func (u Highlight) read(
 	ctx context.Context,
 	store port.DerivedStore,
 	sourceText port.SourceText,
-) ([]highlight.Box, error) {
+) ([]domain.HighlightBox, error) {
 	if store == nil {
 		return nil, nil
 	}
@@ -189,7 +189,7 @@ func (u Highlight) layer(
 	reader port.VaultReader,
 	ref domain.Fingerprint,
 	runs []domain.ByteSpan,
-) ([]highlight.Box, error) {
+) ([]domain.HighlightBox, error) {
 	if name, ok := text.ReaderName(ref); !ok || name != text.ReaderPDF {
 		// A book made for a screen is set afresh wherever it is shown, and
 		// carries no rectangles.

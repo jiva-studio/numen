@@ -5,15 +5,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
 // makeCues is a transcript of the words, one cue to each of them.
-func makeCues(said ...string) []transcript.Cue {
-	out := make([]transcript.Cue, 0, len(said))
+func makeCues(said ...string) []domain.TranscriptCue {
+	out := make([]domain.TranscriptCue, 0, len(said))
 	for at, text := range said {
-		out = append(out, transcript.Cue{Text: text, From: at * 1000, To: at*1000 + 800})
+		out = append(out, domain.TranscriptCue{Text: text, From: at * 1000, To: at*1000 + 800})
 	}
 	return out
 }

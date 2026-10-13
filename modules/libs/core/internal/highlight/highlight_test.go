@@ -10,11 +10,11 @@ import (
 
 // word is one run of prose on a page, at an offset, with a rectangle nobody
 // looks at closely.
-func word(page, start, length int) highlight.Box {
-	return highlight.Box{
+func word(page, start, length int) domain.HighlightBox {
+	return domain.HighlightBox{
 		Page:     page,
 		ByteSpan: domain.ByteSpan{From: start, To: start + length},
-		Rect:     highlight.Rect{MinX: 0.1, MinY: float32(start) / 1000, MaxX: 0.9, MaxY: 0.2},
+		Rect:     domain.Rect{MinX: 0.1, MinY: float32(start) / 1000, MaxX: 0.9, MaxY: 0.2},
 	}
 }
 
@@ -24,8 +24,8 @@ func run(start, length int) domain.ByteSpan {
 }
 
 // read is a document read into words, each five bytes with a space after.
-func read(pages, each int) []highlight.Box {
-	var out []highlight.Box
+func read(pages, each int) []domain.HighlightBox {
+	var out []domain.HighlightBox
 	at := 0
 	for page := 0; page < pages; page++ {
 		for i := 0; i < each; i++ {

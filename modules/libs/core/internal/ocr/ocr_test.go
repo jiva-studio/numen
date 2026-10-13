@@ -102,8 +102,8 @@ func TestRegionsComeBackInReadingOrder(t *testing.T) {
 
 func TestAnArtifactSaysWhatEachPageSays(t *testing.T) {
 	pages := []ocr.Page{
-		{Blocks: []ocr.Block{{Label: "text", Text: "Preface."}}},
-		{Blocks: []ocr.Block{
+		{Blocks: []domain.OCRBlock{{Label: "text", Text: "Preface."}}},
+		{Blocks: []domain.OCRBlock{
 			{Label: "paragraph_title", Text: "THE FIRST PART"},
 			{Label: "text", Text: "The body begins."},
 		}},
@@ -143,9 +143,9 @@ func TestAnArtifactWithNoMarksIsAllProse(t *testing.T) {
 
 func TestAPageWithNothingOnItIsStillAPage(t *testing.T) {
 	raw, _, _ := ocr.Write([]ocr.Page{
-		{Blocks: []ocr.Block{{Label: "text", Text: "Something."}}},
+		{Blocks: []domain.OCRBlock{{Label: "text", Text: "Something."}}},
 		{},
-		{Blocks: []ocr.Block{{Label: "text", Text: "Something else."}}},
+		{Blocks: []domain.OCRBlock{{Label: "text", Text: "Something else."}}},
 	})
 
 	_, marks := ocr.Read(raw)
@@ -156,9 +156,9 @@ func TestAPageWithNothingOnItIsStillAPage(t *testing.T) {
 
 func TestWritingAndReadingAgreeAboutEveryOffset(t *testing.T) {
 	pages := []ocr.Page{
-		{Blocks: []ocr.Block{{Label: "text", Text: "Alpha."}}},
-		{Blocks: []ocr.Block{{Label: "text", Text: "Beta."}, {Label: "text", Text: "Gamma."}}},
-		{Blocks: []ocr.Block{{Label: "text", Text: "Delta."}}},
+		{Blocks: []domain.OCRBlock{{Label: "text", Text: "Alpha."}}},
+		{Blocks: []domain.OCRBlock{{Label: "text", Text: "Beta."}, {Label: "text", Text: "Gamma."}}},
+		{Blocks: []domain.OCRBlock{{Label: "text", Text: "Delta."}}},
 	}
 	raw, _, _ := ocr.Write(pages)
 	text, marks := ocr.Read(raw)
@@ -199,10 +199,10 @@ func TestALineWrittenForTheWriterIsNotProse(t *testing.T) {
 	// A run stopped part way writes down how far it got. That line is not what
 	// the page says, and an offset into the prose must not count it.
 	first, _, _ := ocr.Write([]ocr.Page{
-		{Blocks: []ocr.Block{{Label: "text", Text: "Alpha."}}},
+		{Blocks: []domain.OCRBlock{{Label: "text", Text: "Alpha."}}},
 	})
 	second, _, _ := ocr.Write([]ocr.Page{
-		{Blocks: []ocr.Block{{Label: "text", Text: "Beta."}}},
+		{Blocks: []domain.OCRBlock{{Label: "text", Text: "Beta."}}},
 	})
 	raw := append([]byte("\x00pages 2\n"), first...)
 	raw = append(raw, []byte("\x00pages 4\n")...)
@@ -232,7 +232,7 @@ func TestEveryBoxSaysWhereItsWordsAreInTheProse(t *testing.T) {
 		line(0, 0, 70, 20, "Epsilon"),
 		line(80, 0, 120, 20, "zeta"),
 	})
-	opening := []ocr.Block{
+	opening := []domain.OCRBlock{
 		{Label: "text", Text: first, Boxes: firstBoxes},
 		// A region read by something that reports no rectangles. It says
 		// what it says and the prose after it moves along by that much.
@@ -240,7 +240,7 @@ func TestEveryBoxSaysWhereItsWordsAreInTheProse(t *testing.T) {
 	}
 	pages := []ocr.Page{
 		{Index: 0, Size: image.Pt(600, 800), Blocks: opening},
-		{Index: 1, Size: image.Pt(600, 800), Blocks: []ocr.Block{
+		{Index: 1, Size: image.Pt(600, 800), Blocks: []domain.OCRBlock{
 			{Label: "text", Text: last, Boxes: lastBoxes},
 		}},
 	}
@@ -300,10 +300,10 @@ func TestAJoinedWordLeavesTheHyphenBoxOneByteShorter(t *testing.T) {
 func TestAPageNothingWasMeasuredOnHasNoBoxes(t *testing.T) {
 	// A page with no size gives no fraction of itself to divide a rectangle by.
 	raw, boxes, _ := ocr.Write([]ocr.Page{
-		{Index: 0, Blocks: []ocr.Block{{
+		{Index: 0, Blocks: []domain.OCRBlock{{
 			Label: "text",
 			Text:  "Alpha beta",
-			Boxes: []ocr.Box{{Rect: image.Rect(0, 0, 50, 20), Span: domain.ByteSpan{From: 0, To: 5}}},
+			Boxes: []domain.OCRBox{{Rect: image.Rect(0, 0, 50, 20), Span: domain.ByteSpan{From: 0, To: 5}}},
 		}}},
 	})
 
@@ -346,12 +346,12 @@ func TestAJoinedWordLeavesTheHyphenBoxShorterByTheHyphen(t *testing.T) {
 // heading badly still says where its part starts.
 func TestAHeadingSaysWhereAPartOfTheDocumentBegins(t *testing.T) {
 	raw, _, parts := ocr.Write([]ocr.Page{
-		{Index: 0, Blocks: []ocr.Block{
+		{Index: 0, Blocks: []domain.OCRBlock{
 			{Label: "doc_title", Text: "IAYADEVA GOSVAMI", IsHeading: true, Depth: 0},
 			{Label: "text", Text: "He was born in Kenduli."},
 			{Label: "paragraph_title", Text: "His Youth", IsHeading: true, Depth: 1},
 		}},
-		{Index: 1, Blocks: []ocr.Block{
+		{Index: 1, Blocks: []domain.OCRBlock{
 			{Label: "text", Text: "The village stands there still."},
 			{Label: "paragraph_title", Text: "The Journey", IsHeading: true, Depth: 1},
 		}},
@@ -449,9 +449,9 @@ var oldHyphen = regexp.MustCompile(`(\pL)[-‐‑\x{00ad}]$`)
 
 // assembleByRegexp joins one-box lines that are already in reading order, by
 // matching the whole text written so far.
-func assembleByRegexp(lines []ocr.Line) (string, []ocr.Box) {
+func assembleByRegexp(lines []ocr.Line) (string, []domain.OCRBox) {
 	var out strings.Builder
-	var kept []ocr.Box
+	var kept []domain.OCRBox
 	for _, l := range lines {
 		text := strings.TrimSpace(l.Text)
 		if text == "" {
@@ -468,7 +468,7 @@ func assembleByRegexp(lines []ocr.Line) (string, []ocr.Box) {
 			out.WriteString(" ")
 		}
 		at := out.Len()
-		kept = append(kept, ocr.Box{Rect: l.Box, Span: domain.ByteSpan{From: at, To: at + len(text)}})
+		kept = append(kept, domain.OCRBox{Rect: l.Box, Span: domain.ByteSpan{From: at, To: at + len(text)}})
 		out.WriteString(text)
 	}
 	return out.String(), kept

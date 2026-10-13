@@ -53,7 +53,7 @@ func (h *ocrHandler) ReadOcr(
 }
 
 // newBoxes is where a run of the text was read, as a caller reads it.
-func newBoxes(boxes []highlight.Box) []*v1.Box {
+func newBoxes(boxes []domain.HighlightBox) []*v1.Box {
 	out := make([]*v1.Box, 0, len(boxes))
 	for _, one := range boxes {
 		out = append(out, &v1.Box{

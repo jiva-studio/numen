@@ -6,7 +6,6 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 )
 
 // ErrNothingDownloaded is an address that answered, and carries nothing of what
@@ -101,7 +100,7 @@ type Text struct {
 	// kept beyond the run that made it is claimed again by what made it.
 	Producer string
 
-	Cues  []transcript.Cue
+	Cues  []domain.TranscriptCue
 	Prose string
 
 	// Title is what it calls itself, and Length how long it runs in

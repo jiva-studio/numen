@@ -4,8 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
@@ -97,7 +96,7 @@ func TestARunWrittenBackwardsRefusesTheBatch(t *testing.T) {
 // The printed lines of a page stay where they were printed, so a reply putting
 // two of them together is no answer to what was asked.
 func TestARunRefusesABatchThatDoesNotPutLinesTogether(t *testing.T) {
-	page := proofread.GetScanBatches("one two three ", []highlight.Box{
+	page := proofread.GetScanBatches("one two three ", []domain.HighlightBox{
 		box(4, 0, 4), box(4, 4, 4), box(4, 8, 6),
 	})[0]
 	if page.IsJoinable {
@@ -119,7 +118,7 @@ func TestARunRefusesABatchThatDoesNotPutLinesTogether(t *testing.T) {
 // Speech runs on past the line it was cut into, so a batch of it puts lines
 // together.
 func TestABatchOfSpeechPutsLinesTogether(t *testing.T) {
-	batches := proofread.GetSpeechBatches([]transcript.Cue{
+	batches := proofread.GetSpeechBatches([]domain.TranscriptCue{
 		{Text: "Krishna is Raj. Krishna is", From: 0, To: 800},
 		{Text: "connected with Raj Dila.", From: 1000, To: 1800},
 	}, 2, 0)
