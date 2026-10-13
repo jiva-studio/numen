@@ -3,6 +3,7 @@
  * Native Plex-style thought creation box and autocomplete dropdown.
  */
 import { computed, nextTick, onMounted, onScopeDispose, ref, useTemplateRef, watch } from 'vue'
+import { useOutsidePress } from '@numen/ui'
 import type { PlexRelation } from '@numen/ui'
 import { SEARCH_DEBOUNCE_MS } from '@/features/command-palette'
 import { createAnswerGuard, type Question } from '@/shared/questions'
@@ -61,12 +62,9 @@ onMounted(() => {
   void nextTick(() => {
     input.value?.focus()
   })
-  window.addEventListener('pointerdown', onWindowPointerDown)
 })
 
-onScopeDispose(() => {
-  window.removeEventListener('pointerdown', onWindowPointerDown)
-})
+useOutsidePress(popover, () => emit('dismiss'))
 
 const asks = createAnswerGuard()
 let debounceTimer: ReturnType<typeof setTimeout> | undefined
@@ -102,12 +100,6 @@ async function runSearch(mine: Question, trimmed: string) {
 }
 
 /* -------------------------------- Handlers -------------------------------- */
-function onWindowPointerDown(event: PointerEvent) {
-  if (!popover.value?.contains(event.target as Node)) {
-    emit('dismiss')
-  }
-}
-
 function onKeyDown(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     event.stopPropagation()

@@ -10,7 +10,7 @@ import './shared/tokens/window.css'
 export { Plex } from './features/plex'
 export { getRelationName } from './features/plex'
 
-export { Menu, groupItems } from './shared/ui/menu'
+export { Menu, groupItems, useOutsidePress } from './shared/ui/menu'
 export type { MenuItem, MenuTrigger } from './shared/ui/menu'
 
 export { Button } from './shared/ui/button'

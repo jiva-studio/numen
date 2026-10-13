@@ -4,7 +4,7 @@
  * landing outside it and the Escape key both put it away.
  */
 import { onBeforeUnmount, useTemplateRef, watch } from 'vue'
-import { BookContents, type ContentsEntry } from '@numen/ui'
+import { BookContents, useOutsidePress, type ContentsEntry } from '@numen/ui'
 import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -28,13 +28,15 @@ watch(
   () => props.isOpen,
   (isOpen) => {
     if (!isOpen) return cleanupWindowListeners()
-    window.addEventListener('pointerdown', onOutsidePointerDown, true)
     window.addEventListener('keydown', onWindowKey, true)
-    detach = () => {
-      window.removeEventListener('pointerdown', onOutsidePointerDown, true)
-      window.removeEventListener('keydown', onWindowKey, true)
-    }
+    detach = () => window.removeEventListener('keydown', onWindowKey, true)
   },
+)
+
+useOutsidePress(
+  panel,
+  () => emit('dismiss'),
+  () => props.isOpen,
 )
 
 onBeforeUnmount(cleanupWindowListeners)
@@ -42,13 +44,6 @@ onBeforeUnmount(cleanupWindowListeners)
 /* -------------------------------- Handlers -------------------------------- */
 function onSelectEntry(offset: number) {
   emit('go', offset)
-}
-
-function onOutsidePointerDown(event: Event) {
-  const target = event.target
-  if (!(target instanceof Node)) return
-  if (panel.value?.contains(target)) return
-  emit('dismiss')
 }
 
 function onWindowKey(event: KeyboardEvent) {
