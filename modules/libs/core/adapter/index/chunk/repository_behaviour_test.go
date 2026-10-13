@@ -49,7 +49,7 @@ func TestTheStatementsAreTheOnesTheRepositoryRuns(t *testing.T) {
 
 func TestASavedSourceHoldsWhatItWasGiven(t *testing.T) {
 	s := newStore(t)
-	err := s.db.Chunks().SaveSource(t.Context(), vaultA, chunk.Source{
+	err := s.db.Chunks().SaveSource(t.Context(), repoVaultA, chunk.Source{
 		Path: "books/a.epub", Kind: "book", Size: 77, MTime: 1234, Hash: "h1", Recipe: "r1", Producer: "ocr",
 	})
 	if err != nil {
@@ -67,7 +67,7 @@ func TestASavedSourceHoldsWhatItWasGiven(t *testing.T) {
 		hash != "h1" || recipe != "r1" || producer != "ocr" {
 		t.Errorf("the row holds %q %q %d %d %q %q %q", path, kind, size, mtime, hash, recipe, producer)
 	}
-	if got := s.paths(vaultB); len(got) != 0 {
+	if got := s.paths(repoVaultB); len(got) != 0 {
 		t.Errorf("the other vault holds %v", got)
 	}
 }
@@ -76,12 +76,12 @@ func TestASourceSavedAgainKeepsItsRowAndTakesTheNewValues(t *testing.T) {
 	s := newStore(t)
 	repo := s.db.Chunks()
 	first := chunk.Source{Path: "a.epub", Kind: "book", Size: 1, MTime: 10, Hash: "h1", Recipe: "r1", Producer: "p1"}
-	if err := repo.SaveSource(t.Context(), vaultA, first); err != nil {
+	if err := repo.SaveSource(t.Context(), repoVaultA, first); err != nil {
 		t.Fatal(err)
 	}
 	id := s.ints(`SELECT id FROM sources`)
 
-	if err := repo.SaveSource(t.Context(), vaultA, chunk.Source{Path: "a.epub", Kind: "book", Size: 2, MTime: 20}); err != nil {
+	if err := repo.SaveSource(t.Context(), repoVaultA, chunk.Source{Path: "a.epub", Kind: "book", Size: 2, MTime: 20}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -132,11 +132,11 @@ func TestAnIndexThatCannotNameTheVaultSaysWhyOnEveryWrite(t *testing.T) {
 	src := chunk.Source{Path: "a.epub", Kind: "book", Size: 1, MTime: 1}
 
 	for name, run := range map[string]func() error{
-		"SaveSource":     func() error { return repo.SaveSource(t.Context(), vaultA, src) },
-		"SaveExtraction": func() error { return repo.SaveExtraction(t.Context(), vaultA, src, nil) },
-		"ReplaceChunks":  func() error { return repo.ReplaceChunks(t.Context(), vaultA, "book", "a.epub", nil) },
-		"RemoveSources":  func() error { return repo.RemoveSources(t.Context(), vaultA, "book", []string{"a.epub"}) },
-		"MoveSources":    func() error { return repo.MoveSources(t.Context(), vaultA, "a", "b") },
+		"SaveSource":     func() error { return repo.SaveSource(t.Context(), repoVaultA, src) },
+		"SaveExtraction": func() error { return repo.SaveExtraction(t.Context(), repoVaultA, src, nil) },
+		"ReplaceChunks":  func() error { return repo.ReplaceChunks(t.Context(), repoVaultA, "book", "a.epub", nil) },
+		"RemoveSources":  func() error { return repo.RemoveSources(t.Context(), repoVaultA, "book", []string{"a.epub"}) },
+		"MoveSources":    func() error { return repo.MoveSources(t.Context(), repoVaultA, "a", "b") },
 	} {
 		t.Run(name, func(t *testing.T) {
 			err := run()
@@ -152,17 +152,17 @@ func TestAWriteWhoseContextIsGoneSaysItCouldNotBegin(t *testing.T) {
 	s := newStore(t)
 	repo := s.db.Chunks()
 	src := chunk.Source{Path: "a.epub", Kind: "book", Size: 1, MTime: 1}
-	s.cut(vaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "x"}})
-	row := s.rowsOf(vaultA, "a.epub")[0]
+	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "x"}})
+	row := s.rowsOf(repoVaultA, "a.epub")[0]
 	vector := s.vectorFor(row, "m", 1)
 
 	for name, run := range map[string]func() error{
-		"SaveSource":     func() error { return repo.SaveSource(canceled(t), vaultA, src) },
-		"SaveExtraction": func() error { return repo.SaveExtraction(canceled(t), vaultA, src, nil) },
-		"ReplaceChunks":  func() error { return repo.ReplaceChunks(canceled(t), vaultA, "book", "a.epub", nil) },
+		"SaveSource":     func() error { return repo.SaveSource(canceled(t), repoVaultA, src) },
+		"SaveExtraction": func() error { return repo.SaveExtraction(canceled(t), repoVaultA, src, nil) },
+		"ReplaceChunks":  func() error { return repo.ReplaceChunks(canceled(t), repoVaultA, "book", "a.epub", nil) },
 		"SaveVectors":    func() error { return repo.SaveVectors(canceled(t), []chunk.Vector{vector}) },
-		"RemoveSources":  func() error { return repo.RemoveSources(canceled(t), vaultA, "book", []string{"a.epub"}) },
-		"MoveSources":    func() error { return repo.MoveSources(canceled(t), vaultA, "a", "b") },
+		"RemoveSources":  func() error { return repo.RemoveSources(canceled(t), repoVaultA, "book", []string{"a.epub"}) },
+		"MoveSources":    func() error { return repo.MoveSources(canceled(t), repoVaultA, "a", "b") },
 	} {
 		t.Run(name, func(t *testing.T) {
 			err := run()
@@ -177,7 +177,7 @@ func TestAWriteWhoseContextIsGoneSaysItCouldNotBegin(t *testing.T) {
 			}
 		})
 	}
-	if got := s.rowsOf(vaultA, "a.epub"); len(got) != 1 {
+	if got := s.rowsOf(repoVaultA, "a.epub"); len(got) != 1 {
 		t.Errorf("the source's chunks are %v", got)
 	}
 }
@@ -189,7 +189,7 @@ func TestAnExtractionIsASourceAndItsChunksTogether(t *testing.T) {
 	}}}
 	src := chunk.Source{Path: "a.epub", Kind: "book", Size: 5, MTime: 9, Hash: "h", Recipe: "r", Producer: "p"}
 
-	if err := s.db.Chunks().SaveExtraction(t.Context(), vaultA, src, chunks); err != nil {
+	if err := s.db.Chunks().SaveExtraction(t.Context(), repoVaultA, src, chunks); err != nil {
 		t.Fatal(err)
 	}
 
@@ -197,7 +197,7 @@ func TestAnExtractionIsASourceAndItsChunksTogether(t *testing.T) {
 		AND hash = 'h' AND recipe = 'r' AND producer = 'p'`); n != 1 {
 		t.Error("the source was not recorded as given")
 	}
-	if got := s.rowsOf(vaultA, "a.epub"); len(got) != 3 {
+	if got := s.rowsOf(repoVaultA, "a.epub"); len(got) != 3 {
 		t.Errorf("the extraction holds %d chunks, want 3", len(got))
 	}
 }
@@ -206,28 +206,28 @@ func TestAnExtractionThatFailsLeavesNeitherTheSourceNorTheChunks(t *testing.T) {
 	s := newStore(t)
 	s.exec(`CREATE TRIGGER refuse BEFORE INSERT ON chunks BEGIN SELECT RAISE(ABORT, 'boom'); END`)
 
-	err := s.db.Chunks().SaveExtraction(t.Context(), vaultA,
+	err := s.db.Chunks().SaveExtraction(t.Context(), repoVaultA,
 		chunk.Source{Path: "a.epub", Kind: "book", Size: 5, MTime: 9}, []chunk.Chunk{{Start: 0, Length: 1, Text: "x"}})
 
 	wantSQLiteError(t, err, "boom")
-	if got := s.paths(vaultA); len(got) != 0 {
+	if got := s.paths(repoVaultA); len(got) != 0 {
 		t.Errorf("the source %v was kept", got)
 	}
 }
 
 func TestChunksReplacedForASourceTheIndexDoesNotHoldSayWhich(t *testing.T) {
 	s := newStore(t)
-	s.cut(vaultA, "book", "a.epub", nil)
+	s.cut(repoVaultA, "book", "a.epub", nil)
 
-	err := s.db.Chunks().ReplaceChunks(t.Context(), vaultA, "note", "a.epub", nil)
+	err := s.db.Chunks().ReplaceChunks(t.Context(), repoVaultA, "note", "a.epub", nil)
 	if err == nil || err.Error() != "a.epub is not a note the index holds" {
 		t.Errorf("a source of another kind: %v", err)
 	}
-	err = s.db.Chunks().ReplaceChunks(t.Context(), vaultB, "book", "a.epub", nil)
+	err = s.db.Chunks().ReplaceChunks(t.Context(), repoVaultB, "book", "a.epub", nil)
 	if err == nil || err.Error() != "a.epub is not a book the index holds" {
 		t.Errorf("a source of another vault: %v", err)
 	}
-	err = s.db.Chunks().ReplaceChunks(t.Context(), vaultA, "book", "b.epub", nil)
+	err = s.db.Chunks().ReplaceChunks(t.Context(), repoVaultA, "book", "b.epub", nil)
 	if err == nil || err.Error() != "b.epub is not a book the index holds" {
 		t.Errorf("a source that is not there: %v", err)
 	}
@@ -235,14 +235,14 @@ func TestChunksReplacedForASourceTheIndexDoesNotHoldSayWhich(t *testing.T) {
 
 func TestTheCutOfASourceHoldsALargeChunkAndTheSmallOnesInsideIt(t *testing.T) {
 	s := newStore(t)
-	s.cut(vaultA, "book", "a.epub", []chunk.Chunk{
+	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{
 		{Start: 0, Length: 20, Location: "chapter 1", Text: "whole one", Small: []chunk.Chunk{
 			{Start: 0, Length: 10, Text: "alpha"}, {Start: 10, Length: 10, Location: "p 2", Text: "beta"},
 		}},
 		{Start: 20, Length: 5, Text: "lone"},
 	})
 
-	rows := s.rowsOf(vaultA, "a.epub")
+	rows := s.rowsOf(repoVaultA, "a.epub")
 	if len(rows) != 4 {
 		t.Fatalf("the cut holds %d chunks, want 4", len(rows))
 	}
@@ -278,19 +278,19 @@ func TestTheCutOfASourceHoldsALargeChunkAndTheSmallOnesInsideIt(t *testing.T) {
 func TestACutAgainKeepsTheRowOfEveryChunkWhoseTextSurvivesAndDropsTheRest(t *testing.T) {
 	s := newStore(t)
 	repo := s.db.Chunks()
-	s.cut(vaultA, "book", "a.epub", []chunk.Chunk{{
+	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{{
 		Start: 0, Length: 20, Text: "whole one", Small: []chunk.Chunk{
 			{Start: 0, Length: 10, Text: "alpha"}, {Start: 10, Length: 10, Text: "beta"},
 		},
 	}})
-	before := s.rowsOf(vaultA, "a.epub")
+	before := s.rowsOf(repoVaultA, "a.epub")
 	oldLarge, alpha, beta := before[0], before[1], before[2]
 	if err := repo.SaveVectors(t.Context(), []chunk.Vector{s.vectorFor(alpha, "m", 1), s.vectorFor(beta, "m", 2)}); err != nil {
 		t.Fatal(err)
 	}
 	betaHash := s.strings(`SELECT hash FROM chunks WHERE id = ?`, beta)[0]
 
-	if err := repo.ReplaceChunks(t.Context(), vaultA, "book", "a.epub", []chunk.Chunk{{
+	if err := repo.ReplaceChunks(t.Context(), repoVaultA, "book", "a.epub", []chunk.Chunk{{
 		Start: 0, Length: 30, Location: "moved", Text: "whole two", Small: []chunk.Chunk{
 			{Start: 5, Length: 7, Location: "new place", Text: "alpha"}, {Start: 12, Length: 8, Text: "gamma"},
 		},
@@ -298,7 +298,7 @@ func TestACutAgainKeepsTheRowOfEveryChunkWhoseTextSurvivesAndDropsTheRest(t *tes
 		t.Fatal(err)
 	}
 
-	after := s.rowsOf(vaultA, "a.epub")
+	after := s.rowsOf(repoVaultA, "a.epub")
 	if len(after) != 3 {
 		t.Fatalf("the source holds %v", after)
 	}
@@ -343,14 +343,14 @@ func TestACutAgainKeepsTheRowOfEveryChunkWhoseTextSurvivesAndDropsTheRest(t *tes
 func TestAVectorForTextAnotherChunkStillHoldsOutlivesTheChunkItWasBoughtFor(t *testing.T) {
 	s := newStore(t)
 	repo := s.db.Chunks()
-	s.cut(vaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "shared words"}})
-	s.cut(vaultA, "book", "b.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "shared words"}})
-	row := s.rowsOf(vaultA, "a.epub")[0]
+	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "shared words"}})
+	s.cut(repoVaultA, "book", "b.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "shared words"}})
+	row := s.rowsOf(repoVaultA, "a.epub")[0]
 	if err := repo.SaveVectors(t.Context(), []chunk.Vector{s.vectorFor(row, "m", 1)}); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := repo.ReplaceChunks(t.Context(), vaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "other words"}}); err != nil {
+	if err := repo.ReplaceChunks(t.Context(), repoVaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "other words"}}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -361,16 +361,16 @@ func TestAVectorForTextAnotherChunkStillHoldsOutlivesTheChunkItWasBoughtFor(t *t
 
 func TestAChunkIsKeptOnlyBySameTextAtTheSameSize(t *testing.T) {
 	s := newStore(t)
-	s.cut(vaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "same"}})
-	was := s.rowsOf(vaultA, "a.epub")[0]
+	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "same"}})
+	was := s.rowsOf(repoVaultA, "a.epub")[0]
 
-	if err := s.db.Chunks().ReplaceChunks(t.Context(), vaultA, "book", "a.epub", []chunk.Chunk{{
+	if err := s.db.Chunks().ReplaceChunks(t.Context(), repoVaultA, "book", "a.epub", []chunk.Chunk{{
 		Start: 0, Length: 5, Text: "outer", Small: []chunk.Chunk{{Start: 0, Length: 5, Text: "same"}},
 	}}); err != nil {
 		t.Fatal(err)
 	}
 
-	if got := s.rowsOf(vaultA, "a.epub"); slices.Contains(got, was) || len(got) != 2 {
+	if got := s.rowsOf(repoVaultA, "a.epub"); slices.Contains(got, was) || len(got) != 2 {
 		t.Errorf("a large chunk's row was handed to a small one with the same text: %v, was %d", got, was)
 	}
 }
@@ -378,26 +378,26 @@ func TestAChunkIsKeptOnlyBySameTextAtTheSameSize(t *testing.T) {
 func TestATextThatOccursTwiceIsTwoRowsAndEachIsKeptOnce(t *testing.T) {
 	s := newStore(t)
 	repo := s.db.Chunks()
-	s.cut(vaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "echo"}, {Start: 5, Length: 5, Text: "echo"}})
-	was := s.rowsOf(vaultA, "a.epub")
+	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "echo"}, {Start: 5, Length: 5, Text: "echo"}})
+	was := s.rowsOf(repoVaultA, "a.epub")
 	if len(was) != 2 {
 		t.Fatalf("two chunks hold %v", was)
 	}
 
-	if err := repo.ReplaceChunks(t.Context(), vaultA, "book", "a.epub", []chunk.Chunk{
+	if err := repo.ReplaceChunks(t.Context(), repoVaultA, "book", "a.epub", []chunk.Chunk{
 		{Start: 0, Length: 5, Text: "echo"}, {Start: 5, Length: 5, Text: "echo"}, {Start: 10, Length: 5, Text: "echo"},
 	}); err != nil {
 		t.Fatal(err)
 	}
-	three := s.rowsOf(vaultA, "a.epub")
+	three := s.rowsOf(repoVaultA, "a.epub")
 	if len(three) != 3 || !slices.Contains(three, was[0]) || !slices.Contains(three, was[1]) {
 		t.Errorf("the rows are %v, want %v kept and one added", three, was)
 	}
 
-	if err := repo.ReplaceChunks(t.Context(), vaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "echo"}}); err != nil {
+	if err := repo.ReplaceChunks(t.Context(), repoVaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "echo"}}); err != nil {
 		t.Fatal(err)
 	}
-	if one := s.rowsOf(vaultA, "a.epub"); len(one) != 1 {
+	if one := s.rowsOf(repoVaultA, "a.epub"); len(one) != 1 {
 		t.Errorf("one chunk left %v", one)
 	}
 	if n := s.count(`SELECT count(*) FROM chunks_fts`); n != 1 {
@@ -408,11 +408,11 @@ func TestATextThatOccursTwiceIsTwoRowsAndEachIsKeptOnce(t *testing.T) {
 func TestTheSectionsAChunkOpensAreIndexedByName(t *testing.T) {
 	s := newStore(t)
 	repo := s.db.Chunks()
-	s.cut(vaultA, "book", "a.epub", []chunk.Chunk{
+	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{
 		{Start: 0, Length: 5, Text: "first", Opens: []string{"Beginnings", "Prologue"}},
 		{Start: 5, Length: 5, Text: "second"},
 	})
-	rows := s.rowsOf(vaultA, "a.epub")
+	rows := s.rowsOf(repoVaultA, "a.epub")
 	first, second := rows[0], rows[1]
 
 	match := func(name string) []int64 {
@@ -429,7 +429,7 @@ func TestTheSectionsAChunkOpensAreIndexedByName(t *testing.T) {
 	}
 
 	// The same text cut again keeps its row and takes the names it opens now.
-	if err := repo.ReplaceChunks(t.Context(), vaultA, "book", "a.epub", []chunk.Chunk{
+	if err := repo.ReplaceChunks(t.Context(), repoVaultA, "book", "a.epub", []chunk.Chunk{
 		{Start: 0, Length: 5, Text: "first", Opens: []string{"Renamed"}},
 		{Start: 5, Length: 5, Text: "second", Opens: []string{"Epilogue"}},
 	}); err != nil {
@@ -445,7 +445,7 @@ func TestTheSectionsAChunkOpensAreIndexedByName(t *testing.T) {
 		t.Errorf("Epilogue names %v, want the kept chunk %d", got, second)
 	}
 
-	if err := repo.ReplaceChunks(t.Context(), vaultA, "book", "a.epub", []chunk.Chunk{
+	if err := repo.ReplaceChunks(t.Context(), repoVaultA, "book", "a.epub", []chunk.Chunk{
 		{Start: 0, Length: 5, Text: "first"}, {Start: 5, Length: 5, Text: "second"},
 	}); err != nil {
 		t.Fatal(err)
@@ -458,18 +458,18 @@ func TestTheSectionsAChunkOpensAreIndexedByName(t *testing.T) {
 func TestACutKeepsAnotherSourceOfTheSameTextApart(t *testing.T) {
 	s := newStore(t)
 	repo := s.db.Chunks()
-	s.cut(vaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "same"}})
-	s.cut(vaultA, "book", "b.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "same"}})
-	other := s.rowsOf(vaultA, "b.epub")
+	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "same"}})
+	s.cut(repoVaultA, "book", "b.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "same"}})
+	other := s.rowsOf(repoVaultA, "b.epub")
 
-	if err := repo.ReplaceChunks(t.Context(), vaultA, "book", "a.epub", nil); err != nil {
+	if err := repo.ReplaceChunks(t.Context(), repoVaultA, "book", "a.epub", nil); err != nil {
 		t.Fatal(err)
 	}
 
-	if got := s.rowsOf(vaultA, "a.epub"); len(got) != 0 {
+	if got := s.rowsOf(repoVaultA, "a.epub"); len(got) != 0 {
 		t.Errorf("the source still holds %v", got)
 	}
-	if got := s.rowsOf(vaultA, "b.epub"); !slices.Equal(got, other) {
+	if got := s.rowsOf(repoVaultA, "b.epub"); !slices.Equal(got, other) {
 		t.Errorf("the other source holds %v, was %v", got, other)
 	}
 }
@@ -477,8 +477,8 @@ func TestACutKeepsAnotherSourceOfTheSameTextApart(t *testing.T) {
 func TestVectorsAreWrittenForEveryChunkTheyNameAndReplacedWhenWrittenAgain(t *testing.T) {
 	s := newStore(t)
 	repo := s.db.Chunks()
-	s.cut(vaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "one"}, {Start: 5, Length: 5, Text: "two"}})
-	rows := s.rowsOf(vaultA, "a.epub")
+	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "one"}, {Start: 5, Length: 5, Text: "two"}})
+	rows := s.rowsOf(repoVaultA, "a.epub")
 
 	if err := repo.SaveVectors(t.Context(), nil); err != nil {
 		t.Fatalf("no vectors: %v", err)
@@ -497,7 +497,7 @@ func TestVectorsAreWrittenForEveryChunkTheyNameAndReplacedWhenWrittenAgain(t *te
 	if n := s.count(`SELECT count(*) FROM vectors`); n != 3 {
 		t.Errorf("%d vectors are kept, want the one a gone chunk was bought too", n)
 	}
-	if n := s.count(`SELECT count(*) FROM chunks_vec WHERE vault_id = (SELECT id FROM vaults WHERE identifier = ?)`, string(vaultA)); n != 2 {
+	if n := s.count(`SELECT count(*) FROM chunks_vec WHERE vault_id = (SELECT id FROM vaults WHERE identifier = ?)`, string(repoVaultA)); n != 2 {
 		t.Errorf("%d coarse rows carry the chunk's vault", n)
 	}
 
@@ -528,9 +528,9 @@ func TestVectorsGoInBatchesEachCommittedOnItsOwn(t *testing.T) {
 			for i := range 6 {
 				cut = append(cut, chunk.Chunk{Start: i * 5, Length: 5, Text: fmt.Sprintf("chunk %d", i)})
 			}
-			s.cut(vaultA, "book", "a.epub", cut)
+			s.cut(repoVaultA, "book", "a.epub", cut)
 			var vectors []chunk.Vector
-			for _, row := range s.rowsOf(vaultA, "a.epub") {
+			for _, row := range s.rowsOf(repoVaultA, "a.epub") {
 				vectors = append(vectors, s.vectorFor(row, "m", 1))
 			}
 
@@ -557,8 +557,8 @@ func TestAVectorThatFailsLeavesTheBatchesBeforeItWritten(t *testing.T) {
 	for i := range 5 {
 		cut = append(cut, chunk.Chunk{Start: i * 5, Length: 5, Text: fmt.Sprintf("chunk %d", i)})
 	}
-	s.cut(vaultA, "book", "a.epub", cut)
-	rows := s.rowsOf(vaultA, "a.epub")
+	s.cut(repoVaultA, "book", "a.epub", cut)
+	rows := s.rowsOf(repoVaultA, "a.epub")
 	s.exec(`CREATE TRIGGER refuse BEFORE INSERT ON vectors WHEN NEW.recipe = 'poison' BEGIN SELECT RAISE(ABORT, 'boom'); END`)
 	vectors := []chunk.Vector{
 		s.vectorFor(rows[0], "m", 1), s.vectorFor(rows[1], "m", 1),
@@ -582,8 +582,8 @@ func TestAThousandVectorsAreOneBatchAndTheThousandAndFirstIsAnother(t *testing.T
 	for i := range 1001 {
 		cut = append(cut, chunk.Chunk{Start: i, Length: 1, Text: fmt.Sprintf("chunk %d", i)})
 	}
-	s.cut(vaultA, "book", "a.epub", cut)
-	rows := s.rowsOf(vaultA, "a.epub")
+	s.cut(repoVaultA, "book", "a.epub", cut)
+	rows := s.rowsOf(repoVaultA, "a.epub")
 	s.exec(`CREATE TRIGGER refuse BEFORE INSERT ON vectors WHEN NEW.recipe = 'poison' BEGIN SELECT RAISE(ABORT, 'boom'); END`)
 	vectors := make([]chunk.Vector, 0, len(rows))
 	for i, row := range rows {
@@ -606,36 +606,36 @@ func TestRemovedSourcesTakeEverythingMadeFromThem(t *testing.T) {
 	s := newStore(t)
 	repo := s.db.Chunks()
 	for _, path := range []string{"a.epub", "b.epub", "c.epub"} {
-		s.cut(vaultA, "book", path, []chunk.Chunk{{Start: 0, Length: 9, Text: "whole " + path, Opens: []string{"Name " + path}, Small: []chunk.Chunk{
+		s.cut(repoVaultA, "book", path, []chunk.Chunk{{Start: 0, Length: 9, Text: "whole " + path, Opens: []string{"Name " + path}, Small: []chunk.Chunk{
 			{Start: 0, Length: 4, Text: "left " + path},
 		}}})
 	}
-	s.cut(vaultB, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "elsewhere"}})
-	s.cut(vaultA, "note", "n.md", []chunk.Chunk{{Start: 0, Length: 4, Text: "a note"}})
+	s.cut(repoVaultB, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "elsewhere"}})
+	s.cut(repoVaultA, "note", "n.md", []chunk.Chunk{{Start: 0, Length: 4, Text: "a note"}})
 	var vectors []chunk.Vector
-	for _, row := range s.rowsOf(vaultA, "a.epub") {
+	for _, row := range s.rowsOf(repoVaultA, "a.epub") {
 		vectors = append(vectors, s.vectorFor(row, "m", 1))
 	}
 	if err := repo.SaveVectors(t.Context(), vectors); err != nil {
 		t.Fatal(err)
 	}
-	keptB := s.rowsOf(vaultA, "b.epub")
-	keptOther := s.rowsOf(vaultB, "a.epub")
+	keptB := s.rowsOf(repoVaultA, "b.epub")
+	keptOther := s.rowsOf(repoVaultB, "a.epub")
 
-	if err := repo.RemoveSources(t.Context(), vaultA, "book", []string{"missing.epub", "a.epub", "n.md", "c.epub"}); err != nil {
+	if err := repo.RemoveSources(t.Context(), repoVaultA, "book", []string{"missing.epub", "a.epub", "n.md", "c.epub"}); err != nil {
 		t.Fatal(err)
 	}
 
-	if got := s.paths(vaultA); !slices.Equal(got, []string{"b.epub", "n.md"}) {
+	if got := s.paths(repoVaultA); !slices.Equal(got, []string{"b.epub", "n.md"}) {
 		t.Errorf("the vault holds %v, want only what was not named, or named of another kind", got)
 	}
-	if got := s.paths(vaultB); !slices.Equal(got, []string{"a.epub"}) {
+	if got := s.paths(repoVaultB); !slices.Equal(got, []string{"a.epub"}) {
 		t.Errorf("the other vault holds %v", got)
 	}
-	if got := s.rowsOf(vaultA, "b.epub"); !slices.Equal(got, keptB) {
+	if got := s.rowsOf(repoVaultA, "b.epub"); !slices.Equal(got, keptB) {
 		t.Errorf("a source that stayed holds %v, was %v", got, keptB)
 	}
-	if got := s.rowsOf(vaultB, "a.epub"); !slices.Equal(got, keptOther) {
+	if got := s.rowsOf(repoVaultB, "a.epub"); !slices.Equal(got, keptOther) {
 		t.Errorf("the other vault's source holds %v, was %v", got, keptOther)
 	}
 	if n := s.count(`SELECT count(*) FROM chunks`); n != 2+1+1 {
@@ -655,13 +655,13 @@ func TestRemovedSourcesTakeEverythingMadeFromThem(t *testing.T) {
 
 func TestRemovingNoSourcesChangesNothing(t *testing.T) {
 	s := newStore(t)
-	s.cut(vaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "x"}})
+	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "x"}})
 
-	if err := s.db.Chunks().RemoveSources(t.Context(), vaultA, "book", nil); err != nil {
+	if err := s.db.Chunks().RemoveSources(t.Context(), repoVaultA, "book", nil); err != nil {
 		t.Fatal(err)
 	}
 
-	if got := s.paths(vaultA); !slices.Equal(got, []string{"a.epub"}) {
+	if got := s.paths(repoVaultA); !slices.Equal(got, []string{"a.epub"}) {
 		t.Errorf("the vault holds %v", got)
 	}
 }

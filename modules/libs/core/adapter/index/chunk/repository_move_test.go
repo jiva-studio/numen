@@ -47,15 +47,15 @@ func (s *store) noteName(row int64) (title, folded, indexed string) {
 
 func TestAMovedFolderTakesEverythingUnderItAndNothingBesides(t *testing.T) {
 	s := newStore(t)
-	s.saveNote(vaultA, "physics/Entropy.md", "Entropy", false)
-	s.saveNote(vaultA, "physics/heat/Heat.md", "Heat", false)
-	s.saveNote(vaultA, "physics-old/Stray.md", "Stray", false)
-	s.saveNote(vaultA, "physics0/Next.md", "Next", false)
-	s.saveNote(vaultB, "physics/Other.md", "Other", false)
-	s.cut(vaultA, "book", "physics/A Book.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "book words"}})
-	held := s.rowsOf(vaultA, "physics/A Book.epub")
+	s.saveNote(repoVaultA, "physics/Entropy.md", "Entropy", false)
+	s.saveNote(repoVaultA, "physics/heat/Heat.md", "Heat", false)
+	s.saveNote(repoVaultA, "physics-old/Stray.md", "Stray", false)
+	s.saveNote(repoVaultA, "physics0/Next.md", "Next", false)
+	s.saveNote(repoVaultB, "physics/Other.md", "Other", false)
+	s.cut(repoVaultA, "book", "physics/A Book.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "book words"}})
+	held := s.rowsOf(repoVaultA, "physics/A Book.epub")
 
-	if err := s.db.Chunks().MoveSources(t.Context(), vaultA, "physics", "science/physics"); err != nil {
+	if err := s.db.Chunks().MoveSources(t.Context(), repoVaultA, "physics", "science/physics"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -63,63 +63,63 @@ func TestAMovedFolderTakesEverythingUnderItAndNothingBesides(t *testing.T) {
 		"physics-old/Stray.md", "physics0/Next.md",
 		"science/physics/A Book.epub", "science/physics/Entropy.md", "science/physics/heat/Heat.md",
 	}
-	if got := s.paths(vaultA); !slices.Equal(got, want) {
+	if got := s.paths(repoVaultA); !slices.Equal(got, want) {
 		t.Errorf("the vault holds %v, want %v", got, want)
 	}
-	if got := s.paths(vaultB); !slices.Equal(got, []string{"physics/Other.md"}) {
+	if got := s.paths(repoVaultB); !slices.Equal(got, []string{"physics/Other.md"}) {
 		t.Errorf("the other vault holds %v", got)
 	}
-	if got := s.rowsOf(vaultA, "science/physics/A Book.epub"); !slices.Equal(got, held) {
+	if got := s.rowsOf(repoVaultA, "science/physics/A Book.epub"); !slices.Equal(got, held) {
 		t.Errorf("the book's chunks are %v, were %v", got, held)
 	}
 }
 
 func TestAFileMovedToAnotherNameKeepsItsOwnFolderUnrenamed(t *testing.T) {
 	s := newStore(t)
-	s.saveNote(vaultA, "Old.md", "Old", false)
-	s.saveNote(vaultA, "Old.md.bak", "Backup", false)
+	s.saveNote(repoVaultA, "Old.md", "Old", false)
+	s.saveNote(repoVaultA, "Old.md.bak", "Backup", false)
 
-	if err := s.db.Chunks().MoveSources(t.Context(), vaultA, "Old.md", "New.md"); err != nil {
+	if err := s.db.Chunks().MoveSources(t.Context(), repoVaultA, "Old.md", "New.md"); err != nil {
 		t.Fatal(err)
 	}
 
-	if got := s.paths(vaultA); !slices.Equal(got, []string{"New.md", "Old.md.bak"}) {
+	if got := s.paths(repoVaultA); !slices.Equal(got, []string{"New.md", "Old.md.bak"}) {
 		t.Errorf("the vault holds %v", got)
 	}
 }
 
 func TestAFolderWithANameThatIsNotLatinMovesByCharacters(t *testing.T) {
 	s := newStore(t)
-	s.saveNote(vaultA, "физика/Энтропия.md", "Энтропия", false)
+	s.saveNote(repoVaultA, "физика/Энтропия.md", "Энтропия", false)
 
-	if err := s.db.Chunks().MoveSources(t.Context(), vaultA, "физика", "physics"); err != nil {
+	if err := s.db.Chunks().MoveSources(t.Context(), repoVaultA, "физика", "physics"); err != nil {
 		t.Fatal(err)
 	}
 
-	if got := s.paths(vaultA); !slices.Equal(got, []string{"physics/Энтропия.md"}) {
+	if got := s.paths(repoVaultA); !slices.Equal(got, []string{"physics/Энтропия.md"}) {
 		t.Errorf("the vault holds %v", got)
 	}
 }
 
 func TestAMoveOntoWhereAScanAlreadyFiledTheFileKeepsTheRowThatTravels(t *testing.T) {
 	s := newStore(t)
-	s.cut(vaultA, "book", "Old.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "old words"}})
-	s.cut(vaultA, "book", "New.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "fresh words"}})
-	s.cut(vaultA, "book", "New.epub.d/inner.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "inner words"}})
-	held := s.rowsOf(vaultA, "Old.epub")
-	standing := s.rowsOf(vaultA, "New.epub")
+	s.cut(repoVaultA, "book", "Old.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "old words"}})
+	s.cut(repoVaultA, "book", "New.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "fresh words"}})
+	s.cut(repoVaultA, "book", "New.epub.d/inner.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "inner words"}})
+	held := s.rowsOf(repoVaultA, "Old.epub")
+	standing := s.rowsOf(repoVaultA, "New.epub")
 	if err := s.db.Chunks().SaveVectors(t.Context(), []chunk.Vector{s.vectorFor(standing[0], "m", 1)}); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := s.db.Chunks().MoveSources(t.Context(), vaultA, "Old.epub", "New.epub"); err != nil {
+	if err := s.db.Chunks().MoveSources(t.Context(), repoVaultA, "Old.epub", "New.epub"); err != nil {
 		t.Fatal(err)
 	}
 
-	if got := s.paths(vaultA); !slices.Equal(got, []string{"New.epub", "New.epub.d/inner.epub"}) {
+	if got := s.paths(repoVaultA); !slices.Equal(got, []string{"New.epub", "New.epub.d/inner.epub"}) {
 		t.Errorf("the vault holds %v", got)
 	}
-	if got := s.rowsOf(vaultA, "New.epub"); !slices.Equal(got, held) {
+	if got := s.rowsOf(repoVaultA, "New.epub"); !slices.Equal(got, held) {
 		t.Errorf("the file at the landing holds %v, want the travelling %v", got, held)
 	}
 	if n := s.count(`SELECT count(*) FROM chunks_fts WHERE rowid = ?`, standing[0]); n != 0 {
@@ -132,60 +132,60 @@ func TestAMoveOntoWhereAScanAlreadyFiledTheFileKeepsTheRowThatTravels(t *testing
 
 func TestAMoveOntoAFolderDisplacesEverythingStandingUnderIt(t *testing.T) {
 	s := newStore(t)
-	s.saveNote(vaultA, "draft/Idea.md", "Idea", false)
-	s.saveNote(vaultA, "final/Idea.md", "Idea", false)
-	s.saveNote(vaultA, "final/deep/Plan.md", "Plan", false)
-	s.saveNote(vaultA, "final-old/Keep.md", "Keep", false)
-	s.saveNote(vaultB, "final/Keep.md", "Keep", false)
+	s.saveNote(repoVaultA, "draft/Idea.md", "Idea", false)
+	s.saveNote(repoVaultA, "final/Idea.md", "Idea", false)
+	s.saveNote(repoVaultA, "final/deep/Plan.md", "Plan", false)
+	s.saveNote(repoVaultA, "final-old/Keep.md", "Keep", false)
+	s.saveNote(repoVaultB, "final/Keep.md", "Keep", false)
 
-	if err := s.db.Chunks().MoveSources(t.Context(), vaultA, "draft", "final"); err != nil {
+	if err := s.db.Chunks().MoveSources(t.Context(), repoVaultA, "draft", "final"); err != nil {
 		t.Fatal(err)
 	}
 
-	if got := s.paths(vaultA); !slices.Equal(got, []string{"final-old/Keep.md", "final/Idea.md"}) {
+	if got := s.paths(repoVaultA); !slices.Equal(got, []string{"final-old/Keep.md", "final/Idea.md"}) {
 		t.Errorf("the vault holds %v", got)
 	}
-	if got := s.paths(vaultB); !slices.Equal(got, []string{"final/Keep.md"}) {
+	if got := s.paths(repoVaultB); !slices.Equal(got, []string{"final/Keep.md"}) {
 		t.Errorf("the other vault holds %v", got)
 	}
 }
 
 func TestAFolderMovedInsideItselfKeepsWhatIsMoving(t *testing.T) {
 	s := newStore(t)
-	s.saveNote(vaultA, "a/One.md", "One", false)
-	s.saveNote(vaultA, "a/b/Two.md", "Two", false)
-	s.saveNote(vaultA, "a/b/c/Three.md", "Three", false)
+	s.saveNote(repoVaultA, "a/One.md", "One", false)
+	s.saveNote(repoVaultA, "a/b/Two.md", "Two", false)
+	s.saveNote(repoVaultA, "a/b/c/Three.md", "Three", false)
 
-	if err := s.db.Chunks().MoveSources(t.Context(), vaultA, "a/b", "a"); err != nil {
+	if err := s.db.Chunks().MoveSources(t.Context(), repoVaultA, "a/b", "a"); err != nil {
 		t.Fatal(err)
 	}
 
 	// The sibling standing where the folder lands is displaced; what moves stays.
-	if got := s.paths(vaultA); !slices.Equal(got, []string{"a/Two.md", "a/c/Three.md"}) {
+	if got := s.paths(repoVaultA); !slices.Equal(got, []string{"a/Two.md", "a/c/Three.md"}) {
 		t.Errorf("the vault holds %v", got)
 	}
 }
 
 func TestAMoveOntoItsOwnPathChangesNothing(t *testing.T) {
 	s := newStore(t)
-	s.cut(vaultA, "book", "Same.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "words"}})
-	held := s.rowsOf(vaultA, "Same.epub")
+	s.cut(repoVaultA, "book", "Same.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "words"}})
+	held := s.rowsOf(repoVaultA, "Same.epub")
 
-	if err := s.db.Chunks().MoveSources(t.Context(), vaultA, "Same.epub", "Same.epub"); err != nil {
+	if err := s.db.Chunks().MoveSources(t.Context(), repoVaultA, "Same.epub", "Same.epub"); err != nil {
 		t.Fatal(err)
 	}
 
-	if got := s.rowsOf(vaultA, "Same.epub"); !slices.Equal(got, held) {
+	if got := s.rowsOf(repoVaultA, "Same.epub"); !slices.Equal(got, held) {
 		t.Errorf("the chunks are %v, were %v", got, held)
 	}
 }
 
 func TestANoteCalledByItsFilenameIsCalledByTheFilenameItLandsUnder(t *testing.T) {
 	s := newStore(t)
-	s.saveNote(vaultA, "Torpor.md", "Torpor", false)
-	row := s.sourceRow(vaultA, "Torpor.md")
+	s.saveNote(repoVaultA, "Torpor.md", "Torpor", false)
+	row := s.sourceRow(repoVaultA, "Torpor.md")
 
-	if err := s.db.Chunks().MoveSources(t.Context(), vaultA, "Torpor.md", "sleep/Hibernation.md"); err != nil {
+	if err := s.db.Chunks().MoveSources(t.Context(), repoVaultA, "Torpor.md", "sleep/Hibernation.md"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -197,10 +197,10 @@ func TestANoteCalledByItsFilenameIsCalledByTheFilenameItLandsUnder(t *testing.T)
 
 func TestANoteWithATitleOfItsOwnTakesItsTitleWhenTheFileLandsUnderTheNameOfIt(t *testing.T) {
 	s := newStore(t)
-	s.saveNote(vaultA, "Draft.md", "Heat: a study", true)
-	row := s.sourceRow(vaultA, "Draft.md")
+	s.saveNote(repoVaultA, "Draft.md", "Heat: a study", true)
+	row := s.sourceRow(repoVaultA, "Draft.md")
 
-	if err := s.db.Chunks().MoveSources(t.Context(), vaultA, "Draft.md", "Heat- a study.md"); err != nil {
+	if err := s.db.Chunks().MoveSources(t.Context(), repoVaultA, "Draft.md", "Heat- a study.md"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -215,11 +215,11 @@ func TestANoteWithATitleOfItsOwnTakesItsTitleWhenTheFileLandsUnderTheNameOfIt(t 
 
 func TestANoteWithATitleOfItsOwnKeepsItsNameWhenTheFileLandsUnderAnotherOne(t *testing.T) {
 	s := newStore(t)
-	s.saveNote(vaultA, "Draft.md", "Heat", true)
-	row := s.sourceRow(vaultA, "Draft.md")
+	s.saveNote(repoVaultA, "Draft.md", "Heat", true)
+	row := s.sourceRow(repoVaultA, "Draft.md")
 	_, foldedBefore, indexedBefore := s.noteName(row)
 
-	if err := s.db.Chunks().MoveSources(t.Context(), vaultA, "Draft.md", "Unrelated.md"); err != nil {
+	if err := s.db.Chunks().MoveSources(t.Context(), repoVaultA, "Draft.md", "Unrelated.md"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -231,11 +231,11 @@ func TestANoteWithATitleOfItsOwnKeepsItsNameWhenTheFileLandsUnderAnotherOne(t *t
 
 func TestAFileMovedWithoutChangingNameKeepsTheNameOfTheNote(t *testing.T) {
 	s := newStore(t)
-	s.saveNote(vaultA, "a/Torpor.md", "Custom", false)
-	row := s.sourceRow(vaultA, "a/Torpor.md")
+	s.saveNote(repoVaultA, "a/Torpor.md", "Custom", false)
+	row := s.sourceRow(repoVaultA, "a/Torpor.md")
 	s.exec(`UPDATE notes SET title = 'Marked'`)
 
-	if err := s.db.Chunks().MoveSources(t.Context(), vaultA, "a/Torpor.md", "b/Torpor.md"); err != nil {
+	if err := s.db.Chunks().MoveSources(t.Context(), repoVaultA, "a/Torpor.md", "b/Torpor.md"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -246,13 +246,13 @@ func TestAFileMovedWithoutChangingNameKeepsTheNameOfTheNote(t *testing.T) {
 
 func TestASourceThatIsNoNoteMovesWithoutBeingNamed(t *testing.T) {
 	s := newStore(t)
-	s.cut(vaultA, "book", "Old.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "words"}})
+	s.cut(repoVaultA, "book", "Old.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "words"}})
 
-	if err := s.db.Chunks().MoveSources(t.Context(), vaultA, "Old.epub", "New.epub"); err != nil {
+	if err := s.db.Chunks().MoveSources(t.Context(), repoVaultA, "Old.epub", "New.epub"); err != nil {
 		t.Fatal(err)
 	}
 
-	if got := s.paths(vaultA); !slices.Equal(got, []string{"New.epub"}) {
+	if got := s.paths(repoVaultA); !slices.Equal(got, []string{"New.epub"}) {
 		t.Errorf("the vault holds %v", got)
 	}
 }

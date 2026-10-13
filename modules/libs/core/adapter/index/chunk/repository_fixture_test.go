@@ -17,11 +17,11 @@ import (
 )
 
 const (
-	vaultA domain.VaultID = "01VAULTA"
-	vaultB domain.VaultID = "01VAULTB"
+	repoVaultA domain.VaultID = "01VAULTA"
+	repoVaultB domain.VaultID = "01VAULTB"
 )
 
-var migrated = testsupport.NewTemplate(func(ctx context.Context, path string) error {
+var repoTemplate = testsupport.NewTemplate(func(ctx context.Context, path string) error {
 	db, err := index.Open(ctx, path)
 	if err != nil {
 		return err
@@ -44,13 +44,13 @@ func newStore(t *testing.T) *store {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 
 	path := filepath.Join(t.TempDir(), "index.db")
-	migrated.CopyTo(t, path)
+	repoTemplate.CopyTo(t, path)
 	db, err := index.Open(t.Context(), path)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	for _, id := range []domain.VaultID{vaultA, vaultB} {
+	for _, id := range []domain.VaultID{repoVaultA, repoVaultB} {
 		if err := db.Vaults().Register(t.Context(), id); err != nil {
 			t.Fatal(err)
 		}

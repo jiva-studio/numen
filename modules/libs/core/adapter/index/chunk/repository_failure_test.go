@@ -10,13 +10,13 @@ import (
 // section the large one opens, and a vector for every chunk.
 func holdsBook(s *store) {
 	s.t.Helper()
-	s.cut(vaultA, "book", "a.epub", []chunk.Chunk{{
+	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{{
 		Start: 0, Length: 20, Text: "whole", Opens: []string{"Beginnings"}, Small: []chunk.Chunk{
 			{Start: 0, Length: 10, Text: "left"}, {Start: 10, Length: 10, Text: "right"},
 		},
 	}})
 	var vectors []chunk.Vector
-	for _, row := range s.rowsOf(vaultA, "a.epub") {
+	for _, row := range s.rowsOf(repoVaultA, "a.epub") {
 		vectors = append(vectors, s.vectorFor(row, "m", 1))
 	}
 	if err := s.db.Chunks().SaveVectors(s.t.Context(), vectors); err != nil {
@@ -26,14 +26,14 @@ func holdsBook(s *store) {
 
 func holdsNotes(s *store) {
 	s.t.Helper()
-	s.saveNote(vaultA, "Old.md", "Old", false)
-	s.saveNote(vaultA, "Target.md", "Target", false)
-	s.cut(vaultA, "book", "Target.md.d", []chunk.Chunk{{Start: 0, Length: 4, Text: "standing"}})
+	s.saveNote(repoVaultA, "Old.md", "Old", false)
+	s.saveNote(repoVaultA, "Target.md", "Target", false)
+	s.cut(repoVaultA, "book", "Target.md.d", []chunk.Chunk{{Start: 0, Length: 4, Text: "standing"}})
 }
 
 func replaceWith(chunks ...chunk.Chunk) func(s *store) error {
 	return func(s *store) error {
-		return s.db.Chunks().ReplaceChunks(s.t.Context(), vaultA, "book", "a.epub", chunks)
+		return s.db.Chunks().ReplaceChunks(s.t.Context(), repoVaultA, "book", "a.epub", chunks)
 	}
 }
 
@@ -47,7 +47,7 @@ func TestAWriteThatTheDatabaseRefusesSaysWhichStatementAndKeepsTheDatabasesReaso
 	fresh := []chunk.Chunk{{Start: 0, Length: 5, Text: "brand new words", Opens: []string{"Fresh"}}}
 	keptLeaf := []chunk.Chunk{{Start: 0, Length: 5, Text: "whole", Opens: []string{"Beginnings"}}}
 	move := func(from, to string) func(s *store) error {
-		return func(s *store) error { return s.db.Chunks().MoveSources(s.t.Context(), vaultA, from, to) }
+		return func(s *store) error { return s.db.Chunks().MoveSources(s.t.Context(), repoVaultA, from, to) }
 	}
 	source := chunk.Source{Path: "b.epub", Kind: "book", Size: 1, MTime: 1}
 
@@ -59,11 +59,11 @@ func TestAWriteThatTheDatabaseRefusesSaysWhichStatementAndKeepsTheDatabasesReaso
 		want   string
 	}{
 		{"save source", func(*store) {}, func(s *store) { s.failOn("sources", "INSERT") },
-			func(s *store) error { return s.db.Chunks().SaveSource(s.t.Context(), vaultA, source) }, "record the source b.epub: "},
+			func(s *store) error { return s.db.Chunks().SaveSource(s.t.Context(), repoVaultA, source) }, "record the source b.epub: "},
 		{"extraction source", func(*store) {}, func(s *store) { s.failOn("sources", "INSERT") },
-			func(s *store) error { return s.db.Chunks().SaveExtraction(s.t.Context(), vaultA, source, nil) }, "record the source b.epub: "},
+			func(s *store) error { return s.db.Chunks().SaveExtraction(s.t.Context(), repoVaultA, source, nil) }, "record the source b.epub: "},
 		{"extraction chunk", func(*store) {}, func(s *store) { s.failOn("chunks", "INSERT") },
-			func(s *store) error { return s.db.Chunks().SaveExtraction(s.t.Context(), vaultA, source, fresh) }, "store a chunk of this source: "},
+			func(s *store) error { return s.db.Chunks().SaveExtraction(s.t.Context(), repoVaultA, source, fresh) }, "store a chunk of this source: "},
 		{"new chunk", holdsBook, func(s *store) { s.failOn("chunks", "INSERT") }, replaceWith(fresh...), "store a chunk of this source: "},
 		{"new words", holdsBook, func(s *store) { s.failOn("chunks_fts", "INSERT") }, replaceWith(fresh...), "index a chunk for the words in it: "},
 		{"new section names", holdsBook, func(s *store) { s.failOn("sections_fts", "INSERT") }, replaceWith(fresh...),
@@ -82,26 +82,26 @@ func TestAWriteThatTheDatabaseRefusesSaysWhichStatementAndKeepsTheDatabasesReaso
 		{"gone vector", holdsBook, func(s *store) { s.failOn("vectors", "DELETE") }, replaceWith(keptLeaf...), "forget_vector: "},
 		{"coarse row", holdsBook, func(s *store) { s.failOn("chunks_vec", "INSERT") },
 			func(s *store) error {
-				return s.db.Chunks().SaveVectors(s.t.Context(), []chunk.Vector{s.vectorFor(s.rowsOf(vaultA, "a.epub")[0], "m", 3)})
+				return s.db.Chunks().SaveVectors(s.t.Context(), []chunk.Vector{s.vectorFor(s.rowsOf(repoVaultA, "a.epub")[0], "m", 3)})
 			}, "insert_vec: "},
 		{"old coarse row", holdsBook, func(s *store) { s.failOn("chunks_vec", "DELETE") },
 			func(s *store) error {
-				return s.db.Chunks().SaveVectors(s.t.Context(), []chunk.Vector{s.vectorFor(s.rowsOf(vaultA, "a.epub")[0], "m", 3)})
+				return s.db.Chunks().SaveVectors(s.t.Context(), []chunk.Vector{s.vectorFor(s.rowsOf(repoVaultA, "a.epub")[0], "m", 3)})
 			}, "delete_vec: "},
 		{"vector", holdsBook, func(s *store) { s.failOn("vectors", "UPDATE") },
 			func(s *store) error {
-				return s.db.Chunks().SaveVectors(s.t.Context(), []chunk.Vector{s.vectorFor(s.rowsOf(vaultA, "a.epub")[0], "m", 3)})
+				return s.db.Chunks().SaveVectors(s.t.Context(), []chunk.Vector{s.vectorFor(s.rowsOf(repoVaultA, "a.epub")[0], "m", 3)})
 			}, "keep_vector: "},
 		{"remove words", holdsBook, func(s *store) { s.failOn("chunks_fts", "DELETE") },
-			func(s *store) error { return s.db.Chunks().RemoveSources(s.t.Context(), vaultA, "book", []string{"a.epub"}) }, "clear_fts: "},
+			func(s *store) error { return s.db.Chunks().RemoveSources(s.t.Context(), repoVaultA, "book", []string{"a.epub"}) }, "clear_fts: "},
 		{"remove coarse", holdsBook, func(s *store) { s.failOn("chunks_vec", "DELETE") },
-			func(s *store) error { return s.db.Chunks().RemoveSources(s.t.Context(), vaultA, "book", []string{"a.epub"}) }, "clear_vec: "},
+			func(s *store) error { return s.db.Chunks().RemoveSources(s.t.Context(), repoVaultA, "book", []string{"a.epub"}) }, "clear_vec: "},
 		{"remove sections", holdsBook, func(s *store) { s.failOn("sections_fts", "DELETE") },
-			func(s *store) error { return s.db.Chunks().RemoveSources(s.t.Context(), vaultA, "book", []string{"a.epub"}) }, "clear_sections: "},
+			func(s *store) error { return s.db.Chunks().RemoveSources(s.t.Context(), repoVaultA, "book", []string{"a.epub"}) }, "clear_sections: "},
 		{"remove chunks", holdsBook, func(s *store) { s.failOn("chunks", "DELETE") },
-			func(s *store) error { return s.db.Chunks().RemoveSources(s.t.Context(), vaultA, "book", []string{"a.epub"}) }, "clear_chunks: "},
+			func(s *store) error { return s.db.Chunks().RemoveSources(s.t.Context(), repoVaultA, "book", []string{"a.epub"}) }, "clear_chunks: "},
 		{"remove source", holdsBook, func(s *store) { s.failOn("sources", "DELETE") },
-			func(s *store) error { return s.db.Chunks().RemoveSources(s.t.Context(), vaultA, "book", []string{"a.epub"}) }, "delete_source: "},
+			func(s *store) error { return s.db.Chunks().RemoveSources(s.t.Context(), repoVaultA, "book", []string{"a.epub"}) }, "delete_source: "},
 		{"move", holdsNotes, func(s *store) { s.failOn("sources", "UPDATE") }, move("Old.md", "New.md"), "move_sources: "},
 		{"rename note", holdsNotes, func(s *store) { s.failOn("notes", "UPDATE") }, move("Old.md", "New.md"), "rename_note: "},
 		{"rename title", holdsNotes, func(s *store) { s.failOn("titles_fts", "INSERT") }, move("Old.md", "New.md"), "rename_title: "},
