@@ -389,14 +389,17 @@ func TestTheModelIsAskedForOnlyWhereOneIsNamed(t *testing.T) {
 				runTask(t, agent, port.Task{Question: "hello", Model: c.taskModel})
 
 				lines := strings.Split(readNote(t, out, "argv"), "\n")
-				var got string
+				got, want := "no model", c.want
+				if want == "" {
+					want = "no model"
+				}
 				for i, line := range lines {
 					if line == "--model" && i+1 < len(lines) {
 						got = lines[i+1]
 					}
 				}
-				if got != c.want {
-					t.Errorf("the model asked for is %q, want %q", got, c.want)
+				if got != want {
+					t.Errorf("the model asked for is %q, want %q", got, want)
 				}
 			})
 		}
