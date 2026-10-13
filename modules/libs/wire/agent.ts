@@ -28,7 +28,8 @@ export interface AgentClient {
 
 /** The agent port, over the client the window talks on. */
 export const createAgentPort = (agent: AgentClient): AgentPort => ({
-  async *ask(prompt, focus, conversation, signal, agentId, modelId) {
+  async *ask(...args: Parameters<AgentPort['ask']>) {
+    const [prompt, focus, conversation, signal, agentId, modelId] = args
     for await (const step of agent.askAgent(
       {
         prompt,
