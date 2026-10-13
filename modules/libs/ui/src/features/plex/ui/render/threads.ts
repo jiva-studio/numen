@@ -30,18 +30,25 @@ export function getReachThread(
   return createThreadPath({ x: source.x + offset.x, y: source.y }, to)
 }
 
+export interface PendingThreadTarget {
+  readonly from: string | null
+  readonly at: Position | null
+  readonly viewport: Size
+}
+
 /**
  * The line from a node's handle to a point given in the plex's own pixels,
  * measured from its top left corner.
  */
-export function getPendingThread(
-  frame: PlexFrame,
-  from: string | null,
-  at: Position | null,
-  viewport: Size,
-): Thread | null {
+export function getPendingThread(frame: PlexFrame, target: PendingThreadTarget): Thread | null {
+  const { from, at, viewport } = target
   const to = at && { x: at.x - viewport.width / 2, y: at.y - viewport.height / 2 }
   return getReachThread(frame, from, to)
+}
+
+export interface ReachGhostOptions {
+  readonly relationName: (relation: PlexRelation) => string
+  readonly nodeSize: Size
 }
 
 /**
@@ -51,11 +58,19 @@ export function getPendingThread(
 export function getReachGhost(
   outcome: Drop | null,
   to: Position | null,
-  relationName: (relation: PlexRelation) => string,
-  nodeSize: Size,
+  options: ReachGhostOptions,
 ): PlacedNode | null {
   if (outcome?.kind !== 'create' || !to) return null
-  return ghostNode('ghost', relationName(outcome.relation), outcome.relation, to, nodeSize)
+  return ghostNode(
+    { id: 'ghost', title: options.relationName(outcome.relation), relation: outcome.relation },
+    to,
+    options.nodeSize,
+  )
+}
+
+export interface DraggedShapeOptions {
+  readonly dropName: (relation: PlexRelation) => string
+  readonly nodeSize: Size
 }
 
 /**
@@ -67,16 +82,19 @@ export function getReachGhost(
  */
 export function getDraggedShape(
   frame: PlexFrame,
-  relation: PlexRelation | null,
-  to: Position | null,
-  dropName: (relation: PlexRelation) => string,
-  nodeSize: Size,
+  target: { readonly relation: PlexRelation | null; readonly to: Position | null },
+  options: DraggedShapeOptions,
 ): DraggedShape | null {
+  const { relation, to } = target
   const focus = frame.nodes.find((node) => node.relation === 'focus')
   if (!relation || !to || !focus) return null
 
   return {
     thread: createThreadPath(focus, to),
-    ghost: ghostNode('dragged', dropName(relation), relation, to, nodeSize),
+    ghost: ghostNode(
+      { id: 'dragged', title: options.dropName(relation), relation },
+      to,
+      options.nodeSize,
+    ),
   }
 }

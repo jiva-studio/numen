@@ -66,37 +66,92 @@ export interface NoticeCardsState {
   readonly onFocusOut: (event: FocusEvent) => void
 }
 
-export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
-  /** How fast each count is moving. This is the clock the rate is read against. */
+function useNoticeSampling(
+  getNotices: () => readonly Notice[],
+  now: Ref<number>,
+  beat: () => void,
+) {
   const moving = shallowRef<ReadonlyMap<string, Movement>>(new Map())
-
-  /** The ones a person has put away, and when each of the rest arrived. */
-  const away = shallowRef<ReadonlySet<string>>(new Set())
-  const arrived = shallowRef<ReadonlyMap<string, number>>(new Map())
-
-  /** How long the corner has been held for, and the moment a card is read against. */
-  const { now, read, beat, onPointerOver, onPointerOut, onFocusIn, onFocusOut } = useNoticeStack(
-    options.stack,
-    options.getNow,
-    options.isHidden,
-  )
-
-  /** The ones whose caller has already been told they are finished with. */
-  const forgotten = new Set<string>()
-
-  /**
-   * The clock forward, and every count read against it.
-   *
-   * A count is read on the clock, so how fast it is moving is measured over
-   * stretches of time and not over however often the work behind it speaks.
-   */
   const sample = (): void => {
     beat()
-    moving.value = measureMovement(moving.value, options.getNotices(), now.value)
+    moving.value = measureMovement(moving.value, getNotices(), now.value)
+  }
+  const leftOn = (one: Notice): string => {
+    const tally = findTally(one)
+    if (tally === undefined) return ''
+    return getRemainingWord(tally.total - tally.done, moving.value.get(one.id)?.rate ?? 0)
+  }
+  return { sample, leftOn }
+}
+
+interface DismissalContext {
+  readonly folds: ComputedRef<{ shown: readonly Notice[] }>
+  readonly away: ShallowRef<ReadonlySet<string>>
+  readonly forgotten: Set<string>
+  readonly dismiss: (id: string) => void
+}
+
+function useNoticeDismissal(context: DismissalContext) {
+  const cards = new Map<string, CardHandle>()
+
+  const holdCard = (id: string, card: unknown): void => {
+    if (card) cards.set(id, card as CardHandle)
+    else cards.delete(id)
   }
 
+  const dismissByHand = async (id: string): Promise<void> => {
+    const at = context.folds.value.shown.findIndex((one) => one.id === id)
+    const hadFocus = cards.get(id)?.way === document.activeElement
+    context.forgotten.add(id)
+    context.away.value = new Set([...context.away.value, id])
+    context.dismiss(id)
+    if (!hadFocus || at < 0) return
+    await nextTick()
+    const left = context.folds.value.shown
+    const next = left[Math.min(at, left.length - 1)]
+    if (next) cards.get(next.id)?.way?.focus()
+  }
+
+  return { holdCard, dismissByHand }
+}
+
+function watchNoticeTicker(
+  sample: () => void,
+  drawn: ComputedRef<readonly Notice[]>,
+  options: { getNotices: () => readonly Notice[]; away: ShallowRef<ReadonlySet<string>> },
+): void {
+  const coming = computed(() => {
+    const shown = new Set(drawn.value.map((one) => one.id))
+    return getReadable(options.getNotices()).some(
+      (one) => one.stay !== 'read' && !options.away.value.has(one.id) && !shown.has(one.id),
+    )
+  })
+  const dwelling = computed(() =>
+    drawn.value.some((one) => one.stay === 'read' && getDwell(one.text, one.about) !== Infinity),
+  )
+  const counting = computed(() => drawn.value.some((one) => findTally(one) !== undefined))
+
+  watchEffect((clean) => {
+    if (!coming.value && !dwelling.value && !counting.value) return
+    const tick = setInterval(sample, 250)
+    clean(() => clearInterval(tick))
+  })
+}
+
+interface NoticeLifecycleOptions {
+  readonly getNotices: () => readonly Notice[]
+  readonly arrived: ShallowRef<ReadonlyMap<string, number>>
+  readonly away: ShallowRef<ReadonlySet<string>>
+  readonly forgotten: Set<string>
+  readonly read: ShallowRef<number>
+  readonly sample: () => void
+  readonly dismiss: (id: string) => void
+}
+
+function useNoticeLifecycle(options: NoticeLifecycleOptions): void {
+  const { getNotices, arrived, away, forgotten, read, sample, dismiss } = options
   watch(
-    options.getNotices,
+    getNotices,
     (all) => {
       sample()
       arrived.value = getArrivalTimes(arrived.value, all, read.value)
@@ -107,14 +162,44 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
     { immediate: true },
   )
 
-  const leftOn = (one: Notice): string => {
-    const tally = findTally(one)
-    if (tally === undefined) return ''
-    return getRemainingWord(tally.total - tally.done, moving.value.get(one.id)?.rate ?? 0)
-  }
+  watchEffect(() => {
+    for (const id of getFinishedNotices(getNotices(), arrived.value, read.value)) {
+      if (forgotten.has(id)) continue
+      forgotten.add(id)
+      dismiss(id)
+    }
+  })
+}
+
+export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
+  const away = shallowRef<ReadonlySet<string>>(new Set())
+  const arrived = shallowRef<ReadonlyMap<string, number>>(new Map())
+  const forgotten = new Set<string>()
+
+  const { now, read, beat, onPointerOver, onPointerOut, onFocusIn, onFocusOut } = useNoticeStack(
+    options.stack,
+    options.getNow,
+    options.isHidden,
+  )
+
+  const { sample, leftOn } = useNoticeSampling(options.getNotices, now, beat)
+
+  useNoticeLifecycle({
+    getNotices: options.getNotices,
+    arrived,
+    away,
+    forgotten,
+    read,
+    sample,
+    dismiss: options.dismiss,
+  })
 
   const drawn = computed(() =>
-    getShownNotices(options.getNotices(), arrived.value, away.value, read.value, options.getWait()),
+    getShownNotices(options.getNotices(), read.value, {
+      firstSeen: arrived.value,
+      away: away.value,
+      wait: options.getWait(),
+    }),
   )
 
   const isOpened = ref(false)
@@ -122,68 +207,18 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
     foldNotices(drawn.value, isOpened.value ? drawn.value.length : options.getRoom()),
   )
 
-  // Asking to see what is behind the rest is asked about what stands then. Once
-  // it all fits again, the next stack over the room folds as any other would.
   watch(drawn, (all) => {
     if (all.length <= options.getRoom()) isOpened.value = false
   })
 
-  /** Whether anything getReadable has not yet lasted long enough to be drawn. */
-  const coming = computed(() => {
-    const shown = new Set(drawn.value.map((one) => one.id))
-    return getReadable(options.getNotices()).some(
-      (one) => one.stay !== 'read' && !away.value.has(one.id) && !shown.has(one.id),
-    )
+  watchNoticeTicker(sample, drawn, { getNotices: options.getNotices, away })
+
+  const { holdCard, dismissByHand } = useNoticeDismissal({
+    folds,
+    away,
+    forgotten,
+    dismiss: options.dismiss,
   })
-
-  /** Whether anything drawn is going to go by itself. */
-  const dwelling = computed(() =>
-    drawn.value.some((one) => one.stay === 'read' && getDwell(one.text, one.about) !== Infinity),
-  )
-
-  /** Whether anything drawn is counting, and so has a rate to be read. */
-  const counting = computed(() => drawn.value.some((one) => findTally(one) !== undefined))
-
-  // The corner changes by itself while nothing else changes, so the moment is
-  // watched for as long as something is waiting on it.
-  watchEffect((clean) => {
-    if (!coming.value && !dwelling.value && !counting.value) return
-    const tick = setInterval(sample, 250)
-    clean(() => clearInterval(tick))
-  })
-
-  watchEffect(() => {
-    for (const id of getFinishedNotices(options.getNotices(), arrived.value, read.value)) {
-      if (forgotten.has(id)) continue
-      forgotten.add(id)
-      options.dismiss(id)
-    }
-  })
-
-  /** The cards drawn, each under the notice it stands for. */
-  const cards = new Map<string, CardHandle>()
-
-  const holdCard = (id: string, card: unknown): void => {
-    if (card) cards.set(id, card as CardHandle)
-    else cards.delete(id)
-  }
-
-  /**
-   * A card put away, and the keyboard left where it can go on putting them
-   * away: on the card that takes the place of the one that went, or on the last.
-   */
-  const dismissByHand = async (id: string): Promise<void> => {
-    const at = folds.value.shown.findIndex((one) => one.id === id)
-    const hadFocus = cards.get(id)?.way === document.activeElement
-    forgotten.add(id)
-    away.value = new Set([...away.value, id])
-    options.dismiss(id)
-    if (!hadFocus || at < 0) return
-    await nextTick()
-    const left = folds.value.shown
-    const next = left[Math.min(at, left.length - 1)]
-    if (next) cards.get(next.id)?.way?.focus()
-  }
 
   return {
     drawn,

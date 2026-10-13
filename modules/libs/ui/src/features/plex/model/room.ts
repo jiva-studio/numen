@@ -73,8 +73,8 @@ export function useRoom(
     if (!measure) return undefined
 
     const { margin } = options.value
-    const within = room.value
-    return (node: PlacedNode) => getWideBox(node, measure(node), within, margin)
+    const bounds = { viewport: room.value, margin }
+    return (node: PlacedNode) => getWideBox(node, measure(node), bounds)
   })
 
   /**
@@ -87,7 +87,8 @@ export function useRoom(
 
     const { margin } = options.value
     const deps = { measure: measures.value?.heading, viewport: room.value, margin }
-    return (node: PlacedNode) => getNodeHeadings(node, getHeadings(node.id), options.value, deps)
+    return (node: PlacedNode) =>
+      getNodeHeadings(node, getHeadings(node.id), { options: options.value, deps })
   })
 
   return { room, options, measures, widen, hung }

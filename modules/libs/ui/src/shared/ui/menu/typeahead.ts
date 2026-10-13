@@ -44,13 +44,14 @@ export const isLetter = (press: {
  * letter that begins a word, and the same letter struck again, look on from the
  * item after it.
  */
-export function jumpTo(
-  items: readonly MenuItem[],
-  was: Typeahead,
-  letter: string,
-  from: number,
-  now: number,
-): Jump {
+export interface JumpStrike {
+  readonly letter: string
+  readonly from: number
+  readonly now: number
+}
+
+export function jumpTo(items: readonly MenuItem[], was: Typeahead, strike: JumpStrike): Jump {
+  const { letter, from, now } = strike
   const word = now - was.struck > TYPING ? letter : was.word + letter
   const typed: Typeahead = { word, struck: now }
 

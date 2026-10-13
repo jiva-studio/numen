@@ -27,6 +27,18 @@ export interface SplitResult {
   readonly focus: NodeId
 }
 
+export interface BesidePlacement {
+  readonly onto: NodeId
+  readonly tab: TabId
+  readonly side: Side
+  readonly axis: Orientation
+}
+
+interface JoinBeside {
+  readonly index: number
+  readonly side: Side
+}
+
 /**
  * A new pane put alongside a node, taking half its share.
  *
@@ -37,12 +49,10 @@ export interface SplitResult {
  */
 export function putBeside(
   root: WorkspaceNode,
-  onto: NodeId,
-  tab: TabId,
-  side: Side,
-  axis: Orientation,
+  placement: BesidePlacement,
   id: NodeIdFactory,
 ): SplitResult {
+  const { onto, tab, side, axis } = placement
   const wanted = findSideOrientation(side)
   const path = pathTo(root, onto)
   if (!wanted || !path) return { root, axis, focus: onto }
@@ -63,7 +73,7 @@ export function putBeside(
 
   if (getOrientation(axis, above.length) === wanted) {
     return {
-      root: replaceAt(root, above, joinBeside(parent, made, index, side)),
+      root: replaceAt(root, above, joinBeside(parent, made, { index, side })),
       axis,
       focus: made.id,
     }
@@ -84,7 +94,8 @@ function orderPair(newPane: Pane, node: WorkspaceNode, side: Side): WorkspaceNod
 }
 
 /** The branch with the new pane among its children, taking half the share of the child at `index`. */
-function joinBeside(parent: Branch, newPane: Pane, index: number, side: Side): WorkspaceNode {
+function joinBeside(parent: Branch, newPane: Pane, join: JoinBeside): WorkspaceNode {
+  const { index, side } = join
   const at = isLeading(side) ? index : index + 1
   const children = [...parent.children.slice(0, at), newPane, ...parent.children.slice(at)]
   return withChildren(parent, children, insert(parent.sizes, index, isLeading(side)))

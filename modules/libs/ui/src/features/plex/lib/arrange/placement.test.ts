@@ -39,13 +39,11 @@ const place = (
   perLine = DEFAULT_OPTIONS.maxPerLine,
   options: PlexOptions = DEFAULT_OPTIONS,
 ): PlacedNode[] =>
-  rowsAndColumns.place(
-    relations,
-    FOCUS,
+  rowsAndColumns.place(relations, FOCUS, {
     options,
-    limits({ perLine, lines: DEFAULT_OPTIONS.maxLines }),
-    sameWidth,
-  )
+    limits: limits({ perLine, lines: DEFAULT_OPTIONS.maxLines }),
+    width: sameWidth,
+  })
 
 const of = (nodes: readonly PlacedNode[], relation: PlexRelation) =>
   nodes.filter((node) => node.relation === relation)
@@ -160,13 +158,11 @@ describe('a column', () => {
   it('turns the same edge towards the focus, whatever a box measures', () => {
     const widths: Widths = (node) => (node.id.endsWith('1') ? 240 : nodeSize.width)
     const column = rowsAndColumns
-      .place(
-        { sibling: createNodes('sibling', 2) },
-        FOCUS,
-        DEFAULT_OPTIONS,
-        limits({ perLine: 5, lines: 4 }),
-        widths,
-      )
+      .place({ sibling: createNodes('sibling', 2) }, FOCUS, {
+        options: DEFAULT_OPTIONS,
+        limits: limits({ perLine: 5, lines: 4 }),
+        width: widths,
+      })
       .filter((node) => node.relation === 'sibling')
 
     const edges = column.map((node) => node.x - node.width / 2)
@@ -254,9 +250,11 @@ describe('how far a column reaches before it clears the rows', () => {
     const placed = rowsAndColumns.place(
       { child: createNodes('child', 6), sibling: createNodes('sibling', 3) },
       focus,
-      options,
-      limits({ perLine: 3, lines: 3 }),
-      widths,
+      {
+        options,
+        limits: limits({ perLine: 3, lines: 3 }),
+        width: widths,
+      },
     )
     return of(placed, 'sibling')[0]!.x
   }

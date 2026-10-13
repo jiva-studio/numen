@@ -41,7 +41,9 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
     focus: vi.fn<() => void>(),
     select: vi.fn<() => void>(),
   } satisfies PaletteFieldHandle
-  const field = shallowRef<PaletteFieldHandle | null>(setUpOptions.hasField === false ? null : handle)
+  const field = shallowRef<PaletteFieldHandle | null>(
+    setUpOptions.hasField === false ? null : handle,
+  )
   const reveal = vi.fn<() => void>()
   const goBack = vi.fn<() => void>()
   const dismiss = vi.fn<() => void>()
@@ -89,8 +91,21 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
   }
 
   return {
-    isOpen, step, opensOn, typed, isPanelOpen, handle, field, reveal, goBack, dismiss,
-    back, errors, places, press, wrapper,
+    isOpen,
+    step,
+    opensOn,
+    typed,
+    isPanelOpen,
+    handle,
+    field,
+    reveal,
+    goBack,
+    dismiss,
+    back,
+    errors,
+    places,
+    press,
+    wrapper,
   }
 }
 

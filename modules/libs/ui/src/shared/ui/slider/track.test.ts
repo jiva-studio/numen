@@ -18,23 +18,23 @@ describe('the keys the handle walks under', () => {
   })
 
   it('move a step, and the ends take the handle to the ends', () => {
-    expect(stepForKey('ArrowRight', 40, bounds(), false)).toBe(41)
-    expect(stepForKey('ArrowUp', 40, bounds(), false)).toBe(41)
-    expect(stepForKey('ArrowLeft', 40, bounds(), false)).toBe(39)
-    expect(stepForKey('ArrowDown', 40, bounds(), false)).toBe(39)
-    expect(stepForKey('Home', 40, bounds(), false)).toBe(0)
-    expect(stepForKey('End', 40, bounds(), false)).toBe(100)
+    expect(stepForKey('ArrowRight', 40, { bounds: bounds(), isBigStep: false })).toBe(41)
+    expect(stepForKey('ArrowUp', 40, { bounds: bounds(), isBigStep: false })).toBe(41)
+    expect(stepForKey('ArrowLeft', 40, { bounds: bounds(), isBigStep: false })).toBe(39)
+    expect(stepForKey('ArrowDown', 40, { bounds: bounds(), isBigStep: false })).toBe(39)
+    expect(stepForKey('Home', 40, { bounds: bounds(), isBigStep: false })).toBe(0)
+    expect(stepForKey('End', 40, { bounds: bounds(), isBigStep: false })).toBe(100)
   })
 
   it('cover ten steps under a page key, and under a key held with shift', () => {
-    expect(stepForKey('PageUp', 40, bounds(), false)).toBe(50)
-    expect(stepForKey('PageDown', 40, bounds(), false)).toBe(30)
-    expect(stepForKey('ArrowRight', 40, bounds(), true)).toBe(50)
-    expect(stepForKey('ArrowLeft', 40, bounds(), true)).toBe(30)
+    expect(stepForKey('PageUp', 40, { bounds: bounds(), isBigStep: false })).toBe(50)
+    expect(stepForKey('PageDown', 40, { bounds: bounds(), isBigStep: false })).toBe(30)
+    expect(stepForKey('ArrowRight', 40, { bounds: bounds(), isBigStep: true })).toBe(50)
+    expect(stepForKey('ArrowLeft', 40, { bounds: bounds(), isBigStep: true })).toBe(30)
   })
 
   it('leave a key the handle does not answer to with nothing to say', () => {
-    expect(stepForKey('a', 40, bounds(), false)).toBeNull()
-    expect(stepForKey('Enter', 40, bounds(), false)).toBeNull()
+    expect(stepForKey('a', 40, { bounds: bounds(), isBigStep: false })).toBeNull()
+    expect(stepForKey('Enter', 40, { bounds: bounds(), isBigStep: false })).toBeNull()
   })
 })

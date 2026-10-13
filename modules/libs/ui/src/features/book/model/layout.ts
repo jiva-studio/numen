@@ -20,85 +20,117 @@ import type { SettledBookProps } from '../lib/props'
  * `onMove` is what the reader says when the offset in front changes, and
  * `takeLed` hands over the place a link led to, once.
  */
-export function useBookLayout(
-  area: Readonly<ShallowRef<HTMLElement | null>>,
-  paper: Readonly<ShallowRef<HTMLElement | null>>,
+export interface BookLayoutOptions {
+  readonly area: Readonly<ShallowRef<HTMLElement | null>>
+  readonly paper: Readonly<ShallowRef<HTMLElement | null>>
+  readonly props: SettledBookProps
+  readonly onMove: (at: number) => void
+  readonly takeLed: () => BookLink | undefined
+  readonly getEdge: (of: HTMLElement) => number
+}
+
+interface BookWatchContext {
+  readonly settle: (keep: number, led?: BookLink) => void
+  readonly getKeptOffset: () => number
+  readonly takeLed: () => BookLink | undefined
+  readonly standing: { value: number }
+  readonly getSpreadOf: (at: number) => number
+  readonly stand: (spread: number, how: 'smooth' | 'auto') => void
+}
+
+function watchBookLayout(
   props: SettledBookProps,
-  onMove: (at: number) => void,
-  takeLed: () => BookLink | undefined,
-  getEdge: (of: HTMLElement) => number,
-) {
-  const { textSize, viewport, isMeasured, flow, spreadCount, setting, marks, ...column } =
-    useBookColumns(area, paper, props, getEdge)
-
-  const { front, leftInChapter, stand, getKeptOffset, getSpreadOf, turn, standing } = useBookTurns(
-    paper,
-    props,
-    flow,
-    spreadCount,
-    marks,
-    onMove,
-  )
-
-  /**
-   * The text set in columns again, with one offset kept in front. The columns are
-   * measured after the browser has laid them out, and only an area that overflows
-   * has a length to measure.
-   *
-   * A place a link led to is found here, in markup that has only now been drawn.
-   */
-  const settle = (keep: number, led?: BookLink) => {
-    column.measure()
-    if (!isMeasured.value) return
-    onNextFrame(() => {
-      const box = area.value
-      const text = paper.value
-      if (!box || !text) return
-      column.readColumns(box, text)
-      const landed =
-        led && (led.path === '' || led.path === props.path)
-          ? column.findFragmentOffset(led.fragment)
-          : undefined
-      stand(getSpreadOf(landed ?? keep), 'auto')
-      if (landed !== undefined) onMove(landed)
-      column.markRuns()
-    })
-  }
-
-  // A reading area of another size, or a text of another size, is another set of
-  // columns.
-  watch([() => viewport.value.width, () => viewport.value.height, textSize], () => {
-    settle(getKeptOffset())
-  })
-
-  // Another document is opened at the offset asked for, and there is nothing to
-  // keep in front.
+  signals: { viewport: ShallowRef<{ width: number; height: number }>; textSize: { value: number } },
+  context: BookWatchContext,
+): void {
   watch(
-    () => props.markup,
+    [
+      () => signals.viewport.value.width,
+      () => signals.viewport.value.height,
+      () => signals.textSize.value,
+    ],
     () => {
-      const place = takeLed()
-      standing.value = 0
-      settle(props.at, place)
+      context.settle(context.getKeptOffset())
     },
   )
 
-  // An offset asked for from outside is turned to. One reached by the hand is
-  // already in front.
+  watch(
+    () => props.markup,
+    () => {
+      const place = context.takeLed()
+      context.standing.value = 0
+      context.settle(props.at, place)
+    },
+  )
+
   watch(
     () => props.at,
     (at) => {
       if (at < props.span.from || at >= props.span.to) return
-      const want = getSpreadOf(at)
-      if (want !== standing.value) stand(want, 'smooth')
+      const want = context.getSpreadOf(at)
+      if (want !== context.standing.value) context.stand(want, 'smooth')
     },
   )
 
   onMounted(() => {
-    settle(props.at)
-    // The columns are counted over the type the book is set in, which arrives
-    // after the markup does.
-    void document.fonts?.ready.then(() => settle(getKeptOffset()))
+    context.settle(props.at)
+    void document.fonts?.ready.then(() => context.settle(context.getKeptOffset()))
   })
+}
+
+/**
+ * The room one document of a book is read in, and everything measured from it.
+ * `onMove` is what the reader says when the offset in front changes, and
+ * `takeLed` hands over the place a link led to, once.
+ */
+export function useBookLayout(options: BookLayoutOptions) {
+  const { textSize, viewport, isMeasured, flow, spreadCount, setting, marks, ...column } =
+    useBookColumns({
+      area: options.area,
+      paper: options.paper,
+      props: options.props,
+      getEdge: options.getEdge,
+    })
+
+  const { front, leftInChapter, stand, getKeptOffset, getSpreadOf, turn, standing } = useBookTurns({
+    paper: options.paper,
+    props: options.props,
+    flow,
+    spreadCount,
+    marks,
+    onMove: options.onMove,
+  })
+
+  const settle = (keep: number, led?: BookLink) => {
+    column.measure()
+    if (!isMeasured.value) return
+    onNextFrame(() => {
+      const box = options.area.value
+      const text = options.paper.value
+      if (!box || !text) return
+      column.readColumns(box, text)
+      const landed =
+        led && (led.path === '' || led.path === options.props.path)
+          ? column.findFragmentOffset(led.fragment)
+          : undefined
+      stand(getSpreadOf(landed ?? keep), 'auto')
+      if (landed !== undefined) options.onMove(landed)
+      column.markRuns()
+    })
+  }
+
+  watchBookLayout(
+    options.props,
+    { viewport, textSize },
+    {
+      settle,
+      getKeptOffset,
+      takeLed: options.takeLed,
+      standing,
+      getSpreadOf,
+      stand,
+    },
+  )
 
   return {
     textSize,

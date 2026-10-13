@@ -31,7 +31,9 @@ describe('hover', () => {
 
 describe('keyboard focus', () => {
   it('is on where the focused element matches :focus-visible', () => {
-    const { hoverFocus, focus, asked } = createFocusTarget((selector) => selector === ':focus-visible')
+    const { hoverFocus, focus, asked } = createFocusTarget(
+      (selector) => selector === ':focus-visible',
+    )
     focus()
 
     expect(asked).toStrictEqual([':focus-visible'])

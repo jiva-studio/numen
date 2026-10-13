@@ -91,45 +91,49 @@ export const listen = (frame: HTMLElement, view: EditorView) => {
   })
 
   frame.addEventListener('keydown', (event) => {
-    const cell = (event.target as HTMLElement).closest<HTMLElement>('.cm-cell')
-    if (!cell) return
+    handleCellKeydown(event, frame, view)
+  })
+}
 
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      const range = getRange(cell)
-      if (range) view.dispatch({ selection: { anchor: view.state.doc.lineAt(range.to).to } })
-      view.focus()
-      return
-    }
+function handleCellKeydown(event: KeyboardEvent, frame: HTMLElement, view: EditorView): void {
+  const cell = (event.target as HTMLElement).closest<HTMLElement>('.cm-cell')
+  if (!cell) return
 
-    if (event.key === 'Enter') {
-      event.preventDefault()
-      const cells = getCells(frame)
-      const columns = countColumns(frame)
-      const below = cells[cells.indexOf(cell) + columns]
-      if (below) focus(below)
-      return
-    }
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    const range = getRange(cell)
+    if (range) view.dispatch({ selection: { anchor: view.state.doc.lineAt(range.to).to } })
+    view.focus()
+    return
+  }
 
-    if (event.key !== 'Tab') return
+  if (event.key === 'Enter') {
     event.preventDefault()
     const cells = getCells(frame)
-    const at = cells.indexOf(cell)
-
-    if (event.shiftKey) {
-      focus(cells[Math.max(at - 1, 0)])
-      return
-    }
-    if (at < cells.length - 1) {
-      focus(cells[at + 1])
-      return
-    }
-
-    const range = getRange(cell)
-    if (!range) return
-    const end = view.state.doc.lineAt(range.to).to
     const columns = countColumns(frame)
-    view.dispatch({ changes: { from: end, insert: emptyRow(columns) } })
-    focus(getCells(frame)[at + 1])
-  })
+    const below = cells[cells.indexOf(cell) + columns]
+    if (below) focus(below)
+    return
+  }
+
+  if (event.key !== 'Tab') return
+  event.preventDefault()
+  const cells = getCells(frame)
+  const at = cells.indexOf(cell)
+
+  if (event.shiftKey) {
+    focus(cells[Math.max(at - 1, 0)])
+    return
+  }
+  if (at < cells.length - 1) {
+    focus(cells[at + 1])
+    return
+  }
+
+  const range = getRange(cell)
+  if (!range) return
+  const end = view.state.doc.lineAt(range.to).to
+  const columns = countColumns(frame)
+  view.dispatch({ changes: { from: end, insert: emptyRow(columns) } })
+  focus(getCells(frame)[at + 1])
 }

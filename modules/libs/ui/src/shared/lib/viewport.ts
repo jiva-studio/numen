@@ -68,12 +68,17 @@ export const browserViewport: Viewport = {
  * stands, and again whenever it is replaced by another. `onFound` hears of each
  * element before the watching of it begins.
  */
+interface FollowOptions {
+  readonly took: (size: Size) => void
+  readonly onFound?: () => void
+}
+
 const useFollowed = (
   area: Readonly<Ref<HTMLElement | null>>,
   watchWith: Viewport['watch'],
-  took: (size: Size) => void,
-  onFound?: () => void,
+  options: FollowOptions,
 ): void => {
+  const { took, onFound } = options
   let followed: HTMLElement | null = null
   let stop: (() => void) | undefined
 
@@ -112,14 +117,12 @@ export function useViewport(area: Readonly<Ref<HTMLElement | null>>): {
     viewport.value = { width, height }
   }
 
-  useFollowed(
-    area,
-    browserViewport.watch,
-    (size) => {
+  useFollowed(area, browserViewport.watch, {
+    took: (size) => {
       viewport.value = size
     },
-    measure,
-  )
+    onFound: measure,
+  })
 
   return { viewport, measure }
 }
@@ -133,8 +136,10 @@ export function useWholeViewport(area: Readonly<Ref<HTMLElement | null>>): {
 } {
   const viewport = ref<Size>({ width: 0, height: 0 })
 
-  useFollowed(area, browserViewport.watchWhole, (size) => {
-    viewport.value = size
+  useFollowed(area, browserViewport.watchWhole, {
+    took: (size) => {
+      viewport.value = size
+    },
   })
 
   return { viewport }

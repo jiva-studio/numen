@@ -40,7 +40,12 @@ const setUp = (width: number, height: number, textSize = 1) => {
   mount(
     defineComponent({
       setup() {
-        columns = useBookColumns(shallowRef(area), shallowRef(paper), props(textSize), () => 0)
+        columns = useBookColumns({
+          area: shallowRef(area),
+          paper: shallowRef(paper),
+          props: props(textSize),
+          getEdge: () => 0,
+        })
         return () => null
       },
     }),

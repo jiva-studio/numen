@@ -50,12 +50,20 @@ export interface Day extends Tally {
   readonly isAhead: boolean
 }
 
+export interface HeatmapHistory {
+  readonly did: ReadonlyMap<string, Tally>
+  readonly due?: ReadonlyMap<string, number>
+}
+
 export function getDays(
   columns: number,
   now: Date,
-  did: ReadonlyMap<string, Tally>,
-  due: ReadonlyMap<string, number> = new Map(),
+  history: ReadonlyMap<string, Tally> | HeatmapHistory,
 ): Day[] {
+  const [did, due] =
+    'did' in history
+      ? [history.did, history.due ?? new Map<string, number>()]
+      : [history, new Map<string, number>()]
   const out: Day[] = []
 
   const today = getDayName(now)

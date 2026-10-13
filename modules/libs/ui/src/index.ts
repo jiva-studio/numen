@@ -81,7 +81,7 @@ export { Skeleton } from './shared/ui/skeleton'
 export type { Turn } from './features/thread'
 export { useConversation } from './features/thread'
 export type { Conversation } from './features/thread'
-export type { AgentPort, AgentStep } from './features/thread'
+export type { AgentPort, AgentQuery, AgentStep } from './features/thread'
 
 /** A link to a note: `[[name]]` in the text, `note://<identifier>` inside it. */
 export { isNoteAddress, getWikilinks } from './shared/lib/address'
@@ -111,7 +111,7 @@ export { BookContents } from './features/book'
 export type { ContentsEntry } from './features/book'
 
 export { WorkspaceLayout } from './features/workspace'
-export { closeTab, openTab, openTabBeside } from './features/workspace'
+export { closeTab, openTab, openTabBeside, type OpenBesidePlacement } from './features/workspace'
 
 /** For arranging without drawing, or reading a gesture without this renderer. */
 export { branch, pane } from './features/workspace'

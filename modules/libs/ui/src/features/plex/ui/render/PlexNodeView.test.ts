@@ -498,9 +498,12 @@ describe('the headings a node hangs', () => {
       props: {
         node: createNode(),
         wide,
-        hung: getNodeHeadings(createNode(), items, SIZES, {
-          viewport: { width: 1000, height: 600 },
-          margin: 20,
+        hung: getNodeHeadings(createNode(), items, {
+          options: SIZES,
+          deps: {
+            viewport: { width: 1000, height: 600 },
+            margin: 20,
+          },
         }),
         behaviour: { ...DEFAULT_BEHAVIOUR, dwell: WAIT, clock: world.clock },
       },

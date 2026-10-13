@@ -423,7 +423,7 @@ describe('a book carried into another group of tabs', () => {
       .find((tab) => tab.startsWith('book:'))!
     workspace.vm.$emit(
       'update:modelValue',
-      openTabBeside(was, book, 'right', () => 'landed'),
+      openTabBeside(was, book, { side: 'right', createId: () => 'landed' }),
     )
     await settle()
     await settle()

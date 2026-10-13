@@ -6,12 +6,17 @@
  * Counting from -1 by one is how the first is asked for, and from 0 by minus
  * one is how the last is.
  */
+export interface RovingMotion {
+  readonly from: number
+  readonly by: number
+}
+
 export const stepTo = <T>(
   items: readonly T[],
-  from: number,
-  by: number,
+  motion: RovingMotion,
   canLand: (item: T) => boolean,
 ): number => {
+  const { from, by } = motion
   const total = items.length
   for (let step = 1; step <= total; step += 1) {
     const at = (((from + by * step) % total) + total) % total

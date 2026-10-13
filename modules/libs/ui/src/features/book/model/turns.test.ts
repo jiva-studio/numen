@@ -39,14 +39,14 @@ const setUp = (marks: readonly Mark[] = MARKS, at = 0, drawn = true) => {
   const { paper, writes } = paperWithStyle()
   const props = { book: { from: 0, to: 400 }, span: { from: 0, to: 400 }, at } as SettledBookProps
   const onMove = vi.fn<(at: number) => void>()
-  const turns = useBookTurns(
-    shallowRef<HTMLElement | null>(drawn ? paper : null),
+  const turns = useBookTurns({
+    paper: shallowRef<HTMLElement | null>(drawn ? paper : null),
     props,
-    computed(() => FLOW),
-    computed(() => 4),
-    shallowRef(marks),
+    flow: computed(() => FLOW),
+    spreadCount: computed(() => 4),
+    marks: shallowRef(marks),
     onMove,
-  )
+  })
   return { turns, writes, onMove }
 }
 

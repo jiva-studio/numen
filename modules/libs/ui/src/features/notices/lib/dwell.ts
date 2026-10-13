@@ -46,19 +46,26 @@ export const getArrivalTimes = (
 const isRead = (notice: Notice, firstSeen: ReadonlyMap<string, number>, at: number): boolean =>
   at - (firstSeen.get(notice.id) ?? at) >= getDwell(notice.text, notice.about)
 
+export interface ShownNoticeOptions {
+  readonly firstSeen: ReadonlyMap<string, number>
+  readonly away?: ReadonlySet<string>
+  readonly wait?: number
+}
+
 /** The notices drawn: the ones that have lasted, less the ones put away. */
 export const getShownNotices = (
   notices: readonly Notice[],
-  firstSeen: ReadonlyMap<string, number>,
-  away: ReadonlySet<string>,
   at: number,
-  wait: number = CARD_DELAY,
-): readonly Notice[] =>
-  getReadable(notices).filter((notice) => {
+  options: ShownNoticeOptions,
+): readonly Notice[] => {
+  const away = options.away ?? new Set<string>()
+  const wait = options.wait ?? CARD_DELAY
+  return getReadable(notices).filter((notice) => {
     if (away.has(notice.id)) return false
-    if (notice.stay === 'read') return !isRead(notice, firstSeen, at)
-    return notice.isUserStarted || at - (firstSeen.get(notice.id) ?? at) >= wait
+    if (notice.stay === 'read') return !isRead(notice, options.firstSeen, at)
+    return notice.isUserStarted || at - (options.firstSeen.get(notice.id) ?? at) >= wait
   })
+}
 
 /** The notices that have been read, and whose caller may dismiss them. */
 export const getFinishedNotices = (

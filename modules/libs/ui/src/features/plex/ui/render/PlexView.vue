@@ -87,22 +87,28 @@ const thread = computed(() => getReachThread(props.frame, props.gestureFrom, pro
 
 /** The line from a node to a point awaiting a node of its own. */
 const pendingThread = computed(() =>
-  getPendingThread(
-    props.frame,
-    props.pending?.from ?? null,
-    props.pending?.at ?? null,
-    props.viewport,
-  ),
+  getPendingThread(props.frame, {
+    from: props.pending?.from ?? null,
+    at: props.pending?.at ?? null,
+    viewport: props.viewport,
+  }),
 )
 
 /** The node a gesture would make, drawn where it would appear. */
 const ghost = computed(() =>
-  getReachGhost(props.gestureOutcome, props.gestureAt, props.relationName, props.nodeSize),
+  getReachGhost(props.gestureOutcome, props.gestureAt, {
+    relationName: props.relationName,
+    nodeSize: props.nodeSize,
+  }),
 )
 
 /** What is dragged in from outside, and the shape letting go would leave. */
 const dragging = computed(() =>
-  getDraggedShape(props.frame, props.dropRelation, props.draggedAt, props.dropName, props.nodeSize),
+  getDraggedShape(
+    props.frame,
+    { relation: props.dropRelation, to: props.draggedAt },
+    { dropName: props.dropName, nodeSize: props.nodeSize },
+  ),
 )
 
 /* -------------------------------- Handlers -------------------------------- */

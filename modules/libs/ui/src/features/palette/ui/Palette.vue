@@ -138,12 +138,12 @@ const {
   chooseAction,
   onPress,
   onGround,
-} = useActionPanel(
-  () => offered.value,
-  () => lit.value?.id,
-  (item, action) => emit('choose', item, action),
-  () => emit('dismiss'),
-)
+} = useActionPanel({
+  getActions: () => offered.value,
+  getLit: () => lit.value?.id,
+  choose: (item, action) => emit('choose', item, action),
+  dismiss: () => emit('dismiss'),
+})
 
 const { onKey } = usePaletteKeys({
   field,

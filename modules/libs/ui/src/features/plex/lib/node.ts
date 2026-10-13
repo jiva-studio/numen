@@ -31,16 +31,10 @@ export interface PlacedNode extends PlexNode {
  * it. A box like any other: it is only that it has no title of its own, and
  * says the relation it would take instead.
  */
-export const ghostNode = (
-  id: string,
-  title: string,
-  relation: PlexNodeRelation,
-  at: Position,
-  size: Size,
-): PlacedNode => ({
-  id,
-  title,
-  relation,
+export const ghostNode = (node: PlexNode, at: Position, size: Size): PlacedNode => ({
+  id: node.id,
+  title: node.title,
+  relation: node.relation,
   x: at.x,
   y: at.y,
   width: size.width,

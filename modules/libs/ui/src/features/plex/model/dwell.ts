@@ -26,6 +26,11 @@ export interface WideBox {
   readonly offset: number
 }
 
+export interface WideBoxBounds {
+  readonly viewport: Size
+  readonly margin: number
+}
+
 /**
  * The box a node opens to: the room its whole title asks for, held inside the
  * window. It grows about its own middle, and slides back inside the window
@@ -34,12 +39,8 @@ export interface WideBox {
  * Nothing where the box already holds the title, and nothing where the window
  * is no wider than the box.
  */
-export function getWideBox(
-  node: PlacedNode,
-  room: number,
-  viewport: Size,
-  margin: number,
-): WideBox | null {
+export function getWideBox(node: PlacedNode, room: number, bounds: WideBoxBounds): WideBox | null {
+  const { viewport, margin } = bounds
   const width = Math.min(room, viewport.width - 2 * margin)
   if (width <= node.width) return null
 
@@ -129,19 +130,22 @@ export function useDwell(
   return open
 }
 
+export interface OpenBoxOptions {
+  readonly node: () => PlacedNode
+  readonly wide: () => WideBox | null
+  readonly on: () => string | null
+  readonly delay: () => number
+  readonly clock?: Clock | undefined
+}
+
 /**
  * One node's box as it is drawn, and where its handle sits in it. What the
  * handle is made of is all sizes, and so all tokens.
  *
  * `on` names what the attention is on, and nothing when it is on none.
  */
-export function useOpenBox(
-  node: () => PlacedNode,
-  wide: () => WideBox | null,
-  on: () => string | null,
-  delay: () => number,
-  clock: Clock = browserClock,
-) {
+export function useOpenBox(options: OpenBoxOptions) {
+  const { node, wide, on, delay, clock = browserClock } = options
   const open = useDwell(on, delay, clock)
   const box = computed(() => interpolateBox(node(), wide(), open.value))
 

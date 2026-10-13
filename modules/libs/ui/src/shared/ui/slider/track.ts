@@ -24,19 +24,34 @@ export const isWalkingKey = (key: string): boolean => WALKING.includes(key)
 /** How many steps a page key covers, which is what a key held with shift covers. */
 const PACES = 10
 
+/** Options for walking a handle along a slider track. */
+export interface SliderStepOptions {
+  readonly bounds: Bounds
+  readonly isBigStep?: boolean
+}
+
+const KEY_STEPS: Record<string, number> = {
+  ArrowRight: 1,
+  ArrowUp: 1,
+  ArrowLeft: -1,
+  ArrowDown: -1,
+  PageUp: PACES,
+  PageDown: -PACES,
+}
+
 /** Where a key leaves the handle, and nothing for a key it does not answer. */
 export const stepForKey = (
   key: string,
   value: number,
-  bounds: Bounds,
-  isBigStep: boolean,
+  options: SliderStepOptions,
 ): number | null => {
-  const paces = isBigStep ? PACES : 1
+  const { bounds, isBigStep = false } = options
   if (key === 'Home') return bounds.min
   if (key === 'End') return bounds.max
-  if (key === 'ArrowRight' || key === 'ArrowUp') return stepBy(value, paces, bounds)
-  if (key === 'ArrowLeft' || key === 'ArrowDown') return stepBy(value, -paces, bounds)
-  if (key === 'PageUp') return stepBy(value, PACES, bounds)
-  if (key === 'PageDown') return stepBy(value, -PACES, bounds)
+  const step = KEY_STEPS[key]
+  if (step !== undefined) {
+    const paces = Math.abs(step) === PACES ? step : step * (isBigStep ? PACES : 1)
+    return stepBy(value, paces, bounds)
+  }
   return null
 }

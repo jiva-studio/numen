@@ -63,7 +63,10 @@ describe('a notice put away', () => {
     const notices = [createNotice({ id: 'reading' }), createNotice({ id: 'embedding' })]
     const arrived = getArrivalTimes(new Map(), notices, 0)
     expect(
-      getShownNotices(notices, arrived, new Set(['reading']), 20_000).map((each) => each.id),
+      getShownNotices(notices, 20_000, {
+        firstSeen: arrived,
+        away: new Set(['reading']),
+      }).map((each) => each.id),
     ).toEqual(['embedding'])
   })
 
@@ -92,18 +95,20 @@ describe('how long work runs before it is worth a card', () => {
 
   it('draws nothing while the work is younger than the wait', () => {
     const arrived = getArrivalTimes(new Map(), embedding, 1000)
-    expect(getShownNotices(embedding, arrived, new Set(), 10_999, 10_000)).toEqual([])
+    expect(getShownNotices(embedding, 10_999, { firstSeen: arrived, wait: 10_000 })).toEqual([])
   })
 
   it('draws it once the work has lasted', () => {
     const arrived = getArrivalTimes(new Map(), embedding, 1000)
     expect(
-      getShownNotices(embedding, arrived, new Set(), 11_000, 10_000).map((each) => each.id),
+      getShownNotices(embedding, 11_000, { firstSeen: arrived, wait: 10_000 }).map(
+        (each) => each.id,
+      ),
     ).toEqual(['embedding'])
   })
 
   it('draws nothing it was never told the arrival of', () => {
-    expect(getShownNotices(embedding, new Map(), new Set(), 99_000, 10_000)).toEqual([])
+    expect(getShownNotices(embedding, 99_000, { firstSeen: new Map(), wait: 10_000 })).toEqual([])
   })
 })
 
@@ -118,7 +123,7 @@ describe('a notice somebody asked for', () => {
     const arrived = getArrivalTimes(new Map(), [asked, behind], 0)
 
     expect(
-      getShownNotices([asked, behind], arrived, new Set(), 0).map(
+      getShownNotices([asked, behind], 0, { firstSeen: arrived }).map(
         (createNotice) => createNotice.id,
       ),
     ).toEqual(['reading'])
@@ -127,7 +132,9 @@ describe('a notice somebody asked for', () => {
   it('is put away like any other', () => {
     const arrived = getArrivalTimes(new Map(), [asked], 0)
 
-    expect(getShownNotices([asked], arrived, new Set(['reading']), 0)).toEqual([])
+    expect(getShownNotices([asked], 0, { firstSeen: arrived, away: new Set(['reading']) })).toEqual(
+      [],
+    )
   })
 })
 
@@ -153,13 +160,13 @@ describe('how long something said stands to be read', () => {
     const said: Notice = { id: 'renamed', text: 'Renamed', stay: 'read' }
     const arrived = getArrivalTimes(new Map(), [said], 1000)
 
-    expect(getShownNotices([said], arrived, new Set(), 1000).map((each) => each.id)).toEqual([
+    expect(getShownNotices([said], 1000, { firstSeen: arrived }).map((each) => each.id)).toEqual([
       'renamed',
     ])
     expect(
-      getShownNotices([said], arrived, new Set(), 1000 + MIN_DWELL + PER_WORD - 1),
+      getShownNotices([said], 1000 + MIN_DWELL + PER_WORD - 1, { firstSeen: arrived }),
     ).toHaveLength(1)
-    expect(getShownNotices([said], arrived, new Set(), 1000 + MIN_DWELL + PER_WORD)).toEqual([])
+    expect(getShownNotices([said], 1000 + MIN_DWELL + PER_WORD, { firstSeen: arrived })).toEqual([])
   })
 
   it('stands until it is put away where it was not asked to be read in passing', () => {
@@ -170,9 +177,9 @@ describe('how long something said stands to be read', () => {
     }
     const arrived = getArrivalTimes(new Map(), [kept], 0)
 
-    expect(getShownNotices([kept], arrived, new Set(), 10_000_000).map((each) => each.id)).toEqual([
-      'occupied',
-    ])
+    expect(
+      getShownNotices([kept], 10_000_000, { firstSeen: arrived }).map((each) => each.id),
+    ).toEqual(['occupied'])
   })
 
   it('keeps a notice too long to be read in passing standing, and never finishes it', () => {
@@ -180,9 +187,9 @@ describe('how long something said stands to be read', () => {
     const long: Notice = { id: 'repaired', text: 'Links repaired in', about: list, stay: 'read' }
     const arrived = getArrivalTimes(new Map(), [long], 0)
 
-    expect(getShownNotices([long], arrived, new Set(), 10_000_000).map((each) => each.id)).toEqual([
-      'repaired',
-    ])
+    expect(
+      getShownNotices([long], 10_000_000, { firstSeen: arrived }).map((each) => each.id),
+    ).toEqual(['repaired'])
     expect(getFinishedNotices([long], arrived, 10_000_000)).toEqual([])
   })
 

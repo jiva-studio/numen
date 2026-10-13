@@ -28,14 +28,20 @@ export const EDGE = 0.15
  * neither. Taking words up and swiping are one gesture until the hand lifts,
  * and a run worth quoting is wider than a swipe.
  */
-export function handTurn(
-  from: number,
-  to: number,
-  wide: number,
-  hasSelection: boolean,
-): PageTurn | undefined {
-  if (hasSelection) return undefined
-  return swipeTurn(to - from) ?? pressTurn(to, wide)
+export interface HandTurnOptions {
+  readonly wide: number
+  readonly hasSelection: boolean
+}
+
+/**
+ * What a hand put down and lifted again does: a swipe turns the way it went, a
+ * press near either edge turns that way, and a hand that took words up did
+ * neither. Taking words up and swiping are one gesture until the hand lifts,
+ * and a run worth quoting is wider than a swipe.
+ */
+export function handTurn(from: number, to: number, options: HandTurnOptions): PageTurn | undefined {
+  if (options.hasSelection) return undefined
+  return swipeTurn(to - from) ?? pressTurn(to, options.wide)
 }
 
 /** Which way a press across the reading area turns the page. */
@@ -57,25 +63,26 @@ export interface Destination {
   readonly offset?: number
 }
 
+export interface TurnContext {
+  readonly spread: number
+  readonly count: number
+  readonly span: Span
+  readonly book: Span
+}
+
 /**
  * Where a turn lands. A turn inside the document lands on the spread it asks
  * for; past either end stands the document beside this one, which the holder
  * of the book opens at the offset the turn names.
  */
-export function turnTo(
-  way: PageTurn,
-  spread: number,
-  count: number,
-  span: Span,
-  book: Span,
-): Destination {
+export function turnTo(way: PageTurn, context: TurnContext): Destination {
   if (way === 'first') return { spread: 0 }
-  if (way === 'last') return { spread: count - 1 }
+  if (way === 'last') return { spread: context.count - 1 }
 
-  const to = spread + (way === 'next' ? 1 : -1)
-  if (to >= 0 && to < count) return { spread: to }
+  const to = context.spread + (way === 'next' ? 1 : -1)
+  if (to >= 0 && to < context.count) return { spread: to }
 
-  const offset = way === 'next' ? span.to : span.from - 1
-  if (offset >= book.from && offset < book.to) return { offset }
+  const offset = way === 'next' ? context.span.to : context.span.from - 1
+  if (offset >= context.book.from && offset < context.book.to) return { offset }
   return {}
 }

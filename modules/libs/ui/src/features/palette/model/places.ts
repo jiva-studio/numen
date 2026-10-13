@@ -95,7 +95,7 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
     places,
     (now) => {
       if (here.value >= 0) return
-      goTo(stepTo(now, -1, 1, canLandOn))
+      goTo(stepTo(now, { from: -1, by: 1 }, canLandOn))
     },
     { flush: 'post' },
   )

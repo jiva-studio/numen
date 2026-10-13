@@ -71,7 +71,11 @@ export function arrangePlex(
   // into the room that is left. The opening is measured against the
   // arrangement itself, so a placement of any shape keeps the window.
   const lay = (spacing: Spacing) =>
-    placement.place(nodesByRelation, focus, { ...resolved, ...spacing }, limits, getWidth)
+    placement.place(nodesByRelation, focus, {
+      options: { ...resolved, ...spacing },
+      limits,
+      width: getWidth,
+    })
   const spacing = findSpacing(resolved, (candidate, viewport) =>
     isInsideViewport(lay(candidate), viewport, resolved.margin),
   )

@@ -72,10 +72,10 @@ const { dragged, at, lift, hover, release, drop, step } = useDrag<InsertionPoint
   move: (held, at) => emit('move', held, at),
 })
 
-const shown = computed(() => getGrid(props.cards, props.sections, props.stencils, dragged.value))
+const shown = computed(() => getGrid(props, dragged.value))
 
 provide(DECK_CONTEXT, {
-  write: (card, field, nth, text) => emit('write', card, field, nth, text),
+  write: (card, target, text) => emit('write', card, target.field, target.nth, text),
 })
 
 // --- Handlers ---

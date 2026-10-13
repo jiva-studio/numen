@@ -41,6 +41,14 @@ export interface AgentPanelDeps {
   readonly paint?: (draw: () => void) => void
 }
 
+function createCardConversation(
+  agent: AgentPort,
+  conversationId: string,
+  paint?: (draw: () => void) => void,
+): Conversation {
+  return useConversation({ agent, words, conversation: conversationId, paint })
+}
+
 export function useAgentPanel(deps: AgentPanelDeps) {
   /** Whether the panel is what the window is showing, which the window holds. */
   const open = computed(() => deps.open())
@@ -63,7 +71,7 @@ export function useAgentPanel(deps: AgentPanelDeps) {
   const startTalk = (card: CardFace) => {
     if (held.value?.card.mark === card.mark && held.value.card.face === card.face) return
     endConversation()
-    const conversation = useConversation(deps.agent(card), words, `card-${opened++}`, deps.paint)
+    const conversation = createCardConversation(deps.agent(card), `card-${opened++}`, deps.paint)
     held.value = { card, conversation }
   }
 
@@ -75,18 +83,13 @@ export function useAgentPanel(deps: AgentPanelDeps) {
     const card = deps.card()
     if (!card) return
     const why = deps.unreachable()
-    if (why) {
-      deps.showNotice(why)
-      return
-    }
+    if (why) return deps.showNotice(why)
     startTalk(card)
     deps.showPanel(true)
   }
 
   /** The panel put away, with what was said in it kept. */
-  const closePanel = () => {
-    deps.showPanel(false)
-  }
+  const closePanel = () => deps.showPanel(false)
 
   const setWritten = (text: string) => {
     written.value = text

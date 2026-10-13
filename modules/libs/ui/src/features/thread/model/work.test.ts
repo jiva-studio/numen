@@ -9,7 +9,7 @@ const create = () => {
   const put = vi.fn<(turn: Turn) => void>()
   const drop = vi.fn<(id: string) => void>()
   const locations = new Map<string, SourceLocation>()
-  const line = createWorkLine(put, drop, locations, 'Working', 'work', 'wait')
+  const line = createWorkLine({ put, drop, locations, waitWords: 'Working' }, 'work', 'wait')
   return { line, put, drop, locations }
 }
 
@@ -22,7 +22,7 @@ describe('the line that says what the agent has in hand', () => {
 
   it('names the tool as a program is not named, and how much was written', () => {
     const { line, put } = create()
-    line.reach('read_note', 'Plans', undefined, 12)
+    line.reach({ tool: 'read_note', subject: 'Plans', written: 12 })
     expect(put).toHaveBeenCalledExactlyOnceWith({
       id: 'work',
       voice: 'doing',
@@ -35,16 +35,21 @@ describe('the line that says what the agent has in hand', () => {
 
   it('settles in place once reached for', () => {
     const { line, put } = create()
-    line.reach('read_note', 'Plans', undefined, 0)
+    line.reach({ tool: 'read_note', subject: 'Plans', written: 0 })
     line.settle()
     expect(put).toHaveBeenLastCalledWith(
-      expect.objectContaining({ id: 'work', text: 'read note', subject: 'Plans', state: 'settled' }),
+      expect.objectContaining({
+        id: 'work',
+        text: 'read note',
+        subject: 'Plans',
+        state: 'settled',
+      }),
     )
   })
 
   it('does not put the line back by settling after it came down', () => {
     const { line, put, drop } = create()
-    line.reach('t', 's', undefined, 0)
+    line.reach({ tool: 't', subject: 's', written: 0 })
     line.takeDown()
     put.mockClear()
     line.settle()
@@ -54,25 +59,30 @@ describe('the line that says what the agent has in hand', () => {
 
   it('can be opened while the call names a run of a source', () => {
     const { line, put, locations } = create()
-    line.reach('t', 's', PLACE, 0)
+    line.reach({ tool: 't', subject: 's', location: PLACE, written: 0 })
     expect(locations.get('work')).toBe(PLACE)
     expect(put).toHaveBeenLastCalledWith(expect.objectContaining({ canOpen: true }))
   })
 
   it('cannot be opened once a later call names no run', () => {
     const { line, put, locations } = create()
-    line.reach('t', 's', PLACE, 0)
-    line.reach('t', 's', { path: 'a', span: { from: 4, to: 4 } }, 0)
+    line.reach({ tool: 't', subject: 's', location: PLACE, written: 0 })
+    line.reach({
+      tool: 't',
+      subject: 's',
+      location: { path: 'a', span: { from: 4, to: 4 } },
+      written: 0,
+    })
     expect(locations.has('work')).toBe(false)
     expect(put.mock.lastCall?.[0]).not.toHaveProperty('canOpen')
-    line.reach('t', 's', PLACE, 0)
-    line.reach('t', 's', null, 0)
+    line.reach({ tool: 't', subject: 's', location: PLACE, written: 0 })
+    line.reach({ tool: 't', subject: 's', location: null, written: 0 })
     expect(locations.has('work')).toBe(false)
   })
 
   it('forgets the source when the line comes down', () => {
     const { line, drop, locations } = create()
-    line.reach('t', 's', PLACE, 0)
+    line.reach({ tool: 't', subject: 's', location: PLACE, written: 0 })
     line.takeDown()
     expect(drop).toHaveBeenCalledWith('work')
     expect(locations.size).toBe(0)
@@ -94,7 +104,7 @@ describe('the line that says what the agent has in hand', () => {
 
   it('brings both lines down on clear', () => {
     const { line, drop, locations } = create()
-    line.reach('t', 's', PLACE, 0)
+    line.reach({ tool: 't', subject: 's', location: PLACE, written: 0 })
     line.clear()
     expect(drop).toHaveBeenCalledWith('work')
     expect(drop).toHaveBeenCalledWith('wait')

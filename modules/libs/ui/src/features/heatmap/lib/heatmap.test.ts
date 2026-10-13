@@ -113,7 +113,7 @@ describe('the days a grid draws', () => {
   // A vault whose cards are all still ahead has a beginning too.
   it('opens on this week for a vault with nothing behind it', () => {
     const now = new Date('2026-08-29T12:00:00')
-    const shown = getDays(30, now, new Map(), new Map([['2026-09-03', 8]]))
+    const shown = getDays(30, now, { did: new Map(), due: new Map([['2026-09-03', 8]]) })
 
     expect(shown[0]!.day).toBe('2026-08-24')
   })
@@ -137,7 +137,7 @@ describe('the days a grid draws', () => {
       ['2026-08-29', 99],
       ['2026-09-02', 7],
     ])
-    const shown = getDays(12, now, done, coming)
+    const shown = getDays(12, now, { did: done, due: coming })
 
     expect(shown.find((one) => one.isToday)?.did).toBe(4)
     const later = shown.find((one) => one.day === '2026-09-02')
@@ -187,7 +187,7 @@ describe('where the days are drawn', () => {
   })
 
   it('fills a column before it begins the next', () => {
-    const days = getDays(2, new Date('2026-01-31T12:00:00Z'), new Map(), new Map())
+    const days = getDays(2, new Date('2026-01-31T12:00:00Z'), new Map())
     const cells = getCells(grid, days)
 
     expect(cells.slice(0, 7).map((one) => one.x)).toStrictEqual([0, 0, 0, 0, 0, 0, 0])
@@ -197,7 +197,7 @@ describe('where the days are drawn', () => {
   })
 
   it('draws every cell the size the grid measured', () => {
-    const days = getDays(1, new Date('2026-01-31T12:00:00Z'), new Map(), new Map())
+    const days = getDays(1, new Date('2026-01-31T12:00:00Z'), new Map())
 
     for (const cell of getCells(grid, days)) expect(cell.size).toBe(10)
   })
@@ -241,7 +241,7 @@ describe('the first day a grid draws', () => {
   })
 
   it('opens on this week where the only days are still to come', () => {
-    const shown = getDays(10, friday, none, new Map([['2026-10-01', 3]]))
+    const shown = getDays(10, friday, { did: none, due: new Map([['2026-10-01', 3]]) })
 
     expect(shown[0]!.day).toBe('2026-09-14')
   })
@@ -252,18 +252,16 @@ describe('the first day a grid draws', () => {
       ['2026-09-01', 1],
       ['2026-09-05', 1],
     ])
-    const shown = getDays(10, friday, did, new Map([['2026-09-20', 2]]))
+    const shown = getDays(10, friday, { did, due: new Map([['2026-09-20', 2]]) })
 
     expect(shown[0]!.day).toBe('2026-08-31')
   })
 
   it('opens on the week of the earliest day among those still coming', () => {
-    const shown = getDays(
-      10,
-      friday,
-      createTallies([['2026-09-16', 1]]),
-      new Map([['2026-09-02', 2]]),
-    )
+    const shown = getDays(10, friday, {
+      did: createTallies([['2026-09-16', 1]]),
+      due: new Map([['2026-09-02', 2]]),
+    })
 
     expect(shown[0]!.day).toBe('2026-08-31')
   })

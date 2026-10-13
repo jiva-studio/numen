@@ -107,7 +107,10 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
   /** A question sent. What the person has open the agent reads for itself. */
   const send = (text: string) => {
     userQuestion.value = ''
-    void conversation.ask(text, '', selectedAgentId.value, selectedModelId.value)
+    void conversation.ask(text, '', {
+      agentId: selectedAgentId.value,
+      modelId: selectedModelId.value,
+    })
   }
 
   /** A line about work pressed: where that call was working is put in front. */

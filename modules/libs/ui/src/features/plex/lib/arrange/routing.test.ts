@@ -525,6 +525,8 @@ describe('the run of a line between two boxes', () => {
     const byId = new Map([a, b].map((node) => [node.id, node]))
 
     expect(routeEdges([{ from: 'a', to: 'b' }], byId, routing)[0]!.opacity).toBe(1)
-    expect(routeEdges([{ from: 'a', to: 'b' }], byId, routing, () => 0.25)[0]!.opacity).toBe(0.25)
+    expect(
+      routeEdges([{ from: 'a', to: 'b' }], byId, { routing, opacity: () => 0.25 })[0]!.opacity,
+    ).toBe(0.25)
   })
 })

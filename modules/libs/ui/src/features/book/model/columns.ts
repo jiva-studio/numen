@@ -35,23 +35,39 @@ const getLine = (text: HTMLElement): number => {
   return Number.isFinite(parsedHeight) ? parsedHeight : 0
 }
 
+function createBookSetting(flow: Flow, height: number, textSize: number) {
+  return {
+    '--book-run': flow.columns === 1 ? '200%' : '100%',
+    '--book-gap': `${GAP}px`,
+    '--book-column': `${columnWidth(flow)}px`,
+    '--book-height': `${height}px`,
+    '--book-size': `calc(var(--numen-prose-size) * ${textSize})`,
+  }
+}
+
+export interface BookColumnsOptions {
+  readonly area: Readonly<ShallowRef<HTMLElement | null>>
+  readonly paper: Readonly<ShallowRef<HTMLElement | null>>
+  readonly props: SettledBookProps
+  readonly getEdge: (of: HTMLElement) => number
+}
+
 /** `getEdge` is handed on to the marks, which is what reads it. */
-export function useBookColumns(
-  area: Readonly<ShallowRef<HTMLElement | null>>,
-  paper: Readonly<ShallowRef<HTMLElement | null>>,
-  props: SettledBookProps,
-  getEdge: (of: HTMLElement) => number,
-) {
+export function useBookColumns(options: BookColumnsOptions) {
   /** How large the text is set, held inside what a book may be read at. */
-  const textSize = computed(() => clamp(props.textSize, { min: SMALLEST, max: LARGEST }))
+  const textSize = computed(() => clamp(options.props.textSize, { min: SMALLEST, max: LARGEST }))
 
   /** The reading area, taken again whenever it changes. */
-  const { viewport, measure } = useViewport(area)
+  const { viewport, measure } = useViewport(options.area)
 
   /** How far the columns run, taken once they have been laid out. */
   const along = ref(0)
 
-  const { marks, gather, findFragmentOffset, markRuns } = useBookMarks(paper, props, getEdge)
+  const { marks, gather, findFragmentOffset, markRuns } = useBookMarks(
+    options.paper,
+    options.props,
+    options.getEdge,
+  )
 
   /**
    * Whether the reading area has been measured. A book is turned and never
@@ -71,18 +87,9 @@ export function useBookColumns(
   /** How many spreads the document is read in. */
   const spreadCount = computed(() => countSpreads(flow.value))
 
-  /**
-   * What the columns are set with. A column's own width and height are among
-   * them: a percentage inside a column resolves against a box whose height is not
-   * settled.
-   */
-  const setting = computed(() => ({
-    '--book-run': columns.value === 1 ? '200%' : '100%',
-    '--book-gap': `${GAP}px`,
-    '--book-column': `${columnWidth(flow.value)}px`,
-    '--book-height': `${viewport.value.height}px`,
-    '--book-size': `calc(var(--numen-prose-size) * ${textSize.value})`,
-  }))
+  const setting = computed(() =>
+    createBookSetting(flow.value, viewport.value.height, textSize.value),
+  )
 
   /**
    * The columns as the browser has just laid them out: how tall a column may be,

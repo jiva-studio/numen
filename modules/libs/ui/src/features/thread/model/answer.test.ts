@@ -16,7 +16,7 @@ const create = () => {
       draw()
     })
   }
-  return { answer: createAnswer(put, drop, nextId, paint), put, drop, frames, flush }
+  return { answer: createAnswer({ put, drop, nextId }, paint), put, drop, frames, flush }
 }
 
 describe('an answer as it arrives', () => {

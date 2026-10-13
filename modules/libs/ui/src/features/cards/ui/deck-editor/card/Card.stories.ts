@@ -161,7 +161,10 @@ type Corpora = keyof typeof CORPORA
 
 /** The one card of a corpus, laid out against the stencil that cuts it. */
 const createTile = (corpus: Corpus): Tile => {
-  const laid = getGrid([corpus.card], [], corpus.cut ? [corpus.cut] : [], null).runs[0]?.tiles[0]
+  const laid = getGrid(
+    { cards: [corpus.card], sections: [], stencils: corpus.cut ? [corpus.cut] : [] },
+    null,
+  ).runs[0]?.tiles[0]
   if (!laid) throw new Error('a corpus holding no card')
   return laid
 }
@@ -224,7 +227,9 @@ const meta: Meta<Knobs> = {
         tile.value = createTile(written)
       }
 
-      provide(DECK_CONTEXT, { write: (_card, field, nth, text) => onWrite(field, nth, text) })
+      provide(DECK_CONTEXT, {
+        write: (_card, { field, nth }, text) => onWrite(field, nth, text),
+      })
 
       return {
         args,
