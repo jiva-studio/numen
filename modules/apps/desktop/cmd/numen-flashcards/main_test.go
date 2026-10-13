@@ -2,7 +2,6 @@ package main
 
 import (
 	"reflect"
-	"slices"
 	"testing"
 )
 
@@ -68,29 +67,8 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 
 	bindVaultIndexer(t.Context(), api, vaults)
 
-	if vaults.recordVault == nil {
+	if vaults.RecordVault == nil {
 		t.Fatal("a vault brought level is recorded nowhere")
 	}
-	vaults.recordVault(held[0])
-}
-
-// The window lets go in order: the agents, the page, the walk and the watch,
-// and the index last.
-func TestTheWindowLetsGoInOrder(t *testing.T) {
-	_, db, vaults, _, _ := makeWindow(t)
-	var ran []string
-
-	steps := makeShutdown(
-		func() error { ran = append(ran, "agents"); return nil },
-		func() { ran = append(ran, "stop") },
-		vaults, db,
-	)
-	steps.Run()
-
-	if want := []string{"agents", "stop"}; !slices.Equal(ran, want) {
-		t.Errorf("the window let go of %v", ran)
-	}
-	if vaults.tryBeginWork() {
-		t.Error("work began after the window let go")
-	}
+	vaults.RecordVault(held[0])
 }

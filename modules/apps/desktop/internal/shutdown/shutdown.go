@@ -5,7 +5,11 @@
 // run waits for them.
 package shutdown
 
-import "sync"
+import (
+	"fmt"
+	"io"
+	"sync"
+)
 
 // Sequence are what is let go of, first to last.
 type Sequence struct {
@@ -26,4 +30,19 @@ func (s *Sequence) Run() {
 			step()
 		}
 	})
+}
+
+// Report is a step that runs fn and writes its fault to out as "name: fault",
+// or "name: label: fault" when label is set.
+func Report(name string, out io.Writer, label string, fn func() error) func() {
+	return func() {
+		err := fn()
+		switch {
+		case err == nil:
+		case label == "":
+			fmt.Fprintf(out, "%s: %v\n", name, err)
+		default:
+			fmt.Fprintf(out, "%s: %s: %v\n", name, label, err)
+		}
+	}
 }
