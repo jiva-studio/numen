@@ -69,7 +69,7 @@ const FIELDS: Record<Field, readonly [string, string]> = {
 
 /** An error clause as a sentence. */
 const sayAsSentence = (clause: string): string =>
-  `$1`
+  `${clause.charAt(0).toUpperCase()}${clause.slice(1)}.`
 
 /** A count as a person reads one. */
 const count = (value: number): string => `${Math.round(value)}`
