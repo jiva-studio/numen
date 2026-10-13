@@ -106,8 +106,5 @@ func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault) (embedd
 // writes a batch of pages and asks for this, so a book being read answers about
 // the pages that have been read.
 func (u ReadWholeVault) CutOne(ctx context.Context, v domain.Vault, path string) error {
-	if _, err := u.books.ExtractOne(ctx, v, path); err != nil {
-		return fmt.Errorf("cutting %s: %w", path, err)
-	}
-	return nil
+	return source.NewCutSource(u.books).Execute(ctx, v, path)
 }

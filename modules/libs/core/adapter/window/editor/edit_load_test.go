@@ -60,8 +60,9 @@ func TestEditLoad(t *testing.T) {
 	api.state.setVault(v)
 
 	reading := time.Now()
-	_, wait := startIndexing(t.Context(), v, container.NewEditorAssembly(cfg, nil, db),
-		api.state, false, nil, newIndexTriggers(time.Hour), &pendingSources{}, io.Discard)
+	made := container.NewEditorAssembly(cfg, nil, db)
+	worker := newIndexWorker(made, api.state, nil, time.Hour, io.Discard)
+	_, wait := startIndexing(t.Context(), v, made, api.state, false, worker, worker.NewSession(), io.Discard)
 	t.Cleanup(wait)
 	for !api.state.Ready.Load() && api.state.Error.Why() == "" {
 		time.Sleep(50 * time.Millisecond)

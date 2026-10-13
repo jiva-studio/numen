@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
 
@@ -31,16 +32,13 @@ func proofreadTranscriptCommand(
 		return errors.New("nothing to proofread with: none is configured")
 	}
 
-	proofread, cut := open.Proofread, open.Cut
+	proofread, cut := open.Proofread, source.NewCutSource(open.Cut)
 	fmt.Fprintf(out, "proofreading %s with %s\n", path, proofread.GetProofreaderName())
 	started := time.Now()
 
 	// The line of lines rewrites itself, and is closed once it stops.
 	shown := false
-	proofread.Cut = func(ctx context.Context, v domain.Vault, path string) error {
-		_, err := cut.ExtractOne(ctx, v, path)
-		return err
-	}
+	proofread.Cut = cut.Execute
 	proofread.OnProgress = func(res transcription.ProofreadResult) {
 		if res.Lines > 0 {
 			fmt.Fprintf(out, "  line %d of %d\r", res.Read, res.Lines)

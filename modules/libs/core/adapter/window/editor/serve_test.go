@@ -214,12 +214,12 @@ func openingWith(
 	line, done := api.state.ChangeEvents.subscribe()
 	t.Cleanup(done)
 
-	wake := newIndexTriggers(still)
-	api.state.NotifyNoteWritten = func() { fire(wake.notes) }
+	made := newWatched(cfg, db, readers, watcher)
+	worker := newIndexWorker(made, api.state, embedder, still, io.Discard)
+	api.state.NotifyNoteWritten = worker.WakeNotes
 
 	ctx, stop := context.WithCancel(t.Context())
-	_, wait := startIndexing(ctx, v, newWatched(cfg, db, readers, watcher),
-		api.state, false, embedder, wake, &pendingSources{}, io.Discard)
+	_, wait := startIndexing(ctx, v, made, api.state, false, worker, worker.NewSession(), io.Discard)
 	t.Cleanup(func() {
 		stop()
 		wait()
@@ -540,9 +540,10 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	api.state.setVault(v)
 
 	out := &saying{}
+	made := newWatched(cfg, db, readers, watcher)
+	worker := newIndexWorker(made, api.state, nil, quietPeriod, out)
 	ctx, stop := context.WithCancel(t.Context())
-	_, wait := startIndexing(ctx, v, newWatched(cfg, db, readers, watcher),
-		api.state, true, nil, newIndexTriggers(quietPeriod), &pendingSources{}, out)
+	_, wait := startIndexing(ctx, v, made, api.state, true, worker, worker.NewSession(), out)
 	t.Cleanup(func() {
 		stop()
 		wait()

@@ -7,8 +7,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
 
@@ -48,7 +48,7 @@ func runTranscribeCommand(ctx context.Context, out io.Writer, deps Deps, args []
 	}
 	defer closeIfOpen(open.Close)
 
-	transcribe, cut := open.Transcribe, open.Cut
+	transcribe, cut := open.Transcribe, source.NewCutSource(open.Cut)
 	fmt.Fprintf(out, "transcribing %s with %s\n", args[1], transcribe.By().GetTranscriptionModel())
 	started := time.Now()
 
@@ -56,10 +56,7 @@ func runTranscribeCommand(ctx context.Context, out io.Writer, deps Deps, args []
 	// a line of its own.
 	shown := false
 	transcribe.IsRepeat = again
-	transcribe.Cut = func(ctx context.Context, v domain.Vault, path string) error {
-		_, err := cut.ExtractOne(ctx, v, path)
-		return err
-	}
+	transcribe.Cut = cut.Execute
 	// A terminal that prints nothing for an hour looks broken, and this takes
 	// about that. The line rewrites itself.
 	transcribe.OnProgress = func(res transcription.TranscribeResult) {
