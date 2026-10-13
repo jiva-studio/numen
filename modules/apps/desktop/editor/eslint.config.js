@@ -12,6 +12,7 @@ import pluginVue from 'eslint-plugin-vue'
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'
 import prettier from 'eslint-config-prettier'
+import { createLayerElements, createLayerPolicies } from '../../../tools/lint/layers.mjs'
 
 /** The globals a pure core is not allowed to reach for, and the port for each. */
 const lifetimes = [
@@ -23,39 +24,20 @@ const lifetimes = [
 const layerOrder = ['shared', 'entities', 'features', 'widgets', 'pages', 'app']
 const sliceLayers = ['entities', 'features', 'widgets', 'pages']
 
-const layerElements = [
-  { type: 'testing', pattern: 'src/testing' },
-  { type: 'shared', pattern: 'src/shared' },
-  ...sliceLayers.map((type) => ({ type, pattern: `src/${type}/*`, capture: ['slice'] })),
-  { type: 'app', pattern: 'src/app' },
-]
+const layerElements = createLayerElements({
+  order: layerOrder,
+  sliceLayers,
+  extra: [{ type: 'testing', pattern: 'src/testing' }],
+})
 
-const layerPolicies = [
-  { allow: { to: { module: { origin: ['external', 'core'] } } } },
-  { allow: { to: { element: { type: 'testing' } } } },
-  { from: { file: { categories: 'entry' } }, allow: { to: { element: { type: layerOrder } } } },
-  { from: { element: { type: 'testing' } }, allow: { to: { element: { type: layerOrder } } } },
-  ...layerOrder.map((layer, index) => ({
-    from: { element: { type: layer } },
-    allow: { to: { element: { type: layerOrder.slice(0, index) } } },
-  })),
-  ...['shared', 'app'].map((layer) => ({
-    from: { element: { type: layer } },
-    allow: { to: { element: { type: layer } } },
-  })),
-  ...sliceLayers.flatMap((layer) => [
-    {
-      from: { element: { type: layer } },
-      allow: {
-        to: { element: { type: layer, captured: { slice: '{{ from.element.captured.slice }}' } } },
-      },
-    },
-    {
-      from: { element: { type: layer } },
-      allow: { to: { element: { type: layer }, file: { categories: 'crossImport' } } },
-    },
-  ]),
-]
+const layerPolicies = createLayerPolicies({
+  order: layerOrder,
+  sliceLayers,
+  extra: [
+    { allow: { to: { element: { type: 'testing' } } } },
+    { from: { element: { type: 'testing' } }, allow: { to: { element: { type: layerOrder } } } },
+  ],
+})
 
 export default tseslint.config(
   {
