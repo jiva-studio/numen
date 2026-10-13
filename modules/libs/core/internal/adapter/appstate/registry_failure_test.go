@@ -2,9 +2,10 @@ package appstate_test
 
 import (
 	"encoding/json"
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -20,10 +21,9 @@ func isolateEnvironment(t *testing.T) {
 
 func TestOpenUsesTheConfigurationFolder(t *testing.T) {
 	isolateEnvironment(t)
-	config := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", config)
-	if runtime.GOOS != "linux" {
-		t.Skip("the configuration folder is taken from XDG_CONFIG_HOME on linux only")
+	config, err := os.UserConfigDir()
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	r, err := appstate.Open()
@@ -39,9 +39,6 @@ func TestOpenUsesTheConfigurationFolder(t *testing.T) {
 }
 
 func TestOpenFailsWithoutAConfigurationFolder(t *testing.T) {
-	if runtime.GOOS != "linux" {
-		t.Skip("the configuration folder is unknown on linux only when HOME and XDG_CONFIG_HOME are empty")
-	}
 	t.Setenv("HOME", "")
 	t.Setenv("XDG_CONFIG_HOME", "")
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
@@ -62,22 +59,25 @@ func TestPathIsWhereTheRegistryWasOpened(t *testing.T) {
 	}
 }
 
-// operations lists every call that reads the registry file.
-func operations() map[string]func(*appstate.VaultRegistry) error {
-	return map[string]func(*appstate.VaultRegistry) error{
-		"List": func(r *appstate.VaultRegistry) error { _, err := r.List(); return err },
-		"Save": func(r *appstate.VaultRegistry) error {
-			return r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"})
+// operation is one call that reads the registry file; found is what it
+// reports about a vault.
+type operation func(*appstate.VaultRegistry) (found bool, err error)
+
+func operations() map[string]operation {
+	return map[string]operation{
+		"List": func(r *appstate.VaultRegistry) (bool, error) { _, err := r.List(); return false, err },
+		"Save": func(r *appstate.VaultRegistry) (bool, error) {
+			return false, r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"})
 		},
-		"Remove":       func(r *appstate.VaultRegistry) error { return r.Remove("01AAA") },
-		"RecordOpened": func(r *appstate.VaultRegistry) error { return r.RecordOpened("01AAA") },
-		"GetLastVault": func(r *appstate.VaultRegistry) error { _, _, err := r.GetLastVault(); return err },
-		"FindVault":    func(r *appstate.VaultRegistry) error { _, _, err := r.FindVault("personal"); return err },
+		"Remove":       func(r *appstate.VaultRegistry) (bool, error) { return false, r.Remove("01AAA") },
+		"RecordOpened": func(r *appstate.VaultRegistry) (bool, error) { return false, r.RecordOpened("01AAA") },
+		"GetLastVault": func(r *appstate.VaultRegistry) (bool, error) { _, found, err := r.GetLastVault(); return found, err },
+		"FindVault":    func(r *appstate.VaultRegistry) (bool, error) { _, found, err := r.FindVault("personal"); return found, err },
 	}
 }
 
 func TestAnUnparsableRegistryIsReportedAndLeftAlone(t *testing.T) {
-	for name, operation := range operations() {
+	for name, call := range operations() {
 		t.Run(name, func(t *testing.T) {
 			isolateEnvironment(t)
 			path := filepath.Join(t.TempDir(), "vaults.json")
@@ -86,12 +86,17 @@ func TestAnUnparsableRegistryIsReportedAndLeftAlone(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if err := operation(appstate.OpenAt(path)); err == nil {
-				t.Fatal("a registry that cannot be parsed was accepted")
+			found, err := call(appstate.OpenAt(path))
+			var syntax *json.SyntaxError
+			if !errors.As(err, &syntax) {
+				t.Fatalf("err = %v, want the parse failure", err)
 			}
-			raw, err := os.ReadFile(path)
-			if err != nil {
-				t.Fatal(err)
+			if found {
+				t.Error("a vault was reported from a registry that cannot be parsed")
+			}
+			raw, readErr := os.ReadFile(path)
+			if readErr != nil {
+				t.Fatal(readErr)
 			}
 			if string(raw) != damaged {
 				t.Errorf("the damaged file was rewritten: %s", raw)
@@ -101,7 +106,7 @@ func TestAnUnparsableRegistryIsReportedAndLeftAlone(t *testing.T) {
 }
 
 func TestARegistryThatCannotBeReadIsReported(t *testing.T) {
-	for name, operation := range operations() {
+	for name, call := range operations() {
 		t.Run(name, func(t *testing.T) {
 			isolateEnvironment(t)
 			// A folder where the file should be: it exists, and it cannot be read as a file.
@@ -110,8 +115,13 @@ func TestARegistryThatCannotBeReadIsReported(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if err := operation(appstate.OpenAt(path)); err == nil {
-				t.Fatal("a registry that cannot be read was accepted")
+			found, err := call(appstate.OpenAt(path))
+			var unreadable *fs.PathError
+			if !errors.As(err, &unreadable) {
+				t.Fatalf("err = %v, want the read failure", err)
+			}
+			if found {
+				t.Error("a vault was reported from a registry that cannot be read")
 			}
 		})
 	}
@@ -171,7 +181,71 @@ func TestSavingIntoAFolderThatCannotBeCreatedIsReported(t *testing.T) {
 	}
 
 	r := appstate.OpenAt(filepath.Join(parent, "state", "vaults.json"))
-	if err := r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}); err == nil {
-		t.Fatal("a save into a folder that cannot be created reported success")
+	err := r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"})
+	var failure *fs.PathError
+	if !errors.As(err, &failure) || failure.Op != "mkdir" {
+		t.Fatalf("err = %v, want the failure to create the folder", err)
+	}
+}
+
+func TestTheFolderAndFileAreReadableByOthers(t *testing.T) {
+	isolateEnvironment(t)
+	dir := filepath.Join(t.TempDir(), "state")
+	path := filepath.Join(dir, "vaults.json")
+	if err := appstate.OpenAt(path).Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}); err != nil {
+		t.Fatal(err)
+	}
+
+	folder, err := os.Stat(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if perm := folder.Mode().Perm(); perm&0o700 != 0o700 || perm&0o055 != 0o055 || perm&0o022 != 0 {
+		t.Errorf("folder mode = %o, want 755 less the umask", perm)
+	}
+	file, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if perm := file.Mode().Perm(); perm&0o600 != 0o600 || perm&0o044 != 0o044 || perm&0o133 != 0 {
+		t.Errorf("file mode = %o, want 644 less the umask", perm)
+	}
+}
+
+func TestRecordingTheVaultAlreadyRecordedWritesNothing(t *testing.T) {
+	isolateEnvironment(t)
+	path := filepath.Join(t.TempDir(), "vaults.json")
+	r := appstate.OpenAt(path)
+	if err := r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.RecordOpened("01AAA"); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := r.RecordOpened("01AAA"); err != nil {
+		t.Fatal(err)
+	}
+	after, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !os.SameFile(before, after) {
+		t.Error("the file was replaced by a write that changed nothing")
+	}
+}
+
+func TestNothingIsOpenedWhileTheLastIdentityIsEmpty(t *testing.T) {
+	isolateEnvironment(t)
+	r := newRegistry(t)
+	if err := r.Save(domain.Vault{Name: "nameless identity", Path: "/notes"}); err != nil {
+		t.Fatal(err)
+	}
+	if got, found, err := r.GetLastVault(); err != nil || found {
+		t.Errorf("last = %v %v %v, want nothing", got, found, err)
 	}
 }
