@@ -15,8 +15,8 @@ import {
 import type { Day } from '@numen/ui'
 import type { PresetTabState, SettingValue } from '../../types'
 import { BUDGET_UNITS, LOADS, RULES, WHOLE_LOAD, getLoadOn, setLoadOn } from '../../types'
-import type { Bounds, BudgetUnit } from '../../types'
-import { round } from '../../lib/curve'
+import type { BudgetUnit } from '../../types'
+import { getFieldCount, getFieldLimits, getFieldValue } from '../../lib/fields'
 import type { Field } from '../../lib/fields'
 import { WORDS as words } from '../../words'
 
@@ -38,8 +38,8 @@ const week = computed<readonly Day[]>(() =>
 
 const levels = LOADS.map((one) => one / WHOLE_LOAD)
 
-const fieldBounds = computed(() => createControlBounds(props.field, bounds.value))
-const fieldCount = computed(() => getFieldCount(props.field))
+const fieldBounds = computed(() => getFieldLimits(props.field, bounds.value))
+const fieldCount = computed(() => getFieldCount(props.field, settings.value))
 
 // --- Handlers ---
 function onSelectLoad(day: string, level: number) {
@@ -52,7 +52,7 @@ function onSelectRule(rule: string) {
 
 function onFieldType(field: Field, value: number | null) {
   if (value === null) return
-  props.state.updateSetting(field, field === 'retention' ? round(value / 100, 2) : value)
+  props.state.updateSetting(field, getFieldValue(field, value))
 }
 
 function onFieldCommit() {
@@ -78,32 +78,6 @@ function onChooseUnit(field: Field, unit: string) {
 
 function onDateChange(event: Event) {
   onChooseSetting('byDate', (event.target as HTMLInputElement).value)
-}
-
-// --- Helpers ---
-type ControlBounds = { min: number; max: number } | Record<string, never>
-
-function createMinMax(one: Bounds | undefined, per = 1): ControlBounds {
-  return one ? { min: one.least * per, max: one.most * per } : {}
-}
-
-function createControlBounds(field: Field, within: typeof bounds.value): ControlBounds {
-  if (field === 'newADay') return createMinMax(within.newADay)
-  if (field === 'reviewsADay') return createMinMax(within.reviewsADay)
-  if (field === 'minutesADay') return createMinMax(within.minutesADay)
-  if (field === 'backlog') return createMinMax(within.backlog)
-  if (field === 'interval') return createMinMax(within.interval)
-  if (field === 'retention') return createMinMax(within.retention, 100)
-  return {}
-}
-
-function getFieldCount(field: Field): number | null {
-  if (field === 'newADay') return settings.value.newADay
-  if (field === 'reviewsADay') return settings.value.reviewsADay
-  if (field === 'retention') return Math.round(settings.value.retention * 100)
-  if (field === 'minutesADay') return settings.value.minutesADay
-  if (field === 'interval') return settings.value.interval
-  return null
 }
 </script>
 
