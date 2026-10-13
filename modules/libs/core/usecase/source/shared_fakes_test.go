@@ -14,7 +14,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -22,13 +21,15 @@ import (
 // A shelf is what a recognition is written to, in memory.
 type shelf struct {
 	mu     sync.Mutex
-	files  map[string][]byte
-	held   map[string]bool
+	files  map[domain.ArtifactName][]byte
+	held   map[domain.ArtifactName]bool
 	opens  int
 	closes int
 }
 
-func newShelf() *shelf { return &shelf{files: map[string][]byte{}, held: map[string]bool{}} }
+func newShelf() *shelf {
+	return &shelf{files: map[domain.ArtifactName][]byte{}, held: map[domain.ArtifactName]bool{}}
+}
 
 // shelves hands the one shelf to whatever opens a vault's store.
 type shelves struct{ *shelf }
@@ -36,7 +37,7 @@ type shelves struct{ *shelf }
 func (s shelves) Open(domain.Vault) (port.DerivedStore, error) { return s.shelf, nil }
 
 // Open is one file of the store, which a copy of a video is played from.
-func (s *shelf) Open(_ context.Context, name string) (io.ReadSeekCloser, int64, error) {
+func (s *shelf) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	raw, held := s.files[name]
@@ -56,7 +57,7 @@ func (s *shelf) closeCount() int {
 }
 
 // WriteStream puts what a reader gives under a name.
-func (s *shelf) WriteStream(_ context.Context, name string, from io.Reader) (int64, error) {
+func (s *shelf) WriteArtifactStream(_ context.Context, name domain.ArtifactName, from io.Reader) (int64, error) {
 	raw, err := io.ReadAll(from)
 	if err != nil {
 		return 0, err
@@ -81,7 +82,7 @@ func (c trackedCloser) Close() error {
 	return nil
 }
 
-func (s *shelf) Read(_ context.Context, name string) ([]byte, error) {
+func (s *shelf) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byte, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	raw, held := s.files[name]
@@ -91,36 +92,36 @@ func (s *shelf) Read(_ context.Context, name string) ([]byte, error) {
 	return raw, nil
 }
 
-func (s *shelf) Write(_ context.Context, name string, content []byte) error {
+func (s *shelf) WriteArtifact(_ context.Context, name domain.ArtifactName, content []byte) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.files[name] = append([]byte(nil), content...)
 	return nil
 }
 
-func (s *shelf) Append(_ context.Context, name string, content []byte) error {
+func (s *shelf) AppendArtifact(_ context.Context, name domain.ArtifactName, content []byte) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.files[name] = append(s.files[name], content...)
 	return nil
 }
 
-func (s *shelf) List(_ context.Context, name string) ([]port.Entry, error) {
+func (s *shelf) ListReviewLogs(context.Context) ([]port.Entry, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var out []port.Entry
 	for held, content := range s.files {
-		if strings.HasPrefix(held, name+"/") && !strings.Contains(held[len(name)+1:], "/") {
+		if held.File == domain.ArtifactReviewLog {
 			out = append(out, port.Entry{Name: held, Size: len(content)})
 		}
 	}
-	slices.SortFunc(out, func(a, b port.Entry) int { return strings.Compare(a.Name, b.Name) })
+	slices.SortFunc(out, func(a, b port.Entry) int { return strings.Compare(a.Name.Hash, b.Name.Hash) })
 	return out, nil
 }
 
 // Remove takes a name out of the store, along with the claim on it: a claim is
 // held on a file, and taking that file away frees the name.
-func (s *shelf) Remove(_ context.Context, name string) error {
+func (s *shelf) RemoveArtifact(_ context.Context, name domain.ArtifactName) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.files, name)
@@ -128,7 +129,7 @@ func (s *shelf) Remove(_ context.Context, name string) error {
 	return nil
 }
 
-func (s *shelf) ClaimName(_ context.Context, name string) (func() error, error) {
+func (s *shelf) ClaimArtifact(_ context.Context, name domain.ArtifactName) (func() error, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.held[name] {
@@ -144,16 +145,16 @@ func (s *shelf) ClaimName(_ context.Context, name string) (func() error, error) 
 }
 
 // hold takes a name the way another run holds it.
-func (s *shelf) hold(name string) {
+func (s *shelf) hold(name domain.ArtifactName) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.held[name] = true
 }
 
-func (s *shelf) names() []string {
+func (s *shelf) names() []domain.ArtifactName {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	var out []string
+	var out []domain.ArtifactName
 	for name := range s.files {
 		out = append(out, name)
 	}
@@ -210,9 +211,9 @@ const documentPath = "library/scan.pdf"
 // names are what one recognition of the fixture is kept under.
 type names struct {
 	hash        string
-	artifact    string
-	corrections string
-	far         string
+	artifact    domain.ArtifactName
+	corrections domain.ArtifactName
+	far         domain.ArtifactName
 }
 
 // textNames finds the one recognition on the shelf and says what its files are
@@ -220,15 +221,15 @@ type names struct {
 func textNames(t *testing.T, shelved *shelf) names {
 	t.Helper()
 	for _, name := range shelved.names() {
-		if !strings.HasSuffix(name, ".txt") {
+		if name.File != domain.ArtifactText || name.Producer != domain.OCR {
 			continue
 		}
-		hash := strings.TrimSuffix(strings.TrimPrefix(name, "ocr/"), ".txt")
+		hash := name.Hash
 		return names{
 			hash:        hash,
-			artifact:    text.Artifact("ocr", hash),
-			corrections: text.Corrections("ocr", hash),
-			far:         text.Proofread("ocr", hash),
+			artifact:    domain.NewArtifactName(domain.ArtifactText, domain.OCR, hash),
+			corrections: domain.NewArtifactName(domain.ArtifactCorrections, domain.OCR, hash),
+			far:         domain.NewArtifactName(domain.ArtifactProofread, domain.OCR, hash),
 		}
 	}
 	t.Fatal("nothing was read")

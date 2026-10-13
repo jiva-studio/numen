@@ -12,7 +12,6 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
@@ -46,12 +45,12 @@ type artifactHandler struct {
 const (
 	// An artifact is named by what it is. What made it is the store's to say,
 	// and a caller asking for one asks for a kind and not for a producer.
-	recognitionID          = derived.OCR
-	recognitionCorrectedID = derived.OCR + ".corrected"
-	transcriptID           = derived.Transcript
-	transcriptCorrectedID  = derived.Transcript + ".corrected"
-	articleID              = derived.Article
-	copiedID               = derived.Copies
+	recognitionID          = source.KindRecognition
+	recognitionCorrectedID = source.KindRecognition + ".corrected"
+	transcriptID           = source.KindTranscript
+	transcriptCorrectedID  = source.KindTranscript + ".corrected"
+	articleID              = source.KindArticle
+	copiedID               = source.KindCopy
 )
 
 // errNoArtifact is a kind no file of the vault carries, and errNotCarried one
@@ -81,7 +80,7 @@ func getArtifactKinds(kind domain.SourceKind, produces string) []v1.ArtifactKind
 		}
 	case kind != domain.KindURL || produces == "":
 		return nil
-	case produces == derived.Captions:
+	case produces == domain.Captions:
 		// A site that publishes words against a clock is one a copy can be
 		// taken from: the same tool answers for both.
 		return []v1.ArtifactKind{
@@ -688,7 +687,7 @@ func getReachCode(err error) connect.Code {
 // getTextKind is what the text at an address is: a video is words with the times
 // they were said at, and every other page is the prose it is written around.
 func getTextKind(produces string) v1.ArtifactKind {
-	if produces == derived.Captions {
+	if produces == domain.Captions {
 		return v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT
 	}
 	return v1.ArtifactKind_ARTIFACT_KIND_ARTICLE

@@ -31,7 +31,7 @@ func newProofreadTranscript(
 	kept := newShelf()
 
 	hash := text.Fingerprint(raw)
-	if err := kept.Write(t.Context(), text.Artifact(text.ASR, hash), transcript.Marshal(newCues(words))); err != nil {
+	if err := kept.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash), transcript.Marshal(newCues(words))); err != nil {
 		t.Fatal(err)
 	}
 	by := &corrector{says: says}
@@ -64,7 +64,7 @@ func newCues(words []string) []transcript.Cue {
 }
 
 // readCues is what a transcript on the shelf says, cue by cue.
-func readCues(t *testing.T, shelved *shelf, name string) []transcript.Cue {
+func readCues(t *testing.T, shelved *shelf, name domain.ArtifactName) []transcript.Cue {
 	t.Helper()
 	_, cues := transcript.Parse(readShelf(t, shelved, name))
 	return cues
@@ -112,7 +112,7 @@ func TestATranscriptIsPutRightAndEveryTimingStands(t *testing.T) {
 		t.Errorf("got %+v", res)
 	}
 
-	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
+	cues := readCues(t, shelved, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash))
 	if len(cues) != len(words) {
 		t.Fatalf("the transcript says %+v", cues)
 	}
@@ -129,7 +129,7 @@ func TestATranscriptIsPutRightAndEveryTimingStands(t *testing.T) {
 	}
 
 	var stood putting
-	if err := json.Unmarshal(readShelf(t, shelved, text.Proofread(text.ASR, hash)), &stood); err != nil {
+	if err := json.Unmarshal(readShelf(t, shelved, domain.NewArtifactName(domain.ArtifactProofread, domain.ASR, hash)), &stood); err != nil {
 		t.Fatal(err)
 	}
 	if stood.By != "a proofreader" || stood.At != getSpan(2).To {
@@ -140,12 +140,12 @@ func TestATranscriptIsPutRightAndEveryTimingStands(t *testing.T) {
 func TestWhatTheModelHeardIsNotWrittenOver(t *testing.T) {
 	words := []string{"first thing", "secnd thing"}
 	u, v, shelved, _, hash := newProofreadTranscript(t, map[int]string{1: corrects(1, "second thing")}, words...)
-	was := string(readShelf(t, shelved, text.Artifact(text.ASR, hash)))
+	was := string(readShelf(t, shelved, domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash)))
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
 	}
-	if now := string(readShelf(t, shelved, text.Artifact(text.ASR, hash))); now != was {
+	if now := string(readShelf(t, shelved, domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash))); now != was {
 		t.Errorf("the artifact now says %q", now)
 	}
 }
@@ -163,7 +163,7 @@ func TestAReplyThatIsNoAnswerLeavesItsLinesAsHeard(t *testing.T) {
 	if res.UncorrectedBatches != 1 || res.Fixed != 0 || res.Left != 2 {
 		t.Errorf("got %+v", res)
 	}
-	if _, err := shelved.Read(t.Context(), text.Corrections(text.ASR, hash)); err == nil {
+	if _, err := shelved.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash)); err == nil {
 		t.Error("a transcript nothing put right was written beside the artifact")
 	}
 }
@@ -202,7 +202,7 @@ func TestATranscriptIsTakenUpWhereTheRunBeforeStopped(t *testing.T) {
 		}
 	}
 
-	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
+	cues := readCues(t, shelved, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash))
 	if len(cues) != 4 {
 		t.Fatalf("the transcript says %+v", cues)
 	}
@@ -220,14 +220,14 @@ func TestAResumedRunReadsNoMoreLinesThanTheTranscriptHas(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing", "forth thing"}
 	u, v, shelved, _, hash := newProofreadTranscript(t, nil, words...)
 	u.BatchSize, u.Overlap, u.InFlight = 2, 1, 1
-	if err := shelved.Write(t.Context(), text.Corrections(text.ASR, hash), transcript.Marshal(newCues(words))); err != nil {
+	if err := shelved.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash), transcript.Marshal(newCues(words))); err != nil {
 		t.Fatal(err)
 	}
 	stood, err := json.Marshal(putting{By: "a proofreader", At: getSpan(1).To})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := shelved.Write(t.Context(), text.Proofread(text.ASR, hash), stood); err != nil {
+	if err := shelved.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactProofread, domain.ASR, hash), stood); err != nil {
 		t.Fatal(err)
 	}
 
@@ -256,7 +256,7 @@ func TestAResumedRunReadsNoMoreLinesThanTheTranscriptHas(t *testing.T) {
 
 func TestOneRunToARecordingBeingPutRight(t *testing.T) {
 	u, v, shelved, by, hash := newProofreadTranscript(t, nil, "first thing", "secnd thing")
-	shelved.hold(text.Partial(text.ASR, hash))
+	shelved.hold(domain.NewArtifactName(domain.ArtifactPartial, domain.ASR, hash))
 
 	res, err := u.Execute(t.Context(), v, recordingPath)
 	if err != nil {
@@ -285,7 +285,7 @@ func TestATranscriptSomebodyElseWroteIsLeftAsTheyLeftIt(t *testing.T) {
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			u, v, shelved, by, hash := newProofreadTranscript(t, map[int]string{1: corrects(1, "second thing")}, words...)
-			if err := shelved.Write(t.Context(), text.Corrections(text.ASR, hash), one.said); err != nil {
+			if err := shelved.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash), one.said); err != nil {
 				t.Fatal(err)
 			}
 			if one.stood.By != "" {
@@ -293,7 +293,7 @@ func TestATranscriptSomebodyElseWroteIsLeftAsTheyLeftIt(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				if err := shelved.Write(t.Context(), text.Proofread(text.ASR, hash), stood); err != nil {
+				if err := shelved.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactProofread, domain.ASR, hash), stood); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -308,7 +308,7 @@ func TestATranscriptSomebodyElseWroteIsLeftAsTheyLeftIt(t *testing.T) {
 			if len(by.asked) != 0 {
 				t.Errorf("it asked about %v", by.asked)
 			}
-			if now := string(readShelf(t, shelved, text.Corrections(text.ASR, hash))); now != string(one.said) {
+			if now := string(readShelf(t, shelved, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash))); now != string(one.said) {
 				t.Errorf("the transcript now says %q", now)
 			}
 		})
@@ -317,7 +317,7 @@ func TestATranscriptSomebodyElseWroteIsLeftAsTheyLeftIt(t *testing.T) {
 
 func TestATranscriptThatIsNotThereIsNothingToPutRight(t *testing.T) {
 	u, v, shelved, _, hash := newProofreadTranscript(t, nil, "first thing")
-	if err := shelved.Remove(t.Context(), text.Artifact(text.ASR, hash)); err != nil {
+	if err := shelved.RemoveArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -412,7 +412,7 @@ func TestARunTakingUpAmongTheSeamsIsToldAbout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := shelved.Write(t.Context(), text.Proofread(text.ASR, hash), stood); err != nil {
+	if err := shelved.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactProofread, domain.ASR, hash), stood); err != nil {
 		t.Fatal(err)
 	}
 

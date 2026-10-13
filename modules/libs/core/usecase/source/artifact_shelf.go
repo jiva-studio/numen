@@ -6,7 +6,6 @@ import (
 	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -28,7 +27,7 @@ func (s artifactShelf) getHash(ctx context.Context, v domain.Vault, path string)
 
 // artifactFile is the file one producer's artifact stands in, and its size.
 type artifactFile struct {
-	Name string
+	Name domain.ArtifactName
 	Size int64
 }
 
@@ -36,12 +35,12 @@ type artifactFile struct {
 func getArtifactFile(
 	ctx context.Context, store port.DerivedStore, producer, hash string,
 ) (*artifactFile, error) {
-	for _, one := range []string{
-		text.Corrections(producer, hash),
-		text.Artifact(producer, hash),
-		text.Partial(producer, hash),
+	for _, one := range []domain.ArtifactName{
+		domain.NewArtifactName(domain.ArtifactCorrections, producer, hash),
+		domain.NewArtifactName(domain.ArtifactText, producer, hash),
+		domain.NewArtifactName(domain.ArtifactPartial, producer, hash),
 	} {
-		reader, size, err := store.Open(ctx, one)
+		reader, size, err := store.OpenArtifact(ctx, one)
 		if errors.Is(err, fs.ErrNotExist) {
 			continue
 		}
@@ -74,7 +73,7 @@ func (s artifactShelf) getArtifacts(ctx context.Context, v domain.Vault, path st
 		return artifactSet{}, err
 	}
 	out := make([]Artifact, 0, 2)
-	for _, producer := range text.Producers() {
+	for _, producer := range domain.GetAddressProducers() {
 		found, err := getArtifactFile(ctx, store, producer, hash)
 		if err != nil {
 			return artifactSet{}, err
@@ -90,9 +89,9 @@ func (s artifactShelf) getArtifacts(ctx context.Context, v domain.Vault, path st
 			Format:   getArtifactFormat(producer),
 		})
 	}
-	if file, size, err := store.Open(ctx, text.Copy(hash)); err == nil {
+	if file, size, err := store.OpenArtifact(ctx, domain.NewCopyName(hash)); err == nil {
 		_ = file.Close()
-		out = append(out, Artifact{Path: path, Kind: KindCopy, Bytes: size, Format: text.CopyType})
+		out = append(out, Artifact{Path: path, Kind: KindCopy, Bytes: size, Format: domain.CopyType})
 	} else if !errors.Is(err, fs.ErrNotExist) {
 		return artifactSet{}, err
 	}
@@ -106,6 +105,6 @@ func getArtifactWords(ctx context.Context, store port.DerivedStore, producer, ha
 	if err != nil || found == nil {
 		return "", err
 	}
-	raw, err := store.Read(ctx, found.Name)
+	raw, err := store.ReadArtifact(ctx, found.Name)
 	return string(raw), err
 }

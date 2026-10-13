@@ -3,7 +3,7 @@ package source
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 func TestTranscriptCorrectionsAreCompleteWhenWrittenAndActiveWhileARunHoldsTheName(t *testing.T) {
@@ -18,11 +18,11 @@ func TestTranscriptCorrectionsAreCompleteWhenWrittenAndActiveWhileARunHoldsTheNa
 	if got := state(); got != RunNone {
 		t.Fatalf("state is %v before anything", got)
 	}
-	s.claim(t, text.Partial(text.ASR, talkHash))
+	s.claim(t, domain.NewArtifactName(domain.ArtifactPartial, domain.ASR, talkHash))
 	if got := state(); got != RunActive {
 		t.Fatalf("state is %v while a run holds the recording", got)
 	}
-	s.write(t, text.Corrections(text.ASR, talkHash), "right")
+	s.write(t, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, talkHash), "right")
 	if got := state(); got != RunComplete {
 		t.Fatalf("state is %v with corrections written", got)
 	}

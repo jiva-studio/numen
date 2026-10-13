@@ -18,64 +18,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// The producers: what made a text, which is not the same question as what the
-// text is. A kind with one producer is named by it, and a kind with two names
-// both in the files.
-const (
-	// ASR is a model here, listening to a recording.
-	ASR = "asr"
-	// OCR is a model here, recognising the text of a scan's pages.
-	OCR = "ocr"
-)
-
-// The producers that bring back what is at an address a link note points at.
-const (
-	// Captions is a site, publishing words with a video.
-	Captions = "captions"
-	// Article is the reader that finds the prose a page is written around.
-	Article = "article"
-)
-
-// isTimed says whether a producer writes words with the times they were said at.
-// Those are WebVTT and open in a player; everything else is prose.
-func isTimed(producer string) bool { return producer == ASR || producer == Captions }
-
-// Transcript is where text with the times it was said at is kept, and Copies
-// where the bytes of a video are.
-//
-// A folder is a kind: what the files in it are. A producer is what made them,
-// which is another question — a transcript is a transcript whether a model here
-// heard it or a site published it with the video, so both stand here under
-// names of their own.
-const (
-	Transcript = "transcript"
-	Copies     = "copy"
-	IndexClaim = "index/indexing"
-)
-
-// getName is the name one of a producer's files stands under inside its kind:
-// the hash, then the producer where the kind has more than one, then what the
-// file is.
-func getName(producer, hash, what string) string {
-	if isTimed(producer) {
-		return Transcript + "/" + hash + "." + producer + what
-	}
-	return producer + "/" + hash + what
-}
-
-// The container a copy of a video is fetched and kept in, and what a player is
-// told it is. One is asked for and one is kept, so what a player is handed is
-// what every player this window is drawn in opens.
-const (
-	CopyExtension = ".mp4"
-	CopyType      = "video/mp4"
-)
-
-// Copy is the name a copy of what is at an address is kept under. It is not
-// text and nothing reads it as any: it is the bytes a person plays, kept where
-// they can be fetched again from the address the note carries.
-func Copy(hash string) string { return Copies + "/" + hash + CopyExtension }
-
 // Separator is what stands between a link note's own prose and what was fetched
 // for it. The two are one text, and a chunk is cut across neither into the
 // other.
@@ -127,8 +69,11 @@ func (r Reader) readRecognition(ctx context.Context, from, hash string) (*Docume
 	if r.Derived == nil {
 		return nil, ErrUnreadable
 	}
-	for _, name := range []string{Artifact(from, hash), Partial(from, hash)} {
-		raw, err := r.Derived.Read(ctx, name)
+	for _, name := range []domain.ArtifactName{
+		domain.NewArtifactName(domain.ArtifactText, from, hash),
+		domain.NewArtifactName(domain.ArtifactPartial, from, hash),
+	} {
+		raw, err := r.Derived.ReadArtifact(ctx, name)
 		if errors.Is(err, fs.ErrNotExist) {
 			continue
 		}
@@ -186,11 +131,6 @@ func JoinDocuments(prose string, fetched *Document) *Document {
 	return doc
 }
 
-// Producers are the ones that bring back what is at an address, in the order
-// one of them is read: what a model here heard stands over what a site
-// published, because listening is asked for and publishing is not.
-func Producers() []string { return []string{ASR, Captions, Article} }
-
 // ReadDownloaded is what was brought back for an address, as the text a link
 // note is cut with, and which producer brought it.
 //
@@ -202,9 +142,12 @@ func ReadDownloaded(
 	if store == nil {
 		return "", "", nil
 	}
-	for _, from := range Producers() {
-		for _, name := range []string{Artifact(from, hash), Partial(from, hash)} {
-			raw, err := store.Read(ctx, name)
+	for _, from := range domain.GetAddressProducers() {
+		for _, name := range []domain.ArtifactName{
+			domain.NewArtifactName(domain.ArtifactText, from, hash),
+			domain.NewArtifactName(domain.ArtifactPartial, from, hash),
+		} {
+			raw, err := store.ReadArtifact(ctx, name)
 			if errors.Is(err, fs.ErrNotExist) {
 				continue
 			}
@@ -233,8 +176,8 @@ func ReadComposed(
 	producer, hash string,
 	raw []byte,
 ) (*Document, error) {
-	if isTimed(producer) {
-		put, err := readOptional(ctx, store, Corrections(producer, hash))
+	if domain.IsTimedProducer(producer) {
+		put, err := readOptional(ctx, store, domain.NewArtifactName(domain.ArtifactCorrections, producer, hash))
 		if err != nil {
 			return nil, err
 		}
@@ -245,17 +188,17 @@ func ReadComposed(
 		}
 		return ReadTranscript(raw), nil
 	}
-	parts, err := readOptional(ctx, store, Parts(producer, hash))
+	parts, err := readOptional(ctx, store, domain.NewArtifactName(domain.ArtifactParts, producer, hash))
 	if err != nil {
 		return nil, err
 	}
-	corrections, err := readOptional(ctx, store, Corrections(producer, hash))
+	corrections, err := readOptional(ctx, store, domain.NewArtifactName(domain.ArtifactCorrections, producer, hash))
 	if err != nil {
 		return nil, err
 	}
 	var boxes []byte
 	if len(corrections) > 0 {
-		if boxes, err = readOptional(ctx, store, Boxes(producer, hash)); err != nil {
+		if boxes, err = readOptional(ctx, store, domain.NewArtifactName(domain.ArtifactBoxes, producer, hash)); err != nil {
 			return nil, err
 		}
 	}
@@ -264,8 +207,8 @@ func ReadComposed(
 
 // readOptional is what is kept under a name, and nothing where the store holds
 // nothing.
-func readOptional(ctx context.Context, store port.DerivedStore, name string) ([]byte, error) {
-	raw, err := store.Read(ctx, name)
+func readOptional(ctx context.Context, store port.DerivedStore, name domain.ArtifactName) ([]byte, error) {
+	raw, err := store.ReadArtifact(ctx, name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
 	}
@@ -355,71 +298,15 @@ func GetFingerprint(r io.Reader) (string, error) {
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
-// Artifact is the name a producer's recognition of these bytes is kept under.
-//
-// It is the hash of what was read and not the path it was read from, so a
-// document renamed or moved keeps its recognition, and two copies of one
-// document in a vault share the one file.
-//
-// The extension is the producer's: a transcript is WebVTT and opens in a player
-// under the name a player knows it by.
-func Artifact(from, hash string) string {
-	if isTimed(from) {
-		return getName(from, hash, ".vtt")
-	}
-	return getName(from, hash, ".txt")
-}
-
-// Partial is the name a producer's recognition still running is kept under. It
-// is not an artifact until it is complete, and nothing reads it back as one.
-func Partial(from, hash string) string {
-	if isTimed(from) {
-		return getName(from, hash, ".partial.vtt")
-	}
-	return getName(from, hash, ".partial")
-}
-
-// Corrections is the name what put a producer's text right is kept under. A
-// text nothing proofread and nobody edited has no such file.
-//
-// The artifact stays what was read or heard, so deleting this file gives that
-// back. A transcript's corrections are the words as they now stand, WebVTT
-// under the extension that format is opened by; a recognition's are one record to
-// a line put right, keyed by the box the line was read from.
-func Corrections(from, hash string) string {
-	if isTimed(from) {
-		return getName(from, hash, ".corrected.vtt")
-	}
-	return getName(from, hash, ".corrected")
-}
-
-// Parts is the name the parts of a recognition are kept under. A recognition whose
-// layout model named none has no such file.
-func Parts(from, hash string) string { return getName(from, hash, ".parts") }
-
-// Boxes is the name the coordinates a model produced are kept under. They are
-// kept because no machine here remakes them cheaply.
-func Boxes(from, hash string) string { return getName(from, hash, ".boxes") }
-
-// Proofread is the name of what says who put a recognition right and how far they
-// got. A run stopped part way is taken up again at the page it names.
-func Proofread(from, hash string) string { return getName(from, hash, ".proofread") }
-
-// Answer is the name of what a recording gave where it gave no words: silence,
-// or bytes nothing here can open. It is not a transcript and nothing reads it as
-// one; it is there so that a recording nothing can be heard in is not listened
-// to again every time the vault is scanned.
-func Answer(from, hash string) string { return getName(from, hash, ".answer") }
-
 // The two answers a recording gives that carry no words: it holds no speech, or
-// nothing here opens it. What is kept under Answer opens with one of them.
+// nothing here opens it. The answer a run keeps opens with one of them.
 const (
 	Silent   = "silent"
 	Unopened = "unopened"
 )
 
 // ReadAnswer is which of the two a recording gave and what the run said about
-// it, read from what is kept under Answer. Bytes opening with neither word are
+// it, read from the answer a run kept. Bytes opening with neither word are
 // nothing this wrote.
 func ReadAnswer(raw []byte) (kind, detail string) {
 	line := strings.TrimSpace(string(raw))
@@ -432,47 +319,4 @@ func ReadAnswer(raw []byte) (kind, detail string) {
 		}
 	}
 	return "", ""
-}
-
-// GetProducerFile is the name of what says which models produced an artifact.
-// Nothing on any hot path reads it; it is there so a person can ask what read a
-// text they are looking at, and so a sweep can find everything a recogniser now
-// known to be bad produced.
-func GetProducerFile(from, hash string) string { return getName(from, hash, ".json") }
-
-// Names is every file one recognition of these bytes is kept under. One run
-// made them and none of them means anything without the others.
-//
-// Each producer's own files are named: a sweep works through this list, and a
-// transcription writes no coordinates or parts.
-func Names(from, hash string) []string {
-	if isTimed(from) {
-		return []string{
-			Artifact(from, hash),
-			Partial(from, hash),
-			Corrections(from, hash),
-			Proofread(from, hash),
-			Answer(from, hash),
-			GetProducerFile(from, hash),
-		}
-	}
-	return []string{
-		Artifact(from, hash),
-		Partial(from, hash),
-		Boxes(from, hash),
-		Parts(from, hash),
-		Corrections(from, hash),
-		Proofread(from, hash),
-		GetProducerFile(from, hash),
-	}
-}
-
-// AddressTexts is every file a producer wrote for one address, without the
-// copy.
-func AddressTexts(hash string) []string {
-	var out []string
-	for _, producer := range Producers() {
-		out = append(out, Names(producer, hash)...)
-	}
-	return out
 }

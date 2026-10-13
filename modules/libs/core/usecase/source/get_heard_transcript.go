@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 )
 
 // GetHeardTranscript reads the text a model wrote from the file at a path.
@@ -18,6 +17,9 @@ func (u GetHeardTranscript) Execute(ctx context.Context, v domain.Vault, path st
 		return Transcript{}, err
 	}
 	producer, hash := stored.meta.Producer, stored.meta.Hash
-	words, err := readFirst(ctx, stored.store, text.Artifact(producer, hash), text.Partial(producer, hash))
+	words, err := readFirst(ctx, stored.store,
+		domain.NewArtifactName(domain.ArtifactText, producer, hash),
+		domain.NewArtifactName(domain.ArtifactPartial, producer, hash),
+	)
 	return Transcript{Words: words, Exists: true}, err
 }

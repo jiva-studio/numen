@@ -294,7 +294,7 @@ func TestASourceStandingOnARecognitionIsEmbeddedFromIt(t *testing.T) {
 	raw := bookOf(t, "Scanned", words(sanskrit, 400))
 	shelf.hold(bookPath, domain.KindBook, raw, 1)
 	read, _, _ := ocr.Write([]ocr.Page{{Index: 0, Blocks: []ocr.Block{{Label: "text", Text: words(sanskrit, 400)}}}})
-	if err := made.Write(ctx, text.Artifact("ocr", text.Fingerprint(raw)), read); err != nil {
+	if err := made.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, "ocr", text.Fingerprint(raw)), read); err != nil {
 		t.Fatal(err)
 	}
 
@@ -329,7 +329,7 @@ func TestEmbeddingWhileAnotherProcessClaimsVaultReportsBusy(t *testing.T) {
 	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 400)), 1)
 	small := cutBooks(t, index, shelf, first)
 
-	made.hold(text.IndexClaim)
+	made.hold(domain.NewIndexClaimName())
 
 	model := &embedder{dims: dimensions}
 	embed := NewEmbed(vaults{first.ID: shelf}, index, index)
@@ -352,7 +352,7 @@ func TestEmbeddingWhileAnotherProcessClaimsVaultReportsBusy(t *testing.T) {
 	}
 
 	// Once released, embedding proceeds and completes.
-	_ = made.Remove(ctx, text.IndexClaim)
+	_ = made.RemoveArtifact(ctx, domain.NewIndexClaimName())
 	secondRes, err := embed.Execute(ctx, first)
 	if err != nil {
 		t.Fatal(err)

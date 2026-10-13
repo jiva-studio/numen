@@ -14,7 +14,6 @@ import (
 	"sync/atomic"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -27,13 +26,13 @@ import (
 // holds both.
 const (
 	// OCRDir is text with the place on the page each word stands at.
-	OCRDir = text.OCR
+	OCRDir = domain.OCR
 	// TranscriptDir is text with the times each stretch of it was said at.
-	TranscriptDir = text.Transcript
+	TranscriptDir = "transcript"
 	// ArticleDir is the prose a page is written around.
-	ArticleDir = text.Article
+	ArticleDir = domain.Article
 	// CopyDir is the bytes of a video, kept to be played from this disk.
-	CopyDir = text.Copies
+	CopyDir = "copy"
 	// IndexDir is where claims and coordination for vault indexing live.
 	IndexDir = "index"
 )
@@ -373,7 +372,7 @@ func (d *DerivedStore) ClaimName(_ context.Context, name string) (func() error, 
 // List reports the files directly under a name, as names of this store, sorted.
 // A folder among them is not one: what is kept here is files, and a caller
 // after them would have to be told which entries it may read.
-func (d *DerivedStore) List(_ context.Context, name string) ([]port.Entry, error) {
+func (d *DerivedStore) List(_ context.Context, name string) ([]Listed, error) {
 	target, err := d.getPath(name)
 	if err != nil {
 		return nil, err
@@ -389,7 +388,7 @@ func (d *DerivedStore) List(_ context.Context, name string) ([]port.Entry, error
 	if err != nil {
 		return nil, err
 	}
-	out := make([]port.Entry, 0, len(entries))
+	out := make([]Listed, 0, len(entries))
 	for _, e := range entries {
 		if e.IsDir() {
 			continue
@@ -401,9 +400,9 @@ func (d *DerivedStore) List(_ context.Context, name string) ([]port.Entry, error
 		if err != nil {
 			continue
 		}
-		out = append(out, port.Entry{Name: clean + "/" + e.Name(), Size: int(info.Size())})
+		out = append(out, Listed{Name: clean + "/" + e.Name(), Size: int(info.Size())})
 	}
-	slices.SortFunc(out, func(a, b port.Entry) int { return strings.Compare(a.Name, b.Name) })
+	slices.SortFunc(out, func(a, b Listed) int { return strings.Compare(a.Name, b.Name) })
 	return out, nil
 }
 
@@ -583,4 +582,11 @@ func (d *DerivedStore) isEnclosedBy(resolved, area string) (bool, error) {
 	}
 	d.where.Store(where)
 	return where.isInside(resolved, area), nil
+}
+
+// Listed is a file a folder of the store holds: its name in the store, and how
+// many bytes are under it.
+type Listed struct {
+	Name string
+	Size int
 }

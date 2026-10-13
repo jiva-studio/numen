@@ -16,12 +16,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Area is the folder inside a vault's service folder the answers are kept in.
-const Area = "flashcards"
-
-// Suffix is what a file of answers is named with.
-const Suffix = ".jsonl"
-
 // Log is one vault's answers: every run that was ever written there.
 type Log struct{ Stores port.DerivedStores }
 
@@ -124,7 +118,7 @@ type LogFile struct {
 func (u Log) ReadFile(
 	ctx context.Context, store port.DerivedStore, file port.Entry,
 ) (LogFile, error) {
-	raw, err := store.Read(ctx, file.Name)
+	raw, err := store.ReadArtifact(ctx, file.Name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return LogFile{IsGone: true}, nil
 	}
@@ -140,18 +134,13 @@ func (u Log) ReadFile(
 
 // readLogFiles returns the files of the log, sorted by name.
 func readLogFiles(ctx context.Context, store port.DerivedStore) ([]port.Entry, error) {
-	held, err := store.List(ctx, Area)
+	held, err := store.ListReviewLogs(ctx)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]port.Entry, 0, len(held))
-	for _, one := range held {
-		if strings.HasSuffix(one.Name, Suffix) {
-			out = append(out, one)
-		}
-	}
+	out := slices.Clone(held)
 	slices.SortFunc(out, func(a, b port.Entry) int {
-		return strings.Compare(a.Name, b.Name)
+		return strings.Compare(a.Name.Hash, b.Name.Hash)
 	})
 	return out, nil
 }
@@ -167,21 +156,21 @@ func (u Log) Open(ctx context.Context, v domain.Vault, at time.Time) (*LogWriter
 		return nil, err
 	}
 	id := ulid.New(at)
-	return &LogWriter{store: store, name: Area + "/" + id + Suffix}, nil
+	return &LogWriter{store: store, name: domain.NewReviewLogName(id)}, nil
 }
 
 // LogWriter is one session of review, and the file it appends to.
 type LogWriter struct {
 	store port.DerivedStore
-	name  string
+	name  domain.ArtifactName
 	// stopped is the append that did not land. A run whose file refused one
 	// answer writes nothing further to it, and every answer after it is
 	// refused with what stopped the first.
 	stopped error
 }
 
-// GetName is the file this run writes, as a name of the vault's own store.
-func (r *LogWriter) GetName() string { return r.name }
+// GetName is the identifier of the run, which names the file it writes.
+func (r *LogWriter) GetName() string { return r.name.Hash }
 
 // Append writes one answer to the end of the run's file.
 //
@@ -195,7 +184,7 @@ func (r *LogWriter) Append(ctx context.Context, a review.Answer) error {
 	if err != nil {
 		return err
 	}
-	if err := r.store.Append(ctx, r.name, raw); err != nil {
+	if err := r.store.AppendArtifact(ctx, r.name, raw); err != nil {
 		r.stopped = fmt.Errorf("%s took no more answers: %w", r.name, err)
 		return r.stopped
 	}

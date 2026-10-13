@@ -2,7 +2,6 @@ package flashcards_test
 
 import (
 	"errors"
-	"strings"
 	"testing"
 	"time"
 
@@ -79,11 +78,8 @@ func TestARunIsKnownByTheFileItWrites(t *testing.T) {
 	}
 
 	name := run.GetName()
-	if !strings.HasSuffix(name, ".jsonl") {
-		t.Errorf("the run is known as %q", name)
-	}
 	held := getRunFiles(t, s)
-	if len(held) != 1 || !strings.HasSuffix(name, held[0]) {
+	if len(held) != 1 || held[0] != name+".jsonl" {
 		t.Errorf("the run is known as %q and the vault holds %v", name, held)
 	}
 }

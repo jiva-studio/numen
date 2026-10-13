@@ -1,6 +1,14 @@
 /** The curve of a line: how it is keyed, which way it is read, and where its arrowhead is aimed. */
 import { describe, expect, it } from 'vitest'
-import { ARROW_LENGTH, getArrow, edgeKey, getHeading, getLength, type EdgeCurve } from './edge'
+import {
+  ARROW_LENGTH,
+  createPointOnCurve,
+  getArrow,
+  edgeKey,
+  getHeading,
+  getLength,
+  type EdgeCurve,
+} from './edge'
 
 const toDegrees = (radians: number) => (radians * 180) / Math.PI
 
@@ -106,5 +114,21 @@ describe('the arrowhead of a curve that turns back within the head', () => {
   it('is aimed along the piece it covers when that piece runs across the page', () => {
     expect(getLength(turnsBackAcross)).toBeGreaterThan(ARROW_LENGTH)
     expect(getArrow(turnsBackAcross, 'to').angle).toBeCloseTo(0, 5)
+  })
+})
+
+describe('a point on a curve whose start does not move', () => {
+  // The first steps of this curve are too small to register, so the curve
+  // has length while its first chord has none.
+  const stalled: EdgeCurve = {
+    fromPoint: { x: 0, y: 0 },
+    control1: { x: 0, y: 0 },
+    control2: { x: 0, y: 0 },
+    toPoint: { x: 1e-320, y: 0 },
+  }
+
+  it('is the start at the start of the line', () => {
+    expect(getLength(stalled)).toBeGreaterThan(0)
+    expect(createPointOnCurve(stalled)(0)).toEqual({ x: 0, y: 0 })
   })
 })

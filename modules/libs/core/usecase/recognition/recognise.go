@@ -108,12 +108,14 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		return res, err
 	}
 	area := run.GetArea(u.Area, "ocr")
-	final, partial := text.Artifact(area, hash), text.Partial(area, hash)
-	boxes, parts := text.Boxes(area, hash), text.Parts(area, hash)
+	final := domain.NewArtifactName(domain.ArtifactText, area, hash)
+	partial := domain.NewArtifactName(domain.ArtifactPartial, area, hash)
+	boxes := domain.NewArtifactName(domain.ArtifactBoxes, area, hash)
+	parts := domain.NewArtifactName(domain.ArtifactParts, area, hash)
 
 	// One run to a document. The name is the hash of its bytes, and it is held for
 	// as long as the recognition takes.
-	release, err := store.ClaimName(ctx, partial)
+	release, err := store.ClaimArtifact(ctx, partial)
 	if err != nil {
 		file.Close()
 		if errors.Is(err, port.ErrClaimed) {
@@ -126,7 +128,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 
 	// A document already read is not read again. The name is the hash of what
 	// was read, so this holds however the file was renamed or moved since.
-	if _, err := store.Read(ctx, final); err == nil {
+	if _, err := store.ReadArtifact(ctx, final); err == nil {
 		file.Close()
 		res.Read, res.Pages = 1, 1
 		return res, run.Stand(ctx, u.Cut, u.sources, v, ref, hash, area)
@@ -177,9 +179,9 @@ type pageWriter struct {
 	v       domain.Vault
 	store   port.DerivedStore
 	path    string
-	partial string
-	boxes   string
-	parts   string
+	partial domain.ArtifactName
+	boxes   domain.ArtifactName
+	parts   domain.ArtifactName
 	prose   int
 }
 
@@ -193,15 +195,15 @@ func (w *pageWriter) write(ctx context.Context, pages []ocr.Page, read int) erro
 	for i := range named {
 		named[i].Start += w.prose
 	}
-	if err := w.store.Append(ctx, w.boxes, highlight.Pack(found)); err != nil {
+	if err := w.store.AppendArtifact(ctx, w.boxes, highlight.Pack(found)); err != nil {
 		return err
 	}
 	if len(named) > 0 {
-		if err := w.store.Append(ctx, w.parts, ocr.Pack(named)); err != nil {
+		if err := w.store.AppendArtifact(ctx, w.parts, ocr.Pack(named)); err != nil {
 			return err
 		}
 	}
-	if err := w.store.Append(ctx, w.partial, appendCount(written, read)); err != nil {
+	if err := w.store.AppendArtifact(ctx, w.partial, appendCount(written, read)); err != nil {
 		return err
 	}
 	said, _ := ocr.Read(written)
@@ -287,8 +289,8 @@ func (u Recognise) saveRecognition(
 	res *RecogniseResult,
 ) error {
 	partial := out.partial
-	final := text.Artifact(area, hash)
-	whole, err := store.Read(ctx, partial)
+	final := domain.NewArtifactName(domain.ArtifactText, area, hash)
+	whole, err := store.ReadArtifact(ctx, partial)
 	if errors.Is(err, fs.ErrNotExist) {
 		res.IsEmpty = true
 		return nil
@@ -303,7 +305,7 @@ func (u Recognise) saveRecognition(
 		return u.forget(ctx, v, ref, hash, store, partial, out.boxes, out.parts)
 	}
 
-	if err := store.Write(ctx, final, whole); err != nil {
+	if err := store.WriteArtifact(ctx, final, whole); err != nil {
 		return err
 	}
 	if err := u.record(ctx, store, area, hash); err != nil {
@@ -313,7 +315,7 @@ func (u Recognise) saveRecognition(
 	if err := run.Stand(ctx, u.Cut, u.sources, v, ref, hash, area); err != nil {
 		return err
 	}
-	return store.Remove(ctx, partial)
+	return store.RemoveArtifact(ctx, partial)
 }
 
 // forget puts a document that said nothing back on its own text layer, and takes
@@ -324,10 +326,10 @@ func (u Recognise) forget(
 	ref domain.Fingerprint,
 	hash string,
 	store port.DerivedStore,
-	names ...string,
+	names ...domain.ArtifactName,
 ) error {
 	for _, name := range names {
-		if err := store.Remove(ctx, name); err != nil {
+		if err := store.RemoveArtifact(ctx, name); err != nil {
 			return err
 		}
 	}
@@ -335,8 +337,8 @@ func (u Recognise) forget(
 }
 
 // dropBoxes drops the coordinates of pages no count claims.
-func dropBoxes(ctx context.Context, store port.DerivedStore, name string, done int) error {
-	raw, err := store.Read(ctx, name)
+func dropBoxes(ctx context.Context, store port.DerivedStore, name domain.ArtifactName, done int) error {
+	raw, err := store.ReadArtifact(ctx, name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
@@ -353,13 +355,13 @@ func dropBoxes(ctx context.Context, store port.DerivedStore, name string, done i
 	// Written back whatever was dropped. An append that did not land whole
 	// leaves bytes that are not a record, and every record appended after them
 	// is read at a shifted offset.
-	return store.Write(ctx, name, highlight.Pack(kept))
+	return store.WriteArtifact(ctx, name, highlight.Pack(kept))
 }
 
 // dropParts drops the parts no count claims: those opening past the prose the
 // pages before the count came to.
-func dropParts(ctx context.Context, store port.DerivedStore, name string, prose int) error {
-	raw, err := store.Read(ctx, name)
+func dropParts(ctx context.Context, store port.DerivedStore, name domain.ArtifactName, prose int) error {
+	raw, err := store.ReadArtifact(ctx, name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
@@ -373,7 +375,7 @@ func dropParts(ctx context.Context, store port.DerivedStore, name string, prose 
 			kept = append(kept, part)
 		}
 	}
-	return store.Write(ctx, name, ocr.Pack(kept))
+	return store.WriteArtifact(ctx, name, ocr.Pack(kept))
 }
 
 // record keeps what read the document beside what it read. Nothing on any path
@@ -392,7 +394,7 @@ func (u Recognise) record(ctx context.Context, store port.DerivedStore, area, ha
 	if err != nil {
 		return err
 	}
-	return store.Write(ctx, text.GetProducerFile(area, hash), append(raw, '\n'))
+	return store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactProducer, area, hash), append(raw, '\n'))
 }
 
 // appendCount is a run of pages and, after them, how many of the document have
@@ -419,8 +421,8 @@ const resumeMark = ocr.Note + "pages "
 // batch that did not land whole. The two numbers come from the same stretch of
 // the file, which is what makes a coordinate written next land where its words
 // are.
-func readResumePoint(ctx context.Context, store port.DerivedStore, partial string) (int, int, error) {
-	raw, err := store.Read(ctx, partial)
+func readResumePoint(ctx context.Context, store port.DerivedStore, partial domain.ArtifactName) (int, int, error) {
+	raw, err := store.ReadArtifact(ctx, partial)
 	if errors.Is(err, fs.ErrNotExist) {
 		return 0, 0, nil
 	}
@@ -429,7 +431,7 @@ func readResumePoint(ctx context.Context, store port.DerivedStore, partial strin
 	}
 	read, end := lastCount(raw)
 	if end < len(raw) {
-		if err := store.Write(ctx, partial, raw[:end]); err != nil {
+		if err := store.WriteArtifact(ctx, partial, raw[:end]); err != nil {
 			return 0, 0, err
 		}
 	}

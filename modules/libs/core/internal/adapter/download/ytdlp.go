@@ -17,7 +17,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/operation"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -58,7 +57,7 @@ func newYtDLP(c Config) *ytDLP {
 func (v *ytDLP) CanHandle(at domain.URL) bool { return isVideoSite(at) && v.command.isPresent() }
 
 func (v *ytDLP) GetDownloadModel(domain.URL) port.DownloadModel {
-	return port.DownloadModel{Tool: "yt-dlp", Version: v.getVersion(), Producer: text.Captions}
+	return port.DownloadModel{Tool: "yt-dlp", Version: v.getVersion(), Producer: domain.Captions}
 }
 
 // readVersion is what the tool answers when asked which it is, and nothing when
@@ -188,7 +187,7 @@ func (v *ytDLP) GetText(
 		return port.Text{}, err
 	}
 	return port.Text{
-		Producer: text.Captions,
+		Producer: domain.Captions,
 		Cues:     cues,
 		Title:    meta.Title,
 		Length:   meta.Length,

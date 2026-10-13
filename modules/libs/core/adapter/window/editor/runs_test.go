@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
@@ -53,10 +52,10 @@ func (a *asking) Start(v domain.Vault, path string) port.StartOutcome {
 // under for as long as it takes, and a claim on it is refused.
 type claimed struct {
 	stored
-	name string
+	name domain.ArtifactName
 }
 
-func (c claimed) ClaimName(_ context.Context, name string) (func() error, error) {
+func (c claimed) ClaimArtifact(_ context.Context, name domain.ArtifactName) (func() error, error) {
 	if name == c.name {
 		return nil, port.ErrClaimed
 	}
@@ -273,7 +272,7 @@ func TestASourceAlreadyDoneIsNotRunAgain(t *testing.T) {
 			const wrote = "what the model wrote"
 			scans, hears := willRun(), willRun()
 			api, _ := openRunWindow(t,
-				stored{derived.Artifact(one.from, one.hash): []byte(wrote)},
+				stored{domain.NewArtifactName(domain.ArtifactText, one.from, one.hash): []byte(wrote)},
 				indexed{one.path: {Fingerprint: domain.Fingerprint{Path: one.path}, Producer: one.from, Hash: one.hash}},
 				scans, hears,
 			)
@@ -308,8 +307,8 @@ func TestASourceARunHoldsIsSaidToBeUnderWay(t *testing.T) {
 			scans, hears := willRun(), willRun()
 			api, _ := openRunWindow(t,
 				claimed{
-					stored: stored{derived.Partial(one.from, one.hash): []byte(far)},
-					name:   derived.Partial(one.from, one.hash),
+					stored: stored{domain.NewArtifactName(domain.ArtifactPartial, one.from, one.hash): []byte(far)},
+					name:   domain.NewArtifactName(domain.ArtifactPartial, one.from, one.hash),
 				},
 				indexed{one.path: {Fingerprint: domain.Fingerprint{Path: one.path}, Producer: one.from, Hash: one.hash}},
 				scans, hears,
@@ -341,7 +340,7 @@ func TestASourceNothingHoldsIsNotUnderWay(t *testing.T) {
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			api, _ := openRunWindow(t,
-				stored{derived.Partial(one.from, one.hash): []byte("as far as it got")},
+				stored{domain.NewArtifactName(domain.ArtifactPartial, one.from, one.hash): []byte("as far as it got")},
 				indexed{one.path: {Fingerprint: domain.Fingerprint{Path: one.path}, Producer: one.from, Hash: one.hash}},
 				willQueue(), willQueue(),
 			)
@@ -365,8 +364,8 @@ func TestASourceDoneIsDoneEvenWhereAPartialStands(t *testing.T) {
 	scans := willRun()
 	api, _ := openRunWindow(t,
 		stored{
-			derived.Artifact(reader, scanned): []byte("what the model wrote"),
-			derived.Partial(reader, scanned):  []byte("what it wrote on the way"),
+			domain.NewArtifactName(domain.ArtifactText, reader, scanned):    []byte("what the model wrote"),
+			domain.NewArtifactName(domain.ArtifactPartial, reader, scanned): []byte("what it wrote on the way"),
 		},
 		indexed{book: {Fingerprint: domain.Fingerprint{Path: book}, Producer: reader, Hash: scanned}},
 		scans, willRun(),
@@ -443,5 +442,5 @@ func TestListingWhatAFileCarriesBeginsNoRun(t *testing.T) {
 type reachingASite struct{ port.Downloader }
 
 func (reachingASite) GetDownloadModel(domain.URL) port.DownloadModel {
-	return port.DownloadModel{Tool: "a test", Producer: derived.Captions}
+	return port.DownloadModel{Tool: "a test", Producer: domain.Captions}
 }

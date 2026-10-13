@@ -9,7 +9,6 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
@@ -96,5 +95,5 @@ func (h *recordingHandler) getCopyMedia(
 	if location.VaultPath != "" {
 		played = location.VaultPath
 	}
-	return h.playing.Address(v, domain.Fingerprint{Path: played, Size: location.Size}), derived.CopyType
+	return h.playing.Address(v, domain.Fingerprint{Path: played, Size: location.Size}), domain.CopyType
 }

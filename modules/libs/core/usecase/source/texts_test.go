@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/urlfile"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -34,7 +33,7 @@ func newTextScene(t *testing.T) textScene {
 	index := newStore()
 	index.put(first.ID, domain.Source{
 		Fingerprint: domain.Fingerprint{Path: recordingPath, Kind: domain.KindRecording},
-		Producer:    text.ASR, Hash: talkHash,
+		Producer:    domain.ASR, Hash: talkHash,
 	})
 	kept := newShelf()
 	readers := vaults{first.ID: library}
@@ -54,16 +53,16 @@ func (s textScene) withoutIndex() textScene {
 	return s
 }
 
-func (s textScene) write(t *testing.T, name, content string) {
+func (s textScene) write(t *testing.T, name domain.ArtifactName, content string) {
 	t.Helper()
-	if err := s.shelf.Write(t.Context(), name, []byte(content)); err != nil {
+	if err := s.shelf.WriteArtifact(t.Context(), name, []byte(content)); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func (s textScene) claim(t *testing.T, name string) {
+func (s textScene) claim(t *testing.T, name domain.ArtifactName) {
 	t.Helper()
-	if _, err := s.shelf.ClaimName(t.Context(), name); err != nil {
+	if _, err := s.shelf.ClaimArtifact(t.Context(), name); err != nil {
 		t.Fatal(err)
 	}
 }

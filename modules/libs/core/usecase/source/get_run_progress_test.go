@@ -8,14 +8,16 @@ import (
 )
 
 func TestRunProgressIsReadOffTheNamesTheRunWrites(t *testing.T) {
-	partial := text.Partial(text.ASR, talkHash)
+	partial := domain.NewArtifactName(domain.ArtifactPartial, domain.ASR, talkHash)
 	for name, tc := range map[string]struct {
 		set  func(textScene)
 		want RunProgress
 	}{
 		"nothing is left": {func(textScene) {}, RunProgress{State: RunNone}},
 		"a finished text": {
-			func(s textScene) { s.write(t, text.Artifact(text.ASR, talkHash), "words") },
+			func(s textScene) {
+				s.write(t, domain.NewArtifactName(domain.ArtifactText, domain.ASR, talkHash), "words")
+			},
 			RunProgress{State: RunComplete, Size: 5},
 		},
 		"a run holding the name": {
@@ -27,7 +29,9 @@ func TestRunProgressIsReadOffTheNamesTheRunWrites(t *testing.T) {
 			RunProgress{State: RunStopped, Size: 2},
 		},
 		"a recording with no speech": {
-			func(s textScene) { s.write(t, text.Answer(text.ASR, talkHash), text.Silent) },
+			func(s textScene) {
+				s.write(t, domain.NewArtifactName(domain.ArtifactAnswer, domain.ASR, talkHash), text.Silent)
+			},
 			RunProgress{State: RunNoSpeech},
 		},
 	} {
@@ -47,7 +51,7 @@ func TestRunProgressIsReadOffTheNamesTheRunWrites(t *testing.T) {
 
 func TestRunProgressOfARecordingTheIndexKnowsNothingOfStandsOnItsBytes(t *testing.T) {
 	s := newTextScene(t).withoutIndex()
-	s.write(t, text.Artifact(text.ASR, text.Fingerprint([]byte("a recording"))), "words")
+	s.write(t, domain.NewArtifactName(domain.ArtifactText, domain.ASR, text.Fingerprint([]byte("a recording"))), "words")
 
 	got, err := s.texts.GetRunProgress.Execute(t.Context(), s.vault, recordingPath, domain.KindRecording)
 	if err != nil || got.State != RunComplete {
@@ -76,7 +80,7 @@ func TestRunProgressOfALinkNoteIsReadUnderItsAddress(t *testing.T) {
 	if got := read(); got != RunNone {
 		t.Fatalf("nothing fetched: %v", got)
 	}
-	s.write(t, text.Artifact(text.Producers()[0], text.Fingerprint([]byte(string(linkedURL)))), "page")
+	s.write(t, domain.NewArtifactName(domain.ArtifactText, domain.GetAddressProducers()[0], text.Fingerprint([]byte(string(linkedURL)))), "page")
 	if got := read(); got != RunComplete {
 		t.Fatalf("a page fetched: %v", got)
 	}
