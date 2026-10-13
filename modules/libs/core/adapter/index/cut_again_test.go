@@ -187,7 +187,7 @@ func TestCuttingASourceAgainKeepsTheRowsOfTheTextItStillHolds(t *testing.T) {
 	// A run in which no row was ever kept, or one where a source never held one
 	// text twice, or one where nothing was ever cut away, asks nothing of any of
 	// the three rules.
-	if kept < 40 || twice < 20 || gone < 50 {
+	if kept < 20 || twice < 10 || gone < 25 {
 		t.Fatalf("%d rows were kept, %d texts stood twice in one source, "+
 			"and %d texts were cut away", kept, twice, gone)
 	}

@@ -19,7 +19,7 @@ import { formatErrorCodeMessage, formatErrorMessage } from '@numen/wire'
 import NoteSheet from '../note/NoteSheet.vue'
 import { startCore, type Core } from '../core'
 import { watchVault } from './watchVault'
-import { asPlex } from './picture'
+import { convertNeighbourhood } from './picture'
 import { CREATABLE_RELATIONS, isCreatable, ROLE_BY_RELATION, SEED_NOTE_PATH } from './relations'
 
 const core = ref<Core | null>(null)
@@ -40,7 +40,7 @@ async function loadPicture(path: string) {
   if (!core.value) return
   const answer = await core.value.notes.getNeighbourhood({ path })
   focusPath.value = path
-  picture.value = asPlex(answer)
+  picture.value = convertNeighbourhood(answer)
 }
 
 async function createRelatedNote(from: string, relation: PlexRelation) {

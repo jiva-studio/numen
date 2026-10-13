@@ -5,7 +5,7 @@
  * and which of them another command's row reaches.
  */
 import { describe, expect, it } from 'vitest'
-import { commandsOf, isCommandPrefixTyped, getNoteCommands } from './commands'
+import { createCommands, isCommandPrefixTyped, getNoteCommands } from './commands'
 import { WORDS as words } from '@/shared/words'
 
 describe('the character that means the commands', () => {
@@ -23,7 +23,7 @@ describe('the character that means the commands', () => {
 
 describe('the commands over a note', () => {
   it('leave out the ones another command reaches on its own row', () => {
-    const over = getNoteCommands(commandsOf(words)).map((one) => one.id)
+    const over = getNoteCommands(createCommands(words)).map((one) => one.id)
 
     expect(over).not.toContain('beside')
     expect(over).not.toContain('destroy')
@@ -32,7 +32,7 @@ describe('the commands over a note', () => {
 
 describe('the commands over the vaults an installation holds', () => {
   it('are offered in the group of the vault in front', () => {
-    const over = commandsOf(words)
+    const over = createCommands(words)
       .filter((one) => one.group === 'vault')
       .map((one) => one.id)
 
@@ -50,7 +50,7 @@ describe('the commands over the vaults an installation holds', () => {
 
 describe('the commands that ask for a choice among a few', () => {
   it('are the ones that set how the window is drawn and how it works', () => {
-    const choosing = commandsOf(words)
+    const choosing = createCommands(words)
       .filter((one) => one.needs === 'choosing')
       .map((one) => one.id)
 

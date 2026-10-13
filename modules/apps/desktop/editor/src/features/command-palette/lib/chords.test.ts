@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { isChord, findChordCommand, findChordKeys, createRowKeys, CHORDS } from './chords'
-import { commandsOf } from './commands'
+import { createCommands } from './commands'
 import { WORDS as words } from '@/shared/words'
 
 const createKeyEvent = (over: Partial<KeyboardEventInit> = {}) => ({
@@ -94,16 +94,16 @@ describe('how a keystroke is drawn on the row that names it', () => {
 
 describe('every keystroke the table holds', () => {
   const APPLE = 'MacIntel'
-  const createCommands = () => commandsOf(words, APPLE)
+  const createAppleCommands = () => createCommands(words, APPLE)
 
   it('names a command the window has', () => {
-    const commands = createCommands()
+    const commands = createAppleCommands()
     const known = new Set(commands.map((one) => one.id))
     for (const held of CHORDS) expect(known.has(held.command)).toBe(true)
   })
 
   it('is drawn on the row of the command it names', () => {
-    const commands = createCommands()
+    const commands = createAppleCommands()
     for (const held of CHORDS) {
       const command = commands.find((one) => one.id === held.command)
       expect(command?.keys).toEqual(findChordKeys(held.command, APPLE))

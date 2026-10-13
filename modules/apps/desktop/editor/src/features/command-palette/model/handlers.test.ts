@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import { commandsOf } from '../lib/commands'
+import { createCommands } from '../lib/commands'
 import { runSupport } from './runs'
 import { createInvocation } from '../lib/invocation'
 import { createNotes } from '../lib/notes'
@@ -256,7 +256,7 @@ const carry = async (invocation: CommandInvocation, on: CommandDeps) =>
 
 describe('every command that is offered', () => {
   it('is carried out by something', async () => {
-    for (const command of commandsOf(WORDS)) {
+    for (const command of createCommands(WORDS)) {
       const one = window()
       await carry(createInvocation(command.id, front(), 'Entropy'), one.on)
 

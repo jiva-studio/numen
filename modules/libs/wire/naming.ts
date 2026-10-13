@@ -7,7 +7,7 @@
  */
 
 /** What each word a window uses is, as the schema names it. */
-export const namesOf = <W extends string, E extends number>(
+export const getNames = <W extends string, E extends number>(
   worded: Readonly<Record<E, W | null>>,
 ): Record<W, E> => {
   const named = Object.entries(worded).flatMap(([value, word]) =>

@@ -132,6 +132,7 @@ func newAPI(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
 		Session:       running.Session,
 		Schedules:     running.Schedules,
 		Log:           running.Log,
+		Record:        running.Record,
 		GetReviewDays: running.GetReviewDays,
 		Neighbourhood: flashcards.NewShowNeighbourhood(
 			note.NewShowLinks(db.Links()),

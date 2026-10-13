@@ -14,4 +14,4 @@ const NOTES: ReadonlyMap<NoteType, LucideIcon> = new Map([
 ])
 
 /** The icon for a kind of note. Every kind has one. */
-export const iconOfNote = (type: NoteType): LucideIcon => NOTES.get(type) ?? FileText
+export const getNoteIcon = (type: NoteType): LucideIcon => NOTES.get(type) ?? FileText
