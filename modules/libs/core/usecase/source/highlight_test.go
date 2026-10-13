@@ -61,9 +61,9 @@ func recordSource(t *testing.T, index *store, shelved *library, from, hash strin
 	index.put(first.ID, domain.Source{Fingerprint: ref, Hash: hash, Producer: from})
 }
 
-// run is where a word of the document is: its offset in the text, and how long
+// locate is where a word of the document is: its offset in the text, and how long
 // it is.
-func run(t *testing.T, book document, word string) (start, length int) {
+func locate(t *testing.T, book document, word string) (start, length int) {
 	t.Helper()
 	at := strings.Index(book.Text, word)
 	if at < 0 {
@@ -136,7 +136,7 @@ func TestASourceWithNoRecognitionIsLitFromItsOwnLayer(t *testing.T) {
 	u, index, _, book, shelved := newHighlight(t, tiny)
 	recordSource(t, index, shelved, "", "abc123")
 
-	start, length := run(t, book, "gamma")
+	start, length := locate(t, book, "gamma")
 	found := litOn(t, u, documentPath, start, length)
 	if len(found) != 1 || found[0].Page != 0 {
 		t.Fatalf("%q was lit at %+v", "gamma", found)
@@ -161,8 +161,8 @@ func TestARunCrossingAPageIsOnBothOfThem(t *testing.T) {
 	u, index, _, book, shelved := newHighlight(t, tiny)
 	recordSource(t, index, shelved, "", "abc123")
 
-	from, _ := run(t, book, "gamma")
-	to, length := run(t, book, "Delta")
+	from, _ := locate(t, book, "gamma")
+	to, length := locate(t, book, "Delta")
 	found := litOn(t, u, documentPath, from, to+length-from)
 	if len(found) != 2 || !slices.Equal(pages(found), []int{0, 1}) {
 		t.Fatalf("a run across a page was lit at %+v", found)
@@ -176,7 +176,7 @@ func TestAWordIsLitOnThePageItIsPrintedOn(t *testing.T) {
 	u, index, _, book, shelved := newHighlight(t, outline)
 	recordSource(t, index, shelved, "", "abc123")
 
-	start, length := run(t, book, "Afterword")
+	start, length := locate(t, book, "Afterword")
 	found := litOn(t, u, documentPath, start, length)
 	if len(found) != 1 || found[0].Page != 3 {
 		t.Fatalf("%q is printed on page 3 and was lit at %+v", "Afterword", found)
@@ -195,7 +195,7 @@ func TestOnlyThePagesARunFallsOnAreLit(t *testing.T) {
 		return book.boxes(pages), nil
 	})
 
-	start, length := run(t, book, "closer")
+	start, length := locate(t, book, "closer")
 	found := litOn(t, u, documentPath, start, length)
 	if !slices.Equal(asked, []int{2}) {
 		t.Errorf("a word on page 2 of %d asked for pages %v", len(book.Pages), asked)
@@ -218,8 +218,8 @@ func TestSeveralPlacesAreAskedAboutAtOnce(t *testing.T) {
 		return book.boxes(pages), nil
 	})
 
-	after, afterLength := run(t, book, "Afterword")
-	closer, closerLength := run(t, book, "closer")
+	after, afterLength := locate(t, book, "Afterword")
+	closer, closerLength := locate(t, book, "closer")
 	found, err := u.Execute(t.Context(), first, documentPath, []domain.ByteSpan{
 		{From: after, To: after + afterLength},
 		{From: closer, To: closer + closerLength},
@@ -301,7 +301,7 @@ func TestASourceTheIndexDoesNotHoldIsLitNowhere(t *testing.T) {
 		return nil, nil
 	})
 
-	start, length := run(t, book, "gamma")
+	start, length := locate(t, book, "gamma")
 	found := litOn(t, u, documentPath, start, length)
 	if len(found) != 0 {
 		t.Errorf("a source the index does not hold was lit at %+v", found)
@@ -344,7 +344,7 @@ func TestAFileRewrittenSinceItWasReadIsLitFromItself(t *testing.T) {
 	})); err != nil {
 		t.Fatal(err)
 	}
-	start, length := run(t, book, "Afterword")
+	start, length := locate(t, book, "Afterword")
 
 	lit := litOn(t, u, documentPath, start, length)
 	if len(lit) == 0 {

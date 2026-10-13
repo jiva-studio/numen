@@ -348,7 +348,7 @@ func TestARecordingNamedIsHeardBeforeTheOnesNobodyAskedFor(t *testing.T) {
 		order = append(order, path)
 		return nil
 	}
-	listening.queue.add(v, "talks/named.mp3")
+	listening.line.Add(v, "talks/named.mp3")
 
 	listening.round(t.Context(), unheard{recordings: []string{"talks/owed.mp3"}}, v)
 

@@ -463,8 +463,7 @@ var (
 // list only shrinks.
 var timers = []string{
 	"internal/retry/retry.go",
-	"usecase/source/recognition.go",
-	"usecase/source/transcription.go",
+	"usecase/run/worker.go",
 	"usecase/source/transcription_resident.go",
 }
 

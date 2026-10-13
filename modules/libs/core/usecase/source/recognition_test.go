@@ -44,9 +44,15 @@ type watched struct {
 
 func newWatched(t *testing.T, why error) *watched {
 	t.Helper()
+	return newWatchedUnder(t, t.Context(), why)
+}
+
+// newWatchedUnder is a watched worker whose runs end with ctx.
+func newWatchedUnder(t *testing.T, ctx context.Context, why error) *watched {
+	t.Helper()
 	tasks := task.New()
 	w := &watched{tasks: tasks, held: &blank{}}
-	w.RecognitionWorker = NewRecognitionWorker(t.Context(), Recognitions{
+	w.RecognitionWorker = NewRecognitionWorker(ctx, Recognitions{
 		Readers:   vaults{},
 		Derived:   shelves{newShelf()},
 		Sources:   newStore(),
@@ -258,9 +264,8 @@ func TestMultipleFailedRecognitionsAreTrackedIndependently(t *testing.T) {
 // A recognition whoever asked for it stopped is a recognition that is over, and not one
 // that failed.
 func TestARecognitionStoppedIsNotAFailure(t *testing.T) {
-	w := newWatched(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
-	w.under = ctx
+	w := newWatchedUnder(t, ctx, nil)
 	w.RecognitionWorker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 		cancel()
 		return nil, nil, context.Canceled

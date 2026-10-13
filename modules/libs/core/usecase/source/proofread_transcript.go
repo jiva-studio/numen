@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
 // ProofreadTranscript puts a recording's transcript right, where a person
@@ -121,7 +122,7 @@ type putting struct {
 // Execute puts one recording's transcript right.
 func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path string) (ProofreadTranscriptResult, error) {
 	res := ProofreadTranscriptResult{Path: path}
-	hash, err := u.getHash(ctx, v, path)
+	hash, err := run.GetHash(ctx, u.readers, v, path, u.Hash)
 	if err != nil {
 		return res, err
 	}
@@ -130,7 +131,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 		return res, err
 	}
 
-	area := u.area()
+	area := run.GetArea(u.Area, text.ASR)
 	textPath, progressPath := text.Corrections(area, hash), text.Proofread(area, hash)
 
 	// One run to a recording. The name a transcription holds is the name held
@@ -186,7 +187,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	}
 	// Progress is reported once there is a batch to ask about, so a transcript
 	// nothing is left to be asked about is never work anybody is shown.
-	u.progress(res)
+	run.Report(u.OnProgress, res)
 	// Who is putting this transcript right stands before the first words do,
 	// and the count of what they have asked about stands after the lines it
 	// claims.
@@ -195,22 +196,6 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	}
 	err = u.askBatches(ctx, job, at, &res)
 	return res, err
-}
-
-// getHash is the fingerprint of the recording's bytes.
-func (u ProofreadTranscript) getHash(ctx context.Context, v domain.Vault, path string) (string, error) {
-	if u.Hash != "" {
-		return u.Hash, nil
-	}
-	reader, err := u.readers.Open(v)
-	if err != nil {
-		return "", err
-	}
-	raw, err := reader.Read(ctx, path)
-	if err != nil {
-		return "", fmt.Errorf("read %s: %w", path, err)
-	}
-	return text.Fingerprint(raw), nil
 }
 
 // transcriptProofreadJob is the state of proofreading one transcript: what it asks about, and which
@@ -253,7 +238,8 @@ func (u ProofreadTranscript) newTranscriptJob(
 	stood putting,
 ) *transcriptProofreadJob {
 	about := proofread.Describe(cues)
-	mainBatches := setContext(proofread.GetSpeechBatches(cues, u.batchSize(), u.overlap()), about)
+	size, overlap := run.GetSize(u.BatchSize, DefaultBatchSize), run.GetSize(u.Overlap, DefaultOverlap)
+	mainBatches := setContext(proofread.GetSpeechBatches(cues, size, overlap), about)
 	return &transcriptProofreadJob{
 		v: v, store: store, path: path, textPath: textPath, progressPath: progressPath,
 		cues: cues, original: slices.Clone(cues), about: about,
@@ -283,13 +269,14 @@ func (u ProofreadTranscript) askBatches(
 	at int,
 	res *ProofreadTranscriptResult,
 ) error {
-	for ; at < len(p.batches); at += u.inFlight() {
+	inFlight := run.GetSize(u.InFlight, DefaultInFlight)
+	for ; at < len(p.batches); at += inFlight {
 		if err := ctx.Err(); err != nil {
 			// What came back is on disk already, and the next run begins at the
 			// line this one stopped on.
 			return err
 		}
-		end := min(at+u.inFlight(), len(p.batches))
+		end := min(at+inFlight, len(p.batches))
 		group := p.batches[at:end]
 
 		replies, err := u.by.Proofread(ctx, group)
@@ -305,7 +292,7 @@ func (u ProofreadTranscript) askBatches(
 		if err := u.saveGroup(ctx, p, wrote, end); err != nil {
 			return err
 		}
-		u.progress(*res)
+		run.Report(u.OnProgress, *res)
 	}
 	return nil
 }
@@ -318,7 +305,7 @@ func (u ProofreadTranscript) saveGroup(ctx context.Context, p *transcriptProofre
 			return err
 		}
 	}
-	if err := u.cut(ctx, p.v, p.path); err != nil {
+	if err := run.Cut(ctx, u.Cut, p.v, p.path); err != nil {
 		return err
 	}
 	if end == len(p.mainBatches) {
@@ -514,7 +501,8 @@ func getProgress(batches []proofread.Batch, mainBatches, end int, cues []transcr
 // batchesAcrossCuts is a batch over each cut, carrying what the recording holds
 // on both sides of it, so a sentence broken in two is put right whole.
 func (u ProofreadTranscript) batchesAcrossCuts(cues []transcript.Cue, cuts []int, about string) []proofread.Batch {
-	return setContext(proofread.CutIntoBatches(cues, u.batchSize(), u.overlap(), cuts), about)
+	size, overlap := run.GetSize(u.BatchSize, DefaultBatchSize), run.GetSize(u.Overlap, DefaultOverlap)
+	return setContext(proofread.CutIntoBatches(cues, size, overlap, cuts), about)
 }
 
 // setContext is the batches with what the recording holds on each of them.
@@ -562,47 +550,5 @@ func linesBefore(cues []transcript.Cue, at int) int {
 	return out
 }
 
-// cut makes this source's chunks from the transcript as it now stands.
-func (u ProofreadTranscript) cut(ctx context.Context, v domain.Vault, path string) error {
-	if u.Cut == nil {
-		return nil
-	}
-	return u.Cut(ctx, v, path)
-}
-
-func (u ProofreadTranscript) area() string {
-	if u.Area == "" {
-		return text.ASR
-	}
-	return u.Area
-}
-
-func (u ProofreadTranscript) batchSize() int {
-	if u.BatchSize <= 0 {
-		return DefaultBatchSize
-	}
-	return u.BatchSize
-}
-
-func (u ProofreadTranscript) overlap() int {
-	if u.Overlap <= 0 {
-		return DefaultOverlap
-	}
-	return u.Overlap
-}
-
-func (u ProofreadTranscript) inFlight() int {
-	if u.InFlight <= 0 {
-		return DefaultInFlight
-	}
-	return u.InFlight
-}
-
 // unbounded holds a correction to speech to no distance from what was heard.
 const unbounded = 0.0
-
-func (u ProofreadTranscript) progress(res ProofreadTranscriptResult) {
-	if u.OnProgress != nil {
-		u.OnProgress(res)
-	}
-}
