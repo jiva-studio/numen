@@ -45,13 +45,6 @@ export default tseslint.config(
     },
   },
 
-  // Wire bridge adapters implement port interfaces defined by @numen/ui
-  {
-    files: ['agent.ts'],
-    rules: {
-      'max-params': 'off',
-    },
-  },
 
   // Package boundaries: no reaching out of the module via relative paths
   {
