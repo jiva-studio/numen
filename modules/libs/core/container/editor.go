@@ -149,8 +149,7 @@ func (e EditorAssembly) OpenTranscriptionWorker(
 }
 
 func (e EditorAssembly) GetRefresh() vault.Refresh {
-	return makeRefresh(e.cfg, e.db,
-		e.db.NotesWithChunking(e.cfg.GetChunkSizes(), e.cfg.Legibility()))
+	return makeRefresh(e.cfg, e.db, e.db.Notes())
 }
 
 // ReadWholeVault reads the vault the one way, with this launch's answer about

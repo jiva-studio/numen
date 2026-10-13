@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // Scan brings the index up to date with one vault. The vault is
@@ -20,6 +21,9 @@ type Scan struct {
 	notes       port.NoteRepository
 	known       FingerprintQueries
 	maintenance port.IndexMaintenance
+
+	// Cut is how the notes found are cut into the chunks the index keeps.
+	Cut note.CutNotes
 
 	// Walks is the turns the vaults being walked take. A scan given none takes
 	// its turn from nobody and waits for nobody.
@@ -163,7 +167,7 @@ func walkVault(ctx context.Context, reader port.VaultReader) ([]domain.Fingerpri
 // res.Indexed.
 func (u Scan) newGroup(v domain.Vault, res *ScanResult) grouping {
 	return grouping{write: func(ctx context.Context, notes []domain.Note) error {
-		if err := u.notes.Save(ctx, v.ID, notes); err != nil {
+		if err := u.notes.Save(ctx, v.ID, u.Cut.Execute(notes)); err != nil {
 			// The failure is somewhere in a group, so say which one.
 			return fmt.Errorf("index %d notes of %s, %s to %s: %w",
 				len(notes), v.Name, notes[0].Fingerprint.Path, notes[len(notes)-1].Fingerprint.Path, err)

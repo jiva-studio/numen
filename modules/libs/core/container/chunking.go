@@ -6,6 +6,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -30,11 +31,10 @@ func (c Config) Legibility() chunking.Legibility {
 	return chunking.Legibility{}
 }
 
-// NotesWithChunking is the note repository, told the sizes a note is cut at and what
-// makes one legible. A note is cut in the adapter that stores it, and both
-// reach that adapter from here.
-func (i *Index) NotesWithChunking(sizes chunking.Sizes, reads chunking.Legibility) port.NoteRepository {
-	return i.db.Notes().WithChunkSizes(sizes, reads)
+// CutNotes is how a note is cut into the chunks the index keeps: at this
+// installation's sizes, keeping what reads as text.
+func (c Config) CutNotes() note.CutNotes {
+	return note.CutNotes{Sizes: c.GetChunkSizes(), Legibility: c.Legibility()}
 }
 
 // Scan is the walk that reads a vault's notes into the index, cut at this
@@ -43,10 +43,11 @@ func (c Config) Scan(db *Index) vault.Scan {
 	scan := vault.NewScan(
 		c.VaultReaders(),
 		db.Vaults(),
-		db.NotesWithChunking(c.GetChunkSizes(), c.Legibility()),
+		db.Notes(),
 		db.Queries(),
 		db.Maintenance(),
 	)
+	scan.Cut = c.CutNotes()
 	scan.Walks = db.Walks()
 	scan.ShouldRebuildIndex = c.ShouldRebuildIndex
 	return scan

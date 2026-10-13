@@ -40,6 +40,14 @@ type Chunk struct {
 	Small []Chunk
 }
 
+// NoteChunks is one note as the index keeps it: the headings it is found by,
+// and the chunks its body was cut into.
+type NoteChunks struct {
+	Note     Note
+	Headings []Heading
+	Chunks   []Chunk
+}
+
 // SourceChunks is one source as reading it left it: the file, the recipe that
 // read it, and the chunks its text was cut into.
 type SourceChunks struct {

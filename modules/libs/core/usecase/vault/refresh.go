@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // Refresh brings named notes up to date, for when something says which files
@@ -34,6 +35,9 @@ type Refresh struct {
 	// now says which notes were modified recently enough to be edited again under
 	// the same modification time.
 	now port.Clock
+
+	// Cut is how the notes named are cut into the chunks the index keeps.
+	Cut note.CutNotes
 
 	// Ledger holds the content of notes indexed while their modification time
 	// was too recent to tell a second edit from the first. Refreshes that share
@@ -195,7 +199,7 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	// paths handed here is not small because they were named individually.
 	var res RefreshResult
 	group := grouping{write: func(ctx context.Context, notes []domain.Note) error {
-		return u.notes.Save(ctx, v.ID, notes)
+		return u.notes.Save(ctx, v.ID, u.Cut.Execute(notes))
 	}}
 
 	recorded := make(map[string]*ledgerEntry)
