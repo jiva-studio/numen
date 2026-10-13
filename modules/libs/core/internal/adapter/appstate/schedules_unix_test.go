@@ -1,4 +1,4 @@
-//go:build linux
+//go:build linux || darwin
 
 package appstate_test
 
@@ -47,9 +47,9 @@ func TestAWriteThatRunsOutOfRoomLeavesNothingBehind(t *testing.T) {
 	if err := syscall.Setrlimit(syscall.RLIMIT_FSIZE, &limit); err != nil {
 		t.Skipf("the file size cannot be limited: %v", err)
 	}
-	before := countDescriptors(t)
+	before, canCount := countDescriptors()
 	err := kept.Write(t.Context(), "vault-a", make([]byte, 4096))
-	after := countDescriptors(t)
+	after, _ := countDescriptors()
 	if restoreErr := syscall.Setrlimit(syscall.RLIMIT_FSIZE, &old); restoreErr != nil {
 		t.Fatal(restoreErr)
 	}
@@ -64,16 +64,12 @@ func TestAWriteThatRunsOutOfRoomLeavesNothingBehind(t *testing.T) {
 	if len(entries) != 0 {
 		t.Errorf("the folder holds %v", entries)
 	}
-	if after != before {
+	if canCount && after != before {
 		t.Errorf("descriptors open: %d before, %d after", before, after)
 	}
 }
 
-func countDescriptors(t *testing.T) int {
-	t.Helper()
+func countDescriptors() (int, bool) {
 	entries, err := os.ReadDir("/proc/self/fd")
-	if err != nil {
-		t.Skipf("descriptors cannot be listed: %v", err)
-	}
-	return len(entries)
+	return len(entries), err == nil
 }
