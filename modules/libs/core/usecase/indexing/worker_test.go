@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -73,6 +72,14 @@ func reading(t *testing.T) (container.EditorAssembly, *container.Index) {
 	return container.NewEditorAssembly(cfg, nil, db), db
 }
 
+// getModelWait blocks until the model behind an embedder has turned up.
+func getModelWait(embedder port.Embedder) WaitForModel {
+	if waiting, ok := embedder.(embedding.WaitingEmbedder); ok {
+		return waiting.Wait
+	}
+	return nil
+}
+
 // newPass is the indexing of one vault over an embedder, reporting into events.
 func newPass(
 	made container.EditorAssembly, db *container.Index, events Events, embedder port.Embedder, recipe string,
@@ -81,7 +88,7 @@ func newPass(
 	worker := NewWorker(Config{
 		Reading:  made.ReadWholeVault,
 		Embedder: embedder,
-		Wait:     made.GetModelWait(embedder),
+		Wait:     getModelWait(embedder),
 		Owed: func(ctx context.Context, v domain.Vault) (int64, int64, error) {
 			return db.Progress().GetProgress(ctx, v.ID, recipe)
 		},
@@ -94,11 +101,11 @@ func newPass(
 
 // cut reads the vault's notes, so that its chunks are in the index owing their
 // vectors.
-func cut(t *testing.T, db *container.Index, v domain.Vault) {
+func cut(t *testing.T, made container.EditorAssembly, db *container.Index, v domain.Vault) {
 	t.Helper()
 
 	scan := vault.NewScan(
-		filesystem.VaultReaders{},
+		made.GetVaultReaders(),
 		db.Vaults(),
 		db.Notes(),
 		db.Queries(),
@@ -184,7 +191,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	cut(t, db, v)
+	cut(t, made, db, v)
 	events := newRecorder()
 
 	newPass(made, db, events, model, model.GetModel().Recipe(), v).embed(t.Context())
@@ -206,7 +213,7 @@ func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	cut(t, db, v)
+	cut(t, made, db, v)
 	events := newRecorder()
 
 	newPass(made, db, events, model, model.GetModel().Recipe(), v).embed(t.Context())
@@ -258,7 +265,7 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	fit(t, db, watching)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	cut(t, db, v)
+	cut(t, made, db, v)
 
 	newPass(made, db, events, watching, watching.GetModel().Recipe(), v).embed(t.Context())
 
@@ -307,7 +314,7 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	cut(t, db, v)
+	cut(t, made, db, v)
 	events := newRecorder()
 
 	arriving := embedding.NewDeferredEmbedder(model.GetModel())
@@ -406,7 +413,7 @@ func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	cut(t, db, v)
+	cut(t, made, db, v)
 
 	// A provider that answers over a network is here the moment it is made, so
 	// there is no arrival to wait for and the pass begins at once.
@@ -465,7 +472,7 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	cut(t, db, v)
+	cut(t, made, db, v)
 
 	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
 	p.worker.read = model.wake
