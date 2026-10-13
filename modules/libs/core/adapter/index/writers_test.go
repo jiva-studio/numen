@@ -1,6 +1,7 @@
 package index
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -8,13 +9,18 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
+	notecase "github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
+
+// saveCut stores notes cut at the default sizes, the way a scan hands them over.
+func saveCut(ctx context.Context, db *DB, vaultID domain.VaultID, notes []domain.Note) error {
+	return db.Notes().Save(ctx, vaultID, notecase.CutNotes{}.Execute(notes))
+}
 
 // saveNote saves one note of a title of its own through the opening given.
 func saveNote(t *testing.T, db *DB, v domain.Vault, path, title string) error {
 	t.Helper()
-	return db.Notes().WithChunkSizes(chunking.Sizes{}, chunking.Legibility{}).Save(t.Context(), v.ID, []domain.Note{{
+	return saveCut(t.Context(), db, v.ID, []domain.Note{{
 		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: int64(len(title)), ModTime: walked},
 		Title:       title,
 		Type:        domain.TypeNote,

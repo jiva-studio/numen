@@ -337,7 +337,7 @@ type countingNotes struct {
 	sizes  []int
 }
 
-func (c *countingNotes) Save(_ context.Context, _ domain.VaultID, notes []domain.Note) error {
+func (c *countingNotes) Save(_ context.Context, _ domain.VaultID, notes []domain.NoteChunks) error {
 	c.groups++
 	c.notes += len(notes)
 	c.sizes = append(c.sizes, len(notes))
@@ -380,7 +380,7 @@ type savesCounted struct {
 	saved atomic.Int32
 }
 
-func (c *savesCounted) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.Note) error {
+func (c *savesCounted) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.NoteChunks) error {
 	c.saved.Add(int32(len(notes)))
 	return c.NoteRepository.Save(ctx, vaultID, notes)
 }

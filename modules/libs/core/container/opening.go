@@ -62,13 +62,14 @@ func (c Config) VaultOpenerWith(
 	scan := vault.NewScan(
 		walking,
 		db.Vaults(),
-		db.NotesWithChunking(c.GetChunkSizes(), c.Legibility()),
+		db.Notes(),
 		db.Queries(),
 		db.Maintenance(),
 	)
+	scan.Cut = c.CutNotes()
 	scan.Walks = db.Walks()
 
-	buffered := &bufferedNoteRepository{NoteRepository: db.NotesWithChunking(c.GetChunkSizes(), c.Legibility())}
+	buffered := &bufferedNoteRepository{NoteRepository: db.Notes()}
 	return &VaultOpener{
 		watcher:  watcher,
 		scan:     scan,
@@ -81,6 +82,7 @@ func (c Config) VaultOpenerWith(
 // and sharing the installation's ledger.
 func makeRefresh(c Config, db *Index, notes port.NoteRepository) vault.Refresh {
 	refresh := vault.NewRefresh(c.VaultReaders(), db.Vaults(), notes, db.SourcesKnown(), db.Sources(), c.Clock())
+	refresh.Cut = c.CutNotes()
 	refresh.Ledger = db.ledger
 	return refresh
 }
@@ -203,9 +205,9 @@ type bufferedWrites struct {
 	isOver   bool
 }
 
-func (b *bufferedNoteRepository) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.Note) error {
+func (b *bufferedNoteRepository) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.NoteChunks) error {
 	for _, one := range notes {
-		b.record(one.Fingerprint.Path)
+		b.record(one.Note.Fingerprint.Path)
 	}
 	return b.NoteRepository.Save(ctx, vaultID, notes)
 }

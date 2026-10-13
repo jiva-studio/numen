@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -468,7 +467,7 @@ func (s *scanFixture) deps(t *testing.T, held domain.Vault) cli.Deps {
 				return cli.Scan{}, err
 			}
 			notes := vaults.NewScan(readers, db.Vaults(),
-				db.Notes().WithChunkSizes(chunking.Sizes{}, chunking.Legibility{}),
+				db.Notes(),
 				db.NoteQueries(), db.Maintenance())
 			books := source.NewExtract(readers, db.Sources(), db.Sources())
 			books.Derived, books.Documents = store, pdf.Documents{}

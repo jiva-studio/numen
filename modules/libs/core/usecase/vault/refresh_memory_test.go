@@ -146,15 +146,15 @@ func (r memRows) Unregister(context.Context, domain.VaultID) error { return nil 
 
 type memNotes struct{ w *memWorld }
 
-func (n memNotes) Save(_ context.Context, _ domain.VaultID, notes []domain.Note) error {
+func (n memNotes) Save(_ context.Context, _ domain.VaultID, notes []domain.NoteChunks) error {
 	if n.w.saveFailures > 0 {
 		n.w.saveFailures--
 		return errMemory
 	}
 	var paths []string
 	for _, note := range notes {
-		paths = append(paths, note.Fingerprint.Path)
-		n.w.held[note.Fingerprint.Path] = []domain.Fingerprint{note.Fingerprint}
+		paths = append(paths, note.Note.Fingerprint.Path)
+		n.w.held[note.Note.Fingerprint.Path] = []domain.Fingerprint{note.Note.Fingerprint}
 	}
 	n.w.saves = append(n.w.saves, paths)
 	return nil

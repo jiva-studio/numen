@@ -92,6 +92,22 @@ type Chunk struct {
 	Small []Chunk
 }
 
+// FromDomain is the chunks of a source as the index holds them.
+func FromDomain(in []domain.Chunk) []Chunk {
+	out := make([]Chunk, 0, len(in))
+	for _, c := range in {
+		out = append(out, Chunk{
+			Start:    c.Start,
+			Length:   c.Length,
+			Location: c.Location,
+			Text:     c.Text,
+			Opens:    c.Opens,
+			Small:    FromDomain(c.Small),
+		})
+	}
+	return out
+}
+
 // Vector is one chunk's embedding in both representations that are stored.
 //
 // `Value` is one byte a dimension, for the rerank. `Coarse` is one bit a
