@@ -7,14 +7,14 @@ import { NumberField, SegmentedControl } from '@numen/ui'
 import SettingRow from './setting-row/SettingRow.vue'
 import type { SettingsTabState } from '../types'
 import paths from '../paths.json'
-import { write } from '@/entities/settings'
+import { createSettingFields } from '@/entities/settings'
 import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ state: SettingsTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
-const installation = computed(() => props.state.installation)
+const fields = createSettingFields(() => props.state.installation)
 
 const profiles = [
   { id: 'eco', text: words.eco },
@@ -24,7 +24,7 @@ const profiles = [
 ]
 
 const currentProfile = computed<string>(() => {
-  const profile = getSettingString(paths.performanceProfile)
+  const profile = fields.getString(paths.performanceProfile)
   return profile || 'balanced'
 })
 
@@ -46,38 +46,23 @@ const profileDetail = computed<string>(() => {
 
 /* -------------------------------- Handlers -------------------------------- */
 function onProfileChange(choice: string): void {
-  setSetting(paths.performanceProfile, choice)
+  fields.setValue(paths.performanceProfile, choice)
 }
 
 function onEmbeddingBatchSizeChange(size: number | null): void {
-  if (size !== null) setSetting(paths.performanceEmbeddingBatchSize, size)
+  if (size !== null) fields.setValue(paths.performanceEmbeddingBatchSize, size)
 }
 
 function onOcrThreadsChange(threads: number | null): void {
-  if (threads !== null) setSetting(paths.performanceOcrThreads, threads)
+  if (threads !== null) fields.setValue(paths.performanceOcrThreads, threads)
 }
 
 function onOcrSessionsChange(sessions: number | null): void {
-  if (sessions !== null) setSetting(paths.performanceOcrSessions, sessions)
+  if (sessions !== null) fields.setValue(paths.performanceOcrSessions, sessions)
 }
 
 function onLlmConcurrencyChange(concurrency: number | null): void {
-  if (concurrency !== null) setSetting(paths.performanceLlmConcurrency, concurrency)
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-function getSettingString(at: readonly string[]): string {
-  const value = installation.value.getSetting(at)
-  return typeof value === 'string' ? value : ''
-}
-
-function getSettingNumber(at: readonly string[], fallback: number): number {
-  const value = installation.value.getSetting(at)
-  return typeof value === 'number' ? value : fallback
-}
-
-function setSetting(at: readonly string[], value: unknown): void {
-  installation.value.write([{ at, value: write(value) }])
+  if (concurrency !== null) fields.setValue(paths.performanceLlmConcurrency, concurrency)
 }
 </script>
 
@@ -107,7 +92,7 @@ function setSetting(at: readonly string[], value: unknown): void {
         :detail="words.embeddingBatchSizeDetail"
       >
         <NumberField
-          :model-value="getSettingNumber(paths.performanceEmbeddingBatchSize, 32)"
+          :model-value="fields.getNumber(paths.performanceEmbeddingBatchSize, 32)"
           :min="1"
           :max="512"
           :step="1"
@@ -124,7 +109,7 @@ function setSetting(at: readonly string[], value: unknown): void {
         :detail="words.ocrThreadsDetail"
       >
         <NumberField
-          :model-value="getSettingNumber(paths.performanceOcrThreads, 4)"
+          :model-value="fields.getNumber(paths.performanceOcrThreads, 4)"
           :min="1"
           :max="64"
           :step="1"
@@ -141,7 +126,7 @@ function setSetting(at: readonly string[], value: unknown): void {
         :detail="words.ocrSessionsDetail"
       >
         <NumberField
-          :model-value="getSettingNumber(paths.performanceOcrSessions, 1)"
+          :model-value="fields.getNumber(paths.performanceOcrSessions, 1)"
           :min="1"
           :max="16"
           :step="1"
@@ -158,7 +143,7 @@ function setSetting(at: readonly string[], value: unknown): void {
         :detail="words.llmConcurrencyDetail"
       >
         <NumberField
-          :model-value="getSettingNumber(paths.performanceLlmConcurrency, 2)"
+          :model-value="fields.getNumber(paths.performanceLlmConcurrency, 2)"
           :min="1"
           :max="16"
           :step="1"

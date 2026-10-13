@@ -143,7 +143,12 @@ function onPartsChange(count: number | null) {
       <Switch v-model="installation.isNesting.value" :aria-labelledby="labelledBy" />
     </SettingRow>
 
-    <SettingRow v-slot="{ labelledBy }" at="headings" :name="words.headings" :detail="words.headingsDetail">
+    <SettingRow
+      v-slot="{ labelledBy }"
+      at="headings"
+      :name="words.headings"
+      :detail="words.headingsDetail"
+    >
       <NumberField
         :model-value="installation.headings.value"
         :min="installation.headingsBounds.value.least"
