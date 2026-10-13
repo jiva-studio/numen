@@ -27,6 +27,8 @@ withDefaults(
 const emit = defineEmits<{
   (event: 'lift', at: PointerEvent): void
   (event: 'close'): void
+  /** A menu asked for on the tab, and where on the screen. */
+  (event: 'menu', at: { x: number; y: number }): void
 }>()
 
 defineSlots<{
@@ -51,6 +53,10 @@ const onPointerDown = (event: PointerEvent) => {
   ;(event.currentTarget as HTMLElement).focus()
   emit('lift', event)
 }
+
+function onContextMenu(event: MouseEvent): void {
+  emit('menu', { x: event.clientX, y: event.clientY })
+}
 </script>
 
 <template>
@@ -64,6 +70,7 @@ const onPointerDown = (event: PointerEvent) => {
     :data-showing="showing || undefined"
     :data-focused="isFocused || undefined"
     @pointerdown="onPointerDown"
+    @contextmenu.prevent="onContextMenu"
   >
     <span v-if="$slots.icon" class="tab__icon flex shrink-0 items-center">
       <slot name="icon" />

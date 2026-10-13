@@ -5,7 +5,8 @@
  * it: they are neither drawn nor written while it stands, and the file keeps
  * them where the person left them.
  */
-import type { Goal, Rule, Settings } from '../types'
+import type { Bounds, Goal, Rule, Settings, SettingsBounds } from '../types'
+import { round } from './curve'
 
 /** One setting of a preset a person may take out of the goal's hands. */
 export type Field =
@@ -121,3 +122,37 @@ export const getShapeKey = (settings: Settings): string => {
   const rest = FIELDS.filter((field) => !own.has(field)).map((field) => `${field}=${values[field]}`)
   return [settings.goal, ...rest].join(' ')
 }
+
+/** The limits a control for a field is held to, and none where the field has none. */
+export type FieldLimits = { min: number; max: number } | Record<string, never>
+
+/** Retention is held as a share of one and shown as a percentage. */
+const PERCENT = 100
+
+const toLimits = (bounds: Bounds | undefined, per = 1): FieldLimits =>
+  bounds ? { min: bounds.least * per, max: bounds.most * per } : {}
+
+/** The limits a field's control is held to, in the unit the control shows. */
+export const getFieldLimits = (field: Field, bounds: SettingsBounds): FieldLimits => {
+  if (field === 'newADay') return toLimits(bounds.newADay)
+  if (field === 'reviewsADay') return toLimits(bounds.reviewsADay)
+  if (field === 'minutesADay') return toLimits(bounds.minutesADay)
+  if (field === 'backlog') return toLimits(bounds.backlog)
+  if (field === 'interval') return toLimits(bounds.interval)
+  if (field === 'retention') return toLimits(bounds.retention, PERCENT)
+  return {}
+}
+
+/** The number a field's number control shows, and nothing for a field that has none. */
+export const getFieldCount = (field: Field, settings: Settings): number | null => {
+  if (field === 'newADay') return settings.newADay
+  if (field === 'reviewsADay') return settings.reviewsADay
+  if (field === 'retention') return Math.round(settings.retention * PERCENT)
+  if (field === 'minutesADay') return settings.minutesADay
+  if (field === 'interval') return settings.interval
+  return null
+}
+
+/** The value a field is set to by the number its control shows. */
+export const getFieldValue = (field: Field, count: number): number =>
+  field === 'retention' ? round(count / PERCENT, 2) : count

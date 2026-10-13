@@ -7,6 +7,7 @@
  */
 import { onBeforeUnmount } from 'vue'
 import type { ShallowRef } from 'vue'
+import { isInside } from './outside'
 
 export interface MenuGroundState {
   /** The window listened to, and listened to once however often this is called. */
@@ -24,8 +25,7 @@ export function useMenuGround(
    * the menu's own list is not the ground moving, and everything else is.
    */
   const dismissOutside = (event: Event): void => {
-    const target = event.target
-    if (target instanceof Node && menu.value?.contains(target)) return
+    if (isInside(menu.value, event)) return
     dismiss()
   }
 

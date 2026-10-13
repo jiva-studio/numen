@@ -39,6 +39,7 @@ const mountBranch = (node: Branch, slots: Record<string, string> = {}) => {
     choose: () => {},
     close: () => {},
     lift: () => {},
+    menu: () => {},
     claim,
     resize,
     show: () => {},

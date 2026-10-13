@@ -9,6 +9,7 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import { createAnswerGuard as latest } from '@/shared/questions'
+import { useDebouncedAsk, type Wait } from '@/shared/search'
 import type { Vault } from '@/entities/vault'
 import { createCommands } from '../lib/commands'
 import { getPaletteView } from './view'
@@ -28,9 +29,6 @@ import { createPaletteSteps } from './navigation'
 /** How many notes the step that picks one asks for. */
 const GROUP_RESULT_LIMIT = 8
 
-/** How long a keystroke waits before the vault is asked. */
-const SEARCH_DEBOUNCE_MS = 120
-
 /** What the palette holds before anything is asked of the vault. */
 const BLANK = {
   found: [] as readonly NameMatch[],
@@ -40,8 +38,6 @@ const BLANK = {
   failureMessage: '',
 }
 
-const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
-
 export function useCommandPalette(
   core: CommandsDeps,
   words: Words,
@@ -49,7 +45,7 @@ export function useCommandPalette(
   knows: NoteLookup,
   lists: PaletteLists,
   runs: RunSupport,
-  wait: (ms: number) => Promise<unknown> = sleep,
+  wait?: Wait,
 ) {
   const open = ref(false)
   const typed = ref('')
@@ -64,6 +60,7 @@ export function useCommandPalette(
   const failureMessage = ref(BLANK.failureMessage)
 
   const asked = latest()
+  const debounced = useDebouncedAsk({ guard: asked, ...(wait ? { wait } : {}) })
 
   const on = computed<CommandTarget>(() => at())
 
@@ -123,31 +120,32 @@ export function useCommandPalette(
     invocation,
   )
 
-  const searchNames = async (query: string) => {
-    const mine = asked.ask()
-    if (!query) {
-      found.value = []
-      isWorking.value = false
-      failureMessage.value = ''
-      return
-    }
-    isWorking.value = true
-    failureMessage.value = ''
-    await wait(SEARCH_DEBOUNCE_MS)
-    if (!mine.isCurrent) return
-    try {
-      const names = await core.names(query, GROUP_RESULT_LIMIT)
-      if (!mine.isCurrent) return
-      found.value = names
-    } catch {
-      // The window says what it could not do; what the call carried back adds nothing a person can act on.
-      if (!mine.isCurrent) return
-      found.value = []
-      failureMessage.value = words.notAsked
-    } finally {
-      if (mine.isCurrent) isWorking.value = false
-    }
-  }
+  const searchNames = (query: string) =>
+    debounced.ask(query, {
+      blank: () => {
+        found.value = []
+        isWorking.value = false
+        failureMessage.value = ''
+      },
+      pending: () => {
+        isWorking.value = true
+        failureMessage.value = ''
+      },
+      run: async (trimmed, mine) => {
+        try {
+          const names = await core.names(trimmed, GROUP_RESULT_LIMIT)
+          if (!mine.isCurrent) return
+          found.value = names
+        } catch {
+          // The window says what it could not do; what the call carried back adds nothing a person can act on.
+          if (!mine.isCurrent) return
+          found.value = []
+          failureMessage.value = words.notAsked
+        } finally {
+          if (mine.isCurrent) isWorking.value = false
+        }
+      },
+    })
 
   const setTyped = async (text: string) => {
     typed.value = text

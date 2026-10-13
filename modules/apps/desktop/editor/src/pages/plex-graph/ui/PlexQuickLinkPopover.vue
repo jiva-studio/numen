@@ -2,10 +2,10 @@
 /**
  * Native Plex-style thought creation box and autocomplete dropdown.
  */
-import { computed, nextTick, onMounted, onScopeDispose, ref, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue'
+import { useOutsidePress } from '@numen/ui'
 import type { PlexRelation } from '@numen/ui'
-import { SEARCH_DEBOUNCE_MS } from '@/features/command-palette'
-import { createAnswerGuard, type Question } from '@/shared/questions'
+import { useSearchResults } from '@/shared/search'
 import { WORDS as words } from '../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -26,9 +26,8 @@ const input = useTemplateRef<HTMLInputElement>('input')
 const popover = useTemplateRef<HTMLDivElement>('popover')
 
 const query = ref('')
-const results = ref<readonly { path: string; title: string }[]>([])
 const highlightedIndex = ref(0)
-const isLoading = ref(false)
+const { results, isLoading, setQuery } = useSearchResults((text) => props.search(text))
 
 const trimmedQuery = computed(() => query.value.trim())
 
@@ -61,53 +60,16 @@ onMounted(() => {
   void nextTick(() => {
     input.value?.focus()
   })
-  window.addEventListener('pointerdown', onWindowPointerDown)
 })
 
-onScopeDispose(() => {
-  window.removeEventListener('pointerdown', onWindowPointerDown)
-})
+useOutsidePress(popover, () => emit('dismiss'))
 
-const asks = createAnswerGuard()
-let debounceTimer: ReturnType<typeof setTimeout> | undefined
-
-watch(query, (newQuery) => {
-  const trimmed = newQuery.trim()
-  const mine = asks.ask()
-  clearTimeout(debounceTimer)
+watch(query, (text) => {
   highlightedIndex.value = 0
-  if (!trimmed) {
-    results.value = []
-    isLoading.value = false
-    return
-  }
-  isLoading.value = true
-  debounceTimer = setTimeout(() => void runSearch(mine, trimmed), SEARCH_DEBOUNCE_MS)
+  void setQuery(text)
 })
-
-onScopeDispose(() => {
-  clearTimeout(debounceTimer)
-  asks.close()
-})
-
-async function runSearch(mine: Question, trimmed: string) {
-  try {
-    const found = await props.search(trimmed)
-    if (mine.isCurrent) results.value = found
-  } catch {
-    if (mine.isCurrent) results.value = []
-  } finally {
-    if (mine.isCurrent) isLoading.value = false
-  }
-}
 
 /* -------------------------------- Handlers -------------------------------- */
-function onWindowPointerDown(event: PointerEvent) {
-  if (!popover.value?.contains(event.target as Node)) {
-    emit('dismiss')
-  }
-}
-
 function onKeyDown(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     event.stopPropagation()
@@ -169,6 +131,7 @@ function submitHighlighted() {
     :style="positionStyle"
     role="dialog"
     aria-label="New thought"
+    :aria-busy="isLoading"
   >
     <!-- Plex Thought Node Box -->
     <div class="plex-quick-link__node">

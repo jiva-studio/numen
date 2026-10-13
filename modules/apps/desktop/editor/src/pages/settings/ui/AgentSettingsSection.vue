@@ -2,77 +2,50 @@
 /**
  * Settings for the AI agent and indexing model.
  */
-import { computed } from 'vue'
 import { NumberField, Select, Switch } from '@numen/ui'
 import type { SelectChoice } from '@numen/ui'
 import SettingRow from './setting-row/SettingRow.vue'
 import type { SettingsTabState } from '../types'
 import paths from '../paths.json'
-import { createChoices } from '../lib/models'
-import { write } from '@/entities/settings'
+import { createModelChoices } from '../lib/models'
+import { createSettingFields } from '@/entities/settings'
 import { WORDS as words } from '../words'
 
 // --- Props & Emits ---
 const props = defineProps<{ state: SettingsTabState }>()
 
 // --- State ---
-const installation = computed(() => props.state.installation)
+const fields = createSettingFields(() => props.state.installation)
 
 const WHOLE = Number.MAX_SAFE_INTEGER
 const STEPS = { least: 1, most: WHOLE }
 
-// --- Handlers ---
-function onModelChange(at: readonly string[], name: string) {
-  const model = installation.value.getModels(at).find((one) => one.name === name)
-  if (model) installation.value.write(model.writes)
-  else setSetting(at, name)
-}
+const getChoices = (at: readonly string[]): readonly SelectChoice[] =>
+  createModelChoices(fields, at, words)
 
+// --- Handlers ---
 function onIndexingModelChange(name: string) {
-  onModelChange(paths.indexingModel, name)
+  fields.chooseModel(paths.indexingModel, name)
 }
 
 function onAgentUseChange(name: string) {
-  onModelChange(paths.agent, name)
+  fields.chooseModel(paths.agent, name)
 }
 
 function onAgentModelChange(name: string) {
-  onModelChange(paths.agentModel, name)
+  fields.chooseModel(paths.agentModel, name)
 }
 
 function onAgentStepsChange(count: number | null) {
-  if (count !== null) setSetting(paths.agentSteps, count)
+  if (count !== null) fields.setValue(paths.agentSteps, count)
 }
 
 function onAgentToolsChange(value: boolean) {
-  setSetting(paths.agentTools, value)
+  fields.setValue(paths.agentTools, value)
 }
 
 function onAgentHooksChange(value: boolean) {
-  setSetting(paths.agentHooks, value)
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-function getSettingString(at: readonly string[]): string {
-  const value = installation.value.getSetting(at)
-  return typeof value === 'string' ? value : ''
-}
-
-function isSettingEnabled(at: readonly string[]): boolean {
-  return installation.value.getSetting(at) === true
-}
-
-function getSettingNumber(at: readonly string[]): number | null {
-  const value = installation.value.getSetting(at)
-  return typeof value === 'number' ? value : null
-}
-
-function getModels(at: readonly string[]): readonly SelectChoice[] {
-  return createChoices(installation.value.getModels(at), getSettingString(at), words)
-}
-
-function setSetting(at: readonly string[], value: unknown): void {
-  installation.value.write([{ at, value: write(value) }])
+  fields.setValue(paths.agentHooks, value)
 }
 </script>
 
@@ -87,8 +60,8 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.indexingModelDetail"
     >
       <Select
-        :model-value="getSettingString(paths.indexingModel)"
-        :choices="getModels(paths.indexingModel)"
+        :model-value="fields.getString(paths.indexingModel)"
+        :choices="getChoices(paths.indexingModel)"
         :name="words.indexingModel"
         :aria-labelledby="labelledBy"
         class="settings__choice"
@@ -107,8 +80,8 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.agentUseDetail"
     >
       <Select
-        :model-value="getSettingString(paths.agent)"
-        :choices="getModels(paths.agent)"
+        :model-value="fields.getString(paths.agent)"
+        :choices="getChoices(paths.agent)"
         :name="words.agentUse"
         :aria-labelledby="labelledBy"
         class="settings__choice"
@@ -123,8 +96,8 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.agentModelDetail"
     >
       <Select
-        :model-value="getSettingString(paths.agentModel)"
-        :choices="getModels(paths.agentModel)"
+        :model-value="fields.getString(paths.agentModel)"
+        :choices="getChoices(paths.agentModel)"
         :name="words.agentModel"
         :aria-labelledby="labelledBy"
         class="settings__choice"
@@ -139,7 +112,7 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.agentStepsDetail"
     >
       <NumberField
-        :model-value="getSettingNumber(paths.agentSteps)"
+        :model-value="fields.getNumber(paths.agentSteps)"
         :min="STEPS.least"
         :max="STEPS.most"
         :step="1"
@@ -156,7 +129,7 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.agentToolsDetail"
     >
       <Switch
-        :model-value="isSettingEnabled(paths.agentTools)"
+        :model-value="fields.isEnabled(paths.agentTools)"
         :aria-labelledby="labelledBy"
         @update:model-value="onAgentToolsChange"
       />
@@ -169,7 +142,7 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.agentHooksDetail"
     >
       <Switch
-        :model-value="isSettingEnabled(paths.agentHooks)"
+        :model-value="fields.isEnabled(paths.agentHooks)"
         :aria-labelledby="labelledBy"
         @update:model-value="onAgentHooksChange"
       />
