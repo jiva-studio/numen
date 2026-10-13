@@ -865,49 +865,6 @@ func TestAddCardUnderASectionTheDeckDoesNotHold(t *testing.T) {
 	}
 }
 
-// The file keeps the newline it ends with when the section standing last is
-// given another name.
-func TestRenamingTheLastSectionKeepsTheFinalNewline(t *testing.T) {
-	const front = "---\n" +
-		"id: 01J8F3K2M9QRSTVWXYZ012\n" +
-		"type: deck\n" +
-		"---\n" +
-		"\n"
-	tests := []struct {
-		name string
-		body string
-	}{
-		{
-			name: "cards under the heading",
-			body: "# The ones with fur\n" +
-				"\n" +
-				"## Llama ^k7m2xq9fzp\n" +
-				"\n" +
-				"Q: Hair?\n" +
-				"A: Wool.\n",
-		},
-		{
-			name: "heading on the last line",
-			body: "# The ones with fur\n",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			raw := front + tt.body
-			f, err := format.OpenDeck([]byte(raw))
-			if err != nil {
-				t.Fatalf("open: %v", err)
-			}
-			if err := f.RenameSection(0, "The furred ones"); err != nil {
-				t.Fatalf("rename: %v", err)
-			}
-			want := strings.Replace(raw, "# The ones with fur\n", "# The furred ones\n", 1)
-			if got := string(f.Bytes()); got != want {
-				t.Errorf("rename changed more than the heading\n want %q\n  got %q", want, got)
-			}
-		})
-||||||| c4896c2fb
-
 // A deck whose frontmatter is never closed holds no prose to write to: every
 // change is refused with the markdown package's ErrUnterminated, and nothing is
 // written.
@@ -1214,5 +1171,49 @@ func TestRenameFieldOfAHeadingThatEndsTheFile(t *testing.T) {
 	}
 	if want := "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Title"; n != 1 || f.Body() != want {
 		t.Errorf("renamed %d\n want %q\n  got %q", n, want, f.Body())
+	}
+}
+
+// The file keeps the newline it ends with when the section standing last is
+// given another name.
+func TestRenamingTheLastSectionKeepsTheFinalNewline(t *testing.T) {
+	const front = "---\n" +
+		"id: 01J8F3K2M9QRSTVWXYZ012\n" +
+		"type: deck\n" +
+		"---\n" +
+		"\n"
+	tests := []struct {
+		name string
+		body string
+	}{
+		{
+			name: "cards under the heading",
+			body: "# The ones with fur\n" +
+				"\n" +
+				"## Llama ^k7m2xq9fzp\n" +
+				"\n" +
+				"Q: Hair?\n" +
+				"A: Wool.\n",
+		},
+		{
+			name: "heading on the last line",
+			body: "# The ones with fur\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			raw := front + tt.body
+			f, err := format.OpenDeck([]byte(raw))
+			if err != nil {
+				t.Fatalf("open: %v", err)
+			}
+			if err := f.RenameSection(0, "The furred ones"); err != nil {
+				t.Fatalf("rename: %v", err)
+			}
+			want := strings.Replace(raw, "# The ones with fur\n", "# The furred ones\n", 1)
+			if got := string(f.Bytes()); got != want {
+				t.Errorf("rename changed more than the heading\n want %q\n  got %q", want, got)
+			}
+		})
 	}
 }
