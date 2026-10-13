@@ -44,6 +44,7 @@ var driving = map[string]bool{
 	"adapter/window/editor":     true,
 	"adapter/window/flashcards": true,
 	"internal/adapter/theme":    true,
+	"internal/wire":             true,
 }
 
 // pure are the packages holding what is true of a note or a card, of a
@@ -184,7 +185,7 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 			return err
 		}
 		pkg := getPackage("..", path)
-		if strings.HasSuffix(path, "_test.go") || !isAdapter(pkg) {
+		if strings.HasSuffix(path, "_test.go") || !isAdapter(pkg) && !isShared(pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -275,13 +276,19 @@ func TestATestOfTheCoreBuildingAnAdapterStandsOutsideIt(t *testing.T) {
 
 // machinery are the packages held to none of the abstinences below, because
 // reaching outward is what they are: the composition root that builds the
-// adapters, the fixtures only a test is compiled from, and the infrastructure
-// the adapters share — the runtime two of them load their models through, and
-// the package two windows both answer a request for a page out of. The
-// adapters themselves are left out by adapting.
-var machinery = []string{
-	"container", "internal/onnxruntime", "internal/testsupport", "internal/wire",
-}
+// adapters and the fixtures only a test is compiled from. The adapters
+// themselves are left out by adapting, and the shared adapter libraries by
+// being among shared.
+var machinery = []string{"container", "internal/testsupport"}
+
+// shared are the adapter libraries more than one adapter is built on: the
+// runtime two of them load their models through, and the package two windows
+// both answer a request for a page out of. Each is held to the adapter rules,
+// and the machine and the clock are open to it as they are to an adapter.
+var shared = []string{"internal/onnxruntime", "internal/wire"}
+
+// isShared says whether a package is a shared adapter library.
+func isShared(pkg string) bool { return isAmong(shared, pkg) }
 
 // theMachine are the packages that are the machine and the world beyond it: the
 // process's files and its children, a socket, and the kernel itself. Each one
@@ -323,7 +330,7 @@ func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
 			return err
 		}
 		pkg := getPackage("..", path)
-		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || isAmong(machinery, pkg) {
+		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || isShared(pkg) || isAmong(machinery, pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -462,7 +469,7 @@ func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 			return err
 		}
 		pkg := getPackage("..", path)
-		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || isAmong(machinery, pkg) {
+		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || isShared(pkg) || isAmong(machinery, pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -699,7 +706,7 @@ func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
 			return err
 		}
 		pkg := getPackage("..", path)
-		if strings.HasSuffix(path, "_test.go") || !isAdapter(pkg) {
+		if strings.HasSuffix(path, "_test.go") || !isAdapter(pkg) && !isShared(pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
@@ -1109,7 +1116,7 @@ func getRefusal(from, to string) string {
 	}
 
 	switch {
-	case isAdapter(from):
+	case isAdapter(from) || isShared(from):
 		if to == "container" {
 			return "an adapter is given what it needs and assembles nothing"
 		}
@@ -1303,6 +1310,12 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"usecase/note", "container", true},
 		{"usecase/note", "port", false},
 		{"internal/wire", "adapter/window/editor", true},
+		{"internal/wire", "container", true},
+		{"internal/wire", "internal/adapter/trash", true},
+		{"internal/wire", "usecase/note", false},
+		{"internal/onnxruntime", "usecase/note", true},
+		{"internal/onnxruntime", "internal/adapter/embed", true},
+		{"internal/onnxruntime", "port", false},
 
 		// What is true of a note is worked out from what is true of a note.
 		{"domain", "task", true},
