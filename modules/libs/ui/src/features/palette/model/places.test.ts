@@ -16,7 +16,11 @@ const item = (id: string, disabled = false): PaletteItem => ({
   disabled,
 })
 
-const group = (id: string, items: PaletteItem[], rest: Partial<PaletteGroup> = {}): PaletteGroup => ({
+const group = (
+  id: string,
+  items: PaletteItem[],
+  rest: Partial<PaletteGroup> = {},
+): PaletteGroup => ({
   id,
   title: id,
   items,
@@ -53,7 +57,10 @@ describe('usePalettePlaces', () => {
     })
 
     it('is empty where no group is silent', () => {
-      const { state } = setUp([group('seen', [item('a')]), group('loading', [], { isWorking: true })])
+      const { state } = setUp([
+        group('seen', [item('a')]),
+        group('loading', [], { isWorking: true }),
+      ])
       expect(state.said.value).toBe('')
     })
   })

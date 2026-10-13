@@ -18,7 +18,7 @@ describe('the stretch a grid asks about', () => {
 
     for (const width of [120, 320, 640, 900, 1600]) {
       const { columns } = measureGrid({ ...widest, width })
-      for (const one of getDays(columns, now, new Map(), new Map())) {
+      for (const one of getDays(columns, now, new Map())) {
         expect(one.day >= stretch.from && one.day <= stretch.to).toBe(true)
       }
     }
@@ -37,7 +37,7 @@ describe('the stretch a grid asks about', () => {
   it('leaves days out where the grid is drawn wider than it was asked for', () => {
     const asked = getStretch({ width: 640, cell: 11, gap: 3 }, now)
     const { columns } = measureGrid({ width: 1600, cell: 11, gap: 3 })
-    const outside = getDays(columns, now, new Map(), new Map()).filter(
+    const outside = getDays(columns, now, new Map()).filter(
       (one) => one.day < asked.from || one.day > asked.to,
     )
     expect(outside.length).toBeGreaterThan(0)

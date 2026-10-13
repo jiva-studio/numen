@@ -16,32 +16,38 @@ const card = (id: string, section: string | null): DeckCard => ({
   filled: [],
 })
 
+const grid = (
+  cards: readonly DeckCard[],
+  sections: readonly DeckSection[] = [],
+  dragCard: string | null = null,
+) => getGrid({ cards, sections, stencils: CUTS }, dragCard)
+
 describe('getGrid, the drop target a run draws', () => {
   it('draws no drop target for the cards before the first section where there is no section', () => {
-    expect(getGrid([], [], CUTS, null).runs.map((run) => run.isDropTarget)).toEqual([false])
+    expect(grid([], []).runs.map((run) => run.isDropTarget)).toEqual([false])
   })
 
   it('draws a drop target for the empty head of a deck that has sections', () => {
-    expect(getGrid([], SECTIONS, CUTS, null).runs[0]?.isDropTarget).toBe(true)
+    expect(grid([], SECTIONS).runs[0]?.isDropTarget).toBe(true)
   })
 
   it('draws none for a head holding cards, the first of them being landed on', () => {
-    expect(getGrid([card('a', null)], SECTIONS, CUTS, null).runs[0]?.isDropTarget).toBe(false)
+    expect(grid([card('a', null)], SECTIONS).runs[0]?.isDropTarget).toBe(false)
   })
 
   it('draws none for a run under a section, its heading being landed on', () => {
-    const runs = getGrid([card('a', 'roots')], SECTIONS, CUTS, null).runs
+    const runs = grid([card('a', 'roots')], SECTIONS).runs
     expect(runs.slice(1).map((run) => run.isDropTarget)).toEqual([false, false])
   })
 
   it('stands a card naming a section that is not there before the first section', () => {
-    const runs = getGrid([card('a', 'gone')], SECTIONS, CUTS, null).runs
+    const runs = grid([card('a', 'gone')], SECTIONS).runs
     expect(runs[0]?.tiles.map((tile) => [tile.id, tile.section])).toEqual([['a', null]])
   })
 })
 
 describe('isMoved', () => {
-  const getRuns = (cards: readonly DeckCard[]) => getGrid(cards, SECTIONS, CUTS, null).runs
+  const getRuns = (cards: readonly DeckCard[]) => grid(cards, SECTIONS).runs
   const RUNS = getRuns([card('a', null), card('b', null), card('c', 'roots')])
 
   it('moves nothing let go on itself', () => {

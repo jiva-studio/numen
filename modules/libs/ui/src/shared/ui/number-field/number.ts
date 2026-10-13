@@ -99,6 +99,43 @@ export interface NumberEntry {
  * stands there written out. `onCommit` hears of a rest at a number other than
  * the one the field was resting at.
  */
+const checkInvalid = (raw: string, getBounds: () => Bounds): boolean => {
+  const text = raw.trim()
+  if (text === '') return false
+  if (!isPartialNumber(text)) return true
+  const value = parseNumber(text)
+  return value !== null && value !== clamp(value, getBounds())
+}
+
+interface NumberSyncState {
+  readonly model: Ref<number | null>
+  readonly inForce: ComputedRef<number | null>
+  readonly typed: Ref<string>
+}
+
+const watchNumberSync = (
+  state: NumberSyncState,
+  setRested: (value: number | null) => void,
+): void => {
+  const { model, inForce, typed } = state
+  watch(
+    inForce,
+    (now) => {
+      if (now === model.value) return
+      model.value = now
+      typed.value = formatNumber(now)
+      setRested(now)
+    },
+    { immediate: true },
+  )
+
+  watch(model, (now) => {
+    if (isTextForValue(typed.value, now)) return
+    typed.value = formatNumber(now)
+    setRested(now)
+  })
+}
+
 export const useNumberEntry = (
   model: Ref<number | null>,
   getBounds: () => Bounds,
@@ -109,40 +146,11 @@ export const useNumberEntry = (
   /** The number the field last stood at rest at. Committing is what moves it. */
   let rested = model.value
 
-  /**
-   * Text a number could still be typed out of is left alone; text that is no
-   * number, and a number past the bounds, are refused. A number between two
-   * places the step lays is on the way to one of them, and stands unmarked
-   * until the field is left.
-   */
-  const isInvalid = computed(() => {
-    const raw = typed.value.trim()
-    if (raw === '') return false
-    if (!isPartialNumber(raw)) return true
-    const value = parseNumber(raw)
-    return value !== null && value !== clamp(value, getBounds())
-  })
-
+  const isInvalid = computed(() => checkInvalid(typed.value, getBounds))
   const speechText = computed(() => (isInvalid.value ? typed.value.trim() : undefined))
-
-  /** The number in force, which is a number the bounds hold. */
   const inForce = computed(() => (model.value === null ? null : clamp(model.value, getBounds())))
 
-  watch(
-    inForce,
-    (now) => {
-      if (now === model.value) return
-      model.value = now
-      typed.value = formatNumber(now)
-      rested = now
-    },
-    { immediate: true },
-  )
-
-  // A number set from outside is written out; typing that means it is left alone.
-  watch(model, (now) => {
-    if (isTextForValue(typed.value, now)) return
-    typed.value = formatNumber(now)
+  watchNumberSync({ model, inForce, typed }, (now) => {
     rested = now
   })
 

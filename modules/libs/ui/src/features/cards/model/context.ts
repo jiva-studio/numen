@@ -4,9 +4,14 @@
  */
 import type { InjectionKey } from 'vue'
 
+export interface CardFieldTarget {
+  readonly field: string
+  readonly nth: number
+}
+
 export interface DeckContext {
-  /** One value of a card as it now reads; `nth` says which of a field's values. */
-  readonly write: (card: string, field: string, nth: number, text: string) => void
+  /** One value of a card as it now reads; `target` says which of a field's values. */
+  readonly write: (card: string, target: CardFieldTarget, text: string) => void
 }
 
 export const DECK_CONTEXT = Symbol('deck') as InjectionKey<DeckContext>

@@ -11,7 +11,12 @@ import type { Notice } from '../lib/notice'
 import { getRemainingWord } from '../lib/tally'
 
 const work = (id: string): Notice => ({ id, text: `Indexing ${id}`, isWorking: true })
-const asked = (id: string): Notice => ({ id, text: `Filed ${id}`, stay: 'kept', isUserStarted: true })
+const asked = (id: string): Notice => ({
+  id,
+  text: `Filed ${id}`,
+  stay: 'kept',
+  isUserStarted: true,
+})
 const report = (id: string, text = `Renamed ${id}`): Notice => ({
   id,
   text,

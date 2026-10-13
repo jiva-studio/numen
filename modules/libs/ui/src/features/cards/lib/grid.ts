@@ -91,52 +91,74 @@ export interface Grid {
  * has, and a card naming a section that was not handed in stands before the
  * first section, where every card handed in is drawn and counted.
  */
-export function getGrid(
-  cards: readonly DeckCard[],
-  sections: readonly DeckSection[],
+interface PlacementContext {
+  readonly sectioned: ReadonlySet<string | null>
+  readonly dragCard: string | null
+}
+
+function createTile(
+  card: DeckCard,
   stencils: readonly Stencil[],
-  dragCard: string | null,
-): Grid {
+  placement: PlacementContext,
+): Tile {
+  const cut = stencils.find((each) => each.name === card.stencil)
+  const fields = getDeclaredFields(cut?.fields ?? [])
+
+  /** How many values the card writes under each field, as they are counted off. */
+  const under = new Map<string, number>()
+  const countOff = (field: string): number => {
+    const nth = (under.get(field) ?? 0) + 1
+    under.set(field, nth)
+    return nth
+  }
+
+  // A value the stencil does not name is the person's and stays in the file,
+  // and nothing here draws it or says a word about it. A card whose stencil
+  // was not handed in draws no value at all, and says which stencil it is
+  // waiting for. A card naming no stencil waits for nothing, so everything it
+  // wrote stands as it was written.
+  const named = card.stencil !== null
+  const counted = getCardFieldValues(card.filled, fields)
+    .filter((each) => each.isDeclared || !named)
+    .map((each, place) => {
+      const nth = countOff(each.field)
+      return { ...each, at: place + 1, nth, key: `${each.field}#${nth}` }
+    })
+
+  return {
+    id: card.id,
+    section: placement.sectioned.has(card.section) ? card.section : null,
+    stencil: card.stencil,
+    filled: counted.map((each) => ({
+      ...each,
+      isLast: each.nth === (under.get(each.field) ?? 0),
+    })),
+    at: 0,
+    of: 0,
+    isKnown: cut !== undefined,
+    isDragged: card.id === placement.dragCard,
+  }
+}
+
+/** Source data required to lay out a deck's grid. */
+export interface DeckGridSource {
+  readonly cards: readonly DeckCard[]
+  readonly sections: readonly DeckSection[]
+  readonly stencils: readonly Stencil[]
+}
+
+/**
+ * The tiles of a deck, in the order the cards were handed in, each laid out
+ * under the stencil it names and standing in the run of the section it is
+ * under. A card naming a stencil that was not handed in keeps every value it
+ * has, and a card naming a section that was not handed in stands before the
+ * first section, where every card handed in is drawn and counted.
+ */
+export function getGrid(deck: DeckGridSource, dragCard: string | null = null): Grid {
+  const { cards, sections, stencils } = deck
   const sectioned = new Set<string | null>(sections.map((section) => section.id))
-  const tiles = cards.map((card) => {
-    const cut = stencils.find((each) => each.name === card.stencil)
-    const fields = getDeclaredFields(cut?.fields ?? [])
-
-    /** How many values the card writes under each field, as they are counted off. */
-    const under = new Map<string, number>()
-    const countOff = (field: string): number => {
-      const nth = (under.get(field) ?? 0) + 1
-      under.set(field, nth)
-      return nth
-    }
-
-    // A value the stencil does not name is the person's and stays in the file,
-    // and nothing here draws it or says a word about it. A card whose stencil
-    // was not handed in draws no value at all, and says which stencil it is
-    // waiting for. A card naming no stencil waits for nothing, so everything it
-    // wrote stands as it was written.
-    const named = card.stencil !== null
-    const counted = getCardFieldValues(card.filled, fields)
-      .filter((each) => each.isDeclared || !named)
-      .map((each, place) => {
-        const nth = countOff(each.field)
-        return { ...each, at: place + 1, nth, key: `${each.field}#${nth}` }
-      })
-
-    return {
-      id: card.id,
-      section: sectioned.has(card.section) ? card.section : null,
-      stencil: card.stencil,
-      filled: counted.map((each) => ({
-        ...each,
-        isLast: each.nth === (under.get(each.field) ?? 0),
-      })),
-      at: 0,
-      of: 0,
-      isKnown: cut !== undefined,
-      isDragged: card.id === dragCard,
-    }
-  })
+  const placement: PlacementContext = { sectioned, dragCard }
+  const tiles = cards.map((card) => createTile(card, stencils, placement))
 
   const tilesUnder = (section: string | null): readonly Tile[] =>
     tiles.filter((tile) => tile.section === section)

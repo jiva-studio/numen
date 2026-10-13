@@ -51,6 +51,49 @@ const STEPS: Readonly<Record<string, readonly [by: number, from?: number]>> = {
   End: [-1, 0],
 }
 
+interface KeyContext {
+  readonly typed: Readonly<{ value: string }>
+  readonly places: PalettePlacesState
+  readonly isPanelOpen: { value: boolean }
+  readonly options: PaletteKeysOptions
+  readonly stepBy: (by: number, from?: number) => void
+  readonly openActions: (event: KeyboardEvent) => void
+}
+
+function handlePaletteKey(event: KeyboardEvent, context: KeyContext): void {
+  if (isActionsChord(event)) {
+    context.openActions(event)
+    return
+  }
+
+  const step = STEPS[event.key]
+  if (step) {
+    event.preventDefault()
+    context.stepBy(step[0], step[1])
+    return
+  }
+
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    context.places.chooseAt(context.places.here.value, event.shiftKey)
+    return
+  }
+
+  if (event.key === 'Backspace' && context.typed.value === '') {
+    event.preventDefault()
+    context.options.goBack()
+    return
+  }
+
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    context.options.dismiss()
+    return
+  }
+
+  if (event.key === 'Tab') event.preventDefault()
+}
+
 export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
   const { field, places, isPanelOpen, typed } = options
 
@@ -64,7 +107,7 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
 
   /** The keyboard moved through the places, and what it lands on brought into sight. */
   const stepBy = (by: number, from = places.here.value): void => {
-    places.goTo(stepTo(places.places.value, from, by, canLandOn))
+    places.goTo(stepTo(places.places.value, { from, by }, canLandOn))
     options.reveal()
   }
 
@@ -76,38 +119,7 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
   }
 
   const onKey = (event: KeyboardEvent): void => {
-    if (isActionsChord(event)) {
-      openActions(event)
-      return
-    }
-
-    const step = STEPS[event.key]
-    if (step) {
-      event.preventDefault()
-      stepBy(step[0], step[1])
-      return
-    }
-
-    if (event.key === 'Enter') {
-      event.preventDefault()
-      places.chooseAt(places.here.value, event.shiftKey)
-      return
-    }
-
-    if (event.key === 'Backspace' && typed.value === '') {
-      event.preventDefault()
-      options.goBack()
-      return
-    }
-
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      options.dismiss()
-      return
-    }
-
-    // The keyboard stays in the field for as long as the palette stands.
-    if (event.key === 'Tab') event.preventDefault()
+    handlePaletteKey(event, { typed, places, isPanelOpen, options, stepBy, openActions })
   }
 
   /**

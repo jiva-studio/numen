@@ -55,7 +55,7 @@ export function useMenuKeys(
 
   /** The keyboard onto the item a letter names, and nowhere where it names none. */
   const jump = (letter: string): void => {
-    const jumped = jumpTo(items(), typed, letter, here.value, now())
+    const jumped = jumpTo(items(), typed, { letter, from: here.value, now: now() })
     typed = jumped.typed
     if (jumped.at !== null) goTo(jumped.at)
   }
