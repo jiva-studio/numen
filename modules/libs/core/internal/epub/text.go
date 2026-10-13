@@ -127,18 +127,22 @@ func (x *extractor) write(text string) {
 	if x.preformattedDepth > 0 {
 		x.out = append(x.out, text...)
 	} else {
-		for _, r := range text {
-			if unicode.IsSpace(r) {
-				if last, ok := x.findLastByte(); ok && last != ' ' && last != '\n' {
-					x.out = append(x.out, ' ')
-				}
-				continue
-			}
-			x.out = utf8.AppendRune(x.out, r)
-		}
+		x.writeNormalized(text)
 	}
 	if len(x.out) > start {
 		x.markup.run(start)
+	}
+}
+
+func (x *extractor) writeNormalized(text string) {
+	for _, r := range text {
+		if unicode.IsSpace(r) {
+			if last, ok := x.findLastByte(); ok && last != ' ' && last != '\n' {
+				x.out = append(x.out, ' ')
+			}
+			continue
+		}
+		x.out = utf8.AppendRune(x.out, r)
 	}
 }
 
