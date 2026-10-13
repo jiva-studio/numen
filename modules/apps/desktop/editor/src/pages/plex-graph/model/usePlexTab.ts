@@ -160,13 +160,13 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
   const openNode = (node: string, how: PlexDestination = 'here') => {
     const path = map.getNodePath(node)
-    if (path) deps.openNote(path, getName(path), how)
+    if (path) deps.openNote(path, { title: getName(path), showing: how })
   }
 
   const openHeading = (node: string, heading: string) => {
     const path = map.getNodePath(node)
     if (!path || !/^\d+$/.test(heading)) return
-    deps.openNote(path, getName(path), 'here', Number(heading))
+    deps.openNote(path, { title: getName(path), showing: 'here', line: Number(heading) })
   }
 
   const createNote = async () => {

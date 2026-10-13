@@ -32,11 +32,16 @@ export interface MenuRequest {
 /** Where rows let go of landed, as the tree reports it. */
 export type DropPosition = { readonly into: string | null } | { readonly before: string }
 
+export interface FileCommandTarget {
+  readonly name: string
+  readonly source: Source
+}
+
 /** What a files tab asks of the window it is drawn in. */
 export interface FilesTabDeps {
   openDestination(destination: SearchDestination | null, state?: FilesTabState): void
   onSelectPath?(path: string, state: FilesTabState): void
-  runCommand(id: string, paths: readonly string[], name: string, source: Source): void
+  runCommand(id: string, paths: readonly string[], target: FileCommandTarget): void
   movePath(from: string, to: string): Promise<void>
   setDraggedPaths(paths: readonly string[]): void
   createFolder(path: string): Promise<void>

@@ -8,15 +8,7 @@
  */
 import type { CSSProperties } from 'vue'
 import type { Position } from '@numen/ui'
-import {
-  PLOT_BOTTOM,
-  PLOT_HEIGHT,
-  PLOT_LEFT,
-  PLOT_RIGHT,
-  PLOT_TOP,
-  PLOT_WIDTH,
-  type Extent,
-} from './plot'
+import { PLOT_HEIGHT, PLOT_LEFT, PLOT_RIGHT, PLOT_TOP, PLOT_WIDTH } from './plot'
 
 /** How far the name of a mark stands above it, and how wide it is set. */
 export const AXIS_LABEL_LIFT = 9

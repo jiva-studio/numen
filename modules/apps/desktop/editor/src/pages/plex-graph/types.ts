@@ -72,19 +72,20 @@ export interface PlexEditor {
   ): Promise<boolean>
 }
 
+export interface OpenNoteOptions {
+  title?: string
+  showing?: PlexDestination
+  line?: number
+  state?: PlexTabState
+}
+
 /** Dependencies for plex tab state. */
 export interface PlexTabDeps {
   readonly editor: PlexEditor
   readonly isReady: Readonly<Ref<boolean>>
   readonly isNesting: Readonly<Ref<boolean>>
   readonly headings: Readonly<Ref<number>>
-  openNote(
-    path: string,
-    title: string,
-    showing: PlexDestination,
-    line?: number,
-    state?: PlexTabState,
-  ): void
+  openNote(path: string, options?: OpenNoteOptions): void
   onSelectPath?(path: string, title?: string, state?: PlexTabState): void
   readHeadings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
   askAgent(text: string): void

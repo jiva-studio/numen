@@ -17,14 +17,15 @@ export function isNotePath(path: string): boolean {
   return path.endsWith('.md') || !path.includes('.')
 }
 
-function syncNoteTab(
-  targetId: TabId,
-  path: string,
-  title: string,
-  targetTab: NonNullable<ReturnType<ReturnType<typeof useWindowTabs>['getTab']>>,
-  editing: ReturnType<typeof useNoteEditors>,
-): void {
+interface SyncTargetContext {
+  targetId: TabId
+  targetTab: NonNullable<ReturnType<ReturnType<typeof useWindowTabs>['getTab']>>
+  editing: ReturnType<typeof useNoteEditors>
+}
+
+function syncNoteTab(path: string, title: string, context: SyncTargetContext): void {
   if (!isNotePath(path)) return
+  const { targetId, targetTab, editing } = context
   const noteId =
     (targetTab.state as { id?: string } | undefined)?.id ?? targetId.replace(/^note:/, '')
   void editing.noted.loadInTab(noteId, path, title)
@@ -45,19 +46,24 @@ function syncFilesTab(targetId: TabId, path: string, held: ReturnType<typeof use
   }
 }
 
+interface SyncDestination {
+  targetId: TabId
+  path: string
+  title: string
+}
+
 function syncToTab(
-  targetId: TabId,
-  path: string,
-  title: string,
+  destination: SyncDestination,
   held: ReturnType<typeof useWindowTabs>,
   editing: ReturnType<typeof useNoteEditors>,
 ): void {
+  const { targetId, path, title } = destination
   const targetTab = held.getTab(targetId)
   if (!targetTab) return
 
   switch (targetTab.kind.kind) {
     case 'note':
-      syncNoteTab(targetId, path, title, targetTab, editing)
+      syncNoteTab(path, title, { targetId, targetTab, editing })
       break
     case 'plex':
       syncPlexTab(targetId, path, held)
@@ -79,7 +85,7 @@ export function useTabSync({ held, tabLinks, editing }: TabSyncDeps) {
     isSyncing = true
     try {
       for (const targetId of targets) {
-        syncToTab(targetId, path, title, held, editing)
+        syncToTab({ targetId, path, title }, held, editing)
       }
       return true
     } finally {

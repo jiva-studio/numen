@@ -120,7 +120,7 @@ const fetchCurve = async (state: CurveState, context: CurveContext): Promise<voi
 
 /** Calculates the curve for the goal these settings name. */
 export const updateCurves = async (state: CurveState, context: CurveContext): Promise<void> => {
-  const { path, getSettings, today } = context
+  const { getSettings, today } = context
   const settings = getSettings()
   const shape = getShapeKey(settings)
   const heldCurve = state.answers.get(shape)

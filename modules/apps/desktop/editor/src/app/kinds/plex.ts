@@ -53,12 +53,13 @@ export function createPlexKind({
     isReady: computed(() => !window.failure.value),
     isNesting: settings.nesting.isNesting,
     headings: settings.nesting.headings,
-    openNote: (path, title, showing, line, state) => {
-      const tabId = findPlexTabId(held, state)
+    openNote: (path, options) => {
+      const title = options?.title ?? ''
+      const tabId = findPlexTabId(held, options?.state)
       if (tabId && tabSync?.syncPathFromTab(tabId, path, title)) {
         return
       }
-      void tabOpeners.openFile(path, title, showing, line)
+      void tabOpeners.openFile(path, title, options?.showing, options?.line)
     },
     onSelectPath: (path, title, state) => {
       const tabId = findPlexTabId(held, state)

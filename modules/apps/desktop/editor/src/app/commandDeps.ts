@@ -42,72 +42,107 @@ export interface CommandDepsOptions {
   search?: () => void
 }
 
-export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
-  const {
-    core,
-    held,
-    making,
-    made,
-    setVaultName,
-    reload,
-    loadArtifactStates,
-    reached,
-    openPreset,
-    dressed,
-    oneName,
-    nesting,
-    recorded,
-    pointed,
-    files,
-    plexes,
-    agents,
+function createFileCommands(core: VaultCore, making: NoteCreator): CommandDeps['files'] {
+  return {
+    createNote: (title, from, relation) => making.createWithTitle(title, from, relation),
+    rename: (path, title) => core.rename(path, title),
+    remove: (path, isPermanent) => core.remove(path, isPermanent),
+    move: (from, to) => core.move(from, to),
+    createFolder: (path) => core.createFolder(path),
+  }
+}
+
+function createRunCommands(options: CommandDepsOptions): CommandDeps['runs'] {
+  const { loadArtifactStates, recorded, pointed } = options
+  return {
+    getArtifactStates: (path) => running.getArtifactStates(path),
+    createArtifact: async (path, of) => {
+      const outcome = await running.createArtifact(path, of)
+      void loadArtifactStates(path)
+      return outcome
+    },
+    fetchArtifact: async (path) => {
+      const outcome = await running.fetchArtifact(path)
+      void loadArtifactStates(path)
+      return outcome
+    },
+    correctArtifact: async (path) => {
+      const outcome = await running.correctArtifact(path)
+      void loadArtifactStates(path)
+      return outcome
+    },
+    deleteTranscript: async (path) => {
+      const able = await running.deleteTranscript(path)
+      if (able) {
+        ;(recorded.onDelete ?? recorded.reloadTranscript)?.(path)
+        ;(pointed.onDelete ?? pointed.reloadTranscript)?.(path)
+      }
+      void loadArtifactStates(path)
+      return able
+    },
+    deleteCopy: async (path) => {
+      const able = await running.deleteCopy(path)
+      if (able) void loadArtifactStates(path)
+      return able
+    },
+  }
+}
+
+function createNavigationCommands(options: CommandDepsOptions): CommandDeps['goes'] {
+  const { files, plexes, agents, held, openPreset, getOpeningNote, search } = options
+  return {
+    revealPath: (path) => void files().revealPath(path),
+    travel: async (path) => {
+      await plexes().travel(path)
+    },
+    leave: async (from, to) => {
+      await plexes().leavePath(from, to)
+    },
     getOpeningNote,
-    runs,
-    writeMessage,
-  } = options
+    openTab: (kind) => void held.openTabOfKind(kind),
+    openPreset: (path) => openPreset(path),
+    closeTab: (tab) => held.requestClose(tab),
+    ask: (text) => void agents().askQuestion(text),
+    search: search ?? (() => {}),
+  }
+}
+
+function createSettingsCommands(options: CommandDepsOptions): CommandDeps['settings'] {
+  const { dressed, oneName, nesting, rest } = options
+  return {
+    chooseAppearance: async (chosen) => {
+      await dressed.chooseItem(chosen)
+    },
+    chooseSync: async (chosen) => {
+      await oneName.choose(chosen)
+    },
+    chooseNesting: async (chosen) => {
+      await nesting.choose(chosen)
+    },
+    chooseHeadings: async (chosen) => {
+      await nesting.chooseCount(chosen)
+    },
+    choosePerformance: async (chosen) => {
+      await rest.writeSettings([{ at: ['performance', 'profile'], value: write(chosen) }])
+    },
+    chooseIndexingModel: async (chosen) => {
+      const models = rest.getModelsAt?.(['indexing', 'model', 'name']) ?? []
+      const model = models.find((one) => one.name === chosen)
+      if (model) {
+        await rest.writeSettings(model.writes)
+      } else {
+        await rest.writeSettings([{ at: ['indexing', 'model', 'name'], value: write(chosen) }])
+      }
+    },
+  }
+}
+
+export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
+  const { core, making, made, setVaultName, reload, reached, runs, writeMessage } = options
 
   return {
-    files: {
-      createNote: (title, from, relation) => making.createWithTitle(title, from, relation),
-      rename: (path, title) => core.rename(path, title),
-      remove: (path, isPermanent) => core.remove(path, isPermanent),
-      move: (from, to) => core.move(from, to),
-      createFolder: (path) => core.createFolder(path),
-    },
-    runs: {
-      getArtifactStates: (path) => running.getArtifactStates(path),
-      createArtifact: async (path, of) => {
-        const outcome = await running.createArtifact(path, of)
-        void loadArtifactStates(path)
-        return outcome
-      },
-      fetchArtifact: async (path) => {
-        const outcome = await running.fetchArtifact(path)
-        void loadArtifactStates(path)
-        return outcome
-      },
-      correctArtifact: async (path) => {
-        const outcome = await running.correctArtifact(path)
-        void loadArtifactStates(path)
-        return outcome
-      },
-      deleteTranscript: async (path) => {
-        const able = await running.deleteTranscript(path)
-        if (able) {
-          ;(recorded.onDelete ?? recorded.reloadTranscript)?.(path)
-          ;(pointed.onDelete ?? pointed.reloadTranscript)?.(path)
-        }
-        void loadArtifactStates(path)
-        return able
-      },
-      deleteCopy: async (path) => {
-        const able = await running.deleteCopy(path)
-        if (able) {
-          void loadArtifactStates(path)
-        }
-        return able
-      },
-    },
+    files: createFileCommands(core, making),
+    runs: createRunCommands(options),
     makers: {
       ...made,
       createStencil: (folder, name) => made.createStencil(folder, name, [cardWords.newField]),
@@ -117,50 +152,8 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
       setVaultName,
       reload,
     },
-    goes: {
-      revealPath: (path) => void files().revealPath(path),
-      travel: async (path) => {
-        await plexes().travel(path)
-      },
-      leave: async (from, to) => {
-        await plexes().leavePath(from, to)
-      },
-      getOpeningNote,
-      openTab: (kind) => void held.openTabOfKind(kind),
-      openPreset: (path) => openPreset(path),
-      closeTab: (tab) => held.requestClose(tab),
-      ask: (text) => void agents().askQuestion(text),
-      search: options.search ?? (() => {}),
-    },
-    settings: {
-      chooseAppearance: async (chosen) => {
-        await dressed.chooseItem(chosen)
-      },
-      chooseSync: async (chosen) => {
-        await oneName.choose(chosen)
-      },
-      chooseNesting: async (chosen) => {
-        await nesting.choose(chosen)
-      },
-      chooseHeadings: async (chosen) => {
-        await nesting.chooseCount(chosen)
-      },
-      choosePerformance: async (chosen) => {
-        await options.rest.writeSettings([{ at: ['performance', 'profile'], value: write(chosen) }])
-      },
-      chooseIndexingModel: async (chosen) => {
-        // Find the model with the given name from the available models
-        const models = options.rest.getModelsAt?.(['indexing', 'model', 'name']) ?? []
-        const model = models.find((one) => one.name === chosen)
-        if (model) {
-          await options.rest.writeSettings(model.writes)
-        } else {
-          await options.rest.writeSettings([
-            { at: ['indexing', 'model', 'name'], value: write(chosen) },
-          ])
-        }
-      },
-    },
+    goes: createNavigationCommands(options),
+    settings: createSettingsCommands(options),
     notes: reached,
     runSupport: runs,
     copyPath: (path) => void navigator.clipboard?.writeText(path),

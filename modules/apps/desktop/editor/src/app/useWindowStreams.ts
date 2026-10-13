@@ -32,24 +32,45 @@ export interface WindowStreamsDeps {
   readonly openFileAt: (path: string, spans: readonly Span[]) => void
 }
 
+interface VaultChangeData {
+  paths: readonly string[]
+  shouldReload?: boolean
+  renamed: readonly PathRename[]
+}
+
+async function handleVaultChange(change: VaultChangeData, deps: WindowStreamsDeps): Promise<void> {
+  if (change.paths.length === 0 && !change.shouldReload && change.renamed.length === 0) return
+  if (change.shouldReload && (await deps.isVaultSwapped())) return void deps.reload()
+  await deps.onVaultChanged(change.shouldReload ? [] : change.paths, change.renamed)
+  if (change.renamed.some((went) => went.from === deps.opening.value)) {
+    try {
+      await deps.readInitialNote()
+    } catch {
+      // The next change asks again.
+    }
+  }
+  try {
+    await deps.ask()
+  } catch {
+    // What a change means is already drawn; the counts come round with the next one.
+  }
+}
+
+async function handleFocusChange(
+  asked: { path?: string; spans: readonly Span[] },
+  travelTo: (path: string) => Promise<void> | void,
+  openFileAt: (path: string, spans: readonly Span[]) => void,
+): Promise<void> {
+  if (!asked.path) return
+  const spans = asked.spans
+    .map((one) => ({ from: one.from, to: one.to }))
+    .filter((one) => one.to > one.from)
+  if (!spans.length) return void (await travelTo(asked.path))
+  openFileAt(asked.path, spans)
+}
+
 export function useWindowStreams(deps: WindowStreamsDeps) {
-  const {
-    core,
-    listening,
-    isOpen,
-    setLost,
-    wait,
-    opening,
-    tasks,
-    isVaultSwapped,
-    reload,
-    onVaultChanged,
-    readInitialNote,
-    ask,
-    reportChange,
-    travelTo,
-    openFileAt,
-  } = deps
+  const { core, listening, isOpen, setLost, wait, tasks, reportChange, travelTo, openFileAt } = deps
 
   /** Every stream is read the same way, and taken up again the same way. */
   const follows = createFollower({
@@ -58,38 +79,10 @@ export function useWindowStreams(deps: WindowStreamsDeps) {
     wait,
   })
 
-  /**
-   * Follow the vault.
-   *
-   * Every change is told, including changes to notes that are nowhere on
-   * screen: a link is written at one end and shows at both, so a note edited
-   * somewhere else is exactly how a new parent arrives. What is drawn cannot
-   * answer whether a change reaches it.
-   */
   const follow = () =>
     follows(
       () => core.watchVaultChanges(listening.signal),
-      async (change) => {
-        if (change.paths.length === 0 && !change.shouldReload && change.renamed.length === 0) return
-        // A reload standing at another folder is another vault under this
-        // window, and the page is drawn again on it.
-        if (change.shouldReload && (await isVaultSwapped())) return void reload()
-        await onVaultChanged(change.shouldReload ? [] : change.paths, change.renamed)
-        // The note the vault opens with is asked for again when it moves.
-        if (change.renamed.some((went) => went.from === opening.value)) {
-          try {
-            await readInitialNote()
-          } catch {
-            // The next change asks again.
-          }
-        }
-        try {
-          await ask()
-        } catch {
-          // What a change means is already drawn; the counts come round with
-          // the next one.
-        }
-      },
+      (change) => handleVaultChange(change, deps),
     )
 
   /** Follows the changes being made to notes. */
@@ -103,41 +96,21 @@ export function useWindowStreams(deps: WindowStreamsDeps) {
       },
     )
 
-  /**
-   * Travels to whatever is asked for while the window is open — an agent
-   * working the vault beside the person naming the note it is talking about. A
-   * focus naming a span of a source's text opens that source at it.
-   */
   const watch = () =>
     follows(
       () => core.watchFocus(listening.signal),
-      async (asked) => {
-        if (!asked.path) return
-        const spans = asked.spans
-          .map((one) => ({ from: one.from, to: one.to }))
-          .filter((one) => one.to > one.from)
-        if (!spans.length) return void (await travelTo(asked.path))
-        openFileAt(asked.path, spans)
-      },
+      (asked) => handleFocusChange(asked, travelTo, openFileAt),
     )
 
-  /**
-   * Keeps the list of what is being done up to date while the window is open.
-   *
-   * Nothing is asked for on a timer. Work begins without the window: an agent
-   * is told to read a document, and the list says so the moment it starts.
-   */
   const followTasks = () =>
     follows(
       () => core.watchTasks(listening.signal),
       async (list) => {
         const ran = tasks.value.length > 0
         tasks.value = list
-        // What the vault holds moves while a pass runs and settles when it
-        // ends, so it is asked for again the moment the list empties.
         if (!ran || list.length > 0) return
         try {
-          await ask()
+          await deps.ask()
         } catch {
           // The pass after this one asks again.
         }

@@ -13,7 +13,15 @@ import {
 import { getBacklogRun } from '../../lib/plot'
 import { WORDS as words } from '../../words'
 
-function createCalloutData(curve: Curve, place: number, at: Position | null, value: number) {
+interface CalloutOptions {
+  curve: Curve
+  place: number
+  at: Position | null
+  value: number
+}
+
+function createCalloutData(options: CalloutOptions) {
+  const { curve, place, at, value } = options
   const point = curve.at[place]
   if (!curve.isHonest || !at || !point) return null
   const backlog = getBacklogRun(curve, place)
@@ -29,6 +37,19 @@ function createCalloutData(curve: Curve, place: number, at: Position | null, val
   return { lines, ...createCallout(at) }
 }
 
+function createMarks(goal: string, knob: Position | null, suggested: Position | null): Mark[] {
+  const out: Mark[] = []
+  if (knob) out.push({ key: 'knob', at: knob, text: '' })
+  if (suggested) {
+    out.push({
+      key: 'suggested',
+      at: suggested,
+      text: words.markName(goal),
+    })
+  }
+  return out
+}
+
 export function useCurveAnnotations(
   props: CurveSliderProps,
   plot: ReturnType<typeof useCurvePlot>,
@@ -36,22 +57,17 @@ export function useCurveAnnotations(
   const isDated = computed(() => props.curve.goal === 'date')
   const isHonest = computed(() => props.curve.isHonest)
 
-  const marks = computed(() => {
-    if (!isHonest.value) return []
-    const out: Mark[] = []
-    if (plot.knob.value) out.push({ key: 'knob', at: plot.knob.value, text: '' })
-    if (plot.suggested.value) {
-      out.push({
-        key: 'suggested',
-        at: plot.suggested.value,
-        text: words.markName(props.curve.goal),
-      })
-    }
-    return out
-  })
+  const marks = computed(() =>
+    isHonest.value ? createMarks(props.curve.goal, plot.knob.value, plot.suggested.value) : [],
+  )
 
   const callout = computed(() =>
-    createCalloutData(props.curve, props.place, plot.knob.value, plot.held.value),
+    createCalloutData({
+      curve: props.curve,
+      place: props.place,
+      at: plot.knob.value,
+      value: plot.held.value,
+    }),
   )
 
   const named = computed(() => createLabels(marks.value, callout.value?.box ?? null))
@@ -76,14 +92,8 @@ export function useCurveAnnotations(
     return point ? words.learning(point.learns, point.learned, props.curve.cards) : []
   })
 
-  const atLeast = computed(() =>
-    props.place === 0 ? '' : words.formatGoalValue(props.curve.goal, props.curve.grid[0] ?? 0),
-  )
-  const atMost = computed(() =>
-    props.place === plot.places.value - 1
-      ? ''
-      : words.formatGoalValue(props.curve.goal, props.curve.grid[plot.places.value - 1] ?? 0),
-  )
+  const grid = computed(() => props.curve.grid)
+  const lastIndex = computed(() => plot.places.value - 1)
 
   return {
     isDated,
@@ -96,10 +106,16 @@ export function useCurveAnnotations(
     atKnob,
     counts,
     learning,
-    atLeast,
-    atMost,
-    least: computed(() => props.curve.grid[0] ?? 0),
-    most: computed(() => props.curve.grid[plot.places.value - 1] ?? 0),
+    atLeast: computed(() =>
+      props.place === 0 ? '' : words.formatGoalValue(props.curve.goal, grid.value[0] ?? 0),
+    ),
+    atMost: computed(() =>
+      props.place === lastIndex.value
+        ? ''
+        : words.formatGoalValue(props.curve.goal, grid.value[lastIndex.value] ?? 0),
+    ),
+    least: computed(() => grid.value[0] ?? 0),
+    most: computed(() => grid.value[lastIndex.value] ?? 0),
     value: computed(() => plot.held.value),
   }
 }

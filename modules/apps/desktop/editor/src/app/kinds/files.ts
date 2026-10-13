@@ -50,21 +50,15 @@ function findFilesTabId(held: FilesKindDeps['held'], state?: unknown): string | 
   return held.handle.last<FilesTabState>('files')?.id ?? null
 }
 
-export function createFilesKind({
-  core,
-  tabOpeners,
-  held,
-  runs,
-  editing,
-  vaults,
-  getTarget,
-  runCommand,
-  commandDeps,
-  dragged,
-  writeMessage,
-  destinations,
-  tabSync,
-}: FilesKindDeps) {
+interface FileCreatorsDeps {
+  core: FilesKindDeps['core']
+  tabOpeners: FilesKindDeps['tabOpeners']
+  editing: FilesKindDeps['editing']
+  writeMessage: FilesKindDeps['writeMessage']
+}
+
+function createFilesCreators(deps: FileCreatorsDeps) {
+  const { core, tabOpeners, editing, writeMessage } = deps
   const fetchArtifact = async (path: string): Promise<void> => {
     try {
       await running.fetchArtifact(path)
@@ -75,7 +69,7 @@ export function createFilesKind({
     editing.notes.applyPathChanges([path])
   }
 
-  const made = createFileCreators(
+  return createFileCreators(
     {
       createDeck: (title, folder) => cards.createDeck(title, folder),
       createStencil: (title, folder, fields) => cards.createStencil(title, folder, fields),
@@ -90,8 +84,30 @@ export function createFilesKind({
     { errors: words.errors },
     writeMessage,
   )
+}
 
-  const files = buildFilesKind(held.handle, () => useFileTree(core), {
+interface FilesTabConfigDeps {
+  deps: FilesKindDeps
+  made: ReturnType<typeof createFilesCreators>
+}
+
+function createFilesTabDeps(config: FilesTabConfigDeps): FilesTabDeps {
+  const { deps, made } = config
+  const {
+    held,
+    runs,
+    editing,
+    vaults,
+    getTarget,
+    runCommand,
+    commandDeps,
+    dragged,
+    writeMessage,
+    destinations,
+    tabSync,
+  } = deps
+
+  return {
     openDestination: (landing, state) => {
       if (landing?.path && isNotePath(landing.path)) {
         const tabId = findFilesTabId(held, state)
@@ -110,14 +126,14 @@ export function createFilesKind({
         }
       }
     },
-    runCommand: (id, paths, name, source) => {
+    runCommand: (id, paths, details) => {
       const path = paths[0] ?? ''
       runCommand(id, {
         ...getTarget(),
         path,
-        title: name,
+        title: details.name,
         file: path,
-        source,
+        source: details.source,
         made: vaults.makes.value.get(path) ?? {},
         others: paths.slice(1),
       })
@@ -145,7 +161,12 @@ export function createFilesKind({
     showError: (text) => writeMessage(text, 'error'),
     canRun: (run) => runs.canRun(run),
     getArtifactStates: (path) => vaults.makes.value.get(path) ?? {},
-  })
+  }
+}
 
+export function createFilesKind(deps: FilesKindDeps) {
+  const made = createFilesCreators(deps)
+  const filesDeps = createFilesTabDeps({ deps, made })
+  const files = buildFilesKind(deps.held.handle, () => useFileTree(deps.core), filesDeps)
   return { files, made }
 }

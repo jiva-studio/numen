@@ -52,9 +52,9 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
   const gestures = useFilesTab(list, {
     openDestination: (landing) =>
       void done.push(`lands ${landing ? `${landing.at} ${landing.path}` : '—'}`),
-    runCommand: (id, paths, name, source) => {
-      done.push(`runs ${id} ${paths.join(' ')} ${name}`)
-      sources.push(source)
+    runCommand: (id, paths, target) => {
+      done.push(`runs ${id} ${paths.join(' ')} ${target.name}`)
+      sources.push(target.source)
     },
     movePath: async (from, to) => void done.push(`moves ${from} ${to}`),
     setDraggedPaths: (paths) => void done.push(`drags ${paths.join(' ') || '—'}`),

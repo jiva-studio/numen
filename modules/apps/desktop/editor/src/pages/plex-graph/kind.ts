@@ -31,8 +31,8 @@ export function createPlexKind(
       const current: { state?: PlexTabState } = {}
       const wrappedDeps: PlexTabDeps = {
         ...deps,
-        openNote: (path, title, how, line) =>
-          current.state && deps.openNote(path, title, how, line, current.state),
+        openNote: (path, options) =>
+          current.state && deps.openNote(path, { ...options, state: current.state }),
         onSelectPath: (path, title) =>
           current.state && deps.onSelectPath?.(path, title, current.state),
       }

@@ -97,7 +97,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
   const remove = (paths: readonly string[]) => {
     const first = paths[0]
     if (first === undefined) return
-    deps.runCommand('remove', paths, getNameOf(first), getSourceOf(first))
+    deps.runCommand('remove', paths, { name: getNameOf(first), source: getSourceOf(first) })
   }
 
   const createFolder = async (path: string | null) => {
@@ -147,7 +147,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
       renamingPath.value = path
       return
     }
-    deps.runCommand(id, getOverPaths(path), getNameOf(path), getSourceOf(path))
+    deps.runCommand(id, getOverPaths(path), { name: getNameOf(path), source: getSourceOf(path) })
   }
 
   const getNameOf = (path: string): string => list.getEntryAt(path)?.name ?? getFileName(path)
