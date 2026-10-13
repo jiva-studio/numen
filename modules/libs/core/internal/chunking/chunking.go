@@ -27,6 +27,7 @@ import (
 
 // Whole, as Sizes.Large, cuts one large chunk over the whole text: the chunk
 // enclosing every small chunk is the source itself. This is how a note is cut.
+// gomutants:disable-next-line INTEGER_INCREMENT reason="Whole is any negative size: Resolve maps every negative Large to Whole, so -2 behaves as -1"
 const Whole = -1
 
 // The sizes used where configuration names none.
@@ -109,6 +110,24 @@ func (c Chunk) ExtractText(text string) string { return text[c.Start : c.Start+c
 // computeMiddle returns the byte the chunk is centred on; it decides which large
 // chunk a small one belongs to.
 func (c Chunk) computeMiddle() int { return c.Start + c.Length/2 }
+
+// Chunks cuts the text and gives every chunk as the index holds it. The build
+// function makes one chunk from a cut one, and is told whether it is a large
+// chunk or a small one inside it.
+func Chunks(
+	text string, parts []domain.PartStart, sizes Sizes, reads Legibility,
+	build func(c Chunk, isLarge bool) domain.Chunk,
+) []domain.Chunk {
+	var out []domain.Chunk
+	for _, large := range Cut(text, parts, sizes, reads) {
+		c := build(large, true)
+		for _, small := range large.Small {
+			c.Small = append(c.Small, build(small, false))
+		}
+		out = append(out, c)
+	}
+	return out
+}
 
 // Cut returns the large chunks of the text, each carrying the small chunks
 // inside it.

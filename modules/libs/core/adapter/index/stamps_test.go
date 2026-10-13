@@ -15,7 +15,7 @@ func TestTheSourceRowHoldsNanosecondsSinceTheEpoch(t *testing.T) {
 	const nanos = 1788433445123456789
 
 	db := openDB(t)
-	if err := db.Notes().Save(t.Context(), first.ID, []domain.Note{{
+	if err := saveCut(t.Context(), db, first.ID, []domain.Note{{
 		Fingerprint: domain.Fingerprint{
 			Path: "notes/Compost.md", Kind: domain.KindNote, Size: 12, ModTime: at,
 		},
@@ -53,7 +53,7 @@ func TestAFileStampedByAClockIsUnchangedThroughTheIndex(t *testing.T) {
 	ref := domain.Fingerprint{
 		Path: "notes/Leaves.md", Kind: domain.KindNote, Size: 12, ModTime: at,
 	}
-	if err := db.Notes().Save(t.Context(), first.ID, []domain.Note{{
+	if err := saveCut(t.Context(), db, first.ID, []domain.Note{{
 		Fingerprint: ref, Title: "Leaves", Body: "Turned and rotted down.",
 	}}); err != nil {
 		t.Fatal(err)

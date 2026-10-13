@@ -7,7 +7,8 @@
  * names.
  */
 import { ref, type Ref, type ShallowRef } from 'vue'
-import { stepTo, type MenuItem } from './item'
+import { stepTo } from '@/shared/lib/roving'
+import { canLandOn, type MenuItem } from './item'
 import { isLetter, jumpTo, NOTHING_TYPED, type Typeahead } from './typeahead'
 
 /** A row standing now, which takes the keyboard when it is asked to. */
@@ -62,7 +63,7 @@ export function useMenuKeys(
   const onKey = (event: KeyboardEvent): void => {
     const step = (by: number, from: number): void => {
       event.preventDefault()
-      goTo(stepTo(items(), from, by))
+      goTo(stepTo(items(), from, by, canLandOn))
     }
     const stepForward = (): void => step(1, here.value)
     // Counting back from no item is counting back from the first.

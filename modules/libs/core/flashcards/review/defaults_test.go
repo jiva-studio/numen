@@ -26,7 +26,7 @@ type defaultPreset struct {
 	Counts      string         `json:"counts"`
 	Backlog     int            `json:"backlog"`
 	Load        map[string]int `json:"load"`
-	IsEvenLoad  bool           `json:"evenLoad"`
+	IsEvenLoad  bool           `json:"hasEvenLoad"`
 	Learned     string         `json:"learned"`
 	Interval    int            `json:"interval"`
 }

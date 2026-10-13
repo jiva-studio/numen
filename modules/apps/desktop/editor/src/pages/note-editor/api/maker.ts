@@ -7,7 +7,7 @@
  */
 import type { PlexRelation } from '@numen/ui'
 import { formatErrorMessage } from '@numen/wire'
-import type { Link, NewNote, Role } from '@/entities/note'
+import type { Link, NewNote, PairLink, Role } from '@/entities/note'
 import type { CreateResult } from '@/entities/file'
 import type { ErrorCode } from '@/shared/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
@@ -26,6 +26,8 @@ export interface NoteMaker {
    * A relationship removed from one note.
    */
   removeLink(path: string, to: string, role?: Role): Promise<ErrorCode | null>
+  /** The links between two notes made exactly the ones given. */
+  replaceLinks(first: string, second: string, links: readonly PairLink[]): Promise<ErrorCode | null>
 }
 
 /** The relations a link can put a note in. Each is also the role the link carries. */
@@ -68,14 +70,8 @@ export const UNTITLED = 'Untitled note'
 /** How many names are asked for before the vault refusing them all is said. */
 const names = 100
 
-/**
- * What a person is told when a note could not be made or joined. A name that
- * is taken is a name to choose again, and nothing has been renamed.
- */
-const words: Record<ErrorCode, string> = {
-  ...ERRORS,
-  occupied: 'a note of that name is filed there already',
-}
+/** What a person is told when a note could not be made or joined. */
+const words: Record<ErrorCode, string> = ERRORS
 
 /** What a person is told when the vault took none of the names it was offered. */
 const exhausted = `every name from ${UNTITLED} onwards is taken`
@@ -204,12 +200,43 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
     }
   }
 
+  /**
+   * Make the links between two notes exactly the ones given. A relation that is
+   * not a role a link can carry refuses the whole set, and a refusal from the
+   * core is said to the person.
+   */
+  async function replaceLinks(
+    first: string,
+    second: string,
+    links: readonly { from: string; to: string; relation: PlexRelation; label: string }[],
+  ): Promise<boolean> {
+    const pairs: PairLink[] = []
+    for (const { relation, ...link } of links) {
+      const role = getRole(relation)
+      if (!role) return false
+      pairs.push({ ...link, role })
+    }
+    try {
+      const replaceError = await core.replaceLinks(first, second, pairs)
+      if (replaceError !== null) {
+        writeMessage(words[replaceError], 'error')
+        return false
+      }
+      writeMessage('')
+      return true
+    } catch (error) {
+      writeMessage(formatErrorMessage(error), 'error')
+      return false
+    }
+  }
+
   return {
     createInRelation,
     createUntitled,
     createWithTitle,
     join,
     removeLink,
+    replaceLinks,
   }
 }
 

@@ -118,9 +118,9 @@ describe('applying a typed choice', () => {
 
   it('takes a yes or a no for an even load, and nothing else', () => {
     const was = settings()
-    expect(applyTypedSetting(was, 'evenLoad', false, NO_BOUNDS).evenLoad).toBe(false)
-    expect(applyTypedSetting(was, 'evenLoad', 'no', NO_BOUNDS)).toBe(was)
-    expect(applyTypedSetting(was, 'evenLoad', 0, NO_BOUNDS)).toBe(was)
+    expect(applyTypedSetting(was, 'hasEvenLoad', false, NO_BOUNDS).hasEvenLoad).toBe(false)
+    expect(applyTypedSetting(was, 'hasEvenLoad', 'no', NO_BOUNDS)).toBe(was)
+    expect(applyTypedSetting(was, 'hasEvenLoad', 0, NO_BOUNDS)).toBe(was)
   })
 
   it('sets no field from a value that belongs to another', () => {

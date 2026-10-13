@@ -8,15 +8,15 @@ export interface StatusBarTask {
   readonly id: string
   readonly label: string
   readonly group: string
-  readonly detail?: string | undefined
+  readonly about?: string | undefined
   readonly progress?: number | undefined
-  readonly currentCount?: number | undefined
-  readonly totalCount?: number | undefined
-  readonly unit?: string | undefined
+  readonly done?: number | undefined
+  readonly total?: number | undefined
+  readonly counting?: string | undefined
   readonly etaSeconds?: number | undefined
   readonly state: TaskState
   readonly canCancel?: boolean | undefined
-  readonly errorReason?: string | undefined
+  readonly error?: string | undefined
 }
 
 export interface TaskGroupData {

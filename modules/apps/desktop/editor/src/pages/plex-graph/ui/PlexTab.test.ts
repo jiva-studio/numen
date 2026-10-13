@@ -386,7 +386,6 @@ describe('interaction events forwarded from Plex component', () => {
     drawing(13)
     let openedInspector: { pair: string; at: { x: number; y: number } } | null = null
     let savedPayload: unknown = null
-    let removedKey = ''
     let dismissed = false
 
     const linkInspector = ref<unknown>(null)
@@ -398,9 +397,6 @@ describe('interaction events forwarded from Plex component', () => {
       },
       saveLinkInspector: async (payload: unknown) => {
         savedPayload = payload
-      },
-      removeEntireLink: async (pairKey: string) => {
-        removedKey = pairKey
       },
       dismissLinkInspector: () => {
         dismissed = true
@@ -418,7 +414,6 @@ describe('interaction events forwarded from Plex component', () => {
 
     // Mount with inspector open
     linkInspector.value = {
-      pairKey: 'Root.md Child.md',
       nodeA: { id: 'Root.md', title: 'Root', path: 'Root.md' },
       nodeB: { id: 'Child.md', title: 'Child', path: 'Child.md' },
       links: [],
@@ -427,11 +422,8 @@ describe('interaction events forwarded from Plex component', () => {
     await view.vm.$nextTick()
 
     const inspector = view.findComponent(PlexLinkInspectorPopover)
-    inspector.vm.$emit('save', { pairKey: 'Root.md Child.md', rows: [], removedLinks: [] })
-    expect(savedPayload).toBeDefined()
-
-    inspector.vm.$emit('remove-entire-link', 'Root.md Child.md')
-    expect(removedKey).toBe('Root.md Child.md')
+    inspector.vm.$emit('save', [])
+    expect(savedPayload).toEqual([])
 
     inspector.vm.$emit('dismiss')
     expect(dismissed).toBe(true)

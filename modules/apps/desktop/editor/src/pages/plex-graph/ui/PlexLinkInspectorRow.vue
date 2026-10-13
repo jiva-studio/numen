@@ -2,7 +2,7 @@
 /**
  * Single direction and description row in PlexLinkInspectorPopover.
  */
-import { ArrowLeft, ArrowRight, Minus, Trash2 } from '@lucide/vue'
+import { ArrowLeft, ArrowRight, Trash2 } from '@lucide/vue'
 import type { DirectionalLinkItem } from '../types'
 import { WORDS as words } from '../words'
 
@@ -12,16 +12,19 @@ const props = defineProps<{
   isStatic: boolean
 }>()
 
-const description = defineModel<string>('description', { required: true })
-
 const emit = defineEmits<{
   (event: 'toggle-direction'): void
+  (event: 'update:label', label: string): void
   (event: 'remove'): void
   (event: 'done'): void
   (event: 'add-reverse'): void
 }>()
 
 /* -------------------------------- Handlers -------------------------------- */
+function onInput(event: Event) {
+  emit('update:label', (event.target as HTMLInputElement).value)
+}
+
 function onInputKeyDown(event: KeyboardEvent) {
   if (event.key === 'Enter') {
     event.stopPropagation()
@@ -52,18 +55,15 @@ function onInputKeyDown(event: KeyboardEvent) {
         v-if="props.row.direction === 'forward'"
         class="plex-link-row__icon plex-link-popover__icon"
       />
-      <ArrowLeft
-        v-else-if="props.row.direction === 'reverse'"
-        class="plex-link-row__icon plex-link-popover__icon"
-      />
-      <Minus v-else class="plex-link-row__icon plex-link-popover__icon" />
+      <ArrowLeft v-else class="plex-link-row__icon plex-link-popover__icon" />
     </button>
 
     <input
-      v-model="description"
+      :value="props.row.label"
       type="text"
       class="plex-link-row__input plex-link-popover__input"
       :placeholder="words.linkDescriptionPlaceholder"
+      @input="onInput"
       @keydown="onInputKeyDown"
     />
 

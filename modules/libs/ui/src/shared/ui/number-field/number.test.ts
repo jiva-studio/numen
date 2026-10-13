@@ -7,7 +7,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   isAllowed,
-  clamp,
   parseNumber,
   isPartialNumber,
   snapToBounds,
@@ -15,8 +14,8 @@ import {
   stepBy,
   stepForKey,
   formatNumber,
-  type Bounds,
 } from './number'
+import type { Bounds } from '@/shared/lib/bounds'
 
 const BOUNDS: Bounds = { min: 0, max: 240, step: 5 }
 
@@ -74,12 +73,6 @@ describe('text a number could still be typed out of', () => {
 })
 
 describe('the bounds', () => {
-  it('brings a number inside them', () => {
-    expect(clamp(-4, BOUNDS)).toBe(0)
-    expect(clamp(900, BOUNDS)).toBe(240)
-    expect(clamp(20, BOUNDS)).toBe(20)
-  })
-
   it('moves a number one step, and stops at them', () => {
     expect(stepBy(20, 1, BOUNDS)).toBe(25)
     expect(stepBy(20, -1, BOUNDS)).toBe(15)

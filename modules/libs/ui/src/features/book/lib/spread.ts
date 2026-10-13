@@ -202,7 +202,3 @@ export function findSpreadAt(marks: readonly Mark[], flow: Flow, at: number): nu
 /** How large the text may be set. */
 export const SMALLEST = 0.8
 export const LARGEST = 2
-
-/** A number held inside the bounds it is read between. */
-export const clamp = (value: number, least: number, most: number): number =>
-  Math.min(Math.max(value, least), most)

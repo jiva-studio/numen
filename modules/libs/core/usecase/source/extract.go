@@ -550,19 +550,15 @@ func (u Extract) source(
 // chunksOf cuts one source's text: the large chunks a result shows, each
 // holding the small chunks that carry a vector.
 func chunksOf(doc *text.Document, sizes chunking.Sizes, reads chunking.Legibility) []domain.Chunk {
-	var out []domain.Chunk
-	for _, large := range chunking.Cut(doc.Text, doc.Parts, sizes, reads) {
-		c := chunkAt(doc, large)
+	return chunking.Chunks(doc.Text, doc.Parts, sizes, reads, func(c chunking.Chunk, isLarge bool) domain.Chunk {
+		out := chunkAt(doc, c)
 		// The name of a section is kept on the chunk that begins it, and on that
-		// one only: a small chunk standing at the same offset is inside it, and
-		// one section named twice is one section answering twice.
-		c.Opens = doc.GetNamesAt(large.Start)
-		for _, small := range large.Small {
-			c.Small = append(c.Small, chunkAt(doc, small))
+		// one only.
+		if isLarge {
+			out.Opens = doc.GetNamesAt(c.Start)
 		}
-		out = append(out, c)
-	}
-	return out
+		return out
+	})
 }
 
 // chunkAt is one chunk with what it holds and where the source says it is. The

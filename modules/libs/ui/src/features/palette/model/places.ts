@@ -6,11 +6,12 @@
  * Nothing here draws anything.
  */
 import { computed, ref, watch, type ComputedRef, type Ref } from 'vue'
+import { stepTo } from '@/shared/lib/roving'
 import {
   canChoose,
+  canLandOn,
   flatten,
   orderGroups,
-  stepTo,
   type PaletteAction,
   type PaletteGroup,
   type PaletteItem,
@@ -94,7 +95,7 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
     places,
     (now) => {
       if (here.value >= 0) return
-      goTo(stepTo(now, -1, 1))
+      goTo(stepTo(now, -1, 1, canLandOn))
     },
     { flush: 'post' },
   )

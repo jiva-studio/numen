@@ -5,24 +5,18 @@
  * over while the core still schedules it.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Goal, StopReason } from '@numen/protocol'
+import { StopReason } from '@numen/protocol'
+import { DEFAULT_SETTINGS, formatSettings } from '@numen/wire'
+import type { SettingsMessage } from '@numen/wire'
 
 import { useReviewCounter } from '@/entities/vault'
 import type { CardsDueClient, VaultCardsDue } from '@/entities/vault'
 import { getDayName } from '@numen/ui'
 import { useVaultPresets } from '@/pages/decks'
-import type { PresetsClient, SettingsMessage } from '@/pages/decks'
+import type { PresetsClient } from '@/pages/decks'
 
-const createSettings = (day: string): SettingsMessage => ({
-  goal: Goal.BY_DATE,
-  byDate: day,
-  minutesADay: 20,
-  newADay: 10,
-  reviewsADay: 200,
-  retention: 0.9,
-  load: {},
-  hasEvenLoad: true,
-})
+const createSettings = (day: string) =>
+  formatSettings({ ...DEFAULT_SETTINGS, goal: 'date', byDate: day, reviewsADay: 200 })
 
 const vault: VaultCardsDue = {
   vault: '01A',

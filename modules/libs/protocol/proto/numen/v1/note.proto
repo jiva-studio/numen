@@ -57,6 +57,10 @@ service NoteService {
   // is left alone: a link is one end's account of a relationship.
   rpc RemoveLink(RemoveLinkRequest) returns (RemoveLinkResponse);
 
+  // ReplaceLinks makes the links between two notes exactly the ones given: each
+  // note holds one link to the other, or none.
+  rpc ReplaceLinks(ReplaceLinksRequest) returns (ReplaceLinksResponse);
+
   // RenameNote gives a note a different name. A note is shown by its title,
   // else by its first level-one heading, else by its filename: whichever of the
   // three names it is brought into line, and the file follows it where a title
@@ -323,6 +327,32 @@ message RemoveLinkRequest {
 
 message RemoveLinkResponse {
   // Set when nothing was removed, and why.
+  optional ErrorCode error = 1;
+}
+
+// PairLink is one relationship between the two notes a ReplaceLinks names: the
+// note it is written in, the note it goes to, and what kind it is.
+message PairLink {
+  string from = 1;
+  string to = 2;
+  Role role = 3;
+
+  // What the person calls this relationship, when they call it anything.
+  string label = 4;
+}
+
+message ReplaceLinksRequest {
+  // The two notes the links run between.
+  string first = 1;
+  string second = 2;
+
+  // Every link that is to stand between them. A note written in no entry holds
+  // no link to the other.
+  repeated PairLink links = 3;
+}
+
+message ReplaceLinksResponse {
+  // Set when the links were not all replaced, and why.
   optional ErrorCode error = 1;
 }
 

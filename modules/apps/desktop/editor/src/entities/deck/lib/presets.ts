@@ -2,11 +2,14 @@
 import type { Result } from '@numen/wire'
 import { StopReason } from '@numen/protocol'
 import type { BudgetName } from '@numen/protocol'
-import type { Goal } from '@numen/wire'
+import { DEFAULT_SETTINGS } from '@numen/wire'
+import type { Goal, BudgetUnit, Rule, Load, Settings } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 import type { CardsFailure } from '../types'
 
-export type { Goal }
+export type { Goal, BudgetUnit, Rule, Load, Settings }
+
+export { DEFAULT_SETTINGS as DEFAULTS }
 
 export type { StopReason }
 
@@ -29,24 +32,11 @@ export type { BudgetName }
 /** The three, in the order they are offered. */
 export const GOALS: readonly Goal[] = ['minutes', 'retention', 'date']
 
-/**
- * The unit a day's budget is spent in.
- */
-export type BudgetUnit = 'cards' | 'shows'
-
 /** The two, in the order they are offered. */
 export const BUDGET_UNITS: readonly BudgetUnit[] = ['cards', 'shows']
 
-/**
- * What a preset counts as learned.
- */
-export type Rule = 'interval' | 'retention'
-
 /** The two, in the order they are offered. */
 export const RULES: readonly Rule[] = ['interval', 'retention']
-
-/** A share of a day's load for each day of the week that is not at the whole. */
-export type Load = Readonly<Record<string, number>>
 
 /** The whole of a day's load, which a day nothing was said about carries. */
 export const WHOLE_LOAD = 100
@@ -64,42 +54,6 @@ export const setLoadOn = (load: Load, day: string, share: number): Load => {
   if (share === WHOLE_LOAD) delete out[day]
   else out[day] = share
   return out
-}
-
-/**
- * How the decks pointing at one preset are scheduled.
- */
-export interface Settings {
-  readonly goal: Goal
-  /** The day the material is to be in the head, as `2026-09-30`. Empty for none. */
-  readonly byDate: string
-  readonly minutesADay: number
-  readonly newADay: number
-  readonly reviewsADay: number
-  readonly retention: number
-  /** The unit a day's budget is spent in. */
-  readonly counts: BudgetUnit
-  readonly backlog: number
-  readonly load: Load
-  readonly evenLoad: boolean
-  readonly learned: Rule
-  readonly interval: number
-}
-
-/** A preset naming nothing, and how a deck pointing at none is scheduled. */
-export const DEFAULTS: Settings = {
-  goal: 'minutes',
-  byDate: '',
-  minutesADay: 20,
-  newADay: 10,
-  reviewsADay: 200,
-  retention: 0.9,
-  counts: 'cards',
-  backlog: 100,
-  load: {},
-  evenLoad: true,
-  learned: 'interval',
-  interval: 21,
 }
 
 /** How far one setting goes, at each end. */

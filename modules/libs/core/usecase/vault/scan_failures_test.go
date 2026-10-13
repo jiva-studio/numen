@@ -87,14 +87,14 @@ func (m *scanVault) GetFingerprints(context.Context, domain.VaultID) (map[string
 	return m.known, m.knownErr
 }
 
-func (m *scanVault) Save(_ context.Context, _ domain.VaultID, notes []domain.Note) error {
+func (m *scanVault) Save(_ context.Context, _ domain.VaultID, notes []domain.NoteChunks) error {
 	m.saveCalls++
 	if m.saveErr != nil && m.saveCalls >= m.failSaveAt {
 		return m.saveErr
 	}
 	paths := make([]string, len(notes))
 	for i, n := range notes {
-		paths[i] = n.Fingerprint.Path
+		paths[i] = n.Note.Fingerprint.Path
 	}
 	m.saved = append(m.saved, paths)
 	return nil

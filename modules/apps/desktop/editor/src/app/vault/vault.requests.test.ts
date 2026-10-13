@@ -17,6 +17,7 @@ const { asked } = vi.hoisted(() => {
     readNote: vi.fn(),
     watchEdits: vi.fn(),
     removeLink: vi.fn(),
+    replaceLinks: vi.fn(),
     renameNote: vi.fn(),
     listHeadings: vi.fn(),
     resolveAddresses: vi.fn(),
@@ -219,6 +220,18 @@ describe('a note followed', () => {
     })
     await core.removeLink('a.md', 'b.md')
     expect(asked.removeLink.mock.calls.at(-1)?.[0]).toEqual({ path: 'a.md', to: 'b.md' })
+  })
+
+  it('has the links of a pair replaced in one request, each under the wire role', async () => {
+    asked.replaceLinks.mockResolvedValue({})
+    await core.replaceLinks('a.md', 'b.md', [
+      { from: 'a.md', to: 'b.md', role: 'jump', label: 'see' },
+    ])
+    expect(asked.replaceLinks.mock.calls.at(-1)?.[0]).toEqual({
+      first: 'a.md',
+      second: 'b.md',
+      links: [{ from: 'a.md', to: 'b.md', role: Role.JUMP, label: 'see' }],
+    })
   })
 
   it('has its edits read under the signal of the window, and a missing span read as the start', async () => {

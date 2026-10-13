@@ -2,7 +2,8 @@
 /**
  * Persistent bottom status bar displaying background task activity and details popover.
  */
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
+import { useMenuGround } from '@/shared/ui/menu/ground'
 import type { StatusBarTask } from '../model/types'
 import { calculateAggregate } from '../lib/aggregate'
 import CircularProgress from './CircularProgress.vue'
@@ -15,8 +16,18 @@ const props = withDefaults(
     tasks?: readonly StatusBarTask[] | undefined
     idleLabel?: string | undefined
     workingLabel?: string | undefined
+    activeLabel?: string | undefined
+    failedLabel?: string | undefined
+    regionLabel?: string | undefined
   }>(),
-  { tasks: () => [], idleLabel: 'Ready', workingLabel: 'Background tasks' },
+  {
+    tasks: () => [],
+    idleLabel: 'Ready',
+    workingLabel: 'Background tasks',
+    activeLabel: 'active',
+    failedLabel: 'failed',
+    regionLabel: 'Status Bar',
+  },
 )
 
 /* --------------------------------- Events --------------------------------- */
@@ -28,25 +39,18 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
-const rootRef = ref<HTMLElement | null>(null)
+const root = useTemplateRef<HTMLElement>('root')
+const ground = useMenuGround(root, onClose)
 
 const taskList = computed(() => props.tasks ?? [])
 const aggregate = computed(() => calculateAggregate(taskList.value))
 const summaryText = computed(() => {
   if (aggregate.value.isIdle) return props.idleLabel
-  return `${aggregate.value.activeCount} active`
+  return `${aggregate.value.activeCount} ${props.activeLabel}`
 })
 
 /* --------------------------------- Hooks ---------------------------------- */
-onMounted(() => {
-  document.addEventListener('click', onClickOutside)
-  document.addEventListener('keydown', onKeyDown)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', onClickOutside)
-  document.removeEventListener('keydown', onKeyDown)
-})
+watch(isOpen, (open) => (open ? ground.listen() : ground.release()))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle() {
@@ -64,25 +68,15 @@ function onRetry(id: string) {
 function onDismiss(id: string) {
   emit('dismiss', id)
 }
-
-function onClickOutside(event: MouseEvent) {
-  if (isOpen.value && rootRef.value && !rootRef.value.contains(event.target as Node)) {
-    isOpen.value = false
-  }
-}
-
-function onKeyDown(event: KeyboardEvent) {
-  if (event.key === 'Escape' && isOpen.value) isOpen.value = false
-}
 </script>
 
 <template>
   <footer
-    ref="rootRef"
+    ref="root"
     class="status-bar"
     :class="{ 'status-bar--active': !aggregate.isIdle }"
     role="region"
-    aria-label="Status Bar"
+    :aria-label="regionLabel"
   >
     <button
       type="button"
@@ -104,7 +98,7 @@ function onKeyDown(event: KeyboardEvent) {
       <span class="status-bar__summary">{{ summaryText }}</span>
 
       <span v-if="aggregate.failedCount > 0" class="status-bar__badge status-bar__badge--alarm">
-        {{ aggregate.failedCount }} failed
+        {{ aggregate.failedCount }} {{ failedLabel }}
       </span>
     </button>
 

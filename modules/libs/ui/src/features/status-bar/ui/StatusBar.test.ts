@@ -97,7 +97,7 @@ describe('StatusBar', () => {
         label: 'Failed Task',
         group: 'Import',
         state: 'failed',
-        errorReason: 'Network error',
+        error: 'Network error',
       },
       {
         id: 'completed-1',
@@ -126,5 +126,59 @@ describe('StatusBar', () => {
     const dismissBtn = wrapper.find('button[aria-label="Dismiss"]')
     await dismissBtn.trigger('click')
     expect(wrapper.emitted('dismiss')?.[0]).toEqual(['completed-1'])
+  })
+
+  const openBar = async () => {
+    const wrapper = mount(StatusBar, {
+      props: { tasks: [{ id: '1', label: 'Indexing', group: 'Books', state: 'running' }] },
+      attachTo: document.body,
+    })
+    await wrapper.find('.status-bar__trigger').trigger('click')
+    return wrapper
+  }
+
+  it('closes the popover on a press outside the bar', async () => {
+    const wrapper = await openBar()
+
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.status-bar__popover-container').exists()).toBe(false)
+  })
+
+  it('keeps the popover open on a press inside the bar', async () => {
+    const wrapper = await openBar()
+
+    wrapper
+      .find('.status-bar__popover-container')
+      .element.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.status-bar__popover-container').exists()).toBe(true)
+  })
+
+  it('closes the popover on Escape', async () => {
+    const wrapper = await openBar()
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.status-bar__popover-container').exists()).toBe(false)
+  })
+
+  it('draws the labels it is given', () => {
+    const wrapper = mount(StatusBar, {
+      props: {
+        tasks: [
+          { id: '1', label: 'A', group: 'G', state: 'running' },
+          { id: '2', label: 'B', group: 'G', state: 'failed' },
+        ],
+        activeLabel: 'в работе',
+        failedLabel: 'с ошибкой',
+      },
+    })
+
+    expect(wrapper.text()).toContain('1 в работе')
+    expect(wrapper.text()).toContain('1 с ошибкой')
   })
 })

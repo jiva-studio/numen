@@ -40,7 +40,7 @@ func (s sources) SaveSource(ctx context.Context, vaultID domain.VaultID, src dom
 // SaveExtraction records the source and replaces its chunks in one write, so a
 // recipe is never recorded for chunks that are not there.
 func (s sources) SaveExtraction(ctx context.Context, vaultID domain.VaultID, e domain.SourceChunks) error {
-	return s.write.SaveExtraction(ctx, vaultID, newChunkSource(e.Source), convertChunks(e.Chunks))
+	return s.write.SaveExtraction(ctx, vaultID, newChunkSource(e.Source), chunk.FromDomain(e.Chunks))
 }
 
 // RemoveSources takes out the sources at the paths given, and their chunks and
@@ -181,21 +181,6 @@ func newChunkSource(s domain.Source) chunk.Source {
 		Recipe:   s.Recipe,
 		Producer: s.Producer,
 	}
-}
-
-func convertChunks(in []domain.Chunk) []chunk.Chunk {
-	out := make([]chunk.Chunk, 0, len(in))
-	for _, c := range in {
-		out = append(out, chunk.Chunk{
-			Start:    c.Start,
-			Length:   c.Length,
-			Location: c.Location,
-			Text:     c.Text,
-			Opens:    c.Opens,
-			Small:    convertChunks(c.Small),
-		})
-	}
-	return out
 }
 
 // GetKeptVectors is the vectors already made for these texts under this recipe.

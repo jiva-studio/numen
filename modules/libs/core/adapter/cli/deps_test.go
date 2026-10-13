@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
@@ -76,7 +75,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			}
 
 			notes := vaults.NewScan(readers, db.Vaults(),
-				db.Notes().WithChunkSizes(chunking.Sizes{}, chunking.Legibility{}),
+				db.Notes(),
 				db.NoteQueries(), db.Maintenance())
 			notes.ShouldRebuildIndex = rebuild
 

@@ -10,104 +10,66 @@ import {
   type AgentModelOption,
 } from '@numen/ui'
 import { areLinkTargetsEqual, parseLinkTarget, extractLinkTargets } from '@/entities/note'
+import type { Model } from '@/entities/settings'
 import type { AgentTabDeps } from '../types'
 
 export { createTabTitle } from '../lib/title'
 export type { AgentTabDeps, NoteRef } from '../types'
-
-export const DEFAULT_AGENT_OPTIONS: readonly AgentModelOption[] = [
-  {
-    agentId: 'antigravity',
-    agentTitle: 'Antigravity',
-    modelId: 'gemini-3.7-flash-high',
-    modelTitle: 'Gemini 3.7 Flash',
-    isAvailable: true,
-    isDefault: true,
-  },
-  {
-    agentId: 'antigravity',
-    agentTitle: 'Antigravity',
-    modelId: 'gemini-3.1-pro-high',
-    modelTitle: 'Gemini 3.1 Pro',
-    isAvailable: true,
-  },
-  {
-    agentId: 'claude',
-    agentTitle: 'Claude Code',
-    modelId: 'sonnet',
-    modelTitle: 'Sonnet 3.7',
-    isAvailable: true,
-  },
-  {
-    agentId: 'claude',
-    agentTitle: 'Claude Code',
-    modelId: 'haiku',
-    modelTitle: 'Haiku 3.5',
-    isAvailable: true,
-  },
-  {
-    agentId: 'claude',
-    agentTitle: 'Claude Code',
-    modelId: 'opus',
-    modelTitle: 'Opus 3',
-    isAvailable: true,
-  },
-  {
-    agentId: 'codex',
-    agentTitle: 'OpenAI Codex',
-    modelId: 'gpt-5.6-terra',
-    modelTitle: 'GPT-5.6 Terra',
-    isAvailable: true,
-  },
-  {
-    agentId: 'codex',
-    agentTitle: 'OpenAI Codex',
-    modelId: 'gpt-5.6-luna',
-    modelTitle: 'GPT-5.6 Luna',
-    isAvailable: true,
-  },
-]
 
 /** What one agent tab holds. */
 export type AgentTabState = ReturnType<typeof useAgentConversation>
 
 export type ResolvedAddressMap = ReadonlyMap<string, string>
 
-/** Antigravity takes the first option, which the selection watch puts in place of a model the options lack. */
-function getDefaultModel(agent: string): string {
-  if (agent === 'codex') {
-    return 'gpt-5.6-terra'
-  }
-  return 'sonnet'
-}
+const AGENT_USE_AT = ['agent', 'use'] as const
+
+/** The path the models of one agent are named at. */
+const getModelAt = (agent: string): readonly string[] => ['agent', agent, 'model']
 
 export function useAgentConversation(conversation: Conversation, deps: AgentTabDeps) {
   /** The question being written, until it is sent. */
   const userQuestion = ref('')
-  const initialAgent = (deps.getSetting?.(['agent', 'use']) as string | undefined) || 'antigravity'
-  const initialModel =
-    (deps.getSetting?.(['agent', initialAgent, 'model']) as string | undefined) ||
-    getDefaultModel(initialAgent)
+  const getModelsAt = (path: readonly string[]) => deps.getModelsAt?.(path) ?? []
 
-  const selectedAgentId = ref(initialAgent)
-  const selectedModelId = ref(initialModel)
+  /** The agents installed here, as the core lists them. */
+  const getInstalledAgents = () =>
+    getModelsAt(AGENT_USE_AT).filter((one) => one.name !== '' && one.presence === 'present')
 
-  const modelOptions = computed<readonly AgentModelOption[]>(() => {
-    const allModels = deps.getModels?.() ?? []
-    const programModels = allModels.filter(
-      (m) => m.namedAt.length === 2 && m.namedAt[0] === 'agent' && m.namedAt[1] === 'use',
+  /** The options of one agent: the models the core lists. */
+  const getAgentOptions = (agent: Model): readonly AgentModelOption[] =>
+    getModelsAt(getModelAt(agent.name))
+      .filter((one) => one.name !== '')
+      .map((one) => ({
+        agentId: agent.name,
+        agentTitle: agent.title,
+        modelId: one.name,
+        modelTitle: one.title,
+        isAvailable: true,
+        isDefault: one.isDefault,
+      }))
+
+  const modelOptions = computed<readonly AgentModelOption[]>(() =>
+    getInstalledAgents().flatMap(getAgentOptions),
+  )
+
+  const selectedAgentId = ref('')
+  const selectedModelId = ref('')
+
+  /** The setting kept at a path, as text. */
+  const getKept = (path: readonly string[]): string => String(deps.getSetting?.(path) ?? '')
+
+  /** The kept model of the kept agent, else that agent's default. */
+  const pickOption = (options: readonly AgentModelOption[]): AgentModelOption => {
+    const agent = selectedAgentId.value || getKept(AGENT_USE_AT)
+    const model = selectedModelId.value || getKept(getModelAt(agent))
+    const ofAgent = options.filter((o) => o.agentId === agent)
+    return (
+      ofAgent.find((o) => o.modelId === model) ??
+      ofAgent.find((o) => o.isDefault) ??
+      ofAgent[0] ??
+      options[0]!
     )
-    if (programModels.length === 0) {
-      return DEFAULT_AGENT_OPTIONS
-    }
-    const availableAgents = new Set<string>()
-    for (const p of programModels) {
-      if (p.name && p.presence === 'present') {
-        availableAgents.add(p.name)
-      }
-    }
-    return DEFAULT_AGENT_OPTIONS.filter((opt) => availableAgents.has(opt.agentId))
-  })
+  }
 
   watch(
     modelOptions,
@@ -121,10 +83,10 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
       const current = options.find(
         (o) => o.agentId === selectedAgentId.value && o.modelId === selectedModelId.value,
       )
-      if (!current) {
-        selectedAgentId.value = first.agentId
-        selectedModelId.value = first.modelId
-      }
+      if (current) return
+      const pick = pickOption(options)
+      selectedAgentId.value = pick.agentId
+      selectedModelId.value = pick.modelId
     },
     { immediate: true },
   )

@@ -21,6 +21,12 @@ export function getNoteTypes(neighbourhood: Neighbourhood): ReadonlyMap<string, 
   return found
 }
 
+/** A relationship both notes named is drawn with an arrow at the end away from the focus. */
+function getEdgeArrow(relation: NoteRelation, isMutual: boolean): EdgeArrow | undefined {
+  if (isMutual) return relation === 'child' ? 'to' : 'from'
+  return undefined
+}
+
 /**
  * A node is drawn under the ticket its note holds, and so is each end of an
  * edge. The caller says what a note's ticket is.
@@ -32,34 +38,9 @@ export function getNoteTypes(neighbourhood: Neighbourhood): ReadonlyMap<string, 
  * A relationship both notes named is drawn with an arrow at the end away from
  * the focus, the words along the line being the ones the note in focus wrote.
  */
-function getSavedArrow(
-  saved: string,
-  relation: NoteRelation,
-  focusPath: string,
-  targetPath: string,
-): EdgeArrow | undefined {
-  const target = saved.split('->')[1]
-  if (target === focusPath) return relation === 'child' ? 'from' : 'to'
-  if (target === targetPath) return relation === 'child' ? 'to' : 'from'
-  return undefined
-}
-
-function getEdgeArrow(
-  relation: NoteRelation,
-  isMutual: boolean,
-  focusPath: string,
-  targetPath: string,
-  saved?: string,
-): EdgeArrow | undefined {
-  if (saved) return getSavedArrow(saved, relation, focusPath, targetPath)
-  if (isMutual) return relation === 'child' ? 'to' : 'from'
-  return undefined
-}
-
 export function convertNeighbourhood(
   neighbourhood: Neighbourhood,
   ticket: (path: string) => string,
-  directions?: ReadonlyMap<string, string>,
 ): PlexNeighbourhood {
   const focus: PlexNode = {
     id: ticket(neighbourhood.focus.path),
@@ -75,7 +56,6 @@ export function convertNeighbourhood(
     label: string
     through: string
     isMutual: boolean
-    path: string
   }[] = []
   // Stryker restore ArrayDeclaration
   /** The path of every note this picture draws, the note in focus included. */
@@ -93,15 +73,12 @@ export function convertNeighbourhood(
       label: related.label,
       through: related.through,
       isMutual: related.isMutual,
-      path: related.path,
     })
   }
 
-  const edges: PlexEdge[] = placed.flatMap(({ id, relation, label, through, isMutual, path }) => {
+  const edges: PlexEdge[] = placed.flatMap(({ id, relation, label, through, isMutual }) => {
     const line = label ? { label } : {}
-    const pairKey = [neighbourhood.focus.path, path].sort().join(' ')
-    const saved = directions?.get(pairKey)
-    const arrow = getEdgeArrow(relation, isMutual, neighbourhood.focus.path, path, saved)
+    const arrow = getEdgeArrow(relation, isMutual)
     const head = arrow ? { arrow } : {}
 
     if (relation === 'parent' || relation === 'jump') {

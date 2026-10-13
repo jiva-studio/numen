@@ -15,6 +15,7 @@ export type {
   RenameResult,
   Role,
   NoteRelation,
+  PairLink,
   WriteResult,
 } from './lib/note'
 export { openNotes } from './model/notes'

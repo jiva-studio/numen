@@ -183,6 +183,43 @@ func (a *API) RemoveLink(
 	return connect.NewResponse(&v1.RemoveLinkResponse{}), nil
 }
 
+// ReplaceLinks makes the links between two notes the ones the request names.
+func (a *API) ReplaceLinks(
+	ctx context.Context, r *connect.Request[v1.ReplaceLinksRequest],
+) (*connect.Response[v1.ReplaceLinksResponse], error) {
+	showing, err := a.getCurrentVault()
+	if err != nil {
+		return nil, err
+	}
+	links := make([]note.PairLink, 0, len(r.Msg.GetLinks()))
+	for _, l := range r.Msg.GetLinks() {
+		role, ok := convertRoleFromWire(l.GetRole())
+		if !ok {
+			err := fmt.Errorf("no link carries the role %v", l.GetRole())
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
+		links = append(links, note.PairLink{From: l.GetFrom(), To: l.GetTo(), Role: role, Label: l.GetLabel()})
+	}
+	if !a.Writing.begin() {
+		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
+	}
+	defer a.Writing.finish()
+
+	if err := a.Notes.ReplaceLinks.Execute(
+		ctx, showing, r.Msg.GetFirst(), r.Msg.GetSecond(), links,
+	); err != nil {
+		if errors.Is(err, note.ErrNotAPair) {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
+		reason, refused := wire.GetErrorCode(err)
+		if !refused {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		return connect.NewResponse(&v1.ReplaceLinksResponse{Error: &reason}), nil
+	}
+	return connect.NewResponse(&v1.ReplaceLinksResponse{}), nil
+}
+
 func (a *API) GetOpeningNote(
 	ctx context.Context, _ *connect.Request[v1.GetOpeningNoteRequest],
 ) (*connect.Response[v1.GetOpeningNoteResponse], error) {

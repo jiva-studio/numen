@@ -4,12 +4,11 @@ import { useWindowStatusBar } from './useWindowStatusBar'
 import type { Task } from '@/shared/notices/task'
 
 describe('useWindowStatusBar', () => {
-  it('maps empty tasks to empty status bar tasks and idle aggregate', () => {
+  it('maps empty tasks to empty status bar tasks', () => {
     const tasks = ref<readonly Task[]>([])
     const statusBar = useWindowStatusBar({ tasks })
 
     expect(statusBar.tasks.value).toEqual([])
-    expect(statusBar.aggregate.value.isIdle).toBe(true)
   })
 
   it('maps running tasks with progress percentage and groups them', () => {
@@ -50,9 +49,6 @@ describe('useWindowStatusBar', () => {
     expect(task2.progress).toBeUndefined()
     expect(task2.state).toBe('running')
     expect(task2.group).toBe('Audio & Transcription')
-
-    expect(statusBar.aggregate.value.activeCount).toBe(2)
-    expect(statusBar.aggregate.value.isIdle).toBe(false)
   })
 
   it('handles failed tasks and allows dismissing them', () => {
@@ -73,8 +69,7 @@ describe('useWindowStatusBar', () => {
 
     expect(statusBar.tasks.value).toHaveLength(1)
     expect(statusBar.tasks.value[0]?.state).toBe('failed')
-    expect(statusBar.tasks.value[0]?.errorReason).toBe('File is corrupted')
-    expect(statusBar.aggregate.value.failedCount).toBe(1)
+    expect(statusBar.tasks.value[0]?.error).toBe('File is corrupted')
 
     // Dismissing the failed task removes it from the status bar display
     statusBar.onDismissTask('failed-task')
@@ -95,14 +90,14 @@ describe('useWindowStatusBar detail and unit', () => {
   }
   const first = (task: Task) => useWindowStatusBar({ tasks: ref([task]) }).tasks.value[0]!
 
-  it('carries what the task is about as its detail, and nothing where it is about nothing', () => {
-    expect(first({ ...base, about: 'doc.pdf' }).detail).toBe('doc.pdf')
-    expect(first(base).detail).toBeUndefined()
+  it('carries what the task is about, and nothing where it is about nothing', () => {
+    expect(first({ ...base, about: 'doc.pdf' }).about).toBe('doc.pdf')
+    expect(first(base).about).toBeUndefined()
   })
 
-  it('names the unit a task counts, and none where it counts things', () => {
-    expect(first({ ...base, counting: 'seconds' }).unit).toBe('seconds')
-    expect(first(base).unit).toBeUndefined()
+  it('names what a task counts, and none where it counts things', () => {
+    expect(first({ ...base, counting: 'seconds' }).counting).toBe('seconds')
+    expect(first(base).counting).toBeUndefined()
   })
 
   it('lets a running task be cancelled and a failed one not', () => {
@@ -111,10 +106,10 @@ describe('useWindowStatusBar detail and unit', () => {
   })
 
   it('carries the counts of a task that has a total, and none of one that has not', () => {
-    expect(first(base)).toMatchObject({ currentCount: 1, totalCount: 4, progress: 25 })
+    expect(first(base)).toMatchObject({ done: 1, total: 4, progress: 25 })
     const none = first({ ...base, total: 0 })
-    expect(none.currentCount).toBeUndefined()
-    expect(none.totalCount).toBeUndefined()
+    expect(none.done).toBeUndefined()
+    expect(none.total).toBeUndefined()
   })
 })
 

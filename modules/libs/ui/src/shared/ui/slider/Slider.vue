@@ -10,7 +10,8 @@
 import { computed, watch, type HTMLAttributes } from 'vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { cn } from '@/shared/lib/classes'
-import { clamp, isWalkingKey, stepForKey, type Bounds } from './track'
+import { clamp, type Bounds } from '@/shared/lib/bounds'
+import { isWalkingKey, stepForKey } from './track'
 
 const props = withDefaults(
   defineProps<{

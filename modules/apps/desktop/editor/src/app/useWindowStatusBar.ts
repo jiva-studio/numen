@@ -3,7 +3,6 @@
  */
 import { computed, ref, type Ref } from 'vue'
 import type { StatusBarTask, TaskState } from '@numen/ui'
-import { calculateAggregate } from '@numen/ui'
 import type { Task } from '@/shared/notices/task'
 
 export interface WindowStatusBarDeps {
@@ -49,19 +48,17 @@ export function useWindowStatusBar({ tasks, onCancel, onRetry }: WindowStatusBar
           id: task.id,
           label: task.label,
           group,
-          detail: task.about || undefined,
+          about: task.about || undefined,
           progress,
-          currentCount: hasTotal ? task.done : undefined,
-          totalCount: hasTotal ? task.total : undefined,
-          unit: task.counting === 'things' ? undefined : task.counting || undefined,
+          done: hasTotal ? task.done : undefined,
+          total: hasTotal ? task.total : undefined,
+          counting: task.counting === 'things' ? undefined : task.counting || undefined,
           state,
           canCancel: !isFailed,
-          errorReason: isFailed ? task.error : undefined,
+          error: isFailed ? task.error : undefined,
         }
       })
   })
-
-  const aggregate = computed(() => calculateAggregate(statusBarTasks.value))
 
   function onCancelTask(id: string) {
     onCancel?.(id)
@@ -77,7 +74,6 @@ export function useWindowStatusBar({ tasks, onCancel, onRetry }: WindowStatusBar
 
   return {
     tasks: statusBarTasks,
-    aggregate,
     onCancelTask,
     onRetryTask,
     onDismissTask,

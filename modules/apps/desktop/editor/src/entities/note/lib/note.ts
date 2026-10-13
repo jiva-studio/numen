@@ -129,6 +129,14 @@ export interface Link {
   label?: string
 }
 
+/** One relationship between two notes: the note it is written in, the note it goes to, and what it says. */
+export interface PairLink {
+  readonly from: string
+  readonly to: string
+  readonly role: Role
+  readonly label: string
+}
+
 /** A note renamed, and what its file did. */
 export interface RenamedNote {
   /** Where the note is filed now. */

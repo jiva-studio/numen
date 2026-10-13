@@ -16,8 +16,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
 )
 
 //go:embed sql/*.sql
@@ -34,22 +32,9 @@ const kind = "note"
 // answers no questions about them.
 type Repository struct {
 	db *sql.DB
-
-	// sizes are what a note is cut at, and reads what a chunk of it has to read
-	// like to be kept. A repository told neither takes what the chunking
-	// package names.
-	sizes chunking.Sizes
-	reads chunking.Legibility
 }
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
-
-// WithChunkSizes is the repository, cutting a note at the sizes given and keeping what
-// reads as text. The settings decide both, and what has read the settings
-// passes them in here.
-func (r *Repository) WithChunkSizes(sizes chunking.Sizes, reads chunking.Legibility) *Repository {
-	return &Repository{db: r.db, sizes: sizes, reads: reads}
-}
 
 // exec runs a named statement and says which one failed. A bare driver error
 // from one of the many statements in a transaction is a schema mistake nobody
@@ -66,7 +51,7 @@ func exec(ctx context.Context, tx *sqlwrite.Transaction, name string, args ...an
 // A note and the size and date that call it up to date are stored together or
 // not at all, so an interrupted scan leaves files to be read again.
 func (r *Repository) Save(
-	ctx context.Context, vaultID domain.VaultID, notes []domain.Note,
+	ctx context.Context, vaultID domain.VaultID, notes []domain.NoteChunks,
 ) error {
 	if len(notes) == 0 {
 		return nil
@@ -82,8 +67,8 @@ func (r *Repository) Save(
 		return err
 	}
 	for _, one := range notes {
-		if err := saveNote(ctx, tx, vault, one, r.sizes, r.reads); err != nil {
-			return fmt.Errorf("%s: %w", one.Fingerprint.Path, err)
+		if err := saveNote(ctx, tx, vault, one); err != nil {
+			return fmt.Errorf("%s: %w", one.Note.Fingerprint.Path, err)
 		}
 	}
 	if err := tx.Commit(); err != nil {
@@ -93,23 +78,18 @@ func (r *Repository) Save(
 }
 
 func saveNote(
-	ctx context.Context, tx *sqlwrite.Transaction, vault int64, indexed domain.Note,
-	sizes chunking.Sizes, reads chunking.Legibility,
+	ctx context.Context, tx *sqlwrite.Transaction, vault int64, indexed domain.NoteChunks,
 ) error {
-	n := indexed
+	n := indexed.Note
 	row, err := saveSourceAndNote(ctx, tx, vault, n)
 	if err != nil {
 		return err
 	}
-	kept := getIndexedHeadings(n)
-
-	// The note goes in as its own large chunk, so the words in it are findable
-	// as soon as it is indexed. A chunk whose text is what it was keeps its
-	// row, and the vector made from it.
-	if err := chunk.Replace(ctx, tx, row, vault, splitIntoChunks(n, kept, sizes, reads)); err != nil {
+	// A chunk whose text is what it was keeps its row, and the vector made from it.
+	if err := chunk.Replace(ctx, tx, row, vault, chunk.FromDomain(indexed.Chunks)); err != nil {
 		return err
 	}
-	for _, h := range kept {
+	for _, h := range indexed.Headings {
 		if err := exec(ctx, tx, "insert_heading", row, h.Line, h.Level, h.Text); err != nil {
 			return err
 		}
@@ -185,119 +165,6 @@ func insertLinks(ctx context.Context, tx *sqlwrite.Transaction, row int64, links
 		}
 	}
 	return nil
-}
-
-// splitIntoChunks is how a note is splitIntoChunks: one large chunk over the whole of it, and the small
-// chunks inside that carry the vectors. The small chunks are splitIntoChunks at the sizes a
-// book's are, and a mixed vault ranks by what a passage says.
-//
-// The large chunk is the note itself. The sizes decide the small chunks inside
-// it.
-//
-// The note's headings are its parts, so the small chunks of one section are
-// tiled inside that section and no chunk runs across a heading.
-//
-// Offsets are into the file. The body begins after the frontmatter, and every
-// chunk is moved out by as much.
-//
-// A deck and a stencil are splitIntoChunks into nothing. A card is found by its heading,
-// which is its question, and a stencil by its title, which is its file name.
-// The vectors hang off the chunks, so neither is embedded either.
-func splitIntoChunks(
-	n domain.Note, headings []domain.Heading,
-	sizes chunking.Sizes, reads chunking.Legibility,
-) []chunk.Chunk {
-	if n.Type == domain.TypeDeck || n.Type == domain.TypeStencil {
-		return nil
-	}
-
-	at := int(n.Fingerprint.Size) - len(n.Body)
-	if at < 0 {
-		at = 0
-	}
-	sizes.Large = chunking.Whole
-	body, divisions := n.Body, getPartStarts(headings)
-
-	out := make([]chunk.Chunk, 0, 1)
-	for _, large := range chunking.Cut(body, divisions, sizes, reads) {
-		// The title is searched together with the body: a note is looked for by
-		// the name it was given.
-		c := chunk.Chunk{
-			Start:    at + large.Start,
-			Length:   large.Length,
-			Location: large.Location,
-			Text:     n.Title + "\n" + large.ExtractText(body),
-		}
-		for _, small := range large.Small {
-			c.Small = append(c.Small, chunk.Chunk{
-				Start:    at + small.Start,
-				Length:   small.Length,
-				Location: small.Location,
-				Text:     small.ExtractText(body),
-			})
-		}
-		out = append(out, c)
-	}
-	if len(out) == 0 {
-		// A note of a title and no words is answered by its title.
-		out = append(out, chunk.Chunk{Start: at, Length: len(body), Text: n.Title})
-	}
-	return out
-}
-
-// getPartStarts is where a note names the section that follows. A heading carries the
-// byte its line begins at in the body, which is the offset a chunk is cut
-// against, and the heading's own text is what the section is called.
-//
-// They are the headings the index keeps, so a passage is announced under a name
-// somebody wrote.
-func getPartStarts(headings []domain.Heading) []domain.PartStart {
-	if len(headings) == 0 {
-		return nil
-	}
-	out := make([]domain.PartStart, 0, len(headings))
-	for _, h := range headings {
-		out = append(out, domain.PartStart{Title: h.Text, Offset: h.Offset})
-	}
-	return out
-}
-
-// The two levels a deck spends on what a person writes: a section, and a card
-// under it. Below them stand the stencil's field names, written out under every
-// card.
-const (
-	sectionLevel = 1
-	cardLevel    = 2
-)
-
-// getIndexedHeadings is the headings of a note as the index keeps them.
-//
-// A deck keeps its sections and its cards, and a card's heading is kept without
-// the mark it ends in. A card whose first field is empty is named by nothing,
-// and a heading of no text is not kept. A stencil keeps none: its headings are
-// its faces and their two sides. Every other note keeps every heading it has.
-func getIndexedHeadings(n domain.Note) []domain.Heading {
-	switch n.Type {
-	case domain.TypeStencil:
-		return nil
-	case domain.TypeDeck:
-		out := make([]domain.Heading, 0, len(n.Headings))
-		for _, h := range n.Headings {
-			switch h.Level {
-			case sectionLevel:
-				out = append(out, h)
-			case cardLevel:
-				h.Text, _ = format.ReadHeading(h.Text)
-				if h.Text == "" {
-					continue
-				}
-				out = append(out, h)
-			}
-		}
-		return out
-	default:
-		return n.Headings
-	}
 }
 
 func (r *Repository) Remove(ctx context.Context, vaultID domain.VaultID, paths []string) error {

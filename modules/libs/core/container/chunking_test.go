@@ -85,7 +85,7 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 		Title:       "Cut",
 		Body:        body,
 	}
-	if err := db.NotesWithChunking(held.GetChunkSizes(), held.Legibility()).Save(t.Context(), v.ID, []domain.Note{n}); err != nil {
+	if err := db.Notes().Save(t.Context(), v.ID, held.CutNotes().Execute([]domain.Note{n})); err != nil {
 		t.Fatal(err)
 	}
 

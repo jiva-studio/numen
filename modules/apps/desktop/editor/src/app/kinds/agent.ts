@@ -34,7 +34,7 @@ export function createAgentKind({
         unreachable: () => window.unreachable.value,
         writeSetting: (path, value) => settings.rest.writeSetting(path, value),
         getSetting: (path) => settings.rest.getSetting(path),
-        getModels: () => settings.rest.models.value,
+        getModelsAt: (path) => settings.rest.getModelsAt(path),
       }),
     about,
   )

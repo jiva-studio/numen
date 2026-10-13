@@ -35,3 +35,15 @@ func TestASmallChunkNoLargeOneHoldsWhole(t *testing.T) {
 		t.Errorf("the middle at 90 did not put it under the first: %v", held)
 	}
 }
+
+// A small chunk lying before the first large chunk belongs to none, and the
+// ones after it still go under the large chunk holding them.
+func TestASmallChunkBeforeEveryLargeOneDoesNotHideTheNext(t *testing.T) {
+	large := []Chunk{{Start: 100, Length: 50}}
+	small := []Chunk{{Start: 0, Length: 10}, {Start: 110, Length: 10}}
+
+	held := enclose(large, small)
+	if len(held[0].Small) != 1 || held[0].Small[0].Start != 110 {
+		t.Errorf("the chunk at 110 did not go under the large chunk: %v", held[0].Small)
+	}
+}

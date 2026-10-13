@@ -35,15 +35,16 @@ func (c Config) Notes(
 	remove := note.NewRemove(writers, links, known, index)
 
 	return note.Scenarios{
-		Read:     note.NewRead(readers),
-		Write:    note.NewWrite(readers, writers, index, now),
-		Create:   note.NewCreate(writers, queries, index, now),
-		Replace:  note.NewReplace(readers, writers, index, now),
-		Linking:  linking,
-		AddLinks: note.NewAddLinks(linking),
-		Move:     moving,
-		Rename:   note.NewRename(moving),
-		Remove:   remove,
+		Read:         note.NewRead(readers),
+		Write:        note.NewWrite(readers, writers, index, now),
+		Create:       note.NewCreate(writers, queries, index, now),
+		Replace:      note.NewReplace(readers, writers, index, now),
+		Linking:      linking,
+		AddLinks:     note.NewAddLinks(linking),
+		ReplaceLinks: note.NewReplaceLinks(linking, note.NewGetLinkAddress(queries)),
+		Move:         moving,
+		Rename:       note.NewRename(moving),
+		Remove:       remove,
 
 		Links:         note.NewShowLinks(links),
 		Neighbourhood: note.NewShowNeighbourhood(links, queries),
