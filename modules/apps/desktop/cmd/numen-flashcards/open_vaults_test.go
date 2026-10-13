@@ -174,3 +174,34 @@ func TestUpdateIndexAnswersWithWhatFailed(t *testing.T) {
 		t.Error("a levelling that could not run answered with nothing")
 	}
 }
+
+// What goes wrong following a vault is said with the vault's name, and a later
+// success says nothing.
+func TestWhatGoesWrongFollowingAVaultIsSaid(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("a file nobody may read is read by the superuser")
+	}
+	_, _, vaults, _, held := makeWindow(t)
+	v := held[0]
+	var out syncBuffer
+	vaults.out = &out
+	if err := vaults.indexVault(t.Context(), v); err != nil {
+		t.Fatal(err)
+	}
+
+	shut := filepath.Join(v.Path, "decks", "Shut.md")
+	if err := os.WriteFile(shut, []byte("---\ntype: deck\n---\n"), 0o000); err != nil {
+		t.Fatal(err)
+	}
+
+	deadline := time.Now().Add(20 * time.Second)
+	for !strings.Contains(out.String(), "numen-flashcards: One: ") {
+		if time.Now().After(deadline) {
+			t.Fatalf("nothing was said about a file that could not be read: %q", out.String())
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	if strings.Contains(out.String(), "<nil>") {
+		t.Errorf("a success was said as a fault: %q", out.String())
+	}
+}
