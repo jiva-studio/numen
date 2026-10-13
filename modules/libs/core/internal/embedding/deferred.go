@@ -192,8 +192,8 @@ func (e *Embedder) Concurrency() int {
 	e.mu.RLock()
 	held := e.held
 	e.mu.RUnlock()
-	if c, ok := held.(interface{ Concurrency() int }); ok {
-		return c.Concurrency()
+	if held == nil {
+		return 1
 	}
-	return 1
+	return held.Concurrency()
 }
