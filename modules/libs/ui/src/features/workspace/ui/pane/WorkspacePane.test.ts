@@ -21,6 +21,7 @@ const createContext = (marks: Readonly<Record<string, string>> = {}): WorkspaceC
   choose: () => {},
   close: () => {},
   lift: () => {},
+  menu: () => {},
   claim: () => {},
   resize: () => {},
   show: () => {},

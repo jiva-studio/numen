@@ -31,6 +31,20 @@ export function getReachThread(
 }
 
 /**
+ * The line from a node's handle to a point given in the plex's own pixels,
+ * measured from its top left corner.
+ */
+export function getPendingThread(
+  frame: PlexFrame,
+  from: string | null,
+  at: Position | null,
+  viewport: Size,
+): Thread | null {
+  const to = at && { x: at.x - viewport.width / 2, y: at.y - viewport.height / 2 }
+  return getReachThread(frame, from, to)
+}
+
+/**
  * The node a gesture would make, drawn where it would appear so the reader sees
  * it before letting go.
  */

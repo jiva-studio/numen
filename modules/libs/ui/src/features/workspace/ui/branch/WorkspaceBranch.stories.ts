@@ -91,6 +91,7 @@ const meta: Meta<Knobs> = {
           choose: () => {},
           close: () => {},
           lift: () => {},
+          menu: () => {},
           claim: () => {},
           resize,
           show: () => {},

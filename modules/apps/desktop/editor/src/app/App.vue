@@ -89,21 +89,11 @@ function dismissNotice(id: string) {
   log.dismiss(id)
 }
 
-function onOpenLinkMenu(tabId: string, event: PointerEvent | MouseEvent) {
+function onTabContextMenu(tabId: string, at: { x: number; y: number }) {
+  const kind = held.getTab(tabId)?.kind.kind
+  if (kind !== 'note' && kind !== 'files' && kind !== 'plex') return
   activeMenuTabId.value = tabId
-  menuPosition.value = { x: event.clientX, y: event.clientY }
-}
-
-function onTabContextMenu(event: MouseEvent) {
-  const target = (event.target as HTMLElement).closest('[data-workspace-tab]') as HTMLElement | null
-  const tabId = target?.getAttribute('data-workspace-tab')
-  if (tabId) {
-    const kind = held.getTab(tabId)?.kind.kind
-    if (kind === 'note' || kind === 'files' || kind === 'plex') {
-      event.preventDefault()
-      onOpenLinkMenu(tabId, event)
-    }
-  }
+  menuPosition.value = at
 }
 
 function onLinkTab(targetId: string) {
@@ -135,7 +125,7 @@ function onCloseLinkMenu() {
       :tabs="held.tabs.value"
       @close="onCloseTab"
       @show="onShowTab"
-      @contextmenu="onTabContextMenu"
+      @tab-context-menu="onTabContextMenu"
     >
       <template #icon="{ id }">
         <component :is="getTabIcon(id)" v-if="getTabIcon(id)" class="tab-icon" />

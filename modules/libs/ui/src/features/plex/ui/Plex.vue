@@ -31,6 +31,7 @@ const props = withDefaults(defineProps<PlexProps>(), {
   reaching: () => byHandle,
   showing: () => byDoubleClick,
   relationName: getRelationName,
+  pending: null,
   dragged: () => [],
   dropName: getRelationName,
 })
@@ -157,6 +158,7 @@ defineExpose({
       :gesture-from="gesture.from.value"
       :gesture-at="gesture.at.value"
       :gesture-outcome="gesture.outcome.value"
+      :pending="pending"
       :dragged-at="dragging.at.value"
       :drop-relation="dragging.relation.value"
       :drop-name="dropName"

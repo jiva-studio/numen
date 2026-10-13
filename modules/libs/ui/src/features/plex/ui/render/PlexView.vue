@@ -14,7 +14,7 @@ import PlexNodeView from './PlexNodeView.vue'
 import PlexThread from './PlexThread.vue'
 import { useEdgeLines } from './lines'
 import type { PlexDrawnSlots, PlexViewEvents, PlexViewProps } from './props'
-import { getDraggedShape, getReachGhost, getReachThread } from './threads'
+import { getDraggedShape, getPendingThread, getReachGhost, getReachThread } from './threads'
 import type { GestureRole, PlacedNode } from '../../lib/node'
 import { getRelationName } from '../../lib/relation'
 import { DWELL } from '../../model/dwell'
@@ -34,6 +34,7 @@ const props = withDefaults(defineProps<PlexViewProps>(), {
   gestureFrom: null,
   gestureAt: null,
   gestureOutcome: null,
+  pending: null,
   draggedAt: null,
   dropRelation: null,
   dropName: getRelationName,
@@ -89,6 +90,16 @@ const drawn = computed(() => {
 
 /** The line a gesture drags behind it, from the handle to the pointer. */
 const thread = computed(() => getReachThread(props.frame, props.gestureFrom, props.gestureAt))
+
+/** The line from a node to a point awaiting a node of its own. */
+const pendingThread = computed(() =>
+  getPendingThread(
+    props.frame,
+    props.pending?.from ?? null,
+    props.pending?.at ?? null,
+    props.viewport,
+  ),
+)
 
 /** The node a gesture would make, drawn where it would appear. */
 const ghost = computed(() =>
@@ -195,6 +206,8 @@ const getRole = (node: PlacedNode): GestureRole => {
     <!-- The gesture itself, drawn over everything it may land on. -->
     <PlexThread v-if="thread" class="plex__reach" :d="thread" :ghost="ghost" />
 
+    <PlexThread v-if="pendingThread" class="plex__pending" :d="pendingThread" />
+
     <!-- Something dragged in from outside, drawn over everything it crosses. -->
     <PlexThread
       v-if="dragging"
@@ -237,7 +250,8 @@ const getRole = (node: PlacedNode): GestureRole => {
   pointer-events: none;
 }
 
-.plex__reach {
+.plex__reach,
+.plex__pending {
   pointer-events: none;
 }
 
