@@ -449,9 +449,47 @@ func TestWhatTheLoggingRuleRefuses(t *testing.T) {
 	}
 }
 
-// telling are the functions of time that answer from the machine's clock. The
-// rest of the package is arithmetic over an instant somebody was given.
-var telling = map[string]bool{"Now": true, "Since": true}
+// telling are the functions of time that answer from the machine's clock, and
+// waiting are the ones that arm the machine's timers. The rest of the package
+// is arithmetic over an instant somebody was given.
+var (
+	telling = map[string]bool{"Now": true, "Since": true}
+	waiting = map[string]bool{
+		"After": true, "AfterFunc": true, "NewTimer": true, "NewTicker": true, "Tick": true,
+	}
+)
+
+// timers are the files of the core that arm a timer of the machine's, and the
+// list only shrinks.
+var timers = []string{
+	"internal/retry/retry.go",
+	"usecase/source/recognition.go",
+	"usecase/source/transcription.go",
+	"usecase/source/transcription_resident.go",
+}
+
+// getClockReads are the calls in a file that read the machine's clock or arm its
+// timers, each written time.Name. The local name of the import is not read.
+func getClockReads(file *ast.File) (reads, arms []string) {
+	ast.Inspect(file, func(node ast.Node) bool {
+		at, is := node.(*ast.SelectorExpr)
+		if !is {
+			return true
+		}
+		from, is := at.X.(*ast.Ident)
+		if !is || from.Name != "time" {
+			return true
+		}
+		if telling[at.Sel.Name] {
+			reads = append(reads, "time."+at.Sel.Name)
+		}
+		if waiting[at.Sel.Name] {
+			arms = append(arms, "time."+at.Sel.Name)
+		}
+		return true
+	})
+	return reads, arms
+}
 
 // The domain does not know what time it is. A clock is a port, so a scenario
 // that stamps a note or asks what is due today is handed one, and the
@@ -464,6 +502,7 @@ var telling = map[string]bool{"Now": true, "Since": true}
 func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 	var wrong []string
 	var read int
+	armed := map[string]bool{}
 	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
@@ -477,24 +516,29 @@ func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 			return err
 		}
 		read++
-		ast.Inspect(file, func(node ast.Node) bool {
-			at, is := node.(*ast.SelectorExpr)
-			if !is {
-				return true
+		reads, arms := getClockReads(file)
+		for _, one := range reads {
+			wrong = append(wrong, path+" runs "+one+": a scenario is handed a clock and reads no other")
+		}
+		rel := filepath.ToSlash(strings.TrimPrefix(path, "../"))
+		if len(arms) > 0 {
+			armed[rel] = true
+			if !slices.Contains(timers, rel) {
+				wrong = append(wrong, path+" runs "+arms[0]+": the core arms no timer of the machine's")
 			}
-			from, is := at.X.(*ast.Ident)
-			if is && from.Name == "time" && telling[at.Sel.Name] {
-				wrong = append(wrong, path+" runs time."+at.Sel.Name)
-			}
-			return true
-		})
+		}
 		return nil
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, one := range wrong {
-		t.Error(one + ": a scenario is handed a clock and reads no other")
+		t.Error(one)
+	}
+	for _, one := range timers {
+		if !armed[one] {
+			t.Errorf("timers holds %s and it arms no timer", one)
+		}
 	}
 
 	// A walk that read no file of the core is a rule checked against nothing,
@@ -1562,5 +1606,39 @@ type Store interface {
 	}
 	if !slices.Equal(refused, []string{"chunkID", "rowID"}) {
 		t.Errorf("the rule refuses %v, want the two identities spelled as numbers", refused)
+	}
+}
+
+// What the rule refuses, read against a file written to be refused. It finds
+// the clock read and each timer armed, and lets through the arithmetic over an
+// instant and the constructors that read no clock.
+func TestWhatTheClockRuleRefuses(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "clock.go", `package p
+
+import "time"
+
+func run(at time.Time) {
+	_ = time.Now()
+	_ = time.Since(at)
+	<-time.After(time.Second)
+	time.AfterFunc(time.Second, func() {})
+	_ = time.NewTimer(time.Second)
+	_ = time.NewTicker(time.Second)
+	_ = time.Tick(time.Second)
+	_ = at.Add(time.Second)
+	_ = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	_ = time.Duration(3)
+}
+`, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reads, arms := getClockReads(file)
+	if want := []string{"time.Now", "time.Since"}; !slices.Equal(reads, want) {
+		t.Errorf("the rule refuses the reads %v, want %v", reads, want)
+	}
+	want := []string{"time.After", "time.AfterFunc", "time.NewTimer", "time.NewTicker", "time.Tick"}
+	if !slices.Equal(arms, want) {
+		t.Errorf("the rule refuses the timers %v, want %v", arms, want)
 	}
 }
