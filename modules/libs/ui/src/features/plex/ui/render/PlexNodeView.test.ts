@@ -8,6 +8,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlexNodeView from './PlexNodeView.vue'
+import { DEFAULT_BEHAVIOUR } from '../../model/behaviour'
 import { OPENING, type WideBox } from '../../model/dwell'
 import { getNodeHeadings, type PlexHeading } from '../../lib/inside'
 import { stubClock } from '@/shared/fixtures/clock'
@@ -325,9 +326,8 @@ describe('a box with more of its title to show', () => {
       props: {
         node: createNode(over),
         wide,
-        dwell: WAIT,
+        behaviour: { ...DEFAULT_BEHAVIOUR, dwell: WAIT, clock: world.clock },
         gestureRole,
-        clock: world.clock,
       },
     })
     return { node, world }
@@ -440,7 +440,11 @@ describe('a box with nothing more to show', () => {
     vi.useFakeTimers()
     const world = stubClock()
     const node = mount(PlexNodeView, {
-      props: { node: createNode(), dwell: WAIT, clock: world.clock, ...props },
+      props: {
+        node: createNode(),
+        behaviour: { ...DEFAULT_BEHAVIOUR, dwell: WAIT, clock: world.clock },
+        ...props,
+      },
     })
     await node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT)
@@ -498,8 +502,7 @@ describe('the headings a node hangs', () => {
           viewport: { width: 1000, height: 600 },
           margin: 20,
         }),
-        dwell: WAIT,
-        clock: world.clock,
+        behaviour: { ...DEFAULT_BEHAVIOUR, dwell: WAIT, clock: world.clock },
       },
     })
     return { node, world }

@@ -10,11 +10,9 @@
 import { computed, toRef, useSlots, useTemplateRef, watch } from 'vue'
 import PlexView from './render/PlexView.vue'
 import type { PlexEvents, PlexProps, PlexSlots } from './props'
-import { DWELL } from '../model/dwell'
-import { byHandle } from '../model/reaching'
-import { byDoubleClick } from '../model/showing'
+import { DEFAULT_BEHAVIOUR, type PlexBehaviour } from '../model/behaviour'
 import { useRoom } from '../model/room'
-import { usePlexTransition, browserClock } from '../model/transition'
+import { usePlexTransition } from '../model/transition'
 import { browserViewport } from '@/shared/lib/viewport'
 import { formatCount, getRelationName, type PlexRelation } from '../lib/relation'
 import { usePlexDrag } from '../model/drag'
@@ -23,13 +21,13 @@ import { usePlexGesture } from '../model/gesture'
 const props = withDefaults(defineProps<PlexProps>(), {
   showEdgeLabels: true,
   duration: 420,
-  clock: () => browserClock,
+  clock: () => DEFAULT_BEHAVIOUR.clock,
   viewport: () => browserViewport,
   creatable: () => ['parent', 'child', 'jump'],
   dragThreshold: 8,
-  dwell: DWELL,
-  reaching: () => byHandle,
-  showing: () => byDoubleClick,
+  dwell: DEFAULT_BEHAVIOUR.dwell,
+  reaching: () => DEFAULT_BEHAVIOUR.reaching,
+  showing: () => DEFAULT_BEHAVIOUR.showing,
   relationName: getRelationName,
   dragged: () => [],
   dropName: getRelationName,
@@ -46,6 +44,14 @@ const view = useTemplateRef<InstanceType<typeof PlexView>>('view')
 const slots = useSlots()
 
 const { room, options, measures, widen, hung } = useRoom(frameElement, props, () => !!slots.icon)
+
+/** How the nodes behave, handed down as one. */
+const behaviour = computed<PlexBehaviour>(() => ({
+  dwell: props.dwell,
+  reaching: props.reaching,
+  showing: props.showing,
+  clock: props.clock,
+}))
 
 const { frame, isMoving } = usePlexTransition(
   () => props.neighbourhood,
@@ -150,10 +156,7 @@ defineExpose({
       :relation-name="relationName"
       :widen="widen"
       :hung="hung"
-      :dwell="dwell"
-      :reaching="reaching"
-      :showing="showing"
-      :clock="clock"
+      :behaviour="behaviour"
       :gesture-from="gesture.from.value"
       :gesture-at="gesture.at.value"
       :gesture-outcome="gesture.outcome.value"
