@@ -34,16 +34,7 @@ var wiring = []string{
 
 // portCalls are the files outside wiring that call a port through a field, and
 // the list only shrinks.
-var portCalls = map[string]string{
-	// The window reads notes, links and readers through the ports; issue #903.
-	"adapter/window/editor/loopback.go":      "issue #903",
-	"adapter/window/editor/notes.go":         "issue #903",
-	"adapter/window/editor/artifacts.go":     "issue #903",
-	"adapter/window/editor/search.go":        "issue #903",
-	"adapter/window/editor/vault_session.go": "issue #903",
-	// The command records an opened vault on the registry it is handed.
-	"adapter/cli/vault.go": "the command line calls the registry directly",
-}
+var portCalls = map[string]string{}
 
 // getPortFields are the names of the struct fields a file types port.X.
 func getPortFields(file *ast.File) []string {

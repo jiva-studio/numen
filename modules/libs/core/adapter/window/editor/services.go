@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
@@ -109,6 +110,12 @@ func (s *Services) readDocuments(readers port.VaultReaders, v *viewer) {
 		v, &getBook, &getBookMarkup, &getBookPicture
 }
 
+// readFiles binds the use cases that read the files of the vaults the readers open.
+func (s *Services) readFiles(readers port.VaultReaders) {
+	s.files.getFingerprint = file.NewGetFingerprint(readers)
+	s.server.openFile = document.NewOpenFile(readers)
+}
+
 // readTexts binds the use cases that read and write what was made from a file
 // of the vault, each to the handlers that call it.
 func (s *Services) readTexts(texts source.Texts) {
@@ -138,9 +145,12 @@ func (s *Services) readImports(fetching *source.ImportURL) {
 
 // noteHandler answers what a vault's notes hold and what changes them.
 type noteHandler struct {
-	state   *State
-	queries port.NoteQueries
-	links   port.LinkQueries
+	state *State
+
+	getOpeningNote *note.GetOpeningNote
+	getTypes       *note.GetTypes
+	getHeadings    *note.GetHeadings
+	resolveLinks   *note.ResolveLinks
 
 	read              *note.Read
 	write             *note.Write
@@ -154,16 +164,19 @@ type noteHandler struct {
 
 // searchHandler answers what the vault holds that matches what was typed.
 type searchHandler struct {
-	state   *State
-	queries port.NoteQueries
-	finds   *search.Search
+	state *State
+	finds *search.Search
+
+	getNameMatches *search.GetNameMatches
+	getTitles      note.GetTitles
+	getTypes       *note.GetTypes
 }
 
 // artifactFiles finds the file a question about an artifact is about, in the
 // vault the window is showing.
 type artifactFiles struct {
 	state          *State
-	readers        port.VaultReaders
+	getFingerprint *file.GetFingerprint
 	getNoteAddress source.GetNoteAddress
 	imports        *source.ImportURL
 }

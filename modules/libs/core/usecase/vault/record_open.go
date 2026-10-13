@@ -1,0 +1,19 @@
+package vault
+
+import (
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// RecordOpen records the vault a window is showing, so the next window opens on it.
+type RecordOpen struct {
+	registry port.VaultRegistry
+}
+
+func NewRecordOpen(registry port.VaultRegistry) RecordOpen {
+	return RecordOpen{registry: registry}
+}
+
+func (u RecordOpen) Execute(id domain.VaultID) error {
+	return u.registry.RecordOpened(id)
+}

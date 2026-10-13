@@ -24,6 +24,7 @@ type fileServer struct {
 	files    *artifactFiles
 	find     *vaults.Find
 	openCopy source.OpenCopy
+	openFile *document.OpenFile
 }
 
 // A Loopback is a socket on the loopback address that answers with the vault's
@@ -181,7 +182,7 @@ func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, at string)
 		http.Error(w, errNoVaultNamed, http.StatusNotFound)
 		return
 	}
-	if h.files.readers == nil {
+	if h.openFile == nil {
 		refuse(w, errNoVault)
 		return
 	}
@@ -192,32 +193,18 @@ func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, at string)
 	if strings.HasSuffix(at, domain.URLExtension) && h.serveCopy(w, r, held, at, named) {
 		return
 	}
-	reader, err := h.files.readers.Open(held)
+	opened, err := h.openFile.Execute(r.Context(), held, at, named)
 	if err != nil {
 		refuse(w, err)
 		return
 	}
-	ref, err := reader.GetFingerprint(r.Context(), at)
-	if err != nil {
-		refuse(w, err)
-		return
-	}
-	if named.Size != ref.Size || named.Mtime != stamp(ref.ModTime) {
-		refuse(w, document.ErrChanged)
-		return
-	}
-	file, err := reader.Open(r.Context(), ref.Path)
-	if err != nil {
-		refuse(w, err)
-		return
-	}
-	defer file.Close()
+	defer opened.Body.Close()
 
 	w.Header().Set("Cache-Control", immutable)
-	if named := domain.MediaType(ref.Path); named != "" {
+	if named := domain.MediaType(opened.Path); named != "" {
 		w.Header().Set("Content-Type", named)
 	}
-	http.ServeContent(w, r, ref.Path, ref.ModTime, file)
+	http.ServeContent(w, r, opened.Path, opened.ModTime, opened.Body)
 }
 
 // serveCopy answers with the copy fetched for a url, and says whether it
