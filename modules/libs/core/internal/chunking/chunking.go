@@ -27,6 +27,7 @@ import (
 
 // Whole, as Sizes.Large, cuts one large chunk over the whole text: the chunk
 // enclosing every small chunk is the source itself. This is how a note is cut.
+// gomutants:disable-next-line INTEGER_INCREMENT reason="Whole is any negative size: Resolve maps every negative Large to Whole, so -2 behaves as -1"
 const Whole = -1
 
 // The sizes used where configuration names none.

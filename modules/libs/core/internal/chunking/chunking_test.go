@@ -405,11 +405,62 @@ func TestAChunkIsBoundedUnderTheModelsLimit(t *testing.T) {
 	if got := GetCharacterBound(256); got >= 256*4 {
 		t.Errorf("256 tokens allow %d characters, which is not a floor", got)
 	}
+	if got := GetCharacterBound(256); got != 512 {
+		t.Errorf("256 tokens allow %d characters, want 512", got)
+	}
 	if GetCharacterBound(256) <= 0 {
 		t.Error("a model with a limit allows nothing")
 	}
 	// More tokens allow more characters, and the two move together.
 	if GetCharacterBound(512) <= GetCharacterBound(256) {
 		t.Error("twice the tokens do not allow more characters")
+	}
+}
+
+// TestCutUsesTheDefaultSizes is the rule that a zero size takes its default: a
+// small chunk holds fifty words and the next begins ten words before its end.
+func TestCutUsesTheDefaultSizes(t *testing.T) {
+	text := line(120)
+	small := flatten(Cut(text, nil, Sizes{}, Legibility{}))
+	if len(small) < 2 {
+		t.Fatalf("small chunks: got %d, want several", len(small))
+	}
+	first := strings.Fields(small[0].ExtractText(text))
+	second := strings.Fields(small[1].ExtractText(text))
+	if len(first) != 50 {
+		t.Fatalf("first small chunk holds %d words, want 50", len(first))
+	}
+	if !equal(second[:10], first[40:]) {
+		t.Errorf("second chunk begins %v, want the last ten words of the first %v", second[:10], first[40:])
+	}
+}
+
+// TestCutDefaultLimit is the rule that a small chunk holds at most a thousand
+// characters when the caller names no limit.
+func TestCutDefaultLimit(t *testing.T) {
+	tests := []struct {
+		name  string
+		runes int
+		kept  bool
+	}{
+		{name: "a word at the limit is indexed", runes: 1000, kept: true},
+		{name: "a word over the limit is not", runes: 1001, kept: false},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			out := Cut(strings.Repeat("a", test.runes), nil, Sizes{}, Legibility{})
+			if got := countSmall(out) > 0; got != test.kept {
+				t.Errorf("small chunk kept: got %v, want %v", got, test.kept)
+			}
+		})
+	}
+}
+
+// TestResolveKeepsAnOverlapNonNegative is the rule that a negative overlap
+// means none.
+func TestResolveKeepsAnOverlapNonNegative(t *testing.T) {
+	got := Sizes{LargeOverlap: -5, SmallOverlap: -3}.Resolve()
+	if got.LargeOverlap != 0 || got.SmallOverlap != 0 {
+		t.Errorf("overlaps: got %d and %d, want 0 and 0", got.LargeOverlap, got.SmallOverlap)
 	}
 }
