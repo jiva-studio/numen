@@ -1,12 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { Neighbourhood } from '@/entities/note'
 import {
-  createMutualInspectorLinks,
-  createSingleInspectorLink,
+  addReverseLink,
+  areLinksEqual,
+  createInspectorLinks,
+  findPairNeighbour,
   getInverseRelation,
-  resolveInspectorDirectionToggle,
-  resolveInspectorDonePayload,
+  getLinksToSave,
+  removeLink,
   resolvePopoverPosition,
-  resolveSingleDirection,
+  setLinkLabel,
+  toggleLinkDirection,
 } from './linkInspector'
 import type { DirectionalLinkItem } from '../types'
 
@@ -17,8 +21,24 @@ const row = (more: Partial<DirectionalLinkItem> = {}): DirectionalLinkItem => ({
   to: 'B.md',
   role: 'child',
   direction: 'forward',
-  description: '',
+  label: '',
   ...more,
+})
+
+/** A neighbourhood around Focus.md holding the neighbours given. */
+const around = (...related: Partial<Neighbourhood['related'][number]>[]): Neighbourhood => ({
+  focus: { path: 'Focus.md', title: 'Focus' },
+  focusType: 'note',
+  related: related.map((one) => ({
+    path: 'Other.md',
+    title: 'Other',
+    type: 'note',
+    relation: 'child',
+    label: '',
+    through: '',
+    isMutual: false,
+    ...one,
+  })),
 })
 
 describe('linkInspector helper module', () => {
@@ -34,410 +54,233 @@ describe('linkInspector helper module', () => {
     })
   })
 
-  describe('resolveSingleDirection', () => {
-    it('returns undirected when saved direction is undirected', () => {
-      expect(resolveSingleDirection('undirected', 'parent', true, 'A.md', 'B.md')).toBe(
-        'undirected',
+  describe('findPairNeighbour', () => {
+    it('finds the neighbour at the end of the pair that is not the focus, whichever end is asked first', () => {
+      const nh = around({ path: 'Other.md' }, { path: 'Third.md' })
+
+      expect(findPairNeighbour(nh, 'Focus.md', 'Other.md')?.path).toBe('Other.md')
+      expect(findPairNeighbour(nh, 'Other.md', 'Focus.md')?.path).toBe('Other.md')
+    })
+
+    it('finds a sibling by the pair of its parent and itself, and not the parent', () => {
+      const nh = around(
+        { path: 'Parent.md', relation: 'parent' },
+        { path: 'Sibling.md', relation: 'sibling', through: 'Parent.md' },
       )
+
+      expect(findPairNeighbour(nh, 'Parent.md', 'Sibling.md')?.path).toBe('Sibling.md')
     })
 
-    it('returns forward when saved direction matches A->B', () => {
-      expect(resolveSingleDirection('A.md->B.md', 'jump', true, 'A.md', 'B.md')).toBe('forward')
-    })
-
-    it('returns reverse when saved direction does not match A->B', () => {
-      expect(resolveSingleDirection('B.md->A.md', 'jump', true, 'A.md', 'B.md')).toBe('reverse')
-    })
-
-    it('defaults jump to undirected when unsaved', () => {
-      expect(resolveSingleDirection(undefined, 'jump', true, 'A.md', 'B.md')).toBe('undirected')
-    })
-
-    it('defaults hierarchical relations to undirected when unsaved', () => {
-      expect(resolveSingleDirection(undefined, 'parent', true, 'A.md', 'B.md')).toBe('undirected')
-      expect(resolveSingleDirection(undefined, 'parent', false, 'A.md', 'B.md')).toBe('undirected')
-      expect(resolveSingleDirection(undefined, 'child', true, 'A.md', 'B.md')).toBe('undirected')
+    it('finds nothing in a pair the neighbourhood does not draw', () => {
+      expect(findPairNeighbour(around({ path: 'Other.md' }), 'Focus.md', 'Gone.md')).toBeUndefined()
+      expect(findPairNeighbour(null, 'Focus.md', 'Other.md')).toBeUndefined()
     })
   })
 
-  describe('createMutualInspectorLinks', () => {
-    it('creates forward and reverse rows from Focus A perspective', () => {
-      const descriptions = new Map<string, string>()
-      const rows = createMutualInspectorLinks(
-        'A.md',
-        'B.md',
-        { relation: 'child', directLabel: 'desc A->B', reverseLabel: 'desc B->A' },
-        true,
-        descriptions,
+  describe('createInspectorLinks', () => {
+    it('shows one link written in the focus, with the label the core reports', () => {
+      const links = createInspectorLinks(
+        around({ relation: 'parent', label: 'depends on' }),
+        'Focus.md',
+        'Other.md',
       )
 
-      expect(rows).toHaveLength(2)
-      expect(rows[0]).toEqual({
-        id: 'A.md->B.md',
-        from: 'A.md',
-        to: 'B.md',
-        role: 'child',
-        direction: 'forward',
-        description: 'desc A->B',
-      })
-      expect(rows[1]).toEqual({
-        id: 'B.md->A.md',
-        from: 'B.md',
-        to: 'A.md',
-        role: 'parent',
-        direction: 'reverse',
-        description: 'desc B->A',
-      })
-    })
-
-    it('creates forward and reverse rows from Focus B perspective', () => {
-      const descriptions = new Map<string, string>()
-      const rows = createMutualInspectorLinks(
-        'A.md',
-        'B.md',
-        { relation: 'parent', directLabel: 'desc B->A', reverseLabel: 'desc A->B' },
-        false,
-        descriptions,
-      )
-
-      expect(rows).toHaveLength(2)
-      expect(rows[0]?.description).toBe('desc A->B')
-      expect(rows[1]?.description).toBe('desc B->A')
-    })
-
-    it('prefers descriptions stored in the active map', () => {
-      const descriptions = new Map([
-        ['A.md->B.md', 'override AB'],
-        ['B.md->A.md', 'override BA'],
-      ])
-      const rows = createMutualInspectorLinks(
-        'A.md',
-        'B.md',
-        { relation: 'jump', directLabel: 'initial', reverseLabel: 'initial' },
-        true,
-        descriptions,
-      )
-
-      expect(rows[0]?.description).toBe('override AB')
-      expect(rows[1]?.description).toBe('override BA')
-    })
-
-    it('handles empty descriptions and label fallback', () => {
-      const descriptions = new Map<string, string>()
-      const rows = createMutualInspectorLinks(
-        'A.md',
-        'B.md',
-        { relation: 'jump', label: 'fallback label' },
-        true,
-        descriptions,
-      )
-
-      expect(rows[0]?.description).toBe('fallback label')
-      expect(rows[1]?.description).toBe('')
-    })
-
-    it('makes undescribed jumps both ways of a relationship that names no relation', () => {
-      const rows = createMutualInspectorLinks('A.md', 'B.md', { relation: '' }, true, new Map())
-
-      expect(rows.map((one) => [one.role, one.description])).toStrictEqual([
-        ['jump', ''],
-        ['jump', ''],
+      expect(links).toEqual([
+        {
+          id: 'Focus.md->Other.md',
+          from: 'Focus.md',
+          to: 'Other.md',
+          role: 'parent',
+          direction: 'forward',
+          label: 'depends on',
+        },
       ])
     })
-  })
 
-  describe('createSingleInspectorLink', () => {
-    it('creates forward link when direction is forward', () => {
-      const directions = new Map([['A.md B.md', 'A.md->B.md']])
-      const descriptions = new Map<string, string>()
-      const rows = createSingleInspectorLink(
-        'A.md',
-        'B.md',
-        { relation: 'child', directLabel: 'child link' },
-        true,
-        directions,
-        descriptions,
-      )
+    it('reads the same link as running in reverse when the pair is asked the other way', () => {
+      const links = createInspectorLinks(around({ relation: 'child' }), 'Other.md', 'Focus.md')
 
-      expect(rows).toHaveLength(1)
-      expect(rows[0]).toEqual({
-        id: 'A.md->B.md',
-        from: 'A.md',
-        to: 'B.md',
-        role: 'child',
-        direction: 'forward',
-        description: 'child link',
-      })
+      expect(links).toHaveLength(1)
+      expect(links[0]).toMatchObject({ from: 'Focus.md', to: 'Other.md', direction: 'reverse' })
     })
 
-    it('inverts from/to and role when direction is reverse', () => {
-      const directions = new Map([['A.md B.md', 'B.md->A.md']])
-      const descriptions = new Map<string, string>()
-      const rows = createSingleInspectorLink(
-        'A.md',
-        'B.md',
-        { relation: 'child', directLabel: 'reverse child' },
-        true,
-        directions,
-        descriptions,
+    it('shows both links of a mutual relationship, each with the words its note wrote', () => {
+      const links = createInspectorLinks(
+        around({ relation: 'child', isMutual: true, label: 'owns', reverseLabel: 'belongs to' }),
+        'Focus.md',
+        'Other.md',
       )
 
-      expect(rows).toHaveLength(1)
-      expect(rows[0]).toEqual({
-        id: 'B.md->A.md',
-        from: 'B.md',
-        to: 'A.md',
-        role: 'parent',
-        direction: 'reverse',
-        description: 'reverse child',
-      })
-    })
-
-    it('handles undefined related note cleanly', () => {
-      const directions = new Map<string, string>()
-      const descriptions = new Map<string, string>()
-      const rows = createSingleInspectorLink(
-        'A.md',
-        'B.md',
-        undefined,
-        true,
-        directions,
-        descriptions,
-      )
-
-      expect(rows).toHaveLength(1)
-      expect(rows[0]?.role).toBe('jump')
-      expect(rows[0]?.direction).toBe('undirected')
-      expect(rows[0]?.description).toBe('')
-    })
-
-    it('reads the saved direction under the pair key, whichever note comes first', () => {
-      const directions = new Map([['A.md B.md', 'A.md->B.md']])
-      const rows = createSingleInspectorLink(
-        'B.md',
-        'A.md',
-        { relation: 'child' },
-        true,
-        directions,
-        new Map(),
-      )
-
-      expect(rows[0]).toMatchObject({ from: 'A.md', to: 'B.md', direction: 'reverse' })
-    })
-
-    it('takes the description stored under the link it resolved', () => {
-      const directions = new Map([['A.md B.md', 'B.md->A.md']])
-      const descriptions = new Map([
-        ['A.md->B.md', 'one way'],
-        ['B.md->A.md', 'the other way'],
+      expect(links.map((link) => [link.from, link.to, link.role, link.label])).toEqual([
+        ['Focus.md', 'Other.md', 'child', 'owns'],
+        ['Other.md', 'Focus.md', 'parent', 'belongs to'],
       ])
-      const rows = createSingleInspectorLink(
-        'A.md',
-        'B.md',
-        { relation: 'child', directLabel: 'label' },
-        true,
-        directions,
-        descriptions,
+    })
+
+    it('lists the link written in the first note first', () => {
+      const links = createInspectorLinks(
+        around({ relation: 'jump', isMutual: true, label: 'a', reverseLabel: 'b' }),
+        'Other.md',
+        'Focus.md',
       )
 
-      expect(rows[0]?.description).toBe('the other way')
+      expect(links.map((link) => link.from)).toEqual(['Other.md', 'Focus.md'])
+      expect(links.map((link) => link.direction)).toEqual(['forward', 'reverse'])
+    })
+
+    it('shows a sibling as its own link up to the parent it shares', () => {
+      const links = createInspectorLinks(
+        around(
+          { path: 'Parent.md', relation: 'parent' },
+          { path: 'Sibling.md', relation: 'sibling', through: 'Parent.md', label: 'next to' },
+        ),
+        'Parent.md',
+        'Sibling.md',
+      )
+
+      expect(links).toEqual([
+        {
+          id: 'Sibling.md->Parent.md',
+          from: 'Sibling.md',
+          to: 'Parent.md',
+          role: 'parent',
+          direction: 'reverse',
+          label: 'next to',
+        },
+      ])
+    })
+
+    it('shows nothing for a pair the core reports no link for', () => {
+      expect(createInspectorLinks(around(), 'Focus.md', 'Gone.md')).toEqual([])
+      expect(createInspectorLinks(null, 'Focus.md', 'Other.md')).toEqual([])
     })
   })
 
-  describe('resolveInspectorDirectionToggle', () => {
-    it('cycles from forward to reverse without removing links', () => {
-      const next = resolveInspectorDirectionToggle(row({ direction: 'forward' }))
+  describe('toggleLinkDirection', () => {
+    it('runs a single link the other way under the opposite role, keeping its label', () => {
+      const toggled = toggleLinkDirection([row({ label: 'x' })], 'A.md')
 
-      expect(next).toEqual({
-        direction: 'reverse',
-        from: 'A.md',
-        to: 'B.md',
-        role: 'child',
-        removedLink: undefined,
-      })
+      expect(toggled).toEqual([
+        {
+          id: 'B.md->A.md',
+          from: 'B.md',
+          to: 'A.md',
+          role: 'parent',
+          direction: 'reverse',
+          label: 'x',
+        },
+      ])
     })
 
-    it('cycles from reverse to undirected without removing links', () => {
-      const next = resolveInspectorDirectionToggle(row({ direction: 'reverse' }))
+    it('returns to where it started when toggled twice', () => {
+      const start = [row({ label: 'x' })]
 
-      expect(next).toEqual({
-        direction: 'undirected',
-        from: 'A.md',
-        to: 'B.md',
-        role: 'child',
-        removedLink: undefined,
-      })
+      expect(toggleLinkDirection(toggleLinkDirection(start, 'A.md'), 'A.md')).toEqual(start)
     })
 
-    it('cycles from undirected to forward without removing links', () => {
-      const next = resolveInspectorDirectionToggle(row({ direction: 'undirected' }))
+    it('leaves two links alone', () => {
+      const two = [row(), row({ id: 'B.md->A.md', from: 'B.md', to: 'A.md', direction: 'reverse' })]
 
-      expect(next).toEqual({
-        direction: 'forward',
-        from: 'A.md',
-        to: 'B.md',
-        role: 'child',
-        removedLink: undefined,
-      })
-    })
-
-    it('inverts endpoints and role when cycling to reverse with node paths', () => {
-      const next = resolveInspectorDirectionToggle(row({ direction: 'forward' }), 'A.md', 'B.md')
-
-      expect(next).toEqual({
-        direction: 'reverse',
-        from: 'B.md',
-        to: 'A.md',
-        role: 'parent',
-        removedLink: undefined,
-      })
-    })
-
-    it('restores endpoints and role when cycling from reverse to undirected with node paths', () => {
-      const reversed = {
-        ...row({ direction: 'reverse' }),
-        from: 'B.md',
-        to: 'A.md',
-        role: 'parent' as const,
-      }
-      const next = resolveInspectorDirectionToggle(reversed, 'A.md', 'B.md')
-
-      expect(next).toEqual({
-        direction: 'undirected',
-        from: 'A.md',
-        to: 'B.md',
-        role: 'child',
-        removedLink: undefined,
-      })
+      expect(toggleLinkDirection(two, 'A.md')).toEqual(two)
     })
   })
 
-  describe('resolveInspectorDonePayload', () => {
-    const forward = row({ description: 'feeds' })
-    const backward = row({
-      id: 'B.md->A.md',
-      from: 'B.md',
-      to: 'A.md',
-      role: 'parent',
-      direction: 'reverse',
-      description: 'is fed by',
+  describe('editing rows', () => {
+    it('sets the label of the row named and no other', () => {
+      const rows = [row(), row({ id: 'B.md->A.md', from: 'B.md', to: 'A.md' })]
+
+      const edited = setLinkLabel(rows, 'B.md->A.md', 'back')
+
+      expect(edited.map((one) => one.label)).toEqual(['', 'back'])
+      expect(rows[1]?.label).toBe('')
     })
 
-    it('keeps a single row and removes nothing', () => {
-      const payload = resolveInspectorDonePayload([forward], [forward], new Set(), 'A.md B.md', [])
+    it('removes the row named', () => {
+      const rows = [row(), row({ id: 'B.md->A.md', from: 'B.md', to: 'A.md' })]
 
-      expect(payload).toEqual({ pairKey: 'A.md B.md', rows: [forward], removedLinks: [] })
+      expect(removeLink(rows, 'A.md->B.md').map((one) => one.id)).toEqual(['B.md->A.md'])
+    })
+  })
+
+  describe('addReverseLink', () => {
+    it('adds the link back, with no label, under the opposite role', () => {
+      const added = addReverseLink([row({ label: 'x' })], [], 'A.md', 'B.md')
+
+      expect(added.map((one) => [one.from, one.to, one.role, one.label])).toEqual([
+        ['A.md', 'B.md', 'child', 'x'],
+        ['B.md', 'A.md', 'parent', ''],
+      ])
     })
 
-    it('keeps both rows of a pair when both are described', () => {
-      const payload = resolveInspectorDonePayload(
-        [forward, backward],
-        [forward, backward],
-        new Set([forward.id, backward.id]),
-        'A.md B.md',
-        [],
-      )
+    it('lists the link written in the first note first when the one kept runs from the second', () => {
+      const kept = row({ id: 'B.md->A.md', from: 'B.md', to: 'A.md', direction: 'reverse' })
 
-      expect(payload.rows).toEqual([forward, backward])
-      expect(payload.removedLinks).toEqual([])
+      const added = addReverseLink([kept], [], 'A.md', 'B.md')
+
+      expect(added.map((one) => one.from)).toEqual(['A.md', 'B.md'])
+      expect(added.map((one) => one.direction)).toEqual(['forward', 'reverse'])
     })
 
-    it('drops a blank first row of a pair and removes its saved link', () => {
-      const blank = { ...forward, description: '   ' }
-      const payload = resolveInspectorDonePayload(
-        [blank, backward],
-        [],
-        new Set([forward.id]),
-        'A.md B.md',
-        [],
-      )
+    it('adds a link between the notes when none is left, in the role the pair first had', () => {
+      const initial = [row({ role: 'parent' })]
 
-      expect(payload.rows).toEqual([backward])
-      expect(payload.removedLinks).toEqual([{ from: 'A.md', to: 'B.md', role: 'child' }])
+      expect(addReverseLink([], initial, 'A.md', 'B.md')).toEqual([
+        {
+          id: 'A.md->B.md',
+          from: 'A.md',
+          to: 'B.md',
+          role: 'parent',
+          direction: 'forward',
+          label: '',
+        },
+      ])
+      expect(addReverseLink([], initial, 'B.md', 'A.md')[0]?.role).toBe('child')
     })
 
-    it('drops a blank first row of a pair that was never saved without removing anything', () => {
-      const blank = { ...forward, description: '' }
-      const payload = resolveInspectorDonePayload([blank, backward], [], new Set(), 'A.md B.md', [])
-
-      expect(payload.rows).toEqual([backward])
-      expect(payload.removedLinks).toEqual([])
+    it('adds a jump where the pair had no link at all', () => {
+      expect(addReverseLink([], [], 'A.md', 'B.md')[0]?.role).toBe('jump')
     })
 
-    it('drops a blank second row of a pair and removes its saved link', () => {
-      const blank = { ...backward, description: ' ' }
-      const payload = resolveInspectorDonePayload(
-        [forward, blank],
-        [],
-        new Set([backward.id]),
-        'A.md B.md',
-        [],
-      )
+    it('adds nothing to two links', () => {
+      const two = [row(), row({ id: 'B.md->A.md', from: 'B.md', to: 'A.md' })]
 
-      expect(payload.rows).toEqual([forward])
-      expect(payload.removedLinks).toEqual([{ from: 'B.md', to: 'A.md', role: 'parent' }])
+      expect(addReverseLink(two, [], 'A.md', 'B.md')).toEqual(two)
+    })
+  })
+
+  describe('getLinksToSave', () => {
+    const back = row({ id: 'B.md->A.md', from: 'B.md', to: 'A.md', direction: 'reverse' })
+
+    it('leaves out the one of two links that has nothing written', () => {
+      expect(getLinksToSave([row({ label: 'x' }), back])).toEqual([row({ label: 'x' })])
+      expect(getLinksToSave([row(), { ...back, label: 'y' }])).toEqual([{ ...back, label: 'y' }])
     })
 
-    it('drops a blank second row of a pair that was never saved without removing anything', () => {
-      const blank = { ...backward, description: '' }
-      const payload = resolveInspectorDonePayload([forward, blank], [], new Set(), 'A.md B.md', [])
+    it('keeps two links that both say something, or both say nothing', () => {
+      const both = [row({ label: 'x' }), { ...back, label: 'y' }]
 
-      expect(payload.rows).toEqual([forward])
-      expect(payload.removedLinks).toEqual([])
+      expect(getLinksToSave(both)).toEqual(both)
+      expect(getLinksToSave([row(), back])).toEqual([row(), back])
     })
 
-    it('removes a saved link the rows no longer hold', () => {
-      const payload = resolveInspectorDonePayload(
-        [backward],
-        [forward],
-        new Set([forward.id]),
-        'A.md B.md',
-        [],
-      )
+    it('keeps a single link even with nothing written', () => {
+      expect(getLinksToSave([row()])).toEqual([row()])
+      expect(getLinksToSave([])).toEqual([])
+    })
+  })
 
-      expect(payload.removedLinks).toEqual([{ from: 'A.md', to: 'B.md', role: 'child' }])
+  describe('areLinksEqual', () => {
+    it('is true for the same links in any order', () => {
+      const back = row({ id: 'B.md->A.md', from: 'B.md', to: 'A.md' })
+
+      expect(areLinksEqual([row(), back], [back, row()])).toBe(true)
     })
 
-    it('removes a saved link once when it is already among the removed', () => {
-      const removed = { from: 'A.md', to: 'B.md', role: 'child' as const }
-      const payload = resolveInspectorDonePayload(
-        [backward],
-        [forward],
-        new Set([forward.id]),
-        'A.md B.md',
-        [{ from: 'C.md', to: 'D.md', role: 'jump' }, removed],
-      )
-
-      expect(payload.removedLinks).toEqual([{ from: 'C.md', to: 'D.md', role: 'jump' }, removed])
-    })
-
-    it('removes a saved link that matches a removed one on only two of its three parts', () => {
-      const payload = resolveInspectorDonePayload(
-        [backward],
-        [forward],
-        new Set([forward.id]),
-        'A.md B.md',
-        [
-          { from: 'C.md', to: 'B.md', role: 'child' },
-          { from: 'A.md', to: 'C.md', role: 'child' },
-          { from: 'A.md', to: 'B.md', role: 'jump' },
-        ],
-      )
-
-      expect(payload.removedLinks).toHaveLength(4)
-      expect(payload.removedLinks[3]).toEqual({ from: 'A.md', to: 'B.md', role: 'child' })
-    })
-
-    it('removes no saved link that one of several rows still holds', () => {
-      const payload = resolveInspectorDonePayload(
-        [forward, backward],
-        [forward, backward],
-        new Set([forward.id, backward.id]),
-        'A.md B.md',
-        [],
-      )
-
-      expect(payload.removedLinks).toEqual([])
+    it('is false where a label, a role, an end or the count differs', () => {
+      expect(areLinksEqual([row()], [row({ label: 'x' })])).toBe(false)
+      expect(areLinksEqual([row()], [row({ role: 'jump' })])).toBe(false)
+      expect(areLinksEqual([row()], [row({ from: 'B.md', to: 'A.md' })])).toBe(false)
+      expect(areLinksEqual([row()], [])).toBe(false)
     })
   })
 

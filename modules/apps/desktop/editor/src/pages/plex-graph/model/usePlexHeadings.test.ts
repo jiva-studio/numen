@@ -22,7 +22,7 @@ const createDeps = (
     createInRelation: async () => null,
     createWithTitle: async () => null,
     join: async () => false,
-    removeLink: async () => false,
+    replaceLinks: async () => false,
   },
   isReady: ref(true),
   isNesting: ref(true),

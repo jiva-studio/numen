@@ -1,13 +1,13 @@
 /**
- * Helper functions for building and resolving link items in the Plex link inspector.
+ * The links between two notes as the link inspector shows them, and the edits a person makes to the rows.
  */
 import type { PlexRelation } from '@numen/ui'
-import type { DirectionalLinkItem, LinkDirectionMode } from '../types'
+import type { Neighbourhood } from '@/entities/note'
+import type { DirectionalLinkItem } from '../types'
 
-/**
- * Returns the opposite hierarchy relation for a relationship.
- * Note: 'sibling' is a graph placement relation derived from a shared parent, not an authored link role.
- */
+type Neighbour = Neighbourhood['related'][number]
+
+/** The opposite hierarchy relation; a sibling is placed by a shared parent and is its own opposite. */
 export function getInverseRelation(relation: PlexRelation): PlexRelation {
   switch (relation) {
     case 'parent':
@@ -20,208 +20,145 @@ export function getInverseRelation(relation: PlexRelation): PlexRelation {
   }
 }
 
-/**
- * Resolves the initial link direction mode for a single link between two notes.
- * Single links default to undirected ('—') unless explicitly set to a direction.
- */
-export function resolveSingleDirection(
-  savedDirection: string | undefined,
+function createLinkItem(
+  from: string,
+  to: string,
   role: PlexRelation,
-  isFocusA: boolean,
-  pathA: string,
-  pathB: string,
-): LinkDirectionMode {
-  if (savedDirection === 'undirected') return 'undirected'
-  if (savedDirection) {
-    return savedDirection === `${pathA}->${pathB}` ? 'forward' : 'reverse'
-  }
-  return 'undirected'
-}
-
-function getDefaultMutualDescriptions(
-  related: { directLabel?: string; label?: string; reverseLabel?: string },
-  isFocusA: boolean,
-): { directDesc: string; reverseDesc: string } {
-  const direct = related.directLabel ?? related.label ?? ''
-  const reverse = related.reverseLabel ?? ''
+  label: string,
+  firstPath: string,
+): DirectionalLinkItem {
   return {
-    directDesc: isFocusA ? direct : reverse,
-    reverseDesc: isFocusA ? reverse : direct,
+    id: `${from}->${to}`,
+    from,
+    to,
+    role,
+    direction: from === firstPath ? 'forward' : 'reverse',
+    label,
   }
 }
 
-export function createMutualInspectorLinks(
+/** The neighbour the line between two drawn notes stands for. */
+export function findPairNeighbour(
+  around: Neighbourhood | null,
   pathA: string,
   pathB: string,
-  related: { relation: string; directLabel?: string; label?: string; reverseLabel?: string },
-  isFocusA: boolean,
-  descriptions: Map<string, string>,
-): DirectionalLinkItem[] {
-  const baseRelation = (related.relation as PlexRelation) || 'jump'
-  const roleAtoB = isFocusA ? baseRelation : getInverseRelation(baseRelation)
-  const roleBtoA = getInverseRelation(roleAtoB)
-  const defaults = getDefaultMutualDescriptions(related, isFocusA)
-
-  const descAB = descriptions.get(`${pathA}->${pathB}`) ?? defaults.directDesc
-  const descBA = descriptions.get(`${pathB}->${pathA}`) ?? defaults.reverseDesc
-
-  return [
-    {
-      id: `${pathA}->${pathB}`,
-      from: pathA,
-      to: pathB,
-      role: roleAtoB,
-      direction: 'forward',
-      description: descAB,
-    },
-    {
-      id: `${pathB}->${pathA}`,
-      from: pathB,
-      to: pathA,
-      role: roleBtoA,
-      direction: 'reverse',
-      description: descBA,
-    },
-  ]
-}
-
-function getSingleRole(baseRole: PlexRelation, isReverse: boolean): PlexRelation {
-  return isReverse ? getInverseRelation(baseRole) : baseRole
-}
-
-export function createSingleInspectorLink(
-  pathA: string,
-  pathB: string,
-  related: { relation?: string; directLabel?: string; label?: string } | undefined,
-  isFocusA: boolean,
-  directions: Map<string, string>,
-  descriptions: Map<string, string>,
-): DirectionalLinkItem[] {
-  const baseRole = (related?.relation as PlexRelation) || 'jump'
-  const pairKey = [pathA, pathB].sort().join(' ')
-  const direction = resolveSingleDirection(
-    directions.get(pairKey),
-    baseRole,
-    isFocusA,
-    pathA,
-    pathB,
+): Neighbour | undefined {
+  if (!around) return undefined
+  const focus = around.focus.path
+  if (pathA === focus || pathB === focus) {
+    const other = pathA === focus ? pathB : pathA
+    return around.related.find((one) => one.path === other)
+  }
+  return around.related.find(
+    (one) =>
+      one.relation === 'sibling' &&
+      [pathA, pathB].includes(one.path) &&
+      [pathA, pathB].includes(one.through),
   )
-
-  const isReverse = direction === 'reverse'
-  const from = isReverse ? pathB : pathA
-  const to = isReverse ? pathA : pathB
-  const role = getSingleRole(baseRole, isReverse)
-  const desc = related?.directLabel ?? related?.label ?? ''
-  const description = descriptions.get(`${from}->${to}`) ?? desc
-
-  return [{ id: `${from}->${to}`, from, to, role, direction, description }]
 }
 
-export function resolveInspectorDirectionToggle(
-  row: DirectionalLinkItem,
-  nodeAPath?: string,
-  nodeBPath?: string,
-): {
-  direction: LinkDirectionMode
-  from: string
-  to: string
-  role: PlexRelation
-  removedLink?: { from: string; to: string; role?: PlexRelation } | undefined
-} {
-  const nextDirection: Record<LinkDirectionMode, LinkDirectionMode> = {
-    undirected: 'forward',
-    forward: 'reverse',
-    reverse: 'undirected',
-  }
-  const next = nextDirection[row.direction]
-  if (!nodeAPath || !nodeBPath) {
-    return {
-      direction: next,
-      from: row.from,
-      to: row.to,
-      role: row.role,
-      removedLink: undefined,
-    }
+/** The links the core reports between two drawn notes, the one written in `pathA` first. */
+export function createInspectorLinks(
+  around: Neighbourhood | null,
+  pathA: string,
+  pathB: string,
+): DirectionalLinkItem[] {
+  const related = findPairNeighbour(around, pathA, pathB)
+  if (!around || !related) return []
+
+  if (related.relation === 'sibling') {
+    return [createLinkItem(related.path, related.through, 'parent', related.label, pathA)]
   }
 
-  const baseRole = row.from === nodeAPath ? row.role : getInverseRelation(row.role)
-  if (next === 'reverse') {
-    return {
-      direction: next,
-      from: nodeBPath,
-      to: nodeAPath,
-      role: getInverseRelation(baseRole),
-      removedLink: undefined,
-    }
+  const focus = around.focus.path
+  const links = [createLinkItem(focus, related.path, related.relation, related.label, pathA)]
+  if (related.isMutual) {
+    const reverse = related.reverseLabel ?? ''
+    links.push(
+      createLinkItem(related.path, focus, getInverseRelation(related.relation), reverse, pathA),
+    )
   }
-
-  return {
-    direction: next,
-    from: nodeAPath,
-    to: nodeBPath,
-    role: baseRole,
-    removedLink: undefined,
-  }
+  return focus === pathA ? links : links.reverse()
 }
 
-function pruneEmptyDualRows(
+/** The role a link written in `from` takes, going by the first link the pair had. */
+function getRoleFrom(initial: readonly DirectionalLinkItem[], from: string): PlexRelation {
+  const first = initial[0]
+  if (!first) return 'jump'
+  return first.from === from ? first.role : getInverseRelation(first.role)
+}
+
+/** The only link flipped to run the other way. Two links are not flipped. */
+export function toggleLinkDirection(
   rows: readonly DirectionalLinkItem[],
-  initialLinkIds: Set<string>,
-): {
-  rows: DirectionalLinkItem[]
-  removed: { from: string; to: string; role?: PlexRelation }[]
-} {
-  if (rows.length !== 2) return { rows: [...rows], removed: [] }
-  const r0Blank = !rows[0]!.description.trim()
-  const r1Blank = !rows[1]!.description.trim()
-
-  if (r0Blank && !r1Blank) {
-    const r0 = rows[0]!
-    const removed = initialLinkIds.has(r0.id) ? [{ from: r0.from, to: r0.to, role: r0.role }] : []
-    return { rows: [rows[1]!], removed }
-  }
-  if (r1Blank && !r0Blank) {
-    const r1 = rows[1]!
-    const removed = initialLinkIds.has(r1.id) ? [{ from: r1.from, to: r1.to, role: r1.role }] : []
-    return { rows: [rows[0]!], removed }
-  }
-  return { rows: [...rows], removed: [] }
+  firstPath: string,
+): DirectionalLinkItem[] {
+  if (rows.length !== 1) return [...rows]
+  const row = rows[0]!
+  return [createLinkItem(row.to, row.from, getInverseRelation(row.role), row.label, firstPath)]
 }
 
-function collectOmittedInitialLinks(
-  initialLinks: readonly DirectionalLinkItem[],
-  finalRows: readonly DirectionalLinkItem[],
-  alreadyRemoved: readonly { from: string; to: string; role?: PlexRelation }[],
-): { from: string; to: string; role?: PlexRelation }[] {
-  const isPresent = (link: DirectionalLinkItem) => finalRows.some((r) => r.id === link.id)
-  const isRemoved = (link: DirectionalLinkItem) =>
-    alreadyRemoved.some((r) => r.from === link.from && r.to === link.to && r.role === link.role)
-
-  return initialLinks
-    .filter((link) => !isPresent(link) && !isRemoved(link))
-    .map((link) => ({ from: link.from, to: link.to, role: link.role }))
+/** The rows with the label of one replaced. */
+export function setLinkLabel(
+  rows: readonly DirectionalLinkItem[],
+  id: string,
+  label: string,
+): DirectionalLinkItem[] {
+  return rows.map((row) => (row.id === id ? { ...row, label } : row))
 }
 
-export function resolveInspectorDonePayload(
-  localRows: readonly DirectionalLinkItem[],
-  initialLinks: readonly DirectionalLinkItem[],
-  initialLinkIds: Set<string>,
-  pairKey: string,
-  existingRemoved: readonly { from: string; to: string; role?: PlexRelation }[],
-): {
-  pairKey: string
-  rows: DirectionalLinkItem[]
-  removedLinks: { from: string; to: string; role?: PlexRelation }[]
-} {
-  const pruned = pruneEmptyDualRows(localRows, initialLinkIds)
-  const allRemoved = [...existingRemoved, ...pruned.removed]
-  const omitted = collectOmittedInitialLinks(initialLinks, pruned.rows, allRemoved)
+/** The rows without one. */
+export function removeLink(
+  rows: readonly DirectionalLinkItem[],
+  id: string,
+): DirectionalLinkItem[] {
+  return rows.filter((row) => row.id !== id)
+}
 
-  return {
-    pairKey,
-    rows: pruned.rows,
-    removedLinks: [...allRemoved, ...omitted],
+/** The rows with the link back added; two rows are the most there are. */
+export function addReverseLink(
+  rows: readonly DirectionalLinkItem[],
+  initial: readonly DirectionalLinkItem[],
+  firstPath: string,
+  secondPath: string,
+): DirectionalLinkItem[] {
+  if (rows.length >= 2) return [...rows]
+  const first = rows[0]
+  if (!first) {
+    const role = getRoleFrom(initial, firstPath)
+    return [createLinkItem(firstPath, secondPath, role, '', firstPath)]
   }
+  const back = createLinkItem(first.to, first.from, getInverseRelation(first.role), '', firstPath)
+  const kept = createLinkItem(first.from, first.to, first.role, first.label, firstPath)
+  return first.from === firstPath ? [kept, back] : [back, kept]
+}
+
+/** The links to save: of two links, one with nothing written is left out. */
+export function getLinksToSave(rows: readonly DirectionalLinkItem[]): DirectionalLinkItem[] {
+  if (rows.length !== 2) return [...rows]
+  const [one, other] = rows as [DirectionalLinkItem, DirectionalLinkItem]
+  const isOneBlank = !one.label.trim()
+  const isOtherBlank = !other.label.trim()
+  if (isOneBlank && !isOtherBlank) return [other]
+  if (isOtherBlank && !isOneBlank) return [one]
+  return [...rows]
+}
+
+/** Whether two sets of links say the same thing. */
+export function areLinksEqual(
+  one: readonly DirectionalLinkItem[],
+  other: readonly DirectionalLinkItem[],
+): boolean {
+  if (one.length !== other.length) return false
+  return one.every((link) =>
+    other.some(
+      (match) =>
+        match.from === link.from &&
+        match.to === link.to &&
+        match.role === link.role &&
+        match.label === link.label,
+    ),
+  )
 }
 
 export interface PopoverPlacementOptions {
