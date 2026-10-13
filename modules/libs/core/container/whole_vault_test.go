@@ -84,8 +84,8 @@ func TestTheCutOfASourceIsGivenWhatItReadsWith(t *testing.T) {
 	if !cut.ShouldRebuildIndex {
 		t.Error("a rebuild was asked for and the cut skips sources the index remembers")
 	}
-	if cut.Sizes != held.GetChunkSizes() {
-		t.Errorf("cut at %+v, and the settings say %+v", cut.Sizes, held.GetChunkSizes())
+	if cut.Sizes != held.CutNotes().Sizes {
+		t.Errorf("cut at %+v, and the settings say %+v", cut.Sizes, held.CutNotes().Sizes)
 	}
 }
 
