@@ -20,7 +20,7 @@ const deferred = <T>() => {
 
 describe('a text typed', () => {
   it('is asked once, after the pause that follows the last keystroke', async () => {
-    const run = vi.fn(async () => {})
+    const run = vi.fn(async (_query: string) => {})
     const { ask } = useDebouncedAsk()
 
     void ask('q', { blank: vi.fn(), run })
@@ -37,7 +37,7 @@ describe('a text typed', () => {
   it('is blank where it holds only space, and nothing waits', async () => {
     const blank = vi.fn()
     const pending = vi.fn()
-    const run = vi.fn(async () => {})
+    const run = vi.fn(async (_query: string) => {})
     await useDebouncedAsk().ask('  ', { blank, pending, run })
 
     expect(blank).toHaveBeenCalledTimes(1)
@@ -46,7 +46,7 @@ describe('a text typed', () => {
   })
 
   it('is let go of by a drop', async () => {
-    const run = vi.fn(async () => {})
+    const run = vi.fn(async (_query: string) => {})
     const { ask, drop } = useDebouncedAsk()
 
     void ask('q', { blank: vi.fn(), run })
@@ -58,7 +58,7 @@ describe('a text typed', () => {
 
   it('waits on the clock it is handed', async () => {
     const waited: number[] = []
-    const run = vi.fn(async () => {})
+    const run = vi.fn(async (_query: string) => {})
     await useDebouncedAsk({
       wait: async (ms) => {
         waited.push(ms)
