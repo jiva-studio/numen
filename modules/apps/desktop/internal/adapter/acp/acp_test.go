@@ -689,3 +689,43 @@ func TestAntigravityRunsInTheRealHomeWhereNoneCanBeMade(t *testing.T) {
 		})
 	}
 }
+
+// Stopping a run ends it although nobody reads its steps and its buffer is full.
+func TestStopEndsARunWhoseStepsAreNotRead(t *testing.T) {
+	dir := t.TempDir()
+	script := filepath.Join(dir, "codex")
+	body := "#!/bin/sh\n" +
+		"for i in $(seq 1 200); do\n" +
+		"  echo '{\"type\":\"item.completed\",\"item\":{\"type\":\"mcp_tool_call\"}}'\n" +
+		"done\n" +
+		"sleep 60\n"
+	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	agent := acp.New(acp.Options{
+		Program: "codex",
+		Root:    dir,
+		Tools:   acp.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
+	})
+	agent.Command = []string{script}
+	t.Cleanup(func() { _ = agent.Close() })
+
+	run, err := agent.StartRun(t.Context(), port.Task{Question: "q"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for len(run.GetSteps()) < cap(run.GetSteps()) {
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	stopped := make(chan struct{})
+	go func() {
+		_ = run.Stop()
+		close(stopped)
+	}()
+	select {
+	case <-stopped:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Stop did not return")
+	}
+}

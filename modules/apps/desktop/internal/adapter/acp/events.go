@@ -25,7 +25,11 @@ type eventReader struct {
 
 // send reports a step.
 func (r *eventReader) send(step port.Step) {
-	r.work.Output <- step
+	select {
+	case r.work.Output <- step:
+	case <-r.work.Stopped():
+		return
+	}
 	if step.Kind == domain.StepToolDone {
 		r.done++
 	}
