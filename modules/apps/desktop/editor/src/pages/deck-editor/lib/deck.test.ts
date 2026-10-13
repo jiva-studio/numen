@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { CARD_HEAD, createCardRunEnd } from '@numen/ui'
 import type { VaultDeck } from '@/entities/deck'
 import {
-  addCard,
+  addCard as addCardInternal,
   serializeBufferDeckToString,
   serializeBufferCardsToVaultCards,
   dropCard,
@@ -11,7 +11,7 @@ import {
   deserializeBufferDeckFromString,
   deserializeVaultDeck,
   createDeckCards,
-  replaceCardValue,
+  replaceCardValue as replaceCardValueInternal,
   findStencilPath,
   removeCard,
   areDecksEqual,
@@ -21,6 +21,18 @@ import {
   serializeBufferSectionsToVaultSections,
   type BufferDeck,
 } from './deck'
+
+const addCard = (
+  deck: BufferDeck,
+  title: string,
+  stencilPath: string,
+  values: any,
+  section: string | null = null,
+  generateCardId?: any,
+) => addCardInternal(deck, title, { stencilPath, values, section, generateCardId })
+
+const replaceCardValue = (deck: BufferDeck, id: string, field: string, nth: number, text: string) =>
+  replaceCardValueInternal(deck, id, { field, nth, text })
 
 /** Identities counted out, so a test names the card it means. */
 const createIds = () => {

@@ -53,12 +53,62 @@ export const generateUniqueName = (names: readonly string[], word: string): stri
   }
 }
 
+function getRowsInFolder(
+  entriesByFolder: ReadonlyMap<string, readonly Entry[]>,
+  isFolderOpen: (folder: string) => boolean,
+  folder: string,
+): readonly ListingRow[] {
+  const entries = entriesByFolder.get(folder) ?? []
+  return entries.map((entry) => ({
+    entry,
+    rows:
+      entry.isFolder && isFolderOpen(entry.path)
+        ? getRowsInFolder(entriesByFolder, isFolderOpen, entry.path)
+        : [],
+  }))
+}
+
+interface FolderListingResult {
+  folder: string
+  entries?: readonly Entry[]
+  error?: unknown
+}
+
+function mergeFolderListings(
+  current: ReadonlyMap<string, readonly Entry[]>,
+  listings: readonly FolderListingResult[],
+): { next: ReadonlyMap<string, readonly Entry[]>; isChanged: boolean; error: string } {
+  const next = new Map(current)
+  let isChanged = false
+  let error = ''
+  for (const listing of listings) {
+    if (listing.error !== undefined) {
+      error = formatErrorMessage(listing.error)
+    } else if (listing.entries && !isSameEntries(next.get(listing.folder), listing.entries)) {
+      next.set(listing.folder, listing.entries)
+      isChanged = true
+    }
+  }
+  return { next, isChanged, error }
+}
+
+function findDrawnInFolder(
+  path: string,
+  isFolderOpen: (folder: string) => boolean,
+  getEntryAt: (path: string) => Entry | null,
+): string | null {
+  let folder = getFolderPath(path)
+  while (!isFolderOpen(folder) && !getEntryAt(folder)) {
+    folder = getFolderPath(folder)
+  }
+  return isFolderOpen(folder) ? folder : null
+}
+
 export function useFileTree(core: Folders): FileTree {
   const entriesByFolder = shallowRef<ReadonlyMap<string, readonly Entry[]>>(new Map())
   const open = shallowRef<ReadonlySet<string>>(new Set([ROOT]))
   const selectedPaths = shallowRef<readonly string[]>([])
   const errorMessage = ref('')
-
   let isAlive = true
 
   const getEntriesInFolder = (folder: string): readonly Entry[] =>
@@ -66,13 +116,9 @@ export function useFileTree(core: Folders): FileTree {
 
   const isFolderOpen = (folder: string): boolean => open.value.has(folder)
 
-  const getRowsInFolder = (folder: string): readonly ListingRow[] =>
-    getEntriesInFolder(folder).map((entry) => ({
-      entry,
-      rows: entry.isFolder && isFolderOpen(entry.path) ? getRowsInFolder(entry.path) : [],
-    }))
-
-  const rows = computed<readonly ListingRow[]>(() => getRowsInFolder(ROOT))
+  const rows = computed<readonly ListingRow[]>(() =>
+    getRowsInFolder(entriesByFolder.value, isFolderOpen, ROOT),
+  )
   const openRows = computed<readonly string[]>(() => [...open.value])
 
   const getEntryAt = (path: string): Entry | null =>
@@ -89,18 +135,9 @@ export function useFileTree(core: Folders): FileTree {
       }),
     )
     if (!isAlive) return
-    const next = new Map(entriesByFolder.value)
-    let isChanged = false
-    for (const listing of listings) {
-      if ('error' in listing) {
-        errorMessage.value = formatErrorMessage(listing.error)
-      } else if (!isSameEntries(next.get(listing.folder), listing.entries)) {
-        next.set(listing.folder, listing.entries)
-        isChanged = true
-      }
-    }
-    if (isChanged) entriesByFolder.value = next
-    if (!listings.some((one) => 'error' in one)) errorMessage.value = ''
+    const merged = mergeFolderListings(entriesByFolder.value, listings)
+    if (merged.isChanged) entriesByFolder.value = merged.next
+    errorMessage.value = merged.error
   }
 
   const loadFolder = (folder: string) => loadFolders([folder])
@@ -137,14 +174,6 @@ export function useFileTree(core: Folders): FileTree {
     await loadFolders([...open.value])
   }
 
-  const getDrawnInFolder = (path: string): string | null => {
-    let folder = getFolderPath(path)
-    while (!isFolderOpen(folder) && !getEntryAt(folder)) {
-      folder = getFolderPath(folder)
-    }
-    return isFolderOpen(folder) ? folder : null
-  }
-
   const refreshChanged = async (
     paths: readonly string[] = [],
     renames: readonly PathRename[] = [],
@@ -155,7 +184,9 @@ export function useFileTree(core: Folders): FileTree {
     const named = [...paths, ...renames.flatMap((one) => [one.from, one.to])]
     if (named.length === 0) return void (await refresh())
     const folders = new Set(
-      named.map(getDrawnInFolder).filter((one): one is string => one !== null),
+      named
+        .map((p) => findDrawnInFolder(p, isFolderOpen, getEntryAt))
+        .filter((one): one is string => one !== null),
     )
     await loadFolders([...folders])
   }

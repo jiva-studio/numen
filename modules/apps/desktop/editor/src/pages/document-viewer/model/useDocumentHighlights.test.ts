@@ -1,7 +1,16 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { useDocumentHighlights } from './useDocumentHighlights'
+import { useDocumentHighlights as useDocumentHighlightsOriginal } from './useDocumentHighlights'
 import type { Documents, PageHighlight, Rect } from '../types'
+
+const useDocumentHighlights = (
+  documents: Documents,
+  path: string,
+  pageNumber: any,
+  error: any,
+  onGoToPage: any,
+  isOpen: any,
+) => useDocumentHighlightsOriginal(documents, path, { pageNumber, error, onGoToPage, isOpen })
 
 describe('useDocumentHighlights', () => {
   const rect: Rect = { minX: 0.1, minY: 0.2, maxX: 0.3, maxY: 0.4 }

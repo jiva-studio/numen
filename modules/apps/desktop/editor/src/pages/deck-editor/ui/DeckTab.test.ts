@@ -167,7 +167,7 @@ const mountDeck = async (
   }
 
   const held = useWindowTabs()
-  const decks = useDeckTabs(core, presets, held.handle, tabOpeners())
+  const decks = useDeckTabs(core, presets, { handle: held.handle, tabOpeners: tabOpeners() })
   held.registerKinds([decks.kind])
   const id = await held.openTabOfKind(DECK, 'Animals.md')
   await settle()

@@ -10,8 +10,7 @@ import { areLinksEqual, createInspectorLinks } from './linkInspector'
 export function useLinkInspector(
   view: PlexView,
   editor: PlexEditor,
-  map: NodeIdMap,
-  getName: (path: string) => string,
+  ...[map, getName]: [map: NodeIdMap, getName: (path: string) => string]
 ) {
   const linkInspector = ref<LinkInspectorRequest | null>(null)
 

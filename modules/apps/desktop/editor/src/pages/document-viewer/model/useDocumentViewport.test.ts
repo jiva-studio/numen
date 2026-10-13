@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { ref, shallowRef } from 'vue'
-import { useDocumentViewport } from './useDocumentViewport'
+import { useDocumentViewport as useDocumentViewportOriginal } from './useDocumentViewport'
 import type { Documents, Page } from '../types'
+
+const useDocumentViewport = (
+  documents: Documents,
+  path: string,
+  pages: any,
+  pageNumber: any,
+  fingerprint: any,
+  isOpen: any,
+) => useDocumentViewportOriginal(documents, path, { pages, pageNumber, fingerprint, isOpen })
 
 describe('useDocumentViewport', () => {
   const documents: Documents = {
@@ -39,14 +48,7 @@ describe('useDocumentViewport', () => {
   it('keeps its width once the document is closed', () => {
     const pages = shallowRef<readonly Page[]>([{ width: 100, height: 200 }])
     let open = true
-    const viewport = useDocumentViewport(
-      documents,
-      'doc.pdf',
-      pages,
-      ref(0),
-      ref('v1'),
-      () => open,
-    )
+    const viewport = useDocumentViewport(documents, 'doc.pdf', pages, ref(0), ref('v1'), () => open)
     viewport.widen(800)
 
     open = false

@@ -28,27 +28,47 @@ export interface VaultAnswer {
 
 const NOTHING: VaultAnswer = { problems: [], reading: null, writing: null, bound: 0 }
 
+const findFailureReason = (errorCode: ErrorCode | null, bound: number): string | null => {
+  if (errorCode === 'deckTooLarge') return words.tooLarge(bound)
+  if (errorCode === 'notADeck') return words.notADeck
+  return null
+}
+
+const formatErrorMessage = (answer: VaultAnswer, hasError: boolean): string => {
+  if (!hasError) return ''
+  if (answer.reading !== null)
+    return findFailureReason(answer.reading, answer.bound) ?? words.notRead
+  if (answer.writing !== null)
+    return findFailureReason(answer.writing, answer.bound) ?? words.notSaved
+  return words.unreachable
+}
+
+function moveEntry<T>(map: Map<string, T>, from: string, to: string): void {
+  const value = map.get(from)
+  if (value !== undefined) map.set(to, value)
+  map.delete(from)
+}
+
+export interface ReadAnswer {
+  readonly problems: readonly DeckProblem[]
+  readonly error?: ErrorCode | null
+  readonly bound: number
+  readonly title: string | null
+}
+
+export interface WriteAnswer {
+  readonly error?: ErrorCode | null
+  readonly bound: number
+}
+
 /** The answers one window has, about the decks that window holds. */
 export function createDeckAnswers() {
-  /** What the vault reports about each file, under the path it is filed at. */
   const fileAnswers = new Map<string, VaultAnswer>()
-  /** What each file is called, as the vault last read it. */
   const titles = new Map<string, string>()
 
-  /** What was reported about a file, and default empty answer where nothing was. */
   const getAnswer = (path: string): VaultAnswer => fileAnswers.get(path) ?? NOTHING
 
-  /** What a read of a file came back with, under the title it came back as. */
-  const recordRead = (
-    path: string,
-    answer: {
-      readonly problems: readonly DeckProblem[]
-      readonly error?: ErrorCode | null
-      readonly bound: number
-      /** The title the file carries, and nothing where the read reached none. */
-      readonly title: string | null
-    },
-  ): void => {
+  const recordRead = (path: string, answer: ReadAnswer): void => {
     fileAnswers.set(path, {
       problems: answer.problems,
       reading: answer.error ?? null,
@@ -58,14 +78,7 @@ export function createDeckAnswers() {
     if (answer.title !== null) titles.set(path, answer.title)
   }
 
-  /** What a write of a file came back with. What the last read found stands. */
-  const recordWrite = (
-    path: string,
-    answer: {
-      readonly error?: ErrorCode | null
-      readonly bound: number
-    },
-  ): void => {
+  const recordWrite = (path: string, answer: WriteAnswer): void => {
     const currentAnswer = getAnswer(path)
     fileAnswers.set(path, {
       problems: currentAnswer.problems,
@@ -75,50 +88,24 @@ export function createDeckAnswers() {
     })
   }
 
-  /** What is wrong with a file, as the marks against its cards are made from. */
   const getProblems = (path: string): readonly DeckProblem[] => getAnswer(path).problems
 
-  const findFailureReason = (errorCode: ErrorCode | null, bound: number): string | null => {
-    if (errorCode === 'deckTooLarge') return words.tooLarge(bound)
-    if (errorCode === 'notADeck') return words.notADeck
-    return null
-  }
+  const getErrorMessage = (path: string, hasError: boolean): string =>
+    formatErrorMessage(getAnswer(path), hasError)
 
-  /**
-   * What an errored tab failed for, in words a person reads.
-   */
-  const getErrorMessage = (path: string, hasError: boolean): string => {
-    if (!hasError) return ''
-    const currentAnswer = getAnswer(path)
-    if (currentAnswer.reading !== null)
-      return findFailureReason(currentAnswer.reading, currentAnswer.bound) ?? words.notRead
-    if (currentAnswer.writing !== null)
-      return findFailureReason(currentAnswer.writing, currentAnswer.bound) ?? words.notSaved
-    return words.unreachable
-  }
-
-  /** What a deck tab is called: the title the file carries, or the file itself. */
   const getTitle = (path: string): string => titles.get(path) || getFileName(path)
-
-  /** A file the window was told the title of before any read of it answered. */
   const setTitle = (path: string, title: string): void => {
     titles.set(path, title)
   }
 
-  /** What was recorded about a file no tab of this window holds any longer. */
   const forgetFile = (path: string): void => {
     fileAnswers.delete(path)
     titles.delete(path)
   }
 
-  /** The same, carried to where the file was filed instead. */
   const moveFile = (from: string, to: string): void => {
-    const existing = fileAnswers.get(from)
-    if (existing) fileAnswers.set(to, existing)
-    fileAnswers.delete(from)
-    const title = titles.get(from)
-    if (title !== undefined) titles.set(to, title)
-    titles.delete(from)
+    moveEntry(fileAnswers, from, to)
+    moveEntry(titles, from, to)
   }
 
   return {

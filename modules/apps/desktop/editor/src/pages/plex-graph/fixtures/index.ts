@@ -94,7 +94,7 @@ export const createVault = (takes = true) => {
       made.push([from, relation])
       return takes ? { path: `${title}.md`, title } : null
     },
-    join: async (from, to, relation, label) => {
+    join: async (...[from, to, relation, label]) => {
       if (label !== undefined) joined.push([from, to, relation, label])
       else joined.push([from, to, relation])
       return takes && !notJoinedPaths.has(to)

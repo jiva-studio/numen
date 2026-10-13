@@ -17,27 +17,52 @@ export { useDocumentHighlights } from './useDocumentHighlights'
 /** What one open document holds. */
 export type DocumentReaderState = ReturnType<typeof useDocumentReader>
 
+function useDocumentReaderNavigation(
+  getLayoutPromise: () => Promise<void>,
+  navigation: ReturnType<typeof useDocumentNavigation>,
+  highlights: ReturnType<typeof useDocumentHighlights>,
+) {
+  const goToPage = async (page: number) => {
+    await getLayoutPromise()
+    await navigation.goToPage(page)
+  }
+
+  const goToNextPage = async () => goToPage(navigation.pageNumber.value + 1)
+  const goToPreviousPage = async () => goToPage(navigation.pageNumber.value - 1)
+
+  const focusSpans = async (...spans: readonly Span[]) => {
+    await getLayoutPromise()
+    await highlights.focusSpans(...spans)
+  }
+
+  return { goToPage, goToNextPage, goToPreviousPage, focusSpans }
+}
+
 export function useDocumentReader(documents: Documents, path: string) {
   const pages = shallowRef<readonly Page[]>([])
   const fingerprint = ref<string>()
   const error = ref('')
-
-  /**
-   * Whether the layout is still on its way. No pages is not the same as no
-   * pages yet, and the silence a reader puts up says the wrong one of the two.
-   */
   const isLoading = ref(true)
   let open = true
 
   const navigation = useDocumentNavigation(pages)
-  const viewport = useDocumentViewport(
-    documents,
-    path,
+  const viewport = useDocumentViewport(documents, path, {
     pages,
-    navigation.pageNumber,
+    pageNumber: navigation.pageNumber,
     fingerprint,
-    () => open,
-  )
+    isOpen: () => open,
+  })
+
+  let layoutPromise: Promise<void>
+
+  const highlights = useDocumentHighlights(documents, path, {
+    pageNumber: navigation.pageNumber,
+    error,
+    onGoToPage: (page) => nav.goToPage(page),
+    isOpen: () => open,
+  })
+
+  const nav = useDocumentReaderNavigation(() => layoutPromise, navigation, highlights)
 
   const loadLayout = async () => {
     try {
@@ -53,29 +78,7 @@ export function useDocumentReader(documents: Documents, path: string) {
     }
   }
 
-  const layoutPromise = loadLayout()
-
-  const goToPage = async (page: number) => {
-    await layoutPromise
-    await navigation.goToPage(page)
-  }
-
-  const highlights = useDocumentHighlights(
-    documents,
-    path,
-    navigation.pageNumber,
-    error,
-    goToPage,
-    () => open,
-  )
-
-  const goToNextPage = async () => goToPage(navigation.pageNumber.value + 1)
-  const goToPreviousPage = async () => goToPage(navigation.pageNumber.value - 1)
-
-  const focusSpans = async (...spans: readonly Span[]) => {
-    await layoutPromise
-    await highlights.focusSpans(...spans)
-  }
+  layoutPromise = loadLayout()
 
   const close = () => {
     open = false
@@ -94,12 +97,12 @@ export function useDocumentReader(documents: Documents, path: string) {
     getOtherHighlightsOn: highlights.getOtherHighlightsOn,
     error,
     isLoading,
-    goToPage,
-    goToNextPage,
-    goToPreviousPage,
+    goToPage: nav.goToPage,
+    goToNextPage: nav.goToNextPage,
+    goToPreviousPage: nav.goToPreviousPage,
     widen: viewport.widen,
     applyHighlights: highlights.applyHighlights,
-    focusSpans,
+    focusSpans: nav.focusSpans,
     close,
   }
 }

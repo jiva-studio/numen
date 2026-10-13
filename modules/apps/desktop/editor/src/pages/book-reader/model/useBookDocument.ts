@@ -8,13 +8,14 @@ import type { MessageWriter } from '@/shared/notices/messages'
 import { resolveImageUrls } from '../lib/markup'
 import type { Books, SpineDocument } from '../types'
 
-export function useBookDocument(
-  books: Books,
-  path: string,
-  fingerprint: Ref<string>,
-  writeMessage: MessageWriter,
-  isOpen: () => boolean,
-) {
+export interface BookDocumentOptions {
+  fingerprint: Ref<string>
+  writeMessage: MessageWriter
+  isOpen: () => boolean
+}
+
+export function useBookDocument(books: Books, path: string, options: BookDocumentOptions) {
+  const { fingerprint, writeMessage, isOpen } = options
   const markup = ref('')
   const drawnDocument = shallowRef<SpineDocument | undefined>(undefined)
 

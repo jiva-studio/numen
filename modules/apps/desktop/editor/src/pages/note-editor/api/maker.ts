@@ -82,11 +82,17 @@ export interface NoteRef {
   readonly title: string
 }
 
-export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
-  /**
-   * One note asked for. A name the vault has already filed is handed back as
-   * `occupied` for the caller to answer for.
-   */
+function createNoteFactory(core: NoteMaker, writeMessage: MessageWriter) {
+  const reportNoteResult = (result: NoteRef | ErrorCode | null): NoteRef | null => {
+    if (result === null) return null
+    if (typeof result === 'string') {
+      writeMessage(words[result], 'error')
+      return null
+    }
+    writeMessage('')
+    return result
+  }
+
   async function createNote(
     title: string,
     folder: string,
@@ -102,13 +108,6 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
     }
   }
 
-  /**
-   * A note under the first name the vault has free.
-   *
-   * The name is asked for again for as long as the vault answers that it is
-   * taken: whether a name is free is the filesystem's to answer at the moment
-   * the file is made, so it is asked one name at a time.
-   */
   async function createUntitled(folder: string, links: readonly Link[]): Promise<NoteRef | null> {
     for (let taken = 1; taken <= names; taken++) {
       const made = await createNote(createNumberedName(taken), folder, links)
@@ -119,10 +118,6 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
     return null
   }
 
-  /**
-   * A note under the name a person gave it: in a relation of another note, filed
-   * beside it, or on its own at the top of the vault.
-   */
   async function createWithTitle(
     title: string,
     from: string,
@@ -133,33 +128,18 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
     return reportNoteResult(await createNote(title, from ? getParentFolder(from) : '', links))
   }
 
-  /** Create a note in a relation of another one, filed in the folder that one is in. */
   async function createInRelation(from: string, relation: PlexRelation): Promise<NoteRef | null> {
     const links = resolveRelationLinks(from, relation)
     if (!links) return null
     return createUntitled(getParentFolder(from), links)
   }
 
-  /** What a note that was asked for came to, said to the person where it failed. */
-  const reportNoteResult = (result: NoteRef | ErrorCode | null): NoteRef | null => {
-    if (result === null) return null
-    if (typeof result === 'string') {
-      writeMessage(words[result], 'error')
-      return null
-    }
-    writeMessage('')
-    return result
-  }
+  return { createInRelation, createUntitled, createWithTitle }
+}
 
-  /**
-   * Join two notes that are both there. The link is written in the one the
-   * gesture came from, and says where the other sits.
-   */
+function createNoteLinkWriter(core: NoteMaker, writeMessage: MessageWriter) {
   async function join(
-    from: string,
-    to: string,
-    relation: PlexRelation,
-    label?: string,
+    ...[from, to, relation, label]: [string, string, PlexRelation, string?]
   ): Promise<boolean> {
     const role = getRole(relation)
     if (!role) return false
@@ -181,9 +161,6 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
     }
   }
 
-  /**
-   * Remove a relationship from one note.
-   */
   async function removeLink(from: string, to: string, relation?: PlexRelation): Promise<boolean> {
     const role = relation ? getRole(relation) : undefined
     try {
@@ -200,11 +177,6 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
     }
   }
 
-  /**
-   * Make the links between two notes exactly the ones given. A relation that is
-   * not a role a link can carry refuses the whole set, and a refusal from the
-   * core is said to the person.
-   */
   async function replaceLinks(
     first: string,
     second: string,
@@ -230,13 +202,13 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
     }
   }
 
+  return { join, removeLink, replaceLinks }
+}
+
+export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
   return {
-    createInRelation,
-    createUntitled,
-    createWithTitle,
-    join,
-    removeLink,
-    replaceLinks,
+    ...createNoteFactory(core, writeMessage),
+    ...createNoteLinkWriter(core, writeMessage),
   }
 }
 

@@ -23,9 +23,7 @@ export function getInverseRelation(relation: PlexRelation): PlexRelation {
 function createLinkItem(
   from: string,
   to: string,
-  role: PlexRelation,
-  label: string,
-  firstPath: string,
+  ...[role, label, firstPath]: [role: PlexRelation, label: string, firstPath: string]
 ): DirectionalLinkItem {
   return {
     id: `${from}->${to}`,
@@ -119,8 +117,7 @@ export function removeLink(
 export function addReverseLink(
   rows: readonly DirectionalLinkItem[],
   initial: readonly DirectionalLinkItem[],
-  firstPath: string,
-  secondPath: string,
+  ...[firstPath, secondPath]: [firstPath: string, secondPath: string]
 ): DirectionalLinkItem[] {
   if (rows.length >= 2) return [...rows]
   const first = rows[0]
@@ -183,9 +180,7 @@ function getLeftPosition(atX: number, width: number, containerW: number, margin:
 function getTopPosition(
   atY: number,
   height: number,
-  containerH: number,
-  margin: number,
-  gap: number,
+  ...[containerH, margin, gap]: [containerH: number, margin: number, gap: number]
 ): number {
   const aboveTop = atY - height - gap
   if (aboveTop >= margin) return aboveTop

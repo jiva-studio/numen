@@ -14,18 +14,12 @@ import PlexTab from './ui/PlexTab.vue'
 /** What a plex tab is called: the note it stands on. */
 const getPlexTitle = (note: string): string => note || words.plex
 
-/**
- * Manages window-level plex tab operations and navigation.
- */
-export function createPlexKind(
-  handle: WindowHandle,
+function createPlexTabDefinition(
   createView: () => PlexView,
   deps: PlexTabDeps,
-) {
-  const getAll = () => handle.each<PlexTabState>(PLEX)
-  const front = (): PlexTabState | null => handle.last<PlexTabState>(PLEX)?.state ?? null
-
-  const kind: TabKind<PlexTabState, typeof PLEX> = {
+  getCurrentPath: () => string,
+): TabKind<PlexTabState, typeof PLEX> {
+  return {
     kind: PLEX,
     open: (at) => {
       const current: { state?: PlexTabState } = {}
@@ -59,10 +53,22 @@ export function createPlexKind(
     },
     getOpenTab: (state) => ({ path: state.view.here.value }),
   }
+}
 
+/**
+ * Manages window-level plex tab operations and navigation.
+ */
+export function createPlexKind(
+  handle: WindowHandle,
+  createView: () => PlexView,
+  deps: PlexTabDeps,
+) {
+  const getAll = () => handle.each<PlexTabState>(PLEX)
+  const front = (): PlexTabState | null => handle.last<PlexTabState>(PLEX)?.state ?? null
   const getCurrentPath = (): string => front()?.view.here.value ?? ''
-
   const getName = (path: string): string => (path ? (front()?.getName(path) ?? '') : '')
+
+  const kind = createPlexTabDefinition(createView, deps, getCurrentPath)
 
   const travel = async (path: string) => {
     const one = handle.last<PlexTabState>(PLEX)

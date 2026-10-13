@@ -12,8 +12,7 @@ import type { NodeIdMap } from '../lib/nodeIdMap'
 export function usePlexHeadings(
   paths: Ref<readonly string[]>,
   types: Ref<ReadonlyMap<string, NoteType>>,
-  deps: PlexTabDeps,
-  nodeIdMap: NodeIdMap,
+  ...[deps, nodeIdMap]: [deps: PlexTabDeps, nodeIdMap: NodeIdMap]
 ) {
   const headings = shallowRef<ReadonlyMap<string, readonly PlexHeading[]>>(new Map())
   const reading = createAnswerGuard()

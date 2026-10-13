@@ -17,17 +17,19 @@ type NoteChanges = ReturnType<typeof createNoteChanges>
 type NoteKeyboard = ReturnType<typeof createNoteKeyboard>
 type NoteTitles = ReturnType<typeof createNoteTitles>
 
+export interface CreateNoteTabDeps {
+  notes: Notes
+  changes: NoteChanges
+  keyboard: NoteKeyboard
+  vault: NoteTabDeps
+  names: NoteTitles
+  handle: WindowHandle
+  tabOpeners: FileOpeners
+}
+
 /** Creates the reactive state for an open note tab. */
-export function createNoteTab(
-  id: string,
-  notes: Notes,
-  changes: NoteChanges,
-  keyboard: NoteKeyboard,
-  vault: NoteTabDeps,
-  names: NoteTitles,
-  handle: WindowHandle,
-  tabOpeners: FileOpeners,
-): NoteTabState {
+export function createNoteTab(id: string, deps: CreateNoteTabDeps): NoteTabState {
+  const { notes, changes, keyboard, vault, names, handle, tabOpeners } = deps
   const closeTab = (tab: string) => {
     keyboard.cancelFocusRequest(id)
     changes.closeNote(notes.getPath(id))

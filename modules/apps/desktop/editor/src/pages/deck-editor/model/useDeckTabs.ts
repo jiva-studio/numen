@@ -32,21 +32,79 @@ import type { DeckTabState } from '../types'
 
 export type { DeckTabState }
 
-export interface DeckTabsDeps {
+export interface DeckTabsOptions {
+  handle: WindowHandle
+  tabOpeners: FileOpeners
   now?: () => number
 }
 
-export function useDeckTabs(
-  cards: Cards,
-  presets: Presets,
-  handle: WindowHandle,
-  tabOpeners: FileOpeners,
-  deps?: DeckTabsDeps,
-) {
+export function useDeckTabs(cards: Cards, presets: Presets, options: DeckTabsOptions) {
+  const { handle, tabOpeners, now = () => 0 } = options
   const vaultAnswers = createDeckAnswers()
-  const now = deps?.now ?? (() => 0)
+  const store = createDeckNoteStore(cards, vaultAnswers, now)
+  const read = createDeckReader(store, vaultAnswers.getProblems)
+  const wiring = useDeckScheduleSync(cards, presets, store)
+  const { createDeckTabState } = createDeckTabFactory({
+    store,
+    read,
+    vaultAnswers,
+    wiring,
+    handle,
+  })
+  const tabIds = createDeckTabIdManager(store)
+  const kept = createDeckStoreProxy(store, vaultAnswers, handle)
 
-  const store = openNotes(
+  const kind = createDeckKind({
+    cardTabPathMap: tabIds.cardTabPathMap,
+    pendingTabIds: tabIds.pendingTabIds,
+    store,
+    vaultAnswers,
+    listStencils: wiring.listStencils,
+    listPresets: wiring.scheduled.listPresets,
+    listStencilsAgain: wiring.listStencilsAgain,
+    listPresetsAgain: wiring.scheduled.listPresetsAgain,
+    refreshDeckPreset: wiring.scheduled.refreshDeckPreset,
+    createDeckTabState,
+  })
+
+  const openDeckTab = (path: string, title: string, how: PlexDestination): void => {
+    const id = tabIds.getOrCreateTabId(path)
+    if (title) vaultAnswers.setTitle(path, title)
+    void (how === 'beside' ? handle.openTabBeside(DECK, id) : handle.openTab(DECK, id))
+  }
+  tabOpeners.registerEditor('deck', openDeckTab)
+
+  const applyPathChanges = (
+    paths: readonly string[],
+    // Stryker disable next-line ArrayDeclaration: an entry that is not a rename names no file, and every walk over renames skips it.
+    renames: readonly PathRename[] = [],
+  ): void => {
+    for (const rename of renames) vaultAnswers.moveFile(rename.from, rename.to)
+    store.applyPathChanges(paths, renames)
+    wiring.applyPathChanges(paths, renames)
+  }
+
+  return {
+    kind,
+    createDeckTabState,
+    applyPathChanges,
+    listStencils: wiring.listStencils,
+    getTitle: vaultAnswers.getTitle,
+    kept,
+    getOpenIds: store.getOpenIds,
+    getOpenNote: store.getOpenNote,
+    keep: store.keep,
+    take: store.take,
+    flush: store.flush,
+  }
+}
+
+function createDeckNoteStore(
+  cards: Cards,
+  vaultAnswers: ReturnType<typeof createDeckAnswers>,
+  now: () => number,
+) {
+  return openNotes(
     {
       read: async (path) => {
         const answer = await cards.readDeck(path)
@@ -94,14 +152,21 @@ export function useDeckTabs(
     },
     { now },
   )
+}
 
-  const read = createDeckReader(store, vaultAnswers.getProblems)
+interface DeckTabStateFactoryDeps {
+  store: ReturnType<typeof openNotes>
+  read: ReturnType<typeof createDeckReader>
+  vaultAnswers: ReturnType<typeof createDeckAnswers>
+  wiring: ReturnType<typeof useDeckScheduleSync>
+  handle: WindowHandle
+}
+
+function createDeckTabFactory(deps: DeckTabStateFactoryDeps) {
+  const { store, read, vaultAnswers, wiring, handle } = deps
   const { getDeck, getMarks } = read
-
-  const wiring = useDeckScheduleSync(cards, presets, store)
-  const { offers, stencils, listStencils, listStencilsAgain, scheduled } = wiring
-  const { choices, listPresets, listPresetsAgain, refreshDeckPreset, scheduleDeck, getDeckPreset } =
-    scheduled
+  const { offers, stencils, scheduled } = wiring
+  const { choices, scheduleDeck, getDeckPreset } = scheduled
 
   const updateDeckState = (id: string, deck: BufferDeck): void => {
     const body = serializeBufferDeckToString(deck)
@@ -109,9 +174,19 @@ export function useDeckTabs(
     store.setBody(id, body)
   }
 
+  const forgetPath = (path: string): void => {
+    if (store.getOpenIds().some((one) => store.getPath(one) === path)) return
+    vaultAnswers.forgetFile(path)
+    scheduled.forgetFile(path)
+  }
+
   const createDeckTabState = (id: string): DeckTabState => {
     const deck = computed(() => getDeck(id))
-    const actions = createDeckTabActions(id, getDeck, updateDeckState, () => offers.value)
+    const actions = createDeckTabActions(id, {
+      getDeck,
+      updateDeck: updateDeckState,
+      getOffers: () => offers.value,
+    })
 
     return {
       id,
@@ -143,18 +218,19 @@ export function useDeckTabs(
     }
   }
 
-  const forgetPath = (path: string): void => {
-    if (store.getOpenIds().some((one) => store.getPath(one) === path)) return
-    vaultAnswers.forgetFile(path)
-    scheduled.forgetFile(path)
-  }
+  return { createDeckTabState, updateDeckState, forgetPath }
+}
 
+function createDeckStoreProxy(
+  store: ReturnType<typeof openNotes>,
+  vaultAnswers: ReturnType<typeof createDeckAnswers>,
+  handle: WindowHandle,
+): Store {
   const closeTabById = (id: string): void => {
     const tab = handle.each<DeckTabState>(DECK).find((one) => one.state.id === id)
     tab?.state.close(tab.id)
   }
-
-  const kept: Store = {
+  return {
     has: (id) => store.getOpenIds().includes(id),
     getPath: (id) => store.getPath(id),
     getTitle: (id) => vaultAnswers.getTitle(store.getPath(id)),
@@ -163,11 +239,12 @@ export function useDeckTabs(
     close: closeTabById,
     getTabAt: (path) => store.getOpenIds().find((id) => store.getPath(id) === path) ?? null,
   }
+}
 
+function createDeckTabIdManager(store: ReturnType<typeof openNotes>) {
   const tabbed = computed<ReadonlyMap<string, string>>(
     () => new Map(store.getOpenIds().map((one) => [store.getPath(one), one])),
   )
-
   const pendingTabIds = new Map<string, string>()
   const cardTabPathMap = new Map<string, string>()
 
@@ -180,50 +257,5 @@ export function useDeckTabs(
     return one
   }
 
-  const kind = createDeckKind({
-    cardTabPathMap,
-    pendingTabIds,
-    store,
-    vaultAnswers,
-    listStencils,
-    listPresets,
-    listStencilsAgain,
-    listPresetsAgain,
-    refreshDeckPreset,
-    createDeckTabState,
-  })
-
-  const openDeckTab = (path: string, title: string, how: PlexDestination): void => {
-    const id = getOrCreateTabId(path)
-    if (title) vaultAnswers.setTitle(path, title)
-    void (how === 'beside' ? handle.openTabBeside(DECK, id) : handle.openTab(DECK, id))
-  }
-
-  tabOpeners.registerEditor('deck', openDeckTab)
-
-  const applyPathChanges = (
-    paths: readonly string[],
-    // Stryker disable next-line ArrayDeclaration: an entry that is not a rename names no file, and every walk over renames skips it.
-    renames: readonly PathRename[] = [],
-  ): void => {
-    for (const rename of renames) {
-      vaultAnswers.moveFile(rename.from, rename.to)
-    }
-    store.applyPathChanges(paths, renames)
-    wiring.applyPathChanges(paths, renames)
-  }
-
-  return {
-    kind,
-    createDeckTabState,
-    applyPathChanges,
-    listStencils,
-    getTitle: vaultAnswers.getTitle,
-    kept,
-    getOpenIds: store.getOpenIds,
-    getOpenNote: store.getOpenNote,
-    keep: store.keep,
-    take: store.take,
-    flush: store.flush,
-  }
+  return { pendingTabIds, cardTabPathMap, getOrCreateTabId }
 }
