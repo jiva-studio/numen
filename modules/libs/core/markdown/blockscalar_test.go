@@ -51,7 +51,7 @@ func TestAHashLineInsideABlockScalarIsTheValue(t *testing.T) {
 			if err != nil {
 				t.Fatalf("the note stopped being readable: %v\n%s", err, got)
 			}
-			links, err := again.Links()
+			links, err := readLinks(again)
 			if err != nil {
 				t.Fatalf("links: %v", err)
 			}

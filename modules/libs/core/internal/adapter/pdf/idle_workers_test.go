@@ -1,6 +1,8 @@
 package pdf
 
 import (
+	"fmt"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -176,4 +178,12 @@ func TestAReleaseCannotCloseAPoolADocumentHasAcquired(t *testing.T) {
 		t.Fatal(err)
 	}
 	putWorker(worker)
+}
+
+func openPath(path string) (*document, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("pdf: %w", err)
+	}
+	return openReader(file)
 }

@@ -53,7 +53,7 @@ func TestWhatAnAnswerCostsIsTheMiddleOfTheAnswers(t *testing.T) {
 		}
 	})
 
-	cost := review.GetCost(by, answers)
+	cost := getCost(by, answers)
 	if cost.New != 3*time.Second {
 		t.Errorf("a card being learned costs %v, want 3s", cost.New)
 	}
@@ -74,7 +74,7 @@ func TestAHistoryTooShortToSayStandsAtTheDefault(t *testing.T) {
 	// One card face answered once, for fifty-five seconds.
 	answers := makeAnswers(at, 1, 1, func(int, int) time.Duration { return 55 * time.Second })
 
-	cost := review.GetCost(by, answers)
+	cost := getCost(by, answers)
 	if cost != review.DefaultCost {
 		t.Errorf("cost = %+v, want the default %+v", cost, review.DefaultCost)
 	}
@@ -93,7 +93,7 @@ func TestACostOfOneKindLeavesTheOtherAtTheDefault(t *testing.T) {
 	// to a card that comes round in days.
 	answers := makeAnswers(at, 12, 2, func(int, int) time.Duration { return 30 * time.Second })
 
-	cost := review.GetCost(by, answers)
+	cost := getCost(by, answers)
 	if cost.New != 30*time.Second || !cost.ShouldReadNew {
 		t.Errorf("a card being learned costs %v, read %t, want 30s read", cost.New, cost.ShouldReadNew)
 	}
@@ -111,7 +111,7 @@ func TestAKindOfAnswerIsNeverCostedBelowTheShortest(t *testing.T) {
 
 	answers := makeAnswers(at, 12, 3, func(int, int) time.Duration { return 20 * time.Millisecond })
 
-	cost := review.GetCost(by, answers)
+	cost := getCost(by, answers)
 	if cost.New != review.ShortestAnswer || cost.Review != review.ShortestAnswer {
 		t.Errorf("cost = %+v, want both halves at %v", cost, review.ShortestAnswer)
 	}
@@ -127,7 +127,7 @@ func TestAnAnswerNobodySatThroughIsCappedAtTheLongest(t *testing.T) {
 	// what one answer is capped at.
 	answers := makeAnswers(at, 12, 3, func(int, int) time.Duration { return time.Hour })
 
-	cost := review.GetCost(by, answers)
+	cost := getCost(by, answers)
 	if cost.New != review.LongestAnswer || cost.Review != review.LongestAnswer {
 		t.Errorf("cost = %+v, want both halves at %v", cost, review.LongestAnswer)
 	}
@@ -136,7 +136,7 @@ func TestAnAnswerNobodySatThroughIsCappedAtTheLongest(t *testing.T) {
 // A vault holding no answer times is projected at the default, and not at
 // nothing a minute.
 func TestAVaultHoldingNoAnswerTimesIsProjectedAtTheDefault(t *testing.T) {
-	if got := review.GetCost(review.NewFSRS(), nil); got != review.DefaultCost {
+	if got := getCost(review.NewFSRS(), nil); got != review.DefaultCost {
 		t.Errorf("cost = %+v, want the default %+v", got, review.DefaultCost)
 	}
 }
@@ -156,8 +156,22 @@ func TestAnAnswerCarryingNoTimeSaysNothingAboutItsKind(t *testing.T) {
 		return 9 * time.Second
 	})
 
-	cost := review.GetCost(by, answers)
+	cost := getCost(by, answers)
 	if cost.New != 9*time.Second || cost.Review != 9*time.Second {
 		t.Errorf("cost = %+v, want both halves at 9s", cost)
 	}
+}
+
+// getCost is the cost of the answers taken as one group.
+func getCost(by review.Scheduler, answers []review.Answer) review.AnswerCost {
+	const group = "all"
+	under := make(map[review.CardFaceID]string)
+	for _, a := range answers {
+		under[a.CardFace] = group
+	}
+	costs := review.GetCostUnder(by, answers, under)
+	if cost, ok := costs[group]; ok {
+		return cost
+	}
+	return review.DefaultCost
 }
