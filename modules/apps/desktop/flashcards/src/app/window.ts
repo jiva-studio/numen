@@ -22,8 +22,8 @@ import type { Grade } from '@/entities/card'
 import type { NotesPanel, Report } from '@/pages/session'
 
 export interface WindowDeps {
-  now?: () => number
-  today?: () => Date
+  now?: (() => number) | undefined
+  today?: (() => Date) | undefined
 }
 
 /** Everything the window is made of, made once and handed to what draws it. */

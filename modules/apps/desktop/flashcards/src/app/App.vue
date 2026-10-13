@@ -20,8 +20,8 @@ import { useWindow } from './window'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  now?: () => number
-  today?: () => Date
+  now?: (() => number) | undefined
+  today?: (() => Date) | undefined
 }>()
 
 /* --------------------------------- State ---------------------------------- */
