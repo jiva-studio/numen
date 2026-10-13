@@ -906,5 +906,313 @@ func TestRenamingTheLastSectionKeepsTheFinalNewline(t *testing.T) {
 				t.Errorf("rename changed more than the heading\n want %q\n  got %q", want, got)
 			}
 		})
+||||||| c4896c2fb
+
+// A deck whose frontmatter is never closed holds no prose to write to: every
+// change is refused with the markdown package's ErrUnterminated, and nothing is
+// written.
+func TestAChangeToADeckWithUnclosedFrontmatterIsRefused(t *testing.T) {
+	raw := "---\ntype: deck\n\n# Fur\n\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n" +
+		"## Bare\n\n[[Animal]]\n\n### Name\n\nBare\n"
+	stencils := map[string]format.Stencil{"Animal": {Fields: []string{"Name"}}}
+	createID := func() domain.CardID { return "m9n8b7v6c5" }
+
+	for name, change := range map[string]func(*format.DeckFile) error{
+		"whole": func(f *format.DeckFile) error {
+			given, err := f.Whole(stencils, createID)
+			if given != nil {
+				t.Errorf("marks given = %+v, want none", given)
+			}
+			return err
+		},
+		"set a value": func(f *format.DeckFile) error { return f.SetValue(llama, "Name", "Lama") },
+		"set a stencil": func(f *format.DeckFile) error {
+			return f.SetStencil(llama, "Beast")
+		},
+		"remove a value": func(f *format.DeckFile) error { return f.RemoveValue(llama, "Name") },
+		"remove a card":  func(f *format.DeckFile) error { return f.RemoveCard(llama) },
+		"rename a section": func(f *format.DeckFile) error {
+			return f.RenameSection(0, "Furred")
+		},
+		"remove a section": func(f *format.DeckFile) error { return f.RemoveSection(0) },
+		"add a section":    func(f *format.DeckFile) error { return f.AddSection(format.Section{Name: "New"}) },
+		"add a card":       func(f *format.DeckFile) error { return f.AddCard(format.Card{Heading: "Camel"}) },
+		"add a card under": func(f *format.DeckFile) error {
+			return f.AddCardUnder(0, format.Card{Heading: "Camel"})
+		},
+		"rename a field": func(f *format.DeckFile) error {
+			n, err := f.RenameField(map[string]string{"Animal": "Animal"}, "Animal", "Name", "Title")
+			if n != 0 {
+				t.Errorf("renamed %d, want 0", n)
+			}
+			return err
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			f, err := format.OpenDeck([]byte(raw))
+			if err != nil {
+				t.Fatalf("open: %v", err)
+			}
+			if err := change(f); !errors.Is(err, markdown.ErrUnterminated) {
+				t.Errorf("err = %v, want ErrUnterminated", err)
+			}
+			if string(f.Bytes()) != raw {
+				t.Error("a refused change was written anyway")
+			}
+		})
+	}
+}
+
+// Making a deck whole through its file writes the marks into the file and says
+// which cards were given one.
+func TestDeckFileWholeWritesTheMarksItGives(t *testing.T) {
+	f := format.OpenDeckBody("## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n")
+	given, err := f.Whole(map[string]format.Stencil{"Animal": {Fields: []string{"Name"}}},
+		func() domain.CardID { return "m9n8b7v6c5" })
+	if err != nil {
+		t.Fatalf("whole: %v", err)
+	}
+	if want := []format.CardMark{{Card: 0, Mark: "m9n8b7v6c5"}}; !slices.Equal(given, want) {
+		t.Errorf("given = %+v, want %+v", given, want)
+	}
+	if want := "## Llama ^m9n8b7v6c5\n\n[[Animal]]\n\n### Name\n\nLlama\n"; f.Body() != want {
+		t.Errorf("body\n want %q\n  got %q", want, f.Body())
+	}
+}
+
+// A card that cannot be found is refused before anything is written, whichever
+// change was asked for.
+func TestSetStencilAndRemoveCardOfACardTheDeckDoesNotHold(t *testing.T) {
+	body := "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n"
+	f := format.OpenDeckBody(body)
+	if err := f.SetStencil("wxyz01234t", "Animal"); !errors.Is(err, format.ErrNoSuchCard) {
+		t.Errorf("set stencil = %v, want ErrNoSuchCard", err)
+	}
+	if err := f.RemoveCard("wxyz01234t"); !errors.Is(err, format.ErrNoSuchCard) {
+		t.Errorf("remove card = %v, want ErrNoSuchCard", err)
+	}
+	if f.Body() != body {
+		t.Error("a card that is not there was written anyway")
+	}
+}
+
+// The marks of the cards the tests below write by hand.
+const (
+	markA = "aaaaaaaaaa"
+	markB = "bbbbbbbbbb"
+)
+
+// Taking the only card of a deck away leaves an empty deck, and taking the last
+// card away from under one character of prose leaves that character on the one
+// break a file ends with.
+func TestRemovingTheLastCardAtTheTopOfTheBody(t *testing.T) {
+	for name, one := range map[string]struct{ raw, want string }{
+		"the only card":    {"## Llama ^aaaaaaaaaa\n\n[[Animal]]\n", ""},
+		"one character up": {"x\n\n## Llama ^aaaaaaaaaa\n", "x\n"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			f := format.OpenDeckBody(one.raw)
+			if err := f.RemoveCard(markA); err != nil {
+				t.Fatalf("remove: %v", err)
+			}
+			if got := f.Body(); got != one.want {
+				t.Errorf("body\n want %q\n  got %q", one.want, got)
+			}
+		})
+	}
+}
+
+// The same holds for a section standing last.
+func TestRemovingTheLastSectionAtTheTopOfTheBody(t *testing.T) {
+	for name, one := range map[string]struct{ raw, want string }{
+		"the only section": {"# Fur\n", ""},
+		"one character up": {"x\n\n# Fur\n", "x\n"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			f := format.OpenDeckBody(one.raw)
+			if err := f.RemoveSection(0); err != nil {
+				t.Fatalf("remove: %v", err)
+			}
+			if got := f.Body(); got != one.want {
+				t.Errorf("body\n want %q\n  got %q", one.want, got)
+			}
+		})
+	}
+}
+
+// A section removed from a file written with carriage returns takes the blank
+// line under its heading with it.
+func TestRemoveSectionOfACrlfDeck(t *testing.T) {
+	raw := strings.ReplaceAll(deck, "\n", "\r\n")
+	f, err := format.OpenDeck([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := f.RemoveSection(0); err != nil {
+		t.Fatalf("remove: %v", err)
+	}
+	want := strings.Replace(raw, "# The ones with fur\r\n\r\n", "", 1)
+	if got := string(f.Bytes()); got != want {
+		t.Errorf("section removed wrong\n want %q\n  got %q", want, got)
+	}
+}
+
+// A card that already names a stencil has the name replaced where it stands.
+func TestSetStencilOnACardThatNamedOne(t *testing.T) {
+	f, err := format.OpenDeck([]byte(deck))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := f.SetStencil(llama, "Beast"); err != nil {
+		t.Fatalf("set the stencil: %v", err)
+	}
+	want := strings.Replace(deck, "[[Animal]]", "[[Beast]]", 1)
+	if got := string(f.Bytes()); got != want {
+		t.Errorf("stencil set wrong\n want %q\n  got %q", want, got)
+	}
+}
+
+// A card with no mark is not the card of the empty mark.
+func TestAnEmptyMarkAddressesNoCard(t *testing.T) {
+	raw := "## Bare\n\n### Name\n\nx\n\n## Llama ^aaaaaaaaaa\n\n### Name\n\ny\n"
+	f := format.OpenDeckBody(raw)
+	if err := f.SetValue("", "Name", "z"); !errors.Is(err, format.ErrNoSuchCard) {
+		t.Errorf("err = %v, want ErrNoSuchCard", err)
+	}
+	if f.Body() != raw {
+		t.Error("a card without a mark was written to")
+	}
+}
+
+// A place before the first section or after the last stands nowhere.
+func TestASectionOutsideTheDeckIsRefused(t *testing.T) {
+	for _, at := range []int{-1, 1} {
+		f := format.OpenDeckBody(deck)
+		if err := f.RenameSection(at, "Nowhere"); !errors.Is(err, format.ErrNoSuchSection) {
+			t.Errorf("rename %d = %v, want ErrNoSuchSection", at, err)
+		}
+		if err := f.RemoveSection(at); !errors.Is(err, format.ErrNoSuchSection) {
+			t.Errorf("remove %d = %v, want ErrNoSuchSection", at, err)
+		}
+		if err := f.AddCardUnder(at, format.Card{Heading: "Camel"}); !errors.Is(err, format.ErrNoSuchSection) {
+			t.Errorf("add under %d = %v, want ErrNoSuchSection", at, err)
+		}
+		if f.Body() != deck {
+			t.Errorf("a section at %d that is not there was written to", at)
+		}
+	}
+}
+
+// A section whose heading ends the file is renamed without a break the file did
+// not end with.
+func TestRenamingTheLastSectionWhoseHeadingEndsTheFile(t *testing.T) {
+	f := format.OpenDeckBody("# One\n\n## Llama ^aaaaaaaaaa\n\n# Last")
+	if err := f.RenameSection(1, "Final"); err != nil {
+		t.Fatalf("rename: %v", err)
+	}
+	if want := "# One\n\n## Llama ^aaaaaaaaaa\n\n# Final"; f.Body() != want {
+		t.Errorf("body\n want %q\n  got %q", want, f.Body())
+	}
+}
+
+// A card asked into a section is written at the end of it: in front of the
+// section after it, or at the end of the deck where none follows.
+func TestAddCardUnderASectionWritesAtItsEnd(t *testing.T) {
+	raw := "# One\n\n## Llama ^aaaaaaaaaa\n\n# Two\n"
+	card := format.Card{Heading: "Camel", Mark: markB}
+
+	first := format.OpenDeckBody(raw)
+	if err := first.AddCardUnder(0, card); err != nil {
+		t.Fatalf("add: %v", err)
+	}
+	if want := "# One\n\n## Llama ^aaaaaaaaaa\n\n## Camel ^bbbbbbbbbb\n\n# Two\n"; first.Body() != want {
+		t.Errorf("body\n want %q\n  got %q", want, first.Body())
+	}
+
+	last := format.OpenDeckBody(raw)
+	if err := last.AddCardUnder(1, card); err != nil {
+		t.Fatalf("add: %v", err)
+	}
+	if want := raw + "\n## Camel ^bbbbbbbbbb\n"; last.Body() != want {
+		t.Errorf("body\n want %q\n  got %q", want, last.Body())
+	}
+}
+
+// A card standing under a section before the first or past the last is refused.
+func TestDeckBodyRefusesACardUnderAPlaceOutsideTheSections(t *testing.T) {
+	for _, at := range []int{-2, 2} {
+		_, err := format.DeckBody(format.Deck{
+			Sections: []format.Section{{Name: "One"}, {Name: "Two"}},
+			Cards:    []format.Card{{Heading: "Llama", Section: at}},
+		})
+		if !errors.Is(err, format.ErrNoSuchSection) {
+			t.Errorf("section %d: body = %v, want ErrNoSuchSection", at, err)
+		}
+	}
+}
+
+// What follows the last value is the deck's tail, and a deck of prose alone has
+// none to take.
+func TestDeckBodyEndsOnTheTailOfTheDeck(t *testing.T) {
+	for name, one := range map[string]struct {
+		deck format.Deck
+		want string
+	}{
+		"prose alone": {format.Deck{Preamble: "Only prose"}, "Only prose\n"},
+		"empty":       {format.Deck{}, ""},
+		"cards alone": {
+			format.Deck{
+				Cards: []format.Card{{Heading: "Llama", Mark: markA, Section: format.NoSection}},
+				Tail:  "\n\nafter",
+			},
+			"## Llama ^aaaaaaaaaa\n\nafter",
+		},
+		"sections alone": {
+			format.Deck{Sections: []format.Section{{Name: "One"}}, Tail: "\n\nafter"},
+			"# One\n\nafter",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			got, err := format.DeckBody(one.deck)
+			if err != nil {
+				t.Fatalf("body: %v", err)
+			}
+			if got != one.want {
+				t.Errorf("body\n want %q\n  got %q", one.want, got)
+			}
+		})
+	}
+}
+
+// Only the cards cut by the stencil are renamed, whichever order they stand in,
+// and a card whose link lands on another stencil keeps its field.
+func TestRenameFieldSkipsTheCardsOfOtherStencils(t *testing.T) {
+	raw := "## Compost ^zpqrstvwxy\n\n[[Term]]\n\n### Name\n\nx\n\n" +
+		"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n"
+	f := format.OpenDeckBody(raw)
+	n, err := f.RenameField(
+		map[string]string{"Term": "Term.md", "Animal": "Animal.md"}, "Animal.md", "Name", "Title")
+	if err != nil {
+		t.Fatalf("rename: %v", err)
+	}
+	if n != 1 {
+		t.Errorf("renamed = %d, want 1", n)
+	}
+	want := strings.Replace(raw, "### Name\n\nLlama", "### Title\n\nLlama", 1)
+	if f.Body() != want {
+		t.Errorf("body\n want %q\n  got %q", want, f.Body())
+	}
+}
+
+// A field heading that ends the file is renamed without a break the file did
+// not end with.
+func TestRenameFieldOfAHeadingThatEndsTheFile(t *testing.T) {
+	f := format.OpenDeckBody("## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name")
+	n, err := f.RenameField(map[string]string{"Animal": "Animal.md"}, "Animal.md", "Name", "Title")
+	if err != nil {
+		t.Fatalf("rename: %v", err)
+	}
+	if want := "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Title"; n != 1 || f.Body() != want {
+		t.Errorf("renamed %d\n want %q\n  got %q", n, want, f.Body())
 	}
 }
