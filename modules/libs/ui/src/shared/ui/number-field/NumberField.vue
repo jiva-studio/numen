@@ -7,10 +7,10 @@
  * once the field is left. Bounds that move under the number bring it in.
  */
 import { computed, nextTick, ref, useTemplateRef, watch, type HTMLAttributes } from 'vue'
+import { clamp } from '@/shared/lib/bounds'
 import { cn } from '@/shared/lib/classes'
 import {
   isAllowed,
-  clamp,
   parseNumber,
   isPartialNumber,
   snapToBounds,

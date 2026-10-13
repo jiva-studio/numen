@@ -16,6 +16,7 @@ import { useDrawnRows } from '../model/rows'
 import { useRowSelection } from '../model/selection'
 import type { Position } from '@/shared/lib/geometry'
 import { browserClock, type Clock } from '@/shared/lib/clock'
+import { useRefRegistry } from '@/shared/lib/refs'
 import { DragPreview } from '@/shared/ui/drag-preview'
 import TreeRow from './TreeRow.vue'
 
@@ -103,6 +104,7 @@ const rows = useDrawnRows(
   () => props.selected,
 )
 const { tabbed, setRowElement } = rows
+const { getRef: getRowRef } = useRefRegistry<RowId>(setRowElement)
 
 const selection = useRowSelection(
   () => shown.value,
@@ -153,21 +155,6 @@ const {
   },
   tell: emit,
 })
-
-const rowRefs = new Map<RowId, (element: unknown) => void>()
-
-/* -------------------------------- Helpers --------------------------------- */
-function getRowRef(rowId: RowId): (element: unknown) => void {
-  let refCallback = rowRefs.get(rowId)
-  if (!refCallback) {
-    refCallback = (element: unknown) => {
-      setRowElement(rowId, element)
-      if (!element) rowRefs.delete(rowId)
-    }
-    rowRefs.set(rowId, refCallback)
-  }
-  return refCallback
-}
 </script>
 
 <template>

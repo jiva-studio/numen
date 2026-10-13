@@ -7,7 +7,8 @@
  * is typing.
  */
 import { nextTick, onBeforeUnmount, onMounted, watch, type Ref, type ShallowRef } from 'vue'
-import { findKeptPlace, stepTo, type PaletteAction } from '../lib/item'
+import { stepTo } from '@/shared/lib/roving'
+import { canLandOn, findKeptPlace, type PaletteAction } from '../lib/item'
 import { isActionsChord } from '../lib/keys'
 import type { PalettePlacesState } from './places'
 
@@ -63,7 +64,7 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
 
   /** The keyboard moved through the places, and what it lands on brought into sight. */
   const stepBy = (by: number, from = places.here.value): void => {
-    places.goTo(stepTo(places.places.value, from, by))
+    places.goTo(stepTo(places.places.value, from, by, canLandOn))
     options.reveal()
   }
 

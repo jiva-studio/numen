@@ -15,6 +15,7 @@ import {
   type Text,
   type TransactionSpec,
 } from '@codemirror/state'
+import { isLeading, isTrailing } from '@/shared/lib/surrogate'
 
 /** Where a position sits in the text a person sees. */
 interface Place {
@@ -46,7 +47,7 @@ const difference = (was: Text, now: Text): ChangeSpec => {
   let head = 0
   while (before.charCodeAt(head) === after.charCodeAt(head)) head += 1
   // A pair standing for one character is not cut between its halves.
-  if (lone(before.charCodeAt(head - 1))) head -= 1
+  if (isLeading(before.charCodeAt(head - 1))) head -= 1
 
   let tail = 0
   while (
@@ -63,12 +64,6 @@ const difference = (was: Text, now: Text): ChangeSpec => {
     insert: after.slice(head, after.length - tail),
   }
 }
-
-/** The leading half of a pair standing for one character. */
-const lone = (code: number) => code >= 0xd800 && code <= 0xdbff
-
-/** The trailing half of one. */
-const isTrailing = (code: number) => code >= 0xdc00 && code <= 0xdfff
 
 /** The text of `fresh`, put in over what the state holds. */
 export const replace = (state: EditorState, fresh: string): TransactionSpec => {

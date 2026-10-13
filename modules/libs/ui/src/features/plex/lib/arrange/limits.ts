@@ -1,3 +1,4 @@
+import { clamp } from '@/shared/lib/bounds'
 import { RELATION_NAMES, type PlexRelation } from '../relation'
 import { isVertical, type PlexOptions } from './options'
 
@@ -8,8 +9,6 @@ export interface RoleLimits {
 }
 
 export type Limits = Readonly<Record<PlexRelation, RoleLimits>>
-
-const clamp = (value: number, low: number, high: number) => Math.max(low, Math.min(high, value))
 
 /** How many boxes of `size` fit end to end in `room`. */
 const countAlong = (room: number, size: number, gap: number) =>
@@ -57,11 +56,10 @@ export function getLimits(
     Math.max(options.focusSize.width / 2, (perLine * width + (perLine - 1) * options.gap) / 2)
   /** How many lines of a column stand beyond something of this half-width. */
   const columnsBeyond = (clear: number) =>
-    clamp(
-      countAlong(halfWidth - clear - options.focusGap, width, options.lineGap),
-      0,
-      options.maxLines,
-    )
+    clamp(countAlong(halfWidth - clear - options.focusGap, width, options.lineGap), {
+      min: 0,
+      max: options.maxLines,
+    })
 
   const columnsBeside = (perLine: number) => columnsBeyond(rowHalf(perLine))
 
@@ -103,8 +101,7 @@ export function getLimits(
           height,
           options.lineGap,
         ),
-        1,
-        options.maxLines,
+        { min: 1, max: options.maxLines },
       ),
     }),
     () => ({

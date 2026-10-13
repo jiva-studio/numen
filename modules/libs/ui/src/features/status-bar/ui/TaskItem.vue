@@ -20,10 +20,10 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const subtext = computed(() => {
-  if (props.task.state === 'failed' && props.task.errorReason) {
-    return props.task.errorReason
+  if (props.task.state === 'failed' && props.task.error) {
+    return props.task.error
   }
-  return props.task.detail || ''
+  return props.task.about || ''
 })
 
 /* -------------------------------- Handlers -------------------------------- */

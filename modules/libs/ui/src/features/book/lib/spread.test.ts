@@ -2,9 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   GAP,
   getColumn,
-  LARGEST,
-  SMALLEST,
-  clamp,
   NARROWEST,
   columnHeight,
   columnWidth,
@@ -475,14 +472,6 @@ describe('which spread a place falls in, where the gap fills the column', () => 
     const flow = { along: 500, width: 100, gap: GAP, columns: 2 }
     expect(columnWidth(flow)).toBe(0)
     expect(getSpread(flow, 300)).toBe(0)
-  })
-})
-
-describe('how large the text may be set', () => {
-  it('keeps a size inside the bounds it is read between', () => {
-    expect(clamp(1.5, SMALLEST, LARGEST)).toBe(1.5)
-    expect(clamp(0.1, SMALLEST, LARGEST)).toBe(SMALLEST)
-    expect(clamp(9, SMALLEST, LARGEST)).toBe(LARGEST)
   })
 })
 

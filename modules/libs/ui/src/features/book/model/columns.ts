@@ -8,13 +8,13 @@
 import { computed, ref } from 'vue'
 import type { ShallowRef } from 'vue'
 
+import { clamp } from '@/shared/lib/bounds'
 import { useViewport } from '@/shared/lib/viewport'
 import { useBookMarks } from './marks'
 import {
   GAP,
   LARGEST,
   SMALLEST,
-  clamp,
   columnHeight,
   columnWidth,
   countColumns,
@@ -43,7 +43,7 @@ export function useBookColumns(
   getEdge: (of: HTMLElement) => number,
 ) {
   /** How large the text is set, held inside what a book may be read at. */
-  const textSize = computed(() => clamp(props.textSize, SMALLEST, LARGEST))
+  const textSize = computed(() => clamp(props.textSize, { min: SMALLEST, max: LARGEST }))
 
   /** The reading area, taken again whenever it changes. */
   const { viewport, measure } = useViewport(area)
