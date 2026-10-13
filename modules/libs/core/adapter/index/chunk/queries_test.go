@@ -1077,7 +1077,7 @@ func TestKeptVectorsAreFoundByTheHashOfTheirTextUnderTheRecipe(t *testing.T) {
 		hashes = append(hashes, raw)
 	}
 
-	got, err := db.ChunkQueries().GetKeptVectors(t.Context(), recipe, append(hashes, nil, []byte{}))
+	got, err := db.ChunkQueries().GetKeptVectors(t.Context(), recipe, append([][]byte{nil, {}}, hashes...))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1206,5 +1206,81 @@ func TestRecognisedSourcesFailOnAClosedOrBrokenIndex(t *testing.T) {
 	gone := broken(t, func(*index.DB) {}, `ALTER TABLE sources RENAME TO gone`)
 	if _, err := gone.GetRecognisedSources(t.Context(), vaultA, "book"); err == nil {
 		t.Error("an index with no sources answered")
+	}
+}
+
+func TestEveryQueryFailsWhenTheVaultCannotBeLooked(t *testing.T) {
+	ctx := t.Context()
+	q := broken(t, func(*index.DB) {}, `ALTER TABLE vaults RENAME TO gone`)
+	kinds := []domain.SourceKind{domain.KindBook}
+
+	checks := map[string]func() error{
+		"GetFingerprints": func() error { _, err := q.GetFingerprints(ctx, vaultA, "book"); return err },
+		"GetSourcesUnder": func() error { _, err := q.GetSourcesUnder(ctx, vaultA, "p"); return err },
+		"FindLexical":     func() error { _, err := q.FindLexical(ctx, vaultA, "w", kinds, 5, false); return err },
+		"GetNamedPassages": func() error {
+			_, err := q.GetNamedPassages(ctx, vaultA, "w", kinds, 5, false)
+			return err
+		},
+		"FindNearest": func() error {
+			_, err := q.FindNearest(ctx, vaultA, recipe, seedVector(0xF0), nil, 5, -1)
+			return err
+		},
+		"GetUnchunkedSources": func() error { _, err := q.GetUnchunkedSources(ctx, vaultA, "book", 5); return err },
+		"GetSourcesWithOtherRecipe": func() error {
+			_, err := q.GetSourcesWithOtherRecipe(ctx, vaultA, "book", []string{"r"}, 5)
+			return err
+		},
+		"GetUnembeddedChunks": func() error { _, err := q.GetUnembeddedChunks(ctx, vaultA, recipe, 0, 0, 0, 5); return err },
+		"GetProgress":         func() error { _, _, err := q.GetProgress(ctx, vaultA, recipe); return err },
+		"GetRecognisedSources": func() error {
+			_, err := q.GetRecognisedSources(ctx, vaultA, "book")
+			return err
+		},
+	}
+	for name, check := range checks {
+		if err := check(); err == nil {
+			t.Errorf("%s answered although the vault could not be looked up", name)
+		}
+	}
+
+	p, found, err := q.Passage(ctx, vaultA, 1)
+	if err == nil || found || p != (chunk.Passage{}) {
+		t.Errorf("Passage answered %+v, %v, %v", p, found, err)
+	}
+	text, found, err := q.GetSourceText(ctx, vaultA, "p")
+	if err == nil || found || text != (chunk.SourceText{}) {
+		t.Errorf("GetSourceText answered %+v, %v, %v", text, found, err)
+	}
+	held, embedded, err := q.GetProgress(ctx, vaultA, recipe)
+	if err == nil || held != 0 || embedded != 0 {
+		t.Errorf("GetProgress answered %d, %d, %v", held, embedded, err)
+	}
+}
+
+func TestACursorOfOneIsAPositionAndNotTheStart(t *testing.T) {
+	db := openIndex(t)
+	source{path: "lib/a.epub", mtime: century, large: "l", smalls: []string{"a1"}}.save(t, db)
+	for _, cursor := range [][3]int64{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}} {
+		got, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vaultA, recipe, cursor[0], cursor[1], cursor[2], 10)
+		if err != nil || len(got) != 0 {
+			t.Errorf("cursor %v owes %d, %v", cursor, len(got), err)
+		}
+	}
+}
+
+func TestASourceModifiedAtTheLatestInstantIsStillWalked(t *testing.T) {
+	db := openIndex(t)
+	source{path: "lib/last.epub", mtime: math.MaxInt64, large: "l", smalls: []string{"x"}}.save(t, db)
+	got, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vaultA, recipe, 0, 0, 0, 10)
+	if err != nil || len(got) != 1 {
+		t.Errorf("a walk from the start owes %d, %v", len(got), err)
+	}
+}
+
+func TestASearchByMeaningThatNothingReachesAnswersWithNoPassages(t *testing.T) {
+	got, err := meaningFixture(t).ChunkQueries().FindNearest(t.Context(), vaultA, recipe, seedVector(0xF0), nil, 5, 2)
+	if err != nil || got != nil {
+		t.Errorf("a floor nothing reaches answered %v, %v", got, err)
 	}
 }
