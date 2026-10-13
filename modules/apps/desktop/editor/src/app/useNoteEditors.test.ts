@@ -100,7 +100,10 @@ describe('the note editors', () => {
     const { core } = create()
 
     expect(h.calls.openNotes[0]).toBe(core)
-    expect(h.calls.openNotes[1]).toEqual({ onReplaced: h.parts.changes.reportNoteChange })
+    expect(h.calls.openNotes[1]).toEqual({
+      onReplaced: h.parts.changes.reportNoteChange,
+      now: expect.any(Function),
+    })
     expect(h.calls.openNotes[1].onReplaced).toBe(h.parts.changes.reportNoteChange)
   })
 

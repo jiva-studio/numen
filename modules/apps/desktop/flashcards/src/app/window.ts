@@ -21,14 +21,22 @@ import { useWindowStreams } from './useWindowStreams'
 import type { Grade } from '@/entities/card'
 import type { NotesPanel, Report } from '@/pages/session'
 
+export interface WindowDeps {
+  now?: (() => number) | undefined
+  today?: (() => Date) | undefined
+}
+
 /** Everything the window is made of, made once and handed to what draws it. */
-export const useWindow = () => {
+export const useWindow = (deps: WindowDeps = {}) => {
+  const now = deps.now ?? (() => Date.now())
+  const clockDay = deps.today ?? (() => new Date())
+
   /** The vault whose decks are open, and whose cards are being asked. */
   const vault = ref('')
 
   const { notices, showNotice, reportError, setTasks, dismissNotice } = useNotices()
   const { vaults, isCounting, day: today, count, stop } = useReviewCounter({ cards, reportError })
-  const state = useReviewSession({ cards, reportError })
+  const state = useReviewSession({ cards, reportError, now })
   const done = useReviewDays({
     cards,
     reportError,
@@ -36,6 +44,7 @@ export const useWindow = () => {
     // zoomed out is wider in the pixels a layout is measured in than the
     // screen is, and the screen alone would leave the widest grids short.
     widest: () => Math.max(window.screen.width, document.documentElement.clientWidth),
+    now: clockDay,
   })
   const schedules = useVaultPresets({ presets: cards })
 

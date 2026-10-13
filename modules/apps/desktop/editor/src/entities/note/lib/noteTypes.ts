@@ -35,5 +35,5 @@ export interface OpenNotesOptions {
   /** What hears that a note on screen was replaced by what its file holds. */
   onReplaced?(path: string): void
   /** When it is now. */
-  now?(): number
+  now(): number
 }

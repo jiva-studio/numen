@@ -3,6 +3,7 @@ import { effectScope, shallowRef } from 'vue'
 import { afterEach, describe, expect, it } from 'vitest'
 import { useTabDrag, type TabDragState } from './drag'
 import { getPanes } from '../lib/tree'
+import { getRect } from '../lib/drop'
 import type { Tab, Workspace } from '../lib/node'
 import type { Clock } from '@/shared/lib/clock'
 import { createIdFactory, withSpare } from '../fixtures/build'
@@ -72,6 +73,7 @@ function createDrag(options: { getTab?: typeof getTab; hasFrame?: boolean } = {}
       getEdge: () => 10,
       getThreshold: () => 4,
       getClock: () => clock,
+      getRect: (element: Element) => getRect(element.getBoundingClientRect()),
     }),
   )!
 
