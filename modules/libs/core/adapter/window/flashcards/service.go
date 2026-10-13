@@ -66,7 +66,7 @@ func (a *API) WatchCardsDue(
 	repeat := time.NewTicker(wire.Again)
 	defer repeat.Stop()
 
-	counted := a.countVaults(ctx, sortVaults(known))
+	counted := a.countVaults(ctx, known)
 	for counted != nil {
 		select {
 		case one, open := <-counted:
@@ -87,34 +87,17 @@ func (a *API) WatchCardsDue(
 	return nil
 }
 
-// sortVaults is the order the vaults are counted in: the current one, then the
-// rest as the list holds them. A person coming back to this window is most
-// often coming back to the vault they were last in.
-func sortVaults(known []vaults.KnownVault) []domain.Vault {
-	order := make([]domain.Vault, 0, len(known))
-	for _, one := range known {
-		if one.IsCurrent {
-			order = append(order, one.Vault)
-		}
-	}
-	for _, one := range known {
-		if !one.IsCurrent {
-			order = append(order, one.Vault)
-		}
-	}
-	return order
-}
-
 // countVaults works the vaults out, a few at a time, and hands each over as it
 // comes. A vault that takes a minute holds up nothing but the ones behind it in
 // the queue.
-func (a *API) countVaults(ctx context.Context, all []domain.Vault) <-chan *v1.VaultCardsDue {
+func (a *API) countVaults(ctx context.Context, all []vaults.KnownVault) <-chan *v1.VaultCardsDue {
 	counted := make(chan *v1.VaultCardsDue)
 	go func() {
 		defer close(counted)
 		var running sync.WaitGroup
 		room := make(chan struct{}, atOnce)
-		for _, v := range all {
+		for _, one := range all {
+			v := one.Vault
 			select {
 			case room <- struct{}{}:
 			case <-ctx.Done():

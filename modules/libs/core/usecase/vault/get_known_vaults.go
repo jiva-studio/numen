@@ -1,6 +1,8 @@
 package vault
 
 import (
+	"slices"
+
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -19,7 +21,8 @@ type KnownVault struct {
 }
 
 // GetKnownVaults is every vault this installation holds, each with what is true of
-// it now.
+// it now. The current vault comes first and the rest follow as the list holds
+// them.
 //
 // The list remembers where a vault was last seen and which one was opened last;
 // whether the folder is still there is a question for the machine. Every screen
@@ -59,11 +62,16 @@ func (u GetKnownVaults) Execute(showing domain.VaultID) ([]KnownVault, error) {
 
 	known := make([]KnownVault, 0, len(held))
 	for _, v := range held {
-		known = append(known, KnownVault{
+		one := KnownVault{
 			Vault:     v,
 			IsMissing: u.folders.Execute(v),
 			IsCurrent: showing != "" && v.ID == showing,
-		})
+		}
+		if one.IsCurrent {
+			known = slices.Insert(known, 0, one)
+			continue
+		}
+		known = append(known, one)
 	}
 	return known, nil
 }
