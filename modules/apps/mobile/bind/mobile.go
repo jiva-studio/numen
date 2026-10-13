@@ -93,7 +93,7 @@ func Start(dir string) (int, error) {
 		fmt.Fprintln(os.Stderr, "themes:", wrong)
 	}
 	opened.Services.Themes = themes
-	listener, err := listenLocal()
+	listener, err := listenLocal(ctx)
 	if err != nil {
 		stop()
 		_ = opened.Close()
@@ -154,8 +154,8 @@ type localListener struct {
 }
 
 // listenLocal is a listener on a free loopback port.
-func listenLocal() (localListener, error) {
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+func listenLocal(ctx context.Context) (localListener, error) {
+	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
 	if err != nil {
 		return localListener{}, err
 	}

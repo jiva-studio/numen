@@ -15,7 +15,7 @@ func isUnclaimed(ctx context.Context, store port.DerivedStore, name domain.Artif
 	if err != nil {
 		return false
 	}
-	release()
+	port.Close(release)
 	return true
 }
 

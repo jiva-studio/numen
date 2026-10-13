@@ -38,66 +38,57 @@ func Begin(ctx context.Context, db *sql.DB) (*Transaction, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Transaction{Tx: tx, ready: map[string]*sql.Stmt{}}, nil
+	return &Transaction{Tx: tx}, nil
 }
 
-// Transaction is a write transaction and the statements prepared inside it.
-//
-// SQLite reads the text of a statement each time one is prepared, and the
-// driver prepares afresh for every Exec. A transaction that spans five hundred
-// notes runs the same two dozen statements five hundred times over, so each of
-// them is prepared here on its first use and run again after that.
-//
-// A prepared statement belongs to the transaction it was prepared in and is
-// closed with it, on commit and on rollback alike.
+// Transaction is a write transaction.
 type Transaction struct {
 	*sql.Tx
-	ready map[string]*sql.Stmt
 }
 
 func (t *Transaction) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	//nolint:sqlclosecheck // the statement is the transaction's and is closed with it
-	prepared, err := t.prepare(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	return prepared.ExecContext(ctx, args...)
+	var out sql.Result
+	err := prepare(ctx, t.Tx, query, func(stmt *sql.Stmt) error {
+		var err error
+		out, err = stmt.ExecContext(ctx, args...)
+		return err
+	})
+	return out, err
 }
 
 func (t *Transaction) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	//nolint:sqlclosecheck // the statement is the transaction's and is closed with it
-	prepared, err := t.prepare(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	return prepared.QueryContext(ctx, args...)
+	var out *sql.Rows
+	err := prepare(ctx, t.Tx, query, func(stmt *sql.Stmt) error {
+		var err error
+		out, err = stmt.QueryContext(ctx, args...)
+		return err
+	})
+	return out, err
 }
 
 // QueryRowContext hands a statement that could not be prepared to the
 // transaction itself, which is where the reason reaches the caller: a row
 // carries what went wrong and there is no other way to put it there.
 func (t *Transaction) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
-	//nolint:sqlclosecheck // the statement is the transaction's and is closed with it
-	prepared, err := t.prepare(ctx, query)
+	var out *sql.Row
+	err := prepare(ctx, t.Tx, query, func(stmt *sql.Stmt) error {
+		out = stmt.QueryRowContext(ctx, args...)
+		return nil
+	})
 	if err != nil {
 		return t.Tx.QueryRowContext(ctx, query, args...)
 	}
-	return prepared.QueryRowContext(ctx, args...)
+	return out
 }
 
-// prepare is the statement this text was prepared as, preparing it the first
-// time it is asked for. One transaction is written by one goroutine, which is
-// what the pool of one write connection leaves it.
-func (t *Transaction) prepare(ctx context.Context, query string) (*sql.Stmt, error) {
-	if held, ok := t.ready[query]; ok {
-		return held, nil
-	}
-	prepared, err := t.Tx.PrepareContext(ctx, query)
+// prepare runs a statement prepared on the transaction and closes it when done.
+func prepare(ctx context.Context, tx *sql.Tx, query string, run func(*sql.Stmt) error) error {
+	stmt, err := tx.PrepareContext(ctx, query)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	t.ready[query] = prepared
-	return prepared, nil
+	defer stmt.Close()
+	return run(stmt)
 }
 
 // Exec runs one write statement, asking again while another process holds the

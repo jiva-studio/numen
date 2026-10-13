@@ -94,7 +94,7 @@ func (u ImportURL) Execute(
 	if err != nil {
 		return res, err
 	}
-	defer release()
+	defer port.Close(release)
 
 	if isRepeat {
 		if err := dropDownloads(ctx, store, hash); err != nil {

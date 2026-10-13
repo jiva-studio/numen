@@ -58,8 +58,8 @@ type Loopback struct {
 //
 // stopped is told where the socket stops answering under the window, which is
 // nobody's doing and nothing anybody asked for.
-func Listen(files *fileServer, stopped func(error)) (*Loopback, error) {
-	held, err := net.Listen("tcp", "127.0.0.1:0")
+func Listen(ctx context.Context, files *fileServer, stopped func(error)) (*Loopback, error) {
+	held, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, err
 	}

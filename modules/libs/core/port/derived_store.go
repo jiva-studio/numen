@@ -80,6 +80,13 @@ type DerivedStore interface {
 	ClaimArtifact(ctx context.Context, name domain.ArtifactName) (release func() error, err error)
 }
 
+// Close runs closer when non-nil and drops any error it returns.
+func Close(closer func() error) {
+	if closer != nil {
+		_ = closer()
+	}
+}
+
 // Entry is one thing a store holds: its name in that store, and how many
 // bytes are under it.
 type Entry struct {

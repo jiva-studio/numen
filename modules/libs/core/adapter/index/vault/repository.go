@@ -16,7 +16,7 @@ import (
 //go:embed sql/*.sql
 var files embed.FS
 
-var stmt = sqlfile.Load(files, "sql")
+var stmt, _ = sqlfile.Load(files, "sql")
 
 // Repository is the collection of vaults. Rows elsewhere point at these, which
 // is why a vault is registered before anything is stored for it.
