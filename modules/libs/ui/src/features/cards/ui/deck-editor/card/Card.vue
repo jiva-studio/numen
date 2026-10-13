@@ -37,11 +37,6 @@ const emit = defineEmits<{
   (event: 'release'): void
   /** The card asked to go one place along the order. */
   (event: 'step', direction: StepDirection, press: KeyboardEvent): void
-  /**
-   * One value as it now reads. A card writing a field twice is writing two
-   * values, of which `nth` says which was typed in.
-   */
-  (event: 'write', field: string, nth: number, text: string): void
 }>()
 
 /** What this card's boxes are named by, which is this card's alone. */
@@ -117,11 +112,11 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
       <CardValue
         v-for="value in tile.filled"
         :key="value.key"
+        :card="tile.id"
         :value="value"
         :box-id="boxId(value)"
         :wrong="getProblems(value)"
         :words="words"
-        @write="(text: string) => emit('write', value.field, value.nth, text)"
       />
 
       <p v-if="!tile.filled.length" class="card__silence caps-numen text-small text-hushed">

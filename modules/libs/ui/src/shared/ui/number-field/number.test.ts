@@ -4,7 +4,8 @@
  * The negatives matter most: a word is no number, and neither is a line that
  * only looks like one until the end of it.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
 import {
   isAllowed,
   parseNumber,
@@ -14,6 +15,7 @@ import {
   stepBy,
   stepForKey,
   formatNumber,
+  useNumberEntry,
 } from './number'
 import type { Bounds } from '@/shared/lib/bounds'
 
@@ -192,5 +194,97 @@ describe('the places a number is kept to', () => {
   it('leaves a number alone where the step is nothing or less', () => {
     expect(snapToBounds(5, { min: 0, max: 10, step: 0 })).toBe(5)
     expect(snapToBounds(5, { min: 0, max: 10, step: -1 })).toBe(5)
+  })
+})
+
+describe('a field being typed into', () => {
+  const create = (start: number | null = 10) => {
+    const model = ref<number | null>(start)
+    const onCommit = vi.fn<(value: number | null) => void>()
+    const entry = useNumberEntry(model, () => BOUNDS, onCommit)
+    return { model, onCommit, entry }
+  }
+
+  it('stands on the number it is given, written out', () => {
+    expect(create(10).entry.typed.value).toBe('10')
+    expect(create(null).entry.typed.value).toBe('')
+  })
+
+  it('brings a number the bounds do not hold in, and writes it out', () => {
+    const { model, entry } = create(900)
+
+    expect(model.value).toBe(240)
+    expect(entry.typed.value).toBe('240')
+  })
+
+  it('leaves what was typed standing and the number alone until it is allowed', () => {
+    const { model, entry } = create(10)
+
+    entry.setText('1')
+    expect(model.value).toBe(10)
+    expect(entry.typed.value).toBe('1')
+
+    entry.setText('15')
+    expect(model.value).toBe(15)
+  })
+
+  it('holds no number for an empty line', () => {
+    const { model, entry } = create(10)
+
+    entry.setText(' ')
+
+    expect(model.value).toBeNull()
+  })
+
+  it('refuses a word and a number past the ends, and not a number on its way', () => {
+    const { entry } = create(10)
+
+    entry.setText('abc')
+    expect(entry.isInvalid.value).toBe(true)
+    expect(entry.speechText.value).toBe('abc')
+
+    entry.setText('900')
+    expect(entry.isInvalid.value).toBe(true)
+
+    entry.setText('13')
+    expect(entry.isInvalid.value).toBe(false)
+    expect(entry.speechText.value).toBeUndefined()
+  })
+
+  it('commits the number on a place of the step, once, and says nothing for a rest where it was', async () => {
+    const { model, onCommit, entry } = create(10)
+
+    entry.setText('13')
+    await entry.commit()
+    expect(model.value).toBe(15)
+    expect(entry.typed.value).toBe('15')
+    expect(onCommit).toHaveBeenCalledTimes(1)
+    expect(onCommit).toHaveBeenCalledWith(15)
+
+    await entry.commit()
+    expect(onCommit).toHaveBeenCalledTimes(1)
+  })
+
+  it('writes out a number set from outside, and leaves typing that means it alone', async () => {
+    const { model, entry } = create(10)
+
+    model.value = 20
+    await Promise.resolve()
+    expect(entry.typed.value).toBe('20')
+
+    entry.setText('2')
+    await Promise.resolve()
+    expect(entry.typed.value).toBe('2')
+  })
+
+  it('answers the keys of a spin button, and a disabled field takes them without moving', () => {
+    const { model, entry } = create(10)
+
+    expect(entry.applyKey('ArrowUp', false)).toBe(true)
+    expect(model.value).toBe(15)
+    expect(entry.applyKey('a', false)).toBe(false)
+
+    expect(entry.applyKey('ArrowUp', true)).toBe(true)
+    expect(model.value).toBe(15)
   })
 })

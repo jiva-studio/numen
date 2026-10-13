@@ -12,7 +12,6 @@ import { Sheet } from './sheet'
 import { usePageWidth } from '../model/width'
 import { useViewport } from '@/shared/lib/viewport'
 import { onNextFrame, type Paint } from '@/shared/lib/clock'
-import { keyTurn } from '@/shared/lib/turn'
 import { useHandScroll } from '../model/scroll'
 import {
   GAP,
@@ -20,7 +19,8 @@ import {
   getPagesWithin,
   inFront,
   row,
-  findPageScroll,
+  getScrollTarget,
+  getTurnTarget,
   type Rect,
   type ReaderWords,
   type Page,
@@ -110,13 +110,8 @@ const onScroll = () => {
 
 /** The row put where a page stands, with that page against the left edge. */
 const stand = (page: number, how: ScrollBehavior) => {
-  const begins = findPageScroll(laid.value, page)
-  if (begins === undefined) return
-
-  // As far as the row goes: the last page cannot be brought any further left
-  // than the end of it.
-  const getFurthest = Math.max(laid.value.length - viewport.value.width, 0)
-  send(Math.min(Math.max(begins, 0), getFurthest), how)
+  const to = getScrollTarget(laid.value, viewport.value, page)
+  if (to !== undefined) send(to, how)
 }
 
 // A page asked for from outside is scrolled to. One reached by the hand is
@@ -155,20 +150,8 @@ const rowStyle = computed(() => ({
  * emitted, so whoever holds `at` is the one that moves it.
  */
 const handleKey = (event: KeyboardEvent): boolean => {
-  const way = keyTurn(event.key)
-  if (!way || props.pages.length === 0) return false
-
-  const last = props.pages.length - 1
-  let to: number
-  if (way === 'first') {
-    to = 0
-  } else if (way === 'last') {
-    to = last
-  } else {
-    to = props.at + (way === 'next' ? 1 : -1)
-  }
-
-  if (to < 0 || to > last) return false
+  const to = getTurnTarget(event.key, props.at, props.pages.length)
+  if (to === undefined) return false
   emit('go', to)
   return true
 }

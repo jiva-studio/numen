@@ -7,10 +7,11 @@
  * stencil a new one is cut by. What a card holds is the card's own. What a card
  * stands for is the caller's.
  */
-import { computed, shallowRef } from 'vue'
+import { computed, provide, shallowRef } from 'vue'
 import DeckRun from './DeckRun.vue'
 import { Icon } from '../icon'
 import { Divider } from '../divider'
+import { DECK_CONTEXT } from '../../model/context'
 import { useDrag } from '../../model/drag'
 import { Button } from '@/shared/ui/button'
 import {
@@ -73,6 +74,10 @@ const { dragged, at, lift, hover, release, drop, step } = useDrag<InsertionPoint
 
 const shown = computed(() => getGrid(props.cards, props.sections, props.stencils, dragged.value))
 
+provide(DECK_CONTEXT, {
+  write: (card, field, nth, text) => emit('write', card, field, nth, text),
+})
+
 // --- Handlers ---
 function onDragOver(targetAt: InsertionPoint | undefined, event: DragEvent): void {
   hover(targetAt, event)
@@ -104,10 +109,6 @@ function onRelease(): void {
 
 function onStep(id: string, direction: StepDirection, press: KeyboardEvent): void {
   step(id, direction, press)
-}
-
-function onWriteCard(id: string, field: string, nth: number, text: string): void {
-  emit('write', id, field, nth, text)
 }
 
 function onAsk(runId: string): void {
@@ -156,7 +157,6 @@ function onAddSection(): void {
       @lift="onLift"
       @release="onRelease"
       @step="onStep"
-      @write="onWriteCard"
       @ask="onAsk(run.id)"
       @add="(stencil) => onAddCard(stencil, run)"
     />

@@ -6,8 +6,9 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
-import { ref, watch } from 'vue'
+import { provide, ref, watch } from 'vue'
 import Card from './Card.vue'
+import { DECK_CONTEXT } from '../../../model/context'
 import type { DeckCard } from '../../../lib/deck'
 import { getGrid, type Tile } from '../../../lib/grid'
 import type { Stencil } from '../../../lib/card'
@@ -207,26 +208,29 @@ const meta: Meta<Knobs> = {
         },
       )
 
+      const onWrite = (field: string, nth: number, text: string) => {
+        const card = held.value.card
+
+        // The one written is the one counted off under its own field.
+        let under = 0
+        const filled = card.filled.map((each) => {
+          if (each.field !== field) return each
+          under += 1
+          return under === nth ? { field, text } : each
+        })
+        if (under < nth) filled.push({ field, text })
+        const written = { ...held.value, card: { ...card, filled } }
+        held.value = written
+        tile.value = createTile(written)
+      }
+
+      provide(DECK_CONTEXT, { write: (_card, field, nth, text) => onWrite(field, nth, text) })
+
       return {
         args,
         tile,
         wrong: () => held.value.wrong ?? [],
         wrongUnder: () => new Map(Object.entries(held.value.wrongUnder ?? {})),
-        onWrite: (field: string, nth: number, text: string) => {
-          const card = held.value.card
-
-          // The one written is the one counted off under its own field.
-          let under = 0
-          const filled = card.filled.map((each) => {
-            if (each.field !== field) return each
-            under += 1
-            return under === nth ? { field, text } : each
-          })
-          if (under < nth) filled.push({ field, text })
-          const written = { ...held.value, card: { ...card, filled } }
-          held.value = written
-          tile.value = createTile(written)
-        },
       }
     },
     template: `
@@ -235,7 +239,6 @@ const meta: Meta<Knobs> = {
           :tile="tile"
           :wrong="wrong()"
           :wrong-under="wrongUnder()"
-          @write="onWrite"
         />
       </div>
     `,

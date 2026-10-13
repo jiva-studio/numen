@@ -19,19 +19,21 @@ const emit = defineEmits<{
   (event: 'enter'): void
 }>()
 
+/** Where the heading goes, and the box it is drawn in. */
+const place = computed(() => ({
+  transform: `translate(0 ${props.hung.top + props.hung.pad + props.heading.y})`,
+  x: props.hung.offset - props.hung.width / 2 + props.hung.pad,
+  width: props.hung.width - 2 * props.hung.pad,
+}))
+
 const headingStyle = computed(() => ({
   paddingInlineStart: `calc(var(--numen-node-padding) + ${props.heading.indent}px)`,
 }))
 </script>
 
 <template>
-  <g :opacity="heading.opacity" :transform="`translate(0 ${hung.top + hung.pad + heading.y})`">
-    <foreignObject
-      :x="hung.offset - hung.width / 2 + hung.pad"
-      y="0"
-      :width="hung.width - 2 * hung.pad"
-      :height="hung.headingHeight"
-    >
+  <g :opacity="heading.opacity" :transform="place.transform">
+    <foreignObject :x="place.x" y="0" :width="place.width" :height="hung.headingHeight">
       <div class="plex__heading" :style="headingStyle" @click.stop="emit('enter')" @dblclick.stop>
         <span class="plex__heading-text">{{ heading.text }}</span>
       </div>

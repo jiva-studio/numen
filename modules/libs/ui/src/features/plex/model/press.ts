@@ -7,8 +7,8 @@ import { computed } from 'vue'
 import { isMenuKey, isPress, isShowKey } from '../lib/keys'
 import { isReachable, isStop, type GestureRole, type PlacedNode, type Position } from '../lib/node'
 import type { MenuTrigger } from '@/shared/ui/menu'
-import type { ReachStrategy } from './reaching'
-import { getDestination, mergeListeners, type PlexDestination, type ShowStrategy } from './showing'
+import type { PlexBehaviour } from './behaviour'
+import { getDestination, mergeListeners, type PlexDestination } from './showing'
 
 /** What the node says when a press comes to something. */
 export interface NodePressSaid {
@@ -22,8 +22,7 @@ export interface NodePressSaid {
 export interface NodePressProps {
   readonly node: PlacedNode
   readonly gestureRole: GestureRole
-  readonly reaching: ReachStrategy
-  readonly showing: ShowStrategy
+  readonly behaviour: Pick<PlexBehaviour, 'reaching' | 'showing'>
 }
 
 /**
@@ -59,11 +58,11 @@ export function useNodePress(
 
   /** What this node listens for beyond the handle. */
   const listening = mergeListeners(
-    props.reaching.listeners({
+    props.behaviour.reaching.listeners({
       ready: () => !isGhost.value && props.gestureRole === 'open',
       reach: (event: PointerEvent) => listeners.reach(event),
     }),
-    props.showing.listeners({
+    props.behaviour.showing.listeners({
       ready: () => canStop.value,
       show: (hasModifier: boolean) => showNode(hasModifier),
     }),
@@ -81,7 +80,7 @@ export function useNodePress(
     },
 
     onDoubleClick: (event: MouseEvent): void => {
-      if (props.showing.isDoubleClick) showNode(event.altKey)
+      if (props.behaviour.showing.isDoubleClick) showNode(event.altKey)
     },
 
     onContextMenu: (event: MouseEvent): void => {
