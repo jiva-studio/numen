@@ -279,8 +279,7 @@ func (a *API) AnswerCard(
 	}
 
 	on := review.CardFaceID{Card: r.Msg.GetMark(), Face: r.Msg.GetFace()}
-	record := flashcards.NewRecord(run, a.getNow)
-	given, err := record.Answer(ctx, on, parseRating(r.Msg.GetRating()),
+	given, err := a.Record.Answer(ctx, run, on, parseRating(r.Msg.GetRating()),
 		time.Duration(r.Msg.GetTookMs())*time.Millisecond)
 	if err != nil {
 		if errors.Is(err, flashcards.ErrNoRating) {
@@ -321,8 +320,7 @@ func (a *API) TakeBackAnswer(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	record := flashcards.NewRecord(run, a.getNow)
-	if _, err := record.TakeBack(ctx, r.Msg.GetAnswer()); err != nil {
+	if _, err := a.Record.TakeBack(ctx, run, r.Msg.GetAnswer()); err != nil {
 		if errors.Is(err, flashcards.ErrNoAnswer) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
