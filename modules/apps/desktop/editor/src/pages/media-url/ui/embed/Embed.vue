@@ -10,20 +10,27 @@
  */
 import { computed, onBeforeUnmount, ref, useTemplateRef } from 'vue'
 import { getDraggedHeight, LEAST } from '../../lib/height'
+import { seekFrame } from '../../lib/player'
+import { createHeightStore, type HeightStore } from '../../lib/storage'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = defineProps<{
-  /** Where a frame plays what is at the address, and nothing where a copy is. */
-  embed: string
-  /**
-   * Where a copy of it on this disk is played from, and nothing where there is
-   * none. A copy is played in place of the frame: it plays offline, and nothing
-   * of the site it came from is loaded to play it.
-   */
-  copy: string
-  /** What the frame and the bar that resizes it are called. */
-  words: { readonly playing: string; readonly taller: string }
-}>()
+const props = withDefaults(
+  defineProps<{
+    /** Where a frame plays what is at the address, and nothing where a copy is. */
+    embed: string
+    /**
+     * Where a copy of it on this disk is played from, and nothing where there is
+     * none. A copy is played in place of the frame: it plays offline, and nothing
+     * of the site it came from is loaded to play it.
+     */
+    copy: string
+    /** What the frame and the bar that resizes it are called. */
+    words: { readonly playing: string; readonly taller: string }
+    /** Where the height a person drew the player is kept. This machine's storage by default. */
+    store?: HeightStore
+  }>(),
+  { store: () => createHeightStore() },
+)
 
 const emit = defineEmits<{
   /** Where the copy stands, in milliseconds, as it plays. A frame says nothing. */
@@ -35,9 +42,7 @@ const frame = useTemplateRef<HTMLIFrameElement>('frame')
 const player = useTemplateRef<HTMLVideoElement>('player')
 
 /** How tall the player is drawn, remembered on this machine. */
-const HEIGHT = 'numen.embed.height'
-
-const tall = ref(readHeight())
+const tall = ref(props.store.read())
 const drawn = ref<{ bar: HTMLElement; pointer: number; from: number; was: number } | null>(null)
 const frameStyle = computed(() =>
   tall.value === null ? undefined : { blockSize: `${tall.value}px` },
@@ -84,12 +89,7 @@ function onPointerUp(): void {
   held.bar.removeEventListener('pointerup', onPointerUp)
   held.bar.removeEventListener('pointercancel', onPointerUp)
   if (held.bar.hasPointerCapture(held.pointer)) held.bar.releasePointerCapture(held.pointer)
-  try {
-    if (tall.value !== null) localStorage.setItem(HEIGHT, String(tall.value))
-  } catch {
-    // A machine that keeps nothing for this page draws the player this tall
-    // until it is closed, which is the whole of what is lost.
-  }
+  if (tall.value !== null) props.store.write(tall.value)
 }
 
 function onVideoTimeUpdate(event: Event): void {
@@ -98,20 +98,6 @@ function onVideoTimeUpdate(event: Event): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-/**
- * How tall a person drew the player last, and nothing where they have not drawn
- * it: sixteen by nine is what it is until somebody says otherwise.
- */
-function readHeight(): number | null {
-  try {
-    const kept = Number(localStorage.getItem(HEIGHT))
-    return kept >= LEAST ? kept : null
-  } catch {
-    // A browser that keeps nothing for this page has no height to give back.
-    return null
-  }
-}
-
 /** Played from a moment, in milliseconds: the copy where there is one. */
 function seek(ms: number): void {
   if (player.value) {
@@ -119,17 +105,7 @@ function seek(ms: number): void {
     void player.value.play()
     return
   }
-  let origin: string
-  try {
-    origin = new URL(props.embed).origin
-  } catch {
-    // An embed that is not a parseable absolute URL has no origin to post the message to.
-    return
-  }
-  frame.value?.contentWindow?.postMessage(
-    JSON.stringify({ event: 'command', func: 'seekTo', args: [ms / 1000, true] }),
-    origin,
-  )
+  seekFrame(frame.value?.contentWindow, props.embed, ms)
 }
 
 defineExpose({ seek })

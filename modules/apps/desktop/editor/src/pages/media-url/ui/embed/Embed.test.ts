@@ -110,3 +110,19 @@ describe('a copy of the video on this disk', () => {
     expect(drawn.get('video').attributes('src')).toBe(COPY)
   })
 })
+
+describe('the height a person drew the player', () => {
+  it('is where the player opens, where the store holds one', () => {
+    const store = { read: () => 300, write: () => {} }
+    const drawn = mount(Embed, { props: { embed: EMBED, copy: '', words, store } })
+
+    expect(drawn.get('iframe').attributes('style')).toContain('300px')
+  })
+
+  it('leaves the player at sixteen by nine where the store holds none', () => {
+    const store = { read: () => null, write: () => {} }
+    const drawn = mount(Embed, { props: { embed: EMBED, copy: '', words, store } })
+
+    expect(drawn.get('iframe').attributes('style')).toBeUndefined()
+  })
+})
