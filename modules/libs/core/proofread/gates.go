@@ -32,87 +32,130 @@ func GetFixedLines(batch Batch, reply string, maxDistance float64) (put []Line, 
 	if strings.Contains(reply, Opens) || strings.Contains(reply, Closes) {
 		return nil, false, false
 	}
+	return buildFixedLines(batch, reply, maxDistance, indexBatchLines(batch))
+}
 
+// indexBatchLines maps each line number in the batch to its text.
+func indexBatchLines(batch Batch) map[int]string {
 	read := make(map[int]string, len(batch.Lines))
 	for _, line := range batch.Lines {
 		read[line.Number] = line.Text
 	}
+	return read
+}
 
+// buildFixedLines parses reply rows, verifying each against the batch and collecting
+// the accepted corrections.
+func buildFixedLines(batch Batch, reply string, maxDistance float64, read map[int]string) ([]Line, bool, bool) {
 	var out []Line
+	past := false
 	answered := make(map[int]bool, len(batch.Lines))
 	for _, row := range strings.Split(stripFence(reply), "\n") {
 		row = strings.TrimSpace(row)
 		if row == "" {
 			continue
 		}
-		at, through, text, barred, numbers := readRow(row)
-		if !numbers {
+		line, keep, reaches, valid := processRow(row, batch, read, answered, maxDistance)
+		if !valid {
 			return nil, false, false
-		}
-		was, named := read[at]
-		if !named {
-			return nil, false, false
-		}
-		if through > at && !batch.IsJoinable {
-			return nil, false, false
-		}
-		// A sentence runs on past the last line a batch was given, and a model
-		// reading it names the whole of it. Such a run is dropped and the rest
-		// of the batch stands; a run skipping a line in the middle is an answer
-		// against the wrong numbers, and refuses the batch.
-		joined, reaches := was, false
-		for line := at + 1; line <= through; line++ {
-			next, held := read[line]
-			if !held {
-				if line > batch.Last() {
-					reaches = true
-					break
-				}
-				return nil, false, false
-			}
-			joined += " " + next
 		}
 		if reaches {
 			past = true
 			continue
 		}
-		// A line is answered for once, by one row of the reply.
-		for line := at; line <= through; line++ {
-			if answered[line] {
-				return nil, false, false
-			}
-			answered[line] = true
+		if keep {
+			out = append(out, line)
 		}
-		was = joined
-		// A line opening with the digits the row opens with, and no bar to tell
-		// the two apart, is a row whose number was left out: the line's own
-		// first word reads as the number, and the batch is refused.
-		if !barred && strings.HasPrefix(strings.TrimSpace(was), readLeadingDigits(row)) {
-			return nil, false, false
-		}
-		// An answer of nothing, or of marks that are not words, over a line that
-		// said something empties it.
-		if len(extractLetters(text)) == 0 && len(extractLetters(was)) > 0 {
-			return nil, false, false
-		}
-		// A run answered with what its lines already say is still a change:
-		// the lines are put together.
-		if through == at && text == strings.TrimSpace(was) {
-			continue
-		}
-		// What is dropped is a correction that changes nothing. A run changes
-		// the lines whatever it says: they become one.
-		if through == at {
-			if isPrefixedBySymbols(was, text) {
-				continue
-			}
-			if maxDistance > 0 && EditDistance(was, text) > maxDistance {
-				continue
-			}
-		}
-		out = append(out, Line{Number: at, Last: through, Text: text})
 	}
 	return out, past, true
+}
+
+// processRow parses and checks a single reply row against the batch lines and edit distance.
+func processRow(row string, batch Batch, read map[int]string, answered map[int]bool, maxDistance float64) (line Line, keep, reaches, ok bool) {
+	at, through, text, barred, numbers := readRow(row)
+	if !numbers {
+		return Line{}, false, false, false
+	}
+	if through > at && !batch.IsJoinable {
+		return Line{}, false, false, false
+	}
+	was, reaches, matchOk := matchLines(read, at, through, batch.Last())
+	if !matchOk {
+		return Line{}, false, false, false
+	}
+	if reaches {
+		return Line{}, false, true, true
+	}
+	if !claimLines(answered, at, through) {
+		return Line{}, false, false, false
+	}
+	if !isValidRow(row, was, text, barred) {
+		return Line{}, false, false, false
+	}
+	if !canKeepCorrection(was, text, at, through, maxDistance) {
+		return Line{}, false, false, true
+	}
+	return Line{Number: at, Last: through, Text: text}, true, false, true
+}
+
+// matchLines gathers the lines from at through to, verifying each exists in the batch.
+// A run reaching beyond the batch reports reaches true.
+func matchLines(read map[int]string, at, through, last int) (joined string, reaches, ok bool) {
+	was, named := read[at]
+	if !named {
+		return "", false, false
+	}
+	for line := at + 1; line <= through; line++ {
+		next, held := read[line]
+		if !held {
+			if line > last {
+				return "", true, true
+			}
+			return "", false, false
+		}
+		was += " " + next
+	}
+	return was, false, true
+}
+
+// claimLines marks the given line range as answered, refusing lines answered twice.
+func claimLines(answered map[int]bool, at, through int) bool {
+	for line := at; line <= through; line++ {
+		if answered[line] {
+			return false
+		}
+		answered[line] = true
+	}
+	return true
+}
+
+// isValidRow says whether the reply row has words and its digits separate from the line.
+func isValidRow(row, was, text string, barred bool) bool {
+	if !barred && strings.HasPrefix(strings.TrimSpace(was), readLeadingDigits(row)) {
+		return false
+	}
+	if len(extractLetters(text)) == 0 && len(extractLetters(was)) > 0 {
+		return false
+	}
+	return true
+}
+
+// canKeepCorrection says whether a correction changes the line and stands within
+// the allowed edit distance. A run of lines is always kept.
+func canKeepCorrection(was, text string, at, through int, maxDistance float64) bool {
+	if through > at {
+		return true
+	}
+	if text == strings.TrimSpace(was) {
+		return false
+	}
+	if isPrefixedBySymbols(was, text) {
+		return false
+	}
+	if maxDistance > 0 && EditDistance(was, text) > maxDistance {
+		return false
+	}
+	return true
 }
 
 // GetGatheredLines is what a run of batches put right, keyed by the line, and the
@@ -140,10 +183,7 @@ func GetGatheredLines(asked []Batch, replies map[int]string, maxDistance float64
 		if ran {
 			past = append(past, batch.Number)
 		}
-		after := make(map[int]int, len(batch.Lines))
-		for i, line := range batch.Lines {
-			after[line.Number] = len(batch.Lines) - 1 - i
-		}
+		after := countRemainingLines(batch.Lines)
 		for _, line := range lines {
 			if stood, seen := best[line.Number]; seen && after[line.Number] < stood {
 				continue
@@ -153,6 +193,15 @@ func GetGatheredLines(asked []Batch, replies map[int]string, maxDistance float64
 		}
 	}
 	return put, past
+}
+
+// countRemainingLines maps each line number to the count of lines following it in the batch.
+func countRemainingLines(lines []Line) map[int]int {
+	remaining := make(map[int]int, len(lines))
+	for i, line := range lines {
+		remaining[line.Number] = len(lines) - 1 - i
+	}
+	return remaining
 }
 
 // readRow is the line a reply row is about, what that line now says, and
@@ -174,15 +223,8 @@ func readRow(row string) (at, through int, text string, barred, ok bool) {
 
 	// A run of lines put together is written as the first and the last of them.
 	if rest[0] == '-' {
-		last := readLeadingDigits(rest[1:])
-		if last == "" {
-			return 0, 0, "", false, false
-		}
-		if through, err = strconv.Atoi(last); err != nil || through <= at {
-			return 0, 0, "", false, false
-		}
-		rest = rest[1+len(last):]
-		if rest == "" {
+		var ok bool
+		if through, rest, ok = readRowRange(rest, at); !ok {
 			return 0, 0, "", false, false
 		}
 	}
@@ -193,6 +235,23 @@ func readRow(row string) (at, through int, text string, barred, ok bool) {
 	rest = strings.TrimLeft(rest, " \t")
 	barred = strings.HasPrefix(rest, "|")
 	return at, through, strings.TrimSpace(strings.TrimPrefix(rest, "|")), barred, true
+}
+
+// readRowRange parses the ending line number in a hyphenated line range.
+func readRowRange(rest string, at int) (through int, remainder string, ok bool) {
+	last := readLeadingDigits(rest[1:])
+	if last == "" {
+		return 0, "", false
+	}
+	through, err := strconv.Atoi(last)
+	if err != nil || through <= at {
+		return 0, "", false
+	}
+	remainder = rest[1+len(last):]
+	if remainder == "" {
+		return 0, "", false
+	}
+	return through, remainder, true
 }
 
 // readLeadingDigits is the run of digits a row opens with, and nothing for a row readLeadingDigits

@@ -404,7 +404,3 @@ linters:
       - path: (^|/)flashcards/review/
         linters: [cyclop, gocognit, nestif, funlen]
 
-      # Text alignment computes distance and similarity across transcript batches.
-      - path: (^|/)proofread/
-        linters: [cyclop, gocognit, nestif]
-
