@@ -25,6 +25,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/shutdown"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
@@ -118,7 +119,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 		return err
 	}
 	pages, opened := shown.pages, shown.opened
-	loadThemes(cfg, opened)
+	opened.Services.Themes = themes.Load(cfg.Themes, opened.SayTheme, os.Stdout)
 
 	// What reading the settings had to tell a person goes where they are: a
 	// window opened from a desktop entry has no terminal to write to.
@@ -126,7 +127,12 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 
 	reachable := makeEndpoint(ctx, cfg, opened, mcp)
 	going := &vaultFlush{flush: opened.FlushPending}
-	behind := makeShutdown(reachable, opened, stop)
+	// The agents stop, the installation closes, then the context they ran under ends.
+	behind := shutdown.NewSequence(
+		reachable.Stop,
+		shutdown.Report("numen", os.Stderr, "", opened.Close),
+		stop,
+	)
 
 	// The vault settles before a quit is let through, so the steps behind it are
 	// asked for here with nothing left owed.
@@ -192,17 +198,6 @@ func openInstallation(
 	return shownInstallation{pages: pages, opened: opened}, nil
 }
 
-// loadThemes gives the window the installation's themes. A folder that could not
-// be made leaves the ones this binary ships, and a theme the settings name that
-// the catalogue has not is said where the person is.
-func loadThemes(cfg container.Config, opened *editor.Installation) {
-	themes, wrong := cfg.Themes(opened.SayTheme)
-	if wrong != nil {
-		fmt.Fprintf(os.Stdout, "themes: %v\n", wrong)
-	}
-	opened.Services.Themes = themes
-}
-
 // makeEndpoint is the agents' endpoint on the vault in the window.
 func makeEndpoint(
 	ctx context.Context, cfg container.Config, opened *editor.Installation, mcp agentOptions,
@@ -216,22 +211,6 @@ func makeEndpoint(
 		SetUnreachable: func(said string) { opened.State.Unreachable.Store(said) },
 		ErrorHandler:   func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
 	}
-}
-
-// makeShutdown stops the agents, closes the installation, then ends the context
-// they ran under.
-func makeShutdown(
-	reachable *agents.Endpoint, opened *editor.Installation, stop func(),
-) *shutdown.Sequence {
-	return shutdown.NewSequence(
-		reachable.Stop,
-		func() {
-			if err := opened.Close(); err != nil {
-				fmt.Fprintln(os.Stderr, "numen:", err)
-			}
-		},
-		stop,
-	)
 }
 
 // makeApplication is the application serving the page. It ends when its last
