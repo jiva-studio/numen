@@ -93,7 +93,7 @@ func TestBothThresholdsMustHold(t *testing.T) {
 	}{
 		{"both hold", "ab cd", Legibility{Alphabetic: 1, Dirty: 0}, true},
 		{"too few letters", "12 34", Legibility{Alphabetic: 0.5, Dirty: 1}, false},
-		{"too many dirty words", "a#b c#d", Legibility{Alphabetic: 0.5, Dirty: 0.5}, true},
+		{"dirty words at their limit", "a#b c#d", Legibility{Alphabetic: 0.5, Dirty: 1}, true},
 		{"too many dirty words and few letters", "a#b c#d", Legibility{Alphabetic: 0.9, Dirty: 0.1}, false},
 		{"letters hold, dirty fails", "ab c#d", Legibility{Alphabetic: 0.5, Dirty: 0.1}, false},
 	}

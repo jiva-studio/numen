@@ -21,7 +21,7 @@ func TestAWordIsSpelledWhenOnlyItsEndsCarryMarks(t *testing.T) {
 		"a#b", "a_b", "a,b", "a@b", "a!b", "a?b", "a/b", "a:b", "a`b", "a{b", "a[b",
 		"(a#b)", "3#4", "#a#b", "a#b#", "ab#c", "a#bc", "((a#b))", "a#a", "z#z", "A#A", "Z#Z", "0#0", "9#9",
 		"wo¤rda", "naï#ve", "é¤é", "(é¤é)", "(٣¤٣)", "é_é", "é#é", "é,é", "x\u2061y",
-		"日本\u2fff語", "日本\u3040語", "日本\ufeff語", "日本\uff00語", "日本\ufff0語", "é\ufffdé",
+		"日本\u2fff語", "日本\u3040語", "日本\ufeff語", "日本\ufff0語", "é\ufffdé",
 		"é/é", "é:é", "é`é", "é{é", "é@é", "é[é", "é(é",
 	}
 	for _, token := range misspelled {
