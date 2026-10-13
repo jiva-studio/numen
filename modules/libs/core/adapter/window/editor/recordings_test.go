@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
@@ -35,7 +34,7 @@ const (
 
 // stored is what a run of transcription left in the vault's store, by the name
 // it left it under.
-type stored map[string][]byte
+type stored map[domain.ArtifactName][]byte
 
 // storing hands the one store to whatever opens a vault's.
 type storing struct{ port.DerivedStore }
@@ -43,7 +42,7 @@ type storing struct{ port.DerivedStore }
 func (s storing) Open(domain.Vault) (port.DerivedStore, error) { return s.DerivedStore, nil }
 
 // Open is one file of the store, which a copy of a video is played from.
-func (s stored) Open(_ context.Context, name string) (io.ReadSeekCloser, int64, error) {
+func (s stored) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
 	raw, held := s[name]
 	if !held {
 		return nil, 0, fs.ErrNotExist
@@ -52,7 +51,7 @@ func (s stored) Open(_ context.Context, name string) (io.ReadSeekCloser, int64, 
 }
 
 // WriteStream puts what a reader gives under a name.
-func (s stored) WriteStream(_ context.Context, name string, from io.Reader) (int64, error) {
+func (s stored) WriteArtifactStream(_ context.Context, name domain.ArtifactName, from io.Reader) (int64, error) {
 	raw, err := io.ReadAll(from)
 	if err != nil {
 		return 0, err
@@ -66,7 +65,7 @@ type readingBytes struct{ *bytes.Reader }
 
 func (readingBytes) Close() error { return nil }
 
-func (s stored) Read(_ context.Context, name string) ([]byte, error) {
+func (s stored) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byte, error) {
 	raw, held := s[name]
 	if !held {
 		return nil, fs.ErrNotExist
@@ -74,27 +73,27 @@ func (s stored) Read(_ context.Context, name string) ([]byte, error) {
 	return raw, nil
 }
 
-func (s stored) Write(_ context.Context, name string, content []byte) error {
+func (s stored) WriteArtifact(_ context.Context, name domain.ArtifactName, content []byte) error {
 	s[name] = content
 	return nil
 }
 
-func (s stored) Append(context.Context, string, []byte) error { return nil }
+func (s stored) AppendArtifact(context.Context, domain.ArtifactName, []byte) error { return nil }
 
-func (s stored) Remove(_ context.Context, name string) error {
+func (s stored) RemoveArtifact(_ context.Context, name domain.ArtifactName) error {
 	delete(s, name)
 	return nil
 }
 
-func (s stored) List(context.Context, string) ([]port.Entry, error) { return nil, nil }
+func (s stored) ListReviewLogs(context.Context) ([]port.Entry, error) { return nil, nil }
 
-func (s stored) ClaimName(context.Context, string) (func() error, error) {
+func (s stored) ClaimArtifact(context.Context, domain.ArtifactName) (func() error, error) {
 	return func() error { return nil }, nil
 }
 
 // The model a test's words were heard by, and the bytes it heard them in.
 const (
-	asr    = derived.ASR
+	asr    = domain.ASR
 	hashed = "2fd4e1c6"
 )
 
@@ -129,12 +128,12 @@ func windowOn(t *testing.T, held port.DerivedStore) (*Services, http.Handler) {
 // whole is the store holding a finished transcript of the recording, and partly
 // is one a run is still writing.
 func whole(cues []transcript.Cue) stored {
-	return stored{derived.Artifact(asr, hashed): transcript.Marshal(cues)}
+	return stored{domain.NewArtifactName(domain.ArtifactText, asr, hashed): transcript.Marshal(cues)}
 }
 
 func newPartialStore(cues []transcript.Cue, reached int) stored {
 	return stored{
-		derived.Partial(asr, hashed): append(transcript.Marshal(cues), transcript.GetReachMarker(reached)...),
+		domain.NewArtifactName(domain.ArtifactPartial, asr, hashed): append(transcript.Marshal(cues), transcript.GetReachMarker(reached)...),
 	}
 }
 
@@ -328,14 +327,14 @@ func TestAQuestionNamingNoRunIsAboutTheWholeTranscript(t *testing.T) {
 // holds the recording it is writing down.
 type heldBy struct {
 	stored
-	name string
+	name domain.ArtifactName
 }
 
-func (h heldBy) ClaimName(ctx context.Context, name string) (func() error, error) {
+func (h heldBy) ClaimArtifact(ctx context.Context, name domain.ArtifactName) (func() error, error) {
 	if name == h.name {
 		return nil, fmt.Errorf("%s: %w", name, port.ErrClaimed)
 	}
-	return h.stored.ClaimName(ctx, name)
+	return h.stored.ClaimArtifact(ctx, name)
 }
 
 // writeTranscript sends a transcript as the window sends one.
@@ -364,14 +363,14 @@ func TestATranscriptPutRightIsKeptBesideWhatWasHeard(t *testing.T) {
 		t.Fatalf("put the transcript right and was refused: %v", err)
 	}
 
-	put, kept := held[derived.Corrections(asr, hashed)]
+	put, kept := held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]
 	if !kept {
 		t.Fatalf("nothing was kept beside the transcript: %v", held)
 	}
 	if _, cues := transcript.Parse(put); len(cues) != 2 || cues[1].Text != "what Rupa said next" {
 		t.Errorf("the transcript was put right to %q", put)
 	}
-	if _, cues := transcript.Parse(held[derived.Artifact(asr, hashed)]); cues[1].Text != "what was said next" {
+	if _, cues := transcript.Parse(held[domain.NewArtifactName(domain.ArtifactText, asr, hashed)]); cues[1].Text != "what was said next" {
 		t.Error("what was heard was written over")
 	}
 }
@@ -384,8 +383,8 @@ func TestATranscriptAPersonWroteSaysSo(t *testing.T) {
 	if err := writeTranscript(api, cueOf("what Rupa said", 1500, 4200)); err != nil {
 		t.Fatalf("put the transcript right and was refused: %v", err)
 	}
-	if !transcript.IsWrittenByHand(held[derived.Corrections(asr, hashed)]) {
-		t.Errorf("the transcript does not say a person wrote it:\n%s", held[derived.Corrections(asr, hashed)])
+	if !transcript.IsWrittenByHand(held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]) {
+		t.Errorf("the transcript does not say a person wrote it:\n%s", held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)])
 	}
 }
 
@@ -424,7 +423,7 @@ func TestATranscriptStandsWhenItCannotBeCutAgain(t *testing.T) {
 	if err := writeTranscript(api, cueOf("what was said", 1500, 4200)); err != nil {
 		t.Fatalf("put the transcript right and was refused: %v", err)
 	}
-	if _, kept := held[derived.Corrections(asr, hashed)]; !kept {
+	if _, kept := held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]; !kept {
 		t.Error("the correction was not kept")
 	}
 }
@@ -445,7 +444,7 @@ func TestATranscriptPutRightIsWhatTheWindowIsToldNext(t *testing.T) {
 		t.Errorf("the window is told %+v", told.GetCues())
 	}
 
-	delete(held, derived.Corrections(asr, hashed))
+	delete(held, domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed))
 	if told := readTranscript(t, api); told.GetCues()[1].GetText() != "what was said next" {
 		t.Errorf("what was heard did not come back: %+v", told.GetCues())
 	}
@@ -495,7 +494,7 @@ func TestATranscriptThatRunsBackwardsIsRefused(t *testing.T) {
 			if err.Error() == "" {
 				t.Error("the transcript was refused without saying why")
 			}
-			if _, kept := held[derived.Corrections(asr, hashed)]; kept {
+			if _, kept := held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]; kept {
 				t.Error("a transcript that was refused was written")
 			}
 		})
@@ -514,7 +513,7 @@ func TestACueWithNoWordsIsDropped(t *testing.T) {
 	); err != nil {
 		t.Fatalf("put the transcript right and was refused: %v", err)
 	}
-	if _, cues := transcript.Parse(held[derived.Corrections(asr, hashed)]); len(cues) != 2 {
+	if _, cues := transcript.Parse(held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]); len(cues) != 2 {
 		t.Errorf("the transcript was written down as %v", cues)
 	}
 }
@@ -522,14 +521,14 @@ func TestACueWithNoWordsIsDropped(t *testing.T) {
 // A run appends to the transcript, and what is being appended to is not edited
 // underneath.
 func TestATranscriptIsNotEditedWhileTheRecordingIsBeingListenedTo(t *testing.T) {
-	held := heldBy{stored: newPartialStore(newCues(), 9100), name: derived.Partial(asr, hashed)}
+	held := heldBy{stored: newPartialStore(newCues(), 9100), name: domain.NewArtifactName(domain.ArtifactPartial, asr, hashed)}
 	api, _ := windowOn(t, held)
 
 	err := writeTranscript(api, cueOf("what was said", 1500, 4200))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("edited a recording being listened to and was refused %v", err)
 	}
-	if _, kept := held.stored[derived.Corrections(asr, hashed)]; kept {
+	if _, kept := held.stored[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]; kept {
 		t.Error("the transcript was written while a run held the recording")
 	}
 
@@ -582,7 +581,7 @@ func TestATranscriptOfNoWordsIsRefused(t *testing.T) {
 			if connect.CodeOf(err) != connect.CodeInvalidArgument {
 				t.Fatalf("the transcript was answered with %v", err)
 			}
-			if _, kept := held[derived.Corrections(asr, hashed)]; kept {
+			if _, kept := held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)]; kept {
 				t.Error("a transcript of no words was written over the recording")
 			}
 			if told := readTranscript(t, api); len(told.GetCues()) != 2 {
@@ -654,11 +653,11 @@ type refusing struct {
 	why error
 }
 
-func (r refusing) Write(ctx context.Context, name string, content []byte) error {
-	if name == derived.Corrections(asr, hashed) {
+func (r refusing) WriteArtifact(ctx context.Context, name domain.ArtifactName, content []byte) error {
+	if name == domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed) {
 		return r.why
 	}
-	return r.stored.Write(ctx, name, content)
+	return r.stored.WriteArtifact(ctx, name, content)
 }
 
 // A correction that could not be written is said so, and the source is not cut

@@ -28,61 +28,62 @@ var ErrHeldByAnother = errors.New("the file is held by another program")
 // the application's and not the person's.
 //
 // Every name is a name in one store. A name that leaves it is refused, and so
-// is one that resolves out of it through a link.
+// is one that resolves out of it through a link. Where a name is kept is the
+// store's own business.
 type DerivedStore interface {
-	// Read returns what is stored under a name. A name with nothing under it
-	// gets fs.ErrNotExist: the folder is on the person's disk and they may
-	// empty it, which is an answer and not a failure.
-	Read(ctx context.Context, name string) ([]byte, error)
+	// ReadArtifact returns what is stored under a name. A name with nothing
+	// under it gets fs.ErrNotExist: the folder is on the person's disk and they
+	// may empty it, which is an answer and not a failure.
+	ReadArtifact(ctx context.Context, name domain.ArtifactName) ([]byte, error)
 
-	// Open is one file to read a part of, and how many bytes it holds. A copy of
-	// a video is played from the middle and is an hour long, and holding all of
-	// it to answer for a second of it is the whole file in memory for every
-	// listener.
+	// OpenArtifact is one file to read a part of, and how many bytes it holds.
+	// A copy of a video is played from the middle and is an hour long, and
+	// holding all of it to answer for a second of it is the whole file in
+	// memory for every listener.
 	//
-	// The same errors as Read. Whoever opens it closes it.
-	Open(ctx context.Context, name string) (io.ReadSeekCloser, int64, error)
+	// The same errors as ReadArtifact. Whoever opens it closes it.
+	OpenArtifact(ctx context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error)
 
-	// Write puts content under a name, atomically, replacing whatever was
-	// there. Replacing is ordinary: one recognition run twice writes the same
-	// bytes under the same name.
-	Write(ctx context.Context, name string, content []byte) error
+	// WriteArtifact puts content under a name, atomically, replacing whatever
+	// was there. Replacing is ordinary: one recognition run twice writes the
+	// same bytes under the same name.
+	WriteArtifact(ctx context.Context, name domain.ArtifactName, content []byte) error
 
-	// WriteStream puts what a reader gives under a name, atomically. A copy of a video
-	// arrives over a network and is not held in memory to be written.
-	WriteStream(ctx context.Context, name string, from io.Reader) (int64, error)
+	// WriteArtifactStream puts what a reader gives under a name, atomically. A
+	// copy of a video arrives over a network and is not held in memory to be
+	// written.
+	WriteArtifactStream(ctx context.Context, name domain.ArtifactName, from io.Reader) (int64, error)
 
-	// Append adds to what is under a name, creating it when there is nothing.
-	// A recognition is written as it is read, over an hour, and reading a
-	// growing file back in order to rewrite it costs the square of its pages.
-	Append(ctx context.Context, name string, content []byte) error
+	// AppendArtifact adds to what is under a name, creating it when there is
+	// nothing. A recognition is written as it is read, over an hour, and
+	// reading a growing file back in order to rewrite it costs the square of
+	// its pages.
+	AppendArtifact(ctx context.Context, name domain.ArtifactName, content []byte) error
 
-	// List reports the names the store holds under one of its own, sorted.
-	// Work whose whole record is a folder of files nobody names in advance —
-	// a run of review writing one file and never touching it again — has no
-	// other way to find what is there. A name with nothing under it lists
-	// nothing, which is what an empty store answers.
+	// ListReviewLogs reports the files of review answers, sorted by name. A
+	// run of review writes one file and never touches it again, so there is no
+	// other way to find what is there. A store with none lists nothing.
 	//
 	// The length comes with the name because a file appended to keeps its name
 	// and grows: what tells a reader that a file it has already read has
 	// changed is how long it now is, and asking that of a listing costs the
 	// listing and not the recognition.
-	List(ctx context.Context, name string) ([]Entry, error)
+	ListReviewLogs(ctx context.Context) ([]Entry, error)
 
-	// Remove takes a name out of the store. A name already gone is the outcome
-	// that was asked for.
-	Remove(ctx context.Context, name string) error
+	// RemoveArtifact takes a name out of the store. A name already gone is the
+	// outcome that was asked for.
+	RemoveArtifact(ctx context.Context, name domain.ArtifactName) error
 
-	// ClaimName takes a name for this caller alone and returns what lets it go. A
-	// name already claimed is refused with ErrClaimed, so work whose whole
+	// ClaimArtifact takes a name for this caller alone and returns what lets it
+	// go. A name already claimed is refused with ErrClaimed, so work whose whole
 	// output is one file is done once.
-	ClaimName(ctx context.Context, name string) (release func() error, err error)
+	ClaimArtifact(ctx context.Context, name domain.ArtifactName) (release func() error, err error)
 }
 
 // Entry is one thing a store holds: its name in that store, and how many
 // bytes are under it.
 type Entry struct {
-	Name string
+	Name domain.ArtifactName
 	Size int
 }
 

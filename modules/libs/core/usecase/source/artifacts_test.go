@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 )
 
@@ -20,12 +19,12 @@ func newArtifactShelf(t *testing.T, cues ...transcript.Cue) (*store, *shelf) {
 	index.sources[first.ID] = map[string]domain.Source{
 		recordingPath: {
 			Fingerprint: domain.Fingerprint{Path: recordingPath, Kind: domain.KindRecording},
-			Producer:    text.ASR,
+			Producer:    domain.ASR,
 			Hash:        artifactHash,
 		},
 	}
 	kept := newShelf()
-	if err := kept.Write(t.Context(), text.Artifact(text.ASR, artifactHash), transcript.Marshal(cues)); err != nil {
+	if err := kept.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, artifactHash), transcript.Marshal(cues)); err != nil {
 		t.Fatal(err)
 	}
 	return index, kept
@@ -50,7 +49,7 @@ func TestListingArtifactsNamesWhatWasMadeFromAFile(t *testing.T) {
 		t.Fatalf("%d artifacts listed, want the one transcript", len(held))
 	}
 	got := held[0]
-	if got.Kind != KindTranscript || got.Producer != text.ASR || got.Format != "text/vtt" || !got.IsReadable() {
+	if got.Kind != KindTranscript || got.Producer != domain.ASR || got.Format != "text/vtt" || !got.IsReadable() {
 		t.Errorf("the transcript was listed as %+v", got)
 	}
 }
@@ -69,7 +68,7 @@ func TestListingArtifactsOfAFileTheIndexDoesNotHoldIsEmpty(t *testing.T) {
 
 func TestACopyIsListedAndIsNotReadable(t *testing.T) {
 	index, kept := newArtifactShelf(t, transcript.Cue{Text: "one", From: 0, To: 1000})
-	if err := kept.Write(t.Context(), text.Copy(artifactHash), []byte("video")); err != nil {
+	if err := kept.WriteArtifact(t.Context(), domain.NewCopyName(artifactHash), []byte("video")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -132,7 +131,7 @@ func TestACorrectionReplacesTheCuesBeginningInsideItsSpan(t *testing.T) {
 	if n != 3 {
 		t.Errorf("the transcript holds %d cues, want 3", n)
 	}
-	raw, err := kept.Read(t.Context(), text.Corrections(text.ASR, artifactHash))
+	raw, err := kept.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, artifactHash))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,7 +187,7 @@ func TestACorrectionIsRefusedWhereItCannotBeWritten(t *testing.T) {
 		t.Error("a file nothing was made from was written")
 	}
 
-	kept.hold(text.Partial(text.ASR, artifactHash))
+	kept.hold(domain.NewArtifactName(domain.ArtifactPartial, domain.ASR, artifactHash))
 	if _, err := write.Execute(t.Context(), first, Correction{
 		Path: recordingPath, Kind: KindTranscript, Words: words,
 	}); !errors.Is(err, ErrTranscriptBusy) {

@@ -4,18 +4,19 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 )
 
 func TestACopyInTheStoreIsRemoved(t *testing.T) {
 	s := newTextScene(t)
-	name := text.Copy(text.Fingerprint([]byte(string(linkedURL))))
+	name := domain.NewCopyName(text.Fingerprint([]byte(string(linkedURL))))
 	s.write(t, name, "video")
 
 	if err := s.texts.RemoveCopy.Execute(t.Context(), s.vault, linkPath, linkedURL); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.shelf.Read(t.Context(), name); err == nil {
+	if _, err := s.shelf.ReadArtifact(t.Context(), name); err == nil {
 		t.Error("the copy is still in the store")
 	}
 }

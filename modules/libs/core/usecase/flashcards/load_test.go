@@ -52,39 +52,39 @@ type countingStore struct {
 	on    *loadCounts
 }
 
-func (s countingStore) Read(ctx context.Context, name string) ([]byte, error) {
+func (s countingStore) ReadArtifact(ctx context.Context, name domain.ArtifactName) ([]byte, error) {
 	s.on.Opened++
-	return s.inner.Read(ctx, name)
+	return s.inner.ReadArtifact(ctx, name)
 }
 
-func (s countingStore) List(ctx context.Context, name string) ([]port.Entry, error) {
+func (s countingStore) ListReviewLogs(ctx context.Context) ([]port.Entry, error) {
 	s.on.Listed++
-	return s.inner.List(ctx, name)
+	return s.inner.ListReviewLogs(ctx)
 }
 
-func (s countingStore) Open(ctx context.Context, name string) (io.ReadSeekCloser, int64, error) {
+func (s countingStore) OpenArtifact(ctx context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
 	s.on.Opened++
-	return s.inner.Open(ctx, name)
+	return s.inner.OpenArtifact(ctx, name)
 }
 
-func (s countingStore) WriteStream(ctx context.Context, name string, from io.Reader) (int64, error) {
-	return s.inner.WriteStream(ctx, name, from)
+func (s countingStore) WriteArtifactStream(ctx context.Context, name domain.ArtifactName, from io.Reader) (int64, error) {
+	return s.inner.WriteArtifactStream(ctx, name, from)
 }
 
-func (s countingStore) Write(ctx context.Context, name string, content []byte) error {
-	return s.inner.Write(ctx, name, content)
+func (s countingStore) WriteArtifact(ctx context.Context, name domain.ArtifactName, content []byte) error {
+	return s.inner.WriteArtifact(ctx, name, content)
 }
 
-func (s countingStore) Append(ctx context.Context, name string, content []byte) error {
-	return s.inner.Append(ctx, name, content)
+func (s countingStore) AppendArtifact(ctx context.Context, name domain.ArtifactName, content []byte) error {
+	return s.inner.AppendArtifact(ctx, name, content)
 }
 
-func (s countingStore) Remove(ctx context.Context, name string) error {
-	return s.inner.Remove(ctx, name)
+func (s countingStore) RemoveArtifact(ctx context.Context, name domain.ArtifactName) error {
+	return s.inner.RemoveArtifact(ctx, name)
 }
 
-func (s countingStore) ClaimName(ctx context.Context, name string) (func() error, error) {
-	return s.inner.ClaimName(ctx, name)
+func (s countingStore) ClaimArtifact(ctx context.Context, name domain.ArtifactName) (func() error, error) {
+	return s.inner.ClaimArtifact(ctx, name)
 }
 
 // countingKept counts what a use case asks of the cache.
@@ -255,7 +255,7 @@ func loadAnswers(tb testing.TB, s vaulted, cards, days, perDay int) {
 			lines = append(lines, raw...)
 			card++
 		}
-		if err := store.Write(ctx, run.GetName(), lines); err != nil {
+		if err := store.WriteArtifact(ctx, domain.NewReviewLogName(run.GetName()), lines); err != nil {
 			tb.Fatal(err)
 		}
 	}

@@ -26,8 +26,8 @@ func (u ImportURL) DeleteText(ctx context.Context, v domain.Vault, path string) 
 
 // dropDownloads takes away everything ever downloaded for an address.
 func dropDownloads(ctx context.Context, store port.DerivedStore, hash string) error {
-	for _, name := range text.AddressTexts(hash) {
-		if err := store.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+	for _, name := range domain.GetAddressTextNames(hash) {
+		if err := store.RemoveArtifact(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return err
 		}
 	}

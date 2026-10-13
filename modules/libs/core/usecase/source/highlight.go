@@ -159,7 +159,7 @@ func (u Highlight) read(
 	if store == nil {
 		return nil, nil
 	}
-	raw, err := store.Read(ctx, text.Boxes(sourceText.Producer, sourceText.Hash))
+	raw, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactBoxes, sourceText.Producer, sourceText.Hash))
 	if errors.Is(err, fs.ErrNotExist) {
 		// The store is a folder on the person's disk and they may empty it.
 		return nil, nil
@@ -172,7 +172,7 @@ func (u Highlight) read(
 	// A recognition that was proofread is read with its corrections in it, so a run
 	// of its text is a run of the corrected prose and the coordinates say where
 	// those words stand.
-	corrections, err := store.Read(ctx, text.Corrections(sourceText.Producer, sourceText.Hash))
+	corrections, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactCorrections, sourceText.Producer, sourceText.Hash))
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return nil, err
 	}

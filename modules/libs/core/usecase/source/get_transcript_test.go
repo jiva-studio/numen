@@ -3,7 +3,7 @@ package source
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 func TestTranscriptIsWhatAPersonPutRightBeforeWhatWasHeard(t *testing.T) {
@@ -26,12 +26,12 @@ func TestTranscriptIsWhatAPersonPutRightBeforeWhatWasHeard(t *testing.T) {
 		t.Fatalf("nothing is heard yet, got %q", got)
 	}
 
-	s.write(t, text.Partial(text.ASR, talkHash), "partial")
+	s.write(t, domain.NewArtifactName(domain.ArtifactPartial, domain.ASR, talkHash), "partial")
 	if got := read(); got != "partial" {
 		t.Errorf("a run still going is read as far as it got, got %q", got)
 	}
-	s.write(t, text.Artifact(text.ASR, talkHash), "heard")
-	s.write(t, text.Corrections(text.ASR, talkHash), "right")
+	s.write(t, domain.NewArtifactName(domain.ArtifactText, domain.ASR, talkHash), "heard")
+	s.write(t, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, talkHash), "right")
 
 	if got := read(); got != "right" {
 		t.Errorf("the words as they stand are the corrections, got %q", got)

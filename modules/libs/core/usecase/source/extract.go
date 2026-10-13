@@ -264,11 +264,11 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 		if stood[port.SourceText{Producer: r.Producer, Hash: r.Hash}] {
 			continue
 		}
-		gone := text.Names(r.Producer, r.Hash)
+		gone := domain.GetArtifactNames(r.Producer, r.Hash)
 		// A copy of a video is named by the address alone, so it goes when
 		// nothing names that address any more, whoever downloaded the words.
 		if !named[r.Hash] {
-			gone = append(gone, text.Copy(r.Hash))
+			gone = append(gone, domain.NewCopyName(r.Hash))
 		}
 		if err := u.removeNames(ctx, gone); err != nil {
 			return err
@@ -297,9 +297,9 @@ func (u Extract) readReferencedRecognitions(ctx context.Context, v domain.Vault)
 
 // removeNames removes each named file from the store; a file already absent
 // counts as removed.
-func (u Extract) removeNames(ctx context.Context, names []string) error {
+func (u Extract) removeNames(ctx context.Context, names []domain.ArtifactName) error {
 	for _, name := range names {
-		if err := u.Derived.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		if err := u.Derived.RemoveArtifact(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return fmt.Errorf("remove %s: %w", name, err)
 		}
 	}
@@ -343,7 +343,10 @@ func (u Extract) recordIfTextMissing(
 	r port.SourceText,
 	res *ExtractResult,
 ) error {
-	if u.hasAny(ctx, text.Artifact(r.Producer, r.Hash), text.Partial(r.Producer, r.Hash)) {
+	if u.hasAny(ctx,
+		domain.NewArtifactName(domain.ArtifactText, r.Producer, r.Hash),
+		domain.NewArtifactName(domain.ArtifactPartial, r.Producer, r.Hash),
+	) {
 		return nil
 	}
 	ref, err := reader.GetFingerprint(ctx, r.Path)
@@ -362,9 +365,9 @@ func (u Extract) recordIfTextMissing(
 
 // hasAny says the store has something under one of these names. A recognition
 // still being written is the text of the pages read so far.
-func (u Extract) hasAny(ctx context.Context, names ...string) bool {
+func (u Extract) hasAny(ctx context.Context, names ...domain.ArtifactName) bool {
 	for _, name := range names {
-		if _, err := u.Derived.Read(ctx, name); !errors.Is(err, fs.ErrNotExist) {
+		if _, err := u.Derived.ReadArtifact(ctx, name); !errors.Is(err, fs.ErrNotExist) {
 			return true
 		}
 	}
@@ -631,8 +634,11 @@ func (u Extract) text(ctx context.Context, ref domain.Fingerprint, raw []byte, h
 	}
 	if u.Derived != nil {
 		from := u.producer(ref)
-		for _, name := range []string{text.Artifact(from, hash), text.Partial(from, hash)} {
-			switch found, err := u.Derived.Read(ctx, name); {
+		for _, name := range []domain.ArtifactName{
+			domain.NewArtifactName(domain.ArtifactText, from, hash),
+			domain.NewArtifactName(domain.ArtifactPartial, from, hash),
+		} {
+			switch found, err := u.Derived.ReadArtifact(ctx, name); {
 			case err == nil:
 				// The parts of a recognition bound the chunks it is cut into, the
 				// way an outline bounds a book's.
@@ -663,7 +669,7 @@ func (u Extract) area() string {
 // and everything else is read.
 func (u Extract) producer(ref domain.Fingerprint) string {
 	if ref.Kind == domain.KindRecording {
-		return text.ASR
+		return domain.ASR
 	}
 	return u.area()
 }

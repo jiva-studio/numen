@@ -45,5 +45,5 @@ func (u GetRunProgress) Execute(
 	if err != nil {
 		return RunProgress{}, err
 	}
-	return readRunProgress(ctx, store, text.ASR, text.Fingerprint(raw))
+	return readRunProgress(ctx, store, domain.ASR, text.Fingerprint(raw))
 }

@@ -26,7 +26,7 @@ func TestASourceAlreadyAnsweredSaysWhatCameOfIt(t *testing.T) {
 	const said = "the mp3 recording: mp3: MPEG version 2.5 is not supported"
 	talks := willRun()
 	api, _ := openRunWindow(t,
-		stored{derived.Answer(asr, hashed): []byte(derived.Unopened + ": " + said + "\n")},
+		stored{domain.NewArtifactName(domain.ArtifactAnswer, asr, hashed): []byte(derived.Unopened + ": " + said + "\n")},
 		indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}},
 		willRun(), talks,
 	)
@@ -59,7 +59,7 @@ func TestARecordingAnsweredIsFoundWhereTheIndexNamesNoProducer(t *testing.T) {
 		t.Run(one.name, func(t *testing.T) {
 			talks := willRun()
 			api, _ := openRunWindow(t,
-				stored{derived.Answer(derived.ASR, getSoundFingerprint()): []byte(one.gave)},
+				stored{domain.NewArtifactName(domain.ArtifactAnswer, domain.ASR, getSoundFingerprint()): []byte(one.gave)},
 				indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Hash: getSoundFingerprint()}},
 				willRun(), talks,
 			)
@@ -83,7 +83,7 @@ func TestARecordingAnsweredIsFoundWhereTheIndexNamesNoProducer(t *testing.T) {
 func TestARecordingAnsweredIsFoundWhereTheIndexHoldsNothing(t *testing.T) {
 	talks := willRun()
 	api, _ := openRunWindow(t,
-		stored{derived.Answer(derived.ASR, getSoundFingerprint()): []byte(derived.Silent + "\n")},
+		stored{domain.NewArtifactName(domain.ArtifactAnswer, domain.ASR, getSoundFingerprint()): []byte(derived.Silent + "\n")},
 		newEmptyIndex(),
 		willRun(), talks,
 	)
@@ -101,8 +101,8 @@ func TestASourceDoneIsDoneEvenWhereAnAnswerStands(t *testing.T) {
 	talks := willRun()
 	api, _ := openRunWindow(t,
 		stored{
-			derived.Artifact(asr, hashed): []byte("what the model heard"),
-			derived.Answer(asr, hashed):   []byte(derived.Silent + "\n"),
+			domain.NewArtifactName(domain.ArtifactText, asr, hashed):   []byte("what the model heard"),
+			domain.NewArtifactName(domain.ArtifactAnswer, asr, hashed): []byte(derived.Silent + "\n"),
 		},
 		indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}},
 		willRun(), talks,
@@ -120,8 +120,8 @@ func TestARecordingDoneIsDoneWhereTheIndexNamesNoProducer(t *testing.T) {
 	talks := willRun()
 	api, _ := openRunWindow(t,
 		stored{
-			derived.Artifact(derived.ASR, getSoundFingerprint()): []byte(heard),
-			derived.Answer(derived.ASR, getSoundFingerprint()):   []byte(derived.Silent + "\n"),
+			domain.NewArtifactName(domain.ArtifactText, domain.ASR, getSoundFingerprint()):   []byte(heard),
+			domain.NewArtifactName(domain.ArtifactAnswer, domain.ASR, getSoundFingerprint()): []byte(derived.Silent + "\n"),
 		},
 		indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Hash: getSoundFingerprint()}},
 		willRun(), talks,

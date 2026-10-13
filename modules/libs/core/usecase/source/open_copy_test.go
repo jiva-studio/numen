@@ -3,6 +3,7 @@ package source
 import (
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 )
 
@@ -12,7 +13,7 @@ func TestACopyInTheStoreIsOpened(t *testing.T) {
 	if _, found := s.texts.OpenCopy.Execute(t.Context(), s.vault, linkedURL); found {
 		t.Fatal("a copy opened before one was fetched")
 	}
-	s.write(t, text.Copy(text.Fingerprint([]byte(string(linkedURL)))), "video")
+	s.write(t, domain.NewCopyName(text.Fingerprint([]byte(string(linkedURL)))), "video")
 
 	copied, found := s.texts.OpenCopy.Execute(t.Context(), s.vault, linkedURL)
 	if !found || copied.Size != 5 {

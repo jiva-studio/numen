@@ -2,7 +2,6 @@ package flashcards
 
 import (
 	"errors"
-	"strings"
 	"testing"
 	"time"
 
@@ -57,7 +56,7 @@ func TestAWindowNamingNoClockOpensARun(t *testing.T) {
 
 	out := startSession(t, api, held[0])
 	now := ulid.New(time.Now())
-	name := strings.TrimPrefix(out.GetRun(), flashcards.Area+"/")
+	name := out.GetRun()
 	if len(name) < 5 || name[:5] != now[:5] {
 		t.Errorf("the run %q was not opened at this machine's time", out.GetRun())
 	}

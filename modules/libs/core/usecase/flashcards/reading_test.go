@@ -3,7 +3,6 @@ package flashcards_test
 import (
 	"context"
 	"errors"
-	"strings"
 	"testing"
 	"time"
 
@@ -41,7 +40,7 @@ func (c countingReader) Read(ctx context.Context, path string) ([]byte, error) {
 // tallied is a vault's answers with a tally of the files read out of them.
 type tallied struct {
 	port.DerivedStores
-	reads map[string]int
+	reads map[domain.ArtifactName]int
 }
 
 func (s tallied) Open(v domain.Vault) (port.DerivedStore, error) {
@@ -54,12 +53,12 @@ func (s tallied) Open(v domain.Vault) (port.DerivedStore, error) {
 
 type talliedStore struct {
 	port.DerivedStore
-	reads map[string]int
+	reads map[domain.ArtifactName]int
 }
 
-func (s talliedStore) Read(ctx context.Context, name string) ([]byte, error) {
+func (s talliedStore) ReadArtifact(ctx context.Context, name domain.ArtifactName) ([]byte, error) {
 	s.reads[name]++
-	return s.DerivedStore.Read(ctx, name)
+	return s.DerivedStore.ReadArtifact(ctx, name)
 }
 
 // lookups is a vault's links with a tally of the notes whose links were looked
@@ -153,7 +152,7 @@ func TestTheAnswerLogIsReadOnce(t *testing.T) {
 	})
 	answer(t, s.run(t, saturday.AddDate(0, 0, -1)), "card000000", 6*time.Second)
 
-	reads := map[string]int{}
+	reads := map[domain.ArtifactName]int{}
 	kept := flashcards.NewSchedules(
 		tallied{DerivedStores: s.logs, reads: reads},
 		review.NewFSRS(), today, s.standings, s.presets,
@@ -164,7 +163,7 @@ func TestTheAnswerLogIsReadOnce(t *testing.T) {
 		t.Fatal(err)
 	}
 	for name, times := range reads {
-		if strings.HasSuffix(name, ".jsonl") && times != 1 {
+		if name.File == domain.ArtifactReviewLog && times != 1 {
 			t.Errorf("%s was read %d times", name, times)
 		}
 	}

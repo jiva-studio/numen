@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -81,7 +80,7 @@ func (u *WriteCorrections) write(
 
 	// A run appends to what it is writing down, and what is being appended to is
 	// not corrected underneath.
-	release, err := store.ClaimName(ctx, text.Partial(producer, hash))
+	release, err := store.ClaimArtifact(ctx, domain.NewArtifactName(domain.ArtifactPartial, producer, hash))
 	if errors.Is(err, port.ErrClaimed) {
 		return 0, ErrTranscriptBusy
 	}
@@ -93,7 +92,7 @@ func (u *WriteCorrections) write(
 	_, stood := transcript.Parse([]byte(words))
 	whole := spliceCues(stood, put, in.Start, in.Length)
 	written := append(transcript.Marshal(whole), transcript.GetHandWrittenMark()...)
-	if err := store.Write(ctx, text.Corrections(producer, hash), written); err != nil {
+	if err := store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactCorrections, producer, hash), written); err != nil {
 		return 0, err
 	}
 	if u.changed != nil {

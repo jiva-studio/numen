@@ -3,6 +3,7 @@ package source
 import (
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 )
 
@@ -12,7 +13,7 @@ func TestACopyInTheStoreIsLocatedByItsAddress(t *testing.T) {
 	if s.texts.GetCopyLocation.Execute(t.Context(), s.vault, linkPath, linkedURL).Exists {
 		t.Fatal("a copy exists before one was fetched")
 	}
-	s.write(t, text.Copy(text.Fingerprint([]byte(string(linkedURL)))), "video")
+	s.write(t, domain.NewCopyName(text.Fingerprint([]byte(string(linkedURL)))), "video")
 
 	where := s.texts.GetCopyLocation.Execute(t.Context(), s.vault, linkPath, linkedURL)
 	if !where.Exists || where.VaultPath != "" || where.Size != 5 {
