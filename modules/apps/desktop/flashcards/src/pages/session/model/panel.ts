@@ -63,7 +63,12 @@ export function useAgentPanel(deps: AgentPanelDeps) {
   const startTalk = (card: CardFace) => {
     if (held.value?.card.mark === card.mark && held.value.card.face === card.face) return
     endConversation()
-    const conversation = useConversation(deps.agent(card), words, `card-${opened++}`, deps.paint)
+    const conversation = useConversation({
+      agent: deps.agent(card),
+      words,
+      conversation: `card-${opened++}`,
+      paint: deps.paint,
+    })
     held.value = { card, conversation }
   }
 

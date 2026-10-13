@@ -26,8 +26,9 @@ export function createAgentKind({
 }: AgentKindDeps) {
   return buildAgentKind(
     held.handle,
-    () =>
-      useAgentConversation(useConversation(agent, talk, generateId(CONVERSATION)), {
+    useAgentConversation(
+      useConversation({ agent, words: talk, conversation: generateId(CONVERSATION) }),
+      {
         openFileAt: (path, ...runs) => void tabOpeners.openFileAt(path, runs),
         openFileBeside: (path) => void tabOpeners.openFile(path, '', 'beside'),
         resolve: (written) => core.resolve('', written),
@@ -35,7 +36,8 @@ export function createAgentKind({
         writeSetting: (path, value) => settings.rest.writeSetting(path, value),
         getSetting: (path) => settings.rest.getSetting(path),
         getModelsAt: (path) => settings.rest.getModelsAt(path),
-      }),
+      },
+    ),
     about,
   )
 }

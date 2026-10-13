@@ -1,12 +1,19 @@
 /** The clock, driven by hand: no waiting, no flakiness. */
 import { effectScope, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
-import { usePlexTransition } from './transition'
+import { usePlexTransition as baseUsePlexTransition, type Clock } from './transition'
 import { rowsAndColumns, type ArrangeInput } from '../lib/arrange'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
 import { stubClock } from '@/shared/fixtures/clock'
 import type { PlexNeighbourhood } from '../lib/neighbourhood'
 import type { PlacedNode } from '../lib/node'
+
+const usePlexTransition = (
+  neighbourhood: () => PlexNeighbourhood,
+  input: () => ArrangeInput | undefined,
+  duration: () => number,
+  clock?: Clock,
+) => baseUsePlexTransition(neighbourhood, input, { duration, clock })
 
 /** Run a composable inside a scope, as a component would. */
 function inScope<T>(build: () => T): T {

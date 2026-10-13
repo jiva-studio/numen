@@ -53,12 +53,12 @@ describe('createAgentPort', () => {
   it('hands the question, the focus and the conversation to the service', async () => {
     const { agent, requests } = service([])
     const abort = new AbortController()
-    for await (const _ of createAgentPort(agent).ask(
-      'why?',
-      'notes/Leaf mould.md',
-      'one',
-      abort.signal,
-    )) {
+    for await (const _ of createAgentPort(agent).ask({
+      question: 'why?',
+      focus: 'notes/Leaf mould.md',
+      conversation: 'one',
+      signal: abort.signal,
+    })) {
       // The port is read to the end; what it yields is checked below.
     }
     expect(requests).toEqual([

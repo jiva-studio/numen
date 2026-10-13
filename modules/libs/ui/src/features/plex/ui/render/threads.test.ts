@@ -53,25 +53,26 @@ describe('the line to a point awaiting a node', () => {
   const viewport = { width: 400, height: 200 }
 
   it('runs from the handle of the node to the point measured from the corner', () => {
-    expect(getPendingThread(frame, 'b', { x: 420, y: 250 }, viewport)).toBe(
+    expect(getPendingThread(frame, { from: 'b', at: { x: 420, y: 250 }, viewport })).toBe(
       'M 120 50 C 170 50 170 150 220 150',
     )
   })
 
   it('is nothing off a node or without a point', () => {
-    expect(getPendingThread(frame, 'missing', { x: 420, y: 250 }, viewport)).toBeNull()
-    expect(getPendingThread(frame, null, { x: 420, y: 250 }, viewport)).toBeNull()
-    expect(getPendingThread(frame, 'b', null, viewport)).toBeNull()
+    expect(
+      getPendingThread(frame, { from: 'missing', at: { x: 420, y: 250 }, viewport }),
+    ).toBeNull()
+    expect(getPendingThread(frame, { from: null, at: { x: 420, y: 250 }, viewport })).toBeNull()
+    expect(getPendingThread(frame, { from: 'b', at: null, viewport })).toBeNull()
   })
 })
 
 describe('the box a gesture would leave', () => {
   const to = { x: 30, y: 40 }
+  const options = { relationName: getRelationLabel, nodeSize: SIZE }
 
   it('is a box with the relation name where the pointer is when letting go creates', () => {
-    expect(
-      getReachGhost({ kind: 'create', from: 'a', relation: 'child' }, to, getRelationLabel, SIZE),
-    ).toEqual({
+    expect(getReachGhost({ kind: 'create', from: 'a', relation: 'child' }, to, options)).toEqual({
       id: 'ghost',
       title: 'new child',
       relation: 'child',
@@ -85,20 +86,15 @@ describe('the box a gesture would leave', () => {
   })
 
   it('is nothing when there is no outcome or the outcome links', () => {
-    expect(getReachGhost(null, to, getRelationLabel, SIZE)).toBeNull()
+    expect(getReachGhost(null, to, options)).toBeNull()
     expect(
-      getReachGhost(
-        { kind: 'link', from: 'a', to: 'b', relation: 'child' },
-        to,
-        getRelationLabel,
-        SIZE,
-      ),
+      getReachGhost({ kind: 'link', from: 'a', to: 'b', relation: 'child' }, to, options),
     ).toBeNull()
   })
 
   it('is nothing without a pointer', () => {
     expect(
-      getReachGhost({ kind: 'create', from: 'a', relation: 'child' }, null, getRelationLabel, SIZE),
+      getReachGhost({ kind: 'create', from: 'a', relation: 'child' }, null, options),
     ).toBeNull()
   })
 })
@@ -109,9 +105,10 @@ describe('something dragged over the picture', () => {
     createNode('b', 'child', 100, 50),
     createNode('a', 'focus', 10, 20),
   ])
+  const options = { dropName: getRelationLabel, nodeSize: SIZE }
 
   it('is a line from the focus to the pointer and the box letting go would leave', () => {
-    const shape = getDraggedShape(focusLast, 'sibling', to, getRelationLabel, SIZE)
+    const shape = getDraggedShape(focusLast, { relation: 'sibling', to }, options)
 
     expect(shape?.thread).toBe('M 10 20 C 20 20 20 40 30 40')
     expect(shape?.ghost).toEqual({
@@ -128,15 +125,13 @@ describe('something dragged over the picture', () => {
   })
 
   it('is nothing without a relation, a pointer or a focus', () => {
-    expect(getDraggedShape(focusLast, null, to, getRelationLabel, SIZE)).toBeNull()
-    expect(getDraggedShape(focusLast, 'child', null, getRelationLabel, SIZE)).toBeNull()
+    expect(getDraggedShape(focusLast, { relation: null, to }, options)).toBeNull()
+    expect(getDraggedShape(focusLast, { relation: 'child', to: null }, options)).toBeNull()
     expect(
       getDraggedShape(
         createFrame([createNode('b', 'child', 0, 0)]),
-        'child',
-        to,
-        getRelationLabel,
-        SIZE,
+        { relation: 'child', to },
+        options,
       ),
     ).toBeNull()
   })

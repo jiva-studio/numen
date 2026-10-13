@@ -63,8 +63,10 @@ const { frame, isMoving } = usePlexTransition(
     measureLabel: measures.value?.label,
     labelDepth: measures.value?.labelDepth,
   }),
-  () => props.duration,
-  props.clock,
+  {
+    duration: () => props.duration,
+    clock: props.clock,
+  },
 )
 
 /**

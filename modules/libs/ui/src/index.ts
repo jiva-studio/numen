@@ -81,7 +81,7 @@ export { Skeleton } from './shared/ui/skeleton'
 export type { Turn } from './features/thread'
 export { useConversation } from './features/thread'
 export type { Conversation } from './features/thread'
-export type { AgentPort, AgentStep } from './features/thread'
+export type { AgentPort, AgentQuery, AgentStep } from './features/thread'
 
 /** A link to a note: `[[name]]` in the text, `note://<identifier>` inside it. */
 export { isNoteAddress, getWikilinks } from './shared/lib/address'
