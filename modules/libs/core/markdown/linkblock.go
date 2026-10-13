@@ -69,7 +69,8 @@ func (d *Document) block() (block, error) {
 		return block{}, ErrInline
 	}
 
-	b.entries, indent := d.readBlockEntries(items, end)
+	entries, indent := d.readBlockEntries(items, end)
+	b.entries = entries
 	if indent != "" {
 		b.indent = indent
 	}
