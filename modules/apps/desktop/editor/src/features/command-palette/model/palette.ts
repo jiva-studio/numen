@@ -10,7 +10,7 @@
 import { computed, ref, shallowRef } from 'vue'
 import { createAnswerGuard as latest } from '@/shared/questions'
 import type { Vault } from '@/entities/vault'
-import { commandsOf } from '../lib/commands'
+import { createCommands } from '../lib/commands'
 import { getPaletteView } from './view'
 import { createInvocation } from '../lib/invocation'
 import type {
@@ -54,7 +54,7 @@ export function useCommandPalette(
   const open = ref(false)
   const typed = ref('')
 
-  const commands = commandsOf(words)
+  const commands = createCommands(words)
   const byId = new Map(commands.map((one) => [one.id, one]))
 
   const found = shallowRef<readonly NameMatch[]>(BLANK.found)

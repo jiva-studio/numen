@@ -7,7 +7,13 @@ import { StopReason } from '@numen/protocol'
 import { asFailure, asValue } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 import type { Cards, VaultCard, DeckProblem, Preset } from '@/entities/deck'
-import { DEFAULTS, NO_PLACE, NO_BOUNDS, type PresetChoice, type Presets } from '@/entities/deck'
+import {
+  DEFAULTS,
+  NO_CURVE_POINT,
+  NO_BOUNDS,
+  type PresetChoice,
+  type Presets,
+} from '@/entities/deck'
 import { fileOpeners, type WindowHandle } from '@/entities/tab'
 import { useWindowTabs } from '@/entities/tab'
 import { DECK } from '@/entities/tab'
@@ -182,8 +188,8 @@ const vault = (
       grid: [],
       days: [],
       at: [],
-      now: NO_PLACE,
-      suggested: NO_PLACE,
+      now: NO_CURVE_POINT,
+      suggested: NO_CURVE_POINT,
       decks: 0,
       cards: 0,
       overdue: 0,
@@ -399,7 +405,7 @@ describe('a deck the vault refused', () => {
 
 describe('what is wrong with a deck', () => {
   const stencilless: DeckProblem = {
-    fault: 'cardWithoutAStencil',
+    kind: 'cardWithoutAStencil',
     card: 1,
     face: null,
     field: '',
@@ -580,7 +586,7 @@ describe('a deck read again under the window', () => {
   // The file is read wrong in a way that stands against one card, so a mark
   // that went is a mark this can see going.
   const stencilless: DeckProblem = {
-    fault: 'cardWithoutAStencil',
+    kind: 'cardWithoutAStencil',
     card: 1,
     face: null,
     field: '',
@@ -788,7 +794,7 @@ describe('a deck renamed under the window', () => {
     const one = await open({
       problems: [
         {
-          fault: 'cardWithoutAStencil',
+          kind: 'cardWithoutAStencil',
           card: 1,
           face: null,
           field: '',
@@ -1069,7 +1075,7 @@ describe('a deck tab closed', () => {
 
   it('forgets the marks it drew', async () => {
     const one = await open({
-      problems: [{ fault: 'unknown', card: 0, face: null, field: '', text: 'Odd' }],
+      problems: [{ kind: 'unknown', card: 0, face: null, field: '', text: 'Odd' }],
     })
     const before = one.tab.marks.value
     one.tab.close(one.id)

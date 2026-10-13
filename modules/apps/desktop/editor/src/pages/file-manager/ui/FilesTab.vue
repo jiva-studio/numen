@@ -7,7 +7,7 @@ import { Menu, Tree } from '@numen/ui'
 import type { Position, RowMarker } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 
-import { iconFor } from '@/shared/icons'
+import { findIcon } from '@/shared/icons'
 import { getEntryIcon } from '../lib/icons'
 import type { DropPosition, FilesTabState } from '../types'
 import { getRows } from '../lib/rows'
@@ -170,7 +170,7 @@ function getRowIcon(id: string, open: boolean): LucideIcon {
       @dismiss="onDismissMenu"
     >
       <template #icon="{ id }">
-        <component :is="iconFor(id)" v-if="iconFor(id)" class="files__icon" aria-hidden="true" />
+        <component :is="findIcon(id)" v-if="findIcon(id)" class="files__icon" aria-hidden="true" />
       </template>
     </Menu>
   </div>

@@ -14,7 +14,7 @@ const TIGHT_STEP = nodeSize.width + gap
 /** A window wide enough for eleven children at the settings and no wider. */
 const EXACT = { width: 11 * nodeSize.width + 10 * gap + 2 * margin, height: 1000 }
 
-const children = (frame: PlexFrame) => frame.nodes.filter((node) => node.seat === 'child')
+const children = (frame: PlexFrame) => frame.nodes.filter((node) => node.relation === 'child')
 
 const stepAlong = (frame: PlexFrame) => {
   const [first, second] = children(frame)
@@ -71,7 +71,7 @@ describe('a gap opens into the room the window leaves', () => {
 })
 
 describe('the gap an edge crosses opens first', () => {
-  it('seats the first line further down when the width is already spoken for', () => {
+  it('places the first line further down when the width is already spoken for', () => {
     // Eleven children fill this window edge to edge, so nothing opens sideways.
     // The height is untouched, and the label an edge carries is read there.
     const frame = arrangePlex(build('A node', { child: 11 }), {
@@ -85,7 +85,7 @@ describe('the gap an edge crosses opens first', () => {
 })
 
 describe('a line runs as long as the window holds', () => {
-  it('seats eleven children on one line when the width is there', () => {
+  it('places eleven children on one line when the width is there', () => {
     const frame = arrangePlex(build('A node', { child: 11 }), {
       options: { viewport: { width: 1970, height: 1440 } },
     })
@@ -110,7 +110,7 @@ describe('what opens still keeps the window', () => {
     { width: 560, height: 480 },
   ]
 
-  it.each(WINDOWS)('$width×$height, every seat taken', (viewport) => {
+  it.each(WINDOWS)('$width×$height, every relation taken', (viewport) => {
     const full = build('A node', { parent: 6, child: 21, jump: 7, sibling: 7 })
     const frame = arrangePlex(full, { options: { viewport, spread: 4 } })
     expect(findEscaped(frame, viewport).map((node) => node.title)).toStrictEqual([])

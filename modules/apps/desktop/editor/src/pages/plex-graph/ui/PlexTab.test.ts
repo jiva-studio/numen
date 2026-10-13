@@ -8,13 +8,13 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import type { PlexRelatedSeat } from '@numen/ui'
+import type { PlexRelation } from '@numen/ui'
 import PlexTab from './PlexTab.vue'
 import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
 import type { MenuRequest, PlexTabState } from '../types'
 import { WORDS as words } from '../words'
 import type { NoteType } from '@/entities/file'
-import { iconFor } from '@/shared/icons'
+import { findIcon } from '@/shared/icons'
 
 /** A tab standing on one note, with a child beside it and no menu open. */
 const createTabState = () =>
@@ -22,8 +22,8 @@ const createTabState = () =>
     view: { error: ref(''), isLoading: ref(false) },
     picture: ref({
       nodes: [
-        { id: 'Root.md', title: 'Root', seat: 'focus' },
-        { id: 'Child.md', title: 'Child', seat: 'child' },
+        { id: 'Root.md', title: 'Root', relation: 'focus' },
+        { id: 'Child.md', title: 'Child', relation: 'child' },
       ],
       edges: [{ from: 'Root.md', to: 'Child.md' }],
     }),
@@ -34,7 +34,7 @@ const createTabState = () =>
     isNavigatingOnCreate: ref(true),
     creatable: ['child'],
     maxHeadings: ref(6),
-    typeOf: () => 'note',
+    getType: () => 'note',
     activate: () => {},
     createNode: async () => {},
     joinNodes: async () => {},
@@ -72,7 +72,7 @@ const drawing = (type: number) => {
 }
 
 /** The width of the box a node is drawn in, by what the node says. */
-const widthOf = (view: ReturnType<typeof mount>, name: string) =>
+const getWidth = (view: ReturnType<typeof mount>, name: string) =>
   Number(view.get(`[aria-label^="${name}"] rect`).attributes('width'))
 
 afterEach(() => {
@@ -83,22 +83,22 @@ describe('the box a node is drawn in', () => {
   it('is the size it was designed at when nothing multiplies the type', () => {
     drawing(13)
     const view = mount(PlexTab, { props: { state: createTabState() } })
-    expect(widthOf(view, 'Root')).toBe(176)
-    expect(widthOf(view, 'Child')).toBe(144)
+    expect(getWidth(view, 'Root')).toBe(176)
+    expect(getWidth(view, 'Child')).toBe(144)
   })
 
   it('is half again as large where the label is', () => {
     drawing(19.5)
     const view = mount(PlexTab, { props: { state: createTabState() } })
-    expect(widthOf(view, 'Root')).toBe(264)
-    expect(widthOf(view, 'Child')).toBe(216)
+    expect(getWidth(view, 'Root')).toBe(264)
+    expect(getWidth(view, 'Child')).toBe(216)
   })
 
   it('is smaller where the label is', () => {
     drawing(9.75)
     const view = mount(PlexTab, { props: { state: createTabState() } })
-    expect(widthOf(view, 'Root')).toBe(132)
-    expect(widthOf(view, 'Child')).toBe(108)
+    expect(getWidth(view, 'Root')).toBe(132)
+    expect(getWidth(view, 'Child')).toBe(108)
   })
 })
 
@@ -157,21 +157,21 @@ describe('what a node is drawn before its title', () => {
   const createTypedTab = (types: Record<string, NoteType>) =>
     ({
       ...createTabState(),
-      typeOf: (node: string) => types[node] ?? 'note',
+      getType: (node: string) => types[node] ?? 'note',
     }) as unknown as PlexTabState
 
   it('is the icon the tree draws a deck under', () => {
     drawing(13)
     const view = mount(PlexTab, { props: { state: createTypedTab({ 'Root.md': 'deck' }) } })
 
-    expect(view.findComponent(iconFor('deck')!).exists()).toBe(true)
+    expect(view.findComponent(findIcon('deck')!).exists()).toBe(true)
   })
 
   it('is the icon the tree draws a stencil under', () => {
     drawing(13)
     const view = mount(PlexTab, { props: { state: createTypedTab({ 'Root.md': 'stencil' }) } })
 
-    expect(view.findComponent(iconFor('stencil')!).exists()).toBe(true)
+    expect(view.findComponent(findIcon('stencil')!).exists()).toBe(true)
   })
 
   it('is nothing at all for an ordinary note, which keeps no room for one', () => {
@@ -194,7 +194,7 @@ describe('quick link popover rendering', () => {
   it('renders popover when state.quickLink is present', () => {
     drawing(13)
     const tabState = createTabState()
-    tabState.quickLink.value = { from: 'Root.md', seat: 'child', at: { x: 300, y: 250 } }
+    tabState.quickLink.value = { from: 'Root.md', relation: 'child', at: { x: 300, y: 250 } }
 
     const view = mount(PlexTab, { props: { state: tabState } })
 
@@ -204,7 +204,7 @@ describe('quick link popover rendering', () => {
   it('computes handle position and draws thread using getScreenCTM', async () => {
     drawing(13)
     const tabState = createTabState()
-    tabState.quickLink.value = { from: 'Root.md', seat: 'child', at: { x: 300, y: 250 } }
+    tabState.quickLink.value = { from: 'Root.md', relation: 'child', at: { x: 300, y: 250 } }
 
     const originalGetScreenCTM = SVGSVGElement.prototype.getScreenCTM
     SVGSVGElement.prototype.getScreenCTM = function () {
@@ -232,7 +232,7 @@ describe('quick link popover rendering', () => {
   it('draws thread using DOMRect fallback when CTM returns null', async () => {
     drawing(13)
     const tabState = createTabState()
-    tabState.quickLink.value = { from: 'Root.md', seat: 'child', at: { x: 300, y: 250 } }
+    tabState.quickLink.value = { from: 'Root.md', relation: 'child', at: { x: 300, y: 250 } }
 
     const originalGetScreenCTM = SVGSVGElement.prototype.getScreenCTM
     SVGSVGElement.prototype.getScreenCTM = () => null
@@ -259,7 +259,7 @@ describe('quick link popover rendering', () => {
         confirmed = [name, isExisting]
       },
     } as unknown as PlexTabState
-    tabState.quickLink.value = { from: 'Root.md', seat: 'child', at: { x: 300, y: 250 } }
+    tabState.quickLink.value = { from: 'Root.md', relation: 'child', at: { x: 300, y: 250 } }
 
     const view = mount(PlexTab, { props: { state: tabState } })
     const popover = view.findComponent({ name: 'PlexQuickLinkPopover' })
@@ -296,14 +296,14 @@ describe('interaction events forwarded from Plex component', () => {
       activate: (node: string) => {
         activated = node
       },
-      createNode: async (from: string, seat: PlexRelatedSeat, at: { x: number; y: number }) => {
-        created = [from, seat, at]
+      createNode: async (from: string, relation: PlexRelation, at: { x: number; y: number }) => {
+        created = [from, relation, at]
       },
-      joinNodes: async (from: string, to: string, seat: PlexRelatedSeat) => {
-        linked = [from, to, seat]
+      joinNodes: async (from: string, to: string, relation: PlexRelation) => {
+        linked = [from, to, relation]
       },
-      dropNodes: async (nodes: readonly string[], seat: PlexRelatedSeat) => {
-        brought = [nodes, seat]
+      dropNodes: async (nodes: readonly string[], relation: PlexRelation) => {
+        brought = [nodes, relation]
       },
       openMenu: (req: unknown) => {
         openedMenu = req

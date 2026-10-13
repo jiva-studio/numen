@@ -108,8 +108,8 @@ const conversation =
 export const Playground: Story = {
   render: conversation([
     createAsked('1', 'What does a plex draw?'),
-    createAnswered('2', 'One node in focus, and everything else placed by its seat.'),
-    createAsked('3', 'And where do the seats come from?'),
+    createAnswered('2', 'One node in focus, and everything else placed by its relation.'),
+    createAsked('3', 'And where do the relations come from?'),
     createAnswered('4', MULTILINE),
   ]),
 }
@@ -121,9 +121,9 @@ export const Fresh: Story = {
     const canvas = within(canvasElement)
     const field = canvas.getByRole('textbox')
     await userEvent.click(field)
-    await userEvent.type(field, 'what is a seat')
+    await userEvent.type(field, 'what is a relation')
     await userEvent.keyboard('{Enter}')
-    await expect(canvas.getByText('what is a seat')).toBeInTheDocument()
+    await expect(canvas.getByText('what is a relation')).toBeInTheDocument()
     await expect((field as HTMLTextAreaElement).value).toBe('')
   },
 }

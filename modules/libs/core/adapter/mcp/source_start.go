@@ -6,7 +6,7 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 func addSourceWriteTools(server *sdk.Server, core Core) {
@@ -57,7 +57,7 @@ func startRecognition(core Core, in sourceStartInput) (sourceStartOutput, error)
 		"as it goes, and the window shows how far it has got"
 	started := core.Sources.StartRecognition.Execute(core.getCurrentVault().Vault, in.Path)
 	switch {
-	case started == port.Queued:
+	case started == source.Queued:
 		status = "queued; another document is being read and this one is in line behind " +
 			"it — nothing more is needed, it begins when that recognition is over"
 	case !core.Sources.GetRecognitionStatus.Execute().IsReady:
@@ -96,7 +96,7 @@ func startTranscription(core Core, in sourceTranscribeInput) (sourceStartOutput,
 		"searchable as it goes"
 	started := core.Sources.StartTranscription.Execute(core.getCurrentVault().Vault, in.Path)
 	switch {
-	case started == port.Queued:
+	case started == source.Queued:
 		status = "queued; another recording is being transcribed and this one is in line " +
 			"behind it — nothing more is needed, it begins when that one is over"
 	case !core.Sources.GetTranscriptionReadiness.Execute():

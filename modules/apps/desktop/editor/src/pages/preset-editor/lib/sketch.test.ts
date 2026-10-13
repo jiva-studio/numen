@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULTS, NO_BOUNDS, NO_PLACE, type Settings } from '../types'
+import { DEFAULTS, NO_BOUNDS, NO_CURVE_POINT, type Settings } from '../types'
 import { BOUNDS } from '../fixtures'
 import { getPointCost } from './curve'
 import { estimateCurve } from './sketch'
@@ -29,7 +29,7 @@ describe('the line the window draws in the answer’s place', () => {
     expect(guess.grid[0]).toBe(0)
     expect(guess.grid[guess.grid.length - 1]).toBe(60)
     expect(guess.grid[guess.now.at]).toBe(20)
-    expect(guess.suggested).toStrictEqual(NO_PLACE)
+    expect(guess.suggested).toStrictEqual(NO_CURVE_POINT)
   })
 
   it('brings back more of the material the longer the day runs', () => {

@@ -116,6 +116,34 @@ linters:
             - pkg: "github.com/jiva-studio/numen/modules/libs/core/container"
               desc: "an adapter is given what it needs and assembles nothing"
 
+        # The files named with ! below hold a port in their signature; each one
+        # is on the list for one reason:
+        # editor/assembly.go, serve.go, api.go, index.go and flashcards/api.go
+        # bind the window to the ports the container hands it; editor/agent.go,
+        # flashcards/agent.go and focus.go hand port.Task and port.Window across
+        # the wire; editor/viewer.go, documents.go and pool/documents.go hold
+        # the open document and the vault readers the viewer reads through.
+        driving-adapter:
+          list-mode: lax
+          files:
+            - "**/adapter/window/**"
+            - "**/adapter/mcp/**"
+            - "!$test"
+            - "!**/adapter/window/editor/assembly.go"
+            - "!**/adapter/window/editor/serve.go"
+            - "!**/adapter/window/editor/api.go"
+            - "!**/adapter/window/editor/index.go"
+            - "!**/adapter/window/editor/agent.go"
+            - "!**/adapter/window/editor/focus.go"
+            - "!**/adapter/window/editor/viewer.go"
+            - "!**/adapter/window/editor/documents.go"
+            - "!**/adapter/window/editor/pool/documents.go"
+            - "!**/adapter/window/flashcards/api.go"
+            - "!**/adapter/window/flashcards/agent.go"
+          deny:
+            - pkg: "github.com/jiva-studio/numen/modules/libs/core/port"
+              desc: "a driving adapter calls the use case layer; a port or sentinel it needs is re-exported there"
+
     errcheck:
       # A type assertion that fails is a panic, and the core does not panic.
       check-type-assertions: true

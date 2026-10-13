@@ -4,13 +4,13 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { Menu, optionsForType, Plex, createThreadPath, useTypeSize, Waiting } from '@numen/ui'
-import type { MenuTrigger, PlexRelatedSeat, PlexDestination } from '@numen/ui'
+import type { MenuTrigger, PlexRelation, PlexDestination } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 import PlexQuickLinkPopover from './PlexQuickLinkPopover.vue'
 import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
 import { ITEMS, NONE } from '../lib/menu'
-import { iconFor } from '@/shared/icons'
-import { iconOfNote } from '@/entities/note'
+import { findIcon } from '@/shared/icons'
+import { getNoteIcon } from '@/entities/note'
 import type { LinkInspectorSavePayload, PlexTabState } from '../types'
 import { WORDS as words } from '../words'
 
@@ -95,16 +95,16 @@ function onPointerUp(event: PointerEvent) {
   }
 }
 
-function onCreateNode(from: string, seat: PlexRelatedSeat, at?: { x: number; y: number }) {
-  void props.state.createNode(from, seat, at ?? lastPointer.value)
+function onCreateNode(from: string, relation: PlexRelation, at?: { x: number; y: number }) {
+  void props.state.createNode(from, relation, at ?? lastPointer.value)
 }
 
-function onLinkNodes(from: string, to: string, seat: PlexRelatedSeat) {
-  void props.state.joinNodes(from, to, seat)
+function onLinkNodes(from: string, to: string, relation: PlexRelation) {
+  void props.state.joinNodes(from, to, relation)
 }
 
-function onBringNodes(nodes: readonly string[], seat: PlexRelatedSeat) {
-  void props.state.dropNodes(nodes, seat)
+function onBringNodes(nodes: readonly string[], relation: PlexRelation) {
+  void props.state.dropNodes(nodes, relation)
 }
 
 function onOpenMenu(node: string, at: { x: number; y: number }, opening: MenuTrigger) {
@@ -172,8 +172,8 @@ function onDismissLinkInspector() {
  * deck, a stencil and a preset carry the icon the tree draws them under.
  */
 function getNodeIcon(node: string): LucideIcon | null {
-  const type = props.state.typeOf(node)
-  return type === 'note' ? null : iconOfNote(type)
+  const type = props.state.getType(node)
+  return type === 'note' ? null : getNoteIcon(type)
 }
 
 /** A menu put away, and the keyboard back on the node it was asked from. */
@@ -255,7 +255,7 @@ function getSourceHandlePosition(
       :creatable="props.state.creatable"
       :dragged="dragged"
       :drop-name="words.dropName"
-      :headings="props.state.headingsOf"
+      :headings="props.state.getHeadings"
       @activate="onActivateNode"
       @create="onCreateNode"
       @link="onLinkNodes"
@@ -288,7 +288,7 @@ function getSourceHandlePosition(
       @dismiss="onDismissMenu"
     >
       <template #icon="{ id }">
-        <component :is="iconFor(id)" v-if="iconFor(id)" class="plex__icon" aria-hidden="true" />
+        <component :is="findIcon(id)" v-if="findIcon(id)" class="plex__icon" aria-hidden="true" />
       </template>
     </Menu>
 
@@ -299,7 +299,7 @@ function getSourceHandlePosition(
     <PlexQuickLinkPopover
       v-if="quickLink"
       :at="quickLink.at"
-      :seat="quickLink.seat"
+      :relation="quickLink.relation"
       :search="props.state.searchNotes"
       @select-note="onSelectQuickLinkNote"
       @create-note="onCreateQuickLinkNote"

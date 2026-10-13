@@ -6,7 +6,7 @@ import type {
   MenuTrigger,
   PlexNeighbourhood,
   PlexHeading,
-  PlexRelatedSeat,
+  PlexRelation,
   PlexDestination,
 } from '@numen/ui'
 import type { NoteHeading } from '@/entities/note'
@@ -22,10 +22,10 @@ export interface MenuRequest {
   readonly opening: MenuTrigger
 }
 
-/** Where the quick link popover stands, and what seat it connects. */
+/** Where the quick link popover stands, and what relation it connects. */
 export interface QuickLinkRequest {
   readonly from: string
-  readonly seat: PlexRelatedSeat
+  readonly relation: PlexRelation
   readonly at: { readonly x: number; readonly y: number }
 }
 
@@ -37,7 +37,7 @@ export interface DirectionalLinkItem {
   readonly id: string
   readonly from: string
   readonly to: string
-  readonly role: PlexRelatedSeat
+  readonly role: PlexRelation
   readonly direction: LinkDirectionMode
   readonly description: string
 }
@@ -46,7 +46,7 @@ export interface DirectionalLinkItem {
 export interface LinkInspectorSavePayload {
   readonly pairKey: string
   readonly rows: readonly DirectionalLinkItem[]
-  readonly removedLinks: readonly { from: string; to: string; role?: PlexRelatedSeat }[]
+  readonly removedLinks: readonly { from: string; to: string; role?: PlexRelation }[]
 }
 
 export interface LinkInspectorNode {
@@ -66,14 +66,14 @@ export interface LinkInspectorRequest {
 
 /** Making a note from the picture, and joining two that are already on it. */
 export interface PlexEditor {
-  createInSeat(from: string, seat: PlexRelatedSeat): Promise<unknown>
+  createInRelation(from: string, relation: PlexRelation): Promise<unknown>
   createWithTitle(
     title: string,
     from: string,
-    seat: PlexRelatedSeat,
+    relation: PlexRelation,
   ): Promise<{ path: string } | null>
-  join(from: string, to: string, seat: PlexRelatedSeat, label?: string): Promise<boolean>
-  removeLink(from: string, to: string, seat?: PlexRelatedSeat): Promise<boolean>
+  join(from: string, to: string, relation: PlexRelation, label?: string): Promise<boolean>
+  removeLink(from: string, to: string, relation?: PlexRelation): Promise<boolean>
 }
 
 /** Dependencies for plex tab state. */
@@ -98,7 +98,7 @@ export interface PlexTabDeps {
   showMessage(text: string): void
   createUntitledNote(): Promise<string>
   readOpeningPath(): Promise<string>
-  readonly creatable: readonly PlexRelatedSeat[]
+  readonly creatable: readonly PlexRelation[]
   searchNames?(query: string, limit?: number): Promise<readonly { path: string; title: string }[]>
   readonly isNavigatingOnCreate?: Readonly<Ref<boolean>>
 }
@@ -108,7 +108,7 @@ export interface PlexViewState {
   readonly picture: ComputedRef<PlexNeighbourhood | null>
   readonly empty: ComputedRef<boolean>
   readonly dragged: ComputedRef<readonly string[]>
-  readonly creatable: readonly PlexRelatedSeat[]
+  readonly creatable: readonly PlexRelation[]
 }
 
 export interface PlexMenuState {
@@ -120,17 +120,17 @@ export interface PlexMenuState {
 
 export interface PlexHeadingsState {
   readonly maxHeadings: Readonly<Ref<number>>
-  typeOf(node: string): NoteType
-  headingsOf(node: string): readonly PlexHeading[]
+  getType(node: string): NoteType
+  getHeadings(node: string): readonly PlexHeading[]
   readHeadings(): Promise<void>
   openHeading(node: string, heading: string): void
 }
 
 export interface PlexNodeActions {
   activate(node: string): void
-  createNode(from: string, seat: PlexRelatedSeat, at?: { x: number; y: number }): Promise<void>
-  joinNodes(from: string, to: string, seat: PlexRelatedSeat): Promise<void>
-  dropNodes(dragged: readonly string[], seat: PlexRelatedSeat): Promise<void>
+  createNode(from: string, relation: PlexRelation, at?: { x: number; y: number }): Promise<void>
+  joinNodes(from: string, to: string, relation: PlexRelation): Promise<void>
+  dropNodes(dragged: readonly string[], relation: PlexRelation): Promise<void>
   openNode(node: string, showing?: PlexDestination): void
   createNote(): Promise<void>
   followMoves(renamed: readonly PathRename[]): void

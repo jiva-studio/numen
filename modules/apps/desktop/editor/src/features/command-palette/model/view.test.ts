@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { WORDS as words } from '@/shared/words'
-import { commandsOf } from '../lib/commands'
+import { createCommands } from '../lib/commands'
 import type { PendingStep } from '../lib/step'
 import type { Command, CommandTarget, PaletteLists } from '../types'
 import { runSupport } from './runs'
@@ -57,7 +57,7 @@ const getNoteGroup = (view: ReturnType<typeof createView>, over: CommandTarget, 
   view.createGroups(null, over, typed).find((group) => group.id === 'note')
 
 describe('the commands as the words typed leave them', () => {
-  const view = createView(commandsOf(words))
+  const view = createView(createCommands(words))
 
   it('lights nothing where nothing is typed', () => {
     const read = getNoteGroup(view, front(), '')?.items.find((item) => item.id === 'read')
@@ -121,7 +121,7 @@ describe('the command reached on the same row', () => {
 })
 
 describe('what the group over a note says while it holds nothing', () => {
-  const view = createView(commandsOf(words))
+  const view = createView(createCommands(words))
 
   it('says the vault could not be opened where it is not ready', () => {
     expect(getNoteGroup(view, front({ isReady: false }), '')?.silence).toBe(words.noVault)

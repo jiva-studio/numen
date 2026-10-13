@@ -1,10 +1,10 @@
 import type { PlacedNode, PlexNode } from '../node'
-import type { PlexRelatedSeat } from '../seat'
+import type { PlexRelation } from '../relation'
 import type { Limits, RoleLimits } from './limits'
 import { isVertical, type Direction, type PlexOptions } from './options'
 
-/** The nodes admitted to the picture, grouped by the seat they take. */
-export type Seating = Readonly<Partial<Record<PlexRelatedSeat, readonly PlexNode[]>>>
+/** The nodes admitted to the picture, grouped by the relation they take. */
+export type NodesByRelation = Readonly<Partial<Record<PlexRelation, readonly PlexNode[]>>>
 
 /** How wide a node's box is drawn, clamped before a strategy is called. */
 export type Widths = (node: PlexNode) => number
@@ -21,7 +21,7 @@ export interface Placement {
   readonly name: string
   /** The focus is already at the origin; it is passed in to be cleared. */
   place(
-    seating: Seating,
+    nodesByRelation: NodesByRelation,
     focus: PlacedNode,
     options: PlexOptions,
     limits: Limits,
@@ -33,20 +33,27 @@ export interface Placement {
 export const rowsAndColumns: Placement = {
   name: 'rows-and-columns',
 
-  place(seating, focus, options, limits, width) {
+  place(nodesByRelation, focus, options, limits, width) {
     const placed: PlacedNode[] = [focus]
 
     // Rows first. A row of children is as wide as the plex gets, so a column
     // at a fixed distance would sit on top of it once the row outgrew that
-    // distance. The sideways seats give way, because moving parents and
+    // distance. The sideways relations give way, because moving parents and
     // children would move the axis the plex is read on.
-    const seated = Object.entries(seating) as [PlexRelatedSeat, readonly PlexNode[]][]
-    const rows = seated.filter(([seat]) => isVertical(options.direction[seat]))
-    const columns = seated.filter(([seat]) => !isVertical(options.direction[seat]))
+    const entries = Object.entries(nodesByRelation) as [PlexRelation, readonly PlexNode[]][]
+    const rows = entries.filter(([relation]) => isVertical(options.direction[relation]))
+    const columns = entries.filter(([relation]) => !isVertical(options.direction[relation]))
 
-    for (const [seat, nodes] of rows) {
+    for (const [relation, nodes] of rows) {
       placed.push(
-        ...line(nodes, options.direction[seat], options, limits[seat], width, focus.height / 2),
+        ...line(
+          nodes,
+          options.direction[relation],
+          options,
+          limits[relation],
+          width,
+          focus.height / 2,
+        ),
       )
     }
 
@@ -58,12 +65,14 @@ export const rowsAndColumns: Placement = {
     const rowsPlaced = [...placed]
     const reach = Math.max(
       0,
-      ...columns.map(([seat, nodes]) => getReach(nodes.length, options, limits[seat])),
+      ...columns.map(([relation, nodes]) => getReach(nodes.length, options, limits[relation])),
     )
     const clearance = measureWidestWithin(rowsPlaced, reach)
 
-    for (const [seat, nodes] of columns) {
-      placed.push(...line(nodes, options.direction[seat], options, limits[seat], width, clearance))
+    for (const [relation, nodes] of columns) {
+      placed.push(
+        ...line(nodes, options.direction[relation], options, limits[relation], width, clearance),
+      )
     }
 
     return placed.slice(1)
@@ -71,7 +80,7 @@ export const rowsAndColumns: Placement = {
 }
 
 /**
- * One seat, in lines running away from the focus. `clearance` is what the
+ * One relation, in lines running away from the focus. `clearance` is what the
  * first line has to clear.
  */
 function line(
@@ -168,10 +177,10 @@ function inColumns(
 }
 
 /**
- * The nodes of a seat cut into lines, nearest the focus first. `depth` counts
+ * The nodes of a relation cut into lines, nearest the focus first. `depth` counts
  * the lines out from the focus and `first` the nodes before.
  *
- * `perLine` is the longest a line may be, and the lines a seat runs to share
+ * `perLine` is the longest a line may be, and the lines a relation runs to share
  * its nodes out evenly: every line is within one node of every other.
  */
 function lines(

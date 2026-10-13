@@ -20,7 +20,7 @@ func london(t *testing.T) *time.Location {
 // one in the morning is finishing that day, not starting the next.
 func TestAnHourAfterMidnightBelongsToTheDayBefore(t *testing.T) {
 	in := london(t)
-	day := review.Day{Starts: review.DayStarts, In: in}
+	day := review.Day{Starts: review.DayStartTime, In: in}
 
 	late := time.Date(2026, 3, 10, 1, 30, 0, 0, in)
 	if got, want := day.GetEnd(late), time.Date(2026, 3, 10, 4, 0, 0, 0, in); !got.Equal(want) {
@@ -37,7 +37,7 @@ func TestAnHourAfterMidnightBelongsToTheDayBefore(t *testing.T) {
 // out of ends at the hour a person reads.
 func TestTheDayAnHourIsTakenOutOfEndsAtTheHourOnTheWall(t *testing.T) {
 	in := london(t)
-	day := review.Day{Starts: review.DayStarts, In: in}
+	day := review.Day{Starts: review.DayStartTime, In: in}
 
 	// The clocks go forward at one in the morning on 29 March 2026.
 	before := time.Date(2026, 3, 28, 9, 0, 0, 0, in)
@@ -50,7 +50,7 @@ func TestTheDayAnHourIsTakenOutOfEndsAtTheHourOnTheWall(t *testing.T) {
 // and a card owed today is owed for the whole of it.
 func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
 	in := london(t)
-	day := review.Day{Starts: review.DayStarts, In: in}
+	day := review.Day{Starts: review.DayStartTime, In: in}
 	now := time.Date(2026, 3, 10, 9, 0, 0, 0, in)
 
 	for name, one := range map[string]struct {
@@ -74,7 +74,7 @@ func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
 
 // A card nobody has answered is owed the first time it is asked about.
 func TestACardNobodyAnsweredIsOwed(t *testing.T) {
-	day := review.Day{Starts: review.DayStarts}
+	day := review.Day{Starts: review.DayStartTime}
 	if !day.IsOwed(review.Schedule{}, time.Now()) {
 		t.Error("a card with no answers behind it is not owed")
 	}
@@ -82,7 +82,7 @@ func TestACardNobodyAnsweredIsOwed(t *testing.T) {
 
 // A build holding no zone counts the day in the machine's own.
 func TestADayWithNoZoneIsCountedInTheMachinesOwn(t *testing.T) {
-	day := review.Day{Starts: review.DayStarts}
+	day := review.Day{Starts: review.DayStartTime}
 	now := time.Date(2026, 3, 10, 9, 0, 0, 0, time.Local)
 	if got := day.GetEnd(now); got.Location() != time.Local {
 		t.Errorf("counted in %v, want the machine's own", got.Location())

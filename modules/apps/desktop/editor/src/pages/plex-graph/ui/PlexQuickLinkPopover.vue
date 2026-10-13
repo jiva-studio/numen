@@ -3,7 +3,7 @@
  * Native Plex-style thought creation box and autocomplete dropdown.
  */
 import { computed, nextTick, onMounted, onScopeDispose, ref, useTemplateRef, watch } from 'vue'
-import type { PlexRelatedSeat } from '@numen/ui'
+import type { PlexRelation } from '@numen/ui'
 import { SEARCH_DEBOUNCE_MS } from '@/features/command-palette'
 import { createAnswerGuard, type Question } from '@/shared/questions'
 import { WORDS as words } from '../words'
@@ -11,7 +11,7 @@ import { WORDS as words } from '../words'
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   at: { readonly x: number; readonly y: number }
-  seat: PlexRelatedSeat
+  relation: PlexRelation
   search: (query: string) => Promise<readonly { path: string; title: string }[]>
 }>()
 
@@ -53,7 +53,7 @@ const totalItems = computed(() => results.value.length + (showCreateOption.value
 const positionStyle = computed(() => ({
   left: `${Math.round(props.at.x)}px`,
   top: `${Math.round(props.at.y)}px`,
-  '--seat-color': `var(--numen-seat-${props.seat}, var(--numen-accent))`,
+  '--relation-color': `var(--numen-relation-${props.relation}, var(--numen-accent))`,
 }))
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -165,7 +165,7 @@ function submitHighlighted() {
   <div
     ref="popover"
     class="plex-quick-link"
-    :class="`plex-quick-link--${seat}`"
+    :class="`plex-quick-link--${relation}`"
     :style="positionStyle"
     role="dialog"
     aria-label="New thought"
@@ -234,7 +234,7 @@ function submitHighlighted() {
 .plex-quick-link__node,
 .plex-quick-link__dropdown {
   background: var(--numen-surface-raised, var(--numen-surface));
-  border: var(--numen-stroke, 1px) solid var(--seat-color, var(--numen-rule));
+  border: var(--numen-stroke, 1px) solid var(--relation-color, var(--numen-rule));
   border-radius: var(--radius, 0.375rem);
 }
 .plex-quick-link__node {

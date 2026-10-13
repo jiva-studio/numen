@@ -6,11 +6,11 @@ import { getLimits } from './limits'
 import { DEFAULT_OPTIONS } from './options'
 import { build } from '../../fixtures/build'
 import type { PlexFrame } from '../frame'
-import { RELATED_SEATS } from '../seat'
+import { RELATION_NAMES } from '../relation'
 
 const { nodeSize, minWidth, gap, squeeze, margin } = DEFAULT_OPTIONS
 
-/** The neighbourhood a narrow window used to give seats up on. */
+/** The neighbourhood a narrow window used to give relations up on. */
 const COUNTS = { parent: 1, child: 6, jump: 1, sibling: 2 }
 
 const findEscaped = (frame: PlexFrame, viewport: { width: number; height: number }) =>
@@ -20,9 +20,10 @@ const findEscaped = (frame: PlexFrame, viewport: { width: number; height: number
       Math.abs(node.y) + node.height / 2 > viewport.height / 2 - margin,
   )
 
-const getChildWidth = (frame: PlexFrame) => frame.nodes.find((node) => node.seat === 'child')!.width
+const getChildWidth = (frame: PlexFrame) =>
+  frame.nodes.find((node) => node.relation === 'child')!.width
 
-describe('a box narrows and a gap closes before a seat is given up', () => {
+describe('a box narrows and a gap closes before a relation is given up', () => {
   const NARROW = [
     { width: 440, height: 1000 },
     { width: 500, height: 1000 },
@@ -31,7 +32,7 @@ describe('a box narrows and a gap closes before a seat is given up', () => {
     { width: 900, height: 1000 },
   ]
 
-  it.each(NARROW)('$width×$height seats every node', (viewport) => {
+  it.each(NARROW)('$width×$height places every node', (viewport) => {
     const frame = arrangePlex(build('A node', COUNTS), { options: { viewport } })
     expect(frame.overflow).toStrictEqual({})
   })
@@ -112,12 +113,14 @@ describe('how closely a plex is packed', () => {
   })
 })
 
-describe('the loosest packing that seats everything', () => {
+describe('the loosest packing that fits everything', () => {
   const STEPS = 2 ** 7
 
-  const canSeatAll = (options: typeof DEFAULT_OPTIONS) => {
+  const canRelationAll = (options: typeof DEFAULT_OPTIONS) => {
     const limits = getLimits(options, COUNTS)
-    return RELATED_SEATS.every((seat) => limits[seat].perLine * limits[seat].lines >= COUNTS[seat])
+    return RELATION_NAMES.every(
+      (relation) => limits[relation].perLine * limits[relation].lines >= COUNTS[relation],
+    )
   }
 
   const getTightness = (packed: typeof DEFAULT_OPTIONS) =>
@@ -127,16 +130,16 @@ describe('the loosest packing that seats everything', () => {
     { width: 440, height: 1000 },
     { width: 500, height: 1000 },
     { width: 600, height: 1000 },
-  ])('$width×$height is found to a 128th, and one step looser seats less', (viewport) => {
+  ])('$width×$height is found to a 128th, and one step looser relations less', (viewport) => {
     const options = { ...DEFAULT_OPTIONS, viewport }
     const packed = measureCrowding(options, COUNTS)
     const tightness = getTightness(packed)
 
-    expect(canSeatAll(packed)).toBe(true)
+    expect(canRelationAll(packed)).toBe(true)
     expect(tightness).toBeGreaterThanOrEqual(0)
     expect(tightness).toBeLessThan(1)
     expect(tightness * STEPS).toBeCloseTo(Math.round(tightness * STEPS))
-    expect(canSeatAll(packOptions(options, tightness + 1 / STEPS))).toBe(false)
+    expect(canRelationAll(packOptions(options, tightness + 1 / STEPS))).toBe(false)
   })
 
   it('packs a window that is crowded at the settings tighter than the settings', () => {
@@ -144,15 +147,15 @@ describe('the loosest packing that seats everything', () => {
     expect(getTightness(measureCrowding(options, COUNTS))).toBeGreaterThan(0)
   })
 
-  it('leaves a window alone that holds the nodes with no seat to spare', () => {
-    // Twelve to a line and four lines: forty-eight children fill the seat exactly.
+  it('leaves a window alone that holds the nodes with no relation to spare', () => {
+    // Twelve to a line and four lines: forty-eight children fill the relation exactly.
     const options = { ...DEFAULT_OPTIONS, viewport: { width: 2000, height: 1400 } }
     const counts = { parent: 0, child: 48, jump: 0, sibling: 0 }
     expect(measureCrowding(options, counts)).toStrictEqual(options)
   })
 })
 
-describe('what no packing can seat', () => {
+describe('what no packing can fit', () => {
   it('is still reported rather than drawn past the edge', () => {
     const viewport = { width: 400, height: 400 }
     const crowd = build('A node', { parent: 9, child: 40, jump: 9, sibling: 9 })

@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
@@ -182,7 +181,7 @@ func (a *API) CreateURL(
 // getListCode is the code a folder that could not be listed is answered with.
 func getListCode(err error) connect.Code {
 	switch {
-	case errors.Is(err, port.ErrOutside):
+	case errors.Is(err, source.ErrOutside):
 		return connect.CodeInvalidArgument
 	case errors.Is(err, fs.ErrNotExist):
 		return connect.CodeNotFound

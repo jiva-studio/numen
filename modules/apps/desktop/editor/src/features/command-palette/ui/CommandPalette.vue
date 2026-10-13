@@ -16,8 +16,8 @@ import type { Commands } from '../model/palette'
 import { runInvocation } from '../model/handlers'
 import type { SearchState } from '../model/search'
 import { findSourceIcon } from '@/entities/file'
-import { iconOfNote } from '@/entities/note'
-import { iconFor } from '@/shared/icons'
+import { getNoteIcon } from '@/entities/note'
+import { findIcon } from '@/shared/icons'
 import { isChord } from '../lib/chords'
 import { openDestination, type DestinationDeps } from '../model/destination'
 import { ANSWER_WORDS } from '../words'
@@ -140,11 +140,11 @@ onUnmounted(() => globalThis.removeEventListener('keydown', onKeyDown))
 function getRowIcon(id: string) {
   if (props.commands.open.value) {
     const picked = props.commands.findNoteType(id)
-    return picked ? iconOfNote(picked) : iconFor(id)
+    return picked ? getNoteIcon(picked) : findIcon(id)
   }
-  if (id === CREATE_NOTE_ID) return iconFor('note')
+  if (id === CREATE_NOTE_ID) return findIcon('note')
   const type = props.search.findNoteType(id)
-  if (type) return iconOfNote(type)
+  if (type) return getNoteIcon(type)
   const kind = props.search.findHitSource(id)
   return kind ? findSourceIcon(kind) : null
 }

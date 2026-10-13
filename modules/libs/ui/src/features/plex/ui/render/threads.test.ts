@@ -1,15 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import type { PlexFrame } from '../../lib/frame'
 import type { PlacedNode } from '../../lib/node'
-import type { PlexRelatedSeat } from '../../lib/seat'
+import type { PlexRelation } from '../../lib/relation'
 import { getDraggedShape, getReachGhost, getReachThread } from './threads'
 
 const SIZE = { width: 40, height: 20 }
 
-const createNode = (id: string, seat: PlacedNode['seat'], x: number, y: number): PlacedNode => ({
+const createNode = (
+  id: string,
+  relation: PlacedNode['relation'],
+  x: number,
+  y: number,
+): PlacedNode => ({
   id,
   title: id,
-  seat,
+  relation,
   x,
   y,
   width: 40,
@@ -27,7 +32,7 @@ const createFrame = (nodes: PlacedNode[]): PlexFrame => ({
 
 const frame = createFrame([createNode('a', 'focus', 0, 0), createNode('b', 'child', 100, 50)])
 
-const nameSeat = (seat: PlexRelatedSeat): string => `new ${seat}`
+const getRelationLabel = (relation: PlexRelation): string => `new ${relation}`
 
 describe('the line dragged from a node', () => {
   it('runs from the handle of the node it left to the pointer', () => {
@@ -47,32 +52,37 @@ describe('the line dragged from a node', () => {
 describe('the box a gesture would leave', () => {
   const to = { x: 30, y: 40 }
 
-  it('is a box with the seat name where the pointer is when letting go creates', () => {
-    expect(getReachGhost({ kind: 'create', from: 'a', seat: 'child' }, to, nameSeat, SIZE)).toEqual(
-      {
-        id: 'ghost',
-        title: 'new child',
-        seat: 'child',
-        x: 30,
-        y: 40,
-        width: 40,
-        height: 20,
-        order: 0,
-        opacity: 1,
-      },
-    )
+  it('is a box with the relation name where the pointer is when letting go creates', () => {
+    expect(
+      getReachGhost({ kind: 'create', from: 'a', relation: 'child' }, to, getRelationLabel, SIZE),
+    ).toEqual({
+      id: 'ghost',
+      title: 'new child',
+      relation: 'child',
+      x: 30,
+      y: 40,
+      width: 40,
+      height: 20,
+      order: 0,
+      opacity: 1,
+    })
   })
 
   it('is nothing when there is no outcome or the outcome links', () => {
-    expect(getReachGhost(null, to, nameSeat, SIZE)).toBeNull()
+    expect(getReachGhost(null, to, getRelationLabel, SIZE)).toBeNull()
     expect(
-      getReachGhost({ kind: 'link', from: 'a', to: 'b', seat: 'child' }, to, nameSeat, SIZE),
+      getReachGhost(
+        { kind: 'link', from: 'a', to: 'b', relation: 'child' },
+        to,
+        getRelationLabel,
+        SIZE,
+      ),
     ).toBeNull()
   })
 
   it('is nothing without a pointer', () => {
     expect(
-      getReachGhost({ kind: 'create', from: 'a', seat: 'child' }, null, nameSeat, SIZE),
+      getReachGhost({ kind: 'create', from: 'a', relation: 'child' }, null, getRelationLabel, SIZE),
     ).toBeNull()
   })
 })
@@ -85,13 +95,13 @@ describe('something dragged over the picture', () => {
   ])
 
   it('is a line from the focus to the pointer and the box letting go would leave', () => {
-    const shape = getDraggedShape(focusLast, 'sibling', to, nameSeat, SIZE)
+    const shape = getDraggedShape(focusLast, 'sibling', to, getRelationLabel, SIZE)
 
     expect(shape?.thread).toBe('M 10 20 C 20 20 20 40 30 40')
     expect(shape?.ghost).toEqual({
       id: 'dragged',
       title: 'new sibling',
-      seat: 'sibling',
+      relation: 'sibling',
       x: 30,
       y: 40,
       width: 40,
@@ -101,11 +111,17 @@ describe('something dragged over the picture', () => {
     })
   })
 
-  it('is nothing without a seat, a pointer or a focus', () => {
-    expect(getDraggedShape(focusLast, null, to, nameSeat, SIZE)).toBeNull()
-    expect(getDraggedShape(focusLast, 'child', null, nameSeat, SIZE)).toBeNull()
+  it('is nothing without a relation, a pointer or a focus', () => {
+    expect(getDraggedShape(focusLast, null, to, getRelationLabel, SIZE)).toBeNull()
+    expect(getDraggedShape(focusLast, 'child', null, getRelationLabel, SIZE)).toBeNull()
     expect(
-      getDraggedShape(createFrame([createNode('b', 'child', 0, 0)]), 'child', to, nameSeat, SIZE),
+      getDraggedShape(
+        createFrame([createNode('b', 'child', 0, 0)]),
+        'child',
+        to,
+        getRelationLabel,
+        SIZE,
+      ),
     ).toBeNull()
   })
 })

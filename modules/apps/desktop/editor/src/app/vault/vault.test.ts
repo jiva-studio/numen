@@ -162,13 +162,13 @@ describe('settings domain', () => {
     const writtenSettings = JSON.stringify({
       naming: { sync_title_and_filename: true },
       appearance: { nest_headings_under_notes: true, nested_heading_limit: 3 },
-      review: { day_starts: '04:00' },
+      review: { day_start_time: '04:00' },
     })
     asked.getSettings.mockResolvedValue({
       written: writtenSettings,
       models: [],
       nestedHeadingLimitBounds: { least: 1, most: 5 },
-      latestDayStarts: '06:00',
+      latestDayStartTime: '06:00',
       day: '2026-09-10',
       path: 'settings.json',
     })

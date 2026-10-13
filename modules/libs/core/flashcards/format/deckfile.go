@@ -186,6 +186,7 @@ func (f *DeckFile) RemoveCard(card domain.CardID) error {
 // between them is choosing which of the two the person meant.
 func (f *DeckFile) getCardSpan(body []byte, card domain.CardID) (cardSpan, error) {
 	_, spans := readDeck(domain.Fingerprint{}, body)
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="at is only compared with zero, so -1 becomes -2 and nothing reads the difference"
 	at := -1
 	for i, span := range spans {
 		if span.mark == "" || span.mark != card {
@@ -330,6 +331,7 @@ func DeckBody(d Deck) (string, error) {
 		return nil
 	}
 	for _, card := range d.Cards {
+		// gomutants:disable-next-line INTEGER_DECREMENT reason="0 becomes -1, and the one place the two differ is NoSection, which the first condition already excludes"
 		if card.Section != NoSection && (card.Section < 0 || card.Section >= len(d.Sections)) {
 			return "", fmt.Errorf("%w: %d", ErrNoSuchSection, card.Section)
 		}

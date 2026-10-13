@@ -209,7 +209,7 @@ func (s *neighbourSet) add(neighbour domain.Neighbour) {
 }
 
 // addMutual records a neighbour that the note in focus names too, and that is
-// seated already. Both ends naming the same relation is one relationship named
+// related already. Both ends naming the same relation is one relationship named
 // twice, and the word for it is the focus's own where it wrote one.
 func (s *neighbourSet) addMutual(neighbour domain.Neighbour) {
 	i := s.at[neighbour.Path]
@@ -227,7 +227,7 @@ func (s *neighbourSet) addMutual(neighbour domain.Neighbour) {
 }
 
 // remove takes a note out of the order the picture is drawn in. Nothing is added to
-// the seats after it.
+// the relations after it.
 func (s *neighbourSet) remove(path string) {
 	s.order = slices.DeleteFunc(s.order, func(n domain.Neighbour) bool { return n.Path == path })
 }

@@ -68,7 +68,7 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
 
   return {
     files: {
-      createNote: (title, from, seat) => making.createWithTitle(title, from, seat),
+      createNote: (title, from, relation) => making.createWithTitle(title, from, relation),
       rename: (path, title) => core.rename(path, title),
       remove: (path, isPermanent) => core.remove(path, isPermanent),
       move: (from, to) => core.move(from, to),

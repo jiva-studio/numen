@@ -6,12 +6,12 @@ import (
 	"time"
 )
 
-// DayStarts is how long past midnight a day of review begins by default.
+// DayStartTime is how long past midnight a day of review begins by default.
 //
 // A person answering cards at one in the morning is finishing the day before,
 // not starting the next one, and a boundary at midnight splits one session in
 // two and calls half of it late.
-const DayStarts = 4 * time.Hour
+const DayStartTime = 4 * time.Hour
 
 // ErrNotAnHour is the error of an hour a day of review cannot be made to begin
 // at.

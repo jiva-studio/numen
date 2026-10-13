@@ -5,8 +5,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -85,42 +83,5 @@ func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
 		if counts[string(v.ID)] != 1 {
 			t.Errorf("the vault %s was counted %d times", string(v.ID), counts[string(v.ID)])
 		}
-	}
-}
-
-// The vault a window was last opened on is counted first: a person coming back
-// to this window is most often coming back to where they were.
-func TestTheVaultOpenedLastIsCountedFirst(t *testing.T) {
-	all := []domain.Vault{{ID: "one"}, {ID: "two"}, {ID: "three"}}
-
-	for name, c := range map[string]struct {
-		last domain.VaultID
-		want []string
-	}{
-		"one in the middle":    {"two", []string{"two", "one", "three"}},
-		"the last of them":     {"three", []string{"three", "one", "two"}},
-		"the first of them":    {"one", []string{"one", "two", "three"}},
-		"none opened yet":      {"", []string{"one", "two", "three"}},
-		"one the list dropped": {"four", []string{"one", "two", "three"}},
-	} {
-		t.Run(name, func(t *testing.T) {
-			known, err := vaults.NewGetKnownVaults(registry{held: all, last: c.last}, nil).Execute("")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			got := make([]string, 0, len(all))
-			for _, v := range sortVaults(known) {
-				got = append(got, string(v.ID))
-			}
-			if len(got) != len(c.want) {
-				t.Fatalf("counted %v", got)
-			}
-			for at, want := range c.want {
-				if got[at] != want {
-					t.Fatalf("counted %v, want %v", got, c.want)
-				}
-			}
-		})
 	}
 }

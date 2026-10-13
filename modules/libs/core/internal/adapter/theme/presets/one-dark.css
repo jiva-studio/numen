@@ -10,7 +10,7 @@
  * text colour.
  *
  * The accent is the syntax accent, which the caret is drawn in. It is a blue,
- * so a parent takes the palette's cyan and the four seats stand apart from it.
+ * so a parent takes the palette's cyan and the four relations stand apart from it.
  *
  * Mixed here, because the palette does not name them: the selection where the
  * keyboard is away and at every other match, which are the selection at two
@@ -28,10 +28,10 @@
   --numen-accent: #528bff;
   --numen-accent-ink: #282c34;
 
-  --numen-seat-parent: #56b6c2;
-  --numen-seat-child: #98c379;
-  --numen-seat-jump: #d19a66;
-  --numen-seat-sibling: #c678dd;
+  --numen-relation-parent: #56b6c2;
+  --numen-relation-child: #98c379;
+  --numen-relation-jump: #d19a66;
+  --numen-relation-sibling: #c678dd;
 
   --numen-edge: #3e4452;
   --numen-edge-label: #5c6370;

@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import { commandsOf } from '../lib/commands'
+import { createCommands } from '../lib/commands'
 import { runSupport } from './runs'
 import { createInvocation } from '../lib/invocation'
 import { createNotes } from '../lib/notes'
@@ -117,8 +117,8 @@ const window = (
   const runs = runSupport()
   const on: CommandDeps = {
     files: {
-      createNote: async (title, from, seat) => {
-        done.push(`createNote ${title} ${from || '—'} ${seat ?? '—'}`)
+      createNote: async (title, from, relation) => {
+        done.push(`createNote ${title} ${from || '—'} ${relation ?? '—'}`)
         return answers.wasMade === false ? null : { path: `${title}.md`, title }
       },
       rename: async (path, title) => {
@@ -256,7 +256,7 @@ const carry = async (invocation: CommandInvocation, on: CommandDeps) =>
 
 describe('every command that is offered', () => {
   it('is carried out by something', async () => {
-    for (const command of commandsOf(WORDS)) {
+    for (const command of createCommands(WORDS)) {
       const one = window()
       await carry(createInvocation(command.id, front(), 'Entropy'), one.on)
 
@@ -332,7 +332,7 @@ describe('a deck, a stencil or a preset made', () => {
 })
 
 describe('a note made', () => {
-  it('writes the note it was made from into it, in the seat that was asked for', async () => {
+  it('writes the note it was made from into it, in the relation that was asked for', async () => {
     const one = window()
 
     await carry(createInvocation('child', front(), 'Entropy'), one.on)
@@ -340,7 +340,7 @@ describe('a note made', () => {
     expect(one.done[0]).toBe('createNote Entropy physics/Ontology.md child')
   })
 
-  it('stands on its own where no seat was asked for', async () => {
+  it('stands on its own where no relation was asked for', async () => {
     const one = window()
 
     await carry(createInvocation('note', front(), 'Entropy'), one.on)
@@ -1179,7 +1179,7 @@ describe('indexingModel command', () => {
   })
 })
 
-describe('a note made in a seat of another', () => {
+describe('a note made in a relation of another', () => {
   it('is made as a parent or as a jump where that was asked', async () => {
     const one = window()
 

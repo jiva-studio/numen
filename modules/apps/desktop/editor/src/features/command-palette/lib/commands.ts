@@ -3,7 +3,7 @@
  */
 import type { Command, CommandGroup } from '../types'
 
-export { commandsOf } from './table'
+export { createCommands } from './table'
 
 /**
  * The commands another one reaches on its own row. They are offered there and

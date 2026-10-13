@@ -38,7 +38,7 @@ func (none) GetLastVault() (domain.Vault, bool, error)    { return domain.Vault{
 // Both windows count in review days, and a day worked out twice is two
 // arithmetics that drift the moment one of them is touched.
 func TestBothWindowsAreToldTheSameDay(t *testing.T) {
-	day := review.Day{Starts: review.DayStarts}
+	day := review.Day{Starts: review.DayStartTime}
 	clock := func() time.Time { return morning }
 
 	getting := setting.NewGet(

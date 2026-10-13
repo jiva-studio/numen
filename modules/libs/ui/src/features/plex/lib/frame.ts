@@ -1,6 +1,6 @@
 import type { PlacedEdge } from './edge'
 import type { PlacedNode } from './node'
-import type { PlexRelatedSeat } from './seat'
+import type { PlexRelation } from './relation'
 
 /** The box every placed node fits inside. */
 export interface Extent {
@@ -19,8 +19,8 @@ export interface PlexFrame {
   readonly nodes: readonly PlacedNode[]
   readonly edges: readonly PlacedEdge[]
   readonly extent: Extent
-  /** Nodes of a seat that did not fit. Empty when everything fit. */
-  readonly overflow: Readonly<Partial<Record<PlexRelatedSeat, number>>>
+  /** Nodes of a relation that did not fit. Empty when everything fit. */
+  readonly overflow: Readonly<Partial<Record<PlexRelation, number>>>
 }
 
 export function getExtent(nodes: readonly PlacedNode[]): Extent {

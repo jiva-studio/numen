@@ -248,6 +248,7 @@ func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, recip
 	if err != nil {
 		return nil, err
 	}
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="the mutated test is >= : cutting a list of exactly limit entries to limit entries leaves it unchanged"
 	if len(ranked) > limit {
 		ranked = ranked[:limit]
 	}

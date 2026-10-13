@@ -11,6 +11,8 @@ type Scenarios struct {
 	CardsDue  CountCardsDue
 	Session   Session
 	Log       Log
+	// Record writes down an answer in a run, and a taking back of one.
+	Record Record
 	// Counted is how much of a vault was answered on each day it was reviewed.
 	Counted CountReviews
 	// GetReviewDays is those days inside a stretch of them.

@@ -3,6 +3,7 @@ package vault_test
 import (
 	"errors"
 	"io/fs"
+	"slices"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -84,11 +85,45 @@ func TestTheVaultOpenedLastIsTheCurrentOne(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if known[0].IsCurrent {
+	if known[1].IsCurrent {
 		t.Error("a vault that was not opened last was called the current one")
 	}
-	if !known[1].IsCurrent {
+	if !known[0].IsCurrent {
 		t.Error("the vault opened last is not the current one")
+	}
+}
+
+// The current vault comes first and the rest follow as the list holds them.
+func TestTheCurrentVaultComesFirst(t *testing.T) {
+	t.Parallel()
+	all := []domain.Vault{{ID: "one"}, {ID: "two"}, {ID: "three"}}
+
+	for name, c := range map[string]struct {
+		last domain.VaultID
+		want []string
+	}{
+		"one in the middle":    {"two", []string{"two", "one", "three"}},
+		"the last of them":     {"three", []string{"three", "one", "two"}},
+		"the first of them":    {"one", []string{"one", "two", "three"}},
+		"none opened yet":      {"", []string{"one", "two", "three"}},
+		"one the list dropped": {"four", []string{"one", "two", "three"}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			list := &theList{rows: all, last: domain.Vault{ID: c.last}, isKept: c.last != ""}
+			known, err := vaults.NewGetKnownVaults(list, folders{}).Execute("")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			got := make([]string, 0, len(all))
+			for _, one := range known {
+				got = append(got, string(one.Vault.ID))
+			}
+			if !slices.Equal(got, c.want) {
+				t.Fatalf("listed %v, want %v", got, c.want)
+			}
+		})
 	}
 }
 

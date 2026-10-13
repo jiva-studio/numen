@@ -113,7 +113,7 @@ func TestAProblemStandsAgainstTheCardItIsAbout(t *testing.T) {
 	if len(problems) != 1 {
 		t.Fatalf("the deck came back with %d problems: %+v", len(problems), problems)
 	}
-	if fault := problems[0].GetFault(); fault != v1.Fault_FAULT_CARD_WITHOUT_A_STENCIL {
+	if fault := problems[0].GetKind(); fault != v1.ProblemKind_PROBLEM_KIND_CARD_WITHOUT_A_STENCIL {
 		t.Errorf("the card with no wikilink under it is reported as %v", fault)
 	}
 	at := problems[0].GetCard()
@@ -194,7 +194,7 @@ func TestTwoCardsOfOneMarkStandAgainstBoth(t *testing.T) {
 		t.Fatalf("two cards of one mark came back as %d problems: %+v", len(problems), problems)
 	}
 	for at, problem := range problems {
-		if fault := problem.GetFault(); fault != v1.Fault_FAULT_MARK_CARRIED_TWICE {
+		if fault := problem.GetKind(); fault != v1.ProblemKind_PROBLEM_KIND_MARK_CARRIED_TWICE {
 			t.Errorf("the problem against card %d is %v", at, fault)
 		}
 		if problem.Card == nil || problem.GetCard() != int32(at) {

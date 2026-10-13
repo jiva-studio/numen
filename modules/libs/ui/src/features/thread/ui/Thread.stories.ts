@@ -66,9 +66,9 @@ export const Silent: Story = { render: renderThread([]) }
 export const Playground: Story = {
   render: renderThread([
     createAsked('1', 'What does a plex draw?'),
-    createAnswered('2', 'One node in focus, and everything else placed by its seat.'),
+    createAnswered('2', 'One node in focus, and everything else placed by its relation.'),
     createAsked('3', 'Two things.'),
-    createAsked('4', 'And where do the seats come from?'),
+    createAsked('4', 'And where do the relations come from?'),
     createAnswered('5', MULTILINE),
   ]),
 }
@@ -76,7 +76,7 @@ export const Playground: Story = {
 /** An answer still arriving, and a turn that did not go. */
 export const InFlight: Story = {
   render: renderThread([
-    createAsked('1', 'And the seats?', 'failed'),
+    createAsked('1', 'And the relations?', 'failed'),
     createAsked('2', 'What does a plex draw?'),
     createAnswered('3', 'One node in focus, and everything else', 'arriving'),
   ]),

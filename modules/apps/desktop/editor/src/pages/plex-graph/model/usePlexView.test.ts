@@ -230,7 +230,7 @@ describe('a vault that changed somewhere else', () => {
           path: to,
           title: to,
           type: 'note' as const,
-          seat: 'child' as const,
+          relation: 'child' as const,
           label: '',
           through: '',
           isMutual: false,

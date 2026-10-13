@@ -2,7 +2,7 @@
  * What a gesture in a plex comes to, asked without a screen.
  *
  * A note made from a node other than the focus is the one to watch: it is
- * written into the vault whatever happens, and a picture one seat deep draws
+ * written into the vault whatever happens, and a picture one relation deep draws
  * it only from the node it was made from.
  */
 import { describe, expect, it, vi } from 'vitest'
@@ -17,7 +17,7 @@ import { ITEMS, NEW_NOTE } from '../lib/menu'
 import { usePlexView as viewing, type PlexView } from './usePlexView'
 import { WORDS as words } from '../words'
 import { createVault, settle, viewOn, type Types, type NeighbourSpec } from '../fixtures'
-import type { NoteHeading, Seat } from '@/entities/note'
+import type { NoteHeading, NoteRelation } from '@/entities/note'
 import { getRenamedPath, type PathRename } from '@/shared/paths'
 
 /** A plex tab with the window it is drawn in written down. */
@@ -75,7 +75,7 @@ const tab = (
   }
   const state = usePlexTab(plex.view, deps)
   /** What the picture calls a note, which is what a gesture in it carries. */
-  const node = (path: string) => nodeFor(state, path.replace(/\.md$/, ''))
+  const node = (path: string) => getNode(state, path.replace(/\.md$/, ''))
   return {
     state,
     node,
@@ -96,7 +96,7 @@ const tab = (
 }
 
 /** The node of the picture drawn for the note of this title, if it draws one. */
-const nodeFor = (state: PlexTabState, title: string): string =>
+const getNode = (state: PlexTabState, title: string): string =>
   state.picture.value?.nodes.find((node) => node.title === title)?.id ?? ''
 
 describe('a note made from a node', () => {
@@ -333,7 +333,7 @@ describe('notes dragged in and let go over the picture', () => {
     expect(one.went).toEqual(['Root.md'])
   })
 
-  it('writes one for each of them, to the one note in the one seat', async () => {
+  it('writes one for each of them, to the one note in the one relation', async () => {
     const one = tab('Root.md')
 
     await one.state.dropNodes(['Entropy.md', 'Kelvin.md', 'Heat.md'], 'child')
@@ -346,7 +346,7 @@ describe('notes dragged in and let go over the picture', () => {
     expect(one.went).toEqual(['Root.md'])
   })
 
-  it('takes the seat the drag named, whichever it was', async () => {
+  it('takes the relation the drag named, whichever it was', async () => {
     const one = tab('Root.md')
 
     await one.state.dropNodes(['Entropy.md'], 'parent')
@@ -431,7 +431,7 @@ describe('the headings a node nests', () => {
 
     await one.state.readHeadings()
 
-    expect(one.state.headingsOf(one.node('Child.md'))).toStrictEqual([
+    expect(one.state.getHeadings(one.node('Child.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
       { id: '9', text: 'Cold', level: 2 },
     ])
@@ -443,7 +443,7 @@ describe('the headings a node nests', () => {
 
     await one.state.readHeadings()
 
-    expect(one.state.headingsOf(one.node('Root.md'))).toStrictEqual([])
+    expect(one.state.getHeadings(one.node('Root.md'))).toStrictEqual([])
   })
 
   it('are each named by the line it stands on', async () => {
@@ -452,7 +452,7 @@ describe('the headings a node nests', () => {
 
     await one.state.readHeadings()
 
-    expect(one.state.headingsOf(one.node('Root.md')).map((heading) => heading.id)).toStrictEqual([
+    expect(one.state.getHeadings(one.node('Root.md')).map((heading) => heading.id)).toStrictEqual([
       '12',
     ])
   })
@@ -464,7 +464,7 @@ describe('the headings a node nests', () => {
     await one.state.view.go('Other.md')
     await settle()
 
-    expect(one.state.headingsOf(one.node('Other.md'))).toStrictEqual([
+    expect(one.state.getHeadings(one.node('Other.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
     ])
   })
@@ -490,7 +490,7 @@ describe('the headings a node nests', () => {
       createUntitledNote: async () => '',
       creatable: ['parent', 'child', 'jump'],
     })
-    const node = () => nodeFor(plex, 'Root')
+    const node = () => getNode(plex, 'Root')
 
     // The picture asks once as it is built, and that answer is left pending.
     const asked = answers.length
@@ -500,7 +500,7 @@ describe('the headings a node nests', () => {
     answers[asked]?.(new Map([['Root.md', [heading('Stale', 1)]]]))
     await settle()
 
-    expect(plex.headingsOf(node())).toStrictEqual([{ id: '2', text: 'Fresh', level: 1 }])
+    expect(plex.getHeadings(node())).toStrictEqual([{ id: '2', text: 'Fresh', level: 1 }])
   })
 
   it('are none for every node while the setting is off', async () => {
@@ -509,8 +509,8 @@ describe('the headings a node nests', () => {
     await one.state.readHeadings()
     one.isNesting.value = false
 
-    expect(one.state.headingsOf(one.node('Child.md'))).toStrictEqual([])
-    expect(one.state.headingsOf(one.node('Root.md'))).toStrictEqual([])
+    expect(one.state.getHeadings(one.node('Child.md'))).toStrictEqual([])
+    expect(one.state.getHeadings(one.node('Root.md'))).toStrictEqual([])
   })
 
   it('are not asked of the vault at all while the setting is off', async () => {
@@ -530,7 +530,7 @@ describe('the headings a node nests', () => {
 
     await one.state.readHeadings()
 
-    expect(one.state.headingsOf(one.node('Animals.md'))).toStrictEqual([])
+    expect(one.state.getHeadings(one.node('Animals.md'))).toStrictEqual([])
     expect(one.headingsAsked).toStrictEqual([['Root.md']])
   })
 
@@ -541,7 +541,7 @@ describe('the headings a node nests', () => {
 
     await one.state.readHeadings()
 
-    expect(one.state.headingsOf(one.node('Animal.md'))).toStrictEqual([])
+    expect(one.state.getHeadings(one.node('Animal.md'))).toStrictEqual([])
     expect(one.headingsAsked).toStrictEqual([['Root.md']])
   })
 
@@ -553,7 +553,7 @@ describe('the headings a node nests', () => {
 
     await one.state.readHeadings()
 
-    expect(one.state.headingsOf(one.node('Child.md'))).toStrictEqual([
+    expect(one.state.getHeadings(one.node('Child.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
     ])
   })
@@ -565,7 +565,7 @@ describe('the headings a node nests', () => {
 
     await one.state.readHeadings()
 
-    expect(one.state.headingsOf(one.node('Animals.md'))).toStrictEqual([])
+    expect(one.state.getHeadings(one.node('Animals.md'))).toStrictEqual([])
     expect(one.headingsAsked).toStrictEqual([])
   })
 
@@ -576,12 +576,12 @@ describe('the headings a node nests', () => {
 
     one.isNesting.value = false
     await settle()
-    expect(one.state.headingsOf(one.node('Child.md'))).toStrictEqual([])
+    expect(one.state.getHeadings(one.node('Child.md'))).toStrictEqual([])
 
     one.isNesting.value = true
     await settle()
 
-    expect(one.state.headingsOf(one.node('Child.md'))).toStrictEqual([
+    expect(one.state.getHeadings(one.node('Child.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
     ])
   })
@@ -626,10 +626,10 @@ describe('a heading of a node chosen', () => {
 })
 
 /** A note beside another: where it sits, and the note it comes through. */
-type NeighbourRow = readonly [path: string, seat: Seat, through?: string]
+type NeighbourRow = readonly [path: string, relation: NoteRelation, through?: string]
 
 /** What a note is shown by, which a move of its file leaves alone. */
-const titleOf = (path: string) => (path.split('/').pop() ?? path).replace(/\.md$/, '')
+const getNoteTitle = (path: string) => (path.split('/').pop() ?? path).replace(/\.md$/, '')
 
 /**
  * A plex standing in a vault whose files a person can move.
@@ -640,7 +640,11 @@ const titleOf = (path: string) => (path.split('/').pop() ?? path).replace(/\.md$
  * arriving tells it.
  */
 const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
-  let around = beside.map(([path, seat, through]) => ({ path, seat, through: through ?? '' }))
+  let around = beside.map(([path, relation, through]) => ({
+    path,
+    relation,
+    through: through ?? '',
+  }))
   /** An answer the vault is holding back, and what lets it go. */
   let holding: Promise<void> | null = null
   let release = () => {}
@@ -655,13 +659,13 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
       asked.push(path)
       if (holding) await holding
       return {
-        focus: { path, title: titleOf(path) },
+        focus: { path, title: getNoteTitle(path) },
         focusType: 'note' as const,
         related: around.map((one) => ({
           path: one.path,
-          title: titleOf(one.path),
+          title: getNoteTitle(one.path),
           type: 'note' as const,
-          seat: one.seat,
+          relation: one.relation,
           label: '',
           through: one.through ?? '',
           isMutual: false,
@@ -690,9 +694,9 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
   /** The picture as it stands, which is what a drawn window reads. */
   const picture = () => state.picture.value
   /** What the picture calls the note shown by this title. */
-  const node = (title: string) => nodeFor(state, title)
-  /** Every node of the picture, as the seat it sits in and what it is called. */
-  const nodes = () => (picture()?.nodes ?? []).map((one) => `${one.seat} ${one.id}`)
+  const node = (title: string) => getNode(state, title)
+  /** Every node of the picture, as the relation it sits in and what it is called. */
+  const nodes = () => (picture()?.nodes ?? []).map((one) => `${one.relation} ${one.id}`)
   /** Every edge of the picture, as the two nodes it runs between. */
   const edges = () => (picture()?.edges ?? []).map((one) => `${one.from} -> ${one.to}`)
 
@@ -712,7 +716,7 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
   }
   /** The person travels to another note, which is a picture of its own. */
   const goToNote = async (path: string, ...now: readonly NeighbourRow[]) => {
-    around = now.map(([at, seat, through]) => ({ path: at, seat, through: through ?? '' }))
+    around = now.map(([at, relation, through]) => ({ path: at, relation, through: through ?? '' }))
     await view.go(path)
   }
 
@@ -870,7 +874,7 @@ describe('a gesture the plex reports', () => {
     expect(one.ran).toStrictEqual([['read', 'physics/Heat.md', 'Heat']])
   })
 
-  it('makes a note in a seat of the note the node stands for', async () => {
+  it('makes a note in a relation of the note the node stands for', async () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
@@ -979,9 +983,9 @@ describe('what a node stands for', () => {
       'Stencil.md': 'stencil',
     })
 
-    expect(one.state.typeOf(one.node('Deck.md'))).toBe('deck')
-    expect(one.state.typeOf(one.node('Stencil.md'))).toBe('stencil')
-    expect(one.state.typeOf(one.node('Root.md'))).toBe('note')
+    expect(one.state.getType(one.node('Deck.md'))).toBe('deck')
+    expect(one.state.getType(one.node('Stencil.md'))).toBe('stencil')
+    expect(one.state.getType(one.node('Root.md'))).toBe('note')
   })
 })
 
@@ -994,14 +998,18 @@ describe('quick-link popover from a node handle', () => {
 
     expect(one.state.quickLink.value).toStrictEqual({
       from: childNode,
-      seat: 'child',
+      relation: 'child',
       at: { x: 450, y: 320 },
     })
   })
 
   it('dismisses quick link popover cleanly on dismiss', async () => {
     const one = tab('Root.md')
-    one.state.openQuickLink({ from: one.node('Root.md'), seat: 'parent', at: { x: 100, y: 200 } })
+    one.state.openQuickLink({
+      from: one.node('Root.md'),
+      relation: 'parent',
+      at: { x: 100, y: 200 },
+    })
 
     one.state.dismissQuickLink()
 
@@ -1011,7 +1019,7 @@ describe('quick-link popover from a node handle', () => {
   it('creates new note and navigates to it when confirmed with title and navigation enabled', async () => {
     const one = tab('Root.md')
     const rootNode = one.node('Root.md')
-    one.state.openQuickLink({ from: rootNode, seat: 'child', at: { x: 100, y: 200 } })
+    one.state.openQuickLink({ from: rootNode, relation: 'child', at: { x: 100, y: 200 } })
 
     await one.state.confirmQuickLink('SubTopic', false)
 
@@ -1023,7 +1031,7 @@ describe('quick-link popover from a node handle', () => {
   it('joins existing note and navigates to it when confirmed as existing note', async () => {
     const one = tab('Root.md', ['Other.md'])
     const rootNode = one.node('Root.md')
-    one.state.openQuickLink({ from: rootNode, seat: 'jump', at: { x: 100, y: 200 } })
+    one.state.openQuickLink({ from: rootNode, relation: 'jump', at: { x: 100, y: 200 } })
 
     await one.state.confirmQuickLink('Other.md', true)
 
@@ -1036,7 +1044,7 @@ describe('quick-link popover from a node handle', () => {
     const one = tab('Root.md')
     one.state.isNavigatingOnCreate.value = false
     const rootNode = one.node('Root.md')
-    one.state.openQuickLink({ from: rootNode, seat: 'child', at: { x: 100, y: 200 } })
+    one.state.openQuickLink({ from: rootNode, relation: 'child', at: { x: 100, y: 200 } })
 
     await one.state.confirmQuickLink('SubTopic', false)
 
@@ -1048,7 +1056,7 @@ describe('quick-link popover from a node handle', () => {
     const one = tab('Root.md', ['Other.md'])
     one.state.isNavigatingOnCreate.value = false
     const rootNode = one.node('Root.md')
-    one.state.openQuickLink({ from: rootNode, seat: 'jump', at: { x: 100, y: 200 } })
+    one.state.openQuickLink({ from: rootNode, relation: 'jump', at: { x: 100, y: 200 } })
 
     await one.state.confirmQuickLink('Other.md', true)
 
@@ -1062,7 +1070,7 @@ describe('quick-link popover from a node handle', () => {
     expect(one.made).toEqual([])
 
     const rootNode = one.node('Root.md')
-    one.state.openQuickLink({ from: rootNode, seat: 'child', at: { x: 100, y: 200 } })
+    one.state.openQuickLink({ from: rootNode, relation: 'child', at: { x: 100, y: 200 } })
     await one.state.confirmQuickLink('   ', false)
     expect(one.made).toEqual([])
   })
@@ -1306,7 +1314,7 @@ describe('quick-link popover from a node handle', () => {
   it('preserves correct forward and reverse directions and descriptions when opening from the other node as focus', async () => {
     // Note B (Child.md) is now the focus, and Focus.md is related as parent with label 222
     const { state, node } = tab('Child.md', [
-      { path: 'Focus.md', seat: 'parent', isMutual: true, label: '222' },
+      { path: 'Focus.md', relation: 'parent', isMutual: true, label: '222' },
     ])
     await settle()
 
@@ -1334,7 +1342,7 @@ describe('quick-link popover from a node handle', () => {
 
   it('populates both forward and reverse descriptions from neighbourhood data without prior saves', async () => {
     const { state, node } = tab('Focus.md', [
-      { path: 'Child.md', seat: 'child', isMutual: true, label: '111', reverseLabel: '222' },
+      { path: 'Child.md', relation: 'child', isMutual: true, label: '111', reverseLabel: '222' },
     ])
     await settle()
 
@@ -1532,7 +1540,7 @@ describe('usePlexTab edge cases and helpers', () => {
     one.state.openHeading('unknown-node', '12')
     one.state.openHeading(one.node('Root.md'), 'not-a-number')
 
-    one.state.openQuickLink({ from: one.node('Root.md'), seat: 'child', at: { x: 10, y: 10 } })
+    one.state.openQuickLink({ from: one.node('Root.md'), relation: 'child', at: { x: 10, y: 10 } })
     expect(one.state.quickLink.value).not.toBeNull()
     one.state.dismissQuickLink()
     expect(one.state.quickLink.value).toBeNull()
@@ -1584,7 +1592,7 @@ describe('the notes a plex asks the vault for the headings of', () => {
 describe('a quick link confirmed', () => {
   it('writes nothing from a node the picture never drew', async () => {
     const one = tab('Root.md', ['Other.md'])
-    one.state.openQuickLink({ from: 'nowhere', seat: 'jump', at: { x: 1, y: 2 } })
+    one.state.openQuickLink({ from: 'nowhere', relation: 'jump', at: { x: 1, y: 2 } })
 
     await one.state.confirmQuickLink('Other.md', true)
 
@@ -1594,7 +1602,7 @@ describe('a quick link confirmed', () => {
 
   it('stands where it stood when the vault wrote no link to the note', async () => {
     const one = tab('Root.md', ['Other.md'], false)
-    one.state.openQuickLink({ from: one.node('Root.md'), seat: 'jump', at: { x: 1, y: 2 } })
+    one.state.openQuickLink({ from: one.node('Root.md'), relation: 'jump', at: { x: 1, y: 2 } })
 
     await one.state.confirmQuickLink('Other.md', true)
 
@@ -1604,7 +1612,7 @@ describe('a quick link confirmed', () => {
 
   it('stands where it stood when the vault made no note', async () => {
     const one = tab('Root.md', [], false)
-    one.state.openQuickLink({ from: one.node('Root.md'), seat: 'child', at: { x: 1, y: 2 } })
+    one.state.openQuickLink({ from: one.node('Root.md'), relation: 'child', at: { x: 1, y: 2 } })
 
     await one.state.confirmQuickLink('Compost', false)
 
@@ -1632,7 +1640,7 @@ describe('what a note is called where the picture names it nowhere', () => {
 
 describe('what a node the picture never drew stands for', () => {
   it('is a note', () => {
-    expect(tab('Root.md', [], true, { 'Root.md': 'deck' }).state.typeOf('nowhere')).toBe('note')
+    expect(tab('Root.md', [], true, { 'Root.md': 'deck' }).state.getType('nowhere')).toBe('note')
   })
 })
 

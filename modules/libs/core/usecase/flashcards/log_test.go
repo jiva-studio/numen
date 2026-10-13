@@ -336,7 +336,7 @@ func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	writing := flashcards.NewRecord(run, time.Now)
+	writing := newSitting(run, time.Now)
 
 	if _, err := writing.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -375,7 +375,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	shut := flashcards.NewRecord(yesterdayRun, func() time.Time { return yesterday })
+	shut := newSitting(yesterdayRun, func() time.Time { return yesterday })
 	if _, err := shut.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
