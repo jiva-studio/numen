@@ -4,16 +4,11 @@ package agents
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
-	"slices"
-	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/acp"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -117,12 +112,7 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 		fmt.Fprintln(opts.Out, "agents:", err)
 	}
 
-	router := &Router{
-		opts:       opts,
-		url:        endpoint.URL,
-		secret:     secret,
-		vocabulary: words,
-	}
+	router := NewRouter(opts, endpoint.URL, secret, words)
 
 	served := &Server{
 		URL: endpoint.URL,
@@ -176,187 +166,4 @@ func getVocabularyFunc(opts Options) func(context.Context, mcp.Core) (map[string
 		return mcp.GetReviewVocabulary
 	}
 	return mcp.Vocabulary
-}
-
-// Router routes tasks to the configured agent dynamically.
-type Router struct {
-	opts       Options
-	url        string
-	secret     string
-	vocabulary map[string]mcp.Tool
-
-	mu     sync.Mutex
-	closed bool
-	claude *claudecode.Agent
-	anti   *acp.Agent
-	codex  *acp.Agent
-}
-
-// Close stops every agent router managed.
-func (r *Router) Close() error {
-	r.mu.Lock()
-	r.closed = true
-	var errs []error
-	if r.claude != nil {
-		if err := r.claude.Close(); err != nil {
-			errs = append(errs, err)
-		}
-	}
-	if r.anti != nil {
-		if err := r.anti.Close(); err != nil {
-			errs = append(errs, err)
-		}
-	}
-	if r.codex != nil {
-		if err := r.codex.Close(); err != nil {
-			errs = append(errs, err)
-		}
-	}
-	r.mu.Unlock()
-	return errors.Join(errs...)
-}
-
-func (r *Router) getAgent(use string, cfg container.Config) port.Agent {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	switch use {
-	case agent.UseAntigravity:
-		if r.anti == nil {
-			r.anti = &acp.Agent{
-				Program:      "antigravity",
-				Command:      cfg.Agent.Antigravity.Command,
-				Root:         r.opts.Root,
-				Tools:        acp.Endpoint{URL: r.url, Token: r.secret},
-				Model:        cfg.Agent.Antigravity.Model,
-				Turns:        cfg.Agent.Antigravity.MaxSteps,
-				ErrorHandler: func(err error) { fmt.Fprintln(r.opts.Out, "agent:", err) },
-			}
-		} else {
-			r.anti.Model = cfg.Agent.Antigravity.Model
-			r.anti.Turns = cfg.Agent.Antigravity.MaxSteps
-			if len(cfg.Agent.Antigravity.Command) > 0 {
-				r.anti.Command = cfg.Agent.Antigravity.Command
-			}
-		}
-		return r.anti
-	case agent.UseCodex:
-		if r.codex == nil {
-			r.codex = &acp.Agent{
-				Program:      "codex",
-				Command:      cfg.Agent.Codex.Command,
-				Root:         r.opts.Root,
-				Tools:        acp.Endpoint{URL: r.url, Token: r.secret},
-				Model:        cfg.Agent.Codex.Model,
-				Turns:        cfg.Agent.Codex.MaxSteps,
-				ErrorHandler: func(err error) { fmt.Fprintln(r.opts.Out, "agent:", err) },
-			}
-		} else {
-			r.codex.Model = cfg.Agent.Codex.Model
-			r.codex.Turns = cfg.Agent.Codex.MaxSteps
-			if len(cfg.Agent.Codex.Command) > 0 {
-				r.codex.Command = cfg.Agent.Codex.Command
-			}
-		}
-		return r.codex
-	default:
-		if r.claude == nil {
-			r.claude = NewClaude(cfg, r.opts.Root, r.url, r.secret, r.vocabulary, r.opts.Preview, r.opts.Out)
-		} else {
-			r.claude.Model = cfg.Agent.Claude.Model
-			r.claude.MaxTurns = cfg.Agent.Claude.MaxSteps
-		}
-		return r.claude
-	}
-}
-
-func (r *Router) currentConfig() (string, container.Config) {
-	use := r.opts.Config.Agent.Use
-	if use == "" {
-		use = agent.UseClaude
-	}
-	return use, r.opts.Config
-}
-
-// StartRun starts the task on the active agent.
-func (r *Router) StartRun(ctx context.Context, task port.Task) (port.Run, error) {
-	r.mu.Lock()
-	if r.closed {
-		r.mu.Unlock()
-		return nil, errors.New("agent is closed")
-	}
-	r.mu.Unlock()
-
-	use, cfg := r.currentConfig()
-	if task.Agent != "" {
-		use = task.Agent
-	}
-	fmt.Fprintf(r.opts.Out, "agents: dispatching task to %s (model: %s)\n", use, task.Model)
-	agentRunner := r.getAgent(use, cfg)
-	if agentRunner == nil {
-		return nil, errors.New("no agent configured")
-	}
-	return agentRunner.StartRun(ctx, task)
-}
-
-// EndConversation forwards conversation end to all active agents.
-func (r *Router) EndConversation(ctx context.Context, conversation string) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	var errs []error
-	if r.claude != nil {
-		if err := r.claude.EndConversation(ctx, conversation); err != nil {
-			errs = append(errs, err)
-		}
-	}
-	if r.anti != nil {
-		if err := r.anti.EndConversation(ctx, conversation); err != nil {
-			errs = append(errs, err)
-		}
-	}
-	if r.codex != nil {
-		if err := r.codex.EndConversation(ctx, conversation); err != nil {
-			errs = append(errs, err)
-		}
-	}
-	return errors.Join(errs...)
-}
-
-// NewClaude is what the window asks on the person's behalf.
-func NewClaude(
-	cfg container.Config,
-	root, url, secret string,
-	vocabulary map[string]mcp.Tool,
-	drafting claudecode.EditPreview,
-	out io.Writer,
-) *claudecode.Agent {
-	words := make(map[string]claudecode.ToolDeclaration, len(vocabulary))
-	allowed := make([]string, 0, len(vocabulary))
-	for name, tool := range vocabulary {
-		allowed = append(allowed, claudecode.ToolName(name))
-		words[claudecode.ToolName(name)] = claudecode.ToolDeclaration{
-			Title: tool.Title,
-			Kind:  tool.Kind,
-			Arguments: claudecode.Arguments{
-				About:   tool.About,
-				Element: tool.Inside,
-				Match:   tool.Match,
-				Text:    tool.Text,
-			},
-		}
-	}
-	slices.Sort(allowed)
-	return &claudecode.Agent{
-		Command:                  cfg.Agent.Claude.Command,
-		Root:                     root,
-		Tools:                    claudecode.Endpoint{URL: url, Token: secret},
-		Allowed:                  allowed,
-		ToolDeclarations:         words,
-		Preview:                  drafting,
-		Model:                    cfg.Agent.Claude.Model,
-		MaxTurns:                 cfg.Agent.Claude.MaxSteps,
-		ShouldReadHooksAndSkills: cfg.Agent.Claude.ShouldReadHooksAndSkills,
-		ErrorHandler:             func(err error) { fmt.Fprintln(out, "agent:", err) },
-	}
 }

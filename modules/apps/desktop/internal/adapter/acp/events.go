@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/runner"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -13,7 +14,9 @@ import (
 // holds the tool call a streamed block is building up.
 type eventReader struct {
 	agent        *Agent
-	work         *work
+	work         *runner.Work
+	limit        int
+	done         int
 	conversation string
 
 	currentTool string
@@ -22,8 +25,15 @@ type eventReader struct {
 
 // send reports a step.
 func (r *eventReader) send(step port.Step) {
-	r.work.steps <- step
+	r.work.Output <- step
+	if step.Kind == domain.StepToolDone {
+		r.done++
+	}
 }
+
+// isOverLimit is whether the agent has finished as many tool calls as the task allows. A task
+// allowing none has no limit.
+func (r *eventReader) isOverLimit() bool { return r.limit > 0 && r.done >= r.limit }
 
 // handle reports the steps one decoded line of the agent's output carries.
 func (r *eventReader) handle(rawMap map[string]any) {
@@ -56,12 +66,7 @@ func (r *eventReader) rememberSession(rawMap map[string]any) {
 	}
 	for _, key := range []string{"conversation_id", "session_id"} {
 		if sessID, ok := rawMap[key].(string); ok && sessID != "" {
-			r.agent.carried.Lock()
-			if r.agent.carried.sessions == nil {
-				r.agent.carried.sessions = map[string]string{}
-			}
-			r.agent.carried.sessions[r.conversation] = sessID
-			r.agent.carried.Unlock()
+			r.agent.registry.SetSession(r.conversation, sessID)
 		}
 	}
 }

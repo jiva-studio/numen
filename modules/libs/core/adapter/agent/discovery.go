@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -52,30 +53,44 @@ var codexSearchPlaces = []string{
 }
 
 // IsClaudeInstalled checks whether Claude Code CLI is available on this machine.
-func IsClaudeInstalled() bool {
-	if _, err := exec.LookPath("claude"); err == nil {
-		return true
-	}
-	return findInSearchPlaces(claudeSearchPlaces) != ""
-}
+func IsClaudeInstalled() bool { return locate([]string{"claude"}, claudeSearchPlaces) != "" }
 
 // IsAntigravityInstalled checks whether Antigravity CLI is available on this machine.
 func IsAntigravityInstalled() bool {
-	if _, err := exec.LookPath("agy"); err == nil {
-		return true
-	}
-	if _, err := exec.LookPath("antigravity"); err == nil {
-		return true
-	}
-	return findInSearchPlaces(antigravitySearchPlaces) != ""
+	return locate([]string{"agy", "antigravity"}, antigravitySearchPlaces) != ""
 }
 
 // IsCodexInstalled checks whether OpenAI Codex CLI is available on this machine.
-func IsCodexInstalled() bool {
-	if _, err := exec.LookPath("codex"); err == nil {
-		return true
+func IsCodexInstalled() bool { return locate([]string{"codex"}, codexSearchPlaces) != "" }
+
+// FindClaude returns the path of the Claude Code CLI, or the bare name where it is nowhere.
+func FindClaude() string { return findCommand("claude", []string{"claude"}, claudeSearchPlaces) }
+
+// FindAntigravity returns the path of the Antigravity CLI, or the bare name where it is nowhere.
+func FindAntigravity() string {
+	return findCommand("agy", []string{"agy", "antigravity"}, antigravitySearchPlaces)
+}
+
+// FindCodex returns the path of the Codex CLI, or the bare name where it is nowhere.
+func FindCodex() string { return findCommand("codex", []string{"codex"}, codexSearchPlaces) }
+
+// findCommand returns the located program, or the bare name that says it is not installed.
+func findCommand(bare string, names, places []string) string {
+	if found := locate(names, places); found != "" {
+		return found
 	}
-	return findInSearchPlaces(codexSearchPlaces) != ""
+	return bare
+}
+
+// locate returns the first of names on the path, then the first of places that can run. Empty
+// says none does.
+func locate(names, places []string) string {
+	for _, name := range names {
+		if found, err := exec.LookPath(name); err == nil {
+			return found
+		}
+	}
+	return findInSearchPlaces(places)
 }
 
 func findInSearchPlaces(places []string) string {
@@ -96,7 +111,7 @@ func findInSearchPlaces(places []string) string {
 			continue
 		}
 		for _, match := range matches {
-			if isExecutable(match) {
+			if isRunnable(match) {
 				return match
 			}
 		}
@@ -104,10 +119,16 @@ func findInSearchPlaces(places []string) string {
 	return ""
 }
 
-func isExecutable(path string) bool {
+// isRunnable is a regular file with an execute bit, held under the name it was looked for by.
+func isRunnable(path string) bool {
 	about, err := os.Stat(path)
-	if err != nil || about.IsDir() {
+	if err != nil || !about.Mode().IsRegular() || about.Mode().Perm()&0o111 == 0 {
 		return false
 	}
-	return about.Mode().Perm()&0o111 != 0
+	entries, err := os.ReadDir(filepath.Dir(path))
+	if err != nil {
+		return false
+	}
+	name := filepath.Base(path)
+	return slices.ContainsFunc(entries, func(e os.DirEntry) bool { return e.Name() == name })
 }

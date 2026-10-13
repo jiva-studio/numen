@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/docfile"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
@@ -150,7 +149,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 // openDocument opens a document and returns it rewound, with the fingerprint of
 // its bytes. The file is closed when it returns an error.
 func openDocument(ctx context.Context, reader port.VaultReader, path string) (io.ReadSeekCloser, string, error) {
-	file, err := docfile.Open(ctx, reader, path)
+	file, err := reader.OpenShared(ctx, path)
 	if err != nil {
 		return nil, "", fmt.Errorf("read %s: %w", path, err)
 	}

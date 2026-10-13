@@ -324,3 +324,6 @@ func (e *Embedder) chooseOutput() (name string, pooled bool, err error) {
 	}
 	return "", false, fmt.Errorf("%s has no output of %d dimensions: %v %v", e.name, e.dimensions, names, dshapes)
 }
+
+// Concurrency is one: the embedder runs a batch at a time.
+func (e *Embedder) Concurrency() int { return 1 }

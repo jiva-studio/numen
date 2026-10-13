@@ -61,8 +61,8 @@ func (u Embed) inferWorkers() int {
 	if u.Concurrency > 0 {
 		return u.Concurrency
 	}
-	if c, ok := u.Embedder.(interface{ Concurrency() int }); ok && c.Concurrency() > 0 {
-		return c.Concurrency()
+	if u.Embedder != nil && u.Embedder.Concurrency() > 0 {
+		return u.Embedder.Concurrency()
 	}
 	return 1
 }

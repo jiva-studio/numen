@@ -7,12 +7,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/docfile"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
-
-var _ port.SharedOpener = (*filesystem.VaultReader)(nil)
 
 func TestAnOpenSharedFileReadsTheBytesAndCanBeRenamedAndRemoved(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{"a.pdf": "the bytes"})
@@ -20,7 +16,7 @@ func TestAnOpenSharedFileReadsTheBytesAndCanBeRenamedAndRemoved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	file, err := docfile.Open(t.Context(), reader, "a.pdf")
+	file, err := reader.OpenShared(t.Context(), "a.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}

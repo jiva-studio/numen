@@ -1,0 +1,267 @@
+package container
+
+import (
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
+	"testing"
+
+	"gopkg.in/yaml.v3"
+)
+
+// wiring are the files of a driving adapter that bind the ports the composition
+// root hands it. They hold a port in a field and call it; every other file asks
+// a use case.
+var wiring = []string{
+	"adapter/cli/deps.go",
+	"adapter/window/editor/agent.go",
+	"adapter/window/editor/api.go",
+	"adapter/window/editor/assembly.go",
+	"adapter/window/editor/documents.go",
+	"adapter/window/editor/focus.go",
+	"adapter/window/editor/index.go",
+	"adapter/window/editor/pool/documents.go",
+	"adapter/window/editor/serve.go",
+	"adapter/window/editor/viewer.go",
+	"adapter/window/flashcards/agent.go",
+	"adapter/window/flashcards/api.go",
+}
+
+// portCalls are the files outside wiring that call a port through a field, and
+// the list only shrinks.
+var portCalls = map[string]string{
+	// The window reads notes, links and readers through the ports; issue #903.
+	"adapter/window/editor/loopback.go":      "issue #903",
+	"adapter/window/editor/notes.go":         "issue #903",
+	"adapter/window/editor/recordings.go":    "issue #903",
+	"adapter/window/editor/search.go":        "issue #903",
+	"adapter/window/editor/vault_session.go": "issue #903",
+	// The command records an opened vault on the registry it is handed.
+	"adapter/cli/vault.go": "the command line calls the registry directly",
+}
+
+// getPortFields are the names of the struct fields a file types port.X.
+func getPortFields(file *ast.File) []string {
+	var found []string
+	ast.Inspect(file, func(node ast.Node) bool {
+		held, is := node.(*ast.StructType)
+		if !is {
+			return true
+		}
+		for _, one := range held.Fields.List {
+			typed := one.Type
+			if star, is := typed.(*ast.StarExpr); is {
+				typed = star.X
+			}
+			at, is := typed.(*ast.SelectorExpr)
+			if !is {
+				continue
+			}
+			if from, is := at.X.(*ast.Ident); is && from.Name == "port" {
+				for _, name := range one.Names {
+					found = append(found, name.Name)
+				}
+			}
+		}
+		return true
+	})
+	return found
+}
+
+// getFieldCalls are the calls in a file made as x.Field.Method(...) where Field
+// is one of these names, each written Field.Method.
+func getFieldCalls(file *ast.File, fields []string) []string {
+	var found []string
+	ast.Inspect(file, func(node ast.Node) bool {
+		call, is := node.(*ast.CallExpr)
+		if !is {
+			return true
+		}
+		method, is := call.Fun.(*ast.SelectorExpr)
+		if !is {
+			return true
+		}
+		field, is := method.X.(*ast.SelectorExpr)
+		if is && slices.Contains(fields, field.Sel.Name) {
+			found = append(found, field.Sel.Name+"."+method.Sel.Name)
+		}
+		return true
+	})
+	return found
+}
+
+// isDrivingAdapterFile says whether a path, relative to the core, is a file of
+// an adapter something outside comes in through.
+func isDrivingAdapterFile(rel string) bool {
+	return isAmong([]string{"adapter/cli", "adapter/mcp", "adapter/window"}, filepath.ToSlash(filepath.Dir(rel)))
+}
+
+// A driving adapter asks a use case. The port it holds in a field is the
+// composition root's to hand over, and a call made through that field is the
+// adapter doing the use case's work.
+func TestNoDrivingAdapterCallsAPortOutsideItsWiring(t *testing.T) {
+	fields := map[string][]string{}
+	files := map[string]*ast.File{}
+	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") ||
+			strings.HasSuffix(path, "_test.go") {
+			return err
+		}
+		rel := getPackage("..", path) + "/" + entry.Name()
+		if !isDrivingAdapterFile(rel) {
+			return nil
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+		if err != nil {
+			return err
+		}
+		files[rel] = file
+		dir := filepath.Dir(rel)
+		fields[dir] = append(fields[dir], getPortFields(file)...)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// A walk that read no driving adapter, or met no port field, is a rule
+	// checked against nothing.
+	if len(files) < 30 {
+		t.Fatalf("%d files of the driving adapters read: the walk is not reading them", len(files))
+	}
+	var held int
+	for _, one := range fields {
+		held += len(one)
+	}
+	if held == 0 {
+		t.Fatal("no driving adapter holds a port in a field: the walk is not reading them")
+	}
+
+	called := map[string]bool{}
+	for rel, file := range files {
+		if slices.Contains(wiring, rel) {
+			continue
+		}
+		calls := getFieldCalls(file, fields[filepath.Dir(rel)])
+		if len(calls) == 0 {
+			continue
+		}
+		called[rel] = true
+		if _, is := portCalls[rel]; !is {
+			t.Errorf("%s calls %s: a driving adapter asks a use case, not a port", rel, calls[0])
+		}
+	}
+	for rel := range portCalls {
+		if !called[rel] {
+			t.Errorf("portCalls holds %s and it calls no port", rel)
+		}
+	}
+	for _, rel := range wiring {
+		if files[rel] == nil {
+			t.Errorf("wiring holds %s and it is not there", rel)
+		}
+	}
+}
+
+// What the rule refuses, read against a file written to be refused. It finds a
+// call through a field typed port.X, and lets through a call through a field of
+// another type and a call on a value that is no field.
+func TestWhatTheDrivingCallRuleRefuses(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "call.go", `package p
+
+type Notes struct {
+	Queries port.NoteQueries
+	Links   *port.LinkQueries
+	Find    usecase.Find
+}
+
+func read(a *API, queries port.NoteQueries) {
+	a.Notes.Queries.GetTypes()
+	a.Notes.Links.Resolve()
+	a.Notes.Find.Execute()
+	queries.GetTypes()
+}
+`, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fields := getPortFields(file)
+	if want := []string{"Queries", "Links"}; !slices.Equal(fields, want) {
+		t.Fatalf("the port fields are %v, want %v", fields, want)
+	}
+	want := []string{"Queries.GetTypes", "Links.Resolve"}
+	if got := getFieldCalls(file, fields); !slices.Equal(got, want) {
+		t.Errorf("the rule refuses %v, want %v", got, want)
+	}
+}
+
+// depguardFiles are the file patterns of the lint rule that keeps a driving
+// adapter off the ports.
+func depguardFiles(t *testing.T) []string {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", ".golangci.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var config struct {
+		Linters struct {
+			Settings struct {
+				Depguard struct {
+					Rules map[string]struct {
+						Files []string `yaml:"files"`
+					} `yaml:"rules"`
+				} `yaml:"depguard"`
+			} `yaml:"settings"`
+		} `yaml:"linters"`
+	}
+	if err := yaml.Unmarshal(raw, &config); err != nil {
+		t.Fatal(err)
+	}
+	return config.Linters.Settings.Depguard.Rules["driving-adapter"].Files
+}
+
+// getUncovered are the driving adapters of adapter/ no pattern of the lint rule
+// reaches.
+func getUncovered(patterns []string) []string {
+	var found []string
+	for one := range driving {
+		if !strings.HasPrefix(one, "adapter/") {
+			continue
+		}
+		if !slices.ContainsFunc(patterns, func(pattern string) bool {
+			held := strings.TrimSuffix(strings.TrimPrefix(pattern, "**/"), "/**")
+			return !strings.HasPrefix(pattern, "!") && (one == held || strings.HasPrefix(one, held+"/"))
+		}) {
+			found = append(found, one)
+		}
+	}
+	slices.Sort(found)
+	return found
+}
+
+// Every driving adapter is on the lint rule that keeps it off the ports.
+func TestEveryDrivingAdapterIsOnTheLintRule(t *testing.T) {
+	patterns := depguardFiles(t)
+	if len(patterns) == 0 {
+		t.Fatal("the driving-adapter rule lists no file: the config is not being read")
+	}
+	for _, one := range getUncovered(patterns) {
+		t.Errorf("%s is a driving adapter and the depguard driving-adapter rule does not list it", one)
+	}
+}
+
+// What the rule refuses, read against a list written to be refused.
+func TestWhatTheLintCoverageRuleRefuses(t *testing.T) {
+	got := getUncovered([]string{"**/adapter/window/**", "**/adapter/mcp/**", "!**/adapter/cli/deps.go"})
+	if want := []string{"adapter/cli"}; !slices.Equal(got, want) {
+		t.Errorf("the rule refuses %v, want %v", got, want)
+	}
+	if got := getUncovered([]string{"**/adapter/window/**", "**/adapter/mcp/**", "**/adapter/cli/**"}); len(got) != 0 {
+		t.Errorf("the rule refuses %v, want none", got)
+	}
+}

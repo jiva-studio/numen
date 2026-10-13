@@ -49,6 +49,7 @@ func skipIfInstalledAtAnAbsolutePlace(t *testing.T, places []string) {
 type tool struct {
 	name      string
 	isInstall func() bool
+	find      func() string
 	places    []string
 	commands  []string
 	homePlace string
@@ -56,9 +57,9 @@ type tool struct {
 
 func tools() []tool {
 	return []tool{
-		{"claude", IsClaudeInstalled, claudeSearchPlaces, []string{"claude"}, ".local/bin/claude"},
-		{"antigravity", IsAntigravityInstalled, antigravitySearchPlaces, []string{"agy", "antigravity"}, ".local/bin/agy"},
-		{"codex", IsCodexInstalled, codexSearchPlaces, []string{"codex"}, ".codex/bin/codex"},
+		{"claude", IsClaudeInstalled, FindClaude, claudeSearchPlaces, []string{"claude"}, ".local/bin/claude"},
+		{"antigravity", IsAntigravityInstalled, FindAntigravity, antigravitySearchPlaces, []string{"agy", "antigravity"}, ".local/bin/agy"},
+		{"codex", IsCodexInstalled, FindCodex, codexSearchPlaces, []string{"codex"}, ".codex/bin/codex"},
 	}
 }
 
@@ -201,5 +202,58 @@ func TestSearchContinuesPastAPlaceThatIsNotAPattern(t *testing.T) {
 	writeExecutable(t, want, 0o755)
 	if got := findInSearchPlaces([]string{"~/.local/bin/claude", want}); got != want {
 		t.Fatalf("found %q, want %q", got, want)
+	}
+}
+
+// Launching finds what settings reports: a tool under the nix profile is the command, for each
+// tool.
+func TestFindReturnsWhatInstalledReports(t *testing.T) {
+	for _, tl := range tools() {
+		t.Run(tl.name, func(t *testing.T) {
+			home, _ := isolateMachine(t)
+			skipIfInstalledAtAnAbsolutePlace(t, tl.places)
+			at := filepath.Join(home, ".nix-profile/bin", tl.commands[0])
+			writeExecutable(t, at, 0o755)
+			if !tl.isInstall() {
+				t.Fatal("reported missing")
+			}
+			if got := tl.find(); got != at {
+				t.Fatalf("found %q, want %q", got, at)
+			}
+		})
+	}
+}
+
+// A machine holding none of a tool starts the bare name, which says it is not installed.
+func TestFindReturnsTheBareNameWhereNothingIsInstalled(t *testing.T) {
+	for _, tl := range tools() {
+		t.Run(tl.name, func(t *testing.T) {
+			isolateMachine(t)
+			skipIfInstalledAtAnAbsolutePlace(t, tl.places)
+			if got := tl.find(); got != tl.commands[0] {
+				t.Fatalf("found %q, want %q", got, tl.commands[0])
+			}
+		})
+	}
+}
+
+// The path is asked before the places.
+func TestFindAsksThePathFirst(t *testing.T) {
+	home, bin := isolateMachine(t)
+	writeExecutable(t, filepath.Join(home, ".local/bin/claude"), 0o755)
+	want := filepath.Join(bin, "claude")
+	writeExecutable(t, want, 0o755)
+	if got := FindClaude(); got != want {
+		t.Fatalf("found %q, want %q", got, want)
+	}
+}
+
+// A mac filesystem answers to a name in any case, and the command is the file held under that
+// name.
+func TestAProgramUnderAnotherCaseIsNotTheCommand(t *testing.T) {
+	home, _ := isolateMachine(t)
+	writeExecutable(t, filepath.Join(home, "Applications/Claude.app/Contents/MacOS/Claude"), 0o755)
+	if got := findInSearchPlaces([]string{"~/Applications/Claude.app/Contents/MacOS/claude"}); got != "" {
+		t.Fatalf("found %q", got)
 	}
 }

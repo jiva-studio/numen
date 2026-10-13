@@ -9,8 +9,9 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
-	"time"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/runner"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
@@ -134,12 +135,7 @@ func (p *Proofreader) runBatch(ctx context.Context, dir string, batch proofread.
 	cmd := exec.CommandContext(ctx, name, append(rest, p.buildArguments()...)...)
 	cmd.Dir = dir
 	cmd.Env = buildEnvironment(os.Environ())
-	detach(cmd)
-
-	// The whole group goes, and the pipes are let go of shortly after: a
-	// grandchild holding the child's output keeps a wait from returning.
-	cmd.Cancel = func() error { return kill(cmd) }
-	cmd.WaitDelay = 2 * time.Second
+	runner.Supervise(cmd)
 
 	// The batch goes on the input: --disallowed-tools takes as many names as
 	// follow it, and a batch is longer than a command line holds.
@@ -157,7 +153,7 @@ func (p *Proofreader) runBatch(ctx context.Context, dir string, batch proofread.
 // getCommand returns the command line to run and what stands before its own arguments.
 func (p *Proofreader) getCommand() (string, []string) {
 	if len(p.Command) == 0 {
-		return findCommand(), nil
+		return agent.FindClaude(), nil
 	}
 	return p.Command[0], p.Command[1:]
 }
