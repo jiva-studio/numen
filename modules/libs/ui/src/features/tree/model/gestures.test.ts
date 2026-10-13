@@ -8,10 +8,14 @@ import type { RowDragState } from './drag'
 import { useTreeGestures, type TreeGesturesTell } from './gestures'
 import { useDrawnRows } from './rows'
 import { useRowSelection } from './selection'
+import type { Position } from '@/shared/lib/geometry'
 
 const ROWS: readonly Row[] = [{ id: 'notes', name: 'Notes', hasChildren: false }]
 
-const create = (renamingPath = ref<string | null>(null)) => {
+const create = (
+  renamingPath = ref<string | null>(null),
+  getMenuAt: (row: string) => Position | null = () => null,
+) => {
   const told: unknown[][] = []
   const tell: TreeGesturesTell = (...args: unknown[]) => {
     told.push(args)
@@ -42,7 +46,7 @@ const create = (renamingPath = ref<string | null>(null)) => {
     rows,
     selection,
     drag,
-    getMenuAt: () => null,
+    getMenuAt,
     tell,
   })
   return { gestures, told }
@@ -57,6 +61,38 @@ describe('the menu key on a row with no place on screen', () => {
 
     expect(event.defaultPrevented).toBe(true)
     expect(told).toStrictEqual([])
+  })
+})
+
+describe('the menu keys on a row with a place on screen', () => {
+  const at: Position = { x: 12, y: 34 }
+
+  it('opens the menu on shift and F10', () => {
+    const { gestures, told } = create(ref<string | null>(null), () => at)
+
+    gestures.onKeyDown(new KeyboardEvent('keydown', { key: 'F10', shiftKey: true }))
+
+    expect(told).toStrictEqual([['menu', 'notes', at]])
+  })
+
+  it('leaves F10 alone without shift', () => {
+    const { gestures, told } = create(ref<string | null>(null), () => at)
+    const event = new KeyboardEvent('keydown', { key: 'F10', cancelable: true })
+
+    gestures.onKeyDown(event)
+
+    expect(told).toStrictEqual([])
+    expect(event.defaultPrevented).toBe(false)
+  })
+
+  it('leaves another key alone when shift is held', () => {
+    const { gestures, told } = create(ref<string | null>(null), () => at)
+    const event = new KeyboardEvent('keydown', { key: 'x', shiftKey: true, cancelable: true })
+
+    gestures.onKeyDown(event)
+
+    expect(told).toStrictEqual([])
+    expect(event.defaultPrevented).toBe(false)
   })
 })
 
