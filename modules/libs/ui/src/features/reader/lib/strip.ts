@@ -6,6 +6,7 @@
  * asks them without a browser.
  */
 import type { Size } from '@/shared/lib/geometry'
+import { keyTurn } from '@/shared/lib/turn'
 
 /** Where something sits on a page, in fractions of it. */
 export interface Rect {
@@ -149,6 +150,35 @@ export function inFront(row: Row, viewport: Size, along: number): number {
 export function findPageScroll(row: Row, page: number): number | undefined {
   const begins = row.starts[page]
   return begins === undefined ? undefined : begins - GAP
+}
+
+/**
+ * How far the row is scrolled to bring a page against the left edge, held
+ * inside the row: the last page cannot be brought further left than the end of
+ * it. Nothing for a page the row does not hold.
+ */
+export function getScrollTarget(row: Row, viewport: Size, page: number): number | undefined {
+  const begins = findPageScroll(row, page)
+  if (begins === undefined) return undefined
+  const getFurthest = Math.max(row.length - viewport.width, 0)
+  return Math.min(Math.max(begins, 0), getFurthest)
+}
+
+/**
+ * The page a key turns to, counted from the first. Nothing for a key that turns
+ * no page, a document with no pages, or a turn that leaves the document.
+ */
+export function getTurnTarget(key: string, at: number, pageCount: number): number | undefined {
+  const way = keyTurn(key)
+  if (!way || pageCount === 0) return undefined
+
+  const last = pageCount - 1
+  let to: number
+  if (way === 'first') to = 0
+  else if (way === 'last') to = last
+  else to = at + (way === 'next' ? 1 : -1)
+
+  return to < 0 || to > last ? undefined : to
 }
 
 /**
