@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/epub"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 // A document reaches the window as pictures: a page of a scan is pixels, and
@@ -360,10 +361,10 @@ func refuse(w http.ResponseWriter, err error) {
 		// The window is told when to ask again.
 		w.Header().Set("Retry-After", "1")
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
-	case errors.Is(err, document.ErrNoPage), errors.Is(err, document.ErrChanged), port.IsNoNote(err),
+	case errors.Is(err, document.ErrNoPage), errors.Is(err, document.ErrChanged), source.IsNoNote(err),
 		errors.Is(err, epub.ErrNoDocument), errors.Is(err, epub.ErrNoEntry):
 		http.Error(w, err.Error(), http.StatusNotFound)
-	case errors.Is(err, port.ErrOutside):
+	case errors.Is(err, source.ErrOutside):
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	case errors.Is(err, document.ErrNotADocument), errors.Is(err, document.ErrEncrypted), isMisnamed(err):
 		http.Error(w, err.Error(), http.StatusUnsupportedMediaType)

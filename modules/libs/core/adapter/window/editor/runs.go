@@ -2,7 +2,7 @@ package editor
 
 import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 // A source carrying no text a person typed is put through a run: a scan is
@@ -18,5 +18,5 @@ type Runner interface {
 	// Start takes on one source a person named, and says whether it began now
 	// or waits its turn. It runs under the application, so whoever asked is
 	// answered at once.
-	Start(v domain.Vault, path string) port.StartOutcome
+	Start(v domain.Vault, path string) source.StartOutcome
 }
