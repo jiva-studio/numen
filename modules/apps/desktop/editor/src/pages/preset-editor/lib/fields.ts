@@ -19,7 +19,7 @@ export type Field =
   | 'counts'
   | 'backlog'
   | 'load'
-  | 'evenLoad'
+  | 'hasEvenLoad'
 
 /** Every setting the receipt has a row for, in the order they stand in. */
 export const FIELDS: readonly Field[] = [
@@ -35,7 +35,7 @@ export const FIELDS: readonly Field[] = [
   'counts',
   'backlog',
   'load',
-  'evenLoad',
+  'hasEvenLoad',
 ]
 
 /**
@@ -78,7 +78,7 @@ const LEARNS: Record<Rule, readonly Field[]> = {
 }
 
 /** The settings that stand under no goal in particular, and are drawn under all. */
-const ALWAYS: readonly Field[] = ['load', 'evenLoad']
+const ALWAYS: readonly Field[] = ['load', 'hasEvenLoad']
 
 /** The settings a goal schedules by, which are the rows the receipt draws. */
 export const getGoalFields = (goal: Goal, rule: Rule): readonly Field[] => {
@@ -116,7 +116,7 @@ export const getShapeKey = (settings: Settings): string => {
       .sort()
       .map((day) => `${day}=${settings.load[day]}`)
       .join(','),
-    evenLoad: `${settings.evenLoad}`,
+    hasEvenLoad: `${settings.hasEvenLoad}`,
   }
   const rest = FIELDS.filter((field) => !own.has(field)).map((field) => `${field}=${values[field]}`)
   return [settings.goal, ...rest].join(' ')

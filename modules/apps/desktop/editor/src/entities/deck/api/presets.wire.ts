@@ -7,10 +7,9 @@ import {
   type CurvePoint as CurvePointMessage,
   type Point as PointMessage,
   type Preset as PresetMessage,
-  type Settings as SettingsMessage,
   type SettingsBounds as SettingsBoundsMessage,
 } from '@numen/protocol'
-import { goalNames, goalOf } from '@numen/wire'
+import { formatSettings, goalOf, parseSettings } from '@numen/wire'
 import { parseFingerprint, findErrorCode, isStaleAnswer, formatFingerprint } from '@/shared/answers'
 import { presetsService } from '@/shared/clients'
 import { DEFAULTS, NO_CURVE_POINT } from '../lib/presets'
@@ -22,15 +21,8 @@ import type {
   Preset,
   Presets,
   PresetReadResult,
-  Settings,
   SettingsBounds,
 } from '../lib/presets'
-import {
-  BUDGET_UNIT_BY_WIRE,
-  WIRE_BY_BUDGET_UNIT,
-  RULE_BY_WIRE,
-  WIRE_BY_RULE,
-} from './presets.names'
 
 /** The same questions, in the shape the window asks them. */
 export const presets: Presets = {
@@ -59,7 +51,7 @@ export const presets: Presets = {
   write: async (path, settings, seen) => {
     const answer = await presetsService.writePreset({
       path,
-      settings: toSettingsMessage(settings),
+      settings: formatSettings(settings),
       ...(seen === '' ? {} : { baseline: parseFingerprint(seen) }),
     })
     const code = isStaleAnswer(answer) ? 'changed' : findErrorCode(answer)
@@ -69,7 +61,7 @@ export const presets: Presets = {
   curve: async (path, settings) => {
     const answer = await presetsService.computeCurve({
       path,
-      settings: toSettingsMessage(settings),
+      settings: formatSettings(settings),
     })
     return parseCurve(answer.curve)
   },
@@ -119,41 +111,6 @@ const parsePreset = (one: PresetMessage): Preset => ({
   problems: one.problems,
   stops: one.stops,
   stopsOn: one.stopsOn,
-})
-
-/** The settings in the window's own words. A preset carrying none is the defaults. */
-const parseSettings = (settings: SettingsMessage | undefined): Settings =>
-  settings === undefined
-    ? DEFAULTS
-    : {
-        goal: goalOf[settings.goal] ?? DEFAULTS.goal,
-        byDate: settings.byDate,
-        minutesADay: settings.minutesADay,
-        newADay: settings.newADay,
-        reviewsADay: settings.reviewsADay,
-        retention: settings.retention,
-        counts: BUDGET_UNIT_BY_WIRE[settings.counts] ?? DEFAULTS.counts,
-        backlog: settings.backlog,
-        load: settings.load,
-        evenLoad: settings.hasEvenLoad,
-        learned: RULE_BY_WIRE[settings.learned] ?? DEFAULTS.learned,
-        interval: settings.interval,
-      }
-
-/** The settings in the shape the schema carries them. */
-const toSettingsMessage = (settings: Settings) => ({
-  goal: goalNames[settings.goal],
-  byDate: settings.byDate,
-  minutesADay: settings.minutesADay,
-  newADay: settings.newADay,
-  reviewsADay: settings.reviewsADay,
-  retention: settings.retention,
-  counts: WIRE_BY_BUDGET_UNIT[settings.counts],
-  backlog: settings.backlog,
-  load: { ...settings.load },
-  evenLoad: settings.evenLoad,
-  learned: WIRE_BY_RULE[settings.learned],
-  interval: settings.interval,
 })
 
 /** One place of the grid, as the window carries what the preset comes to there. */

@@ -80,7 +80,9 @@ const applyChoiceSetting = (
   if (field === 'byDate' && typeof value === 'string') return { ...settings, byDate: value }
   if (field === 'counts' && isBudgetUnit(value)) return { ...settings, counts: value }
   if (field === 'learned' && isRule(value)) return { ...settings, learned: value }
-  if (field === 'evenLoad' && typeof value === 'boolean') return { ...settings, evenLoad: value }
+  if (field === 'hasEvenLoad' && typeof value === 'boolean') {
+    return { ...settings, hasEvenLoad: value }
+  }
   return undefined
 }
 

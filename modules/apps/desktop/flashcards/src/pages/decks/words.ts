@@ -1,6 +1,7 @@
 /** What this screen says of a preset: its goal, its day, and why it asks nothing. */
 // Stryker disable StringLiteral: interface copy
 import { StopReason } from '@numen/protocol'
+import { formatStopReasonMessage } from '@numen/wire'
 import { parseDay, daysBetween, many, percent } from '@numen/ui'
 
 import { isSpent } from './lib/progress'
@@ -14,15 +15,6 @@ export const STOPPED = {
   nothing: 'nothing today',
   /** The budget was spent, and elsewhere for a deck that says this. */
   full: 'the day is full',
-  noCards: 'no cards a day',
-  noMinutes: 'no budget in time',
-  noDay: 'by no day',
-  /** The day it aimed at is behind us, named where the window holds it. */
-  pastDay: 'the day has passed',
-  passed: (day: string) => `${getDayWords(day)} has passed`,
-  noLoad: (day: string) => `no load on ${getWeekdayWords(day)}`,
-  /** No day of the week carries any of the load, so there is no next day. */
-  noWeek: 'no load on any day',
   /** Every card face here is unbegun, and the preset begins none a day. */
   noneToBegin: 'no cards to begin',
 } as const
@@ -50,23 +42,6 @@ export const getLeftWords = (one: Preset): string => {
 }
 
 /**
- * The words each verdict the vault may hand over comes to. A verdict scheduling
- * something says nothing. Every value stands here, so a verdict added to the
- * schema is one this window is made to answer.
- */
-const WHY: Record<StopReason, (settings: Settings | null, today: string) => string> = {
-  [StopReason.UNSPECIFIED]: () => '',
-  [StopReason.NOTHING]: () => '',
-  [StopReason.NO_MINUTES]: () => STOPPED.noMinutes,
-  [StopReason.NO_CARDS]: () => STOPPED.noCards,
-  [StopReason.NO_DAY]: () => STOPPED.noDay,
-  [StopReason.PAST_DAY]: (settings) =>
-    settings?.byDate ? STOPPED.passed(settings.byDate) : STOPPED.pastDay,
-  [StopReason.NO_LOAD]: (settings, today) => STOPPED.noLoad(today),
-  [StopReason.NO_WEEK]: () => STOPPED.noWeek,
-}
-
-/**
  * Why a preset schedules nothing today, in the words to show, and empty while
  * it schedules something.
  *
@@ -77,7 +52,11 @@ export const getStoppedWords = (
   why: StopReason,
   settings: Settings | null,
   today: string,
-): string => WHY[why](settings, today)
+): string =>
+  formatStopReasonMessage(why, {
+    day: why === StopReason.PAST_DAY && settings?.byDate ? getDayWords(settings.byDate) : undefined,
+    weekday: why === StopReason.NO_LOAD ? getWeekdayWords(today) : undefined,
+  })
 
 /**
  * What the goal of a preset comes to, in the few words a person reads at a
@@ -88,13 +67,13 @@ export const getGoalWords = (settings: Settings, today: string): string => {
     case 'retention':
       return `${percent(settings.retention)} remembered`
     case 'date': {
-      if (!settings.byDate) return 'by no day'
+      if (!settings.byDate) return formatStopReasonMessage(StopReason.NO_DAY)
       const left = daysBetween(today, settings.byDate)
       if (left <= 0) return `by ${getDayWords(settings.byDate)}`
       return `${many(left, 'day')} to ${getDayWords(settings.byDate)}`
     }
     case 'minutes':
-      if (settings.minutesADay === 0) return STOPPED.noMinutes
+      if (settings.minutesADay === 0) return formatStopReasonMessage(StopReason.NO_MINUTES)
       return `${many(settings.minutesADay, 'minute')} a day`
   }
 }

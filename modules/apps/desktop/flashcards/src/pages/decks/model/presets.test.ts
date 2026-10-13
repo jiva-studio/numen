@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { ErrorCode, StopReason } from '@numen/protocol'
-import { goalNames } from '@numen/wire'
+import { DEFAULT_SETTINGS, formatSettings } from '@numen/wire'
+import type { SettingsMessage } from '@numen/wire'
 
 import { useVaultPresets } from './presets'
 import { PRESET_UNREADABLE_MESSAGE } from '../api/presets'
 import type { PresetsClient } from '../api/presets'
 import { canStart, getSpentShare, isSpent } from '../lib/progress'
 import { CLOSES_NOTHING } from '../types'
-import type { Budget, Preset, Settings, SettingsMessage } from '../types'
+import type { Budget, Preset, Settings } from '../types'
 import { getGoalWords, getLeftWords, getStoppedWords, STOPPED } from '../words'
 import type { BudgetKeys, PresetCardsDue, VaultCardsDue } from '@/entities/vault'
 
@@ -24,10 +25,8 @@ const settings = (fields: Partial<Settings> = {}): Settings => ({
 })
 
 /** The same settings, as the schema carries them. */
-const createSettingsMessage = (one: Settings): SettingsMessage => ({
-  ...one,
-  goal: goalNames[one.goal],
-})
+const createSettingsMessage = (one: Settings): SettingsMessage =>
+  formatSettings({ ...DEFAULT_SETTINGS, ...one })
 
 const budget = (fields: Partial<Budget> = {}): Budget => ({
   new: 10,
@@ -325,16 +324,25 @@ describe('whether starting a session on a deck is offered', () => {
 // The reasons stand in one column, under a tile and along a deck row, so they
 // read in one voice.
 describe('why a preset or a deck is asking nothing', () => {
+  const on = '2026-09-05'
+
   it('is said in one register: a clause in lower case, and never a sentence', () => {
-    const said = [STOPPED.nothing, STOPPED.full, STOPPED.noCards, STOPPED.noMinutes]
+    const said = [
+      STOPPED.nothing,
+      STOPPED.full,
+      getStoppedWords(StopReason.NO_CARDS, null, on),
+      getStoppedWords(StopReason.NO_MINUTES, null, on),
+    ]
 
     for (const one of said) {
       expect(one).toBe(one.toLowerCase())
       expect(one).not.toMatch(/[.!?]$/)
     }
     // A day and a day of the week are names, and carry the only capital in one.
-    expect(STOPPED.passed('2026-09-30')).toMatch(/ has passed$/)
-    expect(STOPPED.noLoad('2026-09-05')).toMatch(/^no load on \S+$/)
+    expect(getStoppedWords(StopReason.PAST_DAY, settings({ byDate: '2026-09-30' }), on)).toMatch(
+      / has passed$/,
+    )
+    expect(getStoppedWords(StopReason.NO_LOAD, null, on)).toMatch(/^no load on \S+$/)
   })
 })
 

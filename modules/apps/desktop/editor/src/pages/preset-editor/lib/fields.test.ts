@@ -41,7 +41,7 @@ describe('the settings a goal schedules by', () => {
   it('draws what stands under no goal in particular under all three', () => {
     for (const goal of ['minutes', 'retention', 'date'] as const) {
       expect(getGoalFields(goal, DEFAULTS.learned)).toContain('load')
-      expect(getGoalFields(goal, DEFAULTS.learned)).toContain('evenLoad')
+      expect(getGoalFields(goal, DEFAULTS.learned)).toContain('hasEvenLoad')
     }
   })
 
@@ -117,14 +117,14 @@ describe('the one word that says the shape of the settings', () => {
   it('names the goal, then every setting the goal steers by its value', () => {
     expect(getShapeKey({ ...every, goal: 'date' })).toBe(
       'date newADay=10 reviewsADay=200 learned=interval interval=21 retention=0.9 ' +
-        'minutesADay=20 byDate=2026-09-30 counts=cards backlog=100 load=mon=25,tue=50 evenLoad=true',
+        'minutesADay=20 byDate=2026-09-30 counts=cards backlog=100 load=mon=25,tue=50 hasEvenLoad=true',
     )
   })
 
   it('leaves the day out under a goal that does not getGoalField by it', () => {
     expect(getShapeKey({ ...every, goal: 'minutes' })).toBe(
       'minutes newADay=10 reviewsADay=200 learned=interval interval=21 retention=0.9 ' +
-        'minutesADay=20 counts=cards backlog=100 load=mon=25,tue=50 evenLoad=true',
+        'minutesADay=20 counts=cards backlog=100 load=mon=25,tue=50 hasEvenLoad=true',
     )
   })
 
@@ -133,7 +133,7 @@ describe('the one word that says the shape of the settings', () => {
 
     expect(getShapeKey({ ...every, reviewsADay: 300 })).not.toBe(shape)
     expect(getShapeKey({ ...every, backlog: 50 })).not.toBe(shape)
-    expect(getShapeKey({ ...every, evenLoad: false })).not.toBe(shape)
+    expect(getShapeKey({ ...every, hasEvenLoad: false })).not.toBe(shape)
   })
 
   it('is the same wherever the days of the load were written first', () => {

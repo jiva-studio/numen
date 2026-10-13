@@ -25,8 +25,7 @@ of declares a public API under `@x`, named for the slice it is for.
 
 ## What a `.vue` may not do
 
-A `.vue` file reaches no client. What talks to the core is a port in `app/`, and
-what a component is given is props. Business logic is a composable or a domain
+A `.vue` file reaches no client, and what a component is given is props. What talks to the core is a port in `app/`, or the `api` segment of a slice, which binds the generated clients from `shared/clients`. Business logic is a composable or a domain
 model, never a component.
 
 There is no store framework and no module-level mutable state.
@@ -34,9 +33,7 @@ There is no store framework and no module-level mutable state.
 ## Reaching the core
 
 A window talks to the core through the generated Connect clients, and the answer
-is mapped field by field into the window's own type. A refusal is put into words
-by `refusalWords` or `troubleWords` from `@numen/wire`; nothing prints an error
-by stringifying it.
+is mapped field by field into the window's own type. A fault is put into words by `formatErrorMessage` and an error code by `formatErrorCodeMessage`, both from `@numen/wire`; nothing prints an error by stringifying it. The settings of a preset are mapped by `parseSettings` and `formatSettings`, and a stop reason is worded by `formatStopReasonMessage`, from the same library.
 
 ## The one gotcha that costs an afternoon
 
