@@ -2,9 +2,9 @@
 
 package main
 
-// findSchemas puts the settings a dialog reads on the search path. Only the
-// toolkit on Linux is built on them.
-func findSchemas() {}
+// setSchemasDir leaves the search path as it is. Only the toolkit on Linux is
+// built on the settings a dialog reads.
+func setSchemasDir() {}
 
 // hasSchemas reports whether this machine holds the settings a folder dialog
 // reads.
