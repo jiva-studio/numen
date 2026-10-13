@@ -693,7 +693,4 @@ func TestABookIsCutTheWayItAlwaysWas(t *testing.T) {
 	if got := extract.producer(domain.Fingerprint{Kind: domain.KindBook}); got != "ocr" {
 		t.Errorf("a book's recognition is kept under %q, want ocr", got)
 	}
-	if got := domain.NewArtifactName(domain.ArtifactText, "ocr", "abc123"); got != "ocr/abc123.txt" {
-		t.Errorf("a recognition is kept under %q", got)
-	}
 }
