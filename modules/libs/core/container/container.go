@@ -196,7 +196,11 @@ func (c Config) WriteConfiguredFile() func(written string, baseline *string) err
 			return err
 		}
 		held := DefaultSettings()
-		return settings.Write(path, []byte(written), baseline, &held)
+		if err := settings.Write(path, []byte(written), baseline, &held); err != nil {
+			return err
+		}
+		adapteragent.RefreshModels()
+		return nil
 	}
 }
 

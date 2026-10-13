@@ -141,3 +141,32 @@ describe('the agents an agent tab offers', () => {
     expect(state.modelOptions.value.map((one) => one.modelId)).toEqual(['zeta-small'])
   })
 })
+
+describe('an agent that reports no models', () => {
+  it('is offered with the default the core lists for it, named nothing', () => {
+    const state = open([
+      model(['agent', 'use'], 'zeta'),
+      model(['agent', 'use'], 'omega'),
+      model(['agent', 'zeta', 'model'], 'zeta-small'),
+      model(['agent', 'omega', 'model'], '', 'present', true),
+    ])
+
+    expect(state.modelOptions.value.map((one) => [one.agentId, one.modelId])).toEqual([
+      ['zeta', 'zeta-small'],
+      ['omega', ''],
+    ])
+  })
+
+  it('is switched to with its default, which sets no model of its own', () => {
+    const state = open([
+      model(['agent', 'use'], 'zeta'),
+      model(['agent', 'use'], 'omega'),
+      model(['agent', 'zeta', 'model'], 'zeta-small'),
+      model(['agent', 'omega', 'model'], '', 'present', true),
+    ])
+
+    state.selectModel(state.modelOptions.value[1]!)
+
+    expect([state.selectedAgentId.value, state.selectedModelId.value]).toEqual(['omega', ''])
+  })
+})

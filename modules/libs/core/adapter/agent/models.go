@@ -2,13 +2,16 @@ package agent
 
 import (
 	"encoding/json"
+	"os"
+	"slices"
+	"strings"
+	"sync"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // The groups the models stand on.
 const (
-	groupSize       = "By how large it is"
 	groupInFull     = "In full"
 	groupConfigured = "Named in the settings"
 )
@@ -17,18 +20,111 @@ const (
 // section of the settings.
 var UseAt = []string{"use"}
 
-// GetModels are the models the agent can answer with.
+// GetModels are the models of every installed agent, and of the one the settings
+// name. An agent reports its own, once per session. One that reports none
+// offers the model its settings name, alone.
 func GetModels(held Config) []port.Model {
-	switch held.Use {
-	case UseAntigravity:
-		return getAntigravityModels(held)
+	return getModels(session, getListed(held))
+}
 
-	case UseCodex:
-		return getCodexModels(held)
+// RefreshModels drops what the agents reported, so the next read asks them again.
+func RefreshModels() { session.clear() }
 
-	default:
-		return getClaudeModels(held)
+// listed is one agent whose models are on offer.
+type listed struct {
+	use string
+	at  []string
+	// set is the model its settings name.
+	set string
+	// key changes whenever what the agent is asked through changes.
+	key    string
+	source modelSource
+}
+
+// getListed are the agents whose models are on offer: the installed ones, and
+// the one the settings name.
+func getListed(held Config) []listed {
+	apiKey := os.Getenv(anthropicKeyVar)
+	all := []struct {
+		isInstalled bool
+		agent       listed
+	}{
+		{IsClaudeInstalled(), listed{
+			use: UseClaude, at: ModelAt, set: held.Claude.Model, key: apiKey,
+			source: claudeModels{key: apiKey, base: os.Getenv(anthropicBaseVar)},
+		}},
+		{IsAntigravityInstalled(), listed{
+			use: UseAntigravity, at: []string{"antigravity", "model"}, set: held.Antigravity.Model,
+			source: antigravityModels{},
+		}},
+		{IsCodexInstalled(), listed{
+			use: UseCodex, at: []string{"codex", "model"}, set: held.Codex.Model,
+			key: strings.Join(held.Codex.Command, " "), source: codexModels{command: held.Codex.Command},
+		}},
 	}
+	var agents []listed
+	for _, one := range all {
+		if one.isInstalled || one.agent.use == held.Use {
+			agents = append(agents, one.agent)
+		}
+	}
+	return agents
+}
+
+// getModels are the rows of these agents, each asked for its models at the same time.
+func getModels(kept *catalogue, agents []listed) []port.Model {
+	offered := make([][]AgentModel, len(agents))
+	var group sync.WaitGroup
+	for at, one := range agents {
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			offered[at] = kept.get(one.use, one.key, one.source)
+		}()
+	}
+	group.Wait()
+
+	var models []port.Model
+	for at, one := range agents {
+		models = append(models, getAgentModels(one.at, one.set, offered[at])...)
+	}
+	return models
+}
+
+// getAgentModels are the rows of one agent: what it reported, or the model the
+// settings name alone where it reported none.
+func getAgentModels(at []string, set string, offered []AgentModel) []port.Model {
+	var models []port.Model
+	switch {
+	case len(offered) == 0 && set != "":
+		models = []port.Model{{Path: at, Name: set, Title: set, IsDefault: true}}
+	case len(offered) == 0:
+		models = []port.Model{{Path: at, Title: "Whatever this machine answers with", IsDefault: true}}
+	default:
+		isSet := slices.ContainsFunc(offered, func(one AgentModel) bool { return one.Name == set })
+		isReportedDefault := slices.ContainsFunc(offered, func(one AgentModel) bool { return one.IsDefault })
+		for place, one := range offered {
+			title := one.Title
+			if title == "" {
+				title = one.Name
+			}
+			isDefault := one.Name == set
+			if !isSet {
+				isDefault = one.IsDefault || (place == 0 && !isReportedDefault)
+			}
+			models = append(models, port.Model{
+				Path: at, Name: one.Name, Title: title, Group: groupInFull, IsDefault: isDefault,
+			})
+		}
+		if set != "" && !isSet {
+			models = append(models, port.Model{Path: at, Name: set, Title: set, Group: groupConfigured})
+		}
+	}
+	for place := range models {
+		models[place].Presence = port.NothingToFetch
+		models[place].Writes = []port.Setting{newSetting(at, models[place].Name)}
+	}
+	return models
 }
 
 // GetPrograms are the programs the agent setting can name.
@@ -76,16 +172,6 @@ func GetPrograms() []port.Model {
 			Presence: port.NothingToFetch,
 		},
 	}
-}
-
-// hasModel says whether one of these models is already the name given.
-func hasModel(models []port.Model, name string) bool {
-	for _, one := range models {
-		if one.Name == name {
-			return true
-		}
-	}
-	return false
 }
 
 // newSetting is one setting written down.
