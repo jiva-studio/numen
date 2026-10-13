@@ -93,15 +93,25 @@ func TestAWriteThatTheDatabaseRefusesSaysWhichStatementAndKeepsTheDatabasesReaso
 				return s.db.Chunks().SaveVectors(s.t.Context(), []chunk.Vector{s.vectorFor(s.rowsOf(repoVaultA, "a.epub")[0], "m", 3)})
 			}, "keep_vector: "},
 		{"remove words", holdsBook, func(s *store) { s.failOn("chunks_fts", "DELETE") },
-			func(s *store) error { return s.db.Chunks().RemoveSources(s.t.Context(), repoVaultA, "book", []string{"a.epub"}) }, "clear_fts: "},
+			func(s *store) error {
+				return s.db.Chunks().RemoveSources(s.t.Context(), repoVaultA, "book", []string{"a.epub"})
+			}, "clear_fts: "},
 		{"remove coarse", holdsBook, func(s *store) { s.failOn("chunks_vec", "DELETE") },
-			func(s *store) error { return s.db.Chunks().RemoveSources(s.t.Context(), repoVaultA, "book", []string{"a.epub"}) }, "clear_vec: "},
+			func(s *store) error {
+				return s.db.Chunks().RemoveSources(s.t.Context(), repoVaultA, "book", []string{"a.epub"})
+			}, "clear_vec: "},
 		{"remove sections", holdsBook, func(s *store) { s.failOn("sections_fts", "DELETE") },
-			func(s *store) error { return s.db.Chunks().RemoveSources(s.t.Context(), repoVaultA, "book", []string{"a.epub"}) }, "clear_sections: "},
+			func(s *store) error {
+				return s.db.Chunks().RemoveSources(s.t.Context(), repoVaultA, "book", []string{"a.epub"})
+			}, "clear_sections: "},
 		{"remove chunks", holdsBook, func(s *store) { s.failOn("chunks", "DELETE") },
-			func(s *store) error { return s.db.Chunks().RemoveSources(s.t.Context(), repoVaultA, "book", []string{"a.epub"}) }, "clear_chunks: "},
+			func(s *store) error {
+				return s.db.Chunks().RemoveSources(s.t.Context(), repoVaultA, "book", []string{"a.epub"})
+			}, "clear_chunks: "},
 		{"remove source", holdsBook, func(s *store) { s.failOn("sources", "DELETE") },
-			func(s *store) error { return s.db.Chunks().RemoveSources(s.t.Context(), repoVaultA, "book", []string{"a.epub"}) }, "delete_source: "},
+			func(s *store) error {
+				return s.db.Chunks().RemoveSources(s.t.Context(), repoVaultA, "book", []string{"a.epub"})
+			}, "delete_source: "},
 		{"move", holdsNotes, func(s *store) { s.failOn("sources", "UPDATE") }, move("Old.md", "New.md"), "move_sources: "},
 		{"rename note", holdsNotes, func(s *store) { s.failOn("notes", "UPDATE") }, move("Old.md", "New.md"), "rename_note: "},
 		{"rename title", holdsNotes, func(s *store) { s.failOn("titles_fts", "INSERT") }, move("Old.md", "New.md"), "rename_title: "},
@@ -121,7 +131,6 @@ func TestAWriteThatTheDatabaseRefusesSaysWhichStatementAndKeepsTheDatabasesReaso
 		})
 	}
 }
-
 
 func TestASourceThatCannotBeLookedUpIsAnErrorAndNotAMissingOne(t *testing.T) {
 	for name, run := range map[string]func(s *store) error{
