@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/agent"
 )
 
 // errNoAgent is an installation with none. Whether one can be reached is asked
@@ -28,13 +29,15 @@ func (a *API) AskAgent(
 		return connect.NewError(connect.CodeFailedPrecondition, errNoAgent)
 	}
 
-	return wire.StreamAgentTask(ctx, taking, port.Task{
+	task := port.Task{
 		Question:     r.Msg.GetPrompt(),
 		Focus:        r.Msg.GetFocus(),
 		Conversation: r.Msg.GetConversation(),
 		Agent:        r.Msg.GetAgent(),
 		Model:        r.Msg.GetModel(),
-	}, stream)
+	}
+	task.Instructions = agent.GetInstructions(task)
+	return wire.StreamAgentTask(ctx, taking, task, stream)
 }
 
 // FinishConversation says a conversation is over, and hands that on to the
