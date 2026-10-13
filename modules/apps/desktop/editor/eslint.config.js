@@ -268,7 +268,6 @@ export default tseslint.config(
       'src/**/*.stories.ts',
       'src/testing/**',
       // The ports' own defaults, which is where the browser is allowed in.
-      'src/entities/settings/model/review.ts',
       'src/entities/note/model/notes.ts',
     ],
     rules: {

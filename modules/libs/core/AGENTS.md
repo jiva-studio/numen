@@ -75,8 +75,7 @@ them are unexported — so no half-built one exists for a method to check.
 |---|---|
 | A use case does not carry a collaborator its constructor takes in an exported field | `TestNoUseCaseCarriesACollaboratorInTheOpen` |
 
-`usecase/recognition`'s `Proofread` and `usecase/transcription`'s `Proofread` are what a
-closed one looks like. The rest are in the rule's baseline, which only shrinks.
+No use case exposes a collaborator: the baseline is zero.
 
 A dependency that may genuinely be absent is not a nil left in a field: it is a
 case the composition root decides, and it says so in a word — `ProofreadingConfig.Recognition`

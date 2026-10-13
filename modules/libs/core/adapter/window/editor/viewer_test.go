@@ -196,7 +196,7 @@ func printOf(t *testing.T, api *Services, path string) document.Fingerprint {
 // getPageAddress is where one page of a file of this window's vault is drawn.
 func getPageAddress(t *testing.T, api *Services, path string, at, wide int) string {
 	t.Helper()
-	return getPageRoute(path, at, wide, printOf(t, api, path))
+	return pageURL(path, at, wide, printOf(t, api, path))
 }
 
 // A page comes back drawn at least as wide as the window asked for it, and
@@ -275,8 +275,8 @@ func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 			stopReadAhead(api)
 
 			for _, url := range []string{
-				getAssetRoute(path),
-				getPageRoute(path, 0, 400, document.Fingerprint{}),
+				assetURL(path),
+				pageURL(path, 0, 400, document.Fingerprint{}),
 			} {
 				out := ask(handler, url)
 				if out.Code == http.StatusOK {
@@ -314,7 +314,7 @@ func TestAPageTheDocumentDoesNotHaveIsRefused(t *testing.T) {
 			if one.wide == "" {
 				join = "?"
 			}
-			at := getAssetRoute(book) + "/" + pagesName + "/" + asked +
+			at := assetURL(book) + "/" + pagesName + "/" + asked +
 				join + formatFingerprint(printOf(t, api, book))
 			out := ask(handler, at)
 			if out.Code != one.want {
@@ -334,7 +334,7 @@ func TestAnAddressNamingOtherBytesIsRefused(t *testing.T) {
 	stopReadAhead(api)
 
 	mark := printOf(t, api, book)
-	held := ask(handler, getPageRoute(book, 0, 400, mark))
+	held := ask(handler, pageURL(book, 0, 400, mark))
 	if held.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d: %s", held.Code, held.Body)
 	}
@@ -343,7 +343,7 @@ func TestAnAddressNamingOtherBytesIsRefused(t *testing.T) {
 	}
 
 	mark.Mtime++
-	if out := ask(handler, getPageRoute(book, 0, 400, mark)); out.Code != http.StatusNotFound {
+	if out := ask(handler, pageURL(book, 0, 400, mark)); out.Code != http.StatusNotFound {
 		t.Errorf("an address naming bytes the file is not was answered %d", out.Code)
 	}
 }
