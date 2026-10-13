@@ -8,6 +8,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
 
 // errNoTools is a machine holding neither of the programs an address is
@@ -231,8 +233,8 @@ func createImportURL(ctx context.Context, cfg container.Config) (cli.ImportURL, 
 func createProofreadRecognition(
 	ctx context.Context, cfg container.Config, v domain.Vault,
 ) (cli.ProofreadRecognition, error) {
-	proofread, held, err := cfg.GetScanProofreading().
-		Recognition(cfg.VaultReaders(), cfg.GetDerivedStores())
+	proofread, held, err := recognition.CreateProofread(
+		cfg.GetScanProofreading(), cfg.VaultReaders(), cfg.GetDerivedStores())
 	if err != nil || !held {
 		return cli.ProofreadRecognition{}, err
 	}
@@ -250,8 +252,8 @@ func createProofreadRecognition(
 func createProofreadTranscript(
 	ctx context.Context, cfg container.Config, v domain.Vault,
 ) (cli.ProofreadTranscript, error) {
-	proofread, held, err := cfg.GetSpeechProofreading().
-		Transcript(cfg.VaultReaders(), cfg.GetDerivedStores())
+	proofread, held, err := transcription.CreateProofread(
+		cfg.GetSpeechProofreading(), cfg.VaultReaders(), cfg.GetDerivedStores())
 	if err != nil || !held {
 		return cli.ProofreadTranscript{}, err
 	}
