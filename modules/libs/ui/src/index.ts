@@ -107,7 +107,7 @@ export { Notices } from './features/notices'
 export { createNotice } from './features/notices'
 export type { Notice, Stay, Task } from './features/notices'
 
-export { default as Agent } from './screens/Agent.vue'
+export { Agent } from './screens/agent'
 export { Reader } from './features/reader'
 
 /** A book made for a screen, set in columns and turned a page at a time. */
@@ -163,8 +163,8 @@ export type { PlexRelation } from './features/plex'
 export type { PlexDestination } from './features/plex'
 export { createThreadPath } from './features/plex'
 
-export { MessageComposer, AgentModelSelector } from './screens/message-composer'
-export type { AgentModelOption } from './screens/message-composer'
+export { MessageComposer, AgentModelSelector } from './features/message-composer'
+export type { AgentModelOption } from './features/message-composer'
 
 export { StatusBar } from './features/status-bar'
 export type { StatusBarTask, TaskState } from './features/status-bar'

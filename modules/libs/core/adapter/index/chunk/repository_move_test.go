@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	notecase "github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // saveNote indexes a note whose title is its own, or the filename's where the
@@ -21,7 +22,7 @@ func (s *store) saveNote(vault domain.VaultID, path, title string, named bool) {
 	if named {
 		n.Frontmatter = map[string]any{"title": title}
 	}
-	if err := s.db.Notes().Save(s.t.Context(), vault, []domain.Note{n}); err != nil {
+	if err := s.db.Notes().Save(s.t.Context(), vault, notecase.CutNotes{}.Execute([]domain.Note{n})); err != nil {
 		s.t.Fatal(err)
 	}
 }
