@@ -47,7 +47,7 @@ const setup = () => {
       rest: {
         writeSetting: record('writeSetting', 'written'),
         getSetting: record('getSetting', 'value'),
-        models,
+        getModelsAt: record('getModelsAt', models.value),
       },
     },
     about: () => ({ path: '', title: '' }),
@@ -103,9 +103,9 @@ describe('the agent conversation', () => {
     ])
   })
 
-  it('reads the models the settings hold', () => {
+  it('reads the models the settings hold at a path', () => {
     const one = setup()
 
-    expect(one.options.getModels!()).toBe(one.models.value)
+    expect(one.options.getModelsAt!(['agent', 'use'])).toBe(one.models.value)
   })
 })
