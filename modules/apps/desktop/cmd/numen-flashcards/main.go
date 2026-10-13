@@ -23,6 +23,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/shutdown"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
 	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
@@ -67,10 +68,10 @@ func makeConfig(out io.Writer) container.Config {
 // What a write touched is levelled through the opening the vault was opened
 // with, which is what the walk and the watch also go through.
 func makeNotesAndCards(
-	cfg container.Config, db *container.Index, vaults *openVaults,
+	cfg container.Config, db *container.Index, vaults *container.OpenVaults,
 ) (container.Notes, container.Cards) {
-	return cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), vaults.updateIndex),
-		cfg.Cards(db.Queries(), db.Links(), vaults.updateIndex)
+	return cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), vaults.UpdateIndex),
+		cfg.Cards(db.Queries(), db.Links(), vaults.UpdateIndex)
 }
 
 func run(cfg container.Config, noAgent bool) error {
@@ -99,7 +100,9 @@ func run(cfg container.Config, noAgent bool) error {
 	// Every vault this window shows is opened the way the editor opens the one
 	// it shows: watched from the moment it is opened, walked into the index, and
 	// levelled by the paths a write touches.
-	vaults := &openVaults{cfg: cfg, db: db, lifetime: ctx, out: os.Stderr}
+	vaults := &container.OpenVaults{
+		Config: cfg, Index: db, Lifetime: ctx, Out: os.Stderr, Label: "numen-flashcards",
+	}
 
 	notes, cards := makeNotesAndCards(cfg, db, vaults)
 	api := makeWindowAPI(cfg, registry, db, notes, vaults)
@@ -109,11 +112,17 @@ func run(cfg container.Config, noAgent bool) error {
 	// is started and stopped around a session.
 	away := serveAgents(ctx, cfg, db, notes, cards, api, noAgent, os.Stderr)
 
-	held := makeShutdown(away, stop, vaults, db)
+	// The agents stop, then the walk and the watch, then the index they write to closes.
+	held := shutdown.NewSequence(
+		shutdown.Report("numen-flashcards", os.Stderr, "agents", away),
+		stop,
+		vaults.CloseAndWait,
+		shutdown.Report("numen-flashcards", os.Stderr, "", db.Close),
+	)
 	defer held.Run()
 
 	followChanges(ctx, cfg, api)
-	loadThemes(cfg, api)
+	api.Themes = themes.Load(cfg.Themes, func(said string) { fmt.Fprintln(os.Stderr, "themes:", said) }, os.Stderr)
 
 	pages, err := window.Pages()
 	if err != nil {
@@ -125,9 +134,9 @@ func run(cfg container.Config, noAgent bool) error {
 // makeWindowAPI is the page's API over the cards, the notes and the registry.
 func makeWindowAPI(
 	cfg container.Config, registry port.VaultRegistry, db *container.Index,
-	notes container.Notes, vaults *openVaults,
+	notes container.Notes, vaults *container.OpenVaults,
 ) *window.API {
-	running := cfg.Flashcards(db.Queries(), db.Links(), db.Problems(), vaults.updateIndex)
+	running := cfg.Flashcards(db.Queries(), db.Links(), db.Problems(), vaults.UpdateIndex)
 	return &window.API{
 		Find:           cfg.Vaults(registry, db, notes.Move).Find,
 		GetKnownVaults: cfg.GetKnownVaults(registry),
@@ -150,33 +159,12 @@ func makeWindowAPI(
 // bindVaultIndexer connects the walk of a vault into the index to the API.
 // The walk outlives the count that asked for it, and a vault that moved is
 // counted again and walked again where the last walk failed.
-func bindVaultIndexer(ctx context.Context, api *window.API, vaults *openVaults) {
-	vaults.recordVault = func(v domain.Vault) {
+func bindVaultIndexer(ctx context.Context, api *window.API, vaults *container.OpenVaults) {
+	vaults.RecordVault = func(v domain.Vault) {
 		api.ClearIndexFailure(v.ID)
 		api.ReportChange()
 	}
-	api.SetVaultIndexer(ctx, vaults.indexVault)
-}
-
-// makeShutdown stops the agents, then the walk and the watch, then closes the
-// index they write to.
-func makeShutdown(
-	away func() error, stop func(), vaults *openVaults, db *container.Index,
-) *shutdown.Sequence {
-	return shutdown.NewSequence(
-		func() {
-			if err := away(); err != nil {
-				fmt.Fprintln(os.Stderr, "numen-flashcards: agents:", err)
-			}
-		},
-		stop,
-		vaults.closeAndWait,
-		func() {
-			if err := db.Close(); err != nil {
-				fmt.Fprintln(os.Stderr, "numen-flashcards:", err)
-			}
-		},
-	)
+	api.SetVaultIndexer(ctx, vaults.IndexVault)
 }
 
 // followChanges counts again what the window draws from when it changes, so a
@@ -190,16 +178,6 @@ func followChanges(ctx context.Context, cfg container.Config, api *window.API) {
 		return
 	}
 	api.ReportChangesFrom(ctx, moves)
-}
-
-// loadThemes gives the API the installation's themes. A folder that could not
-// be made leaves the ones this binary ships.
-func loadThemes(cfg container.Config, api *window.API) {
-	themes, why := cfg.Themes(func(said string) { fmt.Fprintln(os.Stderr, "themes:", said) })
-	if why != nil {
-		fmt.Fprintf(os.Stderr, "themes: %v\n", why)
-	}
-	api.Themes = themes
 }
 
 // runApplication opens the window and runs until it closes.
