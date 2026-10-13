@@ -276,3 +276,6 @@ func (c *Client) collect(parsed response) ([][]float32, error) {
 func retryDelay(resp *http.Response) time.Duration {
 	return retry.ParseAfter(resp.Header.Get("Retry-After"), time.Now())
 }
+
+// Concurrency is one: the client sends a request at a time.
+func (c *Client) Concurrency() int { return 1 }

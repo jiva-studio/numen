@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/docfile"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/epub"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -55,6 +54,6 @@ func (u GetDocument) Execute(ctx context.Context, v domain.Vault, path string) (
 // openFile is the file of a document, opened as it is drawn from.
 func openFile(reader port.VaultReader, path string) func(context.Context) (io.ReadSeekCloser, error) {
 	return func(ctx context.Context) (io.ReadSeekCloser, error) {
-		return docfile.Open(ctx, reader, path)
+		return reader.OpenShared(ctx, path)
 	}
 }

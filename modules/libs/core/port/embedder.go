@@ -73,6 +73,9 @@ type Embedder interface {
 	// Any number of texts may be passed: how a request to the model is
 	// bounded is the implementation's business.
 	Embed(ctx context.Context, texts []string) ([][]float32, error)
+	// Concurrency is how many batches the embedder runs in parallel, and one for
+	// an embedder that runs them one at a time.
+	Concurrency() int
 
 	// Close releases whatever the model holds.
 	Close() error

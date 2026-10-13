@@ -762,3 +762,7 @@ func (w writers) Open(vault domain.Vault) (port.VaultWriter, error) {
 func (w writers) Lock(context.Context, domain.Vault) (func(), error) {
 	return func() {}, nil
 }
+
+func (l *library) OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error) {
+	return l.Open(ctx, path)
+}

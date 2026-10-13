@@ -53,6 +53,10 @@ outside `port/`.
 |---|---|
 | An identity is a word of the core's own, in a field and in a signature alike | `TestTheCoresIdentitiesAreItsOwn`, `TestTheIdentitiesAPortAsksForAreTheCoresOwn` |
 | An instant is a `time.Time` | `TestEveryInstantTheCoreCarriesIsATime` |
+| A driving adapter calls no port outside its wiring files, and is on the depguard rule | `TestNoDrivingAdapterCallsAPortOutsideItsWiring`, `TestEveryDrivingAdapterIsOnTheLintRule` |
+| The core arms no timer of the machine's | `TestNothingOfTheCoreReadsTheMachinesClock` |
+| The core probes no value for another interface | `TestNoCodeOfTheCoreProbesAValueForAnotherInterface` |
+| A port names no type from `internal/` | `TestNoPortNamesATypeFromInternal` |
 
 No type is named by a gerund or a participle.
 

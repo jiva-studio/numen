@@ -1,0 +1,228 @@
+package container
+
+import (
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"io/fs"
+	"path"
+	"path/filepath"
+	"slices"
+	"strconv"
+	"strings"
+	"testing"
+)
+
+// getInterfaceProbes are the type assertions and type-switch cases of a file
+// whose target is an interface literal or a port.X, each written as the target.
+func getInterfaceProbes(file *ast.File) []string {
+	var found []string
+	probe := func(target ast.Expr) {
+		switch held := target.(type) {
+		case *ast.InterfaceType:
+			found = append(found, "interface{...}")
+		case *ast.SelectorExpr:
+			if from, is := held.X.(*ast.Ident); is && from.Name == "port" {
+				found = append(found, "port."+held.Sel.Name)
+			}
+		}
+	}
+	ast.Inspect(file, func(node ast.Node) bool {
+		switch held := node.(type) {
+		case *ast.TypeAssertExpr:
+			if held.Type != nil {
+				probe(held.Type)
+			}
+		case *ast.CaseClause:
+			for _, one := range held.List {
+				probe(one)
+			}
+		}
+		return true
+	})
+	return found
+}
+
+// A value the core is handed is used as the port it was handed as. Asking it
+// whether it is also something else is a second port that no constructor, no
+// composition root and no fake is told about, so what a port promises is the
+// whole of what the core may rely on.
+//
+// A case clause of an expression switch is read as well: it names a port only
+// where the switch is over a type.
+func TestNoCodeOfTheCoreProbesAValueForAnotherInterface(t *testing.T) {
+	var wrong []string
+	var read int
+	err := filepath.WalkDir("..", func(at string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(at, ".go") {
+			return err
+		}
+		pkg := getPackage("..", at)
+		if strings.HasSuffix(at, "_test.go") || isAdapter(pkg) || isShared(pkg) ||
+			isAmong(machinery, pkg) || isAmong([]string{"internal/testonly"}, pkg) {
+			return nil
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), at, nil, 0)
+		if err != nil {
+			return err
+		}
+		read++
+		for _, one := range getInterfaceProbes(file) {
+			wrong = append(wrong, at+" asserts to "+one)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one + ": a value is used as the port it was handed as")
+	}
+
+	// A walk that read no file of the core is a rule checked against nothing,
+	// and it passes.
+	if read < 100 {
+		t.Fatalf("%d files of the core read: the walk is not reading it", read)
+	}
+}
+
+// What the rule refuses, read against a file written to be refused. It finds an
+// assertion to an anonymous interface and to a port, in a type switch as well,
+// and lets through an assertion to a concrete type and to an error.
+func TestWhatTheInterfaceProbeRuleRefuses(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "probe.go", `package p
+
+func probe(held any, reader port.VaultReader) {
+	_, _ = held.(interface{ Concurrency() int })
+	_, _ = reader.(port.SharedOpener)
+	switch held.(type) {
+	case port.Trash:
+	case *os.File:
+	}
+	_, _ = held.(string)
+	_, _ = held.(*Embedder)
+	_, _ = held.(error)
+	switch held {
+	case 1:
+	}
+}
+`, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"interface{...}", "port.SharedOpener", "port.Trash"}
+	if got := getInterfaceProbes(file); !slices.Equal(got, want) {
+		t.Errorf("the rule refuses %v, want %v", got, want)
+	}
+}
+
+// internalTypes are the types a file names from a package under internal/, each
+// written pkg.Name as the file spells it.
+func internalTypes(file *ast.File) []string {
+	local := map[string]bool{}
+	for _, one := range file.Imports {
+		held, err := strconv.Unquote(one.Path.Value)
+		if err != nil || !strings.HasPrefix(held, module+"internal/") {
+			continue
+		}
+		name := path.Base(held)
+		if one.Name != nil {
+			name = one.Name.Name
+		}
+		local[name] = true
+	}
+	var found []string
+	ast.Inspect(file, func(node ast.Node) bool {
+		at, is := node.(*ast.SelectorExpr)
+		if !is {
+			return true
+		}
+		if from, is := at.X.(*ast.Ident); is && local[from.Name] {
+			found = append(found, from.Name+"."+at.Sel.Name)
+		}
+		return true
+	})
+	return found
+}
+
+// portInternals are the types from internal/ that port/ still names, by the
+// file naming them, and the list only shrinks.
+var portInternals = map[string][]string{
+	"port/document.go":   {"highlight.Box"},
+	"port/downloader.go": {"transcript.Cue"},
+	"port/recogniser.go": {"ocr.Block"},
+}
+
+// An adapter outside the core cannot name a package under internal/, so a port
+// that does is a port it cannot answer. What a port speaks in is declared in
+// domain/ or beside the port.
+func TestNoPortNamesATypeFromInternal(t *testing.T) {
+	dir := filepath.Join("..", "port")
+	entries, err := filepath.Glob(filepath.Join(dir, "*.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var read int
+	named := map[string][]string{}
+	for _, at := range entries {
+		if strings.HasSuffix(at, "_test.go") {
+			continue
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), at, nil, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		read++
+		rel := "port/" + filepath.Base(at)
+		for _, one := range internalTypes(file) {
+			if !slices.Contains(named[rel], one) {
+				named[rel] = append(named[rel], one)
+			}
+			if !slices.Contains(portInternals[rel], one) {
+				t.Errorf("%s names %s: a port speaks in the core's own types", rel, one)
+			}
+		}
+	}
+
+	// A walk that read no file of port/ is a rule checked against nothing.
+	if read < 20 {
+		t.Fatalf("%d files of port/ read: the walk is not reading it", read)
+	}
+	for rel, listed := range portInternals {
+		for _, one := range listed {
+			if !slices.Contains(named[rel], one) {
+				t.Errorf("portInternals holds %s for %s and it names nothing of the kind", one, rel)
+			}
+		}
+	}
+}
+
+// What the rule refuses, read against a file written to be refused. It finds a
+// type of a package under internal/, by whatever name the file imports it, and
+// lets through the domain's, the standard library's and a selector on a value.
+func TestWhatThePortInternalRuleRefuses(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "port.go", `package port
+
+import (
+	"image"
+
+	"`+module+`domain"
+	"`+module+`internal/ocr"
+	hl "`+module+`internal/highlight"
+)
+
+type Reader interface {
+	Read(page image.Image) ([]ocr.Block, error)
+	Boxes() []hl.Box
+	Span() domain.ByteSpan
+	Bounds(page image.Image) image.Rectangle
+}
+`, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"ocr.Block", "hl.Box"}
+	if got := internalTypes(file); !slices.Equal(got, want) {
+		t.Errorf("the rule refuses %v, want %v", got, want)
+	}
+}

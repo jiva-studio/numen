@@ -44,6 +44,7 @@ var driving = map[string]bool{
 	"adapter/window/editor":     true,
 	"adapter/window/flashcards": true,
 	"internal/adapter/theme":    true,
+	"internal/wire":             true,
 }
 
 // pure are the packages holding what is true of a note or a card, of a
@@ -184,7 +185,7 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 			return err
 		}
 		pkg := getPackage("..", path)
-		if strings.HasSuffix(path, "_test.go") || !isAdapter(pkg) {
+		if strings.HasSuffix(path, "_test.go") || !isAdapter(pkg) && !isShared(pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -275,13 +276,19 @@ func TestATestOfTheCoreBuildingAnAdapterStandsOutsideIt(t *testing.T) {
 
 // machinery are the packages held to none of the abstinences below, because
 // reaching outward is what they are: the composition root that builds the
-// adapters, the fixtures only a test is compiled from, and the infrastructure
-// the adapters share — the runtime two of them load their models through, and
-// the package two windows both answer a request for a page out of. The
-// adapters themselves are left out by adapting.
-var machinery = []string{
-	"container", "internal/onnxruntime", "internal/testsupport", "internal/wire",
-}
+// adapters and the fixtures only a test is compiled from. The adapters
+// themselves are left out by adapting, and the shared adapter libraries by
+// being among shared.
+var machinery = []string{"container", "internal/testsupport"}
+
+// shared are the adapter libraries more than one adapter is built on: the
+// runtime two of them load their models through, and the package two windows
+// both answer a request for a page out of. Each is held to the adapter rules,
+// and the machine and the clock are open to it as they are to an adapter.
+var shared = []string{"internal/onnxruntime", "internal/wire"}
+
+// isShared says whether a package is a shared adapter library.
+func isShared(pkg string) bool { return isAmong(shared, pkg) }
 
 // theMachine are the packages that are the machine and the world beyond it: the
 // process's files and its children, a socket, and the kernel itself. Each one
@@ -323,7 +330,7 @@ func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
 			return err
 		}
 		pkg := getPackage("..", path)
-		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || isAmong(machinery, pkg) {
+		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || isShared(pkg) || isAmong(machinery, pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -442,9 +449,47 @@ func TestWhatTheLoggingRuleRefuses(t *testing.T) {
 	}
 }
 
-// telling are the functions of time that answer from the machine's clock. The
-// rest of the package is arithmetic over an instant somebody was given.
-var telling = map[string]bool{"Now": true, "Since": true}
+// telling are the functions of time that answer from the machine's clock, and
+// waiting are the ones that arm the machine's timers. The rest of the package
+// is arithmetic over an instant somebody was given.
+var (
+	telling = map[string]bool{"Now": true, "Since": true}
+	waiting = map[string]bool{
+		"After": true, "AfterFunc": true, "NewTimer": true, "NewTicker": true, "Tick": true,
+	}
+)
+
+// timers are the files of the core that arm a timer of the machine's, and the
+// list only shrinks.
+var timers = []string{
+	"internal/retry/retry.go",
+	"usecase/source/recognition.go",
+	"usecase/source/transcription.go",
+	"usecase/source/transcription_resident.go",
+}
+
+// getClockReads are the calls in a file that read the machine's clock or arm its
+// timers, each written time.Name. The local name of the import is not read.
+func getClockReads(file *ast.File) (reads, arms []string) {
+	ast.Inspect(file, func(node ast.Node) bool {
+		at, is := node.(*ast.SelectorExpr)
+		if !is {
+			return true
+		}
+		from, is := at.X.(*ast.Ident)
+		if !is || from.Name != "time" {
+			return true
+		}
+		if telling[at.Sel.Name] {
+			reads = append(reads, "time."+at.Sel.Name)
+		}
+		if waiting[at.Sel.Name] {
+			arms = append(arms, "time."+at.Sel.Name)
+		}
+		return true
+	})
+	return reads, arms
+}
 
 // The domain does not know what time it is. A clock is a port, so a scenario
 // that stamps a note or asks what is due today is handed one, and the
@@ -457,12 +502,13 @@ var telling = map[string]bool{"Now": true, "Since": true}
 func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 	var wrong []string
 	var read int
+	armed := map[string]bool{}
 	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
 		pkg := getPackage("..", path)
-		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || isAmong(machinery, pkg) {
+		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || isShared(pkg) || isAmong(machinery, pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -470,24 +516,29 @@ func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 			return err
 		}
 		read++
-		ast.Inspect(file, func(node ast.Node) bool {
-			at, is := node.(*ast.SelectorExpr)
-			if !is {
-				return true
+		reads, arms := getClockReads(file)
+		for _, one := range reads {
+			wrong = append(wrong, path+" runs "+one+": a scenario is handed a clock and reads no other")
+		}
+		rel := filepath.ToSlash(strings.TrimPrefix(path, "../"))
+		if len(arms) > 0 {
+			armed[rel] = true
+			if !slices.Contains(timers, rel) {
+				wrong = append(wrong, path+" runs "+arms[0]+": the core arms no timer of the machine's")
 			}
-			from, is := at.X.(*ast.Ident)
-			if is && from.Name == "time" && telling[at.Sel.Name] {
-				wrong = append(wrong, path+" runs time."+at.Sel.Name)
-			}
-			return true
-		})
+		}
 		return nil
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, one := range wrong {
-		t.Error(one + ": a scenario is handed a clock and reads no other")
+		t.Error(one)
+	}
+	for _, one := range timers {
+		if !armed[one] {
+			t.Errorf("timers holds %s and it arms no timer", one)
+		}
 	}
 
 	// A walk that read no file of the core is a rule checked against nothing,
@@ -699,7 +750,7 @@ func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
 			return err
 		}
 		pkg := getPackage("..", path)
-		if strings.HasSuffix(path, "_test.go") || !isAdapter(pkg) {
+		if strings.HasSuffix(path, "_test.go") || !isAdapter(pkg) && !isShared(pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
@@ -1109,7 +1160,7 @@ func getRefusal(from, to string) string {
 	}
 
 	switch {
-	case isAdapter(from):
+	case isAdapter(from) || isShared(from):
 		if to == "container" {
 			return "an adapter is given what it needs and assembles nothing"
 		}
@@ -1303,6 +1354,12 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"usecase/note", "container", true},
 		{"usecase/note", "port", false},
 		{"internal/wire", "adapter/window/editor", true},
+		{"internal/wire", "container", true},
+		{"internal/wire", "internal/adapter/trash", true},
+		{"internal/wire", "usecase/note", false},
+		{"internal/onnxruntime", "usecase/note", true},
+		{"internal/onnxruntime", "internal/adapter/embed", true},
+		{"internal/onnxruntime", "port", false},
 
 		// What is true of a note is worked out from what is true of a note.
 		{"domain", "task", true},
@@ -1549,5 +1606,39 @@ type Store interface {
 	}
 	if !slices.Equal(refused, []string{"chunkID", "rowID"}) {
 		t.Errorf("the rule refuses %v, want the two identities spelled as numbers", refused)
+	}
+}
+
+// What the rule refuses, read against a file written to be refused. It finds
+// the clock read and each timer armed, and lets through the arithmetic over an
+// instant and the constructors that read no clock.
+func TestWhatTheClockRuleRefuses(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "clock.go", `package p
+
+import "time"
+
+func run(at time.Time) {
+	_ = time.Now()
+	_ = time.Since(at)
+	<-time.After(time.Second)
+	time.AfterFunc(time.Second, func() {})
+	_ = time.NewTimer(time.Second)
+	_ = time.NewTicker(time.Second)
+	_ = time.Tick(time.Second)
+	_ = at.Add(time.Second)
+	_ = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	_ = time.Duration(3)
+}
+`, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reads, arms := getClockReads(file)
+	if want := []string{"time.Now", "time.Since"}; !slices.Equal(reads, want) {
+		t.Errorf("the rule refuses the reads %v, want %v", reads, want)
+	}
+	want := []string{"time.After", "time.AfterFunc", "time.NewTimer", "time.NewTicker", "time.Tick"}
+	if !slices.Equal(arms, want) {
+		t.Errorf("the rule refuses the timers %v, want %v", arms, want)
 	}
 }
