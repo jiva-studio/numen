@@ -546,9 +546,9 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
     const handed: string[][] = []
     const recording: Placement = {
       name: 'recording',
-      place: (nodesByRelation, focus, options, limits, width) => {
+      place: (nodesByRelation, focus, context) => {
         handed.push(Object.keys(nodesByRelation))
-        return rowsAndColumns.place(nodesByRelation, focus, options, limits, width)
+        return rowsAndColumns.place(nodesByRelation, focus, context)
       },
     }
 

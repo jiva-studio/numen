@@ -15,7 +15,7 @@ export interface PlexTransition {
 
 export interface PlexTransitionOptions {
   readonly duration: () => number
-  readonly clock?: Clock
+  readonly clock?: Clock | undefined
 }
 
 /**
@@ -62,6 +62,9 @@ export function usePlexTransition(
         handle = null
         isMoving.value = false
       },
+      onNext: (next) => {
+        handle = next
+      },
     })
   }
 
@@ -83,25 +86,31 @@ interface StepContext {
   readonly getOptions: () => ArrangeInput['options'] | undefined
   readonly onFrame: (frame: PlexFrame) => void
   readonly onDone: () => void
+  readonly onNext: (handle: number) => void
 }
 
 function startTransition(context: StepContext): number {
   let started: number | null = null
-  let handle = 0
 
   const step = (now: number) => {
     started ??= now
     const t = Math.min(1, (now - started) / context.ms)
-    context.onFrame(interpolatePlex(context.from, context.to, easeOut(t), context.getOptions()))
+    const options = context.getOptions()
+    context.onFrame(
+      interpolatePlex(
+        context.from,
+        context.to,
+        options ? { progress: easeOut(t), ...options } : easeOut(t),
+      ),
+    )
     if (t < 1) {
-      handle = context.clock.schedule(step)
+      context.onNext(context.clock.schedule(step))
     } else {
       context.onDone()
     }
   }
 
-  handle = context.clock.schedule(step)
-  return handle
+  return context.clock.schedule(step)
 }
 
 function watchInputChanges(input: () => ArrangeInput | undefined, onChange: () => void): void {

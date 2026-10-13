@@ -62,16 +62,17 @@ export function separateTitles(
   for (const { edge, at, metrics } of sortTightestFirst(edges, width)) {
     const boxAt = runBoxes(edge, routing.labelDepth + 2 * apart)
     const ends = (edge.arrow ? routing.arrowRoom : 0) / metrics.arc
-    const clear = clearSpans(boxAt, [...boxes, ...titles], ends, STEP / metrics.arc)
+    const clear = clearSpans(boxAt, [...boxes, ...titles], { ends, step: STEP / metrics.arc })
 
-    const found = settle(clear, edge.words!, metrics, width)
+    const found = settle(clear, edge.words!, { metrics, width })
     if (!found) {
       settled[at] = { ...edge, words: undefined, wordsAt: MIDDLE }
       continue
     }
 
-    const half = found.extent / 2 / metrics.arc
-    titles.push(...getTitleBoxes(boxAt, found.at - half, found.at + half, STEP / metrics.arc))
+    titles.push(
+      ...getTitleBoxes(boxAt, { from: found.at - half, to: found.at + half }, STEP / metrics.arc),
+    )
 
     // The reading direction is the tangent where the words end up, and the
     // words of a curve taken the other way round are read from its far end.
@@ -119,12 +120,17 @@ function sortTightestFirst(
  * set in the middle of that span. Nothing where that span holds less
  * than `LEAST` of them.
  */
+interface SettleOptions {
+  readonly metrics: TitleMetrics
+  readonly width: (label: string) => number
+}
+
 function settle(
   clear: readonly Span[],
   words: string,
-  metrics: TitleMetrics,
-  width: (label: string) => number,
+  options: SettleOptions,
 ): { words: string; at: number; extent: number } | null {
+  const { metrics, width } = options
   const whole = findNearestPlace(clear, metrics.extent / 2 / metrics.arc)
   if (whole !== null) return { words, at: whole, extent: metrics.extent }
 
@@ -141,6 +147,11 @@ function settle(
   return { words: cut, at: (longest.from + longest.to) / 2, extent: width(cut) }
 }
 
+interface ClearSpanOptions {
+  readonly ends: number
+  readonly step: number
+}
+
 /**
  * The runs of a line with nothing in the way, `ends` of it kept clear at
  * either end for whatever is drawn there. Every step of the line is looked at
@@ -150,9 +161,9 @@ function settle(
 function clearSpans(
   boxAt: (from: number, to: number) => Box,
   boxes: readonly Box[],
-  ends: number,
-  step: number,
+  options: ClearSpanOptions,
 ): Span[] {
+  const { ends, step } = options
   const last = 1 - ends
   if (ends >= last || step <= 0) return []
 

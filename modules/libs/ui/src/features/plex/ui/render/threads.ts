@@ -62,9 +62,7 @@ export function getReachGhost(
 ): PlacedNode | null {
   if (outcome?.kind !== 'create' || !to) return null
   return ghostNode(
-    'ghost',
-    options.relationName(outcome.relation),
-    outcome.relation,
+    { id: 'ghost', title: options.relationName(outcome.relation), relation: outcome.relation },
     to,
     options.nodeSize,
   )
@@ -93,6 +91,10 @@ export function getDraggedShape(
 
   return {
     thread: createThreadPath(focus, to),
-    ghost: ghostNode('dragged', options.dropName(relation), relation, to, options.nodeSize),
+    ghost: ghostNode(
+      { id: 'dragged', title: options.dropName(relation), relation },
+      to,
+      options.nodeSize,
+    ),
   }
 }

@@ -21,6 +21,8 @@ import {
 import { countBytes, getUnitOffset } from './bytes'
 import { BOOK_WORDS } from './words'
 import { EDGE, SWIPE, handTurn, pressTurn, swipeTurn, turnTo } from './turn'
+import type { Span } from '@/shared/lib/span'
+import type { PageTurn } from '@/shared/lib/turn'
 
 /** A wide reading area, which takes two columns, and a narrow one, which takes one. */
 const WIDE = 800

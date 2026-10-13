@@ -83,16 +83,16 @@ const canReach = computed(() => props.creatable.length > 0)
  * what it landed on — and says so. Whether a parent may be made, and what
  * making one writes, is the application's.
  */
-const gesture = usePlexGesture(
-  () => frame.value,
-  () => options.value,
-  () => props.creatable,
-  () => props.dragThreshold,
-  (drop) => {
+const gesture = usePlexGesture({
+  frame: () => frame.value,
+  options: () => options.value,
+  relations: () => props.creatable,
+  threshold: () => props.dragThreshold,
+  commit: (drop) => {
     if (drop.kind === 'create') emit('create', drop.from, drop.relation)
     else emit('link', drop.from, drop.to, drop.relation)
   },
-)
+})
 
 /**
  * Something dragged across the picture from outside it.

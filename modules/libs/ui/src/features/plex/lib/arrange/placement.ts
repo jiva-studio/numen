@@ -9,6 +9,12 @@ export type NodesByRelation = Readonly<Partial<Record<PlexRelation, readonly Ple
 /** How wide a node's box is drawn, clamped before a strategy is called. */
 export type Widths = (node: PlexNode) => number
 
+export interface PlacementContext {
+  readonly options: PlexOptions
+  readonly limits: Limits
+  readonly width: Widths
+}
+
 /**
  * Where the nodes go, as a strategy: a radial mind map is another
  * implementation of this.
@@ -23,9 +29,7 @@ export interface Placement {
   place(
     nodesByRelation: NodesByRelation,
     focus: PlacedNode,
-    options: PlexOptions,
-    limits: Limits,
-    width: Widths,
+    context: PlacementContext,
   ): PlacedNode[]
 }
 
@@ -33,7 +37,8 @@ export interface Placement {
 export const rowsAndColumns: Placement = {
   name: 'rows-and-columns',
 
-  place(nodesByRelation, focus, options, limits, width) {
+  place(nodesByRelation, focus, context) {
+    const { options, limits, width } = context
     const placed: PlacedNode[] = [focus]
 
     // Rows first. A row of children is as wide as the plex gets, so a column
@@ -46,14 +51,12 @@ export const rowsAndColumns: Placement = {
 
     for (const [relation, nodes] of rows) {
       placed.push(
-        ...line(
-          nodes,
-          options.direction[relation],
+        ...line(nodes, options.direction[relation], {
           options,
-          limits[relation],
+          limits: limits[relation],
           width,
-          focus.height / 2,
-        ),
+          clearance: focus.height / 2,
+        }),
       )
     }
 
@@ -71,12 +74,29 @@ export const rowsAndColumns: Placement = {
 
     for (const [relation, nodes] of columns) {
       placed.push(
-        ...line(nodes, options.direction[relation], options, limits[relation], width, clearance),
+        ...line(nodes, options.direction[relation], {
+          options,
+          limits: limits[relation],
+          width,
+          clearance,
+        }),
       )
     }
 
     return placed.slice(1)
   },
+}
+
+interface LineContext {
+  readonly options: PlexOptions
+  readonly limits: RoleLimits
+  readonly width: Widths
+  readonly clearance: number
+}
+
+interface AxisPlacement {
+  readonly sign: number
+  readonly near: number
 }
 
 /**
@@ -86,16 +106,14 @@ export const rowsAndColumns: Placement = {
 function line(
   nodes: readonly PlexNode[],
   direction: Direction,
-  options: PlexOptions,
-  limits: RoleLimits,
-  width: Widths,
-  clearance: number,
+  context: LineContext,
 ): PlacedNode[] {
   const sign = direction === 'up' || direction === 'left' ? -1 : 1
-  const near = clearance + options.focusGap
+  const near = context.clearance + context.options.focusGap
+  const placement: AxisPlacement = { sign, near }
   return isVertical(direction)
-    ? inRows(nodes, sign, near, options, limits, width)
-    : inColumns(nodes, sign, near, options, limits, width)
+    ? inRows(nodes, placement, context)
+    : inColumns(nodes, placement, context)
 }
 
 /**
@@ -104,12 +122,11 @@ function line(
  */
 function inRows(
   nodes: readonly PlexNode[],
-  sign: number,
-  near: number,
-  options: PlexOptions,
-  limits: RoleLimits,
-  width: Widths,
+  placement: AxisPlacement,
+  context: LineContext,
 ): PlacedNode[] {
+  const { sign, near } = placement
+  const { options, limits, width } = context
   const { height } = options.nodeSize
   const placed: PlacedNode[] = []
 
@@ -143,12 +160,11 @@ function inRows(
  */
 function inColumns(
   nodes: readonly PlexNode[],
-  sign: number,
-  near: number,
-  options: PlexOptions,
-  limits: RoleLimits,
-  width: Widths,
+  placement: AxisPlacement,
+  context: LineContext,
 ): PlacedNode[] {
+  const { sign, near } = placement
+  const { options, limits, width } = context
   const { height } = options.nodeSize
   const step = height + options.gap
   const placed: PlacedNode[] = []

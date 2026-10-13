@@ -13,7 +13,12 @@ const usePlexTransition = (
   input: () => ArrangeInput | undefined,
   duration: () => number,
   clock?: Clock,
-) => baseUsePlexTransition(neighbourhood, input, { duration, clock })
+) =>
+  baseUsePlexTransition(
+    neighbourhood,
+    input,
+    clock !== undefined ? { duration, clock } : { duration },
+  )
 
 /** Run a composable inside a scope, as a component would. */
 function inScope<T>(build: () => T): T {

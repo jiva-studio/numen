@@ -39,18 +39,28 @@ const currentLineMarks = EditorView.decorations.compute([timeGutterField, 'doc']
   return Decoration.set([currentLine.range(state.doc.line(at + 1).from)])
 })
 
+interface TimeOptions {
+  readonly text: string
+  readonly at: number
+  readonly isCurrent: boolean
+  readonly goToLine: (line: number) => void
+}
+
 /** One time in the gutter. It is clicked to go to the line it stands on. */
 class Time extends GutterMarker {
   override elementClass: string
+  readonly text: string
+  readonly at: number
+  readonly isCurrent: boolean
+  readonly goToLine: (line: number) => void
 
-  constructor(
-    readonly text: string,
-    readonly at: number,
-    readonly isCurrent: boolean,
-    readonly goToLine: (line: number) => void,
-  ) {
+  constructor(options: TimeOptions) {
     super()
-    this.elementClass = isCurrent ? 'cm-current' : ''
+    this.text = options.text
+    this.at = options.at
+    this.isCurrent = options.isCurrent
+    this.goToLine = options.goToLine
+    this.elementClass = options.isCurrent ? 'cm-current' : ''
   }
 
   override eq(other: Time): boolean {
@@ -80,7 +90,7 @@ const createTimeGutterExtension = (goToLine: (line: number) => void): Extension 
       const at = view.state.doc.lineAt(line.from).number - 1
       const { times: all, current } = view.state.field(timeGutterField)
       const text = all[at]
-      return text === undefined ? null : new Time(text, at, at === current, goToLine)
+      return text === undefined ? null : new Time({ text, at, isCurrent: at === current, goToLine })
     },
     lineMarkerChange: (update) =>
       update.startState.field(timeGutterField) !== update.state.field(timeGutterField),

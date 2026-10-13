@@ -138,6 +138,39 @@ function watchNoticeTicker(
   })
 }
 
+interface NoticeLifecycleOptions {
+  readonly getNotices: () => readonly Notice[]
+  readonly arrived: ShallowRef<ReadonlyMap<string, number>>
+  readonly away: ShallowRef<ReadonlySet<string>>
+  readonly forgotten: Set<string>
+  readonly read: ShallowRef<number>
+  readonly sample: () => void
+  readonly dismiss: (id: string) => void
+}
+
+function useNoticeLifecycle(options: NoticeLifecycleOptions): void {
+  const { getNotices, arrived, away, forgotten, read, sample, dismiss } = options
+  watch(
+    getNotices,
+    (all) => {
+      sample()
+      arrived.value = getArrivalTimes(arrived.value, all, read.value)
+      away.value = getStillAway(away.value, all)
+      const here = new Set(getReadable(all).map((one) => one.id))
+      for (const id of [...forgotten]) if (!here.has(id)) forgotten.delete(id)
+    },
+    { immediate: true },
+  )
+
+  watchEffect(() => {
+    for (const id of getFinishedNotices(getNotices(), arrived.value, read.value)) {
+      if (forgotten.has(id)) continue
+      forgotten.add(id)
+      dismiss(id)
+    }
+  })
+}
+
 export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
   const away = shallowRef<ReadonlySet<string>>(new Set())
   const arrived = shallowRef<ReadonlyMap<string, number>>(new Map())
@@ -151,17 +184,15 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
 
   const { sample, leftOn } = useNoticeSampling(options.getNotices, now, beat)
 
-  watch(
-    options.getNotices,
-    (all) => {
-      sample()
-      arrived.value = getArrivalTimes(arrived.value, all, read.value)
-      away.value = getStillAway(away.value, all)
-      const here = new Set(getReadable(all).map((one) => one.id))
-      for (const id of [...forgotten]) if (!here.has(id)) forgotten.delete(id)
-    },
-    { immediate: true },
-  )
+  useNoticeLifecycle({
+    getNotices: options.getNotices,
+    arrived,
+    away,
+    forgotten,
+    read,
+    sample,
+    dismiss: options.dismiss,
+  })
 
   const drawn = computed(() =>
     getShownNotices(options.getNotices(), read.value, {
@@ -181,14 +212,6 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
   })
 
   watchNoticeTicker(sample, drawn, { getNotices: options.getNotices, away })
-
-  watchEffect(() => {
-    for (const id of getFinishedNotices(options.getNotices(), arrived.value, read.value)) {
-      if (forgotten.has(id)) continue
-      forgotten.add(id)
-      options.dismiss(id)
-    }
-  })
 
   const { holdCard, dismissByHand } = useNoticeDismissal({
     folds,

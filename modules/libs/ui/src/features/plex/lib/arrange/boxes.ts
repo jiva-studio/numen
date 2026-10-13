@@ -30,12 +30,17 @@ export const getBox = (node: PlacedNode, apart: number): Box => ({
  * around the whole of a diagonal run stands over most of a quarter of the
  * picture, and a line crossing anywhere near it would find nowhere to be.
  */
+export interface BoxSpan {
+  readonly from: number
+  readonly to: number
+}
+
 export function getTitleBoxes(
   boxAt: (from: number, to: number) => Box,
-  from: number,
-  to: number,
+  span: BoxSpan,
   step: number,
 ): Box[] {
+  const { from, to } = span
   const boxes: Box[] = []
   for (let at = from; at < to; at += step) {
     boxes.push(boxAt(at, Math.min(at + step, to)))

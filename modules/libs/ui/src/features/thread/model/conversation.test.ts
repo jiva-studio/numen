@@ -1243,8 +1243,8 @@ describe('a conversation that is over, while an answer is on its way', () => {
     let signal: AbortSignal | undefined
     const conversation = useConversation(
       {
-        async *ask(_question, _focus, _named, given) {
-          signal = given
+        async *ask(query) {
+          signal = query.signal
           yield createToolStep('Search notes')
           await held
         },

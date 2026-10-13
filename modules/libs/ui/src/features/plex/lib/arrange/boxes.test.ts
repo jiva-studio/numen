@@ -47,8 +47,7 @@ describe('the steps a title is tried in', () => {
         asked.push([a, b])
         return square
       },
-      from,
-      to,
+      { from, to },
       step,
     )
     return { asked, boxes }

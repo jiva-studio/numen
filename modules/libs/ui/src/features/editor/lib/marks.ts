@@ -7,7 +7,7 @@
  * the text: the file is what was typed, mark for mark.
  */
 import { syntaxTree } from '@codemirror/language'
-import type { EditorState, Range } from '@codemirror/state'
+import type { EditorState, Range, Text } from '@codemirror/state'
 import { Decoration, type DecorationSet, type WidgetType } from '@codemirror/view'
 import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common'
 import { findChild } from './address'
@@ -38,39 +38,49 @@ export interface BlockNode {
  * else is drawn for the lines on screen. `pass` says which of the two this
  * pass is collecting.
  */
-const build = (
-  state: EditorState,
-  from: number,
-  to: number,
-  pass: 'blocks' | 'getMarks',
-): DecorationSet => {
-  const found: Range<Decoration>[] = []
-  const doc = state.doc
-  const blocks = pass === 'blocks'
+interface MarkSpan {
+  readonly from: number
+  readonly to: number
+}
 
-  const isSelected = (start: number, end: number) =>
-    state.selection.ranges.some((range) => range.from <= end && range.to >= start)
+class MarkBuilder {
+  readonly found: Range<Decoration>[] = []
+  private readonly doc: Text
+  private readonly blocks: boolean
 
-  const isOutsideSelection = (node: SyntaxNodeRef) => !isSelected(node.from, node.to)
+  constructor(
+    private readonly state: EditorState,
+    pass: 'blocks' | 'getMarks',
+  ) {
+    this.doc = state.doc
+    this.blocks = pass === 'blocks'
+  }
 
-  const isParentSelected = (node: SyntaxNodeRef) => {
+  private isSelected(start: number, end: number): boolean {
+    return this.state.selection.ranges.some((range) => range.from <= end && range.to >= start)
+  }
+
+  private isOutsideSelection(node: SyntaxNodeRef): boolean {
+    return !this.isSelected(node.from, node.to)
+  }
+
+  private isParentSelected(node: SyntaxNodeRef): boolean {
     const parent = node.node.parent as SyntaxNode
-    return isSelected(parent.from, parent.to)
+    return this.isSelected(parent.from, parent.to)
   }
 
-  /** A mark and the space it is separated from its content by. */
-  const hide = (start: number, end: number) => {
-    const after = doc.sliceString(end, end + 1) === ' ' ? end + 1 : end
-    found.push(hidden.range(start, after))
+  private hide(start: number, end: number): void {
+    const after = this.doc.sliceString(end, end + 1) === ' ' ? end + 1 : end
+    this.found.push(hidden.range(start, after))
   }
 
-  const eachLine = (
+  private eachLine(
     start: number,
     end: number,
     add: (at: number, first: boolean, isLast: boolean) => void,
-  ) => {
+  ): void {
     for (let at = start, first = true; ; first = false) {
-      const row = doc.lineAt(at)
+      const row = this.doc.lineAt(at)
       const isLast = row.to >= end
       add(row.from, first, isLast)
       if (isLast) break
@@ -78,164 +88,157 @@ const build = (
     }
   }
 
-  /** A widget standing for whole lines. */
-  const block = (node: SyntaxNodeRef, widget: WidgetType) =>
-    Decoration.replace({ widget, block: true }).range(
-      doc.lineAt(node.from).from,
-      doc.lineAt(node.to).to,
+  private block(node: SyntaxNodeRef, widget: WidgetType): Range<Decoration> {
+    return Decoration.replace({ widget, block: true }).range(
+      this.doc.lineAt(node.from).from,
+      this.doc.lineAt(node.to).to,
     )
+  }
 
-  /** A widget standing for whole lines, and null where the node stands for none. */
-  const takeBlock = (node: SyntaxNodeRef): boolean | null => {
+  takeBlock(node: SyntaxNodeRef): boolean | null {
     switch (node.name) {
       case 'HorizontalRule':
-        if (blocks && isOutsideSelection(node)) found.push(block(node, new Rule()))
-        // Stryker disable next-line BooleanLiteral: true descends into a HorizontalRule, which has no children
+        if (this.blocks && this.isOutsideSelection(node))
+          this.found.push(this.block(node, new Rule()))
         return false
 
       case 'Table':
-        if (!isOutsideSelection(node)) return !blocks
-        if (blocks) found.push(block(node, getGrid(state, node.node)))
+        if (!this.isOutsideSelection(node)) return !this.blocks
+        if (this.blocks) this.found.push(this.block(node, getGrid(this.state, node.node)))
         return false
     }
     return null
   }
 
-  /** The lines a construct colours: a heading, a quote, a fenced block. */
-  const takeLine = (node: SyntaxNodeRef): boolean | null => {
+  takeLine(node: SyntaxNodeRef): boolean | null {
     const heading = HEADING.exec(node.name)
     if (heading) {
-      found.push(line(`cm-heading cm-heading-${heading[1]}`).range(doc.lineAt(node.from).from))
+      this.found.push(
+        line(`cm-heading cm-heading-${heading[1]}`).range(this.doc.lineAt(node.from).from),
+      )
       return true
     }
 
     if (node.name === 'Blockquote') {
-      eachLine(node.from, node.to, (at) => found.push(line('cm-quote').range(at)))
+      this.eachLine(node.from, node.to, (at) => this.found.push(line('cm-quote').range(at)))
       return true
     }
 
     if (node.name === 'FencedCode') {
-      eachLine(node.from, node.to, (at, first, isLast) => {
+      this.eachLine(node.from, node.to, (at, first, isLast) => {
         const edge = `${first ? ' cm-code-first' : ''}${isLast ? ' cm-code-last' : ''}`
-        found.push(line(`cm-code${edge}`).range(at))
+        this.found.push(line(`cm-code${edge}`).range(at))
       })
-      // Stryker disable next-line BooleanLiteral: true descends into a FencedCode, which has no child that is drawn
       return true
     }
 
     return null
   }
 
-  /** What stands in place of a mark: a bullet, a checkbox. */
-  const takeWidget = (node: SyntaxNodeRef): boolean | null => {
+  takeWidget(node: SyntaxNodeRef): boolean | null {
     switch (node.name) {
       case 'ListMark': {
-        if (BULLET.test(doc.sliceString(node.from, node.to)))
-          found.push(Decoration.replace({ widget: new Bullet() }).range(node.from, node.to))
-        // Stryker disable next-line BooleanLiteral: true descends into a ListMark, which has no children
+        if (BULLET.test(this.doc.sliceString(node.from, node.to)))
+          this.found.push(Decoration.replace({ widget: new Bullet() }).range(node.from, node.to))
         return false
       }
 
       case 'TaskMarker': {
-        const done = doc.sliceString(node.from, node.to).toLowerCase() === '[x]'
-        const box = new Box(done, !state.readOnly)
-        found.push(Decoration.replace({ widget: box }).range(node.from, node.to))
-        // Stryker disable next-line BooleanLiteral: true descends into a TaskMarker, which has no children
+        const done = this.doc.sliceString(node.from, node.to).toLowerCase() === '[x]'
+        const box = new Box(done, !this.state.readOnly)
+        this.found.push(Decoration.replace({ widget: box }).range(node.from, node.to))
         return false
       }
     }
     return null
   }
 
-  /** The picture an image is shown as while the selection is outside it. */
-  const takeImage = (node: SyntaxNodeRef): boolean | null => {
+  takeImage(node: SyntaxNodeRef): boolean | null {
     if (node.name !== 'Image') return null
 
     const address = findChild(node.node, 'URL')
-    if (!address || !isOutsideSelection(node)) return true
-    found.push(
+    if (!address || !this.isOutsideSelection(node)) return true
+    this.found.push(
       Decoration.replace({
-        widget: new Picture(doc.sliceString(address.from, address.to)),
+        widget: new Picture(this.doc.sliceString(address.from, address.to)),
       }).range(node.from, node.to),
     )
     return false
   }
 
-  /** A mark taken out of the drawing while the selection is outside what it belongs to. */
-  const takeShy = (node: SyntaxNodeRef): boolean | null => {
+  takeShy(node: SyntaxNodeRef): boolean | null {
     if (SHY.has(node.name)) {
-      if (!isParentSelected(node)) found.push(hidden.range(node.from, node.to))
-      // Stryker disable next-line BooleanLiteral: true descends into a mark of the shy set, which has no children
+      if (!this.isParentSelected(node)) this.found.push(hidden.range(node.from, node.to))
       return false
     }
 
     if (node.name === 'CodeMark') {
-      if (node.node.parent?.name === 'InlineCode' && !isParentSelected(node))
-        found.push(hidden.range(node.from, node.to))
-      // Stryker disable next-line BooleanLiteral: true descends into a CodeMark, which has no children
+      if (node.node.parent?.name === 'InlineCode' && !this.isParentSelected(node))
+        this.found.push(hidden.range(node.from, node.to))
       return false
     }
 
     return null
   }
 
-  /** A mark taken out with the space that separates it from its content. */
-  const isSpacedMark = (node: SyntaxNodeRef): boolean | null => {
+  isSpacedMark(node: SyntaxNodeRef): boolean | null {
     if (node.name === 'HeaderMark') {
-      // Stryker disable next-line BooleanLiteral: true descends into a HeaderMark, which has no children
       if ((node.node.parent as SyntaxNode).name.startsWith('Setext')) return false
-      if (!isParentSelected(node)) hide(node.from, node.to)
-      // Stryker disable next-line BooleanLiteral: true descends into a HeaderMark, which has no children
+      if (!this.isParentSelected(node)) this.hide(node.from, node.to)
       return false
     }
 
     if (node.name === 'QuoteMark') {
-      if (!isParentSelected(node)) hide(node.from, node.to)
-      // Stryker disable next-line BooleanLiteral: true descends into a QuoteMark, which has no children
+      if (!this.isParentSelected(node)) this.hide(node.from, node.to)
       return false
     }
 
     return null
   }
 
-  /** The class a stretch of text is drawn in: emphasis, code, a link. */
-  const takeInline = (node: SyntaxNodeRef): boolean | null => {
+  takeInline(node: SyntaxNodeRef): boolean | null {
     const name = INLINE.get(node.name)
     if (!name) return null
 
-    found.push(mark(name).range(node.from, node.to))
+    this.found.push(mark(name).range(node.from, node.to))
     return true
   }
 
-  syntaxTree(state).iterate({
-    from,
-    to,
-    enter: (node) => {
-      const asBlock = takeBlock(node)
-      if (asBlock !== null) return asBlock
-      if (blocks) return BLOCK_CONTAINERS.has(node.name)
+  enter(node: SyntaxNodeRef): boolean {
+    const asBlock = this.takeBlock(node)
+    if (asBlock !== null) return asBlock
+    if (this.blocks) return BLOCK_CONTAINERS.has(node.name)
 
-      return (
-        takeLine(node) ??
-        takeWidget(node) ??
-        takeImage(node) ??
-        takeShy(node) ??
-        isSpacedMark(node) ??
-        takeInline(node) ??
-        true
-      )
-    },
+    return (
+      this.takeLine(node) ??
+      this.takeWidget(node) ??
+      this.takeImage(node) ??
+      this.takeShy(node) ??
+      this.isSpacedMark(node) ??
+      this.takeInline(node) ??
+      true
+    )
+  }
+}
+
+const build = (state: EditorState, span: MarkSpan, pass: 'blocks' | 'getMarks'): DecorationSet => {
+  const builder = new MarkBuilder(state, pass)
+  syntaxTree(state).iterate({
+    from: span.from,
+    to: span.to,
+    enter: (node) => builder.enter(node),
   })
 
-  return Decoration.set(found, true)
+  return Decoration.set(builder.found, true)
 }
 
 /** What is drawn inside the lines: the getMarks, and what stands for them. */
 export const getMarks = (state: EditorState, from: number, to: number) =>
-  build(state, from, to, 'getMarks')
+  build(state, { from, to }, 'getMarks')
 
 /** What is drawn in place of whole lines: a rule, a table. */
-export const blockMarks = (state: EditorState) => build(state, 0, state.doc.length, 'blocks')
+export const blockMarks = (state: EditorState) =>
+  build(state, { from: 0, to: state.doc.length }, 'blocks')
 
 /** The tables and rules of the document, in order, with the stretch each one is written in. */
 export const findBlocks = (state: EditorState): BlockNode[] => {

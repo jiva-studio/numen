@@ -7,6 +7,7 @@ import type { PlacedNode } from '../lib/node'
 
 const WINDOW = { width: 1200, height: 800 }
 const MARGIN = 16
+const BOUNDS = { viewport: WINDOW, margin: MARGIN }
 
 const createNode = (over: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
@@ -30,7 +31,7 @@ const getSpan = (node: PlacedNode, wide: { width: number; offset: number }) => (
 describe('a box with more of its title to show', () => {
   it('widens to the room the whole title asks for', () => {
     const node = createNode()
-    expect(getWideBox(node, 300, WINDOW, MARGIN)).toStrictEqual({
+    expect(getWideBox(node, 300, BOUNDS)).toStrictEqual({
       width: 300,
       offset: 0,
     })
@@ -38,20 +39,20 @@ describe('a box with more of its title to show', () => {
 
   it('grows about its own middle, so it opens both ways at once', () => {
     const node = createNode({ x: 120 })
-    const wide = getWideBox(node, 300, WINDOW, MARGIN)!
+    const wide = getWideBox(node, 300, BOUNDS)!
     expect(getSpan(node, wide)).toStrictEqual({ from: -30, to: 270 })
   })
 
   it('slides back inside the window where its middle leaves no room', () => {
     const node = createNode({ x: 500 })
-    const wide = getWideBox(node, 300, WINDOW, MARGIN)!
+    const wide = getWideBox(node, 300, BOUNDS)!
     expect(wide.width).toBe(300)
     expect(getSpan(node, wide)).toStrictEqual({ from: 284, to: 584 })
   })
 
   it('grows no wider than the window, the margin kept clear', () => {
     const node = createNode({ x: 500 })
-    const wide = getWideBox(node, 2000, WINDOW, MARGIN)!
+    const wide = getWideBox(node, 2000, BOUNDS)!
     expect(wide.width).toBe(WINDOW.width - 2 * MARGIN)
     expect(getSpan(node, wide)).toStrictEqual({ from: -584, to: 584 })
   })
@@ -59,15 +60,17 @@ describe('a box with more of its title to show', () => {
 
 describe('a box with nothing more to show', () => {
   it('stays as it was placed when its title needs exactly the room it has', () => {
-    expect(getWideBox(createNode(), 144, WINDOW, MARGIN)).toBeNull()
+    expect(getWideBox(createNode(), 144, BOUNDS)).toBeNull()
   })
 
   it('stays as it was placed when its title is already in it', () => {
-    expect(getWideBox(createNode(), 120, WINDOW, MARGIN)).toBeNull()
+    expect(getWideBox(createNode(), 120, BOUNDS)).toBeNull()
   })
 
   it('stays as it was placed when the window is no wider than it is', () => {
-    expect(getWideBox(createNode(), 300, { width: 160, height: 800 }, MARGIN)).toBeNull()
+    expect(
+      getWideBox(createNode(), 300, { viewport: { width: 160, height: 800 }, margin: MARGIN }),
+    ).toBeNull()
   })
 })
 

@@ -40,8 +40,8 @@ export interface AgentQuery {
   readonly focus: string
   readonly conversation: string
   readonly signal: AbortSignal
-  readonly agentId?: string
-  readonly modelId?: string
+  readonly agentId?: string | undefined
+  readonly modelId?: string | undefined
 }
 
 export interface AgentPort {

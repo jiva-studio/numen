@@ -75,6 +75,11 @@ function getIndents(headings: readonly PlexHeading[], step: number): Map<number,
   return new Map(levels.map((level, rank) => [level, Math.min(rank, DEEPEST) * step]))
 }
 
+export interface NodeHeadingsContext {
+  readonly options: Pick<PlexOptions, 'headingHeight' | 'headingIndent' | 'maxHeadings'>
+  readonly deps: HeadingsDeps
+}
+
 /**
  * What one node hangs: every heading it holds, in the order they were given, and
  * how many of them stand in the window at once.
@@ -84,11 +89,11 @@ function getIndents(headings: readonly PlexHeading[], step: number): Map<number,
 export function getNodeHeadings(
   node: PlacedNode,
   headings: readonly PlexHeading[],
-  options: Pick<PlexOptions, 'headingHeight' | 'headingIndent' | 'maxHeadings'>,
-  deps: HeadingsDeps,
+  context: NodeHeadingsContext,
 ): NodeHeadings | null {
   if (headings.length === 0) return null
 
+  const { options, deps } = context
   const { headingHeight, headingIndent, maxHeadings } = options
   const pad = Math.round(PAD * headingHeight)
   const top = node.height / 2
@@ -115,10 +120,15 @@ export function getNodeHeadings(
     headingHeight,
     pad,
     shown,
-    ...getHeadingsWidth(node, hung, pad, deps),
+    ...getHeadingsWidth(node, hung, { pad, deps }),
     headings: hung,
     height: shown * headingHeight + 2 * pad,
   }
+}
+
+interface HeadingsWidthContext {
+  readonly pad: number
+  readonly deps: HeadingsDeps
 }
 
 /**
@@ -130,9 +140,9 @@ export function getNodeHeadings(
 function getHeadingsWidth(
   node: PlacedNode,
   hung: readonly HungHeading[],
-  pad: number,
-  deps: HeadingsDeps,
+  context: HeadingsWidthContext,
 ): { width: number; offset: number } {
+  const { pad, deps } = context
   const measure = deps.measure
   const measuredContentWidth = measure
     ? Math.max(...hung.map((heading) => measure(heading.text) + heading.indent))

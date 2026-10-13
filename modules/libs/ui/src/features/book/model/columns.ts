@@ -35,9 +35,9 @@ const getLine = (text: HTMLElement): number => {
   return Number.isFinite(parsedHeight) ? parsedHeight : 0
 }
 
-function createBookSetting(columns: number, flow: Flow, height: number, textSize: number) {
+function createBookSetting(flow: Flow, height: number, textSize: number) {
   return {
-    '--book-run': columns === 1 ? '200%' : '100%',
+    '--book-run': flow.columns === 1 ? '200%' : '100%',
     '--book-gap': `${GAP}px`,
     '--book-column': `${columnWidth(flow)}px`,
     '--book-height': `${height}px`,
@@ -88,7 +88,7 @@ export function useBookColumns(options: BookColumnsOptions) {
   const spreadCount = computed(() => countSpreads(flow.value))
 
   const setting = computed(() =>
-    createBookSetting(columns.value, flow.value, viewport.value.height, textSize.value),
+    createBookSetting(flow.value, viewport.value.height, textSize.value),
   )
 
   /**

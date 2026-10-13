@@ -14,7 +14,7 @@ const getSpokenTool = (tool: string) => tool.replaceAll('_', ' ')
 export interface WorkCall {
   readonly tool: string
   readonly subject: string
-  readonly location?: SourceLocation | null
+  readonly location?: SourceLocation | null | undefined
   readonly written: number
 }
 

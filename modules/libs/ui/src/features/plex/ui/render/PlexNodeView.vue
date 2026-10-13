@@ -79,13 +79,13 @@ const under = computed(() =>
     : null,
 )
 
-const { open, box, handle } = useOpenBox(
-  () => props.node,
-  () => props.wide,
-  () => under.value,
-  () => props.behaviour.dwell,
-  props.behaviour.clock,
-)
+const { open, box, handle } = useOpenBox({
+  node: () => props.node,
+  wide: () => props.wide,
+  on: () => under.value,
+  delay: () => props.behaviour.dwell,
+  clock: props.behaviour.clock,
+})
 
 // A box that has begun to open is already over its neighbours.
 watch(
