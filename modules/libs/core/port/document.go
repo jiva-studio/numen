@@ -56,10 +56,3 @@ var (
 	// ErrEncrypted is a document whose text is locked.
 	ErrEncrypted = errors.New("the document is locked")
 )
-
-// SharedOpener is a vault reader that can open a file to be held for a long
-// time, so that the file can be renamed or deleted while it is open where the
-// platform allows.
-type SharedOpener interface {
-	OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error)
-}
