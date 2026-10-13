@@ -2,8 +2,8 @@
  * What letting go of a dragged tab comes to, as geometry alone.
  *
  * A point and a box in, a side out. Which pane that box belongs to and what
- * the side then does to the tree are settled elsewhere; `getRect` turns a
- * rectangle into the window coordinates the pure core reasons about.
+ * the side then does to the tree are settled elsewhere; `getRect` is the one
+ * thing here that measures anything.
  */
 import type { NodeId, Side } from './node'
 import { getPlaceInBox, type Position, type Rect } from './rect'
@@ -120,17 +120,8 @@ export function findEdgeSide(at: Position, box: Rect, reach: number): Side | nul
   return side
 }
 
-export interface BoxRect {
-  readonly left: number
-  readonly top: number
-  readonly width: number
-  readonly height: number
-}
-
 /** What an element takes up on screen, in the window's own coordinates. */
-export const getRect = (box: DOMRectReadOnly | BoxRect): Rect => ({
-  x: box.left,
-  y: box.top,
-  width: box.width,
-  height: box.height,
-})
+export const getRect = (element: Element): Rect => {
+  const box = element.getBoundingClientRect()
+  return { x: box.left, y: box.top, width: box.width, height: box.height }
+}

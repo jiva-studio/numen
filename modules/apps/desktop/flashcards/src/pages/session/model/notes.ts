@@ -34,76 +34,15 @@ export interface NotesPanelDeps {
   readonly showNotice: (message: string) => void
 }
 
-export function useNotesPanel(deps: NotesPanelDeps) {
-  /** Whether the panel is what the window is showing. */
-  const open = computed(() => deps.open())
-
+function useDeckNotes(
+  getDeckNeighbourhood: (vault: string, deck: string) => Promise<DeckNeighbourhood>,
+  showNotice: (message: string) => void,
+) {
   const notes = shallowRef<readonly Neighbour[]>([])
-
-  /** How many at the end came named and not read. */
   const unread = ref(0)
-
   const isWorking = ref(false)
-
-  /** The deck the notes in hand belong to, and nothing while none are. */
   let activeDeck: string | null = null
-
-  /** The note the panel is to be opened on, where a link named one. */
-  const at = ref('')
-
-  /** The deck the answer being waited for was asked about. */
   let pendingDeck: string | null = null
-
-  /** What the deck is joined to, asked for once and kept until the deck changes. */
-  const fetchNotes = async (vault: string, deck: string) => {
-    if (activeDeck === deck) return
-    // What is in hand belongs to the deck behind this one, and a person must
-    // never read one deck's notes under another deck's card.
-    clearNotes()
-    pendingDeck = deck
-    isWorking.value = true
-    try {
-      const around = await deps.getDeckNeighbourhood(vault, deck)
-      // A card answered while this was in flight moves the session to another
-      // deck, and what came back is then about the deck behind it.
-      if (pendingDeck !== deck) return
-      notes.value = around.notes
-      unread.value = around.unread
-      activeDeck = deck
-    } catch {
-      // The deck could not be reached, and the window says so: the panel holds
-      // nothing until it is asked again.
-      if (pendingDeck !== deck) return
-      notes.value = []
-      unread.value = 0
-      activeDeck = null
-      deps.showNotice(words.unreached)
-    } finally {
-      if (pendingDeck === deck) isWorking.value = false
-    }
-  }
-
-  /**
-   * The panel asked for, on whichever deck is up. The note it opens on is the
-   * one a link in the card named.
-   */
-  const openPanel = async (note = '') => {
-    const deck = deps.deck()
-    if (!deck) return
-    at.value = note
-    deps.showPanel(true)
-    await fetchNotes(deps.vault(), deck)
-  }
-
-  /** The panel put away, with what was read in it kept. */
-  const closePanel = () => {
-    deps.showPanel(false)
-  }
-
-  /** The note the panel was opened on has been read to, and is not sought again. */
-  const read = () => {
-    at.value = ''
-  }
 
   const clearNotes = () => {
     notes.value = []
@@ -112,7 +51,53 @@ export function useNotesPanel(deps: NotesPanelDeps) {
     pendingDeck = null
   }
 
-  /** The session is over: the panel holds nothing and is put away. */
+  const fetchNotes = async (vault: string, deck: string) => {
+    if (activeDeck === deck) return
+    clearNotes()
+    pendingDeck = deck
+    isWorking.value = true
+    try {
+      const around = await getDeckNeighbourhood(vault, deck)
+      if (pendingDeck !== deck) return
+      notes.value = around.notes
+      unread.value = around.unread
+      activeDeck = deck
+    } catch {
+      if (pendingDeck !== deck) return
+      clearNotes()
+      showNotice(words.unreached)
+    } finally {
+      if (pendingDeck === deck) isWorking.value = false
+    }
+  }
+
+  return { notes, unread, isWorking, fetchNotes, clearNotes }
+}
+
+export function useNotesPanel(deps: NotesPanelDeps) {
+  const open = computed(() => deps.open())
+  const at = ref('')
+  const { notes, unread, isWorking, fetchNotes, clearNotes } = useDeckNotes(
+    deps.getDeckNeighbourhood,
+    deps.showNotice,
+  )
+
+  const openPanel = async (note = '') => {
+    const deck = deps.deck()
+    if (!deck) return
+    at.value = note
+    deps.showPanel(true)
+    await fetchNotes(deps.vault(), deck)
+  }
+
+  const closePanel = () => {
+    deps.showPanel(false)
+  }
+
+  const read = () => {
+    at.value = ''
+  }
+
   const endSession = () => {
     clearNotes()
     at.value = ''

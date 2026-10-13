@@ -32,68 +32,59 @@ import type { DeckTabState } from '../types'
 
 export type { DeckTabState }
 
-export interface DeckTabsDeps {
-  now?: () => number
-}
-
 export function useDeckTabs(
   cards: Cards,
   presets: Presets,
   handle: WindowHandle,
   tabOpeners: FileOpeners,
-  deps?: DeckTabsDeps,
 ) {
   const vaultAnswers = createDeckAnswers()
-  const now = deps?.now ?? (() => 0)
 
-  const store = openNotes(
-    {
-      read: async (path) => {
-        const answer = await cards.readDeck(path)
-        if (!answer.ok) {
-          const code = getFailureCode(answer.error.code)
-          vaultAnswers.recordRead(path, {
-            problems: [],
-            error: code,
-            bound: answer.error.bound,
-            title: null,
-          })
-          return asFailure(code ?? 'notADeck')
-        }
-        const read = answer.value.deck
+  const store = openNotes({
+    read: async (path) => {
+      const answer = await cards.readDeck(path)
+      if (!answer.ok) {
+        const code = getFailureCode(answer.error.code)
         vaultAnswers.recordRead(path, {
-          problems: read.problems,
-          error: null,
-          bound: 0,
-          title: read.title,
+          problems: [],
+          error: code,
+          bound: answer.error.bound,
+          title: null,
         })
-        return asValue({
-          body: serializeBufferDeckToString(deserializeVaultDeck(read)),
-          at: answer.value.at,
-        })
-      },
-      write: async (path, body, seen) => {
-        const deck = deserializeBufferDeckFromString(body)
-        const answer = await cards.writeDeck(
-          path,
-          {
-            preamble: deck.preamble,
-            cards: serializeBufferCardsToVaultCards(deck),
-            sections: serializeBufferSectionsToVaultSections(deck),
-            tail: deck.tail,
-          },
-          seen?.fingerprint ?? null,
-        )
-        vaultAnswers.recordWrite(path, {
-          error: answer.ok ? null : getFailureCode(answer.error.code),
-          bound: answer.ok ? 0 : answer.error.bound,
-        })
-        if (!answer.ok) return asFailure(answer.error.code)
-        return asValue({ body: '', at: answer.value.at })
-      },
+        return asFailure(code ?? 'notADeck')
+      }
+      const read = answer.value.deck
+      vaultAnswers.recordRead(path, {
+        problems: read.problems,
+        error: null,
+        bound: 0,
+        title: read.title,
+      })
+      return asValue({
+        body: serializeBufferDeckToString(deserializeVaultDeck(read)),
+        at: answer.value.at,
+      })
     },
-    { now },
-  )
+    write: async (path, body, seen) => {
+      const deck = deserializeBufferDeckFromString(body)
+      const answer = await cards.writeDeck(
+        path,
+        {
+          preamble: deck.preamble,
+          cards: serializeBufferCardsToVaultCards(deck),
+          sections: serializeBufferSectionsToVaultSections(deck),
+          tail: deck.tail,
+        },
+        seen?.fingerprint ?? null,
+      )
+      vaultAnswers.recordWrite(path, {
+        error: answer.ok ? null : getFailureCode(answer.error.code),
+        bound: answer.ok ? 0 : answer.error.bound,
+      })
+      if (!answer.ok) return asFailure(answer.error.code)
+      return asValue({ body: '', at: answer.value.at })
+    },
+  })
 
   const read = createDeckReader(store, vaultAnswers.getProblems)
   const { getDeck, getMarks } = read

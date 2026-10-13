@@ -126,7 +126,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 	if err != nil {
 		return res, err
 	}
-	defer port.Close(release)
+	defer func() { _ = release() }()
 
 	model := u.Embedder.GetModel()
 	reader, err := u.readers.Open(v)

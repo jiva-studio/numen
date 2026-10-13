@@ -31,31 +31,7 @@ export interface CarouselStripDeps {
   readonly shown: Ref<PanelPlace>
 }
 
-export const useCarouselStrip = (deps: CarouselStripDeps) => {
-  const window_ = deps.window
-  const middle = deps.middle
-  const shown = deps.shown
-
-  /** A hand is on the strip, so nothing takes it anywhere else. */
-  const taking = ref(false)
-
-  /**
-   * The strip is being taken somewhere it was asked to go. It passes the others
-   * on the way, and that is not a person asking for one of them.
-   */
-  let sending = 0
-
-  /** Debounce before the strip, stopped on its own, snaps to the nearest stop. */
-  let snapTimer = 0
-
-  /** Where a move in flight is going, and nothing while none is. */
-  let aim: PanelPlace | null = null
-
-  /**
-   * Where the strip stands when each of the three is in the window. They are read
-   * off the layout rather than worked out, so the space the three stand apart by
-   * is in them already.
-   */
+function createCarouselStops(window_: Ref<HTMLElement | null>, middle: Ref<HTMLElement | null>) {
   const getStops = (): Record<PanelPlace, number> => {
     const at = window_.value
     const card = middle.value
@@ -63,7 +39,6 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     return { before: 0, here: card.offsetLeft, after: at.scrollWidth - at.clientWidth }
   }
 
-  /** Which of the three the strip is closest to standing on. */
   const findNearest = (left: number): PanelPlace => {
     const all = getStops()
     let best: PanelPlace = 'before'
@@ -73,13 +48,60 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     return best
   }
 
+  return { getStops, findNearest }
+}
+
+function useCarouselDrag(deps: {
+  readonly window_: Ref<HTMLElement | null>
+  readonly shown: Ref<PanelPlace>
+  readonly findNearest: (left: number) => PanelPlace
+  readonly slideTo: (where: PanelPlace) => void
+}) {
+  const taking = ref(false)
+  let from = 0
+  let was = 0
+
+  const onPointerDown = (press: PointerEvent) => {
+    const at = deps.window_.value
+    if (!at || press.button !== 0) return
+    taking.value = true
+    from = press.clientX
+    was = at.scrollLeft
+    at.setPointerCapture(press.pointerId)
+  }
+
+  const onPointerMove = (press: PointerEvent) => {
+    const at = deps.window_.value
+    if (!at || !taking.value) return
+    at.scrollLeft = was - (press.clientX - from)
+  }
+
+  const letGo = async () => {
+    if (!taking.value) return
+    const at = deps.window_.value
+    const where = at ? deps.findNearest(at.scrollLeft) : deps.shown.value
+    taking.value = false
+    await nextTick()
+    if (where !== deps.shown.value) deps.shown.value = where
+    await nextTick()
+    deps.slideTo(deps.shown.value)
+  }
+
+  return { taking, onPointerDown, onPointerMove, letGo }
+}
+
+function useCarouselMover(
+  window_: Ref<HTMLElement | null>,
+  getStops: () => Record<PanelPlace, number>,
+) {
+  let sending = 0
+  let snapTimer = 0
+  let aim: PanelPlace | null = null
+
   const slideTo = (where: PanelPlace) => {
     window.clearTimeout(snapTimer)
     const at = window_.value
-    if (!at) return
-    // A strip already standing where it is being sent is left alone: a move
-    // that moves nothing never arrives.
-    if (Math.abs(at.scrollLeft - getStops()[where]) <= 1) return
+    if (!at || Math.abs(at.scrollLeft - getStops()[where]) <= 1) return
     window.clearTimeout(sending)
     sending = window.setTimeout(() => {
       sending = 0
@@ -89,11 +111,6 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     at.scrollLeft = getStops()[where]
   }
 
-  /**
-   * The strip put where it belongs rather than taken there. The window opens with
-   * the card already in it, and a resize moves the stops under a strip that is
-   * standing on one, so neither is something to be seen sliding.
-   */
   const placeAt = (where: PanelPlace) => {
     const at = window_.value
     if (!at) return
@@ -106,88 +123,67 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     at.style.scrollBehavior = ''
   }
 
-  const onResize = () => placeAt(shown.value)
+  const snapTo = (where: PanelPlace) => {
+    window.clearTimeout(snapTimer)
+    snapTimer = window.setTimeout(() => slideTo(aim ?? where), SNAP_DELAY_MS)
+  }
 
-  watch(
-    () => shown.value,
-    (where) => {
-      if (!taking.value) slideTo(where)
-    },
-  )
-
-  /**
-   * Where a hand has taken the strip. Past the halfway mark between two of the
-   * stops it has asked for the nearer one, and the window is told as it crosses.
-   */
-  const onScroll = () => {
-    const at = window_.value
-    if (!at) return
-    // A move in flight is over when it arrives, whatever time it took.
-    if (aim && Math.abs(at.scrollLeft - getStops()[aim]) <= 1) {
+  const checkArrived = (scrollLeft: number) => {
+    if (aim && Math.abs(scrollLeft - getStops()[aim]) <= 1) {
       aim = null
       window.clearTimeout(sending)
       sending = 0
     }
-    const where = findNearest(at.scrollLeft)
-    if (!aim && where !== shown.value) shown.value = where
+  }
 
-    // A wheel or a trackpad leaves the strip wherever it ran out, and it is taken
-    // the rest of the way once it has stopped. A hand still on it is not done.
-    //
-    // It is armed while a move is in flight too, and aims where that move was
-    // going, so a wheel turned during one still lands on a card.
-    //
-    // Where it settles is the window's answer and not the strip's: a panel the
-    // window refused to open is a panel the strip must not be left standing on.
-    if (taking.value) return
+  const clear = () => {
+    window.clearTimeout(sending)
     window.clearTimeout(snapTimer)
-    const going = aim
-    snapTimer = window.setTimeout(() => slideTo(going ?? shown.value), SNAP_DELAY_MS)
   }
 
-  /** Where the hand went down, and where the strip was under it. */
-  let from = 0
-  let was = 0
+  return { slideTo, placeAt, snapTo, checkArrived, clear, isAiming: () => aim !== null }
+}
 
-  const onPointerDown = (press: PointerEvent) => {
+export const useCarouselStrip = (deps: CarouselStripDeps) => {
+  const window_ = deps.window
+  const middle = deps.middle
+  const shown = deps.shown
+  const { getStops, findNearest } = createCarouselStops(window_, middle)
+  const mover = useCarouselMover(window_, getStops)
+
+  const { taking, onPointerDown, onPointerMove, letGo } = useCarouselDrag({
+    window_,
+    shown,
+    findNearest,
+    slideTo: mover.slideTo,
+  })
+
+  const onScroll = () => {
     const at = window_.value
-    if (!at || press.button !== 0) return
-    taking.value = true
-    from = press.clientX
-    was = at.scrollLeft
-    at.setPointerCapture(press.pointerId)
+    if (!at) return
+    mover.checkArrived(at.scrollLeft)
+    const where = findNearest(at.scrollLeft)
+    if (!mover.isAiming() && where !== shown.value) shown.value = where
+    if (!taking.value) mover.snapTo(shown.value)
   }
 
-  const onPointerMove = (press: PointerEvent) => {
-    const at = window_.value
-    if (!at || !taking.value) return
-    at.scrollLeft = was - (press.clientX - from)
-  }
+  watch(
+    () => shown.value,
+    (where) => {
+      if (!taking.value) mover.slideTo(where)
+    },
+  )
 
-  const letGo = async () => {
-    if (!taking.value) return
-    const at = window_.value
-    const where = at ? findNearest(at.scrollLeft) : shown.value
-    taking.value = false
-    // A hand moves the strip with the smoothing off, and it is taken the rest of
-    // the way with it on, so the letting go is waited for.
-    await nextTick()
-    if (where !== shown.value) shown.value = where
-    // Where the hand asked for and where the window went are two things: a panel
-    // the window refused to open is one the strip goes back off.
-    await nextTick()
-    slideTo(shown.value)
-  }
+  const onResize = () => mover.placeAt(shown.value)
 
   onMounted(() => {
-    placeAt(shown.value)
+    mover.placeAt(shown.value)
     window.addEventListener('resize', onResize)
   })
 
   onBeforeUnmount(() => {
     window.removeEventListener('resize', onResize)
-    window.clearTimeout(sending)
-    window.clearTimeout(snapTimer)
+    mover.clear()
   })
 
   return { taking, onScroll, onPointerDown, onPointerMove, letGo }

@@ -7,10 +7,7 @@ import dts from 'vite-plugin-dts'
 export default defineConfig({
   plugins: [vue(), tailwindcss(), dts({ include: ['src'], bundleTypes: true })],
   resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
-      '@numen/protocol/testdata': fileURLToPath(new URL('../protocol/testdata', import.meta.url)),
-    },
+    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
   build: {
     lib: {

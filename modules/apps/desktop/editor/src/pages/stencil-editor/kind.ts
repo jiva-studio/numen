@@ -18,27 +18,18 @@ import { createStencilFields } from './model/fields'
 
 export type { StencilTabState, VaultAnswer }
 
-export interface StencilTabsDeps {
-  now?: () => number
-}
-
 export function useStencilTabs(
   cards: Cards,
   handle: WindowHandle,
   tabOpeners: FileOpeners,
   writeMessage: MessageWriter = () => {},
-  deps?: StencilTabsDeps,
 ) {
   const wire = createStencilWire(cards, writeMessage)
-  const now = deps?.now ?? (() => 0)
 
-  const store = openNotes(
-    {
-      read: wire.read,
-      write: wire.write,
-    },
-    { now },
-  )
+  const store = openNotes({
+    read: wire.read,
+    write: wire.write,
+  })
 
   const fields = createStencilFields(
     (id) => store.getOpenNote(id).body,

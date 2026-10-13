@@ -87,7 +87,7 @@ func (u *WriteCorrections) write(
 	if err != nil {
 		return 0, err
 	}
-	defer port.Close(release)
+	defer release()
 
 	_, stood := transcript.Parse([]byte(words))
 	whole := spliceCues(stood, put, in.Start, in.Length)

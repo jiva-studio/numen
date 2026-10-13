@@ -7,10 +7,7 @@
     "jsx": "preserve",
     "types": ["vite/client", "node"],
 
-    "paths": {
-      "@/*": ["./src/*"],
-      "@numen/protocol/testdata/*": ["../protocol/testdata/*"]
-    },
+    "paths": { "@/*": ["./src/*"] },
 
     "strict": true,
     "noUncheckedIndexedAccess": true,
