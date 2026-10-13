@@ -48,7 +48,7 @@ func newPageHandler(t *testing.T, cfg container.Config) (http.Handler, numenv1co
 	if err != nil {
 		t.Fatal(err)
 	}
-	return (&API{Themes: themes}).NewHandler(files), themes
+	return newThemedServices(themes).NewHandler(files), themes
 }
 
 // puts a theme in the person's folder, which opening the catalogue made.
@@ -101,7 +101,7 @@ func getResponse(handler http.Handler, path string) *httptest.ResponseRecorder {
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 	held := csp.Sources{}.Policy()
 
-	handler := (&API{}).NewHandler(http.NotFoundHandler())
+	handler := newBareServices().NewHandler(http.NotFoundHandler())
 	for _, path := range []string{"", "/", "/index.html", "/built/index.css", getAssetRoute("a.pdf")} {
 		if said := getResponse(handler, path).Header().Get("Content-Security-Policy"); said != held {
 			t.Errorf("%q is held to %q", path, said)
@@ -120,7 +120,7 @@ func TestTheHostsAWindowMayFrame(t *testing.T) {
 		t.Errorf("the window may frame %q", got)
 	}
 
-	said := getResponse((&API{}).NewHandler(http.NotFoundHandler()), "/").
+	said := getResponse(newBareServices().NewHandler(http.NotFoundHandler()), "/").
 		Header().Get("Content-Security-Policy")
 	if !strings.Contains(said, "frame-src 'self';") {
 		t.Errorf("the policy reads %q", said)
@@ -142,7 +142,7 @@ func TestTheHostsAWindowMayFrame(t *testing.T) {
 // through to the pages and is answered not found; a route a service holds
 // answers a GET as a method that call does not take.
 func TestEveryServiceTheVaultIsAskedAboutIsMounted(t *testing.T) {
-	handler := (&API{}).NewHandler(http.NotFoundHandler())
+	handler := newBareServices().NewHandler(http.NotFoundHandler())
 	for _, route := range []string{
 		numenv1connect.VaultServiceGetVaultStateProcedure,
 		numenv1connect.FileServiceListFilesProcedure,
@@ -159,9 +159,9 @@ func TestEveryServiceTheVaultIsAskedAboutIsMounted(t *testing.T) {
 // closes behind the door. Every question is refused at it, whatever it would
 // have reached into.
 func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
-	api := &API{}
-	handler := api.NewHandler(http.NotFoundHandler())
-	questions, _ := numenv1connect.NewVaultServiceHandler(api)
+	services := newBareServices()
+	handler := services.NewHandler(http.NotFoundHandler())
+	questions, _ := numenv1connect.NewVaultServiceHandler(services.Vault)
 	asked := []string{"", "/", "/index.html", getAssetRoute("a.pdf"), questions + "Find"}
 
 	for _, path := range asked {
@@ -170,7 +170,7 @@ func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 		}
 	}
 
-	api.Close()
+	services.state.Close()
 
 	for _, path := range asked {
 		if code := getResponse(handler, path).Code; code != http.StatusServiceUnavailable {
@@ -319,7 +319,7 @@ func TestAPageThatCannotSayWhatItWearsIsServedAsItWasBuilt(t *testing.T) {
 		t.Skipf("no interface in this binary: %v", err)
 	}
 
-	out := getResponse((&API{}).NewHandler(files), "/")
+	out := getResponse(newBareServices().NewHandler(files), "/")
 	if out.Code != http.StatusOK {
 		t.Fatalf("answered %d", out.Code)
 	}
@@ -395,11 +395,11 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 	// A page is the one thing left under this route, and drawing one looks the
 	// file up before anything else. That look is where the door stands.
 	api := newViewingAPI(readers, newViewer(nil))
-	api.Viewer.open = func(file io.ReadSeekCloser) (port.OpenDocument, error) {
+	api.Document.viewer.open = func(file io.ReadSeekCloser) (port.OpenDocument, error) {
 		file.Close()
 		return nil, document.ErrNoPage
 	}
-	api.setVault(testsupport.NewVault(t, map[string]string{"Note.pdf": "# Note\n"}))
+	api.state.setVault(testsupport.NewVault(t, map[string]string{"Note.pdf": "# Note\n"}))
 	handler := api.NewHandler(http.NotFoundHandler())
 
 	answered := make(chan struct{})
@@ -413,7 +413,7 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 	shut := make(chan struct{})
 	go func() {
 		defer close(shut)
-		api.Close()
+		api.state.Close()
 	}()
 
 	select {

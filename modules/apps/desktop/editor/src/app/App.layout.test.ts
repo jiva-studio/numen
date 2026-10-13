@@ -292,23 +292,10 @@ describe('tab linking context menu', () => {
     const layout = window.findComponent(WorkspaceLayout)
     expect(layout.exists()).toBe(true)
 
-    // Simulate tab element in DOM
-    const tabEl = document.createElement('div')
     const plexTabId = getTabs(window).find((t) => t.id.startsWith('plex:'))?.id ?? 'plex:main'
     const filesTabId = getTabs(window).find((t) => t.id.startsWith('files:'))?.id ?? 'files:side'
 
-    tabEl.setAttribute('data-workspace-tab', plexTabId)
-    document.body.appendChild(tabEl)
-
-    const event = new MouseEvent('contextmenu', {
-      bubbles: true,
-      cancelable: true,
-      clientX: 50,
-      clientY: 50,
-    })
-    Object.defineProperty(event, 'target', { value: tabEl, enumerable: true })
-
-    layout.vm.$emit('contextmenu', event)
+    layout.vm.$emit('tab-context-menu', plexTabId, { x: 50, y: 50 })
     await settle()
 
     const linkMenu = window.findComponent({ name: 'TabLinkMenu' })
@@ -320,7 +307,7 @@ describe('tab linking context menu', () => {
     expect(window.findComponent({ name: 'TabLinkMenu' }).exists()).toBe(false)
 
     // Reopen menu to verify unlink
-    layout.vm.$emit('contextmenu', event)
+    layout.vm.$emit('tab-context-menu', plexTabId, { x: 50, y: 50 })
     await settle()
 
     const openedMenu = window.findComponent({ name: 'TabLinkMenu' })
@@ -331,27 +318,14 @@ describe('tab linking context menu', () => {
     await settle()
 
     expect(window.findComponent({ name: 'TabLinkMenu' }).exists()).toBe(false)
-    tabEl.remove()
   })
 
   it('closes link menu when close event is emitted', async () => {
     const window = await mountWindow()
     const layout = window.findComponent(WorkspaceLayout)
 
-    const tabEl = document.createElement('div')
     const plexTabId = getTabs(window).find((t) => t.id.startsWith('plex:'))?.id ?? 'plex:main'
-    tabEl.setAttribute('data-workspace-tab', plexTabId)
-    document.body.appendChild(tabEl)
-
-    const event = new MouseEvent('contextmenu', {
-      bubbles: true,
-      cancelable: true,
-      clientX: 50,
-      clientY: 50,
-    })
-    Object.defineProperty(event, 'target', { value: tabEl, enumerable: true })
-
-    layout.vm.$emit('contextmenu', event)
+    layout.vm.$emit('tab-context-menu', plexTabId, { x: 50, y: 50 })
     await settle()
 
     const linkMenu = window.findComponent({ name: 'TabLinkMenu' })
@@ -359,6 +333,5 @@ describe('tab linking context menu', () => {
     await settle()
 
     expect(window.findComponent({ name: 'TabLinkMenu' }).exists()).toBe(false)
-    tabEl.remove()
   })
 })

@@ -2,14 +2,13 @@
 /**
  * Settings for optical character recognition (OCR).
  */
-import { computed } from 'vue'
 import { Select, Switch } from '@numen/ui'
 import type { SelectChoice } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import type { SettingsTabState } from '../../types'
 import paths from '../../paths.json'
-import { createChoices } from '../../lib/models'
-import { write } from '@/entities/settings'
+import { createModelChoices } from '../../lib/models'
+import { createSettingFields } from '@/entities/settings'
 import { WORDS as words } from '../../words'
 
 // --- Props & Emits ---
@@ -20,43 +19,22 @@ const props = defineProps<{
 }>()
 
 // --- State ---
-const installation = computed(() => props.state.installation)
+const fields = createSettingFields(() => props.state.installation)
+
+const getChoices = (at: readonly string[]): readonly SelectChoice[] =>
+  createModelChoices(fields, at, words)
 
 // --- Handlers ---
-function onModelChange(at: readonly string[], name: string) {
-  const model = installation.value.getModels(at).find((one) => one.name === name)
-  if (model) installation.value.write(model.writes)
-  else setSetting(at, name)
-}
-
 function onOcrModelChange(name: string) {
-  onModelChange(paths.ocrModel, name)
+  fields.chooseModel(paths.ocrModel, name)
 }
 
 function onOcrProofreadChange(name: string) {
-  setSetting(paths.ocrProofread, name)
+  fields.setValue(paths.ocrProofread, name)
 }
 
 function onOcrProofreadAlwaysChange(value: boolean) {
-  setSetting(paths.ocrProofreadAlways, value)
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-function getSettingString(at: readonly string[]): string {
-  const value = installation.value.getSetting(at)
-  return typeof value === 'string' ? value : ''
-}
-
-function isSettingEnabled(at: readonly string[]): boolean {
-  return installation.value.getSetting(at) === true
-}
-
-function getModels(at: readonly string[]): readonly SelectChoice[] {
-  return createChoices(installation.value.getModels(at), getSettingString(at), words)
-}
-
-function setSetting(at: readonly string[], value: unknown): void {
-  installation.value.write([{ at, value: write(value) }])
+  fields.setValue(paths.ocrProofreadAlways, value)
 }
 </script>
 
@@ -71,8 +49,8 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.ocrModelDetail"
     >
       <Select
-        :model-value="getSettingString(paths.ocrModel)"
-        :choices="getModels(paths.ocrModel)"
+        :model-value="fields.getString(paths.ocrModel)"
+        :choices="getChoices(paths.ocrModel)"
         :name="words.ocrModel"
         :aria-labelledby="labelledBy"
         class="settings__choice"
@@ -87,7 +65,7 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.ocrProofreadDetail"
     >
       <Select
-        :model-value="getSettingString(paths.ocrProofread)"
+        :model-value="fields.getString(paths.ocrProofread)"
         :choices="props.profiles"
         :name="words.ocrProofread"
         :aria-labelledby="labelledBy"
@@ -103,7 +81,7 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.ocrProofreadAlwaysDetail"
     >
       <Switch
-        :model-value="isSettingEnabled(paths.ocrProofreadAlways)"
+        :model-value="fields.isEnabled(paths.ocrProofreadAlways)"
         :aria-labelledby="labelledBy"
         @update:model-value="onOcrProofreadAlwaysChange"
       />

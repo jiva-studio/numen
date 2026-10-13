@@ -70,9 +70,9 @@ func openTwoVaults(t *testing.T) *showing {
 	}
 	t.Cleanup(func() { installation.Close() })
 
-	going, itself := numenv1connect.NewWindowServiceHandler(installation.API.Window)
+	going, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
-	answers(mux, installation.API)
+	answers(mux, installation.Services)
 	mux.Handle(going, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
@@ -587,7 +587,7 @@ func TestARunReachesTheVaultTheWindowIsShowing(t *testing.T) {
 		go func() {
 			defer asked.Done()
 			for asking.Err() == nil {
-				f.installation.API.CreateArtifact(asking, connect.NewRequest(&v1.CreateArtifactRequest{
+				f.installation.Services.Artifact.CreateArtifact(asking, connect.NewRequest(&v1.CreateArtifactRequest{
 					Path: entropy, Kind: of,
 				}))
 			}

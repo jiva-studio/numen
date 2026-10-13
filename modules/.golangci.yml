@@ -118,10 +118,10 @@ linters:
 
         # The files named with ! below hold a port in their signature; each one
         # is on the list for one reason:
-        # editor/assembly.go, serve.go, api.go, index.go and flashcards/api.go
+        # editor/assembly.go, serve.go, state.go, services.go, index.go and flashcards/api.go
         # bind the window to the ports the container hands it; editor/agent.go,
         # flashcards/agent.go and focus.go hand port.Task and port.Window across
-        # the wire; editor/viewer.go, documents.go and pool/documents.go hold
+        # the wire; editor/viewer.go and pool/documents.go hold
         # the open document and the vault readers the viewer reads through;
         # cli/deps.go holds the ports the command line is handed and cli/vault.go
         # answers port.ErrNoTrash.
@@ -134,12 +134,12 @@ linters:
             - "!$test"
             - "!**/adapter/window/editor/assembly.go"
             - "!**/adapter/window/editor/serve.go"
-            - "!**/adapter/window/editor/api.go"
+            - "!**/adapter/window/editor/state.go"
             - "!**/adapter/window/editor/index.go"
             - "!**/adapter/window/editor/agent.go"
             - "!**/adapter/window/editor/focus.go"
             - "!**/adapter/window/editor/viewer.go"
-            - "!**/adapter/window/editor/documents.go"
+            - "!**/adapter/window/editor/services.go"
             - "!**/adapter/window/editor/pool/documents.go"
             - "!**/adapter/window/flashcards/api.go"
             - "!**/adapter/window/flashcards/agent.go"

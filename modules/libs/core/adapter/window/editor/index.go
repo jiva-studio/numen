@@ -10,9 +10,10 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
+	embedmodel "github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -95,7 +96,7 @@ func startIndexing(
 	ctx context.Context,
 	v domain.Vault,
 	made Assembly,
-	api *API,
+	state *State,
 	rebuild bool,
 	embedder port.Embedder,
 	wake indexTriggers,
@@ -104,24 +105,24 @@ func startIndexing(
 ) (vaults.Refresh, func()) {
 	// Said before the goroutine starts, so a window that opens on a fresh vault
 	// is shown the walk from its first moment.
-	api.reportTask(task.Task{ID: walkingNotes, Title: "Indexing the vault"})
+	state.reportTask(task.Task{ID: walkingNotes, Title: "Indexing the vault"})
 
 	var running sync.WaitGroup
 
 	read, run, refresh, unwatched := made.StartVault(
-		ctx, v, rebuild, newChangeReporter(api, wake), newErrorReporter(api))
+		ctx, v, rebuild, newChangeReporter(state, wake), newErrorReporter(state))
 	if unwatched != nil {
 		fmt.Fprintf(out, "not watching %s: %v\n", v.Name, unwatched)
-		api.WatchError.Store(unwatched.Error())
+		state.WatchError.Store(unwatched.Error())
 	}
 	running.Add(1)
 	go func() {
 		defer running.Done()
-		watchVault(ctx, api, run, unwatched)
+		watchVault(ctx, state, run, unwatched)
 	}()
 
 	pass := indexer{
-		made: made, api: api, v: v, embedder: embedder, wake: wake, owed: owed, out: out,
+		made: made, state: state, v: v, embedder: embedder, wake: wake, owed: owed, out: out,
 		// Indexing every file again is what this launch was asked for, and one
 		// pass makes it. Every pass after it indexes what changed.
 		owes: rebuild,
@@ -137,23 +138,23 @@ func startIndexing(
 
 // newErrorReporter tells the window what went wrong along the way, and tells it
 // that nothing does once a later attempt succeeds.
-func newErrorReporter(api *API) port.ErrorHandler {
+func newErrorReporter(state *State) port.ErrorHandler {
 	return func(err error) {
 		if err == nil {
-			api.Error.Store("")
+			state.Error.Store("")
 			return
 		}
-		api.Error.Store(err.Error())
+		state.Error.Store(err.Error())
 	}
 }
 
 // newChangeReporter tells the window what changed, and wakes the passes that owe
 // work for it.
-func newChangeReporter(api *API, wake indexTriggers) func(paths, assets []string, reload bool) {
+func newChangeReporter(state *State, wake indexTriggers) func(paths, assets []string, reload bool) {
 	return func(paths, assets []string, reload bool) {
 		// A client draws every file the vault holds, so an asset is named to it
 		// the way a note is.
-		api.ChangeEvents.publish(change{paths: slices.Concat(paths, assets), shouldReload: reload})
+		state.ChangeEvents.publish(change{paths: slices.Concat(paths, assets), shouldReload: reload})
 		if reload || len(assets) > 0 {
 			// A book dropped into an open vault is read without anybody asking.
 			fire(wake.sources)
@@ -167,12 +168,12 @@ func newChangeReporter(api *API, wake indexTriggers) func(paths, assets []string
 }
 
 // watchVault runs the watch until it stops.
-func watchVault(ctx context.Context, api *API, run func(context.Context), unwatched error) {
+func watchVault(ctx context.Context, state *State, run func(context.Context), unwatched error) {
 	run(ctx)
 	// Nothing reaches the window once the watch stops, so from here on the
 	// vault is one that is not being followed.
 	if unwatched == nil && ctx.Err() == nil {
-		api.WatchError.Store("the watch stopped")
+		state.WatchError.Store("the watch stopped")
 	}
 }
 
@@ -180,7 +181,7 @@ func watchVault(ctx context.Context, api *API, run func(context.Context), unwatc
 // books, then the vectors both owe.
 type indexer struct {
 	made     Assembly
-	api      *API
+	state    *State
 	v        domain.Vault
 	embedder port.Embedder
 	wake     indexTriggers
@@ -219,7 +220,7 @@ func (p *indexer) run(ctx context.Context, read func(ctx context.Context, during
 			quiet = time.After(p.wake.still)
 		case <-quiet:
 			quiet = nil
-			embedSources(ctx, p.made, p.api, p.v, p.embedder, p.wake.read)
+			embedSources(ctx, p.made, p.state, p.v, p.embedder, p.wake.read)
 		}
 	}
 }
@@ -227,12 +228,12 @@ func (p *indexer) run(ctx context.Context, read func(ctx context.Context, during
 // readNotes is the vault's first indexing: the walk, and the notes written while
 // it ran read once more. It answers whether the vault was read.
 func (p *indexer) readNotes(ctx context.Context, read func(ctx context.Context, during func()) (int, error)) bool {
-	defer p.api.finishTask(walkingNotes)
+	defer p.state.finishTask(walkingNotes)
 
 	// The walk runs behind the window, which answers from what it has reached. A
 	// later one is the index being brought level with a vault that moved under
 	// it.
-	p.api.reportTask(task.Task{ID: walkingNotes, Title: "Indexing the vault"})
+	p.state.reportTask(task.Task{ID: walkingNotes, Title: "Indexing the vault"})
 	notes, err := read(ctx, nil)
 
 	switch {
@@ -242,12 +243,12 @@ func (p *indexer) readNotes(ctx context.Context, read func(ctx context.Context, 
 		// is nothing to report.
 		return false
 	default:
-		p.api.Error.Store(err.Error())
+		p.state.Error.Store(err.Error())
 		return false
 	}
 
 	fmt.Fprintf(p.out, "%s: %d notes\n", p.v.Name, notes)
-	p.api.Ready.Store(true)
+	p.state.Ready.Store(true)
 	return true
 }
 
@@ -255,7 +256,7 @@ func (p *indexer) readNotes(ctx context.Context, read func(ctx context.Context, 
 func (p *indexer) indexSources(ctx context.Context) {
 	asked := p.owes
 	p.owes = false
-	readSources(ctx, p.made, p.api, p.v, p.embedder, asked, p.wake.read, p.out)
+	readSources(ctx, p.made, p.state, p.v, p.embedder, asked, p.wake.read, p.out)
 }
 
 // embedRecognisedPages cuts and embeds what has been read of a document while the
@@ -266,9 +267,9 @@ func (p *indexer) embedRecognisedPages(ctx context.Context) {
 		return
 	}
 	for path, of := range held {
-		rechunkSource(ctx, p.made, p.api, p.embedder, of, path)
+		rechunkSource(ctx, p.made, p.state, p.embedder, of, path)
 	}
-	embedSources(ctx, p.made, p.api, p.v, p.embedder, p.wake.read)
+	embedSources(ctx, p.made, p.state, p.v, p.embedder, p.wake.read)
 }
 
 // readSources takes the text out of every book in the vault and then embeds what
@@ -280,7 +281,7 @@ func (p *indexer) embedRecognisedPages(ctx context.Context) {
 func readSources(
 	ctx context.Context,
 	made Assembly,
-	api *API,
+	state *State,
 	v domain.Vault,
 	embedder port.Embedder,
 	rebuild bool,
@@ -289,11 +290,11 @@ func readSources(
 ) {
 	making, err := made.ReadWholeVault(ctx, embedder, v, rebuild)
 	if err != nil {
-		api.reportTask(task.Task{ID: extractingBooks, Title: "Extracting books", Error: err.Error()})
+		state.reportTask(task.Task{ID: extractingBooks, Title: "Extracting books", Error: err.Error()})
 		return
 	}
 	making.OnBooksProgress = func(res source.ExtractResult) {
-		api.reportTask(task.Task{
+		state.reportTask(task.Task{
 			ID: extractingBooks, Title: "Extracting books", About: res.CurrentSource,
 			// Every book the walk found leaves this pass one of several ways, and
 			// all four count as done.
@@ -302,24 +303,24 @@ func readSources(
 		})
 	}
 
-	api.reportTask(task.Task{ID: extractingBooks, Title: "Extracting books"})
+	state.reportTask(task.Task{ID: extractingBooks, Title: "Extracting books"})
 	res, read := making.ReadBooks(ctx, v)
 	switch {
 	case read == nil:
 		if res.Extracted > 0 {
 			fmt.Fprintf(out, "%s: %d books, %d chunks\n", v.Name, res.Extracted, res.Chunks)
 		}
-		api.finishTask(extractingBooks)
+		state.finishTask(extractingBooks)
 	case errors.Is(read, context.Canceled):
 		// Asked to stop. What it cut is correct as far as it got.
-		api.finishTask(extractingBooks)
+		state.finishTask(extractingBooks)
 	default:
 		// A failed pass stays in the list until whoever is shown it takes it
 		// out.
-		api.reportTask(task.Task{ID: extractingBooks, Title: "Extracting books", Error: read.Error()})
+		state.reportTask(task.Task{ID: extractingBooks, Title: "Extracting books", Error: read.Error()})
 	}
 
-	embedSources(ctx, made, api, v, embedder, nudge)
+	embedSources(ctx, made, state, v, embedder, nudge)
 }
 
 // rechunkSource cuts one source again from whatever its text now says.
@@ -330,13 +331,13 @@ func readSources(
 func rechunkSource(
 	ctx context.Context,
 	made Assembly,
-	api *API,
+	state *State,
 	embedder port.Embedder,
 	v domain.Vault,
 	path string,
 ) {
 	cut := func(err error) {
-		api.reportTask(task.Task{ID: extractingBooks, Title: "Extracting books", About: path, Error: err.Error()})
+		state.reportTask(task.Task{ID: extractingBooks, Title: "Extracting books", About: path, Error: err.Error()})
 	}
 
 	making, err := made.ReadWholeVault(ctx, embedder, v, false)
@@ -348,7 +349,7 @@ func rechunkSource(
 	case err == nil:
 		// The pages that were read are cut, and a cut that failed before this
 		// one is over.
-		api.finishTask(extractingBooks)
+		state.finishTask(extractingBooks)
 	case !errors.Is(err, context.Canceled):
 		cut(err)
 	}
@@ -365,7 +366,7 @@ func rechunkSource(
 func embedSources(
 	ctx context.Context,
 	made Assembly,
-	api *API,
+	state *State,
 	v domain.Vault,
 	embedder port.Embedder,
 	nudge chan struct{},
@@ -373,7 +374,7 @@ func embedSources(
 	if embedder == nil {
 		return
 	}
-	owing, owes := getOwedVectors(ctx, api, v)
+	owing, owes := getOwedVectors(ctx, state, v)
 	if !owes {
 		return
 	}
@@ -384,12 +385,12 @@ func embedSources(
 	// Fetching the model and preparing it is a step of its own, and it stands in
 	// the list under its own name. Nothing is indexed until it is over, and a
 	// model that never arrived is said under that name.
-	if arrival, ok := embedder.(embedding.WaitingEmbedder); ok {
+	if arrival, ok := embedder.(embedmodel.WaitingEmbedder); ok {
 		if err := arrival.Wait(under); err != nil {
 			return
 		}
 	}
-	makeVectors(ctx, under, made, api, v, embedder, owing)
+	makeVectors(ctx, under, made, state, v, embedder, owing)
 }
 
 // getOwedVectors is what a pass owes, asked once before it starts: the chunks
@@ -399,11 +400,11 @@ func embedSources(
 // It is asked before the model is waited for. Every path into the pass runs on
 // the one goroutine that also reads the books and cuts what a recognition
 // wrote, and a vault owing no vector holds that goroutine for nothing.
-func getOwedVectors(ctx context.Context, api *API, v domain.Vault) (owing int64, owes bool) {
-	if api.Indexing.Progress == nil {
+func getOwedVectors(ctx context.Context, state *State, v domain.Vault) (owing int64, owes bool) {
+	if state.Indexing.Progress == nil {
 		return 0, true
 	}
-	held, embedded, err := api.Indexing.Progress.GetProgress(ctx, v.ID, text(&api.Indexing.Recipe))
+	held, embedded, err := state.Indexing.Progress.GetProgress(ctx, v.ID, text(&state.Indexing.Recipe))
 	if err != nil {
 		return 0, true
 	}
@@ -440,13 +441,13 @@ func stopOnNudge(ctx context.Context, nudge chan struct{}) (context.Context, fun
 func makeVectors(
 	ctx, under context.Context,
 	made Assembly,
-	api *API,
+	state *State,
 	v domain.Vault,
 	embedder port.Embedder,
 	owing int64,
 ) {
 	indexing := func(err error) {
-		api.reportTask(task.Task{ID: makingVectors, Title: "Indexing", Error: err.Error()})
+		state.reportTask(task.Task{ID: makingVectors, Title: "Indexing", Error: err.Error()})
 	}
 
 	making, err := made.ReadWholeVault(ctx, embedder, v, false)
@@ -458,17 +459,17 @@ func makeVectors(
 	// The pass enters the list when it opens the first of them, so the row is
 	// never a word with nothing under it. A share is drawn once a vector has
 	// been made, counted over the work in hand and not the size of the vault.
-	making.OnVectorsProgress = func(res source.EmbedResult) {
+	making.OnVectorsProgress = func(res embedding.EmbedResult) {
 		at := task.Task{ID: makingVectors, Title: "Indexing", About: res.CurrentSource}
 		if res.Embedded > 0 {
 			at.Count, at.Total = int64(res.Embedded), owing
 		}
-		api.reportTask(at)
+		state.reportTask(at)
 	}
 
 	switch _, err := making.MakeVectors(under, v); {
 	case err == nil, errors.Is(err, context.Canceled):
-		api.finishTask(makingVectors)
+		state.finishTask(makingVectors)
 	default:
 		// A vault short of the vectors it owes is searched by its words alone,
 		// and the reason for it stands in the list.

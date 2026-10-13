@@ -18,7 +18,7 @@ const pointsAtAVideo = "https://youtu.be/dQw4w9WgXcQ"
 // page holding the player is served over this run's socket, and the host is
 // told an address on this machine.
 func TestThePlayerIsFramedFromThisRunsOwnSocket(t *testing.T) {
-	back, handler := openLoopback(t, &API{})
+	back, handler := openLoopback(t, newBareServices())
 	at := parseURL(t, pointsAtAVideo)
 
 	address := back.Embed(at)
@@ -45,7 +45,7 @@ func TestThePlayerIsFramedFromThisRunsOwnSocket(t *testing.T) {
 // adapter's to say. A host learned about later is played here without this
 // route learning anything about it.
 func TestTheRouteCarriesTheAddressAndNotOneHostsIdentifier(t *testing.T) {
-	back, _ := openLoopback(t, &API{})
+	back, _ := openLoopback(t, newBareServices())
 	at := parseURL(t, pointsAtAVideo)
 
 	address := back.Embed(at)
@@ -62,7 +62,7 @@ func TestTheRouteCarriesTheAddressAndNotOneHostsIdentifier(t *testing.T) {
 // socket every process on this machine can knock at, so what it may do is
 // written on it.
 func TestThePageHoldingAPlayerIsHeldToItsOwnPolicy(t *testing.T) {
-	back, handler := openLoopback(t, &API{})
+	back, handler := openLoopback(t, newBareServices())
 
 	answer := httptest.NewRecorder()
 	handler.ServeHTTP(answer,
@@ -80,7 +80,7 @@ func TestThePageHoldingAPlayerIsHeldToItsOwnPolicy(t *testing.T) {
 // An address nothing plays is refused. The route serves a player, and is not a
 // way to ask this socket for a page of somebody else's.
 func TestAnEmbedAddressNothingPlays(t *testing.T) {
-	back, handler := openLoopback(t, &API{})
+	back, handler := openLoopback(t, newBareServices())
 
 	for _, raw := range []string{
 		url.PathEscape("https://example.com/entropy"),

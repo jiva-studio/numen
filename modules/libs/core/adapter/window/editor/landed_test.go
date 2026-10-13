@@ -29,8 +29,8 @@ func TestAMoveThatCameApartAfterTheFileLandedSaysWhereItWent(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
-	m := f.installation.API.Files.Move.WithSources(stuck{f.installation.API.Files.Move.Sources()})
-	f.installation.API.Files.Move = &m
+	m := f.installation.Services.FileMove().WithSources(stuck{f.installation.Services.FileMove().Sources()})
+	f.installation.Services.SetFileMove(&m)
 
 	answer, err := f.client.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
 		From: "Entropy.md",
@@ -52,7 +52,7 @@ func TestARenameThatCameApartAfterTheFileLandedSaysWhatTheNoteIsCalled(t *testin
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
 	waitForScan(t, f)
-	*f.installation.API.Notes.Rename = f.installation.API.Notes.Rename.WithSources(stuck{f.installation.API.Notes.Rename.Sources()})
+	*f.installation.Services.NoteRename() = f.installation.Services.NoteRename().WithSources(stuck{f.installation.Services.NoteRename().Sources()})
 
 	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path:  "Entropy.md",

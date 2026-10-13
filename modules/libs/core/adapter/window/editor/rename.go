@@ -7,25 +7,24 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // RenameNote gives a note a different name.
-func (a *API) RenameNote(
+func (h *noteHandler) RenameNote(
 	ctx context.Context, r *connect.Request[v1.RenameNoteRequest],
 ) (*connect.Response[v1.RenameNoteResponse], error) {
-	showing, err := a.getCurrentVault()
+	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
-	if !a.Writing.begin() {
+	if !h.state.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.finish()
+	defer h.state.Writing.finish()
 
-	renamed, err := a.Notes.Rename.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTitle())
+	renamed, err := h.rename.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTitle())
 	out := &v1.RenameNoteResponse{
 		Path:       renamed.Path,
 		Title:      renamed.Title,
@@ -34,7 +33,7 @@ func (a *API) RenameNote(
 	if renamed.Moved != nil {
 		out.Moved = newMoveResult(*renamed.Moved)
 	}
-	out.IsUnlevelled = a.isUnlevelled(err)
+	out.IsUnlevelled = h.state.isUnlevelled(err)
 	if err != nil && !out.GetIsUnlevelled() {
 		reason, refused := wire.GetErrorCode(err)
 		switch {
@@ -47,52 +46,6 @@ func (a *API) RenameNote(
 		// answer. A rename that came apart afterwards is a rename that happened.
 	}
 	return connect.NewResponse(out), nil
-}
-
-// RemoveFile takes a file or a folder out of the vault. It goes to the trash,
-// and a request that says so destroys a note.
-func (a *API) RemoveFile(
-	ctx context.Context, r *connect.Request[v1.RemoveFileRequest],
-) (*connect.Response[v1.RemoveFileResponse], error) {
-	showing, err := a.getCurrentVault()
-	if err != nil {
-		return nil, err
-	}
-	if !a.Writing.begin() {
-		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
-	}
-	defer a.Writing.finish()
-
-	removed, err := a.removal(ctx, showing, r.Msg.GetPath(), r.Msg.GetDestroy())
-	behind := a.isUnlevelled(err)
-	if err != nil && !behind {
-		reason, refused := wire.GetErrorCode(err)
-		if !refused {
-			return nil, connect.NewError(connect.CodeInternal, err)
-		}
-		return connect.NewResponse(&v1.RemoveFileResponse{Error: &reason}), nil
-	}
-	// The watcher reports only the paths the vault holds a source for. What
-	// went is said here, so the tree drops the row whatever stood on it.
-	a.ChangeEvents.publish(change{paths: []string{removed.Path}})
-	return connect.NewResponse(&v1.RemoveFileResponse{
-		Trashed:      removed.Trashed,
-		Dangling:     removed.Dangling,
-		IsUnlevelled: behind,
-	}), nil
-}
-
-// removal is the two ways something leaves the vault.
-func (a *API) removal(
-	ctx context.Context,
-	v domain.Vault,
-	path string,
-	destroy bool,
-) (note.RemoveResult, error) {
-	if destroy {
-		return a.Notes.Remove.Destroy(ctx, v, path)
-	}
-	return a.Notes.Remove.Execute(ctx, v, path)
 }
 
 // newWireNameSource is which of the two a rename wrote, as the schema carries it.

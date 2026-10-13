@@ -34,10 +34,10 @@ func asks(client connect.HTTPClient, at string) questions {
 }
 
 // answers puts them on a mux, which is what a window serves them from.
-func answers(mux *http.ServeMux, api *editor.API) {
-	mux.Handle(numenv1connect.NewVaultServiceHandler(api))
-	mux.Handle(numenv1connect.NewWorkspaceServiceHandler(api))
-	mux.Handle(numenv1connect.NewFileServiceHandler(api))
-	mux.Handle(numenv1connect.NewNoteServiceHandler(api))
-	mux.Handle(numenv1connect.NewSearchServiceHandler(api))
+func answers(mux *http.ServeMux, services *editor.Services) {
+	mux.Handle(numenv1connect.NewVaultServiceHandler(services.Vault))
+	mux.Handle(numenv1connect.NewWorkspaceServiceHandler(services.Workspace))
+	mux.Handle(numenv1connect.NewFileServiceHandler(services.File))
+	mux.Handle(numenv1connect.NewNoteServiceHandler(services.Note))
+	mux.Handle(numenv1connect.NewSearchServiceHandler(services.Search))
 }

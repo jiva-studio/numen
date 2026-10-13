@@ -15,6 +15,7 @@ import (
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
 
 // noting is an index that holds on to what a drop wrote to it.
@@ -31,23 +32,22 @@ func (n *noting) SaveExtraction(_ context.Context, _ domain.VaultID, e domain.So
 // dropper is a window holding one recording a model has listened to, with the
 // use case that takes what it heard away. `known` is what the index says the
 // recording stands on.
-func dropper(t *testing.T, held port.DerivedStore, known indexed) (*API, *noting, http.Handler) {
+func dropper(t *testing.T, held port.DerivedStore, known indexed) (*Services, *noting, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
 	index := &noting{}
 	hl := source.NewHighlight(filesystem.VaultReaders{}, known, storing{held})
-	api := &API{
-		Readers:   filesystem.VaultReaders{},
-		Highlight: &hl,
-		Texts:     source.NewTexts(filesystem.VaultReaders{}, nil, known, storing{held}),
-		Drops: &source.DropTranscript{
-			Readers: filesystem.VaultReaders{},
-			Sources: index,
-			Queries: known,
-			Derived: storing{held},
-		},
+	api := newBareServices()
+	api.files.readers = filesystem.VaultReaders{}
+	api.Ocr.highlight = &hl
+	api.readTexts(source.NewTexts(filesystem.VaultReaders{}, nil, known, storing{held}))
+	api.Artifact.drops = &transcription.Drop{
+		Readers: filesystem.VaultReaders{},
+		Sources: index,
+		Queries: known,
+		Derived: storing{held},
 	}
-	api.setVault(vault)
+	api.state.setVault(vault)
 	return api, index, api.NewHandler(http.NotFoundHandler())
 }
 
@@ -57,8 +57,8 @@ func newTranscriptIndex() indexed {
 }
 
 // deleteTranscript asks for what a recording was heard as to be taken away.
-func deleteTranscript(api *API) error {
-	_, err := api.DeleteArtifact(context.Background(), connect.NewRequest(&v1.DeleteArtifactRequest{
+func deleteTranscript(api *Services) error {
+	_, err := api.Artifact.DeleteArtifact(context.Background(), connect.NewRequest(&v1.DeleteArtifactRequest{
 		Path: talk, Kind: v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
 	}))
 	return err

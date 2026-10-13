@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { Model } from '@/entities/settings'
-import { createChoices, getLastPathSegment } from './models'
+import { createChoices, createModelChoices, getLastPathSegment } from './models'
 
 const WORDS = {
   byDefault: 'the default',
@@ -140,5 +140,16 @@ describe('the choices a setting offers', () => {
       WORDS,
     )
     expect(offered.map((one) => one.group)).toStrictEqual(['By how large it is', 'In full'])
+  })
+})
+
+describe('the choices of a field', () => {
+  it('are the models offered, with the value the file holds standing in force', () => {
+    const fields = {
+      getModels: () => [model({ name: 'opus', title: 'Opus' })],
+      getString: () => 'mine',
+    }
+    const offered = createModelChoices(fields, ['agent', 'model'], WORDS)
+    expect(offered.map((one) => one.id)).toStrictEqual(['mine', 'opus'])
   })
 })

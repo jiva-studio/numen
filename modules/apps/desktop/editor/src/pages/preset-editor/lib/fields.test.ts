@@ -4,7 +4,15 @@
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULTS, type Settings } from '../types'
-import { FIELDS, getGoalFields, getShapeKey, getGoalField } from './fields'
+import {
+  FIELDS,
+  getFieldCount,
+  getFieldLimits,
+  getFieldValue,
+  getGoalFields,
+  getShapeKey,
+  getGoalField,
+} from './fields'
 
 const settings = (over: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...over })
 
@@ -146,5 +154,60 @@ describe('the field a goal steers', () => {
     expect(getGoalField('minutes')).toBe('minutesADay')
     expect(getGoalField('retention')).toBe('retention')
     expect(getGoalField('date')).toBe('byDate')
+  })
+})
+
+describe('the limits of a control', () => {
+  const bounds = {
+    newADay: { least: 0, most: 50 },
+    retention: { least: 0.7, most: 0.99 },
+    backlog: { least: 0, most: 100 },
+  }
+
+  it('are the bounds of the setting', () => {
+    expect(getFieldLimits('newADay', bounds)).toStrictEqual({ min: 0, max: 50 })
+    expect(getFieldLimits('backlog', bounds)).toStrictEqual({ min: 0, max: 100 })
+  })
+
+  it('are in percent for retention, which is held as a share', () => {
+    const { min, max } = getFieldLimits('retention', bounds) as { min: number; max: number }
+    expect(min).toBeCloseTo(70)
+    expect(max).toBeCloseTo(99)
+  })
+
+  it('are none for a field with no bounds given, or with no number to bound', () => {
+    expect(getFieldLimits('reviewsADay', bounds)).toStrictEqual({})
+    expect(getFieldLimits('byDate', bounds)).toStrictEqual({})
+    expect(getFieldLimits('load', bounds)).toStrictEqual({})
+  })
+})
+
+describe('the number a control shows', () => {
+  it('is the setting, and a percentage for retention', () => {
+    const held = settings({ newADay: 7, retention: 0.9, interval: 30 })
+    expect(getFieldCount('newADay', held)).toBe(7)
+    expect(getFieldCount('interval', held)).toBe(30)
+    expect(getFieldCount('retention', held)).toBe(90)
+  })
+
+  it('is nothing for a field that is no number', () => {
+    expect(getFieldCount('byDate', settings())).toBeNull()
+    expect(getFieldCount('hasEvenLoad', settings())).toBeNull()
+  })
+})
+
+describe('the value a number typed comes to', () => {
+  it('is the number itself, and a share of one for retention', () => {
+    expect(getFieldValue('newADay', 12)).toBe(12)
+    expect(getFieldValue('retention', 90)).toBe(0.9)
+    expect(getFieldValue('retention', 87)).toBe(0.87)
+  })
+
+  it('is read back as the percentage it was typed as', () => {
+    for (const typed of [70, 85, 93, 99]) {
+      expect(
+        getFieldCount('retention', settings({ retention: getFieldValue('retention', typed) })),
+      ).toBe(typed)
+    }
   })
 })

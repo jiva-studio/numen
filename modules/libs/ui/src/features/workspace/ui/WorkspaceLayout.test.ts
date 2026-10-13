@@ -107,6 +107,18 @@ describe('the last tab in the workspace', () => {
   })
 })
 
+describe('a menu asked for on a tab', () => {
+  it('is told to the caller with the tab and the point', async () => {
+    const held = mountWorkspace()
+
+    await held
+      .find('[data-workspace-tab="chat"]')
+      .trigger('contextmenu', { clientX: 5, clientY: 6 })
+
+    expect(held.emitted('tab-context-menu')).toStrictEqual([['chat', { x: 5, y: 6 }]])
+  })
+})
+
 describe('what a tab carries', () => {
   it('reaches the strip from the tabs the caller declared', () => {
     const held = mountWorkspace(oneStack(), {

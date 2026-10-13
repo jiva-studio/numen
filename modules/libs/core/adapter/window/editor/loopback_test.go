@@ -40,9 +40,9 @@ func (heldVaults) Remove(domain.VaultID) error { return nil }
 func (heldVaults) RecordOpened(domain.VaultID) error { return nil }
 
 // openLoopback is the socket a player reaches this API over, closed with the test.
-func openLoopback(t *testing.T, api *API) (*Loopback, http.Handler) {
+func openLoopback(t *testing.T, api *Services) (*Loopback, http.Handler) {
 	t.Helper()
-	back, err := Listen(api, nil)
+	back, err := Listen(api.server, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,9 +53,9 @@ func openLoopback(t *testing.T, api *API) (*Loopback, http.Handler) {
 // statOf is what the vault says about the file at a path, which is what an
 // address names. A path the vault does not hold has an address all the same,
 // and what that address is answered with is what some of these ask about.
-func statOf(t *testing.T, api *API, v domain.Vault, path string) domain.Fingerprint {
+func statOf(t *testing.T, api *Services, v domain.Vault, path string) domain.Fingerprint {
 	t.Helper()
-	reader, err := api.Readers.Open(v)
+	reader, err := api.files.readers.Open(v)
 	if err != nil {
 		return domain.Fingerprint{Path: path}
 	}
@@ -87,7 +87,7 @@ func TestASocketThatStoppedAnsweringIsSaid(t *testing.T) {
 
 	said := make(chan error, 1)
 	why := errors.New("the machine took the socket away")
-	back, err := newLoopback(takenAway{why: why}, api, func(err error) { said <- err })
+	back, err := newLoopback(takenAway{why: why}, api.server, func(err error) { said <- err })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +101,7 @@ func TestASocketThatStoppedAnsweringIsSaid(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the socket stopped answering and nobody was told")
 	}
-	if at := back.Address(api.GetCurrentVault(), statOf(t, api, api.GetCurrentVault(), talk)); at != "" {
+	if at := back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)); at != "" {
 		t.Errorf("a socket that answers nothing gave out %s", at)
 	}
 }
@@ -112,7 +112,7 @@ func TestOnlyTheAddressThisRunGaveOutIsAnswered(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	back, handler := openLoopback(t, api)
 
-	right := back.Address(api.GetCurrentVault(), statOf(t, api, api.GetCurrentVault(), talk))
+	right := back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk))
 	if out := ask(handler, right); out.Code != http.StatusOK {
 		t.Fatalf("the address this run gave out was answered %d", out.Code)
 	}
@@ -132,13 +132,13 @@ func TestOnlyTheAddressThisRunGaveOutIsAnswered(t *testing.T) {
 // named in the address and not taken from the window.
 func TestAFileIsServedFromTheVaultItsAddressNames(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
-	held := api.GetCurrentVault()
+	held := api.state.GetCurrentVault()
 	find := vaults.NewFind(heldVaults{held})
-	api.Vaults.Find = &find
+	api.server.find = &find
 	back, handler := openLoopback(t, api)
 
 	// The window moves to a vault holding nothing of the kind.
-	api.setVault(testsupport.NewVault(t, map[string]string{"other.md": "somewhere else"}))
+	api.state.setVault(testsupport.NewVault(t, map[string]string{"other.md": "somewhere else"}))
 
 	if out := ask(handler, back.Address(held, statOf(t, api, held, talk))); out.Code != http.StatusOK {
 		t.Errorf("the recording of the vault that moved out of the window was answered %d: %s",
@@ -151,7 +151,7 @@ func TestAFileOfAVaultNobodyHoldsIsRefused(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	back, handler := openLoopback(t, api)
 
-	elsewhere := api.GetCurrentVault()
+	elsewhere := api.state.GetCurrentVault()
 	ref := statOf(t, api, elsewhere, talk)
 	elsewhere.ID = "01ANOTHERVAULTALTOGETHER00"
 	if out := ask(handler, back.Address(elsewhere, ref)); out.Code != http.StatusNotFound {
@@ -166,8 +166,9 @@ func TestTheSocketServesTheVaultAndNotTheDisk(t *testing.T) {
 		talk:      sound,
 		"note.md": "# What a note says",
 	})
-	api := &API{Readers: filesystem.VaultReaders{}}
-	api.setVault(vault)
+	api := newBareServices()
+	api.files.readers = filesystem.VaultReaders{}
+	api.state.setVault(vault)
 	back, handler := openLoopback(t, api)
 
 	if out := ask(handler, back.Address(vault, statOf(t, api, vault, "note.md"))); out.Code != http.StatusOK {
@@ -187,7 +188,7 @@ func TestTheSocketAnswersAPiece(t *testing.T) {
 	back, handler := openLoopback(t, api)
 
 	out := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, back.Address(api.GetCurrentVault(), statOf(t, api, api.GetCurrentVault(), talk)), nil)
+	r := httptest.NewRequest(http.MethodGet, back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)), nil)
 	r.Header.Set("Range", "bytes=4-12")
 	handler.ServeHTTP(out, r)
 
@@ -203,13 +204,13 @@ func TestTheSocketAnswersAPiece(t *testing.T) {
 // way in is what is asked here.
 func TestARecordingIsReachedOverTheSocket(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
-	back, err := Listen(api, nil)
+	back, err := Listen(api.server, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer back.Close()
 
-	out, err := http.Get(back.Address(api.GetCurrentVault(), statOf(t, api, api.GetCurrentVault(), talk)))
+	out, err := http.Get(back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)))
 	if err != nil {
 		t.Fatalf("the socket answered nothing: %v", err)
 	}
@@ -233,7 +234,7 @@ func TestARecordingIsReachedOverTheSocket(t *testing.T) {
 // socket a recording is played from is the one thing named beside it.
 func TestThePolicyNamesTheSocketAndNothingElse(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
-	back, err := Listen(api, nil)
+	back, err := Listen(api.server, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

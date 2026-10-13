@@ -8,7 +8,8 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -20,8 +21,8 @@ type vaultSession struct {
 	// refresh brings a note of this vault up to date through the opening it is
 	// being followed by.
 	refresh             vaults.Refresh
-	recognitionWorker   *source.RecognitionWorker
-	transcriptionWorker *source.TranscriptionWorker
+	recognitionWorker   *recognition.Worker
+	transcriptionWorker *transcription.Worker
 
 	// recognitionRunner reads a scanned document, transcriptionRunner hears a recording,
 	// proofreads puts a transcript right, and proofreadsRecognition puts a recognition
@@ -58,7 +59,7 @@ var errAnswerPending = errors.New("a page is holding work a person has to answer
 // window stays on the one it had, and a window neither comes up in stands on
 // nothing and says so.
 func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
-	if v.ID == o.API.GetCurrentVault().ID {
+	if v.ID == o.State.GetCurrentVault().ID {
 		return nil
 	}
 	if err := o.checkIdentity.Execute(v); err != nil {
@@ -73,11 +74,11 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	held, spent := context.WithTimeout(ctx, FlushTimeout)
 	defer spent()
 
-	if !flushPending(held, o.API.Window, &o.API.Writing) {
+	if !flushPending(held, o.State.Window, &o.State.Writing) {
 		return errAnswerPending
 	}
 
-	was := o.API.GetCurrentVault()
+	was := o.State.GetCurrentVault()
 	o.stopVault()
 	o.resetStatus()
 
@@ -87,19 +88,19 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 		if back := o.startVault(was, false); back != nil { //nolint:contextcheck // and so do the ones behind the vault it goes back to
 			// The window is standing on nothing: it says so, and the door on
 			// writes stays shut.
-			o.API.setVault(domain.Vault{})
-			o.API.Error.Store(back.Error())
+			o.State.setVault(domain.Vault{})
+			o.State.Error.Store(back.Error())
 			return errors.Join(err, back)
 		}
 	}
 	// Writes are taken again: there is a vault to write in.
-	o.API.Writing.open()
+	o.State.Writing.open()
 	// The round the settling was is over, and what a page holds from here is
 	// this vault's.
-	o.API.Window.CancelFlush()
+	o.State.Window.CancelFlush()
 	// Everything a page is holding was read in a vault that is no longer in
 	// front of it.
-	o.API.ChangeEvents.publish(change{shouldReload: true})
+	o.State.ChangeEvents.publish(change{shouldReload: true})
 	return err
 }
 
@@ -108,10 +109,10 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 // The zero vault is a window standing on nothing: it shows no vault, and no
 // pass runs behind it.
 func (o *Installation) startVault(v domain.Vault, rebuild bool) error {
-	o.API.setVault(v)
+	o.State.setVault(v)
 	if v.ID == "" {
 		// Nothing is being read, so nothing is waited for.
-		o.API.Ready.Store(true)
+		o.State.Ready.Store(true)
 		return nil
 	}
 	// Recorded before the vault is built, so the next window opens on it. A
@@ -125,7 +126,7 @@ func (o *Installation) startVault(v domain.Vault, rebuild bool) error {
 	}
 	// Last, so a request that reads a run reads the one belonging to the vault
 	// in front of it.
-	o.API.setSession(on)
+	o.State.setSession(on)
 	return nil
 }
 
@@ -177,7 +178,7 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 
 	// Indexing every file again belongs to the vault this window was opened on,
 	// and to nothing built for a vault that arrives later.
-	refresh, ended := startIndexing(watching, v, o.made, o.API, rebuild, o.Embedder, o.triggers, owed, o.out)
+	refresh, ended := startIndexing(watching, v, o.made, o.State, rebuild, o.Embedder, o.triggers, owed, o.out)
 
 	return &vaultSession{
 		refresh:             refresh,
@@ -207,7 +208,7 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 // stopVault takes down the half of the window that belongs to the vault it is
 // showing.
 func (o *Installation) stopVault() {
-	on := o.API.session.Swap(nil)
+	on := o.State.session.Swap(nil)
 	if on == nil {
 		return
 	}
@@ -219,8 +220,8 @@ func (o *Installation) stopVault() {
 	on.transcriptionWorker.Wait()
 	// The documents held open go with the vault, and each gives back the worker
 	// it was holding.
-	if o.API.Viewer != nil {
-		o.API.Viewer.reset()
+	if o.viewer != nil {
+		o.viewer.reset()
 	}
 }
 
@@ -231,15 +232,15 @@ func (o *Installation) stopVault() {
 // What stopped this installation from embedding at all is put back. It stands
 // for as long as the window is open.
 func (o *Installation) resetStatus() {
-	o.API.Ready.Store(false)
-	o.API.Error.Store("")
-	o.API.WatchError.Store("")
+	o.State.Ready.Store(false)
+	o.State.Error.Store("")
+	o.State.WatchError.Store("")
 
 	for _, pass := range []string{walkingNotes, extractingBooks, makingVectors, wordsAlone} {
-		o.API.finishTask(pass)
+		o.State.finishTask(pass)
 	}
 	if o.embedderError != nil {
-		o.API.reportTask(task.Task{ID: makingVectors, Title: "Indexing", Error: o.embedderError.Error()})
+		o.State.reportTask(task.Task{ID: makingVectors, Title: "Indexing", Error: o.embedderError.Error()})
 	}
 }
 

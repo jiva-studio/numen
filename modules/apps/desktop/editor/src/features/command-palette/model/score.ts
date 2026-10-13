@@ -10,9 +10,6 @@ export type SearchGroup = 'names' | 'text' | 'meaning'
 /** How many answers each group holds. */
 export const GROUP_RESULT_LIMIT = 8
 
-/** How long a keystroke waits before anything is asked. */
-export const SEARCH_DEBOUNCE_MS = 120
-
 /**
  * Why a group holds nothing, based on coverage score and indexing state.
  */

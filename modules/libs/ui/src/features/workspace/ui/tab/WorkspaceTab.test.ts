@@ -120,6 +120,22 @@ describe('picking a tab up', () => {
   })
 })
 
+describe('asking for a menu', () => {
+  it('says where, and keeps the native menu away', async () => {
+    const tab = mountTab()
+    const event = new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+      clientX: 12,
+      clientY: 34,
+    })
+    tab.element.dispatchEvent(event)
+
+    expect(tab.emitted('menu')).toStrictEqual([[{ x: 12, y: 34 }]])
+    expect(event.defaultPrevented).toBe(true)
+  })
+})
+
 describe('closing', () => {
   it('is asked for by the close', async () => {
     const tab = mountTab()

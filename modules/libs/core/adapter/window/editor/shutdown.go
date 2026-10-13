@@ -71,7 +71,7 @@ func (o *Installation) FlushPending(ctx context.Context) bool {
 		return false
 	}
 
-	flushed := flushPending(ctx, o.API.Window, &o.API.Writing)
+	flushed := flushPending(ctx, o.State.Window, &o.State.Writing)
 	o.shutdown.end(flushed)
 	return flushed
 }
@@ -80,7 +80,7 @@ func (o *Installation) FlushPending(ctx context.Context) bool {
 // a person answering a question and has no time bound. It returns false where
 // ctx ended or the vault was requested again.
 func (o *Installation) WaitForFlush(ctx context.Context) bool {
-	return o.API.Window.WaitForFlush(ctx)
+	return o.State.Window.WaitForFlush(ctx)
 }
 
 // flushPending has every client write what only it holds, then waits for the

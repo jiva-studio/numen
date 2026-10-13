@@ -9,7 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
 
 // runTranscribeCommand listens to one recording with a model and writes down what
@@ -62,7 +62,7 @@ func runTranscribeCommand(ctx context.Context, out io.Writer, deps Deps, args []
 	}
 	// A terminal that prints nothing for an hour looks broken, and this takes
 	// about that. The line rewrites itself.
-	transcribe.OnProgress = func(res source.TranscribeResult) {
+	transcribe.OnProgress = func(res transcription.TranscribeResult) {
 		if res.Length > 0 {
 			fmt.Fprintf(out, "  %s of %s\r",
 				transcript.FormatTimestamp(res.Heard), transcript.FormatTimestamp(res.Length))

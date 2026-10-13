@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -75,12 +76,12 @@ func (c Config) syncVectorIndex(ctx context.Context, db *Index, model port.Embed
 }
 
 // Embed gives a vault's chunks the vectors they owe.
-func (c Config) Embed(db *Index, embedder port.Embedder, v domain.Vault) (source.Embed, error) {
+func (c Config) Embed(db *Index, embedder port.Embedder, v domain.Vault) (embedding.Embed, error) {
 	derived, err := c.GetDerivedStores().Open(v)
 	if err != nil {
-		return source.Embed{}, err
+		return embedding.Embed{}, err
 	}
-	embed := source.NewEmbed(c.VaultReaders(), db.VectorQueries(), db.Vectors())
+	embed := embedding.NewEmbed(c.VaultReaders(), db.VectorQueries(), db.Vectors())
 	embed.Derived = derived
 	embed.Documents = c.TextExtractor()
 	embed.Embedder = embedder

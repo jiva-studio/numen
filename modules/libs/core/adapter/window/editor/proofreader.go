@@ -5,7 +5,8 @@ import (
 	"errors"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
 
 // A transcript a model heard is put right by a second model, asked for as the
@@ -20,7 +21,7 @@ type Proofreader interface {
 	ProofreaderReady() bool
 	// Proofread puts one transcript right and says what came of asking. It
 	// answers before the work is over.
-	Proofread(ctx context.Context, v domain.Vault, path string) (source.ProofreadTranscriptResult, error)
+	Proofread(ctx context.Context, v domain.Vault, path string) (transcription.ProofreadResult, error)
 }
 
 // RecognitionProofreader puts a document's recognition right, for a person who asked
@@ -31,7 +32,7 @@ type RecognitionProofreader interface {
 	ProofreaderReady() bool
 	// Proofread puts one recognition right and says what came of asking. It
 	// answers before the work is over.
-	Proofread(ctx context.Context, v domain.Vault, path string) (source.ProofreadRecognitionResult, error)
+	Proofread(ctx context.Context, v domain.Vault, path string) (recognition.ProofreadResult, error)
 }
 
 // errNoProofreading is an installation the settings name nothing to put a
