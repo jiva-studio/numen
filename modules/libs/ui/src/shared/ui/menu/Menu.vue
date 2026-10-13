@@ -7,11 +7,12 @@
  * point and says which item was chosen; what the items are and what choosing
  * one does are the caller's.
  */
-import { computed, nextTick, onBeforeUnmount, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, useTemplateRef, watch } from 'vue'
 import MenuRow from './MenuRow.vue'
 import { groupItems, getInitialIndex, type MenuItem, type MenuTrigger } from './item'
 import { useMenuGround } from './ground'
 import { useMenuKeys } from './keys'
+import { useMenuOpen } from './open'
 import { useMenuPlacement } from './place'
 import type { Position, Size } from '@/shared/lib/geometry'
 
@@ -114,36 +115,15 @@ const choose = (item: MenuItem) => {
   emit('dismiss')
 }
 
-/** Whether the menu stands: what entering put in place, leaving takes away. */
-let standing = false
-
-const enter = async () => {
-  if (standing) return
-  standing = true
-  listen()
-
-  await nextTick()
-  measure()
-  goTo(getInitialIndex(props.trigger, props.items, props.current))
-}
-
-const leave = () => {
-  if (!standing) return
-  standing = false
-  release()
-  here.value = -1
-  const back = props.from
-  if (back?.isConnected) back.focus()
-}
-
-watch(
-  () => props.open,
-  (now) => {
-    if (now) void enter()
-    else leave()
-  },
-  { immediate: true },
-)
+useMenuOpen({
+  isOpen: () => props.open,
+  listen,
+  release,
+  measure,
+  focusInitial: () => goTo(getInitialIndex(props.trigger, props.items, props.current)),
+  reset: () => (here.value = -1),
+  getFrom: () => props.from,
+})
 
 /** Measured again when what it holds changes, and when the point does. */
 watch(
@@ -160,9 +140,6 @@ const menuStyle = computed(() => ({
   top: `${placed.value.y}px`,
   '--asking': `${props.asking}px`,
 }))
-
-// A menu can go while it is still open, and what it left on the window with it.
-onBeforeUnmount(leave)
 </script>
 
 <template>
