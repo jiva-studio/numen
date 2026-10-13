@@ -175,6 +175,7 @@ type Notes struct {
 	Write             *note.Write
 	Create            *note.Create
 	EditLinks         *note.EditLinks
+	ReplaceLinks      *note.ReplaceLinks
 	Rename            *note.Rename
 	Remove            *note.Remove
 	ShowNeighbourhood *note.ShowNeighbourhood

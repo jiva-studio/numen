@@ -6,6 +6,7 @@ import type {
   NoteEdit,
   NoteHeading,
   NoteResult,
+  PairLink,
   Role,
   WriteResult,
   RemoveResult,
@@ -54,6 +55,11 @@ export interface NotePort {
    * A relationship taken out of one note.
    */
   removeLink(path: string, to: string, role?: Role): Promise<ErrorCode | null>
+  /**
+   * The links between two notes made exactly the ones given: each note holds one
+   * link to the other, or none. The answer says why nothing was replaced.
+   */
+  replaceLinks(first: string, second: string, links: readonly PairLink[]): Promise<ErrorCode | null>
   /**
    * A note given a different name. Whichever of the title and the filename
    * names it is brought into line, and the file follows where a title and a

@@ -1,7 +1,7 @@
 /**
  * Tab state, window registration, and interactions for an open plex graph tab.
  */
-import { computed, ref, watch, type Ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { PlexNeighbourhood, PlexRelation, PlexDestination } from '@numen/ui'
 import type { NoteType } from '@/entities/file'
 import { getFileName, type PathRename } from '@/shared/paths'
@@ -14,20 +14,20 @@ import type {
   DirectionalLinkItem,
   LinkDirectionMode,
   LinkInspectorRequest,
-  LinkInspectorSavePayload,
   MenuRequest,
   PlexEditor,
   PlexTabDeps,
   PlexTabState,
   QuickLinkRequest,
 } from '../types'
+import { useLinkInspector } from './useLinkInspector'
+import { useQuickLink } from './useQuickLink'
 import { usePlexHeadings } from './usePlexHeadings'
 
 export type {
   DirectionalLinkItem,
   LinkDirectionMode,
   LinkInspectorRequest,
-  LinkInspectorSavePayload,
   MenuRequest,
   PlexEditor,
   PlexTabDeps,
@@ -35,23 +35,15 @@ export type {
   QuickLinkRequest,
 }
 
-import {
-  createMutualInspectorLinks,
-  createSingleInspectorLink,
-  getInverseRelation,
-} from './linkInspector'
-
-export { getInverseRelation }
+export { getInverseRelation } from './linkInspector'
 
 export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const map = createNodeIdMap()
-  const linkDirections = ref<Map<string, string>>(new Map())
-  const linkDescriptions = ref<Map<string, string>>(new Map())
 
   const picture = computed<PlexNeighbourhood | null>(() => {
     const around = view.neighbourhood.value
     if (!deps.isReady.value || !around) return null
-    return convertNeighbourhood(around, map.getNodeId, linkDirections.value)
+    return convertNeighbourhood(around, map.getNodeId)
   })
 
   /**
@@ -86,8 +78,14 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   })
 
   const menu = ref<MenuRequest | null>(null)
-  const quickLink = ref<QuickLinkRequest | null>(null)
-  const isNavigatingOnCreate = (deps.isNavigatingOnCreate ?? ref(true)) as Ref<boolean>
+  const {
+    quickLink,
+    isNavigatingOnCreate,
+    openQuickLink,
+    dismissQuickLink,
+    searchNotes,
+    confirmQuickLink,
+  } = useQuickLink(view, deps, map)
 
   const types = computed<ReadonlyMap<string, NoteType>>(() => {
     const around = view.neighbourhood.value
@@ -111,53 +109,6 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     if (path) {
       void view.go(path)
       deps.onSelectPath?.(path, getName(path))
-    }
-  }
-
-  const openQuickLink = (request: QuickLinkRequest) => {
-    quickLink.value = request
-  }
-
-  const dismissQuickLink = () => {
-    quickLink.value = null
-  }
-
-  const searchNotes = async (
-    query: string,
-  ): Promise<readonly { path: string; title: string }[]> => {
-    if (!deps.searchNames) return []
-    const results = await deps.searchNames(query)
-    return results.map((item) => ({ path: item.path, title: item.title }))
-  }
-
-  const confirmQuickLink = async (titleOrPath: string, isExisting: boolean) => {
-    const active = quickLink.value
-    quickLink.value = null
-    if (!active) return
-
-    const fromPath = map.getNodePath(active.from)
-    if (!fromPath) return
-
-    if (isExisting) {
-      const success = await deps.editor.join(fromPath, titleOrPath, active.relation)
-      if (success) {
-        if (isNavigatingOnCreate.value) {
-          await view.go(titleOrPath)
-        } else {
-          await view.go(fromPath)
-        }
-      }
-    } else {
-      const title = titleOrPath.trim()
-      if (!title) return
-      const created = await deps.editor.createWithTitle(title, fromPath, active.relation)
-      if (created) {
-        if (isNavigatingOnCreate.value) {
-          await view.go(created.path)
-        } else {
-          await view.go(fromPath)
-        }
-      }
     }
   }
 
@@ -186,6 +137,9 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     const near = around?.related.find((one) => one.path === path)
     return near?.title || getFileName(path).replace(/\.md$/, '')
   }
+
+  const { linkInspector, openLinkInspector, dismissLinkInspector, saveLinkInspector } =
+    useLinkInspector(view, deps.editor, map, getName)
 
   const dropNodes = async (nodes: readonly string[], relation: PlexRelation) => {
     const here = view.here.value
@@ -220,105 +174,14 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     if (path) await view.go(path)
   }
 
-  const linkInspector = ref<LinkInspectorRequest | null>(null)
-
-  const openLinkInspector = (pair: string, at: { x: number; y: number }) => {
-    const ids = pair.split(' ')
-    const idA = ids[0]!
-    const idB = ids[1]!
-    const pathA = map.getNodePath(idA)
-    const pathB = map.getNodePath(idB)
-    if (!pathA || !pathB) return
-
-    const titleA = getName(pathA)
-    const titleB = getName(pathB)
-    const around = view.neighbourhood.value
-    const related = around?.related.find((r) => r.path === pathB || r.path === pathA)
-    const isFocusA = pathA === around?.focus.path
-
-    const links = related?.isMutual
-      ? createMutualInspectorLinks(pathA, pathB, related, isFocusA, linkDescriptions.value)
-      : createSingleInspectorLink(
-          pathA,
-          pathB,
-          related,
-          isFocusA,
-          linkDirections.value,
-          linkDescriptions.value,
-        )
-
-    linkInspector.value = {
-      pairKey: pair,
-      nodeA: { id: idA, title: titleA, path: pathA },
-      nodeB: { id: idB, title: titleB, path: pathB },
-      links,
-      at,
-    }
-  }
-
-  const dismissLinkInspector = () => {
-    linkInspector.value = null
-  }
-
-  const saveLinkInspector = async (payload: LinkInspectorSavePayload) => {
-    for (const removed of payload.removedLinks) {
-      await deps.editor.removeLink(removed.from, removed.to, removed.role)
-      linkDescriptions.value.delete(`${removed.from}->${removed.to}`)
-    }
-
-    for (const row of payload.rows) {
-      await deps.editor.join(row.from, row.to, row.role, row.description)
-      if (row.description) {
-        linkDescriptions.value.set(`${row.from}->${row.to}`, row.description)
-      } else {
-        linkDescriptions.value.delete(`${row.from}->${row.to}`)
-      }
-    }
-
-    if (payload.rows.length === 0) {
-      // Directions are kept by the two notes' paths; the inspector's pair key names graph nodes.
-      const open = linkInspector.value
-      if (open) linkDirections.value.delete([open.nodeA.path, open.nodeB.path].sort().join(' '))
-    } else if (payload.rows.length === 1) {
-      const row = payload.rows[0]!
-      const pairKey = [row.from, row.to].sort().join(' ')
-      if (row.direction === 'undirected') {
-        linkDirections.value.set(pairKey, 'undirected')
-      } else {
-        linkDirections.value.set(pairKey, `${row.from}->${row.to}`)
-      }
-    } else {
-      const row = payload.rows[0]!
-      const pairKey = [row.from, row.to].sort().join(' ')
-      linkDirections.value.delete(pairKey)
-    }
-
-    const here = view.here.value
-    if (here) await view.go(here)
-    dismissLinkInspector()
-  }
-
-  const removeEntireLink = async (pairKey: string) => {
-    const active = linkInspector.value
-    if (active && active.pairKey === pairKey) {
-      for (const link of active.links) {
-        await deps.editor.removeLink(link.from, link.to, link.role)
-        linkDescriptions.value.delete(`${link.from}->${link.to}`)
-      }
-    }
-    const here = view.here.value
-    if (here) await view.go(here)
-    dismissLinkInspector()
-  }
-
   const openMenu = (request: MenuRequest) => {
     menu.value = request
   }
 
   const dismiss = () => {
     menu.value = null
-    quickLink.value = null
-    linkInspector.value = null
+    dismissQuickLink()
+    dismissLinkInspector()
   }
 
   const chooseMenuItem = (id: string) => {
@@ -372,6 +235,5 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     openLinkInspector,
     dismissLinkInspector,
     saveLinkInspector,
-    removeEntireLink,
   }
 }

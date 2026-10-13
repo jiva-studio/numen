@@ -33,6 +33,7 @@ function fake(answers: CreateResult[] = [], errors: (ErrorCode | null)[] = []) {
       return errors.shift() ?? null
     },
     removeLink: async () => null,
+    replaceLinks: async () => null,
   }
   return { core, asked, joined, ...writer() }
 }
@@ -299,5 +300,67 @@ describe('joining through a core that could not be reached', () => {
     )
     expect(told.at(-1)?.text).toContain('numen did not answer')
     expect(told.at(-1)?.kind).toBe('error')
+  })
+})
+
+describe('replacing the links between two notes', () => {
+  const links = [
+    { from: 'Ontology.md', to: 'Entropy.md', relation: 'child' as const, label: 'owns' },
+    { from: 'Entropy.md', to: 'Ontology.md', relation: 'parent' as const, label: '' },
+  ]
+
+  /** A core whose replacement answers as told and keeps what it was asked. */
+  const replacing = (answer: () => Promise<ErrorCode | null>) => {
+    const asked: { first: string; second: string; roles: Role[] }[] = []
+    const core = {
+      replaceLinks: async (first: string, second: string, pairs: readonly { role: Role }[]) => {
+        asked.push({ first, second, roles: pairs.map((pair) => pair.role) })
+        return answer()
+      },
+    } as unknown as NoteMaker
+    return { core, asked, ...writer() }
+  }
+
+  it('asks once for every link, under the role of its relation, and says nothing when done', async () => {
+    const { core, asked, write, told } = replacing(async () => null)
+
+    expect(
+      await createNoteWriter(core, write).replaceLinks('Ontology.md', 'Entropy.md', links),
+    ).toBe(true)
+    expect(asked).toStrictEqual([
+      { first: 'Ontology.md', second: 'Entropy.md', roles: ['child', 'parent'] },
+    ])
+    expect(told).toStrictEqual([{ text: '', kind: 'report' }])
+  })
+
+  it('asks for nothing where a relation is not one a link can carry', async () => {
+    const { core, asked, write } = replacing(async () => null)
+    const sibling = [{ ...links[0]!, relation: 'sibling' as const }]
+
+    expect(
+      await createNoteWriter(core, write).replaceLinks('Ontology.md', 'Entropy.md', sibling),
+    ).toBe(false)
+    expect(asked).toStrictEqual([])
+  })
+
+  it('says why the core replaced nothing', async () => {
+    const { core, write, told } = replacing(async () => 'unreadable')
+
+    expect(
+      await createNoteWriter(core, write).replaceLinks('Ontology.md', 'Entropy.md', links),
+    ).toBe(false)
+    expect(told.at(-1)?.text).not.toBe('')
+    expect(told.at(-1)?.kind).toBe('error')
+  })
+
+  it('says a core that could not be reached', async () => {
+    const { core, write, told } = replacing(async () => {
+      throw new Error('the vault is out of reach')
+    })
+
+    expect(
+      await createNoteWriter(core, write).replaceLinks('Ontology.md', 'Entropy.md', links),
+    ).toBe(false)
+    expect(told.at(-1)?.text).toContain('numen did not answer')
   })
 })

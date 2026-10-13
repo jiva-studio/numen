@@ -1,13 +1,12 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
-import { ArrowLeft, ArrowLeftRight, ArrowRight, Minus } from '@lucide/vue'
+import { ArrowLeft, ArrowLeftRight, ArrowRight } from '@lucide/vue'
 import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
 import type { LinkInspectorRequest } from '../types'
 
 describe('PlexLinkInspectorPopover component', () => {
   const defaultRequest: LinkInspectorRequest = {
-    pairKey: 'n1 n2',
     nodeA: { id: 'n1', title: 'Note Alpha', path: 'notes/alpha.md' },
     nodeB: { id: 'n2', title: 'Note Beta', path: 'notes/beta.md' },
     links: [
@@ -17,7 +16,7 @@ describe('PlexLinkInspectorPopover component', () => {
         to: 'notes/beta.md',
         role: 'jump',
         direction: 'forward',
-        description: 'Relates to',
+        label: 'Relates to',
       },
     ],
     at: { x: 300, y: 200 },
@@ -67,8 +66,8 @@ describe('PlexLinkInspectorPopover component', () => {
     await doneBtn.trigger('click')
 
     expect(wrapper.emitted('save')).toBeTruthy()
-    const payload = wrapper.emitted('save')?.[0]?.[0] as { rows: { direction: string }[] }
-    expect(payload.rows[0]?.direction).toBe('reverse')
+    const rows = wrapper.emitted('save')?.[0]?.[0] as { direction: string }[]
+    expect(rows[0]?.direction).toBe('reverse')
     wrapper.unmount()
   })
 
@@ -79,8 +78,8 @@ describe('PlexLinkInspectorPopover component', () => {
     await input.trigger('keydown', { key: 'Enter' })
 
     expect(wrapper.emitted('save')).toBeTruthy()
-    const payload = wrapper.emitted('save')?.[0]?.[0] as { rows: { description: string }[] }
-    expect(payload.rows[0]?.description).toBe('Causes')
+    const rows = wrapper.emitted('save')?.[0]?.[0] as { label: string }[]
+    expect(rows[0]?.label).toBe('Causes')
     wrapper.unmount()
   })
 
@@ -103,9 +102,9 @@ describe('PlexLinkInspectorPopover component', () => {
     await doneBtn.trigger('click')
 
     expect(wrapper.emitted('save')).toBeTruthy()
-    const payload = wrapper.emitted('save')?.[0]?.[0] as { rows: { description: string }[] }
-    expect(payload.rows.length).toBe(1)
-    expect(payload.rows[0]?.description).toBe('Relates to')
+    const rows = wrapper.emitted('save')?.[0]?.[0] as { label: string }[]
+    expect(rows.length).toBe(1)
+    expect(rows[0]?.label).toBe('Relates to')
     wrapper.unmount()
   })
 
@@ -121,10 +120,10 @@ describe('PlexLinkInspectorPopover component', () => {
     await doneBtn.trigger('click')
 
     expect(wrapper.emitted('save')).toBeTruthy()
-    const payload = wrapper.emitted('save')?.[0]?.[0] as { rows: { description: string }[] }
-    expect(payload.rows.length).toBe(2)
-    expect(payload.rows[0]?.description).toBe('Relates to')
-    expect(payload.rows[1]?.description).toBe('Reverse description')
+    const rows = wrapper.emitted('save')?.[0]?.[0] as { label: string }[]
+    expect(rows.length).toBe(2)
+    expect(rows[0]?.label).toBe('Relates to')
+    expect(rows[1]?.label).toBe('Reverse description')
     wrapper.unmount()
   })
 
@@ -141,35 +140,18 @@ describe('PlexLinkInspectorPopover component', () => {
     await doneBtn.trigger('click')
 
     expect(wrapper.emitted('save')).toBeTruthy()
-    const payload = wrapper.emitted('save')?.[0]?.[0] as {
-      rows: unknown[]
-      removedLinks: { from: string; to: string }[]
-    }
-    expect(payload.rows.length).toBe(0)
-    expect(payload.removedLinks).toContainEqual({
-      from: 'notes/alpha.md',
-      to: 'notes/beta.md',
-      role: 'jump',
-    })
+    expect(wrapper.emitted('save')?.[0]?.[0]).toEqual([])
     wrapper.unmount()
   })
 
-  it('cycles through all direction modes: forward -> reverse -> undirected -> forward', async () => {
+  it('flips between forward and reverse on each click', async () => {
     const wrapper = mountPopover()
     const dirBtn = wrapper.get('.plex-link-popover__dir-btn')
-
-    // Initial: forward
     expect(dirBtn.findComponent(ArrowRight).exists()).toBe(true)
 
-    // 1st click: reverse
     await dirBtn.trigger('click')
     expect(dirBtn.findComponent(ArrowLeft).exists()).toBe(true)
 
-    // 2nd click: undirected
-    await dirBtn.trigger('click')
-    expect(dirBtn.findComponent(Minus).exists()).toBe(true)
-
-    // 3rd click: back to forward
     await dirBtn.trigger('click')
     expect(dirBtn.findComponent(ArrowRight).exists()).toBe(true)
 
@@ -178,7 +160,6 @@ describe('PlexLinkInspectorPopover component', () => {
 
   it('inverts child role to parent when toggled to reverse', async () => {
     const childRequest: LinkInspectorRequest = {
-      pairKey: 'parent child',
       nodeA: { id: 'parent', title: 'Parent Node', path: 'notes/parent.md' },
       nodeB: { id: 'child', title: 'Child Node', path: 'notes/child.md' },
       links: [
@@ -188,7 +169,7 @@ describe('PlexLinkInspectorPopover component', () => {
           to: 'notes/child.md',
           role: 'child',
           direction: 'forward',
-          description: 'Is child of',
+          label: 'Is child of',
         },
       ],
       at: { x: 100, y: 100 },
@@ -201,15 +182,16 @@ describe('PlexLinkInspectorPopover component', () => {
     const doneBtn = wrapper.get('.plex-link-popover__btn--done')
     await doneBtn.trigger('click')
 
-    const payload = wrapper.emitted('save')?.[0]?.[0] as {
-      rows: { from: string; to: string; role: string; direction: string }[]
-      removedLinks: { from: string; to: string; role: string }[]
-    }
-    expect(payload.rows[0]?.from).toBe('notes/child.md')
-    expect(payload.rows[0]?.to).toBe('notes/parent.md')
-    expect(payload.rows[0]?.role).toBe('parent')
-    expect(payload.rows[0]?.direction).toBe('reverse')
-    expect(payload.removedLinks).toEqual([])
+    const rows = wrapper.emitted('save')?.[0]?.[0] as {
+      from: string
+      to: string
+      role: string
+      direction: string
+    }[]
+    expect(rows[0]?.from).toBe('notes/child.md')
+    expect(rows[0]?.to).toBe('notes/parent.md')
+    expect(rows[0]?.role).toBe('parent')
+    expect(rows[0]?.direction).toBe('reverse')
 
     wrapper.unmount()
   })
@@ -225,7 +207,6 @@ describe('PlexLinkInspectorPopover component', () => {
 
   it('disables direction toggle when two bidirectional rows exist', async () => {
     const bidirectionalRequest: LinkInspectorRequest = {
-      pairKey: 'n1 n2',
       nodeA: { id: 'n1', title: 'Note Alpha', path: 'notes/alpha.md' },
       nodeB: { id: 'n2', title: 'Note Beta', path: 'notes/beta.md' },
       links: [
@@ -235,7 +216,7 @@ describe('PlexLinkInspectorPopover component', () => {
           to: 'notes/beta.md',
           role: 'jump',
           direction: 'forward',
-          description: 'Forward',
+          label: 'Forward',
         },
         {
           id: 'notes/beta.md->notes/alpha.md',
@@ -243,7 +224,7 @@ describe('PlexLinkInspectorPopover component', () => {
           to: 'notes/alpha.md',
           role: 'jump',
           direction: 'reverse',
-          description: 'Reverse',
+          label: 'Reverse',
         },
       ],
       at: { x: 300, y: 200 },
@@ -287,33 +268,8 @@ describe('PlexLinkInspectorPopover component', () => {
     wrapper.unmount()
   })
 
-  it('starts in undirected mode when initial request has undirected direction', () => {
-    const undirectedRequest: LinkInspectorRequest = {
-      pairKey: 'n1 n2',
-      nodeA: { id: 'n1', title: 'Note Alpha', path: 'notes/alpha.md' },
-      nodeB: { id: 'n2', title: 'Note Beta', path: 'notes/beta.md' },
-      links: [
-        {
-          id: 'notes/alpha.md->notes/beta.md',
-          from: 'notes/alpha.md',
-          to: 'notes/beta.md',
-          role: 'jump',
-          direction: 'undirected',
-          description: '',
-        },
-      ],
-      at: { x: 300, y: 200 },
-    }
-
-    const wrapper = mountPopover(undirectedRequest)
-    const dirBtn = wrapper.get('.plex-link-popover__dir-btn')
-    expect(dirBtn.findComponent(Minus).exists()).toBe(true)
-    wrapper.unmount()
-  })
-
   it('re-enables direction toggle when a row is removed from a 2-row inspector', async () => {
     const bidirectionalRequest: LinkInspectorRequest = {
-      pairKey: 'n1 n2',
       nodeA: { id: 'n1', title: 'Note Alpha', path: 'notes/alpha.md' },
       nodeB: { id: 'n2', title: 'Note Beta', path: 'notes/beta.md' },
       links: [
@@ -323,7 +279,7 @@ describe('PlexLinkInspectorPopover component', () => {
           to: 'notes/beta.md',
           role: 'jump',
           direction: 'forward',
-          description: 'Forward text',
+          label: 'Forward text',
         },
         {
           id: 'notes/beta.md->notes/alpha.md',
@@ -331,7 +287,7 @@ describe('PlexLinkInspectorPopover component', () => {
           to: 'notes/alpha.md',
           role: 'jump',
           direction: 'reverse',
-          description: 'Reverse text',
+          label: 'Reverse text',
         },
       ],
       at: { x: 300, y: 200 },
@@ -368,9 +324,9 @@ describe('PlexLinkInspectorPopover component', () => {
     await doneBtn.trigger('click')
 
     expect(wrapper.emitted('save')).toBeTruthy()
-    const payload = wrapper.emitted('save')?.[0]?.[0] as { rows: { description: string }[] }
-    expect(payload.rows.length).toBe(1)
-    expect(payload.rows[0]?.description).toBe('Relates to')
+    const rows = wrapper.emitted('save')?.[0]?.[0] as { label: string }[]
+    expect(rows.length).toBe(1)
+    expect(rows[0]?.label).toBe('Relates to')
     wrapper.unmount()
   })
 
@@ -388,9 +344,8 @@ describe('PlexLinkInspectorPopover component', () => {
     outsideEl.remove()
   })
 
-  it('prunes empty first row when only second reverse row has a description and marks initial link removed', async () => {
+  it('leaves out the empty first row when only the second has a label', async () => {
     const bidirectionalRequest: LinkInspectorRequest = {
-      pairKey: 'n1 n2',
       nodeA: { id: 'n1', title: 'Note Alpha', path: 'notes/alpha.md' },
       nodeB: { id: 'n2', title: 'Note Beta', path: 'notes/beta.md' },
       links: [
@@ -400,7 +355,7 @@ describe('PlexLinkInspectorPopover component', () => {
           to: 'notes/beta.md',
           role: 'jump',
           direction: 'forward',
-          description: '',
+          label: '',
         },
         {
           id: 'notes/beta.md->notes/alpha.md',
@@ -408,7 +363,7 @@ describe('PlexLinkInspectorPopover component', () => {
           to: 'notes/alpha.md',
           role: 'jump',
           direction: 'reverse',
-          description: 'Reverse only',
+          label: 'Reverse only',
         },
       ],
       at: { x: 300, y: 200 },
@@ -419,17 +374,9 @@ describe('PlexLinkInspectorPopover component', () => {
     await doneBtn.trigger('click')
 
     expect(wrapper.emitted('save')).toBeTruthy()
-    const payload = wrapper.emitted('save')?.[0]?.[0] as {
-      rows: { description: string }[]
-      removedLinks: { from: string; to: string }[]
-    }
-    expect(payload.rows.length).toBe(1)
-    expect(payload.rows[0]?.description).toBe('Reverse only')
-    expect(payload.removedLinks).toContainEqual({
-      from: 'notes/alpha.md',
-      to: 'notes/beta.md',
-      role: 'jump',
-    })
+    const rows = wrapper.emitted('save')?.[0]?.[0] as { label: string }[]
+    expect(rows.length).toBe(1)
+    expect(rows[0]?.label).toBe('Reverse only')
     wrapper.unmount()
   })
 
@@ -447,7 +394,6 @@ describe('PlexLinkInspectorPopover component', () => {
 
   it('toggles direction when row starts in reverse direction', async () => {
     const reverseRequest: LinkInspectorRequest = {
-      pairKey: 'n1 n2',
       nodeA: { id: 'n1', title: 'Note Alpha', path: 'notes/alpha.md' },
       nodeB: { id: 'n2', title: 'Note Beta', path: 'notes/beta.md' },
       links: [
@@ -457,7 +403,7 @@ describe('PlexLinkInspectorPopover component', () => {
           to: 'notes/alpha.md',
           role: 'jump',
           direction: 'reverse',
-          description: 'Reverse link',
+          label: 'Reverse link',
         },
       ],
       at: { x: 300, y: 200 },
@@ -467,21 +413,21 @@ describe('PlexLinkInspectorPopover component', () => {
     const dirBtn = wrapper.get('.plex-link-popover__dir-btn')
     expect(dirBtn.findComponent(ArrowLeft).exists()).toBe(true)
 
-    // Toggle reverse -> undirected
+    // Toggle reverse -> forward
     await dirBtn.trigger('click')
-    expect(dirBtn.findComponent(Minus).exists()).toBe(true)
+    expect(dirBtn.findComponent(ArrowRight).exists()).toBe(true)
 
     const doneBtn = wrapper.get('.plex-link-popover__btn--done')
     await doneBtn.trigger('click')
 
-    const payload = wrapper.emitted('save')?.[0]?.[0] as {
-      rows: { from: string; to: string; direction: string }[]
-      removedLinks: { from: string; to: string }[]
-    }
-    expect(payload.rows[0]?.direction).toBe('undirected')
-    expect(payload.rows[0]?.from).toBe('notes/alpha.md')
-    expect(payload.rows[0]?.to).toBe('notes/beta.md')
-    expect(payload.removedLinks).toEqual([])
+    const rows = wrapper.emitted('save')?.[0]?.[0] as {
+      from: string
+      to: string
+      direction: string
+    }[]
+    expect(rows[0]?.direction).toBe('forward')
+    expect(rows[0]?.from).toBe('notes/alpha.md')
+    expect(rows[0]?.to).toBe('notes/beta.md')
     wrapper.unmount()
   })
 
@@ -496,7 +442,6 @@ describe('PlexLinkInspectorPopover component', () => {
 
   it('adds forward second row when starting from a single reverse row', async () => {
     const reverseRequest: LinkInspectorRequest = {
-      pairKey: 'n1 n2',
       nodeA: { id: 'n1', title: 'Note Alpha', path: 'notes/alpha.md' },
       nodeB: { id: 'n2', title: 'Note Beta', path: 'notes/beta.md' },
       links: [
@@ -506,7 +451,7 @@ describe('PlexLinkInspectorPopover component', () => {
           to: 'notes/alpha.md',
           role: 'parent',
           direction: 'reverse',
-          description: 'Reverse parent',
+          label: 'Reverse parent',
         },
       ],
       at: { x: 300, y: 200 },

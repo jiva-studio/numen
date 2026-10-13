@@ -57,6 +57,7 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     create: async () => ({ ok: true, value: { path: '' } }),
     join: async () => null,
     removeLink: async () => null,
+    replaceLinks: async () => null,
     rename: async (path, title) => asValue({ path, title, hasFrontmatter: false, moved: null }),
     remove: async () => asValue({ trashed: '', dangling: [] }),
     list: async () => [],

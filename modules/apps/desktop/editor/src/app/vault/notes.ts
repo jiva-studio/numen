@@ -27,6 +27,7 @@ export type NoteOperations = Pick<
   | 'create'
   | 'join'
   | 'removeLink'
+  | 'replaceLinks'
   | 'rename'
   | 'headings'
   | 'resolve'
@@ -64,6 +65,14 @@ export const notesCore: NoteOperations = {
   join: async (path, link) => findErrorCode(await notes.writeLink({ path, link: mapLink(link) })),
   removeLink: async (path, to, role) =>
     findErrorCode(await notes.removeLink({ path, to, ...(role ? { role: roles[role] } : {}) })),
+  replaceLinks: async (first, second, links) =>
+    findErrorCode(
+      await notes.replaceLinks({
+        first,
+        second,
+        links: links.map((link) => ({ ...link, role: roles[link.role] })),
+      }),
+    ),
   rename: async (path, title) => {
     const answer = await notes.renameNote({ path, title })
     if (isStaleAnswer(answer)) return asFailure('changed')

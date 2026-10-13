@@ -4,13 +4,14 @@
  */
 import { computed, nextTick, onMounted, onScopeDispose, ref, useTemplateRef, watch } from 'vue'
 import { ArrowLeftRight, X } from '@lucide/vue'
-import type { PlexRelation } from '@numen/ui'
-import type { DirectionalLinkItem, LinkInspectorRequest, LinkInspectorSavePayload } from '../types'
+import type { DirectionalLinkItem, LinkInspectorRequest } from '../types'
 import {
-  getInverseRelation,
-  resolveInspectorDirectionToggle,
-  resolveInspectorDonePayload,
+  addReverseLink,
+  getLinksToSave,
+  removeLink,
   resolvePopoverPosition,
+  setLinkLabel,
+  toggleLinkDirection,
 } from '../model/linkInspector'
 import { WORDS as words } from '../words'
 import PlexLinkInspectorRow from './PlexLinkInspectorRow.vue'
@@ -21,16 +22,13 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'save', payload: LinkInspectorSavePayload): void
-  (event: 'remove-entire-link', pairKey: string): void
+  (event: 'save', rows: readonly DirectionalLinkItem[]): void
   (event: 'dismiss'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
 const popover = useTemplateRef<HTMLDivElement>('popover')
-const localRows = ref<DirectionalLinkItem[]>(props.request.links.map((link) => ({ ...link })))
-const removedLinks = ref<{ from: string; to: string; role?: PlexRelation }[]>([])
-const initialLinkIds = new Set(props.request.links.map((link) => link.id))
+const localRows = ref<readonly DirectionalLinkItem[]>(props.request.links)
 
 const placedPosition = ref<{ left: number; top: number }>(
   resolvePopoverPosition({
@@ -120,79 +118,29 @@ function onKeyDown(event: KeyboardEvent) {
   }
 }
 
-function onToggleDirection(row: DirectionalLinkItem) {
-  if (localRows.value.length > 1) return
-  const res = resolveInspectorDirectionToggle(
-    row,
-    props.request.nodeA.path,
-    props.request.nodeB.path,
-  )
-  const target = row as {
-    direction: string
-    from: string
-    to: string
-    role: PlexRelation
-  }
-  target.direction = res.direction
-  target.from = res.from
-  target.to = res.to
-  target.role = res.role
+function onToggleDirection() {
+  localRows.value = toggleLinkDirection(localRows.value, props.request.nodeA.path)
+}
+
+function onLabelChanged(row: DirectionalLinkItem, label: string) {
+  localRows.value = setLinkLabel(localRows.value, row.id, label)
 }
 
 function onAddReverseRow() {
-  if (localRows.value.length >= 2) return
-  if (localRows.value.length === 0) {
-    const baseRole = props.request.links[0]?.role ?? 'jump'
-    localRows.value.push({
-      id: `${props.request.nodeA.path}->${props.request.nodeB.path}`,
-      from: props.request.nodeA.path,
-      to: props.request.nodeB.path,
-      role: baseRole,
-      direction: 'forward',
-      description: '',
-    })
-    return
-  }
-  const first = localRows.value[0]!
-  const baseRole =
-    first.from === props.request.nodeA.path ? first.role : getInverseRelation(first.role)
-
-  localRows.value = [
-    {
-      ...first,
-      id: `${props.request.nodeA.path}->${props.request.nodeB.path}`,
-      from: props.request.nodeA.path,
-      to: props.request.nodeB.path,
-      role: baseRole,
-      direction: 'forward',
-    },
-    {
-      id: `${props.request.nodeB.path}->${props.request.nodeA.path}`,
-      from: props.request.nodeB.path,
-      to: props.request.nodeA.path,
-      role: getInverseRelation(baseRole),
-      direction: 'reverse',
-      description: '',
-    },
-  ]
+  localRows.value = addReverseLink(
+    localRows.value,
+    props.request.links,
+    props.request.nodeA.path,
+    props.request.nodeB.path,
+  )
 }
 
 function onRemoveRow(row: DirectionalLinkItem) {
-  if (initialLinkIds.has(row.id)) {
-    removedLinks.value.push({ from: row.from, to: row.to, role: row.role })
-  }
-  localRows.value = localRows.value.filter((r) => r.id !== row.id)
+  localRows.value = removeLink(localRows.value, row.id)
 }
 
 function onDone() {
-  const payload = resolveInspectorDonePayload(
-    localRows.value,
-    props.request.links,
-    initialLinkIds,
-    props.request.pairKey,
-    removedLinks.value,
-  )
-  emit('save', payload)
+  emit('save', getLinksToSave(localRows.value))
 }
 
 /* -------------------------------- Helpers --------------------------------- */
@@ -248,12 +196,12 @@ function updatePosition() {
         {{ words.linkWillBeRemoved }}
       </div>
       <PlexLinkInspectorRow
-        v-for="row in localRows"
-        :key="row.id"
-        v-model:description="(row as { description: string }).description"
+        v-for="(row, index) in localRows"
+        :key="index"
         :row="row"
         :is-static="localRows.length > 1"
-        @toggle-direction="onToggleDirection(row)"
+        @toggle-direction="onToggleDirection"
+        @update:label="onLabelChanged(row, $event)"
         @remove="onRemoveRow(row)"
         @done="onDone"
         @add-reverse="onAddReverseRow"

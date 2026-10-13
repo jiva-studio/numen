@@ -82,7 +82,7 @@ export const viewOn = (
 export const createVault = (takes = true) => {
   const made: [string, string][] = []
   const joined: [string, string, string, string?][] = []
-  const removed: [string, string, PlexRelation?][] = []
+  const replaced: { first: string; second: string; links: unknown[] }[] = []
   /** The notes this vault will write no link to, which a test names. */
   const notJoinedPaths = new Set<string>()
   const editor: PlexEditor = {
@@ -99,11 +99,10 @@ export const createVault = (takes = true) => {
       else joined.push([from, to, relation])
       return takes && !notJoinedPaths.has(to)
     },
-    removeLink: async (from, to, relation) => {
-      if (relation !== undefined) removed.push([from, to, relation])
-      else removed.push([from, to])
+    replaceLinks: async (first, second, links) => {
+      replaced.push({ first, second, links: [...links] })
       return takes
     },
   }
-  return { editor, made, joined, removed, notJoinedPaths }
+  return { editor, made, joined, replaced, notJoinedPaths }
 }

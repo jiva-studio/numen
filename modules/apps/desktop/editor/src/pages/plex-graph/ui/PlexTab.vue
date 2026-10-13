@@ -11,7 +11,7 @@ import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
 import { ITEMS, NONE } from '../lib/menu'
 import { findIcon } from '@/shared/icons'
 import { getNoteIcon } from '@/entities/note'
-import type { LinkInspectorSavePayload, PlexTabState } from '../types'
+import type { DirectionalLinkItem, PlexTabState } from '../types'
 import { WORDS as words } from '../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -154,12 +154,8 @@ function onEdgeMenu(pair: string, at: { x: number; y: number }) {
   }
 }
 
-function onSaveLinkInspector(payload: LinkInspectorSavePayload) {
-  void props.state.saveLinkInspector(payload)
-}
-
-function onRemoveEntireLink(pairKey: string) {
-  void props.state.removeEntireLink(pairKey)
+function onSaveLinkInspector(rows: readonly DirectionalLinkItem[]) {
+  void props.state.saveLinkInspector(rows)
 }
 
 function onDismissLinkInspector() {
@@ -310,7 +306,6 @@ function getSourceHandlePosition(
       v-if="linkInspector"
       :request="linkInspector"
       @save="onSaveLinkInspector"
-      @remove-entire-link="onRemoveEntireLink"
       @dismiss="onDismissLinkInspector"
     />
   </div>

@@ -367,6 +367,7 @@ func (o *Installation) wireUseCases(ctx context.Context) {
 	api.Notes.Write = &notes.Write
 	api.Notes.Create = &notes.Create
 	api.Notes.EditLinks = &notes.Linking
+	api.Notes.ReplaceLinks = &notes.ReplaceLinks
 	api.Notes.Rename = &notes.Rename
 	api.Notes.Remove = &notes.Remove
 	api.Notes.ShowNeighbourhood = &notes.Neighbourhood
