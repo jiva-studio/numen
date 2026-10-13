@@ -130,12 +130,12 @@ func newViewingAPI(readers port.VaultReaders, v *viewer) *Services {
 }
 
 // stat is what the vault says about the file at a path, as an address names it.
-func (a *Services) stat(ctx context.Context, path string) (port.VaultReader, document.Fingerprint, error) {
-	showing := a.state.GetCurrentVault()
+func (s *Services) stat(ctx context.Context, path string) (port.VaultReader, document.Fingerprint, error) {
+	showing := s.state.GetCurrentVault()
 	if showing.ID == "" {
 		return nil, document.Fingerprint{}, errNoVault
 	}
-	reader, err := a.files.readers.Open(showing)
+	reader, err := s.files.readers.Open(showing)
 	if err != nil {
 		return nil, document.Fingerprint{}, err
 	}
