@@ -105,12 +105,13 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	}
 
 	hash := text.Fingerprint(raw)
-	area := run.GetArea(u.Area, text.ASR)
-	final, partial := text.Artifact(area, hash), text.Partial(area, hash)
+	area := run.GetArea(u.Area, domain.ASR)
+	final := domain.NewArtifactName(domain.ArtifactText, area, hash)
+	partial := domain.NewArtifactName(domain.ArtifactPartial, area, hash)
 
 	// One run to a recording. The name is the hash of its bytes, and it is held
 	// for as long as the listening takes.
-	release, err := store.ClaimName(ctx, partial)
+	release, err := store.ClaimArtifact(ctx, partial)
 	if errors.Is(err, port.ErrClaimed) {
 		res.IsBusy = true
 		return res, nil
@@ -123,7 +124,8 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	if u.IsRepeat {
 		// Somebody asked for this recording to be heard afresh. What a run
 		// before this one made goes, and the listening starts from the top.
-		if err := removeAllNames(ctx, store, final, partial, text.Answer(area, hash)); err != nil {
+		answer := domain.NewArtifactName(domain.ArtifactAnswer, area, hash)
+		if err := removeAllNames(ctx, store, final, partial, answer); err != nil {
 			return res, err
 		}
 	}
@@ -158,8 +160,8 @@ func (u Transcribe) saveTranscript(
 	hash, area string,
 	res *TranscribeResult,
 ) error {
-	partial := text.Partial(area, hash)
-	whole, err := store.Read(ctx, partial)
+	partial := domain.NewArtifactName(domain.ArtifactPartial, area, hash)
+	whole, err := store.ReadArtifact(ctx, partial)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return err
 	}
@@ -170,7 +172,7 @@ func (u Transcribe) saveTranscript(
 		return u.answer(ctx, v, ref, hash, area, store, text.Silent)
 	}
 
-	if err := store.Write(ctx, text.Artifact(area, hash), whole); err != nil {
+	if err := store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, area, hash), whole); err != nil {
 		return err
 	}
 	if err := u.record(ctx, store, area, hash); err != nil {
@@ -180,14 +182,14 @@ func (u Transcribe) saveTranscript(
 	if err := run.Stand(ctx, u.Cut, u.sources, v, ref, hash, area); err != nil {
 		return err
 	}
-	return store.Remove(ctx, partial)
+	return store.RemoveArtifact(ctx, partial)
 }
 
 // removeAllNames removes each name from the store and passes over names that
 // are already absent.
-func removeAllNames(ctx context.Context, store port.DerivedStore, names ...string) error {
+func removeAllNames(ctx context.Context, store port.DerivedStore, names ...domain.ArtifactName) error {
 	for _, name := range names {
-		if err := store.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		if err := store.RemoveArtifact(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return err
 		}
 	}
@@ -209,14 +211,14 @@ func (u Transcribe) recordSource(
 	hash, area string,
 	res *TranscribeResult,
 ) (bool, error) {
-	if held, err := store.Read(ctx, text.Artifact(area, hash)); err == nil {
+	if held, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, area, hash)); err == nil {
 		if _, cues := transcript.Parse(held); len(cues) > 0 {
 			res.Heard = cues[len(cues)-1].To
 			res.Length = res.Heard
 		}
 		return true, run.Stand(ctx, u.Cut, u.sources, v, ref, hash, area)
 	}
-	if held, err := store.Read(ctx, text.Answer(area, hash)); err == nil {
+	if held, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactAnswer, area, hash)); err == nil {
 		gave, _ := text.ReadAnswer(held)
 		res.IsSilent = gave == text.Silent
 		res.IsUnopened = gave == text.Unopened
@@ -235,7 +237,8 @@ func (u Transcribe) transcribeSegments(
 	v domain.Vault,
 	store port.DerivedStore,
 	recording port.Recording,
-	path, partial string,
+	path string,
+	partial domain.ArtifactName,
 	res *TranscribeResult,
 ) error {
 	from, size, err := leftOff(ctx, store, partial)
@@ -264,7 +267,7 @@ func (u Transcribe) transcribeSegments(
 
 		from = reached
 		body := trimHeader(transcript.Marshal(cues), opened)
-		if err := store.Append(ctx, partial, append(body, transcript.GetReachMarker(from)...)); err != nil {
+		if err := store.AppendArtifact(ctx, partial, append(body, transcript.GetReachMarker(from)...)); err != nil {
 			return err
 		}
 		opened = true
@@ -312,13 +315,13 @@ func (u Transcribe) answer(
 	store port.DerivedStore,
 	transcript string,
 ) error {
-	if err := store.Write(ctx, text.Answer(area, hash), []byte(transcript+"\n")); err != nil {
+	if err := store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactAnswer, area, hash), []byte(transcript+"\n")); err != nil {
 		return err
 	}
 	if err := u.record(ctx, store, area, hash); err != nil {
 		return err
 	}
-	if err := store.Remove(ctx, text.Partial(area, hash)); err != nil {
+	if err := store.RemoveArtifact(ctx, domain.NewArtifactName(domain.ArtifactPartial, area, hash)); err != nil {
 		return err
 	}
 	return run.Stand(ctx, u.Cut, u.sources, v, ref, hash, "")
@@ -341,7 +344,7 @@ func (u Transcribe) record(ctx context.Context, store port.DerivedStore, area, h
 	if err != nil {
 		return err
 	}
-	return store.Write(ctx, text.GetProducerFile(area, hash), append(raw, '\n'))
+	return store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactProducer, area, hash), append(raw, '\n'))
 }
 
 // describeFailure is a failure as one line, which is what a file holding one
@@ -365,9 +368,9 @@ func trimHeader(raw []byte, opened bool) []byte {
 // A note stands after the cues it claims, so what follows the last one is a
 // batch that did not land whole.
 func leftOff(
-	ctx context.Context, store port.DerivedStore, partial string,
+	ctx context.Context, store port.DerivedStore, partial domain.ArtifactName,
 ) (transcribed, size int, err error) {
-	raw, err := store.Read(ctx, partial)
+	raw, err := store.ReadArtifact(ctx, partial)
 	if errors.Is(err, fs.ErrNotExist) {
 		return 0, 0, nil
 	}
@@ -377,7 +380,7 @@ func leftOff(
 	ms, end := transcript.ReadReached(raw)
 	if end < len(raw) {
 		// Written back to the note. Bytes past it are cues no note claims.
-		if err := store.Write(ctx, partial, raw[:end]); err != nil {
+		if err := store.WriteArtifact(ctx, partial, raw[:end]); err != nil {
 			return 0, 0, err
 		}
 	}

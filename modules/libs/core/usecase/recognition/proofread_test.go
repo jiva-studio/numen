@@ -211,10 +211,10 @@ func TestCorrectionsAnotherProofreaderMadeAreNotTakenUp(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := shelved.Write(t.Context(), names.far, stood); err != nil {
+	if err := shelved.WriteArtifact(t.Context(), names.far, stood); err != nil {
 		t.Fatal(err)
 	}
-	if err := shelved.Write(t.Context(), names.corrections, []byte("what another one said")); err != nil {
+	if err := shelved.WriteArtifact(t.Context(), names.corrections, []byte("what another one said")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -253,7 +253,7 @@ func TestOneRunToARecognition(t *testing.T) {
 func TestARecognitionThatIsNotThereIsNothingToProofread(t *testing.T) {
 	put, v, shelved, _ := newProofreadRecognition(t, nil)
 	names := textNames(t, shelved)
-	if err := shelved.Remove(t.Context(), names.artifact); err != nil {
+	if err := shelved.RemoveArtifact(t.Context(), names.artifact); err != nil {
 		t.Fatal(err)
 	}
 
@@ -300,7 +300,7 @@ func TestABatchThatWasNotCutIsAskedAboutAgain(t *testing.T) {
 	if _, err := put.Execute(t.Context(), v, documentPath); err == nil {
 		t.Fatal("a cut that failed was taken as a batch done")
 	}
-	if _, err := shelved.Read(t.Context(), textNames(t, shelved).far); err == nil {
+	if _, err := shelved.ReadArtifact(t.Context(), textNames(t, shelved).far); err == nil {
 		t.Error("a batch nothing cut was counted")
 	}
 
@@ -317,9 +317,9 @@ func TestABatchThatWasNotCutIsAskedAboutAgain(t *testing.T) {
 // names are what one recognition of the fixture is kept under.
 type names struct {
 	hash        string
-	artifact    string
-	corrections string
-	far         string
+	artifact    domain.ArtifactName
+	corrections domain.ArtifactName
+	far         domain.ArtifactName
 }
 
 // textNames finds the one recognition on the shelf and says what its files are
@@ -327,15 +327,15 @@ type names struct {
 func textNames(t *testing.T, shelved *shelf) names {
 	t.Helper()
 	for _, name := range shelved.names() {
-		if !strings.HasSuffix(name, ".txt") {
+		if name.File != domain.ArtifactText || name.Producer != domain.OCR {
 			continue
 		}
-		hash := strings.TrimSuffix(strings.TrimPrefix(name, "ocr/"), ".txt")
+		hash := name.Hash
 		return names{
 			hash:        hash,
-			artifact:    text.Artifact("ocr", hash),
-			corrections: text.Corrections("ocr", hash),
-			far:         text.Proofread("ocr", hash),
+			artifact:    domain.NewArtifactName(domain.ArtifactText, domain.OCR, hash),
+			corrections: domain.NewArtifactName(domain.ArtifactCorrections, domain.OCR, hash),
+			far:         domain.NewArtifactName(domain.ArtifactProofread, domain.OCR, hash),
 		}
 	}
 	t.Fatal("nothing was read")

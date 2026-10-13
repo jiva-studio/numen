@@ -28,9 +28,9 @@ type site struct {
 }
 
 func (s *site) GetDownloadModel(_ domain.URL) port.DownloadModel {
-	producer := text.Captions
+	producer := domain.Captions
 	if len(s.cues) == 0 && s.prose != "" {
-		producer = text.Article
+		producer = domain.Article
 	}
 	return port.DownloadModel{Tool: "a test", Version: "1", Producer: producer}
 }
@@ -50,11 +50,11 @@ func (s *site) GetText(
 	s.asked = append(s.asked, "text "+string(at))
 	if len(s.cues) > 0 {
 		return port.Text{
-			Producer: text.Captions, Cues: s.cues, Title: s.title, Length: s.length,
+			Producer: domain.Captions, Cues: s.cues, Title: s.title, Length: s.length,
 		}, nil
 	}
 	if s.prose != "" {
-		return port.Text{Producer: text.Article, Prose: s.prose, Title: s.title}, nil
+		return port.Text{Producer: domain.Article, Prose: s.prose, Title: s.title}, nil
 	}
 	return port.Text{}, port.ErrNothingDownloaded
 }
@@ -68,7 +68,7 @@ func (s *site) Download(ctx context.Context, at domain.URL, into io.Writer) (por
 	if _, err := into.Write(s.bytes); err != nil {
 		return port.Copy{}, err
 	}
-	return port.Copy{MediaType: text.CopyType, Extension: text.CopyExtension}, nil
+	return port.Copy{MediaType: domain.CopyType, Extension: domain.CopyExtension}, nil
 }
 
 const videoNote = "notes/https---youtu.be-dQw4w9WgXcQ.url"
@@ -110,11 +110,11 @@ func TestTheWordsPublishedWithAVideo(t *testing.T) {
 	}}
 	u, kept, address := newImportURL(t, pointsAtAVideo, from)
 
-	res, err := u.Execute(t.Context(), first, videoNote)
+	res, err := u.Execute(t.Context(), first, videoNote, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Producer != text.Captions {
+	if res.Producer != domain.Captions {
 		t.Errorf("the words were downloaded by %q", res.Producer)
 	}
 	if res.Bytes == 0 {
@@ -122,14 +122,14 @@ func TestTheWordsPublishedWithAVideo(t *testing.T) {
 	}
 
 	hash := text.Fingerprint([]byte(address))
-	raw, err := kept.Read(t.Context(), text.Artifact(text.Captions, hash))
+	raw, err := kept.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.Captions, hash))
 	if err != nil {
 		t.Fatalf("nothing stands under the address: %v", err)
 	}
 	if got := getWords(t, raw); len(got) != 2 || got[0] != "what was said" {
 		t.Errorf("the words read %v", got)
 	}
-	if _, err := kept.Read(t.Context(), text.GetProducerFile(text.Captions, hash)); err != nil {
+	if _, err := kept.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactProducer, domain.Captions, hash)); err != nil {
 		t.Errorf("what downloaded the words is not recorded: %v", err)
 	}
 }
@@ -140,11 +140,11 @@ func TestAnAddressAlreadyDownloaded(t *testing.T) {
 	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "said", To: 1000}}}
 	u, _, _ := newImportURL(t, aPastedAddress, from)
 
-	if _, err := u.Execute(t.Context(), first, videoNote); err != nil {
+	if _, err := u.Execute(t.Context(), first, videoNote, false); err != nil {
 		t.Fatal(err)
 	}
 	asked := len(from.asked)
-	if _, err := u.Execute(t.Context(), first, videoNote); err != nil {
+	if _, err := u.Execute(t.Context(), first, videoNote, false); err != nil {
 		t.Fatal(err)
 	}
 	if len(from.asked) != asked {
@@ -158,7 +158,7 @@ func TestAVideoNobodyPublishedWordsFor(t *testing.T) {
 	from := &site{title: "Entropy explained"}
 	u, kept, address := newImportURL(t, pointsAtAVideo, from)
 
-	res, err := u.Execute(t.Context(), first, videoNote)
+	res, err := u.Execute(t.Context(), first, videoNote, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,7 +166,7 @@ func TestAVideoNobodyPublishedWordsFor(t *testing.T) {
 		t.Errorf("it came back with %+v", res)
 	}
 	hash := text.Fingerprint([]byte(address))
-	if _, err := kept.Read(t.Context(), text.Answer(text.Captions, hash)); err != nil {
+	if _, err := kept.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactAnswer, domain.Captions, hash)); err != nil {
 		t.Errorf("nothing was written down about it: %v", err)
 	}
 }
@@ -177,15 +177,15 @@ func TestThePagePointedAt(t *testing.T) {
 	u, kept, _ := newImportURL(t,
 		"[InternetShortcut]\nURL=https://example.com/entropy\n", from)
 
-	res, err := u.Execute(t.Context(), first, videoNote)
+	res, err := u.Execute(t.Context(), first, videoNote, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Producer != text.Article {
+	if res.Producer != domain.Article {
 		t.Errorf("the prose was downloaded by %q", res.Producer)
 	}
 	hash := text.Fingerprint([]byte("https://example.com/entropy"))
-	raw, err := kept.Read(t.Context(), text.Artifact(text.Article, hash))
+	raw, err := kept.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.Article, hash))
 	if err != nil {
 		t.Fatalf("nothing stands under the address: %v", err)
 	}
@@ -205,7 +205,7 @@ func TestANoteThatPointsNowhere(t *testing.T) {
 		"[InternetShortcut]\nURL=file:///etc/passwd\n",
 	} {
 		u, _, _ := newImportURL(t, written, &site{})
-		if _, err := u.Execute(t.Context(), first, videoNote); err == nil {
+		if _, err := u.Execute(t.Context(), first, videoNote, false); err == nil {
 			t.Errorf("%q was downloaded for: %v", written, err)
 		}
 	}
@@ -222,7 +222,7 @@ func TestANoteStillCalledByItsAddressTakesTheTitle(t *testing.T) {
 		return "notes/Entropy explained.url", nil
 	}
 
-	res, err := u.Execute(t.Context(), first, videoNote)
+	res, err := u.Execute(t.Context(), first, videoNote, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -247,7 +247,7 @@ func TestAFilePersonNamedKeepsItsName(t *testing.T) {
 		return "", nil
 	}
 
-	if _, err := u.Execute(t.Context(), first, theirs); err != nil {
+	if _, err := u.Execute(t.Context(), first, theirs, false); err != nil {
 		t.Fatal(err)
 	}
 	if named != 0 {
@@ -261,7 +261,7 @@ func TestACopyKeptInTheApplicationsFolder(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
 	u, kept, address := newImportURL(t, pointsAtAVideo, from)
 
-	got, err := u.Copy(t.Context(), first, videoNote)
+	got, err := u.Copy(t.Context(), first, videoNote, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -271,8 +271,8 @@ func TestACopyKeptInTheApplicationsFolder(t *testing.T) {
 	if got.Bytes != int64(len(from.bytes)) {
 		t.Errorf("the copy is %d bytes", got.Bytes)
 	}
-	name := text.Copy(text.Fingerprint([]byte(address)))
-	if _, _, err := kept.Open(t.Context(), name); err != nil {
+	name := domain.NewCopyName(text.Fingerprint([]byte(address)))
+	if _, _, err := kept.OpenArtifact(t.Context(), name); err != nil {
 		t.Errorf("nothing in the folder the copy was kept in: %v", err)
 	}
 }
@@ -283,10 +283,10 @@ func TestACopyAlreadyInTheApplicationsFolder(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
 	u, kept, _ := newImportURL(t, pointsAtAVideo, from)
 
-	if _, err := u.Copy(t.Context(), first, videoNote); err != nil {
+	if _, err := u.Copy(t.Context(), first, videoNote, nil); err != nil {
 		t.Fatal(err)
 	}
-	got, err := u.Copy(t.Context(), first, videoNote)
+	got, err := u.Copy(t.Context(), first, videoNote, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -311,7 +311,7 @@ func TestACopyKeptBesideTheNote(t *testing.T) {
 	u.Readers = vaults{first.ID: held}
 	u.IsToVault, u.Writers = true, writers{first.ID: held}
 
-	got, err := u.Copy(t.Context(), first, videoNote)
+	got, err := u.Copy(t.Context(), first, videoNote, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -328,7 +328,7 @@ func TestACopyKeptBesideTheNote(t *testing.T) {
 	if string(held.files[beside].raw) != string(from.bytes) {
 		t.Errorf("the copy reads %q", held.files[beside].raw)
 	}
-	if _, _, err := kept.Open(t.Context(), text.Copy(text.Fingerprint([]byte(address)))); err == nil {
+	if _, _, err := kept.OpenArtifact(t.Context(), domain.NewCopyName(text.Fingerprint([]byte(address)))); err == nil {
 		t.Error("the copy is in the application's folder too, and the vault is where it was asked for")
 	}
 }
@@ -342,10 +342,10 @@ func TestACopyAlreadyBesideTheNote(t *testing.T) {
 	u.Readers = vaults{first.ID: held}
 	u.IsToVault, u.Writers = true, writers{first.ID: held}
 
-	if _, err := u.Copy(t.Context(), first, videoNote); err != nil {
+	if _, err := u.Copy(t.Context(), first, videoNote, nil); err != nil {
 		t.Fatal(err)
 	}
-	got, err := u.Copy(t.Context(), first, videoNote)
+	got, err := u.Copy(t.Context(), first, videoNote, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -363,7 +363,7 @@ func TestACopyAsksMetadataAndDownloadUnderOneOperation(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
 	u, _, _ := newImportURL(t, pointsAtAVideo, from)
 
-	if _, err := u.Copy(t.Context(), first, videoNote); err != nil {
+	if _, err := u.Copy(t.Context(), first, videoNote, nil); err != nil {
 		t.Fatal(err)
 	}
 	if len(from.inOperation) != 2 || !from.inOperation[0] || !from.inOperation[1] {

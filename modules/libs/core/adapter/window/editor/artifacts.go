@@ -12,7 +12,6 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
@@ -46,12 +45,12 @@ type artifactHandler struct {
 const (
 	// An artifact is named by what it is. What made it is the store's to say,
 	// and a caller asking for one asks for a kind and not for a producer.
-	recognitionID          = derived.OCR
-	recognitionCorrectedID = derived.OCR + ".corrected"
-	transcriptID           = derived.Transcript
-	transcriptCorrectedID  = derived.Transcript + ".corrected"
-	articleID              = derived.Article
-	copiedID               = derived.Copies
+	recognitionID          = source.KindRecognition
+	recognitionCorrectedID = source.KindRecognition + ".corrected"
+	transcriptID           = source.KindTranscript
+	transcriptCorrectedID  = source.KindTranscript + ".corrected"
+	articleID              = source.KindArticle
+	copiedID               = source.KindCopy
 )
 
 // errNoArtifact is a kind no file of the vault carries, and errNotCarried one
@@ -61,35 +60,44 @@ var (
 	errNotCarried = errors.New("this file carries no artifact of that name")
 )
 
-// getArtifactKinds is every artifact a file can carry, in the order they are made. A
-// file carrying none is one nothing is made from.
-//
-// A note carries what is at the address it points at, and what that is follows
-// from the address: a video is words with the times they were said at, and
-// every other page is the prose it is written around.
+// getArtifactKinds is every artifact a file can carry, in the order they are made, as the schema names them.
 func getArtifactKinds(kind domain.SourceKind, produces string) []v1.ArtifactKind {
-	switch {
-	case kind == domain.KindBook:
-		return []v1.ArtifactKind{
-			v1.ArtifactKind_ARTIFACT_KIND_OCR,
-			v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED,
-		}
-	case kind == domain.KindRecording:
-		return []v1.ArtifactKind{
-			v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
-			v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED,
-		}
-	case kind != domain.KindURL || produces == "":
-		return nil
-	case produces == derived.Captions:
-		// A site that publishes words against a clock is one a copy can be
-		// taken from: the same tool answers for both.
-		return []v1.ArtifactKind{
-			v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
-			v1.ArtifactKind_ARTIFACT_KIND_COPY,
-		}
+	var out []v1.ArtifactKind
+	for _, one := range domain.GetArtifactKinds(kind, getAddressText(produces)) {
+		out = append(out, getWireArtifactKind(one))
+	}
+	return out
+}
+
+// getAddressText is what the producer that fetched an address found there.
+func getAddressText(produces string) domain.AddressText {
+	switch produces {
+	case "":
+		return domain.AddressTextNone
+	case domain.Captions:
+		return domain.AddressTextCaptions
 	default:
-		return []v1.ArtifactKind{v1.ArtifactKind_ARTIFACT_KIND_ARTICLE}
+		return domain.AddressTextArticle
+	}
+}
+
+// getWireArtifactKind is the name the schema gives an artifact.
+func getWireArtifactKind(of domain.ArtifactKind) v1.ArtifactKind {
+	switch of {
+	case domain.ArtifactKindRecognition:
+		return v1.ArtifactKind_ARTIFACT_KIND_OCR
+	case domain.ArtifactKindRecognitionCorrected:
+		return v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED
+	case domain.ArtifactKindTranscript:
+		return v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT
+	case domain.ArtifactKindTranscriptCorrected:
+		return v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED
+	case domain.ArtifactKindArticle:
+		return v1.ArtifactKind_ARTIFACT_KIND_ARTICLE
+	case domain.ArtifactKindCopy:
+		return v1.ArtifactKind_ARTIFACT_KIND_COPY
+	default:
+		return v1.ArtifactKind_ARTIFACT_KIND_UNSPECIFIED
 	}
 }
 
@@ -212,14 +220,13 @@ func (h *artifactHandler) fetchCopy(
 	}
 	// A copy is minutes of fetching, so how far it has got is reported as it
 	// arrives.
-	asked := *h.imports
-	asked.Progress = func(done, total int64) {
+	report := func(done, total int64) {
 		h.state.reportTask(task.Task{
 			ID: copying + ref.Path, Title: "Downloading a copy", About: ref.Path,
 			Count: done, Total: total, Unit: task.Bytes, IsUserStarted: true,
 		})
 	}
-	got, err := asked.Copy(ctx, v, ref.Path)
+	got, err := h.imports.Copy(ctx, v, ref.Path, report)
 	h.state.finishTask(copying + ref.Path)
 	out := h.getVideoCopy(ctx, v, ref.Path, at)
 	if errors.Is(err, source.ErrBeingDownloaded) {
@@ -372,10 +379,7 @@ func (h *artifactHandler) DeleteArtifact(
 
 	// The queue told about it is the one behind the vault the recording was
 	// found in.
-	drops := *h.drops
-	drops.Forgets = h.state.getRecordingForgetter()
-
-	res, err := drops.Execute(ctx, showing, ref.Path)
+	res, err := h.drops.Execute(ctx, showing, ref.Path, h.state.getRecordingForgetter())
 	switch {
 	case err != nil:
 		return nil, connect.NewError(getReachCode(err), err)
@@ -463,10 +467,8 @@ func (h *artifactHandler) fetchArtifact(
 	}
 	// A person who asks for this asks for the address afresh: what was fetched
 	// before goes, and the site is read again.
-	asked := *h.imports
-	asked.IsRepeat = true
 	h.state.reportTask(task.Task{ID: fetching + ref.Path, Title: "Downloading an address", About: ref.Path})
-	_, err := asked.Execute(ctx, v, ref.Path)
+	_, err := h.imports.Execute(ctx, v, ref.Path, true)
 	h.state.finishTask(fetching + ref.Path)
 	if err != nil {
 		return nil, connect.NewError(getDownloadCode(err), err)
@@ -688,7 +690,7 @@ func getReachCode(err error) connect.Code {
 // getTextKind is what the text at an address is: a video is words with the times
 // they were said at, and every other page is the prose it is written around.
 func getTextKind(produces string) v1.ArtifactKind {
-	if produces == derived.Captions {
+	if produces == domain.Captions {
 		return v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT
 	}
 	return v1.ArtifactKind_ARTIFACT_KIND_ARTICLE

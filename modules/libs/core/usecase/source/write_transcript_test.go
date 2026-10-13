@@ -6,13 +6,12 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 )
 
 func TestTranscriptWriteKeepsWhatWasHeard(t *testing.T) {
 	s := newTextScene(t)
-	s.write(t, text.Artifact(text.ASR, talkHash), "heard")
+	s.write(t, domain.NewArtifactName(domain.ArtifactText, domain.ASR, talkHash), "heard")
 	cues := []transcript.Cue{{Text: "put right", From: 0, To: 500}}
 	var cutAt string
 
@@ -22,11 +21,11 @@ func TestTranscriptWriteKeepsWhatWasHeard(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	heard, _ := s.shelf.Read(t.Context(), text.Artifact(text.ASR, talkHash))
+	heard, _ := s.shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, talkHash))
 	if string(heard) != "heard" {
 		t.Errorf("what was heard became %q", heard)
 	}
-	written, _ := s.shelf.Read(t.Context(), text.Corrections(text.ASR, talkHash))
+	written, _ := s.shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, talkHash))
 	want := append(transcript.Marshal(cues), transcript.GetHandWrittenMark()...)
 	if string(written) != string(want) {
 		t.Errorf("corrections are %q, want %q", written, want)
@@ -49,14 +48,14 @@ func TestTranscriptWriteSurvivesACutFailure(t *testing.T) {
 	if !errors.Is(written.CutError, failure) {
 		t.Errorf("cut error is %v, want the cutter's", written.CutError)
 	}
-	if _, err := s.shelf.Read(t.Context(), text.Corrections(text.ASR, talkHash)); err != nil {
+	if _, err := s.shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, talkHash)); err != nil {
 		t.Errorf("the corrections did not land: %v", err)
 	}
 }
 
 func TestTranscriptWriteIsRefusedWhileARunHoldsIt(t *testing.T) {
 	s := newTextScene(t)
-	s.claim(t, text.Partial(text.ASR, talkHash))
+	s.claim(t, domain.NewArtifactName(domain.ArtifactPartial, domain.ASR, talkHash))
 
 	_, err := s.texts.WriteTranscript.Execute(t.Context(), s.vault, recordingPath, nil, nil)
 	if !errors.Is(err, ErrTranscriptBusy) {

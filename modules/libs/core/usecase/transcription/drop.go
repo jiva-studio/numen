@@ -23,11 +23,6 @@ type Drop struct {
 	Queries port.SourceQueries
 	Derived port.DerivedStores
 
-	// Forgets takes a recording out of what a queue has already had an answer
-	// about, so one that gave no words is offered again. A build without one
-	// leaves the queue as it stands.
-	Forgets func(v domain.Vault, path string)
-
 	// Area is the store the artifact is kept in. Empty means the default.
 	Area string
 }
@@ -40,7 +35,11 @@ type DropResult struct {
 }
 
 // Execute drops the transcript of one recording.
-func (u Drop) Execute(ctx context.Context, v domain.Vault, path string) (DropResult, error) {
+//
+// The forgets function, where given, takes the recording out of what a queue has already had an answer about, so one that gave no words is offered again.
+func (u Drop) Execute(
+	ctx context.Context, v domain.Vault, path string, forgets func(v domain.Vault, path string),
+) (DropResult, error) {
 	res := DropResult{Path: path}
 
 	reader, err := u.Readers.Open(v)
@@ -63,8 +62,8 @@ func (u Drop) Execute(ctx context.Context, v domain.Vault, path string) (DropRes
 
 	// A run holds the recording it is listening to for as long as it takes, by
 	// the name it appends to. Nothing is taken away underneath it.
-	partial := text.Partial(from, hash)
-	release, err := store.ClaimName(ctx, partial)
+	partial := domain.NewArtifactName(domain.ArtifactPartial, from, hash)
+	release, err := store.ClaimArtifact(ctx, partial)
 	if errors.Is(err, port.ErrClaimed) {
 		res.IsBusy = true
 		return res, nil
@@ -76,7 +75,7 @@ func (u Drop) Execute(ctx context.Context, v domain.Vault, path string) (DropRes
 
 	// A store the person emptied leaves the index standing on a recognition, and
 	// those rows are this use case's to take away as well.
-	names := text.Names(from, hash)
+	names := domain.GetArtifactNames(from, hash)
 	held, err := u.hasAnyName(ctx, store, names)
 	if err != nil {
 		return res, err
@@ -96,13 +95,13 @@ func (u Drop) Execute(ctx context.Context, v domain.Vault, path string) (DropRes
 	if err := u.Sources.SaveExtraction(ctx, v.ID, domain.SourceChunks{Source: domain.Source{Fingerprint: ref}}); err != nil {
 		return res, fmt.Errorf("record %s: %w", path, err)
 	}
-	if u.Forgets != nil {
-		u.Forgets(v, ref.Path)
+	if forgets != nil {
+		forgets(v, ref.Path)
 	}
 
 	// The claim is a lock on the file the name is claimed by, so that file goes
 	// last: the name is free from the moment it does.
-	return res, store.Remove(ctx, partial)
+	return res, store.RemoveArtifact(ctx, partial)
 }
 
 // getProducer is the producer and the fingerprint a recording's transcript is
@@ -131,9 +130,9 @@ func (u Drop) getProducer(
 }
 
 // hasAnyName says whether the store has something under any of these names.
-func (u Drop) hasAnyName(ctx context.Context, store port.DerivedStore, names []string) (bool, error) {
+func (u Drop) hasAnyName(ctx context.Context, store port.DerivedStore, names []domain.ArtifactName) (bool, error) {
 	for _, name := range names {
-		switch _, err := store.Read(ctx, name); {
+		switch _, err := store.ReadArtifact(ctx, name); {
 		case err == nil:
 			return true, nil
 		case !errors.Is(err, fs.ErrNotExist):
@@ -145,12 +144,12 @@ func (u Drop) hasAnyName(ctx context.Context, store port.DerivedStore, names []s
 
 // removeNamesExcept removes every name from the store but keep, and passes over
 // names that are already absent.
-func removeNamesExcept(ctx context.Context, store port.DerivedStore, names []string, keep string) error {
+func removeNamesExcept(ctx context.Context, store port.DerivedStore, names []domain.ArtifactName, keep domain.ArtifactName) error {
 	for _, name := range names {
 		if name == keep {
 			continue
 		}
-		if err := store.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		if err := store.RemoveArtifact(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return fmt.Errorf("remove %s: %w", name, err)
 		}
 	}
@@ -159,7 +158,7 @@ func removeNamesExcept(ctx context.Context, store port.DerivedStore, names []str
 
 func (u Drop) area() string {
 	if u.Area == "" {
-		return text.ASR
+		return domain.ASR
 	}
 	return u.Area
 }

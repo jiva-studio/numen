@@ -120,7 +120,7 @@ func newStoppedWorker(
 		t.Fatal(err)
 	}
 	spoken := cues(words)
-	if err := store.Write(t.Context(), text.Artifact(text.ASR, hash), transcript.Marshal(spoken)); err != nil {
+	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash), transcript.Marshal(spoken)); err != nil {
 		t.Fatal(err)
 	}
 	if through == 0 {
@@ -132,14 +132,14 @@ func newStoppedWorker(
 	for at := range through {
 		spoken[at].Text = strings.ToUpper(spoken[at].Text)
 	}
-	if err := store.Write(t.Context(), text.Corrections(text.ASR, hash), transcript.Marshal(spoken)); err != nil {
+	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash), transcript.Marshal(spoken)); err != nil {
 		t.Fatal(err)
 	}
 	stood, err := json.Marshal(putting{By: by.GetName(), At: spoken[through-1].To})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Write(t.Context(), text.Proofread(text.ASR, hash), stood); err != nil {
+	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactProofread, domain.ASR, hash), stood); err != nil {
 		t.Fatal(err)
 	}
 	return held, v, store, hash
@@ -148,9 +148,9 @@ func newStoppedWorker(
 const recording = "talks/one.mp3"
 
 // readLines is what the transcript on the shelf says, line by line.
-func readLines(t *testing.T, store port.DerivedStore, name string) []string {
+func readLines(t *testing.T, store port.DerivedStore, name domain.ArtifactName) []string {
 	t.Helper()
-	raw, err := store.Read(t.Context(), name)
+	raw, err := store.ReadArtifact(t.Context(), name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,7 +178,7 @@ func TestATranscriptLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testin
 		t.Errorf("the proofreader was asked about lines %v", got)
 	}
 	want := []string{"FIRST THING", "SECOND THING", "THIRD THING"}
-	if got := readLines(t, store, text.Corrections(text.ASR, hash)); !slices.Equal(got, want) {
+	if got := readLines(t, store, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash)); !slices.Equal(got, want) {
 		t.Errorf("the transcript says %q", got)
 	}
 	if doing, failed := getTask(held, recording); doing != "" {
@@ -223,7 +223,7 @@ func TestNoTranscriptIsTakenUpWhereItWasNotAskedFor(t *testing.T) {
 func TestATranscriptAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 	by := &puts{}
 	held, v, store, hash := newStoppedWorker(t, by, 1, "first thing", "second thing")
-	release, err := store.ClaimName(t.Context(), text.Partial(text.ASR, hash))
+	release, err := store.ClaimArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactPartial, domain.ASR, hash))
 	if err != nil {
 		t.Fatal(err)
 	}

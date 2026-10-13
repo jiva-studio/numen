@@ -344,7 +344,7 @@ func read(was []cachedFile, files []port.Entry) bool {
 		return false
 	}
 	for at, one := range was {
-		if one.Name != files[at].Name || one.Size != files[at].Size {
+		if one.Name != files[at].Name.Hash || one.Size != files[at].Size {
 			return false
 		}
 	}
@@ -363,7 +363,7 @@ func (u Schedules) remember(
 	}
 	now := scheduleCache{V: keptVersion, By: mark}
 	for _, one := range files {
-		now.Files = append(now.Files, cachedFile{Name: one.Name, Size: one.Size})
+		now.Files = append(now.Files, cachedFile{Name: one.Name.Hash, Size: one.Size})
 	}
 	for on, s := range out {
 		now.Faces = append(now.Faces, cachedSchedule{

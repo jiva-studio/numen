@@ -183,7 +183,7 @@ func (u Embed) claim(ctx context.Context) (func() error, bool, error) {
 	if u.Derived == nil {
 		return func() error { return nil }, false, nil
 	}
-	release, err := u.Derived.ClaimName(ctx, text.IndexClaim)
+	release, err := u.Derived.ClaimArtifact(ctx, domain.NewIndexClaimName())
 	if errors.Is(err, port.ErrClaimed) {
 		return nil, true, nil
 	}

@@ -1,6 +1,6 @@
 package source
 
-import "github.com/jiva-studio/numen/modules/libs/core/internal/text"
+import "github.com/jiva-studio/numen/modules/libs/core/domain"
 
 // The kinds an artifact is asked for by, which are the kinds the store files
 // them under.
@@ -10,10 +10,10 @@ import "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 // published them. An ocr carries where on which page each word stands, and the
 // prose a page is written around carries no such thing, so they are two kinds.
 const (
-	KindRecognition = text.OCR
-	KindTranscript  = text.Transcript
-	KindArticle     = text.Article
-	KindCopy        = text.Copies
+	KindRecognition = domain.OCR
+	KindTranscript  = "transcript"
+	KindArticle     = domain.Article
+	KindCopy        = "copy"
 )
 
 // Artifact is one thing made from a file of the vault. It is addressed by the
@@ -33,9 +33,9 @@ func (a Artifact) IsReadable() bool { return a.Kind != KindCopy }
 // getArtifactFormat is the media type a producer's artifact is written as.
 func getArtifactFormat(producer string) string {
 	switch producer {
-	case text.ASR, text.Captions:
+	case domain.ASR, domain.Captions:
 		return "text/vtt"
-	case text.OCR:
+	case domain.OCR:
 		return "application/json"
 	default:
 		return "text/plain"
@@ -45,9 +45,9 @@ func getArtifactFormat(producer string) string {
 // getArtifactKind is the kind a producer's text is.
 func getArtifactKind(producer string) string {
 	switch producer {
-	case text.ASR, text.Captions:
+	case domain.ASR, domain.Captions:
 		return KindTranscript
-	case text.Article:
+	case domain.Article:
 		return KindArticle
 	default:
 		return KindRecognition

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/fs"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -37,7 +38,7 @@ type RunProgress struct {
 // readRunProgress is how far the run keeping its files under a name has got.
 func readRunProgress(ctx context.Context, store port.DerivedStore, producer, hash string) (RunProgress, error) {
 	var progress RunProgress
-	whole, err := store.Read(ctx, text.Artifact(producer, hash))
+	whole, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, producer, hash))
 	switch {
 	case err == nil:
 		progress.State, progress.Size = RunComplete, len(whole)
@@ -45,7 +46,7 @@ func readRunProgress(ctx context.Context, store port.DerivedStore, producer, has
 	case !errors.Is(err, fs.ErrNotExist):
 		return progress, err
 	}
-	switch payload, err := store.Read(ctx, text.Answer(producer, hash)); {
+	switch payload, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactAnswer, producer, hash)); {
 	case err == nil:
 		switch answer, why := text.ReadAnswer(payload); answer {
 		case text.Silent:
@@ -59,13 +60,13 @@ func readRunProgress(ctx context.Context, store port.DerivedStore, producer, has
 	}
 
 	// The partial file is read before the claim is tried, so the answer is the run's own file.
-	part, err := store.Read(ctx, text.Partial(producer, hash))
+	part, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactPartial, producer, hash))
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return progress, err
 	}
 	progress.Size = len(part)
 	switch {
-	case !isUnclaimed(ctx, store, text.Partial(producer, hash)):
+	case !isUnclaimed(ctx, store, domain.NewArtifactName(domain.ArtifactPartial, producer, hash)):
 		progress.State = RunActive
 	case progress.Size > 0:
 		progress.State = RunStopped

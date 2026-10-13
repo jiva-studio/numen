@@ -86,3 +86,34 @@ func TestTheSettingsTheEnvironmentNamesAreKept(t *testing.T) {
 		t.Errorf("the folder the machine named became %q", got)
 	}
 }
+
+func TestAFolderOfTheWorkingDirectoryIsNotTakenForTheToolkit(t *testing.T) {
+	// The folders a relative path would name are not looked in.
+	schemasIn(t, filepath.Join(t.TempDir(), "share", "glib-2.0", "schemas"))
+	here := t.TempDir()
+	schemasIn(t, filepath.Join(here, "share", "glib-2.0", "schemas"))
+	schemasIn(t, filepath.Join(here, "glib-2.0", "schemas"))
+	t.Chdir(here)
+
+	if got := getSchemasDir(""); got != "" {
+		t.Errorf("settings were claimed at %q for a toolkit that was not found", got)
+	}
+}
+
+func TestAnEmptyEntryOfTheDataDirectoriesNamesNoFolder(t *testing.T) {
+	here := t.TempDir()
+	schemasIn(t, filepath.Join(here, "glib-2.0", "schemas"))
+	t.Chdir(here)
+	t.Setenv("GSETTINGS_SCHEMA_DIR", "")
+	t.Setenv("XDG_DATA_DIRS", ":")
+
+	if hasSchemas() {
+		t.Error("the working directory was taken for a data directory")
+	}
+}
+
+func TestAToolkitNamedWithAMalformedPathAnswersWithNone(t *testing.T) {
+	if got := getSchemasDir(filepath.Join(t.TempDir(), "[")); got != "" {
+		t.Errorf("settings were claimed at %q", got)
+	}
+}

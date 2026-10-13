@@ -52,15 +52,6 @@ type ImportURL struct {
 	// answers where it is filed afterwards. A run given none leaves it called
 	// what it was called.
 	Names func(ctx context.Context, v domain.Vault, path, title string) (string, error)
-
-	// IsRepeat throws away what a run before this one downloaded and asks the address
-	// afresh. It is how a person asks for a site's words again, and nothing
-	// sets it on its own.
-	IsRepeat bool
-
-	// Progress is told how much of a copy has arrived out of how much the site
-	// declared. A run given none is not followed.
-	Progress func(done, total int64)
 }
 
 // ErrBeingDownloaded is another run holding this address. Nothing was done, and
@@ -82,7 +73,11 @@ type ImportURLResult struct {
 }
 
 // Execute downloads what is at one url's address.
-func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (ImportURLResult, error) {
+//
+// A repeat throws away what a run before this one downloaded and asks the address afresh. It is how a person asks for a site's words again, and nothing sets it on its own.
+func (u ImportURL) Execute(
+	ctx context.Context, v domain.Vault, path string, isRepeat bool,
+) (ImportURLResult, error) {
 	res := ImportURLResult{Path: path}
 	at, ref, store, err := u.readURLFile(ctx, v, path)
 	if err != nil {
@@ -92,7 +87,7 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 
 	// One run to an address. The name is held for as long as the download takes,
 	// and two urls on one address are one download.
-	release, err := store.ClaimName(ctx, text.Partial(u.By.GetDownloadModel(at).Producer, hash))
+	release, err := store.ClaimArtifact(ctx, domain.NewArtifactName(domain.ArtifactPartial, u.By.GetDownloadModel(at).Producer, hash))
 	if errors.Is(err, port.ErrClaimed) {
 		return res, ErrBeingDownloaded
 	}
@@ -101,7 +96,7 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 	}
 	defer release()
 
-	if u.IsRepeat {
+	if isRepeat {
 		if err := dropDownloads(ctx, store, hash); err != nil {
 			return res, err
 		}
@@ -153,7 +148,7 @@ func (u ImportURL) writeDownload(
 	if len(extracted.Cues) > 0 {
 		written = transcript.Marshal(extracted.Cues)
 	}
-	if err := store.Write(ctx, text.Artifact(extracted.Producer, hash), written); err != nil {
+	if err := store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, extracted.Producer, hash), written); err != nil {
 		return "", 0, err
 	}
 	if err := u.record(ctx, store, extracted.Producer, hash, at, extracted); err != nil {
@@ -167,7 +162,7 @@ func (u ImportURL) writeDownload(
 func (u ImportURL) silent(
 	ctx context.Context, at domain.URL, store port.DerivedStore, hash string,
 ) error {
-	return store.Write(ctx, text.Answer(u.By.GetDownloadModel(at).Producer, hash), []byte(text.Silent+"\n"))
+	return store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactAnswer, u.By.GetDownloadModel(at).Producer, hash), []byte(text.Silent+"\n"))
 }
 
 // readURLFile is one url: where it points, the file itself, and the store what
@@ -262,7 +257,7 @@ func (u ImportURL) record(
 	if err != nil {
 		return err
 	}
-	return store.Write(ctx, text.GetProducerFile(producer, hash), written)
+	return store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactProducer, producer, hash), written)
 }
 
 // cut brings the url level in the index, so the words are searched with it.

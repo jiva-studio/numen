@@ -36,7 +36,7 @@ func TestABookNothingHasReadCarriesARecognitionThatIsNothing(t *testing.T) {
 func TestABookAModelHasReadCarriesTheRecognition(t *testing.T) {
 	const wrote = "what the model read off the pages"
 	api, _ := openRunWindow(t,
-		stored{derived.Artifact(reader, scanned): []byte(wrote)},
+		stored{domain.NewArtifactName(domain.ArtifactText, reader, scanned): []byte(wrote)},
 		indexed{book: {Fingerprint: domain.Fingerprint{Path: book}, Producer: reader, Hash: scanned}},
 		willRun(), willRun(),
 	)
@@ -122,7 +122,7 @@ func TestWhatARunAnsweredIsWhatARecordingCarries(t *testing.T) {
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			api, _ := openRunWindow(t,
-				stored{derived.Answer(asr, hashed): []byte(one.gave)},
+				stored{domain.NewArtifactName(domain.ArtifactAnswer, asr, hashed): []byte(one.gave)},
 				indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}},
 				willRun(), willRun(),
 			)
@@ -188,7 +188,7 @@ func TestALinkNoteCarriesTheWordsFetchedForIt(t *testing.T) {
 	const words = "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nwhat was said\n"
 	hash := derived.Fingerprint([]byte(pointsAt))
 	api, _ := openRunWindow(t,
-		stored{derived.Artifact(derived.Captions, hash): []byte(words)},
+		stored{domain.NewArtifactName(domain.ArtifactText, domain.Captions, hash): []byte(words)},
 		newEmptyIndex(), willRun(), willRun(),
 	)
 
@@ -215,10 +215,10 @@ func TestTheWordsOfALinkNoteAreReadBack(t *testing.T) {
 	const words = "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nwhat was said\n"
 	hash := derived.Fingerprint([]byte(pointsAt))
 	api, _ := openRunWindow(t,
-		stored{derived.Artifact(derived.Captions, hash): []byte(words)},
+		stored{domain.NewArtifactName(domain.ArtifactText, domain.Captions, hash): []byte(words)},
 		indexed{pointed: {
 			Fingerprint: domain.Fingerprint{Path: pointed},
-			Producer:    derived.Captions,
+			Producer:    domain.Captions,
 			Hash:        hash,
 		}},
 		willRun(), willRun(),
@@ -239,7 +239,7 @@ func TestTheWordsOfALinkNoteAreReadBack(t *testing.T) {
 // pointing where it pointed.
 func TestACopyIsFetchedAndTakenAway(t *testing.T) {
 	hash := derived.Fingerprint([]byte(pointsAt))
-	held := stored{derived.Copy(hash): []byte("the bytes of a video")}
+	held := stored{domain.NewCopyName(hash): []byte("the bytes of a video")}
 	api, _ := openRunWindow(t, held, newEmptyIndex(), willRun(), willRun())
 
 	if getArtifactStates(t, api, pointed)[copyOf] != v1.State_STATE_DONE {
@@ -254,7 +254,7 @@ func TestACopyIsFetchedAndTakenAway(t *testing.T) {
 	if getArtifactStates(t, api, pointed)[copyOf] != v1.State_STATE_NONE {
 		t.Errorf("the copy is still here: %v", getArtifactStates(t, api, pointed))
 	}
-	if _, held := held[derived.Copy(hash)]; held {
+	if _, held := held[domain.NewCopyName(hash)]; held {
 		t.Error("the bytes are still in the store")
 	}
 }
@@ -266,10 +266,10 @@ func TestALinkNoteIsAskedWhatItIsBeforeItsWords(t *testing.T) {
 	const words = "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nwhat was said\n"
 	hash := derived.Fingerprint([]byte(pointsAt))
 	api, _ := openRunWindow(t,
-		stored{derived.Artifact(derived.Captions, hash): []byte(words)},
+		stored{domain.NewArtifactName(domain.ArtifactText, domain.Captions, hash): []byte(words)},
 		indexed{pointed: {
 			Fingerprint: domain.Fingerprint{Path: pointed},
-			Producer:    derived.Captions,
+			Producer:    domain.Captions,
 			Hash:        hash,
 		}},
 		willRun(), willRun(),
