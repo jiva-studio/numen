@@ -400,7 +400,4 @@ linters:
       - path: (^|/)(internal/epub/|markdown/|flashcards/format/|internal/adapter/filesystem/debounce\.go)
         linters: [cyclop, gocognit, nestif, funlen]
 
-      # Spaced repetition simulation tracks card queues and review buckets.
-      - path: (^|/)flashcards/review/
-        linters: [cyclop, gocognit, nestif, funlen]
 
