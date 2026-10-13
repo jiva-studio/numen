@@ -34,7 +34,6 @@ func makeJumbledHistory() []review.Answer {
 func TestGivingAHistoryOnceAnswersWhatGivingItFourTimesAnswered(t *testing.T) {
 	answers := makeJumbledHistory()
 	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
-	by := review.NewFSRS()
 	named := day.GetName(answers[0].At)
 	under := map[review.CardFaceID]string{
 		{Card: "k7m2xq9fzp", Face: "Say it"}: "Sanskrit.md",
