@@ -11,7 +11,7 @@ import {
   openTabBeside,
   resizeBranch,
 } from './edit'
-import { arrangeWorkspace } from './arrange'
+import { arrangeWorkspace } from '../fixtures/arrange'
 import type { Side, Workspace } from './node'
 import { isBranch, isPane, paneWithTab, getPanes } from './tree'
 import {
