@@ -482,3 +482,16 @@ describe('type the document leaves unsaid or a window refuses', () => {
     expect(widths()).toBeUndefined()
   })
 })
+
+describe('a canvas the page cannot make', () => {
+  it('gives nothing where the canvas has no 2d context to give', () => {
+    vi.stubGlobal('CanvasRenderingContext2D', function () {})
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(() => {
+      throw new Error('no 2d context')
+    })
+    setTheme()
+    stubStyles()
+
+    expect(widths()).toBeUndefined()
+  })
+})
