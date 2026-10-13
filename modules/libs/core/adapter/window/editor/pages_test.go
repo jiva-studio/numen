@@ -102,7 +102,7 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 	held := csp.Sources{}.Policy()
 
 	handler := newBareServices().NewHandler(http.NotFoundHandler())
-	for _, path := range []string{"", "/", "/index.html", "/built/index.css", getAssetRoute("a.pdf")} {
+	for _, path := range []string{"", "/", "/index.html", "/built/index.css", assetURL("a.pdf")} {
 		if said := getResponse(handler, path).Header().Get("Content-Security-Policy"); said != held {
 			t.Errorf("%q is held to %q", path, said)
 		}
@@ -162,7 +162,7 @@ func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 	services := newBareServices()
 	handler := services.NewHandler(http.NotFoundHandler())
 	questions, _ := numenv1connect.NewVaultServiceHandler(services.Vault)
-	asked := []string{"", "/", "/index.html", getAssetRoute("a.pdf"), questions + "Find"}
+	asked := []string{"", "/", "/index.html", assetURL("a.pdf"), questions + "Find"}
 
 	for _, path := range asked {
 		if code := getResponse(handler, path).Code; code == http.StatusServiceUnavailable {
@@ -405,7 +405,7 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 	answered := make(chan struct{})
 	go func() {
 		defer close(answered)
-		at := getPageRoute("Note.pdf", 0, 800, document.Fingerprint{})
+		at := pageURL("Note.pdf", 0, 800, document.Fingerprint{})
 		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, at, nil))
 	}()
 	<-readers.begun

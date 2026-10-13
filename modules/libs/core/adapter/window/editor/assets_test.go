@@ -1,13 +1,24 @@
 package editor
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"regexp"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
+
+// assetURL is the address of a file of the vault. The path is escaped whole, so
+// a file in a folder is one segment and what is asked of it is the next.
+func assetURL(path string) string { return assetsRoute + url.PathEscape(path) }
+
+// pageURL is the address of one page of a file of the vault.
+func pageURL(path string, at, wide int, mark document.Fingerprint) string {
+	return fmt.Sprintf("%s/%s/%d?wide=%d&%s", assetURL(path), pagesName, at, wide, formatFingerprint(mark))
+}
 
 // A file of the vault is one part of its address, and what is asked of it is
 // the rest.
@@ -23,14 +34,14 @@ func TestAFileIsOnePartOfItsAddress(t *testing.T) {
 		path  string
 		where string
 	}{
-		{"a file", getAssetRoute("library/a.pdf"), "library/a.pdf", ""},
-		{"a page of it", getPageRoute("library/a.pdf", 3, 800, document.Fingerprint{}),
+		{"a file", assetURL("library/a.pdf"), "library/a.pdf", ""},
+		{"a page of it", pageURL("library/a.pdf", 3, 800, document.Fingerprint{}),
 			"library/a.pdf", "pages/3"},
-		{"a file in a folder named for a page", getPageRoute("pages/pages/x.pdf", 2, 400, document.Fingerprint{}),
+		{"a file in a folder named for a page", pageURL("pages/pages/x.pdf", 2, 400, document.Fingerprint{}),
 			"pages/pages/x.pdf", "pages/2"},
 		{"a picture of a book", pictureOf("library/a.epub", "OEBPS/pictures/plate.png", document.Fingerprint{}),
 			"library/a.epub", "OEBPS/pictures/plate.png"},
-		{"a name with a space in it", getAssetRoute("library/A Book.pdf"), "library/A Book.pdf", ""},
+		{"a name with a space in it", assetURL("library/A Book.pdf"), "library/A Book.pdf", ""},
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			got, ok := parseAssetAddress(httptest.NewRequest("GET", one.url, nil))
@@ -62,8 +73,8 @@ func TestAnAssetNoReaderReadsIsNotAnswered(t *testing.T) {
 		url  string
 		want int
 	}{
-		{"a file with no place named", getAssetRoute("library/a.pdf"), http.StatusBadRequest},
-		{"a file of no reader", getPageRoute("library/a.md", 0, 800, document.Fingerprint{}), http.StatusNotFound},
+		{"a file with no place named", assetURL("library/a.pdf"), http.StatusBadRequest},
+		{"a file of no reader", pageURL("library/a.md", 0, 800, document.Fingerprint{}), http.StatusNotFound},
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			if out := ask(handler, one.url); out.Code != one.want {
