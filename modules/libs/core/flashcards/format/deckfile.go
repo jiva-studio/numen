@@ -331,7 +331,7 @@ func DeckBody(d Deck) (string, error) {
 		return nil
 	}
 	for _, card := range d.Cards {
-	// gomutants:disable-next-line INTEGER_DECREMENT reason="0 becomes -1, and the one place the two differ is NoSection, which the first condition already excludes"
+		// gomutants:disable-next-line INTEGER_DECREMENT reason="0 becomes -1, and the one place the two differ is NoSection, which the first condition already excludes"
 		if card.Section != NoSection && (card.Section < 0 || card.Section >= len(d.Sections)) {
 			return "", fmt.Errorf("%w: %d", ErrNoSuchSection, card.Section)
 		}
