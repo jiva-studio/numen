@@ -1,6 +1,10 @@
 package source
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
 
 var (
 	// ErrNotReady is a question about a vault whose index or store is not up yet.
@@ -11,4 +15,10 @@ var (
 
 	// ErrTranscriptBusy is a transcript a run is writing down.
 	ErrTranscriptBusy = errors.New("a run is writing this transcript down")
+
+	// ErrOutside is a path that does not stay in the vault.
+	ErrOutside = port.ErrOutside
 )
+
+// IsNoNote reports whether an error says there is no note at the path.
+func IsNoNote(err error) bool { return port.IsNoNote(err) }
