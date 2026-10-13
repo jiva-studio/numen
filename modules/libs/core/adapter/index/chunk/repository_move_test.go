@@ -155,6 +155,7 @@ func TestAFolderMovedInsideItselfKeepsWhatIsMoving(t *testing.T) {
 	s.saveNote(repoVaultA, "a/One.md", "One", false)
 	s.saveNote(repoVaultA, "a/b/Two.md", "Two", false)
 	s.saveNote(repoVaultA, "a/b/c/Three.md", "Three", false)
+	s.saveNote(repoVaultA, "a/z.md", "Zed", false)
 
 	if err := s.db.Chunks().MoveSources(t.Context(), repoVaultA, "a/b", "a"); err != nil {
 		t.Fatal(err)

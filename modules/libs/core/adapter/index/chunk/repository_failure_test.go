@@ -122,3 +122,57 @@ func TestAWriteThatTheDatabaseRefusesSaysWhichStatementAndKeepsTheDatabasesReaso
 	}
 }
 
+
+func TestASourceThatCannotBeLookedUpIsAnErrorAndNotAMissingOne(t *testing.T) {
+	for name, run := range map[string]func(s *store) error{
+		"replace": func(s *store) error {
+			return s.db.Chunks().ReplaceChunks(s.t.Context(), repoVaultA, "book", "a.epub", nil)
+		},
+		"remove": func(s *store) error {
+			return s.db.Chunks().RemoveSources(s.t.Context(), repoVaultA, "book", []string{"a.epub"})
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			s := newStore(t)
+			holdsBook(s)
+			s.exec(`ALTER TABLE sources RENAME COLUMN kind TO sort`)
+
+			wantSQLiteError(t, run(s), "kind")
+		})
+	}
+}
+
+func TestASmallChunkTheDatabaseRefusesFailsTheCut(t *testing.T) {
+	s := newStore(t)
+	s.cut(repoVaultA, "book", "a.epub", nil)
+	s.exec(`CREATE TRIGGER refuse BEFORE INSERT ON chunks WHEN NEW.parent_id IS NOT NULL BEGIN SELECT RAISE(ABORT, 'boom'); END`)
+
+	err := s.db.Chunks().ReplaceChunks(t.Context(), repoVaultA, "book", "a.epub", []chunk.Chunk{{
+		Start: 0, Length: 9, Text: "whole", Small: []chunk.Chunk{{Start: 0, Length: 4, Text: "left"}},
+	}})
+
+	wantSQLiteError(t, err, "store a chunk of this source: ")
+}
+
+func TestALargeChunkThatKeepsItsRowStillEnclosesTheSmallOnesCutAgain(t *testing.T) {
+	s := newStore(t)
+	repo := s.db.Chunks()
+	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{{
+		Start: 0, Length: 9, Text: "whole", Small: []chunk.Chunk{{Start: 0, Length: 4, Text: "left"}},
+	}})
+	was := s.rowsOf(repoVaultA, "a.epub")
+
+	if err := repo.ReplaceChunks(t.Context(), repoVaultA, "book", "a.epub", []chunk.Chunk{{
+		Start: 0, Length: 9, Text: "whole", Small: []chunk.Chunk{{Start: 1, Length: 4, Text: "left"}, {Start: 5, Length: 4, Text: "new"}},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+
+	now := s.rowsOf(repoVaultA, "a.epub")
+	if len(now) != 3 || now[0] != was[0] || now[1] != was[1] {
+		t.Fatalf("the rows are %v, were %v", now, was)
+	}
+	if n := s.count(`SELECT count(*) FROM chunks WHERE parent_id = ?`, was[0]); n != 2 {
+		t.Errorf("%d small chunks sit inside the kept large one, want 2", n)
+	}
+}
