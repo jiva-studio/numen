@@ -153,7 +153,9 @@ func TestAStretchOfALongHistoryHoldsEveryDayInsideIt(t *testing.T) {
 // appendRefusing is a store whose file takes no answer.
 type appendRefusing struct{ port.DerivedStore }
 
-func (appendRefusing) Append(context.Context, string, []byte) error { return errNothingRead }
+func (appendRefusing) AppendArtifact(context.Context, domain.ArtifactName, []byte) error {
+	return errNothingRead
+}
 
 type refusingStores struct{}
 

@@ -10,7 +10,6 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
@@ -52,7 +51,7 @@ func newProofreadWindow(t *testing.T, held port.DerivedStore, read indexed) (*Se
 
 // onTheShelf is a store holding the transcript a model wrote of the recording.
 func onTheShelf() stored {
-	return stored{derived.Artifact(asr, hashed): []byte("what the model heard")}
+	return stored{domain.NewArtifactName(domain.ArtifactText, asr, hashed): []byte("what the model heard")}
 }
 
 // A transcript the window asks for is put right, the run is told which file of
@@ -160,7 +159,7 @@ func TestAProofreadingAskedForBeforeThePassesAreUpIsAskedAgain(t *testing.T) {
 func TestTheCorrectionsARecordingCarriesAreWhatStands(t *testing.T) {
 	const put = "the name and the named are not two"
 	held := onTheShelf()
-	held[derived.Corrections(asr, hashed)] = []byte(put)
+	held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)] = []byte(put)
 	api, _, by := newProofreadWindow(t, held, newTranscriptIndex())
 
 	out, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: talk}))

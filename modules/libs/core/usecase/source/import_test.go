@@ -28,9 +28,9 @@ type site struct {
 }
 
 func (s *site) GetDownloadModel(_ domain.URL) port.DownloadModel {
-	producer := text.Captions
+	producer := domain.Captions
 	if len(s.cues) == 0 && s.prose != "" {
-		producer = text.Article
+		producer = domain.Article
 	}
 	return port.DownloadModel{Tool: "a test", Version: "1", Producer: producer}
 }
@@ -50,11 +50,11 @@ func (s *site) GetText(
 	s.asked = append(s.asked, "text "+string(at))
 	if len(s.cues) > 0 {
 		return port.Text{
-			Producer: text.Captions, Cues: s.cues, Title: s.title, Length: s.length,
+			Producer: domain.Captions, Cues: s.cues, Title: s.title, Length: s.length,
 		}, nil
 	}
 	if s.prose != "" {
-		return port.Text{Producer: text.Article, Prose: s.prose, Title: s.title}, nil
+		return port.Text{Producer: domain.Article, Prose: s.prose, Title: s.title}, nil
 	}
 	return port.Text{}, port.ErrNothingDownloaded
 }
@@ -68,7 +68,7 @@ func (s *site) Download(ctx context.Context, at domain.URL, into io.Writer) (por
 	if _, err := into.Write(s.bytes); err != nil {
 		return port.Copy{}, err
 	}
-	return port.Copy{MediaType: text.CopyType, Extension: text.CopyExtension}, nil
+	return port.Copy{MediaType: domain.CopyType, Extension: domain.CopyExtension}, nil
 }
 
 const videoNote = "notes/https---youtu.be-dQw4w9WgXcQ.url"
@@ -114,7 +114,7 @@ func TestTheWordsPublishedWithAVideo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Producer != text.Captions {
+	if res.Producer != domain.Captions {
 		t.Errorf("the words were downloaded by %q", res.Producer)
 	}
 	if res.Bytes == 0 {
@@ -122,14 +122,14 @@ func TestTheWordsPublishedWithAVideo(t *testing.T) {
 	}
 
 	hash := text.Fingerprint([]byte(address))
-	raw, err := kept.Read(t.Context(), text.Artifact(text.Captions, hash))
+	raw, err := kept.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.Captions, hash))
 	if err != nil {
 		t.Fatalf("nothing stands under the address: %v", err)
 	}
 	if got := getWords(t, raw); len(got) != 2 || got[0] != "what was said" {
 		t.Errorf("the words read %v", got)
 	}
-	if _, err := kept.Read(t.Context(), text.GetProducerFile(text.Captions, hash)); err != nil {
+	if _, err := kept.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactProducer, domain.Captions, hash)); err != nil {
 		t.Errorf("what downloaded the words is not recorded: %v", err)
 	}
 }
@@ -166,7 +166,7 @@ func TestAVideoNobodyPublishedWordsFor(t *testing.T) {
 		t.Errorf("it came back with %+v", res)
 	}
 	hash := text.Fingerprint([]byte(address))
-	if _, err := kept.Read(t.Context(), text.Answer(text.Captions, hash)); err != nil {
+	if _, err := kept.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactAnswer, domain.Captions, hash)); err != nil {
 		t.Errorf("nothing was written down about it: %v", err)
 	}
 }
@@ -181,11 +181,11 @@ func TestThePagePointedAt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Producer != text.Article {
+	if res.Producer != domain.Article {
 		t.Errorf("the prose was downloaded by %q", res.Producer)
 	}
 	hash := text.Fingerprint([]byte("https://example.com/entropy"))
-	raw, err := kept.Read(t.Context(), text.Artifact(text.Article, hash))
+	raw, err := kept.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.Article, hash))
 	if err != nil {
 		t.Fatalf("nothing stands under the address: %v", err)
 	}
@@ -271,8 +271,8 @@ func TestACopyKeptInTheApplicationsFolder(t *testing.T) {
 	if got.Bytes != int64(len(from.bytes)) {
 		t.Errorf("the copy is %d bytes", got.Bytes)
 	}
-	name := text.Copy(text.Fingerprint([]byte(address)))
-	if _, _, err := kept.Open(t.Context(), name); err != nil {
+	name := domain.NewCopyName(text.Fingerprint([]byte(address)))
+	if _, _, err := kept.OpenArtifact(t.Context(), name); err != nil {
 		t.Errorf("nothing in the folder the copy was kept in: %v", err)
 	}
 }
@@ -328,7 +328,7 @@ func TestACopyKeptBesideTheNote(t *testing.T) {
 	if string(held.files[beside].raw) != string(from.bytes) {
 		t.Errorf("the copy reads %q", held.files[beside].raw)
 	}
-	if _, _, err := kept.Open(t.Context(), text.Copy(text.Fingerprint([]byte(address)))); err == nil {
+	if _, _, err := kept.OpenArtifact(t.Context(), domain.NewCopyName(text.Fingerprint([]byte(address)))); err == nil {
 		t.Error("the copy is in the application's folder too, and the vault is where it was asked for")
 	}
 }

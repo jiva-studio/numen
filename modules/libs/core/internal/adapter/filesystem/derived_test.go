@@ -437,7 +437,7 @@ func TestTheStoreSaysWhatNamesItHolds(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []port.Entry{
+	want := []filesystem.Listed{
 		{Name: "ocr/first.txt", Size: len("in it")},
 		{Name: "ocr/second.txt", Size: len("in it")},
 	}
@@ -463,7 +463,7 @@ func TestAListingSaysHowLongEachFileIs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []port.Entry{{Name: "ocr/one.txt", Size: len("first and more")}}
+	want := []filesystem.Listed{{Name: "ocr/one.txt", Size: len("first and more")}}
 	if !slices.Equal(got, want) {
 		t.Errorf("listed %v, want %v", got, want)
 	}

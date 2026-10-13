@@ -140,7 +140,7 @@ func TestWhatIsHeardIsWrittenDownAndClaimed(t *testing.T) {
 	if src.Hash != hash {
 		t.Errorf("the source is named %q and the recording hashes to %q", src.Hash, hash)
 	}
-	raw, err := shelf.Read(t.Context(), text.Artifact(src.Producer, src.Hash))
+	raw, err := shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, src.Producer, src.Hash))
 	if err != nil {
 		t.Fatalf("the artifact is not where the source says: %v", err)
 	}
@@ -150,7 +150,7 @@ func TestWhatIsHeardIsWrittenDownAndClaimed(t *testing.T) {
 	if said := getWords(t, raw); !slices.Equal(said, model.words) {
 		t.Errorf("the artifact says %q and the recording says %q", said, model.words)
 	}
-	if _, err := shelf.Read(t.Context(), text.Partial("asr", hash)); err == nil {
+	if _, err := shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactPartial, "asr", hash)); err == nil {
 		t.Error("the partial is still there")
 	}
 }
@@ -171,7 +171,7 @@ func TestARunThatStoppedIsTakenUpWhereItStopped(t *testing.T) {
 		t.Fatalf("stopping gave %v", err)
 	}
 	// A half-heard recording is not an artifact, and nothing reads it as one.
-	if _, err := shelf.Read(t.Context(), text.Artifact("asr", hash)); err == nil {
+	if _, err := shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, "asr", hash)); err == nil {
 		t.Fatal("a stopped run left an artifact behind")
 	}
 
@@ -184,7 +184,7 @@ func TestARunThatStoppedIsTakenUpWhereItStopped(t *testing.T) {
 		t.Errorf("the second run began at %d ms", res.Resumed)
 	}
 
-	raw, err := shelf.Read(t.Context(), text.Artifact("asr", hash))
+	raw, err := shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, "asr", hash))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,7 +207,7 @@ func TestABatchThatDidNotLandWholeIsCutBack(t *testing.T) {
 	torn = append(torn, transcript.GetReachMarker(800)...)
 	loose := transcript.Marshal([]transcript.Cue{{Text: "half a thought", From: 1000, To: 1800}})
 	torn = append(torn, bytes.TrimPrefix(loose, []byte(transcript.Head+"\n"))...)
-	if err := shelf.Write(t.Context(), text.Partial("asr", hash), torn); err != nil {
+	if err := shelf.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactPartial, "asr", hash), torn); err != nil {
 		t.Fatal(err)
 	}
 
@@ -219,7 +219,7 @@ func TestABatchThatDidNotLandWholeIsCutBack(t *testing.T) {
 		t.Errorf("the run began at %d ms and the note says 800", res.Resumed)
 	}
 
-	raw, err := shelf.Read(t.Context(), text.Artifact("asr", hash))
+	raw, err := shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, "asr", hash))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,7 +233,7 @@ func TestABatchThatDidNotLandWholeIsCutBack(t *testing.T) {
 
 func TestOneRunToARecording(t *testing.T) {
 	u, v, index, shelf, model, hash := listener(t, "one", "two")
-	shelf.hold(text.Partial("asr", hash))
+	shelf.hold(domain.NewArtifactName(domain.ArtifactPartial, "asr", hash))
 
 	res, err := u.Execute(t.Context(), v, recordingPath)
 	if err != nil {
@@ -265,8 +265,11 @@ func TestARecordingWithNothingToHearIsAnsweredOnce(t *testing.T) {
 	if !res.IsSilent {
 		t.Error("a recording carrying no speech was not reported as silent")
 	}
-	for _, name := range []string{text.Artifact("asr", hash), text.Partial("asr", hash)} {
-		if _, err := shelf.Read(t.Context(), name); err == nil {
+	for _, name := range []domain.ArtifactName{
+		domain.NewArtifactName(domain.ArtifactText, "asr", hash),
+		domain.NewArtifactName(domain.ArtifactPartial, "asr", hash),
+	} {
+		if _, err := shelf.ReadArtifact(t.Context(), name); err == nil {
 			t.Errorf("it left %q behind", name)
 		}
 	}
@@ -285,7 +288,7 @@ func TestARecordingWithNothingToHearIsAnsweredOnce(t *testing.T) {
 	if len(model.heard) != heard {
 		t.Errorf("the model was handed %d more stretches", len(model.heard)-heard)
 	}
-	if _, err := shelf.Read(t.Context(), text.Answer("asr", hash)); err != nil {
+	if _, err := shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactAnswer, "asr", hash)); err != nil {
 		t.Errorf("nothing says what the recording answered: %v", err)
 	}
 }
@@ -304,7 +307,7 @@ func TestARecordingNothingCanOpenIsAnsweredOnce(t *testing.T) {
 	if src := index.sources[v.ID][recordingPath]; src.Producer != "" {
 		t.Errorf("the source was pointed at %q", src.Producer)
 	}
-	raw, err := shelf.Read(t.Context(), text.Answer("asr", hash))
+	raw, err := shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactAnswer, "asr", hash))
 	if err != nil {
 		t.Fatalf("nothing says what the recording answered: %v", err)
 	}
@@ -358,7 +361,7 @@ func TestWhatListenedIsKeptBesideWhatItHeard(t *testing.T) {
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
 	}
-	raw, err := shelf.Read(t.Context(), text.GetProducerFile("asr", hash))
+	raw, err := shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactProducer, "asr", hash))
 	if err != nil {
 		t.Fatalf("nothing says what listened: %v", err)
 	}
@@ -400,7 +403,7 @@ func TestAskingForARecordingToBeHeardAgain(t *testing.T) {
 	if res.Resumed != 0 {
 		t.Errorf("asked again, it took up a run at %d ms", res.Resumed)
 	}
-	raw, err := shelf.Read(t.Context(), text.Artifact("asr", hash))
+	raw, err := shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, "asr", hash))
 	if err != nil {
 		t.Fatalf("nothing was written the second time: %v", err)
 	}
@@ -416,7 +419,7 @@ func TestAskingAgainAfterAnAnswer(t *testing.T) {
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := shelf.Read(t.Context(), text.Answer("asr", hash)); err != nil {
+	if _, err := shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactAnswer, "asr", hash)); err != nil {
 		t.Fatalf("the recording left no answer: %v", err)
 	}
 	first := len(model.heard)

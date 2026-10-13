@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
@@ -68,8 +67,8 @@ func deleteTranscript(api *Services) error {
 // owing its text.
 func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 	held := whole(newCues())
-	held[derived.Corrections(asr, hashed)] = held[derived.Artifact(asr, hashed)]
-	held[derived.GetProducerFile(asr, hashed)] = []byte(`{"model":"parakeet"}`)
+	held[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)] = held[domain.NewArtifactName(domain.ArtifactText, asr, hashed)]
+	held[domain.NewArtifactName(domain.ArtifactProducer, asr, hashed)] = []byte(`{"model":"parakeet"}`)
 	api, index, _ := dropper(t, held, newTranscriptIndex())
 
 	if err := deleteTranscript(api); err != nil {
@@ -100,13 +99,13 @@ func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 // A run appends to the transcript, and what is being appended to is not taken
 // out from under it.
 func TestATranscriptIsNotDroppedWhileTheRecordingIsBeingListenedTo(t *testing.T) {
-	held := heldBy{stored: whole(newCues()), name: derived.Partial(asr, hashed)}
+	held := heldBy{stored: whole(newCues()), name: domain.NewArtifactName(domain.ArtifactPartial, asr, hashed)}
 	api, index, _ := dropper(t, held, newTranscriptIndex())
 
 	if err := deleteTranscript(api); connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("dropped a transcript being written and was refused %v", err)
 	}
-	if _, kept := held.stored[derived.Artifact(asr, hashed)]; !kept {
+	if _, kept := held.stored[domain.NewArtifactName(domain.ArtifactText, asr, hashed)]; !kept {
 		t.Error("the transcript went out from under the run")
 	}
 	if len(index.written) != 0 {

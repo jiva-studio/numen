@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
@@ -127,8 +126,8 @@ func TestEveryArtifactTheSchemaNamesStandsSomewhere(t *testing.T) {
 		// of the two texts that is follows from what fetched it.
 		return slices.Contains(getArtifactKinds(domain.KindBook, ""), of) ||
 			slices.Contains(getArtifactKinds(domain.KindRecording, ""), of) ||
-			slices.Contains(getArtifactKinds(domain.KindURL, derived.Captions), of) ||
-			slices.Contains(getArtifactKinds(domain.KindURL, derived.Article), of)
+			slices.Contains(getArtifactKinds(domain.KindURL, domain.Captions), of) ||
+			slices.Contains(getArtifactKinds(domain.KindURL, domain.Article), of)
 	})
 }
 

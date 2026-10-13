@@ -6,7 +6,6 @@ import (
 	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 )
 
 // GetTranscriptCorrectionState says whether the corrections of a recording's transcript are RunComplete, RunActive or RunNone.
@@ -20,13 +19,13 @@ func (u GetTranscriptCorrectionState) Execute(ctx context.Context, v domain.Vaul
 		return RunNone, err
 	}
 	meta := stored.meta
-	switch _, err := stored.store.Read(ctx, text.Corrections(meta.Producer, meta.Hash)); {
+	switch _, err := stored.store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactCorrections, meta.Producer, meta.Hash)); {
 	case err == nil:
 		return RunComplete, nil
 	case !errors.Is(err, fs.ErrNotExist):
 		return RunNone, err
 	}
-	if !isUnclaimed(ctx, stored.store, text.Partial(meta.Producer, meta.Hash)) {
+	if !isUnclaimed(ctx, stored.store, domain.NewArtifactName(domain.ArtifactPartial, meta.Producer, meta.Hash)) {
 		return RunActive, nil
 	}
 	return RunNone, nil

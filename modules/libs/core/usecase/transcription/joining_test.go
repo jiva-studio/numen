@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 )
 
 // newJoinReply is a reply putting a run of lines together as one. A run stands
@@ -39,7 +38,7 @@ func TestASentenceBrokenAcrossSpansBecomesOneLine(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
+	cues := readCues(t, shelved, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash))
 	if len(cues) != 2 {
 		t.Fatalf("the transcript says %+v", cues)
 	}
@@ -67,7 +66,7 @@ func TestJoiningLeavesWhatWasHeardWhereItIs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	heard := readCues(t, shelved, text.Artifact(text.ASR, hash))
+	heard := readCues(t, shelved, domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash))
 	if len(heard) != 2 || heard[0].Text != words[0] || heard[1].Text != words[1] {
 		t.Errorf("what was heard now says %+v", heard)
 	}
@@ -107,7 +106,7 @@ func TestALineAlreadyPutIntoARunIsLeftInIt(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
+			cues := readCues(t, shelved, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash))
 			if len(cues) != 3 {
 				t.Fatalf("the transcript says %+v", cues)
 			}
@@ -133,7 +132,7 @@ func TestARunOverLinesAlreadyPutTogetherIsDropped(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
+	cues := readCues(t, shelved, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash))
 	if len(cues) != 3 {
 		t.Fatalf("the transcript says %+v", cues)
 	}
@@ -177,7 +176,7 @@ func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 		t.Errorf("got %+v", res)
 	}
 
-	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
+	cues := readCues(t, shelved, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash))
 	if len(cues) != 3 || cues[0].Text != putTogether {
 		t.Errorf("the transcript says %+v", cues)
 	}
@@ -227,7 +226,7 @@ func TestASentenceCrossingACutIsPutBackTogether(t *testing.T) {
 		t.Fatalf("it asked %v", by.asked)
 	}
 
-	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
+	cues := readCues(t, shelved, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash))
 	if len(cues) != 6 {
 		t.Fatalf("the transcript says %+v", cues)
 	}
@@ -325,7 +324,7 @@ func TestARunStoppedInTheSeamPassTakesUpWhereItStopped(t *testing.T) {
 		t.Errorf("it asked %v, want the cut it stopped on", said.asked)
 	}
 
-	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
+	cues := readCues(t, shelved, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash))
 	if len(cues) != 7 {
 		t.Fatalf("the transcript says %+v", cues)
 	}
@@ -350,7 +349,7 @@ func TestALineTheFirstPassJoinedIsNotJoinedAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
+	cues := readCues(t, shelved, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash))
 	if len(cues) != 7 {
 		t.Fatalf("the transcript says %+v", cues)
 	}

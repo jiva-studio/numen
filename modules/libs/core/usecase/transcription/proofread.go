@@ -10,7 +10,6 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
@@ -115,7 +114,7 @@ type ProofreadResult struct {
 	Left               int    // lines asked about that stand as they were heard
 	UncorrectedBatches int    // batches replied to without a correction, left as heard
 	IsNone             bool   // there is no transcript to put right, and nothing was done
-	IsEdited           bool   // somebody else wrote what textPath, and it is left as they left it
+	IsEdited           bool   // somebody else wrote the corrections, and they are left as they left them
 	IsBusy             bool   // the recording is held by another run
 	IsAlready          bool   // this proofreader has been over every line, and nothing was asked
 }
@@ -153,13 +152,14 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 		return res, err
 	}
 
-	area := run.GetArea(u.Area, text.ASR)
-	textPath, progressPath := text.Corrections(area, hash), text.Proofread(area, hash)
+	area := run.GetArea(u.Area, domain.ASR)
+	correctionsName := domain.NewArtifactName(domain.ArtifactCorrections, area, hash)
+	progressName := domain.NewArtifactName(domain.ArtifactProofread, area, hash)
 
 	// One run to a recording. The name a transcription holds is the name held
 	// here, so a run listening to a recording and a run putting its transcript
 	// right are never under way at once.
-	release, err := store.ClaimName(ctx, text.Partial(area, hash))
+	release, err := store.ClaimArtifact(ctx, domain.NewArtifactName(domain.ArtifactPartial, area, hash))
 	if errors.Is(err, port.ErrClaimed) {
 		res.IsBusy = true
 		return res, nil
@@ -179,7 +179,7 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 		return res, nil
 	}
 
-	stood, err := u.readCheckpoint(ctx, store, progressPath)
+	stood, err := u.readCheckpoint(ctx, store, progressName)
 	if err != nil {
 		return res, err
 	}
@@ -194,7 +194,7 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 		stood = putting{}
 	}
 
-	job := u.newTranscriptJob(v, store, path, textPath, progressPath, cues, stood)
+	job := u.newTranscriptJob(v, store, path, correctionsName, progressName, cues, stood)
 	// A batch reaches back over the lines it shares with the one before it, so
 	// what this run counts as read begins where the run before it stopped.
 	res.Lines = linesBefore(cues, len(cues))
@@ -213,7 +213,7 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 	// Who is putting this transcript right stands before the first words do,
 	// and the count of what they have asked about stands after the lines it
 	// claims.
-	if err := u.writeCheckpoint(ctx, store, progressPath, stood); err != nil {
+	if err := u.writeCheckpoint(ctx, store, progressName, stood); err != nil {
 		return res, err
 	}
 	err = u.askBatches(ctx, job, at, &res)
@@ -226,9 +226,9 @@ type transcriptProofreadJob struct {
 	v     domain.Vault
 	store port.DerivedStore
 	path  string
-	// textPath is where the corrected words are kept, and progressPath where the
+	// correctionsName is where the corrected words are kept, and progressName where the
 	// count of what has been asked about is kept.
-	textPath, progressPath string
+	correctionsName, progressName domain.ArtifactName
 
 	cues []transcript.Cue
 	// original is the transcript as this run found it, so the batch a line falls
@@ -255,7 +255,8 @@ type transcriptProofreadJob struct {
 func (u Proofread) newTranscriptJob(
 	v domain.Vault,
 	store port.DerivedStore,
-	path, textPath, progressPath string,
+	path string,
+	correctionsName, progressName domain.ArtifactName,
 	cues []transcript.Cue,
 	stood putting,
 ) *transcriptProofreadJob {
@@ -263,7 +264,7 @@ func (u Proofread) newTranscriptJob(
 	size, overlap := run.GetSize(u.BatchSize, DefaultBatchSize), run.GetSize(u.Overlap, DefaultOverlap)
 	mainBatches := setContext(proofread.GetSpeechBatches(cues, size, overlap), about)
 	return &transcriptProofreadJob{
-		v: v, store: store, path: path, textPath: textPath, progressPath: progressPath,
+		v: v, store: store, path: path, correctionsName: correctionsName, progressName: progressName,
 		cues: cues, original: slices.Clone(cues), about: about,
 		mainBatches: mainBatches, batches: mainBatches, from: getFirstUnasked(cues, stood.At),
 		asked: map[int]bool{}, fixed: map[int]bool{}, merged: map[int]bool{},
@@ -323,7 +324,7 @@ func (u Proofread) askBatches(
 // a batch no count claims is one the next run asks about again.
 func (u Proofread) saveGroup(ctx context.Context, p *transcriptProofreadJob, wrote bool, end int) error {
 	if wrote {
-		if err := p.store.Write(ctx, p.textPath, transcript.Marshal(p.cues)); err != nil {
+		if err := p.store.WriteArtifact(ctx, p.correctionsName, transcript.Marshal(p.cues)); err != nil {
 			return err
 		}
 	}
@@ -333,7 +334,7 @@ func (u Proofread) saveGroup(ctx context.Context, p *transcriptProofreadJob, wro
 	if end == len(p.mainBatches) {
 		p.batches = slices.Concat(p.mainBatches, u.batchesAcrossCuts(p.original, p.cuts, p.about))
 	}
-	return u.writeCheckpoint(ctx, p.store, p.progressPath, getProgress(p.batches, len(p.mainBatches), end, p.cues))
+	return u.writeCheckpoint(ctx, p.store, p.progressName, getProgress(p.batches, len(p.mainBatches), end, p.cues))
 }
 
 // markAskedLines records the lines of the group from where this run began.
@@ -404,14 +405,14 @@ func (u Proofread) current(
 	store port.DerivedStore,
 	area, hash string,
 ) ([]byte, bool, error) {
-	raw, err := store.Read(ctx, text.Corrections(area, hash))
+	raw, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactCorrections, area, hash))
 	if err == nil {
 		return raw, true, nil
 	}
 	if !errors.Is(err, fs.ErrNotExist) {
 		return nil, false, err
 	}
-	raw, err = store.Read(ctx, text.Artifact(area, hash))
+	raw, err = store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, area, hash))
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, false, nil
 	}
@@ -423,8 +424,10 @@ func (u Proofread) current(
 
 // readCheckpoint is who put this transcript right and how far they got. A
 // record nothing here can read names nobody.
-func (u Proofread) readCheckpoint(ctx context.Context, store port.DerivedStore, progressPath string) (putting, error) {
-	raw, err := store.Read(ctx, progressPath)
+func (u Proofread) readCheckpoint(
+	ctx context.Context, store port.DerivedStore, progressName domain.ArtifactName,
+) (putting, error) {
+	raw, err := store.ReadArtifact(ctx, progressName)
 	if errors.Is(err, fs.ErrNotExist) {
 		return putting{}, nil
 	}
@@ -441,13 +444,15 @@ func (u Proofread) readCheckpoint(ctx context.Context, store port.DerivedStore, 
 
 // writeCheckpoint writes down who is putting this transcript right and how far
 // they have got.
-func (u Proofread) writeCheckpoint(ctx context.Context, store port.DerivedStore, progressPath string, stood putting) error {
+func (u Proofread) writeCheckpoint(
+	ctx context.Context, store port.DerivedStore, progressName domain.ArtifactName, stood putting,
+) error {
 	stood.By = u.by.GetName()
 	raw, err := json.MarshalIndent(stood, "", "  ")
 	if err != nil {
 		return err
 	}
-	return store.Write(ctx, progressPath, append(raw, '\n'))
+	return store.WriteArtifact(ctx, progressName, append(raw, '\n'))
 }
 
 // countUncorrected is how many of a run's batches answered with what is no

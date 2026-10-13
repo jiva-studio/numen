@@ -14,7 +14,6 @@ import (
 	readability "github.com/go-shiori/go-readability"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -74,7 +73,7 @@ func newPages() *pageProvider {
 func (p *pageProvider) CanHandle(at domain.URL) bool { return !isVideoSite(at) }
 
 func (p *pageProvider) GetDownloadModel(domain.URL) port.DownloadModel {
-	return port.DownloadModel{Tool: readerName, Producer: text.Article}
+	return port.DownloadModel{Tool: readerName, Producer: domain.Article}
 }
 
 // GetMetadata is what a page calls itself, which is the whole of what is known
@@ -120,5 +119,5 @@ func (p *pageProvider) GetText(ctx context.Context, at domain.URL, _ port.Prefer
 	if prose == "" {
 		return port.Text{}, port.ErrNothingDownloaded
 	}
-	return port.Text{Producer: text.Article, Title: strings.TrimSpace(read.Title), Prose: prose}, nil
+	return port.Text{Producer: domain.Article, Title: strings.TrimSpace(read.Title), Prose: prose}, nil
 }

@@ -34,8 +34,8 @@ func (u RemoveCopy) Execute(ctx context.Context, v domain.Vault, path string, at
 	if err != nil {
 		return err
 	}
-	name := text.Copy(text.Fingerprint([]byte(string(at))))
-	if err := store.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+	name := domain.NewCopyName(text.Fingerprint([]byte(string(at))))
+	if err := store.RemoveArtifact(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return err
 	}
 	return nil

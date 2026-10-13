@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -37,7 +36,7 @@ func (u WriteTranscript) Execute(
 	}
 
 	// A run holds the recording it is listening to by the name it appends to.
-	release, err := stored.store.ClaimName(ctx, text.Partial(stored.meta.Producer, stored.meta.Hash))
+	release, err := stored.store.ClaimArtifact(ctx, domain.NewArtifactName(domain.ArtifactPartial, stored.meta.Producer, stored.meta.Hash))
 	if errors.Is(err, port.ErrClaimed) {
 		return TranscriptWrite{}, ErrTranscriptBusy
 	}
@@ -48,7 +47,7 @@ func (u WriteTranscript) Execute(
 
 	// The words are a person's, and a proofreader leaves them alone.
 	written := append(transcript.Marshal(cues), transcript.GetHandWrittenMark()...)
-	if err := stored.store.Write(ctx, text.Corrections(stored.meta.Producer, stored.meta.Hash), written); err != nil {
+	if err := stored.store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactCorrections, stored.meta.Producer, stored.meta.Hash), written); err != nil {
 		return TranscriptWrite{}, err
 	}
 	if cut == nil {

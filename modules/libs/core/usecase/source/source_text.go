@@ -86,7 +86,7 @@ func (s sourceTexts) getFetchedText(
 		return storedText{}, RunProgress{}, err
 	}
 	hash := text.Fingerprint([]byte(string(at)))
-	for _, producer := range text.Producers() {
+	for _, producer := range domain.GetAddressProducers() {
 		progress, err := readRunProgress(ctx, store, producer, hash)
 		if err != nil {
 			return storedText{}, RunProgress{}, err

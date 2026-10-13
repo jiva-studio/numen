@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -116,7 +115,7 @@ func TestARecognisedSourceIsLitFromWhatWasReadInIt(t *testing.T) {
 		testsupport.Box(4, 6, 10, highlight.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
 		testsupport.Box(5, 11, 16, highlight.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
 	}
-	if err := store.Write(t.Context(), text.Boxes("ocr", "abc123"), highlight.Pack(written)); err != nil {
+	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactBoxes, "ocr", "abc123"), highlight.Pack(written)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -339,7 +338,7 @@ func TestAFileRewrittenSinceItWasReadIsLitFromItself(t *testing.T) {
 	recordSource(t, index, shelved, "ocr", "abc123")
 
 	// A recognition whose words sit at the top of the first page.
-	if err := store.Write(ctx, text.Boxes("ocr", "abc123"), highlight.Pack([]highlight.Box{
+	if err := store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactBoxes, "ocr", "abc123"), highlight.Pack([]highlight.Box{
 		testsupport.Box(0, 0, 400, highlight.Rect{MinX: 0.1, MinY: 0.1, MaxX: 0.9, MaxY: 0.2}),
 	})); err != nil {
 		t.Fatal(err)
@@ -372,13 +371,13 @@ func TestAProofreadRecognitionIsLitWhereItsWordsNowStand(t *testing.T) {
 		testsupport.Box(4, 6, 10, highlight.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
 		testsupport.Box(5, 11, 16, highlight.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
 	}
-	if err := store.Write(t.Context(), text.Boxes("ocr", "abc123"), highlight.Pack(written)); err != nil {
+	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactBoxes, "ocr", "abc123"), highlight.Pack(written)); err != nil {
 		t.Fatal(err)
 	}
 	// The first line is put right and grows by three bytes, so the third line
 	// begins at 14 and runs to 19.
 	put := []correction.Line{{Number: 0, Text: "eighteen"}}
-	if err := store.Write(t.Context(), text.Corrections("ocr", "abc123"), correction.Pack(put)); err != nil {
+	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, "ocr", "abc123"), correction.Pack(put)); err != nil {
 		t.Fatal(err)
 	}
 

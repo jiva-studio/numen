@@ -31,7 +31,7 @@ func TestARunTakenAwayBeforeItWasReadIsGone(t *testing.T) {
 	}
 
 	ran, err := flashcards.Log{Stores: s.logs}.ReadFile(t.Context(), store, port.Entry{
-		Name: "flashcards/01ARZ3NDEKTSV4RRFFQ69G5FAV.jsonl",
+		Name: domain.NewReviewLogName("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
 	})
 	if err != nil {
 		t.Fatalf("a run that is no longer there was trouble: %v", err)
@@ -87,7 +87,7 @@ func TestWhatAVaultHoldsIsEveryRunItWasReadFrom(t *testing.T) {
 // the one moment nothing else can arrange.
 type phantom struct {
 	port.DerivedStores
-	name string
+	name domain.ArtifactName
 }
 
 func (p phantom) Open(v domain.Vault) (port.DerivedStore, error) {
@@ -100,11 +100,11 @@ func (p phantom) Open(v domain.Vault) (port.DerivedStore, error) {
 
 type listing struct {
 	port.DerivedStore
-	name string
+	name domain.ArtifactName
 }
 
-func (l listing) List(ctx context.Context, name string) ([]port.Entry, error) {
-	held, err := l.DerivedStore.List(ctx, name)
+func (l listing) ListReviewLogs(ctx context.Context) ([]port.Entry, error) {
+	held, err := l.DerivedStore.ListReviewLogs(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func TestARunTakenAwayIsLeftOutAndTheRestAreRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	gone := phantom{DerivedStores: s.logs, name: "flashcards/01ARZ3NDEKTSV4RRFFQ69G5FAV.jsonl"}
+	gone := phantom{DerivedStores: s.logs, name: domain.NewReviewLogName("01ARZ3NDEKTSV4RRFFQ69G5FAV")}
 	held, err := flashcards.Log{Stores: gone}.Read(t.Context(), s.vault)
 	if err != nil {
 		t.Fatalf("a run taken away refused the whole history: %v", err)
@@ -143,8 +143,8 @@ type reordered struct {
 	reverse bool
 }
 
-func (r *reordered) List(ctx context.Context, name string) ([]port.Entry, error) {
-	held, err := r.DerivedStore.List(ctx, name)
+func (r *reordered) ListReviewLogs(ctx context.Context) ([]port.Entry, error) {
+	held, err := r.DerivedStore.ListReviewLogs(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +202,7 @@ func TestGetLogFilesSortsWhateverOrderTheStoreLists(t *testing.T) {
 	if len(first) != 3 || len(second) != 3 {
 		t.Fatalf("listed %d and then %d files, want the three runs each time", len(first), len(second))
 	}
-	byName := func(a, b port.Entry) int { return strings.Compare(a.Name, b.Name) }
+	byName := func(a, b port.Entry) int { return strings.Compare(a.Name.Hash, b.Name.Hash) }
 	for _, one := range [][]port.Entry{first, second} {
 		if !slices.IsSortedFunc(one, byName) {
 			t.Errorf("%v is not sorted by name", one)
@@ -233,7 +233,9 @@ type closed struct{ port.DerivedStore }
 
 var errClosed = errors.New("the folder cannot be read")
 
-func (closed) Read(context.Context, string) ([]byte, error) { return nil, errClosed }
+func (closed) ReadArtifact(context.Context, domain.ArtifactName) ([]byte, error) {
+	return nil, errClosed
+}
 
 // A vault whose answers cannot be read is not a vault of no answers. The
 // difference is a person's whole history, so it is refused and said rather than
@@ -316,12 +318,12 @@ type filling struct {
 
 var errNoRoom = errors.New("no room left on the disk")
 
-func (f *filling) Append(ctx context.Context, name string, content []byte) error {
+func (f *filling) AppendArtifact(ctx context.Context, name domain.ArtifactName, content []byte) error {
 	f.asked++
 	if f.asked > 1 {
 		return errNoRoom
 	}
-	return f.DerivedStore.Append(ctx, name, content)
+	return f.DerivedStore.AppendArtifact(ctx, name, content)
 }
 
 // A run whose append did not land stops. The file it was writing ends where a
@@ -383,7 +385,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	closed := filepath.Join(s.vault.Path, filesystem.DefaultServiceDir,
-		filepath.FromSlash(yesterdayRun.GetName()))
+		filesystem.FlashcardsDir, yesterdayRun.GetName()+".jsonl")
 	testsupport.Shut(t, closed)
 
 	held, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)

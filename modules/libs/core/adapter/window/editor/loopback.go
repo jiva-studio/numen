@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -244,7 +243,7 @@ func (h *fileServer) serveCopy(
 		return true
 	}
 	w.Header().Set("Cache-Control", immutable)
-	w.Header().Set("Content-Type", derived.CopyType)
+	w.Header().Set("Content-Type", domain.CopyType)
 	http.ServeContent(w, r, "", time.Time{}, video.File)
 	return true
 }

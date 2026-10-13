@@ -1,10 +1,10 @@
 package text_test
 
 import (
-	"slices"
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 )
@@ -47,58 +47,13 @@ func TestATranscriptNamesNoParts(t *testing.T) {
 
 // A transcript nothing put right is composed from its own bytes.
 func TestATranscriptIsComposedFromItsOwnBytes(t *testing.T) {
-	store := shelf{text.Artifact(text.ASR, "abc123"): writeTranscript()}
+	store := shelf{domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"): writeTranscript()}
 
-	doc, err := text.ReadComposed(t.Context(), store, text.ASR, "abc123", writeTranscript())
+	doc, err := text.ReadComposed(t.Context(), store, domain.ASR, "abc123", writeTranscript())
 	if err != nil {
 		t.Fatal(err)
 	}
 	checkLocation(t, doc, middle, "1:23:45")
-}
-
-// A transcript stands in the folder of its kind, under the name of what made
-// it: a video may carry words a site published and words a model here heard,
-// and one folder holds both without either standing on the other.
-func TestATranscriptIsKeptUnderTheNameAPlayerKnowsItBy(t *testing.T) {
-	if name := text.Artifact(text.ASR, "abc123"); name != "transcript/abc123.asr.vtt" {
-		t.Errorf("a transcript is kept under %q", name)
-	}
-	if name := text.Partial(text.ASR, "abc123"); name != "transcript/abc123.asr.partial.vtt" {
-		t.Errorf("a transcription still running is kept under %q", name)
-	}
-}
-
-// A sweep works through the names a producer writes, and a transcription writes
-// no coordinates, parts or corrections.
-func TestASweepOfATranscriptNamesWhatItWrote(t *testing.T) {
-	want := []string{
-		"transcript/abc123.asr.vtt",
-		"transcript/abc123.asr.partial.vtt",
-		"transcript/abc123.asr.corrected.vtt",
-		"transcript/abc123.asr.proofread",
-		"transcript/abc123.asr.answer",
-		"transcript/abc123.asr.json",
-	}
-	if got := text.Names(text.ASR, "abc123"); !slices.Equal(got, want) {
-		t.Errorf("a sweep takes %v, want %v", got, want)
-	}
-}
-
-// A vault already read is not read again, so the names a recognition is kept under
-// are the ones it was written under.
-func TestARecognitionIsKeptUnderTheNamesItAlwaysWas(t *testing.T) {
-	want := []string{
-		"ocr/abc123.txt",
-		"ocr/abc123.partial",
-		"ocr/abc123.boxes",
-		"ocr/abc123.parts",
-		"ocr/abc123.corrected",
-		"ocr/abc123.proofread",
-		"ocr/abc123.json",
-	}
-	if got := text.Names("ocr", "abc123"); !slices.Equal(got, want) {
-		t.Errorf("a recognition is kept under %v, want %v", got, want)
-	}
 }
 
 // A transcript is composed from what it was put right to, and what was heard
@@ -110,11 +65,11 @@ func TestATranscriptIsComposedFromWhatItWasPutRightTo(t *testing.T) {
 		{Text: closing, From: 5400000, To: 5403500},
 	})
 	store := shelf{
-		text.Artifact(text.ASR, "abc123"):    writeTranscript(),
-		text.Corrections(text.ASR, "abc123"): append(put, transcript.GetHandWrittenMark()...),
+		domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"):        writeTranscript(),
+		domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): append(put, transcript.GetHandWrittenMark()...),
 	}
 
-	doc, err := text.ReadComposed(t.Context(), store, text.ASR, "abc123", writeTranscript())
+	doc, err := text.ReadComposed(t.Context(), store, domain.ASR, "abc123", writeTranscript())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,10 +94,10 @@ func TestATranscriptPutRightToNothingIsWhatWasHeard(t *testing.T) {
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			store := shelf{
-				text.Artifact(text.ASR, "abc123"):    writeTranscript(),
-				text.Corrections(text.ASR, "abc123"): one.put,
+				domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"):        writeTranscript(),
+				domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): one.put,
 			}
-			doc, err := text.ReadComposed(t.Context(), store, text.ASR, "abc123", writeTranscript())
+			doc, err := text.ReadComposed(t.Context(), store, domain.ASR, "abc123", writeTranscript())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -158,11 +113,11 @@ func TestATranscriptPutRightToNothingIsWhatWasHeard(t *testing.T) {
 func TestATranscriptTornMidCueIsReadAsFarAsItGoes(t *testing.T) {
 	torn := append(writeTranscript(), "\n00:1"...)
 	store := shelf{
-		text.Artifact(text.ASR, "abc123"):    writeTranscript(),
-		text.Corrections(text.ASR, "abc123"): torn,
+		domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"):        writeTranscript(),
+		domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): torn,
 	}
 
-	doc, err := text.ReadComposed(t.Context(), store, text.ASR, "abc123", writeTranscript())
+	doc, err := text.ReadComposed(t.Context(), store, domain.ASR, "abc123", writeTranscript())
 	if err != nil {
 		t.Fatal(err)
 	}
