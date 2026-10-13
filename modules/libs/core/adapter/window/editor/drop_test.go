@@ -15,6 +15,7 @@ import (
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
 
 // noting is an index that holds on to what a drop wrote to it.
@@ -40,7 +41,7 @@ func dropper(t *testing.T, held port.DerivedStore, known indexed) (*API, *noting
 		Readers:   filesystem.VaultReaders{},
 		Highlight: &hl,
 		Texts:     source.NewTexts(filesystem.VaultReaders{}, nil, known, storing{held}),
-		Drops: &source.DropTranscript{
+		Drops: &transcription.Drop{
 			Readers: filesystem.VaultReaders{},
 			Sources: index,
 			Queries: known,

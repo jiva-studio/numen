@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -471,7 +472,7 @@ func (s *scanFixture) deps(t *testing.T, held domain.Vault) cli.Deps {
 				db.NoteQueries(), db.Maintenance())
 			books := source.NewExtract(readers, db.Sources(), db.Sources())
 			books.Derived, books.Documents = store, pdf.Documents{}
-			vectors := source.NewEmbed(readers, db.Sources(), db.Sources())
+			vectors := embedding.NewEmbed(readers, db.Sources(), db.Sources())
 			if s.embedder != nil {
 				if err := db.FitVectors(ctx, width, s.embedder.GetModel().Recipe()); err != nil {
 					_ = db.Close()

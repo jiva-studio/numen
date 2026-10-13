@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 )
 
 // runRecogniseCommand reads one scanned document with a model.
@@ -51,7 +51,7 @@ func runRecogniseCommand(ctx context.Context, out io.Writer, deps Deps, args []s
 	}
 	// A terminal that prints nothing for an hour looks broken, and this takes
 	// about that. The line rewrites itself.
-	recognise.OnProgress = func(res source.RecogniseResult) {
+	recognise.OnProgress = func(res recognition.RecogniseResult) {
 		if res.Pages > 0 {
 			fmt.Fprintf(out, "  page %d of %d\r", res.Read, res.Pages)
 			shown = true

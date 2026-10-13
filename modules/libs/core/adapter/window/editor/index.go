@@ -10,9 +10,10 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
+	embedmodel "github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -384,7 +385,7 @@ func embedSources(
 	// Fetching the model and preparing it is a step of its own, and it stands in
 	// the list under its own name. Nothing is indexed until it is over, and a
 	// model that never arrived is said under that name.
-	if arrival, ok := embedder.(embedding.WaitingEmbedder); ok {
+	if arrival, ok := embedder.(embedmodel.WaitingEmbedder); ok {
 		if err := arrival.Wait(under); err != nil {
 			return
 		}
@@ -458,7 +459,7 @@ func makeVectors(
 	// The pass enters the list when it opens the first of them, so the row is
 	// never a word with nothing under it. A share is drawn once a vector has
 	// been made, counted over the work in hand and not the size of the vault.
-	making.OnVectorsProgress = func(res source.EmbedResult) {
+	making.OnVectorsProgress = func(res embedding.EmbedResult) {
 		at := task.Task{ID: makingVectors, Title: "Indexing", About: res.CurrentSource}
 		if res.Embedded > 0 {
 			at.Count, at.Total = int64(res.Embedded), owing

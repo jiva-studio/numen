@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 )
 
 // proofreadRecognitionCommand puts one document's recognition right with a model.
@@ -41,7 +41,7 @@ func proofreadRecognitionCommand(
 		_, err := cut.ExtractOne(ctx, v, path)
 		return err
 	}
-	proofread.OnProgress = func(res source.ProofreadRecognitionResult) {
+	proofread.OnProgress = func(res recognition.ProofreadResult) {
 		if res.Pages > 0 {
 			fmt.Fprintf(out, "  page %d of %d\r", res.Read, res.Pages)
 			shown = true

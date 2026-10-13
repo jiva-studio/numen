@@ -10,9 +10,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -105,11 +108,11 @@ type Assembly interface {
 	// is what the two take turns at: one run holds this machine's models at a
 	// time.
 	OpenRecognitionWorker(
-		ctx context.Context, tasks *task.Tasks, models *source.Lock,
-	) *source.RecognitionWorker
+		ctx context.Context, tasks *task.Tasks, models *run.Lock,
+	) *recognition.Worker
 	OpenTranscriptionWorker(
-		ctx context.Context, tasks *task.Tasks, models *source.Lock,
-	) *source.TranscriptionWorker
+		ctx context.Context, tasks *task.Tasks, models *run.Lock,
+	) *transcription.Worker
 
 	// GetRefresh brings named notes up to date for a window standing on no
 	// vault. A window showing one asks what that vault was opened with.

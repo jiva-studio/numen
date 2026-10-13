@@ -14,7 +14,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -51,7 +54,7 @@ type Installation struct {
 	checkIdentity vaults.CheckIdentity
 	// models is this machine's models and processor. Recognising a scan and
 	// listening to a recording each hold them, one run at a time.
-	models *source.Lock
+	models *run.Lock
 	// under is what every vault's passes run under.
 	under    context.Context
 	triggers indexTriggers
@@ -138,7 +141,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		checkIdentity: vaults.NewCheckIdentity(made.GetVaultIdentity()),
 		registry:      registry,
 		tasks:         tasks,
-		models:        &source.Lock{},
+		models:        &run.Lock{},
 		out:           out,
 		under:         ctx,
 		triggers:      wake,
@@ -241,7 +244,7 @@ func (o *Installation) Refresh() vaults.Refresh {
 // GetRecognitionWorker reads a scanned document for whoever asks. It is one job
 // for the window and for an agent alike, so that what a person started through
 // one of them is shown by the other. Nothing while the window has no vault.
-func (o *Installation) GetRecognitionWorker() *source.RecognitionWorker {
+func (o *Installation) GetRecognitionWorker() *recognition.Worker {
 	if on := o.API.session.Load(); on != nil {
 		return on.recognitionWorker
 	}
@@ -252,7 +255,7 @@ func (o *Installation) GetRecognitionWorker() *source.RecognitionWorker {
 // behind the vault. It is one job for the window and for an agent alike, so
 // that what a person started through one of them is shown by the other. Nothing
 // while the window has no vault.
-func (o *Installation) GetTranscriptionWorker() *source.TranscriptionWorker {
+func (o *Installation) GetTranscriptionWorker() *transcription.Worker {
 	if on := o.API.session.Load(); on != nil {
 		return on.transcriptionWorker
 	}
@@ -409,7 +412,7 @@ func (o *Installation) wireUseCases(ctx context.Context) {
 		Unregister:  &held.Unregister,
 	}
 
-	api.Drops = &source.DropTranscript{
+	api.Drops = &transcription.Drop{
 		Readers: made.GetVaultReaders(),
 		Sources: made.GetSourceRepository(),
 		Queries: made.GetSourceQueries(),

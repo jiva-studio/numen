@@ -1,11 +1,11 @@
 package container
 
-import "github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+import "github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 
 // StartTranscription is nil where there is no worker to start.
-func (c Config) StartTranscription(worker *source.TranscriptionWorker) *source.StartTranscription {
+func (c Config) StartTranscription(worker *transcription.Worker) *transcription.Start {
 	if worker == nil {
 		return nil
 	}
-	return source.NewStartTranscription(worker)
+	return transcription.NewStart(worker)
 }

@@ -231,8 +231,7 @@ func createImportURL(ctx context.Context, cfg container.Config) (cli.ImportURL, 
 func createProofreadRecognition(
 	ctx context.Context, cfg container.Config, v domain.Vault,
 ) (cli.ProofreadRecognition, error) {
-	proofread, held, err := cfg.GetScanProofreading().
-		Recognition(cfg.VaultReaders(), cfg.GetDerivedStores())
+	proofread, held, err := cfg.CreateRecognitionProofread()
 	if err != nil || !held {
 		return cli.ProofreadRecognition{}, err
 	}
@@ -250,8 +249,7 @@ func createProofreadRecognition(
 func createProofreadTranscript(
 	ctx context.Context, cfg container.Config, v domain.Vault,
 ) (cli.ProofreadTranscript, error) {
-	proofread, held, err := cfg.GetSpeechProofreading().
-		Transcript(cfg.VaultReaders(), cfg.GetDerivedStores())
+	proofread, held, err := cfg.CreateTranscriptProofread()
 	if err != nil || !held {
 		return cli.ProofreadTranscript{}, err
 	}

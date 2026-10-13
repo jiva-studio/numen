@@ -13,6 +13,7 @@ import (
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
 
 // The fingerprint of the recording a test asks about. A run keeps what it wrote
@@ -166,7 +167,7 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
 	stores := filesystem.DerivedStores{Area: filesystem.TranscriptDir}
 
-	run := source.NewTranscribe(
+	run := transcription.NewTranscribe(
 		filesystem.VaultReaders{},
 		unrecorded{},
 		stores,
