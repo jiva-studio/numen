@@ -507,17 +507,13 @@ func (u Extract) source(
 		res.Unreadable++
 		return nil
 	}
-	// A url's text was never in its bytes, so it is named by the address the
-	// file points at and not by the file.
-	hash := text.Fingerprint(raw)
-	if ref.Kind == domain.KindURL {
-		at, err := urlfile.Read(raw)
-		if err != nil {
-			res.Unreadable++
-			//nolint:nilerr // one file naming no address is one more on the batch's count
-			return nil
-		}
-		hash = text.Fingerprint([]byte(string(at)))
+	hash, err := u.fingerprint(ref, raw)
+	if errors.Is(err, text.ErrUnreadable) {
+		res.Unreadable++
+		return nil
+	}
+	if err != nil {
+		return err
 	}
 
 	// A document read by a recogniser has a text of its own, and the chunks are
@@ -525,10 +521,12 @@ func (u Extract) source(
 	// file whose modification time moved without its content is claimed again
 	// rather than read from scratch.
 	doc, from, err := u.text(ctx, ref, raw, hash)
-	if err != nil {
+	if errors.Is(err, text.ErrUnreadable) {
 		res.Unreadable++
-		//nolint:nilerr // one book nobody could read is one more on the batch's count
 		return nil
+	}
+	if err != nil {
+		return err
 	}
 
 	chunks := chunksOf(doc, sizes, u.Legibility)
@@ -680,4 +678,20 @@ func (u Extract) kinds() []domain.SourceKind {
 		return []domain.SourceKind{domain.KindBook, domain.KindRecording, domain.KindURL}
 	}
 	return u.Kinds
+}
+
+// fingerprint hashes the source's content, reading a URL file's target address
+// where the source is a link.
+func (u Extract) fingerprint(ref domain.Fingerprint, raw []byte) (string, error) {
+	if ref.Kind != domain.KindURL {
+		return text.Fingerprint(raw), nil
+	}
+	at, err := urlfile.Read(raw)
+	if errors.Is(err, urlfile.ErrNoAddress) || errors.Is(err, domain.ErrNotAURL) {
+		return "", text.ErrUnreadable
+	}
+	if err != nil {
+		return "", err
+	}
+	return text.Fingerprint([]byte(string(at))), nil
 }

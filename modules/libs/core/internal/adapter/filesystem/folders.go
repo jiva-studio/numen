@@ -186,7 +186,7 @@ func (w *underWalk) visit(p string, d fs.DirEntry, err error) error {
 		// The rest of the walk still stands: as much of the shape as can be
 		// learnt is learnt, and the vault is read again for what cannot.
 		w.short = true
-		return nil //nolint:nilerr // what could not be read is carried out in whole
+		return fs.SkipDir
 	}
 	w.seen++
 	if w.seen > Entries {

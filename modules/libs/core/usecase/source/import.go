@@ -217,8 +217,11 @@ func (u ImportURL) renameURL(
 	// other name is the person's, and it stands; so does one whose address no
 	// filename can be made from, which nothing could have named it by.
 	pasted, _, err := domain.Filename(string(at))
-	if err != nil || domain.Basename(ref.Path) != pasted {
-		return res, nil //nolint:nilerr // an unnameable address is a name that stands
+	if errors.Is(err, domain.ErrUnnameable) || domain.Basename(ref.Path) != pasted {
+		return res, nil
+	}
+	if err != nil {
+		return res, err
 	}
 	path, err := u.Names(ctx, v, ref.Path, title)
 	if err != nil {

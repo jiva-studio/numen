@@ -422,8 +422,7 @@ func (u Proofread) current(
 	return raw, false, nil
 }
 
-// readCheckpoint is who put this transcript right and how far they got. A
-// record nothing here can read names nobody.
+// readCheckpoint is who put this transcript right and how far they got.
 func (u Proofread) readCheckpoint(
 	ctx context.Context, store port.DerivedStore, progressName domain.ArtifactName,
 ) (putting, error) {
@@ -436,8 +435,7 @@ func (u Proofread) readCheckpoint(
 	}
 	var stood putting
 	if err := json.Unmarshal(raw, &stood); err != nil {
-		//nolint:nilerr // a record nothing here can read names nobody
-		return putting{}, nil
+		return putting{}, fmt.Errorf("read checkpoint %s: %w", progressName, err)
 	}
 	return stood, nil
 }

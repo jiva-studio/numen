@@ -2,6 +2,7 @@ package theme
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -115,9 +116,11 @@ func (s *Service) ReadTheme(
 	req *connect.Request[v1.ReadThemeRequest],
 ) (*connect.Response[v1.ReadThemeResponse], error) {
 	text, err := s.Catalogue.Text(req.Msg.GetName())
-	if err != nil {
-		//nolint:nilerr // a name with no file is no theme, and no CSS is the answer to it
+	if errors.Is(err, ErrNoTheme) || errors.Is(err, ErrNoFolder) {
 		return connect.NewResponse(&v1.ReadThemeResponse{}), nil
+	}
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.ReadThemeResponse{Css: text}), nil
 }
