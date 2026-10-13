@@ -72,7 +72,10 @@ func operations() map[string]operation {
 		"Remove":       func(r *appstate.VaultRegistry) (bool, error) { return false, r.Remove("01AAA") },
 		"RecordOpened": func(r *appstate.VaultRegistry) (bool, error) { return false, r.RecordOpened("01AAA") },
 		"GetLastVault": func(r *appstate.VaultRegistry) (bool, error) { _, found, err := r.GetLastVault(); return found, err },
-		"FindVault":    func(r *appstate.VaultRegistry) (bool, error) { _, found, err := r.FindVault("personal"); return found, err },
+		"FindVault": func(r *appstate.VaultRegistry) (bool, error) {
+			_, found, err := r.FindVault("personal")
+			return found, err
+		},
 	}
 }
 
