@@ -360,7 +360,7 @@ func newProofreadQueue(says map[int]string) *proofreadQueue {
 	}
 }
 
-func (q *proofreadQueue) Submit(_ context.Context, pages []proofread.Batch) (string, error) {
+func (q *proofreadQueue) Submit(_ context.Context, pages []domain.ProofreadBatch) (string, error) {
 	var at []int
 	for _, page := range pages {
 		at = append(at, page.Number)

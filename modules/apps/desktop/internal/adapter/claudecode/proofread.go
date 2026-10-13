@@ -12,7 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/runner"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // Proofreader puts a recognition right through the command line a person already
@@ -72,7 +72,7 @@ func (p *Proofreader) GetName() string {
 //
 // One batch that fails ends the run: the batches already answered are dropped
 // and the caller asks again.
-func (p *Proofreader) Proofread(ctx context.Context, batches []proofread.Batch) (map[int]string, error) {
+func (p *Proofreader) Proofread(ctx context.Context, batches []domain.ProofreadBatch) (map[int]string, error) {
 	if len(batches) == 0 {
 		return nil, nil
 	}
@@ -130,7 +130,7 @@ func (p *Proofreader) Proofread(ctx context.Context, batches []proofread.Batch) 
 }
 
 // runBatch sends one batch and returns what the command line said about it.
-func (p *Proofreader) runBatch(ctx context.Context, dir string, batch proofread.Batch) (string, error) {
+func (p *Proofreader) runBatch(ctx context.Context, dir string, batch domain.ProofreadBatch) (string, error) {
 	name, rest := p.getCommand()
 	cmd := exec.CommandContext(ctx, name, append(rest, p.buildArguments()...)...)
 	cmd.Dir = dir
@@ -139,7 +139,7 @@ func (p *Proofreader) runBatch(ctx context.Context, dir string, batch proofread.
 
 	// The batch goes on the input: --disallowed-tools takes as many names as
 	// follow it, and a batch is longer than a command line holds.
-	cmd.Stdin = strings.NewReader(proofread.Ask(batch))
+	cmd.Stdin = strings.NewReader(batch.Prompt)
 	var said, stderr bytes.Buffer
 	cmd.Stdout = &said
 	cmd.Stderr = &stderr

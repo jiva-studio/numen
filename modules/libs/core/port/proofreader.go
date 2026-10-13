@@ -3,7 +3,7 @@ package port
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // Proofreader is asked about the lines of a run of batches and says what it
@@ -20,7 +20,7 @@ type Proofreader interface {
 	// each, by the batch it is about. Whether a reply is an answer is decided
 	// above this; a batch nothing came back about is a batch left as it was
 	// read.
-	Proofread(ctx context.Context, batches []proofread.Batch) (map[int]string, error)
+	Proofread(ctx context.Context, batches []domain.ProofreadBatch) (map[int]string, error)
 }
 
 // A ProofreadQueue is a proofreader that takes a run of batches away and
@@ -31,7 +31,7 @@ type ProofreadQueue interface {
 
 	// Submit hands the batches over and answers with the name what comes back is
 	// collected under.
-	Submit(ctx context.Context, batches []proofread.Batch) (string, error)
+	Submit(ctx context.Context, batches []domain.ProofreadBatch) (string, error)
 
 	// GetReplies is what came back about the batches left under a name, and
 	// whether it is there yet. A name the service will never answer about is an

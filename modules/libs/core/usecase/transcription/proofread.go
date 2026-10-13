@@ -302,7 +302,7 @@ func (u Proofread) askBatches(
 		end := min(at+inFlight, len(p.batches))
 		group := p.batches[at:end]
 
-		replies, err := u.by.Proofread(ctx, group)
+		replies, err := u.by.Proofread(ctx, ask(group))
 		if err != nil {
 			return fmt.Errorf("proofread %s: %w", p.path, err)
 		}
@@ -579,3 +579,15 @@ func linesBefore(cues []domain.TranscriptCue, at int) int {
 
 // unbounded holds a correction to speech to no distance from what was heard.
 const unbounded = 0.0
+
+// ask is the batches with their prompt built for the proofreader.
+func ask(batches []proofread.Batch) []domain.ProofreadBatch {
+	out := make([]domain.ProofreadBatch, len(batches))
+	for i, batch := range batches {
+		out[i] = domain.ProofreadBatch{
+			Number: batch.Number,
+			Prompt: proofread.Ask(batch),
+		}
+	}
+	return out
+}

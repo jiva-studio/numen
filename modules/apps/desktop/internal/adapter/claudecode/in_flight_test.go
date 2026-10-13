@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // makeCounter is a program standing in for the command line that records how
@@ -43,10 +43,10 @@ func makeCounter(t *testing.T) (command []string, most func() int) {
 	}
 }
 
-func batches(n int) []proofread.Batch {
-	out := make([]proofread.Batch, n)
+func batches(n int) []domain.ProofreadBatch {
+	out := make([]domain.ProofreadBatch, n)
 	for i := range out {
-		out[i] = proofread.Batch{Number: i, Lines: []proofread.Line{{Number: i, Text: "a line"}}}
+		out[i] = domain.ProofreadBatch{Number: i, Prompt: "a line"}
 	}
 	return out
 }

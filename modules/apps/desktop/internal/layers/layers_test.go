@@ -26,7 +26,7 @@ const apps = "github.com/jiva-studio/numen/modules/apps/"
 // named in. Everything else the core holds is the core's own work.
 func isAssembled(pkg string) bool {
 	return pkg == "container" || pkg == "domain" || pkg == "port" ||
-		pkg == "proofread" || strings.HasPrefix(pkg, "adapter/")
+		strings.HasPrefix(pkg, "adapter/")
 }
 
 // baseline are the edges the applications still have. Each is a binary doing a
