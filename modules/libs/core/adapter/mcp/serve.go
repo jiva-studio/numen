@@ -147,7 +147,7 @@ func serve(ctx context.Context, addr, token string, server *sdk.Server, errorHan
 		},
 	)
 
-	listener, err := net.Listen("tcp", addr)
+	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", addr)
 	if err != nil {
 		return nil, fmt.Errorf("listen on %s: %w", addr, err)
 	}

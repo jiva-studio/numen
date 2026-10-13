@@ -62,7 +62,7 @@ func (u ImportURL) Copy(
 	if err != nil {
 		return res, err
 	}
-	defer release()
+	defer port.Close(release)
 
 	if size, held, err := u.getExistingCopy(ctx, v, store, hash, beside); err != nil {
 		return res, err

@@ -145,7 +145,7 @@ func createRecognition(
 	}
 	indexed, err := createCut(ctx, cfg, v, cfg.Extract)
 	if err != nil {
-		_ = closeModels()
+		port.Close(closeModels)
 		return cli.Recognise{}, err
 	}
 	db, cut := indexed.db, indexed.cut
@@ -153,7 +153,7 @@ func createRecognition(
 		Recognise: cfg.Recognise(db.Sources(), models),
 		Cut:       cut,
 		Close: func() error {
-			_ = closeModels()
+			port.Close(closeModels)
 			return db.Close()
 		},
 	}, nil
@@ -175,7 +175,7 @@ func createTranscription(
 	}
 	indexed, err := createCut(ctx, cfg, v, cfg.Extract)
 	if err != nil {
-		_ = closeModels()
+		port.Close(closeModels)
 		return cli.Transcribe{}, err
 	}
 	db, cut := indexed.db, indexed.cut
@@ -183,7 +183,7 @@ func createTranscription(
 		Transcribe: cfg.Transcribe(db.Sources(), models),
 		Cut:        cut,
 		Close: func() error {
-			_ = closeModels()
+			port.Close(closeModels)
 			return db.Close()
 		},
 	}, nil

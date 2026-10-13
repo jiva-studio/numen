@@ -170,7 +170,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	// answers through is in place. A machine that refuses one leaves the player
 	// with no address, and the words are still read.
 	stopped := func(why error) { fmt.Fprintf(out, "recordings will no longer play: %v\n", why) }
-	if playing, why := Listen(services.server, stopped); why != nil {
+	if playing, why := Listen(ctx, services.server, stopped); why != nil {
 		fmt.Fprintf(out, "recordings will not play: %v\n", why)
 	} else {
 		services.openPlaying(playing)

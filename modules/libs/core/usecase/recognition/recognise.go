@@ -124,7 +124,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		}
 		return res, err
 	}
-	defer release()
+	defer port.Close(release)
 
 	// A document already read is not read again. The name is the hash of what
 	// was read, so this holds however the file was renamed or moved since.
