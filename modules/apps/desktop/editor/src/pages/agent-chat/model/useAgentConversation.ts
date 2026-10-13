@@ -52,11 +52,24 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
     getInstalledAgents().flatMap(getAgentOptions),
   )
 
-  const initialAgent = (deps.getSetting?.([...AGENT_USE_AT]) as string | undefined) || ''
-  const initialModel = (deps.getSetting?.(getModelAt(initialAgent)) as string | undefined) || ''
+  const selectedAgentId = ref('')
+  const selectedModelId = ref('')
 
-  const selectedAgentId = ref(initialAgent)
-  const selectedModelId = ref(initialModel)
+  /** The setting kept at a path, as text. */
+  const getKept = (path: readonly string[]): string => String(deps.getSetting?.(path) ?? '')
+
+  /** The kept model of the kept agent, else that agent's default. */
+  const pickOption = (options: readonly AgentModelOption[]): AgentModelOption => {
+    const agent = selectedAgentId.value || getKept(AGENT_USE_AT)
+    const model = selectedModelId.value || getKept(getModelAt(agent))
+    const ofAgent = options.filter((o) => o.agentId === agent)
+    return (
+      ofAgent.find((o) => o.modelId === model) ??
+      ofAgent.find((o) => o.isDefault) ??
+      ofAgent[0] ??
+      options[0]!
+    )
+  }
 
   watch(
     modelOptions,
@@ -71,14 +84,7 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
         (o) => o.agentId === selectedAgentId.value && o.modelId === selectedModelId.value,
       )
       if (current) return
-      const agent = selectedAgentId.value || (deps.getSetting?.([...AGENT_USE_AT]) as string) || ''
-      const model = selectedModelId.value || (deps.getSetting?.(getModelAt(agent)) as string) || ''
-      const ofAgent = options.filter((o) => o.agentId === agent)
-      const pick =
-        ofAgent.find((o) => o.modelId === model) ??
-        ofAgent.find((o) => o.isDefault) ??
-        ofAgent[0] ??
-        first
+      const pick = pickOption(options)
       selectedAgentId.value = pick.agentId
       selectedModelId.value = pick.modelId
     },
