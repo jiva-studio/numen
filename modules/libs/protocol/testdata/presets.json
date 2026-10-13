@@ -10,7 +10,7 @@
     "counts": "cards",
     "backlog": 100,
     "load": {},
-    "evenLoad": true,
+    "hasEvenLoad": true,
     "learned": "interval",
     "interval": 21
   },
