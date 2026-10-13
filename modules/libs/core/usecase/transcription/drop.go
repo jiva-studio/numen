@@ -23,11 +23,6 @@ type Drop struct {
 	Queries port.SourceQueries
 	Derived port.DerivedStores
 
-	// Forgets takes a recording out of what a queue has already had an answer
-	// about, so one that gave no words is offered again. A build without one
-	// leaves the queue as it stands.
-	Forgets func(v domain.Vault, path string)
-
 	// Area is the store the artifact is kept in. Empty means the default.
 	Area string
 }
@@ -40,7 +35,11 @@ type DropResult struct {
 }
 
 // Execute drops the transcript of one recording.
-func (u Drop) Execute(ctx context.Context, v domain.Vault, path string) (DropResult, error) {
+//
+// The forgets function, where given, takes the recording out of what a queue has already had an answer about, so one that gave no words is offered again.
+func (u Drop) Execute(
+	ctx context.Context, v domain.Vault, path string, forgets func(v domain.Vault, path string),
+) (DropResult, error) {
 	res := DropResult{Path: path}
 
 	reader, err := u.Readers.Open(v)
@@ -96,8 +95,8 @@ func (u Drop) Execute(ctx context.Context, v domain.Vault, path string) (DropRes
 	if err := u.Sources.SaveExtraction(ctx, v.ID, domain.SourceChunks{Source: domain.Source{Fingerprint: ref}}); err != nil {
 		return res, fmt.Errorf("record %s: %w", path, err)
 	}
-	if u.Forgets != nil {
-		u.Forgets(v, ref.Path)
+	if forgets != nil {
+		forgets(v, ref.Path)
 	}
 
 	// The claim is a lock on the file the name is claimed by, so that file goes

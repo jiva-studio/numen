@@ -849,6 +849,19 @@ describe('an exchange that ends without saying why', () => {
       ['answered', words.nothing, undefined],
     ])
   })
+
+  it('keeps every turn of two exchanges that each said nothing', async () => {
+    const conversation = useConversation(createPort([]), words, called, now)
+    await conversation.ask('first?', '')
+    await conversation.ask('second?', '')
+
+    expect(getDrawn(conversation)).toEqual([
+      ['asked', 'first?', undefined],
+      ['answered', words.nothing, undefined],
+      ['asked', 'second?', undefined],
+      ['answered', words.nothing, undefined],
+    ])
+  })
 })
 
 describe('a question that cannot be asked', () => {

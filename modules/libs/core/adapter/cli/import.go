@@ -42,13 +42,12 @@ func runImportCommand(ctx context.Context, out io.Writer, deps Deps, args []stri
 	defer closeIfOpen(open.Close)
 
 	importing := open.ImportURL
-	importing.IsRepeat = again
 	if copying {
 		return copyFromURL(ctx, out, importing, v, args[1])
 	}
 	fmt.Fprintf(out, "downloading what %s points at\n", args[1])
 
-	res, err := importing.Execute(ctx, v, args[1])
+	res, err := importing.Execute(ctx, v, args[1], again)
 	if errors.Is(err, source.ErrBeingDownloaded) {
 		fmt.Fprintf(out, "%s is already being downloaded, and nothing was done\n", args[1])
 		return nil
@@ -74,7 +73,7 @@ func copyFromURL(
 	path string,
 ) error {
 	fmt.Fprintf(out, "downloading a copy of what %s points at\n", path)
-	res, err := importing.Copy(ctx, v, path)
+	res, err := importing.Copy(ctx, v, path, nil)
 	if errors.Is(err, source.ErrBeingDownloaded) {
 		fmt.Fprintf(out, "%s is already being downloaded, and nothing was done\n", path)
 		return nil
