@@ -70,6 +70,7 @@ export function separateTitles(
       continue
     }
 
+    const half = found.extent / 2 / metrics.arc
     titles.push(
       ...getTitleBoxes(boxAt, { from: found.at - half, to: found.at + half }, STEP / metrics.arc),
     )

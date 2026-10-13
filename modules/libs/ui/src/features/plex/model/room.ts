@@ -85,6 +85,7 @@ export function useRoom(
     const getHeadings = props.headings
     if (!getHeadings) return undefined
 
+    const { margin } = options.value
     const deps = { measure: measures.value?.heading, viewport: room.value, margin }
     return (node: PlacedNode) =>
       getNodeHeadings(node, getHeadings(node.id), { options: options.value, deps })
