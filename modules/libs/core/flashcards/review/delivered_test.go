@@ -86,8 +86,8 @@ func TestASchedulesDoesNotDependOnHowTheRunsWereDelivered(t *testing.T) {
 		}
 
 		by := review.NewFSRS()
-		want := review.Replay(ahead, by, answers)
-		got := review.Replay(ahead, by, as)
+		want := review.OrderAnswers(answers).Replay(ahead, review.ScheduleBy(by))
+		got := review.OrderAnswers(as).Replay(ahead, review.ScheduleBy(by))
 		if !maps.Equal(got, want) {
 			t.Fatalf("%d answers delivered as %d gave %+v, want %+v",
 				len(answers), len(as), got, want)
@@ -135,8 +135,8 @@ func TestAnAnswerTakenBackLeavesTheScheduleItWasNeverGivenIn(t *testing.T) {
 		}
 
 		by := review.NewFSRS()
-		want := review.Replay(ahead, by, kept)
-		got := review.Replay(ahead, by, with)
+		want := review.OrderAnswers(kept).Replay(ahead, review.ScheduleBy(by))
+		got := review.OrderAnswers(with).Replay(ahead, review.ScheduleBy(by))
 		if !maps.Equal(got, want) {
 			t.Fatalf("%d of %d answers taken back gave %+v, want %+v",
 				took, len(answers), got, want)

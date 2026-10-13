@@ -47,7 +47,7 @@ func BenchmarkLinkBlock(b *testing.B) {
 			b.ReportAllocs()
 			for range b.N {
 				doc, _ := Open(raw)
-				_, _ = doc.Links()
+				_, _ = readLinks(doc)
 			}
 		})
 	}

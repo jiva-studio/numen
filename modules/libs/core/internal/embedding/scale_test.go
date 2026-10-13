@@ -64,7 +64,7 @@ func TestOneScaleServesEveryWidth(t *testing.T) {
 			for _, q := range stored {
 				levels += math.Abs(float64(q))
 			}
-			off := math.Abs(exact(query, doc) - embedding.Similarity(query, stored))
+			off := math.Abs(exact(query, doc) - similarity(query, stored))
 			mean += off
 			worst = math.Max(worst, off)
 		}
@@ -104,9 +104,18 @@ func TestQuantisingCostsTheSameAtEveryWidth(t *testing.T) {
 				t.Fatalf("dimension %d of a unit vector of %d reached the scale", i, d)
 			}
 		}
-		if off := math.Abs(exact(query, doc) - embedding.Similarity(query, stored)); off > 4*step {
+		if off := math.Abs(exact(query, doc) - similarity(query, stored)); off > 4*step {
 			t.Fatalf("%d dimensions: the similarity is off by %.2e, more than four steps of %.2e",
 				d, off, step)
 		}
 	})
+}
+
+// similarity is the stored vector's cosine against the query.
+func similarity(query []float32, stored []int8) float64 {
+	raw := make([]byte, len(stored))
+	for i, q := range stored {
+		raw[i] = byte(q)
+	}
+	return embedding.SimilarityBytes(query, raw)
 }
