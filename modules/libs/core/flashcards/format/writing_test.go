@@ -117,4 +117,3 @@ func TestWriteIdentifier(t *testing.T) {
 		}
 	})
 }
-
