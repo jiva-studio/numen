@@ -82,7 +82,7 @@ func openRunWindow(
 	})
 	hl := source.NewHighlight(filesystem.VaultReaders{}, read, storing{held})
 	api := newBareServices()
-	api.files.readers = filesystem.VaultReaders{}
+	api.readFiles(filesystem.VaultReaders{})
 	api.Ocr.highlight = &hl
 	api.readTexts(source.NewTexts(filesystem.VaultReaders{}, nil, read, storing{held}))
 	// What a url carries follows from what fetches it, so a window that reaches

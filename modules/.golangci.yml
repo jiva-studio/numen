@@ -123,8 +123,7 @@ linters:
         # flashcards/agent.go and focus.go hand port.Task and port.Window across
         # the wire; editor/viewer.go and pool/documents.go hold
         # the open document and the vault readers the viewer reads through;
-        # cli/deps.go holds the ports the command line is handed and cli/vault.go
-        # answers port.ErrNoTrash.
+        # cli/deps.go holds the ports the command line is handed.
         driving-adapter:
           list-mode: lax
           files:
@@ -144,7 +143,6 @@ linters:
             - "!**/adapter/window/flashcards/api.go"
             - "!**/adapter/window/flashcards/agent.go"
             - "!**/adapter/cli/deps.go"
-            - "!**/adapter/cli/vault.go"
           deny:
             - pkg: "github.com/jiva-studio/numen/modules/libs/core/port"
               desc: "a driving adapter calls the use case layer; a port or sentinel it needs is re-exported there"

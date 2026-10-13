@@ -52,10 +52,9 @@ type Installation struct {
 	cards  cards.Scenarios
 	vaults vaults.Scenarios
 
-	made     Assembly
-	registry port.VaultRegistry
-	tasks    *task.Tasks
-	out      io.Writer
+	made  Assembly
+	tasks *task.Tasks
+	out   io.Writer
 	// checkIdentity refuses a vault whose folder no longer carries its identity.
 	checkIdentity vaults.CheckIdentity
 	// models is this machine's models and processor. Recognising a scan and
@@ -148,7 +147,6 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		Asking:        asking,
 		made:          made,
 		checkIdentity: vaults.NewCheckIdentity(made.GetVaultIdentity()),
-		registry:      registry,
 		tasks:         tasks,
 		models:        &run.Lock{},
 		out:           out,
@@ -337,13 +335,17 @@ func createWindow(
 	shown := newCachingViewer(made.GetPageRenderer())
 	services := createServices(state)
 	readers := made.GetVaultReaders()
-	services.files.readers = readers
+	services.readFiles(readers)
 	services.readDocuments(readers, shown)
 	services.readTexts(made.OpenSourceTexts())
 	services.Ocr.highlight = &highlight
-	services.Note.queries = made.GetNoteQueries()
-	services.Note.links = made.GetLinkQueries()
-	services.Search.queries = made.GetNoteQueries()
+	services.Note.getOpeningNote = note.NewGetOpeningNote(made.GetNoteQueries())
+	services.Note.getTypes = note.NewGetTypes(made.GetNoteQueries())
+	services.Note.getHeadings = note.NewGetHeadings(made.GetNoteQueries())
+	services.Note.resolveLinks = note.NewResolveLinks(made.GetLinkQueries())
+	services.Search.getNameMatches = search.NewGetNameMatches(made.GetNoteQueries())
+	services.Search.getTitles = note.NewGetTitles(made.GetNoteQueries())
+	services.Search.getTypes = services.Note.getTypes
 	services.File.getFolderEntries = file.NewGetFolderEntries(readers, made.GetNoteQueries())
 	services.File.getFileKinds = file.NewGetFileKinds(readers, made.GetNoteQueries())
 	services.File.createFolder = file.NewCreateFolder(made.GetVaultWriters())

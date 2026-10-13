@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/jiva-studio/numen/modules/libs/core/check"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 func runProblemsCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
@@ -29,15 +29,15 @@ func runProblemsCommand(ctx context.Context, out io.Writer, deps Deps, args []st
 		named = append(named, domain.Check(name))
 	}
 
-	found, err := check.Standard(open.Problems).Run(ctx, v, named...)
+	report, err := vault.NewStandardGetProblems(open.Problems).Execute(ctx, v, named...)
 	if err != nil {
 		return err
 	}
-	if len(found) == 0 {
+	if len(report.Found) == 0 {
 		fmt.Fprintln(out, "nothing to report")
 		return nil
 	}
-	for _, p := range found {
+	for _, p := range report.Found {
 		fmt.Fprintf(out, "%s\n  %s: %s\n", p.Path, p.Kind, p.Detail)
 	}
 	return nil

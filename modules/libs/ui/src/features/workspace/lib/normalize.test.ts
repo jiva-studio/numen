@@ -153,6 +153,18 @@ describe('a root left with one child turns the axis with it', () => {
     expect(after.axis).toBe('vertical')
   })
 
+  it('keeps the shares the grandchildren had', () => {
+    const uneven = createWorkspace(
+      split('root', [split('down', [stack('c', 'three'), stack('d', 'four')], [0.25, 0.75])]),
+      'horizontal',
+      'c',
+    )
+
+    const after = normalize(uneven)
+
+    expect(isBranch(after.root) && after.root.sizes).toStrictEqual([0.25, 0.75])
+  })
+
   it('draws every pane in exactly the box it had', () => {
     const before = arrangeWorkspace(workspace, SCREEN)
     const after = arrangeWorkspace(normalize(workspace), SCREEN)

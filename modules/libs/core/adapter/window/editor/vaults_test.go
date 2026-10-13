@@ -150,7 +150,7 @@ func onAList(t *testing.T) *onTheList {
 	folderCheck := vaults.NewFolderCheck(filesystem.VaultReaders{})
 	remove := vaults.NewRemove(find, forget, erase)
 	f.api = newBareServices()
-	f.api.files.readers = filesystem.VaultReaders{}
+	f.api.readFiles(filesystem.VaultReaders{})
 	f.api.Vaults.list = &list
 	f.api.Vaults.find = &find
 	f.api.Vaults.folderCheck = &folderCheck

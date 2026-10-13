@@ -184,7 +184,7 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 	talks := willRun()
 	hl := source.NewHighlight(filesystem.VaultReaders{}, newEmptyIndex(), stores)
 	api := newBareServices()
-	api.files.readers = filesystem.VaultReaders{}
+	api.readFiles(filesystem.VaultReaders{})
 	api.Ocr.highlight = &hl
 	api.readTexts(source.NewTexts(filesystem.VaultReaders{}, nil, newEmptyIndex(), stores))
 	api.state.setVault(vault)

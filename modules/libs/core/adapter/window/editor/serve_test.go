@@ -24,6 +24,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
 
 // bindNotes gives the handlers the questions a window asks of the index in db
@@ -31,11 +32,15 @@ import (
 func bindNotes(services *Services, db *container.Index) {
 	queries, links := db.Queries(), db.Links()
 	neighbourhood := note.NewShowNeighbourhood(links, queries)
-	services.Note.queries = queries
-	services.Note.links = links
+	services.Note.getOpeningNote = note.NewGetOpeningNote(queries)
+	services.Note.getTypes = note.NewGetTypes(queries)
+	services.Note.getHeadings = note.NewGetHeadings(queries)
+	services.Note.resolveLinks = note.NewResolveLinks(links)
 	services.Note.showNeighbourhood = &neighbourhood
 	services.Note.getLinkAddress = note.NewGetLinkAddress(queries)
-	services.Search.queries = queries
+	services.Search.getNameMatches = search.NewGetNameMatches(queries)
+	services.Search.getTitles = note.NewGetTitles(queries)
+	services.Search.getTypes = services.Note.getTypes
 	services.Cards.getTitle = note.NewGetTitle(queries)
 	services.Presets.getTitle = services.Cards.getTitle
 }

@@ -72,7 +72,7 @@ func openHighlightWindow(t *testing.T) (*Services, http.Handler, *pdf.Book) {
 	)
 	hl.Documents = pdf.Documents{}
 	api := newBareServices()
-	api.files.readers = filesystem.VaultReaders{}
+	api.readFiles(filesystem.VaultReaders{})
 	api.Ocr.highlight = &hl
 	api.readTexts(source.NewTexts(
 		filesystem.VaultReaders{}, nil,

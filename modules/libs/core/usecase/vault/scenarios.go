@@ -8,6 +8,7 @@ type Scenarios struct {
 	Registry port.VaultRegistry
 
 	List        List
+	RecordOpen  RecordOpen
 	Find        Find
 	FolderCheck FolderCheck
 	Remove      Remove

@@ -117,7 +117,7 @@ func (o *Installation) startVault(v domain.Vault, rebuild bool) error {
 	}
 	// Recorded before the vault is built, so the next window opens on it. A
 	// list that could not be written is said and nothing more.
-	if err := o.registry.RecordOpened(v.ID); err != nil {
+	if err := o.vaults.RecordOpen.Execute(v.ID); err != nil {
 		fmt.Fprintf(o.out, "not recording %s as the vault opened: %v\n", v.Name, err)
 	}
 	on, err := o.buildSession(v, rebuild)
@@ -134,7 +134,7 @@ func (o *Installation) startVault(v domain.Vault, rebuild bool) error {
 // and the watch behind it, the extraction of the documents it holds, and the
 // batches left with a proofreader.
 func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession, error) {
-	known, err := vaults.NewList(o.registry).Execute()
+	known, err := o.vaults.List.Execute()
 	if err != nil {
 		return nil, err
 	}

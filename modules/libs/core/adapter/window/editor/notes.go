@@ -230,7 +230,7 @@ func (h *noteHandler) GetOpeningNote(
 		return connect.NewResponse(&v1.GetOpeningNoteResponse{}), nil
 	}
 
-	ref, found, err := h.queries.GetOpeningNote(ctx, showing.ID)
+	ref, found, err := h.getOpeningNote.Execute(ctx, showing)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -259,7 +259,7 @@ func (h *noteHandler) GetNeighbourhood(
 	for _, related := range found.Related {
 		paths = append(paths, related.Path)
 	}
-	types, err := h.queries.GetTypes(ctx, showing.ID, paths)
+	types, err := h.getTypes.Execute(ctx, showing, paths)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -291,7 +291,7 @@ func (h *noteHandler) ResolveAddresses(
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.links.ResolveLinks(ctx, showing.ID, r.Msg.GetFrom(), r.Msg.GetWritten())
+	found, err := h.resolveLinks.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetWritten())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -440,7 +440,7 @@ func (h *noteHandler) ListHeadings(
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.queries.GetHeadings(ctx, showing.ID, paths)
+	found, err := h.getHeadings.Execute(ctx, showing, paths)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
