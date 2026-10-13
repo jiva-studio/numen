@@ -38,6 +38,14 @@ type Task struct {
 	Agent string
 	// Model is which model answers for this task. Empty uses default.
 	Model string
+	// Instructions is what the agent is told about the person it answers.
+	Instructions string
+	// Tools are the vault tools the agent may call, by the name the vault serves them under.
+	// Nothing outside them is allowed.
+	Tools []string
+	// MaxSteps is how many steps the agent may take before it is stopped. Zero leaves the limit
+	// to the agent.
+	MaxSteps int
 }
 
 // Run is one task being worked. Task is the request; this is its execution.

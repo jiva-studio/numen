@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/agent"
 )
 
 // ErrNoAgent is a question asked at a window that can reach none. Whether one
@@ -50,11 +51,13 @@ func (a *API) AskAgent(
 		Face: r.Msg.GetFace(),
 	})
 
-	return wire.StreamAgentTask(ctx, taking, port.Task{
+	task := port.Task{
 		Question:     r.Msg.GetPrompt(),
 		Focus:        r.Msg.GetFocus(),
 		Conversation: r.Msg.GetConversation(),
-	}, stream)
+	}
+	task.Instructions = agent.GetInstructions(task)
+	return wire.StreamAgentTask(ctx, taking, task, stream)
 }
 
 // FinishConversation says a conversation is over, and hands that on to the

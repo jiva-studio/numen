@@ -10,8 +10,9 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"time"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/runner"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -57,24 +58,17 @@ func (a *Agent) StartRun(ctx context.Context, task port.Task) (port.Run, error) 
 	}
 	pipes := opened.getClosers()
 
-	w := &work{
-		cmd:          cmd,
-		stop:         stop,
-		conversation: task.Conversation,
-		steps:        make(chan port.Step, 64),
-		cleanup:      cleanupTempHome,
-	}
-
-	if !a.registerWork(w) {
+	w := runner.NewWork(task.Conversation, 64, stop)
+	if !a.registry.Add(w) {
 		return abandon(errors.New("this agent is closing"), pipes...)
 	}
 	if err := cmd.Start(); err != nil {
-		a.unregisterWork(w)
+		a.registry.Remove(w)
 		return abandon(fmt.Errorf("start %s: %w", binName, err), pipes...)
 	}
 
-	w.reader.Add(1)
-	go a.read(w, opened.stdin, opened.stdout, task, isRPC)
+	w.Begin()
+	go a.read(w, process{cmd: cmd, stdin: opened.stdin, stdout: opened.stdout, cleanup: cleanupTempHome, stop: stop}, task, isRPC)
 
 	return w, nil
 }
@@ -87,10 +81,7 @@ func (a *Agent) configureCommand(cmd *exec.Cmd) {
 		cmd.Env = os.Environ()
 	}
 	cmd.Env = append(cmd.Env, "NUMEN_TOKEN="+a.Tools.Token)
-	detach(cmd)
-
-	cmd.Cancel = func() error { return kill(cmd) }
-	cmd.WaitDelay = 2 * time.Second
+	runner.Supervise(cmd)
 }
 
 // processPipes are the pipes of the process: its input where it speaks
@@ -144,14 +135,14 @@ func (a *Agent) makeAntigravityCommand(
 ) (*exec.Cmd, func()) {
 	args := append([]string{}, baseArgs...)
 	args = append(args,
-		"-p", task.Question,
+		"-p", getPrompt(task),
 		"--output-format", "stream-json",
 		"--dangerously-skip-permissions",
 	)
 	if model := a.getModel(task); model != "" && model != "default" {
 		args = append(args, "--model", model)
 	}
-	if sessID := a.getCarriedSession(task.Conversation); sessID != "" {
+	if sessID := a.registry.GetSession(task.Conversation); sessID != "" {
 		args = append(args, "--conversation", sessID)
 	}
 
@@ -162,17 +153,6 @@ func (a *Agent) makeAntigravityCommand(
 	}
 	cmd.Env = append(os.Environ(), "HOME="+tempHome)
 	return cmd, clean
-}
-
-// getCarriedSession is the session an earlier task of the conversation was
-// answered in, and nothing where there is none.
-func (a *Agent) getCarriedSession(conversation string) string {
-	a.carried.Lock()
-	defer a.carried.Unlock()
-	if conversation == "" {
-		return ""
-	}
-	return a.carried.sessions[conversation]
 }
 
 // makeCodexCommand is the codex program asked the task, reaching the vault's
@@ -193,32 +173,42 @@ func (a *Agent) makeCodexCommand(
 	if model := a.getModel(task); model != "" && model != "default" {
 		args = append(args, "--model", model)
 	}
-	args = append(args, task.Question)
+	args = append(args, getPrompt(task))
 	return exec.CommandContext(running, binName, args...)
 }
 
+// process is the child an agent runs as, and what the run holds besides it.
+type process struct {
+	cmd     *exec.Cmd
+	stdin   io.WriteCloser
+	stdout  io.ReadCloser
+	cleanup func()
+	stop    context.CancelFunc
+}
+
 // read talks to the agent and reports what it does as steps until its output
-// ends, then waits for the process and lets go of everything the work holds.
-func (a *Agent) read(w *work, stdin io.WriteCloser, stdout io.ReadCloser, task port.Task, isRPC bool) {
+// ends or the task's step limit is reached, then waits for the process and lets
+// go of everything the work holds.
+func (a *Agent) read(w *runner.Work, p process, task port.Task, isRPC bool) {
 	defer func() {
-		if w.cleanup != nil {
-			w.cleanup()
+		if p.cleanup != nil {
+			p.cleanup()
 		}
 	}()
-	defer w.reader.Done()
-	defer a.unregisterWork(w)
-	defer close(w.steps)
-	if stdin != nil {
-		defer stdin.Close()
+	defer w.End()
+	defer a.registry.Remove(w)
+	defer close(w.Output)
+	if p.stdin != nil {
+		defer p.stdin.Close()
 	}
-	defer stdout.Close()
+	defer p.stdout.Close()
 
-	if isRPC && stdin != nil {
-		a.sendRequests(stdin, task)
+	if isRPC && p.stdin != nil {
+		a.sendRequests(p.stdin, task)
 	}
 
-	events := &eventReader{agent: a, work: w, conversation: task.Conversation}
-	scanner := bufio.NewScanner(stdout)
+	events := &eventReader{agent: a, work: w, conversation: task.Conversation, limit: task.MaxSteps}
+	scanner := bufio.NewScanner(p.stdout)
 	for scanner.Scan() {
 		line := scanner.Bytes()
 		if len(line) == 0 {
@@ -228,9 +218,23 @@ func (a *Agent) read(w *work, stdin io.WriteCloser, stdout io.ReadCloser, task p
 		if err := json.Unmarshal(line, &rawMap); err == nil {
 			events.handle(rawMap)
 		}
+		if events.isOverLimit() {
+			events.send(port.Step{Kind: domain.StepStop, Detail: fmt.Sprintf("stopped after %d steps", task.MaxSteps)})
+			p.stop()
+			break
+		}
 	}
 
-	_ = w.cmd.Wait()
+	_ = p.cmd.Wait()
+}
+
+// getPrompt returns what the agent is asked: the instructions the task carries, then the
+// question.
+func getPrompt(task port.Task) string {
+	if task.Instructions == "" {
+		return task.Question
+	}
+	return task.Instructions + "\n" + task.Question
 }
 
 // sendRequests opens a session on the agent over JSON-RPC and prompts it with
@@ -271,9 +275,9 @@ func (a *Agent) sendRequests(stdin io.Writer, task port.Task) {
 		"id":      3,
 		"method":  "session/prompt",
 		"params": map[string]any{
-			"model": a.Model,
+			"model": a.getModel(task),
 			"prompt": []map[string]any{
-				{"role": "user", "text": task.Question},
+				{"role": "user", "text": getPrompt(task)},
 			},
 			"context": map[string]any{
 				"focus": task.Focus,
