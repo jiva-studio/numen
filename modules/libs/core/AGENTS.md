@@ -23,7 +23,7 @@ carries a table of what it refuses and a guard against passing vacuously.
 | The composition root hands out no adapter type | `TestTheRootHandsOutNoAdapterTheCompilerHolds` |
 | A package is imported under the name its layer gives it | `TestNoPackageIsImportedUnderItsLayer` |
 
-Both rules carry a baseline of the edges this installation still has, and
+The layer rule carries a baseline of the edges this installation still has, and
 `container/baseline_test.go` refuses an entry naming an edge nothing reaches any
 more. A baseline only shrinks.
 

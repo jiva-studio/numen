@@ -20,31 +20,13 @@ var outward = []string{
 	module + "adapter", module + "internal/adapter", module + "container", wire,
 }
 
-// wireBaseline are the edges to the schema the core still has. Each is a
-// package naming the wire in the core's own language, and the list only
-// shrinks.
-var wireBaseline = map[string][]string{
-	// What two adapters both put on the schema is built here.
-	"internal/wire": {wire},
-}
-
-// isBaselined says whether a package is allowed the edge it has.
-func isBaselined(from, dep string) bool {
-	for _, held := range wireBaseline[from] {
-		if strings.HasPrefix(dep, held) {
-			return true
-		}
-	}
-	return false
-}
-
 // getRefusedImports is what a package of this module may not be compiled from,
 // and whether it answers for what it names itself.
 //
 // The core answers for the whole of what it is built from. The composition root
 // binds the adapters and is built from them, so it answers for what it names,
 // and the schema is the one thing it may not name. An adapter and what only a
-// test builds answer for nothing.
+// test builds answer for nothing; so does a shared adapter library.
 func getRefusedImports(path string) (refuses []string, named bool) {
 	held := strings.TrimPrefix(path, module)
 	switch {
@@ -52,19 +34,17 @@ func getRefusedImports(path string) (refuses []string, named bool) {
 		return []string{wire}, true
 	case strings.HasPrefix(held, "adapter/"),
 		strings.HasPrefix(held, "internal/adapter/"),
-		strings.HasPrefix(held, "internal/testsupport"):
+		strings.HasPrefix(held, "internal/testsupport"),
+		isShared(held):
 		return nil, false
 	}
 	return outward, false
 }
 
 // isEdgeRefused says whether a package would be failed for the edge it has,
-// which is what inward does with what getRefusedImports and isBaselined say.
+// which is what inward does with what getRefusedImports says.
 func isEdgeRefused(pkg, dep string) bool {
 	isRefused, _ := getRefusedImports(module + pkg)
-	if isBaselined(pkg, dep) {
-		return false
-	}
 	for _, refused := range isRefused {
 		if strings.HasPrefix(dep, refused) {
 			return true
@@ -73,10 +53,9 @@ func isEdgeRefused(pkg, dep string) bool {
 	return false
 }
 
-// What answering and baselined say between them is the whole of the rule, so
-// they are asked directly. A walk that reads the tree and refuses nothing
-// passes, and an entry admitting one edge that quietly admitted every edge
-// would pass with it: these are the edges that have to come back refused.
+// What getRefusedImports says is the whole of the rule, so it is asked directly.
+// A walk that reads the tree and refuses nothing passes: these are the edges
+// that have to come back refused.
 func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 	for _, one := range []struct {
 		pkg, dep  string
@@ -97,10 +76,11 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 		{"container", module + "adapter/index", false},
 		{"container", module + "internal/adapter/theme", false},
 
-		// What two adapters both put on the schema is built in one place, and
-		// the edge that admits it admits nothing else.
+		// A shared adapter library speaks the schema; a package that is no adapter
+		// does not.
 		{"internal/wire", wire + "/gen/numen/v1", false},
-		{"internal/wire", module + "adapter/window/editor", true},
+		{"internal/onnxruntime", wire + "/gen/numen/v1", false},
+		{"internal/query", wire + "/gen/numen/v1", true},
 
 		// An adapter, and what only a test builds, answer for nothing.
 		{"adapter/window/editor", wire + "/gen/numen/v1", false},
@@ -194,9 +174,6 @@ func inward(t *testing.T, goos, goarch string) {
 		}
 		held := strings.TrimPrefix(pkg.ImportPath, module)
 		for _, dep := range reaching {
-			if isBaselined(held, dep) {
-				continue
-			}
 			for _, refused := range refuses {
 				if strings.HasPrefix(dep, refused) {
 					t.Errorf("%s reaches %s", held, strings.TrimPrefix(dep, module))

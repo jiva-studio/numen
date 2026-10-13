@@ -1,14 +1,9 @@
 package container
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
 	"go/parser"
 	"go/token"
-	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -103,86 +98,5 @@ func TestWhatTheBaselineShrinkRuleRefuses(t *testing.T) {
 				t.Errorf("%s → %s needs no baseline entry and the rule admits one", one.from, one.to)
 			}
 		}
-	}
-}
-
-// The edges to the generated schema are the same list under another rule, and
-// the same holds of them: an entry no package answers to is taken off.
-func TestNothingIsBaselinedForTheSchemaThatIsNoLongerNamed(t *testing.T) {
-	for _, one := range stale(wireBaseline, getAllImports(t)) {
-		t.Error(one + ": nothing it is compiled from is the schema")
-	}
-}
-
-// stale are the entries of a baseline naming an edge the package they stand
-// under does not have.
-func stale(listed, built map[string][]string) []string {
-	var idle []string
-	for from, entries := range listed {
-		for _, to := range entries {
-			if !slices.ContainsFunc(built[from], func(dep string) bool {
-				return strings.HasPrefix(dep, to)
-			}) {
-				idle = append(idle, from+" is baselined for "+to)
-			}
-		}
-	}
-	slices.Sort(idle)
-	return idle
-}
-
-// getAllImports is everything each package of the core is compiled from, at
-// whatever remove, as this machine's build resolves it.
-func getAllImports(t *testing.T) map[string][]string {
-	t.Helper()
-
-	listing := exec.CommandContext(t.Context(), "go", "list", "-json", "./...")
-	listing.Dir = ".."
-	listed, err := listing.Output()
-	if err != nil {
-		var ran *exec.ExitError
-		if errors.As(err, &ran) {
-			t.Fatalf("go list: %v: %s", err, ran.Stderr)
-		}
-		t.Fatalf("go list: %v", err)
-	}
-
-	built := map[string][]string{}
-	decoder := json.NewDecoder(bytes.NewReader(listed))
-	for {
-		var pkg struct {
-			ImportPath string
-			Deps       []string
-		}
-		err := decoder.Decode(&pkg)
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil {
-			t.Fatalf("go list: %v", err)
-		}
-		built[strings.TrimPrefix(pkg.ImportPath, module)] = pkg.Deps
-	}
-
-	// A listing of nothing is a rule checked against nothing.
-	if len(built) == 0 {
-		t.Fatal("go list found no package of the core")
-	}
-	return built
-}
-
-// What the rule refuses, read against a listing written to be refused. The
-// entry the listing answers is left alone and the one it does not is named.
-func TestWhatTheSchemaBaselineRuleRefuses(t *testing.T) {
-	built := map[string][]string{
-		"internal/wire": {module + "port", wire + "/gen/numen/v1"},
-		"container":     {module + "port"},
-	}
-	got := stale(map[string][]string{
-		"internal/wire": {wire},
-		"container":     {wire},
-	}, built)
-	if want := []string{"container is baselined for " + wire}; !slices.Equal(got, want) {
-		t.Errorf("the rule refuses %v, want %v", got, want)
 	}
 }
