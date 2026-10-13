@@ -4,37 +4,16 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// GetChunkSizes is how a source's text is cut into chunks.
-//
-// It is a fact about the settings and not about what is loaded: the sizes are
-// part of what a chunk is kept under, and a chunk cut one way in a window and
-// another way in a terminal is a source cut again every time the two take
-// turns. This is where the number comes from, and there is nowhere else to
-// take it from.
-func (c Config) GetChunkSizes() chunking.Sizes {
-	if c.Embedding.Indexing.Use == "" {
-		return chunking.Sizes{}
-	}
-	return chunking.Sizes{Limit: chunking.GetCharacterBound(c.Embedding.Model.MaxTokens)}
-}
-
-// Legibility is what a chunk has to read like to be indexed. It comes from here
-// for the reason the sizes do: one answer for one installation.
-func (c Config) Legibility() chunking.Legibility {
-	return chunking.Legibility{}
-}
-
-// CutNotes is how a note is cut into the chunks the index keeps: at this
-// installation's sizes, keeping what reads as text.
+// CutNotes is how a source's text and a note are cut into the chunks the index
+// keeps: at this installation's sizes, keeping what reads as text.
 func (c Config) CutNotes() note.CutNotes {
-	return note.CutNotes{Sizes: c.GetChunkSizes(), Legibility: c.Legibility()}
+	return note.NewCutNotes(c.Embedding.Indexing.Use != "", c.Embedding.Model.MaxTokens)
 }
 
 // Scan is the walk that reads a vault's notes into the index, cut at this
@@ -118,8 +97,9 @@ func (c Config) Extract(sources port.SourceRepository, known port.SourceQueries,
 	extract := source.NewExtract(c.VaultReaders(), sources, known)
 	extract.Derived = derived
 	extract.Documents = c.TextExtractor()
-	extract.Sizes = c.GetChunkSizes()
-	extract.Legibility = c.Legibility()
+	cut := c.CutNotes()
+	extract.Sizes = cut.Sizes
+	extract.Legibility = cut.Legibility
 	extract.ShouldRebuildIndex = c.ShouldRebuildIndex
 	return extract, nil
 }

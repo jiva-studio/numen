@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
 // What a proofreading cannot be made without. An installation that named no
@@ -116,7 +117,7 @@ type checkpoint struct {
 // Execute proofreads one document's recognition.
 func (u ProofreadRecognition) Execute(ctx context.Context, v domain.Vault, path string) (ProofreadRecognitionResult, error) {
 	res := ProofreadRecognitionResult{Path: path}
-	hash, err := u.getHash(ctx, v, path)
+	hash, err := run.GetHash(ctx, u.readers, v, path, u.Hash)
 	if err != nil {
 		return res, err
 	}
@@ -125,7 +126,7 @@ func (u ProofreadRecognition) Execute(ctx context.Context, v domain.Vault, path 
 		return res, err
 	}
 
-	area := u.area()
+	area := run.GetArea(u.Area, "ocr")
 	corrections, progressPath := text.Corrections(area, hash), text.Proofread(area, hash)
 
 	// One run to a recognition. The name is the one the corrections are kept under,
@@ -163,7 +164,7 @@ func (u ProofreadRecognition) Execute(ctx context.Context, v domain.Vault, path 
 	// Progress is reported once there is a page to ask about, so a recognition
 	// nothing is left to be asked about is never work anybody is shown.
 	if done < len(pages) {
-		u.progress(res)
+		run.Report(u.OnProgress, res)
 	}
 
 	job := proofreadRecognitionJob{v: v, store: store, path: path, pages: pages, corrections: corrections, progressPath: progressPath}
@@ -186,22 +187,6 @@ type proofreadRecognitionJob struct {
 	progressPath string
 }
 
-// getHash is the fingerprint of the recognition's source file.
-func (u ProofreadRecognition) getHash(ctx context.Context, v domain.Vault, path string) (string, error) {
-	if u.Hash != "" {
-		return u.Hash, nil
-	}
-	reader, err := u.readers.Open(v)
-	if err != nil {
-		return "", err
-	}
-	raw, err := reader.Read(ctx, path)
-	if err != nil {
-		return "", fmt.Errorf("read %s: %w", path, err)
-	}
-	return text.Fingerprint(raw), nil
-}
-
 // askPages asks the proofreader about the pages from at onwards, a batch at a
 // time.
 func (u ProofreadRecognition) askPages(
@@ -210,13 +195,14 @@ func (u ProofreadRecognition) askPages(
 	at int,
 	res *ProofreadRecognitionResult,
 ) error {
-	for ; at < len(p.pages); at += u.batch() {
+	batch := run.GetSize(u.Pages, DefaultPages)
+	for ; at < len(p.pages); at += batch {
 		if err := ctx.Err(); err != nil {
 			// What came back is on disk already, and the next run begins at the
 			// page this one stopped on.
 			return err
 		}
-		end := min(at+u.batch(), len(p.pages))
+		end := min(at+batch, len(p.pages))
 		asked := p.pages[at:end]
 
 		replies, err := u.by.Proofread(ctx, asked)
@@ -250,13 +236,13 @@ func (u ProofreadRecognition) writeCorrections(
 		res.Fixed += len(put)
 	}
 	res.Read = end
-	if err := u.cut(ctx, p.v, p.path); err != nil {
+	if err := run.Cut(ctx, u.Cut, p.v, p.path); err != nil {
 		return err
 	}
 	if err := u.writeCheckpoint(ctx, p.store, p.progressPath, checkpoint{Pages: end}); err != nil {
 		return err
 	}
-	u.progress(*res)
+	run.Report(u.OnProgress, *res)
 	return nil
 }
 
@@ -300,7 +286,7 @@ func (u ProofreadRecognition) getCorrections(
 		if !answered {
 			continue
 		}
-		lines, _, ok := proofread.GetFixedLines(page, reply, u.distance())
+		lines, _, ok := proofread.GetFixedLines(page, reply, run.GetSize(u.MaxEditDistance, proofread.MaxEditDistance))
 		if !ok {
 			uncorrected++
 			continue
@@ -403,7 +389,7 @@ func (u ProofreadRecognition) submitBatch(
 	at int,
 	res *ProofreadRecognitionResult,
 ) error {
-	end := min(at+u.batch(), len(p.pages))
+	end := min(at+run.GetSize(u.Pages, DefaultPages), len(p.pages))
 	name, err := u.Queue.Submit(ctx, p.pages[at:end])
 	if err != nil {
 		return fmt.Errorf("leave the pages of %s: %w", p.path, err)
@@ -468,39 +454,4 @@ func (u ProofreadRecognition) writeCheckpoint(ctx context.Context, store port.De
 		return err
 	}
 	return store.Write(ctx, progressPath, append(raw, '\n'))
-}
-
-// cut makes this source's chunks from the recognition as it now stands.
-func (u ProofreadRecognition) cut(ctx context.Context, v domain.Vault, path string) error {
-	if u.Cut == nil {
-		return nil
-	}
-	return u.Cut(ctx, v, path)
-}
-
-func (u ProofreadRecognition) area() string {
-	if u.Area == "" {
-		return "ocr"
-	}
-	return u.Area
-}
-
-func (u ProofreadRecognition) batch() int {
-	if u.Pages <= 0 {
-		return DefaultPages
-	}
-	return u.Pages
-}
-
-func (u ProofreadRecognition) distance() float64 {
-	if u.MaxEditDistance <= 0 {
-		return proofread.MaxEditDistance
-	}
-	return u.MaxEditDistance
-}
-
-func (u ProofreadRecognition) progress(res ProofreadRecognitionResult) {
-	if u.OnProgress != nil {
-		u.OnProgress(res)
-	}
 }

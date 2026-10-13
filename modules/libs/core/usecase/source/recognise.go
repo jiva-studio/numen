@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
 // Recognise reads a scanned document with a model and writes down what it saw.
@@ -106,7 +107,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	if err != nil {
 		return res, err
 	}
-	area := u.area()
+	area := run.GetArea(u.Area, "ocr")
 	final, partial := text.Artifact(area, hash), text.Partial(area, hash)
 	boxes, parts := text.Boxes(area, hash), text.Parts(area, hash)
 
@@ -128,7 +129,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	if _, err := store.Read(ctx, final); err == nil {
 		file.Close()
 		res.Read, res.Pages = 1, 1
-		return res, u.stand(ctx, v, ref, hash, area)
+		return res, run.Stand(ctx, u.Cut, u.sources, v, ref, hash, area)
 	}
 
 	scan, err := u.documents.OpenDocument(ctx, file)
@@ -205,7 +206,7 @@ func (w *pageWriter) write(ctx context.Context, pages []ocr.Page, read int) erro
 	}
 	said, _ := ocr.Read(written)
 	w.prose += len(said)
-	return w.u.cut(ctx, w.v, w.path)
+	return run.Cut(ctx, w.u.Cut, w.v, w.path)
 }
 
 // readPages reads the pages the partial does not yet claim, writing a batch at a
@@ -230,9 +231,10 @@ func (u Recognise) readPages(
 		return err
 	}
 	res.Resumed, res.Read = done, done
-	u.progress(*res)
+	run.Report(u.OnProgress, *res)
 
-	pages := make([]ocr.Page, 0, u.batch())
+	batch := run.GetSize(u.Batch, DefaultBatch)
+	pages := make([]ocr.Page, 0, batch)
 	for index := done; index < scan.GetPageCount(); index++ {
 		if err := ctx.Err(); err != nil {
 			// What has been read is on disk already, and the next run begins
@@ -246,13 +248,13 @@ func (u Recognise) readPages(
 		pages = append(pages, page)
 
 		res.Read = index + 1
-		if len(pages) >= u.batch() {
+		if len(pages) >= batch {
 			if err := out.write(ctx, pages, res.Read); err != nil {
 				return err
 			}
 			pages = pages[:0]
 		}
-		u.progress(*res)
+		run.Report(u.OnProgress, *res)
 	}
 	if len(pages) == 0 {
 		return nil
@@ -308,23 +310,10 @@ func (u Recognise) saveRecognition(
 		return err
 	}
 	// The source stands on the artifact before the partial goes.
-	if err := u.stand(ctx, v, ref, hash, area); err != nil {
+	if err := run.Stand(ctx, u.Cut, u.sources, v, ref, hash, area); err != nil {
 		return err
 	}
 	return store.Remove(ctx, partial)
-}
-
-// stand puts the source on the text a producer made.
-//
-// Cutting writes which text a source stands on together with the chunks cut
-// from it, in one statement, and the two are one fact. Where nothing cuts here
-// the source is recorded as owing its text, and the scan that cuts it writes
-// both.
-func (u Recognise) stand(ctx context.Context, v domain.Vault, ref domain.Fingerprint, hash, from string) error {
-	if u.Cut != nil {
-		return u.Cut(ctx, v, ref.Path)
-	}
-	return u.claim(ctx, v, ref, hash, from)
 }
 
 // forget puts a document that said nothing back on its own text layer, and takes
@@ -342,15 +331,7 @@ func (u Recognise) forget(
 			return err
 		}
 	}
-	return u.stand(ctx, v, ref, hash, "")
-}
-
-// cut makes this source's chunks from what has been read so far.
-func (u Recognise) cut(ctx context.Context, v domain.Vault, path string) error {
-	if u.Cut == nil {
-		return nil
-	}
-	return u.Cut(ctx, v, path)
+	return run.Stand(ctx, u.Cut, u.sources, v, ref, hash, "")
 }
 
 // dropBoxes drops the coordinates of pages no count claims.
@@ -393,14 +374,6 @@ func dropParts(ctx context.Context, store port.DerivedStore, name string, prose 
 		}
 	}
 	return store.Write(ctx, name, ocr.Pack(kept))
-}
-
-// claim records which producer made this source's text.
-//
-// No recipe is written, so the source owes its text: what cuts it into chunks
-// is extraction, which knows the sizes and is the one place that does.
-func (u Recognise) claim(ctx context.Context, v domain.Vault, ref domain.Fingerprint, hash, from string) error {
-	return u.sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref, Hash: hash, Producer: from})
 }
 
 // record keeps what read the document beside what it read. Nothing on any path
@@ -481,24 +454,4 @@ func lastCount(raw []byte) (read, end int) {
 		return lastCount(raw[:at])
 	}
 	return read, at + len(resumeMark) + stop + 1
-}
-
-func (u Recognise) area() string {
-	if u.Area == "" {
-		return "ocr"
-	}
-	return u.Area
-}
-
-func (u Recognise) batch() int {
-	if u.Batch <= 0 {
-		return DefaultBatch
-	}
-	return u.Batch
-}
-
-func (u Recognise) progress(res RecogniseResult) {
-	if u.OnProgress != nil {
-		u.OnProgress(res)
-	}
 }

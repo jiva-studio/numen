@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
 // Transcribe listens to a recording with a model and writes down what it heard.
@@ -104,7 +105,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	}
 
 	hash := text.Fingerprint(raw)
-	area := u.area()
+	area := run.GetArea(u.Area, text.ASR)
 	final, partial := text.Artifact(area, hash), text.Partial(area, hash)
 
 	// One run to a recording. The name is the hash of its bytes, and it is held
@@ -176,7 +177,7 @@ func (u Transcribe) saveTranscript(
 		return err
 	}
 	// The source stands on the artifact before the partial goes.
-	if err := u.stand(ctx, v, ref, hash, area); err != nil {
+	if err := run.Stand(ctx, u.Cut, u.sources, v, ref, hash, area); err != nil {
 		return err
 	}
 	return store.Remove(ctx, partial)
@@ -213,13 +214,13 @@ func (u Transcribe) recordSource(
 			res.Heard = cues[len(cues)-1].To
 			res.Length = res.Heard
 		}
-		return true, u.stand(ctx, v, ref, hash, area)
+		return true, run.Stand(ctx, u.Cut, u.sources, v, ref, hash, area)
 	}
 	if held, err := store.Read(ctx, text.Answer(area, hash)); err == nil {
 		gave, _ := text.ReadAnswer(held)
 		res.IsSilent = gave == text.Silent
 		res.IsUnopened = gave == text.Unopened
-		return true, u.stand(ctx, v, ref, hash, "")
+		return true, run.Stand(ctx, u.Cut, u.sources, v, ref, hash, "")
 	}
 	return false, nil
 }
@@ -242,7 +243,7 @@ func (u Transcribe) transcribeSegments(
 		return err
 	}
 	res.Resumed, res.Heard = from, from
-	u.progress(*res)
+	run.Report(u.OnProgress, *res)
 
 	opened := size > 0
 	for {
@@ -267,11 +268,11 @@ func (u Transcribe) transcribeSegments(
 			return err
 		}
 		opened = true
-		if err := u.cut(ctx, v, path); err != nil {
+		if err := run.Cut(ctx, u.Cut, v, path); err != nil {
 			return err
 		}
 		res.Heard = from
-		u.progress(*res)
+		run.Report(u.OnProgress, *res)
 	}
 }
 
@@ -284,7 +285,7 @@ func (u Transcribe) transcribeBatch(
 	path string,
 	from int,
 ) ([]transcript.Cue, int, error) {
-	segments, err := recording.GetSegments(ctx, from, u.batch())
+	segments, err := recording.GetSegments(ctx, from, run.GetSize(u.Batch, DefaultHeard))
 	if err != nil {
 		return nil, from, fmt.Errorf("transcribe %s at %s: %w", path, transcript.FormatTimestamp(from), err)
 	}
@@ -320,28 +321,7 @@ func (u Transcribe) answer(
 	if err := store.Remove(ctx, text.Partial(area, hash)); err != nil {
 		return err
 	}
-	return u.stand(ctx, v, ref, hash, "")
-}
-
-// stand puts the source on the text a producer made.
-//
-// Cutting writes which text a source stands on together with the chunks cut
-// from it, in one statement, and the two are one fact. Where nothing cuts here
-// the source is recorded as owing its text, and the scan that cuts it writes
-// both.
-func (u Transcribe) stand(ctx context.Context, v domain.Vault, ref domain.Fingerprint, hash, from string) error {
-	if u.Cut != nil {
-		return u.Cut(ctx, v, ref.Path)
-	}
-	return u.sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref, Hash: hash, Producer: from})
-}
-
-// cut makes this source's chunks from what has been heard so far.
-func (u Transcribe) cut(ctx context.Context, v domain.Vault, path string) error {
-	if u.Cut == nil {
-		return nil
-	}
-	return u.Cut(ctx, v, path)
+	return run.Stand(ctx, u.Cut, u.sources, v, ref, hash, "")
 }
 
 // record keeps what listened to the recording beside what it heard. Nothing on
@@ -402,24 +382,4 @@ func leftOff(
 		}
 	}
 	return ms, end, nil
-}
-
-func (u Transcribe) area() string {
-	if u.Area == "" {
-		return text.ASR
-	}
-	return u.Area
-}
-
-func (u Transcribe) batch() int {
-	if u.Batch <= 0 {
-		return DefaultHeard
-	}
-	return u.Batch
-}
-
-func (u Transcribe) progress(res TranscribeResult) {
-	if u.OnProgress != nil {
-		u.OnProgress(res)
-	}
 }
