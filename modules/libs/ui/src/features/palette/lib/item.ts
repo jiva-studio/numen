@@ -1,6 +1,7 @@
 /**
  * What a palette is, as plain values. No DOM, no measurement, no clock.
  */
+import { stepTo } from '@/shared/lib/roving'
 import type { Span } from '@/shared/lib/span'
 import type { PaletteKeys } from '@/shared/ui/key-cap'
 import type { PaletteAction } from '../types'
@@ -83,22 +84,8 @@ export const flatten = (groups: readonly PaletteGroup[]): readonly PalettePlace[
 export const canChoose = (item: PaletteItem): boolean =>
   !item.disabled && (item.actions?.length ?? 0) > 0
 
-/**
- * Where the keyboard lands next, counting from `from` and passing over what
- * cannot be chosen. It wraps, and answers -1 when there is nothing to land on.
- *
- * Counting from -1 by one is how the first is asked for, and from 0 by minus
- * one is how the last is.
- */
-export const stepTo = (places: readonly PalettePlace[], from: number, by: number): number => {
-  const total = places.length
-  for (let step = 1; step <= total; step += 1) {
-    const at = (((from + by * step) % total) + total) % total
-    const place = places[at]
-    if (place && canChoose(place.item)) return at
-  }
-  return -1
-}
+/** Whether the keyboard may land on the place. */
+export const canLandOn = (place: PalettePlace): boolean => canChoose(place.item)
 
 /**
  * Where the keyboard lands in a list of this many, counting from `from`. It
@@ -117,5 +104,5 @@ export const getSteppedIndex = (total: number, from: number, by: number): number
  */
 export const findKeptPlace = (places: readonly PalettePlace[], was: string): number => {
   const at = places.findIndex((place) => place.item.id === was && canChoose(place.item))
-  return stepTo(places, Math.max(at, 0) - 1, 1)
+  return stepTo(places, Math.max(at, 0) - 1, 1, canLandOn)
 }

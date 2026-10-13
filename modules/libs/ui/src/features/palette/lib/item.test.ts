@@ -8,6 +8,7 @@
  * it.
  */
 import { describe, expect, it } from 'vitest'
+import { stepTo } from '@/shared/lib/roving'
 import { findKeptAction, placeActions } from './actions'
 import {
   canChoose,
@@ -15,7 +16,7 @@ import {
   flatten,
   orderGroups,
   getSteppedIndex,
-  stepTo,
+  canLandOn,
   type PaletteItem,
   type PaletteGroup,
 } from './item'
@@ -112,33 +113,33 @@ describe('walking the list', () => {
   const places = flatten(SECTIONS)
 
   it('crosses a group without stopping between them', () => {
-    expect(stepTo(places, 1, 1)).toBe(3)
+    expect(stepTo(places, 1, 1, canLandOn)).toBe(3)
   })
 
   it('passes over what cannot be chosen on the way back too', () => {
-    expect(stepTo(places, 3, -1)).toBe(1)
+    expect(stepTo(places, 3, -1, canLandOn)).toBe(1)
   })
 
   it('wraps at either end', () => {
-    expect(stepTo(places, 3, 1)).toBe(0)
-    expect(stepTo(places, 0, -1)).toBe(3)
+    expect(stepTo(places, 3, 1, canLandOn)).toBe(0)
+    expect(stepTo(places, 0, -1, canLandOn)).toBe(3)
   })
 
   it('is asked for the first by counting from nowhere', () => {
-    expect(stepTo(places, -1, 1)).toBe(0)
+    expect(stepTo(places, -1, 1, canLandOn)).toBe(0)
   })
 
   it('is asked for the last by counting back from the first', () => {
-    expect(stepTo(places, 0, -1)).toBe(3)
+    expect(stepTo(places, 0, -1, canLandOn)).toBe(3)
   })
 
   it('lands nowhere when nothing in the list can be chosen', () => {
     const off = flatten([group('names', [item('one', { disabled: true })])])
-    expect(stepTo(off, -1, 1)).toBe(-1)
+    expect(stepTo(off, -1, 1, canLandOn)).toBe(-1)
   })
 
   it('lands nowhere in a list with nothing in it', () => {
-    expect(stepTo([], -1, 1)).toBe(-1)
+    expect(stepTo([], -1, 1, canLandOn)).toBe(-1)
   })
 })
 

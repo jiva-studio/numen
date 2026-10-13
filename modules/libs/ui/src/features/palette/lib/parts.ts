@@ -1,4 +1,5 @@
 /** A line of a row split into the runs the words stand in, as plain values. */
+import { isLeading, isTrailing } from '@/shared/lib/surrogate'
 import type { Span } from '@/shared/lib/span'
 
 /** One run of a line, and whether it is why the item is here. */
@@ -70,6 +71,3 @@ const whole = (text: string, at: number, by: 1 | -1): number => {
 
 const isInsideCharacter = (text: string, at: number): boolean =>
   isTrailing(text.charCodeAt(at)) && isLeading(text.charCodeAt(at - 1))
-
-const isLeading = (unit: number): boolean => unit >= 0xd800 && unit <= 0xdbff
-const isTrailing = (unit: number): boolean => unit >= 0xdc00 && unit <= 0xdfff

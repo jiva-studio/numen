@@ -2,6 +2,7 @@
  * What a menu is, as plain values. No DOM, no measurement, no clock.
  */
 import { getPlaceBeside } from '@/shared/lib/place'
+import { stepTo } from '@/shared/lib/roving'
 import type { Position, Size } from '@/shared/lib/geometry'
 
 /**
@@ -83,23 +84,6 @@ export const placeMenu = ({ at, size, viewport, margin }: MenuPlacement): Positi
 })
 
 /**
- * Where the keyboard lands next, counting from `from` and passing over the
- * items that cannot be chosen. It wraps, and answers -1 when there is nothing
- * to land on.
- *
- * Counting from -1 by one is how the first is asked for, and from 0 by minus
- * one is how the last is.
- */
-export const stepTo = (items: readonly MenuItem[], from: number, by: number): number => {
-  const total = items.length
-  for (let step = 1; step <= total; step += 1) {
-    const at = (((from + by * step) % total) + total) % total
-    if (!items[at]?.disabled) return at
-  }
-  return -1
-}
-
-/**
  * How a menu came to be open, declared once. Where the keyboard is as it
  * appears is derived from this table.
  */
@@ -131,5 +115,8 @@ export const getInitialIndex = (
 ): number => {
   if (!MENU_TRIGGERS[trigger].hasInitialFocus) return -1
   const at = items.findIndex((item) => item.id === current && !item.disabled)
-  return stepTo(items, Math.max(at, 0) - 1, 1)
+  return stepTo(items, Math.max(at, 0) - 1, 1, canLandOn)
 }
+
+/** Whether the keyboard may land on the item. */
+export const canLandOn = (item: MenuItem): boolean => !item.disabled

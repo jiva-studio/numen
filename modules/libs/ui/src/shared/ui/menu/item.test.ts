@@ -4,7 +4,7 @@
  * area it has to fit in.
  */
 import { describe, expect, it } from 'vitest'
-import { groupItems, getInitialIndex, placeMenu, stepTo, type MenuItem } from './item'
+import { groupItems, getInitialIndex, placeMenu, type MenuItem } from './item'
 
 const VIEWPORT = { width: 1000, height: 800 }
 const SIZE = { width: 200, height: 300 }
@@ -58,40 +58,6 @@ describe('where a menu goes', () => {
   it('keeps whatever clearance it was given', () => {
     expect(getMenuPosition(0, 0, { margin: 24 })).toStrictEqual({ x: 24, y: 24 })
     expect(getMenuPosition(0, 0, { margin: 0 })).toStrictEqual({ x: 0, y: 0 })
-  })
-})
-
-describe('where the keyboard goes', () => {
-  const items: MenuItem[] = [
-    { id: 'one', text: 'One' },
-    { id: 'two', text: 'Two', disabled: true },
-    { id: 'three', text: 'Three' },
-  ]
-
-  it('lands on the first from nowhere, and on the last counting back', () => {
-    expect(stepTo(items, -1, 1)).toBe(0)
-    expect(stepTo(items, 0, -1)).toBe(2)
-  })
-
-  it('passes over what cannot be chosen', () => {
-    expect(stepTo(items, 0, 1)).toBe(2)
-    expect(stepTo(items, 2, -1)).toBe(0)
-  })
-
-  it('wraps at either end', () => {
-    expect(stepTo(items, 2, 1)).toBe(0)
-    expect(stepTo(items, 0, -1)).toBe(2)
-  })
-
-  it('answers nothing when there is nothing to land on', () => {
-    expect(stepTo([], -1, 1)).toBe(-1)
-    expect(stepTo([{ id: 'only', text: 'Only', disabled: true }], -1, 1)).toBe(-1)
-  })
-
-  it('stays where it is when one item is all there is to be on', () => {
-    const only: MenuItem[] = [{ id: 'only', text: 'Only' }]
-    expect(stepTo(only, 0, 1)).toBe(0)
-    expect(stepTo(only, 0, -1)).toBe(0)
   })
 })
 

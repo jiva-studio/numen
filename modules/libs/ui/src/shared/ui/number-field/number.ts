@@ -5,13 +5,7 @@
  * Pure: the same text gives the same answer wherever it is read, so what the
  * field hands on can be named without drawing it.
  */
-
-/** How far a number may go, and what an arrow key moves it by. */
-export interface Bounds {
-  readonly min: number
-  readonly max: number
-  readonly step: number
-}
+import { clamp, getDecimalPlaces, roundToPlaces, type Bounds } from '@/shared/lib/bounds'
 
 export const DEFAULT_BOUNDS: Bounds = { min: 0, max: 999, step: 1 }
 
@@ -38,22 +32,11 @@ export const parseNumber = (text: string): number | null => {
   return Number.isFinite(value) ? value : null
 }
 
-/** The number brought inside the bounds. */
-export const clamp = (value: number, bounds: Bounds): number =>
-  Math.min(bounds.max, Math.max(bounds.min, value))
-
-/** The getDecimalPlaces a step is written to, which is what a number moved by it is kept to. */
-const getDecimalPlaces = (step: number): number => {
-  const [, fraction] = `${step}`.split('.')
-  return fraction?.length ?? 0
-}
-
 /** The place the step lays nearest a number, counted from the floor. */
 const onStep = (value: number, bounds: Bounds): number => {
   if (bounds.step <= 0) return value
   const steps = Math.round((value - bounds.min) / bounds.step)
-  const scale = 10 ** getDecimalPlaces(bounds.step)
-  return Math.round((bounds.min + steps * bounds.step) * scale) / scale
+  return roundToPlaces(bounds.min + steps * bounds.step, getDecimalPlaces(bounds.step))
 }
 
 /** Where the bounds leave a number: on a place the step lays, inside the ends. */
