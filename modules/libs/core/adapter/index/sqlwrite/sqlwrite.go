@@ -47,48 +47,21 @@ type Transaction struct {
 }
 
 func (t *Transaction) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	var out sql.Result
-	err := prepare(ctx, t.Tx, query, func(stmt *sql.Stmt) error {
-		var err error
-		out, err = stmt.ExecContext(ctx, args...)
-		return err
-	})
-	return out, err
+	stmt, err := t.Tx.PrepareContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+	return stmt.ExecContext(ctx, args...)
 }
 
 func (t *Transaction) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	var out *sql.Rows
-	err := prepare(ctx, t.Tx, query, func(stmt *sql.Stmt) error {
-		var err error
-		out, err = stmt.QueryContext(ctx, args...)
-		return err
-	})
-	return out, err
+	return t.Tx.QueryContext(ctx, query, args...)
 }
 
-// QueryRowContext hands a statement that could not be prepared to the
-// transaction itself, which is where the reason reaches the caller: a row
-// carries what went wrong and there is no other way to put it there.
+// QueryRowContext delegates to the underlying transaction.
 func (t *Transaction) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
-	var out *sql.Row
-	err := prepare(ctx, t.Tx, query, func(stmt *sql.Stmt) error {
-		out = stmt.QueryRowContext(ctx, args...)
-		return nil
-	})
-	if err != nil {
-		return t.Tx.QueryRowContext(ctx, query, args...)
-	}
-	return out
-}
-
-// prepare runs a statement prepared on the transaction and closes it when done.
-func prepare(ctx context.Context, tx *sql.Tx, query string, run func(*sql.Stmt) error) error {
-	stmt, err := tx.PrepareContext(ctx, query)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-	return run(stmt)
+	return t.Tx.QueryRowContext(ctx, query, args...)
 }
 
 // Exec runs one write statement, asking again while another process holds the
