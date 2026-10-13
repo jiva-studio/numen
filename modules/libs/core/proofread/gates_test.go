@@ -3,12 +3,13 @@ package proofread_test
 import (
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
 // batch is a page as it was read, misreadings and all.
-func batch() proofread.Batch {
-	return proofread.Batch{Number: 7, Lines: []proofread.Line{
+func batch() domain.ProofreadBatch {
+	return domain.ProofreadBatch{Number: 7, Lines: []domain.ProofreadLine{
 		{Number: 10, Text: "the Sodërby gardin hcdge. "},
 		{Number: 11, Text: "Sodërby Tradgard's Handbok "},
 		{Number: 12, Text: "TRADGARD HANDBOK "},
@@ -192,7 +193,7 @@ func TestALineThatChangedIsACorrectionHoweverItOpens(t *testing.T) {
 
 // A line whose own text opens with digits is a row whose number was left out.
 func TestARowWhoseNumberIsTheLinesOwnDigitsRefusesTheBatch(t *testing.T) {
-	dated := proofread.Batch{Number: 3, Lines: []proofread.Line{
+	dated := domain.ProofreadBatch{Number: 3, Lines: []domain.ProofreadLine{
 		{Number: 1, Text: "1 January 1970 was a Thursday"},
 	}}
 
@@ -208,8 +209,8 @@ func TestARowWhoseNumberIsTheLinesOwnDigitsRefusesTheBatch(t *testing.T) {
 }
 
 // makeLine is one stretch of speech as the machine heard it.
-func makeLine(at int) proofread.Line {
-	return proofread.Line{Number: at, Text: []string{
+func makeLine(at int) domain.ProofreadLine {
+	return domain.ProofreadLine{Number: at, Text: []string{
 		"",
 		"the ferry left at noone",
 		"and the sea was calm",
@@ -221,14 +222,14 @@ func makeLine(at int) proofread.Line {
 
 // wide and narrow both answer about lines 3 and 4. In wide the two stand
 // further from the end.
-func wide() proofread.Batch {
-	return proofread.Batch{Number: 0, Lines: []proofread.Line{
+func wide() domain.ProofreadBatch {
+	return domain.ProofreadBatch{Number: 0, Lines: []domain.ProofreadLine{
 		makeLine(1), makeLine(2), makeLine(3), makeLine(4), makeLine(5),
 	}}
 }
 
-func narrow() proofread.Batch {
-	return proofread.Batch{Number: 1, Lines: []proofread.Line{makeLine(3), makeLine(4)}}
+func narrow() domain.ProofreadBatch {
+	return domain.ProofreadBatch{Number: 1, Lines: []domain.ProofreadLine{makeLine(3), makeLine(4)}}
 }
 
 func TestACorrectionComesFromTheBatchThatSawMoreOfWhatFollows(t *testing.T) {
@@ -237,7 +238,7 @@ func TestACorrectionComesFromTheBatchThatSawMoreOfWhatFollows(t *testing.T) {
 		1: "3|we spoke of the harbor lite",
 	}
 
-	for _, asked := range [][]proofread.Batch{
+	for _, asked := range [][]domain.ProofreadBatch{
 		{wide(), narrow()},
 		{narrow(), wide()},
 	} {
@@ -252,14 +253,14 @@ func TestACorrectionComesFromTheBatchThatSawMoreOfWhatFollows(t *testing.T) {
 }
 
 func TestBatchesSeeingAsMuchAsEachOtherAreSettledByTheLaterOne(t *testing.T) {
-	early := proofread.Batch{Number: 0, Lines: []proofread.Line{makeLine(1), makeLine(2), makeLine(3)}}
-	late := proofread.Batch{Number: 1, Lines: []proofread.Line{makeLine(2), makeLine(3)}}
+	early := domain.ProofreadBatch{Number: 0, Lines: []domain.ProofreadLine{makeLine(1), makeLine(2), makeLine(3)}}
+	late := domain.ProofreadBatch{Number: 1, Lines: []domain.ProofreadLine{makeLine(2), makeLine(3)}}
 	replies := map[int]string{
 		0: "3|we spoke of the harbour lights",
 		1: "3|we spoke of the harbor lite",
 	}
 
-	put, _ := proofread.GetGatheredLines([]proofread.Batch{early, late}, replies, proofread.MaxEditDistance)
+	put, _ := proofread.GetGatheredLines([]domain.ProofreadBatch{early, late}, replies, proofread.MaxEditDistance)
 	if put[3].Text != "we spoke of the harbor lite" {
 		t.Errorf("line 3 says %q, want the later batch", put[3].Text)
 	}
@@ -271,7 +272,7 @@ func TestARefusedReplyLeavesItsLinesToTheOtherBatch(t *testing.T) {
 		1: "3|we spoke of the harbor lite\n4|until the fogg came in",
 	}
 
-	put, _ := proofread.GetGatheredLines([]proofread.Batch{wide(), narrow()}, replies, proofread.MaxEditDistance)
+	put, _ := proofread.GetGatheredLines([]domain.ProofreadBatch{wide(), narrow()}, replies, proofread.MaxEditDistance)
 	if put[3].Text != "we spoke of the harbor lite" {
 		t.Errorf("line 3 says %q, want the batch whose reply was an answer", put[3].Text)
 	}
@@ -283,7 +284,7 @@ func TestARefusedReplyLeavesItsLinesToTheOtherBatch(t *testing.T) {
 func TestALineNoAnsweredBatchCoversIsLeftAsItWasHeard(t *testing.T) {
 	replies := map[int]string{0: "3|we spoke of the harbour lights"}
 
-	put, _ := proofread.GetGatheredLines([]proofread.Batch{wide(), narrow()}, replies, proofread.MaxEditDistance)
+	put, _ := proofread.GetGatheredLines([]domain.ProofreadBatch{wide(), narrow()}, replies, proofread.MaxEditDistance)
 	for _, at := range []int{1, 2, 4, 5} {
 		if text, named := put[at]; named {
 			t.Errorf("line %d was put right to %q with nothing answered about it", at, text.Text)
@@ -294,7 +295,7 @@ func TestALineNoAnsweredBatchCoversIsLeftAsItWasHeard(t *testing.T) {
 func TestACorrectionThatMovedTooFarIsInNoBatchesGathering(t *testing.T) {
 	replies := map[int]string{1: "3|we spoke of the harbour lights\n4|fog"}
 
-	put, _ := proofread.GetGatheredLines([]proofread.Batch{narrow()}, replies, proofread.MaxEditDistance)
+	put, _ := proofread.GetGatheredLines([]domain.ProofreadBatch{narrow()}, replies, proofread.MaxEditDistance)
 	if _, named := put[4]; named {
 		t.Errorf("line 4 was put right to %q, whose letters moved too far", put[4].Text)
 	}
@@ -304,7 +305,7 @@ func TestACorrectionThatMovedTooFarIsInNoBatchesGathering(t *testing.T) {
 }
 
 func TestABatchNothingCameBackAboutPutsNothingRight(t *testing.T) {
-	if put, _ := proofread.GetGatheredLines([]proofread.Batch{wide()}, nil, proofread.MaxEditDistance); len(put) != 0 {
+	if put, _ := proofread.GetGatheredLines([]domain.ProofreadBatch{wide()}, nil, proofread.MaxEditDistance); len(put) != 0 {
 		t.Errorf("a batch with no reply put %v right", put)
 	}
 }

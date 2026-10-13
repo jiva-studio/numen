@@ -11,14 +11,14 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 func TestAClientWithNoQueueSendsNothing(t *testing.T) {
 	c := newBatchClient(t, "")
 	var sending *url.Error
 
-	_, err := c.Submit(t.Context(), []proofread.Batch{page(1, "a line")})
+	_, err := c.Submit(t.Context(), []domain.ProofreadPrompt{page(1, "a line")})
 	if err == nil || errors.As(err, &sending) {
 		t.Errorf("leaving: %v", err)
 	}
@@ -33,7 +33,7 @@ func TestAClientWithNoQueueSendsNothing(t *testing.T) {
 
 func TestAQueueThatIsNoURLIsReported(t *testing.T) {
 	c := newBatchClient(t, "://no-scheme")
-	if _, err := c.Submit(t.Context(), []proofread.Batch{page(1, "a line")}); err == nil {
+	if _, err := c.Submit(t.Context(), []domain.ProofreadPrompt{page(1, "a line")}); err == nil {
 		t.Error("no error out of Submit")
 	}
 	_, ready, err := c.GetReplies(t.Context(), "batch_1")
@@ -52,7 +52,7 @@ func TestAQueueThatCannotBeReachedIsReportedAsTheRequestThatFailed(t *testing.T)
 	c := newBatchClient(t, gone)
 	var sending *url.Error
 
-	if _, err := c.Submit(t.Context(), []proofread.Batch{page(1, "a line")}); !errors.As(err, &sending) {
+	if _, err := c.Submit(t.Context(), []domain.ProofreadPrompt{page(1, "a line")}); !errors.As(err, &sending) {
 		t.Errorf("leaving: %v", err)
 	}
 	_, ready, err := c.GetReplies(t.Context(), "batch_1")
@@ -76,7 +76,7 @@ func TestTheQueueIsAskedWithJSONAndTheKey(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(map[string]string{"id": "batch_1", "status": "validating"})
 	})
 	c := newBatchClient(t, s.URL)
-	if _, err := c.Submit(t.Context(), []proofread.Batch{page(1, "a line")}); err != nil {
+	if _, err := c.Submit(t.Context(), []domain.ProofreadPrompt{page(1, "a line")}); err != nil {
 		t.Fatal(err)
 	}
 	if _, _, err := c.GetReplies(t.Context(), "batch_1"); err != nil {
@@ -111,7 +111,7 @@ func statusServer(t *testing.T, status int) string {
 func TestEvery2xxLeavesTheRun(t *testing.T) {
 	for _, status := range []int{200, 201, 202, 299} {
 		t.Run(fmt.Sprint(status), func(t *testing.T) {
-			name, err := newBatchClient(t, statusServer(t, status)).Submit(t.Context(), []proofread.Batch{page(1, "a line")})
+			name, err := newBatchClient(t, statusServer(t, status)).Submit(t.Context(), []domain.ProofreadPrompt{page(1, "a line")})
 			if err != nil || name != "batch_1" {
 				t.Errorf("left under %q: %v", name, err)
 			}
@@ -122,7 +122,7 @@ func TestEvery2xxLeavesTheRun(t *testing.T) {
 func TestAStatusPast2xxDoesNotLeaveTheRun(t *testing.T) {
 	for _, status := range []int{300, 400, 500} {
 		t.Run(fmt.Sprint(status), func(t *testing.T) {
-			name, err := newBatchClient(t, statusServer(t, status)).Submit(t.Context(), []proofread.Batch{page(1, "a line")})
+			name, err := newBatchClient(t, statusServer(t, status)).Submit(t.Context(), []domain.ProofreadPrompt{page(1, "a line")})
 			if err == nil || name != "" {
 				t.Errorf("left under %q: %v", name, err)
 			}
@@ -143,7 +143,7 @@ func TestASwitchingProtocolsAnswerDoesNotLeaveTheRun(t *testing.T) {
 		_, _ = rw.WriteString("HTTP/1.1 101 Switching Protocols\r\n\r\n")
 		_ = rw.Flush()
 	})
-	name, err := newBatchClient(t, s.URL).Submit(t.Context(), []proofread.Batch{page(1, "a line")})
+	name, err := newBatchClient(t, s.URL).Submit(t.Context(), []domain.ProofreadPrompt{page(1, "a line")})
 	if err == nil || name != "" {
 		t.Fatalf("left under %q: %v", name, err)
 	}
@@ -156,7 +156,7 @@ func TestAMalformedAnswerToLeavingIsReportedAsSuch(t *testing.T) {
 	s := server(t, func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `{"id": not json`)
 	})
-	_, err := newBatchClient(t, s.URL).Submit(t.Context(), []proofread.Batch{page(1, "a line")})
+	_, err := newBatchClient(t, s.URL).Submit(t.Context(), []domain.ProofreadPrompt{page(1, "a line")})
 	var malformed *json.SyntaxError
 	if !errors.As(err, &malformed) {
 		t.Fatalf("want a malformed answer, got %v", err)
@@ -167,7 +167,7 @@ func TestAnAnswerNamingNoBatchDoesNotLeaveTheRun(t *testing.T) {
 	s := server(t, func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `{"status":"validating"}`)
 	})
-	if _, err := newBatchClient(t, s.URL).Submit(t.Context(), []proofread.Batch{page(1, "a line")}); err == nil {
+	if _, err := newBatchClient(t, s.URL).Submit(t.Context(), []domain.ProofreadPrompt{page(1, "a line")}); err == nil {
 		t.Fatal("no error")
 	}
 }
@@ -234,7 +234,7 @@ func TestARefusalOfTheQueueCarriesTheFirst512BytesOfWhatItSaid(t *testing.T) {
 	})
 	c := newBatchClient(t, s.URL)
 
-	_, err := c.Submit(t.Context(), []proofread.Batch{page(1, "a line")})
+	_, err := c.Submit(t.Context(), []domain.ProofreadPrompt{page(1, "a line")})
 	if err == nil {
 		t.Fatal("no error out of Submit")
 	}

@@ -209,7 +209,7 @@ type proofreadRecognitionJob struct {
 	v            domain.Vault
 	store        port.DerivedStore
 	path         string
-	pages        []proofread.Batch
+	pages        []domain.ProofreadBatch
 	corrections  domain.ArtifactName
 	progressName domain.ArtifactName
 }
@@ -232,7 +232,7 @@ func (u Proofread) askPages(
 		end := min(at+batch, len(p.pages))
 		asked := p.pages[at:end]
 
-		replies, err := u.by.Proofread(ctx, asked)
+		replies, err := u.by.Proofread(ctx, proofread.GetPrompts(asked))
 		if err != nil {
 			return fmt.Errorf("proofread %s: %w", p.path, err)
 		}
@@ -249,7 +249,7 @@ func (u Proofread) askPages(
 func (u Proofread) writeCorrections(
 	ctx context.Context,
 	p proofreadRecognitionJob,
-	asked []proofread.Batch,
+	asked []domain.ProofreadBatch,
 	replies map[int]string,
 	end int,
 	res *ProofreadResult,
@@ -280,7 +280,7 @@ func (u Proofread) lines(
 	ctx context.Context,
 	store port.DerivedStore,
 	area, hash string,
-) ([]proofread.Batch, error) {
+) ([]domain.ProofreadBatch, error) {
 	artifact, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, area, hash))
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
@@ -305,7 +305,7 @@ func (u Proofread) lines(
 // A page nothing came back about and a page whose reply the gates refused are
 // the same outcome: the page is left as it was read.
 func (u Proofread) getCorrections(
-	asked []proofread.Batch,
+	asked []domain.ProofreadBatch,
 	replies map[int]string,
 ) (put []correction.Line, uncorrected int) {
 	for _, page := range asked {
@@ -417,7 +417,7 @@ func (u Proofread) submitBatch(
 	res *ProofreadResult,
 ) error {
 	end := min(at+run.GetSize(u.Pages, DefaultPages), len(p.pages))
-	name, err := u.Queue.Submit(ctx, p.pages[at:end])
+	name, err := u.Queue.Submit(ctx, proofread.GetPrompts(p.pages[at:end]))
 	if err != nil {
 		return fmt.Errorf("leave the pages of %s: %w", p.path, err)
 	}
@@ -432,7 +432,7 @@ func dropCorrections(
 	ctx context.Context,
 	store port.DerivedStore,
 	corrections domain.ArtifactName,
-	pages []proofread.Batch,
+	pages []domain.ProofreadBatch,
 	done int,
 ) error {
 	beyond, ok := opening(pages, done)
@@ -463,7 +463,7 @@ func dropCorrections(
 }
 
 // opening is the number of the first line no count claims.
-func opening(pages []proofread.Batch, done int) (int, bool) {
+func opening(pages []domain.ProofreadBatch, done int) (int, bool) {
 	for _, page := range pages[min(done, len(pages)):] {
 		if len(page.Lines) > 0 {
 			return page.Lines[0].Number, true

@@ -112,7 +112,7 @@ func TestATranscriptSayingNothingIsDescribedAsNothing(t *testing.T) {
 // The digest stands before the first line of the question, and the lines are
 // asked about as they always were.
 func TestTheDigestStandsBeforeTheFirstLine(t *testing.T) {
-	batch := proofread.Batch{Number: 0, IsJoinable: true, Context: "The speech opens: Ganaka spoke.", Lines: []proofread.Line{
+	batch := domain.ProofreadBatch{Number: 0, IsJoinable: true, Context: "The speech opens: Ganaka spoke.", Lines: []domain.ProofreadLine{
 		{Number: 0, Text: "Ganaka spoke"},
 		{Number: 1, Text: "to the assembly."},
 	}}
@@ -129,7 +129,7 @@ func TestTheDigestStandsBeforeTheFirstLine(t *testing.T) {
 
 // A batch nothing was said about is the lines alone.
 func TestABatchWithNoDigestIsTheLinesAlone(t *testing.T) {
-	batch := proofread.Batch{Number: 0, Lines: []proofread.Line{{Number: 0, Text: "Ganaka spoke"}}}
+	batch := domain.ProofreadBatch{Number: 0, Lines: []domain.ProofreadLine{{Number: 0, Text: "Ganaka spoke"}}}
 	if asked := proofread.Ask(batch); asked != proofread.Opens+"0"+proofread.Closes+"Ganaka spoke" {
 		t.Errorf("the question is %q", asked)
 	}

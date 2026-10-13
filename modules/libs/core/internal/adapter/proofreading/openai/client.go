@@ -17,9 +17,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/retry"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
 // ErrNoKey is a service configured without a key anywhere to find it.
@@ -80,14 +80,14 @@ func (c *Client) getInFlight() int {
 //
 // One page that fails ends the run: the pages already answered are dropped and
 // the caller asks again.
-func (c *Client) Proofread(ctx context.Context, pages []proofread.Batch) (map[int]string, error) {
+func (c *Client) Proofread(ctx context.Context, pages []domain.ProofreadPrompt) (map[int]string, error) {
 	if len(pages) == 0 {
 		return nil, nil
 	}
 	ctx, stop := context.WithCancel(ctx)
 	defer stop()
 
-	queue := make(chan proofread.Batch)
+	queue := make(chan domain.ProofreadPrompt)
 	go queuePages(ctx, queue, pages)
 
 	run := &proofreadRun{out: make(map[int]string, len(pages)), stop: stop}
@@ -109,7 +109,7 @@ func (c *Client) Proofread(ctx context.Context, pages []proofread.Batch) (map[in
 
 // queuePages hands the pages on until they are all taken or the context ends,
 // and closes the queue.
-func queuePages(ctx context.Context, queue chan<- proofread.Batch, pages []proofread.Batch) {
+func queuePages(ctx context.Context, queue chan<- domain.ProofreadPrompt, pages []domain.ProofreadPrompt) {
 	defer close(queue)
 	for _, page := range pages {
 		select {
@@ -131,7 +131,7 @@ type proofreadRun struct {
 
 // record keeps what came back about a page. The first failure is kept and stops
 // the run.
-func (r *proofreadRun) record(page proofread.Batch, reply string, err error) {
+func (r *proofreadRun) record(page domain.ProofreadPrompt, reply string, err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	switch {
@@ -147,7 +147,7 @@ func (r *proofreadRun) record(page proofread.Batch, reply string, err error) {
 
 // work asks about the pages of the queue one at a time, and ends at the first
 // page that fails.
-func (c *Client) work(ctx context.Context, queue <-chan proofread.Batch, run *proofreadRun) {
+func (c *Client) work(ctx context.Context, queue <-chan domain.ProofreadPrompt, run *proofreadRun) {
 	for page := range queue {
 		reply, err := c.sendWithRetry(ctx, page)
 		run.record(page, reply, err)
@@ -177,13 +177,13 @@ type response struct {
 // sendWithRetry sends one page and returns what the service said about it. A 429, a 408,
 // a 5xx or a timeout is sent again after a wait, up to the profile's attempts;
 // any other failure is returned at once.
-func (c *Client) sendWithRetry(ctx context.Context, page proofread.Batch) (string, error) {
+func (c *Client) sendWithRetry(ctx context.Context, page domain.ProofreadPrompt) (string, error) {
 	body, err := json.Marshal(request{
 		Model:       c.service.Name,
 		Temperature: 0,
 		Messages: []message{
 			{Role: "system", Content: c.instruction},
-			{Role: "user", Content: proofread.Ask(page)},
+			{Role: "user", Content: page.Text},
 		},
 	})
 	if err != nil {
@@ -213,7 +213,7 @@ type retryDecision struct {
 
 // send makes one request. The response body is drained and closed on every
 // path.
-func (c *Client) send(ctx context.Context, page proofread.Batch, body []byte) (string, retryDecision, error) {
+func (c *Client) send(ctx context.Context, page domain.ProofreadPrompt, body []byte) (string, retryDecision, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		strings.TrimSuffix(c.service.BaseURL, "/")+"/chat/completions", bytes.NewReader(body))
 	if err != nil {

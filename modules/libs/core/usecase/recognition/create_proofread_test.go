@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
@@ -17,14 +18,14 @@ type replying struct{ told string }
 
 func (r *replying) GetName() string { return "replying" }
 
-func (r *replying) Proofread(context.Context, []proofread.Batch) (map[int]string, error) {
+func (r *replying) Proofread(context.Context, []domain.ProofreadPrompt) (map[int]string, error) {
 	return nil, nil
 }
 
 // queued is a proofreader with a queue, which is asked nothing either.
 type queued struct{ replying }
 
-func (q *queued) Submit(context.Context, []proofread.Batch) (string, error) { return "", nil }
+func (q *queued) Submit(context.Context, []domain.ProofreadPrompt) (string, error) { return "", nil }
 
 func (q *queued) GetReplies(context.Context, string) (map[int]string, bool, error) {
 	return nil, false, nil

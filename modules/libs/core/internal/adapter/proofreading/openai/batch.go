@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // The statuses a batch is in. A batch in one of the three ends answers about
@@ -56,7 +56,7 @@ type batchResult struct {
 
 // Submit hands the pages to the queue and answers with the id they are collected
 // under.
-func (c *Client) Submit(ctx context.Context, pages []proofread.Batch) (string, error) {
+func (c *Client) Submit(ctx context.Context, pages []domain.ProofreadPrompt) (string, error) {
 	if c.service.BatchURL == "" {
 		return "", errors.New("no batch queue for the proofreading service")
 	}
@@ -70,7 +70,7 @@ func (c *Client) Submit(ctx context.Context, pages []proofread.Batch) (string, e
 				Temperature: 0,
 				Messages: []message{
 					{Role: "system", Content: c.instruction},
-					{Role: "user", Content: proofread.Ask(page)},
+					{Role: "user", Content: page.Text},
 				},
 			},
 		})

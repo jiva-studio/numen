@@ -9,8 +9,8 @@ import (
 )
 
 // A sentence a recording broke across three stretches of speech.
-func makeBrokenBatch() proofread.Batch {
-	return proofread.Batch{Number: 1, IsJoinable: true, Lines: []proofread.Line{
+func makeBrokenBatch() domain.ProofreadBatch {
+	return domain.ProofreadBatch{Number: 1, IsJoinable: true, Lines: []domain.ProofreadLine{
 		{Number: 4, Last: 4, Text: "Krishna is Raj. Krishna is"},
 		{Number: 5, Last: 5, Text: "connected with Raj Dila."},
 		{Number: 6, Last: 6, Text: "Sure."},
@@ -147,7 +147,7 @@ func TestGatheredNamesTheBatchesARunRanPast(t *testing.T) {
 		2: "4-5 | Krishna is Radha, Krishna is connected with Radhika.",
 	}
 
-	put, past := proofread.GetGatheredLines([]proofread.Batch{first, second}, replies, 0)
+	put, past := proofread.GetGatheredLines([]domain.ProofreadBatch{first, second}, replies, 0)
 	if len(put) != 1 {
 		t.Fatalf("%v put right", put)
 	}
@@ -159,7 +159,7 @@ func TestGatheredNamesTheBatchesARunRanPast(t *testing.T) {
 // A line where one sentence ends and the next begins stands in the run of
 // both, and the run is answered with every sentence it covers.
 func TestARunHoldsEverySentenceItsLinesCarry(t *testing.T) {
-	batch := proofread.Batch{Number: 1, IsJoinable: true, Lines: []proofread.Line{
+	batch := domain.ProofreadBatch{Number: 1, IsJoinable: true, Lines: []domain.ProofreadLine{
 		{Number: 4, Last: 4, Text: "we should go. And then"},
 		{Number: 5, Last: 5, Text: "the next day he left."},
 	}}

@@ -16,8 +16,8 @@ import (
 // batch is asked about and answered for by its page, and two batches under one
 // page would take one reply between them, writing one page's corrections onto
 // the other's lines.
-func GetScanBatches(prose string, boxes []domain.HighlightBox) []Batch {
-	var out []Batch
+func GetScanBatches(prose string, boxes []domain.HighlightBox) []domain.ProofreadBatch {
+	var out []domain.ProofreadBatch
 	for at, box := range boxes {
 		if box.Empty() {
 			continue
@@ -25,7 +25,7 @@ func GetScanBatches(prose string, boxes []domain.HighlightBox) []Batch {
 		if box.From < 0 || box.To > len(prose) {
 			return nil
 		}
-		line := Line{Number: at, Text: prose[box.From:box.To]}
+		line := domain.ProofreadLine{Number: at, Text: prose[box.From:box.To]}
 		if n := len(out); n > 0 {
 			switch {
 			case box.Page == out[n-1].Number:
@@ -35,7 +35,7 @@ func GetScanBatches(prose string, boxes []domain.HighlightBox) []Batch {
 				return nil
 			}
 		}
-		out = append(out, Batch{Number: box.Page, Lines: []Line{line}})
+		out = append(out, domain.ProofreadBatch{Number: box.Page, Lines: []domain.ProofreadLine{line}})
 	}
 	return out
 }
@@ -50,16 +50,16 @@ func GetScanBatches(prose string, boxes []domain.HighlightBox) []Batch {
 //
 // A run of lines is answered for inside one batch, so a sentence broken over a
 // cut is put back together here where the overlap carries it whole.
-func GetSpeechBatches(cues []domain.TranscriptCue, size, overlap int) []Batch {
+func GetSpeechBatches(cues []domain.TranscriptCue, size, overlap int) []domain.ProofreadBatch {
 	if size <= 0 {
 		return nil
 	}
 	lines := getTranscriptLines(cues)
 	step := size - getSharedLines(size, overlap)
-	var out []Batch
+	var out []domain.ProofreadBatch
 	for start := 0; start < len(lines); start += step {
 		end := min(start+size, len(lines))
-		out = append(out, Batch{Number: len(out), Lines: lines[start:end:end], IsJoinable: true})
+		out = append(out, domain.ProofreadBatch{Number: len(out), Lines: lines[start:end:end], IsJoinable: true})
 		if end == len(lines) {
 			break
 		}
@@ -78,7 +78,7 @@ func GetSpeechBatches(cues []domain.TranscriptCue, size, overlap int) []Batch {
 //
 // A transcript of one batch has no cut, and a batch of one line has no room
 // for a line on either side of one. The last batch is followed by no cut.
-func CutIntoBatches(cues []domain.TranscriptCue, size, overlap int, cuts []int) []Batch {
+func CutIntoBatches(cues []domain.TranscriptCue, size, overlap int, cuts []int) []domain.ProofreadBatch {
 	batches := GetSpeechBatches(cues, size, overlap)
 	if size < 2 || len(batches) < 2 {
 		return nil
@@ -86,7 +86,7 @@ func CutIntoBatches(cues []domain.TranscriptCue, size, overlap int, cuts []int) 
 
 	lines := getTranscriptLines(cues)
 	step := size - getSharedLines(size, overlap)
-	var out []Batch
+	var out []domain.ProofreadBatch
 	reach := -1
 	for _, cut := range cuts {
 		if cut < 0 || cut >= len(batches)-1 {
@@ -100,7 +100,7 @@ func CutIntoBatches(cues []domain.TranscriptCue, size, overlap int, cuts []int) 
 		}
 		reach = end
 		start := max(end-size, 0)
-		out = append(out, Batch{
+		out = append(out, domain.ProofreadBatch{
 			Number:     len(batches) + len(out),
 			Lines:      lines[start:end:end],
 			IsJoinable: true,
@@ -111,13 +111,13 @@ func CutIntoBatches(cues []domain.TranscriptCue, size, overlap int, cuts []int) 
 
 // getTranscriptLines returns every cue that says something, as a line known by the index
 // of its cue in the transcript.
-func getTranscriptLines(cues []domain.TranscriptCue) []Line {
-	var out []Line
+func getTranscriptLines(cues []domain.TranscriptCue) []domain.ProofreadLine {
+	var out []domain.ProofreadLine
 	for at, cue := range cues {
 		if cue.Text == "" {
 			continue
 		}
-		out = append(out, Line{Number: at, Text: cue.Text})
+		out = append(out, domain.ProofreadLine{Number: at, Text: cue.Text})
 	}
 	return out
 }

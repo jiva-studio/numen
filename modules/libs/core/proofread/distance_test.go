@@ -3,6 +3,7 @@ package proofread_test
 import (
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
@@ -12,8 +13,8 @@ const (
 	asSaid  = "Shura Maheshvasa Vikranta Uttamauja Yudhamanyu Yuyudhana Drupada Maharatha."
 )
 
-func oneLine(text string) proofread.Batch {
-	return proofread.Batch{Number: 1, Lines: []proofread.Line{{Number: 7, Text: text}}}
+func oneLine(text string) domain.ProofreadBatch {
+	return domain.ProofreadBatch{Number: 1, Lines: []domain.ProofreadLine{{Number: 7, Text: text}}}
 }
 
 // Held to no distance, a correction stands however far from the line it puts

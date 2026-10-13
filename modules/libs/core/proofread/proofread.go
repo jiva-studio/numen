@@ -9,46 +9,9 @@ package proofread
 import (
 	"strconv"
 	"strings"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
-
-// A Line is one run of words the recogniser read in one go: the number it is
-// known by, and what it says.
-//
-// A correction may cover a run of lines, and Last is the last of them. A line
-// standing on its own has Last equal to Number, or left at zero where nothing
-// put a run together.
-type Line struct {
-	Number int
-	Last   int
-	Text   string
-}
-
-// IsJoined says whether this correction puts more than one line together.
-func (l Line) IsJoined() bool { return l.Last > l.Number }
-
-// A Batch is the lines one reply is accepted or refused as a whole: the number
-// it is known by, and its lines in the order they are read.
-type Batch struct {
-	Number int
-	Lines  []Line
-
-	// IsJoinable is whether a reply may answer for a run of these lines as one.
-	// Where it does not, a run refuses the batch.
-	IsJoinable bool
-
-	// Context is what the whole text holds, said in its own words. It stands
-	// before the lines in the question and is answered for by nothing.
-	Context string
-}
-
-// Last is the number of the final line a batch carries, and nothing below the
-// first line number for a batch carrying none.
-func (b Batch) Last() int {
-	if len(b.Lines) == 0 {
-		return -1
-	}
-	return b.Lines[len(b.Lines)-1].Number
-}
 
 // A line's number is written between marks no recogniser can produce, so a mark
 // in a reply is a mark of ours coming back.
@@ -124,7 +87,7 @@ as the first and the last of them:
 //
 // The lines are run together as prose: a line ending mid-word is finished by
 // the next one. What the text is about stands before the first of them.
-func Ask(batch Batch) string {
+func Ask(batch domain.ProofreadBatch) string {
 	var out strings.Builder
 	if batch.Context != "" {
 		out.WriteString(batch.Context)
@@ -140,4 +103,13 @@ func Ask(batch Batch) string {
 		out.WriteString(line.Text)
 	}
 	return out.String()
+}
+
+// GetPrompts is the question for each of the batches, by the batch it is about.
+func GetPrompts(batches []domain.ProofreadBatch) []domain.ProofreadPrompt {
+	out := make([]domain.ProofreadPrompt, 0, len(batches))
+	for _, batch := range batches {
+		out = append(out, domain.ProofreadPrompt{Number: batch.Number, Text: Ask(batch)})
+	}
+	return out
 }

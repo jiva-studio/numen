@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
@@ -193,7 +194,7 @@ type spelling struct{}
 
 func (spelling) GetName() string { return "a test" }
 
-func (spelling) Proofread(_ context.Context, _ []proofread.Batch) (map[int]string, error) {
+func (spelling) Proofread(_ context.Context, _ []domain.ProofreadPrompt) (map[int]string, error) {
 	return nil, errors.New("nothing here asks")
 }
 

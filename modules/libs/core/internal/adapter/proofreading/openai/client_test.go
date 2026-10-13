@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading/openai"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
@@ -75,12 +76,8 @@ func reply(w http.ResponseWriter, text string) {
 	})
 }
 
-func page(at int, lines ...string) proofread.Batch {
-	p := proofread.Batch{Number: at}
-	for i, text := range lines {
-		p.Lines = append(p.Lines, proofread.Line{Number: at*100 + i, Text: text})
-	}
-	return p
+func page(at int, lines ...string) domain.ProofreadPrompt {
+	return domain.ProofreadPrompt{Number: at, Text: strings.Join(lines, " ")}
 }
 
 func TestTheServiceIsAskedAboutOnePageWithTheInstruction(t *testing.T) {
@@ -98,7 +95,7 @@ func TestTheServiceIsAskedAboutOnePageWithTheInstruction(t *testing.T) {
 		reply(w, "700|the first line")
 	})
 
-	if _, err := client(t, s.URL).Proofread(t.Context(), []proofread.Batch{one}); err != nil {
+	if _, err := client(t, s.URL).Proofread(t.Context(), []domain.ProofreadPrompt{one}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -119,13 +116,13 @@ func TestTheServiceIsAskedAboutOnePageWithTheInstruction(t *testing.T) {
 	if got.Messages[0].Role != "system" || got.Messages[0].Content != proofread.ScanInstruction {
 		t.Errorf("system message %q: %q", got.Messages[0].Role, got.Messages[0].Content)
 	}
-	if got.Messages[1].Role != "user" || got.Messages[1].Content != proofread.Ask(one) {
+	if got.Messages[1].Role != "user" || got.Messages[1].Content != one.Text {
 		t.Errorf("user message %q: %q", got.Messages[1].Role, got.Messages[1].Content)
 	}
 }
 
 func TestEveryPageComesBackUnderItsOwnNumber(t *testing.T) {
-	var pages []proofread.Batch
+	var pages []domain.ProofreadPrompt
 	for at := 1; at <= 6; at++ {
 		pages = append(pages, page(at, fmt.Sprintf("page %d as read", at)))
 	}
@@ -155,7 +152,7 @@ func TestEveryPageComesBackUnderItsOwnNumber(t *testing.T) {
 			}
 			continue
 		}
-		if got[p.Number] != proofread.Ask(p) {
+		if got[p.Number] != p.Text {
 			t.Errorf("page %d came back as %q", p.Number, got[p.Number])
 		}
 	}
@@ -169,7 +166,7 @@ func TestARefusedRunNamesTheStatusAndNotTheKey(t *testing.T) {
 				fmt.Fprintf(w, "the service says no, and quotes %s back", r.Header.Get("Authorization"))
 			})
 
-			got, err := client(t, s.URL).Proofread(t.Context(), []proofread.Batch{page(1, "a line")})
+			got, err := client(t, s.URL).Proofread(t.Context(), []domain.ProofreadPrompt{page(1, "a line")})
 			if err == nil {
 				t.Fatal("no error")
 			}
@@ -206,7 +203,7 @@ func TestACancelledContextStopsTheRun(t *testing.T) {
 		cancel()
 	}()
 
-	_, err := client(t, s.URL).Proofread(ctx, []proofread.Batch{page(1, "a line"), page(2, "another")})
+	_, err := client(t, s.URL).Proofread(ctx, []domain.ProofreadPrompt{page(1, "a line"), page(2, "another")})
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("want a cancelled context, got %v", err)
 	}

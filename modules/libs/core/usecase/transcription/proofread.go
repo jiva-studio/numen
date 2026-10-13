@@ -238,7 +238,7 @@ type transcriptProofreadJob struct {
 	// mainBatches covers the whole transcript, and batches is mainBatches and,
 	// after it, the batches over the cuts a sentence was answered for past the end
 	// of.
-	mainBatches, batches []proofread.Batch
+	mainBatches, batches []domain.ProofreadBatch
 	from                 int
 
 	asked, fixed map[int]bool
@@ -302,7 +302,7 @@ func (u Proofread) askBatches(
 		end := min(at+inFlight, len(p.batches))
 		group := p.batches[at:end]
 
-		replies, err := u.by.Proofread(ctx, group)
+		replies, err := u.by.Proofread(ctx, proofread.GetPrompts(group))
 		if err != nil {
 			return fmt.Errorf("proofread %s: %w", p.path, err)
 		}
@@ -338,7 +338,7 @@ func (u Proofread) saveGroup(ctx context.Context, p *transcriptProofreadJob, wro
 }
 
 // markAskedLines records the lines of the group from where this run began.
-func (p *transcriptProofreadJob) markAskedLines(group []proofread.Batch) {
+func (p *transcriptProofreadJob) markAskedLines(group []domain.ProofreadBatch) {
 	for _, batch := range group {
 		for _, line := range batch.Lines {
 			if line.Number >= p.from {
@@ -351,7 +351,7 @@ func (p *transcriptProofreadJob) markAskedLines(group []proofread.Batch) {
 // applyReplies puts the group's corrections into the cues, and says whether any
 // cue changed. A batch over a cut is asked about once, so a run past the end of
 // one names no further cut.
-func (p *transcriptProofreadJob) applyReplies(group []proofread.Batch, replies map[int]string) bool {
+func (p *transcriptProofreadJob) applyReplies(group []domain.ProofreadBatch, replies map[int]string) bool {
 	put, past := proofread.GetGatheredLines(group, replies, unbounded)
 	for _, batch := range past {
 		if batch < len(p.mainBatches) {
@@ -372,7 +372,7 @@ func (p *transcriptProofreadJob) applyReplies(group []proofread.Batch, replies m
 // putLine puts one correction into the cues, and says whether it did. Words
 // answered about a line already put together with another no longer stand on
 // their own.
-func (p *transcriptProofreadJob) putLine(line int, gathered proofread.Line) bool {
+func (p *transcriptProofreadJob) putLine(line int, gathered domain.ProofreadLine) bool {
 	if isJoined(p.merged, gathered) {
 		return false
 	}
@@ -458,7 +458,7 @@ func (u Proofread) writeCheckpoint(
 // countUncorrected is how many of a run's batches answered with what is no
 // correction. Such a batch is one nothing was learned from, and its lines stand
 // as they were heard.
-func countUncorrected(asked []proofread.Batch, replies map[int]string, apart float64) int {
+func countUncorrected(asked []domain.ProofreadBatch, replies map[int]string, apart float64) int {
 	out := 0
 	for _, batch := range asked {
 		reply, answered := replies[batch.Number]
@@ -473,7 +473,7 @@ func countUncorrected(asked []proofread.Batch, replies map[int]string, apart flo
 }
 
 // getFirstUnaskedBatch is the first batch holding a line no run has asked about.
-func getFirstUnaskedBatch(batches []proofread.Batch, cues []domain.TranscriptCue, ms int) int {
+func getFirstUnaskedBatch(batches []domain.ProofreadBatch, cues []domain.TranscriptCue, ms int) int {
 	from := getFirstUnasked(cues, ms)
 	at := 0
 	for at < len(batches) && last(batches[at]) < from {
@@ -495,7 +495,7 @@ func getFirstUnasked(cues []domain.TranscriptCue, ms int) int {
 
 // isJoined says whether a correction answers about a line already put together
 // with another. Those words no longer stand on their own.
-func isJoined(merged map[int]bool, said proofread.Line) bool {
+func isJoined(merged map[int]bool, said domain.ProofreadLine) bool {
 	for at := said.Number; at <= said.Last; at++ {
 		if merged[at] {
 			return true
@@ -508,7 +508,7 @@ func isJoined(merged map[int]bool, said proofread.Line) bool {
 // answered. The first spoken of them are the pass over the whole transcript and
 // the rest the pass over its batchesAcrossCuts, and each batch of a pass reaches further
 // into the transcript than the one before it.
-func getProgress(batches []proofread.Batch, mainBatches, end int, cues []domain.TranscriptCue) putting {
+func getProgress(batches []domain.ProofreadBatch, mainBatches, end int, cues []domain.TranscriptCue) putting {
 	var stood putting
 	if done := min(end, mainBatches); done > 0 {
 		stood.At = cues[last(batches[done-1])].To
@@ -527,13 +527,13 @@ func getProgress(batches []proofread.Batch, mainBatches, end int, cues []domain.
 
 // batchesAcrossCuts is a batch over each cut, carrying what the recording holds
 // on both sides of it, so a sentence broken in two is put right whole.
-func (u Proofread) batchesAcrossCuts(cues []domain.TranscriptCue, cuts []int, about string) []proofread.Batch {
+func (u Proofread) batchesAcrossCuts(cues []domain.TranscriptCue, cuts []int, about string) []domain.ProofreadBatch {
 	size, overlap := run.GetSize(u.BatchSize, DefaultBatchSize), run.GetSize(u.Overlap, DefaultOverlap)
 	return setContext(proofread.CutIntoBatches(cues, size, overlap, cuts), about)
 }
 
 // setContext is the batches with what the recording holds on each of them.
-func setContext(batches []proofread.Batch, about string) []proofread.Batch {
+func setContext(batches []domain.ProofreadBatch, about string) []domain.ProofreadBatch {
 	for at := range batches {
 		batches[at].Context = about
 	}
@@ -561,7 +561,7 @@ func countUnchanged(asked, fixed map[int]bool) int {
 }
 
 // last is the number of the final line a batch holds.
-func last(batch proofread.Batch) int {
+func last(batch domain.ProofreadBatch) int {
 	return batch.Lines[len(batch.Lines)-1].Number
 }
 

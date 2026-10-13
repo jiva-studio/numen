@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -28,19 +30,33 @@ type puts struct {
 
 func (p *puts) GetName() string { return "a proofreader" }
 
-func (p *puts) Proofread(_ context.Context, batches []proofread.Batch) (map[int]string, error) {
+func (p *puts) Proofread(_ context.Context, batches []domain.ProofreadPrompt) (map[int]string, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	out := map[int]string{}
 	for _, batch := range batches {
-		for _, line := range batch.Lines {
-			p.asked = append(p.asked, line.Number)
-		}
+		p.asked = append(p.asked, getLineNumbers(batch.Text)...)
 		if said, held := p.says[batch.Number]; held {
 			out[batch.Number] = said
 		}
 	}
 	return out, nil
+}
+
+// getLineNumbers are the numbers of the lines a prompt opens, in order.
+func getLineNumbers(prompt string) []int {
+	var out []int
+	for _, one := range regexp.MustCompile(proofread.Opens+`(\d+)`+proofread.Closes).FindAllStringSubmatch(prompt, -1) {
+		at, _ := strconv.Atoi(one[1])
+		out = append(out, at)
+	}
+	return out
+}
+
+// getContext is what a prompt says before its first line.
+func getContext(prompt string) string {
+	before, _, _ := strings.Cut(prompt, proofread.Opens)
+	return strings.TrimSuffix(before, "\n\n")
 }
 
 // lines is what this proofreader was asked about.
@@ -205,11 +221,11 @@ func (c *corrector) GetName() string {
 	return c.name
 }
 
-func (c *corrector) Proofread(ctx context.Context, pages []proofread.Batch) (map[int]string, error) {
+func (c *corrector) Proofread(ctx context.Context, pages []domain.ProofreadPrompt) (map[int]string, error) {
 	var at []int
 	for _, page := range pages {
 		at = append(at, page.Number)
-		c.about = append(c.about, page.Context)
+		c.about = append(c.about, getContext(page.Text))
 	}
 	c.asked = append(c.asked, at)
 	if c.stop != nil {

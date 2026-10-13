@@ -10,6 +10,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading/openai"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
@@ -94,7 +95,7 @@ func TestTheRunIsLeftWithItsFieldsInTheOrderTheServiceReadsThem(t *testing.T) {
 	var raw []byte
 	s := newRunServer(t, "batch_1", &raw)
 
-	if _, err := newBatchClient(t, s.URL).Submit(t.Context(), []proofread.Batch{page(1, "a line")}); err != nil {
+	if _, err := newBatchClient(t, s.URL).Submit(t.Context(), []domain.ProofreadPrompt{page(1, "a line")}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -112,7 +113,7 @@ func TestTheRunIsLeftWithItsFieldsInTheOrderTheServiceReadsThem(t *testing.T) {
 }
 
 func TestEveryPageOfTheRunIsAskedWhatOnePageIsAskedOnItsOwn(t *testing.T) {
-	pages := []proofread.Batch{page(7, "the frst line", "the second"), page(8, "another page")}
+	pages := []domain.ProofreadPrompt{page(7, "the frst line", "the second"), page(8, "another page")}
 
 	var raw []byte
 	s := newRunServer(t, "batch_1", &raw)
@@ -151,7 +152,7 @@ func TestEveryPageOfTheRunIsAskedWhatOnePageIsAskedOnItsOwn(t *testing.T) {
 			t.Errorf("request %d system message %q: %q", i,
 				one.Body.Messages[0].Role, one.Body.Messages[0].Content)
 		}
-		if one.Body.Messages[1].Role != "user" || one.Body.Messages[1].Content != proofread.Ask(pages[i]) {
+		if one.Body.Messages[1].Role != "user" || one.Body.Messages[1].Content != pages[i].Text {
 			t.Errorf("request %d user message %q: %q", i,
 				one.Body.Messages[1].Role, one.Body.Messages[1].Content)
 		}
@@ -162,7 +163,7 @@ func TestLeaveAnswersWithTheNameTheServiceGave(t *testing.T) {
 	var raw []byte
 	s := newRunServer(t, "batch_1e9f", &raw)
 
-	name, err := newBatchClient(t, s.URL).Submit(t.Context(), []proofread.Batch{page(1, "a line")})
+	name, err := newBatchClient(t, s.URL).Submit(t.Context(), []domain.ProofreadPrompt{page(1, "a line")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -281,7 +282,7 @@ func TestARefusedBatchNamesTheStatusAndNotTheKey(t *testing.T) {
 	})
 	c := newBatchClient(t, s.URL)
 
-	name, err := c.Submit(t.Context(), []proofread.Batch{page(1, "a line")})
+	name, err := c.Submit(t.Context(), []domain.ProofreadPrompt{page(1, "a line")})
 	if err == nil {
 		t.Fatal("no error out of Submit")
 	}

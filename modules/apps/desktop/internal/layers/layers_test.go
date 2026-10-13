@@ -26,7 +26,7 @@ const apps = "github.com/jiva-studio/numen/modules/apps/"
 // named in. Everything else the core holds is the core's own work.
 func isAssembled(pkg string) bool {
 	return pkg == "container" || pkg == "domain" || pkg == "port" ||
-		pkg == "proofread" || strings.HasPrefix(pkg, "adapter/")
+		strings.HasPrefix(pkg, "adapter/")
 }
 
 // baseline are the edges the applications still have. Each is a binary doing a
@@ -303,6 +303,19 @@ func mount() {
 	want := []string{"Agent", "Trash", "Recording"}
 	if got := getClaimedPorts(file); !slices.Equal(got, want) {
 		t.Errorf("the rule refuses %v, want %v", got, want)
+	}
+}
+
+// What the rule lets through and what it refuses: the work of the core is not
+// an application's to import.
+func TestWhatTheCoreRuleRefuses(t *testing.T) {
+	for to, want := range map[string]bool{
+		"container": true, "domain": true, "port": true, "adapter/mcp": true,
+		"proofread": false, "usecase/source": false, "internal/text": false,
+	} {
+		if got := isAssembled(to); got != want {
+			t.Errorf("isAssembled(%q) = %v, want %v", to, got, want)
+		}
 	}
 }
 

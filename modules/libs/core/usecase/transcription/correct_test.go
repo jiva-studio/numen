@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
@@ -249,7 +248,7 @@ type refuses struct{ why error }
 
 func (r *refuses) GetName() string { return "a proofreader that will not answer" }
 
-func (r *refuses) Proofread(context.Context, []proofread.Batch) (map[int]string, error) {
+func (r *refuses) Proofread(context.Context, []domain.ProofreadPrompt) (map[int]string, error) {
 	return nil, r.why
 }
 
@@ -302,7 +301,7 @@ type waits struct {
 
 func (w *waits) GetName() string { return "a proofreader that waits" }
 
-func (w *waits) Proofread(context.Context, []proofread.Batch) (map[int]string, error) {
+func (w *waits) Proofread(context.Context, []domain.ProofreadPrompt) (map[int]string, error) {
 	w.once.Do(func() { close(w.asked) })
 	<-w.on
 	return map[int]string{}, nil

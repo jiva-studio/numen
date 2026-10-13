@@ -6,6 +6,8 @@ import (
 	"unicode"
 
 	"golang.org/x/text/unicode/norm"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // MaxEditDistance is how far a correction may stand from the line as read.
@@ -28,7 +30,7 @@ const MaxEditDistance = 0.30
 // only puts something wordless in front of it, and as is one standing further
 // than maxDistance from the line as read. A maxDistance at or below zero sets
 // no limit.
-func GetFixedLines(batch Batch, reply string, maxDistance float64) (put []Line, past, ok bool) {
+func GetFixedLines(batch domain.ProofreadBatch, reply string, maxDistance float64) (put []domain.ProofreadLine, past, ok bool) {
 	if strings.Contains(reply, Opens) || strings.Contains(reply, Closes) {
 		return nil, false, false
 	}
@@ -38,7 +40,7 @@ func GetFixedLines(batch Batch, reply string, maxDistance float64) (put []Line, 
 		read[line.Number] = line.Text
 	}
 
-	var out []Line
+	var out []domain.ProofreadLine
 	answered := make(map[int]bool, len(batch.Lines))
 	for _, row := range strings.Split(stripFence(reply), "\n") {
 		row = strings.TrimSpace(row)
@@ -110,7 +112,7 @@ func GetFixedLines(batch Batch, reply string, maxDistance float64) (put []Line, 
 				continue
 			}
 		}
-		out = append(out, Line{Number: at, Last: through, Text: text})
+		out = append(out, domain.ProofreadLine{Number: at, Last: through, Text: text})
 	}
 	return out, past, true
 }
@@ -124,8 +126,8 @@ func GetFixedLines(batch Batch, reply string, maxDistance float64) (put []Line, 
 // batch in which the line stands further from the end; where they stand equally
 // far, it is the one from the later batch. A reply the gates refuse puts
 // nothing right, and a line no accepted reply covers is not in the result.
-func GetGatheredLines(asked []Batch, replies map[int]string, maxDistance float64) (map[int]Line, []int) {
-	put := make(map[int]Line)
+func GetGatheredLines(asked []domain.ProofreadBatch, replies map[int]string, maxDistance float64) (map[int]domain.ProofreadLine, []int) {
+	put := make(map[int]domain.ProofreadLine)
 	best := make(map[int]int)
 	var past []int
 	for _, batch := range asked {
