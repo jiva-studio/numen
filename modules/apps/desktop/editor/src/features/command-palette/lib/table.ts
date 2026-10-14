@@ -6,8 +6,9 @@ import { createNoteCommands } from './noteCommands'
 import { createVaultCommands } from './vaultCommands'
 import {
   createWindowCreationCommands,
+  createWindowDisplayCommands,
+  createWindowFeatureCommands,
   createWindowNavigationCommands,
-  createWindowSettingsCommands,
 } from './windowCommands'
 import type { Command } from '../types'
 import type { Words } from '../words'
@@ -28,6 +29,7 @@ export const createCommands = (
   ...createDeletionCommands(words),
   ...createWindowCreationCommands(words, agent),
   ...createWindowNavigationCommands(words, agent),
-  ...createWindowSettingsCommands(words),
+  ...createWindowDisplayCommands(words),
+  ...createWindowFeatureCommands(words),
   ...createVaultCommands(words, agent),
 ]

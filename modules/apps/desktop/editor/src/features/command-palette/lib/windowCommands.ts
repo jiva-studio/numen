@@ -77,7 +77,7 @@ export const createWindowNavigationCommands = (words: Words, agent: string): rea
   },
 ]
 
-const createDisplaySettingsCommands = (words: Words): readonly Command[] => [
+export const createWindowDisplayCommands = (words: Words): readonly Command[] => [
   {
     id: 'appearance',
     text: words.appearance,
@@ -108,7 +108,7 @@ const createDisplaySettingsCommands = (words: Words): readonly Command[] => [
   },
 ]
 
-const createFeatureSettingsCommands = (words: Words): readonly Command[] => [
+export const createWindowFeatureCommands = (words: Words): readonly Command[] => [
   {
     id: 'syncing',
     text: words.syncing,
@@ -148,8 +148,8 @@ const createFeatureSettingsCommands = (words: Words): readonly Command[] => [
 ]
 
 export const createWindowSettingsCommands = (words: Words): readonly Command[] => [
-  ...createDisplaySettingsCommands(words),
-  ...createFeatureSettingsCommands(words),
+  ...createWindowDisplayCommands(words),
+  ...createWindowFeatureCommands(words),
 ]
 
 export const createWindowCommands = (words: Words, agent: string): readonly Command[] => [
