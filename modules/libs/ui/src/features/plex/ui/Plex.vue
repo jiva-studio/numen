@@ -25,7 +25,7 @@ const props = withDefaults(defineProps<PlexProps>(), {
   viewport: () => browserViewport,
   creatable: () => ['parent', 'child', 'jump'],
   dragThreshold: 8,
-  dwell: DEFAULT_BEHAVIOUR.dwell,
+  expansionDelay: DEFAULT_BEHAVIOUR.expansionDelay,
   reaching: () => DEFAULT_BEHAVIOUR.reaching,
   showing: () => DEFAULT_BEHAVIOUR.showing,
   relationName: getRelationName,
@@ -48,7 +48,7 @@ const { room, options, measures, widen, hung } = useRoom(frameElement, props, ()
 
 /** How the nodes behave, handed down as one. */
 const behaviour = computed<PlexBehaviour>(() => ({
-  dwell: props.dwell,
+  expansionDelay: props.expansionDelay,
   reaching: props.reaching,
   showing: props.showing,
   clock: props.clock,

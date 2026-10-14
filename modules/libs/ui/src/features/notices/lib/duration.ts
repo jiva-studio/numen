@@ -11,7 +11,7 @@ import { getReadable, type Notice } from './notice'
 export const CARD_DELAY = 10_000
 
 /** How long the shortest thing worth saying stands, in milliseconds. */
-export const MIN_DWELL = 4_000
+export const MIN_DURATION = 4_000
 
 /** How much longer it stands for each word it carries, in milliseconds. */
 export const PER_WORD = 400
@@ -25,10 +25,10 @@ export const TOO_MUCH = 20
  * Longer words are read for longer. Past twenty of them the time never runs
  * out: a list of names is something a person acts on, and it waits for them.
  */
-export const getDwell = (text: string, about = ''): number => {
+export const getNoticeDuration = (text: string, about = ''): number => {
   const words = `${text} ${about}`.split(/\s/).filter((word) => word !== '')
   if (words.length > TOO_MUCH) return Infinity
-  return MIN_DWELL + words.length * PER_WORD
+  return MIN_DURATION + words.length * PER_WORD
 }
 
 /**
@@ -44,7 +44,7 @@ export const getArrivalTimes = (
 
 /** Whether a notice has stood long enough to have been read. */
 const isRead = (notice: Notice, firstSeen: ReadonlyMap<string, number>, at: number): boolean =>
-  at - (firstSeen.get(notice.id) ?? at) >= getDwell(notice.text, notice.about)
+  at - (firstSeen.get(notice.id) ?? at) >= getNoticeDuration(notice.text, notice.about)
 
 export interface ShownNoticeOptions {
   readonly firstSeen: ReadonlyMap<string, number>

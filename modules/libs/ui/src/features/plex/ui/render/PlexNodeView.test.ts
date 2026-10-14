@@ -9,7 +9,7 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlexNodeView from './PlexNodeView.vue'
 import { DEFAULT_BEHAVIOUR } from '../../model/behaviour'
-import { OPENING, type WideBox } from '../../model/dwell'
+import { EXPANSION_DURATION, type WideBox } from '../../model/expansion'
 import { getNodeHeadings, type PlexHeading } from '../../lib/inside'
 import { stubClock } from '@/shared/fixtures/clock'
 import type { GestureRole, PlacedNode } from '../../lib/node'
@@ -326,7 +326,7 @@ describe('a box with more of its title to show', () => {
       props: {
         node: createNode(over),
         wide,
-        behaviour: { ...DEFAULT_BEHAVIOUR, dwell: WAIT, clock: world.clock },
+        behaviour: { ...DEFAULT_BEHAVIOUR, expansionDelay: WAIT, clock: world.clock },
         gestureRole,
       },
     })
@@ -364,7 +364,7 @@ describe('a box with more of its title to show', () => {
     await vi.advanceTimersByTimeAsync(WAIT)
 
     mounted.world.tick(0)
-    mounted.world.tick(OPENING / 2)
+    mounted.world.tick(EXPANSION_DURATION / 2)
     await mounted.node.vm.$nextTick()
     const halfway = getBox(mounted.node).width
     expect(halfway).toBeGreaterThan(144)
@@ -396,7 +396,7 @@ describe('a box with more of its title to show', () => {
     await vi.advanceTimersByTimeAsync(WAIT)
 
     mounted.world.tick(0)
-    mounted.world.tick(OPENING / 2)
+    mounted.world.tick(EXPANSION_DURATION / 2)
     await mounted.node.vm.$nextTick()
     expect(mounted.node.emitted('settle')).toStrictEqual([[true]])
   })
@@ -442,7 +442,7 @@ describe('a box with nothing more to show', () => {
     const node = mount(PlexNodeView, {
       props: {
         node: createNode(),
-        behaviour: { ...DEFAULT_BEHAVIOUR, dwell: WAIT, clock: world.clock },
+        behaviour: { ...DEFAULT_BEHAVIOUR, expansionDelay: WAIT, clock: world.clock },
         ...props,
       },
     })
@@ -505,7 +505,7 @@ describe('the headings a node hangs', () => {
             margin: 20,
           },
         }),
-        behaviour: { ...DEFAULT_BEHAVIOUR, dwell: WAIT, clock: world.clock },
+        behaviour: { ...DEFAULT_BEHAVIOUR, expansionDelay: WAIT, clock: world.clock },
       },
     })
     return { node, world }
@@ -614,7 +614,7 @@ describe('the headings a node hangs', () => {
 
     await mounted.node.trigger('pointerleave')
     mounted.world.tick(0)
-    mounted.world.tick(OPENING / 2)
+    mounted.world.tick(EXPANSION_DURATION / 2)
     await mounted.node.vm.$nextTick()
     expect(first()).toBe('Heading 1')
 

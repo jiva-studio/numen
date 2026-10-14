@@ -7,7 +7,7 @@
  * already worked out.
  */
 import { computed, onMounted, onScopeDispose, ref, type ShallowRef } from 'vue'
-import { getWideBox } from './dwell'
+import { getWideBox } from './expansion'
 import { useTitleWidths } from './measure'
 import { getNodeHeadings, type PlexHeading } from '../lib/inside'
 import { resolveOptions, type PlexOptionsInput, type Size } from '../lib/arrange'
