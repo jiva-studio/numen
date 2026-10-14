@@ -96,7 +96,7 @@ describe('the marks on the picture', () => {
     const { state } = slider({ curve: curve({ isHonest: false }) })
     expect(state.marks.value).toStrictEqual([])
     expect(state.callout.value).toBeNull()
-    expect(state.heights.value.map((one) => one.text)).toStrictEqual([
+    expect(state.heights.value.map((one: { text: string }) => one.text)).toStrictEqual([
       words.formatGoalCost('minutes', 120),
     ])
   })

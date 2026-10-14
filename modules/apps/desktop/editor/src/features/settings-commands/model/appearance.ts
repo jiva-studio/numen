@@ -6,7 +6,7 @@
  * held until the keyboard has stood on the row for HELD, and what the settings
  * name is put back the moment the keyboard leaves the list.
  */
-import { ref, shallowRef, watch } from 'vue'
+import { ref, shallowRef, watch, type Ref, type ShallowRef } from 'vue'
 import { createFollower } from '@numen/ui'
 import { createAnswerGuard } from '@/shared/questions'
 import type { MessageWriter } from '@/shared/notices/messages'

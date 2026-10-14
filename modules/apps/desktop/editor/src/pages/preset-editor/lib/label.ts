@@ -8,7 +8,15 @@
  */
 import type { CSSProperties } from 'vue'
 import type { Position } from '@numen/ui'
-import { PLOT_HEIGHT, PLOT_LEFT, PLOT_RIGHT, PLOT_TOP, PLOT_WIDTH } from './plot'
+import {
+  PLOT_BOTTOM,
+  PLOT_HEIGHT,
+  PLOT_LEFT,
+  PLOT_RIGHT,
+  PLOT_TOP,
+  PLOT_WIDTH,
+  type Extent,
+} from './plot'
 
 /** How far the name of a mark stands above it, and how wide it is set. */
 export const AXIS_LABEL_LIFT = 9
@@ -185,10 +193,11 @@ export interface Height {
 }
 
 /**
- * What the height of the picture comes to, against the lines it is read off. A
+ * What the height of the picture comes to, against the lines it is read off. An
  * extent of no width is one number and is said once, on the foot, where a curve
  * that never moves is drawn. A number the line, a mark or the readout over the
- * knob stands on is dropped: the axis gives way, and the drawing keeps what it
+ * knob stands on is dropped: the axis gives way, and the drawing keeps what it.
+ */
 export interface AxisLabelsContext {
   places: readonly Position[]
   marks: readonly Position[]

@@ -1,5 +1,6 @@
-import { computed } from 'vue'
-import type { Curve, Position } from '../../types'
+import { computed, type ComputedRef } from 'vue'
+import type { Position } from '@numen/ui'
+import type { Curve, Goal } from '../../types'
 import type { CurveSliderProps } from './useCurveSlider'
 import type { useCurvePlot } from './useCurvePlot'
 import { clearBacklog } from '../../lib/curve'
@@ -37,7 +38,7 @@ function createCalloutData(options: CalloutOptions) {
   return { lines, ...createCallout(at) }
 }
 
-function createMarks(goal: string, knob: Position | null, suggested: Position | null): Mark[] {
+function createMarks(goal: Goal, knob: Position | null, suggested: Position | null): Mark[] {
   const out: Mark[] = []
   if (knob) out.push({ key: 'knob', at: knob, text: '' })
   if (suggested) {
@@ -98,7 +99,7 @@ export function useCurveAnnotations(
         marks: marks.value.map((one) => one.at),
         over: callout.value?.box ?? null,
       },
-      (value) => words.formatGoalCost(props.curve.goal, value),
+      (value: number) => words.formatGoalCost(props.curve.goal, value),
     ),
   )
 

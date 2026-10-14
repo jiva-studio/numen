@@ -1,7 +1,7 @@
 /**
  * Tree state and operations for the files tree.
  */
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
 import type { Entry } from '@/entities/file'
 import { getRenamedPath, type PathRename } from '@/shared/paths'
@@ -151,7 +151,9 @@ function createTreeRefresh(deps: TreeRefreshDeps) {
     renames: readonly PathRename[] = [],
   ) => {
     if (renames.length > 0) {
-      selectedPaths.value = selectedPaths.value.map((one) => getRenamedPath(renames, one) || one)
+      selectedPaths.value = selectedPaths.value.map(
+        (one: string) => getRenamedPath(renames, one) || one,
+      )
     }
     const named = [...paths, ...renames.flatMap((one) => [one.from, one.to])]
     if (named.length === 0) return void (await refresh())

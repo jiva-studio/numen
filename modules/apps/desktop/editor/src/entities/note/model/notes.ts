@@ -141,7 +141,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
   const now = how.now ?? (() => Date.now())
 
   const { context, dispatch } = createNoteStoreContext(core, limits, onReplaced)
-  const { tabs, reportedIds, closeCallbacks } = context
+  const { tabs, bodies, addresses, queue, reportedIds, closeCallbacks } = context
 
   const conflicts = createConflictCoordinator(dispatch, (id) => tabs.get(id))
   const getOpenIds = (): readonly string[] => [...tabs.keys()]

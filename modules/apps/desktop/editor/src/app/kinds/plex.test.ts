@@ -74,7 +74,13 @@ const plexKind = (
       },
     },
     tabOpeners: {
-      openFile: async (path: string, title: string, showing: string, line?: number) => {
+      openFile: async (
+        path: string,
+        title: string,
+        options?: string | { where?: string; line?: number },
+      ) => {
+        const showing = typeof options === 'string' ? options : (options?.where ?? 'here')
+        const line = typeof options === 'object' ? options?.line : undefined
         opened.push([path, title, showing, line])
       },
     },
@@ -131,7 +137,7 @@ describe('a note a plex tab opens', () => {
   it('goes to the tabs linked to the plex tab whose state asked', () => {
     const one = plexKind()
 
-    one.deps.openNote('Compost.md', 'Compost', 'here', undefined, second)
+    one.deps.openNote('Compost.md', { title: 'Compost', showing: 'here', state: second })
 
     expect(one.synced).toStrictEqual([['plex:2', 'Compost.md', 'Compost']])
     expect(one.opened).toStrictEqual([])
@@ -140,7 +146,11 @@ describe('a note a plex tab opens', () => {
   it('goes to the tabs linked to the plex tab in front where no tab holds that state', () => {
     const one = plexKind()
 
-    one.deps.openNote('Compost.md', 'Compost', 'here', undefined, createPlexState('gone'))
+    one.deps.openNote('Compost.md', {
+      title: 'Compost',
+      showing: 'here',
+      state: createPlexState('gone'),
+    })
 
     expect(one.synced).toStrictEqual([['plex:3', 'Compost.md', 'Compost']])
   })
@@ -148,7 +158,12 @@ describe('a note a plex tab opens', () => {
   it('opens in a tab of its own where no tab is linked', () => {
     const one = plexKind({ isLinked: false })
 
-    one.deps.openNote('Compost.md', 'Compost', 'beside', 7, second)
+    one.deps.openNote('Compost.md', {
+      title: 'Compost',
+      showing: 'beside',
+      line: 7,
+      state: second,
+    })
 
     expect(one.opened).toStrictEqual([['Compost.md', 'Compost', 'beside', 7]])
   })
@@ -156,7 +171,7 @@ describe('a note a plex tab opens', () => {
   it('opens in a tab of its own where the window links no tabs', () => {
     const one = plexKind({ hasTabSync: false })
 
-    one.deps.openNote('Compost.md', 'Compost', 'here', undefined, second)
+    one.deps.openNote('Compost.md', { title: 'Compost', showing: 'here', state: second })
 
     expect(one.opened).toStrictEqual([['Compost.md', 'Compost', 'here', undefined]])
   })
@@ -164,7 +179,7 @@ describe('a note a plex tab opens', () => {
   it('goes to the tabs linked to the plex tab in front where none was named', () => {
     const one = plexKind({ front: THREE[0]! })
 
-    one.deps.openNote('Compost.md', 'Compost', 'here')
+    one.deps.openNote('Compost.md', { title: 'Compost', showing: 'here' })
 
     expect(one.synced).toStrictEqual([['plex:1', 'Compost.md', 'Compost']])
   })
@@ -172,7 +187,7 @@ describe('a note a plex tab opens', () => {
   it('goes to the tabs linked to the last plex tab where another kind of tab is in front', () => {
     const one = plexKind({ front: { id: 'note:1', kind: 'note', state: first } })
 
-    one.deps.openNote('Compost.md', 'Compost', 'here')
+    one.deps.openNote('Compost.md', { title: 'Compost', showing: 'here' })
 
     expect(one.synced).toStrictEqual([['plex:3', 'Compost.md', 'Compost']])
   })
@@ -184,7 +199,7 @@ describe('a note a plex tab opens where a tab holds no state', () => {
       tabs: [{ id: 'plex:0', kind: 'plex', state: undefined as unknown as PlexTabState }, ...THREE],
     })
 
-    one.deps.openNote('Compost.md', 'Compost', 'here')
+    one.deps.openNote('Compost.md', { title: 'Compost', showing: 'here' })
 
     expect(one.synced).toStrictEqual([['plex:3', 'Compost.md', 'Compost']])
   })

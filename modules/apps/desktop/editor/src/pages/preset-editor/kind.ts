@@ -1,11 +1,10 @@
 /**
  * Window registration and tab state for flashcard preset tabs.
  */
-import { shallowRef } from 'vue'
+import { shallowRef, type Ref } from 'vue'
 import type { PlexDestination } from '@numen/ui'
 import type { MessageWriter } from '@/shared/notices/messages'
-import type { TabKind, WindowHandle } from '@/entities/tab'
-import type { FileOpeners } from '@/entities/tab'
+import type { FileOpeners, OpenPlacement, TabKind, WindowHandle } from '@/entities/tab'
 import { getFileName, type PathRename } from '@/shared/paths'
 import { PRESET } from '@/entities/tab'
 import { NO_BOUNDS, type Presets, type SettingsBounds } from './types'
@@ -119,9 +118,14 @@ export function usePresetTab(deps: PresetTabDeps) {
 
   const kind = createPresetKind({ handle, context, open, titles, bounds, core, today })
 
-  const openPreset = (path: string, title = '', how: PlexDestination = 'here'): void => {
+  const openPreset = (
+    path: string,
+    title = '',
+    how: PlexDestination | OpenPlacement = 'here',
+  ): void => {
     if (title) titles.set(path, title)
-    void (how === 'beside' ? handle.openTabBeside(PRESET, path) : handle.openTab(PRESET, path))
+    const where = typeof how === 'string' ? how : (how?.where ?? 'here')
+    void (where === 'beside' ? handle.openTabBeside(PRESET, path) : handle.openTab(PRESET, path))
   }
 
   tabOpeners.registerEditor('preset', openPreset)

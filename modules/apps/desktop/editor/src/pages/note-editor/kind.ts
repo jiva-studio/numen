@@ -1,7 +1,7 @@
 /**
  * Window registration and tab state for note tabs.
  */
-import { computed } from 'vue'
+import { computed, type ComputedRef } from 'vue'
 import type { PlexDestination } from '@numen/ui'
 import type { Store } from '@/features/command-palette'
 import type { TabKind, WindowHandle } from '@/entities/tab'
@@ -83,7 +83,7 @@ function createNoteStoreProxy(
   names: ReturnType<typeof createNoteTitles>,
   ...[closeTab, tabbed]: [
     closeTab: (id: string) => void,
-    tabbed: ReturnType<typeof computed<ReadonlyMap<string, string>>>,
+    tabbed: ComputedRef<ReadonlyMap<string, string>>,
   ]
 ): Store {
   return {

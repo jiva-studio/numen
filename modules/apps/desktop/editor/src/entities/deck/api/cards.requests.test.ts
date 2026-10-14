@@ -194,7 +194,7 @@ describe('renaming a field', () => {
   it('sends the path, both names and the file it was read from', async () => {
     answer('renameStencilField', { decks: [], cards: 0, notWritten: [], at: stampedAt })
 
-    await cards.renameField('Word.md', 'Front', 'Face', carried)
+    await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, carried)
 
     expect(cardsService.renameStencilField).toHaveBeenCalledWith({
       path: 'Word.md',

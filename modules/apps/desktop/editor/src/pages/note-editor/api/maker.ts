@@ -138,7 +138,7 @@ function createNoteFactory(core: NoteMaker, writeMessage: MessageWriter) {
 }
 
 async function runLinkOp(
-  op: () => Promise<string | null>,
+  op: () => Promise<ErrorCode | null>,
   writeMessage: MessageWriter,
 ): Promise<boolean> {
   try {

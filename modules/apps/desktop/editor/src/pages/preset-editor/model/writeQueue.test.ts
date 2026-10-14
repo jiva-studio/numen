@@ -3,6 +3,7 @@
  * out goes after it, and a file changed elsewhere is not written over.
  */
 import { describe, expect, it } from 'vitest'
+import type { MessageWriter } from '@/shared/notices/messages'
 import { DEFAULTS, type Presets, type PresetWriteResult } from '../types'
 import { WORDS as words } from '../words'
 import { createWriteQueue, flushWrites, requestWrite, sendWrite } from './writeQueue'

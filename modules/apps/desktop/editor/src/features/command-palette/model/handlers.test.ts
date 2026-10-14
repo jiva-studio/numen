@@ -190,6 +190,7 @@ const window = (
       asking: () => answers.isAsking === true,
       flushPending: async (id) => void done.push(`flushPending ${id}`),
       close: (id) => void done.push(`close ${id}`),
+      openFile: (path, title, showing) => void done.push(`openFile ${path} ${title} ${showing}`),
       openNewFile: (path, title, options) => {
         const type = typeof options === 'string' ? options : options.type
         const showing = typeof options === 'object' ? options.where : undefined

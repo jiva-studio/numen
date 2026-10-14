@@ -7,7 +7,7 @@
  * step it stands on is what the field means. What a step draws is read again
  * on every keystroke, so a vault moving under an open step is drawn as it is.
  */
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 import { createAnswerGuard as latest } from '@/shared/questions'
 import { useDebouncedAsk, type Wait } from '@/shared/search'
 import type { Vault } from '@/entities/vault'
@@ -15,6 +15,7 @@ import { createCommands } from '../lib/commands'
 import { getPaletteView } from './view'
 import { createInvocation } from '../lib/invocation'
 import type {
+  Command,
   CommandsDeps,
   CommandTarget,
   CommandInvocation,
@@ -160,7 +161,7 @@ function parsePaletteDeps(
         knows: knows!,
         lists: lists!,
         runs: runs!,
-        wait,
+        ...(wait !== undefined ? { wait } : {}),
       }
 }
 

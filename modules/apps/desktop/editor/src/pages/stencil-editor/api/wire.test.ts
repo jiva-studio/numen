@@ -221,8 +221,8 @@ describe('renaming a field', () => {
     const { wire } = createWire(cards)
     const changed = vi.fn()
 
-    await wire.renameField('Word.md', 'Front', '', changed)
-    await wire.renameField('Word.md', 'Front', 'Front', changed)
+    await wire.renameField('Word.md', { from: 'Front', to: '' }, changed)
+    await wire.renameField('Word.md', { from: 'Front', to: 'Front' }, changed)
 
     expect(cards.renameField).not.toHaveBeenCalled()
     expect(changed).not.toHaveBeenCalled()
@@ -233,9 +233,9 @@ describe('renaming a field', () => {
     cards.renameField.mockResolvedValue(getRenameAnswer())
     const { wire } = createWire(cards)
 
-    await wire.renameField('Word.md', 'Front', 'Face', vi.fn())
+    await wire.renameField('Word.md', { from: 'Front', to: 'Face' }, vi.fn())
 
-    expect(cards.renameField).toHaveBeenCalledWith('Word.md', 'Front', 'Face', null)
+    expect(cards.renameField).toHaveBeenCalledWith('Word.md', { from: 'Front', to: 'Face' }, null)
   })
 
   it('counts the cards it reached and names the decks it did not', async () => {

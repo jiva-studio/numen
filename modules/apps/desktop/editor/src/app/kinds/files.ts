@@ -14,6 +14,7 @@ import {
 import {
   createFilesKind as buildFilesKind,
   useFileTree,
+  type FilesTabDeps,
   type FilesTabState,
 } from '@/pages/file-manager'
 import { isNotePath } from '../useTabSync'

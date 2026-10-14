@@ -1,7 +1,7 @@
 /**
  * Palette search coordination, debouncing, and group management.
  */
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { PaletteGroup } from '@numen/ui'
 import type { Question } from '@/shared/questions'
 import { useDebouncedAsk, type Wait } from '@/shared/search'
@@ -126,7 +126,7 @@ function buildSearchGroups(deps: BuildGroupsDeps) {
   return { groups, hitsById }
 }
 
-interface SearchState {
+interface SearchRefs {
   names: ShallowRef<readonly NameMatch[]>
   texts: ShallowRef<readonly Passage[]>
   meanings: ShallowRef<readonly Passage[]>
@@ -141,7 +141,7 @@ async function executeSearchQuery(
     mine: Question
     notAskedWord: string
   },
-  state: SearchState,
+  state: SearchRefs,
 ) {
   state.isWorking.value = { names: true, text: true, meaning: true }
   state.failureMessages.value = {}
@@ -197,7 +197,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
 
   const isWorking = ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false })
   const failureMessages = ref<Partial<Record<SearchGroup, string>>>({})
-  const state: SearchState = { names, texts, meanings, isWorking, failureMessages }
+  const state: SearchRefs = { names, texts, meanings, isWorking, failureMessages }
 
   const debounced = useDebouncedAsk(how.wait ? { wait: how.wait } : {})
 

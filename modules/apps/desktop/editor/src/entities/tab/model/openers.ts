@@ -16,14 +16,14 @@ import type { Span } from '@/shared/span'
 export type EditorKind = NoteType | 'preset' | 'url'
 
 export interface OpenPlacement {
-  where?: PlexDestination
-  line?: number
+  where?: PlexDestination | undefined
+  line?: number | undefined
 }
 
 export interface OpenNewFileOptions {
   type: EditorKind
-  where?: PlexDestination
-  line?: number
+  where?: PlexDestination | undefined
+  line?: number | undefined
 }
 
 /**

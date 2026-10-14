@@ -3,7 +3,7 @@
  * few things one kind asks of another.
  */
 import { watch } from 'vue'
-import { core } from './vault'
+import { core, type VaultCore } from './vault'
 import { presets } from '@/entities/deck'
 import { runSupport, type CommandTarget, type NoteLookup } from '@/features/command-palette'
 import { AGENT, FILES, PLEX, createWorkspace, fileOpeners, useWindowTabs } from '@/entities/tab'
@@ -93,7 +93,7 @@ interface DeckPresetHandlers {
 }
 
 async function resolveDeckPreset(
-  vaultCore: VaultPort,
+  vaultCore: VaultCore,
   path: string,
   handlers: DeckPresetHandlers,
 ): Promise<void> {

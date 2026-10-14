@@ -232,5 +232,6 @@ export function createStepGroups(state: ViewState) {
     getExactlyGroup: (step: PendingStep, text: string) =>
       getExactlyGroup(step, text, words, getStepTitle(step)),
     findNoteType,
+    getVaultAside: (one: Vault) => getVaultAside(one, showing.value, words),
   }
 }

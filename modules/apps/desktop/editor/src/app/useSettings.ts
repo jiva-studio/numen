@@ -18,7 +18,7 @@ import {
   useNestingSetting,
   createWindowAppearance,
 } from '@/features/settings-commands'
-import { createReviewSetting } from '@/entities/settings'
+import { createReviewSetting, type SettingEdit } from '@/entities/settings'
 import { createSettingsStore } from '@/entities/settings'
 import { useSettingsTab, paths, createChoices } from '@/pages/settings'
 import type { SelectChoice } from '@numen/ui'
@@ -110,7 +110,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     chooseHeadings: (count: number) => void nesting.chooseCount(`${count}`),
     dayStartTime: dayBegins.starts,
     latestDayStartTime: dayBegins.latest,
-    chooseDayStartTime: (hour: number) => void dayBegins.choose(hour),
+    chooseDayStartTime: (hour: string) => void dayBegins.choose(hour),
     getSetting: (at: readonly string[]) => rest.getSetting(at),
     getModels: (at: readonly string[]) => rest.getModelsAt(at),
     write: (written: readonly SettingEdit[]) => void rest.writeSettings(written),
@@ -124,7 +124,7 @@ interface PaletteListsDeps {
   sync: ReturnType<typeof syncSetting>
   nesting: ReturnType<typeof useNestingSetting>
   rest: ReturnType<typeof createSettingsStore>
-  words: SettingsWords
+  words: Words
 }
 
 function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {

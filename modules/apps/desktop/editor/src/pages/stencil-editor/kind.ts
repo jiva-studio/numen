@@ -7,8 +7,7 @@ import type { Cards } from '@/entities/deck'
 import type { Store } from '@/features/command-palette'
 import { openNotes, getMarkOf } from '@/entities/note'
 import type { MessageWriter } from '@/shared/notices/messages'
-import type { TabKind, WindowHandle } from '@/entities/tab'
-import type { FileOpeners } from '@/entities/tab'
+import type { FileOpeners, OpenPlacement, TabKind, WindowHandle } from '@/entities/tab'
 import { STENCIL } from '@/entities/tab'
 import StencilTab from './ui/StencilTab.vue'
 import { getFileName, type PathRename } from '@/shared/paths'
@@ -19,13 +18,13 @@ import { createStencilFields } from './model/fields'
 export type { StencilTabState, VaultAnswer }
 
 export interface StencilTabsDeps {
-  now?: () => number
+  now?: (() => number) | undefined
 }
 
 export interface StencilTabsOptions {
   tabOpeners: FileOpeners
-  writeMessage?: MessageWriter
-  now?: () => number
+  writeMessage?: MessageWriter | undefined
+  now?: (() => number) | undefined
 }
 
 type StencilStore = ReturnType<typeof openNotes>
@@ -141,13 +140,17 @@ function registerStencilOpener(
   tabIds: ReturnType<typeof createStencilTabIdManager>,
   wire: ReturnType<typeof createStencilWire>,
 ) {
-  deps.tabOpeners.registerEditor('stencil', (path: string, title: string, how: PlexDestination) => {
-    const id = tabIds.getOrCreateTabId(path)
-    if (title) wire.setTitle(path, title)
-    void (how === 'beside'
-      ? deps.handle.openTabBeside(STENCIL, id)
-      : deps.handle.openTab(STENCIL, id))
-  })
+  deps.tabOpeners.registerEditor(
+    'stencil',
+    (path: string, title: string, how?: PlexDestination | OpenPlacement) => {
+      const id = tabIds.getOrCreateTabId(path)
+      if (title) wire.setTitle(path, title)
+      const where = typeof how === 'string' ? how : how?.where
+      void (where === 'beside'
+        ? deps.handle.openTabBeside(STENCIL, id)
+        : deps.handle.openTab(STENCIL, id))
+    },
+  )
 }
 
 export function useStencilTabs(
@@ -161,8 +164,10 @@ export function useStencilTabs(
     args[0] && 'registerEditor' in args[0]
       ? {
           tabOpeners: args[0] as FileOpeners,
-          writeMessage: args[1] as MessageWriter | undefined,
-          now: (args[2] as StencilTabsDeps | undefined)?.now,
+          ...(args[1] ? { writeMessage: args[1] as MessageWriter } : {}),
+          ...((args[2] as StencilTabsDeps | undefined)?.now
+            ? { now: (args[2] as StencilTabsDeps).now }
+            : {}),
         }
       : (args[0] as StencilTabsOptions)
   const { tabOpeners, writeMessage = () => {}, now = () => 0 } = options

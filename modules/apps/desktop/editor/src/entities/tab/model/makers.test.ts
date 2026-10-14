@@ -7,6 +7,7 @@ import type { ErrorCode } from '@/shared/errors'
 import type { CreateResult } from '@/entities/file/@x/tab'
 import { writer } from '@/testing/writer'
 import { ERRORS } from '@/shared/words'
+import type { MessageWriter } from '@/shared/notices/messages'
 import { fileOpeners } from './openers'
 import { createFileCreators, type VaultCreator } from './makers'
 
@@ -47,7 +48,7 @@ const MAKING = { errors: ERRORS }
 const createCreators = (
   vault: VaultCreator,
   tabOpeners = fileOpeners({ fileKinds: async () => new Map() }),
-  write = () => {},
+  write: MessageWriter = () => {},
 ) => createFileCreators(vault, tabOpeners, { words: MAKING, write })
 
 describe('a deck, a stencil or a preset made', () => {

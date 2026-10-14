@@ -15,8 +15,7 @@ import { useDeckScheduleSync } from './useDeckScheduleSync'
 import { createDeckTabActions } from './deckTabActions'
 import { createDeckKind } from '../kind'
 import { openNotes } from '@/entities/note'
-import type { WindowHandle } from '@/entities/tab'
-import type { FileOpeners } from '@/entities/tab'
+import type { FileOpeners, OpenPlacement, WindowHandle } from '@/entities/tab'
 import { DECK } from '@/entities/tab'
 import {
   createDeckSections,
@@ -35,7 +34,7 @@ export type { DeckTabState }
 export interface DeckTabsOptions {
   handle: WindowHandle
   tabOpeners: FileOpeners
-  now?: () => number
+  now?: (() => number) | undefined
 }
 
 function registerDeckOpener(
@@ -43,10 +42,15 @@ function registerDeckOpener(
   tabIds: ReturnType<typeof createDeckTabIdManager>,
   vaultAnswers: ReturnType<typeof createDeckAnswers>,
 ) {
-  const openDeckTab = (path: string, title: string, how: PlexDestination): void => {
+  const openDeckTab = (
+    path: string,
+    title: string,
+    how?: PlexDestination | OpenPlacement,
+  ): void => {
     const id = tabIds.getOrCreateTabId(path)
     if (title) vaultAnswers.setTitle(path, title)
-    void (how === 'beside' ? deps.handle.openTabBeside(DECK, id) : deps.handle.openTab(DECK, id))
+    const where = typeof how === 'string' ? how : how?.where
+    void (where === 'beside' ? deps.handle.openTabBeside(DECK, id) : deps.handle.openTab(DECK, id))
   }
   deps.tabOpeners.registerEditor('deck', openDeckTab)
 }

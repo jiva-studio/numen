@@ -108,7 +108,7 @@ async function handleRenameField(
 
 function createStencilReader(
   cards: Cards,
-  fileAnswers: Map<string, FileAnswer>,
+  fileAnswers: Map<string, VaultAnswer>,
   titles: Map<string, string>,
 ) {
   return async (path: string) => {

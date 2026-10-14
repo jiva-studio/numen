@@ -1,7 +1,7 @@
 /**
  * Reader state and controls for an open book.
  */
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { ContentsEntry } from '@numen/ui'
 import { formatErrorMessage } from '@numen/wire'
 import type { Span } from '@/shared/span'
@@ -56,12 +56,13 @@ function useBookNavigation(deps: BookNavigationDeps) {
     if (!deps.isOpen() || deps.documents.value.length === 0) return
     const last = Math.max(deps.span.value.to - 1, deps.span.value.from)
     offset.value = Math.min(Math.max(Math.trunc(targetOffset), deps.span.value.from), last)
-    await deps.bookDocument.draw(getDocumentAtOffset(deps.documents.value, offset.value))
+    const doc = getDocumentAtOffset(deps.documents.value, offset.value)
+    if (doc) await deps.bookDocument.draw(doc)
   }
 
   const followLink = async (target: string) => {
     await deps.getShape()
-    const targetDoc = deps.documents.value.find((one) => one.path === target)
+    const targetDoc = deps.documents.value.find((one: SpineDocument) => one.path === target)
     if (!targetDoc) return
     await goToOffset(targetDoc.span.from)
   }
@@ -99,7 +100,8 @@ async function loadBookData(
     state.contents.value = getContents(book, deps.words)
     state.fingerprint.value = book.fingerprint
     state.offset.value = book.span.from
-    await deps.drawDocument(getDocumentAtOffset(book.documents, book.span.from))
+    const doc = getDocumentAtOffset(book.documents, book.span.from)
+    if (doc) await deps.drawDocument(doc)
   } catch (error) {
     if (!deps.isOpen()) return
     deps.writeMessage(formatErrorMessage(error), 'error')

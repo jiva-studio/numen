@@ -11,9 +11,9 @@ export type SearchGroup = 'names' | 'text' | 'meaning'
 export const GROUP_RESULT_LIMIT = 8
 
 export interface EmptyGroupReasonOptions {
-  readonly failureMessage?: string
+  readonly failureMessage?: string | undefined
   readonly words: Words
-  readonly coverage?: () => IndexCoverage
+  readonly coverage?: (() => IndexCoverage) | undefined
 }
 
 /**

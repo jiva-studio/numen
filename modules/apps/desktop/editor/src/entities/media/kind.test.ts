@@ -149,13 +149,11 @@ describe('a hit in the words of a recording', () => {
         reader = read
       },
     }
-    createRecordingKind(
-      window,
-      () => ({}) as unknown as TranscriptState,
-      { runCommand: () => {} },
-      openers,
-      medium,
-    )
+    createRecordingKind(window, () => ({}) as unknown as TranscriptState, {
+      deps: { runCommand: () => {} },
+      tabOpeners: openers,
+      as: medium,
+    })
     return { read: reader!, opened }
   }
 
@@ -197,13 +195,11 @@ describe('the recording tabs a window holds, as the application reports on them'
       getTabState: () => null,
       each: () => [{ state: ants }, { state: bees }],
     } as unknown as WindowHandle
-    const made = createRecordingKind(
-      window,
-      () => ({}) as unknown as TranscriptState,
-      { runCommand: () => {} },
-      openers,
-      played,
-    )
+    const made = createRecordingKind(window, () => ({}) as unknown as TranscriptState, {
+      deps: { runCommand: () => {} },
+      tabOpeners: openers,
+      as: played,
+    })
     return { made, ants, bees }
   }
 

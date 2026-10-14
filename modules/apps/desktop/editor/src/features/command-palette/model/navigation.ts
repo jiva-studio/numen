@@ -1,7 +1,7 @@
 /**
  * Step navigation, stack tracking, and presentation for command palette steps.
  */
-import { computed, shallowRef, type Ref } from 'vue'
+import { computed, shallowRef, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 import { getRenamedPath, type PathRename } from '@/shared/paths'
 import type { Vault } from '@/entities/vault'
 import { EXACT, NO, YES, type PendingStep } from '../lib/step'
@@ -147,7 +147,7 @@ function useStepComputed(deps: {
     const s = here.value
     if (!s) return words.typeCommand
     if (s.step === 'exactly') return s.command.warns?.back ?? words.typeBack
-    return prompts[s.step] ?? words.typeCommand
+    return prompts[s.step as PromptStep] ?? words.typeCommand
   })
 
   const step = computed(
@@ -164,7 +164,7 @@ function useStepComputed(deps: {
   return { crumb, placeholder, step, opensOn }
 }
 
-function createStepNaming(words: Words, knows: Knows) {
+function createStepNaming(words: Words, knows: NoteLookup) {
   const getStepTitle = (step: PendingStep): string =>
     step.command.group === 'vault'
       ? step.on.vault.name
