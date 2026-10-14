@@ -28,7 +28,6 @@ import { useAppBootstrap } from './useAppBootstrap'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { PathRename } from '@/shared/paths'
 import type { Span } from '@/shared/span'
-import type { VaultPort } from '@/app/ports/vault'
 
 interface DisplayWiring {
   editing: ReturnType<typeof useNoteEditors>
