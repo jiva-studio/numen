@@ -137,44 +137,44 @@ function createNoteFactory(core: NoteMaker, writeMessage: MessageWriter) {
   return { createInRelation, createUntitled, createWithTitle }
 }
 
+async function runLinkOp(
+  op: () => Promise<string | null>,
+  writeMessage: MessageWriter,
+): Promise<boolean> {
+  try {
+    const opError = await op()
+    if (opError !== null) {
+      writeMessage(words[opError], 'error')
+      return false
+    }
+    writeMessage('')
+    return true
+  } catch (error) {
+    writeMessage(formatErrorMessage(error), 'error')
+    return false
+  }
+}
+
 function createNoteLinkWriter(core: NoteMaker, writeMessage: MessageWriter) {
   async function join(
     ...[from, to, relation, label]: [string, string, PlexRelation, string?]
   ): Promise<boolean> {
     const role = getRole(relation)
     if (!role) return false
-    try {
-      const joinError = await core.join(from, {
-        to,
-        role,
-        ...(label !== undefined ? { label } : {}),
-      })
-      if (joinError !== null) {
-        writeMessage(words[joinError], 'error')
-        return false
-      }
-      writeMessage('')
-      return true
-    } catch (error) {
-      writeMessage(formatErrorMessage(error), 'error')
-      return false
-    }
+    return runLinkOp(
+      () =>
+        core.join(from, {
+          to,
+          role,
+          ...(label !== undefined ? { label } : {}),
+        }),
+      writeMessage,
+    )
   }
 
   async function removeLink(from: string, to: string, relation?: PlexRelation): Promise<boolean> {
     const role = relation ? getRole(relation) : undefined
-    try {
-      const removeError = await core.removeLink(from, to, role)
-      if (removeError !== null) {
-        writeMessage(words[removeError], 'error')
-        return false
-      }
-      writeMessage('')
-      return true
-    } catch (error) {
-      writeMessage(formatErrorMessage(error), 'error')
-      return false
-    }
+    return runLinkOp(() => core.removeLink(from, to, role), writeMessage)
   }
 
   async function replaceLinks(
@@ -188,18 +188,7 @@ function createNoteLinkWriter(core: NoteMaker, writeMessage: MessageWriter) {
       if (!role) return false
       pairs.push({ ...link, role })
     }
-    try {
-      const replaceError = await core.replaceLinks(first, second, pairs)
-      if (replaceError !== null) {
-        writeMessage(words[replaceError], 'error')
-        return false
-      }
-      writeMessage('')
-      return true
-    } catch (error) {
-      writeMessage(formatErrorMessage(error), 'error')
-      return false
-    }
+    return runLinkOp(() => core.replaceLinks(first, second, pairs), writeMessage)
   }
 
   return { join, removeLink, replaceLinks }

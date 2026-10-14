@@ -38,6 +38,20 @@ export interface DeckTabsOptions {
   now?: () => number
 }
 
+function registerDeckOpener(
+  tabOpeners: FileOpeners,
+  tabIds: ReturnType<typeof createDeckTabIdManager>,
+  vaultAnswers: ReturnType<typeof createDeckAnswers>,
+  handle: WindowHandle,
+) {
+  const openDeckTab = (path: string, title: string, how: PlexDestination): void => {
+    const id = tabIds.getOrCreateTabId(path)
+    if (title) vaultAnswers.setTitle(path, title)
+    void (how === 'beside' ? handle.openTabBeside(DECK, id) : handle.openTab(DECK, id))
+  }
+  tabOpeners.registerEditor('deck', openDeckTab)
+}
+
 export function useDeckTabs(
   cards: Cards,
   presets: Presets,
@@ -75,12 +89,7 @@ export function useDeckTabs(
     createDeckTabState,
   })
 
-  const openDeckTab = (path: string, title: string, how: PlexDestination): void => {
-    const id = tabIds.getOrCreateTabId(path)
-    if (title) vaultAnswers.setTitle(path, title)
-    void (how === 'beside' ? handle.openTabBeside(DECK, id) : handle.openTab(DECK, id))
-  }
-  tabOpeners.registerEditor('deck', openDeckTab)
+  registerDeckOpener(tabOpeners, tabIds, vaultAnswers, handle)
 
   const applyPathChanges = (
     paths: readonly string[],

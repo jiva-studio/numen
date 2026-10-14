@@ -2,7 +2,7 @@
  * Where one recording stands: in the single player the window makes sound
  * with, or in the frame a url draws for itself.
  */
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import { type MediaTypeProbe, type Player } from './player'
 import type { RecordingSummary } from '../types'
 
@@ -14,19 +14,31 @@ export interface TabPlayer {
 /** What a url with no copy on this disk is played as: a page, read in a frame. */
 const PAGE = 'text/html'
 
-function createPlaybackActions(
-  through: Player,
-  refs: {
-    url: Ref<string>
-    type: Ref<string>
-    duration: Ref<number>
-    points: Ref<string>
-    frame: ShallowRef<TabPlayer | null>
-    framed: Ref<number>
-    isPlaying: () => boolean
-  },
-  isOpen: () => boolean,
-) {
+interface PlaybackRefs {
+  url: Ref<string>
+  type: Ref<string>
+  duration: Ref<number>
+  points: Ref<string>
+  frame: ShallowRef<TabPlayer | null>
+  framed: Ref<number>
+  isPlaying: () => boolean
+}
+
+function flushWantedSeek(wanted: number, refs: PlaybackRefs, through: Player): number {
+  if (wanted < 0) return wanted
+  if (refs.frame.value) {
+    refs.framed.value = wanted
+    refs.frame.value.seek(wanted)
+    return -1
+  }
+  if (refs.url.value && !refs.points.value) {
+    through.seek(refs.url.value, wanted)
+    return -1
+  }
+  return wanted
+}
+
+function createPlaybackActions(through: Player, refs: PlaybackRefs, isOpen: () => boolean) {
   let wanted = -1
 
   const setFramePlayer = (player: TabPlayer | null) => {
@@ -57,17 +69,7 @@ function createPlaybackActions(
     refs.url.value = summary.mediaUrl
     refs.type.value = summary.mediaType
     refs.points.value = summary.url
-    if (wanted >= 0) {
-      const at = wanted
-      if (refs.frame.value) {
-        wanted = -1
-        refs.framed.value = at
-        refs.frame.value.seek(at)
-      } else if (refs.url.value && !refs.points.value) {
-        wanted = -1
-        through.seek(refs.url.value, at)
-      }
-    }
+    wanted = flushWantedSeek(wanted, refs, through)
     if (!refs.points.value && refs.url.value && through.url.value === '') {
       through.load(refs.url.value)
     }

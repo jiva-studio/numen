@@ -32,6 +32,28 @@ export interface TranscriptOptions {
   plays?: MediaTypeProbe
 }
 
+async function loadRecordingContent(
+  recordings: Recordings,
+  path: string,
+  mine: { claim: () => boolean },
+  options: {
+    setSource: (summary: RecordingSummary) => void
+    setText: (body: string) => void
+  },
+) {
+  const summary = await recordings.getSummary(path)
+  if (!mine.claim()) return null
+  options.setSource(summary)
+  const carried = await recordings.getTaskStates(path)
+  if (!mine.claim()) return null
+  const content = await (carried.transcript
+    ? recordings.readTranscript(path)
+    : recordings.readArticle(path))
+  if (!mine.claim()) return null
+  options.setText(content.cues.length ? getText(content.cues) : content.prose)
+  return content
+}
+
 function useTranscriptContent(
   recordings: Recordings,
   path: string,
@@ -51,18 +73,10 @@ function useTranscriptContent(
   const readRecording = async () => {
     const mine = asks.ask()
     try {
-      const summary = await recordings.getSummary(path)
-      if (!mine.claim()) return
-      options.setSource(summary)
-      const carried = await recordings.getTaskStates(path)
-      if (!mine.claim()) return
-      const content = await (carried.transcript
-        ? recordings.readTranscript(path)
-        : recordings.readArticle(path))
-      if (!mine.claim()) return
+      const content = await loadRecordingContent(recordings, path, mine, options)
+      if (!mine.claim() || !content) return
       cues.value = content.cues
       isEditable.value = content.isEditable
-      options.setText(content.cues.length ? getText(content.cues) : content.prose)
       error.value = ''
     } catch (thrown) {
       if (!mine.claim()) return
@@ -97,6 +111,36 @@ function useTranscriptContent(
   }
 }
 
+function createTranscriptNavigation(deps: {
+  recordings: Recordings
+  path: string
+  content: ReturnType<typeof useTranscriptContent>
+  playback: ReturnType<typeof usePlayback>
+  lines: ReturnType<typeof useTranscriptLines>
+  isOpen: () => boolean
+}) {
+  const { recordings, path, content, playback, lines, isOpen } = deps
+  const reach = async (...spans: readonly Span[]) => {
+    await content.opened
+    if (!isOpen() || spans.length === 0) return
+    try {
+      const ms = await recordings.findCueTime(path, spans[0]!)
+      if (!isOpen() || ms === null) return
+      playback.go(ms)
+    } catch (thrown) {
+      if (!isOpen()) return
+      content.error.value = formatErrorMessage(thrown)
+    }
+  }
+
+  const goToLine = (line: number) => {
+    const span = lines.spans.value[line]
+    if (span) playback.go(span.from)
+  }
+
+  return { reach, goToLine }
+}
+
 export function useTranscript(recordings: Recordings, path: string, how: TranscriptOptions = {}) {
   const through = how.through ?? player
   const quiet = how.quiet ?? WRITE_IDLE_MS
@@ -107,12 +151,12 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
   const isOpen = () => open
 
   const playback = usePlayback(through, plays, isOpen)
-  let draftInstance: ReturnType<typeof useTranscriptDraft> | undefined
+  const draftRef: { current?: ReturnType<typeof useTranscriptDraft> } = {}
 
   const content = useTranscriptContent(recordings, path, {
     setSource: playback.setSource,
-    setText: (body) => draftInstance?.setText(body),
-    drop: () => draftInstance?.drop(),
+    setText: (body) => draftRef.current?.setText(body),
+    drop: () => draftRef.current?.drop(),
   })
 
   const draft = useTranscriptDraft({
@@ -123,25 +167,20 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
     isOpen,
     write: (next) => recordings.writeTranscript(path, next),
   })
-  draftInstance = draft
+  draftRef.current = draft
 
   const lines = useTranscriptLines(content.cues, draft.prose)
   const current = computed(() =>
     playback.hasTime.value ? findCueAt(lines.spans.value, playback.now.value) : -1,
   )
-
-  const reach = async (...spans: readonly Span[]) => {
-    await content.opened
-    if (!open || spans.length === 0) return
-    try {
-      const ms = await recordings.findCueTime(path, spans[0]!)
-      if (!open || ms === null) return
-      playback.go(ms)
-    } catch (thrown) {
-      if (!open) return
-      content.error.value = formatErrorMessage(thrown)
-    }
-  }
+  const { reach, goToLine } = createTranscriptNavigation({
+    recordings,
+    path,
+    content,
+    playback,
+    lines,
+    isOpen,
+  })
 
   const note = computed(() => {
     if (lines.times.value.length) return ''
@@ -158,10 +197,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
     following,
     current,
     note,
-    goToLine: (line: number) => {
-      const span = lines.spans.value[line]
-      if (span) playback.go(span.from)
-    },
+    goToLine,
     setFollowing: (on: boolean) => {
       following.value = on
     },

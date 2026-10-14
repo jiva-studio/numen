@@ -93,24 +93,13 @@ interface FilesTabConfigDeps {
   made: ReturnType<typeof createFilesCreators>
 }
 
-function createFilesTabDeps(config: FilesTabConfigDeps): FilesTabDeps {
-  const { deps, made } = config
-  const {
-    held,
-    runs,
-    editing,
-    vaults,
-    getTarget,
-    runCommand,
-    commandDeps,
-    dragged,
-    writeMessage,
-    destinations,
-    tabSync,
-  } = deps
-
+function createFilesTabPathHandlers(deps: FilesKindDeps) {
+  const { held, destinations, tabSync } = deps
   return {
-    openDestination: (landing, state) => {
+    openDestination: (
+      landing: Parameters<FilesTabDeps['openDestination']>[0],
+      state: Parameters<FilesTabDeps['openDestination']>[1],
+    ) => {
       if (landing?.path && isNotePath(landing.path)) {
         const tabId = findFilesTabId(held, state)
         if (tabId && tabSync?.syncPathFromTab(tabId, landing.path, landing.title ?? '')) {
@@ -119,7 +108,7 @@ function createFilesTabDeps(config: FilesTabConfigDeps): FilesTabDeps {
       }
       void openDestination(landing, destinations)
     },
-    onSelectPath: (path, state) => {
+    onSelectPath: (path: string, state: unknown) => {
       const entry = (state as FilesTabState).list.getEntryAt(path)
       if (entry && !entry.isFolder && (entry.kind === 'note' || isNotePath(path))) {
         const tabId = findFilesTabId(held, state)
@@ -128,6 +117,15 @@ function createFilesTabDeps(config: FilesTabConfigDeps): FilesTabDeps {
         }
       }
     },
+  }
+}
+
+function createFilesTabDeps(config: FilesTabConfigDeps): FilesTabDeps {
+  const { deps, made } = config
+  const { runs, editing, vaults, getTarget, runCommand, commandDeps, dragged, writeMessage } = deps
+
+  return {
+    ...createFilesTabPathHandlers(deps),
     runCommand: (id, paths, details) => {
       const path = paths[0] ?? ''
       runCommand(id, {

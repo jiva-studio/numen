@@ -69,8 +69,45 @@ function useBookNavigation(deps: BookNavigationDeps) {
   return { offset, goToOffset, followLink }
 }
 
-export function useBookReader(books: Books, path: string, options: BookReaderOptions) {
-  const { words, writeMessage = () => {} } = options
+async function loadBookData(
+  books: Books,
+  path: string,
+  state: {
+    title: Ref<string>
+    span: Ref<Span>
+    documents: ShallowRef<readonly SpineDocument[]>
+    pages: Ref<number>
+    pageBytes: Ref<number>
+    contents: ShallowRef<readonly ContentsEntry[]>
+    fingerprint: Ref<string>
+    offset: Ref<number>
+  },
+  deps: {
+    words: BookWords
+    writeMessage: (msg: string, level: 'error') => void
+    isOpen: () => boolean
+    drawDocument: (doc: SpineDocument) => Promise<void>
+  },
+) {
+  try {
+    const book = await books.getBook(path)
+    if (!deps.isOpen()) return
+    state.title.value = book.title
+    state.span.value = book.span
+    state.documents.value = book.documents
+    state.pages.value = book.pages
+    state.pageBytes.value = book.pageBytes
+    state.contents.value = getContents(book, deps.words)
+    state.fingerprint.value = book.fingerprint
+    state.offset.value = book.span.from
+    await deps.drawDocument(getDocumentAtOffset(book.documents, book.span.from))
+  } catch (error) {
+    if (!deps.isOpen()) return
+    deps.writeMessage(formatErrorMessage(error), 'error')
+  }
+}
+
+function useBookState() {
   const title = ref('')
   const span = ref<Span>({ from: 0, to: 0 })
   const documents = shallowRef<readonly SpineDocument[]>([])
@@ -80,49 +117,55 @@ export function useBookReader(books: Books, path: string, options: BookReaderOpt
   // Stryker disable next-line StringLiteral: the fingerprint is assigned before the first document is drawn
   const fingerprint = ref('')
   const isLoading = ref(true)
+
+  return { title, span, documents, contents, pages, pageBytes, fingerprint, isLoading }
+}
+
+function useBookProgress(
+  state: {
+    pageBytes: Ref<number>
+    pages: Ref<number>
+    contents: ShallowRef<readonly ContentsEntry[]>
+  },
+  offset: Ref<number>,
+) {
+  const page = computed(() => getPageNumber(state.pageBytes.value, state.pages.value, offset.value))
+  const chapter = computed(() => getChapterTitle(state.contents.value, offset.value))
+  return { page, chapter }
+}
+
+export function useBookReader(books: Books, path: string, options: BookReaderOptions) {
+  const { words, writeMessage = () => {} } = options
+  const state = useBookState()
   let isOpen = true
 
   const bookDocument = useBookDocument(books, path, {
-    fingerprint,
+    fingerprint: state.fingerprint,
     writeMessage,
     isOpen: () => isOpen,
   })
 
-  let shape: Promise<void>
+  const getShape = () => shape
   const nav = useBookNavigation({
-    documents,
-    span,
+    documents: state.documents,
+    span: state.span,
     bookDocument,
-    getShape: () => shape,
+    getShape,
     isOpen: () => isOpen,
   })
 
-  const page = computed(() => getPageNumber(pageBytes.value, pages.value, nav.offset.value))
-  const chapter = computed(() => getChapterTitle(contents.value, nav.offset.value))
-
   const loadBook = async () => {
-    try {
-      const book = await books.getBook(path)
-      if (!isOpen) return
-      title.value = book.title
-      span.value = book.span
-      documents.value = book.documents
-      pages.value = book.pages
-      pageBytes.value = book.pageBytes
-      contents.value = getContents(book, words)
-      fingerprint.value = book.fingerprint
-      nav.offset.value = book.span.from
-      await bookDocument.draw(getDocumentAtOffset(book.documents, book.span.from))
-    } catch (error) {
-      if (!isOpen) return
-      writeMessage(formatErrorMessage(error), 'error')
-    } finally {
-      isLoading.value = false
-    }
+    await loadBookData(
+      books,
+      path,
+      { ...state, offset: nav.offset },
+      { words, writeMessage, isOpen: () => isOpen, drawDocument: (doc) => bookDocument.draw(doc) },
+    )
+    state.isLoading.value = false
   }
+  const shape = loadBook()
 
-  shape = loadBook()
-
+  const { page, chapter } = useBookProgress(state, nav.offset)
   const marks = useBookHighlights(nav.goToOffset, () => isOpen)
   const focusSpans = async (...spans: readonly Span[]) => {
     await shape
@@ -132,22 +175,22 @@ export function useBookReader(books: Books, path: string, options: BookReaderOpt
   const close = () => {
     isOpen = false
     bookDocument.close()
-    contents.value = []
-    pages.value = 0
-    pageBytes.value = 0
+    state.contents.value = []
+    state.pages.value = 0
+    state.pageBytes.value = 0
   }
 
   return {
     path,
-    title,
-    span,
-    contents,
-    pages,
+    title: state.title,
+    span: state.span,
+    contents: state.contents,
+    pages: state.pages,
+    pageBytes: state.pageBytes,
+    isLoading: state.isLoading,
     page,
     chapter,
-    pageBytes,
     offset: nav.offset,
-    isLoading,
     reading: bookDocument.reading,
     drawn: bookDocument.drawn,
     markup: bookDocument.markup,

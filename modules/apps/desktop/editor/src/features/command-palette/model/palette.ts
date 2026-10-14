@@ -146,34 +146,27 @@ function createPaletteCommands(deps: PaletteCommandsDeps) {
   return { startCommand, getObjection }
 }
 
-export function useCommandPalette(
+function parsePaletteDeps(
   coreOrDeps: CommandsDeps | CommandPaletteDeps,
-  wordsArg?: Words,
-  atArg?: () => CommandTarget,
-  knowsArg?: NoteLookup,
-  listsArg?: PaletteLists,
-  runsArg?: RunSupport,
-  waitArg?: Wait,
-) {
-  const deps: CommandPaletteDeps =
-    'core' in coreOrDeps
-      ? coreOrDeps
-      : {
-          core: coreOrDeps,
-          words: wordsArg!,
-          at: atArg!,
-          knows: knowsArg!,
-          lists: listsArg!,
-          runs: runsArg!,
-          wait: waitArg,
-        }
-  const { core, words, at, knows, lists, runs, wait } = deps
+  args: [Words?, (() => CommandTarget)?, NoteLookup?, PaletteLists?, RunSupport?, Wait?],
+): CommandPaletteDeps {
+  const [words, at, knows, lists, runs, wait] = args
+  return 'core' in coreOrDeps
+    ? coreOrDeps
+    : {
+        core: coreOrDeps,
+        words: words!,
+        at: at!,
+        knows: knows!,
+        lists: lists!,
+        runs: runs!,
+        wait,
+      }
+}
 
+function createPaletteState(wait?: Wait) {
   const open = ref(false)
   const typed = ref('')
-  const commands = createCommands(words)
-  const byId = new Map(commands.map((one) => [one.id, one]))
-
   const found = shallowRef<readonly NameMatch[]>(BLANK.found)
   const known = shallowRef<readonly Vault[]>(BLANK.known)
   const showing = ref(BLANK.showing)
@@ -182,10 +175,6 @@ export function useCommandPalette(
 
   const asked = latest()
   const debounced = useDebouncedAsk({ guard: asked, ...(wait ? { wait } : {}) })
-  const on = computed<CommandTarget>(() => at())
-
-  const invocation = (id: string, over: CommandTarget, name = ''): CommandInvocation =>
-    createInvocation(id, over, name, over.path ? knows.getTabAt(over.path) : null)
 
   const drop = () => {
     asked.drop()
@@ -195,6 +184,33 @@ export function useCommandPalette(
     isWorking.value = BLANK.isWorking
     failureMessage.value = BLANK.failureMessage
   }
+
+  return { open, typed, found, known, showing, isWorking, failureMessage, asked, debounced, drop }
+}
+
+export function useCommandPalette(
+  coreOrDeps: CommandsDeps | CommandPaletteDeps,
+  ...args: [
+    words?: Words,
+    at?: () => CommandTarget,
+    knows?: NoteLookup,
+    lists?: PaletteLists,
+    runs?: RunSupport,
+    wait?: Wait,
+  ]
+) {
+  const deps = parsePaletteDeps(coreOrDeps, args)
+  const { core, words, at, knows, lists, runs, wait } = deps
+  const state = createPaletteState(wait)
+  const { open, typed, found, known, showing, isWorking, failureMessage, asked, debounced, drop } =
+    state
+
+  const commands = createCommands(words)
+  const byId = new Map(commands.map((one) => [one.id, one]))
+  const on = computed<CommandTarget>(() => at())
+
+  const invocation = (id: string, over: CommandTarget, name = ''): CommandInvocation =>
+    createInvocation(id, over, name, over.path ? knows.getTabAt(over.path) : null)
 
   const previewItem = (item: string) => {
     const step = steps.here.value

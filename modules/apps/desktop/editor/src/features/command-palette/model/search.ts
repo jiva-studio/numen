@@ -126,6 +126,64 @@ function buildSearchGroups(deps: BuildGroupsDeps) {
   return { groups, hitsById }
 }
 
+interface SearchState {
+  names: ShallowRef<readonly NameMatch[]>
+  texts: ShallowRef<readonly Passage[]>
+  meanings: ShallowRef<readonly Passage[]>
+  isWorking: Ref<Record<SearchGroup, boolean>>
+  failureMessages: Ref<Partial<Record<SearchGroup, string>>>
+}
+
+async function executeSearchQuery(
+  core: SearchDeps,
+  query: string,
+  mine: Question,
+  state: SearchState,
+  notAskedWord: string,
+) {
+  state.isWorking.value = { names: true, text: true, meaning: true }
+  state.failureMessages.value = {}
+  const onFailed = (g: SearchGroup) => {
+    state.failureMessages.value = { ...state.failureMessages.value, [g]: notAskedWord }
+  }
+  const onDone = (g: SearchGroup) => {
+    if (mine.isCurrent) state.isWorking.value = { ...state.isWorking.value, [g]: false }
+  }
+
+  await Promise.all([
+    fillSearchGroup({
+      mine,
+      group: 'names',
+      question: () => core.names(query, GROUP_RESULT_LIMIT),
+      into: (found) => {
+        state.names.value = found
+      },
+      onFailed,
+      onDone,
+    }),
+    fillSearchGroup({
+      mine,
+      group: 'text',
+      question: () => core.search(query, 'words', GROUP_RESULT_LIMIT),
+      into: (found) => {
+        state.texts.value = found
+      },
+      onFailed,
+      onDone,
+    }),
+    fillSearchGroup({
+      mine,
+      group: 'meaning',
+      question: () => core.search(query, 'meaning', GROUP_RESULT_LIMIT),
+      into: (found) => {
+        state.meanings.value = found
+      },
+      onFailed,
+      onDone,
+    }),
+  ])
+}
+
 export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {}) {
   const coverage = how.coverage
   const open = ref(false)
@@ -137,6 +195,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
 
   const isWorking = ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false })
   const failureMessages = ref<Partial<Record<SearchGroup, string>>>({})
+  const state: SearchState = { names, texts, meanings, isWorking, failureMessages }
 
   const debounced = useDebouncedAsk(how.wait ? { wait: how.wait } : {})
 
@@ -148,43 +207,8 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     failureMessages.value = {}
   }
 
-  const ask = async (query: string, mine: Question) => {
-    isWorking.value = { names: true, text: true, meaning: true }
-    failureMessages.value = {}
-    const onFailed = (g: SearchGroup) => {
-      failureMessages.value = { ...failureMessages.value, [g]: words.notAsked }
-    }
-    const onDone = (g: SearchGroup) => {
-      if (mine.isCurrent) isWorking.value = { ...isWorking.value, [g]: false }
-    }
-
-    await Promise.all([
-      fillSearchGroup({
-        mine,
-        group: 'names',
-        question: () => core.names(query, GROUP_RESULT_LIMIT),
-        into: (found) => (names.value = found),
-        onFailed,
-        onDone,
-      }),
-      fillSearchGroup({
-        mine,
-        group: 'text',
-        question: () => core.search(query, 'words', GROUP_RESULT_LIMIT),
-        into: (found) => (texts.value = found),
-        onFailed,
-        onDone,
-      }),
-      fillSearchGroup({
-        mine,
-        group: 'meaning',
-        question: () => core.search(query, 'meaning', GROUP_RESULT_LIMIT),
-        into: (found) => (meanings.value = found),
-        onFailed,
-        onDone,
-      }),
-    ])
-  }
+  const ask = (query: string, mine: Question) =>
+    executeSearchQuery(core, query, mine, state, words.notAsked)
 
   const setTyped = async (text: string) => {
     typed.value = text

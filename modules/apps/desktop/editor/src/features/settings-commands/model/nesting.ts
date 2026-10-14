@@ -31,7 +31,11 @@ export interface NestingDeps {
   setNestingSettings(isNesting: boolean, headings?: number): Promise<string | null>
 }
 
-function createStepRow(id: string, title: string, current: boolean, currentLabel: string): StepRow {
+function createStepRow(
+  id: string,
+  title: string,
+  ...[current, currentLabel]: [current: boolean, currentLabel: string]
+): StepRow {
   return {
     id,
     title,

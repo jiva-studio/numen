@@ -194,31 +194,28 @@ function usePlexMenu(options: {
   return { menu, openMenu, chooseMenuItem }
 }
 
+function getPlexNodeName(around: PlexView['neighbourhood']['value'], path: string): string {
+  if (around?.focus.path === path && around.focus.title) return around.focus.title
+  const near = around?.related.find((one) => one.path === path)
+  return near?.title || getFileName(path).replace(/\.md$/, '')
+}
+
 export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const map = createNodeIdMap()
   const { picture, empty, dragged, types, getType, drawn } = usePlexPicture(view, deps, map)
 
-  const getName = (path: string): string => {
-    const around = view.neighbourhood.value
-    if (around?.focus.path === path && around.focus.title) return around.focus.title
-    const near = around?.related.find((one) => one.path === path)
-    return near?.title || getFileName(path).replace(/\.md$/, '')
-  }
-
-  const {
-    quickLink,
-    isNavigatingOnCreate,
-    openQuickLink,
-    dismissQuickLink,
-    searchNotes,
-    confirmQuickLink,
-  } = useQuickLink(view, deps, map)
-
+  const getName = (path: string): string => getPlexNodeName(view.neighbourhood.value, path)
+  const quickLinkModel = useQuickLink(view, deps, map)
   const { readHeadings, getHeadings } = usePlexHeadings(drawn, types, deps, map)
-  const { linkInspector, openLinkInspector, dismissLinkInspector, saveLinkInspector } =
-    useLinkInspector(view, deps.editor, map, getName)
+  const linkInspectorModel = useLinkInspector(view, deps.editor, map, getName)
 
-  const nodeActions = usePlexNodeActions({ view, tabDeps: deps, map, getName, openQuickLink })
+  const nodeActions = usePlexNodeActions({
+    view,
+    tabDeps: deps,
+    map,
+    getName,
+    openQuickLink: quickLinkModel.openQuickLink,
+  })
   const { menu, openMenu, chooseMenuItem } = usePlexMenu({
     map,
     tabDeps: deps,
@@ -226,43 +223,31 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     createNote: nodeActions.createNote,
   })
 
-  const dismiss = () => {
-    menu.value = null
-    dismissQuickLink()
-    dismissLinkInspector()
-  }
-
-  const followMoves = (renames: readonly PathRename[]) => {
-    view.followMoves(renames)
-    map.updateRenamedNodes(renames)
-  }
-
   return {
     view,
     picture,
     empty,
     dragged,
     menu,
-    quickLink,
-    linkInspector,
-    isNavigatingOnCreate,
     creatable: deps.creatable,
     getType,
     getHeadings,
     maxHeadings: deps.headings,
     readHeadings,
     openMenu,
-    dismiss,
+    dismiss: () => {
+      menu.value = null
+      quickLinkModel.dismissQuickLink()
+      linkInspectorModel.dismissLinkInspector()
+    },
     chooseMenuItem,
-    followMoves,
+    followMoves: (renames: readonly PathRename[]) => {
+      view.followMoves(renames)
+      map.updateRenamedNodes(renames)
+    },
     getName,
-    openQuickLink,
-    dismissQuickLink,
-    confirmQuickLink,
-    searchNotes,
-    openLinkInspector,
-    dismissLinkInspector,
-    saveLinkInspector,
+    ...quickLinkModel,
+    ...linkInspectorModel,
     ...nodeActions,
   }
 }

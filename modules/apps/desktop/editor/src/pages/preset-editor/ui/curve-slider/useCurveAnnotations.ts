@@ -50,6 +50,24 @@ function createMarks(goal: string, knob: Position | null, suggested: Position | 
   return out
 }
 
+function useCurveBounds(
+  props: CurveSliderProps,
+  grid: ComputedRef<readonly number[]>,
+  lastIndex: ComputedRef<number>,
+) {
+  const atLeast = computed(() =>
+    props.place === 0 ? '' : words.formatGoalValue(props.curve.goal, grid.value[0] ?? 0),
+  )
+  const atMost = computed(() =>
+    props.place === lastIndex.value
+      ? ''
+      : words.formatGoalValue(props.curve.goal, grid.value[lastIndex.value] ?? 0),
+  )
+  const least = computed(() => grid.value[0] ?? 0)
+  const most = computed(() => grid.value[lastIndex.value] ?? 0)
+  return { atLeast, atMost, least, most }
+}
+
 export function useCurveAnnotations(
   props: CurveSliderProps,
   plot: ReturnType<typeof useCurvePlot>,
@@ -94,6 +112,7 @@ export function useCurveAnnotations(
 
   const grid = computed(() => props.curve.grid)
   const lastIndex = computed(() => plot.places.value - 1)
+  const bounds = useCurveBounds(props, grid, lastIndex)
 
   return {
     isDated,
@@ -106,16 +125,7 @@ export function useCurveAnnotations(
     atKnob,
     counts,
     learning,
-    atLeast: computed(() =>
-      props.place === 0 ? '' : words.formatGoalValue(props.curve.goal, grid.value[0] ?? 0),
-    ),
-    atMost: computed(() =>
-      props.place === lastIndex.value
-        ? ''
-        : words.formatGoalValue(props.curve.goal, grid.value[lastIndex.value] ?? 0),
-    ),
-    least: computed(() => grid.value[0] ?? 0),
-    most: computed(() => grid.value[lastIndex.value] ?? 0),
+    ...bounds,
     value: computed(() => plot.held.value),
   }
 }

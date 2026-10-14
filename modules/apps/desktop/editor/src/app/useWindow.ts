@@ -98,12 +98,15 @@ async function resolveDeckPreset(
   handlers: DeckPresetHandlers,
 ): Promise<void> {
   const kind = (await vaultCore.fileKinds([path])).get(path)
-  if (kind?.type !== 'deck') return handlers.openPreset(path)
+  if (kind?.type !== 'deck') {
+    await handlers.openPreset(path)
+    return
+  }
   const answer = await presets.getDeckPreset(path)
   if (!answer.ok) return handlers.writeMessage(words.errors[answer.error], 'error')
   const read = answer.value.preset
   if (!read?.path) return handlers.writeMessage(words.noPreset, 'caution')
-  handlers.openPreset(read.path, read.title)
+  await handlers.openPreset(read.path, read.title)
 }
 
 interface WindowCommandsOptions {
@@ -200,8 +203,7 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
   })
 }
 
-/** Everything the window is made of, made once and handed to what draws it. */
-export const useWindow = () => {
+function initWindowCore() {
   const log = createMessageLog()
   const writeMessage = log.getWriter('command')
   const held = useWindowTabs()
@@ -209,129 +211,159 @@ export const useWindow = () => {
   const tabOpeners = fileOpeners({ ...core, reconcileTab: held.reconcileTab })
   const runs = runSupport()
   const plays = createMediaTypeProbe()
+  return { log, writeMessage, held, tabLinks, tabOpeners, runs, plays }
+}
 
-  let commandsModule: ReturnType<typeof useCommands>
-  let kinds: ReturnType<typeof useWindowKinds>
-  let vaultsModule: ReturnType<typeof useVaults>
+type WindowCore = ReturnType<typeof initWindowCore>
 
+interface WindowContext {
+  commands: ReturnType<typeof useCommands>
+  kinds: ReturnType<typeof useWindowKinds>
+  vaults: ReturnType<typeof useVaults>
+}
+
+function initWindowServices(base: WindowCore, ctx: WindowContext) {
+  let settingsInstance: ReturnType<typeof useSettings>
   const editing = useNoteEditors({
     core,
-    log,
-    tabOpeners,
-    held,
-    day: () => settings.dayBegins.day.value,
+    log: base.log,
+    tabOpeners: base.tabOpeners,
+    held: base.held,
+    day: () => settingsInstance.dayBegins.day.value,
   })
 
-  const tabSync = useTabSync({ held, tabLinks, editing })
+  const tabSync = useTabSync({ held: base.held, tabLinks: base.tabLinks, editing })
 
   const window = useWindowDisplay(
     core,
     createDisplayOptions({
       editing,
-      getCommands: () => commandsModule,
-      getKinds: () => kinds,
-      tabOpeners,
-      getVaults: () => vaultsModule,
+      getCommands: () => ctx.commands,
+      getKinds: () => ctx.kinds,
+      tabOpeners: base.tabOpeners,
+      getVaults: () => ctx.vaults,
     }),
   )
 
-  const settings = useSettings({
+  settingsInstance = useSettings({
     core,
     words,
-    log,
-    windowTabs: held,
+    log: base.log,
+    windowTabs: base.held,
     onSizeChanged: () => editing.noted.measureAll(),
   })
 
-  vaultsModule = useVaults({
+  ctx.vaults = useVaults({
     core,
     words,
-    log,
+    log: base.log,
     chunks: window.chunks,
     embedded: window.embedded,
     isEmbedding: window.isEmbedding,
   })
 
-  const notices = useWindowNotices({ log, window, settings, vaults: vaultsModule })
-  const statusBar = useWindowStatusBar({ tasks: window.tasks })
-  const getTarget = createTargetResolver(held, () => vaultsModule, window)
+  return { editing, tabSync, window, settings: settingsInstance }
+}
+
+type WindowServices = ReturnType<typeof initWindowServices>
+
+function initWindowKindsAndCommands(
+  base: WindowCore,
+  ctx: WindowContext,
+  services: WindowServices,
+) {
+  const { editing, settings, window, tabSync } = services
+  const getTarget = createTargetResolver(base.held, () => ctx.vaults, window)
 
   watch(
     () => getTarget().file,
-    (file) => void vaultsModule.loadArtifactStates(file),
+    (file) => void ctx.vaults.loadArtifactStates(file),
     { immediate: true },
   )
 
-  const runCommand = (id: string, target: CommandTarget) => commandsModule.runCommand(id, target)
+  const runCommand = (id: string, target: CommandTarget) => ctx.commands.runCommand(id, target)
 
-  kinds = useWindowKinds({
+  ctx.kinds = useWindowKinds({
     core,
-    log,
-    tabOpeners,
-    held,
-    runs,
-    plays,
+    log: base.log,
+    tabOpeners: base.tabOpeners,
+    held: base.held,
+    runs: base.runs,
+    plays: base.plays,
     editing,
     settings,
-    vaults: vaultsModule,
+    vaults: ctx.vaults,
     window,
     getTarget,
     runCommand,
-    commandDeps: () => commandsModule.commandDeps,
-    tabLinks,
+    commandDeps: () => ctx.commands.commandDeps,
+    tabLinks: base.tabLinks,
     tabSync,
   })
 
   const knows: NoteLookup = {
     getTitle: (path) => {
       const heldId = editing.reached.getTabAt(path)
-      return heldId === null ? kinds.plexes.getName(path) : editing.getTitle(heldId)
+      return heldId === null ? ctx.kinds.plexes.getName(path) : editing.getTitle(heldId)
     },
     getTabAt: (path) => editing.reached.getTabAt(path),
   }
 
-  const openTabs = useOpenTabs({ core, windowTabs: held })
-
-  commandsModule = initWindowCommands({
-    held,
+  ctx.commands = initWindowCommands({
+    held: base.held,
     getTarget,
     knows,
     settings,
-    runs,
-    vaultsModule,
+    runs: base.runs,
+    vaultsModule: ctx.vaults,
     editing,
-    kinds,
+    kinds: ctx.kinds,
     window,
-    writeMessage,
-    log,
+    writeMessage: base.writeMessage,
+    log: base.log,
   })
 
+  return { getTarget, runCommand }
+}
+
+/** Everything the window is made of, made once and handed to what draws it. */
+export const useWindow = () => {
+  const base = initWindowCore()
+  const ctx = {} as WindowContext
+  const services = initWindowServices(base, ctx)
+  const { getTarget, runCommand } = initWindowKindsAndCommands(base, ctx, services)
+  const { editing, window, settings } = services
+
+  const notices = useWindowNotices({ log: base.log, window, settings, vaults: ctx.vaults })
+  const statusBar = useWindowStatusBar({ tasks: window.tasks })
+  const openTabs = useOpenTabs({ core, windowTabs: base.held })
+
   const closeTab = (id: string, hold?: () => void) => {
-    tabLinks.removeClosedTab(id)
-    if (!held.releaseTab(id)) hold?.()
+    base.tabLinks.removeClosedTab(id)
+    if (!base.held.releaseTab(id)) hold?.()
   }
 
-  useAppHotkeys(commandsModule.onKeyDown)
-  initAppLifecycle({ vaultsModule, held, settings, window, editing })
+  useAppHotkeys(ctx.commands.onKeyDown)
+  initAppLifecycle({ vaultsModule: ctx.vaults, held: base.held, settings, window, editing })
 
   return {
     runCommand,
-    commands: commandsModule.commands,
-    commandDeps: commandsModule.commandDeps,
+    commands: ctx.commands.commands,
+    commandDeps: ctx.commands.commandDeps,
     failure: window.failure,
     fileFlush: editing.fileFlush,
-    held,
-    layout: held.layout,
-    listed: vaultsModule.listed,
-    log,
+    held: base.held,
+    layout: base.held.layout,
+    listed: ctx.vaults.listed,
+    log: base.log,
     notices,
     statusBar,
-    palette: commandsModule.palette,
-    destinations: kinds.destinations,
+    palette: ctx.commands.palette,
+    destinations: ctx.kinds.destinations,
     closeTab,
     getTabIcon: openTabs.getTabIcon,
     getTitle: editing.getTitle,
     getTarget,
-    tabLinks,
+    tabLinks: base.tabLinks,
   }
 }

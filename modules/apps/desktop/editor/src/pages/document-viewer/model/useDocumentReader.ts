@@ -53,17 +53,6 @@ export function useDocumentReader(documents: Documents, path: string) {
     isOpen: () => open,
   })
 
-  let layoutPromise: Promise<void>
-
-  const highlights = useDocumentHighlights(documents, path, {
-    pageNumber: navigation.pageNumber,
-    error,
-    onGoToPage: (page) => nav.goToPage(page),
-    isOpen: () => open,
-  })
-
-  const nav = useDocumentReaderNavigation(() => layoutPromise, navigation, highlights)
-
   const loadLayout = async () => {
     try {
       const layout = await documents.getDocumentLayout(path)
@@ -78,7 +67,16 @@ export function useDocumentReader(documents: Documents, path: string) {
     }
   }
 
-  layoutPromise = loadLayout()
+  const layoutPromise = loadLayout()
+
+  const highlights = useDocumentHighlights(documents, path, {
+    pageNumber: navigation.pageNumber,
+    error,
+    onGoToPage: (page) => nav.goToPage(page),
+    isOpen: () => open,
+  })
+
+  const nav = useDocumentReaderNavigation(() => layoutPromise, navigation, highlights)
 
   const close = () => {
     open = false

@@ -136,6 +136,19 @@ function createStencilKindDefinition(deps: {
   }
 }
 
+function registerStencilOpener(
+  tabOpeners: FileOpeners,
+  tabIds: ReturnType<typeof createStencilTabIdManager>,
+  wire: ReturnType<typeof createStencilWire>,
+  handle: WindowHandle,
+) {
+  tabOpeners.registerEditor('stencil', (path: string, title: string, how: PlexDestination) => {
+    const id = tabIds.getOrCreateTabId(path)
+    if (title) wire.setTitle(path, title)
+    void (how === 'beside' ? handle.openTabBeside(STENCIL, id) : handle.openTab(STENCIL, id))
+  })
+}
+
 export function useStencilTabs(
   cards: Cards,
   handle: WindowHandle,
@@ -171,11 +184,7 @@ export function useStencilTabs(
     tab?.state.close(tab.id)
   }
 
-  tabOpeners.registerEditor('stencil', (path: string, title: string, how: PlexDestination) => {
-    const id = tabIds.getOrCreateTabId(path)
-    if (title) wire.setTitle(path, title)
-    void (how === 'beside' ? handle.openTabBeside(STENCIL, id) : handle.openTab(STENCIL, id))
-  })
+  registerStencilOpener(tabOpeners, tabIds, wire, handle)
 
   const kind = createStencilKindDefinition({
     store,

@@ -39,10 +39,8 @@ function toWriteResult(answered: CoreWriteResult): WriteResult {
   return { kind: 'error', error: convertErrorCode(answered.error) }
 }
 
-export function createNoteQueue(core: Notes, deps: NoteQueueDeps) {
-  const { dispatch, hasTab, setAddress, resumeClosing } = deps
+function createQueueTimers(dispatch: NoteQueueDeps['dispatch']) {
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
-  const flushWaiters = new Map<string, () => void>()
 
   const startTimer = (id: string, after: number): void => {
     clearTimeout(timers.get(id))
@@ -61,6 +59,14 @@ export function createNoteQueue(core: Notes, deps: NoteQueueDeps) {
     // Stryker disable next-line CallExpression: clearTimeout on a handle already cleared does nothing, so a stale entry is never observed
     timers.delete(id)
   }
+
+  return { startTimer, cancelTimer }
+}
+
+export function createNoteQueue(core: Notes, deps: NoteQueueDeps) {
+  const { dispatch, hasTab, setAddress, resumeClosing } = deps
+  const { startTimer, cancelTimer } = createQueueTimers(dispatch)
+  const flushWaiters = new Map<string, () => void>()
 
   const resolveFlush = (id: string): void => {
     flushWaiters.get(id)?.()

@@ -81,8 +81,10 @@ function createNoteKindDefinition(deps: {
 function createNoteStoreProxy(
   notes: Notes,
   names: ReturnType<typeof createNoteTitles>,
-  closeTab: (id: string) => void,
-  tabbed: ReturnType<typeof computed<ReadonlyMap<string, string>>>,
+  ...[closeTab, tabbed]: [
+    closeTab: (id: string) => void,
+    tabbed: ReturnType<typeof computed<ReadonlyMap<string, string>>>,
+  ]
 ): Store {
   return {
     has: (id) => notes.has(id),

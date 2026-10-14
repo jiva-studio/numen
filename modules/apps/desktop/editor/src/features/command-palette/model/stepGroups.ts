@@ -12,7 +12,8 @@ import type { Vault } from '@/entities/vault'
 import { isWebUrl } from '../lib/url'
 import { CHOSEN, EXACT, NAME, NO, OPEN, PICK, YES, type PendingStep } from '../lib/step'
 import type { StepRow } from '../types'
-import type { ConfirmWords, RetypeWords } from '../words'
+import type { ConfirmWords, RetypeWords, Words } from '../words'
+import type { NameMatch } from './search'
 import type { ViewState } from './viewState'
 
 function getNamingGroup(text: string, words: Words): PaletteGroup {
@@ -73,8 +74,7 @@ function getVaultAside(one: Vault, showingId: string, words: Words): string {
 function getConfirmGroup(
   step: PendingStep,
   text: string,
-  words: Words,
-  label: string,
+  ...[words, label]: [words: Words, label: string]
 ): PaletteGroup {
   const word = text.trim().toLowerCase()
   const {
@@ -116,8 +116,7 @@ function getConfirmGroup(
 function getExactlyGroup(
   step: PendingStep,
   text: string,
-  words: Words,
-  title: string,
+  ...[words, title]: [words: Words, title: string]
 ): PaletteGroup {
   const { action = '', then = '' }: Partial<RetypeWords> = step.command.warns ?? {}
   return {
@@ -135,6 +134,59 @@ function getExactlyGroup(
   }
 }
 
+function createPickingGroup(
+  found: readonly NameMatch[],
+  text: string,
+  meta: { words: Words; isWorking: boolean; failureMessage: string },
+): PaletteGroup {
+  const seen = new Set<string>()
+  const items: PaletteItem[] = []
+  for (const one of found) {
+    if (seen.has(one.path)) continue
+    seen.add(one.path)
+    items.push({
+      id: one.path,
+      title: one.title || one.path,
+      ...(one.heading ? {} : { at: one.at }),
+      actions: [{ id: PICK, text: meta.words.travel }],
+    })
+  }
+  return {
+    id: 'picking',
+    title: meta.words.names,
+    items,
+    isWorking: meta.isWorking,
+    silence: meta.failureMessage || (text.trim() ? meta.words.noneFound : meta.words.typeNote),
+  }
+}
+
+function createVaultsGroup(
+  known: readonly Vault[],
+  step: PendingStep,
+  meta: { text: string; words: Words; showing: string; isWorking: boolean; failureMessage: string },
+): PaletteGroup {
+  const word = meta.text.trim().toLowerCase()
+  const items: PaletteItem[] = known
+    .filter((one) => one.name.toLowerCase().includes(word))
+    .map((one) => {
+      const why = getVaultAside(one, meta.showing, meta.words)
+      return {
+        id: one.id,
+        title: one.name,
+        detail: why ? `${why} · ${one.path}` : one.path,
+        ...(why ? { disabled: true } : {}),
+        actions: [{ id: OPEN, text: step.command.text }],
+      }
+    })
+  return {
+    id: 'vaults',
+    title: meta.words.vaults,
+    items,
+    isWorking: meta.isWorking,
+    silence: meta.failureMessage || meta.words.noneFound,
+  }
+}
+
 /** The groups a step draws, over the state the palette holds. */
 export function createStepGroups(state: ViewState) {
   const { words, lists, found, known, showing, isWorking, failureMessage } = state
@@ -143,27 +195,12 @@ export function createStepGroups(state: ViewState) {
   const findNoteType = (id: string): NoteType | null =>
     found.value.find((one) => one.path === id)?.type ?? null
 
-  const getPickingGroup = (text: string): PaletteGroup => {
-    const seen = new Set<string>()
-    const items: PaletteItem[] = []
-    for (const one of found.value) {
-      if (seen.has(one.path)) continue
-      seen.add(one.path)
-      items.push({
-        id: one.path,
-        title: one.title || one.path,
-        ...(one.heading ? {} : { at: one.at }),
-        actions: [{ id: PICK, text: words.travel }],
-      })
-    }
-    return {
-      id: 'picking',
-      title: words.names,
-      items,
+  const getPickingGroup = (text: string): PaletteGroup =>
+    createPickingGroup(found.value, text, {
+      words,
       isWorking: isWorking.value,
-      silence: failureMessage.value || (text.trim() ? words.noneFound : words.typeNote),
-    }
-  }
+      failureMessage: failureMessage.value,
+    })
 
   const getChoosingGroups = (step: PendingStep, text: string): readonly PaletteGroup[] => {
     const word = text.trim().toLowerCase()
@@ -177,28 +214,14 @@ export function createStepGroups(state: ViewState) {
 
   const checkVaultAside = (one: Vault): string => getVaultAside(one, showing.value, words)
 
-  const getVaultsGroup = (text: string, step: PendingStep): PaletteGroup => {
-    const word = text.trim().toLowerCase()
-    const items: PaletteItem[] = known.value
-      .filter((one) => one.name.toLowerCase().includes(word))
-      .map((one) => {
-        const why = checkVaultAside(one)
-        return {
-          id: one.id,
-          title: one.name,
-          detail: why ? `${why} · ${one.path}` : one.path,
-          ...(why ? { disabled: true } : {}),
-          actions: [{ id: OPEN, text: step.command.text }],
-        }
-      })
-    return {
-      id: 'vaults',
-      title: words.vaults,
-      items,
+  const getVaultsGroup = (text: string, step: PendingStep): PaletteGroup =>
+    createVaultsGroup(known.value, step, {
+      text,
+      words,
+      showing: showing.value,
       isWorking: isWorking.value,
-      silence: failureMessage.value || words.noneFound,
-    }
-  }
+      failureMessage: failureMessage.value,
+    })
 
   return {
     getNamingGroup: (text: string) => getNamingGroup(text, words),
@@ -211,6 +234,5 @@ export function createStepGroups(state: ViewState) {
     getExactlyGroup: (step: PendingStep, text: string) =>
       getExactlyGroup(step, text, words, getStepTitle(step)),
     findNoteType,
-    getVaultAside: checkVaultAside,
   }
 }

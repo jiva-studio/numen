@@ -77,7 +77,7 @@ export const createWindowNavigationCommands = (words: Words, agent: string): rea
   },
 ]
 
-export const createWindowSettingsCommands = (words: Words): readonly Command[] => [
+const createDisplaySettingsCommands = (words: Words): readonly Command[] => [
   {
     id: 'appearance',
     text: words.appearance,
@@ -106,6 +106,9 @@ export const createWindowSettingsCommands = (words: Words): readonly Command[] =
     needs: 'choosing',
     isOffered: isAlwaysOffered,
   },
+]
+
+const createFeatureSettingsCommands = (words: Words): readonly Command[] => [
   {
     id: 'syncing',
     text: words.syncing,
@@ -142,6 +145,11 @@ export const createWindowSettingsCommands = (words: Words): readonly Command[] =
     isOffered: isAlwaysOffered,
   },
   { id: 'settings', text: words.settings, group: 'window', isOffered: isAlwaysOffered },
+]
+
+export const createWindowSettingsCommands = (words: Words): readonly Command[] => [
+  ...createDisplaySettingsCommands(words),
+  ...createFeatureSettingsCommands(words),
 ]
 
 export const createWindowCommands = (words: Words, agent: string): readonly Command[] => [

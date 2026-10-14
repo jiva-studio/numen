@@ -33,8 +33,7 @@ const getKept = (deps: AgentTabDeps, path: readonly string[]): string =>
 function pickOption(
   options: readonly AgentModelOption[],
   selectedAgentId: string,
-  selectedModelId: string,
-  deps: AgentTabDeps,
+  ...[selectedModelId, deps]: [selectedModelId: string, deps: AgentTabDeps]
 ): AgentModelOption {
   const agent = selectedAgentId || getKept(deps, AGENT_USE_AT)
   const model = selectedModelId || getKept(deps, getModelAt(agent))
@@ -104,6 +103,29 @@ function useAgentSelection(deps: AgentTabDeps) {
 const isSameList = (a: readonly string[], b: readonly string[]) =>
   a.length === b.length && a.every((one, index) => one === b[index])
 
+function createConversationLinkFollower(
+  deps: AgentTabDeps,
+  getResolved: (href: string) => string | undefined,
+) {
+  return (turn: Turn, href: string, press: MouseEvent) => {
+    const here = parseLinkTarget(href)
+    if (here) {
+      press.preventDefault()
+      const named = extractLinkTargets(turn.text).filter(
+        (target) => target.path === here.path && !areLinkTargetsEqual(target, here),
+      )
+      deps.openFileAt(
+        here.path,
+        ...[here, ...named].map(({ start, length }) => ({ from: start, to: start + length })),
+      )
+      return
+    }
+    if (!isNoteAddress(href)) return
+    const path = getResolved(href)
+    if (path) deps.openFileBeside(path)
+  }
+}
+
 function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps) {
   const resolvedAddresses = shallowRef<ResolvedAddressMap>(new Map())
   const pendingAddresses = new Set<string>()
@@ -152,24 +174,9 @@ function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps
   }
 
   const turns = computed<Turn[]>(() => conversation.turns.value.map(enrichTurn))
-
-  const followLink = (turn: Turn, href: string, press: MouseEvent) => {
-    const here = parseLinkTarget(href)
-    if (here) {
-      press.preventDefault()
-      const named = extractLinkTargets(turn.text).filter(
-        (target) => target.path === here.path && !areLinkTargetsEqual(target, here),
-      )
-      deps.openFileAt(
-        here.path,
-        ...[here, ...named].map(({ start, length }) => ({ from: start, to: start + length })),
-      )
-      return
-    }
-    if (!isNoteAddress(href)) return
-    const path = resolvedAddresses.value.get(href)
-    if (path) deps.openFileBeside(path)
-  }
+  const followLink = createConversationLinkFollower(deps, (href) =>
+    resolvedAddresses.value.get(href),
+  )
 
   return { turns, followLink }
 }

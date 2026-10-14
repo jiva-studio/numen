@@ -104,6 +104,94 @@ function findDrawnInFolder(
   return isFolderOpen(folder) ? folder : null
 }
 
+interface TreeRefreshDeps {
+  core: Folders
+  entriesByFolder: ShallowRef<ReadonlyMap<string, readonly Entry[]>>
+  open: ShallowRef<ReadonlySet<string>>
+  errorMessage: Ref<string>
+  selectedPaths: ShallowRef<readonly string[]>
+  isFolderOpen: (folder: string) => boolean
+  getEntryAt: (path: string) => Entry | null
+  isAlive: () => boolean
+}
+
+function createTreeRefresh(deps: TreeRefreshDeps) {
+  const {
+    core,
+    entriesByFolder,
+    open,
+    errorMessage,
+    selectedPaths,
+    isFolderOpen,
+    getEntryAt,
+    isAlive,
+  } = deps
+
+  const loadFolders = async (folders: readonly string[]) => {
+    const listings = await Promise.all(
+      folders.map(async (folder) => {
+        try {
+          return { folder, entries: await core.list(folder) }
+        } catch (err) {
+          return { folder, error: err }
+        }
+      }),
+    )
+    if (!isAlive()) return
+    const merged = mergeFolderListings(entriesByFolder.value, listings)
+    if (merged.isChanged) entriesByFolder.value = merged.next
+    errorMessage.value = merged.error
+  }
+
+  const loadFolder = (folder: string) => loadFolders([folder])
+  const refresh = async () => loadFolders([...open.value])
+
+  const refreshChanged = async (
+    paths: readonly string[] = [],
+    renames: readonly PathRename[] = [],
+  ) => {
+    if (renames.length > 0) {
+      selectedPaths.value = selectedPaths.value.map((one) => getRenamedPath(renames, one) || one)
+    }
+    const named = [...paths, ...renames.flatMap((one) => [one.from, one.to])]
+    if (named.length === 0) return void (await refresh())
+    const folders = new Set(
+      named
+        .map((p) => findDrawnInFolder(p, isFolderOpen, getEntryAt))
+        .filter((one): one is string => one !== null),
+    )
+    await loadFolders([...folders])
+  }
+
+  return { loadFolders, loadFolder, refresh, refreshChanged }
+}
+
+function createFolderOperations(
+  open: ShallowRef<ReadonlySet<string>>,
+  loadFolder: (folder: string) => Promise<void>,
+  isAlive: () => boolean,
+) {
+  const isFolderOpen = (folder: string): boolean => open.value.has(folder)
+
+  const openFolder = async (folder: string) => {
+    if (!isAlive()) return
+    open.value = new Set(open.value).add(folder)
+    await loadFolder(folder)
+  }
+
+  const closeFolder = (folder: string) => {
+    if (folder === ROOT) return
+    const rest = new Set(open.value)
+    rest.delete(folder)
+    open.value = rest
+  }
+
+  const toggleFolder = (folder: string) =>
+    void (isFolderOpen(folder) ? closeFolder(folder) : openFolder(folder))
+
+  return { isFolderOpen, openFolder, closeFolder, toggleFolder }
+}
+
 export function useFileTree(core: Folders): FileTree {
   const entriesByFolder = shallowRef<ReadonlyMap<string, readonly Entry[]>>(new Map())
   const open = shallowRef<ReadonlySet<string>>(new Set([ROOT]))
@@ -124,78 +212,26 @@ export function useFileTree(core: Folders): FileTree {
   const getEntryAt = (path: string): Entry | null =>
     getEntriesInFolder(getFolderPath(path)).find((one) => one.path === path) ?? null
 
-  const loadFolders = async (folders: readonly string[]) => {
-    const listings = await Promise.all(
-      folders.map(async (folder) => {
-        try {
-          return { folder, entries: await core.list(folder) }
-        } catch (err) {
-          return { folder, error: err }
-        }
-      }),
-    )
-    if (!isAlive) return
-    const merged = mergeFolderListings(entriesByFolder.value, listings)
-    if (merged.isChanged) entriesByFolder.value = merged.next
-    errorMessage.value = merged.error
-  }
+  const refreshControl = createTreeRefresh({
+    core,
+    entriesByFolder,
+    open,
+    errorMessage,
+    selectedPaths,
+    isFolderOpen,
+    getEntryAt,
+    isAlive: () => isAlive,
+  })
 
-  const loadFolder = (folder: string) => loadFolders([folder])
-
-  const openFolder = async (folder: string) => {
-    if (!isAlive) return
-    open.value = new Set(open.value).add(folder)
-    await loadFolder(folder)
-  }
-
-  const closeFolder = (folder: string) => {
-    if (folder === ROOT) return
-    const rest = new Set(open.value)
-    rest.delete(folder)
-    open.value = rest
-  }
-
-  const toggleFolder = (folder: string) =>
-    void (isFolderOpen(folder) ? closeFolder(folder) : openFolder(folder))
-
-  const selectPaths = (paths: readonly string[]) => {
-    selectedPaths.value = paths
-  }
+  const folderOps = createFolderOperations(open, refreshControl.loadFolder, () => isAlive)
 
   const revealPath = async (path: string) => {
     for (const folder of getParentFolders(path)) {
-      await openFolder(folder)
+      await folderOps.openFolder(folder)
       if (!isAlive) return
     }
     selectedPaths.value = [path]
   }
-
-  const refresh = async () => {
-    await loadFolders([...open.value])
-  }
-
-  const refreshChanged = async (
-    paths: readonly string[] = [],
-    renames: readonly PathRename[] = [],
-  ) => {
-    if (renames.length > 0) {
-      selectedPaths.value = selectedPaths.value.map((one) => getRenamedPath(renames, one) || one)
-    }
-    const named = [...paths, ...renames.flatMap((one) => [one.from, one.to])]
-    if (named.length === 0) return void (await refresh())
-    const folders = new Set(
-      named
-        .map((p) => findDrawnInFolder(p, isFolderOpen, getEntryAt))
-        .filter((one): one is string => one !== null),
-    )
-    await loadFolders([...folders])
-  }
-
-  const getUniqueNameInFolder = (folder: string, word: string): string =>
-    generateUniqueName(
-      getEntriesInFolder(folder).map((one) => one.name),
-      word,
-    )
 
   const close = () => {
     isAlive = false
@@ -209,17 +245,23 @@ export function useFileTree(core: Folders): FileTree {
     selectedPaths,
     errorMessage,
     getEntriesInFolder,
-    isFolderOpen,
+    isFolderOpen: folderOps.isFolderOpen,
     getEntryAt,
-    loadFolder,
-    openFolder,
-    closeFolder,
-    toggleFolder,
-    selectPaths,
+    loadFolder: refreshControl.loadFolder,
+    openFolder: folderOps.openFolder,
+    closeFolder: folderOps.closeFolder,
+    toggleFolder: folderOps.toggleFolder,
+    selectPaths: (paths: readonly string[]) => {
+      selectedPaths.value = paths
+    },
     revealPath,
-    refresh,
-    refreshChanged,
-    getUniqueNameInFolder,
+    refresh: refreshControl.refresh,
+    refreshChanged: refreshControl.refreshChanged,
+    getUniqueNameInFolder: (folder: string, word: string): string =>
+      generateUniqueName(
+        getEntriesInFolder(folder).map((one) => one.name),
+        word,
+      ),
     close,
   }
 }

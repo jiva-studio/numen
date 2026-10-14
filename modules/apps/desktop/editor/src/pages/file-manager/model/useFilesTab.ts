@@ -134,24 +134,15 @@ function useFileMenu(options: FileMenuDeps) {
   return { menu, openMenu, dismissMenu, chooseMenuItem, getOverPaths }
 }
 
-export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
-  const renamingPath = ref<string | null>(null)
-  const setRenamingPath = (path: string | null) => {
-    renamingPath.value = path
-  }
-
+function createFileActions(list: FileTree, deps: FilesTabDeps, tabState: () => FilesTabState) {
   const getNameOf = (path: string): string => list.getEntryAt(path)?.name ?? getFileName(path)
   const getSourceOf = (path: string): Source => list.getEntryAt(path)?.kind ?? 'other'
-
-  const creators = useFileCreation(list, deps, renamingPath)
-  const { move } = useFileMoves(list, deps)
-  const fileMenu = useFileMenu({ list, deps, renamingPath, creators, getNameOf, getSourceOf })
 
   const activate = (path: string) => {
     const entry = list.getEntryAt(path)
     if (!entry) return
     list.selectPaths([path])
-    deps.openDestination(getLandingDestination(entry), tabState)
+    deps.openDestination(getLandingDestination(entry), tabState())
   }
 
   const rename = async (path: string, name: string) => {
@@ -176,24 +167,43 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     deps.runCommand('remove', paths, { name: getNameOf(first), source: getSourceOf(first) })
   }
 
+  return { getNameOf, getSourceOf, activate, rename, drag, remove }
+}
+
+export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
+  const renamingPath = ref<string | null>(null)
+  const setRenamingPath = (path: string | null) => {
+    renamingPath.value = path
+  }
+
+  let tabState!: FilesTabState
+  const actions = createFileActions(list, deps, () => tabState)
+  const creators = useFileCreation(list, deps, renamingPath)
+  const { move } = useFileMoves(list, deps)
+  const fileMenu = useFileMenu({
+    list,
+    deps,
+    renamingPath,
+    creators,
+    getNameOf: actions.getNameOf,
+    getSourceOf: actions.getSourceOf,
+  })
+
   const canRun: RunGuard = (run) => deps.canRun?.(run) ?? true
 
   const tabState: FilesTabState = {
+    ...actions,
     list,
     menu: fileMenu.menu,
     renamingPath,
     setRenamingPath,
     getOverPaths: fileMenu.getOverPaths,
     getFolderFor: (path) => create.getFolderFor(list, path),
-    activate,
     open: (path) => void list.openFolder(path),
     close: (path) => list.closeFolder(path),
     select: (paths) => list.selectPaths(paths),
-    rename,
     move,
-    drag,
     drop: () => deps.setDraggedPaths([]),
-    remove,
     createFolder: creators.createFolder,
     createNote: creators.createNote,
     createOne: creators.createOne,
@@ -202,7 +212,6 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     openMenu: fileMenu.openMenu,
     dismissMenu: fileMenu.dismissMenu,
     chooseMenuItem: fileMenu.chooseMenuItem,
-    getNameOf,
     canRun,
     getArtifactStates: deps.getArtifactStates,
   }

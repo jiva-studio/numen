@@ -171,7 +171,11 @@ export interface PopoverPlacementResult {
   readonly top: number
 }
 
-function getLeftPosition(atX: number, width: number, containerW: number, margin: number): number {
+function getLeftPosition(
+  atX: number,
+  width: number,
+  ...[containerW, margin]: [containerW: number, margin: number]
+): number {
   const idealLeft = atX - width / 2
   const maxLeft = Math.max(margin, containerW - width - margin)
   return Math.max(margin, Math.min(idealLeft, maxLeft))

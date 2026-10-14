@@ -107,6 +107,44 @@ function createAppearanceLoader(deps: LoaderDeps) {
   }
 }
 
+function createThemeWatcher(deps: {
+  core: WindowAppearanceDeps['core']
+  files: Map<string, string>
+  choice: ReturnType<typeof useAppearanceChoice>
+  applyAppearance: () => Promise<void>
+  loadAppearance: () => Promise<void>
+  lost: Ref<string>
+  wait: (ms: number) => Promise<unknown>
+}) {
+  let open = true
+  const listening = new AbortController()
+  const follows = createFollower({
+    isOpen: () => open,
+    setLost: (gone) => {
+      deps.lost.value = gone
+    },
+    wait: deps.wait,
+  })
+
+  const follow = () =>
+    follows(
+      () => deps.core.watchThemes(listening.signal),
+      async (names) => {
+        if (!names.length) return
+        for (const name of names) deps.files.delete(name)
+        await deps.loadAppearance()
+        if (names.includes(deps.choice.worn.value)) await deps.applyAppearance()
+      },
+    )
+
+  const stop = () => {
+    open = false
+    listening.abort()
+  }
+
+  return { follow, stop }
+}
+
 export function createWindowAppearance(deps: WindowAppearanceDeps) {
   const { core, words, write, sheet = document, wait = sleep } = deps
   const dressed = getStyleElements(sheet)
@@ -135,14 +173,6 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
   const writeSizes = createSizesWriter(dressed, sheet)
   const drawing = watch(choice.sized, writeSizes)
 
-  let open = true
-  const listening = new AbortController()
-  const follows = createFollower({
-    isOpen: () => open,
-    setLost: (gone) => (lost.value = gone),
-    wait,
-  })
-
   const loadAppearance = createAppearanceLoader({
     core,
     write,
@@ -156,16 +186,15 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     served,
   })
 
-  const follow = () =>
-    follows(
-      () => core.watchThemes(listening.signal),
-      async (names) => {
-        if (!names.length) return
-        for (const name of names) files.delete(name)
-        await loadAppearance()
-        if (names.includes(choice.worn.value)) await applyAppearance()
-      },
-    )
+  const watcher = createThemeWatcher({
+    core,
+    files,
+    choice,
+    applyAppearance,
+    loadAppearance,
+    lost,
+    wait,
+  })
 
   return {
     list,
@@ -184,11 +213,10 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     chooseItem: choice.chooseItem,
     start: async () => {
       await loadAppearance()
-      void follow()
+      void watcher.follow()
     },
     close: () => {
-      open = false
-      listening.abort()
+      watcher.stop()
       choice.close()
       drawing()
     },

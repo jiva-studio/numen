@@ -41,20 +41,28 @@ function discardTab(context: NoteStoreContext, id: string): void {
   context.reportedIds.delete(id)
 }
 
-function executeEffect(context: NoteStoreContext, id: string, effect: Effect): void {
+function executeQueueEffect(queue: NoteStoreContext['queue'], id: string, effect: Effect): boolean {
   switch (effect.kind) {
     case 'read':
-      void context.queue.read(id, effect.path, effect.generation)
-      return
+      void queue.read(id, effect.path, effect.generation)
+      return true
     case 'write':
-      void context.queue.write(id, { path: effect.path, body: effect.body, baseline: effect.seen })
-      return
+      void queue.write(id, { path: effect.path, body: effect.body, baseline: effect.seen })
+      return true
     case 'startTimer':
-      context.queue.startTimer(id, effect.after)
-      return
+      queue.startTimer(id, effect.after)
+      return true
     case 'cancelTimer':
-      context.queue.cancelTimer(id)
-      return
+      queue.cancelTimer(id)
+      return true
+    default:
+      return false
+  }
+}
+
+function executeEffect(context: NoteStoreContext, id: string, effect: Effect): void {
+  if (executeQueueEffect(context.queue, id, effect)) return
+  switch (effect.kind) {
     case 'replace':
       context.bodies.set(id, effect.body)
       context.onReplaced(context.tabs.get(id)?.path ?? id)
@@ -85,18 +93,26 @@ function applyTabTransition(
   if (next.tab.pendingWrite === null) context.queue.resolveFlush(id)
 }
 
-export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
-  const limits = how.limits ?? DEFAULT_WRITE_LIMITS
-  const onReplaced = how.onReplaced ?? (() => {})
-  const now = how.now ?? (() => Date.now())
-
+function createNoteStoreContext(
+  core: Notes,
+  limits: Parameters<typeof transitionTab>[2],
+  onReplaced: (path: string) => void,
+) {
   const tabs = shallowReactive(new Map<string, Tab>())
   const bodies = shallowReactive(new Map<string, string>())
   const addresses = shallowReactive(new Map<string, LinkAddress>())
   const reportedIds = new Set<string>()
   const closeCallbacks = new Map<string, (gone: boolean) => void>()
 
-  let context!: NoteStoreContext
+  const context: NoteStoreContext = {
+    tabs,
+    bodies,
+    addresses,
+    reportedIds,
+    closeCallbacks,
+    queue: null as unknown as ReturnType<typeof createNoteQueue>,
+    onReplaced,
+  }
 
   function dispatch(id: string, event: Event): void {
     const tab = tabs.get(id)
@@ -104,7 +120,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     applyTabTransition(context, id, transitionTab(tab, event, limits))
   }
 
-  const queue = createNoteQueue(core, {
+  context.queue = createNoteQueue(core, {
     dispatch,
     hasTab: (id) => tabs.has(id),
     setAddress: (id, addr) => {
@@ -116,7 +132,17 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     },
   })
 
-  context = { tabs, bodies, addresses, reportedIds, closeCallbacks, queue, onReplaced }
+  return { context, dispatch }
+}
+
+export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
+  const limits = how.limits ?? DEFAULT_WRITE_LIMITS
+  const onReplaced = how.onReplaced ?? (() => {})
+  const now = how.now ?? (() => Date.now())
+
+  const { context, dispatch } = createNoteStoreContext(core, limits, onReplaced)
+  const { tabs, reportedIds, closeCallbacks } = context
+
   const conflicts = createConflictCoordinator(dispatch, (id) => tabs.get(id))
   const getOpenIds = (): readonly string[] => [...tabs.keys()]
 

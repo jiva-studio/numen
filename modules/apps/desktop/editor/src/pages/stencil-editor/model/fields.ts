@@ -52,6 +52,26 @@ function createStencilActions(
   }
 }
 
+function resolveStencilFieldsDeps(
+  args:
+    | [deps: StencilFieldsDeps]
+    | [
+        getBody: (id: string) => string,
+        onTyped: (id: string, body: string) => void,
+        getProblems: (id: string) => readonly DeckProblem[],
+        renameFieldOnWire: (id: string, field: string, name: string) => void,
+      ],
+): StencilFieldsDeps {
+  return args.length === 1
+    ? args[0]
+    : {
+        getBody: args[0],
+        onTyped: args[1],
+        getProblems: args[2],
+        renameFieldOnWire: args[3],
+      }
+}
+
 export function createStencilFields(
   ...args:
     | [deps: StencilFieldsDeps]
@@ -62,16 +82,7 @@ export function createStencilFields(
         renameFieldOnWire: (id: string, field: string, name: string) => void,
       ]
 ) {
-  const deps: StencilFieldsDeps =
-    args.length === 1
-      ? args[0]
-      : {
-          getBody: args[0],
-          onTyped: args[1],
-          getProblems: args[2],
-          renameFieldOnWire: args[3],
-        }
-  const { getBody, onTyped, getProblems, renameFieldOnWire } = deps
+  const { getBody, onTyped, getProblems, renameFieldOnWire } = resolveStencilFieldsDeps(args)
   const parsed = new Map<string, { body: string; stencil: BufferStencil }>()
   const marked = new Map<string, { problems: readonly DeckProblem[]; marks: Marks }>()
 
