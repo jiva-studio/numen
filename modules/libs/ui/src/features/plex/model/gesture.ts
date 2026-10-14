@@ -2,7 +2,7 @@
  * The pointer. Everything that knows about events and screen pixels is here;
  * what a gesture *means* is worked out in `arrange/drop.ts`, as a value.
  */
-import { computed, onScopeDispose, ref, type Ref } from 'vue'
+import { computed, onScopeDispose, ref, type ComputedRef, type Ref } from 'vue'
 import { resolveDrop, getRelationWithoutDirection, type Drop } from '../lib/arrange'
 import type { PlexOptions } from '../lib/arrange'
 import type { PlexFrame } from '../lib/frame'
@@ -45,6 +45,98 @@ export function getPosition(svg: SVGSVGElement, event: PointerEvent): Position |
   }
 }
 
+export interface PlexGestureDeps {
+  readonly frame: () => PlexFrame
+  readonly options: () => PlexOptions
+  readonly relations: () => readonly PlexRelation[]
+  readonly threshold: () => number
+  readonly commit: (drop: Drop) => void
+}
+
+interface GesturePoints {
+  readonly from: Ref<string | null>
+  readonly at: Ref<Position | null>
+  readonly start: Ref<Position | null>
+}
+
+interface GestureListenerHandlers {
+  readonly onMove: (event: PointerEvent) => void
+  readonly onFinish: () => void
+  readonly onCancel: () => void
+}
+
+function releasePointer(element: SVGSVGElement | null, pointerId: number | null): void {
+  if (element && pointerId !== null) {
+    try {
+      // Stryker disable next-line OptionalChaining: a missing method throws a TypeError, which the catch below absorbs
+      element.releasePointerCapture?.(pointerId)
+    } catch {
+      // Never held it; nothing to let go of.
+    }
+  }
+}
+
+function capturePointer(element: SVGSVGElement, pointerId: number): void {
+  try {
+    // Stryker disable next-line OptionalChaining: a missing method throws a TypeError, which the catch below absorbs
+    element.setPointerCapture?.(pointerId)
+  } catch {
+    // Nothing to hold on to; the listeners below still follow it.
+  }
+}
+
+function listenGesture(pointerId: number, handlers: GestureListenerHandlers): () => void {
+  const isMine = (event: PointerEvent) => event.pointerId === pointerId
+
+  const onMove = (event: PointerEvent) => {
+    if (isMine(event)) handlers.onMove(event)
+  }
+  const onUp = (up: PointerEvent) => {
+    if (isMine(up)) handlers.onFinish()
+  }
+  const onLost = (event: PointerEvent) => {
+    if (isMine(event)) handlers.onCancel()
+  }
+  const onKey = (key: KeyboardEvent) => {
+    if (key.key === 'Escape') handlers.onCancel()
+  }
+
+  window.addEventListener('pointermove', onMove)
+  window.addEventListener('pointerup', onUp)
+  window.addEventListener('pointercancel', onLost)
+  window.addEventListener('keydown', onKey)
+
+  return () => {
+    window.removeEventListener('pointermove', onMove)
+    window.removeEventListener('pointerup', onUp)
+    window.removeEventListener('pointercancel', onLost)
+    window.removeEventListener('keydown', onKey)
+  }
+}
+
+function useGestureOutcome(points: GesturePoints, deps: PlexGestureDeps): ComputedRef<Drop | null> {
+  return computed(() => {
+    const source = points.from.value
+    const now = points.at.value
+    if (!source || !now) return null
+
+    const began = points.start.value
+    const travelled = !!began && Math.hypot(now.x - began.x, now.y - began.y) >= deps.threshold()
+    if (!travelled) {
+      const relation = getRelationWithoutDirection(deps.relations())
+      return relation ? { kind: 'create', from: source, relation } : null
+    }
+
+    return resolveDrop({
+      frame: deps.frame(),
+      options: deps.options(),
+      from: source,
+      at: now,
+      relations: deps.relations(),
+    })
+  })
+}
+
 /**
  * Follow a drag from a node until it is let go or given up on.
  *
@@ -52,156 +144,58 @@ export function getPosition(svg: SVGSVGElement, event: PointerEvent): Position |
  * wants — one more child — and asking for a drag to get it would make the
  * handle useless to a trackpad and to anyone who cannot hold a button down.
  */
-export function usePlexGesture(
-  frame: () => PlexFrame,
-  options: () => PlexOptions,
-  getRelations: () => readonly PlexRelation[],
-  threshold: () => number,
-  commit: (drop: Drop) => void,
-): Gesture & GestureHandlers {
+export function usePlexGesture(deps: PlexGestureDeps): Gesture & GestureHandlers {
   const surface = ref<SVGSVGElement | null>(null)
-  const svg = () => surface.value
-
   const from = ref<string | null>(null)
   const at = ref<Position | null>(null)
   const start = ref<Position | null>(null)
   const pointer = ref<number | null>(null)
-
-  /** Far enough from where it started to be a drag rather than a click. */
-  const hasTravelled = (now: Position) => {
-    const began = start.value
-    return !!began && Math.hypot(now.x - began.x, now.y - began.y) >= threshold()
-  }
-
-  const outcome = computed<Drop | null>(() => {
-    const source = from.value
-    const now = at.value
-    if (!source || !now) return null
-
-    // A gesture that has not travelled is a press, and a press has a rule.
-    if (!hasTravelled(now)) {
-      const relation = getRelationWithoutDirection(getRelations())
-      return relation ? { kind: 'create', from: source, relation } : null
-    }
-
-    return resolveDrop({
-      frame: frame(),
-      options: options(),
-      from: source,
-      at: now,
-      relations: getRelations(),
-    })
-  })
-
-  /** What the gesture under way installed on the window, if anything. */
   let detach: (() => void) | null = null
 
-  const stop = (element: SVGSVGElement | null) => {
-    // Every way a gesture ends comes through here, so this is the one place
-    // that has to let go of everything: a listener left behind goes on
-    // answering for a gesture nobody is making.
+  const outcome = useGestureOutcome({ from, at, start }, deps)
+
+  const stop = () => {
     detach?.()
     detach = null
-    if (element && pointer.value !== null) {
-      try {
-        // Stryker disable next-line OptionalChaining: a missing method throws a TypeError, which the catch below absorbs
-        element.releasePointerCapture?.(pointer.value)
-      } catch {
-        // Never held it; nothing to let go of.
-      }
-    }
+    releasePointer(surface.value, pointer.value)
     from.value = null
     at.value = null
     start.value = null
     pointer.value = null
   }
 
-  const move = (event: PointerEvent) => {
-    const element = svg()
-    // Stryker disable next-line ConditionalExpression: the surface is set before any listener that calls this is installed
-    if (!element) return
-    at.value = getPosition(element, event)
-  }
-
-  const finish = () => {
-    const resolved = outcome.value
-    stop(svg())
-    if (resolved) commit(resolved)
-  }
-
-  const cancel = () => stop(svg())
-
-  const ask = (source: string) => {
-    const relation = getRelationWithoutDirection(getRelations())
-    if (relation) commit({ kind: 'create', from: source, relation })
-  }
-
   const begin = (source: string, event: PointerEvent) => {
-    // The element comes with the event rather than through a chain of template
-    // refs: the gesture starts on something inside the drawing, and that is the
-    // shortest honest way to the drawing itself.
     const element = (event.target as SVGElement | null)?.ownerSVGElement ?? null
-    if (!element) return
+    const began = element ? getPosition(element, event) : null
+    if (!element || !began) return
+
     surface.value = element
-
-    const began = getPosition(element, event)
-    if (!began) return
-
     from.value = source
     start.value = began
     at.value = began
     pointer.value = event.pointerId
+    capturePointer(element, event.pointerId)
 
-    // Capture keeps the gesture attached to the drawing once the pointer has
-    // left it. It is allowed to fail — a pointer that is not actually down
-    // cannot be captured — and failing must not take the listeners below with
-    // it, or the gesture would begin and never end.
-    try {
-      // Stryker disable next-line OptionalChaining: a missing method throws a TypeError, which the catch below absorbs
-      element.setPointerCapture?.(event.pointerId)
-    } catch {
-      // Nothing to hold on to; the listeners below still follow it.
-    }
-
-    // Followed on the window rather than on the drawing. A gesture is let go
-    // of wherever the hand happens to be, which is often past the edge of the
-    // plex, and capture is a courtesy the browser may decline.
-    //
-    // One pointer at a time: a second finger arriving is not this gesture, and
-    // its release is not this gesture's release.
-    const isMine = (event: PointerEvent) => event.pointerId === pointer.value
-
-    const onMove = (event: PointerEvent) => {
-      if (isMine(event)) move(event)
-    }
-    const onUp = (up: PointerEvent) => {
-      if (isMine(up)) finish()
-    }
-    // The browser takes the pointer away — a drag the system turned into a
-    // scroll, a pen lifted out of range. No `pointerup` follows, so without
-    // this the thread stays drawn and the next release anywhere makes a node.
-    const onLost = (event: PointerEvent) => {
-      if (isMine(event)) cancel()
-    }
-    const onKey = (key: KeyboardEvent) => {
-      if (key.key === 'Escape') cancel()
-    }
-
-    detach = () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-      window.removeEventListener('pointercancel', onLost)
-      window.removeEventListener('keydown', onKey)
-    }
-
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-    window.addEventListener('pointercancel', onLost)
-    window.addEventListener('keydown', onKey)
+    detach = listenGesture(event.pointerId, {
+      onMove: (e) => {
+        // Stryker disable next-line ConditionalExpression: the surface is set before any listener that calls this is installed
+        if (surface.value) at.value = getPosition(surface.value, e)
+      },
+      onFinish: () => {
+        const resolved = outcome.value
+        stop()
+        if (resolved) deps.commit(resolved)
+      },
+      onCancel: stop,
+    })
   }
 
-  // A plex can go while a hand is still on it.
-  onScopeDispose(() => stop(svg()))
+  const ask = (source: string) => {
+    const relation = getRelationWithoutDirection(deps.relations())
+    if (relation) deps.commit({ kind: 'create', from: source, relation })
+  }
 
-  return { from, at, outcome, begin, ask, cancel }
+  onScopeDispose(stop)
+
+  return { from, at, outcome, begin, ask, cancel: stop }
 }

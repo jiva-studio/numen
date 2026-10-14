@@ -201,26 +201,6 @@ export default tseslint.config(
     },
   },
 
-  // Feature controllers, geometric layout algorithms and gesture state machines coordinate multi-parameter state.
-  {
-    files: ['src/features/**/*.{ts,vue}', 'src/shared/**/*.{ts,vue}'],
-    rules: {
-      'max-lines-per-function': 'off',
-      'max-params': 'off',
-    },
-  },
-
-  // Book and Notices components encapsulate specialized multi-column layout and animated notification styles.
-  {
-    files: ['src/features/book/ui/Book.vue', 'src/features/notices/ui/Notices.vue'],
-    rules: {
-      'vue/max-lines-per-block': [
-        'error',
-        { template: 120, script: 300, style: 120, skipBlankLines: true },
-      ],
-    },
-  },
-
   // Nothing in this module imports anything that knows what a vault
   // is — not in the components, not in the stories, not in the fixtures. A
   // fixture taken from the domain is how the dependency comes back in through

@@ -35,6 +35,62 @@ export interface HandScroll {
   readonly onWheel: (event: WheelEvent) => void
 }
 
+function followPointer(element: HTMLElement | null, event: PointerEvent): void {
+  if (!element || element.hasPointerCapture(event.pointerId)) return
+  try {
+    element.setPointerCapture(event.pointerId)
+  } catch {
+    // The row is carried by the pointer while it is over the room.
+  }
+}
+
+function applyWheelScroll(area: HTMLElement, event: WheelEvent): boolean {
+  const hasBelow = area.scrollHeight > area.clientHeight
+  const by = getWheelOffset({ x: event.deltaX, y: event.deltaY }, hasBelow)
+  if (by.x === 0 && by.y === 0) return false
+  event.preventDefault()
+  area.scrollLeft += by.x
+  area.scrollTop += by.y
+  return true
+}
+
+function usePointerDrag(
+  area: Readonly<ShallowRef<HTMLElement | null>>,
+  isDragging: Ref<boolean>,
+  onInterrupted: () => void,
+) {
+  const hand = new Hand()
+
+  const onPointerDown = (event: PointerEvent): void => {
+    if (!area.value || event.button !== 0) return
+    hand.take(
+      { x: event.clientX, y: event.clientY },
+      { x: area.value.scrollLeft, y: area.value.scrollTop },
+    )
+  }
+
+  const onPointerMove = (event: PointerEvent): void => {
+    if (!area.value || !hand.holding) return
+    const stood = hand.to({ x: event.clientX, y: event.clientY })
+    if (!stood) return
+    isDragging.value = true
+    onInterrupted()
+    area.value.scrollLeft = stood.x
+    area.value.scrollTop = stood.y
+    followPointer(area.value, event)
+  }
+
+  const letGo = (event: PointerEvent): void => {
+    hand.release()
+    isDragging.value = false
+    if (area.value?.hasPointerCapture(event.pointerId)) {
+      area.value.releasePointerCapture(event.pointerId)
+    }
+  }
+
+  return { onPointerDown, onPointerMove, letGo }
+}
+
 export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): HandScroll {
   const along = ref(0)
   const isDragging = ref(false)
@@ -61,71 +117,13 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
     return true
   }
 
-  /**
-   * The row taken hold of and pulled. A book on a table is moved by putting a
-   * hand on it, and a row five hundred pages long is a long way to travel by a
-   * scrollbar.
-   */
-  const hand = new Hand()
-
-  const onPointerDown = (event: PointerEvent): void => {
-    // The controls sit over the room and are pressed, not dragged.
-    if (!area.value || event.button !== 0) return
-    hand.take(
-      { x: event.clientX, y: event.clientY },
-      { x: area.value.scrollLeft, y: area.value.scrollTop },
-    )
-  }
-
-  const onPointerMove = (event: PointerEvent): void => {
-    if (!area.value || !hand.holding) return
-    const stood = hand.to({ x: event.clientX, y: event.clientY })
-    if (!stood) return
-    isDragging.value = true
-    // The hand has the row now, wherever it was being taken.
+  const { onPointerDown, onPointerMove, letGo } = usePointerDrag(area, isDragging, () => {
     heading = undefined
-    area.value.scrollLeft = stood.x
-    area.value.scrollTop = stood.y
-    follow(event)
-  }
+  })
 
-  /**
-   * The pointer followed where it leaves the room, so a hand that runs off the
-   * edge still carries the row. A pointer the window is not holding is one this
-   * cannot be asked about, and the drag then lasts as long as the pointer is
-   * over the room.
-   */
-  const follow = (event: PointerEvent): void => {
-    if (!area.value || area.value.hasPointerCapture(event.pointerId)) return
-    try {
-      area.value.setPointerCapture(event.pointerId)
-    } catch {
-      // The row is carried by the pointer while it is over the room.
-    }
-  }
-
-  const letGo = (event: PointerEvent): void => {
-    hand.release()
-    isDragging.value = false
-    if (area.value?.hasPointerCapture(event.pointerId)) {
-      area.value.releasePointerCapture(event.pointerId)
-    }
-  }
-
-  /**
-   * A wheel turned. A row at rest has one axis and a wheel turned down means the
-   * next page; drawn closer the room has both, and then down means down.
-   */
   const onWheel = (event: WheelEvent): void => {
     if (!area.value) return
-    const hasBelow = area.value.scrollHeight > area.value.clientHeight
-    const by = getWheelOffset({ x: event.deltaX, y: event.deltaY }, hasBelow)
-    if (by.x === 0 && by.y === 0) return
-    event.preventDefault()
-    // The wheel has the row now, wherever it was being taken.
-    heading = undefined
-    area.value.scrollLeft += by.x
-    area.value.scrollTop += by.y
+    if (applyWheelScroll(area.value, event)) heading = undefined
   }
 
   return {

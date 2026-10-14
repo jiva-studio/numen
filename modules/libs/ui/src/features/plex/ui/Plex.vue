@@ -25,7 +25,7 @@ const props = withDefaults(defineProps<PlexProps>(), {
   viewport: () => browserViewport,
   creatable: () => ['parent', 'child', 'jump'],
   dragThreshold: 8,
-  dwell: DEFAULT_BEHAVIOUR.dwell,
+  expansionDelay: DEFAULT_BEHAVIOUR.expansionDelay,
   reaching: () => DEFAULT_BEHAVIOUR.reaching,
   showing: () => DEFAULT_BEHAVIOUR.showing,
   relationName: getRelationName,
@@ -48,7 +48,7 @@ const { room, options, measures, widen, hung } = useRoom(frameElement, props, ()
 
 /** How the nodes behave, handed down as one. */
 const behaviour = computed<PlexBehaviour>(() => ({
-  dwell: props.dwell,
+  expansionDelay: props.expansionDelay,
   reaching: props.reaching,
   showing: props.showing,
   clock: props.clock,
@@ -63,8 +63,10 @@ const { frame, isMoving } = usePlexTransition(
     measureLabel: measures.value?.label,
     labelDepth: measures.value?.labelDepth,
   }),
-  () => props.duration,
-  props.clock,
+  {
+    duration: () => props.duration,
+    clock: props.clock,
+  },
 )
 
 /**
@@ -81,16 +83,16 @@ const canReach = computed(() => props.creatable.length > 0)
  * what it landed on — and says so. Whether a parent may be made, and what
  * making one writes, is the application's.
  */
-const gesture = usePlexGesture(
-  () => frame.value,
-  () => options.value,
-  () => props.creatable,
-  () => props.dragThreshold,
-  (drop) => {
+const gesture = usePlexGesture({
+  frame: () => frame.value,
+  options: () => options.value,
+  relations: () => props.creatable,
+  threshold: () => props.dragThreshold,
+  commit: (drop) => {
     if (drop.kind === 'create') emit('create', drop.from, drop.relation)
     else emit('link', drop.from, drop.to, drop.relation)
   },
-)
+})
 
 /**
  * Something dragged across the picture from outside it.

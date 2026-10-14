@@ -8,7 +8,7 @@ import type { PlexFrame } from '../../lib/frame'
 import type { NodeHeadings } from '../../lib/inside'
 import type { GestureRole, PlacedNode, Position } from '../../lib/node'
 import type { PlexRelation } from '../../lib/relation'
-import type { WideBox } from '../../model/dwell'
+import type { WideBox } from '../../model/expansion'
 import type { PlexBehaviour } from '../../model/behaviour'
 import type { PlexDestination } from '../../model/showing'
 

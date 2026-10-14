@@ -13,6 +13,11 @@ export interface PlexTransition {
   readonly isMoving: Ref<boolean>
 }
 
+export interface PlexTransitionOptions {
+  readonly duration: () => number
+  readonly clock?: Clock | undefined
+}
+
 /**
  * Hold a frame that moves towards each new neighbourhood. One arriving
  * mid-movement re-aims from wherever the plex has got to.
@@ -20,14 +25,13 @@ export interface PlexTransition {
 export function usePlexTransition(
   neighbourhood: () => PlexNeighbourhood,
   input: () => ArrangeInput | undefined,
-  duration: () => number,
-  clock: Clock = browserClock,
+  options: PlexTransitionOptions,
 ): PlexTransition {
+  const { duration, clock = browserClock } = options
   const target = () => arrangePlex(neighbourhood(), input())
 
   const frame = shallowRef<PlexFrame>(target())
   const isMoving = ref(false)
-
   let handle: number | null = null
 
   const stop = () => {
@@ -38,42 +42,78 @@ export function usePlexTransition(
 
   const run = (to: PlexFrame) => {
     stop()
-
-    const from = frame.value
     const ms = duration()
     if (ms <= 0) {
       frame.value = to
       return
     }
 
-    // Elapsed time comes from the callback, not from a clock read here: a
-    // backgrounded tab hands the first callback a stale timestamp and the
-    // movement would arrive already finished.
-    let started: number | null = null
     isMoving.value = true
-
-    const step = (now: number) => {
-      started ??= now
-      const t = Math.min(1, (now - started) / ms)
-      frame.value = interpolatePlex(from, to, easeOut(t), input()?.options)
-      if (t < 1) {
-        handle = clock.schedule(step)
-      } else {
+    handle = startTransition({
+      from: frame.value,
+      to,
+      ms,
+      clock,
+      getOptions: () => input()?.options,
+      onFrame: (f) => {
+        frame.value = f
+      },
+      onDone: () => {
         handle = null
         isMoving.value = false
-      }
-    }
-
-    handle = clock.schedule(step)
+      },
+      onNext: (next) => {
+        handle = next
+      },
+    })
   }
 
   watch(
     () => neighbourhood(),
     () => run(target()),
   )
+  watchInputChanges(input, () => run(target()))
+  onScopeDispose(stop)
 
-  // A change to the arrangement is a move too: the reader still has to be able
-  // to follow what became of what.
+  return { frame, isMoving }
+}
+
+interface StepContext {
+  readonly from: PlexFrame
+  readonly to: PlexFrame
+  readonly ms: number
+  readonly clock: Clock
+  readonly getOptions: () => ArrangeInput['options'] | undefined
+  readonly onFrame: (frame: PlexFrame) => void
+  readonly onDone: () => void
+  readonly onNext: (handle: number) => void
+}
+
+function startTransition(context: StepContext): number {
+  let started: number | null = null
+
+  const step = (now: number) => {
+    started ??= now
+    const t = Math.min(1, (now - started) / context.ms)
+    const options = context.getOptions()
+    context.onFrame(
+      interpolatePlex(
+        context.from,
+        context.to,
+        options ? { progress: easeOut(t), ...options } : easeOut(t),
+      ),
+    )
+    if (t < 1) {
+      context.onNext(context.clock.schedule(step))
+    } else {
+      context.onDone()
+    }
+  }
+
+  return context.clock.schedule(step)
+}
+
+function watchInputChanges(input: () => ArrangeInput | undefined, onChange: () => void): void {
   watch(
     [
       () => input()?.placement,
@@ -94,10 +134,6 @@ export function usePlexTransition(
       () => input()?.measureLabel,
       () => input()?.labelDepth,
     ],
-    () => run(target()),
+    onChange,
   )
-
-  onScopeDispose(stop)
-
-  return { frame, isMoving }
 }

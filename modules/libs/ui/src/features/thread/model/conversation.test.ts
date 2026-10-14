@@ -6,8 +6,9 @@
  * from one exchange landing in the next.
  */
 import { describe, expect, it } from 'vitest'
-import { useConversation, type ConversationStrings } from './conversation'
+import { useConversation as baseUseConversation, type ConversationStrings } from './conversation'
 import type { AgentPort, AgentStep, SourceLocation } from '../lib/agent'
+import type { Paint } from '@/shared/lib/clock'
 
 const words: ConversationStrings = {
   thinking: 'Thinking',
@@ -15,25 +16,32 @@ const words: ConversationStrings = {
   nothing: 'Said nothing',
 }
 
-/** An agent that does what it is told to, a step at a time. */
-const createPort = (steps: readonly AgentStep[], hold?: Promise<void>): AgentPort => ({
-  async *ask(_question, _focus, _conversation, signal) {
-    for (const step of steps) {
-      if (signal.aborted) return
-      yield step
-    }
-    if (hold) await hold
-  },
-  finish: async () => {},
-})
+/** Words are put on the screen as they arrive, with no frame to wait for. */
+const now = (draw: () => void) => draw()
 
 /** What one conversation is called. Every question it sends carries it. */
 const called = 'conversation:one'
 
 const nap = () => new Promise((wake) => setTimeout(wake, 0))
 
-/** Words are put on the screen as they arrive, with no frame to wait for. */
-const now = (draw: () => void) => draw()
+const useConversation = (
+  agent: AgentPort,
+  conversationWords: ConversationStrings,
+  conversation: string = called,
+  paint: Paint = now,
+) => baseUseConversation({ agent, words: conversationWords, conversation, paint })
+
+/** An agent that does what it is told to, a step at a time. */
+const createPort = (steps: readonly AgentStep[], hold?: Promise<void>): AgentPort => ({
+  async *ask(query) {
+    for (const step of steps) {
+      if (query.signal.aborted) return
+      yield step
+    }
+    if (hold) await hold
+  },
+  finish: async () => {},
+})
 
 const createSaidStep = (text: string): AgentStep => ({ kind: 'said', text })
 const createToolStep = (
@@ -520,8 +528,8 @@ describe('a conversation', () => {
   it('carries its own name, so what is asked in one is remembered in one', async () => {
     const carried: string[] = []
     const agent: AgentPort = {
-      async *ask(_asked, _focus, named) {
-        carried.push(named)
+      async *ask(query) {
+        carried.push(query.conversation)
         yield createStopped()
       },
       finish: async () => {},
@@ -1235,8 +1243,8 @@ describe('a conversation that is over, while an answer is on its way', () => {
     let signal: AbortSignal | undefined
     const conversation = useConversation(
       {
-        async *ask(_question, _focus, _named, given) {
-          signal = given
+        async *ask(query) {
+          signal = query.signal
           yield createToolStep('Search notes')
           await held
         },

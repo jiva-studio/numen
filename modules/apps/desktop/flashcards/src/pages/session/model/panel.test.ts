@@ -24,8 +24,8 @@ const createAgent = (says: AgentStep[] = [{ kind: 'said', text: 'Because of the 
   const asked: { text: string; focus: string; conversation: string }[] = []
   const over: string[] = []
   const agent: AgentPort = {
-    async *ask(text, focus, conversation) {
-      asked.push({ text, focus, conversation })
+    async *ask(query) {
+      asked.push({ text: query.question, focus: query.focus, conversation: query.conversation })
       for (const step of says) yield step
     },
     async finish(conversation) {
@@ -233,11 +233,11 @@ describe('a conversation in flight', () => {
     const asked: string[] = []
     let answer = () => {}
     const agent: AgentPort = {
-      async *ask(text, _focus, _conversation, signal) {
-        asked.push(text)
+      async *ask(query) {
+        asked.push(query.question)
         await new Promise<void>((then) => {
           answer = then
-          signal.addEventListener('abort', () => then())
+          query.signal.addEventListener('abort', () => then())
         })
         yield { kind: 'said', text: 'Because of the leaves.' }
       },

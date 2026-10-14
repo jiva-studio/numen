@@ -33,14 +33,14 @@ const createTile = (
   cards: readonly DeckCard[] = CARDS,
   sections: readonly DeckSection[] = [],
 ): Tile => {
-  const laid = getGrid(cards, sections, CUTS, null)
+  const laid = getGrid({ cards, sections, stencils: CUTS }, null)
     .runs.flatMap((run) => run.tiles)
     .find((tile) => tile.id === id)
   if (!laid) throw new Error(`no tile for ${id}`)
   return laid
 }
 
-const write = vi.fn<(card: string, field: string, nth: number, text: string) => void>()
+const write = vi.fn<(card: string, target: { field: string; nth: number }, text: string) => void>()
 
 const mountCard = (tile: Tile, props: Record<string, unknown> = {}) =>
   mount(Card, {
@@ -91,7 +91,7 @@ describe('Card', () => {
     expect(press.defaultPrevented).toBe(false)
 
     await box.setValue('Llama\nand alpaca')
-    expect(write.mock.calls).toEqual([['llama', 'Name', 1, 'Llama\nand alpaca']])
+    expect(write.mock.calls).toEqual([['llama', { field: 'Name', nth: 1 }, 'Llama\nand alpaca']])
   })
 
   it('says on the strip which stencil cut the card, and where none did, that none did', () => {

@@ -68,16 +68,14 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
   } = usePressDrag<Drag, TabDropTarget>({
     getThreshold: options.getThreshold,
     getClock: options.getClock,
-    getDropTargetAt: (_item, at) => getTabDropTargetAt(at.x, at.y),
+    getDropTargetAt: (_item, at) => resolveDropTarget(at, options.frame.value, options.getEdge),
     commit: (item, at) => {
       if (at) land(item, at)
     },
   })
 
   const hasMoved = computed(() => dragging.value?.hasMoved === true)
-
   const overlay = computed(() => (hasMoved.value ? (dropTarget.value?.box ?? null) : null))
-
   const label = computed(() => {
     const held = dragging.value
     if (!held?.hasMoved) return null
@@ -96,59 +94,11 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
   }
 
   function land(drag: Drag, at: TabDropTarget): void {
-    const ids = options.getIdFactory()
-    const workspace = options.workspace
-
-    if (at.kind === 'edge') {
-      workspace.value = dropOnEdge(workspace.value, drag.tab, at.side, ids)
-      return
-    }
-
-    if (at.kind === 'pane') {
-      workspace.value = dropTab(
-        workspace.value,
-        { tab: drag.tab, onto: at.pane, side: at.side },
-        ids,
-      )
-      return
-    }
-
-    const joined =
-      at.pane === drag.from
-        ? workspace.value
-        : dropTab(workspace.value, { tab: drag.tab, onto: at.pane, side: 'center' }, ids)
-    workspace.value = moveTabWithin(joined, drag.tab, at.slot)
-  }
-
-  /**
-   * What the pointer is over, asked of the document.
-   *
-   * A strip is read first, so that a tab can be put in order among its
-   * neighbours; then the outer edge, which divides the whole workspace; then the
-   * pane, which divides itself.
-   */
-  function getTabDropTargetAt(x: number, y: number): TabDropTarget | null {
-    const held = options.frame.value
-    if (!held) return null
-
-    const outer = getRect(held)
-    if (!isInside({ x, y }, outer)) return null
-
-    const local = (box: Rect): Rect => ({ ...box, x: box.x - outer.x, y: box.y - outer.y })
-    const under = document.elementFromPoint(x, y)
-
-    const strip = getClosest(under, '[data-workspace-strip]')
-    const pane = getClosest(under, '[data-workspace-pane]')
-    const id = pane?.getAttribute('data-workspace-pane')
-
-    if (strip && id) return getStripDropTarget(x, strip, id, local)
-
-    const side = findEdgeSide({ x, y }, outer, options.getEdge())
-    if (side) return { kind: 'edge', side, box: local(getOverlay(side, outer)) }
-
-    if (!pane || !id) return null
-
-    return getPaneDropTarget({ x, y }, pane, id, local)
+    options.workspace.value = landTab(options.workspace.value, {
+      drag,
+      at,
+      ids: options.getIdFactory(),
+    })
   }
 
   return { hasMoved, overlay, label, position, dropTarget, press }
@@ -157,6 +107,12 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
 /** A box put in the coordinates of the frame. */
 type ToLocal = (box: Rect) => Rect
 
+interface StripTarget {
+  readonly x: number
+  readonly strip: Element
+  readonly pane: NodeId
+}
+
 const isInside = (at: Position, box: Rect): boolean =>
   at.x >= box.x && at.x <= box.x + box.width && at.y >= box.y && at.y <= box.y + box.height
 
@@ -164,21 +120,82 @@ const getClosest = (under: Element | null, selector: string): Element | null =>
   under?.closest(selector) ?? null
 
 /** A tab put in order among the tabs already drawn on a strip. */
-function getStripDropTarget(
-  x: number,
-  strip: Element,
-  pane: NodeId,
-  local: ToLocal,
-): TabDropTarget {
-  // A strip holds tabs and nothing else, in the order they are drawn.
+function getStripDropTarget(target: StripTarget, local: ToLocal): TabDropTarget {
+  const { x, strip, pane } = target
   const tabs = [...strip.children].map((tab) => getRect(tab))
   const slot = getSlot(x, tabs)
-  return { kind: 'strip', pane, slot, box: local(getCaretRect(slot, tabs, getRect(strip))) }
+  return {
+    kind: 'strip',
+    pane,
+    slot,
+    box: local(getCaretRect(slot, tabs, getRect(strip))),
+  }
 }
 
 /** A pane divided along the side the pointer is nearest. */
-function getPaneDropTarget(at: Position, pane: Element, id: NodeId, local: ToLocal): TabDropTarget {
-  const box = getRect(pane)
+function getPaneDropTarget(
+  at: Position,
+  pane: { readonly element: Element; readonly id: NodeId },
+  local: ToLocal,
+): TabDropTarget {
+  const box = getRect(pane.element)
   const side = getSide(at, box)
-  return { kind: 'pane', pane: id, side, box: local(getOverlay(side, box)) }
+  return { kind: 'pane', pane: pane.id, side, box: local(getOverlay(side, box)) }
+}
+
+interface LandAction {
+  readonly drag: Drag
+  readonly at: TabDropTarget
+  readonly ids: NodeIdFactory
+}
+
+function landTab(workspace: Workspace, action: LandAction): Workspace {
+  const { drag, at, ids } = action
+  if (at.kind === 'edge') {
+    return dropOnEdge(workspace, { tab: drag.tab, side: at.side }, ids)
+  }
+
+  if (at.kind === 'pane') {
+    return dropTab(workspace, { tab: drag.tab, onto: at.pane, side: at.side }, ids)
+  }
+
+  const joined =
+    at.pane === drag.from
+      ? workspace
+      : dropTab(workspace, { tab: drag.tab, onto: at.pane, side: 'center' }, ids)
+  return moveTabWithin(joined, drag.tab, at.slot)
+}
+
+/**
+ * What the pointer is over, asked of the document.
+ *
+ * A strip is read first, so that a tab can be put in order among its
+ * neighbours; then the outer edge, which divides the whole workspace; then the
+ * pane, which divides itself.
+ */
+function resolveDropTarget(
+  at: Position,
+  frame: Element | null,
+  getEdge: () => number,
+): TabDropTarget | null {
+  if (!frame) return null
+
+  const outer = getRect(frame)
+  if (!isInside(at, outer)) return null
+
+  const local = (box: Rect): Rect => ({ ...box, x: box.x - outer.x, y: box.y - outer.y })
+  const under = document.elementFromPoint(at.x, at.y)
+
+  const strip = getClosest(under, '[data-workspace-strip]')
+  const pane = getClosest(under, '[data-workspace-pane]')
+  const id = pane?.getAttribute('data-workspace-pane')
+
+  if (strip && id) return getStripDropTarget({ x: at.x, strip, pane: id }, local)
+
+  const side = findEdgeSide(at, outer, getEdge())
+  if (side) return { kind: 'edge', side, box: local(getOverlay(side, outer)) }
+
+  if (!pane || !id) return null
+
+  return getPaneDropTarget(at, { element: pane, id }, local)
 }

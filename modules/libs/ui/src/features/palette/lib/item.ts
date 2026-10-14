@@ -104,5 +104,5 @@ export const getSteppedIndex = (total: number, from: number, by: number): number
  */
 export const findKeptPlace = (places: readonly PalettePlace[], was: string): number => {
   const at = places.findIndex((place) => place.item.id === was && canChoose(place.item))
-  return stepTo(places, Math.max(at, 0) - 1, 1, canLandOn)
+  return stepTo(places, { from: Math.max(at, 0) - 1, by: 1 }, canLandOn)
 }

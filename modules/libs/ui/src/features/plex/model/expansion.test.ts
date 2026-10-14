@@ -1,12 +1,13 @@
 /** A box widened under a hand that stays on it: how wide, where, and when. */
 import { effectScope, nextTick, ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { OPENING, useDwell, getWideBox } from './dwell'
+import { EXPANSION_DURATION, useExpansion, getWideBox } from './expansion'
 import { stubClock } from '@/shared/fixtures/clock'
 import type { PlacedNode } from '../lib/node'
 
 const WINDOW = { width: 1200, height: 800 }
 const MARGIN = 16
+const BOUNDS = { viewport: WINDOW, margin: MARGIN }
 
 const createNode = (over: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
@@ -30,7 +31,7 @@ const getSpan = (node: PlacedNode, wide: { width: number; offset: number }) => (
 describe('a box with more of its title to show', () => {
   it('widens to the room the whole title asks for', () => {
     const node = createNode()
-    expect(getWideBox(node, 300, WINDOW, MARGIN)).toStrictEqual({
+    expect(getWideBox(node, 300, BOUNDS)).toStrictEqual({
       width: 300,
       offset: 0,
     })
@@ -38,20 +39,20 @@ describe('a box with more of its title to show', () => {
 
   it('grows about its own middle, so it opens both ways at once', () => {
     const node = createNode({ x: 120 })
-    const wide = getWideBox(node, 300, WINDOW, MARGIN)!
+    const wide = getWideBox(node, 300, BOUNDS)!
     expect(getSpan(node, wide)).toStrictEqual({ from: -30, to: 270 })
   })
 
   it('slides back inside the window where its middle leaves no room', () => {
     const node = createNode({ x: 500 })
-    const wide = getWideBox(node, 300, WINDOW, MARGIN)!
+    const wide = getWideBox(node, 300, BOUNDS)!
     expect(wide.width).toBe(300)
     expect(getSpan(node, wide)).toStrictEqual({ from: 284, to: 584 })
   })
 
   it('grows no wider than the window, the margin kept clear', () => {
     const node = createNode({ x: 500 })
-    const wide = getWideBox(node, 2000, WINDOW, MARGIN)!
+    const wide = getWideBox(node, 2000, BOUNDS)!
     expect(wide.width).toBe(WINDOW.width - 2 * MARGIN)
     expect(getSpan(node, wide)).toStrictEqual({ from: -584, to: 584 })
   })
@@ -59,15 +60,17 @@ describe('a box with more of its title to show', () => {
 
 describe('a box with nothing more to show', () => {
   it('stays as it was placed when its title needs exactly the room it has', () => {
-    expect(getWideBox(createNode(), 144, WINDOW, MARGIN)).toBeNull()
+    expect(getWideBox(createNode(), 144, BOUNDS)).toBeNull()
   })
 
   it('stays as it was placed when its title is already in it', () => {
-    expect(getWideBox(createNode(), 120, WINDOW, MARGIN)).toBeNull()
+    expect(getWideBox(createNode(), 120, BOUNDS)).toBeNull()
   })
 
   it('stays as it was placed when the window is no wider than it is', () => {
-    expect(getWideBox(createNode(), 300, { width: 160, height: 800 }, MARGIN)).toBeNull()
+    expect(
+      getWideBox(createNode(), 300, { viewport: { width: 160, height: 800 }, margin: MARGIN }),
+    ).toBeNull()
   })
 })
 
@@ -79,17 +82,17 @@ describe('a box opening under the attention', () => {
   })
 
   /** The wait, run in a scope of its own, as a component gives it. */
-  const createDwell = (on: () => string | null, delay: () => number = () => WAIT) => {
+  const createExpansion = (on: () => string | null, delay: () => number = () => WAIT) => {
     vi.useFakeTimers()
     const world = stubClock()
     const scope = effectScope()
-    const open = scope.run(() => useDwell(on, delay, world.clock))!
+    const open = scope.run(() => useExpansion(on, delay, world.clock))!
     return { open, world, stop: () => scope.stop() }
   }
 
   it('stays shut until the attention has been on one thing for the wait', async () => {
     const on = ref<string | null>(null)
-    const { open, world } = createDwell(() => on.value)
+    const { open, world } = createExpansion(() => on.value)
 
     on.value = 'a box'
     await nextTick()
@@ -100,7 +103,7 @@ describe('a box opening under the attention', () => {
 
   it('opens across several frames rather than in one', async () => {
     const on = ref<string | null>(null)
-    const { open, world } = createDwell(() => on.value)
+    const { open, world } = createExpansion(() => on.value)
 
     on.value = 'a box'
     await nextTick()
@@ -109,18 +112,18 @@ describe('a box opening under the attention', () => {
     world.tick(0)
     expect(open.value).toBe(0)
 
-    world.tick(OPENING / 2)
+    world.tick(EXPANSION_DURATION / 2)
     expect(open.value).toBeGreaterThan(0)
     expect(open.value).toBeLessThan(1)
 
-    world.tick(OPENING)
+    world.tick(EXPANSION_DURATION)
     expect(open.value).toBe(1)
     expect(world.pending).toBe(false)
   })
 
   it('shuts again the moment the attention leaves', async () => {
     const on = ref<string | null>('a box')
-    const { open, world } = createDwell(() => on.value)
+    const { open, world } = createExpansion(() => on.value)
 
     await vi.advanceTimersByTimeAsync(WAIT)
     world.run()
@@ -134,7 +137,7 @@ describe('a box opening under the attention', () => {
 
   it('shuts and begins the wait again where what it was on has moved', async () => {
     const on = ref<string | null>('a box at 0 0')
-    const { open, world } = createDwell(() => on.value)
+    const { open, world } = createExpansion(() => on.value)
 
     await vi.advanceTimersByTimeAsync(WAIT)
     world.run()
@@ -152,7 +155,7 @@ describe('a box opening under the attention', () => {
 
   it('never opens where there is no wait at all', async () => {
     const on = ref<string | null>(null)
-    const { open, world } = createDwell(
+    const { open, world } = createExpansion(
       () => on.value,
       () => 0,
     )
@@ -166,7 +169,7 @@ describe('a box opening under the attention', () => {
 
   it('lets go of a wait its scope outlives', async () => {
     const on = ref<string | null>(null)
-    const { open, world, stop } = createDwell(() => on.value)
+    const { open, world, stop } = createExpansion(() => on.value)
 
     on.value = 'a box'
     await nextTick()
@@ -179,11 +182,11 @@ describe('a box opening under the attention', () => {
 
   it('cancels the frame in flight when the attention leaves mid-opening', async () => {
     const on = ref<string | null>('a box')
-    const { open, world } = createDwell(() => on.value)
+    const { open, world } = createExpansion(() => on.value)
 
     await vi.advanceTimersByTimeAsync(WAIT)
     world.tick(0)
-    world.tick(OPENING / 4)
+    world.tick(EXPANSION_DURATION / 4)
     expect(world.cancelled).toStrictEqual([])
 
     on.value = null
@@ -194,7 +197,7 @@ describe('a box opening under the attention', () => {
 
   it('cancels nothing while no frame is in flight', async () => {
     const on = ref<string | null>(null)
-    const { world } = createDwell(() => on.value)
+    const { world } = createExpansion(() => on.value)
 
     on.value = 'a box'
     await nextTick()
@@ -206,7 +209,7 @@ describe('a box opening under the attention', () => {
 
   it('stops drawing frames when its scope goes mid-opening', async () => {
     const on = ref<string | null>('a box')
-    const { world, stop } = createDwell(() => on.value)
+    const { world, stop } = createExpansion(() => on.value)
 
     await vi.advanceTimersByTimeAsync(WAIT)
     world.tick(0)
@@ -219,7 +222,7 @@ describe('a box opening under the attention', () => {
 
   it('begins the wait again when what the attention is on changes mid-wait', async () => {
     const on = ref<string | null>('a box')
-    const { world } = createDwell(() => on.value)
+    const { world } = createExpansion(() => on.value)
 
     await vi.advanceTimersByTimeAsync(WAIT - 100)
     on.value = 'another box'
@@ -234,27 +237,27 @@ describe('a box opening under the attention', () => {
 
   it('times a frame from the first one it is given, whenever that is', async () => {
     const on = ref<string | null>('a box')
-    const { open, world } = createDwell(() => on.value)
+    const { open, world } = createExpansion(() => on.value)
 
     await vi.advanceTimersByTimeAsync(WAIT)
     world.tick(1000)
     expect(open.value).toBe(0)
 
-    world.tick(1000 + OPENING / 2)
+    world.tick(1000 + EXPANSION_DURATION / 2)
     expect(open.value).toBeGreaterThan(0)
     expect(open.value).toBeLessThan(1)
 
-    world.tick(1000 + OPENING)
+    world.tick(1000 + EXPANSION_DURATION)
     expect(open.value).toBe(1)
   })
 
   it('takes the rest of the way in the share of the time that is left', async () => {
     const on = ref<string | null>('a box')
-    const { open, world } = createDwell(() => on.value)
+    const { open, world } = createExpansion(() => on.value)
 
     await vi.advanceTimersByTimeAsync(WAIT)
     world.tick(0)
-    world.tick(OPENING / 4)
+    world.tick(EXPANSION_DURATION / 4)
     const reached = open.value
     expect(reached).toBeGreaterThan(0)
     expect(reached).toBeLessThan(1)
@@ -267,7 +270,7 @@ describe('a box opening under the attention', () => {
     expect(open.value).toBe(reached)
 
     world.tick(0)
-    world.tick(OPENING * (1 - reached))
+    world.tick(EXPANSION_DURATION * (1 - reached))
     expect(open.value).toBe(1)
     expect(world.pending).toBe(false)
   })

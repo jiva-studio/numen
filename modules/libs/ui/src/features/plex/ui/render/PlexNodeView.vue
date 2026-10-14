@@ -11,7 +11,7 @@ import PlexNodeHeadings from './PlexNodeHeadings.vue'
 import type { PlexDrawnSlots, PlexNodeEvents, PlexNodeProps } from './props'
 import { useHoverFocus } from '../../model/hoverFocus'
 import { DEFAULT_BEHAVIOUR } from '../../model/behaviour'
-import { useOpenBox } from '../../model/dwell'
+import { useOpenBox } from '../../model/expansion'
 import { useNodePress } from '../../model/press'
 import { createAriaLabel, type Position } from '../../lib/node'
 
@@ -79,13 +79,13 @@ const under = computed(() =>
     : null,
 )
 
-const { open, box, handle } = useOpenBox(
-  () => props.node,
-  () => props.wide,
-  () => under.value,
-  () => props.behaviour.dwell,
-  props.behaviour.clock,
-)
+const { open, box, handle } = useOpenBox({
+  node: () => props.node,
+  wide: () => props.wide,
+  on: () => under.value,
+  delay: () => props.behaviour.expansionDelay,
+  clock: props.behaviour.clock,
+})
 
 // A box that has begun to open is already over its neighbours.
 watch(

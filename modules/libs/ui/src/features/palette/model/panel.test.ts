@@ -14,7 +14,12 @@ const setUp = (lit: string | undefined) => {
   const actions = ref<readonly PaletteAction[]>([OPEN])
   const choose = vi.fn<(item: string, action: string) => void>()
   const dismiss = vi.fn<() => void>()
-  const panel = useActionPanel(() => actions.value, () => lit, choose, dismiss)
+  const panel = useActionPanel({
+    getActions: () => actions.value,
+    getLit: () => lit,
+    choose,
+    dismiss,
+  })
   return { actions, choose, dismiss, panel }
 }
 

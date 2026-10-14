@@ -153,7 +153,12 @@ function createTabOpeners(ctx: TabOpenerContext) {
 
   const openTabBesideOfKind = async (kind: string, at = ''): Promise<string> => {
     const id = await createTab(kind, at)
-    if (id) ctx.layout.value = openTabBeside(ctx.layout.value, id, 'right', generatePaneId)
+    if (id) {
+      ctx.layout.value = openTabBeside(ctx.layout.value, id, {
+        side: 'right',
+        createId: generatePaneId,
+      })
+    }
     return id
   }
 

@@ -18,24 +18,26 @@ export interface ActionPanelState {
   readonly onGround: () => void
 }
 
-export function useActionPanel(
-  getActions: () => readonly PaletteAction[],
+export interface ActionPanelOptions {
+  readonly getActions: () => readonly PaletteAction[]
   /** The item the panel is about, by its identity. */
-  getLit: () => string | undefined,
+  readonly getLit: () => string | undefined
   /** An item was chosen, and what was asked of it. */
-  choose: (item: string, action: string) => void,
+  readonly choose: (item: string, action: string) => void
   /** The palette asks to be put away. */
-  dismiss: () => void,
-): ActionPanelState {
+  readonly dismiss: () => void
+}
+
+export function useActionPanel(options: ActionPanelOptions): ActionPanelState {
   const open = ref(false)
 
-  watch(getActions, (now) => {
+  watch(options.getActions, (now) => {
     if (!now.length) open.value = false
   })
 
   const chooseAction = (action: string): void => {
-    const item = getLit()
-    if (item) choose(item, action)
+    const item = options.getLit()
+    if (item) options.choose(item, action)
   }
 
   const onPress = (): void => {
@@ -44,7 +46,7 @@ export function useActionPanel(
 
   const onGround = (): void => {
     if (open.value) return void (open.value = false)
-    dismiss()
+    options.dismiss()
   }
 
   return { open, chooseAction, onPress, onGround }

@@ -16,7 +16,7 @@ import {
   type PlexOptionsInput,
 } from '../lib/arrange'
 import { optionsForType, useTypeSize } from '../model/sizing'
-import { DWELL } from '../model/dwell'
+import { EXPANSION_DELAY } from '../model/expansion'
 import { type PlexHeading } from '../lib/inside'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
 import { createNeighbourhood, walkStart } from '../fixtures/walk'
@@ -36,7 +36,7 @@ interface Knobs {
   placement: Placement
   showEdgeLabels: boolean
   duration: number
-  dwell: number
+  expansionDelay: number
   onActivate: (id: string) => void
   onShow: (id: string, showing: PlexDestination) => void
   onCreate: (from: string, relation: PlexRelation) => void
@@ -241,7 +241,7 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
         :options="options"
         :show-edge-labels="args.showEdgeLabels"
         :duration="args.duration"
-        :dwell="args.dwell"
+        :expansion-delay="args.expansionDelay"
         :dragged="args.dragged"
         :drop-name="args.dropName"
         :headings="args.headings"
@@ -284,7 +284,7 @@ const renderWalk = (args: Knobs) => ({
         :options="options"
         :show-edge-labels="args.showEdgeLabels"
         :duration="args.duration"
-        :dwell="args.dwell"
+        :expansion-delay="args.expansionDelay"
         @activate="focused = $event; args.onActivate($event)"
         @show="(id, showing) => args.onShow(id, showing)"
       />
@@ -344,7 +344,7 @@ const meta = {
       control: { type: 'range', min: 0, max: 3000, step: 20 },
       table: { category: 'Motion' },
     },
-    dwell: {
+    expansionDelay: {
       control: { type: 'range', min: 0, max: 2000, step: 20 },
       table: { category: 'Motion' },
     },
@@ -380,7 +380,7 @@ const meta = {
     placement: rowsAndColumns,
     showEdgeLabels: true,
     duration: 420,
-    dwell: DWELL,
+    expansionDelay: EXPANSION_DELAY,
     onActivate: fn(),
     onShow: fn(),
     onCreate: fn(),
@@ -1373,7 +1373,7 @@ export const SmallWindow: Story = {
             :options="options"
             :show-edge-labels="args.showEdgeLabels"
             :duration="args.duration"
-            :dwell="args.dwell"
+            :expansion-delay="args.expansionDelay"
             @activate="args.onActivate"
           />
         </div>

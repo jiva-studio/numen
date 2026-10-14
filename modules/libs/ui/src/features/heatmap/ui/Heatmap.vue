@@ -42,7 +42,9 @@ const root = useTemplateRef<HTMLElement>('root')
 const room = useWidth(root)
 
 const laid = computed(() => measureGrid({ width: room.value, cell: props.cell, gap: props.gap }))
-const shown = computed(() => getDays(laid.value.columns, props.now, props.did, props.due))
+const shown = computed(() =>
+  getDays(laid.value.columns, props.now, { did: props.did, due: props.due }),
+)
 
 const height = computed(() => getGridHeight(laid.value))
 

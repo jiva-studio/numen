@@ -20,13 +20,15 @@ export interface Answer {
   readonly hasContent: () => boolean
 }
 
+export interface AnswerActions {
+  readonly put: (turn: Turn) => void
+  readonly drop: (id: string) => void
+  readonly nextId: () => string
+}
+
 /** One growing answer, under names taken from `nextId` as each turn begins. */
-export function createAnswer(
-  put: (turn: Turn) => void,
-  drop: (id: string) => void,
-  nextId: () => string,
-  paint: Paint,
-): Answer {
+export function createAnswer(actions: AnswerActions, paint: Paint): Answer {
+  const { put, drop, nextId } = actions
   let id = ''
   let text = ''
 

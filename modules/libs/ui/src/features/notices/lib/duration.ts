@@ -11,7 +11,7 @@ import { getReadable, type Notice } from './notice'
 export const CARD_DELAY = 10_000
 
 /** How long the shortest thing worth saying stands, in milliseconds. */
-export const MIN_DWELL = 4_000
+export const MIN_DURATION = 4_000
 
 /** How much longer it stands for each word it carries, in milliseconds. */
 export const PER_WORD = 400
@@ -25,10 +25,10 @@ export const TOO_MUCH = 20
  * Longer words are read for longer. Past twenty of them the time never runs
  * out: a list of names is something a person acts on, and it waits for them.
  */
-export const getDwell = (text: string, about = ''): number => {
+export const getNoticeDuration = (text: string, about = ''): number => {
   const words = `${text} ${about}`.split(/\s/).filter((word) => word !== '')
   if (words.length > TOO_MUCH) return Infinity
-  return MIN_DWELL + words.length * PER_WORD
+  return MIN_DURATION + words.length * PER_WORD
 }
 
 /**
@@ -44,21 +44,28 @@ export const getArrivalTimes = (
 
 /** Whether a notice has stood long enough to have been read. */
 const isRead = (notice: Notice, firstSeen: ReadonlyMap<string, number>, at: number): boolean =>
-  at - (firstSeen.get(notice.id) ?? at) >= getDwell(notice.text, notice.about)
+  at - (firstSeen.get(notice.id) ?? at) >= getNoticeDuration(notice.text, notice.about)
+
+export interface ShownNoticeOptions {
+  readonly firstSeen: ReadonlyMap<string, number>
+  readonly away?: ReadonlySet<string>
+  readonly wait?: number
+}
 
 /** The notices drawn: the ones that have lasted, less the ones put away. */
 export const getShownNotices = (
   notices: readonly Notice[],
-  firstSeen: ReadonlyMap<string, number>,
-  away: ReadonlySet<string>,
   at: number,
-  wait: number = CARD_DELAY,
-): readonly Notice[] =>
-  getReadable(notices).filter((notice) => {
+  options: ShownNoticeOptions,
+): readonly Notice[] => {
+  const away = options.away ?? new Set<string>()
+  const wait = options.wait ?? CARD_DELAY
+  return getReadable(notices).filter((notice) => {
     if (away.has(notice.id)) return false
-    if (notice.stay === 'read') return !isRead(notice, firstSeen, at)
-    return notice.isUserStarted || at - (firstSeen.get(notice.id) ?? at) >= wait
+    if (notice.stay === 'read') return !isRead(notice, options.firstSeen, at)
+    return notice.isUserStarted || at - (options.firstSeen.get(notice.id) ?? at) >= wait
   })
+}
 
 /** The notices that have been read, and whose caller may dismiss them. */
 export const getFinishedNotices = (

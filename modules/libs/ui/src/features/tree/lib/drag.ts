@@ -18,6 +18,11 @@ export interface DragLabel {
   readonly at: Position
 }
 
+export interface DragLabelOptions {
+  readonly at: Position
+  readonly getCountWords: (rows: number) => string
+}
+
 /**
  * What follows the pointer while rows are dragged, and nothing while none are.
  * One row is said by its name; several are said by how many.
@@ -25,8 +30,7 @@ export interface DragLabel {
 export function dragLabel(
   visibleRows: readonly ShownRow[],
   rows: readonly RowId[],
-  at: Position,
-  getCountWords: (rows: number) => string,
+  options: DragLabelOptions,
 ): DragLabel | null {
   const first = rows[0]
   if (first === undefined) return null
@@ -34,6 +38,6 @@ export function dragLabel(
   const label =
     rows.length === 1
       ? (visibleRows.find((row) => row.id === first)?.name ?? first)
-      : getCountWords(rows.length)
-  return { label, at }
+      : options.getCountWords(rows.length)
+  return { label, at: options.at }
 }

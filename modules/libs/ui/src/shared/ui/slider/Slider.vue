@@ -81,7 +81,10 @@ const onKeyDown = (event: KeyboardEvent) => {
     walking = true
     began = handed
   }
-  const next = stepForKey(event.key, inForce.value, bounds.value, event.shiftKey)
+  const next = stepForKey(event.key, inForce.value, {
+    bounds: bounds.value,
+    isBigStep: event.shiftKey,
+  })
   if (next !== null) setValue(next)
 }
 

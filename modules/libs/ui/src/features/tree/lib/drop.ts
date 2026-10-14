@@ -11,6 +11,11 @@ export type RowDropTarget = { readonly into: RowId | null } | { readonly before:
 /** The row a drop target names, and nothing for the top level. */
 const getTargetRow = (at: RowDropTarget): RowId | null => ('into' in at ? at.into : at.before)
 
+export interface DropMetrics {
+  readonly y: number
+  readonly height: number
+}
+
 /**
  * What letting go at a height comes to.
  *
@@ -23,10 +28,9 @@ const getTargetRow = (at: RowDropTarget): RowId | null => ('into' in at ? at.int
 export function getRowDropTarget(
   visibleRows: readonly ShownRow[],
   dragIds: readonly RowId[],
-  y: number,
-  height: number,
+  metrics: DropMetrics,
 ): RowDropTarget | null {
-  const found = findBand(visibleRows, y, height)
+  const found = findBand(visibleRows, metrics.y, metrics.height)
   if (!found) return null
 
   const on = getTargetRow(found)

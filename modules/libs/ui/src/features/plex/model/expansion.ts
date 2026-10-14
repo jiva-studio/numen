@@ -10,20 +10,25 @@ import { browserClock, type Clock } from './transition'
 import { getHandle, type PlacedNode } from '../lib/node'
 
 /** How long a hand stays on a box before it opens, in milliseconds. */
-export const DWELL = 500
+export const EXPANSION_DELAY = 500
 
 /**
  * How long the opening itself takes, in milliseconds. It carries the places
  * inside the node out from under the box as well as the width, and they leave
  * one behind the next.
  */
-export const OPENING = 280
+export const EXPANSION_DURATION = 280
 
 /** A box drawn wider than it was placed. */
 export interface WideBox {
   readonly width: number
   /** How far its middle stands from where the node is placed. */
   readonly offset: number
+}
+
+export interface WideBoxBounds {
+  readonly viewport: Size
+  readonly margin: number
 }
 
 /**
@@ -34,12 +39,8 @@ export interface WideBox {
  * Nothing where the box already holds the title, and nothing where the window
  * is no wider than the box.
  */
-export function getWideBox(
-  node: PlacedNode,
-  room: number,
-  viewport: Size,
-  margin: number,
-): WideBox | null {
+export function getWideBox(node: PlacedNode, room: number, bounds: WideBoxBounds): WideBox | null {
+  const { viewport, margin } = bounds
   const width = Math.min(room, viewport.width - 2 * margin)
   if (width <= node.width) return null
 
@@ -70,7 +71,7 @@ export function interpolateBox(node: PlacedNode, wide: WideBox | null, open: num
  * that moves is another thing: the box shuts and the wait for it begins again.
  * A wait of nothing at all never opens.
  */
-export function useDwell(
+export function useExpansion(
   on: () => string | null,
   delay: () => number,
   clock: Clock = browserClock,
@@ -95,7 +96,7 @@ export function useDwell(
     const from = open.value
     if (from === to) return
 
-    const span = OPENING * Math.abs(to - from)
+    const span = EXPANSION_DURATION * Math.abs(to - from)
     let started: number | null = null
 
     // Elapsed time comes from the callback, as it does for a move of the whole
@@ -129,20 +130,23 @@ export function useDwell(
   return open
 }
 
+export interface OpenBoxOptions {
+  readonly node: () => PlacedNode
+  readonly wide: () => WideBox | null
+  readonly on: () => string | null
+  readonly delay: () => number
+  readonly clock?: Clock | undefined
+}
+
 /**
  * One node's box as it is drawn, and where its handle sits in it. What the
  * handle is made of is all sizes, and so all tokens.
  *
  * `on` names what the attention is on, and nothing when it is on none.
  */
-export function useOpenBox(
-  node: () => PlacedNode,
-  wide: () => WideBox | null,
-  on: () => string | null,
-  delay: () => number,
-  clock: Clock = browserClock,
-) {
-  const open = useDwell(on, delay, clock)
+export function useOpenBox(options: OpenBoxOptions) {
+  const { node, wide, on, delay, clock = browserClock } = options
+  const open = useExpansion(on, delay, clock)
   const box = computed(() => interpolateBox(node(), wide(), open.value))
 
   const handle = computed(() => {

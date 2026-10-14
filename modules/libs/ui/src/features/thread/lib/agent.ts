@@ -35,6 +35,15 @@ export type AgentStep =
   | { readonly kind: 'thinking' }
   | { readonly kind: 'stopped'; readonly error: string }
 
+export interface AgentQuery {
+  readonly question: string
+  readonly focus: string
+  readonly conversation: string
+  readonly signal: AbortSignal
+  readonly agentId?: string | undefined
+  readonly modelId?: string | undefined
+}
+
 export interface AgentPort {
   /**
    * Ask about what is in focus, and read what happens as it happens.
@@ -43,14 +52,7 @@ export interface AgentPort {
    * carrying one name are answered as one conversation, and a name stands for
    * one conversation and is never given to a second.
    */
-  readonly ask: (
-    question: string,
-    focus: string,
-    conversation: string,
-    signal: AbortSignal,
-    agentId?: string,
-    modelId?: string,
-  ) => AsyncIterable<AgentStep>
+  readonly ask: (query: AgentQuery) => AsyncIterable<AgentStep>
 
   /**
    * Say a conversation is over. What the agent kept of it is let go of, and

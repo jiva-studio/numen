@@ -3,13 +3,13 @@
  */
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_BEHAVIOUR } from './behaviour'
-import { DWELL } from './dwell'
+import { EXPANSION_DELAY } from './expansion'
 import { byHandle } from './reaching'
 import { byDoubleClick } from './showing'
 
 describe('the behaviour a plex has by default', () => {
   it('waits the usual while, offers the handle and asks for a node by its second click', () => {
-    expect(DEFAULT_BEHAVIOUR.dwell).toBe(DWELL)
+    expect(DEFAULT_BEHAVIOUR.expansionDelay).toBe(EXPANSION_DELAY)
     expect(DEFAULT_BEHAVIOUR.reaching).toBe(byHandle)
     expect(DEFAULT_BEHAVIOUR.showing).toBe(byDoubleClick)
   })

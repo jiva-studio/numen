@@ -125,12 +125,8 @@ function reverse(curve: EdgeCurve): EdgeCurve {
 }
 
 /** A cubic leaving both boxes square-on, read from the caller's end. */
-function curveBetween(
-  from: PlacedNode,
-  to: PlacedNode,
-  isVertical: boolean,
-  routing: Routing,
-): EdgeCurve {
+function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeCurve {
+  const isVertical = isVerticalRun(from, to, routing)
   const fromFirst = isVertical ? from.y <= to.y : from.x <= to.x
   const [first, second] = fromFirst ? [from, to] : [to, from]
 
@@ -162,6 +158,11 @@ function cutLabel(edge: PlexEdge, curve: EdgeCurve, routing: Routing): string | 
   return cutToFit(edge.label, room, routing.labelWidth)
 }
 
+export interface RouteEdgeOptions {
+  readonly routing: Routing
+  readonly opacity?: number
+}
+
 /**
  * Route an edge as a cubic curve leaving both boxes square-on. Dropped if
  * either endpoint is not on the canvas.
@@ -169,14 +170,16 @@ function cutLabel(edge: PlexEdge, curve: EdgeCurve, routing: Routing): string | 
 export function routeEdge(
   edge: PlexEdge,
   byId: ReadonlyMap<string, PlacedNode>,
-  routing: Routing,
-  opacity = 1,
+  routingOrOptions: Routing | RouteEdgeOptions,
 ): PlacedEdge | null {
   const from = byId.get(edge.from)
   const to = byId.get(edge.to)
   if (!from || !to || from === to) return null
 
-  const curve = curveBetween(from, to, isVerticalRun(from, to, routing), routing)
+  const routing = 'curvature' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
+  const opacity = 'curvature' in routingOrOptions ? 1 : (routingOrOptions.opacity ?? 1)
+
+  const curve = curveBetween(from, to, routing)
 
   return {
     ...edge,
@@ -189,13 +192,21 @@ export function routeEdge(
   }
 }
 
+export interface RouteEdgesOptions {
+  readonly routing: Routing
+  readonly opacity?: (edge: PlexEdge) => number
+}
+
 export function routeEdges(
   edges: readonly PlexEdge[],
   byId: ReadonlyMap<string, PlacedNode>,
-  routing: Routing,
-  opacity: (edge: PlexEdge) => number = () => 1,
+  routingOrOptions: Routing | RouteEdgesOptions,
 ): PlacedEdge[] {
+  const routing = 'curvature' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
+  const getOpacity =
+    'curvature' in routingOrOptions ? () => 1 : (routingOrOptions.opacity ?? (() => 1))
+
   return edges
-    .map((edge) => routeEdge(edge, byId, routing, opacity(edge)))
+    .map((edge) => routeEdge(edge, byId, { routing, opacity: getOpacity(edge) }))
     .filter((edge): edge is PlacedEdge => edge !== null)
 }

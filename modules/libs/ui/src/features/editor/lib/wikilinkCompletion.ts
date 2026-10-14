@@ -38,6 +38,104 @@ const isCode = (node: SyntaxNode): boolean => {
   return false
 }
 
+interface WikilinkReplace {
+  readonly bracketStart: number
+  readonly replaceTo: number
+}
+
+async function completeHeadings(
+  rawQuery: string,
+  replace: WikilinkReplace,
+  options: WikilinkCompletionOptions,
+): Promise<CompletionResult | null> {
+  const hashIndex = rawQuery.indexOf('#')
+  const notePart = rawQuery.slice(0, hashIndex).trim()
+  const headingQuery = rawQuery
+    .slice(hashIndex + 1)
+    .trim()
+    .toLowerCase()
+  const headingsList = options.headings ? await options.headings(notePart) : []
+
+  const matchedHeadings = headingsList.filter((h) => h.toLowerCase().includes(headingQuery))
+
+  const completions: Completion[] = matchedHeadings.map((heading) => {
+    const target = notePart ? `${notePart}#${heading}` : `#${heading}`
+    const insertText = `[[${target}]]`
+    return {
+      label: target,
+      detail: 'heading',
+      type: 'heading',
+      apply: (view: EditorView) => {
+        view.dispatch({
+          changes: { from: replace.bracketStart, to: replace.replaceTo, insert: insertText },
+          selection: { anchor: replace.bracketStart + insertText.length },
+        })
+      },
+    }
+  })
+
+  return {
+    from: replace.bracketStart + 2,
+    options: completions,
+    filter: false,
+  }
+}
+
+async function completeNotes(
+  rawQuery: string,
+  replace: WikilinkReplace,
+  options: WikilinkCompletionOptions,
+): Promise<CompletionResult | null> {
+  const trimmedQuery = rawQuery.trim()
+  const results = await options.search(trimmedQuery)
+
+  const completions: Completion[] = results.map((item) => {
+    const target = item.heading ? `${item.title}#${item.heading}` : item.title
+    const insertText = `[[${target}]]`
+    return {
+      label: item.heading ? `${item.title}#${item.heading}` : item.title,
+      detail: item.detail ?? (item.heading ? 'heading' : 'note'),
+      type: item.type ?? (item.heading ? 'heading' : 'note'),
+      boost: 1,
+      apply: (view: EditorView) => {
+        view.dispatch({
+          changes: { from: replace.bracketStart, to: replace.replaceTo, insert: insertText },
+          selection: { anchor: replace.bracketStart + insertText.length },
+        })
+      },
+    }
+  })
+
+  const create = options.createNote
+  if (create && trimmedQuery) {
+    const exists = results.some(
+      (r) => r.title.toLowerCase() === trimmedQuery.toLowerCase() && !r.heading,
+    )
+    if (!exists) {
+      const insertText = `[[${trimmedQuery}]]`
+      completions.push({
+        label: `Create "${trimmedQuery}"`,
+        detail: 'new note',
+        type: 'new',
+        boost: -1,
+        apply: (view: EditorView) => {
+          view.dispatch({
+            changes: { from: replace.bracketStart, to: replace.replaceTo, insert: insertText },
+            selection: { anchor: replace.bracketStart + insertText.length },
+          })
+          void create(trimmedQuery)
+        },
+      })
+    }
+  }
+
+  return {
+    from: replace.bracketStart + 2,
+    options: completions,
+    filter: false,
+  }
+}
+
 export function createWikilinkSource(options: WikilinkCompletionOptions) {
   return async (context: CompletionContext): Promise<CompletionResult | null> => {
     const innermost = syntaxTree(context.state).resolveInner(context.pos, 1)
@@ -53,90 +151,16 @@ export function createWikilinkSource(options: WikilinkCompletionOptions) {
     const bracketStart = line.from + match.index
     const lineAfter = line.text.slice(context.pos - line.from)
     const hasClosingBrackets = lineAfter.startsWith(']]')
-    const replaceTo = hasClosingBrackets ? context.pos + 2 : context.pos
-
-    const hashIndex = rawQuery.indexOf('#')
-    if (hashIndex >= 0) {
-      const notePart = rawQuery.slice(0, hashIndex).trim()
-      const headingQuery = rawQuery
-        .slice(hashIndex + 1)
-        .trim()
-        .toLowerCase()
-      const headingsList = options.headings ? await options.headings(notePart) : []
-
-      const matchedHeadings = headingsList.filter((h) => h.toLowerCase().includes(headingQuery))
-
-      const completions: Completion[] = matchedHeadings.map((heading) => {
-        const target = notePart ? `${notePart}#${heading}` : `#${heading}`
-        const insertText = `[[${target}]]`
-        return {
-          label: target,
-          detail: 'heading',
-          type: 'heading',
-          apply: (view: EditorView) => {
-            view.dispatch({
-              changes: { from: bracketStart, to: replaceTo, insert: insertText },
-              selection: { anchor: bracketStart + insertText.length },
-            })
-          },
-        }
-      })
-
-      return {
-        from: bracketStart + 2,
-        options: completions,
-        filter: false,
-      }
+    const replace: WikilinkReplace = {
+      bracketStart,
+      replaceTo: hasClosingBrackets ? context.pos + 2 : context.pos,
     }
 
-    const trimmedQuery = rawQuery.trim()
-    const results = await options.search(trimmedQuery)
-
-    const completions: Completion[] = results.map((item) => {
-      const target = item.heading ? `${item.title}#${item.heading}` : item.title
-      const insertText = `[[${target}]]`
-      return {
-        label: item.heading ? `${item.title}#${item.heading}` : item.title,
-        detail: item.detail ?? (item.heading ? 'heading' : 'note'),
-        type: item.type ?? (item.heading ? 'heading' : 'note'),
-        boost: 1,
-        apply: (view: EditorView) => {
-          view.dispatch({
-            changes: { from: bracketStart, to: replaceTo, insert: insertText },
-            selection: { anchor: bracketStart + insertText.length },
-          })
-        },
-      }
-    })
-
-    const create = options.createNote
-    if (create && trimmedQuery) {
-      const exists = results.some(
-        (r) => r.title.toLowerCase() === trimmedQuery.toLowerCase() && !r.heading,
-      )
-      if (!exists) {
-        const insertText = `[[${trimmedQuery}]]`
-        completions.push({
-          label: `Create "${trimmedQuery}"`,
-          detail: 'new note',
-          type: 'new',
-          boost: -1,
-          apply: (view: EditorView) => {
-            view.dispatch({
-              changes: { from: bracketStart, to: replaceTo, insert: insertText },
-              selection: { anchor: bracketStart + insertText.length },
-            })
-            void create(trimmedQuery)
-          },
-        })
-      }
+    if (rawQuery.includes('#')) {
+      return completeHeadings(rawQuery, replace, options)
     }
 
-    return {
-      from: bracketStart + 2,
-      options: completions,
-      filter: false,
-    }
+    return completeNotes(rawQuery, replace, options)
   }
 }
 

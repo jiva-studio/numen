@@ -4,7 +4,11 @@
  */
 import { describe, expect, it } from 'vitest'
 import { easeOut } from './arrange'
-import { getNodeHeadings, type HeadingsDeps, type PlexHeading } from './inside'
+import {
+  getNodeHeadings as baseGetNodeHeadings,
+  type HeadingsDeps,
+  type PlexHeading,
+} from './inside'
 import { getFurthest, getOpenHeadings, scrollBy } from './open'
 import type { PlacedNode } from './node'
 
@@ -31,6 +35,13 @@ const DEPS: HeadingsDeps = {
   viewport: { width: 1000, height: 600 },
   margin: 20,
 }
+
+const getNodeHeadings = (
+  node: PlacedNode,
+  items: readonly PlexHeading[],
+  options = SIZES,
+  deps = DEPS,
+) => baseGetNodeHeadings(node, items, { options, deps })
 
 /** Headings all at one level, named by their number. */
 const headings = (count: number, level = 1): PlexHeading[] =>

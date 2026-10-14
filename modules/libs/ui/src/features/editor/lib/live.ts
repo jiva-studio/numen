@@ -85,7 +85,7 @@ const isUnchanged = (was: Blocks, nodes: readonly BlockNode[], tr: Transaction) 
   if (was.nodes.length !== nodes.length) return false
 
   const ranges: number[] = []
-  tr.changes.iterChangedRanges((fromA, toA, fromB, toB) => void ranges.push(fromA, toA, fromB, toB))
+  tr.changes.iterChangedRanges((...bounds) => void ranges.push(...bounds))
 
   return nodes.every((node, index) => {
     const before = was.nodes[index] as BlockNode

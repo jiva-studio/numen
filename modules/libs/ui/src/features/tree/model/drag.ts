@@ -89,7 +89,10 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
     const currentDrag = dragging.value
     const where = position.value
     if (!currentDrag?.hasMoved || !where) return null
-    return dragLabel(options.getShownRows(), currentDrag.item, where, options.getCountWords())
+    return dragLabel(options.getShownRows(), currentDrag.item, {
+      at: where,
+      getCountWords: options.getCountWords(),
+    })
   })
 
   /** Where the pointer is, read off the drawing: the rows are one height each. */
@@ -104,7 +107,10 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
     if (!inside) return null
 
     const shown = options.getShownRows()
-    const found = getRowDropTarget(shown, rows, where.y - drawn.top, drawn.height)
+    const found = getRowDropTarget(shown, rows, {
+      y: where.y - drawn.top,
+      height: drawn.height,
+    })
     if (!found) return null
 
     return isRefused(options.getRows(), rows, findHolder(shown, found)) ? null : found

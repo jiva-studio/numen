@@ -106,12 +106,17 @@ const NOTHING: Mark = {
   decorations: Decoration.none,
 }
 
+interface DecorationSpan {
+  readonly from: number
+  readonly to: number
+}
+
 const getDecorations = (
   change: EditorChange,
-  from: number,
-  to: number,
+  span: DecorationSpan,
   reveal: Reveal | null,
 ): DecorationSet => {
+  const { from, to } = span
   if (!reveal) return to > from ? Decoration.set([waiting.range(from, to)]) : Decoration.none
 
   const found: Range<Decoration>[] = []
@@ -141,7 +146,7 @@ const start = (state: EditorState): Mark => {
   const to = reveal
     ? from + change.text.length
     : Math.max(from, Math.min(change.to, state.doc.length))
-  return { change, from, to, reveal, decorations: getDecorations(change, from, to, reveal) }
+  return { change, from, to, reveal, decorations: getDecorations(change, { from, to }, reveal) }
 }
 
 /** How far a transaction says the showing has got, and nothing where it says nothing. */
@@ -152,13 +157,12 @@ const getStepped = (transaction: Transaction): Reveal | null => {
 }
 
 /** How much of the text is shown once the document has moved under it. */
-const getReveal = (
-  state: EditorState,
-  was: Mark,
-  change: EditorChange,
-  from: number,
-): Reveal | null =>
-  hasArrived(state, change, from) ? (was.reveal ?? createReveal(change.text, 0)) : null
+const getReveal = (state: EditorState, was: Mark, from: number): Reveal | null => {
+  if (!was.change) return null
+  return hasArrived(state, was.change, from)
+    ? (was.reveal ?? createReveal(was.change.text, 0))
+    : null
+}
 
 /**
  * What is drawn over the change.
@@ -179,12 +183,12 @@ export const changeMarks = StateField.define<Mark>({
     if (!stepping && !transaction.docChanged) return was
 
     const from = transaction.changes.mapPos(was.from, -1)
-    const reveal = stepping ?? getReveal(transaction.state, was, change, from)
+    const reveal = stepping ?? getReveal(transaction.state, was, from)
     const to = reveal
       ? from + change.text.length
       : Math.max(from, transaction.changes.mapPos(was.to, 1))
 
-    return { change, from, to, reveal, decorations: getDecorations(change, from, to, reveal) }
+    return { change, from, to, reveal, decorations: getDecorations(change, { from, to }, reveal) }
   },
   provide: (field) => EditorView.decorations.from(field, (value) => value.decorations),
 })

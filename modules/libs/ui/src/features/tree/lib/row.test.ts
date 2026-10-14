@@ -231,7 +231,7 @@ describe('where a drag lands', () => {
   const shown = getShownRows('work')
   const HEIGHT = 24
   const getDropTargetAt = (y: number, ...dragging: readonly RowId[]) =>
-    getRowDropTarget(shown, dragging.length ? dragging : ['friday'], y, HEIGHT)
+    getRowDropTarget(shown, dragging.length ? dragging : ['friday'], { y, height: HEIGHT })
 
   it('goes into a row that holds, over the middle of it', () => {
     expect(getDropTargetAt(12)).toStrictEqual({ into: 'work' })
@@ -266,7 +266,7 @@ describe('where a drag lands', () => {
   })
 
   it('lands nowhere while the rows have no height', () => {
-    expect(getRowDropTarget(shown, ['friday'], 12, 0)).toBeNull()
+    expect(getRowDropTarget(shown, ['friday'], { y: 12, height: 0 })).toBeNull()
   })
 
   it('lands nowhere where it would name a row being dragged', () => {
@@ -375,43 +375,47 @@ describe('what a press makes the selection', () => {
   const shown = getShownRows('work')
   const JOINING: Press = { isJoining: true, isExtending: false }
   const REACHING: Press = { isJoining: false, isExtending: true }
+  const select = (rows: readonly RowId[], anchor: RowId | null, row: RowId, press = PLAIN) =>
+    resolveSelection(shown, { rows, anchor }, { row, press })
 
   it('is the row alone, pressed plainly', () => {
-    expect(resolveSelection(shown, ['plans', 'notes'], 'plans', 'loose', PLAIN)).toStrictEqual({
+    expect(select(['plans', 'notes'], 'plans', 'loose')).toStrictEqual({
       rows: ['loose'],
       anchor: 'loose',
     })
   })
 
   it('takes a row in that stands outside it, joining', () => {
-    expect(resolveSelection(shown, ['work'], 'work', 'notes', JOINING)).toStrictEqual({
+    expect(select(['work'], 'work', 'notes', JOINING)).toStrictEqual({
       rows: ['work', 'notes'],
       anchor: 'notes',
     })
   })
 
   it('takes a row out that stands in it, joining', () => {
-    expect(resolveSelection(shown, ['work', 'notes'], 'work', 'notes', JOINING)).toStrictEqual({
+    expect(select(['work', 'notes'], 'work', 'notes', JOINING)).toStrictEqual({
       rows: ['work'],
       anchor: 'notes',
     })
   })
 
   it('draws what it joined in the order the rows are drawn', () => {
-    expect(
-      resolveSelection(shown, ['loose', 'notes'], 'loose', 'work', JOINING).rows,
-    ).toStrictEqual(['work', 'notes', 'loose'])
+    expect(select(['loose', 'notes'], 'loose', 'work', JOINING).rows).toStrictEqual([
+      'work',
+      'notes',
+      'loose',
+    ])
   })
 
   it('reaches from the anchor to the row, in the order they are drawn', () => {
-    expect(resolveSelection(shown, ['plans'], 'plans', 'empty', REACHING)).toStrictEqual({
+    expect(select(['plans'], 'plans', 'empty', REACHING)).toStrictEqual({
       rows: ['plans', 'notes', 'empty'],
       anchor: 'plans',
     })
   })
 
   it('reaches back to the anchor from a row above it', () => {
-    expect(resolveSelection(shown, ['notes'], 'notes', 'work', REACHING).rows).toStrictEqual([
+    expect(select(['notes'], 'notes', 'work', REACHING).rows).toStrictEqual([
       'work',
       'plans',
       'notes',
@@ -419,15 +423,15 @@ describe('what a press makes the selection', () => {
   })
 
   it('leaves the anchor where it stands, reaching again from it', () => {
-    const once = resolveSelection(shown, ['work'], 'work', 'notes', REACHING)
-    const twice = resolveSelection(shown, once.rows, once.anchor, 'loose', REACHING)
+    const once = select(['work'], 'work', 'notes', REACHING)
+    const twice = select(once.rows, once.anchor, 'loose', REACHING)
 
     expect(twice.anchor).toBe('work')
     expect(twice.rows).toStrictEqual(['work', 'plans', 'notes', 'empty', 'loose'])
   })
 
   it('reaches from the row itself where there is no anchor yet', () => {
-    expect(resolveSelection(shown, [], null, 'notes', REACHING)).toStrictEqual({
+    expect(select([], null, 'notes', REACHING)).toStrictEqual({
       rows: ['notes'],
       anchor: 'notes',
     })
@@ -435,7 +439,11 @@ describe('what a press makes the selection', () => {
 
   it('drops a row that is not drawn', () => {
     expect(
-      resolveSelection(getShownRows(), ['plans'], 'plans', 'loose', JOINING).rows,
+      resolveSelection(
+        getShownRows(),
+        { rows: ['plans'], anchor: 'plans' },
+        { row: 'loose', press: JOINING },
+      ).rows,
     ).toStrictEqual(['loose'])
   })
 })
@@ -484,20 +492,22 @@ describe('what follows the pointer', () => {
   const shown = getShownRows('work')
   const at = { x: 40, y: 60 }
   const formatCount = (rows: number) => `${rows} rows`
+  const label = (rows: readonly RowId[]) =>
+    dragLabel(shown, rows, { at, getCountWords: formatCount })
 
   it('is the name of the one row dragged', () => {
-    expect(dragLabel(shown, ['notes'], at, formatCount)).toStrictEqual({ label: 'Notes', at })
+    expect(label(['notes'])).toStrictEqual({ label: 'Notes', at })
   })
 
   it('is how many are dragged, where there are several', () => {
-    expect(dragLabel(shown, ['work', 'notes'], at, formatCount)?.label).toBe('2 rows')
+    expect(label(['work', 'notes'])?.label).toBe('2 rows')
   })
 
   it('is the identity of a row dragged that is not drawn', () => {
-    expect(dragLabel(shown, ['friday'], at, formatCount)?.label).toBe('friday')
+    expect(label(['friday'])?.label).toBe('friday')
   })
 
   it('is nothing at all while nothing is dragged', () => {
-    expect(dragLabel(shown, [], at, formatCount)).toBeNull()
+    expect(label([])).toBeNull()
   })
 })

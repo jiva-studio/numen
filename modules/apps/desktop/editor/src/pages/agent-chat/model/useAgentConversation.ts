@@ -192,12 +192,10 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
 
   const send = (text: string) => {
     userQuestion.value = ''
-    void conversation.ask(
-      text,
-      '',
-      selection.selectedAgentId.value,
-      selection.selectedModelId.value,
-    )
+    void conversation.ask(text, '', {
+      agentId: selection.selectedAgentId.value,
+      modelId: selection.selectedModelId.value,
+    })
   }
 
   const openTurnSource = (turn: Turn) => {

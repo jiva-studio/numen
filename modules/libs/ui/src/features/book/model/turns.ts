@@ -20,25 +20,46 @@ import type { PageTurn } from '@/shared/lib/turn'
 import { turnTo } from '../lib/turn'
 import type { SettledBookProps } from '../lib/props'
 
+function translatePaper(text: HTMLElement, to: string, how: 'smooth' | 'auto'): void {
+  if (how === 'smooth') {
+    text.style.translate = to
+    return
+  }
+  text.style.transition = 'none'
+  text.style.translate = to
+  void text.offsetWidth
+  text.style.transition = ''
+}
+
+export interface BookTurnsOptions {
+  readonly paper: Readonly<ShallowRef<HTMLElement | null>>
+  readonly props: SettledBookProps
+  readonly flow: ComputedRef<Flow>
+  readonly spreadCount: ComputedRef<number>
+  readonly marks: Readonly<ShallowRef<readonly Mark[]>>
+  readonly onMove: (at: number) => void
+}
+
 /** `onMove` is what the reader says when the offset in front changes. */
-export function useBookTurns(
-  paper: Readonly<ShallowRef<HTMLElement | null>>,
-  props: SettledBookProps,
-  flow: ComputedRef<Flow>,
-  spreadCount: ComputedRef<number>,
-  marks: Readonly<ShallowRef<readonly Mark[]>>,
-  onMove: (at: number) => void,
-) {
+export function useBookTurns(options: BookTurnsOptions) {
   /** Which spread is in front, counted from the first. */
   const standing = ref(0)
 
   /** The spread in front, as a page of the book, and how many there are. */
   const front = computed(() =>
-    createPages(props.book, props.span, flow.value, standing.value, marks.value),
+    createPages({
+      book: options.props.book,
+      document: options.props.span,
+      flow: options.flow.value,
+      spread: standing.value,
+      marks: options.marks.value,
+    }),
   )
 
   /** How much of the chapter in front is still to come, which is measured exactly. */
-  const leftInChapter = computed(() => leftInDocument(flow.value, standing.value, marks.value))
+  const leftInChapter = computed(() =>
+    leftInDocument(options.flow.value, standing.value, options.marks.value),
+  )
 
   /**
    * The spread put against the near edge of the reading area. The columns are
@@ -46,28 +67,16 @@ export function useBookTurns(
    * every other one does.
    */
   const stand = (spread: number, how: 'smooth' | 'auto') => {
-    const text = paper.value
-    standing.value = Math.min(Math.max(spread, 0), Math.max(spreadCount.value - 1, 0))
-    if (!text) return
-
-    const to = `${-getSpreadStart(flow.value, standing.value)}px 0`
-    if (how === 'smooth') {
-      text.style.translate = to
-      return
-    }
-    // A layout is not a turn: the columns are put where they belong at once. The
-    // style is settled in between, because a browser handed the transition and
-    // the distance in one recalculation animates neither.
-    text.style.transition = 'none'
-    text.style.translate = to
-    void text.offsetWidth
-    text.style.transition = ''
+    standing.value = Math.min(Math.max(spread, 0), Math.max(options.spreadCount.value - 1, 0))
+    if (!options.paper.value) return
+    const to = `${-getSpreadStart(options.flow.value, standing.value)}px 0`
+    translatePaper(options.paper.value, to, how)
   }
 
   /** What stands in front now, said once, and nothing while nothing does. */
   const announce = () => {
-    const now = inFront(marks.value, flow.value, standing.value)
-    if (now !== undefined && now !== props.at) onMove(now)
+    const now = inFront(options.marks.value, options.flow.value, standing.value)
+    if (now !== undefined && now !== options.props.at) options.onMove(now)
   }
 
   const goTo = (spread: number) => {
@@ -76,16 +85,22 @@ export function useBookTurns(
   }
 
   /** What the person is reading now, to be kept in front while the text is set again. */
-  const getKeptOffset = () => inFront(marks.value, flow.value, standing.value) ?? props.at
+  const getKeptOffset = () =>
+    inFront(options.marks.value, options.flow.value, standing.value) ?? options.props.at
 
   /** The spread one offset of the book's text falls on. */
-  const getSpreadOf = (at: number) => findSpreadAt(marks.value, flow.value, at)
+  const getSpreadOf = (at: number) => findSpreadAt(options.marks.value, options.flow.value, at)
 
   /** What a turn of the page asks for, and where it lands. */
   const turn = (way: PageTurn) => {
-    const to = turnTo(way, standing.value, spreadCount.value, props.span, props.book)
+    const to = turnTo(way, {
+      spread: standing.value,
+      count: options.spreadCount.value,
+      span: options.props.span,
+      book: options.props.book,
+    })
     if (to.spread !== undefined) return goTo(to.spread)
-    if (to.offset !== undefined) onMove(to.offset)
+    if (to.offset !== undefined) options.onMove(to.offset)
   }
 
   return { standing, front, leftInChapter, stand, goTo, getKeptOffset, getSpreadOf, turn }

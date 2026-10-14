@@ -115,7 +115,7 @@ export const getInitialIndex = (
 ): number => {
   if (!MENU_TRIGGERS[trigger].hasInitialFocus) return -1
   const at = items.findIndex((item) => item.id === current && !item.disabled)
-  return stepTo(items, Math.max(at, 0) - 1, 1, canLandOn)
+  return stepTo(items, { from: Math.max(at, 0) - 1, by: 1 }, canLandOn)
 }
 
 /** Whether the keyboard may land on the item. */

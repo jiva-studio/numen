@@ -40,7 +40,7 @@ export interface PlexProps {
    * How long the attention rests on a box before it widens to the whole of
    * its title. Milliseconds; nothing at all never widens.
    */
-  dwell?: number
+  expansionDelay?: number
   /** How a node offers to be reached out of. The handle by default. */
   reaching?: ReachStrategy
   /** How a node is asked for on its own. The second click by default. */

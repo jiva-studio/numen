@@ -34,12 +34,12 @@ describe('the agent a card is asked about', () => {
   it('sends the mark and the face of the card beside the question, and reads the answer', async () => {
     const signal = new AbortController().signal
     const steps = []
-    for await (const step of createCardAgentPort(card).ask(
-      'why is it called that',
-      'decks/Words.md',
-      'card-0',
+    for await (const step of createCardAgentPort(card).ask({
+      question: 'why is it called that',
+      focus: 'decks/Words.md',
+      conversation: 'card-0',
       signal,
-    )) {
+    })) {
       steps.push(step)
     }
 

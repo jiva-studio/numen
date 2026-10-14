@@ -381,16 +381,16 @@ describe('a frame is decided by its inputs and nothing else', () => {
 
 describe('the shape of the movement is a setting', () => {
   it('lets a caller say when an arrival starts to show', () => {
-    const early = interpolatePlex(from, to, 0.2, { motion: { arriveAfter: 0 } })
-    const late = interpolatePlex(from, to, 0.2, { motion: { arriveAfter: 0.9 } })
+    const early = interpolatePlex(from, to, { progress: 0.2, motion: { arriveAfter: 0 } })
+    const late = interpolatePlex(from, to, { progress: 0.2, motion: { arriveAfter: 0.9 } })
 
     expect(node(early, 'a1').opacity).toBeGreaterThan(0)
     expect(node(late, 'a1').opacity).toBe(0)
   })
 
   it('lets a caller say when a departure has finished going', () => {
-    const brief = interpolatePlex(from, to, 0.3, { motion: { leaveBefore: 0.2 } })
-    const lingering = interpolatePlex(from, to, 0.3, { motion: { leaveBefore: 0.9 } })
+    const brief = interpolatePlex(from, to, { progress: 0.3, motion: { leaveBefore: 0.2 } })
+    const lingering = interpolatePlex(from, to, { progress: 0.3, motion: { leaveBefore: 0.9 } })
 
     expect(node(brief, 'b').opacity).toBe(0)
     expect(node(lingering, 'b').opacity).toBeGreaterThan(0)

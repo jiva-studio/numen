@@ -90,21 +90,39 @@ export function useNodePress(
     },
 
     onKeyDown: (event: KeyboardEvent): void => {
-      if (isMenuKey(event)) {
-        if (isGhost.value) return
-        event.preventDefault()
-        const middle = middleOf()
-        if (middle) listeners.menu(middle, 'keyboard')
-        return
-      }
-      if (isShowKey(event)) {
-        event.preventDefault()
-        showNode(event.altKey)
-        return
-      }
-      if (!isPress(event)) return
-      event.preventDefault()
-      activateNode()
+      handleNodeKey(event, {
+        isGhost: isGhost.value,
+        middleOf,
+        onMenu: listeners.menu,
+        onShow: showNode,
+        onActivate: activateNode,
+      })
     },
   }
+}
+
+interface KeyPressContext {
+  readonly isGhost: boolean
+  readonly middleOf: () => Position | null
+  readonly onMenu: (at: Position, trigger: MenuTrigger) => void
+  readonly onShow: (hasModifier: boolean) => void
+  readonly onActivate: () => void
+}
+
+function handleNodeKey(event: KeyboardEvent, context: KeyPressContext): void {
+  if (isMenuKey(event)) {
+    if (context.isGhost) return
+    event.preventDefault()
+    const middle = context.middleOf()
+    if (middle) context.onMenu(middle, 'keyboard')
+    return
+  }
+  if (isShowKey(event)) {
+    event.preventDefault()
+    context.onShow(event.altKey)
+    return
+  }
+  if (!isPress(event)) return
+  event.preventDefault()
+  context.onActivate()
 }

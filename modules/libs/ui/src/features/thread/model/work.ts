@@ -11,14 +11,16 @@ import type { SourceLocation } from '../lib/agent'
  */
 const getSpokenTool = (tool: string) => tool.replaceAll('_', ' ')
 
+export interface WorkCall {
+  readonly tool: string
+  readonly subject: string
+  readonly location?: SourceLocation | null | undefined
+  readonly written: number
+}
+
 export interface WorkLine {
   /** The agent reached for a tool, and how much of it has been written. */
-  readonly reach: (
-    tool: string,
-    subject: string,
-    location: SourceLocation | null | undefined,
-    written: number,
-  ) => void
+  readonly reach: (call: WorkCall) => void
   /** What it reached for has answered, so the line stops claiming to run. */
   readonly settle: () => void
   /** The line comes down. */
@@ -29,18 +31,19 @@ export interface WorkLine {
   readonly clear: () => void
 }
 
+export interface WorkLineOptions {
+  readonly put: (turn: Turn) => void
+  readonly drop: (id: string) => void
+  readonly locations: Map<string, SourceLocation>
+  readonly waitWords: string
+}
+
 /**
  * The two lines of one exchange. `workId` and `wait` name them, and `locations`
  * holds the source a line that says it opens one leads to.
  */
-export function createWorkLine(
-  put: (turn: Turn) => void,
-  drop: (id: string) => void,
-  locations: Map<string, SourceLocation>,
-  waitWords: string,
-  workId: string,
-  wait: string,
-): WorkLine {
+export function createWorkLine(options: WorkLineOptions, workId: string, wait: string): WorkLine {
+  const { put, drop, locations, waitWords } = options
   // What the agent has in hand, as far as anything has said. A call carrying
   // the text of a source is reported again every time more of it is written, so
   // the count is what moves while it is being written.
@@ -77,14 +80,17 @@ export function createWorkLine(
   }
 
   return {
-    reach: (tool, named, location, written) => {
-      says = getSpokenTool(tool)
-      subject = named
+    reach: (call) => {
+      says = getSpokenTool(call.tool)
+      subject = call.subject
       // A call naming a run of a source's text names somewhere the line can be
       // pressed to open.
-      if (location && location.span.to > location.span.from) locations.set(workId, location)
-      else locations.delete(workId)
-      show('arriving', written)
+      if (call.location && call.location.span.to > call.location.span.from) {
+        locations.set(workId, call.location)
+      } else {
+        locations.delete(workId)
+      }
+      show('arriving', call.written)
     },
     settle: () => {
       if (up) show('settled')

@@ -40,24 +40,29 @@ function tweenNode(start: PlacedNode, target: PlacedNode, t: number): PlacedNode
   }
 }
 
+interface NodeTweenOptions {
+  readonly t: number
+  readonly opacity: number
+}
+
 /** A node that was not there before, unfolding from the origin. */
-function openNode(target: PlacedNode, origin: Position, t: number, opacity: number): PlacedNode {
+function openNode(target: PlacedNode, origin: Position, options: NodeTweenOptions): PlacedNode {
   return {
     ...target,
-    x: lerp(origin.x, target.x, t),
-    y: lerp(origin.y, target.y, t),
-    opacity,
+    x: lerp(origin.x, target.x, options.t),
+    y: lerp(origin.y, target.y, options.t),
+    opacity: options.opacity,
   }
 }
 
+interface NodeTiming {
+  readonly t: number
+  readonly entry: number
+  readonly exit: number
+}
+
 /** Every node of both arrangements, as it stands partway through the movement. */
-function tweenNodes(
-  from: PlexFrame,
-  to: PlexFrame,
-  t: number,
-  entryOpacity: number,
-  exitOpacity: number,
-): PlacedNode[] {
+function tweenNodes(from: PlexFrame, to: PlexFrame, timing: NodeTiming): PlacedNode[] {
   const was = new Map(from.nodes.map((node) => [node.id, node]))
   const will = new Set(to.nodes.map((node) => node.id))
   const origin = getOrigin(to, was)
@@ -66,28 +71,33 @@ function tweenNodes(
 
   for (const target of to.nodes) {
     const start = was.get(target.id)
-    nodes.push(start ? tweenNode(start, target, t) : openNode(target, origin, t, entryOpacity))
+    nodes.push(
+      start
+        ? tweenNode(start, target, timing.t)
+        : openNode(target, origin, { t: timing.t, opacity: timing.entry }),
+    )
   }
 
   // Departures stay put and fade; moving them too would be a third thing
   // travelling in a picture meant to be followed by eye.
   for (const gone of from.nodes) {
     if (will.has(gone.id)) continue
-    nodes.push({ ...gone, opacity: exitOpacity })
+    nodes.push({ ...gone, opacity: timing.exit })
   }
 
   return nodes
 }
 
+interface EdgeTweenContext {
+  readonly byId: ReadonlyMap<string, PlacedNode>
+  readonly routing: Routing
+  readonly entryOpacity: number
+  readonly exitOpacity: number
+}
+
 /** Every edge of both arrangements, routed against the nodes as they now stand. */
-function tweenEdges(
-  from: PlexFrame,
-  to: PlexFrame,
-  byId: ReadonlyMap<string, PlacedNode>,
-  routing: Routing,
-  entryOpacity: number,
-  exitOpacity: number,
-): PlacedEdge[] {
+function tweenEdges(from: PlexFrame, to: PlexFrame, context: EdgeTweenContext): PlacedEdge[] {
+  const { byId, routing, entryOpacity, exitOpacity } = context
   const wasEdge = new Set(from.edges.map(edgeKey))
   const willEdge = new Set(to.edges.map(edgeKey))
 
@@ -110,18 +120,24 @@ function tweenEdges(
   for (const edge of from.edges) settled.set(edgeKey(edge), createTitle(edge))
   for (const edge of to.edges) settled.set(edgeKey(edge), createTitle(edge))
 
-  return routeEdges(both, byId, routing, edgeOpacity).map((edge) => ({
+  return routeEdges(both, byId, { routing, opacity: edgeOpacity }).map((edge) => ({
     ...edge,
     ...settled.get(edgeKey(edge)),
   }))
 }
 
+export type InterpolationOptions = PlexOptionsInput & {
+  readonly progress?: number
+}
+
 export function interpolatePlex(
   from: PlexFrame,
   to: PlexFrame,
-  progress: number,
-  options?: PlexOptionsInput,
+  input: number | InterpolationOptions,
 ): PlexFrame {
+  const progress = typeof input === 'number' ? input : (input.progress ?? 0)
+  const options = typeof input === 'number' ? undefined : input
+
   const t = clamp01(progress)
   if (t <= 0) return from
   if (t >= 1) return to
@@ -131,12 +147,17 @@ export function interpolatePlex(
   const arriving = clamp01((t - arriveAfter) / (1 - arriveAfter))
   const leaving = 1 - clamp01(t / leaveBefore)
 
-  const nodes = tweenNodes(from, to, t, arriving, leaving)
+  const nodes = tweenNodes(from, to, { t, entry: arriving, exit: leaving })
   const byId = new Map(nodes.map((node) => [node.id, node]))
 
   return {
     nodes,
-    edges: tweenEdges(from, to, byId, createRouting(resolved), arriving, leaving),
+    edges: tweenEdges(from, to, {
+      byId,
+      routing: createRouting(resolved),
+      entryOpacity: arriving,
+      exitOpacity: leaving,
+    }),
     extent: lerpExtent(from.extent, to.extent, t),
     overflow: to.overflow,
   }

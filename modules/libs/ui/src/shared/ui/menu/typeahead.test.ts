@@ -20,7 +20,7 @@ const typeWord = (word: string): { typed: Typeahead; at: number | null } => {
   let at: number | null = null
   let now = 0
   for (const letter of word) {
-    const jumped = jumpTo(ITEMS, typed, letter, at ?? -1, now)
+    const jumped = jumpTo(ITEMS, typed, { letter, from: at ?? -1, now })
     typed = jumped.typed
     at = jumped.at
     now += 10
@@ -42,14 +42,14 @@ describe('what a run of letters lands on', () => {
   })
 
   it('walks the items one letter begins, and wraps', () => {
-    const first = jumpTo(ITEMS, NOTHING_TYPED, 'c', -1, 0)
-    const second = jumpTo(ITEMS, first.typed, 'c', first.at!, 10)
-    const third = jumpTo(ITEMS, second.typed, 'c', second.at!, 20)
+    const first = jumpTo(ITEMS, NOTHING_TYPED, { letter: 'c', from: -1, now: 0 })
+    const second = jumpTo(ITEMS, first.typed, { letter: 'c', from: first.at!, now: 10 })
+    const third = jumpTo(ITEMS, second.typed, { letter: 'c', from: second.at!, now: 20 })
     expect([first.at, second.at, third.at]).toStrictEqual([2, 3, 2])
   })
 
   it('wraps to the top counting on from where the keyboard stands', () => {
-    expect(jumpTo(ITEMS, NOTHING_TYPED, 'o', 2, 0).at).toBe(0)
+    expect(jumpTo(ITEMS, NOTHING_TYPED, { letter: 'o', from: 2, now: 0 }).at).toBe(0)
   })
 
   it('lands on nothing where no item begins with the word', () => {
@@ -61,24 +61,26 @@ describe('what a run of letters lands on', () => {
       { id: 'copy', text: 'Copy path', disabled: true },
       { id: 'cut', text: 'Cut' },
     ]
-    expect(jumpTo(items, NOTHING_TYPED, 'c', -1, 0).at).toBe(1)
+    expect(jumpTo(items, NOTHING_TYPED, { letter: 'c', from: -1, now: 0 }).at).toBe(1)
   })
 
   it('lands on nothing where there is nothing to land on', () => {
-    expect(jumpTo([], NOTHING_TYPED, 'c', -1, 0).at).toBeNull()
+    expect(jumpTo([], NOTHING_TYPED, { letter: 'c', from: -1, now: 0 }).at).toBeNull()
   })
 })
 
 /** A run of letters stays one word for a second. */
 describe('how long a run of letters stays one word', () => {
   it('carries the word on while the letters keep coming', () => {
-    const first = jumpTo(ITEMS, NOTHING_TYPED, 'c', -1, 1000)
-    expect(jumpTo(ITEMS, first.typed, 'u', first.at!, 2000).typed.word).toBe('cu')
+    const first = jumpTo(ITEMS, NOTHING_TYPED, { letter: 'c', from: -1, now: 1000 })
+    expect(jumpTo(ITEMS, first.typed, { letter: 'u', from: first.at!, now: 2000 }).typed.word).toBe(
+      'cu',
+    )
   })
 
   it('begins a word again once the run has gone quiet', () => {
-    const first = jumpTo(ITEMS, NOTHING_TYPED, 'c', -1, 1000)
-    const later = jumpTo(ITEMS, first.typed, 'o', first.at!, 2001)
+    const first = jumpTo(ITEMS, NOTHING_TYPED, { letter: 'c', from: -1, now: 1000 })
+    const later = jumpTo(ITEMS, first.typed, { letter: 'o', from: first.at!, now: 2001 })
     expect(later.typed.word).toBe('o')
     expect(later.at).toBe(0)
   })
@@ -114,14 +116,14 @@ describe('where a letter counts on from', () => {
   ]
 
   it('moves on to the next item when a letter is struck again on the first', () => {
-    expect(jumpTo(PAIR, NOTHING_TYPED, 'c', 0, 0).at).toBe(1)
+    expect(jumpTo(PAIR, NOTHING_TYPED, { letter: 'c', from: 0, now: 0 }).at).toBe(1)
   })
 
   it('stands on the item the keyboard is on while the word grows', () => {
-    expect(jumpTo(PAIR, { word: 'c', struck: 0 }, 'o', 0, 10).at).toBe(0)
+    expect(jumpTo(PAIR, { word: 'c', struck: 0 }, { letter: 'o', from: 0, now: 10 }).at).toBe(0)
   })
 
   it('looks at the last item when the keyboard is on none', () => {
-    expect(jumpTo(ITEMS, { word: 'c', struck: 0 }, 'u', -1, 10).at).toBe(3)
+    expect(jumpTo(ITEMS, { word: 'c', struck: 0 }, { letter: 'u', from: -1, now: 10 }).at).toBe(3)
   })
 })
