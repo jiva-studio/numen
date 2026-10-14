@@ -4,7 +4,14 @@
  * answer to a question nobody is waiting for is not drawn.
  */
 import { describe, expect, it } from 'vitest'
-import { DEFAULTS, NO_CURVE_POINT, type Curve, type Presets, type Settings } from '../types'
+import {
+  DEFAULTS,
+  NO_CURVE_POINT,
+  type Curve,
+  type Presets,
+  type Settings,
+  type SettingsBounds,
+} from '../types'
 import { estimateCurve } from '../lib/sketch'
 import { getShapeKey } from '../lib/fields'
 import { WORDS as words } from '../words'
@@ -13,8 +20,19 @@ import {
   createCurveState,
   getKnobPosition,
   isSameGrid,
-  updateCurves,
+  updateCurves as updateCurvesImpl,
+  type CurveState,
 } from './curves'
+
+const updateCurves = (
+  state: CurveState,
+  path: string,
+  getSettings: () => Settings,
+  core: Presets,
+  bounds: SettingsBounds,
+  today: string,
+  setErrorMessage: (msg: string) => void,
+) => updateCurvesImpl(state, { path, getSettings, core, bounds, today, setErrorMessage })
 
 const today = '2026-08-30'
 const PATH = 'presets/Daily.md'
@@ -302,7 +320,7 @@ describe('an answer nobody is waiting for any more', () => {
       core,
       BOUNDS,
       today,
-      (one) => void said.push(one),
+      (one: string) => void said.push(one),
     )
     now = other
     await updateCurves(
@@ -333,7 +351,7 @@ describe('an answer nobody is waiting for any more', () => {
       core,
       BOUNDS,
       today,
-      (one) => void said.push(one),
+      (one: string) => void said.push(one),
     )
     gate.fail(new Error('gone'))
     await drawn

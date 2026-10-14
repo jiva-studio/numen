@@ -27,18 +27,16 @@ export function useWindowNotices({
   vaults,
 }: WindowNoticesDeps): ComputedRef<readonly Notice[]> {
   return computed<readonly Notice[]>(() =>
-    getCornerNotices(
-      [],
-      log.messages.value,
-      {
+    getCornerNotices([], log.messages.value, {
+      state: {
         unwatched: window.unwatched.value,
         unread: window.error.value,
         lost: window.lost.value || settings.dressed.lost.value,
         isIndexing: window.isIndexing.value,
         hasNote: window.hasNote.value,
       },
-      vaults.coverage(),
+      vault: vaults.coverage(),
       words,
-    ),
+    }),
   )
 }

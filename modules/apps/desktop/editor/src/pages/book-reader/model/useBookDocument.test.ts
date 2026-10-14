@@ -26,7 +26,11 @@ const create = (open = { value: true }) => {
     },
   }
   const writeMessage: MessageWriter = (text, kind) => written.push([text, kind])
-  const held = useBookDocument(books, 'library/b.epub', ref('print-1'), writeMessage, () => open.value)
+  const held = useBookDocument(books, 'library/b.epub', {
+    fingerprint: ref('print-1'),
+    writeMessage,
+    isOpen: () => open.value,
+  })
   return { held, pending, urls, written }
 }
 

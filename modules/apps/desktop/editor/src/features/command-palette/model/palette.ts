@@ -7,7 +7,7 @@
  * step it stands on is what the field means. What a step draws is read again
  * on every keystroke, so a vault moving under an open step is drawn as it is.
  */
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 import { createAnswerGuard as latest } from '@/shared/questions'
 import { useDebouncedAsk, type Wait } from '@/shared/search'
 import type { Vault } from '@/entities/vault'
@@ -15,6 +15,7 @@ import { createCommands } from '../lib/commands'
 import { getPaletteView } from './view'
 import { createInvocation } from '../lib/invocation'
 import type {
+  Command,
   CommandsDeps,
   CommandTarget,
   CommandInvocation,
@@ -38,21 +39,135 @@ const BLANK = {
   failureMessage: '',
 }
 
-export function useCommandPalette(
-  core: CommandsDeps,
-  words: Words,
-  at: () => CommandTarget,
-  knows: NoteLookup,
-  lists: PaletteLists,
-  runs: RunSupport,
-  wait?: Wait,
-) {
+export interface CommandPaletteDeps {
+  readonly core: CommandsDeps
+  readonly words: Words
+  readonly at: () => CommandTarget
+  readonly knows: NoteLookup
+  readonly lists: PaletteLists
+  readonly runs: RunSupport
+  readonly wait?: Wait
+}
+
+interface PaletteSearchDeps {
+  readonly core: CommandsDeps
+  readonly words: Words
+  readonly debounced: ReturnType<typeof useDebouncedAsk>
+  readonly found: Ref<readonly NameMatch[]>
+  readonly isWorking: Ref<boolean>
+  readonly failureMessage: Ref<string>
+}
+
+function createNamesSearch(deps: PaletteSearchDeps) {
+  return (query: string) =>
+    deps.debounced.ask(query, {
+      blank: () => {
+        deps.found.value = []
+        deps.isWorking.value = false
+        deps.failureMessage.value = ''
+      },
+      pending: () => {
+        deps.isWorking.value = true
+        deps.failureMessage.value = ''
+      },
+      run: async (trimmed, mine) => {
+        try {
+          const names = await deps.core.names(trimmed, GROUP_RESULT_LIMIT)
+          if (!mine.isCurrent) return
+          deps.found.value = names
+        } catch {
+          if (!mine.isCurrent) return
+          deps.found.value = []
+          deps.failureMessage.value = deps.words.notAsked
+        } finally {
+          if (mine.isCurrent) deps.isWorking.value = false
+        }
+      },
+    })
+}
+
+interface PaletteVaultsDeps {
+  readonly core: CommandsDeps
+  readonly words: Words
+  readonly asked: ReturnType<typeof latest>
+  readonly known: Ref<readonly Vault[]>
+  readonly showing: Ref<string>
+  readonly isWorking: Ref<boolean>
+  readonly failureMessage: Ref<string>
+}
+
+function createVaultsLoader(deps: PaletteVaultsDeps) {
+  return async () => {
+    const mine = deps.asked.ask()
+    deps.isWorking.value = true
+    deps.failureMessage.value = ''
+    try {
+      const listed = await deps.core.vaults()
+      if (!mine.isCurrent) return
+      deps.known.value = listed.vaults
+      deps.showing.value = listed.showing
+    } catch {
+      if (!mine.isCurrent) return
+      deps.known.value = []
+      deps.failureMessage.value = deps.words.notAsked
+    } finally {
+      if (mine.isCurrent) deps.isWorking.value = false
+    }
+  }
+}
+
+interface PaletteCommandsDeps {
+  readonly byId: Map<string, Command>
+  readonly runs: RunSupport
+  readonly open: Ref<boolean>
+  readonly words: Words
+  readonly invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation
+  readonly steps: ReturnType<typeof createPaletteSteps>
+}
+
+function createPaletteCommands(deps: PaletteCommandsDeps) {
+  const startCommand = (id: string, over: CommandTarget): CommandInvocation | null => {
+    const command = deps.byId.get(id)
+    if (!command || !command.isOffered(over, deps.runs)) return null
+    if (!command.needs) return deps.invocation(command.id, over)
+    if (!deps.open.value) {
+      deps.steps.reset()
+      deps.open.value = true
+    }
+    deps.steps.pushStep({ step: command.needs, command, on: over })
+    return null
+  }
+
+  const getObjection = (id: string, over: CommandTarget): string => {
+    const command = deps.byId.get(id)
+    if (!command || command.isOffered(over, deps.runs)) return ''
+    return over.isReady ? deps.words.noNote : deps.words.noVault
+  }
+
+  return { startCommand, getObjection }
+}
+
+function parsePaletteDeps(
+  coreOrDeps: CommandsDeps | CommandPaletteDeps,
+  args: [Words?, (() => CommandTarget)?, NoteLookup?, PaletteLists?, RunSupport?, Wait?],
+): CommandPaletteDeps {
+  const [words, at, knows, lists, runs, wait] = args
+  return 'core' in coreOrDeps
+    ? coreOrDeps
+    : {
+        core: coreOrDeps,
+        words: words!,
+        at: at!,
+        knows: knows!,
+        lists: lists!,
+        runs: runs!,
+        ...(wait !== undefined ? { wait } : {}),
+      }
+}
+
+function createPaletteState(wait?: Wait) {
   const open = ref(false)
   const typed = ref('')
-
-  const commands = createCommands(words)
-  const byId = new Map(commands.map((one) => [one.id, one]))
-
   const found = shallowRef<readonly NameMatch[]>(BLANK.found)
   const known = shallowRef<readonly Vault[]>(BLANK.known)
   const showing = ref(BLANK.showing)
@@ -61,11 +176,6 @@ export function useCommandPalette(
 
   const asked = latest()
   const debounced = useDebouncedAsk({ guard: asked, ...(wait ? { wait } : {}) })
-
-  const on = computed<CommandTarget>(() => at())
-
-  const invocation = (id: string, over: CommandTarget, name = ''): CommandInvocation =>
-    createInvocation(id, over, name, over.path ? knows.getTabAt(over.path) : null)
 
   const drop = () => {
     asked.drop()
@@ -76,129 +186,180 @@ export function useCommandPalette(
     failureMessage.value = BLANK.failureMessage
   }
 
-  const setOpen = (now: boolean) => {
-    previewItem('')
-    open.value = now
-    drop()
-    typed.value = ''
-    steps.reset()
-  }
+  return { open, typed, found, known, showing, isWorking, failureMessage, asked, debounced, drop }
+}
+
+function createPaletteStepsAndSearch(
+  deps: CommandPaletteDeps,
+  state: ReturnType<typeof createPaletteState>,
+  invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation,
+) {
+  const loadVaults = createVaultsLoader({
+    core: deps.core,
+    words: deps.words,
+    asked: state.asked,
+    known: state.known,
+    showing: state.showing,
+    isWorking: state.isWorking,
+    failureMessage: state.failureMessage,
+  })
 
   const previewItem = (item: string) => {
-    const step = steps.here.value
-    if (step?.step === 'choosing') lists.previewItem(step.command.id, item)
+    const step = stepsRef.current?.here.value
+    if (step?.step === 'choosing') deps.lists.previewItem(step.command.id, item)
   }
 
-  const loadVaults = async () => {
-    const mine = asked.ask()
-    isWorking.value = true
-    failureMessage.value = ''
-    try {
-      const listed = await core.vaults()
-      if (!mine.isCurrent) return
-      known.value = listed.vaults
-      showing.value = listed.showing
-    } catch {
-      // The window says what it could not do; what the call carried back adds nothing a person can act on.
-      if (!mine.isCurrent) return
-      known.value = []
-      failureMessage.value = words.notAsked
-    } finally {
-      if (mine.isCurrent) isWorking.value = false
-    }
+  const setOpen = (now: boolean) => {
+    previewItem('')
+    state.open.value = now
+    state.drop()
+    state.typed.value = ''
+    stepsRef.current?.reset()
   }
 
-  const steps = createPaletteSteps(
-    words,
-    lists,
-    knows,
-    typed,
-    drop,
-    previewItem,
-    () => void loadVaults(),
-    () => setOpen(false),
+  const stepsRef: { current?: ReturnType<typeof createPaletteSteps> } = {}
+  const steps = createPaletteSteps({
+    words: deps.words,
+    lists: deps.lists,
+    knows: deps.knows,
+    text: state.typed,
+    onDrop: state.drop,
+    onLights: previewItem,
+    onLists: () => void loadVaults(),
+    onClose: () => setOpen(false),
     invocation,
-  )
+  })
+  stepsRef.current = steps
 
-  const searchNames = (query: string) =>
-    debounced.ask(query, {
-      blank: () => {
-        found.value = []
-        isWorking.value = false
-        failureMessage.value = ''
-      },
-      pending: () => {
-        isWorking.value = true
-        failureMessage.value = ''
-      },
-      run: async (trimmed, mine) => {
-        try {
-          const names = await core.names(trimmed, GROUP_RESULT_LIMIT)
-          if (!mine.isCurrent) return
-          found.value = names
-        } catch {
-          // The window says what it could not do; what the call carried back adds nothing a person can act on.
-          if (!mine.isCurrent) return
-          found.value = []
-          failureMessage.value = words.notAsked
-        } finally {
-          if (mine.isCurrent) isWorking.value = false
-        }
-      },
-    })
+  const searchNames = createNamesSearch({
+    core: deps.core,
+    words: deps.words,
+    debounced: state.debounced,
+    found: state.found,
+    isWorking: state.isWorking,
+    failureMessage: state.failureMessage,
+  })
 
   const setTyped = async (text: string) => {
-    typed.value = text
+    state.typed.value = text
     if (steps.here.value?.step === 'picking') await searchNames(text.trim())
   }
 
+  return { steps, previewItem, setOpen, setTyped }
+}
+
+function createPaletteExecution(options: {
+  byId: Map<string, Command>
+  runs: RunSupport
+  open: Ref<boolean>
+  words: Words
+  invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation
+  steps: ReturnType<typeof createPaletteSteps>
+  draws: ReturnType<typeof getPaletteView>
+  found: ShallowRef<readonly NameMatch[]>
+  known: ShallowRef<readonly Vault[]>
+  on: ComputedRef<CommandTarget>
+}) {
+  const { startCommand, getObjection } = createPaletteCommands({
+    byId: options.byId,
+    runs: options.runs,
+    open: options.open,
+    words: options.words,
+    invocation: options.invocation,
+    steps: options.steps,
+  })
+
+  const chooseItem = (item: string, action: string): CommandInvocation | null => {
+    const step = options.steps.here.value
+    if (!step) return startCommand(action, options.on.value)
+    return options.steps.chooseInStep(
+      step,
+      item,
+      action,
+      options.found.value,
+      options.known.value,
+      (one) => Boolean(options.draws.getVaultAside(one)),
+    )
+  }
+
+  return { startCommand, getObjection, chooseItem }
+}
+
+function createPalettePresentation(
+  deps: CommandPaletteDeps,
+  state: ReturnType<typeof createPaletteState>,
+  context: {
+    steps: ReturnType<typeof createPaletteSteps>
+    on: ComputedRef<CommandTarget>
+    invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation
+  },
+) {
+  const { steps, on, invocation } = context
+  const commands = createCommands(deps.words)
+  const byId = new Map(commands.map((one) => [one.id, one]))
+
   const draws = getPaletteView({
-    words,
+    words: deps.words,
     commands,
     byId,
-    runs,
-    lists,
-    found,
-    known,
-    showing,
-    isWorking,
-    failureMessage,
+    runs: deps.runs,
+    lists: deps.lists,
+    found: state.found,
+    known: state.known,
+    showing: state.showing,
+    isWorking: state.isWorking,
+    failureMessage: state.failureMessage,
     getStepTitle: steps.getStepTitle,
     getStepLabel: steps.getStepLabel,
   })
 
-  const groups = computed(() => draws.createGroups(steps.here.value, on.value, typed.value))
+  const groups = computed(() => draws.createGroups(steps.here.value, on.value, state.typed.value))
+  const execution = createPaletteExecution({
+    byId,
+    runs: deps.runs,
+    open: state.open,
+    words: deps.words,
+    invocation,
+    steps,
+    draws,
+    found: state.found,
+    known: state.known,
+    on,
+  })
 
-  const startCommand = (id: string, over: CommandTarget): CommandInvocation | null => {
-    const command = byId.get(id)
-    if (!command || !command.isOffered(over, runs)) return null
-    if (!command.needs) return invocation(command.id, over)
-    if (!open.value) {
-      steps.reset()
-      open.value = true
-    }
-    steps.pushStep({ step: command.needs, command, on: over })
-    return null
-  }
+  return { groups, findNoteType: draws.findNoteType, ...execution }
+}
 
-  const getObjection = (id: string, over: CommandTarget): string => {
-    const command = byId.get(id)
-    if (!command || command.isOffered(over, runs)) return ''
-    return over.isReady ? words.noNote : words.noVault
-  }
+export function useCommandPalette(
+  coreOrDeps: CommandsDeps | CommandPaletteDeps,
+  ...args: [
+    words?: Words,
+    at?: () => CommandTarget,
+    knows?: NoteLookup,
+    lists?: PaletteLists,
+    runs?: RunSupport,
+    wait?: Wait,
+  ]
+) {
+  const deps = parsePaletteDeps(coreOrDeps, args)
+  const state = createPaletteState(deps.wait)
+  const on = computed<CommandTarget>(() => deps.at())
 
-  const chooseItem = (item: string, action: string): CommandInvocation | null => {
-    const step = steps.here.value
-    if (!step) return startCommand(action, on.value)
-    return steps.chooseInStep(step, item, action, found.value, known.value, (one) =>
-      Boolean(draws.getVaultAside(one)),
-    )
-  }
+  const invocation = (id: string, over: CommandTarget, name = ''): CommandInvocation =>
+    createInvocation(id, over, name, over.path ? deps.knows.getTabAt(over.path) : null)
+
+  const { steps, previewItem, setOpen, setTyped } = createPaletteStepsAndSearch(
+    deps,
+    state,
+    invocation,
+  )
+
+  const presentation = createPalettePresentation(deps, state, { steps, on, invocation })
 
   return {
-    open,
-    typed,
-    groups,
+    open: state.open,
+    typed: state.typed,
+    groups: presentation.groups,
     crumb: steps.crumb,
     step: steps.step,
     opensOn: steps.opensOn,
@@ -206,13 +367,13 @@ export function useCommandPalette(
     setTyped,
     previewItem,
     setOpen,
-    startCommand,
-    getObjection,
+    startCommand: presentation.startCommand,
+    getObjection: presentation.getObjection,
     applyRenames: steps.applyRenames,
-    chooseItem,
+    chooseItem: presentation.chooseItem,
     leaveStep: steps.leaveStep,
     goBack: steps.goBack,
-    findNoteType: draws.findNoteType,
+    findNoteType: presentation.findNoteType,
   }
 }
 

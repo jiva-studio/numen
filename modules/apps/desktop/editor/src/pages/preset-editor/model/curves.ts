@@ -72,16 +72,18 @@ export const applyCurveAnswer = (state: CurveState, curve: Curve): void => {
   state.isWaiting.value = false
 }
 
+export interface CurveContext {
+  path: string
+  getSettings: () => Settings
+  core: Presets
+  bounds: SettingsBounds
+  today: string
+  setErrorMessage: (msg: string) => void
+}
+
 /** One curve, asked for and landed. */
-const fetchCurve = async (
-  state: CurveState,
-  path: string,
-  getSettings: () => Settings,
-  core: Presets,
-  bounds: SettingsBounds,
-  today: string,
-  setErrorMessage: (msg: string) => void,
-): Promise<void> => {
+const fetchCurve = async (state: CurveState, context: CurveContext): Promise<void> => {
+  const { path, getSettings, core, bounds, today, setErrorMessage } = context
   const mine = state.asks.ask()
   const settings = getSettings()
   const shape = getShapeKey(settings)
@@ -117,15 +119,8 @@ const fetchCurve = async (
 }
 
 /** Calculates the curve for the goal these settings name. */
-export const updateCurves = async (
-  state: CurveState,
-  path: string,
-  getSettings: () => Settings,
-  core: Presets,
-  bounds: SettingsBounds,
-  today: string,
-  setErrorMessage: (msg: string) => void,
-): Promise<void> => {
+export const updateCurves = async (state: CurveState, context: CurveContext): Promise<void> => {
+  const { getSettings, today } = context
   const settings = getSettings()
   const shape = getShapeKey(settings)
   const heldCurve = state.answers.get(shape)
@@ -144,12 +139,12 @@ export const updateCurves = async (
 
   state.isDrawing = true
   try {
-    await fetchCurve(state, path, getSettings, core, bounds, today, setErrorMessage)
+    await fetchCurve(state, context)
   } finally {
     state.isDrawing = false
   }
 
   if (!state.shouldDrawAgain) return
   state.shouldDrawAgain = false
-  await updateCurves(state, path, getSettings, core, bounds, today, setErrorMessage)
+  await updateCurves(state, context)
 }

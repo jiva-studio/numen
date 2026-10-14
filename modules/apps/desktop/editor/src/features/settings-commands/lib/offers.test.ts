@@ -54,7 +54,7 @@ describe('the modes offered', () => {
 
 describe('the sizes offered', () => {
   const titles = (command: string, text = '') =>
-    getSizeGroups(command, text, SIZES, BOUNDS, words)
+    getSizeGroups(command, text, { sizes: SIZES, bounds: BOUNDS, words })
       .flatMap((one) => one.items)
       .map((one) => one.title)
 

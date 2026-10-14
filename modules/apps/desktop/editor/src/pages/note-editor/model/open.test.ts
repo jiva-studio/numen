@@ -95,16 +95,15 @@ const createTab = (options: { isClosing?: boolean; landed?: Map<string, string> 
     neighbourhood: async () => ({ focus: { title: '' } }),
   } as unknown as NoteTabDeps
 
-  const tab = createNoteTab(
-    'Heat.md',
-    notes as unknown as Notes,
-    changes as unknown as Changes,
-    keyboard as unknown as Keyboard,
+  const tab = createNoteTab('Heat.md', {
+    notes: notes as unknown as Notes,
+    changes: changes as unknown as Changes,
+    keyboard: keyboard as unknown as Keyboard,
     vault,
-    names as unknown as Titles,
-    handle as unknown as WindowHandle,
-    openers as unknown as FileOpeners,
-  )
+    names: names as unknown as Titles,
+    handle: handle as unknown as WindowHandle,
+    tabOpeners: openers as unknown as FileOpeners,
+  })
   return { tab, calls, opened, notes, changes }
 }
 

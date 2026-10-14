@@ -5,7 +5,7 @@
  * each is offered is `lib/offered.ts`, the words they are drawn in are `words.ts`,
  * and what the window offers one being carried out is `model/deps.ts`.
  */
-import type { PaletteKeys } from '@numen/ui'
+import type { PaletteKeys, PlexDestination } from '@numen/ui'
 import type { ArtifactStates } from '@/entities/artifact'
 import type { Source } from '@/entities/file'
 import type { EditorKind } from '@/entities/tab'
@@ -210,7 +210,11 @@ export interface Notes {
    */
   openFile(path: string, title: string, showing: 'here' | 'beside'): void
   /** A file just made here, put in front of the person as what it was made as. */
-  openNewFile(path: string, title: string, type: EditorKind, showing: 'here' | 'beside'): void
+  openNewFile(
+    path: string,
+    title: string,
+    options: EditorKind | { type: EditorKind; where?: PlexDestination },
+  ): void
 }
 
 /**

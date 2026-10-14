@@ -35,7 +35,7 @@ const isUrlDeleteTextOffered = createArtifactOffer(
 const isDeleteTextOffered = (at: CommandTarget, runs: RunSupport): boolean =>
   isRecordingDeleteTextOffered(at, runs) || isUrlDeleteTextOffered(at, runs)
 
-export const createFileCommands = (words: Words): readonly Command[] => [
+export const createArtifactCommands = (words: Words): readonly Command[] => [
   {
     id: 'transcribe',
     text: words.transcribe,
@@ -64,9 +64,6 @@ export const createFileCommands = (words: Words): readonly Command[] => [
     id: 'downloadCopy',
     text: words.downloadCopy,
     group: 'file',
-    // Only a note pointing at a video carries a copy at all, so the row being
-    // there is what says this file is one. An hour of video on somebody's disk
-    // is asked for by hand, and one already here is not asked for again.
     isOffered: (at, runs) =>
       at.isReady &&
       runs.canRun('downloadCopy') &&
@@ -77,18 +74,16 @@ export const createFileCommands = (words: Words): readonly Command[] => [
     id: 'proofread',
     text: words.proofread,
     group: 'file',
-    // There is nothing to put right until a model has produced text, and
-    // nothing to put right again once it has been put right.
     isOffered: isProofreadOffered,
   },
+]
+
+export const createDeletionCommands = (words: Words): readonly Command[] => [
   {
     id: 'deleteText',
     text: words.deleteText,
     group: 'file',
     needs: 'asking',
-    // Everything one run of listening left goes, so a run that stopped part way
-    // and a recording that gave no words are both taken away here. A url
-    // carries a transcript the same way, and deletes it here.
     isOffered: isDeleteTextOffered,
     answers: {
       keeps: words.keepsTranscript,
@@ -102,7 +97,6 @@ export const createFileCommands = (words: Words): readonly Command[] => [
     text: words.deleteCopy,
     group: 'file',
     needs: 'asking',
-    // Only a url carries a copy, and only one that stands has anything to take.
     isOffered: createArtifactOffer('deleteCopy', 'url', (made) => made.copy === 'done'),
     answers: {
       keeps: words.keepsCopy,
@@ -111,4 +105,9 @@ export const createFileCommands = (words: Words): readonly Command[] => [
       then: words.deletedCopy,
     },
   },
+]
+
+export const createFileCommands = (words: Words): readonly Command[] => [
+  ...createArtifactCommands(words),
+  ...createDeletionCommands(words),
 ]

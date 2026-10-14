@@ -6,7 +6,7 @@
  * held until the keyboard has stood on the row for HELD, and what the settings
  * name is put back the moment the keyboard leaves the list.
  */
-import { ref, shallowRef, watch } from 'vue'
+import { ref, shallowRef, watch, type Ref, type ShallowRef } from 'vue'
 import { createFollower } from '@numen/ui'
 import { createAnswerGuard } from '@/shared/questions'
 import type { MessageWriter } from '@/shared/notices/messages'
@@ -17,47 +17,27 @@ import { IS_SIZES, addAfter, getSizesCss, getStyleElements } from '../lib/head'
 import { getModeGroups, getSizeGroups, getThemeGroups } from '../lib/offers'
 import { useAppearanceChoice } from './choice'
 
-export function createWindowAppearance(
-  core: Themes,
-  words: AppearanceWords,
-  write: MessageWriter,
-  sheet: Document = document,
-  wait: (ms: number) => Promise<unknown> = sleep,
-) {
-  const dressed = getStyleElements(sheet)
-  /** What the page was served wearing, which is the applied theme's file. */
-  const served = dressed.theme.textContent
-  /** What the sizes' element holds, once the window knows what it was served at. */
-  // Stryker disable next-line StringLiteral: no size css is empty, so any other starting text compares the same
-  let appliedSizesCss = ''
+export interface WindowAppearanceDeps {
+  core: Themes
+  words: AppearanceWords
+  write: MessageWriter
+  sheet?: Document
+  wait?: (ms: number) => Promise<unknown>
+}
 
-  /** Every theme there is, and the theme and the mode the settings name. */
-  const list = shallowRef<readonly Theme[]>([])
-  const applied = ref('')
-  const mode = ref<Mode>('system')
+interface ThemeWearDeps {
+  core: Themes
+  dressed: ReturnType<typeof getStyleElements>
+  write: MessageWriter
+  words: AppearanceWords
+  applied: Ref<string>
+}
 
-  /** The two sizes the settings name, and how far each of them goes. */
-  const settings = ref<Sizes>({ interfaceScale: DESIGNED, textScale: DESIGNED })
-  const bounds = ref<Ranges>({ interfaceScale: EMPTY_RANGE, textScale: EMPTY_RANGE })
-
-  /**
-   * What the appearance lost touch with, said until it has it back.
-   *
-   * It is a state and not a word, so the window carries it where it carries
-   * everything else that is simply so.
-   */
-  const lost = ref('')
-
-  /** The text of every theme that has been worn, by name. */
+function createThemeWear(deps: ThemeWearDeps) {
+  const { core, dressed, write, words, applied } = deps
   const files = new Map<string, string>()
-
-  /** Whether what the page arrived in still stands for the theme applied. */
-  let arrived = true
-
-  /** A file arriving for a row the keyboard has already left is dropped. */
   const asks = createAnswerGuard()
 
-  /** One theme's file, read once and kept. */
   const fileOf = async (name: string): Promise<string> => {
     const cached = files.get(name)
     if (cached !== undefined) return cached
@@ -66,10 +46,7 @@ export function createWindowAppearance(
     return css
   }
 
-  /** The theme and the mode named, written into the two elements the page was served with. */
   const wear = async (theme: string, half: Mode) => {
-    // The page arrived dressed, and nothing is written over that until the
-    // window has been told what it is dressed in.
     if (!applied.value) return
     const mine = asks.ask()
     dressed.mode.textContent = `:root { color-scheme: ${SCHEMES[half]}; }`
@@ -77,127 +54,186 @@ export function createWindowAppearance(
       const css = await fileOf(theme)
       if (mine.isCurrent) dressed.theme.textContent = css
     } catch {
-      // The window says what it could not do; what the call carried back adds nothing a person can act on.
       if (mine.isCurrent) write(words.unworn, 'error')
     }
   }
 
-  /** The row the keyboard stands on, and what standing on it or choosing it does. */
-  const choice = useAppearanceChoice({
-    core,
-    write,
-    list,
-    applied,
-    mode,
-    settings,
-    bounds,
-    wear,
-  })
+  return { files, wear }
+}
 
-  /** What the window wears now, which is the row stood on over the settings. */
-  const applyAppearance = () => wear(choice.worn.value, choice.half.value)
-
-  /**
-   * The two multipliers, written into the element the head ends with. The page
-   * was served carrying them, so what already stands there is left alone.
-   */
-  const writeSizes = () => {
-    const css = getSizesCss(choice.sized.value)
+function createSizesWriter(dressed: ReturnType<typeof getStyleElements>, sheet: Document) {
+  let appliedSizesCss = ''
+  return (sizes: Sizes) => {
+    const css = getSizesCss(sizes)
     if (css === appliedSizesCss) return
     appliedSizesCss = css
     dressed.sizes ??= addAfter(dressed.theme, IS_SIZES, sheet)
     dressed.sizes.textContent = css
   }
+}
 
-  /** The window drawn again wherever the size it is drawn at changes. */
-  const drawing = watch(choice.sized, writeSizes)
+interface LoaderDeps {
+  core: Themes
+  write: MessageWriter
+  words: AppearanceWords
+  list: ShallowRef<readonly Theme[]>
+  applied: Ref<string>
+  mode: Ref<Mode>
+  settings: Ref<Sizes>
+  bounds: Ref<Ranges>
+  files: Map<string, string>
+  served: string
+}
 
-  let open = true
-  /** Let go of the stream the window is listening to. */
-  const listening = new AbortController()
-  const follows = createFollower({
-    isOpen: () => open,
-    setLost: (gone) => (lost.value = gone),
-    wait,
-  })
-
-  /** Every theme there is, and what the settings say the window is drawn as. */
-  const loadAppearance = async () => {
+function createAppearanceLoader(deps: LoaderDeps) {
+  let arrived = true
+  return async () => {
     let answer: Appearance
     try {
-      answer = await core.getAppearance()
+      answer = await deps.core.getAppearance()
     } catch {
-      // The window says what it could not do; what the call carried back adds nothing a person can act on.
-      write(words.unlisted, 'error')
+      deps.write(deps.words.unlisted, 'error')
       return
     }
-    list.value = answer.themes
-    applied.value = answer.applied
-    mode.value = answer.mode
-    settings.value = answer.sizes
-    bounds.value = answer.bounds
+    deps.list.value = answer.themes
+    deps.applied.value = answer.applied
+    deps.mode.value = answer.mode
+    deps.settings.value = answer.sizes
+    deps.bounds.value = answer.bounds
     if (arrived) {
-      // The page was served wearing this theme, so its file has been read
-      // already, and drawn at these sizes, so they already stand in the head.
-      files.set(answer.applied, served)
-      appliedSizesCss = dressed.sizes?.textContent ?? getSizesCss(answer.sizes)
+      deps.files.set(answer.applied, deps.served)
     }
     arrived = false
   }
+}
 
-  /**
-   * The person's folder changed. What changed is read again from the file it
-   * is now, and a theme being worn is worn as it now reads.
-   */
+function createThemeWatcher(deps: {
+  core: WindowAppearanceDeps['core']
+  files: Map<string, string>
+  choice: ReturnType<typeof useAppearanceChoice>
+  applyAppearance: () => Promise<void>
+  loadAppearance: () => Promise<void>
+  lost: Ref<string>
+  wait: (ms: number) => Promise<unknown>
+}) {
+  let open = true
+  const listening = new AbortController()
+  const follows = createFollower({
+    isOpen: () => open,
+    setLost: (gone) => {
+      deps.lost.value = gone
+    },
+    wait: deps.wait,
+  })
+
   const follow = () =>
     follows(
-      () => core.watchThemes(listening.signal),
+      () => deps.core.watchThemes(listening.signal),
       async (names) => {
         if (!names.length) return
-        for (const name of names) files.delete(name)
-        await loadAppearance()
-        if (names.includes(choice.worn.value)) await applyAppearance()
+        for (const name of names) deps.files.delete(name)
+        await deps.loadAppearance()
+        if (names.includes(deps.choice.worn.value)) await deps.applyAppearance()
       },
     )
 
-  /**
-   * The list, and the folder followed. Nothing is worn from here: the page
-   * arrived dressed, and this is what it was dressed in.
-   */
-  const start = async () => {
-    await loadAppearance()
-    void follow()
-  }
-
-  const close = () => {
+  const stop = () => {
     open = false
     listening.abort()
-    choice.close()
-    drawing()
   }
 
-  const listThemeGroups = () => getThemeGroups(list.value, applied.value, words)
-  const listModeGroups = () => getModeGroups(mode.value, choice.isPinned.value, words)
-  // Stryker disable next-line StringLiteral: text that is not digits offers no typed size, as the empty text offers none
-  const listSizeGroups = (command: string, text = '') =>
-    getSizeGroups(command, text, settings.value, bounds.value, words)
+  return { follow, stop }
+}
+
+function initAppearanceState() {
+  const list = shallowRef<readonly Theme[]>([])
+  const applied = ref('')
+  const mode = ref<Mode>('system')
+  const settings = ref<Sizes>({ interfaceScale: DESIGNED, textScale: DESIGNED })
+  const bounds = ref<Ranges>({ interfaceScale: EMPTY_RANGE, textScale: EMPTY_RANGE })
+  const lost = ref('')
+  return { list, applied, mode, settings, bounds, lost }
+}
+
+function createAppearanceGroups(
+  state: ReturnType<typeof initAppearanceState>,
+  choice: ReturnType<typeof useAppearanceChoice>,
+  words: WindowAppearanceDeps['words'],
+) {
+  return {
+    getThemeGroups: () => getThemeGroups(state.list.value, state.applied.value, words),
+    getModeGroups: () => getModeGroups(state.mode.value, choice.isPinned.value, words),
+    getSizeGroups: (command: string, text = '') =>
+      getSizeGroups(command, text, {
+        sizes: state.settings.value,
+        bounds: state.bounds.value,
+        words,
+      }),
+  }
+}
+
+export function createWindowAppearance(deps: WindowAppearanceDeps) {
+  const { core, words, write, sheet = document, wait = sleep } = deps
+  const dressed = getStyleElements(sheet)
+  const served = dressed.theme.textContent ?? ''
+  const state = initAppearanceState()
+  const { files, wear } = createThemeWear({ core, dressed, write, words, applied: state.applied })
+
+  const choice = useAppearanceChoice({
+    core,
+    write,
+    wear,
+    list: state.list,
+    applied: state.applied,
+    mode: state.mode,
+    settings: state.settings,
+    bounds: state.bounds,
+  })
+
+  const applyAppearance = () => wear(choice.worn.value, choice.half.value)
+  const writeSizes = createSizesWriter(dressed, sheet)
+  const drawing = watch(choice.sized, writeSizes)
+
+  const loadAppearance = createAppearanceLoader({
+    core,
+    write,
+    words,
+    files,
+    served,
+    list: state.list,
+    applied: state.applied,
+    mode: state.mode,
+    settings: state.settings,
+    bounds: state.bounds,
+  })
+
+  const watcher = createThemeWatcher({
+    core,
+    files,
+    choice,
+    applyAppearance,
+    loadAppearance,
+    lost: state.lost,
+    wait,
+  })
 
   return {
-    list,
-    applied,
-    mode,
+    ...state,
     sized: choice.sized,
-    bounds,
     isPinned: choice.isPinned,
     pinned: choice.isPinned,
-    lost,
-    getThemeGroups: listThemeGroups,
-    getModeGroups: listModeGroups,
-    getSizeGroups: listSizeGroups,
+    ...createAppearanceGroups(state, choice, words),
     previewItem: choice.previewItem,
     chooseItem: choice.chooseItem,
-    start,
-    close,
+    start: async () => {
+      await loadAppearance()
+      void watcher.follow()
+    },
+    close: () => {
+      watcher.stop()
+      choice.close()
+      drawing()
+    },
   }
 }
 

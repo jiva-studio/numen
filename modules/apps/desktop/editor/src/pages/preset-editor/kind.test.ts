@@ -147,13 +147,13 @@ const openPresetTab = async (
   const tabOpeners = {
     registerEditor: (name: string) => void registered.push(name),
   } as unknown as FileOpeners
-  const kind = usePresetTab(
+  const kind = usePresetTab({
     core,
     handle,
     tabOpeners,
-    () => {},
-    () => NOW,
-  )
+    writeMessage: () => {},
+    today: () => NOW,
+  })
   const state = await kind.kind.open('Steady.md')
   // The read and the curve behind it are two answers, and both are awaited.
   await Promise.resolve()
@@ -216,13 +216,13 @@ const opening = async (file: Partial<Settings>) => {
   }
   const handle = { closeTab: () => {} } as unknown as WindowHandle
   const tabOpeners = { registerEditor: () => {} } as unknown as FileOpeners
-  const kind = usePresetTab(
+  const kind = usePresetTab({
     core,
     handle,
     tabOpeners,
-    () => {},
-    () => NOW,
-  )
+    writeMessage: () => {},
+    today: () => NOW,
+  })
   return { tab: await kind.kind.open('Steady.md'), written, resolveRead }
 }
 

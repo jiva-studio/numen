@@ -7,8 +7,7 @@ import type { Cards } from '@/entities/deck'
 import type { Store } from '@/features/command-palette'
 import { openNotes, getMarkOf } from '@/entities/note'
 import type { MessageWriter } from '@/shared/notices/messages'
-import type { TabKind, WindowHandle } from '@/entities/tab'
-import type { FileOpeners } from '@/entities/tab'
+import type { FileOpeners, OpenPlacement, TabKind, WindowHandle } from '@/entities/tab'
 import { STENCIL } from '@/entities/tab'
 import StencilTab from './ui/StencilTab.vue'
 import { getFileName, type PathRename } from '@/shared/paths'
@@ -18,67 +17,65 @@ import { createStencilFields } from './model/fields'
 
 export type { StencilTabState, VaultAnswer }
 
-export function useStencilTabs(
-  cards: Cards,
-  handle: WindowHandle,
-  tabOpeners: FileOpeners,
-  writeMessage: MessageWriter = () => {},
-) {
-  const wire = createStencilWire(cards, writeMessage)
+export interface StencilTabsDeps {
+  now?: (() => number) | undefined
+}
 
-  const store = openNotes({
-    read: wire.read,
-    write: wire.write,
-  })
+export interface StencilTabsOptions {
+  tabOpeners: FileOpeners
+  writeMessage?: MessageWriter | undefined
+  now?: (() => number) | undefined
+}
 
-  const fields = createStencilFields(
-    (id) => store.getOpenNote(id).body,
-    (id, body) => store.setBody(id, body),
-    (id) => wire.getProblems(store.getPath(id)),
-    (id, field, name) =>
-      void wire.renameField(store.getPath(id), field, name, store.applyPathChanges),
-  )
+type StencilStore = ReturnType<typeof openNotes>
+type StencilFields = ReturnType<typeof createStencilFields>
+type StencilWire = ReturnType<typeof createStencilWire>
 
-  const createStencilTabState = (id: string): StencilTabState => {
-    const closeTab = (tab: string) => {
-      const path = store.getPath(id)
-      void store.close(id).then((gone) => {
-        if (!gone) return
-        fields.forget(id)
-        wire.forget(
-          path,
-          store.getOpenIds().some((one) => store.getPath(one) === path),
-        )
-        handle.closeTab(tab)
-      })
-    }
-
-    return {
-      id,
-      note: computed(() => store.getOpenNote(id)),
-      stencil: computed(() => fields.getStencil(id)),
-      marks: computed(() => fields.getMarks(id)),
-      errorMessage: computed(() =>
-        wire.getErrorMessage(store.getPath(id), store.getOpenNote(id).error),
-      ),
-      ...fields.createActions(id),
-      keepMine: () => store.keep(id),
-      takeFile: () => store.take(id),
-      close: closeTab,
-    }
+function createStencilTabItem(
+  id: string,
+  deps: {
+    store: StencilStore
+    fields: StencilFields
+    wire: StencilWire
+    handle: WindowHandle
+  },
+): StencilTabState {
+  const { store, fields, wire, handle } = deps
+  const closeTab = (tab: string) => {
+    const path = store.getPath(id)
+    void store.close(id).then((gone) => {
+      if (!gone) return
+      fields.forget(id)
+      wire.forget(
+        path,
+        store.getOpenIds().some((one) => store.getPath(one) === path),
+      )
+      handle.closeTab(tab)
+    })
   }
 
-  /** What a stencil tab is called: the title the file carries, or the file itself. */
+  return {
+    id,
+    note: computed(() => store.getOpenNote(id)),
+    stencil: computed(() => fields.getStencil(id)),
+    marks: computed(() => fields.getMarks(id)),
+    errorMessage: computed(() =>
+      wire.getErrorMessage(store.getPath(id), store.getOpenNote(id).error),
+    ),
+    ...fields.createActions(id),
+    keepMine: () => store.keep(id),
+    takeFile: () => store.take(id),
+    close: closeTab,
+  }
+}
+
+function createStencilStoreProxy(
+  store: StencilStore,
+  wire: StencilWire,
+  closeTab: (id: string) => void,
+): Store {
   const getTitle = (path: string): string => wire.getTitle(path) || getFileName(path)
-
-  /** The tab holding a stencil lets go of it, wherever the window draws it. */
-  const closeTab = (id: string): void => {
-    const tab = handle.each<StencilTabState>(STENCIL).find((one) => one.state.id === id)
-    tab?.state.close(tab.id)
-  }
-
-  /** The stencils, as a command reaches the ones the window has open. */
-  const kept: Store = {
+  return {
     has: (id) => store.getOpenIds().includes(id),
     getPath: (id) => store.getPath(id),
     getTitle: (id) => getTitle(store.getPath(id)),
@@ -87,11 +84,12 @@ export function useStencilTabs(
     close: closeTab,
     getTabAt: (path) => store.getOpenIds().find((id) => store.getPath(id) === path) ?? null,
   }
+}
 
+function createStencilTabIdManager(store: StencilStore) {
   const tabbed = computed<ReadonlyMap<string, string>>(
     () => new Map(store.getOpenIds().map((one) => [store.getPath(one), one])),
   )
-
   const pendingTabPaths = new Map<string, string>()
 
   const getOrCreateTabId = (path: string): string => {
@@ -102,51 +100,113 @@ export function useStencilTabs(
     return id
   }
 
-  const kind: TabKind<StencilTabState, typeof STENCIL> = {
+  return { tabbed, pendingTabPaths, getOrCreateTabId }
+}
+
+function createStencilKindDefinition(deps: {
+  store: StencilStore
+  wire: StencilWire
+  pendingTabPaths: Map<string, string>
+  createStencilTabState: (id: string) => StencilTabState
+}): TabKind<StencilTabState, typeof STENCIL> {
+  const getTitle = (path: string): string => deps.wire.getTitle(path) || getFileName(path)
+  return {
     kind: STENCIL,
     open: (id) => {
-      const path = pendingTabPaths.get(id) ?? id
-      store.open(id, path)
-      pendingTabPaths.delete(id)
-      return createStencilTabState(id)
+      const path = deps.pendingTabPaths.get(id) ?? id
+      deps.store.open(id, path)
+      deps.pendingTabPaths.delete(id)
+      return deps.createStencilTabState(id)
     },
-    getTitle: (one) => getTitle(store.getPath(one.id)),
+    getTitle: (one) => getTitle(deps.store.getPath(one.id)),
     getMark: (one) => getMarkOf(one.note.value.state),
     pane: StencilTab,
     identity: (id) => id,
     getTarget: (one) => ({
-      path: store.getPath(one.id),
-      title: getTitle(store.getPath(one.id)),
+      path: deps.store.getPath(one.id),
+      title: getTitle(deps.store.getPath(one.id)),
     }),
-    getOpenTab: (one) => ({ path: store.getPath(one.id) }),
+    getOpenTab: (one) => ({ path: deps.store.getPath(one.id) }),
     onClose: (one, id) => {
       one.close(id)
       return false
     },
     onDestroy: () => {},
   }
+}
 
-  const openStencil = (path: string, title: string, how: PlexDestination): void => {
-    const id = getOrCreateTabId(path)
-    if (title) wire.setTitle(path, title)
-    void (how === 'beside' ? handle.openTabBeside(STENCIL, id) : handle.openTab(STENCIL, id))
+function registerStencilOpener(
+  deps: { tabOpeners: FileOpeners; handle: WindowHandle },
+  tabIds: ReturnType<typeof createStencilTabIdManager>,
+  wire: ReturnType<typeof createStencilWire>,
+) {
+  deps.tabOpeners.registerEditor(
+    'stencil',
+    (path: string, title: string, how?: PlexDestination | OpenPlacement) => {
+      const id = tabIds.getOrCreateTabId(path)
+      if (title) wire.setTitle(path, title)
+      const where = typeof how === 'string' ? how : how?.where
+      void (where === 'beside'
+        ? deps.handle.openTabBeside(STENCIL, id)
+        : deps.handle.openTab(STENCIL, id))
+    },
+  )
+}
+
+export function useStencilTabs(
+  cards: Cards,
+  handle: WindowHandle,
+  ...args:
+    | [options: StencilTabsOptions]
+    | [tabOpeners: FileOpeners, writeMessage?: MessageWriter, deps?: StencilTabsDeps]
+) {
+  const options: StencilTabsOptions =
+    args[0] && 'registerEditor' in args[0]
+      ? {
+          tabOpeners: args[0] as FileOpeners,
+          ...(args[1] ? { writeMessage: args[1] as MessageWriter } : {}),
+          ...((args[2] as StencilTabsDeps | undefined)?.now
+            ? { now: (args[2] as StencilTabsDeps).now }
+            : {}),
+        }
+      : (args[0] as StencilTabsOptions)
+  const { tabOpeners, writeMessage = () => {}, now = () => 0 } = options
+  const wire = createStencilWire(cards, writeMessage)
+  const store = openNotes({ read: wire.read, write: wire.write }, { now })
+  const fields = createStencilFields(
+    (id) => store.getOpenNote(id).body,
+    (id, body) => store.setBody(id, body),
+    (id) => wire.getProblems(store.getPath(id)),
+    (id, field, name) =>
+      void wire.renameField(store.getPath(id), { from: field, to: name }, store.applyPathChanges),
+  )
+
+  const tabIds = createStencilTabIdManager(store)
+  const createStencilTabState = (id: string): StencilTabState =>
+    createStencilTabItem(id, { store, fields, wire, handle })
+  const getTitle = (path: string): string => wire.getTitle(path) || getFileName(path)
+  const closeTab = (id: string): void => {
+    const tab = handle.each<StencilTabState>(STENCIL).find((one) => one.state.id === id)
+    tab?.state.close(tab.id)
   }
 
-  tabOpeners.registerEditor('stencil', openStencil)
+  registerStencilOpener({ tabOpeners, handle }, tabIds, wire)
 
-  const applyPathChanges = (
-    paths: readonly string[],
-    // Stryker disable next-line ArrayDeclaration: an entry that is not a rename names no file, and every walk over renames skips it.
-    renames: readonly PathRename[] = [],
-  ): void => {
-    wire.movePaths(renames)
-    store.applyPathChanges(paths, renames)
-  }
+  const kind = createStencilKindDefinition({
+    store,
+    wire,
+    pendingTabPaths: tabIds.pendingTabPaths,
+    createStencilTabState,
+  })
+  const kept = createStencilStoreProxy(store, wire, closeTab)
 
   return {
     kind,
     createStencilTabState,
-    applyPathChanges,
+    applyPathChanges: (paths: readonly string[], renames: readonly PathRename[] = []) => {
+      wire.movePaths(renames)
+      store.applyPathChanges(paths, renames)
+    },
     getTitle,
     kept,
     getOpenIds: store.getOpenIds,

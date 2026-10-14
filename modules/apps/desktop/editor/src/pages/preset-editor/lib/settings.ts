@@ -59,15 +59,22 @@ const isBudgetUnit = (value: SettingValue): value is BudgetUnit =>
 
 const isRule = (value: SettingValue): value is Rule => value === 'interval' || value === 'retention'
 
+export interface SettingUpdate {
+  field: Field
+  value: SettingValue
+}
+
 /** Clamps a number to the field's bounds, rounding where the field is whole. */
 const applyNumberSetting = (
   settings: Settings,
-  field: NumberField,
-  value: number,
+  change: { field: NumberField; value: number },
   bounds: SettingsBounds,
 ): Settings => {
   const out: MutableSettings = { ...settings }
-  out[field] = clamp(NUMBER_FIELDS[field] ? Math.round(value) : value, bounds[field])
+  out[change.field] = clamp(
+    NUMBER_FIELDS[change.field] ? Math.round(change.value) : change.value,
+    bounds[change.field],
+  )
   return out
 }
 
@@ -89,17 +96,17 @@ const applyChoiceSetting = (
 /** Clamps a typed value to bounds and updates the settings. */
 export const applyTypedSetting = (
   settings: Settings,
-  field: Field,
-  value: SettingValue,
+  change: SettingUpdate,
   bounds: SettingsBounds,
 ): Settings => {
+  const { field, value } = change
   const chosen = applyChoiceSetting(settings, field, value)
   if (chosen !== undefined) return chosen
   if (field === 'load' && isLoad(value)) {
     return { ...settings, load: clampShares(value, bounds.load) }
   }
   if (isNumberField(field) && typeof value === 'number') {
-    return applyNumberSetting(settings, field, value, bounds)
+    return applyNumberSetting(settings, { field, value }, bounds)
   }
   return settings
 }

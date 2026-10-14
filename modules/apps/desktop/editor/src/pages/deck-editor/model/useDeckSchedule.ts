@@ -35,62 +35,63 @@ export interface ScheduledStore {
   applyPathChanges(paths: readonly string[]): void
 }
 
-/** The scheduler one window has, over the decks that window holds. */
-export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
-  /** The presets of the vault, as they were last listed. */
-  const listedPresets = shallowRef<readonly PresetChoice[]>([])
-  /** Whether the last listing of the presets answered. */
-  let presetsWereListed = true
-  /** Which preset schedules each file, under the path it is filed at. */
-  const scheduled = ref(new Map<string, DeckPreset>())
-  /** What choosing a preset came to, under the tab that chose. */
-  const chose = ref(new Map<string, string>())
+/** The preset a deck names, as the line at the top of it draws it. */
+const readDeckPreset = (answer: PresetReadResult): DeckPreset => {
+  const read = answer.ok ? answer.value.preset : null
+  if (read === null) return BY_DEFAULT
+  const errorMessage = read.problems[0] ?? ''
+  if (read.path === '') return { ...BY_DEFAULT, errorMessage }
+  return { path: read.path, name: read.title || words.unnamed(read.path), errorMessage }
+}
 
-  /** The presets of the vault, asked for again. */
+function usePresetListing(presets: Presets) {
+  const listedPresets = shallowRef<readonly PresetChoice[]>([])
+  let presetsWereListed = true
+
   const listPresets = async (): Promise<void> => {
     try {
       listedPresets.value = await presets.list()
       presetsWereListed = true
     } catch {
-      // Preset listing failed.
       presetsWereListed = false
     }
   }
 
-  /** The presets asked for again, where the last listing did not answer. */
   const listPresetsAgain = (): void => {
     if (!presetsWereListed) void listPresets()
   }
 
-  /** The preset a deck names, as the line at the top of it draws it. */
-  const readDeckPreset = (answer: PresetReadResult): DeckPreset => {
-    const read = answer.ok ? answer.value.preset : null
-    if (read === null) return BY_DEFAULT
-    const errorMessage = read.problems[0] ?? ''
-    if (read.path === '') return { ...BY_DEFAULT, errorMessage }
-    return { path: read.path, name: read.title || words.unnamed(read.path), errorMessage }
-  }
+  const choices = computed<readonly Choice[]>(() => [
+    { path: '', name: words.defaults },
+    ...listedPresets.value.map((one) => ({
+      path: one.path,
+      name: one.title || words.unnamed(one.path),
+    })),
+  ])
 
-  /** Which preset schedules the deck at a path, asked of the vault. */
+  return { choices, listPresets, listPresetsAgain }
+}
+
+/** The scheduler one window has, over the decks that window holds. */
+export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
+  const listing = usePresetListing(presets)
+  const scheduled = ref(new Map<string, DeckPreset>())
+  const chose = ref(new Map<string, string>())
+
   const refreshDeckPreset = async (path: string): Promise<void> => {
     let read: PresetReadResult
     try {
       read = await presets.getDeckPreset(path)
     } catch {
-      // Reading preset scheduling failed.
       return
     }
     scheduled.value.set(path, readDeckPreset(read))
   }
 
-  /** What one tab was told about the preset it last chose. */
   const setChoiceMessage = (id: string, text: string): void => {
     chose.value.set(id, text)
   }
 
-  /**
-   * A deck put on a preset.
-   */
   const scheduleDeck = async (id: string, preset: string): Promise<void> => {
     const path = store.getPath(id)
     await store.flushPending(id)
@@ -100,22 +101,12 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
       else if (answer.error === 'changed') setChoiceMessage(id, words.notScheduledChanged)
       else setChoiceMessage(id, words.notScheduled)
     } catch {
-      // Scheduling preset failed.
       setChoiceMessage(id, words.unreachable)
       return
     }
     store.applyPathChanges([path])
     await refreshDeckPreset(path)
   }
-
-  /** The presets a deck may be put on: the defaults, and every preset the vault holds. */
-  const choices = computed<readonly Choice[]>(() => [
-    { path: '', name: words.defaults },
-    ...listedPresets.value.map((one) => ({
-      path: one.path,
-      name: one.title || words.unnamed(one.path),
-    })),
-  ])
 
   /**
    * The preset one tab is scheduled by.
@@ -144,9 +135,9 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
   }
 
   return {
-    choices,
-    listPresets,
-    listPresetsAgain,
+    choices: listing.choices,
+    listPresets: listing.listPresets,
+    listPresetsAgain: listing.listPresetsAgain,
     refreshDeckPreset,
     scheduleDeck,
     getDeckPreset,

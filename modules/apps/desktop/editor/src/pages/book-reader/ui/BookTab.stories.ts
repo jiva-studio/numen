@@ -162,7 +162,7 @@ const room = (args: Knobs) => ({
   components: { BookTab },
   setup: () => ({
     args,
-    state: useBookTab(useBookReader(shelf(args.book), 'library/mbh.epub', words, () => {})),
+    state: useBookTab(useBookReader(shelf(args.book), 'library/mbh.epub', { words })),
   }),
   template: `
     <div class="numen" :style="{ height: '100vh', width: args.width, background: 'var(--numen-surface)' }">
@@ -317,7 +317,7 @@ export const DrawnOutOfSight: Story = {
   render: (args: Knobs) => ({
     components: { BookTab },
     setup() {
-      const state = useBookTab(useBookReader(shelf(args.book), 'library/mbh.epub', words, () => {}))
+      const state = useBookTab(useBookReader(shelf(args.book), 'library/mbh.epub', { words }))
       const room = ref(false)
       onMounted(() => {
         setTimeout(() => {
@@ -345,7 +345,7 @@ export const DrawnOutOfSight: Story = {
 /** The book whose text points about inside itself and once out of itself. */
 const renderCrossedBook = () => ({
   components: { BookTab },
-  setup: () => ({ state: useBookTab(useBookReader(crossed, 'library/mbh.epub', words, () => {})) }),
+  setup: () => ({ state: useBookTab(useBookReader(crossed, 'library/mbh.epub', { words })) }),
   template: `
     <div class="numen" style="height: 100vh; background: var(--numen-surface)">
       <BookTab :state="state" />
@@ -462,7 +462,7 @@ export const InAPaneOfTheWindow: Story = {
         axis: 'horizontal',
         focus: 'main',
       })
-      const state = useBookTab(useBookReader(shelf(args.book), 'library/mbh.epub', words, () => {}))
+      const state = useBookTab(useBookReader(shelf(args.book), 'library/mbh.epub', { words }))
       return { layout, state, tabs: [{ id: BOOK_TAB, title: 'Mahābhārata' }] }
     },
     template: `
@@ -501,7 +501,7 @@ export const AnswersAKeyAsDrawn: Story = {
   render: (args: Knobs) => ({
     components: { BookTab },
     setup() {
-      const state = useBookTab(useBookReader(shelf(args.book), 'library/mbh.epub', words, () => {}))
+      const state = useBookTab(useBookReader(shelf(args.book), 'library/mbh.epub', { words }))
       return { args, state }
     },
     template: `

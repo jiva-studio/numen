@@ -4,8 +4,7 @@ import type { CommandInvocation, CommandTarget } from '../types'
 export const createInvocation = (
   id: string,
   at: CommandTarget,
-  name = '',
-  note: string | null = null,
+  ...[name = '', note = null]: [string?, (string | null)?]
 ): CommandInvocation => ({
   id,
   path: at.path,

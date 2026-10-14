@@ -84,6 +84,12 @@ export const getGoalValue = (settings: Settings, today: string): number => {
   return settings.minutesADay
 }
 
+export interface ProduceScheduleOptions {
+  curve: Curve
+  today: string
+  within: SettingsBounds
+}
+
 /**
  * The settings one place of the curve produces, which is the goal's own value
  * off the grid. Every other setting stands as the person left it.
@@ -91,10 +97,9 @@ export const getGoalValue = (settings: Settings, today: string): number => {
 export const produceSchedule = (
   was: Settings,
   place: number,
-  curve: Curve,
-  today: string,
-  within: SettingsBounds,
+  options: ProduceScheduleOptions,
 ): Settings => {
+  const { curve, today, within } = options
   const value = curve.grid[place] ?? getGoalValue(was, today)
   if (curve.goal === 'retention') {
     return { ...was, retention: clamp(round(value, 2), within.retention) }

@@ -1,7 +1,7 @@
 /**
  * Reader state and controls for an open book.
  */
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { ContentsEntry } from '@numen/ui'
 import { formatErrorMessage } from '@numen/wire'
 import type { Span } from '@/shared/span'
@@ -26,113 +26,183 @@ export { useBookHighlights } from './useBookHighlights'
 
 export type BookReaderState = ReturnType<typeof useBookReader>
 
-export function useBookReader(
-  books: Books,
-  path: string,
-  words: BookWords,
-  writeMessage: MessageWriter = () => {},
+export interface BookReaderOptions {
+  words: BookWords
+  writeMessage?: MessageWriter
+}
+
+const getChapterTitle = (contents: readonly ContentsEntry[], offset: number): string => {
+  let found = ''
+  for (const entry of contents) {
+    if (entry.at > offset) break
+    found = entry.title
+  }
+  return found
+}
+
+interface BookNavigationDeps {
+  documents: ShallowRef<readonly SpineDocument[]>
+  span: Ref<Span>
+  bookDocument: ReturnType<typeof useBookDocument>
+  getShape: () => Promise<void>
+  isOpen: () => boolean
+}
+
+function useBookNavigation(deps: BookNavigationDeps) {
+  const offset = ref(0)
+
+  const goToOffset = async (targetOffset: number) => {
+    await deps.getShape()
+    if (!deps.isOpen() || deps.documents.value.length === 0) return
+    const last = Math.max(deps.span.value.to - 1, deps.span.value.from)
+    offset.value = Math.min(Math.max(Math.trunc(targetOffset), deps.span.value.from), last)
+    const doc = getDocumentAtOffset(deps.documents.value, offset.value)
+    if (doc) await deps.bookDocument.draw(doc)
+  }
+
+  const followLink = async (target: string) => {
+    await deps.getShape()
+    const targetDoc = deps.documents.value.find((one: SpineDocument) => one.path === target)
+    if (!targetDoc) return
+    await goToOffset(targetDoc.span.from)
+  }
+
+  return { offset, goToOffset, followLink }
+}
+
+async function loadBookData(
+  target: { books: Books; path: string },
+  state: {
+    title: Ref<string>
+    span: Ref<Span>
+    documents: ShallowRef<readonly SpineDocument[]>
+    pages: Ref<number>
+    pageBytes: Ref<number>
+    contents: ShallowRef<readonly ContentsEntry[]>
+    fingerprint: Ref<string>
+    offset: Ref<number>
+  },
+  deps: {
+    words: BookWords
+    writeMessage: (msg: string, level: 'error') => void
+    isOpen: () => boolean
+    drawDocument: (doc: SpineDocument) => Promise<void>
+  },
 ) {
+  try {
+    const book = await target.books.getBook(target.path)
+    if (!deps.isOpen()) return
+    state.title.value = book.title
+    state.span.value = book.span
+    state.documents.value = book.documents
+    state.pages.value = book.pages
+    state.pageBytes.value = book.pageBytes
+    state.contents.value = getContents(book, deps.words)
+    state.fingerprint.value = book.fingerprint
+    state.offset.value = book.span.from
+    const doc = getDocumentAtOffset(book.documents, book.span.from)
+    if (doc) await deps.drawDocument(doc)
+  } catch (error) {
+    if (!deps.isOpen()) return
+    deps.writeMessage(formatErrorMessage(error), 'error')
+  }
+}
+
+function useBookState() {
   const title = ref('')
   const span = ref<Span>({ from: 0, to: 0 })
   const documents = shallowRef<readonly SpineDocument[]>([])
   const contents = shallowRef<readonly ContentsEntry[]>([])
   const pages = ref(0)
   const pageBytes = ref(0)
-  const offset = ref(0)
   // Stryker disable next-line StringLiteral: the fingerprint is assigned before the first document is drawn
   const fingerprint = ref('')
-
-  /**
-   * Whether the book and its first document are still on their way. No text is
-   * not the same as no text yet, and a blank page says the wrong one of the two.
-   */
   const isLoading = ref(true)
+
+  return { title, span, documents, contents, pages, pageBytes, fingerprint, isLoading }
+}
+
+function useBookProgress(
+  state: {
+    pageBytes: Ref<number>
+    pages: Ref<number>
+    contents: ShallowRef<readonly ContentsEntry[]>
+  },
+  offset: Ref<number>,
+) {
+  const page = computed(() => getPageNumber(state.pageBytes.value, state.pages.value, offset.value))
+  const chapter = computed(() => getChapterTitle(state.contents.value, offset.value))
+  return { page, chapter }
+}
+
+function createBookCloser(
+  bookDocument: ReturnType<typeof useBookDocument>,
+  state: ReturnType<typeof useBookState>,
+  onClose: () => void,
+) {
+  return () => {
+    onClose()
+    bookDocument.close()
+    state.contents.value = []
+    state.pages.value = 0
+    state.pageBytes.value = 0
+  }
+}
+
+export function useBookReader(books: Books, path: string, options: BookReaderOptions) {
+  const { words, writeMessage = () => {} } = options
+  const state = useBookState()
   let isOpen = true
 
-  const bookDocument = useBookDocument(books, path, fingerprint, writeMessage, () => isOpen)
+  const bookDocument = useBookDocument(books, path, {
+    fingerprint: state.fingerprint,
+    writeMessage,
+    isOpen: () => isOpen,
+  })
 
-  const page = computed(() => getPageNumber(pageBytes.value, pages.value, offset.value))
-
-  const chapter = computed(() => {
-    let found = ''
-    for (const entry of contents.value) {
-      if (entry.at > offset.value) break
-      found = entry.title
-    }
-    return found
+  const getShape = () => shape
+  const nav = useBookNavigation({
+    documents: state.documents,
+    span: state.span,
+    bookDocument,
+    getShape,
+    isOpen: () => isOpen,
   })
 
   const loadBook = async () => {
-    try {
-      const book = await books.getBook(path)
-      if (!isOpen) return
-      title.value = book.title
-      span.value = book.span
-      documents.value = book.documents
-      pages.value = book.pages
-      pageBytes.value = book.pageBytes
-      contents.value = getContents(book, words)
-      fingerprint.value = book.fingerprint
-      offset.value = book.span.from
-      await bookDocument.draw(getDocumentAtOffset(book.documents, book.span.from))
-    } catch (error) {
-      if (!isOpen) return
-      writeMessage(formatErrorMessage(error), 'error')
-    } finally {
-      isLoading.value = false
-    }
+    await loadBookData(
+      { books, path },
+      { ...state, offset: nav.offset },
+      { words, writeMessage, isOpen: () => isOpen, drawDocument: (doc) => bookDocument.draw(doc) },
+    )
+    state.isLoading.value = false
   }
-
   const shape = loadBook()
 
-  const goToOffset = async (targetOffset: number) => {
-    await shape
-    if (!isOpen || documents.value.length === 0) return
-    const last = Math.max(span.value.to - 1, span.value.from)
-    offset.value = Math.min(Math.max(Math.trunc(targetOffset), span.value.from), last)
-    await bookDocument.draw(getDocumentAtOffset(documents.value, offset.value))
-  }
-
-  const followLink = async (target: string) => {
-    await shape
-    const targetDoc = documents.value.find((one) => one.path === target)
-    if (!targetDoc) return
-    await goToOffset(targetDoc.span.from)
-  }
-
-  const marks = useBookHighlights(goToOffset, () => isOpen)
-
+  const { page, chapter } = useBookProgress(state, nav.offset)
+  const marks = useBookHighlights(nav.goToOffset, () => isOpen)
   const focusSpans = async (...spans: readonly Span[]) => {
     await shape
     await marks.focusSpans(...spans)
   }
 
-  const close = () => {
+  const close = createBookCloser(bookDocument, state, () => {
     isOpen = false
-    bookDocument.close()
-    contents.value = []
-    pages.value = 0
-    pageBytes.value = 0
-  }
+  })
 
   return {
     path,
-    title,
-    span,
-    contents,
-    pages,
+    ...state,
     page,
     chapter,
-    pageBytes,
-    offset,
-    isLoading,
+    offset: nav.offset,
     reading: bookDocument.reading,
     drawn: bookDocument.drawn,
     markup: bookDocument.markup,
     highlights: marks.highlights,
     otherHighlights: marks.otherHighlights,
-    goToOffset,
-    followLink,
+    goToOffset: nav.goToOffset,
+    followLink: nav.followLink,
     focusSpans,
     close,
   }

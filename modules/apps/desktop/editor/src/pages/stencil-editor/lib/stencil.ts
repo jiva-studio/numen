@@ -147,9 +147,7 @@ export const removeFace = (stencil: BufferStencil, id: string): BufferStencil =>
 /** Write one half of one face. */
 export const writeFace = (
   stencil: BufferStencil,
-  id: string,
-  half: 'front' | 'back',
-  text: string,
+  ...[id, half, text]: [id: string, half: 'front' | 'back', text: string]
 ): BufferStencil => ({
   ...stencil,
   faces: stencil.faces.map((face) => (face.id === id ? { ...face, [half]: text } : face)),

@@ -45,20 +45,23 @@ export const navigateToPath = async (
   await on.goes.travel(path)
 }
 
-/**
- * A note made under the name that was typed. From a note tab it opens in a tab
- * beside; anywhere else the plex the person is looking at travels to it.
- */
+export interface CreateNoteOptions {
+  readonly relation: PlexRelation | null
+  readonly words: AnswerWords
+}
+
 export const createNoteCommand = async (
   invocation: CommandInvocation,
-  relation: PlexRelation | null,
   on: CommandDeps,
-  words: AnswerWords,
+  options: CreateNoteOptions,
 ): Promise<void> => {
   if (!invocation.name) return
+  const { relation, words } = options
   const made = await on.files.createNote(invocation.name, relation ? invocation.path : '', relation)
   if (!made) return
-  if (invocation.kind === NOTE) return on.notes.openNewFile(made.path, made.title, 'note', 'beside')
+  if (invocation.kind === NOTE) {
+    return on.notes.openNewFile(made.path, made.title, { type: 'note', where: 'beside' })
+  }
   await navigateToPath(made.path, on, words)
 }
 

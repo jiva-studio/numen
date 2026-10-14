@@ -36,13 +36,11 @@ const recording = (path: string, transcript: number, duration: number) =>
 
 /** The kind, made over the one recording tab this test hands it. */
 const kind = (state: MediaTabState) =>
-  createRecordingKind(
-    tabs,
-    () => state as unknown as TranscriptState,
-    { runCommand: () => {} },
-    openers,
-    played,
-  ).kind
+  createRecordingKind(tabs, () => state as unknown as TranscriptState, {
+    deps: { runCommand: () => {} },
+    tabOpeners: openers,
+    as: played,
+  }).kind
 
 describe('what a command asked over a recording tab is over', () => {
   it('is the file it plays, which is what a run is asked over', () => {
@@ -151,13 +149,11 @@ describe('a hit in the words of a recording', () => {
         reader = read
       },
     }
-    createRecordingKind(
-      window,
-      () => ({}) as unknown as TranscriptState,
-      { runCommand: () => {} },
-      openers,
-      medium,
-    )
+    createRecordingKind(window, () => ({}) as unknown as TranscriptState, {
+      deps: { runCommand: () => {} },
+      tabOpeners: openers,
+      as: medium,
+    })
     return { read: reader!, opened }
   }
 
@@ -199,13 +195,11 @@ describe('the recording tabs a window holds, as the application reports on them'
       getTabState: () => null,
       each: () => [{ state: ants }, { state: bees }],
     } as unknown as WindowHandle
-    const made = createRecordingKind(
-      window,
-      () => ({}) as unknown as TranscriptState,
-      { runCommand: () => {} },
-      openers,
-      played,
-    )
+    const made = createRecordingKind(window, () => ({}) as unknown as TranscriptState, {
+      deps: { runCommand: () => {} },
+      tabOpeners: openers,
+      as: played,
+    })
     return { made, ants, bees }
   }
 

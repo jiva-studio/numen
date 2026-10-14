@@ -47,77 +47,11 @@ export interface ConflictPrompt {
  * open: the person asked for it to go. A conflict is: the text is still here,
  * and nothing but the person decides where it goes.
  */
-export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unknown> = sleep) {
-  const handlers = new Set<FlushHandler>()
-  let open = true
-  const listening = new AbortController()
-
-  /** The token the application is being answered under, once it has asked. */
-  let under: string | null = null
-  /** The last result reported under that token. */
-  let lastResult: FlushResult | null = null
-  /** The writes owed at the ask, while they are still in the air. */
-  let writing: Promise<unknown> | null = null
-  /** Every conflict a person has to settle, drawn or put off. */
+function createConflictRegistry(onChanged: () => void) {
   const outstanding = new Set<Conflict>()
-  /** The notes a person put off. They stand and are not drawn. */
   const put = new Set<string>()
-  /** The conflicts to draw, which is everything standing bar what was put off. */
   const conflicts = shallowRef([]) as Ref<readonly ConflictPrompt[]>
 
-  /** Something the flush waits for, until what this answers with is called. */
-  const addHandler = (one: FlushHandler) => {
-    handlers.add(one)
-    return () => handlers.delete(one)
-  }
-
-  /**
-   * Text a person has to settle, standing until what this answers with is
-   * called. It is told to the application as soon as it is raised: whatever
-   * holds the text is waiting on a person and finishes when they say so.
-   */
-  const raise = (one: Conflict) => {
-    outstanding.add(one)
-    void report()
-    return () => {
-      if (!outstanding.delete(one)) return
-      put.delete(one.note)
-      void report()
-    }
-  }
-
-  async function answer(token: string) {
-    under = token
-    lastResult = null
-    // Every asking is put to the person whole. What was put off last time is
-    // drawn again, because this is a fresh reason to answer it.
-    put.clear()
-    const pendingWrites = Promise.allSettled([...handlers].map((one) => one()))
-    writing = pendingWrites
-    void pendingWrites.then(() => {
-      if (writing !== pendingWrites) return
-      writing = null
-      void report()
-    })
-    await report()
-  }
-
-  /** What is standing, drawn, and reported to the application. */
-  async function report() {
-    const token = under
-    if (token === null) return
-    const all = [...outstanding]
-    conflicts.value = all.filter((one) => !put.has(one.note)).map(prompt)
-    // A write still in the air is not something a person answers, and it is
-    // not an answer either.
-    if (all.length === 0 && writing !== null) return
-    const result: FlushResult = all.length > 0 ? 'asking' : 'written'
-    if (result === lastResult) return
-    lastResult = result
-    await core.reportFlush(token, result)
-  }
-
-  /** One conflict with the three ways out of it. */
   const prompt = (one: Conflict): ConflictPrompt => ({
     note: one.note,
     keep: one.keep,
@@ -128,17 +62,101 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
     },
   })
 
+  const refresh = () => {
+    const all = [...outstanding]
+    conflicts.value = all.filter((one) => !put.has(one.note)).map(prompt)
+    return all
+  }
+
+  const raise = (one: Conflict) => {
+    outstanding.add(one)
+    onChanged()
+    return () => {
+      if (!outstanding.delete(one)) return
+      put.delete(one.note)
+      onChanged()
+    }
+  }
+
+  return {
+    conflicts,
+    raise,
+    refresh,
+    clearPut: () => put.clear(),
+  }
+}
+
+/**
+ * Answering the application when it asks the window to write out what it holds.
+ *
+ * Whatever holds unwritten work adds itself, and every one of them is written
+ * before the answer goes back. An error is not a reason to keep the window
+ * open: the person asked for it to go. A conflict is: the text is still here,
+ * and nothing but the person decides where it goes.
+ */
+function createFlushReporter(
+  core: FlushDeps,
+  registry: ReturnType<typeof createConflictRegistry>,
+  handlers: Set<FlushHandler>,
+) {
+  let under: string | null = null
+  let lastResult: FlushResult | null = null
+  let writing: Promise<unknown> | null = null
+
+  async function report() {
+    const token = under
+    if (token === null) return
+    const all = registry.refresh()
+    if (all.length === 0 && writing !== null) return
+    const result: FlushResult = all.length > 0 ? 'asking' : 'written'
+    if (result === lastResult) return
+    lastResult = result
+    await core.reportFlush(token, result)
+  }
+
+  async function answer(token: string) {
+    under = token
+    lastResult = null
+    registry.clearPut()
+    const pendingWrites = Promise.allSettled([...handlers].map((one) => one()))
+    writing = pendingWrites
+    void pendingWrites.then(() => {
+      if (writing !== pendingWrites) return
+      writing = null
+      void report()
+    })
+    await report()
+  }
+
+  const reset = () => {
+    under = null
+    lastResult = null
+    writing = null
+  }
+
+  return { answer, report, reset }
+}
+
+export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unknown> = sleep) {
+  const handlers = new Set<FlushHandler>()
+  let open = true
+  const listening = new AbortController()
+
+  const reporterHolder: { current?: ReturnType<typeof createFlushReporter> } = {}
+  const registry = createConflictRegistry(() => void reporterHolder.current?.report())
+  const reporter = createFlushReporter(core, registry, handlers)
+  reporterHolder.current = reporter
+
+  const addHandler = (one: FlushHandler) => {
+    handlers.add(one)
+    return () => handlers.delete(one)
+  }
+
   const follows = createFollower({
     isOpen: () => open,
     setLost: () => {},
     wait,
-    // The stream went with whatever was standing still standing, and under a
-    // token nothing answers to any more. It is asked for again.
-    reset: () => {
-      under = null
-      lastResult = null
-      writing = null
-    },
+    reset: reporter.reset,
   })
 
   /** Listen for the quit, for as long as the window is drawn. */
@@ -146,14 +164,14 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
     follows(
       () => core.watchQuit(listening.signal),
       async (message) => {
-        if (message.flush) await answer(message.token)
+        if (message.flush) await reporter.answer(message.token)
       },
     )
 
   return {
     addHandler,
-    raise,
-    conflicts,
+    raise: registry.raise,
+    conflicts: registry.conflicts,
     start,
     close: () => {
       open = false

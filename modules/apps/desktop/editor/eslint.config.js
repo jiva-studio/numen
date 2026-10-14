@@ -168,19 +168,9 @@ export default tseslint.config(
 
   // Limits on complexity and file length for handwritten sources. A test, a spec
   // and a story are shaped by what they are describing and are not held to either.
-  //
-  // `words.ts` is seven tables of the phrases the preset editor says, and what
-  // looks like logic in it picks the sentence printed a line below. A table cut
-  // in half is worse than a long table.
   {
     files: ['src/**/*.{ts,vue}'],
-    ignores: [
-      'src/**/*.test.ts',
-      'src/**/*.spec.ts',
-      'src/**/*.stories.ts',
-      'src/testing/**',
-      'src/pages/preset-editor/words.ts',
-    ],
+    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.stories.ts', 'src/testing/**'],
     rules: {
       'max-lines': ['error', { max: 350, skipBlankLines: true, skipComments: true }],
       'max-lines-per-function': ['error', { max: 60, skipBlankLines: true, skipComments: true }],
@@ -188,21 +178,6 @@ export default tseslint.config(
       'max-depth': ['error', 3],
       'max-params': ['error', 3],
       'no-nested-ternary': 'error',
-    },
-  },
-
-  // Window composables, application lifecycle, entity stores, and page models coordinate multi-parameter state.
-  {
-    files: [
-      'src/app/**/*.{ts,vue}',
-      'src/entities/**/*.{ts,vue}',
-      'src/features/**/*.{ts,vue}',
-      'src/pages/**/*.{ts,vue}',
-      'src/shared/**/*.{ts,vue}',
-    ],
-    rules: {
-      'max-lines-per-function': 'off',
-      'max-params': 'off',
     },
   },
 

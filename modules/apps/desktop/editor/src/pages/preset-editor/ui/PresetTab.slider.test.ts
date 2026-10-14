@@ -99,7 +99,9 @@ describe('the one slider', () => {
   // A card nobody has answered is new, which is what the rest of the product
   // calls it. Overdue keeps its own word, which is a distinction of its own.
   it('calls a card nobody has answered new', () => {
-    const said = words.material(4, 160, 45, 30).map((one) => one.name)
+    const said = words
+      .material({ decks: 4, cards: 160, overdue: 45, unbegun: 30 })
+      .map((one) => one.name)
     expect(said).toContain('new')
     expect(said).not.toContain('unbegun')
     expect(said).toContain('overdue')
@@ -107,7 +109,9 @@ describe('the one slider', () => {
 
   it('leaves out whichever figure stands at nothing', () => {
     const names = (over: number, fresh: number) =>
-      words.material(1, 160, over, fresh).map((one) => `${one.figure} ${one.name}`)
+      words
+        .material({ decks: 1, cards: 160, overdue: over, unbegun: fresh })
+        .map((one) => `${one.figure} ${one.name}`)
     expect(names(0, 30)).toStrictEqual(['1 deck', '160 cards', '30 new'])
     expect(names(45, 0)).toStrictEqual(['1 deck', '160 cards', '45 overdue'])
     expect(names(0, 0)).toStrictEqual(['1 deck', '160 cards'])
@@ -447,12 +451,19 @@ describe('what the control stands at', () => {
   // one of those figures. They stand at what the window was last told while
   // the curve of the settings a person is moving is worked out.
   it('keeps the figures the material stands at while a curve is on its way', () => {
-    const { tab } = mountPresetTab({ isHonest: false }, {}, true, {
-      decks: 4,
-      cards: 160,
-      overdue: 45,
-      unbegun: 30,
-    })
+    const { tab } = mountPresetTab(
+      { isHonest: false },
+      {},
+      {
+        isWaiting: true,
+        counts: {
+          decks: 4,
+          cards: 160,
+          overdue: 45,
+          unbegun: 30,
+        },
+      },
+    )
     const tiles = tab
       .findAll('[data-control="material"] [data-control="tile"]')
       .map((one) => [
@@ -483,7 +494,7 @@ describe('what the control stands at', () => {
   // A caption promising work in progress is a promise, and there is nothing
   // behind it once the vault has refused the picture.
   it('says nothing of indexing the vault where no answer is coming', () => {
-    const { tab } = mountPresetTab({ isHonest: false }, {}, false)
+    const { tab } = mountPresetTab({ isHonest: false }, {}, { isWaiting: false })
     expect(tab.findAll('[data-control="waiting"]')).toHaveLength(0)
     expect(tab.text()).not.toContain(words.waiting)
     expect(tab.findAll('[data-control="picture"][role="slider"]')).toHaveLength(0)

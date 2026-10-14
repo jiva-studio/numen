@@ -92,6 +92,12 @@ export interface Medium<K extends string = string> {
   register(tabOpeners: FileOpeners, reader: SourceReader): void
 }
 
+export interface RecordingKindOptions<K extends string = string> {
+  readonly deps: MediaTabDeps
+  readonly tabOpeners: FileOpeners
+  readonly as: Medium<K>
+}
+
 /**
  * The recording tabs of a window, or its url tabs. A file is its own tab, so
  * the same one opened again is the tab it is already played in.
@@ -99,10 +105,9 @@ export interface Medium<K extends string = string> {
 export function createRecordingKind<K extends string>(
   handle: WindowHandle,
   createState: (path: string) => TranscriptState,
-  deps: MediaTabDeps,
-  tabOpeners: FileOpeners,
-  as: Medium<K>,
+  options: RecordingKindOptions<K>,
 ) {
+  const { deps, tabOpeners, as } = options
   const kind: TabKind<MediaTabState, K> = {
     kind: as.tab,
     open: (path) => useTranscriptTab(createState(path), deps),

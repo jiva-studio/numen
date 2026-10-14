@@ -31,10 +31,11 @@ const HANDLERS: Record<string, CommandHandler> = {
   read: (invocation, on) => on.notes.openFile(invocation.path, invocation.title, 'here'),
   beside: (invocation, on) => on.notes.openFile(invocation.path, invocation.title, 'beside'),
   travel: (invocation, on) => on.goes.travel(invocation.path),
-  child: (invocation, on, words) => createNoteCommand(invocation, 'child', on, words),
-  parent: (invocation, on, words) => createNoteCommand(invocation, 'parent', on, words),
-  jump: (invocation, on, words) => createNoteCommand(invocation, 'jump', on, words),
-  note: (invocation, on, words) => createNoteCommand(invocation, null, on, words),
+  child: (invocation, on, words) => createNoteCommand(invocation, on, { relation: 'child', words }),
+  parent: (invocation, on, words) =>
+    createNoteCommand(invocation, on, { relation: 'parent', words }),
+  jump: (invocation, on, words) => createNoteCommand(invocation, on, { relation: 'jump', words }),
+  note: (invocation, on, words) => createNoteCommand(invocation, on, { relation: null, words }),
   deck: async (invocation, on) => {
     if (invocation.name) await on.makers.createDeck('', invocation.name)
   },
@@ -48,23 +49,21 @@ const HANDLERS: Record<string, CommandHandler> = {
     if (invocation.name) await on.makers.createUrl('', invocation.name)
   },
   title: (invocation, on, words) => renameNoteCommand(invocation, on, words),
-  remove: (invocation, on, words) => removeFiles(invocation, false, on, words),
-  destroy: (invocation, on, words) => removeFiles(invocation, true, on, words),
+  remove: (invocation, on, words) => removeFiles(invocation, on, { isPermanent: false, words }),
+  destroy: (invocation, on, words) => removeFiles(invocation, on, { isPermanent: true, words }),
   transcribe: async (invocation, on, words) =>
-    reportOutcome(
-      invocation,
-      await on.runs.createArtifact(invocation.file, 'transcript'),
+    reportOutcome(invocation, await on.runs.createArtifact(invocation.file, 'transcript'), {
       on,
       words,
-    ),
+    }),
   recognise: async (invocation, on, words) =>
-    reportOutcome(invocation, await on.runs.createArtifact(invocation.file, 'ocr'), on, words),
+    reportOutcome(invocation, await on.runs.createArtifact(invocation.file, 'ocr'), { on, words }),
   downloadText: async (invocation, on, words) =>
-    reportOutcome(invocation, await on.runs.fetchArtifact(invocation.file), on, words),
+    reportOutcome(invocation, await on.runs.fetchArtifact(invocation.file), { on, words }),
   downloadCopy: async (invocation, on, words) =>
-    reportOutcome(invocation, await on.runs.createArtifact(invocation.file, 'copy'), on, words),
+    reportOutcome(invocation, await on.runs.createArtifact(invocation.file, 'copy'), { on, words }),
   proofread: async (invocation, on, words) =>
-    reportOutcome(invocation, await on.runs.correctArtifact(invocation.file), on, words),
+    reportOutcome(invocation, await on.runs.correctArtifact(invocation.file), { on, words }),
   deleteText: async (invocation, on, words) => {
     if (await on.runs.deleteTranscript(invocation.file)) return
     on.runSupport.cannotRun(invocation.id)
@@ -101,8 +100,9 @@ const HANDLERS: Record<string, CommandHandler> = {
   openVault: (invocation, on, words) => showVault(invocation.vault.id, on, words),
   newVault: (_, on, words) => addVault(on, words),
   renameVault: (invocation, on, words) => renameVault(invocation, on, words),
-  removeVault: (invocation, on, words) => removeVault(invocation, false, on, words),
-  eraseVault: (invocation, on, words) => removeVault(invocation, true, on, words),
+  removeVault: (invocation, on, words) =>
+    removeVault(invocation, on, { shouldErase: false, words }),
+  eraseVault: (invocation, on, words) => removeVault(invocation, on, { shouldErase: true, words }),
 }
 
 /** A command carried out. Nothing chosen does nothing at all. */
@@ -131,21 +131,21 @@ const ERROR_STATES: readonly ArtifactState[] = ['none', 'stopped', 'empty', 'fai
  * the work behind the window. A build that cannot make it at all is told once
  * and offers it nowhere after that.
  */
+interface ReportOutcomeDeps {
+  readonly on: RunContext & Voice
+  readonly words: AnswerWords
+}
+
 const reportOutcome = (
   invocation: CommandInvocation,
   outcome: Outcome,
-  on: RunContext & Voice,
-  words: AnswerWords,
+  deps: ReportOutcomeDeps,
 ): void => {
+  const { on, words } = deps
   if (!outcome.able) {
     on.runSupport.cannotRun(invocation.id)
     return on.writeMessage(words.unrunnable, 'error')
   }
-  // A file nothing here could read carries what the run said about it, and that
-  // stands after the message.
-  //
-  // A run over an address is its own answer: it fetches whenever it is asked,
-  // and what it fetched is not what a model heard in a recording.
   const why =
     invocation.id === 'downloadText'
       ? words.fetched[outcome.made]
@@ -154,27 +154,22 @@ const reportOutcome = (
   on.writeMessage(message, ERROR_STATES.includes(outcome.made) ? 'error' : 'report')
 }
 
-/**
- * The files one invocation is over: the one it names, and the rest of the selection it
- * was asked over.
- */
 const getInvocationPaths = (invocation: CommandInvocation): readonly string[] => [
   invocation.path,
   ...invocation.others,
 ]
 
-/**
- * Files taken out of the vault. A file that has gone is gone from the tree, so
- * the notes left pointing at nothing are the whole of what is said. One the
- * vault refuses leaves the rest to go, and what was refused is what the person
- * is told.
- */
+interface RemoveFilesOptions {
+  readonly isPermanent: boolean
+  readonly words: AnswerWords
+}
+
 const removeFiles = async (
   invocation: CommandInvocation,
-  isPermanent: boolean,
   on: CommandDeps,
-  words: AnswerWords,
+  options: RemoveFilesOptions,
 ): Promise<void> => {
+  const { isPermanent, words } = options
   const dangling: string[] = []
   const errors: string[] = []
   let isWaiting = false

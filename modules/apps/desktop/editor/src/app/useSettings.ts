@@ -18,7 +18,7 @@ import {
   useNestingSetting,
   createWindowAppearance,
 } from '@/features/settings-commands'
-import { createReviewSetting } from '@/entities/settings'
+import { createReviewSetting, type SettingEdit } from '@/entities/settings'
 import { createSettingsStore } from '@/entities/settings'
 import { useSettingsTab, paths, createChoices } from '@/pages/settings'
 import type { SelectChoice } from '@numen/ui'
@@ -78,47 +78,58 @@ function getIndexingModelStepGroups(rest: ReturnType<typeof createSettingsStore>
   }))
 }
 
-export function useSettings({ core, words, log, windowTabs, onSizeChanged }: SettingsDeps) {
-  const dayBegins = createReviewSetting(core, words, log.getWriter('reviewed'))
-  const nesting = useNestingSetting(core, words, log.getWriter('nesting'))
-  const dressed = createWindowAppearance(themes, words, log.getWriter('worn'))
-  const sync = syncSetting(core, words, log.getWriter('named'))
-  const rest = createSettingsStore(core, words, log.getWriter('configured'))
+interface SettingsTabConfigDeps {
+  dressed: ReturnType<typeof createWindowAppearance>
+  sync: ReturnType<typeof syncSetting>
+  nesting: ReturnType<typeof useNestingSetting>
+  dayBegins: ReturnType<typeof createReviewSetting>
+  rest: ReturnType<typeof createSettingsStore>
+  file: ReturnType<typeof createTextEditorTabKind>
+}
 
-  const file = createTextEditorTabKind(windowTabs.handle, core, () => void rest.start())
-
-  const configured = useSettingsTab(windowTabs.handle, {
+function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
+  const { dressed, sync, nesting, dayBegins, rest, file } = deps
+  return {
     themes: dressed.list,
     applied: dressed.applied,
     mode: dressed.mode,
     isPinned: dressed.isPinned,
     sizes: dressed.sized,
     bounds: dressed.bounds,
-    choose: (item) => void dressed.chooseItem(item),
+    choose: (item: string) => void dressed.chooseItem(item),
     isSyncing: computed({
       get: () => sync.isEnabled.value,
-      set: (on) => void sync.choose(on ? ON : OFF),
+      set: (on: boolean) => void sync.choose(on ? ON : OFF),
     }),
     isNesting: computed({
       get: () => nesting.isNesting.value,
-      set: (on) => void nesting.choose(on ? ON : OFF),
+      set: (on: boolean) => void nesting.choose(on ? ON : OFF),
     }),
     headings: nesting.headings,
     headingsBounds: nesting.ends,
-    chooseHeadings: (count) => void nesting.chooseCount(`${count}`),
+    chooseHeadings: (count: number) => void nesting.chooseCount(`${count}`),
     dayStartTime: dayBegins.starts,
     latestDayStartTime: dayBegins.latest,
-    chooseDayStartTime: (hour) => void dayBegins.choose(hour),
-    getSetting: (at) => rest.getSetting(at),
-    getModels: (at) => rest.getModelsAt(at),
-    write: (written) => void rest.writeSettings(written),
+    chooseDayStartTime: (hour: string) => void dayBegins.choose(hour),
+    getSetting: (at: readonly string[]) => rest.getSetting(at),
+    getModels: (at: readonly string[]) => rest.getModelsAt(at),
+    write: (written: readonly SettingEdit[]) => void rest.writeSettings(written),
     file: rest.path,
     openFile: () => file.openSettingsFile(),
-  })
+  }
+}
 
-  watch(dressed.sized, () => onSizeChanged())
+interface PaletteListsDeps {
+  dressed: ReturnType<typeof createWindowAppearance>
+  sync: ReturnType<typeof syncSetting>
+  nesting: ReturnType<typeof useNestingSetting>
+  rest: ReturnType<typeof createSettingsStore>
+  words: Words
+}
 
-  const kept: PaletteLists = {
+function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
+  const { dressed, sync, nesting, rest, words } = deps
+  return {
     getStepGroups: (command, typed) => {
       if (command === APPEARANCE) return dressed.getThemeGroups()
       if (command === MODE) return dressed.getModeGroups()
@@ -135,6 +146,25 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
       if (APPEARANCE_COMMANDS.includes(command)) dressed.previewItem(item)
     },
   }
+}
+
+export function useSettings({ core, words, log, windowTabs, onSizeChanged }: SettingsDeps) {
+  const dayBegins = createReviewSetting(core, words, log.getWriter('reviewed'))
+  const nesting = useNestingSetting(core, words, log.getWriter('nesting'))
+  const dressed = createWindowAppearance({ core: themes, words, write: log.getWriter('worn') })
+  const sync = syncSetting(core, words, log.getWriter('named'))
+  const rest = createSettingsStore(core, words, log.getWriter('configured'))
+
+  const file = createTextEditorTabKind(windowTabs.handle, core, () => void rest.start())
+
+  const configured = useSettingsTab(
+    windowTabs.handle,
+    createSettingsTabConfig({ dressed, sync, nesting, dayBegins, rest, file }),
+  )
+
+  watch(dressed.sized, () => onSizeChanged())
+
+  const kept = createSettingsPaletteLists({ dressed, sync, nesting, rest, words })
 
   const kinds = [configured.kind, file.kind]
 

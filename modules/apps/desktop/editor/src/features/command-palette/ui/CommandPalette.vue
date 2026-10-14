@@ -56,12 +56,11 @@ const field = computed(() =>
     : {
         open: props.search.open.value,
         typed: props.search.typed.value,
-        groups: appendCreateOffer(
-          props.search.groups.value,
-          props.search.typed.value,
+        groups: appendCreateOffer(props.search.groups.value, {
+          text: props.search.typed.value,
           words,
-          props.getTarget(),
-        ),
+          at: props.getTarget(),
+        }),
         crumb: '',
         step: '',
         opensOn: '',

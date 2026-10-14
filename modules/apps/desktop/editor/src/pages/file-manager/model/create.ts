@@ -39,13 +39,18 @@ export const createNote = async (
   return made
 }
 
+export interface CreateEntryOptions {
+  createEntry: FileMaker
+  name: string
+}
+
 /** Creates a custom file type in the folder. */
 export const createOne = async (
   list: FileTree,
   path: string | null,
-  createEntry: FileMaker,
-  name: string,
+  options: CreateEntryOptions,
 ): Promise<string | null> => {
+  const { createEntry, name } = options
   const into = getFolderFor(list, path)
   const made = await createEntry(into, name)
   if (!made) return null

@@ -10,7 +10,6 @@ import {
   type AgentModelOption,
 } from '@numen/ui'
 import { areLinkTargetsEqual, parseLinkTarget, extractLinkTargets } from '@/entities/note'
-import type { Model } from '@/entities/settings'
 import type { AgentTabDeps } from '../types'
 
 export { createTabTitle } from '../lib/title'
@@ -26,56 +25,54 @@ const AGENT_USE_AT = ['agent', 'use'] as const
 /** The path the models of one agent are named at. */
 const getModelAt = (agent: string): readonly string[] => ['agent', agent, 'model']
 
-export function useAgentConversation(conversation: Conversation, deps: AgentTabDeps) {
-  /** The question being written, until it is sent. */
-  const userQuestion = ref('')
-  const getModelsAt = (path: readonly string[]) => deps.getModelsAt?.(path) ?? []
+/** The setting kept at a path, as text. */
+const getKept = (deps: AgentTabDeps, path: readonly string[]): string =>
+  String(deps.getSetting?.(path) ?? '')
 
-  /** The agents installed here, as the core lists them. */
+/** The kept model of the kept agent, else that agent's default. */
+function pickOption(
+  options: readonly AgentModelOption[],
+  selectedAgentId: string,
+  ...[selectedModelId, deps]: [selectedModelId: string, deps: AgentTabDeps]
+): AgentModelOption {
+  const agent = selectedAgentId || getKept(deps, AGENT_USE_AT)
+  const model = selectedModelId || getKept(deps, getModelAt(agent))
+  const ofAgent = options.filter((o) => o.agentId === agent)
+  return (
+    ofAgent.find((o) => o.modelId === model) ??
+    ofAgent.find((o) => o.isDefault) ??
+    ofAgent[0] ??
+    options[0]!
+  )
+}
+
+function useAgentSelection(deps: AgentTabDeps) {
+  const getModelsAt = (path: readonly string[]) => deps.getModelsAt?.(path) ?? []
   const getInstalledAgents = () =>
     getModelsAt(AGENT_USE_AT).filter((one) => one.name !== '' && one.presence === 'present')
 
-  /** The options of one agent: the models the core lists, and the agent's own default where it names none. */
-  const getAgentOptions = (agent: Model): readonly AgentModelOption[] =>
-    getModelsAt(getModelAt(agent.name))
-      .filter((one) => one.name !== '' || one.isDefault)
-      .map((one) => ({
-        agentId: agent.name,
-        agentTitle: agent.title,
-        modelId: one.name,
-        modelTitle: one.title,
-        isAvailable: true,
-        isDefault: one.isDefault,
-      }))
-
   const modelOptions = computed<readonly AgentModelOption[]>(() =>
-    getInstalledAgents().flatMap(getAgentOptions),
+    getInstalledAgents().flatMap((agent) =>
+      getModelsAt(getModelAt(agent.name))
+        .filter((one) => one.name !== '' || one.isDefault)
+        .map((one) => ({
+          agentId: agent.name,
+          agentTitle: agent.title,
+          modelId: one.name,
+          modelTitle: one.title,
+          isAvailable: true,
+          isDefault: one.isDefault,
+        })),
+    ),
   )
 
   const selectedAgentId = ref('')
   const selectedModelId = ref('')
 
-  /** The setting kept at a path, as text. */
-  const getKept = (path: readonly string[]): string => String(deps.getSetting?.(path) ?? '')
-
-  /** The kept model of the kept agent, else that agent's default. */
-  const pickOption = (options: readonly AgentModelOption[]): AgentModelOption => {
-    const agent = selectedAgentId.value || getKept(AGENT_USE_AT)
-    const model = selectedModelId.value || getKept(getModelAt(agent))
-    const ofAgent = options.filter((o) => o.agentId === agent)
-    return (
-      ofAgent.find((o) => o.modelId === model) ??
-      ofAgent.find((o) => o.isDefault) ??
-      ofAgent[0] ??
-      options[0]!
-    )
-  }
-
   watch(
     modelOptions,
     (options) => {
-      const first = options[0]
-      if (first === undefined) {
+      if (options[0] === undefined) {
         selectedAgentId.value = ''
         selectedModelId.value = ''
         return
@@ -84,16 +81,12 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
         (o) => o.agentId === selectedAgentId.value && o.modelId === selectedModelId.value,
       )
       if (current) return
-      const pick = pickOption(options)
+      const pick = pickOption(options, selectedAgentId.value, selectedModelId.value, deps)
       selectedAgentId.value = pick.agentId
       selectedModelId.value = pick.modelId
     },
     { immediate: true },
   )
-
-  const setQuestion = (text: string) => {
-    userQuestion.value = text
-  }
 
   const selectModel = (option: AgentModelOption) => {
     selectedAgentId.value = option.agentId
@@ -104,94 +97,17 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
     }
   }
 
-  /** A question sent. What the person has open the agent reads for itself. */
-  const send = (text: string) => {
-    userQuestion.value = ''
-    void conversation.ask(text, '', {
-      agentId: selectedAgentId.value,
-      modelId: selectedModelId.value,
-    })
-  }
+  return { selectedAgentId, selectedModelId, modelOptions, selectModel }
+}
 
-  /** A line about work pressed: where that call was working is put in front. */
-  const openTurnSource = (turn: Turn) => {
-    const location = conversation.getSourceLocation(turn.id)
-    if (location) deps.openFileAt(location.path, location.span)
-  }
+const isSameList = (a: readonly string[], b: readonly string[]) =>
+  a.length === b.length && a.every((one, index) => one === b[index])
 
-  /**
-   * Where each address an answer points at lands. An address that reaches
-   * nothing is held as the empty path, which is what draws the link as not
-   * resolving.
-   */
-  const resolvedAddresses = shallowRef<ResolvedAddressMap>(new Map())
-  const pendingAddresses = new Set<string>()
-
-  /** Every address an answer points at, resolved once each as they arrive. */
-  const resolveAddresses = (addresses: readonly string[]) => {
-    const fresh = addresses.filter((one) => !pendingAddresses.has(one))
-    if (!fresh.length) return
-    for (const one of fresh) pendingAddresses.add(one)
-    void deps.resolve(fresh).then((found) => {
-      const next = new Map(resolvedAddresses.value)
-      for (const one of fresh) next.set(one, found.get(one) ?? '')
-      resolvedAddresses.value = next
-    })
-  }
-
-  /** Extracted wikilink addresses per turn, cached by turn text. */
-  const addressCache = new Map<string, { text: string; addresses: readonly string[] }>()
-
-  const getTurnAddresses = (turn: Turn): readonly string[] => {
-    const cached = addressCache.get(turn.id)
-    if (cached && cached.text === turn.text) {
-      return cached.addresses
-    }
-    const addresses = getWikilinks(turn.text).map((one) => one.address)
-    addressCache.set(turn.id, { text: turn.text, addresses })
-    return addresses
-  }
-
-  watch(
-    () => {
-      const all = conversation.turns.value
-      const last = all[all.length - 1]
-      return [all.length, last?.id, last?.text, last?.state]
-    },
-    () => {
-      resolveAddresses(conversation.turns.value.flatMap((turn) => getTurnAddresses(turn)))
-    },
-    { immediate: true },
-  )
-
-  /** The turn as last drawn, with the unresolved addresses it was drawn with. */
-  const enrichedByTurn = new WeakMap<Turn, { unresolved: readonly string[]; enriched: Turn }>()
-
-  const isSameList = (a: readonly string[], b: readonly string[]) =>
-    a.length === b.length && a.every((one, index) => one === b[index])
-
-  const enrichTurn = (turn: Turn): Turn => {
-    const unresolved = getTurnAddresses(turn).filter(
-      (address) => resolvedAddresses.value.get(address) === '',
-    )
-    if (!unresolved.length) return turn
-    const known = enrichedByTurn.get(turn)
-    if (known && isSameList(known.unresolved, unresolved)) return known.enriched
-    const enriched = { ...turn, unresolved }
-    enrichedByTurn.set(turn, { unresolved, enriched })
-    return enriched
-  }
-
-  /** The turns as the thread draws them, each saying which of its links reach nothing. */
-  const turns = computed<Turn[]>(() => conversation.turns.value.map(enrichTurn))
-
-  /**
-   * A link inside an answer pressed. One naming a place in the vault opens it,
-   * and the other places that answer names in the same document are lit with
-   * it. One naming a note opens that note beside what the person is looking
-   * at. Any other link is left to whatever would follow it.
-   */
-  const followLink = (turn: Turn, href: string, press: MouseEvent) => {
+function createConversationLinkFollower(
+  deps: AgentTabDeps,
+  getResolved: (href: string) => string | undefined,
+) {
+  return (turn: Turn, href: string, press: MouseEvent) => {
     const here = parseLinkTarget(href)
     if (here) {
       press.preventDefault()
@@ -205,22 +121,96 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
       return
     }
     if (!isNoteAddress(href)) return
-    const path = resolvedAddresses.value.get(href)
+    const path = getResolved(href)
     if (path) deps.openFileBeside(path)
+  }
+}
+
+function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps) {
+  const resolvedAddresses = shallowRef<ResolvedAddressMap>(new Map())
+  const pendingAddresses = new Set<string>()
+  const addressCache = new Map<string, { text: string; addresses: readonly string[] }>()
+  const enrichedByTurn = new WeakMap<Turn, { unresolved: readonly string[]; enriched: Turn }>()
+
+  const resolveAddresses = (addresses: readonly string[]) => {
+    const fresh = addresses.filter((one) => !pendingAddresses.has(one))
+    if (!fresh.length) return
+    for (const one of fresh) pendingAddresses.add(one)
+    void deps.resolve(fresh).then((found) => {
+      const next = new Map(resolvedAddresses.value)
+      for (const one of fresh) next.set(one, found.get(one) ?? '')
+      resolvedAddresses.value = next
+    })
+  }
+
+  const getTurnAddresses = (turn: Turn): readonly string[] => {
+    const cached = addressCache.get(turn.id)
+    if (cached && cached.text === turn.text) return cached.addresses
+    const addresses = getWikilinks(turn.text).map((one) => one.address)
+    addressCache.set(turn.id, { text: turn.text, addresses })
+    return addresses
+  }
+
+  watch(
+    () => {
+      const all = conversation.turns.value
+      const last = all[all.length - 1]
+      return [all.length, last?.id, last?.text, last?.state]
+    },
+    () => resolveAddresses(conversation.turns.value.flatMap((turn) => getTurnAddresses(turn))),
+    { immediate: true },
+  )
+
+  const enrichTurn = (turn: Turn): Turn => {
+    const unresolved = getTurnAddresses(turn).filter(
+      (address) => resolvedAddresses.value.get(address) === '',
+    )
+    if (!unresolved.length) return turn
+    const known = enrichedByTurn.get(turn)
+    if (known && isSameList(known.unresolved, unresolved)) return known.enriched
+    const enriched = { ...turn, unresolved }
+    enrichedByTurn.set(turn, { unresolved, enriched })
+    return enriched
+  }
+
+  const turns = computed<Turn[]>(() => conversation.turns.value.map(enrichTurn))
+  const followLink = createConversationLinkFollower(deps, (href) =>
+    resolvedAddresses.value.get(href),
+  )
+
+  return { turns, followLink }
+}
+
+export function useAgentConversation(conversation: Conversation, deps: AgentTabDeps) {
+  const userQuestion = ref('')
+  const selection = useAgentSelection(deps)
+  const addresses = useConversationAddresses(conversation, deps)
+
+  const setQuestion = (text: string) => {
+    userQuestion.value = text
+  }
+
+  const send = (text: string) => {
+    userQuestion.value = ''
+    void conversation.ask(text, '', {
+      agentId: selection.selectedAgentId.value,
+      modelId: selection.selectedModelId.value,
+    })
+  }
+
+  const openTurnSource = (turn: Turn) => {
+    const location = conversation.getSourceLocation(turn.id)
+    if (location) deps.openFileAt(location.path, location.span)
   }
 
   return {
     ...conversation,
-    turns,
+    ...selection,
+    ...addresses,
     userQuestion,
-    selectedAgentId,
-    selectedModelId,
-    modelOptions,
-    selectModel,
     setQuestion,
     send,
     openTurnSource,
-    followLink,
     unreachable: deps.unreachable,
   }
 }

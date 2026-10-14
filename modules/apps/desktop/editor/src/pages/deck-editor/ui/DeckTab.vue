@@ -10,16 +10,16 @@ import type { DeckTabState } from '../types'
 import DeckScheduleBar from './DeckScheduleBar.vue'
 import { WORDS as words } from '@/entities/deck'
 
-// --- Props & Emits ---
+/* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{ state: DeckTabState }>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 const { choices, drawn, marks, errorMessage, note, scheduled, sections, stencils } = props.state
 
 /** Validation errors against cards as reported by deck marks. */
 const validationErrors = computed(() => ({ at: marks.value.at, under: marks.value.under }))
 
-// --- Handlers ---
+/* -------------------------------- Handlers -------------------------------- */
 function onChooseSchedule(path: string) {
   props.state.setSchedule(path)
 }
@@ -36,7 +36,7 @@ function onMoveCard(id: string, at: InsertionPoint) {
   props.state.moveCard(id, at)
 }
 
-function onWriteCard(id: string, field: string, nth: number, text: string) {
+function onWriteCard(...[id, field, nth, text]: [string, string, number, string]) {
   props.state.writeCardField(id, field, nth, text)
 }
 
@@ -60,7 +60,7 @@ function onTake() {
   props.state.takeFile()
 }
 
-// --- Helpers ---
+/* -------------------------------- Helpers --------------------------------- */
 /** The untyped values a card cut by that stencil is made with. */
 function empty(stencil: string) {
   return cardBlanks(cardFields(stencils.value.find((one) => one.name === stencil)?.fields ?? []))

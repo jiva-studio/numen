@@ -290,7 +290,7 @@ describe('what the files tab asks of the window', () => {
     const { deps, runCommand, makes } = setup()
     makes.value = new Map([['a.md', made]])
 
-    deps.runCommand('delete', ['a.md', 'b.md', 'c.md'], 'A', 'tab' as never)
+    deps.runCommand('delete', ['a.md', 'b.md', 'c.md'], { name: 'A', source: 'tab' as never })
 
     expect(runCommand).toHaveBeenCalledWith('delete', {
       vault: { id: 'v', name: 'V' },
@@ -309,7 +309,7 @@ describe('what the files tab asks of the window', () => {
   it('runs a command over a path the vault made nothing for with an empty record', () => {
     const { deps, runCommand } = setup()
 
-    deps.runCommand('delete', ['a.md'], 'A', 'tab' as never)
+    deps.runCommand('delete', ['a.md'], { name: 'A', source: 'tab' as never })
 
     expect(runCommand.mock.calls[0]![1].made).toStrictEqual({})
   })
@@ -484,7 +484,7 @@ describe('what the files tab asks, with nothing to go on', () => {
   it('runs a command over no paths with an empty path', () => {
     const { deps, runCommand } = setup()
 
-    deps.runCommand('delete', [], 'A', 'tab' as never)
+    deps.runCommand('delete', [], { name: 'A', source: 'tab' as never })
 
     expect(runCommand.mock.calls[0]![1]).toMatchObject({ path: '', file: '', others: [] })
   })

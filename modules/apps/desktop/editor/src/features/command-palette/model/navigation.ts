@@ -1,7 +1,7 @@
 /**
  * Step navigation, stack tracking, and presentation for command palette steps.
  */
-import { computed, shallowRef, type Ref } from 'vue'
+import { computed, shallowRef, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 import { getRenamedPath, type PathRename } from '@/shared/paths'
 import type { Vault } from '@/entities/vault'
 import { EXACT, NO, YES, type PendingStep } from '../lib/step'
@@ -26,25 +26,145 @@ const getPrompts = (words: Words): Partial<Record<PromptStep, string>> => ({
   asking: words.answer,
 })
 
-export function createPaletteSteps(
-  words: Words,
-  lists: PaletteLists,
-  knows: NoteLookup,
-  text: Ref<string>,
-  onDrop: () => void,
-  onLights: (item: string) => void,
-  onLists: () => void,
-  onClose: () => void,
-  invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation,
-) {
-  /**
-   * The steps a command asked for, the last of them the one being asked now.
-   */
-  const steps = shallowRef<readonly PendingStep[]>([])
+export interface PaletteStepsOptions {
+  readonly words: Words
+  readonly lists: PaletteLists
+  readonly knows: NoteLookup
+  readonly text: Ref<string>
+  readonly onDrop: () => void
+  readonly onLights: (item: string) => void
+  readonly onLists: () => void
+  readonly onClose: () => void
+  readonly invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation
+}
 
-  /** The step being asked, and nothing at the list of commands. */
-  const here = computed<PendingStep | null>(() => steps.value.at(-1) ?? null)
+interface StepActionDeps {
+  readonly invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation
+  readonly pushStep: (step: PendingStep) => void
+  readonly popStep: () => void
+  readonly lists: PaletteLists
+  readonly text: Ref<string>
+  readonly getStepTitle: (step: PendingStep) => string
+}
 
+function resolveSelectionAction(
+  step: PendingStep,
+  choice: {
+    item: string
+    found: readonly NameMatch[]
+    vaults: readonly Vault[]
+    isAside: (vault: Vault) => boolean
+  },
+  deps: StepActionDeps,
+): CommandInvocation | null {
+  if (step.step === 'picking') {
+    const one = choice.found.find((match) => match.path === choice.item)
+    return one
+      ? deps.invocation(step.command.id, {
+          ...step.on,
+          path: one.path,
+          title: one.title || one.path,
+        })
+      : null
+  }
+  if (step.step === 'vaults') {
+    const one = choice.vaults.find((vault) => vault.id === choice.item)
+    if (!one || choice.isAside(one)) return null
+    const on = { ...step.on, vault: { id: one.id, name: one.name } }
+    if (!step.command.next) return deps.invocation(step.command.id, on)
+    deps.pushStep({ step: step.command.next, command: step.command, on })
+  }
+  return null
+}
+
+function resolveInputOrChoiceAction(
+  step: PendingStep,
+  item: string,
+  deps: StepActionDeps,
+): CommandInvocation | null {
+  const name = deps.text.value.trim()
+  if (step.step === 'naming') return name ? deps.invocation(step.command.id, step.on, name) : null
+  if (step.step === 'address')
+    return isWebUrl(name) ? deps.invocation(step.command.id, step.on, name) : null
+  if (step.step === 'choosing') {
+    const rows = deps.lists.getStepGroups(step.command.id, deps.text.value).flatMap((g) => g.items)
+    const one = rows.find((r) => r.id === item)
+    return !one || one.disabled ? null : deps.invocation(step.command.id, step.on, one.id)
+  }
+  return null
+}
+
+function resolveConfirmationAction(
+  step: PendingStep,
+  action: string,
+  deps: StepActionDeps,
+): CommandInvocation | null {
+  const name = deps.text.value.trim()
+  if (step.step === 'asking') {
+    if (action === NO) {
+      deps.popStep()
+      return null
+    }
+    return action === YES ? deps.invocation(step.command.id, step.on) : null
+  }
+  return action === EXACT && name === deps.getStepTitle(step)
+    ? deps.invocation(step.command.id, step.on, name)
+    : null
+}
+
+function resolveStepAction(
+  step: PendingStep,
+  choice: {
+    item: string
+    action: string
+    found: readonly NameMatch[]
+    vaults: readonly Vault[]
+    isAside: (vault: Vault) => boolean
+  },
+  deps: StepActionDeps,
+): CommandInvocation | null {
+  if (step.step === 'picking' || step.step === 'vaults') {
+    return resolveSelectionAction(step, choice, deps)
+  }
+  if (step.step === 'naming' || step.step === 'address' || step.step === 'choosing') {
+    return resolveInputOrChoiceAction(step, choice.item, deps)
+  }
+  return resolveConfirmationAction(step, choice.action, deps)
+}
+
+function useStepComputed(deps: {
+  here: ComputedRef<PendingStep | null>
+  steps: ShallowRef<readonly PendingStep[]>
+  words: Words
+  lists: PaletteLists
+  text: Ref<string>
+}) {
+  const { here, steps, words, lists, text } = deps
+  const crumb = computed(() => here.value?.command.text ?? words.command)
+  const prompts = getPrompts(words)
+
+  const placeholder = computed(() => {
+    const s = here.value
+    if (!s) return words.typeCommand
+    if (s.step === 'exactly') return s.command.warns?.back ?? words.typeBack
+    return prompts[s.step as PromptStep] ?? words.typeCommand
+  })
+
+  const step = computed(
+    () => `${steps.value.length}:${here.value?.command.id ?? ''}:${here.value?.step ?? 'commands'}`,
+  )
+
+  const opensOn = computed(() => {
+    const s = here.value
+    if (s?.step !== 'choosing') return ''
+    const rows = lists.getStepGroups(s.command.id, text.value).flatMap((g) => g.items)
+    return rows.find((one) => one.isCurrent)?.id ?? ''
+  })
+
+  return { crumb, placeholder, step, opensOn }
+}
+
+function createStepNaming(words: Words, knows: NoteLookup) {
   const getStepTitle = (step: PendingStep): string =>
     step.command.group === 'vault'
       ? step.on.vault.name
@@ -55,170 +175,89 @@ export function createPaletteSteps(
     return others > 0 ? words.several(others + 1) : `“${getStepTitle(step)}”`
   }
 
-  const crumb = computed(() => here.value?.command.text ?? words.command)
+  return { getStepTitle, getStepLabel }
+}
 
-  const prompts = getPrompts(words)
-
-  const placeholder = computed(() => {
-    const step = here.value
-    if (!step) return words.typeCommand
-    if (step.step === 'exactly') return step.command.warns?.back ?? words.typeBack
-    return prompts[step.step] ?? words.typeCommand
-  })
-
-  const step = computed(
-    () => `${steps.value.length}:${here.value?.command.id ?? ''}:${here.value?.step ?? 'commands'}`,
-  )
-
-  const opensOn = computed(() => {
-    const step = here.value
-    if (step?.step !== 'choosing') return ''
-    const rows = lists.getStepGroups(step.command.id, text.value).flatMap((group) => group.items)
-    return rows.find((one) => one.isCurrent)?.id ?? ''
-  })
-
-  const startStep = (step: PendingStep | null) => {
-    if (step?.step === 'vaults') void onLists()
-  }
-
+function createStepStack(options: {
+  steps: ShallowRef<readonly PendingStep[]>
+  here: ComputedRef<PendingStep | null>
+  text: Ref<string>
+  onDrop: () => void
+  onLights: (id: string) => void
+  onLists: () => void
+}) {
   const pushStep = (step: PendingStep) => {
-    onDrop()
-    text.value = step.command.getFieldText?.(step.on) ?? ''
-    steps.value = [...steps.value, step]
-    startStep(step)
+    options.onDrop()
+    options.text.value = step.command.getFieldText?.(step.on) ?? ''
+    options.steps.value = [...options.steps.value, step]
+    if (step.step === 'vaults') void options.onLists()
   }
 
   const popStep = () => {
-    onLights('')
-    onDrop()
-    text.value = ''
-    steps.value = steps.value.slice(0, -1)
-    startStep(here.value)
+    options.onLights('')
+    options.onDrop()
+    options.text.value = ''
+    options.steps.value = options.steps.value.slice(0, -1)
+    if (options.here.value?.step === 'vaults') void options.onLists()
   }
+
+  return { pushStep, popStep }
+}
+
+export function createPaletteSteps(options: PaletteStepsOptions) {
+  const { words, lists, knows, text, onDrop, onLights, onLists, onClose, invocation } = options
+  const steps = shallowRef<readonly PendingStep[]>([])
+  const here = computed<PendingStep | null>(() => steps.value.at(-1) ?? null)
+
+  const { getStepTitle, getStepLabel } = createStepNaming(words, knows)
+  const computedFields = useStepComputed({ here, steps, words, lists, text })
+  const { pushStep, popStep } = createStepStack({ steps, here, text, onDrop, onLights, onLists })
 
   const applyRenames = (renames: readonly PathRename[] = []) => {
     if (!renames.length) return
-    steps.value = steps.value.map((step) => {
-      const to = getRenamedPath(renames, step.on.path)
-      return to ? { ...step, on: { ...step.on, path: to } } : step
+    steps.value = steps.value.map((s) => {
+      const to = getRenamedPath(renames, s.on.path)
+      return to ? { ...s, on: { ...s.on, path: to } } : s
     })
-  }
-
-  const reset = () => {
-    steps.value = []
-  }
-
-  const leaveStep = () => {
-    if (here.value) return popStep()
-    onClose()
-  }
-
-  const goBack = (): boolean => {
-    if (here.value) {
-      popStep()
-      return false
-    }
-    onClose()
-    return true
-  }
-
-  const chooseNote = (
-    step: PendingStep,
-    item: string,
-    found: readonly NameMatch[],
-  ): CommandInvocation | null => {
-    const one = found.find((match) => match.path === item)
-    if (!one) return null
-    return invocation(step.command.id, { ...step.on, path: one.path, title: one.title || one.path })
-  }
-
-  const chooseVault = (
-    step: PendingStep,
-    item: string,
-    vaults: readonly Vault[],
-    isAside: (vault: Vault) => boolean,
-  ): CommandInvocation | null => {
-    const one = vaults.find((vault) => vault.id === item)
-    if (!one || isAside(one)) return null
-    const on = { ...step.on, vault: { id: one.id, name: one.name } }
-    if (!step.command.next) return invocation(step.command.id, on)
-    pushStep({ step: step.command.next, command: step.command, on })
-    return null
-  }
-
-  const chooseName = (step: PendingStep, name: string): CommandInvocation | null =>
-    name ? invocation(step.command.id, step.on, name) : null
-
-  const chooseAddress = (step: PendingStep, name: string): CommandInvocation | null =>
-    isWebUrl(name) ? invocation(step.command.id, step.on, name) : null
-
-  const chooseListItem = (step: PendingStep, item: string): CommandInvocation | null => {
-    const rows = lists.getStepGroups(step.command.id, text.value).flatMap((group) => group.items)
-    const one = rows.find((row) => row.id === item)
-    if (!one || one.disabled) return null
-    return invocation(step.command.id, step.on, one.id)
-  }
-
-  const answerStep = (step: PendingStep, action: string): CommandInvocation | null => {
-    if (action === NO) {
-      popStep()
-      return null
-    }
-    if (action !== YES) return null
-    return invocation(step.command.id, step.on)
-  }
-
-  const retypeTitle = (
-    step: PendingStep,
-    action: string,
-    name: string,
-  ): CommandInvocation | null => {
-    if (action !== EXACT || name !== getStepTitle(step)) return null
-    return invocation(step.command.id, step.on, name)
   }
 
   const chooseInStep = (
     step: PendingStep,
     item: string,
-    action: string,
-    found: readonly NameMatch[],
-    vaults: readonly Vault[],
-    isAside: (vault: Vault) => boolean,
-  ): CommandInvocation | null => {
-    const name = text.value.trim()
-    switch (step.step) {
-      case 'picking':
-        return chooseNote(step, item, found)
-      case 'vaults':
-        return chooseVault(step, item, vaults, isAside)
-      case 'naming':
-        return chooseName(step, name)
-      case 'address':
-        return chooseAddress(step, name)
-      case 'choosing':
-        return chooseListItem(step, item)
-      case 'asking':
-        return answerStep(step, action)
-      default:
-        return retypeTitle(step, action, name)
-    }
-  }
+    ...[action, found, vaults, isAside]: [
+      action: string,
+      found: readonly NameMatch[],
+      vaults: readonly Vault[],
+      isAside: (vault: Vault) => boolean,
+    ]
+  ): CommandInvocation | null =>
+    resolveStepAction(
+      step,
+      { item, action, found, vaults, isAside },
+      { invocation, pushStep, popStep, lists, text, getStepTitle },
+    )
 
   return {
     steps,
     here,
     getStepTitle,
     getStepLabel,
-    crumb,
-    placeholder,
-    step,
-    opensOn,
+    ...computedFields,
     pushStep,
     popStep,
-    reset,
+    reset: () => {
+      steps.value = []
+    },
     applyRenames,
-    leaveStep,
-    goBack,
+    leaveStep: () => (here.value ? popStep() : onClose()),
+    goBack: (): boolean => {
+      if (here.value) {
+        popStep()
+        return false
+      }
+      onClose()
+      return true
+    },
     chooseInStep,
   }
 }

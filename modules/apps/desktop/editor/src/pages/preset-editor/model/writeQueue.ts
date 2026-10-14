@@ -31,14 +31,16 @@ export function createWriteQueue(): WriteQueue {
   }
 }
 
+export interface WriteOptions {
+  path: string
+  settings: Settings
+  core: Presets
+  writeMessage: MessageWriter
+}
+
 /** Sends the current settings to the file the read came out of. */
-export const sendWrite = async (
-  queue: WriteQueue,
-  path: string,
-  settings: Settings,
-  core: Presets,
-  writeMessage: MessageWriter,
-): Promise<void> => {
+export const sendWrite = async (queue: WriteQueue, options: WriteOptions): Promise<void> => {
+  const { path, settings, core, writeMessage } = options
   writeMessage('')
   let answer
   try {
@@ -63,66 +65,42 @@ export const sendWrite = async (
   queue.hasWarned = false
 }
 
-const runWrite = async (
-  queue: WriteQueue,
-  path: string,
-  settings: Settings,
-  core: Presets,
-  writeMessage: MessageWriter,
-): Promise<void> => {
-  await sendWrite(queue, path, settings, core, writeMessage)
+const runWrite = async (queue: WriteQueue, options: WriteOptions): Promise<void> => {
+  await sendWrite(queue, options)
   queue.isWriting = false
   const again = queue.isWriteQueued && !queue.hasExternalChange.value
   queue.isWriteQueued = false
   if (again) {
-    await requestWrite(queue, path, settings, core, writeMessage)
+    await requestWrite(queue, options)
     return
   }
   queue.activeWrite = null
 }
 
 /** Requests a write, queuing behind the active write. */
-export const requestWrite = (
-  queue: WriteQueue,
-  path: string,
-  settings: Settings,
-  core: Presets,
-  writeMessage: MessageWriter,
-): Promise<void> => {
+export const requestWrite = (queue: WriteQueue, options: WriteOptions): Promise<void> => {
   if (queue.isWriting) {
     queue.isWriteQueued = true
     return queue.activeWrite ?? Promise.resolve()
   }
   queue.isWriting = true
-  const started = runWrite(queue, path, settings, core, writeMessage)
+  const started = runWrite(queue, options)
   queue.activeWrite = started
   return started
 }
 
 /** Flushes any unwritten changes or waits for the active write to finish. */
-export const flushWrites = async (
-  queue: WriteQueue,
-  path: string,
-  settings: Settings,
-  core: Presets,
-  writeMessage: MessageWriter,
-): Promise<void> => {
+export const flushWrites = async (queue: WriteQueue, options: WriteOptions): Promise<void> => {
   if (queue.dirtyFields.size > 0 && !queue.hasExternalChange.value) {
-    await requestWrite(queue, path, settings, core, writeMessage)
+    await requestWrite(queue, options)
   } else if (queue.activeWrite) {
     await queue.activeWrite
   }
 }
 
 /** Checks whether a tab can close, warning once if changes cannot be written. */
-export const canCloseTab = async (
-  queue: WriteQueue,
-  path: string,
-  settings: Settings,
-  core: Presets,
-  writeMessage: MessageWriter,
-): Promise<boolean> => {
-  await flushWrites(queue, path, settings, core, writeMessage)
+export const canCloseTab = async (queue: WriteQueue, options: WriteOptions): Promise<boolean> => {
+  await flushWrites(queue, options)
   if (queue.dirtyFields.size === 0 && !queue.hasExternalChange.value) return true
   if (queue.hasWarned) return true
   queue.hasWarned = true

@@ -5,16 +5,24 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import {
   getContents,
   getDocumentAtOffset,
-  useBookReader,
+  useBookReader as openBookReader,
   getPageNumber,
   type Book,
   type Books,
 } from './useBookReader'
+import type { MessageWriter } from '@/shared/notices/messages'
 
 const WORDS = { page: 'Page' }
 
 let heard: string[] = []
 const writeMessage = (text: string) => heard.push(text)
+
+const useBookReader = (
+  books: Books,
+  path: string,
+  words = WORDS,
+  writer: MessageWriter = writeMessage,
+) => openBookReader(books, path, { words, writeMessage: writer })
 
 beforeEach(() => {
   heard = []

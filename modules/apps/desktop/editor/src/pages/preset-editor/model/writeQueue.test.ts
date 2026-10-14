@@ -3,6 +3,7 @@
  * out goes after it, and a file changed elsewhere is not written over.
  */
 import { describe, expect, it } from 'vitest'
+import type { MessageWriter } from '@/shared/notices/messages'
 import { DEFAULTS, type Presets, type PresetWriteResult } from '../types'
 import { WORDS as words } from '../words'
 import { createWriteQueue, flushWrites, requestWrite, sendWrite } from './writeQueue'
@@ -38,6 +39,13 @@ const createMessages = () => {
 
 const nap = () => new Promise((wake) => setTimeout(wake, 0))
 
+const createWriteOpts = (core: Presets, writeMessage: MessageWriter = () => {}) => ({
+  path: PATH,
+  settings: DEFAULTS,
+  core,
+  writeMessage,
+})
+
 describe('a preset nothing has been written to yet', () => {
   it('stands at no version, with nothing queued, changed or said', () => {
     const queue = createWriteQueue()
@@ -59,8 +67,8 @@ describe('one write', () => {
     const { core, based } = createCore({ ok: true, value: { at: 'v1' } })
     const { said, writeMessage } = createMessages()
 
-    await sendWrite(queue, PATH, DEFAULTS, core, writeMessage)
-    await sendWrite(queue, PATH, DEFAULTS, core, writeMessage)
+    await sendWrite(queue, createWriteOpts(core, writeMessage))
+    await sendWrite(queue, createWriteOpts(core, writeMessage))
 
     expect(based).toStrictEqual(['', 'v1'])
     expect(said[0]).toStrictEqual(['', undefined])
@@ -73,7 +81,7 @@ describe('one write', () => {
     queue.dirtyFields.add('retention')
     const { core } = createCore({ ok: true, value: { at: 'v1' } })
 
-    await sendWrite(queue, PATH, DEFAULTS, core, createMessages().writeMessage)
+    await sendWrite(queue, createWriteOpts(core, createMessages().writeMessage))
 
     expect(queue.errorMessage.value).toBe('')
     expect(queue.hasWarned).toBe(false)
@@ -85,7 +93,7 @@ describe('one write', () => {
     const { core } = createCore({ ok: false, error: 'missing' } as PresetWriteResult)
     const { said, writeMessage } = createMessages()
 
-    await sendWrite(queue, PATH, DEFAULTS, core, writeMessage)
+    await sendWrite(queue, createWriteOpts(core, writeMessage))
 
     expect(said.at(-1)).toStrictEqual([queue.errorMessage.value, 'error'])
   })
@@ -100,7 +108,7 @@ describe('a write the vault could not be asked for', () => {
       },
     } as unknown as Presets
 
-    await sendWrite(queue, PATH, DEFAULTS, core, createMessages().writeMessage)
+    await sendWrite(queue, createWriteOpts(core, createMessages().writeMessage))
 
     expect(queue.errorMessage.value).toBe(words.unwritten)
   })
@@ -113,8 +121,8 @@ describe('a write asked for while another is out', () => {
     const { core, based } = createCore(first.answered, { ok: true, value: { at: 'v2' } })
     const { writeMessage } = createMessages()
 
-    const one = requestWrite(queue, PATH, DEFAULTS, core, writeMessage)
-    const two = requestWrite(queue, PATH, DEFAULTS, core, writeMessage)
+    const one = requestWrite(queue, createWriteOpts(core, writeMessage))
+    const two = requestWrite(queue, createWriteOpts(core, writeMessage))
     expect(queue.isWriteQueued).toBe(true)
     first.open({ ok: true, value: { at: 'v1' } })
     await Promise.all([one, two])
@@ -130,8 +138,8 @@ describe('a write asked for while another is out', () => {
     const { core, based } = createCore(first.answered)
     const { writeMessage } = createMessages()
 
-    const one = requestWrite(queue, PATH, DEFAULTS, core, writeMessage)
-    void requestWrite(queue, PATH, DEFAULTS, core, writeMessage)
+    const one = requestWrite(queue, createWriteOpts(core, writeMessage))
+    void requestWrite(queue, createWriteOpts(core, writeMessage))
     first.open({ ok: false, error: 'changed' } as PresetWriteResult)
     await one
 
@@ -146,7 +154,7 @@ describe('flushing a preset', () => {
     queue.dirtyFields.add('retention')
     const { core, based } = createCore()
 
-    await flushWrites(queue, PATH, DEFAULTS, core, createMessages().writeMessage)
+    await flushWrites(queue, createWriteOpts(core, createMessages().writeMessage))
 
     expect(based).toStrictEqual([''])
   })
@@ -155,7 +163,7 @@ describe('flushing a preset', () => {
     const queue = createWriteQueue()
     const { core, based } = createCore()
 
-    await flushWrites(queue, PATH, DEFAULTS, core, createMessages().writeMessage)
+    await flushWrites(queue, createWriteOpts(core, createMessages().writeMessage))
 
     expect(based).toStrictEqual([])
   })
@@ -166,7 +174,7 @@ describe('flushing a preset', () => {
     queue.hasExternalChange.value = true
     const { core, based } = createCore()
 
-    await flushWrites(queue, PATH, DEFAULTS, core, createMessages().writeMessage)
+    await flushWrites(queue, createWriteOpts(core, createMessages().writeMessage))
 
     expect(based).toStrictEqual([])
   })
@@ -176,10 +184,10 @@ describe('flushing a preset', () => {
     const first = createGate()
     const { core } = createCore(first.answered)
     const { writeMessage } = createMessages()
-    void requestWrite(queue, PATH, DEFAULTS, core, writeMessage)
+    void requestWrite(queue, createWriteOpts(core, writeMessage))
 
     let isFlushed = false
-    const flushed = flushWrites(queue, PATH, DEFAULTS, core, writeMessage).then(() => {
+    const flushed = flushWrites(queue, createWriteOpts(core, writeMessage)).then(() => {
       isFlushed = true
     })
     await nap()

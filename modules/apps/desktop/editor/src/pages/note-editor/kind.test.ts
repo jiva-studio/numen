@@ -155,7 +155,7 @@ const window = (
    * does, which is through the one place a file is opened from.
    */
   const openNote = (path: string, title = '', how: PlexDestination = 'here') =>
-    tabOpeners.openNewFile(path, title, 'note', how)
+    tabOpeners.openNewFile(path, title, { type: 'note', where: how })
   return { noted, held, open, openNote, tabOpeners, ...store, drawings: drawing }
 }
 
@@ -668,7 +668,7 @@ describe('a note put in front of the person', () => {
 
   it('is revealed at the line it was asked to open on', async () => {
     const one = window()
-    await one.tabOpeners.openFile('Note.md', '', 'here', 7)
+    await one.tabOpeners.openFile('Note.md', '', { where: 'here', line: 7 })
     const drew = editor()
 
     getState(one).setEditor(drew.drawn)

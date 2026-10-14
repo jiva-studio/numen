@@ -42,7 +42,8 @@ const mountStencil = async (problems: readonly DeckProblem[] = []) => {
     createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     createStencil: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     // The vault writes the name in the fields and in the braces of every face.
-    renameField: async (path, from, to) => {
+    renameField: async (path, field, _seen) => {
+      const { from, to } = field
       renamed.push(`${path} ${from} ${to}`)
       fields = fields.map((one) => (one === from ? to : one))
       const rewriteBraces = (text: string) => text.split(`{{${from}}}`).join(`{{${to}}}`)

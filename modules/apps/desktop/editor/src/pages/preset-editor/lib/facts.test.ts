@@ -62,18 +62,15 @@ describe('what a place buys', () => {
 
 describe('the facts of the material', () => {
   it('leave out the overdue and the new where there are none', () => {
-    expect(getMaterialFacts(4, 160, 0, 0).map((one) => one.kind)).toStrictEqual(['decks', 'cards'])
-    expect(getMaterialFacts(4, 160, 45, 0).map((one) => one.kind)).toStrictEqual([
-      'decks',
-      'cards',
-      'overdue',
-    ])
-    expect(getMaterialFacts(4, 160, 45, 30).map((one) => one.kind)).toStrictEqual([
-      'decks',
-      'cards',
-      'overdue',
-      'unbegun',
-    ])
+    expect(
+      getMaterialFacts({ decks: 4, cards: 160, overdue: 0, unbegun: 0 }).map((one) => one.kind),
+    ).toStrictEqual(['decks', 'cards'])
+    expect(
+      getMaterialFacts({ decks: 4, cards: 160, overdue: 45, unbegun: 0 }).map((one) => one.kind),
+    ).toStrictEqual(['decks', 'cards', 'overdue'])
+    expect(
+      getMaterialFacts({ decks: 4, cards: 160, overdue: 45, unbegun: 30 }).map((one) => one.kind),
+    ).toStrictEqual(['decks', 'cards', 'overdue', 'unbegun'])
   })
 })
 

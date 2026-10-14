@@ -42,20 +42,20 @@ const createSteps = (groups: readonly StepGroup[] = []) => {
   const text = ref('')
   const happened: string[] = []
   const invoked: [string, CommandTarget, string | undefined][] = []
-  const steps = createPaletteSteps(
+  const steps = createPaletteSteps({
     words,
-    { getStepGroups: () => groups, previewItem: () => {} },
-    { getTitle: () => '', getTabAt: () => null },
+    lists: { getStepGroups: () => groups, previewItem: () => {} },
+    knows: { getTitle: () => '', getTabAt: () => null },
     text,
-    () => void happened.push('drop'),
-    (item) => void happened.push(`lights ${item}`),
-    () => void happened.push('lists'),
-    () => void happened.push('close'),
-    (id, over, name) => {
+    onDrop: () => void happened.push('drop'),
+    onLights: (item) => void happened.push(`lights ${item}`),
+    onLists: () => void happened.push('lists'),
+    onClose: () => void happened.push('close'),
+    invocation: (id, over, name) => {
       invoked.push([id, over, name])
       return { id } as never
     },
-  )
+  })
   return { steps, text, happened, invoked }
 }
 

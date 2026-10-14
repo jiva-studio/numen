@@ -37,17 +37,21 @@ export function createMediaKinds({
   const recorded = createRecordingKind(
     held.handle,
     (path) => useTranscript(recordings, path, { plays }),
-    createTabDeps('recording'),
-    tabOpeners,
-    RECORDINGS,
+    {
+      deps: createTabDeps('recording'),
+      tabOpeners,
+      as: RECORDINGS,
+    },
   )
 
   const pointed = createRecordingKind(
     held.handle,
     (path) => useTranscript(recordings, path, { plays }),
-    createTabDeps('url'),
-    tabOpeners,
-    URLS,
+    {
+      deps: createTabDeps('url'),
+      tabOpeners,
+      as: URLS,
+    },
   )
 
   watch(window.tasks, () => {

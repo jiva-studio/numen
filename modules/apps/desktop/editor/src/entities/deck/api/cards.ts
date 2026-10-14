@@ -59,7 +59,7 @@ export const stencilService: StencilService = {
     const error = findErrorCode(answer)
     return error ? asFailure(error) : asValue({ path: answer.path })
   },
-  renameField: async (path, from, to, seen) => {
+  renameField: async (path, { from, to }, seen) => {
     const answer = await cardsService.renameStencilField({
       path,
       from,
@@ -87,10 +87,10 @@ export const stencilService: StencilService = {
       at: formatFingerprint(answer.at) ?? '',
     })
   },
-  writeStencil: async (path, fields, stencil, seen) => {
+  writeStencil: async (path, stencil, seen) => {
     const answer = await cardsService.writeStencil({
       path,
-      fields: [...fields],
+      fields: [...stencil.fields],
       preamble: stencil.preamble,
       faces: stencil.faces.map((face) => ({
         name: face.name,

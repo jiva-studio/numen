@@ -7,19 +7,20 @@ import { generateId, type IdMaker } from '@/entities/deck'
 import { getFileStem } from '@/shared/paths'
 import type { BufferCard, BufferDeck } from '../types'
 
+export interface AddCardOptions {
+  stencilPath: string
+  values: readonly Value[]
+  section?: string | null
+  generateCardId?: IdMaker
+}
+
 /**
  * A card made at the end of a section, cut by the stencil filed at a path, with
  * a value standing empty for each field. Under no section it is made at the end
  * of the cards standing before the first of them.
  */
-export const addCard = (
-  deck: BufferDeck,
-  title: string,
-  stencilPath: string,
-  values: readonly Value[],
-  section: string | null = null,
-  generateCardId: IdMaker = generateId,
-): BufferDeck => {
+export const addCard = (deck: BufferDeck, title: string, options: AddCardOptions): BufferDeck => {
+  const { stencilPath, values, section = null, generateCardId = generateId } = options
   const ranks = new Map<string | null, number>(deck.sections.map((each, index) => [each.id, index]))
   const rank = (id: string | null): number => ranks.get(id) ?? -1
   const mine = rank(section)
@@ -78,19 +79,21 @@ export const dropCard = (deck: BufferDeck, id: string, at: InsertionPoint): Buff
     return { ...deck, cards: [...otherCards, { ...targetCard, section: getLastSection(deck) }] }
   }
 
-  return dropOnSection(deck, targetCard, otherCards, at)
+  return dropOnSection(deck, { card: targetCard, left: otherCards, at })
+}
+
+interface DropOnSectionParams {
+  card: BufferCard
+  left: readonly BufferCard[]
+  at: string
 }
 
 /**
  * A card let go on a section: after the last card standing under it, and where
  * the section begins while it holds none.
  */
-const dropOnSection = (
-  deck: BufferDeck,
-  card: BufferCard,
-  left: readonly BufferCard[],
-  at: string,
-): BufferDeck => {
+const dropOnSection = (deck: BufferDeck, params: DropOnSectionParams): BufferDeck => {
+  const { card, left, at } = params
   const rank = (section: string | null): number =>
     deck.sections.findIndex((each) => each.id === section)
   const head = (section: string | null): number => {
@@ -125,30 +128,37 @@ const dropOnSection = (
   return put(at, head(at))
 }
 
+export interface ReplaceValueTarget {
+  field: string
+  nth: number
+  text: string
+}
+
 /**
  * One value of one card as it now reads.
  */
 export const replaceCardValue = (
   deck: BufferDeck,
   id: string,
-  field: string,
-  nth: number,
-  text: string,
-): BufferDeck => ({
-  ...deck,
-  cards: deck.cards.map((card) => {
-    if (card.id !== id) return card
+  target: ReplaceValueTarget,
+): BufferDeck => {
+  const { field, nth, text } = target
+  return {
+    ...deck,
+    cards: deck.cards.map((card) => {
+      if (card.id !== id) return card
 
-    let under = 0
-    let found = false
-    const values = card.values.map((value) => {
-      if (value.field !== field) return value
-      under += 1
-      if (under !== nth) return value
-      found = true
-      return { field, text }
-    })
-    if (found) return { ...card, values }
-    return text === '' ? card : { ...card, values: [...card.values, { field, text }] }
-  }),
-})
+      let under = 0
+      let found = false
+      const values = card.values.map((value) => {
+        if (value.field !== field) return value
+        under += 1
+        if (under !== nth) return value
+        found = true
+        return { field, text }
+      })
+      if (found) return { ...card, values }
+      return text === '' ? card : { ...card, values: [...card.values, { field, text }] }
+    }),
+  }
+}

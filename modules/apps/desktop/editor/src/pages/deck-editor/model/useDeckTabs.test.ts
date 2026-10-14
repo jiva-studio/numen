@@ -17,8 +17,16 @@ import {
 import { fileOpeners, type WindowHandle } from '@/entities/tab'
 import { useWindowTabs } from '@/entities/tab'
 import { DECK } from '@/entities/tab'
-import { useDeckTabs, type DeckTabState } from './useDeckTabs'
+import { useDeckTabs as useDeckTabsOriginal, type DeckTabState } from './useDeckTabs'
 import { WORDS as words } from '@/entities/deck'
+
+const useDeckTabs = (
+  cards: Cards,
+  presets: Presets,
+  handle: WindowHandle,
+  openers: ReturnType<typeof fileOpeners>,
+  deps?: { now?: () => number },
+) => useDeckTabsOriginal(cards, presets, { handle, tabOpeners: openers, now: deps?.now })
 
 /** A preset that schedules, which is what every preset here is. */
 const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING } satisfies Pick<
@@ -1170,7 +1178,7 @@ describe('a deck opened by a file opener', () => {
   it('is put beside the pane the person is in, where that is asked', () => {
     const { road, openTab, openTabBeside } = spied()
 
-    road.openNewFile('Animals.md', '', 'deck', 'beside')
+    road.openNewFile('Animals.md', '', { type: 'deck', where: 'beside' })
 
     expect(openTabBeside).toHaveBeenCalledTimes(1)
     expect(openTab).not.toHaveBeenCalled()

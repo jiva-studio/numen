@@ -246,7 +246,11 @@ const clear: readonly Position[] = [
 
 describe('the numbers read off the picture’s edges', () => {
   it('is the most over the top and the least on the foot', () => {
-    const numbers = createAxisLabels({ least: 0, most: 10 }, clear, [], null, formatValue)
+    const numbers = createAxisLabels(
+      { least: 0, most: 10 },
+      { places: clear, marks: [] },
+      formatValue,
+    )
 
     expect(numbers.map((one) => one.text)).toStrictEqual(['10', '0'])
     expect(numbers.map((one) => one.box)).toStrictEqual([
@@ -257,7 +261,11 @@ describe('the numbers read off the picture’s edges', () => {
 
   // An extent of no width has one number and nothing else to read.
   it('is one number on the foot for an extent of no width', () => {
-    const numbers = createAxisLabels({ least: 4, most: 4 }, clear, [], null, formatValue)
+    const numbers = createAxisLabels(
+      { least: 4, most: 4 },
+      { places: clear, marks: [] },
+      formatValue,
+    )
 
     expect(numbers).toStrictEqual([
       { at: getAxisNumber(PLOT_BOTTOM, '0'), box: getAxisNumberBox(PLOT_BOTTOM, '0'), text: '4' },
@@ -267,9 +275,7 @@ describe('the numbers read off the picture’s edges', () => {
   it('drops the number the curve itself stands on', () => {
     const numbers = createAxisLabels(
       { least: 0, most: 10 },
-      [{ x: PLOT_LEFT, y: PLOT_BOTTOM }],
-      [],
-      null,
+      { places: [{ x: PLOT_LEFT, y: PLOT_BOTTOM }], marks: [] },
       formatValue,
     )
 
@@ -279,9 +285,7 @@ describe('the numbers read off the picture’s edges', () => {
   it('drops the number a mark stands on', () => {
     const numbers = createAxisLabels(
       { least: 0, most: 10 },
-      clear,
-      [{ x: PLOT_LEFT, y: PLOT_TOP }],
-      null,
+      { places: clear, marks: [{ x: PLOT_LEFT, y: PLOT_TOP }] },
       formatValue,
     )
 
@@ -290,13 +294,21 @@ describe('the numbers read off the picture’s edges', () => {
 
   it('drops the number the bubble over the knob stands on', () => {
     const over = box(PLOT_LEFT, 0, CALLOUT_WIDTH, CALLOUT_HEIGHT)
-    const numbers = createAxisLabels({ least: 0, most: 10 }, clear, [], over, formatValue)
+    const numbers = createAxisLabels(
+      { least: 0, most: 10 },
+      { places: clear, marks: [], over },
+      formatValue,
+    )
 
     expect(numbers.map((one) => one.text)).toStrictEqual(['0'])
   })
 
   it('keeps every number it draws inside the picture', () => {
-    const numbers = createAxisLabels({ least: 0, most: 10 }, clear, [], null, formatValue)
+    const numbers = createAxisLabels(
+      { least: 0, most: 10 },
+      { places: clear, marks: [] },
+      formatValue,
+    )
 
     expect(numbers.every((one) => isInside(one.box))).toBe(true)
   })
@@ -395,7 +407,11 @@ describe('where a name is pulled back at the ends', () => {
 
 describe('where the number over the top is set', () => {
   it('stands over the top line, lifted clear of it', () => {
-    const numbers = createAxisLabels({ least: 0, most: 10 }, clear, [], null, formatValue)
+    const numbers = createAxisLabels(
+      { least: 0, most: 10 },
+      { places: clear, marks: [] },
+      formatValue,
+    )
 
     expect(numbers[0]!.at).toStrictEqual(getAxisNumber(PLOT_TOP, '-100%'))
     expect(numbers[0]!.at.translate).toBe('0 -100%')

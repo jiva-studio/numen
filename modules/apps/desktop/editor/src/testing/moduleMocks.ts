@@ -132,7 +132,7 @@ const cardsSaid = {
       requests.cards.push(`stencil ${folder || '/'} ${title} [${fields.join(', ')}]`)
       return maker.createFile(title, folder)
     },
-    renameField: async (path: string, from: string, to: string) => {
+    renameField: async (path: string, { from, to }: { from: string; to: string }) => {
       requests.renamedField.push(`${path} ${from} ${to}`)
       return said.renaming
     },

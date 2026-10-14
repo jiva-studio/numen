@@ -35,7 +35,8 @@ const mountFiles = async (open: readonly string[] = []) => {
   const tab: FilesTabState = useFilesTab(list, {
     openDestination: (landing) =>
       void done.push(`lands ${landing ? `${landing.at} ${landing.path}` : '—'}`),
-    runCommand: (id, paths, name) => void done.push(`runs ${id} ${paths.join(' ')} ${name}`),
+    runCommand: (id, paths, details) =>
+      void done.push(`runs ${id} ${paths.join(' ')} ${details.name}`),
     movePath: async (from, to) => void done.push(`moves ${from} ${to}`),
     setDraggedPaths: (paths) => void done.push(`drags ${paths.join(' ') || '—'}`),
     createFolder: async (path) => void done.push(`makes ${path}`),

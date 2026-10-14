@@ -6,7 +6,7 @@ import { isAlwaysOffered } from './offered'
 import type { Command } from '../types'
 import type { Words } from '../words'
 
-export const createWindowCommands = (words: Words, agent: string): readonly Command[] => [
+export const createWindowCreationCommands = (words: Words, agent: string): readonly Command[] => [
   {
     id: 'note',
     text: words.newNote,
@@ -43,6 +43,9 @@ export const createWindowCommands = (words: Words, agent: string): readonly Comm
     needs: 'address',
     isOffered: (at) => at.isReady,
   },
+]
+
+export const createWindowNavigationCommands = (words: Words, agent: string): readonly Command[] => [
   {
     id: 'plex',
     text: words.newPlex,
@@ -72,6 +75,9 @@ export const createWindowCommands = (words: Words, agent: string): readonly Comm
     group: 'window',
     isOffered: isAlwaysOffered,
   },
+]
+
+export const createWindowDisplayCommands = (words: Words): readonly Command[] => [
   {
     id: 'appearance',
     text: words.appearance,
@@ -79,7 +85,13 @@ export const createWindowCommands = (words: Words, agent: string): readonly Comm
     needs: 'choosing',
     isOffered: isAlwaysOffered,
   },
-  { id: 'mode', text: words.mode, group: 'window', needs: 'choosing', isOffered: isAlwaysOffered },
+  {
+    id: 'mode',
+    text: words.mode,
+    group: 'window',
+    needs: 'choosing',
+    isOffered: isAlwaysOffered,
+  },
   {
     id: 'interfaceScale',
     text: words.interfaceScale,
@@ -94,6 +106,9 @@ export const createWindowCommands = (words: Words, agent: string): readonly Comm
     needs: 'choosing',
     isOffered: isAlwaysOffered,
   },
+]
+
+export const createWindowFeatureCommands = (words: Words): readonly Command[] => [
   {
     id: 'syncing',
     text: words.syncing,
@@ -130,4 +145,15 @@ export const createWindowCommands = (words: Words, agent: string): readonly Comm
     isOffered: isAlwaysOffered,
   },
   { id: 'settings', text: words.settings, group: 'window', isOffered: isAlwaysOffered },
+]
+
+export const createWindowSettingsCommands = (words: Words): readonly Command[] => [
+  ...createWindowDisplayCommands(words),
+  ...createWindowFeatureCommands(words),
+]
+
+export const createWindowCommands = (words: Words, agent: string): readonly Command[] => [
+  ...createWindowCreationCommands(words, agent),
+  ...createWindowNavigationCommands(words, agent),
+  ...createWindowSettingsCommands(words),
 ]

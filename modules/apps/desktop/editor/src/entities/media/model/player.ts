@@ -49,6 +49,34 @@ export type AudioFactory = () => HTMLAudioElement
 
 const createAudioElement: AudioFactory = () => new Audio()
 
+function bindAudioListeners(
+  audio: HTMLAudioElement,
+  state: {
+    at: Ref<number>
+    duration: Ref<number>
+    isPlaying: Ref<boolean>
+    error: Ref<string>
+  },
+) {
+  audio.preload = 'metadata'
+  audio.addEventListener('timeupdate', () => {
+    state.at.value = Math.round(audio.currentTime * 1000)
+  })
+  audio.addEventListener('seeked', () => {
+    state.at.value = Math.round(audio.currentTime * 1000)
+  })
+  audio.addEventListener('durationchange', () => {
+    const runs = audio.duration
+    state.duration.value = Number.isFinite(runs) ? Math.round(runs * 1000) : 0
+  })
+  audio.addEventListener('play', () => void (state.isPlaying.value = true))
+  audio.addEventListener('pause', () => void (state.isPlaying.value = false))
+  audio.addEventListener('ended', () => void (state.isPlaying.value = false))
+  audio.addEventListener('error', () => {
+    state.error.value = FAILED[audio.error?.code ?? 0] ?? WORDS.unreadable
+  })
+}
+
 /**
  * One sound, played through one element made when it is first wanted. The
  * element is never put in the page, so nothing that is drawn can take it away.
@@ -73,23 +101,7 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
       return null
     }
     element = audio
-    audio.preload = 'metadata'
-    audio.addEventListener('timeupdate', () => {
-      at.value = Math.round(audio.currentTime * 1000)
-    })
-    audio.addEventListener('seeked', () => {
-      at.value = Math.round(audio.currentTime * 1000)
-    })
-    audio.addEventListener('durationchange', () => {
-      const runs = audio.duration
-      duration.value = Number.isFinite(runs) ? Math.round(runs * 1000) : 0
-    })
-    audio.addEventListener('play', () => void (isPlaying.value = true))
-    audio.addEventListener('pause', () => void (isPlaying.value = false))
-    audio.addEventListener('ended', () => void (isPlaying.value = false))
-    audio.addEventListener('error', () => {
-      error.value = FAILED[audio.error?.code ?? 0] ?? WORDS.unreadable
-    })
+    bindAudioListeners(audio, { at, duration, isPlaying, error })
     return audio
   }
 

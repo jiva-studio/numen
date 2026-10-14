@@ -22,6 +22,24 @@ export interface DraftOptions {
   write: (cues: readonly Cue[]) => Promise<void>
 }
 
+async function saveDraftCues(
+  body: string,
+  cues: Ref<readonly Cue[]>,
+  options: { isOpen: () => boolean; write: (cues: readonly Cue[]) => Promise<void> },
+): Promise<{ isSaved: boolean; errorText: string }> {
+  const next = applyCues(cues.value, body)
+  if (isSame(next, cues.value)) return { isSaved: true, errorText: '' }
+  try {
+    await options.write(next)
+    if (!options.isOpen()) return { isSaved: false, errorText: '' }
+    cues.value = next
+    return { isSaved: true, errorText: '' }
+  } catch (thrown) {
+    if (!options.isOpen()) return { isSaved: false, errorText: '' }
+    return { isSaved: false, errorText: formatErrorMessage(thrown) }
+  }
+}
+
 export function useTranscriptDraft(how: DraftOptions) {
   const { cues, isEditable, error, quiet, isOpen, write } = how
 
@@ -51,24 +69,19 @@ export function useTranscriptDraft(how: DraftOptions) {
     writeTimer = undefined
     if (!canWrite()) return
     const body = prose.value
-    const next = applyCues(cues.value, body)
     owed = false
-    // A transcript written down is a transcript a person owns, and a
-    // proofreader leaves it alone. Only words that changed are written.
-    if (isSame(next, cues.value)) return
     isWriting = true
     try {
-      await write(next)
+      const result = await saveDraftCues(body, cues, { isOpen, write })
       if (!isOpen()) return
-      cues.value = next
-      error.value = ''
-    } catch (thrown) {
-      if (!isOpen()) return
-      owed = true
-      error.value = formatErrorMessage(thrown)
+      if (result.isSaved) {
+        error.value = ''
+      } else if (result.errorText) {
+        owed = true
+        error.value = result.errorText
+      }
     } finally {
       isWriting = false
-      // Typing that landed while the write was in the air is still owed.
       if (isOpen() && prose.value !== body) {
         owed = true
         writeTimer = setTimeout(() => void keep(), quiet)

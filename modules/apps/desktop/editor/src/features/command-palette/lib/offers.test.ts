@@ -32,26 +32,30 @@ describe('a search that turned up nothing', () => {
   ]
 
   it('offers to make the note that was looked for', () => {
-    const offered = appendCreateOffer(createGroups(0), 'Entropy', words, front())
+    const offered = appendCreateOffer(createGroups(0), { text: 'Entropy', words, at: front() })
 
     expect(offered.at(-1)?.id).toBe(CREATE_NOTE_ID)
     expect(offered.at(-1)?.items[0]?.title).toBe('Create a note called “Entropy”')
   })
 
   it('offers nothing while a group is still waiting on the vault', () => {
-    expect(appendCreateOffer(createGroups(0, true), 'Entropy', words, front())).toHaveLength(1)
+    expect(
+      appendCreateOffer(createGroups(0, true), { text: 'Entropy', words, at: front() }),
+    ).toHaveLength(1)
   })
 
   it('offers nothing where a group turned something up', () => {
-    expect(appendCreateOffer(createGroups(1), 'Entropy', words, front())).toHaveLength(1)
+    expect(
+      appendCreateOffer(createGroups(1), { text: 'Entropy', words, at: front() }),
+    ).toHaveLength(1)
   })
 
   it('offers nothing where there are no groups to have answered', () => {
-    expect(appendCreateOffer([], 'Entropy', words, front())).toHaveLength(0)
+    expect(appendCreateOffer([], { text: 'Entropy', words, at: front() })).toHaveLength(0)
   })
 
   it('offers nothing where nothing was looked for', () => {
-    expect(appendCreateOffer(createGroups(0), '   ', words, front())).toHaveLength(1)
+    expect(appendCreateOffer(createGroups(0), { text: '   ', words, at: front() })).toHaveLength(1)
   })
 
   it('makes the note where the person is standing, under the words looked for', () => {
@@ -70,7 +74,8 @@ describe('a search that turned up nothing', () => {
   })
 
   it('offers the relations of the note in front, and says which note that is', () => {
-    const item = appendCreateOffer(createGroups(0), 'Entropy', words, front()).at(-1)?.items[0]
+    const item = appendCreateOffer(createGroups(0), { text: 'Entropy', words, at: front() }).at(-1)
+      ?.items[0]
 
     expect(item?.actions?.map((one) => one.id)).toStrictEqual([
       CREATE_NOTE_ID,
@@ -82,12 +87,11 @@ describe('a search that turned up nothing', () => {
   })
 
   it('offers no relation where nothing in front is a note', () => {
-    const item = appendCreateOffer(
-      createGroups(0),
-      'Entropy',
+    const item = appendCreateOffer(createGroups(0), {
+      text: 'Entropy',
       words,
-      front({ path: '', title: '' }),
-    ).at(-1)?.items[0]
+      at: front({ path: '', title: '' }),
+    }).at(-1)?.items[0]
 
     expect(item?.actions?.map((one) => one.id)).toStrictEqual([CREATE_NOTE_ID])
     expect(item?.detail).toBeUndefined()

@@ -7,6 +7,7 @@ import type { ErrorCode } from '@/shared/errors'
 import type { CreateResult } from '@/entities/file/@x/tab'
 import { writer } from '@/testing/writer'
 import { ERRORS } from '@/shared/words'
+import type { MessageWriter } from '@/shared/notices/messages'
 import { fileOpeners } from './openers'
 import { createFileCreators, type VaultCreator } from './makers'
 
@@ -44,18 +45,19 @@ const maker = (
 /** Everything making one of the four says. */
 const MAKING = { errors: ERRORS }
 
+const createCreators = (
+  vault: VaultCreator,
+  tabOpeners = fileOpeners({ fileKinds: async () => new Map() }),
+  write: MessageWriter = () => {},
+) => createFileCreators(vault, tabOpeners, { words: MAKING, write })
+
 describe('a deck, a stencil or a preset made', () => {
   it('is asked of the vault under the name and the folder it was given', async () => {
     const vault = maker()
-    const made = createFileCreators(
-      vault,
-      fileOpeners({ fileKinds: async () => new Map() }),
-      MAKING,
-      () => {},
-    )
+    const made = createCreators(vault)
 
     await made.createFile('deck', 'zoology', 'Animals')
-    await made.createFile('stencil', 'zoology', 'Words', ['Front'])
+    await made.createFile('stencil', 'zoology', { name: 'Words', fields: ['Front'] })
     await made.createFile('preset', '', 'Slow')
 
     expect(vault.asked).toStrictEqual([
@@ -66,12 +68,7 @@ describe('a deck, a stencil or a preset made', () => {
   })
 
   it('answers where the vault filed it', async () => {
-    const made = createFileCreators(
-      maker(),
-      fileOpeners({ fileKinds: async () => new Map() }),
-      MAKING,
-      () => {},
-    )
+    const made = createCreators(maker())
 
     expect(await made.createFile('deck', 'zoology', 'Animals')).toBe('zoology/Animals.md')
   })
@@ -82,7 +79,7 @@ describe('a deck, a stencil or a preset made', () => {
     for (const what of ['deck', 'stencil', 'preset'] as const) {
       tabOpeners.registerEditor(what, (path) => opened.push(`${what} ${path}`))
     }
-    const made = createFileCreators(maker(), tabOpeners, MAKING, () => {})
+    const made = createCreators(maker(), tabOpeners)
 
     await made.createDeck('zoology', 'Animals')
     await made.createStencil('zoology', 'Words', ['Front'])
@@ -98,7 +95,7 @@ describe('a deck, a stencil or a preset made', () => {
   it('says what the vault refused, and nothing opens', async () => {
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
     const told = writer()
-    const made = createFileCreators(maker('occupied'), tabOpeners, MAKING, told.write)
+    const made = createCreators(maker('occupied'), tabOpeners, told.write)
 
     expect(await made.createDeck('zoology', 'Animals')).toBe('')
     expect(told.said).toStrictEqual([ERRORS.occupied])
@@ -106,12 +103,7 @@ describe('a deck, a stencil or a preset made', () => {
 
   it('says a vault that could not be asked at all', async () => {
     const told = writer()
-    const made = createFileCreators(
-      maker(null, true),
-      fileOpeners({ fileKinds: async () => new Map() }),
-      MAKING,
-      told.write,
-    )
+    const made = createCreators(maker(null, true), undefined, told.write)
 
     expect(await made.createDeck('zoology', 'Animals')).toBe('')
     expect(told.said.join(' ')).not.toContain('the vault is not there')
@@ -120,12 +112,7 @@ describe('a deck, a stencil or a preset made', () => {
 
   it('is asked of the vault with no fields where none were given', async () => {
     const vault = maker()
-    const made = createFileCreators(
-      vault,
-      fileOpeners({ fileKinds: async () => new Map() }),
-      MAKING,
-      () => {},
-    )
+    const made = createCreators(vault)
 
     await made.createFile('stencil', 'zoology', 'Words')
 
@@ -134,12 +121,7 @@ describe('a deck, a stencil or a preset made', () => {
 
   it('says what the vault refused as an error', async () => {
     const told = writer()
-    const made = createFileCreators(
-      maker('occupied'),
-      fileOpeners({ fileKinds: async () => new Map() }),
-      MAKING,
-      told.write,
-    )
+    const made = createCreators(maker('occupied'), undefined, told.write)
 
     await made.createFile('deck', 'zoology', 'Animals')
 
@@ -148,12 +130,7 @@ describe('a deck, a stencil or a preset made', () => {
 
   it('says a vault that could not be asked as an error', async () => {
     const told = writer()
-    const made = createFileCreators(
-      maker(null, true),
-      fileOpeners({ fileKinds: async () => new Map() }),
-      MAKING,
-      told.write,
-    )
+    const made = createCreators(maker(null, true), undefined, told.write)
 
     await made.createFile('deck', 'zoology', 'Animals')
 
@@ -166,7 +143,7 @@ describe('a file made and put in front of the person', () => {
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
     const titles: string[] = []
     tabOpeners.registerEditor('deck', (_path, title) => titles.push(title))
-    const made = createFileCreators(maker(), tabOpeners, MAKING, () => {})
+    const made = createCreators(maker(), tabOpeners)
 
     await made.createDeck('zoology', 'Animals')
 
@@ -180,7 +157,7 @@ describe('a note pointing at an address made', () => {
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
     const opened: string[] = []
     tabOpeners.registerEditor('url', (path) => opened.push(path))
-    const made = createFileCreators(vault, tabOpeners, MAKING, () => {})
+    const made = createCreators(vault, tabOpeners)
 
     const path = await made.createUrl('links', 'example.org')
 
@@ -193,7 +170,7 @@ describe('a note pointing at an address made', () => {
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
     const opened: string[] = []
     tabOpeners.registerEditor('url', (path) => opened.push(path))
-    const made = createFileCreators(maker('occupied'), tabOpeners, MAKING, () => {})
+    const made = createCreators(maker('occupied'), tabOpeners)
 
     expect(await made.createUrl('links', 'example.org')).toBe('')
     expect(opened).toStrictEqual([])

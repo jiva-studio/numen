@@ -29,10 +29,19 @@ export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditors
   const notes = openNotes(core, { onReplaced: changes.reportNoteChange })
   const making = createNoteWriter(core, log.getWriter('made'))
 
-  const noted = useNoteTab(core, notes, changes, held.handle, tabOpeners)
-  const decks = useDeckTabs(cards, presets, held.handle, tabOpeners)
-  const stencils = useStencilTabs(cards, held.handle, tabOpeners, log.getWriter('stencil'))
-  const schedules = usePresetTab(presets, held.handle, tabOpeners, log.getWriter('preset'), day)
+  const noted = useNoteTab(core, notes, { changes, handle: held.handle, tabOpeners })
+  const decks = useDeckTabs(cards, presets, { handle: held.handle, tabOpeners })
+  const stencils = useStencilTabs(cards, held.handle, {
+    tabOpeners,
+    writeMessage: log.getWriter('stencil'),
+  })
+  const schedules = usePresetTab({
+    core: presets,
+    handle: held.handle,
+    tabOpeners,
+    writeMessage: log.getWriter('preset'),
+    today: day,
+  })
 
   const fileFlush = useFileFlush(core)
   fileFlush.addHandler(notes.flush)

@@ -6,14 +6,19 @@ import type { Documents, Page } from '../types'
 
 const WIDEST = 4096
 
+export interface DocumentViewportOptions {
+  pages: ShallowRef<readonly Page[]>
+  pageNumber: Ref<number>
+  fingerprint: Ref<string | undefined>
+  isOpen: () => boolean
+}
+
 export function useDocumentViewport(
   documents: Documents,
   path: string,
-  pages: ShallowRef<readonly Page[]>,
-  pageNumber: Ref<number>,
-  fingerprint: Ref<string | undefined>,
-  isOpen: () => boolean,
+  options: DocumentViewportOptions,
 ) {
+  const { pages, pageNumber, fingerprint, isOpen } = options
   const wide = ref(0)
 
   const widen = (pixels: number) => {

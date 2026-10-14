@@ -6,14 +6,19 @@ import { formatErrorMessage } from '@numen/wire'
 import type { Span } from '@/shared/span'
 import type { Documents, PageHighlight, Rect } from '../types'
 
+export interface DocumentHighlightsOptions {
+  pageNumber: Ref<number>
+  error: Ref<string>
+  onGoToPage: (page: number) => Promise<void>
+  isOpen: () => boolean
+}
+
 export function useDocumentHighlights(
   documents: Documents,
   path: string,
-  pageNumber: Ref<number>,
-  error: Ref<string>,
-  onGoToPage: (page: number) => Promise<void>,
-  isOpen: () => boolean,
+  options: DocumentHighlightsOptions,
 ) {
+  const { pageNumber, error, onGoToPage, isOpen } = options
   const highlights = shallowRef<readonly PageHighlight[]>([])
   const otherHighlights = shallowRef<readonly (readonly PageHighlight[])[]>([])
 

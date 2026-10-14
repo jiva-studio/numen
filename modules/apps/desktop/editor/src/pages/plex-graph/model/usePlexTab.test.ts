@@ -47,9 +47,9 @@ const tab = (
     isReady: ref(true),
     isNesting,
     headings: ref(6),
-    openNote: (path, title, showing, line) => {
-      opened.push([path, title, showing])
-      if (line !== undefined) entered.push([path, line])
+    openNote: (path, options) => {
+      opened.push([path, options?.title ?? '', options?.showing ?? 'here'])
+      if (options?.line !== undefined) entered.push([path, options.line])
     },
     // The vault answers about the notes it was asked about and no others.
     readHeadings: async (paths) => {
@@ -673,7 +673,8 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
     isReady: ref(true),
     isNesting: ref(true),
     headings: ref(6),
-    openNote: (path, title, showing) => opened.push([path, title, showing]),
+    openNote: (path, options) =>
+      opened.push([path, options?.title ?? '', options?.showing ?? 'here']),
     readHeadings: async () => new Map(),
     askAgent: () => {},
     runCommand: (id, path, title) => ran.push([id, path, title]),

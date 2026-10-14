@@ -49,16 +49,21 @@ export const renameVault = async (
   if (answer.value) on.vaults.setVaultName({ id: answer.value.id, name: answer.value.name })
 }
 
+export interface RemoveVaultOptions {
+  readonly shouldErase: boolean
+  readonly words: AnswerWords
+}
+
 /**
  * A vault taken off the list. Erasing it puts the folder in the trash this
  * machine keeps; removing it leaves the folder where it is.
  */
 export const removeVault = async (
   invocation: CommandInvocation,
-  shouldErase: boolean,
   on: VaultContext & Voice,
-  words: AnswerWords,
+  options: RemoveVaultOptions,
 ): Promise<void> => {
+  const { shouldErase, words } = options
   const id = invocation.vault.id
   const error = await on.vaults.remove(id, shouldErase)
   if (error) on.writeMessage(words.vaultErrors[error], 'error')

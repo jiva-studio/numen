@@ -60,7 +60,7 @@ const corner = (
   messages: readonly WindowMessage[] = [],
   state: State = well(),
   coverage: IndexCoverage = vault(),
-) => getCornerNotices(tasks, messages, state, coverage, words)
+) => getCornerNotices(tasks, messages, { state, vault: coverage, words })
 
 describe('a document being read', () => {
   it('draws one card, whatever else the vault says about itself', () => {
@@ -202,7 +202,14 @@ describe('work with nothing to count', () => {
 
 describe('a step of a run', () => {
   const step = (what: string, about: string, count = 0, total = 0) =>
-    createTask({ id: 'making the vectors', label: what, about, done: count, total, isUserStarted: false })
+    createTask({
+      id: 'making the vectors',
+      label: what,
+      about,
+      done: count,
+      total,
+      isUserStarted: false,
+    })
 
   it('is called by what it is, and names what it is on', () => {
     const drawn = corner([step('Indexing', 'library/Sabhaparva.epub', 300, 1200)])

@@ -41,7 +41,7 @@ export const documents: Documents = {
       fingerprint: formatFingerprint(answer.fingerprint) ?? '',
     }
   },
-  getPageUrl: (path, pageNumber, wide, fingerprint = '') =>
+  getPageUrl: (...[path, pageNumber, wide, fingerprint = '']: [string, number, number, string?]) =>
     `${getAssetUrl(path)}/pages/${pageNumber}?wide=${wide}&${getBytesQuery(fingerprint)}`,
   getHighlights: async (path, spans) => {
     const answer = await retryWhileBusy(() => served.ocr.readOcr({ path, spans: [...spans] }))

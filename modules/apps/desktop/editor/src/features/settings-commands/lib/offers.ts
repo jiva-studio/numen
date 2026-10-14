@@ -32,12 +32,16 @@ const once = (rows: readonly StepRow[]): readonly StepRow[] => {
  * The themes of one origin, the one the settings name first. Where a theme comes
  * from is said by the group it stands in.
  */
+/**
+ * The themes of one origin, the one the settings name first. Where a theme comes
+ * from is said by the group it stands in.
+ */
 const getThemesOfOrigin = (
   themes: readonly Theme[],
-  themeName: string,
   isBuiltIn: boolean,
-  words: AppearanceWords,
+  context: { themeName: string; words: AppearanceWords },
 ): readonly StepRow[] => {
+  const { themeName, words } = context
   const off = themes.filter((one) => one.isBuiltIn === isBuiltIn)
   const getThemeRow = (one: Theme): StepRow => ({
     id: one.name,
@@ -62,12 +66,12 @@ export const getThemeGroups = (
   const shipping = {
     id: 'shipping',
     title: words.shipping,
-    items: getThemesOfOrigin(themes, themeName, true, words),
+    items: getThemesOfOrigin(themes, true, { themeName, words }),
   }
   const own = {
     id: 'owned',
     title: words.owned,
-    items: getThemesOfOrigin(themes, themeName, false, words),
+    items: getThemesOfOrigin(themes, false, { themeName, words }),
     silence: words.noneOwned,
   }
   const worn = themes.find((one) => one.name === themeName)
@@ -77,12 +81,11 @@ export const getThemeGroups = (
 /** What is said about a mode: why it cannot be chosen, or that it is the one. */
 const getModeDetail = (
   one: Mode,
-  mode: Mode,
-  isPinned: boolean,
+  options: { mode: Mode; isPinned: boolean },
   words: AppearanceWords,
 ): string => {
-  if (isPinned) return words.pinned
-  return one === mode ? words.current : ''
+  if (options.isPinned) return words.pinned
+  return one === options.mode ? words.current : ''
 }
 
 /**
@@ -95,7 +98,7 @@ export const getModeGroups = (
   words: AppearanceWords,
 ): readonly StepGroup[] => {
   const row = (one: Mode): StepRow => {
-    const detail = getModeDetail(one, mode, isPinned, words)
+    const detail = getModeDetail(one, { mode, isPinned }, words)
     return {
       id: getModeId(one),
       title: words[one],
@@ -105,6 +108,12 @@ export const getModeGroups = (
     }
   }
   return [{ id: 'half', title: words.half, items: MODES.map(row) }]
+}
+
+export interface SizeGroupContext {
+  sizes: Sizes
+  bounds: Ranges
+  words: AppearanceWords
 }
 
 /**
@@ -119,10 +128,9 @@ export const getModeGroups = (
 export const getSizeGroups = (
   command: string,
   text: string,
-  sizes: Sizes,
-  bounds: Ranges,
-  words: AppearanceWords,
+  context: SizeGroupContext,
 ): readonly StepGroup[] => {
+  const { sizes, bounds, words } = context
   const which: ScaleKind = command === TEXT_SCALE ? TEXT_SCALE : INTERFACE_SCALE
   const range = its(bounds, which)
   const now = its(sizes, which)

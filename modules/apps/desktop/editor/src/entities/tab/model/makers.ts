@@ -26,20 +26,32 @@ export interface CreateWords {
   readonly errors: Record<ErrorCode, string>
 }
 
+export interface CreateEntryOptions {
+  name: string
+  fields?: readonly string[]
+}
+
+export type CreateTarget = string | CreateEntryOptions
+
+function parseTarget(target: CreateTarget): CreateEntryOptions {
+  return typeof target === 'string' ? { name: target } : target
+}
+
 /** What creating each of the four asks of the vault, each entry naming its own. */
 const createByKind: Record<
   CreateKind,
-  (
-    vault: VaultCreator,
-    folder: string,
-    name: string,
-    fields: readonly string[],
-  ) => Promise<CreateResult>
+  (vault: VaultCreator, folder: string, target: CreateEntryOptions) => Promise<CreateResult>
 > = {
-  deck: (vault, folder, name) => vault.createDeck!.call(vault, name, folder),
-  stencil: (vault, folder, name, fields) => vault.createStencil!.call(vault, name, folder, fields),
-  preset: (vault, folder, name) => vault.createPreset!.call(vault, name, folder),
-  url: (vault, folder, name) => vault.createUrl!.call(vault, name, folder),
+  deck: (vault, folder, target) => vault.createDeck!.call(vault, target.name, folder),
+  stencil: (vault, folder, target) =>
+    vault.createStencil!.call(vault, target.name, folder, target.fields ?? []),
+  preset: (vault, folder, target) => vault.createPreset!.call(vault, target.name, folder),
+  url: (vault, folder, target) => vault.createUrl!.call(vault, target.name, folder),
+}
+
+export interface FileCreatorsOptions {
+  words: CreateWords
+  write: MessageWriter
 }
 
 /**
@@ -51,17 +63,18 @@ const createByKind: Record<
 export function createFileCreators(
   vault: VaultCreator,
   tabOpeners: FileOpeners,
-  words: CreateWords,
-  write: MessageWriter,
+  options: FileCreatorsOptions,
 ) {
+  const { words, write } = options
+
   const createFile = async (
     what: CreateKind,
     folder: string,
-    name: string,
-    fields: readonly string[] = [],
+    target: CreateTarget,
   ): Promise<string> => {
     try {
-      const answer = await createByKind[what](vault, folder, name, fields)
+      const entry = parseTarget(target)
+      const answer = await createByKind[what](vault, folder, entry)
       if (!answer.ok) {
         write(words.errors[answer.error], 'error')
         return ''
@@ -77,10 +90,9 @@ export function createFileCreators(
   const createAndOpenFile = async (
     what: CreateKind,
     folder: string,
-    name: string,
-    fields?: readonly string[],
+    target: CreateTarget,
   ): Promise<string> => {
-    const path = await createFile(what, folder, name, fields)
+    const path = await createFile(what, folder, target)
     if (!path) return ''
     tabOpeners.openNewFile(path, '', what)
     return path
@@ -90,7 +102,7 @@ export function createFileCreators(
     createFile,
     createDeck: (folder: string, name: string) => createAndOpenFile('deck', folder, name),
     createStencil: (folder: string, name: string, fields: readonly string[]) =>
-      createAndOpenFile('stencil', folder, name, fields),
+      createAndOpenFile('stencil', folder, { name, fields }),
     createPreset: (folder: string, name: string) => createAndOpenFile('preset', folder, name),
     createUrl: (folder: string, address: string) => createAndOpenFile('url', folder, address),
   }

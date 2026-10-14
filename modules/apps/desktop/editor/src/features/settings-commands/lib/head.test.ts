@@ -31,11 +31,9 @@ describe('the elements a page is dressed in', () => {
     const sizes = addAfter(theme, IS_SIZES, sheet)
 
     expect(sizes.getAttribute(MARKER)).toBe(IS_SIZES)
-    expect([...sheet.head.querySelectorAll('style')].map((one) => one.getAttribute(MARKER))).toEqual([
-      IS_MODE,
-      IS_THEME,
-      IS_SIZES,
-    ])
+    expect(
+      [...sheet.head.querySelectorAll('style')].map((one) => one.getAttribute(MARKER)),
+    ).toEqual([IS_MODE, IS_THEME, IS_SIZES])
     expect(getStyleElements(sheet).sizes).toBe(sizes)
   })
 })

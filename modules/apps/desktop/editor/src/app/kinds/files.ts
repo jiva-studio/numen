@@ -14,6 +14,7 @@ import {
 import {
   createFilesKind as buildFilesKind,
   useFileTree,
+  type FilesTabDeps,
   type FilesTabState,
 } from '@/pages/file-manager'
 import { isNotePath } from '../useTabSync'
@@ -50,21 +51,15 @@ function findFilesTabId(held: FilesKindDeps['held'], state?: unknown): string | 
   return held.handle.last<FilesTabState>('files')?.id ?? null
 }
 
-export function createFilesKind({
-  core,
-  tabOpeners,
-  held,
-  runs,
-  editing,
-  vaults,
-  getTarget,
-  runCommand,
-  commandDeps,
-  dragged,
-  writeMessage,
-  destinations,
-  tabSync,
-}: FilesKindDeps) {
+interface FileCreatorsDeps {
+  core: FilesKindDeps['core']
+  tabOpeners: FilesKindDeps['tabOpeners']
+  editing: FilesKindDeps['editing']
+  writeMessage: FilesKindDeps['writeMessage']
+}
+
+function createFilesCreators(deps: FileCreatorsDeps) {
+  const { core, tabOpeners, editing, writeMessage } = deps
   const fetchArtifact = async (path: string): Promise<void> => {
     try {
       await running.fetchArtifact(path)
@@ -75,7 +70,7 @@ export function createFilesKind({
     editing.notes.applyPathChanges([path])
   }
 
-  const made = createFileCreators(
+  return createFileCreators(
     {
       createDeck: (title, folder) => cards.createDeck(title, folder),
       createStencil: (title, folder, fields) => cards.createStencil(title, folder, fields),
@@ -87,12 +82,25 @@ export function createFilesKind({
       },
     },
     tabOpeners,
-    { errors: words.errors },
-    writeMessage,
+    {
+      words: { errors: words.errors },
+      write: writeMessage,
+    },
   )
+}
 
-  const files = buildFilesKind(held.handle, () => useFileTree(core), {
-    openDestination: (landing, state) => {
+interface FilesTabConfigDeps {
+  deps: FilesKindDeps
+  made: ReturnType<typeof createFilesCreators>
+}
+
+function createFilesTabPathHandlers(deps: FilesKindDeps) {
+  const { held, destinations, tabSync } = deps
+  return {
+    openDestination: (
+      landing: Parameters<FilesTabDeps['openDestination']>[0],
+      state: Parameters<FilesTabDeps['openDestination']>[1],
+    ) => {
       if (landing?.path && isNotePath(landing.path)) {
         const tabId = findFilesTabId(held, state)
         if (tabId && tabSync?.syncPathFromTab(tabId, landing.path, landing.title ?? '')) {
@@ -101,7 +109,7 @@ export function createFilesKind({
       }
       void openDestination(landing, destinations)
     },
-    onSelectPath: (path, state) => {
+    onSelectPath: (path: string, state: unknown) => {
       const entry = (state as FilesTabState).list.getEntryAt(path)
       if (entry && !entry.isFolder && (entry.kind === 'note' || isNotePath(path))) {
         const tabId = findFilesTabId(held, state)
@@ -110,14 +118,23 @@ export function createFilesKind({
         }
       }
     },
-    runCommand: (id, paths, name, source) => {
+  }
+}
+
+function createFilesTabDeps(config: FilesTabConfigDeps): FilesTabDeps {
+  const { deps, made } = config
+  const { runs, editing, vaults, getTarget, runCommand, commandDeps, dragged, writeMessage } = deps
+
+  return {
+    ...createFilesTabPathHandlers(deps),
+    runCommand: (id, paths, details) => {
       const path = paths[0] ?? ''
       runCommand(id, {
         ...getTarget(),
         path,
-        title: name,
+        title: details.name,
         file: path,
-        source,
+        source: details.source,
         made: vaults.makes.value.get(path) ?? {},
         others: paths.slice(1),
       })
@@ -139,13 +156,19 @@ export function createFilesKind({
       ),
     createNote: async (folder) => (await editing.making.createUntitled(folder, []))?.path ?? '',
     createDeck: (folder, name) => made.createFile('deck', folder, name),
-    createStencil: (folder, name) => made.createFile('stencil', folder, name, [cardWords.newField]),
+    createStencil: (folder, name) =>
+      made.createFile('stencil', folder, { name, fields: [cardWords.newField] }),
     createPreset: (folder, name) => made.createFile('preset', folder, name),
     importUrl: (folder, url) => made.createUrl(folder, url),
     showError: (text) => writeMessage(text, 'error'),
     canRun: (run) => runs.canRun(run),
     getArtifactStates: (path) => vaults.makes.value.get(path) ?? {},
-  })
+  }
+}
 
+export function createFilesKind(deps: FilesKindDeps) {
+  const made = createFilesCreators(deps)
+  const filesDeps = createFilesTabDeps({ deps, made })
+  const files = buildFilesKind(deps.held.handle, () => useFileTree(deps.core), filesDeps)
   return { files, made }
 }

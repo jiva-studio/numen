@@ -62,12 +62,10 @@ describe('the book kind', () => {
     const state = h.bookState('Book.epub')
 
     expect(one.getWriter).toHaveBeenCalledWith('book')
-    expect(h.useBookReader).toHaveBeenCalledWith(
-      { name: 'books' },
-      'Book.epub',
-      { name: 'book words' },
-      one.writer,
-    )
+    expect(h.useBookReader).toHaveBeenCalledWith({ name: 'books' }, 'Book.epub', {
+      words: { name: 'book words' },
+      writeMessage: one.writer,
+    })
     expect(state).toStrictEqual({ tab: 'book', reader: { reader: 'book reader' } })
   })
 })

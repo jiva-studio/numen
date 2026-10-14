@@ -49,7 +49,8 @@ const vault = (
     createStencil: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     // The vault writes the name wherever it stands: in the fields, and in the
     // braces of every face.
-    renameField: async (path, from, to, seen) => {
+    renameField: async (path, field, seen) => {
+      const { from, to } = field
       renamed.push(`${path} ${from} ${to} ${seen ?? '—'}`)
       if (answers.renaming) return answers.renaming
       fields = fields.map((one) => (one === from ? to : one))
@@ -79,14 +80,14 @@ const vault = (
         at: 'read',
       })
     },
-    writeStencil: async (path, wrote, drew) => {
+    writeStencil: async (path, stencil, _seen) => {
       written.push(
-        `${path} ${wrote.join(', ') || '—'} | ${drew.faces.map((one) => one.back).join(' ')}`,
+        `${path} ${stencil.fields.join(', ') || '—'} | ${stencil.faces.map((one) => one.back).join(' ')}`,
       )
       if (answers.wrote) return asFailure(answers.wrote)
       if (answers.isChanged) return asFailure('changed' as const)
-      fields = wrote
-      faces = drew.faces
+      fields = stencil.fields
+      faces = stencil.faces
       return asValue({ at: 'written' })
     },
   }
@@ -653,7 +654,7 @@ describe('a stencil opened from a file', () => {
     expect(here).toHaveBeenCalledTimes(1)
     expect(beside).not.toHaveBeenCalled()
 
-    one.road.openNewFile('Leaf.md', '', 'stencil', 'beside')
+    one.road.openNewFile('Leaf.md', '', { type: 'stencil', where: 'beside' })
     expect(here).toHaveBeenCalledTimes(1)
     expect(beside).toHaveBeenCalledTimes(1)
   })

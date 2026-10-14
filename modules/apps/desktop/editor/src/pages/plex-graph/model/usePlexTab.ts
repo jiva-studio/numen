@@ -37,19 +37,17 @@ export type {
 
 export { getInverseRelation } from './linkInspector'
 
-export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
-  const map = createNodeIdMap()
-
+function usePlexPicture(
+  view: PlexView,
+  deps: PlexTabDeps,
+  map: ReturnType<typeof createNodeIdMap>,
+) {
   const picture = computed<PlexNeighbourhood | null>(() => {
     const around = view.neighbourhood.value
     if (!deps.isReady.value || !around) return null
     return convertNeighbourhood(around, map.getNodeId)
   })
 
-  /**
-   * A node id outlives the one navigation after its note stops being drawn,
-   * so a transition still reaching it by id finds it still there.
-   */
   // Stryker disable next-line ArrayDeclaration: node ids are numeric strings, so an extra entry retains nothing.
   let lastDrawnIds: readonly string[] = []
   watch(
@@ -77,16 +75,6 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     return deps.dragged.value.filter((path) => path !== here)
   })
 
-  const menu = ref<MenuRequest | null>(null)
-  const {
-    quickLink,
-    isNavigatingOnCreate,
-    openQuickLink,
-    dismissQuickLink,
-    searchNotes,
-    confirmQuickLink,
-  } = useQuickLink(view, deps, map)
-
   const types = computed<ReadonlyMap<string, NoteType>>(() => {
     const around = view.neighbourhood.value
     return around ? getNoteTypes(around) : new Map()
@@ -102,7 +90,17 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     return paths.filter(Boolean)
   })
 
-  const { readHeadings, getHeadings } = usePlexHeadings(drawn, types, deps, map)
+  return { picture, empty, dragged, types, getType, drawn }
+}
+
+function usePlexNodeActions(options: {
+  view: PlexView
+  tabDeps: PlexTabDeps
+  map: ReturnType<typeof createNodeIdMap>
+  getName: (path: string) => string
+  openQuickLink: (request: QuickLinkRequest) => void
+}) {
+  const { view, tabDeps: deps, map, getName, openQuickLink } = options
 
   const activate = (node: string) => {
     const path = map.getNodePath(node)
@@ -131,16 +129,6 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     if (one && other && (await deps.editor.join(one, other, relation))) await view.go(one)
   }
 
-  const getName = (path: string): string => {
-    const around = view.neighbourhood.value
-    if (around?.focus.path === path && around.focus.title) return around.focus.title
-    const near = around?.related.find((one) => one.path === path)
-    return near?.title || getFileName(path).replace(/\.md$/, '')
-  }
-
-  const { linkInspector, openLinkInspector, dismissLinkInspector, saveLinkInspector } =
-    useLinkInspector(view, deps.editor, map, getName)
-
   const dropNodes = async (nodes: readonly string[], relation: PlexRelation) => {
     const here = view.here.value
     if (!here) return
@@ -160,13 +148,13 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
   const openNode = (node: string, how: PlexDestination = 'here') => {
     const path = map.getNodePath(node)
-    if (path) deps.openNote(path, getName(path), how)
+    if (path) deps.openNote(path, { title: getName(path), showing: how })
   }
 
   const openHeading = (node: string, heading: string) => {
     const path = map.getNodePath(node)
     if (!path || !/^\d+$/.test(heading)) return
-    deps.openNote(path, getName(path), 'here', Number(heading))
+    deps.openNote(path, { title: getName(path), showing: 'here', line: Number(heading) })
   }
 
   const createNote = async () => {
@@ -174,14 +162,20 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     if (path) await view.go(path)
   }
 
+  return { activate, createNode, joinNodes, dropNodes, openNode, openHeading, createNote }
+}
+
+function usePlexMenu(options: {
+  map: ReturnType<typeof createNodeIdMap>
+  tabDeps: PlexTabDeps
+  getName: (path: string) => string
+  createNote: () => Promise<void>
+}) {
+  const { map, tabDeps: deps, getName, createNote } = options
+  const menu = ref<MenuRequest | null>(null)
+
   const openMenu = (request: MenuRequest) => {
     menu.value = request
-  }
-
-  const dismiss = () => {
-    menu.value = null
-    dismissQuickLink()
-    dismissLinkInspector()
   }
 
   const chooseMenuItem = (id: string) => {
@@ -197,10 +191,37 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     if (path) deps.runCommand(id, path, getName(path))
   }
 
-  const followMoves = (renames: readonly PathRename[]) => {
-    view.followMoves(renames)
-    map.updateRenamedNodes(renames)
-  }
+  return { menu, openMenu, chooseMenuItem }
+}
+
+function getPlexNodeName(around: PlexView['neighbourhood']['value'], path: string): string {
+  if (around?.focus.path === path && around.focus.title) return around.focus.title
+  const near = around?.related.find((one) => one.path === path)
+  return near?.title || getFileName(path).replace(/\.md$/, '')
+}
+
+export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
+  const map = createNodeIdMap()
+  const { picture, empty, dragged, types, getType, drawn } = usePlexPicture(view, deps, map)
+
+  const getName = (path: string): string => getPlexNodeName(view.neighbourhood.value, path)
+  const quickLinkModel = useQuickLink(view, deps, map)
+  const { readHeadings, getHeadings } = usePlexHeadings(drawn, types, deps, map)
+  const linkInspectorModel = useLinkInspector(view, deps.editor, map, getName)
+
+  const nodeActions = usePlexNodeActions({
+    view,
+    tabDeps: deps,
+    map,
+    getName,
+    openQuickLink: quickLinkModel.openQuickLink,
+  })
+  const { menu, openMenu, chooseMenuItem } = usePlexMenu({
+    map,
+    tabDeps: deps,
+    getName,
+    createNote: nodeActions.createNote,
+  })
 
   return {
     view,
@@ -208,32 +229,25 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     empty,
     dragged,
     menu,
-    quickLink,
-    linkInspector,
-    isNavigatingOnCreate,
     creatable: deps.creatable,
     getType,
     getHeadings,
     maxHeadings: deps.headings,
     readHeadings,
-    openHeading,
-    activate,
-    createNode,
-    joinNodes,
-    dropNodes,
-    openNode,
-    createNote,
     openMenu,
-    dismiss,
+    dismiss: () => {
+      menu.value = null
+      quickLinkModel.dismissQuickLink()
+      linkInspectorModel.dismissLinkInspector()
+    },
     chooseMenuItem,
-    followMoves,
+    followMoves: (renames: readonly PathRename[]) => {
+      view.followMoves(renames)
+      map.updateRenamedNodes(renames)
+    },
     getName,
-    openQuickLink,
-    dismissQuickLink,
-    confirmQuickLink,
-    searchNotes,
-    openLinkInspector,
-    dismissLinkInspector,
-    saveLinkInspector,
+    ...quickLinkModel,
+    ...linkInspectorModel,
+    ...nodeActions,
   }
 }
