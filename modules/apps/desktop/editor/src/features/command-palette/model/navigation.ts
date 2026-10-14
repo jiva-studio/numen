@@ -164,11 +164,7 @@ function useStepComputed(deps: {
   return { crumb, placeholder, step, opensOn }
 }
 
-export function createPaletteSteps(options: PaletteStepsOptions) {
-  const { words, lists, knows, text, onDrop, onLights, onLists, onClose, invocation } = options
-  const steps = shallowRef<readonly PendingStep[]>([])
-  const here = computed<PendingStep | null>(() => steps.value.at(-1) ?? null)
-
+function createStepNaming(words: Words, knows: Knows) {
   const getStepTitle = (step: PendingStep): string =>
     step.command.group === 'vault'
       ? step.on.vault.name
@@ -179,22 +175,43 @@ export function createPaletteSteps(options: PaletteStepsOptions) {
     return others > 0 ? words.several(others + 1) : `“${getStepTitle(step)}”`
   }
 
-  const computedFields = useStepComputed({ here, steps, words, lists, text })
+  return { getStepTitle, getStepLabel }
+}
 
+function createStepStack(options: {
+  steps: ShallowRef<readonly PendingStep[]>
+  here: ComputedRef<PendingStep | null>
+  text: Ref<string>
+  onDrop: () => void
+  onLights: (id: string) => void
+  onLists: () => void
+}) {
   const pushStep = (step: PendingStep) => {
-    onDrop()
-    text.value = step.command.getFieldText?.(step.on) ?? ''
-    steps.value = [...steps.value, step]
-    if (step.step === 'vaults') void onLists()
+    options.onDrop()
+    options.text.value = step.command.getFieldText?.(step.on) ?? ''
+    options.steps.value = [...options.steps.value, step]
+    if (step.step === 'vaults') void options.onLists()
   }
 
   const popStep = () => {
-    onLights('')
-    onDrop()
-    text.value = ''
-    steps.value = steps.value.slice(0, -1)
-    if (here.value?.step === 'vaults') void onLists()
+    options.onLights('')
+    options.onDrop()
+    options.text.value = ''
+    options.steps.value = options.steps.value.slice(0, -1)
+    if (options.here.value?.step === 'vaults') void options.onLists()
   }
+
+  return { pushStep, popStep }
+}
+
+export function createPaletteSteps(options: PaletteStepsOptions) {
+  const { words, lists, knows, text, onDrop, onLights, onLists, onClose, invocation } = options
+  const steps = shallowRef<readonly PendingStep[]>([])
+  const here = computed<PendingStep | null>(() => steps.value.at(-1) ?? null)
+
+  const { getStepTitle, getStepLabel } = createStepNaming(words, knows)
+  const computedFields = useStepComputed({ here, steps, words, lists, text })
+  const { pushStep, popStep } = createStepStack({ steps, here, text, onDrop, onLights, onLists })
 
   const applyRenames = (renames: readonly PathRename[] = []) => {
     if (!renames.length) return

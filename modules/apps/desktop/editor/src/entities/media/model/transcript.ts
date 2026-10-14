@@ -33,22 +33,21 @@ export interface TranscriptOptions {
 }
 
 async function loadRecordingContent(
-  recordings: Recordings,
-  path: string,
+  source: { recordings: Recordings; path: string },
   mine: { claim: () => boolean },
   options: {
     setSource: (summary: RecordingSummary) => void
     setText: (body: string) => void
   },
 ) {
-  const summary = await recordings.getSummary(path)
+  const summary = await source.recordings.getSummary(source.path)
   if (!mine.claim()) return null
   options.setSource(summary)
-  const carried = await recordings.getTaskStates(path)
+  const carried = await source.recordings.getTaskStates(source.path)
   if (!mine.claim()) return null
   const content = await (carried.transcript
-    ? recordings.readTranscript(path)
-    : recordings.readArticle(path))
+    ? source.recordings.readTranscript(source.path)
+    : source.recordings.readArticle(source.path))
   if (!mine.claim()) return null
   options.setText(content.cues.length ? getText(content.cues) : content.prose)
   return content
@@ -73,7 +72,7 @@ function useTranscriptContent(
   const readRecording = async () => {
     const mine = asks.ask()
     try {
-      const content = await loadRecordingContent(recordings, path, mine, options)
+      const content = await loadRecordingContent({ recordings, path }, mine, options)
       if (!mine.claim() || !content) return
       cues.value = content.cues
       isEditable.value = content.isEditable
@@ -141,6 +140,22 @@ function createTranscriptNavigation(deps: {
   return { reach, goToLine }
 }
 
+function createTranscriptStatus(
+  lines: ReturnType<typeof useTranscriptLines>,
+  content: ReturnType<typeof useTranscriptContent>,
+  playback: ReturnType<typeof usePlayback>,
+) {
+  const current = computed(() =>
+    playback.hasTime.value ? findCueAt(lines.spans.value, playback.now.value) : -1,
+  )
+  const note = computed(() => {
+    if (lines.times.value.length) return ''
+    if (content.isWorking.value) return WORDS.transcribing
+    return playback.points.value ? WORDS.unfetched : WORDS.silence
+  })
+  return { current, note }
+}
+
 export function useTranscript(recordings: Recordings, path: string, how: TranscriptOptions = {}) {
   const through = how.through ?? player
   const quiet = how.quiet ?? WRITE_IDLE_MS
@@ -170,9 +185,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
   draftRef.current = draft
 
   const lines = useTranscriptLines(content.cues, draft.prose)
-  const current = computed(() =>
-    playback.hasTime.value ? findCueAt(lines.spans.value, playback.now.value) : -1,
-  )
+  const { current, note } = createTranscriptStatus(lines, content, playback)
   const { reach, goToLine } = createTranscriptNavigation({
     recordings,
     path,
@@ -180,12 +193,6 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
     playback,
     lines,
     isOpen,
-  })
-
-  const note = computed(() => {
-    if (lines.times.value.length) return ''
-    if (content.isWorking.value) return WORDS.transcribing
-    return playback.points.value ? WORDS.unfetched : WORDS.silence
   })
 
   return {

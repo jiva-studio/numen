@@ -135,26 +135,28 @@ interface SearchState {
 }
 
 async function executeSearchQuery(
-  core: SearchDeps,
-  query: string,
-  mine: Question,
+  ctx: {
+    core: SearchDeps
+    query: string
+    mine: Question
+    notAskedWord: string
+  },
   state: SearchState,
-  notAskedWord: string,
 ) {
   state.isWorking.value = { names: true, text: true, meaning: true }
   state.failureMessages.value = {}
   const onFailed = (g: SearchGroup) => {
-    state.failureMessages.value = { ...state.failureMessages.value, [g]: notAskedWord }
+    state.failureMessages.value = { ...state.failureMessages.value, [g]: ctx.notAskedWord }
   }
   const onDone = (g: SearchGroup) => {
-    if (mine.isCurrent) state.isWorking.value = { ...state.isWorking.value, [g]: false }
+    if (ctx.mine.isCurrent) state.isWorking.value = { ...state.isWorking.value, [g]: false }
   }
 
   await Promise.all([
     fillSearchGroup({
-      mine,
+      mine: ctx.mine,
       group: 'names',
-      question: () => core.names(query, GROUP_RESULT_LIMIT),
+      question: () => ctx.core.names(ctx.query, GROUP_RESULT_LIMIT),
       into: (found) => {
         state.names.value = found
       },
@@ -162,9 +164,9 @@ async function executeSearchQuery(
       onDone,
     }),
     fillSearchGroup({
-      mine,
+      mine: ctx.mine,
       group: 'text',
-      question: () => core.search(query, 'words', GROUP_RESULT_LIMIT),
+      question: () => ctx.core.search(ctx.query, 'words', GROUP_RESULT_LIMIT),
       into: (found) => {
         state.texts.value = found
       },
@@ -172,9 +174,9 @@ async function executeSearchQuery(
       onDone,
     }),
     fillSearchGroup({
-      mine,
+      mine: ctx.mine,
       group: 'meaning',
-      question: () => core.search(query, 'meaning', GROUP_RESULT_LIMIT),
+      question: () => ctx.core.search(ctx.query, 'meaning', GROUP_RESULT_LIMIT),
       into: (found) => {
         state.meanings.value = found
       },
@@ -208,7 +210,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   }
 
   const ask = (query: string, mine: Question) =>
-    executeSearchQuery(core, query, mine, state, words.notAsked)
+    executeSearchQuery({ core, query, mine, notAskedWord: words.notAsked }, state)
 
   const setTyped = async (text: string) => {
     typed.value = text

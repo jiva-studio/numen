@@ -70,8 +70,7 @@ function useBookNavigation(deps: BookNavigationDeps) {
 }
 
 async function loadBookData(
-  books: Books,
-  path: string,
+  target: { books: Books; path: string },
   state: {
     title: Ref<string>
     span: Ref<Span>
@@ -90,7 +89,7 @@ async function loadBookData(
   },
 ) {
   try {
-    const book = await books.getBook(path)
+    const book = await target.books.getBook(target.path)
     if (!deps.isOpen()) return
     state.title.value = book.title
     state.span.value = book.span
@@ -156,8 +155,7 @@ export function useBookReader(books: Books, path: string, options: BookReaderOpt
 
   const loadBook = async () => {
     await loadBookData(
-      books,
-      path,
+      { books, path },
       { ...state, offset: nav.offset },
       { words, writeMessage, isOpen: () => isOpen, drawDocument: (doc) => bookDocument.draw(doc) },
     )

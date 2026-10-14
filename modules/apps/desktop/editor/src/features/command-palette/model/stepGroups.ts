@@ -212,8 +212,6 @@ export function createStepGroups(state: ViewState) {
     }))
   }
 
-  const checkVaultAside = (one: Vault): string => getVaultAside(one, showing.value, words)
-
   const getVaultsGroup = (text: string, step: PendingStep): PaletteGroup =>
     createVaultsGroup(known.value, step, {
       text,

@@ -223,13 +223,13 @@ interface WindowContext {
 }
 
 function initWindowServices(base: WindowCore, ctx: WindowContext) {
-  let settingsInstance: ReturnType<typeof useSettings>
+  const settingsHolder: { current?: ReturnType<typeof useSettings> } = {}
   const editing = useNoteEditors({
     core,
     log: base.log,
     tabOpeners: base.tabOpeners,
     held: base.held,
-    day: () => settingsInstance.dayBegins.day.value,
+    day: () => settingsHolder.current!.dayBegins.day.value,
   })
 
   const tabSync = useTabSync({ held: base.held, tabLinks: base.tabLinks, editing })
@@ -245,13 +245,14 @@ function initWindowServices(base: WindowCore, ctx: WindowContext) {
     }),
   )
 
-  settingsInstance = useSettings({
+  const settings = useSettings({
     core,
     words,
     log: base.log,
     windowTabs: base.held,
     onSizeChanged: () => editing.noted.measureAll(),
   })
+  settingsHolder.current = settings
 
   ctx.vaults = useVaults({
     core,
@@ -262,7 +263,7 @@ function initWindowServices(base: WindowCore, ctx: WindowContext) {
     isEmbedding: window.isEmbedding,
   })
 
-  return { editing, tabSync, window, settings: settingsInstance }
+  return { editing, tabSync, window, settings }
 }
 
 type WindowServices = ReturnType<typeof initWindowServices>

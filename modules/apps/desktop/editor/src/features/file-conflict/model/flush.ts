@@ -142,9 +142,10 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
   let open = true
   const listening = new AbortController()
 
-  let reporter!: ReturnType<typeof createFlushReporter>
-  const registry = createConflictRegistry(() => void reporter.report())
-  reporter = createFlushReporter(core, registry, handlers)
+  const reporterHolder: { current?: ReturnType<typeof createFlushReporter> } = {}
+  const registry = createConflictRegistry(() => void reporterHolder.current?.report())
+  const reporter = createFlushReporter(core, registry, handlers)
+  reporterHolder.current = reporter
 
   const addHandler = (one: FlushHandler) => {
     handlers.add(one)

@@ -145,28 +145,49 @@ function createThemeWatcher(deps: {
   return { follow, stop }
 }
 
-export function createWindowAppearance(deps: WindowAppearanceDeps) {
-  const { core, words, write, sheet = document, wait = sleep } = deps
-  const dressed = getStyleElements(sheet)
-  const served = dressed.theme.textContent
+function initAppearanceState() {
   const list = shallowRef<readonly Theme[]>([])
   const applied = ref('')
   const mode = ref<Mode>('system')
   const settings = ref<Sizes>({ interfaceScale: DESIGNED, textScale: DESIGNED })
   const bounds = ref<Ranges>({ interfaceScale: EMPTY_RANGE, textScale: EMPTY_RANGE })
   const lost = ref('')
+  return { list, applied, mode, settings, bounds, lost }
+}
 
-  const { files, wear } = createThemeWear({ core, dressed, write, words, applied })
+function createAppearanceGroups(
+  state: ReturnType<typeof initAppearanceState>,
+  choice: ReturnType<typeof useAppearanceChoice>,
+  words: WindowAppearanceDeps['words'],
+) {
+  return {
+    getThemeGroups: () => getThemeGroups(state.list.value, state.applied.value, words),
+    getModeGroups: () => getModeGroups(state.mode.value, choice.isPinned.value, words),
+    getSizeGroups: (command: string, text = '') =>
+      getSizeGroups(command, text, {
+        sizes: state.settings.value,
+        bounds: state.bounds.value,
+        words,
+      }),
+  }
+}
+
+export function createWindowAppearance(deps: WindowAppearanceDeps) {
+  const { core, words, write, sheet = document, wait = sleep } = deps
+  const dressed = getStyleElements(sheet)
+  const served = dressed.theme.textContent ?? ''
+  const state = initAppearanceState()
+  const { files, wear } = createThemeWear({ core, dressed, write, words, applied: state.applied })
 
   const choice = useAppearanceChoice({
     core,
     write,
-    list,
-    applied,
-    mode,
-    settings,
-    bounds,
     wear,
+    list: state.list,
+    applied: state.applied,
+    mode: state.mode,
+    settings: state.settings,
+    bounds: state.bounds,
   })
 
   const applyAppearance = () => wear(choice.worn.value, choice.half.value)
@@ -177,13 +198,13 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     core,
     write,
     words,
-    list,
-    applied,
-    mode,
-    settings,
-    bounds,
     files,
     served,
+    list: state.list,
+    applied: state.applied,
+    mode: state.mode,
+    settings: state.settings,
+    bounds: state.bounds,
   })
 
   const watcher = createThemeWatcher({
@@ -192,23 +213,16 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     choice,
     applyAppearance,
     loadAppearance,
-    lost,
+    lost: state.lost,
     wait,
   })
 
   return {
-    list,
-    applied,
-    mode,
+    ...state,
     sized: choice.sized,
-    bounds,
     isPinned: choice.isPinned,
     pinned: choice.isPinned,
-    lost,
-    getThemeGroups: () => getThemeGroups(list.value, applied.value, words),
-    getModeGroups: () => getModeGroups(mode.value, choice.isPinned.value, words),
-    getSizeGroups: (command: string, text = '') =>
-      getSizeGroups(command, text, { sizes: settings.value, bounds: bounds.value, words }),
+    ...createAppearanceGroups(state, choice, words),
     previewItem: choice.previewItem,
     chooseItem: choice.chooseItem,
     start: async () => {

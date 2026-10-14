@@ -188,6 +188,102 @@ function createPaletteState(wait?: Wait) {
   return { open, typed, found, known, showing, isWorking, failureMessage, asked, debounced, drop }
 }
 
+function createPaletteStepsAndSearch(
+  deps: CommandPaletteDeps,
+  state: ReturnType<typeof createPaletteState>,
+  invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation,
+) {
+  const loadVaults = createVaultsLoader({
+    core: deps.core,
+    words: deps.words,
+    asked: state.asked,
+    known: state.known,
+    showing: state.showing,
+    isWorking: state.isWorking,
+    failureMessage: state.failureMessage,
+  })
+
+  const previewItem = (item: string) => {
+    const step = stepsRef.current?.here.value
+    if (step?.step === 'choosing') deps.lists.previewItem(step.command.id, item)
+  }
+
+  const setOpen = (now: boolean) => {
+    previewItem('')
+    state.open.value = now
+    state.drop()
+    state.typed.value = ''
+    stepsRef.current?.reset()
+  }
+
+  const stepsRef: { current?: ReturnType<typeof createPaletteSteps> } = {}
+  const steps = createPaletteSteps({
+    words: deps.words,
+    lists: deps.lists,
+    knows: deps.knows,
+    text: state.typed,
+    onDrop: state.drop,
+    onLights: previewItem,
+    onLists: () => void loadVaults(),
+    onClose: () => setOpen(false),
+    invocation,
+  })
+  stepsRef.current = steps
+
+  const searchNames = createNamesSearch({
+    core: deps.core,
+    words: deps.words,
+    debounced: state.debounced,
+    found: state.found,
+    isWorking: state.isWorking,
+    failureMessage: state.failureMessage,
+  })
+
+  const setTyped = async (text: string) => {
+    state.typed.value = text
+    if (steps.here.value?.step === 'picking') await searchNames(text.trim())
+  }
+
+  return { steps, previewItem, setOpen, setTyped }
+}
+
+function createPaletteExecution(options: {
+  byId: Map<string, Command>
+  runs: RunSupport
+  open: Ref<boolean>
+  words: Words
+  invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation
+  steps: ReturnType<typeof createPaletteSteps>
+  draws: ReturnType<typeof getPaletteView>
+  found: ShallowRef<readonly NameMatch[]>
+  known: ShallowRef<readonly Vault[]>
+  on: ComputedRef<CommandTarget>
+}) {
+  const { startCommand, getObjection } = createPaletteCommands({
+    byId: options.byId,
+    runs: options.runs,
+    open: options.open,
+    words: options.words,
+    invocation: options.invocation,
+    steps: options.steps,
+  })
+
+  const chooseItem = (item: string, action: string): CommandInvocation | null => {
+    const step = options.steps.here.value
+    if (!step) return startCommand(action, options.on.value)
+    return options.steps.chooseInStep(
+      step,
+      item,
+      action,
+      options.found.value,
+      options.known.value,
+      (one) => Boolean(options.draws.getVaultAside(one)),
+    )
+  }
+
+  return { startCommand, getObjection, chooseItem }
+}
+
 export function useCommandPalette(
   coreOrDeps: CommandsDeps | CommandPaletteDeps,
   ...args: [
@@ -200,10 +296,8 @@ export function useCommandPalette(
   ]
 ) {
   const deps = parsePaletteDeps(coreOrDeps, args)
-  const { core, words, at, knows, lists, runs, wait } = deps
+  const { words, at, knows, lists, runs, wait } = deps
   const state = createPaletteState(wait)
-  const { open, typed, found, known, showing, isWorking, failureMessage, asked, debounced, drop } =
-    state
 
   const commands = createCommands(words)
   const byId = new Map(commands.map((one) => [one.id, one]))
@@ -212,54 +306,11 @@ export function useCommandPalette(
   const invocation = (id: string, over: CommandTarget, name = ''): CommandInvocation =>
     createInvocation(id, over, name, over.path ? knows.getTabAt(over.path) : null)
 
-  const previewItem = (item: string) => {
-    const step = steps.here.value
-    if (step?.step === 'choosing') lists.previewItem(step.command.id, item)
-  }
-
-  const setOpen = (now: boolean) => {
-    previewItem('')
-    open.value = now
-    drop()
-    typed.value = ''
-    steps.reset()
-  }
-
-  const loadVaults = createVaultsLoader({
-    core,
-    words,
-    asked,
-    known,
-    showing,
-    isWorking,
-    failureMessage,
-  })
-
-  const steps = createPaletteSteps({
-    words,
-    lists,
-    knows,
-    text: typed,
-    onDrop: drop,
-    onLights: previewItem,
-    onLists: () => void loadVaults(),
-    onClose: () => setOpen(false),
+  const { steps, previewItem, setOpen, setTyped } = createPaletteStepsAndSearch(
+    deps,
+    state,
     invocation,
-  })
-
-  const searchNames = createNamesSearch({
-    core,
-    words,
-    debounced,
-    found,
-    isWorking,
-    failureMessage,
-  })
-
-  const setTyped = async (text: string) => {
-    typed.value = text
-    if (steps.here.value?.step === 'picking') await searchNames(text.trim())
-  }
+  )
 
   const draws = getPaletteView({
     words,
@@ -267,36 +318,32 @@ export function useCommandPalette(
     byId,
     runs,
     lists,
-    found,
-    known,
-    showing,
-    isWorking,
-    failureMessage,
+    found: state.found,
+    known: state.known,
+    showing: state.showing,
+    isWorking: state.isWorking,
+    failureMessage: state.failureMessage,
     getStepTitle: steps.getStepTitle,
     getStepLabel: steps.getStepLabel,
   })
 
-  const groups = computed(() => draws.createGroups(steps.here.value, on.value, typed.value))
-  const { startCommand, getObjection } = createPaletteCommands({
+  const groups = computed(() => draws.createGroups(steps.here.value, on.value, state.typed.value))
+  const { startCommand, getObjection, chooseItem } = createPaletteExecution({
     byId,
     runs,
-    open,
+    open: state.open,
     words,
     invocation,
     steps,
+    draws,
+    found: state.found,
+    known: state.known,
+    on,
   })
 
-  const chooseItem = (item: string, action: string): CommandInvocation | null => {
-    const step = steps.here.value
-    if (!step) return startCommand(action, on.value)
-    return steps.chooseInStep(step, item, action, found.value, known.value, (one) =>
-      Boolean(draws.getVaultAside(one)),
-    )
-  }
-
   return {
-    open,
-    typed,
+    open: state.open,
+    typed: state.typed,
     groups,
     crumb: steps.crumb,
     step: steps.step,
