@@ -18,7 +18,12 @@ import {
   type Ref,
   type ShallowRef,
 } from 'vue'
-import { getArrivalTimes, getDwell, getFinishedNotices, getShownNotices } from '../lib/dwell'
+import {
+  getArrivalTimes,
+  getNoticeDuration,
+  getFinishedNotices,
+  getShownNotices,
+} from '../lib/duration'
 import { foldNotices } from '../lib/fold'
 import { measureMovement, type Movement } from '../lib/movement'
 import { getStillAway, getReadable, findTally, type Notice } from '../lib/notice'
@@ -126,13 +131,15 @@ function watchNoticeTicker(
       (one) => one.stay !== 'read' && !options.away.value.has(one.id) && !shown.has(one.id),
     )
   })
-  const dwelling = computed(() =>
-    drawn.value.some((one) => one.stay === 'read' && getDwell(one.text, one.about) !== Infinity),
+  const timing = computed(() =>
+    drawn.value.some(
+      (one) => one.stay === 'read' && getNoticeDuration(one.text, one.about) !== Infinity,
+    ),
   )
   const counting = computed(() => drawn.value.some((one) => findTally(one) !== undefined))
 
   watchEffect((clean) => {
-    if (!coming.value && !dwelling.value && !counting.value) return
+    if (!coming.value && !timing.value && !counting.value) return
     const tick = setInterval(sample, 250)
     clean(() => clearInterval(tick))
   })

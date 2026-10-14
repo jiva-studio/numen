@@ -3,14 +3,14 @@
  * attention rests before a box widens, how a node offers to be reached out of,
  * how it is asked for on its own, and the clock a box opens on.
  */
-import { DWELL } from './dwell'
+import { EXPANSION_DELAY } from './expansion'
 import { byHandle, type ReachStrategy } from './reaching'
 import { byDoubleClick, type ShowStrategy } from './showing'
 import { browserClock, type Clock } from '@/shared/lib/clock'
 
 export interface PlexBehaviour {
   /** How long the attention rests on a box before it widens. Milliseconds. */
-  readonly dwell: number
+  readonly expansionDelay: number
   /** How a node offers to be reached out of. */
   readonly reaching: ReachStrategy
   /** How a node is asked for on its own. */
@@ -21,7 +21,7 @@ export interface PlexBehaviour {
 
 /** The handle, the second click, the browser's clock, and the usual wait. */
 export const DEFAULT_BEHAVIOUR: PlexBehaviour = {
-  dwell: DWELL,
+  expansionDelay: EXPANSION_DELAY,
   reaching: byHandle,
   showing: byDoubleClick,
   clock: browserClock,

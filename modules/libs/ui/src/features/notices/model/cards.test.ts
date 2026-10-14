@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { defineComponent, h, nextTick, shallowRef } from 'vue'
 import { useNoticeCards, type NoticeCardsState } from './cards'
-import { MIN_DWELL } from '../lib/dwell'
+import { MIN_DURATION } from '../lib/duration'
 import type { Notice } from '../lib/notice'
 import { getRemainingWord } from '../lib/tally'
 
@@ -137,7 +137,7 @@ describe('the clock behind the corner', () => {
     const { wind } = stand([report('a')])
     expect(vi.getTimerCount()).toBe(1)
 
-    await wind(MIN_DWELL * 10)
+    await wind(MIN_DURATION * 10)
 
     expect(vi.getTimerCount()).toBe(0)
   })
@@ -212,7 +212,7 @@ describe('a card that has been read', () => {
   it('names its caller once, however often the corner is looked at again', async () => {
     const { dismiss, notices, wind } = stand([report('a')])
 
-    await wind(MIN_DWELL * 10)
+    await wind(MIN_DURATION * 10)
     notices.value = [report('a')]
     await wind(1_000)
     notices.value = [report('a')]
@@ -223,20 +223,20 @@ describe('a card that has been read', () => {
 
   it('names its caller again when the same card returns and is read again', async () => {
     const { dismiss, notices, wind } = stand([report('a')])
-    await wind(MIN_DWELL * 10)
+    await wind(MIN_DURATION * 10)
 
     notices.value = []
     await nextTick()
     notices.value = [report('a')]
     await nextTick()
-    await wind(MIN_DWELL * 10)
+    await wind(MIN_DURATION * 10)
 
     expect(dismiss.mock.calls).toEqual([['a'], ['a']])
   })
 
   it('is not forgotten while its caller still hands it in', async () => {
     const { dismiss, notices, wind } = stand([report('a'), asked('k')])
-    await wind(MIN_DWELL * 10)
+    await wind(MIN_DURATION * 10)
 
     notices.value = [report('a'), asked('k'), asked('j')]
     await nextTick()

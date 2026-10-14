@@ -10,14 +10,14 @@ import { browserClock, type Clock } from './transition'
 import { getHandle, type PlacedNode } from '../lib/node'
 
 /** How long a hand stays on a box before it opens, in milliseconds. */
-export const DWELL = 500
+export const EXPANSION_DELAY = 500
 
 /**
  * How long the opening itself takes, in milliseconds. It carries the places
  * inside the node out from under the box as well as the width, and they leave
  * one behind the next.
  */
-export const OPENING = 280
+export const EXPANSION_DURATION = 280
 
 /** A box drawn wider than it was placed. */
 export interface WideBox {
@@ -71,7 +71,7 @@ export function interpolateBox(node: PlacedNode, wide: WideBox | null, open: num
  * that moves is another thing: the box shuts and the wait for it begins again.
  * A wait of nothing at all never opens.
  */
-export function useDwell(
+export function useExpansion(
   on: () => string | null,
   delay: () => number,
   clock: Clock = browserClock,
@@ -96,7 +96,7 @@ export function useDwell(
     const from = open.value
     if (from === to) return
 
-    const span = OPENING * Math.abs(to - from)
+    const span = EXPANSION_DURATION * Math.abs(to - from)
     let started: number | null = null
 
     // Elapsed time comes from the callback, as it does for a move of the whole
@@ -146,7 +146,7 @@ export interface OpenBoxOptions {
  */
 export function useOpenBox(options: OpenBoxOptions) {
   const { node, wide, on, delay, clock = browserClock } = options
-  const open = useDwell(on, delay, clock)
+  const open = useExpansion(on, delay, clock)
   const box = computed(() => interpolateBox(node(), wide(), open.value))
 
   const handle = computed(() => {

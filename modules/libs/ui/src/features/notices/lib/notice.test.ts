@@ -4,12 +4,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   PER_WORD,
-  MIN_DWELL,
+  MIN_DURATION,
   getArrivalTimes,
-  getDwell,
+  getNoticeDuration,
   getFinishedNotices,
   getShownNotices,
-} from './dwell'
+} from './duration'
 import { foldNotices } from './fold'
 import { measureMovement, type Movement } from './movement'
 import { getStillAway, getReadable, findTally, type Notice } from './notice'
@@ -140,20 +140,20 @@ describe('a notice somebody asked for', () => {
 
 describe('how long something said stands to be read', () => {
   it('gives more time to more words', () => {
-    expect(getDwell('Renamed')).toBe(MIN_DWELL + PER_WORD)
-    expect(getDwell('Renamed', 'One.md')).toBe(MIN_DWELL + 2 * PER_WORD)
+    expect(getNoticeDuration('Renamed')).toBe(MIN_DURATION + PER_WORD)
+    expect(getNoticeDuration('Renamed', 'One.md')).toBe(MIN_DURATION + 2 * PER_WORD)
   })
 
   it('never runs out for a notice too long to be read in passing', () => {
     const list = Array.from({ length: 21 }, (_, at) => `Note${at}.md`).join(' ')
 
-    expect(getDwell('Links repaired in', list)).toBe(Infinity)
+    expect(getNoticeDuration('Links repaired in', list)).toBe(Infinity)
   })
 
   it('stands for as long as twenty words, which is not too much to read in passing', () => {
     const list = Array.from({ length: 20 }, (_, at) => `Note${at}.md`).join(' ')
 
-    expect(getDwell(list)).toBe(MIN_DWELL + 20 * PER_WORD)
+    expect(getNoticeDuration(list)).toBe(MIN_DURATION + 20 * PER_WORD)
   })
 
   it('is drawn the moment it arrives and goes once it has been read', () => {
@@ -164,9 +164,11 @@ describe('how long something said stands to be read', () => {
       'renamed',
     ])
     expect(
-      getShownNotices([said], 1000 + MIN_DWELL + PER_WORD - 1, { firstSeen: arrived }),
+      getShownNotices([said], 1000 + MIN_DURATION + PER_WORD - 1, { firstSeen: arrived }),
     ).toHaveLength(1)
-    expect(getShownNotices([said], 1000 + MIN_DWELL + PER_WORD, { firstSeen: arrived })).toEqual([])
+    expect(getShownNotices([said], 1000 + MIN_DURATION + PER_WORD, { firstSeen: arrived })).toEqual(
+      [],
+    )
   })
 
   it('stands until it is put away where it was not asked to be read in passing', () => {
