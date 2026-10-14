@@ -287,10 +287,13 @@ function createPaletteExecution(options: {
 function createPalettePresentation(
   deps: CommandPaletteDeps,
   state: ReturnType<typeof createPaletteState>,
-  steps: ReturnType<typeof createPaletteSteps>,
-  on: ComputedRef<CommandTarget>,
-  invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation,
+  context: {
+    steps: ReturnType<typeof createPaletteSteps>
+    on: ComputedRef<CommandTarget>
+    invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation
+  },
 ) {
+  const { steps, on, invocation } = context
   const commands = createCommands(deps.words)
   const byId = new Map(commands.map((one) => [one.id, one]))
 
@@ -350,7 +353,7 @@ export function useCommandPalette(
     invocation,
   )
 
-  const presentation = createPalettePresentation(deps, state, steps, on, invocation)
+  const presentation = createPalettePresentation(deps, state, { steps, on, invocation })
 
   return {
     open: state.open,
