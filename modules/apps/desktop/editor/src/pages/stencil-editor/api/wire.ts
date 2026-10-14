@@ -79,37 +79,39 @@ function createStencilState() {
   }
 }
 
-async function handleRenameField(
-  cards: Cards,
-  path: string,
-  field: { from: string; to: string },
-  ...[currentAt, say, onChanged]: [
-    currentAt: string,
-    say: MessageWriter,
-    onChanged: (paths: readonly string[]) => void,
-  ]
-): Promise<void> {
-  const { from, to: name } = field
-  if (!name || name === from) return
-  const answer = await cards.renameField(path, { from, to: name }, currentAt || null)
-  if (!answer.ok) {
-    if (answer.error !== 'changed') return say(ERRORS[answer.error], 'error')
-    say(words.notRenamed, 'error')
-    return onChanged([path])
-  }
-  const renamed = answer.value
-  if (renamed.cards > 0) say(words.renamed(renamed.cards, renamed.decks.length))
-  if (renamed.notWritten.length > 0) {
-    say(words.notWritten(renamed.notWritten.map((one) => one.path)), 'error')
-  }
-  onChanged([path])
+interface RenameOptions {
+  currentAt: string
+  say: MessageWriter
+  onChanged: (paths: readonly string[]) => void
 }
 
-export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
-  const state = createStencilState()
-  const { fileAnswers, titles } = state
+async function handleRenameField(
+  cards: Cards,
+  target: { path: string; from: string; to: string },
+  options: RenameOptions,
+): Promise<void> {
+  const { from, to: name } = target
+  if (!name || name === from) return
+  const answer = await cards.renameField(target.path, { from, to: name }, options.currentAt || null)
+  if (!answer.ok) {
+    if (answer.error !== 'changed') return options.say(ERRORS[answer.error], 'error')
+    options.say(words.notRenamed, 'error')
+    return options.onChanged([target.path])
+  }
+  const renamed = answer.value
+  if (renamed.cards > 0) options.say(words.renamed(renamed.cards, renamed.decks.length))
+  if (renamed.notWritten.length > 0) {
+    options.say(words.notWritten(renamed.notWritten.map((one) => one.path)), 'error')
+  }
+  options.onChanged([target.path])
+}
 
-  const read = async (path: string) => {
+function createStencilReader(
+  cards: Cards,
+  fileAnswers: Map<string, FileAnswer>,
+  titles: Map<string, string>,
+) {
+  return async (path: string) => {
     const answer = await cards.readStencil(path)
     if (!answer.ok) {
       fileAnswers.set(path, {
@@ -133,6 +135,13 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
       at: answer.value.at,
     })
   }
+}
+
+export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
+  const state = createStencilState()
+  const { fileAnswers, titles } = state
+
+  const read = createStencilReader(cards, fileAnswers, titles)
 
   const write = async (path: string, body: string, baseline: NoteBaseline | null = null) => {
     const stencil = parseStencil(body)
@@ -161,7 +170,12 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
     path: string,
     field: { from: string; to: string },
     onChanged: (paths: readonly string[]) => void,
-  ) => handleRenameField(cards, path, field, (fileAnswers.get(path) ?? NOTHING).at, say, onChanged)
+  ) =>
+    handleRenameField(
+      cards,
+      { path, from: field.from, to: field.to },
+      { currentAt: (fileAnswers.get(path) ?? NOTHING).at, say, onChanged },
+    )
 
   return {
     ...state,

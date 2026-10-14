@@ -284,6 +284,48 @@ function createPaletteExecution(options: {
   return { startCommand, getObjection, chooseItem }
 }
 
+function createPalettePresentation(
+  deps: CommandPaletteDeps,
+  state: ReturnType<typeof createPaletteState>,
+  steps: ReturnType<typeof createPaletteSteps>,
+  on: ComputedRef<CommandTarget>,
+  invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation,
+) {
+  const commands = createCommands(deps.words)
+  const byId = new Map(commands.map((one) => [one.id, one]))
+
+  const draws = getPaletteView({
+    words: deps.words,
+    commands,
+    byId,
+    runs: deps.runs,
+    lists: deps.lists,
+    found: state.found,
+    known: state.known,
+    showing: state.showing,
+    isWorking: state.isWorking,
+    failureMessage: state.failureMessage,
+    getStepTitle: steps.getStepTitle,
+    getStepLabel: steps.getStepLabel,
+  })
+
+  const groups = computed(() => draws.createGroups(steps.here.value, on.value, state.typed.value))
+  const execution = createPaletteExecution({
+    byId,
+    runs: deps.runs,
+    open: state.open,
+    words: deps.words,
+    invocation,
+    steps,
+    draws,
+    found: state.found,
+    known: state.known,
+    on,
+  })
+
+  return { groups, findNoteType: draws.findNoteType, ...execution }
+}
+
 export function useCommandPalette(
   coreOrDeps: CommandsDeps | CommandPaletteDeps,
   ...args: [
@@ -296,15 +338,11 @@ export function useCommandPalette(
   ]
 ) {
   const deps = parsePaletteDeps(coreOrDeps, args)
-  const { words, at, knows, lists, runs, wait } = deps
-  const state = createPaletteState(wait)
-
-  const commands = createCommands(words)
-  const byId = new Map(commands.map((one) => [one.id, one]))
-  const on = computed<CommandTarget>(() => at())
+  const state = createPaletteState(deps.wait)
+  const on = computed<CommandTarget>(() => deps.at())
 
   const invocation = (id: string, over: CommandTarget, name = ''): CommandInvocation =>
-    createInvocation(id, over, name, over.path ? knows.getTabAt(over.path) : null)
+    createInvocation(id, over, name, over.path ? deps.knows.getTabAt(over.path) : null)
 
   const { steps, previewItem, setOpen, setTyped } = createPaletteStepsAndSearch(
     deps,
@@ -312,39 +350,12 @@ export function useCommandPalette(
     invocation,
   )
 
-  const draws = getPaletteView({
-    words,
-    commands,
-    byId,
-    runs,
-    lists,
-    found: state.found,
-    known: state.known,
-    showing: state.showing,
-    isWorking: state.isWorking,
-    failureMessage: state.failureMessage,
-    getStepTitle: steps.getStepTitle,
-    getStepLabel: steps.getStepLabel,
-  })
-
-  const groups = computed(() => draws.createGroups(steps.here.value, on.value, state.typed.value))
-  const { startCommand, getObjection, chooseItem } = createPaletteExecution({
-    byId,
-    runs,
-    open: state.open,
-    words,
-    invocation,
-    steps,
-    draws,
-    found: state.found,
-    known: state.known,
-    on,
-  })
+  const presentation = createPalettePresentation(deps, state, steps, on, invocation)
 
   return {
     open: state.open,
     typed: state.typed,
-    groups,
+    groups: presentation.groups,
     crumb: steps.crumb,
     step: steps.step,
     opensOn: steps.opensOn,
@@ -352,13 +363,13 @@ export function useCommandPalette(
     setTyped,
     previewItem,
     setOpen,
-    startCommand,
-    getObjection,
+    startCommand: presentation.startCommand,
+    getObjection: presentation.getObjection,
     applyRenames: steps.applyRenames,
-    chooseItem,
+    chooseItem: presentation.chooseItem,
     leaveStep: steps.leaveStep,
     goBack: steps.goBack,
-    findNoteType: draws.findNoteType,
+    findNoteType: presentation.findNoteType,
   }
 }
 

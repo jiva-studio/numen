@@ -176,8 +176,8 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     renamingPath.value = path
   }
 
-  let tabState!: FilesTabState
-  const actions = createFileActions(list, deps, () => tabState)
+  const stateHolder: { current?: FilesTabState } = {}
+  const actions = createFileActions(list, deps, () => stateHolder.current!)
   const creators = useFileCreation(list, deps, renamingPath)
   const { move } = useFileMoves(list, deps)
   const fileMenu = useFileMenu({
@@ -215,6 +215,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     canRun,
     getArtifactStates: deps.getArtifactStates,
   }
+  stateHolder.current = tabState
 
   return tabState
 }

@@ -133,6 +133,20 @@ function useBookProgress(
   return { page, chapter }
 }
 
+function createBookCloser(
+  bookDocument: ReturnType<typeof useBookDocument>,
+  state: ReturnType<typeof useBookState>,
+  onClose: () => void,
+) {
+  return () => {
+    onClose()
+    bookDocument.close()
+    state.contents.value = []
+    state.pages.value = 0
+    state.pageBytes.value = 0
+  }
+}
+
 export function useBookReader(books: Books, path: string, options: BookReaderOptions) {
   const { words, writeMessage = () => {} } = options
   const state = useBookState()
@@ -170,22 +184,13 @@ export function useBookReader(books: Books, path: string, options: BookReaderOpt
     await marks.focusSpans(...spans)
   }
 
-  const close = () => {
+  const close = createBookCloser(bookDocument, state, () => {
     isOpen = false
-    bookDocument.close()
-    state.contents.value = []
-    state.pages.value = 0
-    state.pageBytes.value = 0
-  }
+  })
 
   return {
     path,
-    title: state.title,
-    span: state.span,
-    contents: state.contents,
-    pages: state.pages,
-    pageBytes: state.pageBytes,
-    isLoading: state.isLoading,
+    ...state,
     page,
     chapter,
     offset: nav.offset,

@@ -39,17 +39,16 @@ export interface DeckTabsOptions {
 }
 
 function registerDeckOpener(
-  tabOpeners: FileOpeners,
+  deps: { tabOpeners: FileOpeners; handle: WindowHandle },
   tabIds: ReturnType<typeof createDeckTabIdManager>,
   vaultAnswers: ReturnType<typeof createDeckAnswers>,
-  handle: WindowHandle,
 ) {
   const openDeckTab = (path: string, title: string, how: PlexDestination): void => {
     const id = tabIds.getOrCreateTabId(path)
     if (title) vaultAnswers.setTitle(path, title)
-    void (how === 'beside' ? handle.openTabBeside(DECK, id) : handle.openTab(DECK, id))
+    void (how === 'beside' ? deps.handle.openTabBeside(DECK, id) : deps.handle.openTab(DECK, id))
   }
-  tabOpeners.registerEditor('deck', openDeckTab)
+  deps.tabOpeners.registerEditor('deck', openDeckTab)
 }
 
 export function useDeckTabs(
@@ -89,7 +88,7 @@ export function useDeckTabs(
     createDeckTabState,
   })
 
-  registerDeckOpener(tabOpeners, tabIds, vaultAnswers, handle)
+  registerDeckOpener({ tabOpeners, handle }, tabIds, vaultAnswers)
 
   const applyPathChanges = (
     paths: readonly string[],

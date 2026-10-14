@@ -192,13 +192,18 @@ function createFolderOperations(
   return { isFolderOpen, openFolder, closeFolder, toggleFolder }
 }
 
-export function useFileTree(core: Folders): FileTree {
+function initTreeState() {
   const entriesByFolder = shallowRef<ReadonlyMap<string, readonly Entry[]>>(new Map())
   const open = shallowRef<ReadonlySet<string>>(new Set([ROOT]))
   const selectedPaths = shallowRef<readonly string[]>([])
   const errorMessage = ref('')
-  let isAlive = true
+  return { entriesByFolder, open, selectedPaths, errorMessage }
+}
 
+function createTreeQueries(
+  entriesByFolder: ShallowRef<ReadonlyMap<string, readonly Entry[]>>,
+  open: ShallowRef<ReadonlySet<string>>,
+) {
   const getEntriesInFolder = (folder: string): readonly Entry[] =>
     entriesByFolder.value.get(folder) ?? []
 
@@ -212,54 +217,56 @@ export function useFileTree(core: Folders): FileTree {
   const getEntryAt = (path: string): Entry | null =>
     getEntriesInFolder(getFolderPath(path)).find((one) => one.path === path) ?? null
 
+  return { getEntriesInFolder, isFolderOpen, rows, openRows, getEntryAt }
+}
+
+export function useFileTree(core: Folders): FileTree {
+  const state = initTreeState()
+  let isAlive = true
+
+  const queries = createTreeQueries(state.entriesByFolder, state.open)
+
   const refreshControl = createTreeRefresh({
     core,
-    entriesByFolder,
-    open,
-    errorMessage,
-    selectedPaths,
-    isFolderOpen,
-    getEntryAt,
+    ...state,
+    isFolderOpen: queries.isFolderOpen,
+    getEntryAt: queries.getEntryAt,
     isAlive: () => isAlive,
   })
 
-  const folderOps = createFolderOperations(open, refreshControl.loadFolder, () => isAlive)
+  const folderOps = createFolderOperations(state.open, refreshControl.loadFolder, () => isAlive)
 
   const revealPath = async (path: string) => {
     for (const folder of getParentFolders(path)) {
       await folderOps.openFolder(folder)
       if (!isAlive) return
     }
-    selectedPaths.value = [path]
+    state.selectedPaths.value = [path]
   }
 
   const close = () => {
     isAlive = false
-    entriesByFolder.value = new Map()
-    open.value = new Set([ROOT])
+    state.entriesByFolder.value = new Map()
+    state.open.value = new Set([ROOT])
   }
 
   return {
-    rows,
-    openRows,
-    selectedPaths,
-    errorMessage,
-    getEntriesInFolder,
-    isFolderOpen: folderOps.isFolderOpen,
-    getEntryAt,
+    ...queries,
+    selectedPaths: state.selectedPaths,
+    errorMessage: state.errorMessage,
     loadFolder: refreshControl.loadFolder,
     openFolder: folderOps.openFolder,
     closeFolder: folderOps.closeFolder,
     toggleFolder: folderOps.toggleFolder,
     selectPaths: (paths: readonly string[]) => {
-      selectedPaths.value = paths
+      state.selectedPaths.value = paths
     },
     revealPath,
     refresh: refreshControl.refresh,
     refreshChanged: refreshControl.refreshChanged,
     getUniqueNameInFolder: (folder: string, word: string): string =>
       generateUniqueName(
-        getEntriesInFolder(folder).map((one) => one.name),
+        queries.getEntriesInFolder(folder).map((one) => one.name),
         word,
       ),
     close,
