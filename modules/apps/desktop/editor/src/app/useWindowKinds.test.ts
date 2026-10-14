@@ -149,6 +149,6 @@ describe('the destinations', () => {
 
     window.destinations.openFile('a.md', 'A', 7)
 
-    expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.md', 'A', 'here', 7)
+    expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.md', 'A', { where: 'here', line: 7 })
   })
 })

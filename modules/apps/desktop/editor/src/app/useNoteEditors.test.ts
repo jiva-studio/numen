@@ -108,9 +108,9 @@ describe('the note editors', () => {
     const { writers, day } = create()
 
     expect(h.calls.writer[1]).toBe(writers.made)
-    expect(h.calls.stencils[3]).toBe(writers.stencil)
-    expect(h.calls.schedules[3]).toBe(writers.preset)
-    expect(h.calls.schedules[4]).toBe(day)
+    expect(h.calls.stencils[2].writeMessage).toBe(writers.stencil)
+    expect(h.calls.schedules[0].writeMessage).toBe(writers.preset)
+    expect(h.calls.schedules[0].today).toBe(day)
     expect(new Set(Object.keys(writers))).toEqual(new Set(['made', 'stencil', 'preset']))
   })
 

@@ -154,7 +154,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     reached: editing.reached,
     openPreset: (path) =>
       resolveDeckPreset(core, path, {
-        openPreset: (p, t) => editing.schedules.openPreset(p, t),
+        openPreset: editing.schedules.openPreset,
         writeMessage,
       }),
     dressed: settings.dressed,

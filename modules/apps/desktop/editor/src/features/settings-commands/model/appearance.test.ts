@@ -222,7 +222,7 @@ describe('the page as it was served', () => {
     bare.previewItem('mine:sea')
     await settle()
 
-    expect(getHeadStyles(sheet)).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }'])
+    expect(getHeadStyles(sheet)).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }', SIZED])
   })
 })
 
