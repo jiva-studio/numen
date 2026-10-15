@@ -11,10 +11,10 @@ import (
 type EventHandler func(ctx context.Context, event string) error
 
 type eventState struct {
-	timer      *time.Timer
-	firstSeen  time.Time
-	lastSeen   time.Time
-	event      string
+	timer     *time.Timer
+	firstSeen time.Time
+	lastSeen  time.Time
+	event     string
 }
 
 // EventBus debounces and throttles events sent to plugins to protect the UI main thread.
