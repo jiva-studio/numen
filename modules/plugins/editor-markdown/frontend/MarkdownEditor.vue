@@ -18,7 +18,6 @@ const props = withDefaults(defineProps<Props>(), {
   modelValue: '',
   filePath: '',
   isReadOnly: false,
-  extensions: undefined,
 })
 
 /* --------------------------------- Events --------------------------------- */
