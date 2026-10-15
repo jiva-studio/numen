@@ -1,3 +1,4 @@
+// Package download provides configuration types for content downloading.
 package download
 
 import (
@@ -56,9 +57,9 @@ type Tool struct {
 	Environment map[string]string `json:"environment"`
 }
 
-// getEnvironment is what a run of this tool is started with: this process's own, and what
+// GetEnvironment is what a run of this tool is started with: this process's own, and what
 // the settings name over it. Naming none is this process's own.
-func (t Tool) getEnvironment() []string {
+func (t Tool) GetEnvironment() []string {
 	if len(t.Environment) == 0 {
 		return nil
 	}
