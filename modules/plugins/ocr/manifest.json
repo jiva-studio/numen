@@ -1,0 +1,38 @@
+{
+  "id": "com.numen.ocr",
+  "name": "Document OCR",
+  "version": "1.0.0",
+  "description": "Optical character recognition using PaddleOCR and ONNX Runtime",
+  "capabilities": ["recogniser"],
+  "targets": ["desktop.editor"],
+  "activationEvents": ["onFile:*.pdf", "onCommand:ocr.recognize"],
+  "permissions": ["vault:read"],
+  "lifecycle": {
+    "mode": "on-demand",
+    "idleTimeoutSeconds": 180,
+    "keepAliveWhileVisible": false
+  },
+  "backend": {
+    "type": "process",
+    "entrypoint": "bin/ocr",
+    "serviceName": "numen.v1.RecognitionService"
+  },
+  "frontend": {
+    "entrypoint": "dist/index.js",
+    "styles": "dist/styles.css"
+  },
+  "settings": [
+    {
+      "key": "dpi",
+      "type": "range",
+      "title": "Scan DPI",
+      "description": "Image rendering DPI before OCR extraction",
+      "default": 300,
+      "palette": false,
+      "options": [],
+      "min": 150,
+      "max": 600,
+      "step": 50
+    }
+  ]
+}

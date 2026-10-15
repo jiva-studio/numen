@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// PluginLifecycleService handles lifecycle, ping, and graceful shutdown for all plugins.
+service PluginLifecycleService {
+  rpc Ping(PingRequest) returns (PingResponse);
+  rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
+}
+
+message PingRequest {}
+
+message PingResponse {
+  string status = 1;
+}
+
+message ShutdownRequest {
+  int32 timeout_seconds = 1;
+}
+
+message ShutdownResponse {
+  bool success = 1;
+}
