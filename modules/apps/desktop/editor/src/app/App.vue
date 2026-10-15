@@ -12,6 +12,7 @@ import { UnsavedChangesPrompt } from '@/features/file-conflict'
 import CoreFailureNotice from '@/shared/notices/CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
 import { TabLinkIndicator, TabLinkMenu, useTabLinkMenu } from '@/features/tab-linking'
+import { UpdateIndicator } from '@/features/app-update'
 import { WelcomeScreen } from '@/pages/welcome'
 import { useWindow } from './useWindow'
 import { WORDS as words } from '@/shared/words'
@@ -131,7 +132,11 @@ function onTabContextMenu(tabId: string, at: { x: number; y: number }) {
       @cancel="statusBar.onCancelTask"
       @retry="statusBar.onRetryTask"
       @dismiss="statusBar.onDismissTask"
-    />
+    >
+      <template #trailing>
+        <UpdateIndicator />
+      </template>
+    </StatusBar>
 
     <Notices
       :notices="notices"
