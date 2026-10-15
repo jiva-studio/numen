@@ -130,6 +130,7 @@ func (x *GetTranscriptionModelResponse) GetFrom() string {
 type OpenRecordingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AudioData     []byte                 `protobuf:"bytes,1,opt,name=audio_data,json=audioData,proto3" json:"audio_data,omitempty"`
+	Path          string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -169,6 +170,13 @@ func (x *OpenRecordingRequest) GetAudioData() []byte {
 		return x.AudioData
 	}
 	return nil
+}
+
+func (x *OpenRecordingRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
 }
 
 type OpenRecordingResponse struct {
@@ -589,10 +597,11 @@ const file_numen_v1_transcription_proto_rawDesc = "" +
 	"\x05model\x18\x01 \x01(\tR\x05model\x12\x1c\n" +
 	"\tsegmenter\x18\x02 \x01(\tR\tsegmenter\x12\x18\n" +
 	"\acutting\x18\x03 \x01(\tR\acutting\x12\x12\n" +
-	"\x04from\x18\x04 \x01(\tR\x04from\"5\n" +
+	"\x04from\x18\x04 \x01(\tR\x04from\"I\n" +
 	"\x14OpenRecordingRequest\x12\x1d\n" +
 	"\n" +
-	"audio_data\x18\x01 \x01(\fR\taudioData\"[\n" +
+	"audio_data\x18\x01 \x01(\fR\taudioData\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"[\n" +
 	"\x15OpenRecordingResponse\x12!\n" +
 	"\frecording_id\x18\x01 \x01(\tR\vrecordingId\x12\x1f\n" +
 	"\vduration_ms\x18\x02 \x01(\x05R\n" +

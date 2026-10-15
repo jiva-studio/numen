@@ -34,6 +34,7 @@ message GetTranscriptionModelResponse {
 
 message OpenRecordingRequest {
   bytes audio_data = 1;
+  string path = 2;
 }
 
 message OpenRecordingResponse {

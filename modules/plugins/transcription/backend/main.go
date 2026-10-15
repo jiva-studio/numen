@@ -9,7 +9,9 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -119,11 +121,41 @@ func (s *transcriptionServer) GetTranscriptionModel(
 	}), nil
 }
 
+func readAudioFile(path string) ([]byte, error) {
+	if path == "" {
+		return nil, errors.New("empty audio path")
+	}
+	cleanPath := filepath.Clean(path)
+	if strings.Contains(cleanPath, "..") {
+		return nil, errors.New("path traversal outside allowed scope")
+	}
+	raw, err := os.ReadFile(cleanPath)
+	if err == nil {
+		return raw, nil
+	}
+	if vaultDir := os.Getenv("NUMEN_VAULT_PATH"); vaultDir != "" {
+		if raw, err := os.ReadFile(filepath.Join(vaultDir, path)); err == nil {
+			return raw, nil
+		}
+	}
+	return nil, err
+}
+
 func (s *transcriptionServer) OpenRecording(
 	ctx context.Context,
 	req *connect.Request[numenv1.OpenRecordingRequest],
 ) (*connect.Response[numenv1.OpenRecordingResponse], error) {
-	data := req.Msg.GetAudioData()
+	var data []byte
+	if path := req.Msg.GetPath(); path != "" {
+		var err error
+		data, err = readAudioFile(path)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("read audio %s: %w", path, err))
+		}
+	} else {
+		data = req.Msg.GetAudioData()
+	}
+
 	if len(data) == 0 {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("empty audio data"))
 	}
