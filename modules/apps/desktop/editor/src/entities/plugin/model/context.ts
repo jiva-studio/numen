@@ -5,9 +5,11 @@ import type {
   AgentProviderRegistration,
   CommandRegistration,
   Disposable,
+  FileSelectEvent,
   PluginContext,
   ReaderRegistration,
   TabKindRegistration,
+  VaultChangeEvent,
 } from '@numen/plugin-sdk'
 import type { PluginContextHost } from './types'
 
@@ -53,6 +55,22 @@ export function createPluginContext(pluginId: string, host: PluginContextHost): 
 
     onSettingChange<T = unknown>(key: string, handler: (value: T) => void): Disposable {
       return addSubscription(host.onSettingChange<T>(pluginId, key, handler))
+    },
+
+    onVaultChange(handler: (event: VaultChangeEvent) => void | Promise<void>): Disposable {
+      return addSubscription(host.onVaultChange ? host.onVaultChange(handler) : { dispose: () => {} })
+    },
+
+    onFileSelect(handler: (event: FileSelectEvent) => void | Promise<void>): Disposable {
+      return addSubscription(host.onFileSelect ? host.onFileSelect(handler) : { dispose: () => {} })
+    },
+
+    emitVaultChange(event: VaultChangeEvent): void {
+      host.emitVaultChange?.(event)
+    },
+
+    emitFileSelect(event: FileSelectEvent): void {
+      host.emitFileSelect?.(event)
     },
   }
 }

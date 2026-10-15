@@ -34,8 +34,8 @@ function extractLifecycleFunction(
 }
 
 function getLifecycleHooks(resolved: unknown): {
-  activate?: PluginLifecycle['activate']
-  deactivate?: PluginLifecycle['deactivate']
+  activate?: PluginLifecycle['activate'] | undefined
+  deactivate?: PluginLifecycle['deactivate'] | undefined
 } {
   if (typeof resolved !== 'object' || resolved === null) return {}
   const mod = resolved as Record<string, unknown>

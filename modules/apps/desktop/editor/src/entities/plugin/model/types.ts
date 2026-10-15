@@ -5,10 +5,12 @@ import type {
   AgentProviderRegistration,
   CommandRegistration,
   Disposable,
+  FileSelectEvent,
   PluginContext,
   PluginLifecycle,
   ReaderRegistration,
   TabKindRegistration,
+  VaultChangeEvent,
 } from '@numen/plugin-sdk'
 import type { AnyTabKind, SourceReader } from '@/entities/tab/@x/plugin'
 
@@ -16,10 +18,12 @@ export type {
   AgentProviderRegistration,
   CommandRegistration,
   Disposable,
+  FileSelectEvent,
   PluginContext,
   PluginLifecycle,
   ReaderRegistration,
   TabKindRegistration,
+  VaultChangeEvent,
 }
 
 export interface PluginPaletteCommand {
@@ -52,4 +56,8 @@ export interface PluginContextHost {
     key: string,
     handler: (value: T) => void,
   ): Disposable
+  onVaultChange?(handler: (event: VaultChangeEvent) => void | Promise<void>): Disposable
+  onFileSelect?(handler: (event: FileSelectEvent) => void | Promise<void>): Disposable
+  emitVaultChange?(event: VaultChangeEvent): void
+  emitFileSelect?(event: FileSelectEvent): void
 }

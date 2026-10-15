@@ -150,7 +150,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     agents: () => kinds.agents,
     getOpeningNote: () => window.opening.value,
     writeMessage,
-    pluginHost,
+    ...(pluginHost !== undefined ? { pluginHost } : {}),
   })
 }
 
@@ -177,14 +177,18 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     loadVaults: () => vaultsModule.loadVaults(),
     startSettings: () => settings.start(),
     startLayout,
-    startPlugins: () => deps.pluginLoader?.start(),
+    startPlugins: async () => {
+      await deps.pluginLoader?.start()
+    },
     startWindow: () => window.start(),
     startEditing: () => void editing.fileFlush.start(),
     closeWindow: () => window.close(),
     closeEditing: () => editing.close(),
     closeTabs: () => held.close(),
     closeSettings: () => settings.close(),
-    closePlugins: () => deps.pluginLoader?.close(),
+    closePlugins: async () => {
+      await deps.pluginLoader?.close()
+    },
   })
 }
 

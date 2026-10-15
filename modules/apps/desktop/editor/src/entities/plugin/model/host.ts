@@ -108,10 +108,13 @@ function createReaderTabKind(pluginId: string, registration: ReaderRegistration)
     },
     pane: createPluginPaneWrapper(registration.component),
     identity: (at: string) => at,
-    getTarget: (state: unknown) => ({
-      file: (state as { path?: string })?.path,
-      source: 'document',
-    }),
+    getTarget: (state: unknown) => {
+      const path = (state as { path?: string } | undefined)?.path
+      return {
+        ...(path !== undefined ? { file: path } : {}),
+        source: 'other' as const,
+      }
+    },
     getOpenTab: (state: unknown) => ({ path: (state as { path?: string })?.path ?? '' }),
   }
 }

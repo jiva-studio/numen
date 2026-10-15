@@ -18,6 +18,10 @@ describe('createPluginLoader', () => {
           registerAgentProvider: vi.fn(() => ({ dispose: vi.fn() })),
           getSetting: vi.fn(),
           onSettingChange: vi.fn(() => ({ dispose: vi.fn() })),
+          onVaultChange: vi.fn(() => ({ dispose: vi.fn() })),
+          onFileSelect: vi.fn(() => ({ dispose: vi.fn() })),
+          emitVaultChange: vi.fn(),
+          emitFileSelect: vi.fn(),
         }
         contexts.set(pluginId, ctx)
         return ctx

@@ -69,7 +69,7 @@ export interface CommandsDepsOptions {
   agents: () => { askQuestion: (text: string) => Promise<void> | void }
   getOpeningNote: () => string
   writeMessage: MessageWriter
-  pluginHost?: import('@/entities/plugin').PluginHost
+  pluginHost?: import('@/entities/plugin').PluginHost | undefined
 }
 
 export function useCommands(options: CommandsDepsOptions) {
