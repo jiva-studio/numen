@@ -57,6 +57,8 @@ type Host struct {
 	evictWg        sync.WaitGroup
 	isEvictStopped bool
 	enabled        map[string]bool
+	stdinsMu       sync.Mutex
+	stdins         map[string]io.Closer
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
@@ -77,6 +79,7 @@ func NewHost(target string, dirs ...string) *Host {
 		evictTicker:    time.NewTicker(30 * time.Second),
 		evictDone:      make(chan struct{}),
 		enabled:        make(map[string]bool),
+		stdins:         make(map[string]io.Closer),
 	}
 	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
@@ -183,6 +186,12 @@ func (h *Host) Discover() error {
 		sup, exists := h.supervisors[p.Manifest.ID]
 		if !exists {
 			sup = NewSupervisor()
+			id := p.Manifest.ID
+			sup.SetOnExit(func() {
+				h.mu.Lock()
+				delete(h.endpoints, id)
+				h.mu.Unlock()
+			})
 			h.supervisors[p.Manifest.ID] = sup
 		}
 		sup.SetPermissions(p.Manifest.Permissions)
@@ -277,6 +286,7 @@ func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error)
 		if _, err := h.EnsureActive(ctx, id); err != nil {
 			return activated, fmt.Errorf("activate plugin %s on %s: %w", id, event, err)
 		}
+		h.Release(id)
 		activated = append(activated, id)
 	}
 	return activated, nil
@@ -302,6 +312,12 @@ func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, err
 		if _, hasSup := h.supervisors[pluginID]; !hasSup {
 			sup := NewSupervisor()
 			sup.SetPermissions(p.Manifest.Permissions)
+			id := pluginID
+			sup.SetOnExit(func() {
+				h.mu.Lock()
+				delete(h.endpoints, id)
+				h.mu.Unlock()
+			})
 			h.supervisors[pluginID] = sup
 		}
 	}
@@ -361,6 +377,14 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 		_ = stdout.Close()
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("attach plugin %s: %w", p.Manifest.ID, err)
 	}
+	sup.SetOnExit(func() {
+		h.stdinsMu.Lock()
+		if c, ok := h.stdins[p.Manifest.ID]; ok {
+			_ = c.Close()
+			delete(h.stdins, p.Manifest.ID)
+		}
+		h.stdinsMu.Unlock()
+	})
 	sup.Acquire(now)
 
 	endpoint := Endpoint{
@@ -402,7 +426,8 @@ func (h *Host) defaultLauncher(
 		return nil, nil, fmt.Errorf("validate plugin binary: %w", err)
 	}
 
-	cmd := exec.CommandContext(ctx, binPath, "--port="+strconv.Itoa(port), "--token="+token)
+	cmd := exec.Command(binPath, "--port="+strconv.Itoa(port), "--token="+token)
+	configureSysProcAttr(cmd)
 	cmd.Dir = p.Dir
 	configJSON, _ := h.getPluginConfigJSONLocked(p.Manifest.ID)
 
@@ -423,17 +448,41 @@ func (h *Host) defaultLauncher(
 	)
 	cmd.Env = env
 
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return nil, nil, fmt.Errorf("pipe stdin: %w", err)
+	}
+
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
+		_ = stdin.Close()
 		return nil, nil, fmt.Errorf("pipe stdout: %w", err)
 	}
 
 	if err := cmd.Start(); err != nil {
+		_ = stdin.Close()
 		_ = stdout.Close()
 		return nil, nil, fmt.Errorf("start %s: %w", binPath, err)
 	}
 
+	h.stdinsMu.Lock()
+	if h.stdins == nil {
+		h.stdins = make(map[string]io.Closer)
+	}
+	h.stdins[p.Manifest.ID] = stdin
+	h.stdinsMu.Unlock()
+
 	return cmd.Process, stdout, nil
+}
+
+// Acquire increments the active consumer reference count for a plugin.
+func (h *Host) Acquire(pluginID string) {
+	h.mu.RLock()
+	sup, ok := h.supervisors[pluginID]
+	h.mu.RUnlock()
+	if ok {
+		sup.Acquire(time.Now())
+	}
 }
 
 // Release decrements the active consumer reference count for a plugin.
@@ -519,6 +568,12 @@ func (h *Host) TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 			delete(h.endpoints, id)
 		}
 	}
+	h.stdinsMu.Lock()
+	for id, c := range h.stdins {
+		_ = c.Close()
+		delete(h.stdins, id)
+	}
+	h.stdinsMu.Unlock()
 	return firstErr
 }
 
@@ -777,18 +832,20 @@ func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
 	rawSettings := h.getPluginSettingsLocked(pluginID)
 	values := make(map[string]string, len(rawSettings))
 	for k, v := range rawSettings {
-		if b, err := json.Marshal(v); err == nil {
-			values[k] = string(b)
-		} else {
-			values[k] = fmt.Sprint(v)
+		switch val := v.(type) {
+		case string:
+			values[k] = val
+		default:
+			if b, err := json.Marshal(v); err == nil {
+				values[k] = string(b)
+			} else {
+				values[k] = fmt.Sprint(v)
+			}
 		}
 	}
 	h.mu.RUnlock()
 
 	httpClient := endpoint.HTTPClient()
-	if endpoint.Transport == nil {
-		httpClient.Timeout = 3 * time.Second
-	}
 	client := numenv1connect.NewPluginLifecycleServiceClient(
 		httpClient,
 		endpoint.BaseURL(),
@@ -799,7 +856,9 @@ func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
 		ConfigurationJson: cfgJSON,
 		Values:            values,
 	})
-	_, err = client.Configure(ctx, req)
+	configCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	_, err = client.Configure(configCtx, req)
 	if err != nil {
 		var connectErr *connect.Error
 		if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented {

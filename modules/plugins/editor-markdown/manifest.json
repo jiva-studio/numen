@@ -1,5 +1,5 @@
 {
-  "id": "editor-markdown",
+  "id": "md.numen.editor-markdown",
   "name": "Markdown Editor",
   "version": "1.0.0",
   "description": "Modular Markdown and plain text editor with CodeMirror 6 and wikilinks support",

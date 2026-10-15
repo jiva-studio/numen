@@ -81,6 +81,11 @@ func validateVaultPath(path string) (string, error) {
 		return "", fmt.Errorf("path traversal outside allowed scope")
 	}
 
+	tempDir := filepath.Clean(os.TempDir())
+	if cleanPath == tempDir || strings.HasPrefix(cleanPath, tempDir+string(filepath.Separator)) {
+		return cleanPath, nil
+	}
+
 	vaultRoot := os.Getenv("NUMEN_VAULT_PATH")
 	if vaultRoot != "" {
 		cleanVault := filepath.Clean(vaultRoot)
@@ -354,12 +359,25 @@ func main() {
 	fmt.Printf("NUMEN_READY port=%d\n", actualPort)
 	os.Stdout.Sync()
 
+	stdinEOF := make(chan struct{})
+	go func() {
+		buf := make([]byte, 1)
+		for {
+			n, err := os.Stdin.Read(buf)
+			if err != nil || n == 0 {
+				close(stdinEOF)
+				return
+			}
+		}
+	}()
+
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
 	select {
 	case <-sigCh:
 	case <-shutdownCh:
+	case <-stdinEOF:
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)

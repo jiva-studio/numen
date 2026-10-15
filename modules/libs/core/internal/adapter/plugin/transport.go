@@ -49,7 +49,7 @@ func (e Endpoint) HTTPClient() *http.Client {
 	if e.Transport != nil {
 		return &http.Client{Transport: e.Transport}
 	}
-	return defaultPluginClient
+	return &http.Client{Transport: defaultPluginClient.Transport}
 }
 
 // Address returns host and port joined with a colon.

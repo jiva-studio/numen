@@ -71,7 +71,12 @@ func (h hostDocumentPort) OpenDocument(ctx context.Context, file io.ReadSeekClos
 		}
 		return nil, err
 	}
-	return bridge.OpenDocument(ctx, file)
+	doc, err := bridge.OpenDocument(ctx, file)
+	if err != nil {
+		_ = bridge.Close()
+		return nil, err
+	}
+	return doc, nil
 }
 
 type unavailableDocument struct{}

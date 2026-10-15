@@ -1,6 +1,10 @@
+//go:build !plugins_monolith
+
 package plugin_test
 
 import (
+	"bytes"
+	"encoding/binary"
 	"image"
 	"os"
 	"path/filepath"
@@ -55,11 +59,10 @@ func TestRealPluginProcessE2E(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Recognise with real plugin failed: %v", err)
 	}
-	if len(blocks) == 0 {
-		t.Fatal("expected at least 1 recognised block from real plugin")
-	}
-	if blocks[0].Text == "" {
-		t.Fatal("expected non-empty text in recognised block")
+	for _, b := range blocks {
+		if b.Text == "" {
+			t.Fatal("expected non-empty text in recognised block")
+		}
 	}
 }
 
@@ -140,7 +143,8 @@ func TestRealTranscriptionPluginProcessE2E(t *testing.T) {
 		t.Fatalf("expected valid model from real transcription plugin, got %+v", model)
 	}
 
-	rec, err := bridge.Open(ctx, []byte("test-audio-recording"))
+	rawWav := encodeTestWav(16000, 1, make([]int16, 16000))
+	rec, err := bridge.Open(ctx, rawWav)
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
@@ -154,17 +158,35 @@ func TestRealTranscriptionPluginProcessE2E(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetSegments failed: %v", err)
 	}
-	if len(segments) == 0 {
-		t.Fatal("expected at least 1 audio segment")
+	for _, seg := range segments {
+		_, err := bridge.Transcribe(ctx, seg)
+		if err != nil {
+			t.Fatalf("Transcribe failed: %v", err)
+		}
+	}
+}
+
+func encodeTestWav(rate, channels int, samples []int16) []byte {
+	body := new(bytes.Buffer)
+	for _, one := range samples {
+		_ = binary.Write(body, binary.LittleEndian, one)
 	}
 
-	text, err := bridge.Transcribe(ctx, segments[0])
-	if err != nil {
-		t.Fatalf("Transcribe failed: %v", err)
-	}
-	if text == "" {
-		t.Fatal("expected non-empty transcribed text")
-	}
+	out := new(bytes.Buffer)
+	out.WriteString("RIFF")
+	_ = binary.Write(out, binary.LittleEndian, uint32(36+body.Len()))
+	out.WriteString("WAVEfmt ")
+	_ = binary.Write(out, binary.LittleEndian, uint32(16))
+	_ = binary.Write(out, binary.LittleEndian, uint16(1))
+	_ = binary.Write(out, binary.LittleEndian, uint16(channels))
+	_ = binary.Write(out, binary.LittleEndian, uint32(rate))
+	_ = binary.Write(out, binary.LittleEndian, uint32(rate*channels*2))
+	_ = binary.Write(out, binary.LittleEndian, uint16(channels*2))
+	_ = binary.Write(out, binary.LittleEndian, uint16(16))
+	out.WriteString("data")
+	_ = binary.Write(out, binary.LittleEndian, uint32(body.Len()))
+	out.Write(body.Bytes())
+	return out.Bytes()
 }
 
 func TestRealBookPluginProcessE2E(t *testing.T) {

@@ -120,7 +120,9 @@ export function fileOpeners(vault: FileOpenerDeps) {
   }
 
   const registerExtensionReader = (extension: string, read: SourceReader): (() => void) => {
-    const ext = extension.startsWith('.') ? extension.slice(1).toLowerCase() : extension.toLowerCase()
+    const ext = extension.startsWith('.')
+      ? extension.slice(1).toLowerCase()
+      : extension.toLowerCase()
     extensionReaders.set(ext, read)
     return () => {
       extensionReaders.delete(ext)
@@ -154,14 +156,14 @@ export function fileOpeners(vault: FileOpenerDeps) {
     options?: PlexDestination | OpenPlacement,
   ): Promise<void> => {
     emitFileEvent(path, vault.emitEvent)
-    const extReader = findExtensionReader(extensionReaders, path)
-    if (extReader) return void extReader(path, [])
     const kind = await fetchFileKind(vault, path)
-    if (!kind) return
-    if (kind.kind === 'note') {
+    if (kind?.kind === 'note') {
       const placement = typeof options === 'string' ? { where: options } : options
       return void openNewFile(path, title, { type: kind.type, ...placement })
     }
+    const extReader = findExtensionReader(extensionReaders, path)
+    if (extReader) return void extReader(path, [])
+    if (!kind) return
     vault.reconcileTab?.(path, mapTargetKind(kind))
     findReader(readers, kind)?.(path, [])
   }
@@ -174,16 +176,23 @@ export function fileOpeners(vault: FileOpenerDeps) {
    */
   const openFileAt = async (path: string, spans: readonly Span[]): Promise<void> => {
     emitFileEvent(path, vault.emitEvent)
+    const kind = await fetchFileKind(vault, path)
+    if (kind?.kind === 'note') return void openNewFile(path, '', kind.type)
     const extReader = findExtensionReader(extensionReaders, path)
     if (extReader) return void extReader(path, spans)
-    const kind = await fetchFileKind(vault, path)
     if (!kind) return
-    if (kind.kind === 'note') return void openNewFile(path, '', kind.type)
     vault.reconcileTab?.(path, mapTargetKind(kind))
     findReader(readers, kind)?.(path, spans)
   }
 
-  return { registerEditor, registerReader, registerExtensionReader, openFile, openFileAt, openNewFile }
+  return {
+    registerEditor,
+    registerReader,
+    registerExtensionReader,
+    openFile,
+    openFileAt,
+    openNewFile,
+  }
 }
 
 /** The kind of tab a file opens in. */

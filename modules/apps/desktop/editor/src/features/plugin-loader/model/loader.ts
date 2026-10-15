@@ -17,6 +17,10 @@ interface ActivePluginEntry {
 const IN_TREE_LOADERS: Record<string, () => Promise<unknown>> = {
   'md.numen.pdf': () => import('@plugins/reader-pdf/frontend'),
   'md.numen.epub': () => import('@plugins/reader-epub/frontend'),
+  'md.numen.editor-markdown': () => import('@plugins/editor-markdown/frontend'),
+  'editor-markdown': () => import('@plugins/editor-markdown/frontend'),
+  'md.numen.view-file-tree': () => import('@plugins/view-file-tree/frontend'),
+  'view-file-tree': () => import('@plugins/view-file-tree/frontend'),
 }
 
 function extractLifecycleFunction(
@@ -39,16 +43,13 @@ function getLifecycleHooks(resolved: unknown): {
 } {
   if (typeof resolved !== 'object' || resolved === null) return {}
   const mod = resolved as Record<string, unknown>
-  const target = (typeof mod.default === 'object' && mod.default !== null ? mod.default : mod) as Record<
-    string,
-    unknown
-  >
+  const target = (
+    typeof mod.default === 'object' && mod.default !== null ? mod.default : mod
+  ) as Record<string, unknown>
   const activate = extractLifecycleFunction(target, mod, 'activate') as
-    | PluginLifecycle['activate']
-    | undefined
+    PluginLifecycle['activate'] | undefined
   const deactivate = extractLifecycleFunction(target, mod, 'deactivate') as
-    | PluginLifecycle['deactivate']
-    | undefined
+    PluginLifecycle['deactivate'] | undefined
   return { activate, deactivate }
 }
 
