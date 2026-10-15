@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
-	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 // EditorAssembly is this installation as the window a person writes in asks it:
@@ -53,7 +52,7 @@ func NewEditorAssembly(cfg Config, registry port.VaultRegistry, db *Index) Edito
 	return EditorAssembly{cfg: cfg, registry: registry, db: db}
 }
 
-func (e EditorAssembly) OpenBookClient(ctx context.Context) (numenv1connect.BookServiceClient, func(), error) {
+func (e EditorAssembly) OpenBookClient(ctx context.Context) (any, func(), error) {
 	if e.cfg.PluginHost == nil {
 		return nil, nil, errors.New("no plugin host configured")
 	}

@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
-	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 // Assembly is what this window asks whoever put the application together: the
@@ -30,7 +29,7 @@ import (
 // store. It is opened before the window is, and the window closes it.
 type Assembly interface {
 	// OpenBookClient opens a client to the book reader plugin, returning the client and a closer.
-	OpenBookClient(ctx context.Context) (numenv1connect.BookServiceClient, func(), error)
+	OpenBookClient(ctx context.Context) (any, func(), error)
 
 	// GetRegistry is the list of vaults this installation holds.
 	GetRegistry() port.VaultRegistry
