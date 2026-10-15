@@ -24,7 +24,6 @@ func addCardEditTools(server *sdk.Server, core Core) {
 	addCardSectionAdd(server, core)
 	addCardSectionRename(server, core)
 	addCardSectionRemove(server, core)
-	addCardStencilEdit(server, core)
 }
 
 // checkCardSize returns an error when the card values exceed the size limit of one write.

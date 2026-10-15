@@ -19,6 +19,7 @@ func addCardWriteTools(server *sdk.Server, core Core) {
 func addCardCreateTools(server *sdk.Server, core Core) {
 	addCardDeckCreate(server, core)
 	addCardStencilCreate(server, core)
+	addCardStencilEdit(server, core)
 	addCardFieldRename(server, core)
 }
 
