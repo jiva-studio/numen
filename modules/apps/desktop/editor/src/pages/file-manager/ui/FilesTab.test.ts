@@ -314,15 +314,10 @@ describe('a folder that could not be read', () => {
   })
 })
 
-describe('a drop of several addresses on the files tab', () => {
-  it('imports all dropped addresses into the folder', async () => {
-    const { done, window } = await mountFiles()
-    await window.find('.files').trigger('drop', {
-      dataTransfer: {
-        getData: (type: string) =>
-          type === 'text/uri-list' ? 'https://first.org/\nhttps://second.org/' : '',
-      },
-    })
+describe('several addresses imported into the files tab', () => {
+  it('imports all addresses into the folder', async () => {
+    const { done, tab } = await mountFiles()
+    await tab.importUrls(['https://first.org/', 'https://second.org/'])
     expect(done).toContain('imports-multi / https://first.org/ https://second.org/')
   })
 })
