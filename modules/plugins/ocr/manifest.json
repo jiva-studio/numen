@@ -1,5 +1,5 @@
 {
-  "id": "com.numen.ocr",
+  "id": "md.numen.ocr",
   "name": "Document OCR",
   "version": "1.0.0",
   "description": "Optical character recognition using PaddleOCR and ONNX Runtime",
