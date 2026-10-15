@@ -224,7 +224,7 @@ describe('what a gesture makes of the stencil', () => {
 
   it('accepts options object as single dependency argument', () => {
     const fields = createStencilFields({
-      getBody: () => 'body',
+      getBody: () => JSON.stringify({ faces: [] }),
       onTyped: vi.fn(),
       getProblems: () => [],
       renameFieldOnWire: vi.fn(),

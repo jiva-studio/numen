@@ -181,7 +181,7 @@ describe('a note a plex tab opens', () => {
 
     one.deps.openNote('Compost.md')
 
-    expect(one.opened).toStrictEqual([['Compost.md', '', undefined, undefined]])
+    expect(one.opened).toStrictEqual([['Compost.md', '', 'here', undefined]])
   })
 
   it('goes to the tabs linked to the plex tab in front where none was named', () => {

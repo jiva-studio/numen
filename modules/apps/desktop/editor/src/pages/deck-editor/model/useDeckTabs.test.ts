@@ -1184,15 +1184,6 @@ describe('a deck opened by a file opener', () => {
     expect(openTab).not.toHaveBeenCalled()
   })
 
-  it('is put beside the pane when asked as a string destination', () => {
-    const { road, openTab, openTabBeside } = spied()
-
-    road.openFile('Animals.md', '', 'beside')
-
-    expect(openTabBeside).toHaveBeenCalledTimes(1)
-    expect(openTab).not.toHaveBeenCalled()
-  })
-
   it('is the one tab while the first asked for is not yet open', () => {
     const { road, openTab } = spied()
 

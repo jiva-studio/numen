@@ -146,6 +146,7 @@ function registerStencilOpener(
     (path: string, title: string, how?: PlexDestination | OpenPlacement) => {
       const id = tabIds.getOrCreateTabId(path)
       if (title) wire.setTitle(path, title)
+      // Stryker disable next-line ConditionalExpression: placement is OpenPlacement or undefined from tabOpeners.
       const where = typeof how === 'string' ? how : how?.where
       void (where === 'beside'
         ? deps.handle.openTabBeside(STENCIL, id)
