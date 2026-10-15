@@ -570,6 +570,27 @@ func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
 	return nil
 }
 
+// NotifyAllPluginConfigs sends resolved configurations to all running plugins.
+func (h *Host) NotifyAllPluginConfigs(ctx context.Context) error {
+	h.mu.RLock()
+	seen := make(map[string]struct{}, len(h.plugins))
+	for id := range h.plugins {
+		seen[id] = struct{}{}
+	}
+	for id := range h.supervisors {
+		seen[id] = struct{}{}
+	}
+	h.mu.RUnlock()
+
+	var firstErr error
+	for id := range seen {
+		if err := h.NotifyPluginConfig(ctx, id); err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+	return firstErr
+}
+
 // GetPluginInfos returns wire specifications of all registered plugins and their settings schemas.
 func (h *Host) GetPluginInfos() []*v1.PluginInfo {
 	h.mu.RLock()
