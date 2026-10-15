@@ -162,3 +162,85 @@ func TestBookServerGetBookAndMarkup(t *testing.T) {
 		t.Fatal("expected error for nonexistent file, got nil")
 	}
 }
+
+func TestBookServerVaultBoundary(t *testing.T) {
+	vaultDir := t.TempDir()
+	outsideDir := t.TempDir()
+
+	epubBytes := createMinimalEpub(t)
+	insidePath := filepath.Join(vaultDir, "inside.epub")
+	outsidePath := filepath.Join(outsideDir, "outside.epub")
+	if err := os.WriteFile(insidePath, epubBytes, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(outsidePath, epubBytes, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("NUMEN_VAULT_PATH", vaultDir)
+	server := &bookServer{}
+	ctx := context.Background()
+
+	// 1. Path outside vault should fail with permission denied
+	_, err := server.GetBook(ctx, connect.NewRequest(&numenv1.GetBookRequest{
+		Path: outsidePath,
+	}))
+	if err == nil {
+		t.Fatal("expected error for path outside vault root, got nil")
+	}
+	if connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("expected CodePermissionDenied, got %v", connect.CodeOf(err))
+	}
+
+	// 2. Path traversal should fail with permission denied
+	_, err = server.GetBook(ctx, connect.NewRequest(&numenv1.GetBookRequest{
+		Path: filepath.Join(vaultDir, "..", "outside.epub"),
+	}))
+	if err == nil {
+		t.Fatal("expected error for traversal path, got nil")
+	}
+	if connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("expected CodePermissionDenied, got %v", connect.CodeOf(err))
+	}
+
+	// 3. Relative path inside vault should succeed
+	resp, err := server.GetBook(ctx, connect.NewRequest(&numenv1.GetBookRequest{
+		Path: "inside.epub",
+	}))
+	if err != nil {
+		t.Fatalf("unexpected error for relative path inside vault: %v", err)
+	}
+	if resp.Msg.GetTitle() != "Test Book" {
+		t.Fatalf("expected title 'Test Book', got %q", resp.Msg.GetTitle())
+	}
+}
+
+func TestAuthCheckInterceptor(t *testing.T) {
+	interceptor := authCheck("secret-token")
+	wrapped := interceptor(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+		return nil, nil
+	})
+
+	ctx := context.Background()
+
+	// Missing token -> unauthenticated
+	req := connect.NewRequest(&numenv1.PingRequest{})
+	_, err := wrapped(ctx, req)
+	if err == nil || connect.CodeOf(err) != connect.CodeUnauthenticated {
+		t.Fatalf("expected CodeUnauthenticated for missing token, got %v", err)
+	}
+
+	// Wrong token -> unauthenticated
+	req.Header().Set("Authorization", "Bearer wrong-token")
+	_, err = wrapped(ctx, req)
+	if err == nil || connect.CodeOf(err) != connect.CodeUnauthenticated {
+		t.Fatalf("expected CodeUnauthenticated for wrong token, got %v", err)
+	}
+
+	// Correct token -> success
+	req.Header().Set("Authorization", "Bearer secret-token")
+	_, err = wrapped(ctx, req)
+	if err != nil {
+		t.Fatalf("unexpected error with valid token: %v", err)
+	}
+}

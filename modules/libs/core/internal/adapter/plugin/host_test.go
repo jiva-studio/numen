@@ -165,3 +165,39 @@ func TestHostEvictLoopTeardown(t *testing.T) {
 		t.Fatalf("second TeardownAll failed: %v", err)
 	}
 }
+
+func TestIsWhitelistedEnv(t *testing.T) {
+	allowed := []string{
+		"PATH", "path", "Path",
+		"HOME", "home",
+		"USER", "user",
+		"TMP", "tmp",
+		"TEMP", "temp",
+		"SYSTEMROOT", "SystemRoot",
+		"SYSTEMDRIVE", "SystemDrive",
+		"APPDATA", "AppData",
+		"LOCALAPPDATA", "LocalAppData",
+		"LANG", "lang",
+		"LC_ALL", "lc_ctype", "LC_MESSAGES",
+	}
+	for _, k := range allowed {
+		if !isWhitelistedEnv(k) {
+			t.Errorf("expected %s to be allowed in environment whitelist", k)
+		}
+	}
+
+	disallowed := []string{
+		"AWS_SECRET_ACCESS_KEY",
+		"GITHUB_TOKEN",
+		"PRIVATE_KEY",
+		"DATABASE_URL",
+		"SECRET",
+		"MY_VAR",
+		"FOO",
+	}
+	for _, k := range disallowed {
+		if isWhitelistedEnv(k) {
+			t.Errorf("expected %s to be blocked from environment whitelist", k)
+		}
+	}
+}

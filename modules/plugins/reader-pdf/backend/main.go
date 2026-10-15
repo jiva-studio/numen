@@ -52,6 +52,32 @@ func (s *lifecycleServer) Shutdown(
 	}), nil
 }
 
+func validateVaultPath(path string) (string, error) {
+	if path == "" {
+		return "", fmt.Errorf("path required")
+	}
+	cleanPath := filepath.Clean(path)
+	if strings.Contains(cleanPath, "..") {
+		return "", fmt.Errorf("path traversal outside allowed scope")
+	}
+
+	vaultRoot := os.Getenv("NUMEN_VAULT_PATH")
+	if vaultRoot != "" {
+		cleanVault := filepath.Clean(vaultRoot)
+		if !filepath.IsAbs(cleanPath) {
+			cleanPath = filepath.Join(cleanVault, cleanPath)
+		}
+		prefix := cleanVault
+		if !strings.HasSuffix(prefix, string(filepath.Separator)) {
+			prefix += string(filepath.Separator)
+		}
+		if cleanPath != cleanVault && !strings.HasPrefix(cleanPath, prefix) {
+			return "", fmt.Errorf("path outside allowed vault root")
+		}
+	}
+	return cleanPath, nil
+}
+
 type documentServer struct{}
 
 func (s *documentServer) GetDocument(
@@ -62,9 +88,9 @@ func (s *documentServer) GetDocument(
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
-	cleanPath := filepath.Clean(path)
-	if strings.Contains(cleanPath, "..") {
-		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope"))
+	cleanPath, err := validateVaultPath(path)
+	if err != nil {
+		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", err))
 	}
 
 	file, err := os.Open(cleanPath)
@@ -105,9 +131,9 @@ func (s *documentServer) RenderPage(
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
-	cleanPath := filepath.Clean(path)
-	if strings.Contains(cleanPath, "..") {
-		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope"))
+	cleanPath, err := validateVaultPath(path)
+	if err != nil {
+		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", err))
 	}
 
 	file, err := os.Open(cleanPath)
@@ -156,8 +182,11 @@ func (s *documentServer) ExtractText(
 		if path == "" {
 			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path or data required"))
 		}
-		var err error
-		raw, err = os.ReadFile(path)
+		cleanPath, err := validateVaultPath(path)
+		if err != nil {
+			return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", err))
+		}
+		raw, err = os.ReadFile(cleanPath)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read file: %w", err))
 		}
@@ -187,9 +216,9 @@ func (s *documentServer) GetHighlights(
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
-	cleanPath := filepath.Clean(path)
-	if strings.Contains(cleanPath, "..") {
-		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope"))
+	cleanPath, err := validateVaultPath(path)
+	if err != nil {
+		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", err))
 	}
 
 	raw, err := os.ReadFile(cleanPath)
@@ -236,6 +265,20 @@ func (s *documentServer) GetHighlights(
 	}), nil
 }
 
+func authCheck(expectedToken string) connect.UnaryInterceptorFunc {
+	return func(next connect.UnaryFunc) connect.UnaryFunc {
+		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			if expectedToken != "" {
+				authHeader := req.Header().Get("Authorization")
+				expected := "Bearer " + expectedToken
+				if authHeader != expected {
+					return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("invalid token"))
+				}
+			}
+			return next(ctx, req)
+		}
+	}
+}
 
 func main() {
 	var portFlag int
@@ -269,9 +312,11 @@ func main() {
 	life := &lifecycleServer{shutdownTrigger: shutdownCh}
 	doc := &documentServer{}
 
+	interceptors := connect.WithInterceptors(authCheck(tokenFlag))
+
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(life))
-	mux.Handle(numenv1connect.NewDocumentServiceHandler(doc))
+	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(life, interceptors))
+	mux.Handle(numenv1connect.NewDocumentServiceHandler(doc, interceptors))
 
 	handler := h2c.NewHandler(mux, &http2.Server{})
 	srv := &http.Server{

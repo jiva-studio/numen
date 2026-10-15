@@ -55,24 +55,44 @@ func (s *lifecycleServer) Shutdown(
 
 type bookServer struct{}
 
-func readBookFile(path string) ([]byte, error) {
+var (
+	errEmptyBookPath = errors.New("empty book path")
+	errPathTraversal = errors.New("path traversal outside allowed scope")
+	errOutsideVault  = errors.New("path outside allowed vault root")
+)
+
+func validateVaultPath(path string) (string, error) {
 	if path == "" {
-		return nil, errors.New("empty book path")
+		return "", errEmptyBookPath
 	}
 	cleanPath := filepath.Clean(path)
 	if strings.Contains(cleanPath, "..") {
-		return nil, errors.New("path traversal outside allowed scope")
+		return "", errPathTraversal
 	}
-	raw, err := os.ReadFile(cleanPath)
-	if err == nil {
-		return raw, nil
-	}
-	if vaultDir := os.Getenv("NUMEN_VAULT_PATH"); vaultDir != "" {
-		if raw, err := os.ReadFile(filepath.Join(vaultDir, path)); err == nil {
-			return raw, nil
+
+	vaultRoot := os.Getenv("NUMEN_VAULT_PATH")
+	if vaultRoot != "" {
+		cleanVault := filepath.Clean(vaultRoot)
+		if !filepath.IsAbs(cleanPath) {
+			cleanPath = filepath.Join(cleanVault, cleanPath)
+		}
+		prefix := cleanVault
+		if !strings.HasSuffix(prefix, string(filepath.Separator)) {
+			prefix += string(filepath.Separator)
+		}
+		if cleanPath != cleanVault && !strings.HasPrefix(cleanPath, prefix) {
+			return "", errOutsideVault
 		}
 	}
-	return nil, err
+	return cleanPath, nil
+}
+
+func readBookFile(path string) ([]byte, error) {
+	cleanPath, err := validateVaultPath(path)
+	if err != nil {
+		return nil, err
+	}
+	return os.ReadFile(cleanPath)
 }
 
 func (s *bookServer) GetBook(
@@ -80,8 +100,14 @@ func (s *bookServer) GetBook(
 	req *connect.Request[numenv1.GetBookRequest],
 ) (*connect.Response[numenv1.GetBookResponse], error) {
 	path := req.Msg.GetPath()
+	if path == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
+	}
 	raw, err := readBookFile(path)
 	if err != nil {
+		if errors.Is(err, errOutsideVault) || errors.Is(err, errPathTraversal) {
+			return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
+		}
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
 	}
 
@@ -131,8 +157,14 @@ func (s *bookServer) ReadBookMarkup(
 	req *connect.Request[numenv1.ReadBookMarkupRequest],
 ) (*connect.Response[numenv1.ReadBookMarkupResponse], error) {
 	path := req.Msg.GetPath()
+	if path == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
+	}
 	raw, err := readBookFile(path)
 	if err != nil {
+		if errors.Is(err, errOutsideVault) || errors.Is(err, errPathTraversal) {
+			return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
+		}
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
 	}
 
@@ -149,6 +181,21 @@ func (s *bookServer) ReadBookMarkup(
 	return connect.NewResponse(&numenv1.ReadBookMarkupResponse{
 		Markup: drawn.HTML(),
 	}), nil
+}
+
+func authCheck(expectedToken string) connect.UnaryInterceptorFunc {
+	return func(next connect.UnaryFunc) connect.UnaryFunc {
+		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			if expectedToken != "" {
+				authHeader := req.Header().Get("Authorization")
+				expected := "Bearer " + expectedToken
+				if authHeader != expected {
+					return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("invalid token"))
+				}
+			}
+			return next(ctx, req)
+		}
+	}
 }
 
 func main() {
@@ -183,9 +230,11 @@ func main() {
 	life := &lifecycleServer{shutdownTrigger: shutdownCh}
 	book := &bookServer{}
 
+	interceptors := connect.WithInterceptors(authCheck(tokenFlag))
+
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(life))
-	mux.Handle(numenv1connect.NewBookServiceHandler(book))
+	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(life, interceptors))
+	mux.Handle(numenv1connect.NewBookServiceHandler(book, interceptors))
 
 	handler := h2c.NewHandler(mux, &http2.Server{})
 	srv := &http.Server{
