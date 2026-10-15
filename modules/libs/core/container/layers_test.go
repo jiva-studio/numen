@@ -1251,7 +1251,7 @@ func TestTheCoresPublicAdaptersAreTheseAndNoOthers(t *testing.T) {
 // makes a new one arrive as a decision.
 var held = []string{
 	"appstate", "download", "embed", "filesystem", "pdf", "plugin",
-	"theme", "transcription", "trash",
+	"theme", "trash",
 }
 
 // The adapters under internal/ are these and no others.

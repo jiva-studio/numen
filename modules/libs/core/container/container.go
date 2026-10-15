@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/trash"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -52,7 +51,7 @@ type Config struct {
 	BookExtensions []string
 
 	// Transcription is how a recording is listened to.
-	Transcription transcription.Config
+	Transcription TranscriptionConfig
 
 	// Performance is the active workload and compute calibration profile.
 	Performance settings.Performance
@@ -129,6 +128,9 @@ func NewPluginHost(target string, dirs ...string) *plugin.Host {
 	_ = host.Discover()
 	return host
 }
+
+// bytesPerMB is the size of the megabyte the detected memory is counted in.
+const bytesPerMB = 1 << 20
 
 // Clock is the clock every scenario assembled here is handed.
 func (c Config) Clock() port.Clock {

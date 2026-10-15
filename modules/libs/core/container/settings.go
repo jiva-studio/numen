@@ -152,7 +152,7 @@ func (c Config) SetSettings(said Settings) Config {
 	c.Proofreading = said.Indexing.Proofreading
 	c.ScanProofreading = said.Indexing.Recognition.Proofread
 	c.TranscriptProofreading = said.Indexing.Transcription.Proofread
-	c.Transcription = said.Indexing.Transcription.Config
+	c.Transcription = said.Indexing.Transcription.TranscriptionConfig
 	c.ShouldTranscribe = said.Indexing.CanTranscribe()
 	c.TranscribesUnder = said.Indexing.GetTranscribeLimit()
 	c.Agent = said.Agent
