@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/agent.proto.
  */
 export const file_numen_v1_agent: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiFgoUR2V0QWdlbnRTdGF0ZVJlcXVlc3QiLAoVR2V0QWdlbnRTdGF0ZVJlc3BvbnNlEhMKC3VucmVhY2hhYmxlGAEgASgJIoABCg9Bc2tBZ2VudFJlcXVlc3QSDgoGcHJvbXB0GAEgASgJEg0KBWZvY3VzGAIgASgJEhQKDGNvbnZlcnNhdGlvbhgDIAEoCRIMCgRtYXJrGAQgASgJEgwKBGZhY2UYBSABKAkSDQoFYWdlbnQYBiABKAkSDQoFbW9kZWwYByABKAkiMQoZRmluaXNoQ29udmVyc2F0aW9uUmVxdWVzdBIUCgxjb252ZXJzYXRpb24YASABKAkiHAoaRmluaXNoQ29udmVyc2F0aW9uUmVzcG9uc2UiyAEKEEFza0FnZW50UmVzcG9uc2USDgoEc2FpZBgBIAEoCUgAEicKCXRvb2xfY2FsbBgCIAEoCzISLm51bWVuLnYxLlRvb2xDYWxsSAASEQoHc3RvcHBlZBgDIAEoCUgAEi8KDXRvb2xfZmluaXNoZWQYBCABKAsyFi5udW1lbi52MS5Ub29sRmluaXNoZWRIABIvCg1tb2RlbF9zdGFydGVkGAUgASgLMhYubnVtZW4udjEuTW9kZWxTdGFydGVkSABCBgoEc3RlcCIOCgxUb29sRmluaXNoZWQiDgoMTW9kZWxTdGFydGVkImQKCFRvb2xDYWxsEgwKBHRvb2wYASABKAkSDQoFYWJvdXQYAiABKAkSDwoHd3JpdHRlbhgDIAEoBRIMCgRwYXRoGAQgASgJEhwKBHNwYW4YBSABKAsyDi5udW1lbi52MS5TcGFuMoYCCgxBZ2VudFNlcnZpY2USQwoIQXNrQWdlbnQSGS5udW1lbi52MS5Bc2tBZ2VudFJlcXVlc3QaGi5udW1lbi52MS5Bc2tBZ2VudFJlc3BvbnNlMAESXwoSRmluaXNoQ29udmVyc2F0aW9uEiMubnVtZW4udjEuRmluaXNoQ29udmVyc2F0aW9uUmVxdWVzdBokLm51bWVuLnYxLkZpbmlzaENvbnZlcnNhdGlvblJlc3BvbnNlElAKDUdldEFnZW50U3RhdGUSHi5udW1lbi52MS5HZXRBZ2VudFN0YXRlUmVxdWVzdBofLm51bWVuLnYxLkdldEFnZW50U3RhdGVSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiFgoUR2V0QWdlbnRTdGF0ZVJlcXVlc3QiLAoVR2V0QWdlbnRTdGF0ZVJlc3BvbnNlEhMKC3VucmVhY2hhYmxlGAEgASgJIrgBCg9Bc2tBZ2VudFJlcXVlc3QSDgoGcHJvbXB0GAEgASgJEg0KBWZvY3VzGAIgASgJEhQKDGNvbnZlcnNhdGlvbhgDIAEoCRIMCgRtYXJrGAQgASgJEgwKBGZhY2UYBSABKAkSDQoFYWdlbnQYBiABKAkSDQoFbW9kZWwYByABKAkSFAoMaW5zdHJ1Y3Rpb25zGAggASgJEg0KBXRvb2xzGAkgAygJEhEKCW1heF9zdGVwcxgKIAEoBSIxChlGaW5pc2hDb252ZXJzYXRpb25SZXF1ZXN0EhQKDGNvbnZlcnNhdGlvbhgBIAEoCSIcChpGaW5pc2hDb252ZXJzYXRpb25SZXNwb25zZSLIAQoQQXNrQWdlbnRSZXNwb25zZRIOCgRzYWlkGAEgASgJSAASJwoJdG9vbF9jYWxsGAIgASgLMhIubnVtZW4udjEuVG9vbENhbGxIABIRCgdzdG9wcGVkGAMgASgJSAASLwoNdG9vbF9maW5pc2hlZBgEIAEoCzIWLm51bWVuLnYxLlRvb2xGaW5pc2hlZEgAEi8KDW1vZGVsX3N0YXJ0ZWQYBSABKAsyFi5udW1lbi52MS5Nb2RlbFN0YXJ0ZWRIAEIGCgRzdGVwIg4KDFRvb2xGaW5pc2hlZCIOCgxNb2RlbFN0YXJ0ZWQiZAoIVG9vbENhbGwSDAoEdG9vbBgBIAEoCRINCgVhYm91dBgCIAEoCRIPCgd3cml0dGVuGAMgASgFEgwKBHBhdGgYBCABKAkSHAoEc3BhbhgFIAEoCzIOLm51bWVuLnYxLlNwYW4iWAoTQWdlbnRUb29sRGVmaW5pdGlvbhIMCgRuYW1lGAEgASgJEhMKC2Rlc2NyaXB0aW9uGAIgASgJEh4KFnBhcmFtZXRlcnNfanNvbl9zY2hlbWEYAyABKAkiQgoTUmVnaXN0ZXJUb29sUmVxdWVzdBIrCgR0b29sGAEgASgLMh0ubnVtZW4udjEuQWdlbnRUb29sRGVmaW5pdGlvbiInChRSZWdpc3RlclRvb2xSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIIi4KGUV4dGVuZFN5c3RlbVByb21wdFJlcXVlc3QSEQoJZXh0ZW5zaW9uGAEgASgJIkIKGkV4dGVuZFN5c3RlbVByb21wdFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSEwoLZnVsbF9wcm9tcHQYAiABKAkiFgoUR2V0QWdlbnRUb29sc1JlcXVlc3QiZgoVR2V0QWdlbnRUb29sc1Jlc3BvbnNlEiwKBXRvb2xzGAEgAygLMh0ubnVtZW4udjEuQWdlbnRUb29sRGVmaW5pdGlvbhIfChdzeXN0ZW1fcHJvbXB0X2V4dGVuc2lvbhgCIAEoCTKIBAoMQWdlbnRTZXJ2aWNlEkMKCEFza0FnZW50EhkubnVtZW4udjEuQXNrQWdlbnRSZXF1ZXN0GhoubnVtZW4udjEuQXNrQWdlbnRSZXNwb25zZTABEl8KEkZpbmlzaENvbnZlcnNhdGlvbhIjLm51bWVuLnYxLkZpbmlzaENvbnZlcnNhdGlvblJlcXVlc3QaJC5udW1lbi52MS5GaW5pc2hDb252ZXJzYXRpb25SZXNwb25zZRJQCg1HZXRBZ2VudFN0YXRlEh4ubnVtZW4udjEuR2V0QWdlbnRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRBZ2VudFN0YXRlUmVzcG9uc2USTQoMUmVnaXN0ZXJUb29sEh0ubnVtZW4udjEuUmVnaXN0ZXJUb29sUmVxdWVzdBoeLm51bWVuLnYxLlJlZ2lzdGVyVG9vbFJlc3BvbnNlEl8KEkV4dGVuZFN5c3RlbVByb21wdBIjLm51bWVuLnYxLkV4dGVuZFN5c3RlbVByb21wdFJlcXVlc3QaJC5udW1lbi52MS5FeHRlbmRTeXN0ZW1Qcm9tcHRSZXNwb25zZRJQCg1HZXRBZ2VudFRvb2xzEh4ubnVtZW4udjEuR2V0QWdlbnRUb29sc1JlcXVlc3QaHy5udW1lbi52MS5HZXRBZ2VudFRvb2xzUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetAgentStateRequest
@@ -110,6 +110,27 @@ export type AskAgentRequest = Message<"numen.v1.AskAgentRequest"> & {
    * @generated from field: string model = 7;
    */
   model: string;
+
+  /**
+   * Instructions told about the task.
+   *
+   * @generated from field: string instructions = 8;
+   */
+  instructions: string;
+
+  /**
+   * Vault tools the agent may call.
+   *
+   * @generated from field: repeated string tools = 9;
+   */
+  tools: string[];
+
+  /**
+   * Maximum steps the agent may take.
+   *
+   * @generated from field: int32 max_steps = 10;
+   */
+  maxSteps: number;
 };
 
 /**
@@ -301,6 +322,143 @@ export const ToolCallSchema: GenMessage<ToolCall> = /*@__PURE__*/
   messageDesc(file_numen_v1_agent, 8);
 
 /**
+ * AgentToolDefinition describes a tool registered with or provided by the agent service.
+ *
+ * @generated from message numen.v1.AgentToolDefinition
+ */
+export type AgentToolDefinition = Message<"numen.v1.AgentToolDefinition"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string description = 2;
+   */
+  description: string;
+
+  /**
+   * @generated from field: string parameters_json_schema = 3;
+   */
+  parametersJsonSchema: string;
+};
+
+/**
+ * Describes the message numen.v1.AgentToolDefinition.
+ * Use `create(AgentToolDefinitionSchema)` to create a new message.
+ */
+export const AgentToolDefinitionSchema: GenMessage<AgentToolDefinition> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 9);
+
+/**
+ * @generated from message numen.v1.RegisterToolRequest
+ */
+export type RegisterToolRequest = Message<"numen.v1.RegisterToolRequest"> & {
+  /**
+   * @generated from field: numen.v1.AgentToolDefinition tool = 1;
+   */
+  tool?: AgentToolDefinition | undefined;
+};
+
+/**
+ * Describes the message numen.v1.RegisterToolRequest.
+ * Use `create(RegisterToolRequestSchema)` to create a new message.
+ */
+export const RegisterToolRequestSchema: GenMessage<RegisterToolRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 10);
+
+/**
+ * @generated from message numen.v1.RegisterToolResponse
+ */
+export type RegisterToolResponse = Message<"numen.v1.RegisterToolResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+};
+
+/**
+ * Describes the message numen.v1.RegisterToolResponse.
+ * Use `create(RegisterToolResponseSchema)` to create a new message.
+ */
+export const RegisterToolResponseSchema: GenMessage<RegisterToolResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 11);
+
+/**
+ * @generated from message numen.v1.ExtendSystemPromptRequest
+ */
+export type ExtendSystemPromptRequest = Message<"numen.v1.ExtendSystemPromptRequest"> & {
+  /**
+   * @generated from field: string extension = 1;
+   */
+  extension: string;
+};
+
+/**
+ * Describes the message numen.v1.ExtendSystemPromptRequest.
+ * Use `create(ExtendSystemPromptRequestSchema)` to create a new message.
+ */
+export const ExtendSystemPromptRequestSchema: GenMessage<ExtendSystemPromptRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 12);
+
+/**
+ * @generated from message numen.v1.ExtendSystemPromptResponse
+ */
+export type ExtendSystemPromptResponse = Message<"numen.v1.ExtendSystemPromptResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * @generated from field: string full_prompt = 2;
+   */
+  fullPrompt: string;
+};
+
+/**
+ * Describes the message numen.v1.ExtendSystemPromptResponse.
+ * Use `create(ExtendSystemPromptResponseSchema)` to create a new message.
+ */
+export const ExtendSystemPromptResponseSchema: GenMessage<ExtendSystemPromptResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 13);
+
+/**
+ * @generated from message numen.v1.GetAgentToolsRequest
+ */
+export type GetAgentToolsRequest = Message<"numen.v1.GetAgentToolsRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.GetAgentToolsRequest.
+ * Use `create(GetAgentToolsRequestSchema)` to create a new message.
+ */
+export const GetAgentToolsRequestSchema: GenMessage<GetAgentToolsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 14);
+
+/**
+ * @generated from message numen.v1.GetAgentToolsResponse
+ */
+export type GetAgentToolsResponse = Message<"numen.v1.GetAgentToolsResponse"> & {
+  /**
+   * @generated from field: repeated numen.v1.AgentToolDefinition tools = 1;
+   */
+  tools: AgentToolDefinition[];
+
+  /**
+   * @generated from field: string system_prompt_extension = 2;
+   */
+  systemPromptExtension: string;
+};
+
+/**
+ * Describes the message numen.v1.GetAgentToolsResponse.
+ * Use `create(GetAgentToolsResponseSchema)` to create a new message.
+ */
+export const GetAgentToolsResponseSchema: GenMessage<GetAgentToolsResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 15);
+
+/**
  * AgentService gives a task to the agent working this vault.
  *
  * @generated from service numen.v1.AgentService
@@ -339,6 +497,36 @@ export const AgentService: GenService<{
     methodKind: "unary";
     input: typeof GetAgentStateRequestSchema;
     output: typeof GetAgentStateResponseSchema;
+  },
+  /**
+   * RegisterTool registers a custom tool with the agent.
+   *
+   * @generated from rpc numen.v1.AgentService.RegisterTool
+   */
+  registerTool: {
+    methodKind: "unary";
+    input: typeof RegisterToolRequestSchema;
+    output: typeof RegisterToolResponseSchema;
+  },
+  /**
+   * ExtendSystemPrompt extends the agent's system instructions.
+   *
+   * @generated from rpc numen.v1.AgentService.ExtendSystemPrompt
+   */
+  extendSystemPrompt: {
+    methodKind: "unary";
+    input: typeof ExtendSystemPromptRequestSchema;
+    output: typeof ExtendSystemPromptResponseSchema;
+  },
+  /**
+   * GetAgentTools lists the registered tools and prompt extension.
+   *
+   * @generated from rpc numen.v1.AgentService.GetAgentTools
+   */
+  getAgentTools: {
+    methodKind: "unary";
+    input: typeof GetAgentToolsRequestSchema;
+    output: typeof GetAgentToolsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_agent, 0);

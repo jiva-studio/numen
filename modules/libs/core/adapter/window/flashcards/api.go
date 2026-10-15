@@ -39,6 +39,7 @@ var ErrNoRun = errors.New("no run of that name is open")
 // when another session opens on that vault or the window closes: what was
 // written stands, and the next session opens a file of its own.
 type API struct {
+	numenv1connect.UnimplementedAgentServiceHandler
 	// Find is the vault of a name, a path or an identity, and GetKnownVaults is
 	// every vault the installation holds.
 	Find           vaults.Find

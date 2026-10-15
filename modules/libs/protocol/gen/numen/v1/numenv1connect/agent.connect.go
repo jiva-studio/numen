@@ -46,6 +46,15 @@ const (
 	// AgentServiceGetAgentStateProcedure is the fully-qualified name of the AgentService's
 	// GetAgentState RPC.
 	AgentServiceGetAgentStateProcedure = "/numen.v1.AgentService/GetAgentState"
+	// AgentServiceRegisterToolProcedure is the fully-qualified name of the AgentService's RegisterTool
+	// RPC.
+	AgentServiceRegisterToolProcedure = "/numen.v1.AgentService/RegisterTool"
+	// AgentServiceExtendSystemPromptProcedure is the fully-qualified name of the AgentService's
+	// ExtendSystemPrompt RPC.
+	AgentServiceExtendSystemPromptProcedure = "/numen.v1.AgentService/ExtendSystemPrompt"
+	// AgentServiceGetAgentToolsProcedure is the fully-qualified name of the AgentService's
+	// GetAgentTools RPC.
+	AgentServiceGetAgentToolsProcedure = "/numen.v1.AgentService/GetAgentTools"
 )
 
 // AgentServiceClient is a client for the numen.v1.AgentService service.
@@ -60,6 +69,12 @@ type AgentServiceClient interface {
 	// answers is the installation's, not the vault's, so every window asks the
 	// same question here and none of them carries the answer in its own state.
 	GetAgentState(context.Context, *connect.Request[v1.GetAgentStateRequest]) (*connect.Response[v1.GetAgentStateResponse], error)
+	// RegisterTool registers a custom tool with the agent.
+	RegisterTool(context.Context, *connect.Request[v1.RegisterToolRequest]) (*connect.Response[v1.RegisterToolResponse], error)
+	// ExtendSystemPrompt extends the agent's system instructions.
+	ExtendSystemPrompt(context.Context, *connect.Request[v1.ExtendSystemPromptRequest]) (*connect.Response[v1.ExtendSystemPromptResponse], error)
+	// GetAgentTools lists the registered tools and prompt extension.
+	GetAgentTools(context.Context, *connect.Request[v1.GetAgentToolsRequest]) (*connect.Response[v1.GetAgentToolsResponse], error)
 }
 
 // NewAgentServiceClient constructs a client for the numen.v1.AgentService service. By default, it
@@ -91,6 +106,24 @@ func NewAgentServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(agentServiceMethods.ByName("GetAgentState")),
 			connect.WithClientOptions(opts...),
 		),
+		registerTool: connect.NewClient[v1.RegisterToolRequest, v1.RegisterToolResponse](
+			httpClient,
+			baseURL+AgentServiceRegisterToolProcedure,
+			connect.WithSchema(agentServiceMethods.ByName("RegisterTool")),
+			connect.WithClientOptions(opts...),
+		),
+		extendSystemPrompt: connect.NewClient[v1.ExtendSystemPromptRequest, v1.ExtendSystemPromptResponse](
+			httpClient,
+			baseURL+AgentServiceExtendSystemPromptProcedure,
+			connect.WithSchema(agentServiceMethods.ByName("ExtendSystemPrompt")),
+			connect.WithClientOptions(opts...),
+		),
+		getAgentTools: connect.NewClient[v1.GetAgentToolsRequest, v1.GetAgentToolsResponse](
+			httpClient,
+			baseURL+AgentServiceGetAgentToolsProcedure,
+			connect.WithSchema(agentServiceMethods.ByName("GetAgentTools")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -99,6 +132,9 @@ type agentServiceClient struct {
 	askAgent           *connect.Client[v1.AskAgentRequest, v1.AskAgentResponse]
 	finishConversation *connect.Client[v1.FinishConversationRequest, v1.FinishConversationResponse]
 	getAgentState      *connect.Client[v1.GetAgentStateRequest, v1.GetAgentStateResponse]
+	registerTool       *connect.Client[v1.RegisterToolRequest, v1.RegisterToolResponse]
+	extendSystemPrompt *connect.Client[v1.ExtendSystemPromptRequest, v1.ExtendSystemPromptResponse]
+	getAgentTools      *connect.Client[v1.GetAgentToolsRequest, v1.GetAgentToolsResponse]
 }
 
 // AskAgent calls numen.v1.AgentService.AskAgent.
@@ -116,6 +152,21 @@ func (c *agentServiceClient) GetAgentState(ctx context.Context, req *connect.Req
 	return c.getAgentState.CallUnary(ctx, req)
 }
 
+// RegisterTool calls numen.v1.AgentService.RegisterTool.
+func (c *agentServiceClient) RegisterTool(ctx context.Context, req *connect.Request[v1.RegisterToolRequest]) (*connect.Response[v1.RegisterToolResponse], error) {
+	return c.registerTool.CallUnary(ctx, req)
+}
+
+// ExtendSystemPrompt calls numen.v1.AgentService.ExtendSystemPrompt.
+func (c *agentServiceClient) ExtendSystemPrompt(ctx context.Context, req *connect.Request[v1.ExtendSystemPromptRequest]) (*connect.Response[v1.ExtendSystemPromptResponse], error) {
+	return c.extendSystemPrompt.CallUnary(ctx, req)
+}
+
+// GetAgentTools calls numen.v1.AgentService.GetAgentTools.
+func (c *agentServiceClient) GetAgentTools(ctx context.Context, req *connect.Request[v1.GetAgentToolsRequest]) (*connect.Response[v1.GetAgentToolsResponse], error) {
+	return c.getAgentTools.CallUnary(ctx, req)
+}
+
 // AgentServiceHandler is an implementation of the numen.v1.AgentService service.
 type AgentServiceHandler interface {
 	// AskAgent hands over a task and reports what the agent does, in the order it
@@ -128,6 +179,12 @@ type AgentServiceHandler interface {
 	// answers is the installation's, not the vault's, so every window asks the
 	// same question here and none of them carries the answer in its own state.
 	GetAgentState(context.Context, *connect.Request[v1.GetAgentStateRequest]) (*connect.Response[v1.GetAgentStateResponse], error)
+	// RegisterTool registers a custom tool with the agent.
+	RegisterTool(context.Context, *connect.Request[v1.RegisterToolRequest]) (*connect.Response[v1.RegisterToolResponse], error)
+	// ExtendSystemPrompt extends the agent's system instructions.
+	ExtendSystemPrompt(context.Context, *connect.Request[v1.ExtendSystemPromptRequest]) (*connect.Response[v1.ExtendSystemPromptResponse], error)
+	// GetAgentTools lists the registered tools and prompt extension.
+	GetAgentTools(context.Context, *connect.Request[v1.GetAgentToolsRequest]) (*connect.Response[v1.GetAgentToolsResponse], error)
 }
 
 // NewAgentServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -155,6 +212,24 @@ func NewAgentServiceHandler(svc AgentServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(agentServiceMethods.ByName("GetAgentState")),
 		connect.WithHandlerOptions(opts...),
 	)
+	agentServiceRegisterToolHandler := connect.NewUnaryHandler(
+		AgentServiceRegisterToolProcedure,
+		svc.RegisterTool,
+		connect.WithSchema(agentServiceMethods.ByName("RegisterTool")),
+		connect.WithHandlerOptions(opts...),
+	)
+	agentServiceExtendSystemPromptHandler := connect.NewUnaryHandler(
+		AgentServiceExtendSystemPromptProcedure,
+		svc.ExtendSystemPrompt,
+		connect.WithSchema(agentServiceMethods.ByName("ExtendSystemPrompt")),
+		connect.WithHandlerOptions(opts...),
+	)
+	agentServiceGetAgentToolsHandler := connect.NewUnaryHandler(
+		AgentServiceGetAgentToolsProcedure,
+		svc.GetAgentTools,
+		connect.WithSchema(agentServiceMethods.ByName("GetAgentTools")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.AgentService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AgentServiceAskAgentProcedure:
@@ -163,6 +238,12 @@ func NewAgentServiceHandler(svc AgentServiceHandler, opts ...connect.HandlerOpti
 			agentServiceFinishConversationHandler.ServeHTTP(w, r)
 		case AgentServiceGetAgentStateProcedure:
 			agentServiceGetAgentStateHandler.ServeHTTP(w, r)
+		case AgentServiceRegisterToolProcedure:
+			agentServiceRegisterToolHandler.ServeHTTP(w, r)
+		case AgentServiceExtendSystemPromptProcedure:
+			agentServiceExtendSystemPromptHandler.ServeHTTP(w, r)
+		case AgentServiceGetAgentToolsProcedure:
+			agentServiceGetAgentToolsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -182,4 +263,16 @@ func (UnimplementedAgentServiceHandler) FinishConversation(context.Context, *con
 
 func (UnimplementedAgentServiceHandler) GetAgentState(context.Context, *connect.Request[v1.GetAgentStateRequest]) (*connect.Response[v1.GetAgentStateResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AgentService.GetAgentState is not implemented"))
+}
+
+func (UnimplementedAgentServiceHandler) RegisterTool(context.Context, *connect.Request[v1.RegisterToolRequest]) (*connect.Response[v1.RegisterToolResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AgentService.RegisterTool is not implemented"))
+}
+
+func (UnimplementedAgentServiceHandler) ExtendSystemPrompt(context.Context, *connect.Request[v1.ExtendSystemPromptRequest]) (*connect.Response[v1.ExtendSystemPromptResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AgentService.ExtendSystemPrompt is not implemented"))
+}
+
+func (UnimplementedAgentServiceHandler) GetAgentTools(context.Context, *connect.Request[v1.GetAgentToolsRequest]) (*connect.Response[v1.GetAgentToolsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AgentService.GetAgentTools is not implemented"))
 }
