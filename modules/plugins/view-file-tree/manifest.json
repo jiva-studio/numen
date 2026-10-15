@@ -1,0 +1,13 @@
+{
+  "id": "view-file-tree",
+  "name": "File Tree Explorer",
+  "version": "1.0.0",
+  "description": "Modular file tree explorer and vault navigator",
+  "capabilities": ["view.file-tree", "ui.view"],
+  "targets": ["desktop.editor"],
+  "activationEvents": ["onStartupFinished", "onView:file-tree"],
+  "permissions": ["vault:read"],
+  "frontend": {
+    "entrypoint": "frontend/index.ts"
+  }
+}
