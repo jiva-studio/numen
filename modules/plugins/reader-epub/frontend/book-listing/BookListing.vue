@@ -5,7 +5,7 @@
  */
 import { onBeforeUnmount, useTemplateRef, watch } from 'vue'
 import { BookContents, useOutsidePress, type ContentsEntry } from '@numen/ui'
-import { WORDS as words } from '../../words'
+import { WORDS as words } from '../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{

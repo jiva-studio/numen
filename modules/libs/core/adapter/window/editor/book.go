@@ -9,6 +9,7 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/epub"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
@@ -18,6 +19,7 @@ import (
 type bookHandler struct {
 	state          *State
 	viewer         *viewer
+	openClient     func(context.Context) (numenv1connect.BookServiceClient, func(), error)
 	getBook        *document.GetBook
 	getBookMarkup  *document.GetBookMarkup
 	getBookPicture *document.GetBookPicture
@@ -40,6 +42,15 @@ func (h *bookHandler) GetBook(
 	ctx context.Context,
 	r *connect.Request[v1.GetBookRequest],
 ) (*connect.Response[v1.GetBookResponse], error) {
+	if h.openClient != nil {
+		client, closeClient, err := h.openClient(ctx)
+		if err == nil {
+			if closeClient != nil {
+				defer closeClient()
+			}
+			return client.GetBook(ctx, r)
+		}
+	}
 	if h.getBook == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 	}
@@ -91,6 +102,15 @@ func (h *bookHandler) ReadBookMarkup(
 	ctx context.Context,
 	r *connect.Request[v1.ReadBookMarkupRequest],
 ) (*connect.Response[v1.ReadBookMarkupResponse], error) {
+	if h.openClient != nil {
+		client, closeClient, err := h.openClient(ctx)
+		if err == nil {
+			if closeClient != nil {
+				defer closeClient()
+			}
+			return client.ReadBookMarkup(ctx, r)
+		}
+	}
 	if h.getBookMarkup == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 	}

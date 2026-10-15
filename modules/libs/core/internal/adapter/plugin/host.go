@@ -107,6 +107,18 @@ func (h *Host) FindPluginByCapability(capability string) (DiscoveredPlugin, bool
 	return emptyDiscoveredPlugin(), false
 }
 
+// FindPluginByFileExtension finds the first registered plugin that declares support for the given file extension.
+func (h *Host) FindPluginByFileExtension(ext string) (DiscoveredPlugin, bool) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	for _, p := range h.plugins {
+		if p.Manifest.HasFileExtension(ext) {
+			return p, true
+		}
+	}
+	return emptyDiscoveredPlugin(), false
+}
+
 // TriggerEvent activates all dormant or idle plugins registered for the given event.
 func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error) {
 	h.mu.RLock()

@@ -64,6 +64,7 @@ type Manifest struct {
 	Description      string    `json:"description"`
 	Capabilities     []string  `json:"capabilities"`
 	Targets          []string  `json:"targets"`
+	FileExtensions   []string  `json:"fileExtensions,omitempty"`
 	ActivationEvents []string  `json:"activationEvents"`
 	Permissions      []string  `json:"permissions"`
 	Lifecycle        Lifecycle `json:"lifecycle"`
@@ -109,6 +110,11 @@ func (m Manifest) CanTarget(target string) bool {
 // HasCapability reports whether this plugin provides the given capability.
 func (m Manifest) HasCapability(capability string) bool {
 	return slices.Contains(m.Capabilities, capability)
+}
+
+// HasFileExtension reports whether this plugin supports the given file extension.
+func (m Manifest) HasFileExtension(ext string) bool {
+	return slices.Contains(m.FileExtensions, ext)
 }
 
 // CanActivateOn reports whether the given event triggers plugin activation.

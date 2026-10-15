@@ -70,8 +70,10 @@ function systemChrome(): string | undefined {
 
 const chrome = systemChrome()
 
-/** `@/` is the window's own source, as `vite.config.ts` and `tsconfig.json` say. */
-const alias = { '@': fileURLToPath(new URL('./src', import.meta.url)) }
+const alias = {
+  '@': fileURLToPath(new URL('./src', import.meta.url)),
+  '@plugins': fileURLToPath(new URL('../../../plugins', import.meta.url)),
+}
 
 export default defineConfig({
   resolve: { alias },
