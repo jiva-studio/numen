@@ -263,6 +263,7 @@ func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, err
 	h.mu.Lock()
 
 	if h.safeMode {
+		h.mu.Unlock()
 		return Endpoint{Host: "", Port: 0, Token: ""}, errSafeModeActive
 	}
 
@@ -625,7 +626,7 @@ func (h *Host) defaultLauncher(
 
 	cmd := exec.CommandContext(ctx, binPath, "--port="+strconv.Itoa(port), "--token="+token)
 	cmd.Dir = p.Dir
-	configJSON, _ := h.GetPluginConfigJSON(p.Manifest.ID)
+	configJSON, _ := h.getPluginConfigJSONLocked(p.Manifest.ID)
 	cmd.Env = append(
 		os.Environ(),
 		"NUMEN_PLUGIN_PORT="+strconv.Itoa(port),

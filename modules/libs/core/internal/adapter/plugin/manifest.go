@@ -55,18 +55,47 @@ type Frontend struct {
 	Styles     string `json:"styles"`
 }
 
+// SettingOptions is a slice of option values supporting string arrays and object arrays.
+type SettingOptions []string
+
+func (o *SettingOptions) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" || len(data) == 0 {
+		*o = nil
+		return nil
+	}
+	var stringSlice []string
+	if err := json.Unmarshal(data, &stringSlice); err == nil {
+		*o = stringSlice
+		return nil
+	}
+
+	var objSlice []struct {
+		Value string `json:"value"`
+	}
+	if err := json.Unmarshal(data, &objSlice); err == nil {
+		vals := make([]string, len(objSlice))
+		for i, obj := range objSlice {
+			vals[i] = obj.Value
+		}
+		*o = vals
+		return nil
+	}
+
+	return fmt.Errorf("options must be array of strings or objects with value")
+}
+
 // Setting declares one configuration field managed by the core host.
 type Setting struct {
-	Key         string   `json:"key"`
-	Type        string   `json:"type"`
-	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	Default     any      `json:"default"`
-	Palette     bool     `json:"palette,omitempty"`
-	Options     []string `json:"options,omitempty"`
-	Min         float64  `json:"min,omitempty"`
-	Max         float64  `json:"max,omitempty"`
-	Step        float64  `json:"step,omitempty"`
+	Key         string         `json:"key"`
+	Type        string         `json:"type"`
+	Title       string         `json:"title"`
+	Description string         `json:"description"`
+	Default     any            `json:"default"`
+	Palette     bool           `json:"palette,omitempty"`
+	Options     SettingOptions `json:"options,omitempty"`
+	Min         float64        `json:"min,omitempty"`
+	Max         float64        `json:"max,omitempty"`
+	Step        float64        `json:"step,omitempty"`
 }
 
 // AgentTool declares a custom tool provided or required by an agent plugin.
