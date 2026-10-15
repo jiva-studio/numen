@@ -125,14 +125,6 @@ func (d *debugOptions) serveHTTP(
 ) error {
 	reachable.Start()
 
-	loopback, err := editor.Listen(opened.API, func(err error) {
-		fmt.Fprintln(os.Stderr, "numen loopback:", err)
-	})
-	if err != nil {
-		return fmt.Errorf("open loopback: %w", err)
-	}
-	defer loopback.Close()
-
 	listener, err := net.Listen("tcp", d.httpAddr)
 	if err != nil {
 		return fmt.Errorf("listen on %s: %w", d.httpAddr, err)
@@ -148,7 +140,7 @@ func (d *debugOptions) serveHTTP(
 		NextProtos:   []string{"h2", "http/1.1"},
 	})
 
-	handler := opened.API.NewHandler(pages)
+	handler := opened.Services.NewHandler(pages)
 	server := &http.Server{
 		Handler: handler,
 	}

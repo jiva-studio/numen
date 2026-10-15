@@ -1,0 +1,30 @@
+import { test, expect } from 'playwright/test'
+
+test.describe('PDF Document Reader', () => {
+  test('opens PDF document and renders viewer without saving error', async ({ page }) => {
+    await page.goto('/')
+
+    await expect(page.locator('text=Ready')).toBeVisible()
+
+    // Switch to Files tab
+    await page.getByText('Files').first().click()
+
+    // Expand assets folder
+    const assetsRow = page.locator('[data-tree-row="assets"]')
+    await expect(assetsRow).toBeVisible()
+    await assetsRow.press('Enter')
+
+    // Target sample.pdf in tree
+    const pdfRow = page.locator('[data-tree-row="assets/sample.pdf"]')
+    await expect(pdfRow).toBeVisible()
+    await pdfRow.press('Enter')
+
+    // Verify document tab opened and no error modal or error panel is shown
+    await expect(page.locator('.fallback-panel')).not.toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('text=Saving went wrong')).not.toBeVisible()
+    await expect(page.locator('text=Something went wrong')).not.toBeVisible()
+
+    // Verify reader canvas / page rendered
+    await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
+  })
+})

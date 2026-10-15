@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const sourceVault = path.resolve(__dirname, '../../../vault')
 const binaryPath = path.resolve(__dirname, '../../../../apps/desktop/numen-debug')
+const repoRoot = path.resolve(__dirname, '../../../../..')
+const pluginsPath = path.resolve(repoRoot, 'modules/plugins')
 
 const port = process.env.NUMEN_TEST_PORT ?? '3456'
 const host = '127.0.0.1'
@@ -58,6 +60,7 @@ const child = spawn(
     env: {
       ...process.env,
       NUMEN_MOCK_ML: 'true',
+      NUMEN_PLUGINS_PATH: pluginsPath,
     },
   },
 )

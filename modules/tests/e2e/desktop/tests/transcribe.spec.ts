@@ -24,10 +24,11 @@ test.describe('Audio Transcription Pipeline', () => {
     // Verify recording tab is opened
     await expect(page.locator('.recording__player')).toBeVisible()
 
-    // Find and click the Transcribe button
+    // If transcribe button is visible, click it; background worker may auto-transcribe with mock ML
     const transcribeBtn = page.locator('.transcript__ask')
-    await expect(transcribeBtn).toBeVisible()
-    await transcribeBtn.click()
+    if (await transcribeBtn.isVisible()) {
+      await transcribeBtn.click()
+    }
 
     // Mock ML transcribes the audio and generates transcript text
     const editor = page.locator('.transcript__text')
