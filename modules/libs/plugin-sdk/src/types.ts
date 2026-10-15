@@ -65,6 +65,19 @@ export interface PluginLifecycle {
   deactivate?(): void | Promise<void>
 }
 
+// VaultChangeEvent describes a change in vault root or files.
+export interface VaultChangeEvent {
+  readonly vaultPath?: string
+  readonly paths?: readonly string[]
+  readonly renamed?: readonly { readonly from: string; readonly to: string }[]
+}
+
+// FileSelectEvent describes a file selection or open request.
+export interface FileSelectEvent {
+  readonly path: string
+  readonly title?: string
+}
+
 // PluginContext provides registration and host services to an activated plugin.
 export interface PluginContext {
   readonly pluginId: string
@@ -75,6 +88,10 @@ export interface PluginContext {
   registerAgentProvider(registration: AgentProviderRegistration): Disposable
   getSetting<T = unknown>(key: string): T | undefined
   onSettingChange<T = unknown>(key: string, handler: (value: T) => void): Disposable
+  onVaultChange(handler: (event: VaultChangeEvent) => void | Promise<void>): Disposable
+  onFileSelect(handler: (event: FileSelectEvent) => void | Promise<void>): Disposable
+  emitVaultChange(event: VaultChangeEvent): void
+  emitFileSelect(event: FileSelectEvent): void
 }
 
 // PluginManifest describes the metadata in manifest.json.

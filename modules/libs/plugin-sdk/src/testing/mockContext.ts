@@ -2,9 +2,11 @@ import type {
   AgentProviderRegistration,
   CommandRegistration,
   Disposable,
+  FileSelectEvent,
   PluginContext,
   ReaderRegistration,
   TabKindRegistration,
+  VaultChangeEvent,
 } from '../types'
 
 // MockPluginContext extends PluginContext with inspection and simulation methods.
@@ -31,6 +33,8 @@ export function createMockPluginContext(
     Object.entries(initialValues?.initialSettings ?? {}),
   )
   const settingListeners = new Map<string, Set<(val: unknown) => void>>()
+  const vaultListeners = new Set<(event: VaultChangeEvent) => void | Promise<void>>()
+  const fileSelectListeners = new Set<(event: FileSelectEvent) => void | Promise<void>>()
   const subscriptions: Disposable[] = []
 
   function addDisposable(d: Disposable): Disposable {
@@ -124,6 +128,38 @@ export function createMockPluginContext(
       }
     },
 
+    onVaultChange(handler: (event: VaultChangeEvent) => void | Promise<void>): Disposable {
+      vaultListeners.add(handler)
+      const disposable: Disposable = {
+        dispose: () => {
+          vaultListeners.delete(handler)
+        },
+      }
+      return addDisposable(disposable)
+    },
+
+    onFileSelect(handler: (event: FileSelectEvent) => void | Promise<void>): Disposable {
+      fileSelectListeners.add(handler)
+      const disposable: Disposable = {
+        dispose: () => {
+          fileSelectListeners.delete(handler)
+        },
+      }
+      return addDisposable(disposable)
+    },
+
+    emitVaultChange(event: VaultChangeEvent): void {
+      for (const listener of vaultListeners) {
+        void listener(event)
+      }
+    },
+
+    emitFileSelect(event: FileSelectEvent): void {
+      for (const listener of fileSelectListeners) {
+        void listener(event)
+      }
+    },
+
     getRegisteredReaders(): ReaderRegistration[] {
       return [...readers]
     },
@@ -153,6 +189,9 @@ export function createMockPluginContext(
         const d = subscriptions.pop()
         d?.dispose()
       }
+      vaultListeners.clear()
+      fileSelectListeners.clear()
+      settingListeners.clear()
     },
   }
 

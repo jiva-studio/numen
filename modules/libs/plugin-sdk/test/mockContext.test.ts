@@ -72,6 +72,33 @@ describe('mock plugin context', () => {
     expect(notifiedValue).toBe(60)
   })
 
+  it('manages vault change and file select events', () => {
+    const ctx = createMockPluginContext()
+    let receivedVaultPath = ''
+    let receivedSelectedPath = ''
+
+    const vaultSub = ctx.onVaultChange((event) => {
+      receivedVaultPath = event.vaultPath ?? ''
+    })
+    const fileSub = ctx.onFileSelect((event) => {
+      receivedSelectedPath = event.path
+    })
+
+    ctx.emitVaultChange({ vaultPath: '/path/to/vault' })
+    expect(receivedVaultPath).toBe('/path/to/vault')
+
+    ctx.emitFileSelect({ path: 'notes/test.md', title: 'test' })
+    expect(receivedSelectedPath).toBe('notes/test.md')
+
+    vaultSub.dispose()
+    fileSub.dispose()
+
+    ctx.emitVaultChange({ vaultPath: '/other/vault' })
+    ctx.emitFileSelect({ path: 'other/note.md' })
+    expect(receivedVaultPath).toBe('/path/to/vault')
+    expect(receivedSelectedPath).toBe('notes/test.md')
+  })
+
   it('cleans up all subscriptions on dispose', () => {
     const ctx = createMockPluginContext()
     ctx.registerCommand({ id: 'c1', title: 'C1', handler: () => {} })
