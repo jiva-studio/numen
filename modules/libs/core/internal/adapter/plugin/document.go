@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"connectrpc.com/connect"
 
@@ -88,8 +89,116 @@ func (b *DocumentBridge) Read(ctx context.Context, raw []byte) (domain.TextLayer
 }
 
 // GetHighlights implements port.TextExtractor.
-func (b *DocumentBridge) GetHighlights(_ context.Context, _ []byte, _ []int, _ []int) ([]domain.HighlightBox, error) {
-	return nil, nil
+func (b *DocumentBridge) GetHighlights(ctx context.Context, raw []byte, starts []int, pages []int) ([]domain.HighlightBox, error) {
+	if len(raw) == 0 || len(pages) == 0 {
+		return nil, nil
+	}
+
+	if b.host != nil {
+		if err := b.host.CheckPluginPermission(b.pluginID, PermissionVaultRead); err != nil {
+			return nil, err
+		}
+	}
+
+	textLayer, err := b.Read(ctx, raw)
+	if err != nil {
+		return nil, fmt.Errorf("read text layer: %w", err)
+	}
+
+	tmpPath, cleanup, err := bufferTempDocument(bytes.NewReader(raw))
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
+
+	req := connect.NewRequest(&v1.GetHighlightsRequest{
+		Path: tmpPath,
+	})
+	resp, err := b.client.GetHighlights(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("rpc get highlights: %w", err)
+	}
+
+	wanted := make(map[int]bool, len(pages))
+	for _, p := range pages {
+		if p >= 0 {
+			wanted[p] = true
+		}
+	}
+
+	pageStarts := starts
+	if len(pageStarts) == 0 {
+		pageStarts = textLayer.Pages
+	}
+
+	return mapHighlightBoxes(resp.Msg.GetHighlights(), wanted, textLayer.Text, pageStarts), nil
+}
+
+func mapHighlightBoxes(
+	highlights []*v1.DocumentHighlight,
+	wanted map[int]bool,
+	docText string,
+	pageStarts []int,
+) []domain.HighlightBox {
+	pageCursors := make(map[int]int)
+	var boxes []domain.HighlightBox
+	for _, h := range highlights {
+		page := int(h.GetPageNumber())
+		if !wanted[page] {
+			continue
+		}
+
+		cursor, exists := pageCursors[page]
+		if !exists && page < len(pageStarts) {
+			cursor = pageStarts[page]
+		}
+
+		from, to, next := locateWordSpan(docText, cursor, h.GetText())
+		pageCursors[page] = next
+
+		boxes = append(boxes, domain.HighlightBox{
+			Page: page,
+			ByteSpan: domain.ByteSpan{
+				From: from,
+				To:   to,
+			},
+			Rect: getRectFromQuadPoints(h.GetQuadPoints()),
+		})
+	}
+	return boxes
+}
+
+func locateWordSpan(docText string, cursor int, word string) (int, int, int) {
+	from, to := cursor, cursor+len(word)
+	if cursor < len(docText) {
+		idx := strings.Index(docText[cursor:], word)
+		if idx >= 0 {
+			from = cursor + idx
+			to = from + len(word)
+		}
+	}
+	return from, to, to
+}
+
+func getRectFromQuadPoints(qp []float32) domain.Rect {
+	switch {
+	case len(qp) == 4:
+		return domain.Rect{
+			MinX: min(qp[0], qp[2]),
+			MinY: min(qp[1], qp[3]),
+			MaxX: max(qp[0], qp[2]),
+			MaxY: max(qp[1], qp[3]),
+		}
+	case len(qp) >= 8:
+		return domain.Rect{
+			MinX: min(qp[0], qp[2], qp[4], qp[6]),
+			MinY: min(qp[1], qp[3], qp[5], qp[7]),
+			MaxX: max(qp[0], qp[2], qp[4], qp[6]),
+			MaxY: max(qp[1], qp[3], qp[5], qp[7]),
+		}
+	default:
+		return domain.Rect{}
+	}
 }
 
 // OpenDocument implements port.PageRenderer.
@@ -106,6 +215,7 @@ func (b *DocumentBridge) OpenDocument(ctx context.Context, file io.ReadSeekClose
 	}
 
 	var path string
+	var cleanup func()
 	if named, ok := file.(interface{ Name() string }); ok {
 		validated, err := b.resolveNamedPath(named.Name())
 		if err != nil {
@@ -113,11 +223,11 @@ func (b *DocumentBridge) OpenDocument(ctx context.Context, file io.ReadSeekClose
 		}
 		path = validated
 	} else {
-		tmpPath, cleanup, err := bufferTempDocument(file)
+		tmpPath, clean, err := bufferTempDocument(file)
 		if err != nil {
 			return nil, err
 		}
-		defer cleanup()
+		cleanup = clean
 		path = tmpPath
 	}
 
@@ -126,20 +236,25 @@ func (b *DocumentBridge) OpenDocument(ctx context.Context, file io.ReadSeekClose
 	})
 	resp, err := b.client.GetDocument(ctx, req)
 	if err != nil {
+		if cleanup != nil {
+			cleanup()
+		}
 		return nil, fmt.Errorf("rpc get document: %w", err)
 	}
 
 	return &remoteDocument{
-		client: b.client,
-		path:   path,
-		pages:  resp.Msg.GetPages(),
+		client:  b.client,
+		path:    path,
+		pages:   resp.Msg.GetPages(),
+		cleanup: cleanup,
 	}, nil
 }
 
 type remoteDocument struct {
-	client numenv1connect.DocumentServiceClient
-	path   string
-	pages  []*v1.Page
+	client  numenv1connect.DocumentServiceClient
+	path    string
+	pages   []*v1.Page
+	cleanup func()
 }
 
 func (d *remoteDocument) GetPageCount() int {
@@ -172,7 +287,11 @@ func (d *remoteDocument) RenderPage(index, dpi int) (image.Image, error) {
 	return img, nil
 }
 
-func (d *remoteDocument) Close() {}
+func (d *remoteDocument) Close() {
+	if d.cleanup != nil {
+		d.cleanup()
+	}
+}
 
 func (b *DocumentBridge) resolveNamedPath(rawPath string) (string, error) {
 	if b.host == nil || b.host.GetVaultPath() == "" {

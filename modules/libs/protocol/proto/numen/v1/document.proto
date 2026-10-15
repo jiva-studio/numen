@@ -32,6 +32,9 @@ service DocumentService {
 
   // ExtractText extracts text and page boundaries from a document.
   rpc ExtractText(ExtractTextRequest) returns (ExtractTextResponse);
+
+  // GetHighlights extracts quotation highlights from a document.
+  rpc GetHighlights(GetHighlightsRequest) returns (GetHighlightsResponse);
 }
 
 message GetDocumentRequest {
@@ -80,4 +83,19 @@ message ExtractTextRequest {
 message ExtractTextResponse {
   string text = 1;
   repeated int32 page_starts = 2;
+}
+
+message GetHighlightsRequest {
+  string path = 1;
+}
+
+message DocumentHighlight {
+  uint32 page_number = 1;
+  repeated float quad_points = 2;
+  string color = 3;
+  string text = 4;
+}
+
+message GetHighlightsResponse {
+  repeated DocumentHighlight highlights = 1;
 }

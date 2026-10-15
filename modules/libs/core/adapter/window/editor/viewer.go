@@ -266,6 +266,13 @@ func (h *documentHandler) ExtractText(
 	return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 }
 
+func (h *documentHandler) GetHighlights(
+	_ context.Context,
+	_ *connect.Request[v1.GetHighlightsRequest],
+) (*connect.Response[v1.GetHighlightsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
+}
+
 // newWireFingerprint is a fingerprint as the schema carries it.
 func newWireFingerprint(mark document.Fingerprint) *v1.Fingerprint {
 	return &v1.Fingerprint{Path: mark.Path, Size: mark.Size, Mtime: mark.Mtime}

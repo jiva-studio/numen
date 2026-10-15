@@ -343,6 +343,15 @@ func (s *documentServer) ExtractText(
 	}), nil
 }
 
+func (s *documentServer) GetHighlights(
+	_ context.Context,
+	_ *connect.Request[numenv1.GetHighlightsRequest],
+) (*connect.Response[numenv1.GetHighlightsResponse], error) {
+	return connect.NewResponse(&numenv1.GetHighlightsResponse{
+		Highlights: nil,
+	}), nil
+}
+
 func main() {
 	var portFlag int
 	var tokenFlag string

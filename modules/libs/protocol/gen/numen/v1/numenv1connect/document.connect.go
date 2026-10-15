@@ -48,6 +48,9 @@ const (
 	// DocumentServiceExtractTextProcedure is the fully-qualified name of the DocumentService's
 	// ExtractText RPC.
 	DocumentServiceExtractTextProcedure = "/numen.v1.DocumentService/ExtractText"
+	// DocumentServiceGetHighlightsProcedure is the fully-qualified name of the DocumentService's
+	// GetHighlights RPC.
+	DocumentServiceGetHighlightsProcedure = "/numen.v1.DocumentService/GetHighlights"
 )
 
 // DocumentServiceClient is a client for the numen.v1.DocumentService service.
@@ -64,6 +67,8 @@ type DocumentServiceClient interface {
 	RenderPage(context.Context, *connect.Request[v1.RenderPageRequest]) (*connect.Response[v1.RenderPageResponse], error)
 	// ExtractText extracts text and page boundaries from a document.
 	ExtractText(context.Context, *connect.Request[v1.ExtractTextRequest]) (*connect.Response[v1.ExtractTextResponse], error)
+	// GetHighlights extracts quotation highlights from a document.
+	GetHighlights(context.Context, *connect.Request[v1.GetHighlightsRequest]) (*connect.Response[v1.GetHighlightsResponse], error)
 }
 
 // NewDocumentServiceClient constructs a client for the numen.v1.DocumentService service. By
@@ -95,14 +100,21 @@ func NewDocumentServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(documentServiceMethods.ByName("ExtractText")),
 			connect.WithClientOptions(opts...),
 		),
+		getHighlights: connect.NewClient[v1.GetHighlightsRequest, v1.GetHighlightsResponse](
+			httpClient,
+			baseURL+DocumentServiceGetHighlightsProcedure,
+			connect.WithSchema(documentServiceMethods.ByName("GetHighlights")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // documentServiceClient implements DocumentServiceClient.
 type documentServiceClient struct {
-	getDocument *connect.Client[v1.GetDocumentRequest, v1.GetDocumentResponse]
-	renderPage  *connect.Client[v1.RenderPageRequest, v1.RenderPageResponse]
-	extractText *connect.Client[v1.ExtractTextRequest, v1.ExtractTextResponse]
+	getDocument   *connect.Client[v1.GetDocumentRequest, v1.GetDocumentResponse]
+	renderPage    *connect.Client[v1.RenderPageRequest, v1.RenderPageResponse]
+	extractText   *connect.Client[v1.ExtractTextRequest, v1.ExtractTextResponse]
+	getHighlights *connect.Client[v1.GetHighlightsRequest, v1.GetHighlightsResponse]
 }
 
 // GetDocument calls numen.v1.DocumentService.GetDocument.
@@ -120,6 +132,11 @@ func (c *documentServiceClient) ExtractText(ctx context.Context, req *connect.Re
 	return c.extractText.CallUnary(ctx, req)
 }
 
+// GetHighlights calls numen.v1.DocumentService.GetHighlights.
+func (c *documentServiceClient) GetHighlights(ctx context.Context, req *connect.Request[v1.GetHighlightsRequest]) (*connect.Response[v1.GetHighlightsResponse], error) {
+	return c.getHighlights.CallUnary(ctx, req)
+}
+
 // DocumentServiceHandler is an implementation of the numen.v1.DocumentService service.
 type DocumentServiceHandler interface {
 	// GetDocument is what a document is: how many pages it has and how large each
@@ -134,6 +151,8 @@ type DocumentServiceHandler interface {
 	RenderPage(context.Context, *connect.Request[v1.RenderPageRequest]) (*connect.Response[v1.RenderPageResponse], error)
 	// ExtractText extracts text and page boundaries from a document.
 	ExtractText(context.Context, *connect.Request[v1.ExtractTextRequest]) (*connect.Response[v1.ExtractTextResponse], error)
+	// GetHighlights extracts quotation highlights from a document.
+	GetHighlights(context.Context, *connect.Request[v1.GetHighlightsRequest]) (*connect.Response[v1.GetHighlightsResponse], error)
 }
 
 // NewDocumentServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -161,6 +180,12 @@ func NewDocumentServiceHandler(svc DocumentServiceHandler, opts ...connect.Handl
 		connect.WithSchema(documentServiceMethods.ByName("ExtractText")),
 		connect.WithHandlerOptions(opts...),
 	)
+	documentServiceGetHighlightsHandler := connect.NewUnaryHandler(
+		DocumentServiceGetHighlightsProcedure,
+		svc.GetHighlights,
+		connect.WithSchema(documentServiceMethods.ByName("GetHighlights")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.DocumentService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case DocumentServiceGetDocumentProcedure:
@@ -169,6 +194,8 @@ func NewDocumentServiceHandler(svc DocumentServiceHandler, opts ...connect.Handl
 			documentServiceRenderPageHandler.ServeHTTP(w, r)
 		case DocumentServiceExtractTextProcedure:
 			documentServiceExtractTextHandler.ServeHTTP(w, r)
+		case DocumentServiceGetHighlightsProcedure:
+			documentServiceGetHighlightsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -188,4 +215,8 @@ func (UnimplementedDocumentServiceHandler) RenderPage(context.Context, *connect.
 
 func (UnimplementedDocumentServiceHandler) ExtractText(context.Context, *connect.Request[v1.ExtractTextRequest]) (*connect.Response[v1.ExtractTextResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.DocumentService.ExtractText is not implemented"))
+}
+
+func (UnimplementedDocumentServiceHandler) GetHighlights(context.Context, *connect.Request[v1.GetHighlightsRequest]) (*connect.Response[v1.GetHighlightsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.DocumentService.GetHighlights is not implemented"))
 }
