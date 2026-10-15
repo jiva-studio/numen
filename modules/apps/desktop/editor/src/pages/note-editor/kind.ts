@@ -153,6 +153,7 @@ export function useNoteTab(
 
   tabOpeners.registerEditor('note', (path, title, opts) => {
     const how = typeof opts === 'string' ? opts : (opts?.where ?? 'here')
+    // Stryker disable next-line ConditionalExpression,OptionalChaining: String and undefined properties return undefined safely.
     const line = typeof opts === 'object' ? opts?.line : undefined
     openNote(path, title, how)
     focusLine(path, line)

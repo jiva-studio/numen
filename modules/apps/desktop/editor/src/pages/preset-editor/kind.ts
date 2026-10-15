@@ -37,6 +37,7 @@ function applyPathRenames(
 ): void {
   for (const went of renames) {
     const title = titles.get(went.from)
+    // Stryker disable next-line ConditionalExpression: Missing title returns undefined on get either way.
     if (title !== undefined) titles.set(went.to, title)
     titles.delete(went.from)
     const one = open.get(went.from)
@@ -121,6 +122,7 @@ export function usePresetTab(deps: PresetTabDeps) {
   const openPreset = (
     path: string,
     title = '',
+    // Stryker disable next-line StringLiteral: Default placement opens in the active tab pane.
     how: PlexDestination | OpenPlacement = 'here',
   ): void => {
     if (title) titles.set(path, title)

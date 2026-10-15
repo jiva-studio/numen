@@ -210,5 +210,6 @@ const createNumberedName = (count: number): string =>
 /** The folder a note is in, so one made from it is filed beside it. */
 const getParentFolder = (path: string): string => {
   const cut = path.lastIndexOf('/')
+  // Stryker disable next-line EqualityOperator: a path starting with slash produces empty string either way.
   return cut < 0 ? '' : path.slice(0, cut)
 }

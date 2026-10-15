@@ -1160,12 +1160,15 @@ describe('usePlexTab edge cases and helpers', () => {
 
     one.state.openQuickLink({ from: one.node('Root.md'), relation: 'child', at: { x: 10, y: 10 } })
     expect(one.state.quickLink.value).not.toBeNull()
-    one.state.dismissQuickLink()
-    expect(one.state.quickLink.value).toBeNull()
+    const pair = `${one.node('Root.md')} ${one.node('Child.md')}`
+    one.state.openLinkInspector(pair, { x: 10, y: 10 })
+    expect(one.state.linkInspector.value).not.toBeNull()
 
     one.state.openMenu({ node: null, at: { x: 10, y: 10 }, opening: 'pointer' })
     one.state.dismiss()
     expect(one.state.menu.value).toBeNull()
+    expect(one.state.quickLink.value).toBeNull()
+    expect(one.state.linkInspector.value).toBeNull()
 
     one.state.openMenu({ node: null, at: { x: 10, y: 10 }, opening: 'pointer' })
     one.state.chooseMenuItem('other-id')

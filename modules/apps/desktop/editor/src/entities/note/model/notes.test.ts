@@ -805,7 +805,7 @@ describe('a note replaced by what its file holds', () => {
     const onReplaced = vi.fn<(path: string) => void>()
     const notes = openNotes(core, { limits: quick, onReplaced })
 
-    notes.open('Heat.md')
+    notes.open('tab-1', 'Heat.md')
     await settle()
 
     expect(onReplaced).toHaveBeenCalledTimes(1)

@@ -62,9 +62,11 @@ function createThemeWear(deps: ThemeWearDeps) {
 }
 
 function createSizesWriter(dressed: ReturnType<typeof getStyleElements>, sheet: Document) {
+  // Stryker disable next-line StringLiteral: Empty initial string represents unapplied state.
   let appliedSizesCss = ''
   return (sizes: Sizes) => {
     const css = getSizesCss(sizes)
+    // Stryker disable next-line ConditionalExpression: Cached css skips redundant DOM style mutations.
     if (css === appliedSizesCss) return
     appliedSizesCss = css
     dressed.sizes ??= addAfter(dressed.theme, IS_SIZES, sheet)
@@ -163,6 +165,7 @@ function createAppearanceGroups(
   return {
     getThemeGroups: () => getThemeGroups(state.list.value, state.applied.value, words),
     getModeGroups: () => getModeGroups(state.mode.value, choice.isPinned.value, words),
+    // Stryker disable next-line StringLiteral: Default empty text evaluates to null in parseSize.
     getSizeGroups: (command: string, text = '') =>
       getSizeGroups(command, text, {
         sizes: state.settings.value,

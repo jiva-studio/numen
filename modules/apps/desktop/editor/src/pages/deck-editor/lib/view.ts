@@ -72,6 +72,7 @@ export const applyReadHeadings = (screen: BufferDeck, read: BufferDeck): BufferD
  * A reading of a deck under the identities the window already drew it by.
  */
 export const applyScreenIds = (screen: BufferDeck, read: BufferDeck): BufferDeck => {
+  // Stryker disable next-line ConditionalExpression: findIndex for null id yields -1 either way.
   const seat = (deck: BufferDeck, section: string | null): number =>
     section === null ? -1 : deck.sections.findIndex((each) => each.id === section)
 
@@ -85,6 +86,7 @@ export const applyScreenIds = (screen: BufferDeck, read: BufferDeck): BufferDeck
         })
       : read.sections
 
+  // Stryker disable next-line ConditionalExpression: index -1 from seat yields null fallback either way.
   const getSectionId = (section: string | null): string | null =>
     section === null ? null : (sections[seat(read, section)]?.id ?? null)
 
@@ -117,6 +119,7 @@ export const areOffersEqual = (
   one.every((offer, at) => {
     const against = other[at]
     return (
+      // Stryker disable next-line ConditionalExpression: array lengths are equal so element at index is never undefined.
       against !== undefined &&
       offer.path === against.path &&
       offer.title === against.title &&

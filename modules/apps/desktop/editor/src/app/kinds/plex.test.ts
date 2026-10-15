@@ -176,6 +176,14 @@ describe('a note a plex tab opens', () => {
     expect(one.opened).toStrictEqual([['Compost.md', 'Compost', 'here', undefined]])
   })
 
+  it('opens a note when called without options', () => {
+    const one = plexKind({ hasTabSync: false })
+
+    one.deps.openNote('Compost.md')
+
+    expect(one.opened).toStrictEqual([['Compost.md', '', 'here', undefined]])
+  })
+
   it('goes to the tabs linked to the plex tab in front where none was named', () => {
     const one = plexKind({ front: THREE[0]! })
 

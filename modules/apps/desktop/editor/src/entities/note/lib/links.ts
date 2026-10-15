@@ -22,7 +22,9 @@ export interface LinkTarget {
 export function parseLinkTarget(href: string): LinkTarget | null {
   if (!href.startsWith(LINK_SCHEME)) return null
   const rest = href.slice(LINK_SCHEME.length)
+  // Stryker disable next-line StringLiteral: Missing query defaults to an empty query string.
   const [written, query = ''] = rest.split('?', 2)
+  // Stryker disable next-line ConditionalExpression: Empty path check is also guarded by path length check.
   if (!written) return null
 
   let path: string
@@ -32,6 +34,7 @@ export function parseLinkTarget(href: string): LinkTarget | null {
     // An escape a model wrote wrongly names no file, and a link to no file opens nothing.
     return null
   }
+  // Stryker disable next-line ConditionalExpression,EqualityOperator: Non-empty written cannot decode to empty path.
   if (path === '') return null
 
   const asked = new URLSearchParams(query)

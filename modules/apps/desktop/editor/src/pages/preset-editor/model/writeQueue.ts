@@ -93,6 +93,7 @@ export const requestWrite = (queue: WriteQueue, options: WriteOptions): Promise<
 export const flushWrites = async (queue: WriteQueue, options: WriteOptions): Promise<void> => {
   if (queue.dirtyFields.size > 0 && !queue.hasExternalChange.value) {
     await requestWrite(queue, options)
+    // Stryker disable next-line ConditionalExpression: Settled write is null and awaiting null resolves immediately.
   } else if (queue.activeWrite) {
     await queue.activeWrite
   }

@@ -240,6 +240,32 @@ describe('answers arriving', () => {
     expect(getGroup(palette.groups.value, 'meaning')?.silence).toBe(WORDS.wordsOnly)
   })
 
+  it('shows meaning search results with meaning item ids', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+
+    void palette.setTyped('ent')
+    await flushPromises()
+    vault.mode('meaning')?.answer([
+      {
+        path: 'note.md',
+        title: 'Note',
+        text: 'some snippet',
+        at: [],
+        isNote: true,
+        start: 0,
+        length: 10,
+        line: 1,
+        type: 'note',
+        kind: 'note',
+      },
+    ])
+    await flushPromises()
+
+    const meaningGroup = getGroup(palette.groups.value, 'meaning')
+    expect(meaningGroup?.items[0]?.id).toBe('meaning:note.md:0')
+  })
+
   it('lets go of everything when the palette is put away', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, { wait: now })

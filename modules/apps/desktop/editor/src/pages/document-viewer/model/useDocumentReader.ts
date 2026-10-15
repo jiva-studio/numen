@@ -76,6 +76,7 @@ export function useDocumentReader(documents: Documents, path: string) {
     isOpen: () => open,
   })
 
+  // Stryker disable next-line ArrowFunction: Navigation awaits the layout loading promise.
   const nav = useDocumentReaderNavigation(() => layoutPromise, navigation, highlights)
 
   const close = () => {

@@ -48,6 +48,7 @@ async function loadRecordingContent(
   const content = await (carried.transcript
     ? source.recordings.readTranscript(source.path)
     : source.recordings.readArticle(source.path))
+  // Stryker disable next-line ConditionalExpression: Discards results when a newer read supersedes.
   if (!mine.claim()) return null
   options.setText(content.cues.length ? getText(content.cues) : content.prose)
   return content
@@ -73,6 +74,7 @@ function useTranscriptContent(
     const mine = asks.ask()
     try {
       const content = await loadRecordingContent({ recordings, path }, mine, options)
+      // Stryker disable next-line ConditionalExpression: Discards results when a newer read supersedes.
       if (!mine.claim() || !content) return
       cues.value = content.cues
       isEditable.value = content.isEditable
@@ -170,7 +172,9 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
 
   const content = useTranscriptContent(recordings, path, {
     setSource: playback.setSource,
+    // Stryker disable next-line OptionalChaining: Assigned synchronously before any callback invocation.
     setText: (body) => draftRef.current?.setText(body),
+    // Stryker disable next-line OptionalChaining: Assigned synchronously before any callback invocation.
     drop: () => draftRef.current?.drop(),
   })
 

@@ -19,6 +19,7 @@ export const formatFingerprint = (at?: {
 
 /** The two numbers first: a path holds spaces, and everything after them is it. */
 export const parseFingerprint = (at: string) => {
+  // Stryker disable next-line StringLiteral: BigInt evaluates empty string and '0' both to 0n.
   const [size = '0', mtime = '0', ...rest] = at.split(' ')
   return { path: rest.join(' '), size: BigInt(size), mtime: BigInt(mtime) }
 }

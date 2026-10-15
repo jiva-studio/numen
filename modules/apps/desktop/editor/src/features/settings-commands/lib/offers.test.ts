@@ -34,6 +34,14 @@ describe('the themes offered', () => {
     expect(shipping?.items[0]?.title).toBe('dracula')
     expect(shipping?.items[0]?.isCurrent).toBe(true)
   })
+
+  it('marks an owned theme as current when in force', () => {
+    const owned = getThemeGroups(THEMES, 'mine:sea', words)[0]
+
+    expect(owned?.items[0]?.title).toBe('sea')
+    expect(owned?.items[0]?.isCurrent).toBe(true)
+    expect(owned?.items[0]?.detail).toBe(words.current)
+  })
 })
 
 describe('the modes offered', () => {

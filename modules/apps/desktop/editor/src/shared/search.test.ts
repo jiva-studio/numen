@@ -2,6 +2,7 @@
  * What is asked while a person types, and which answer is drawn.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { effectScope } from 'vue'
 import { SEARCH_DEBOUNCE_MS, useDebouncedAsk, useSearchResults } from './search'
 
 beforeEach(() => {
@@ -68,6 +69,25 @@ describe('a text typed', () => {
     expect(waited).toStrictEqual([SEARCH_DEBOUNCE_MS])
     expect(run).toHaveBeenCalledTimes(1)
   })
+
+  it('closes the answer guard when the scope disposes', () => {
+    const scope = effectScope()
+    let isClosed = false
+    scope.run(() => {
+      useDebouncedAsk({
+        guard: {
+          ask: () => ({ isCurrent: true, claim: () => true }),
+          drop: vi.fn(),
+          close: () => {
+            isClosed = true
+          },
+          open: () => true,
+        },
+      })
+    })
+    scope.stop()
+    expect(isClosed).toBe(true)
+  })
 })
 
 describe('the answers to a search', () => {
@@ -125,6 +145,28 @@ describe('the answers to a search', () => {
     expect(results.value).toStrictEqual(['a'])
 
     await setQuery('')
+    expect(results.value).toStrictEqual([])
+  })
+
+  it('starts not loading', () => {
+    const { isLoading } = useSearchResults(async () => [])
+    expect(isLoading.value).toBe(false)
+  })
+
+  it('are cleared when a later search fails', async () => {
+    let hasFailed = false
+    const { results, setQuery } = useSearchResults<string>(async () => {
+      if (hasFailed) throw new Error('down')
+      return ['prev']
+    })
+
+    void setQuery('q')
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
+    expect(results.value).toStrictEqual(['prev'])
+
+    hasFailed = true
+    void setQuery('q2')
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
     expect(results.value).toStrictEqual([])
   })
 })

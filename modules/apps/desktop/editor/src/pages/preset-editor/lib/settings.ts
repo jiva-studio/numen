@@ -118,6 +118,7 @@ export const findGridIndex = (
   today: string,
 ): number => {
   if (typeof value === 'number') return findNearest(grid, value)
+  // Stryker disable next-line ConditionalExpression: Non-string values evaluate to false in isDay.
   if (typeof value === 'string' && isDay(value)) {
     return findNearest(grid, daysBetween(today, value))
   }

@@ -477,6 +477,7 @@ describe('a tree before anything is asked of it', () => {
     expect(list.errorMessage.value).toBe('')
     expect(list.openRows.value).toStrictEqual([ROOT])
     expect(list.isFolderOpen(ROOT)).toBe(true)
+    expect(list.getEntriesInFolder('unloaded')).toStrictEqual([])
   })
 
   it('reads the root when every open folder is refreshed', async () => {

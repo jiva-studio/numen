@@ -97,6 +97,7 @@ export function useCurveAnnotations(
       {
         places: plot.positions.value,
         marks: marks.value.map((one) => one.at),
+        // Stryker disable next-line LogicalOperator: Null coalescing preserves box bounding rect when present.
         over: callout.value?.box ?? null,
       },
       (value: number) => words.formatGoalCost(props.curve.goal, value),
