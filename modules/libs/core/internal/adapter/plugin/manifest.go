@@ -22,25 +22,15 @@ const (
 )
 
 var (
-<<<<<<< HEAD
-	errEmptyID           = errors.New("plugin id cannot be empty")
-	errEmptyName         = errors.New("plugin name cannot be empty")
-	errEmptyVersion      = errors.New("plugin version cannot be empty")
-	errInvalidPermission = errors.New("invalid permission")
-||||||| parent of 6f6524c5b (feat(plugins): declarative settings schema, command palette actions, and host-managed storage (#1011))
-	errEmptyID      = errors.New("plugin id cannot be empty")
-	errEmptyName    = errors.New("plugin name cannot be empty")
-	errEmptyVersion = errors.New("plugin version cannot be empty")
-=======
 	errEmptyID             = errors.New("plugin id cannot be empty")
 	errEmptyName           = errors.New("plugin name cannot be empty")
 	errEmptyVersion        = errors.New("plugin version cannot be empty")
+	errInvalidPermission   = errors.New("invalid permission")
 	errEmptySettingKey     = errors.New("setting key cannot be empty")
 	errDuplicateSettingKey = errors.New("duplicate setting key")
 	errInvalidSettingType  = errors.New("invalid setting type")
 	errEnumMissingOptions  = errors.New("enum setting must define options")
 	errRangeInvalidBounds  = errors.New("range min cannot exceed max")
->>>>>>> 6f6524c5b (feat(plugins): declarative settings schema, command palette actions, and host-managed storage (#1011))
 )
 
 var validSettingTypes = []string{"boolean", "string", "number", "enum", "range"}
@@ -177,7 +167,6 @@ func validateSetting(s Setting, key string) error {
 	}
 	if s.Type == "range" && (s.Min != 0 || s.Max != 0) && s.Min > s.Max {
 		return fmt.Errorf("%w: %s", errRangeInvalidBounds, key)
->>>>>>> 6f6524c5b (feat(plugins): declarative settings schema, command palette actions, and host-managed storage (#1011))
 	}
 	return nil
 }

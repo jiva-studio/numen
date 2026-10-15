@@ -340,4 +340,3 @@ type bytesFile struct{ *bytes.Reader }
 func (bytesFile) Close() error { return nil }
 
 func readerOf(raw []byte) bytesFile { return bytesFile{bytes.NewReader(raw)} }
-
