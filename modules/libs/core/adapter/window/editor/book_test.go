@@ -22,7 +22,6 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/epub"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 )
@@ -99,7 +98,7 @@ func TestAFileThatIsNoBook(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{
 		reflowed: "this is not an archive at all",
 	})
-	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
+	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(testsupport.Documents{}))
 	api.state.setVault(vault)
 	t.Cleanup(api.Document.viewer.close)
 
@@ -209,7 +208,7 @@ func TestAnEntryThatIsNotAPictureIsNotServed(t *testing.T) {
 // that address is one this window answers.
 func TestACoverIsDrawnFromThePictureItWraps(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{reflowed: string(newCoveredBook(t))})
-	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
+	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(testsupport.Documents{}))
 	api.state.setVault(vault)
 	t.Cleanup(api.Document.viewer.close)
 	handler := api.NewHandler(http.NotFoundHandler())
@@ -381,7 +380,7 @@ func openBooks(held *pool.Books) int { return held.Len() }
 func readFrom(t *testing.T) (*Services, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{reflowed: string(bookOf(t))})
-	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
+	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(testsupport.Documents{}))
 	api.state.setVault(vault)
 	t.Cleanup(api.Document.viewer.close)
 	return api, api.NewHandler(http.NotFoundHandler())

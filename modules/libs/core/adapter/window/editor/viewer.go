@@ -224,6 +224,48 @@ func (h *documentHandler) GetDocument(
 	return connect.NewResponse(out), nil
 }
 
+func (h *documentHandler) RenderPage(
+	ctx context.Context,
+	r *connect.Request[v1.RenderPageRequest],
+) (*connect.Response[v1.RenderPageResponse], error) {
+	if h.getPage == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
+	}
+	showing, err := h.state.getShownVault()
+	if err != nil {
+		return nil, connect.NewError(getDrawCode(err), err)
+	}
+	ctx, cancel := context.WithTimeout(ctx, h.viewer.patience)
+	defer cancel()
+
+	wide := int(r.Msg.GetWidth())
+	if wide <= 0 {
+		wide = 800
+	}
+	key := document.PageKey{
+		Document: document.Fingerprint{Path: r.Msg.GetPath()},
+		Page:     int(r.Msg.GetPage()),
+		Width:    wide,
+	}
+	body, err := h.getPage.Execute(ctx, showing, key)
+	if err != nil {
+		return nil, connect.NewError(getDrawCode(err), err)
+	}
+	return connect.NewResponse(&v1.RenderPageResponse{
+		ImageData:   body,
+		ContentType: "image/jpeg",
+		Width:       float64(wide),
+		Height:      0,
+	}), nil
+}
+
+func (h *documentHandler) ExtractText(
+	_ context.Context,
+	_ *connect.Request[v1.ExtractTextRequest],
+) (*connect.Response[v1.ExtractTextResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
+}
+
 // newWireFingerprint is a fingerprint as the schema carries it.
 func newWireFingerprint(mark document.Fingerprint) *v1.Fingerprint {
 	return &v1.Fingerprint{Path: mark.Path, Size: mark.Size, Mtime: mark.Mtime}

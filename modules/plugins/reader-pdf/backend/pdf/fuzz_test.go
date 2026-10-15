@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
+	"github.com/jiva-studio/numen/modules/plugins/reader-pdf/backend/pdf"
 )
 
 // A document read without complaint is one the rest of the application can

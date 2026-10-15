@@ -42,6 +42,12 @@ const (
 	// DocumentServiceGetDocumentProcedure is the fully-qualified name of the DocumentService's
 	// GetDocument RPC.
 	DocumentServiceGetDocumentProcedure = "/numen.v1.DocumentService/GetDocument"
+	// DocumentServiceRenderPageProcedure is the fully-qualified name of the DocumentService's
+	// RenderPage RPC.
+	DocumentServiceRenderPageProcedure = "/numen.v1.DocumentService/RenderPage"
+	// DocumentServiceExtractTextProcedure is the fully-qualified name of the DocumentService's
+	// ExtractText RPC.
+	DocumentServiceExtractTextProcedure = "/numen.v1.DocumentService/ExtractText"
 )
 
 // DocumentServiceClient is a client for the numen.v1.DocumentService service.
@@ -54,6 +60,10 @@ type DocumentServiceClient interface {
 	// could not have one inside the wait is answered unavailable and asks again;
 	// a held request is not an answer.
 	GetDocument(context.Context, *connect.Request[v1.GetDocumentRequest]) (*connect.Response[v1.GetDocumentResponse], error)
+	// RenderPage draws one page of a document and answers with the drawn image bytes.
+	RenderPage(context.Context, *connect.Request[v1.RenderPageRequest]) (*connect.Response[v1.RenderPageResponse], error)
+	// ExtractText extracts text and page boundaries from a document.
+	ExtractText(context.Context, *connect.Request[v1.ExtractTextRequest]) (*connect.Response[v1.ExtractTextResponse], error)
 }
 
 // NewDocumentServiceClient constructs a client for the numen.v1.DocumentService service. By
@@ -73,17 +83,41 @@ func NewDocumentServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(documentServiceMethods.ByName("GetDocument")),
 			connect.WithClientOptions(opts...),
 		),
+		renderPage: connect.NewClient[v1.RenderPageRequest, v1.RenderPageResponse](
+			httpClient,
+			baseURL+DocumentServiceRenderPageProcedure,
+			connect.WithSchema(documentServiceMethods.ByName("RenderPage")),
+			connect.WithClientOptions(opts...),
+		),
+		extractText: connect.NewClient[v1.ExtractTextRequest, v1.ExtractTextResponse](
+			httpClient,
+			baseURL+DocumentServiceExtractTextProcedure,
+			connect.WithSchema(documentServiceMethods.ByName("ExtractText")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // documentServiceClient implements DocumentServiceClient.
 type documentServiceClient struct {
 	getDocument *connect.Client[v1.GetDocumentRequest, v1.GetDocumentResponse]
+	renderPage  *connect.Client[v1.RenderPageRequest, v1.RenderPageResponse]
+	extractText *connect.Client[v1.ExtractTextRequest, v1.ExtractTextResponse]
 }
 
 // GetDocument calls numen.v1.DocumentService.GetDocument.
 func (c *documentServiceClient) GetDocument(ctx context.Context, req *connect.Request[v1.GetDocumentRequest]) (*connect.Response[v1.GetDocumentResponse], error) {
 	return c.getDocument.CallUnary(ctx, req)
+}
+
+// RenderPage calls numen.v1.DocumentService.RenderPage.
+func (c *documentServiceClient) RenderPage(ctx context.Context, req *connect.Request[v1.RenderPageRequest]) (*connect.Response[v1.RenderPageResponse], error) {
+	return c.renderPage.CallUnary(ctx, req)
+}
+
+// ExtractText calls numen.v1.DocumentService.ExtractText.
+func (c *documentServiceClient) ExtractText(ctx context.Context, req *connect.Request[v1.ExtractTextRequest]) (*connect.Response[v1.ExtractTextResponse], error) {
+	return c.extractText.CallUnary(ctx, req)
 }
 
 // DocumentServiceHandler is an implementation of the numen.v1.DocumentService service.
@@ -96,6 +130,10 @@ type DocumentServiceHandler interface {
 	// could not have one inside the wait is answered unavailable and asks again;
 	// a held request is not an answer.
 	GetDocument(context.Context, *connect.Request[v1.GetDocumentRequest]) (*connect.Response[v1.GetDocumentResponse], error)
+	// RenderPage draws one page of a document and answers with the drawn image bytes.
+	RenderPage(context.Context, *connect.Request[v1.RenderPageRequest]) (*connect.Response[v1.RenderPageResponse], error)
+	// ExtractText extracts text and page boundaries from a document.
+	ExtractText(context.Context, *connect.Request[v1.ExtractTextRequest]) (*connect.Response[v1.ExtractTextResponse], error)
 }
 
 // NewDocumentServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -111,10 +149,26 @@ func NewDocumentServiceHandler(svc DocumentServiceHandler, opts ...connect.Handl
 		connect.WithSchema(documentServiceMethods.ByName("GetDocument")),
 		connect.WithHandlerOptions(opts...),
 	)
+	documentServiceRenderPageHandler := connect.NewUnaryHandler(
+		DocumentServiceRenderPageProcedure,
+		svc.RenderPage,
+		connect.WithSchema(documentServiceMethods.ByName("RenderPage")),
+		connect.WithHandlerOptions(opts...),
+	)
+	documentServiceExtractTextHandler := connect.NewUnaryHandler(
+		DocumentServiceExtractTextProcedure,
+		svc.ExtractText,
+		connect.WithSchema(documentServiceMethods.ByName("ExtractText")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.DocumentService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case DocumentServiceGetDocumentProcedure:
 			documentServiceGetDocumentHandler.ServeHTTP(w, r)
+		case DocumentServiceRenderPageProcedure:
+			documentServiceRenderPageHandler.ServeHTTP(w, r)
+		case DocumentServiceExtractTextProcedure:
+			documentServiceExtractTextHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -126,4 +180,12 @@ type UnimplementedDocumentServiceHandler struct{}
 
 func (UnimplementedDocumentServiceHandler) GetDocument(context.Context, *connect.Request[v1.GetDocumentRequest]) (*connect.Response[v1.GetDocumentResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.DocumentService.GetDocument is not implemented"))
+}
+
+func (UnimplementedDocumentServiceHandler) RenderPage(context.Context, *connect.Request[v1.RenderPageRequest]) (*connect.Response[v1.RenderPageResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.DocumentService.RenderPage is not implemented"))
+}
+
+func (UnimplementedDocumentServiceHandler) ExtractText(context.Context, *connect.Request[v1.ExtractTextRequest]) (*connect.Response[v1.ExtractTextResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.DocumentService.ExtractText is not implemented"))
 }

@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/klippa-app/go-pdfium/requests"
 )
 
@@ -51,7 +50,7 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 }
 
 // where reads a fixture and says where the words of some of its pages are.
-func where(t *testing.T, name string, pages ...int) (*Book, []domain.HighlightBox) {
+func where(t *testing.T, name string, pages ...int) (*Book, []HighlightBox) {
 	t.Helper()
 	raw, err := os.ReadFile("testdata/" + name)
 	if err != nil {

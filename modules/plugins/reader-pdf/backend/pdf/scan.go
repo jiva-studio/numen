@@ -100,3 +100,10 @@ func (s *Scan) RenderPage(index, dpi int) (drawing image.Image, err error) {
 	drawn.Cleanup()
 	return out, nil
 }
+
+func recoverPanic[T any](what string, answer *T, err *error) {
+	if raised := recover(); raised != nil {
+		var none T
+		*answer, *err = none, fmt.Errorf("%s raised %v", what, raised)
+	}
+}

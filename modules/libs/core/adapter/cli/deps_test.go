@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -81,12 +81,12 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			notes.ShouldRebuildIndex = rebuild
 
 			books := source.NewExtract(readers, db.Sources(), db.Sources())
-			books.Derived, books.Documents, books.ShouldRebuildIndex = store, pdf.Documents{}, rebuild
+			books.Derived, books.Documents, books.ShouldRebuildIndex = store, testsupport.Documents{}, rebuild
 
 			// No vectors: a test reaches no model, and a vault answers by its
 			// words alone.
 			vectors := embedding.NewEmbed(readers, db.Sources(), db.Sources())
-			vectors.Derived, vectors.Documents = store, pdf.Documents{}
+			vectors.Derived, vectors.Documents = store, testsupport.Documents{}
 
 			return cli.Scan{
 				Read: vaults.NewReadWholeVault(notes, books, vectors),
@@ -106,7 +106,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			}
 			return cli.Search{
 				Search: search.New(db.ChunkQueries(), filesystem.VaultReaders{Options: options},
-					getDerived(options), pdf.Documents{}, nil, 0, errorHandler),
+					getDerived(options), testsupport.Documents{}, nil, 0, errorHandler),
 				Close: db.Close,
 			}, nil
 		},
