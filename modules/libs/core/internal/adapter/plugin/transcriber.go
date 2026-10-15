@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	"connectrpc.com/connect"
 
@@ -37,7 +36,7 @@ func OpenTranscriberBridge(ctx context.Context, host *Host) (*TranscriberBridge,
 		return nil, fmt.Errorf("ensure active %s: %w", plugin.Manifest.ID, err)
 	}
 
-	httpClient := &http.Client{}
+	httpClient := defaultPluginClient
 	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
 	client := numenv1connect.NewTranscriptionServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 

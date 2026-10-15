@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -19,12 +20,15 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-type mockEmbeddingServer struct{}
+type mockEmbeddingServer struct {
+	getModelCalls atomic.Int32
+}
 
 func (s *mockEmbeddingServer) GetEmbeddingModel(
 	_ context.Context,
 	_ *connect.Request[v1.GetEmbeddingModelRequest],
 ) (*connect.Response[v1.GetEmbeddingModelResponse], error) {
+	s.getModelCalls.Add(1)
 	return connect.NewResponse(&v1.GetEmbeddingModelResponse{
 		Name:        "test-model",
 		Dimensions:  384,
@@ -75,8 +79,9 @@ func TestOpenEmbedderBridgeNoPlugin(t *testing.T) {
 }
 
 func TestEmbedderBridge(t *testing.T) {
+	mockServer := &mockEmbeddingServer{}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(&mockEmbeddingServer{}))
+	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(mockServer))
 
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -147,8 +152,16 @@ func TestEmbedderBridge(t *testing.T) {
 	if model.From != "test-provider" {
 		t.Errorf("model From = %q, want test-provider", model.From)
 	}
-	if bridge.Concurrency() != 4 {
-		t.Errorf("concurrency = %d, want 4", bridge.Concurrency())
+
+	callsBefore := mockServer.getModelCalls.Load()
+	for i := 0; i < 5; i++ {
+		if bridge.Concurrency() != 4 {
+			t.Errorf("concurrency = %d, want 4", bridge.Concurrency())
+		}
+	}
+	callsAfter := mockServer.getModelCalls.Load()
+	if callsBefore != callsAfter {
+		t.Errorf("Concurrency() made RPC calls: before=%d, after=%d", callsBefore, callsAfter)
 	}
 
 	vectors, err := bridge.Embed(ctx, []string{"first text", "second text"})

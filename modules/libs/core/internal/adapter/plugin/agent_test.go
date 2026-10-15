@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -267,5 +268,85 @@ func TestAgentBridgeNoPlugin(t *testing.T) {
 	_, err := OpenAgentBridge(t.Context(), host)
 	if err != ErrNoAgentPlugin {
 		t.Fatalf("got err = %v, want ErrNoAgentPlugin", err)
+	}
+}
+
+type floodAgentServer struct {
+	numenv1connect.UnimplementedAgentServiceHandler
+}
+
+func (s *floodAgentServer) AskAgent(
+	ctx context.Context,
+	_ *connect.Request[v1.AskAgentRequest],
+	stream *connect.ServerStream[v1.AskAgentResponse],
+) error {
+	for i := 0; i < 50; i++ {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+		_ = stream.Send(&v1.AskAgentResponse{
+			Step: &v1.AskAgentResponse_Said{
+				Said: fmt.Sprintf("msg %d", i),
+			},
+		})
+	}
+	return nil
+}
+
+func TestAgentBridge_UnreadChannelDoesNotDeadlock(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewAgentServiceHandler(&floodAgentServer{}))
+
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
+
+	tmp := t.TempDir()
+	createTestAgentPluginTree(t, tmp)
+
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+
+	cmd := exec.Command("sleep", "10")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start mock proc failed: %v", err)
+	}
+	defer func() {
+		_ = cmd.Process.Kill()
+		_, _ = cmd.Process.Wait()
+	}()
+
+	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
+		return cmd.Process, io.NopCloser(r), nil
+	})
+
+	ctx := t.Context()
+	bridge, err := OpenAgentBridge(ctx, host)
+	if err != nil {
+		t.Fatalf("OpenAgentBridge failed: %v", err)
+	}
+	defer bridge.Close()
+
+	run, err := bridge.StartRun(ctx, port.Task{Question: "test flood"})
+	if err != nil {
+		t.Fatalf("StartRun failed: %v", err)
+	}
+
+	stopped := make(chan struct{})
+	go func() {
+		_ = run.Stop()
+		close(stopped)
+	}()
+
+	select {
+	case <-stopped:
+	case <-time.After(2 * time.Second):
+		t.Fatal("deadlock in run.Stop() with unread steps channel")
 	}
 }

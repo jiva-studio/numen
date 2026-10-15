@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -136,6 +137,16 @@ func TestProofreaderBridge(t *testing.T) {
 	}
 	if replies[1] != "corrected: line 1 text" {
 		t.Fatalf("unexpected reply: %s", replies[1])
+	}
+
+	host.mu.RLock()
+	sup, ok := host.supervisors["md.numen.proofreading"]
+	host.mu.RUnlock()
+	if !ok {
+		t.Fatalf("supervisor not found")
+	}
+	if !sup.IsIdle(0, time.Now()) {
+		t.Fatalf("expected supervisor to be idle after Proofread returned")
 	}
 }
 

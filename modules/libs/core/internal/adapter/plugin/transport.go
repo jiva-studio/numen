@@ -9,14 +9,32 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var (
 	errInvalidHandshake = errors.New("invalid or missing handshake from plugin process")
 	errHandshakeTimeout = errors.New("timeout waiting for plugin handshake")
 )
+
+var defaultPluginClient = &http.Client{
+	Transport: &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   15 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   20,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	},
+}
 
 // Endpoint holds loopback connection parameters and credentials for an active plugin.
 type Endpoint struct {
