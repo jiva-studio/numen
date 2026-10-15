@@ -93,3 +93,70 @@ func TestReadManifestValidation(t *testing.T) {
 		})
 	}
 }
+
+func TestReadManifestSettingsValidation(t *testing.T) {
+	cases := []struct {
+		name string
+		json string
+	}{
+		{
+			name: "empty setting key",
+			json: `{"id":"a","name":"A","version":"1","settings":[{"key":"","type":"boolean","title":"T"}]}`,
+		},
+		{
+			name: "duplicate setting key",
+			json: `{"id":"a","name":"A","version":"1","settings":[{"key":"k","type":"boolean","title":"T"},{"key":"k","type":"string","title":"T2"}]}`,
+		},
+		{
+			name: "invalid setting type",
+			json: `{"id":"a","name":"A","version":"1","settings":[{"key":"k","type":"unsupported","title":"T"}]}`,
+		},
+		{
+			name: "enum without options",
+			json: `{"id":"a","name":"A","version":"1","settings":[{"key":"k","type":"enum","title":"T","options":[]}]}`,
+		},
+		{
+			name: "range min greater than max",
+			json: `{"id":"a","name":"A","version":"1","settings":[{"key":"k","type":"range","title":"T","min":100,"max":50}]}`,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := ReadManifest(strings.NewReader(tc.json))
+			if err == nil {
+				t.Fatalf("expected error for case %s, got nil", tc.name)
+			}
+		})
+	}
+}
+
+func TestReadManifestValidSettings(t *testing.T) {
+	raw := `{
+		"id": "md.numen.sample",
+		"name": "Sample",
+		"version": "1.0.0",
+		"settings": [
+			{"key": "enabled", "type": "boolean", "title": "Enabled", "default": true, "palette": true},
+			{"key": "model", "type": "enum", "title": "Model", "default": "fast", "options": ["fast", "accurate"]},
+			{"key": "retries", "type": "number", "title": "Retries", "default": 3},
+			{"key": "zoom", "type": "range", "title": "Zoom", "default": 1.0, "min": 0.5, "max": 2.0, "step": 0.1},
+			{"key": "prefix", "type": "string", "title": "Prefix", "default": "test"}
+		]
+	}`
+
+	m, err := ReadManifest(strings.NewReader(raw))
+	if err != nil {
+		t.Fatalf("unexpected error reading manifest with settings: %v", err)
+	}
+
+	if len(m.Settings) != 5 {
+		t.Fatalf("got %d settings, want 5", len(m.Settings))
+	}
+	if !m.Settings[0].Palette {
+		t.Errorf("expected setting enabled to have palette: true")
+	}
+	if len(m.Settings[1].Options) != 2 {
+		t.Errorf("expected enum setting to have 2 options")
+	}
+}

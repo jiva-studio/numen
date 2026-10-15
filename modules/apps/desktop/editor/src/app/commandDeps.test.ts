@@ -50,6 +50,40 @@ describe('createCommandDeps', () => {
     expect(written).toStrictEqual(model.writes)
   })
 
+  it('writes a plugin setting when chosen', async () => {
+    const written: any[] = []
+    const deps = createCommandDeps({
+      core: {} as any,
+      held: { openTabOfKind: () => {}, requestClose: () => {} } as any,
+      making: {} as any,
+      made: {} as any,
+      setVaultName: () => {},
+      reload: () => {},
+      loadArtifactStates: async () => {},
+      reached: {} as any,
+      openPreset: async () => {},
+      dressed: { chooseItem: async () => {} },
+      oneName: { choose: async () => {} },
+      nesting: { choose: async () => {}, chooseCount: async () => {} },
+      rest: {
+        writeSettings: async (w) => void written.push(...w),
+      },
+      recorded: {},
+      pointed: {},
+      files: () => ({ revealPath: () => {} }),
+      plexes: () => ({ travel: async () => {}, leavePath: async () => {} }),
+      agents: () => ({ askQuestion: async () => {} }),
+      getOpeningNote: () => '',
+      runs: {} as any,
+      writeMessage: () => {},
+    })
+
+    await deps.settings.choosePluginSetting?.('transcription', 'autoRun', true)
+    expect(written).toStrictEqual([
+      { at: ['plugins', 'transcription', 'autoRun'], value: 'true' },
+    ])
+  })
+
   it('chooses an indexing model when not found in models', async () => {
     const written: any[] = []
     const deps = createCommandDeps({

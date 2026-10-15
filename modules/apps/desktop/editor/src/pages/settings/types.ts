@@ -6,7 +6,7 @@
  * command of the same name in the palette go through one piece of code.
  */
 import type { Ref } from 'vue'
-import type { Model, SettingEdit } from '@/entities/settings'
+import type { Model, PluginInfo, SettingEdit } from '@/entities/settings'
 import type { Bounds, Mode, Ranges, Sizes, Theme } from '@/entities/settings'
 
 /** What this installation is configured as, as the window already holds it. */
@@ -46,6 +46,7 @@ export interface Installation {
   getSetting(at: readonly string[]): unknown
   getModels(at: readonly string[]): readonly Model[]
   write(written: readonly SettingEdit[]): void
+  readonly plugins?: Readonly<Ref<readonly PluginInfo[]>>
   /** The file the settings stand in, absolute on this machine. */
   readonly file: Readonly<Ref<string>>
   /** That file opened whole, in a tab of its own. */

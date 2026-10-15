@@ -36,12 +36,37 @@ export interface Model {
   readonly presence: Presence
 }
 
+/** Declarative setting schema and metadata exposed by a plugin. */
+export interface PluginSettingInfo {
+  readonly key: string
+  readonly type: 'boolean' | 'string' | 'number' | 'enum' | 'range'
+  readonly title: string
+  readonly description: string
+  readonly default: unknown
+  readonly palette?: boolean | undefined
+  readonly options?: readonly string[] | undefined
+  readonly min?: number | undefined
+  readonly max?: number | undefined
+  readonly step?: number | undefined
+}
+
+/** Information about an installed and active plugin, including declarative settings. */
+export interface PluginInfo {
+  readonly id: string
+  readonly name: string
+  readonly version: string
+  readonly description: string
+  readonly isActive: boolean
+  readonly settings: readonly PluginSettingInfo[]
+}
+
 /** Every setting as it stands, where they stand, and the models offered. */
 export interface Configuration {
   /** Serialized settings JSON content. */
-  readonly jsonContent?: string
+  readonly jsonContent?: string | undefined
   readonly written: string
   /** Absolute path to the settings file on disk. */
   readonly path: string
   readonly models: readonly Model[]
+  readonly plugins?: readonly PluginInfo[] | undefined
 }

@@ -89,7 +89,7 @@ func (e EditorAssembly) OpenGetSettings(day flashcards.Day) *settings.Get {
 	held := e.cfg.NestedHeadingLimitBounds()
 	return settings.NewGet(
 		e.cfg.ReadSettings(), e.cfg.Models(), settings.Bounds{Least: held.Least, Most: held.Most},
-		e.cfg.GetLatestDayStart(), day, e.cfg.Clock(),
+		e.cfg.GetLatestDayStart(), day, e.cfg.Clock(), e.cfg.Plugins(),
 	)
 }
 

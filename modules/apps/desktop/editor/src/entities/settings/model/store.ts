@@ -8,7 +8,7 @@
  */
 import { ref, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import type { Model, SettingEdit } from '../lib/configuration'
+import type { Model, PluginInfo, SettingEdit } from '../lib/configuration'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { write } from '../lib/write'
 
@@ -27,6 +27,7 @@ export interface SettingsStoreDeps {
     readonly written: string
     readonly path: string
     readonly models: readonly Model[]
+    readonly plugins?: readonly PluginInfo[]
   }>
   /** Settings written. A value the settings cannot hold is refused. */
   updateSettings(edits: readonly SettingEdit[]): Promise<void>
@@ -49,6 +50,7 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   /** The file the settings stand in, and the models the settings offer. */
   const path = ref('')
   const models = shallowRef<readonly Model[]>([])
+  const plugins = shallowRef<readonly PluginInfo[]>([])
 
   /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
@@ -71,10 +73,20 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     }
     path.value = answer.path
     models.value = answer.models
+    plugins.value = answer.plugins ?? []
   }
 
-  /** What stands at a setting, and nothing where the file names none. */
-  const getSetting = (path: readonly string[]): unknown => getSettingAt(held.value, path)
+  /** What stands at a setting, and fallback plugin default where unset. */
+  const getSetting = (path: readonly string[]): unknown => {
+    const value = getSettingAt(held.value, path)
+    if (value !== undefined) return value
+    if (path.length === 3 && path[0] === 'plugins') {
+      const p = plugins.value.find((one) => one.id === path[1])
+      const s = p?.settings.find((one) => one.key === path[2])
+      if (s) return s.default
+    }
+    return undefined
+  }
 
   /** The models one setting can be set to, in the order they are offered. */
   const getModelsAt = (path: readonly string[]): readonly Model[] =>
@@ -101,5 +113,15 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   const writeSetting = (path: readonly string[], value: unknown): Promise<void> =>
     writeSettings([{ at: path, value: write(value) }])
 
-  return { held, path, models, start, getSetting, getModelsAt, writeSettings, writeSetting }
+  return {
+    held,
+    path,
+    models,
+    plugins,
+    start,
+    getSetting,
+    getModelsAt,
+    writeSettings,
+    writeSetting,
+  }
 }

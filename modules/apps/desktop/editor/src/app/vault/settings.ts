@@ -9,7 +9,7 @@ import { DEFAULT_STARTS } from '@/entities/settings'
 import { getSettingAt } from '@/entities/settings'
 import { write } from '@/entities/settings'
 import { formatErrorMessage } from '@numen/wire'
-import type { Configuration } from '@/entities/settings'
+import type { Configuration, PluginInfo, PluginSettingInfo } from '@/entities/settings'
 import type { NestingSettings } from '@/entities/settings'
 import type { ReviewSettings } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
@@ -76,6 +76,35 @@ export const settingsCore: SettingsPort = {
         isDefault: one.isDefault,
         writes: one.writes.map((w) => ({ at: w.at, value: w.value })),
         presence: fetched[one.presence],
+      })),
+      plugins: (answer.plugins ?? []).map((p) => ({
+        id: p.id,
+        name: p.name,
+        version: p.version,
+        description: p.description,
+        isActive: p.isActive,
+        settings: (p.settings ?? []).map((s) => {
+          let defaultValue: unknown = undefined
+          if (s.defaultJson) {
+            try {
+              defaultValue = JSON.parse(s.defaultJson)
+            } catch {
+              defaultValue = undefined
+            }
+          }
+          return {
+            key: s.key,
+            type: s.type as PluginSettingInfo['type'],
+            title: s.title,
+            description: s.description,
+            default: defaultValue,
+            palette: s.palette,
+            options: s.options,
+            min: s.min,
+            max: s.max,
+            step: s.step,
+          }
+        }),
       })),
     } satisfies Configuration
   },

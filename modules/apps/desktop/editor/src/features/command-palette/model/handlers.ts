@@ -112,6 +112,23 @@ export async function runInvocation(
   words: AnswerWords,
 ): Promise<void> {
   if (!invocation) return
+  if (invocation.id.startsWith('plugin-setting:')) {
+    on.writeMessage('')
+    try {
+      const parts = invocation.id.split(':')
+      const pluginId = parts[1]
+      const key = parts[2]
+      if (pluginId && key && on.settings.choosePluginSetting) {
+        let value: unknown = invocation.name
+        if (invocation.name === 'on') value = true
+        else if (invocation.name === 'off') value = false
+        await on.settings.choosePluginSetting(pluginId, key, value)
+      }
+    } catch (error) {
+      on.writeMessage(formatErrorMessage(error), 'error')
+    }
+    return
+  }
   const handler = HANDLERS[invocation.id]
   if (!handler) return
   on.writeMessage('')

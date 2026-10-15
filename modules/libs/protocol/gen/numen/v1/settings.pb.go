@@ -146,7 +146,9 @@ type GetSettingsResponse struct {
 	// Day is the review day now standing, written as the year, the month and the
 	// day. A day of review begins at the hour the settings name, so an hour past
 	// midnight is still the day before.
-	Day           string `protobuf:"bytes,6,opt,name=day,proto3" json:"day,omitempty"`
+	Day string `protobuf:"bytes,6,opt,name=day,proto3" json:"day,omitempty"`
+	// Active plugins and their declarative settings schema.
+	Plugins       []*PluginInfo `protobuf:"bytes,7,rep,name=plugins,proto3" json:"plugins,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -221,6 +223,13 @@ func (x *GetSettingsResponse) GetDay() string {
 		return x.Day
 	}
 	return ""
+}
+
+func (x *GetSettingsResponse) GetPlugins() []*PluginInfo {
+	if x != nil {
+		return x.Plugins
+	}
+	return nil
 }
 
 // Model is one model a setting that names a model can be set to.
@@ -658,15 +667,16 @@ var File_numen_v1_settings_proto protoreflect.FileDescriptor
 
 const file_numen_v1_settings_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x14\n" +
-	"\x12GetSettingsRequest\"\x82\x02\n" +
+	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/plugin.proto\x1a\x15numen/v1/shared.proto\"\x14\n" +
+	"\x12GetSettingsRequest\"\xb2\x02\n" +
 	"\x13GetSettingsResponse\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12'\n" +
 	"\x06models\x18\x03 \x03(\v2\x0f.numen.v1.ModelR\x06models\x12O\n" +
 	"\x1bnested_heading_limit_bounds\x18\x04 \x01(\v2\x10.numen.v1.BoundsR\x18nestedHeadingLimitBounds\x121\n" +
 	"\x15latest_day_start_time\x18\x05 \x01(\tR\x12latestDayStartTime\x12\x10\n" +
-	"\x03day\x18\x06 \x01(\tR\x03day\"\xdc\x01\n" +
+	"\x03day\x18\x06 \x01(\tR\x03day\x12.\n" +
+	"\aplugins\x18\a \x03(\v2\x14.numen.v1.PluginInfoR\aplugins\"\xdc\x01\n" +
 	"\x05Model\x12\x19\n" +
 	"\bnamed_at\x18\x01 \x03(\tR\anamedAt\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -731,28 +741,30 @@ var file_numen_v1_settings_proto_goTypes = []any{
 	(*WriteSettingsFileRequest)(nil),  // 9: numen.v1.WriteSettingsFileRequest
 	(*WriteSettingsFileResponse)(nil), // 10: numen.v1.WriteSettingsFileResponse
 	(*Bounds)(nil),                    // 11: numen.v1.Bounds
-	(ErrorCode)(0),                    // 12: numen.v1.ErrorCode
+	(*PluginInfo)(nil),                // 12: numen.v1.PluginInfo
+	(ErrorCode)(0),                    // 13: numen.v1.ErrorCode
 }
 var file_numen_v1_settings_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.GetSettingsResponse.models:type_name -> numen.v1.Model
 	11, // 1: numen.v1.GetSettingsResponse.nested_heading_limit_bounds:type_name -> numen.v1.Bounds
-	4,  // 2: numen.v1.Model.writes:type_name -> numen.v1.Setting
-	0,  // 3: numen.v1.Model.presence:type_name -> numen.v1.Presence
-	4,  // 4: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
-	12, // 5: numen.v1.WriteSettingsFileResponse.error:type_name -> numen.v1.ErrorCode
-	1,  // 6: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
-	5,  // 7: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
-	7,  // 8: numen.v1.SettingsService.ReadSettingsFile:input_type -> numen.v1.ReadSettingsFileRequest
-	9,  // 9: numen.v1.SettingsService.WriteSettingsFile:input_type -> numen.v1.WriteSettingsFileRequest
-	2,  // 10: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
-	6,  // 11: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
-	8,  // 12: numen.v1.SettingsService.ReadSettingsFile:output_type -> numen.v1.ReadSettingsFileResponse
-	10, // 13: numen.v1.SettingsService.WriteSettingsFile:output_type -> numen.v1.WriteSettingsFileResponse
-	10, // [10:14] is the sub-list for method output_type
-	6,  // [6:10] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	12, // 2: numen.v1.GetSettingsResponse.plugins:type_name -> numen.v1.PluginInfo
+	4,  // 3: numen.v1.Model.writes:type_name -> numen.v1.Setting
+	0,  // 4: numen.v1.Model.presence:type_name -> numen.v1.Presence
+	4,  // 5: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
+	13, // 6: numen.v1.WriteSettingsFileResponse.error:type_name -> numen.v1.ErrorCode
+	1,  // 7: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
+	5,  // 8: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
+	7,  // 9: numen.v1.SettingsService.ReadSettingsFile:input_type -> numen.v1.ReadSettingsFileRequest
+	9,  // 10: numen.v1.SettingsService.WriteSettingsFile:input_type -> numen.v1.WriteSettingsFileRequest
+	2,  // 11: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
+	6,  // 12: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
+	8,  // 13: numen.v1.SettingsService.ReadSettingsFile:output_type -> numen.v1.ReadSettingsFileResponse
+	10, // 14: numen.v1.SettingsService.WriteSettingsFile:output_type -> numen.v1.WriteSettingsFileResponse
+	11, // [11:15] is the sub-list for method output_type
+	7,  // [7:11] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_settings_proto_init() }
@@ -760,6 +772,7 @@ func file_numen_v1_settings_proto_init() {
 	if File_numen_v1_settings_proto != nil {
 		return
 	}
+	file_numen_v1_plugin_proto_init()
 	file_numen_v1_shared_proto_init()
 	file_numen_v1_settings_proto_msgTypes[8].OneofWrappers = []any{}
 	file_numen_v1_settings_proto_msgTypes[9].OneofWrappers = []any{}

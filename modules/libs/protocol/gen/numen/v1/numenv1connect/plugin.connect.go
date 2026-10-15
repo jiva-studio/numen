@@ -23,6 +23,8 @@ const _ = connect.IsAtLeastVersion1_13_0
 const (
 	// PluginLifecycleServiceName is the fully-qualified name of the PluginLifecycleService service.
 	PluginLifecycleServiceName = "numen.v1.PluginLifecycleService"
+	// PluginServiceName is the fully-qualified name of the PluginService service.
+	PluginServiceName = "numen.v1.PluginService"
 )
 
 // These constants are the fully-qualified names of the RPCs defined in this package. They're
@@ -39,12 +41,19 @@ const (
 	// PluginLifecycleServiceShutdownProcedure is the fully-qualified name of the
 	// PluginLifecycleService's Shutdown RPC.
 	PluginLifecycleServiceShutdownProcedure = "/numen.v1.PluginLifecycleService/Shutdown"
+	// PluginLifecycleServiceConfigureProcedure is the fully-qualified name of the
+	// PluginLifecycleService's Configure RPC.
+	PluginLifecycleServiceConfigureProcedure = "/numen.v1.PluginLifecycleService/Configure"
+	// PluginServiceGetPluginsProcedure is the fully-qualified name of the PluginService's GetPlugins
+	// RPC.
+	PluginServiceGetPluginsProcedure = "/numen.v1.PluginService/GetPlugins"
 )
 
 // PluginLifecycleServiceClient is a client for the numen.v1.PluginLifecycleService service.
 type PluginLifecycleServiceClient interface {
 	Ping(context.Context, *connect.Request[v1.PingRequest]) (*connect.Response[v1.PingResponse], error)
 	Shutdown(context.Context, *connect.Request[v1.ShutdownRequest]) (*connect.Response[v1.ShutdownResponse], error)
+	Configure(context.Context, *connect.Request[v1.ConfigureRequest]) (*connect.Response[v1.ConfigureResponse], error)
 }
 
 // NewPluginLifecycleServiceClient constructs a client for the numen.v1.PluginLifecycleService
@@ -70,13 +79,20 @@ func NewPluginLifecycleServiceClient(httpClient connect.HTTPClient, baseURL stri
 			connect.WithSchema(pluginLifecycleServiceMethods.ByName("Shutdown")),
 			connect.WithClientOptions(opts...),
 		),
+		configure: connect.NewClient[v1.ConfigureRequest, v1.ConfigureResponse](
+			httpClient,
+			baseURL+PluginLifecycleServiceConfigureProcedure,
+			connect.WithSchema(pluginLifecycleServiceMethods.ByName("Configure")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // pluginLifecycleServiceClient implements PluginLifecycleServiceClient.
 type pluginLifecycleServiceClient struct {
-	ping     *connect.Client[v1.PingRequest, v1.PingResponse]
-	shutdown *connect.Client[v1.ShutdownRequest, v1.ShutdownResponse]
+	ping      *connect.Client[v1.PingRequest, v1.PingResponse]
+	shutdown  *connect.Client[v1.ShutdownRequest, v1.ShutdownResponse]
+	configure *connect.Client[v1.ConfigureRequest, v1.ConfigureResponse]
 }
 
 // Ping calls numen.v1.PluginLifecycleService.Ping.
@@ -89,11 +105,17 @@ func (c *pluginLifecycleServiceClient) Shutdown(ctx context.Context, req *connec
 	return c.shutdown.CallUnary(ctx, req)
 }
 
+// Configure calls numen.v1.PluginLifecycleService.Configure.
+func (c *pluginLifecycleServiceClient) Configure(ctx context.Context, req *connect.Request[v1.ConfigureRequest]) (*connect.Response[v1.ConfigureResponse], error) {
+	return c.configure.CallUnary(ctx, req)
+}
+
 // PluginLifecycleServiceHandler is an implementation of the numen.v1.PluginLifecycleService
 // service.
 type PluginLifecycleServiceHandler interface {
 	Ping(context.Context, *connect.Request[v1.PingRequest]) (*connect.Response[v1.PingResponse], error)
 	Shutdown(context.Context, *connect.Request[v1.ShutdownRequest]) (*connect.Response[v1.ShutdownResponse], error)
+	Configure(context.Context, *connect.Request[v1.ConfigureRequest]) (*connect.Response[v1.ConfigureResponse], error)
 }
 
 // NewPluginLifecycleServiceHandler builds an HTTP handler from the service implementation. It
@@ -115,12 +137,20 @@ func NewPluginLifecycleServiceHandler(svc PluginLifecycleServiceHandler, opts ..
 		connect.WithSchema(pluginLifecycleServiceMethods.ByName("Shutdown")),
 		connect.WithHandlerOptions(opts...),
 	)
+	pluginLifecycleServiceConfigureHandler := connect.NewUnaryHandler(
+		PluginLifecycleServiceConfigureProcedure,
+		svc.Configure,
+		connect.WithSchema(pluginLifecycleServiceMethods.ByName("Configure")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.PluginLifecycleService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case PluginLifecycleServicePingProcedure:
 			pluginLifecycleServicePingHandler.ServeHTTP(w, r)
 		case PluginLifecycleServiceShutdownProcedure:
 			pluginLifecycleServiceShutdownHandler.ServeHTTP(w, r)
+		case PluginLifecycleServiceConfigureProcedure:
+			pluginLifecycleServiceConfigureHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -136,4 +166,78 @@ func (UnimplementedPluginLifecycleServiceHandler) Ping(context.Context, *connect
 
 func (UnimplementedPluginLifecycleServiceHandler) Shutdown(context.Context, *connect.Request[v1.ShutdownRequest]) (*connect.Response[v1.ShutdownResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginLifecycleService.Shutdown is not implemented"))
+}
+
+func (UnimplementedPluginLifecycleServiceHandler) Configure(context.Context, *connect.Request[v1.ConfigureRequest]) (*connect.Response[v1.ConfigureResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginLifecycleService.Configure is not implemented"))
+}
+
+// PluginServiceClient is a client for the numen.v1.PluginService service.
+type PluginServiceClient interface {
+	GetPlugins(context.Context, *connect.Request[v1.GetPluginsRequest]) (*connect.Response[v1.GetPluginsResponse], error)
+}
+
+// NewPluginServiceClient constructs a client for the numen.v1.PluginService service. By default, it
+// uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
+// uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
+// connect.WithGRPCWeb() options.
+//
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
+// http://api.acme.com or https://acme.com/grpc).
+func NewPluginServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) PluginServiceClient {
+	baseURL = strings.TrimRight(baseURL, "/")
+	pluginServiceMethods := v1.File_numen_v1_plugin_proto.Services().ByName("PluginService").Methods()
+	return &pluginServiceClient{
+		getPlugins: connect.NewClient[v1.GetPluginsRequest, v1.GetPluginsResponse](
+			httpClient,
+			baseURL+PluginServiceGetPluginsProcedure,
+			connect.WithSchema(pluginServiceMethods.ByName("GetPlugins")),
+			connect.WithClientOptions(opts...),
+		),
+	}
+}
+
+// pluginServiceClient implements PluginServiceClient.
+type pluginServiceClient struct {
+	getPlugins *connect.Client[v1.GetPluginsRequest, v1.GetPluginsResponse]
+}
+
+// GetPlugins calls numen.v1.PluginService.GetPlugins.
+func (c *pluginServiceClient) GetPlugins(ctx context.Context, req *connect.Request[v1.GetPluginsRequest]) (*connect.Response[v1.GetPluginsResponse], error) {
+	return c.getPlugins.CallUnary(ctx, req)
+}
+
+// PluginServiceHandler is an implementation of the numen.v1.PluginService service.
+type PluginServiceHandler interface {
+	GetPlugins(context.Context, *connect.Request[v1.GetPluginsRequest]) (*connect.Response[v1.GetPluginsResponse], error)
+}
+
+// NewPluginServiceHandler builds an HTTP handler from the service implementation. It returns the
+// path on which to mount the handler and the handler itself.
+//
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
+func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	pluginServiceMethods := v1.File_numen_v1_plugin_proto.Services().ByName("PluginService").Methods()
+	pluginServiceGetPluginsHandler := connect.NewUnaryHandler(
+		PluginServiceGetPluginsProcedure,
+		svc.GetPlugins,
+		connect.WithSchema(pluginServiceMethods.ByName("GetPlugins")),
+		connect.WithHandlerOptions(opts...),
+	)
+	return "/numen.v1.PluginService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case PluginServiceGetPluginsProcedure:
+			pluginServiceGetPluginsHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
+}
+
+// UnimplementedPluginServiceHandler returns CodeUnimplemented from all methods.
+type UnimplementedPluginServiceHandler struct{}
+
+func (UnimplementedPluginServiceHandler) GetPlugins(context.Context, *connect.Request[v1.GetPluginsRequest]) (*connect.Response[v1.GetPluginsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginService.GetPlugins is not implemented"))
 }

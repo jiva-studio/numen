@@ -26,5 +26,24 @@
   "frontend": {
     "entrypoint": "dist/index.js",
     "styles": "dist/styles.css"
-  }
+  },
+  "settings": [
+    {
+      "key": "autoTranscribeOnImport",
+      "type": "boolean",
+      "title": "Auto-transcribe on import",
+      "description": "Automatically transcribe audio and video files added to the vault",
+      "default": false,
+      "palette": true
+    },
+    {
+      "key": "language",
+      "type": "enum",
+      "title": "Transcription Language",
+      "description": "Preferred language model for audio recognition",
+      "default": "auto",
+      "options": ["auto", "en", "es", "fr", "de", "zh", "ja"],
+      "palette": true
+    }
+  ]
 }

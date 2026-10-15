@@ -47,6 +47,7 @@ export interface CommandPaletteDeps {
   readonly lists: PaletteLists
   readonly runs: RunSupport
   readonly wait?: Wait
+  readonly getExtraCommands?: () => readonly Command[]
 }
 
 interface PaletteSearchDeps {
@@ -117,7 +118,7 @@ function createVaultsLoader(deps: PaletteVaultsDeps) {
 }
 
 interface PaletteCommandsDeps {
-  readonly byId: Map<string, Command>
+  readonly byId: { get(id: string): Command | undefined }
   readonly runs: RunSupport
   readonly open: Ref<boolean>
   readonly words: Words
@@ -149,9 +150,17 @@ function createPaletteCommands(deps: PaletteCommandsDeps) {
 
 function parsePaletteDeps(
   coreOrDeps: CommandsDeps | CommandPaletteDeps,
-  args: [Words?, (() => CommandTarget)?, NoteLookup?, PaletteLists?, RunSupport?, Wait?],
+  args: [
+    Words?,
+    (() => CommandTarget)?,
+    NoteLookup?,
+    PaletteLists?,
+    RunSupport?,
+    Wait?,
+    (() => readonly Command[])?,
+  ],
 ): CommandPaletteDeps {
-  const [words, at, knows, lists, runs, wait] = args
+  const [words, at, knows, lists, runs, wait, getExtraCommands] = args
   return 'core' in coreOrDeps
     ? coreOrDeps
     : {
@@ -162,6 +171,7 @@ function parsePaletteDeps(
         lists: lists!,
         runs: runs!,
         ...(wait !== undefined ? { wait } : {}),
+        ...(getExtraCommands !== undefined ? { getExtraCommands } : {}),
       }
 }
 
@@ -249,7 +259,7 @@ function createPaletteStepsAndSearch(
 }
 
 function createPaletteExecution(options: {
-  byId: Map<string, Command>
+  byId: { get(id: string): Command | undefined }
   runs: RunSupport
   open: Ref<boolean>
   words: Words
@@ -295,13 +305,21 @@ function createPalettePresentation(
   },
 ) {
   const { steps, on, invocation } = context
-  const commands = createCommands(deps.words)
-  const byId = new Map(commands.map((one) => [one.id, one]))
+  const staticCommands = createCommands(deps.words)
+  const getCommands = (): readonly Command[] => [
+    ...staticCommands,
+    ...(deps.getExtraCommands ? deps.getExtraCommands() : []),
+  ]
+  const byId = computed(() => new Map(getCommands().map((one) => [one.id, one])))
 
   const draws = getPaletteView({
     words: deps.words,
-    commands,
-    byId,
+    get commands() {
+      return getCommands()
+    },
+    get byId() {
+      return byId.value
+    },
     runs: deps.runs,
     lists: deps.lists,
     found: state.found,
@@ -315,7 +333,9 @@ function createPalettePresentation(
 
   const groups = computed(() => draws.createGroups(steps.here.value, on.value, state.typed.value))
   const execution = createPaletteExecution({
-    byId,
+    get byId() {
+      return byId.value
+    },
     runs: deps.runs,
     open: state.open,
     words: deps.words,
@@ -339,6 +359,7 @@ export function useCommandPalette(
     lists?: PaletteLists,
     runs?: RunSupport,
     wait?: Wait,
+    getExtraCommands?: () => readonly Command[],
   ]
 ) {
   const deps = parsePaletteDeps(coreOrDeps, args)
