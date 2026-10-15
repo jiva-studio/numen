@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/document.proto.
  */
 export const file_numen_v1_document: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9kb2N1bWVudC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkiYAoTR2V0RG9jdW1lbnRSZXNwb25zZRIdCgVwYWdlcxgBIAMoCzIOLm51bWVuLnYxLlBhZ2USKgoLZmluZ2VycHJpbnQYAiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCIlCgRQYWdlEg0KBXdpZHRoGAEgASgBEg4KBmhlaWdodBgCIAEoASJLChFSZW5kZXJQYWdlUmVxdWVzdBIMCgRwYXRoGAEgASgJEgwKBHBhZ2UYAiABKAUSCwoDZHBpGAMgASgFEg0KBXdpZHRoGAQgASgFIl0KElJlbmRlclBhZ2VSZXNwb25zZRISCgppbWFnZV9kYXRhGAEgASgMEhQKDGNvbnRlbnRfdHlwZRgCIAEoCRINCgV3aWR0aBgDIAEoARIOCgZoZWlnaHQYBCABKAEiMAoSRXh0cmFjdFRleHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSDAoEZGF0YRgCIAEoDCI4ChNFeHRyYWN0VGV4dFJlc3BvbnNlEgwKBHRleHQYASABKAkSEwoLcGFnZV9zdGFydHMYAiADKAUy8gEKD0RvY3VtZW50U2VydmljZRJKCgtHZXREb2N1bWVudBIcLm51bWVuLnYxLkdldERvY3VtZW50UmVxdWVzdBodLm51bWVuLnYxLkdldERvY3VtZW50UmVzcG9uc2USRwoKUmVuZGVyUGFnZRIbLm51bWVuLnYxLlJlbmRlclBhZ2VSZXF1ZXN0GhwubnVtZW4udjEuUmVuZGVyUGFnZVJlc3BvbnNlEkoKC0V4dHJhY3RUZXh0EhwubnVtZW4udjEuRXh0cmFjdFRleHRSZXF1ZXN0Gh0ubnVtZW4udjEuRXh0cmFjdFRleHRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9kb2N1bWVudC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkiYAoTR2V0RG9jdW1lbnRSZXNwb25zZRIdCgVwYWdlcxgBIAMoCzIOLm51bWVuLnYxLlBhZ2USKgoLZmluZ2VycHJpbnQYAiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCIlCgRQYWdlEg0KBXdpZHRoGAEgASgBEg4KBmhlaWdodBgCIAEoASJLChFSZW5kZXJQYWdlUmVxdWVzdBIMCgRwYXRoGAEgASgJEgwKBHBhZ2UYAiABKAUSCwoDZHBpGAMgASgFEg0KBXdpZHRoGAQgASgFIl0KElJlbmRlclBhZ2VSZXNwb25zZRISCgppbWFnZV9kYXRhGAEgASgMEhQKDGNvbnRlbnRfdHlwZRgCIAEoCRINCgV3aWR0aBgDIAEoARIOCgZoZWlnaHQYBCABKAEiMAoSRXh0cmFjdFRleHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSDAoEZGF0YRgCIAEoDCI4ChNFeHRyYWN0VGV4dFJlc3BvbnNlEgwKBHRleHQYASABKAkSEwoLcGFnZV9zdGFydHMYAiADKAUiJAoUR2V0SGlnaGxpZ2h0c1JlcXVlc3QSDAoEcGF0aBgBIAEoCSJaChFEb2N1bWVudEhpZ2hsaWdodBITCgtwYWdlX251bWJlchgBIAEoDRITCgtxdWFkX3BvaW50cxgCIAMoAhINCgVjb2xvchgDIAEoCRIMCgR0ZXh0GAQgASgJIkgKFUdldEhpZ2hsaWdodHNSZXNwb25zZRIvCgpoaWdobGlnaHRzGAEgAygLMhsubnVtZW4udjEuRG9jdW1lbnRIaWdobGlnaHQyxAIKD0RvY3VtZW50U2VydmljZRJKCgtHZXREb2N1bWVudBIcLm51bWVuLnYxLkdldERvY3VtZW50UmVxdWVzdBodLm51bWVuLnYxLkdldERvY3VtZW50UmVzcG9uc2USRwoKUmVuZGVyUGFnZRIbLm51bWVuLnYxLlJlbmRlclBhZ2VSZXF1ZXN0GhwubnVtZW4udjEuUmVuZGVyUGFnZVJlc3BvbnNlEkoKC0V4dHJhY3RUZXh0EhwubnVtZW4udjEuRXh0cmFjdFRleHRSZXF1ZXN0Gh0ubnVtZW4udjEuRXh0cmFjdFRleHRSZXNwb25zZRJQCg1HZXRIaWdobGlnaHRzEh4ubnVtZW4udjEuR2V0SGlnaGxpZ2h0c1JlcXVlc3QaHy5udW1lbi52MS5HZXRIaWdobGlnaHRzUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetDocumentRequest
@@ -204,6 +204,72 @@ export const ExtractTextResponseSchema: GenMessage<ExtractTextResponse> = /*@__P
   messageDesc(file_numen_v1_document, 6);
 
 /**
+ * @generated from message numen.v1.GetHighlightsRequest
+ */
+export type GetHighlightsRequest = Message<"numen.v1.GetHighlightsRequest"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message numen.v1.GetHighlightsRequest.
+ * Use `create(GetHighlightsRequestSchema)` to create a new message.
+ */
+export const GetHighlightsRequestSchema: GenMessage<GetHighlightsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_document, 7);
+
+/**
+ * @generated from message numen.v1.DocumentHighlight
+ */
+export type DocumentHighlight = Message<"numen.v1.DocumentHighlight"> & {
+  /**
+   * @generated from field: uint32 page_number = 1;
+   */
+  pageNumber: number;
+
+  /**
+   * @generated from field: repeated float quad_points = 2;
+   */
+  quadPoints: number[];
+
+  /**
+   * @generated from field: string color = 3;
+   */
+  color: string;
+
+  /**
+   * @generated from field: string text = 4;
+   */
+  text: string;
+};
+
+/**
+ * Describes the message numen.v1.DocumentHighlight.
+ * Use `create(DocumentHighlightSchema)` to create a new message.
+ */
+export const DocumentHighlightSchema: GenMessage<DocumentHighlight> = /*@__PURE__*/
+  messageDesc(file_numen_v1_document, 8);
+
+/**
+ * @generated from message numen.v1.GetHighlightsResponse
+ */
+export type GetHighlightsResponse = Message<"numen.v1.GetHighlightsResponse"> & {
+  /**
+   * @generated from field: repeated numen.v1.DocumentHighlight highlights = 1;
+   */
+  highlights: DocumentHighlight[];
+};
+
+/**
+ * Describes the message numen.v1.GetHighlightsResponse.
+ * Use `create(GetHighlightsResponseSchema)` to create a new message.
+ */
+export const GetHighlightsResponseSchema: GenMessage<GetHighlightsResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_document, 9);
+
+/**
  * DocumentService answers what a document is, for whatever opens one.
  *
  * It is a service apart from the vault's notes for one reason: a window that
@@ -248,6 +314,16 @@ export const DocumentService: GenService<{
     methodKind: "unary";
     input: typeof ExtractTextRequestSchema;
     output: typeof ExtractTextResponseSchema;
+  },
+  /**
+   * GetHighlights extracts quotation highlights from a document.
+   *
+   * @generated from rpc numen.v1.DocumentService.GetHighlights
+   */
+  getHighlights: {
+    methodKind: "unary";
+    input: typeof GetHighlightsRequestSchema;
+    output: typeof GetHighlightsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_document, 0);

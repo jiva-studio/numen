@@ -179,6 +179,64 @@ func (s *documentServer) ExtractText(
 	}), nil
 }
 
+func (s *documentServer) GetHighlights(
+	_ context.Context,
+	req *connect.Request[numenv1.GetHighlightsRequest],
+) (*connect.Response[numenv1.GetHighlightsResponse], error) {
+	path := req.Msg.GetPath()
+	if path == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
+	}
+	cleanPath := filepath.Clean(path)
+	if strings.Contains(cleanPath, "..") {
+		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope"))
+	}
+
+	raw, err := os.ReadFile(cleanPath)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read file: %w", err))
+	}
+
+	book, err := pdf.Read(raw)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, fmt.Errorf("parse pdf: %w", err))
+	}
+
+	pages := make([]int, len(book.Pages))
+	for i := range pages {
+		pages[i] = i
+	}
+
+	boxes, err := book.Highlights(raw, pages)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("extract highlights: %w", err))
+	}
+
+	highlights := make([]*numenv1.DocumentHighlight, 0, len(boxes))
+	for _, box := range boxes {
+		var text string
+		if box.From >= 0 && box.To <= len(book.Text) && box.From <= box.To {
+			text = book.Text[box.From:box.To]
+		}
+		highlights = append(highlights, &numenv1.DocumentHighlight{
+			PageNumber: uint32(box.Page),
+			QuadPoints: []float32{
+				box.MinX, box.MinY,
+				box.MaxX, box.MinY,
+				box.MinX, box.MaxY,
+				box.MaxX, box.MaxY,
+			},
+			Color: "#ffff00",
+			Text:  text,
+		})
+	}
+
+	return connect.NewResponse(&numenv1.GetHighlightsResponse{
+		Highlights: highlights,
+	}), nil
+}
+
+
 func main() {
 	var portFlag int
 	var tokenFlag string
