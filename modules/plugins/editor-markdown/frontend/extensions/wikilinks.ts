@@ -95,19 +95,22 @@ export function createWikilinkExtension(options: WikilinkOptions): Extension {
             }))
         } else {
           const matches = await options.search(target.query)
-          suggestions = matches.map((m) => ({
-            label: m.title,
-            detail: m.detail ?? m.type,
-            type: m.type === 'heading' ? 'property' : 'class',
-            apply: (view, completion, from, to) => {
-              const insertText = target.hasClosingBrackets
-                ? completion.label
-                : `${completion.label}]]`
-              view.dispatch({
-                changes: { from: target.start, to, insert: insertText },
-              })
-            },
-          }))
+          suggestions = matches.map((m) => {
+            const detail = m.detail ?? m.type
+            return {
+              label: m.title,
+              ...(detail ? { detail } : {}),
+              type: m.type === 'heading' ? 'property' : 'class',
+              apply: (view, completion, from, to) => {
+                const insertText = target.hasClosingBrackets
+                  ? completion.label
+                  : `${completion.label}]]`
+                view.dispatch({
+                  changes: { from: target.start, to, insert: insertText },
+                })
+              },
+            }
+          })
         }
 
         return {
