@@ -28,10 +28,10 @@ service DocumentService {
   rpc GetDocument(GetDocumentRequest) returns (GetDocumentResponse);
 
   // RenderPage draws one page of a document and answers with the drawn image bytes.
-  rpc RenderPage(RenderDocumentPageRequest) returns (RenderDocumentPageResponse);
+  rpc RenderPage(RenderPageRequest) returns (RenderPageResponse);
 
   // ExtractText extracts text and page boundaries from a document.
-  rpc ExtractText(ExtractDocumentTextRequest) returns (ExtractDocumentTextResponse);
+  rpc ExtractText(ExtractTextRequest) returns (ExtractTextResponse);
 }
 
 message GetDocumentRequest {
@@ -58,26 +58,26 @@ message Page {
   double height = 2;
 }
 
-message RenderDocumentPageRequest {
+message RenderPageRequest {
   string path = 1;
   int32 page = 2;
   int32 dpi = 3;
   int32 width = 4;
 }
 
-message RenderDocumentPageResponse {
+message RenderPageResponse {
   bytes image_data = 1;
   string content_type = 2;
   double width = 3;
   double height = 4;
 }
 
-message ExtractDocumentTextRequest {
+message ExtractTextRequest {
   string path = 1;
   bytes data = 2;
 }
 
-message ExtractDocumentTextResponse {
+message ExtractTextResponse {
   string text = 1;
   repeated int32 page_starts = 2;
 }

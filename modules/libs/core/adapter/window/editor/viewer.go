@@ -226,8 +226,8 @@ func (h *documentHandler) GetDocument(
 
 func (h *documentHandler) RenderPage(
 	ctx context.Context,
-	r *connect.Request[v1.RenderDocumentPageRequest],
-) (*connect.Response[v1.RenderDocumentPageResponse], error) {
+	r *connect.Request[v1.RenderPageRequest],
+) (*connect.Response[v1.RenderPageResponse], error) {
 	if h.getPage == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 	}
@@ -251,7 +251,7 @@ func (h *documentHandler) RenderPage(
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
-	return connect.NewResponse(&v1.RenderDocumentPageResponse{
+	return connect.NewResponse(&v1.RenderPageResponse{
 		ImageData:   body,
 		ContentType: "image/jpeg",
 		Width:       float64(wide),
@@ -261,8 +261,8 @@ func (h *documentHandler) RenderPage(
 
 func (h *documentHandler) ExtractText(
 	_ context.Context,
-	_ *connect.Request[v1.ExtractDocumentTextRequest],
-) (*connect.Response[v1.ExtractDocumentTextResponse], error) {
+	_ *connect.Request[v1.ExtractTextRequest],
+) (*connect.Response[v1.ExtractTextResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 }
 

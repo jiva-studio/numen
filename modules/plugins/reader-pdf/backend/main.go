@@ -92,8 +92,8 @@ func (s *documentServer) GetDocument(
 
 func (s *documentServer) RenderPage(
 	_ context.Context,
-	req *connect.Request[numenv1.RenderDocumentPageRequest],
-) (*connect.Response[numenv1.RenderDocumentPageResponse], error) {
+	req *connect.Request[numenv1.RenderPageRequest],
+) (*connect.Response[numenv1.RenderPageResponse], error) {
 	path := req.Msg.GetPath()
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
@@ -127,7 +127,7 @@ func (s *documentServer) RenderPage(
 	}
 
 	bounds := img.Bounds()
-	return connect.NewResponse(&numenv1.RenderDocumentPageResponse{
+	return connect.NewResponse(&numenv1.RenderPageResponse{
 		ImageData:   buf.Bytes(),
 		ContentType: "image/jpeg",
 		Width:       float64(bounds.Dx()),
@@ -137,8 +137,8 @@ func (s *documentServer) RenderPage(
 
 func (s *documentServer) ExtractText(
 	_ context.Context,
-	req *connect.Request[numenv1.ExtractDocumentTextRequest],
-) (*connect.Response[numenv1.ExtractDocumentTextResponse], error) {
+	req *connect.Request[numenv1.ExtractTextRequest],
+) (*connect.Response[numenv1.ExtractTextResponse], error) {
 	raw := req.Msg.GetData()
 	if len(raw) == 0 {
 		path := req.Msg.GetPath()
@@ -162,7 +162,7 @@ func (s *documentServer) ExtractText(
 		starts[i] = int32(p.Offset)
 	}
 
-	return connect.NewResponse(&numenv1.ExtractDocumentTextResponse{
+	return connect.NewResponse(&numenv1.ExtractTextResponse{
 		Text:       book.Text,
 		PageStarts: starts,
 	}), nil

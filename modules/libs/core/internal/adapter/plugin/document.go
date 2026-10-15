@@ -64,7 +64,7 @@ func (b *DocumentBridge) Close() error {
 
 // Read implements port.TextExtractor.
 func (b *DocumentBridge) Read(ctx context.Context, raw []byte) (domain.TextLayer, error) {
-	req := connect.NewRequest(&v1.ExtractDocumentTextRequest{
+	req := connect.NewRequest(&v1.ExtractTextRequest{
 		Data: raw,
 	})
 	resp, err := b.client.ExtractText(ctx, req)
@@ -145,7 +145,7 @@ func (d *remoteDocument) GetPageSize(index int) (wide, high float64, err error) 
 
 func (d *remoteDocument) RenderPage(index, dpi int) (image.Image, error) {
 	ctx := context.Background()
-	req := connect.NewRequest(&v1.RenderDocumentPageRequest{
+	req := connect.NewRequest(&v1.RenderPageRequest{
 		Path: d.path,
 		Page: int32(index),
 		Dpi:  int32(dpi),

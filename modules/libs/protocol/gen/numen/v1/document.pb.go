@@ -185,7 +185,7 @@ func (x *Page) GetHeight() float64 {
 	return 0
 }
 
-type RenderDocumentPageRequest struct {
+type RenderPageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	Page          int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
@@ -195,20 +195,20 @@ type RenderDocumentPageRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RenderDocumentPageRequest) Reset() {
-	*x = RenderDocumentPageRequest{}
+func (x *RenderPageRequest) Reset() {
+	*x = RenderPageRequest{}
 	mi := &file_numen_v1_document_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RenderDocumentPageRequest) String() string {
+func (x *RenderPageRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RenderDocumentPageRequest) ProtoMessage() {}
+func (*RenderPageRequest) ProtoMessage() {}
 
-func (x *RenderDocumentPageRequest) ProtoReflect() protoreflect.Message {
+func (x *RenderPageRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_document_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -220,40 +220,40 @@ func (x *RenderDocumentPageRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RenderDocumentPageRequest.ProtoReflect.Descriptor instead.
-func (*RenderDocumentPageRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use RenderPageRequest.ProtoReflect.Descriptor instead.
+func (*RenderPageRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_document_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *RenderDocumentPageRequest) GetPath() string {
+func (x *RenderPageRequest) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *RenderDocumentPageRequest) GetPage() int32 {
+func (x *RenderPageRequest) GetPage() int32 {
 	if x != nil {
 		return x.Page
 	}
 	return 0
 }
 
-func (x *RenderDocumentPageRequest) GetDpi() int32 {
+func (x *RenderPageRequest) GetDpi() int32 {
 	if x != nil {
 		return x.Dpi
 	}
 	return 0
 }
 
-func (x *RenderDocumentPageRequest) GetWidth() int32 {
+func (x *RenderPageRequest) GetWidth() int32 {
 	if x != nil {
 		return x.Width
 	}
 	return 0
 }
 
-type RenderDocumentPageResponse struct {
+type RenderPageResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ImageData     []byte                 `protobuf:"bytes,1,opt,name=image_data,json=imageData,proto3" json:"image_data,omitempty"`
 	ContentType   string                 `protobuf:"bytes,2,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
@@ -263,20 +263,20 @@ type RenderDocumentPageResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RenderDocumentPageResponse) Reset() {
-	*x = RenderDocumentPageResponse{}
+func (x *RenderPageResponse) Reset() {
+	*x = RenderPageResponse{}
 	mi := &file_numen_v1_document_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RenderDocumentPageResponse) String() string {
+func (x *RenderPageResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RenderDocumentPageResponse) ProtoMessage() {}
+func (*RenderPageResponse) ProtoMessage() {}
 
-func (x *RenderDocumentPageResponse) ProtoReflect() protoreflect.Message {
+func (x *RenderPageResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_document_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -288,40 +288,40 @@ func (x *RenderDocumentPageResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RenderDocumentPageResponse.ProtoReflect.Descriptor instead.
-func (*RenderDocumentPageResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use RenderPageResponse.ProtoReflect.Descriptor instead.
+func (*RenderPageResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_document_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *RenderDocumentPageResponse) GetImageData() []byte {
+func (x *RenderPageResponse) GetImageData() []byte {
 	if x != nil {
 		return x.ImageData
 	}
 	return nil
 }
 
-func (x *RenderDocumentPageResponse) GetContentType() string {
+func (x *RenderPageResponse) GetContentType() string {
 	if x != nil {
 		return x.ContentType
 	}
 	return ""
 }
 
-func (x *RenderDocumentPageResponse) GetWidth() float64 {
+func (x *RenderPageResponse) GetWidth() float64 {
 	if x != nil {
 		return x.Width
 	}
 	return 0
 }
 
-func (x *RenderDocumentPageResponse) GetHeight() float64 {
+func (x *RenderPageResponse) GetHeight() float64 {
 	if x != nil {
 		return x.Height
 	}
 	return 0
 }
 
-type ExtractDocumentTextRequest struct {
+type ExtractTextRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	Data          []byte                 `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
@@ -329,20 +329,20 @@ type ExtractDocumentTextRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ExtractDocumentTextRequest) Reset() {
-	*x = ExtractDocumentTextRequest{}
+func (x *ExtractTextRequest) Reset() {
+	*x = ExtractTextRequest{}
 	mi := &file_numen_v1_document_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ExtractDocumentTextRequest) String() string {
+func (x *ExtractTextRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ExtractDocumentTextRequest) ProtoMessage() {}
+func (*ExtractTextRequest) ProtoMessage() {}
 
-func (x *ExtractDocumentTextRequest) ProtoReflect() protoreflect.Message {
+func (x *ExtractTextRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_document_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -354,26 +354,26 @@ func (x *ExtractDocumentTextRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ExtractDocumentTextRequest.ProtoReflect.Descriptor instead.
-func (*ExtractDocumentTextRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ExtractTextRequest.ProtoReflect.Descriptor instead.
+func (*ExtractTextRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_document_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *ExtractDocumentTextRequest) GetPath() string {
+func (x *ExtractTextRequest) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *ExtractDocumentTextRequest) GetData() []byte {
+func (x *ExtractTextRequest) GetData() []byte {
 	if x != nil {
 		return x.Data
 	}
 	return nil
 }
 
-type ExtractDocumentTextResponse struct {
+type ExtractTextResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
 	PageStarts    []int32                `protobuf:"varint,2,rep,packed,name=page_starts,json=pageStarts,proto3" json:"page_starts,omitempty"`
@@ -381,20 +381,20 @@ type ExtractDocumentTextResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ExtractDocumentTextResponse) Reset() {
-	*x = ExtractDocumentTextResponse{}
+func (x *ExtractTextResponse) Reset() {
+	*x = ExtractTextResponse{}
 	mi := &file_numen_v1_document_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ExtractDocumentTextResponse) String() string {
+func (x *ExtractTextResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ExtractDocumentTextResponse) ProtoMessage() {}
+func (*ExtractTextResponse) ProtoMessage() {}
 
-func (x *ExtractDocumentTextResponse) ProtoReflect() protoreflect.Message {
+func (x *ExtractTextResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_document_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -406,19 +406,19 @@ func (x *ExtractDocumentTextResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ExtractDocumentTextResponse.ProtoReflect.Descriptor instead.
-func (*ExtractDocumentTextResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ExtractTextResponse.ProtoReflect.Descriptor instead.
+func (*ExtractTextResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_document_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *ExtractDocumentTextResponse) GetText() string {
+func (x *ExtractTextResponse) GetText() string {
 	if x != nil {
 		return x.Text
 	}
 	return ""
 }
 
-func (x *ExtractDocumentTextResponse) GetPageStarts() []int32 {
+func (x *ExtractTextResponse) GetPageStarts() []int32 {
 	if x != nil {
 		return x.PageStarts
 	}
@@ -437,30 +437,30 @@ const file_numen_v1_document_proto_rawDesc = "" +
 	"\vfingerprint\x18\x02 \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\"4\n" +
 	"\x04Page\x12\x14\n" +
 	"\x05width\x18\x01 \x01(\x01R\x05width\x12\x16\n" +
-	"\x06height\x18\x02 \x01(\x01R\x06height\"k\n" +
-	"\x19RenderDocumentPageRequest\x12\x12\n" +
+	"\x06height\x18\x02 \x01(\x01R\x06height\"c\n" +
+	"\x11RenderPageRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x10\n" +
 	"\x03dpi\x18\x03 \x01(\x05R\x03dpi\x12\x14\n" +
-	"\x05width\x18\x04 \x01(\x05R\x05width\"\x8c\x01\n" +
-	"\x1aRenderDocumentPageResponse\x12\x1d\n" +
+	"\x05width\x18\x04 \x01(\x05R\x05width\"\x84\x01\n" +
+	"\x12RenderPageResponse\x12\x1d\n" +
 	"\n" +
 	"image_data\x18\x01 \x01(\fR\timageData\x12!\n" +
 	"\fcontent_type\x18\x02 \x01(\tR\vcontentType\x12\x14\n" +
 	"\x05width\x18\x03 \x01(\x01R\x05width\x12\x16\n" +
-	"\x06height\x18\x04 \x01(\x01R\x06height\"D\n" +
-	"\x1aExtractDocumentTextRequest\x12\x12\n" +
+	"\x06height\x18\x04 \x01(\x01R\x06height\"<\n" +
+	"\x12ExtractTextRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
-	"\x04data\x18\x02 \x01(\fR\x04data\"R\n" +
-	"\x1bExtractDocumentTextResponse\x12\x12\n" +
+	"\x04data\x18\x02 \x01(\fR\x04data\"J\n" +
+	"\x13ExtractTextResponse\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x1f\n" +
 	"\vpage_starts\x18\x02 \x03(\x05R\n" +
-	"pageStarts2\x92\x02\n" +
+	"pageStarts2\xf2\x01\n" +
 	"\x0fDocumentService\x12J\n" +
-	"\vGetDocument\x12\x1c.numen.v1.GetDocumentRequest\x1a\x1d.numen.v1.GetDocumentResponse\x12W\n" +
+	"\vGetDocument\x12\x1c.numen.v1.GetDocumentRequest\x1a\x1d.numen.v1.GetDocumentResponse\x12G\n" +
 	"\n" +
-	"RenderPage\x12#.numen.v1.RenderDocumentPageRequest\x1a$.numen.v1.RenderDocumentPageResponse\x12Z\n" +
-	"\vExtractText\x12$.numen.v1.ExtractDocumentTextRequest\x1a%.numen.v1.ExtractDocumentTextResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"RenderPage\x12\x1b.numen.v1.RenderPageRequest\x1a\x1c.numen.v1.RenderPageResponse\x12J\n" +
+	"\vExtractText\x12\x1c.numen.v1.ExtractTextRequest\x1a\x1d.numen.v1.ExtractTextResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_document_proto_rawDescOnce sync.Once
@@ -476,24 +476,24 @@ func file_numen_v1_document_proto_rawDescGZIP() []byte {
 
 var file_numen_v1_document_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_numen_v1_document_proto_goTypes = []any{
-	(*GetDocumentRequest)(nil),          // 0: numen.v1.GetDocumentRequest
-	(*GetDocumentResponse)(nil),         // 1: numen.v1.GetDocumentResponse
-	(*Page)(nil),                        // 2: numen.v1.Page
-	(*RenderDocumentPageRequest)(nil),   // 3: numen.v1.RenderDocumentPageRequest
-	(*RenderDocumentPageResponse)(nil),  // 4: numen.v1.RenderDocumentPageResponse
-	(*ExtractDocumentTextRequest)(nil),  // 5: numen.v1.ExtractDocumentTextRequest
-	(*ExtractDocumentTextResponse)(nil), // 6: numen.v1.ExtractDocumentTextResponse
-	(*Fingerprint)(nil),                 // 7: numen.v1.Fingerprint
+	(*GetDocumentRequest)(nil),  // 0: numen.v1.GetDocumentRequest
+	(*GetDocumentResponse)(nil), // 1: numen.v1.GetDocumentResponse
+	(*Page)(nil),                // 2: numen.v1.Page
+	(*RenderPageRequest)(nil),   // 3: numen.v1.RenderPageRequest
+	(*RenderPageResponse)(nil),  // 4: numen.v1.RenderPageResponse
+	(*ExtractTextRequest)(nil),  // 5: numen.v1.ExtractTextRequest
+	(*ExtractTextResponse)(nil), // 6: numen.v1.ExtractTextResponse
+	(*Fingerprint)(nil),         // 7: numen.v1.Fingerprint
 }
 var file_numen_v1_document_proto_depIdxs = []int32{
 	2, // 0: numen.v1.GetDocumentResponse.pages:type_name -> numen.v1.Page
 	7, // 1: numen.v1.GetDocumentResponse.fingerprint:type_name -> numen.v1.Fingerprint
 	0, // 2: numen.v1.DocumentService.GetDocument:input_type -> numen.v1.GetDocumentRequest
-	3, // 3: numen.v1.DocumentService.RenderPage:input_type -> numen.v1.RenderDocumentPageRequest
-	5, // 4: numen.v1.DocumentService.ExtractText:input_type -> numen.v1.ExtractDocumentTextRequest
+	3, // 3: numen.v1.DocumentService.RenderPage:input_type -> numen.v1.RenderPageRequest
+	5, // 4: numen.v1.DocumentService.ExtractText:input_type -> numen.v1.ExtractTextRequest
 	1, // 5: numen.v1.DocumentService.GetDocument:output_type -> numen.v1.GetDocumentResponse
-	4, // 6: numen.v1.DocumentService.RenderPage:output_type -> numen.v1.RenderDocumentPageResponse
-	6, // 7: numen.v1.DocumentService.ExtractText:output_type -> numen.v1.ExtractDocumentTextResponse
+	4, // 6: numen.v1.DocumentService.RenderPage:output_type -> numen.v1.RenderPageResponse
+	6, // 7: numen.v1.DocumentService.ExtractText:output_type -> numen.v1.ExtractTextResponse
 	5, // [5:8] is the sub-list for method output_type
 	2, // [2:5] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
