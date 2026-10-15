@@ -20,7 +20,7 @@ func createTestPluginTree(t *testing.T, dir string) {
 	}
 
 	manifest := `{
-		"id": "com.numen.ocr",
+		"id": "md.numen.ocr",
 		"name": "OCR Plugin",
 		"version": "1.0.0",
 		"description": "OCR",
@@ -63,13 +63,13 @@ func TestHostDiscoveryAndLookup(t *testing.T) {
 		t.Fatalf("expected 1 plugin, got %d", len(plugins))
 	}
 
-	p, ok := host.GetPlugin("com.numen.ocr")
-	if !ok || p.Manifest.ID != "com.numen.ocr" {
-		t.Fatal("expected to find com.numen.ocr")
+	p, ok := host.GetPlugin("md.numen.ocr")
+	if !ok || p.Manifest.ID != "md.numen.ocr" {
+		t.Fatal("expected to find md.numen.ocr")
 	}
 
 	capPlugin, ok := host.FindPluginByCapability("recogniser")
-	if !ok || capPlugin.Manifest.ID != "com.numen.ocr" {
+	if !ok || capPlugin.Manifest.ID != "md.numen.ocr" {
 		t.Fatal("expected to find plugin by capability recogniser")
 	}
 }
@@ -98,7 +98,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	})
 
 	ctx := t.Context()
-	endpoint, err := host.EnsureActive(ctx, "com.numen.ocr")
+	endpoint, err := host.EnsureActive(ctx, "md.numen.ocr")
 	if err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
@@ -107,7 +107,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	}
 
 	// Calling EnsureActive again should return the existing active endpoint
-	endpoint2, err := host.EnsureActive(ctx, "com.numen.ocr")
+	endpoint2, err := host.EnsureActive(ctx, "md.numen.ocr")
 	if err != nil {
 		t.Fatalf("second EnsureActive failed: %v", err)
 	}
@@ -116,16 +116,16 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	}
 
 	// Release twice to enter idle state
-	host.Release("com.numen.ocr")
-	host.Release("com.numen.ocr")
+	host.Release("md.numen.ocr")
+	host.Release("md.numen.ocr")
 
 	// TriggerEvent for matching event
 	activated, err := host.TriggerEvent(ctx, "onFile:test.pdf")
 	if err != nil {
 		t.Fatalf("TriggerEvent failed: %v", err)
 	}
-	if len(activated) != 1 || activated[0] != "com.numen.ocr" {
-		t.Fatalf("expected com.numen.ocr to be activated, got %v", activated)
+	if len(activated) != 1 || activated[0] != "md.numen.ocr" {
+		t.Fatalf("expected md.numen.ocr to be activated, got %v", activated)
 	}
 
 	// EvictIdle test
@@ -136,7 +136,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	}
 
 	// Cleanup
-	host.Release("com.numen.ocr")
+	host.Release("md.numen.ocr")
 	if err := host.TeardownAll(ctx, 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}

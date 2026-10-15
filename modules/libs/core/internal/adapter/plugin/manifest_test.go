@@ -7,7 +7,7 @@ import (
 
 func TestReadManifest(t *testing.T) {
 	raw := `{
-		"id": "com.numen.ocr",
+		"id": "md.numen.ocr",
 		"name": "Document OCR",
 		"version": "1.0.0",
 		"description": "Optical character recognition",
@@ -50,8 +50,8 @@ func TestReadManifest(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if m.ID != "com.numen.ocr" {
-		t.Errorf("got id %q, want com.numen.ocr", m.ID)
+	if m.ID != "md.numen.ocr" {
+		t.Errorf("got id %q, want md.numen.ocr", m.ID)
 	}
 	if !m.CanTarget("desktop.editor") {
 		t.Errorf("expected target desktop.editor to be accepted")

@@ -14,7 +14,7 @@ func TestDiscoverPlugins(t *testing.T) {
 		t.Fatal(err)
 	}
 	manifest1 := `{
-		"id": "com.numen.ocr",
+		"id": "md.numen.ocr",
 		"name": "OCR",
 		"version": "1.0.0",
 		"description": "OCR plugin",
@@ -36,7 +36,7 @@ func TestDiscoverPlugins(t *testing.T) {
 		t.Fatal(err)
 	}
 	manifest2 := `{
-		"id": "com.numen.cards",
+		"id": "md.numen.cards",
 		"name": "Cards",
 		"version": "1.0.0",
 		"description": "Cards plugin",
@@ -62,17 +62,17 @@ func TestDiscoverPlugins(t *testing.T) {
 	}
 
 	editorPlugins := FilterPluginsByTarget(found, "desktop.editor")
-	if len(editorPlugins) != 1 || editorPlugins[0].Manifest.ID != "com.numen.ocr" {
+	if len(editorPlugins) != 1 || editorPlugins[0].Manifest.ID != "md.numen.ocr" {
 		t.Errorf("unexpected editor plugins: %v", editorPlugins)
 	}
 
 	flashcardsPlugins := FilterPluginsByTarget(found, "desktop.flashcards")
-	if len(flashcardsPlugins) != 1 || flashcardsPlugins[0].Manifest.ID != "com.numen.cards" {
+	if len(flashcardsPlugins) != 1 || flashcardsPlugins[0].Manifest.ID != "md.numen.cards" {
 		t.Errorf("unexpected flashcards plugins: %v", flashcardsPlugins)
 	}
 
 	ocrPlugin, ok := FindPluginByCapability(found, "recogniser")
-	if !ok || ocrPlugin.Manifest.ID != "com.numen.ocr" {
+	if !ok || ocrPlugin.Manifest.ID != "md.numen.ocr" {
 		t.Errorf("expected to find ocr plugin by capability")
 	}
 
