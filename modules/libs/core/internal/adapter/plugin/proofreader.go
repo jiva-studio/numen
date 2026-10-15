@@ -50,6 +50,12 @@ func (b *ProofreaderBridge) Proofread(ctx context.Context, batches []domain.Proo
 		return nil, nil
 	}
 
+	if b.host != nil {
+		if err := b.host.CheckPluginPermission(b.pluginID, PermissionVaultRead); err != nil {
+			return nil, err
+		}
+	}
+
 	endpoint, err := b.host.EnsureActive(ctx, b.pluginID)
 	if err != nil {
 		return nil, fmt.Errorf("ensure active %s: %w", b.pluginID, err)

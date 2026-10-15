@@ -10,10 +10,22 @@ import (
 	"strings"
 )
 
+const (
+	// PermissionVaultRead allows reading files from the active vault.
+	PermissionVaultRead = "vault:read"
+
+	// PermissionVaultWrite allows modifying files in the active vault.
+	PermissionVaultWrite = "vault:write"
+
+	// PermissionNetworkOutbound allows outbound network requests.
+	PermissionNetworkOutbound = "network:outbound"
+)
+
 var (
-	errEmptyID      = errors.New("plugin id cannot be empty")
-	errEmptyName    = errors.New("plugin name cannot be empty")
-	errEmptyVersion = errors.New("plugin version cannot be empty")
+	errEmptyID           = errors.New("plugin id cannot be empty")
+	errEmptyName         = errors.New("plugin name cannot be empty")
+	errEmptyVersion      = errors.New("plugin version cannot be empty")
+	errInvalidPermission = errors.New("invalid permission")
 )
 
 // Lifecycle defines how the host activates and evicts a plugin from memory.
@@ -109,7 +121,24 @@ func (m Manifest) Validate() error {
 	if strings.TrimSpace(m.Version) == "" {
 		return errEmptyVersion
 	}
+	return m.ValidatePermissions()
+}
+
+// ValidatePermissions verifies that all declared permissions are recognized capabilities.
+func (m Manifest) ValidatePermissions() error {
+	for _, p := range m.Permissions {
+		switch p {
+		case PermissionVaultRead, PermissionVaultWrite, PermissionNetworkOutbound:
+		default:
+			return fmt.Errorf("%w: %s", errInvalidPermission, p)
+		}
+	}
 	return nil
+}
+
+// HasPermission reports whether this plugin requests the given permission.
+func (m Manifest) HasPermission(permission string) bool {
+	return slices.Contains(m.Permissions, permission)
 }
 
 // CanTarget reports whether this plugin runs in the given workspace target.

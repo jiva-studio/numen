@@ -72,6 +72,12 @@ func (b *TranscriberBridge) GetTranscriptionModel() port.TranscriptionModel {
 
 // Open sends recording raw bytes to the plugin to calculate duration and prepare segmentation.
 func (b *TranscriberBridge) Open(ctx context.Context, raw []byte) (port.Recording, error) {
+	if b.host != nil {
+		if err := b.host.CheckPluginPermission(b.pluginID, PermissionVaultRead); err != nil {
+			return nil, err
+		}
+	}
+
 	req := connect.NewRequest(&v1.OpenRecordingRequest{
 		AudioData: raw,
 	})
@@ -89,6 +95,12 @@ func (b *TranscriberBridge) Open(ctx context.Context, raw []byte) (port.Recordin
 
 // Transcribe decodes one audio segment into text words.
 func (b *TranscriberBridge) Transcribe(ctx context.Context, audio port.Audio) (string, error) {
+	if b.host != nil {
+		if err := b.host.CheckPluginPermission(b.pluginID, PermissionVaultRead); err != nil {
+			return "", err
+		}
+	}
+
 	req := connect.NewRequest(&v1.TranscribeRequest{
 		Samples: audio.Samples,
 		FromMs:  int32(audio.From),

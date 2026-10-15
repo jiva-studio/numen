@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -57,7 +58,11 @@ func readBookFile(path string) ([]byte, error) {
 	if path == "" {
 		return nil, errors.New("empty book path")
 	}
-	raw, err := os.ReadFile(path)
+	cleanPath := filepath.Clean(path)
+	if strings.Contains(cleanPath, "..") {
+		return nil, errors.New("path traversal outside allowed scope")
+	}
+	raw, err := os.ReadFile(cleanPath)
 	if err == nil {
 		return raw, nil
 	}

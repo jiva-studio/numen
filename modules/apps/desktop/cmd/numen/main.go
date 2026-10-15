@@ -52,8 +52,13 @@ func main() {
 		"how large the text a person reads is set, 1 being as designed; this launch alone")
 	flag.BoolVar(&cfg.ShouldRebuildIndex, "rebuild-index", false,
 		"read every file and put it in the index again, whatever the index remembers")
+	flag.BoolVar(&cfg.SafeMode, "safe-mode", false, "disable plugins for emergency recovery")
 	flag.BoolVar(&showVersion, "version", false, "say what this build is and stop")
 	flag.Parse()
+
+	if cfg.SafeMode && cfg.PluginHost != nil {
+		cfg.PluginHost.SetSafeMode(true)
+	}
 
 	if showVersion {
 		fmt.Println(version.GetVersionLine("numen"))
@@ -194,6 +199,9 @@ func openInstallation(
 	opened, err := editor.Open(ctx, made, vault, os.Stdout)
 	if err != nil {
 		return shownInstallation{}, err
+	}
+	if cfg.PluginHost != nil {
+		cfg.PluginHost.SetVaultPath(opened.GetCurrentVault().Path)
 	}
 	return shownInstallation{pages: pages, opened: opened}, nil
 }

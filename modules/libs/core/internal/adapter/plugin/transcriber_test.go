@@ -102,7 +102,7 @@ func createTestTranscriptionPluginTree(t *testing.T, dir string) {
 		"capabilities": ["transcription"],
 		"targets": ["desktop.editor"],
 		"activationEvents": ["onFile:*.mp3", "onFile:*.wav", "onCommand:transcribe"],
-		"permissions": [],
+		"permissions": ["vault:read"],
 		"lifecycle": {
 			"mode": "on-demand",
 			"idleTimeoutSeconds": 1,

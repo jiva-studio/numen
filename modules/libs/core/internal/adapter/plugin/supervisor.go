@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"os"
+	"slices"
 	"sync"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 var (
@@ -36,6 +39,8 @@ type Supervisor struct {
 	process        *os.Process
 	lastActiveTime time.Time
 	activeRefCount int
+	permissions    []string
+	validator      VaultPathValidator
 }
 
 // NewSupervisor creates an idle supervisor for a plugin.
@@ -46,6 +51,8 @@ func NewSupervisor() *Supervisor {
 		process:        nil,
 		lastActiveTime: time.Time{},
 		activeRefCount: 0,
+		permissions:    nil,
+		validator:      NewVaultPathValidator(),
 	}
 }
 
@@ -54,6 +61,36 @@ func (s *Supervisor) GetState() ProcessState {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.state
+}
+
+// SetPermissions stores the security permissions declared by the supervised plugin.
+func (s *Supervisor) SetPermissions(permissions []string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.permissions = slices.Clone(permissions)
+}
+
+// HasPermission reports whether the supervised plugin holds the given permission.
+func (s *Supervisor) HasPermission(permission string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return slices.Contains(s.permissions, permission)
+}
+
+// CheckPermission returns an error if the supervised plugin lacks the requested permission.
+func (s *Supervisor) CheckPermission(permission string) error {
+	if !s.HasPermission(permission) {
+		return port.ErrPermissionDenied
+	}
+	return nil
+}
+
+// ValidatePath checks that targetPath is within vaultRoot and the plugin has vault:read permission.
+func (s *Supervisor) ValidatePath(vaultRoot, targetPath string) (string, error) {
+	if err := s.CheckPermission(PermissionVaultRead); err != nil {
+		return "", err
+	}
+	return s.validator.ValidatePath(vaultRoot, targetPath)
 }
 
 // Attach registers a newly started OS process under this supervisor.

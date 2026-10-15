@@ -55,7 +55,7 @@ func (c Config) resolveInFlight(profile Profile) Profile {
 
 // ProofreaderReady says whether a proofreading plugin is available and ready.
 func (c Config) ProofreaderReady() bool {
-	if c.PluginHost != nil {
+	if c.PluginHost != nil && !c.SafeMode {
 		if _, ok := c.PluginHost.FindPluginByCapability("proofreading"); ok {
 			return true
 		}
@@ -78,7 +78,7 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 	}
 
 	if profile.Use == UseService {
-		if c.PluginHost != nil {
+		if c.PluginHost != nil && !c.SafeMode {
 			if _, ok := c.PluginHost.FindPluginByCapability("proofreading"); ok {
 				return plugin.OpenProofreaderBridge(c.PluginHost)
 			}

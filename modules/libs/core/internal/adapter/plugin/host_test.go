@@ -27,7 +27,7 @@ func createTestPluginTree(t *testing.T, dir string) {
 		"capabilities": ["recognition"],
 		"targets": ["desktop.editor"],
 		"activationEvents": ["onFile:*.pdf"],
-		"permissions": [],
+		"permissions": ["vault:read"],
 		"lifecycle": {
 			"mode": "on-demand",
 			"idleTimeoutSeconds": 1,

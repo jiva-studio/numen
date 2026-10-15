@@ -23,7 +23,7 @@ func (c Config) DocumentRenderer() port.DocumentRenderer { return c.PageRenderer
 
 // TextExtractor takes the text out of a file whose text is laid out on printed pages.
 func (c Config) TextExtractor() port.TextExtractor {
-	if c.PluginHost != nil {
+	if c.PluginHost != nil && !c.SafeMode {
 		if _, ok := c.PluginHost.FindPluginByCapability("document"); ok {
 			return hostDocumentPort{host: c.PluginHost}
 		}
@@ -33,7 +33,7 @@ func (c Config) TextExtractor() port.TextExtractor {
 
 // PageRenderer draws such a document's pages.
 func (c Config) PageRenderer() port.PageRenderer {
-	if c.PluginHost != nil {
+	if c.PluginHost != nil && !c.SafeMode {
 		if _, ok := c.PluginHost.FindPluginByCapability("document"); ok {
 			return hostDocumentPort{host: c.PluginHost}
 		}
