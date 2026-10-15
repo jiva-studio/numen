@@ -591,7 +591,6 @@ func (h *Host) NotifyAllPluginConfigs(ctx context.Context) error {
 	return firstErr
 }
 
-
 // GetPluginInfos returns wire specifications of all registered plugins and their settings schemas.
 func (h *Host) GetPluginInfos() []*v1.PluginInfo {
 	h.mu.RLock()

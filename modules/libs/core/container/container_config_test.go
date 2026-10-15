@@ -264,7 +264,6 @@ func TestWriteConfiguredFileUpdatesPluginSettings(t *testing.T) {
 	}
 }
 
-
 func TestTheSettingsFileIsLeftAloneWhenItMovedSinceItWasRead(t *testing.T) {
 	const standing = `{"appearance": {"theme": "mine:sea"}}`
 	cfg, path := writeSettings(t, standing)
