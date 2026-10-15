@@ -6,15 +6,12 @@ import (
 	"hash/fnv"
 	"math"
 	"math/rand/v2"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/onnx"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
@@ -80,31 +77,11 @@ func generateDeterministicVector(text string, dims int) []float32 {
 	return v
 }
 
-func openBenchONNX(b *testing.B, model port.EmbeddingModel) port.Embedder {
-	b.Helper()
-	cfg := embed.Defaults()
-	local, ok := cfg.Indexing.Local()
-	if !ok {
-		return nil
-	}
-	if dir := os.Getenv("NUMEN_TEST_MODEL_DIR"); dir != "" {
-		local.Dir = dir
-	}
-	e, err := onnx.Open(b.Context(), model, local, nil)
-	if err != nil {
-		return nil
-	}
-	b.Cleanup(func() { _ = e.Close() })
-	return e
-}
-
 type benchCorpus struct {
 	vault      domain.Vault
 	db         *container.Index
 	searchMock search.Search
-	searchONNX search.Search
 	mockModel  port.Embedder
-	onnxModel  port.Embedder
 	passages   port.PassageQueries
 	candidates []domain.Passage
 	recipe     string
@@ -116,7 +93,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	ctx := b.Context()
 
 	v := testsupport.GenerateVault(b, notes)
-	embedCfg := embed.Defaults()
+	embedCfg := container.DefaultEmbedding()
 	model := embedCfg.GetStoredModel()
 
 	dbPath := filepath.Join(b.TempDir(), "search_bench.db")
@@ -151,13 +128,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 		b.Fatal(err)
 	}
 
-	onnxEmbedder := openBenchONNX(b, model)
-
 	searchMock := cfg.NewSearch(db, mock, nil)
-	var searchONNX search.Search
-	if onnxEmbedder != nil {
-		searchONNX = cfg.NewSearch(db, onnxEmbedder, nil)
-	}
 
 	passages := db.Passages()
 	candidates, err := passages.FindLexical(ctx, v.ID, "entropy thermodynamics", nil, 20, false)
@@ -174,9 +145,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 		vault:      v,
 		db:         db,
 		searchMock: searchMock,
-		searchONNX: searchONNX,
 		mockModel:  mock,
-		onnxModel:  onnxEmbedder,
 		passages:   passages,
 		candidates: candidates,
 		recipe:     model.Recipe(),
@@ -251,42 +220,6 @@ func BenchmarkSearch(b *testing.B) {
 					}
 					if len(res) == 0 {
 						b.Fatal("dense mock search returned no passages")
-					}
-				}
-			})
-
-			b.Run("Dense/ONNX", func(b *testing.B) {
-				if c.onnxModel == nil {
-					b.Skip("ONNX model not available")
-				}
-				p := search.Parameters{Limit: 20, Lexical: 0, Dense: 20, Named: 0, Floor: -1.0}
-				b.ReportAllocs()
-				b.ResetTimer()
-				for b.Loop() {
-					res, err := c.searchONNX.Execute(ctx, c.vault, queryLexical, p)
-					if err != nil {
-						b.Fatal(err)
-					}
-					if len(res) == 0 {
-						b.Fatal("dense onnx search returned no passages")
-					}
-				}
-			})
-
-			b.Run("Dense/ONNX/Cold", func(b *testing.B) {
-				if c.onnxModel == nil {
-					b.Skip("ONNX model not available")
-				}
-				p := search.Parameters{Limit: 20, Lexical: 0, Dense: 20, Named: 0, Floor: -1.0}
-				b.ReportAllocs()
-				b.ResetTimer()
-				for b.Loop() {
-					res, err := c.searchONNX.WithCache(nil).Execute(ctx, c.vault, queryLexical, p)
-					if err != nil {
-						b.Fatal(err)
-					}
-					if len(res) == 0 {
-						b.Fatal("dense onnx cold search returned no passages")
 					}
 				}
 			})
@@ -376,20 +309,6 @@ func BenchmarkComponents(b *testing.B) {
 				b.ResetTimer()
 				for b.Loop() {
 					_, err := c.mockModel.Embed(ctx, []string{queryLexical})
-					if err != nil {
-						b.Fatal(err)
-					}
-				}
-			})
-
-			b.Run("QueryEmbedding/ONNX", func(b *testing.B) {
-				if c.onnxModel == nil {
-					b.Skip("ONNX model not available")
-				}
-				b.ReportAllocs()
-				b.ResetTimer()
-				for b.Loop() {
-					_, err := c.onnxModel.Embed(ctx, []string{queryLexical})
 					if err != nil {
 						b.Fatal(err)
 					}

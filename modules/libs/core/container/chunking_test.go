@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -27,7 +26,7 @@ func TestTheCutAssembledCarriesTheSizes(t *testing.T) {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	cfg := embed.Defaults()
+	cfg := container.DefaultEmbedding()
 	cfg.Model.MaxTokens = 512
 	held := container.Config{Embedding: cfg, ServiceDir: ".numen"}
 
@@ -41,7 +40,7 @@ func TestTheCutAssembledCarriesTheSizes(t *testing.T) {
 }
 
 func TestAVaultWithNoModelIsCutAtTheDefaultBound(t *testing.T) {
-	cfg := embed.Defaults()
+	cfg := container.DefaultEmbedding()
 	cfg.Indexing.Use = ""
 	if got := (container.Config{Embedding: cfg}).CutNotes().Sizes; got != (chunking.Sizes{}) {
 		t.Errorf("got %+v", got)
@@ -49,7 +48,7 @@ func TestAVaultWithNoModelIsCutAtTheDefaultBound(t *testing.T) {
 }
 
 func TestTheModelSaidIsWhatAChunkIsCutUnder(t *testing.T) {
-	cfg := embed.Defaults()
+	cfg := container.DefaultEmbedding()
 	cfg.Model.MaxTokens = 512
 	if got := (container.Config{Embedding: cfg}).CutNotes().Sizes.Limit; got != chunking.GetCharacterBound(512) {
 		t.Errorf("cut at %d, under %d", got, chunking.GetCharacterBound(512))
@@ -66,7 +65,7 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	cfg := embed.Defaults()
+	cfg := container.DefaultEmbedding()
 	cfg.Model.MaxTokens = 8
 	held := container.Config{Embedding: cfg, ServiceDir: ".numen"}
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
@@ -113,7 +112,7 @@ func TestMakingAVaultSearchableFitsTheVectorIndex(t *testing.T) {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	held := container.Config{Embedding: embed.Defaults(), ServiceDir: ".numen"}
+	held := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
 	if _, err := held.ReadWholeVault(t.Context(), db, wide{384}, v); err != nil {

@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"math"
 	"os"
+	"path/filepath"
+	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // Indexing is how a vault is made searchable. It is one section of the settings
@@ -13,7 +15,7 @@ import (
 // stands where every adapter is bound.
 type Indexing struct {
 	// Embedding is which model turns text into vectors, and how it is reached.
-	Embedding embed.Config `json:"embedding"`
+	Embedding EmbeddingConfig `json:"embedding"`
 
 	// Recognition is how a scanned document is read when a person asks for it.
 	// Nothing here runs on its own.
@@ -171,9 +173,9 @@ type ProofreadingConfig struct {
 
 // What a profile is reached through.
 const (
-	UseService = "service"
-	UseAgent   = "agent"
-	KeyEnvVar  = "NUMEN_PROOFREADING_KEY"
+	UseService            = "service"
+	UseAgent              = "agent"
+	ProofreadingKeyEnvVar = "NUMEN_PROOFREADING_KEY"
 )
 
 // Default proofreading limits.
@@ -243,7 +245,7 @@ func ServiceDefaults() Profile {
 		Use:        UseService,
 		BaseURL:    "https://openrouter.ai/api/v1",
 		BatchURL:   "https://openrouter.ai/api/beta/batches",
-		KeyEnv:     KeyEnvVar,
+		KeyEnv:     ProofreadingKeyEnvVar,
 		BatchSize:  DefaultBatchSize,
 		Attempts:   DefaultAttempts,
 		DelayMS:    DefaultDelayMS,
@@ -290,7 +292,7 @@ func (p Profile) Key() string {
 	}
 	name := p.KeyEnv
 	if name == "" {
-		name = KeyEnvVar
+		name = ProofreadingKeyEnvVar
 	}
 	return os.Getenv(name)
 }
@@ -484,7 +486,7 @@ type SegmenterModel struct {
 func DefaultIndexing() Indexing {
 	set := true
 	return Indexing{
-		Embedding: embed.Defaults(),
+		Embedding: DefaultEmbedding(),
 		Recognition: Recognition{
 			RecognitionConfig: RecognitionConfig{
 				Runtime:        "",
@@ -577,4 +579,317 @@ func (i Indexing) GetTranscribeLimit() int64 {
 		return math.MaxInt64
 	}
 	return int64(i.TranscribeUnderMB) << 20
+}
+
+// Where an embedding vector is made.
+const (
+	UseLocal = "local"
+)
+
+// How a model's per-token output becomes one vector.
+const (
+	PoolMean = "mean"
+	PoolHead = "head"
+)
+
+// What runs a model on this machine.
+const (
+	EngineRuntime = "onnxruntime"
+	EnginePureGo  = "go"
+)
+
+// KeyEnvVar is where the service key is read from when the configuration does
+// not carry one.
+const KeyEnvVar = "NUMEN_EMBEDDING_KEY"
+
+// The files a model is made of.
+const (
+	ModelFile     = "model.onnx"
+	TokenizerFile = "tokenizer.json"
+	ModelFolder   = "onnx"
+)
+
+// EmbeddingConfig is the embedding section of this installation's settings: what a
+// vector is, where it is made, and how near the query a passage stands to be an
+// answer at all.
+type EmbeddingConfig struct {
+	Model    EmbeddingModelConfig `json:"model"`
+	Indexing EmbeddingProvider    `json:"indexing"`
+	Query    EmbeddingProvider    `json:"query"`
+	Floor    float64              `json:"floor"`
+}
+
+// EmbeddingModelConfig is what a vector is: everything that decides the space it lands in.
+type EmbeddingModelConfig struct {
+	Name       string `json:"name"`
+	Dimensions int    `json:"dimensions"`
+	MaxTokens  int    `json:"max_tokens"`
+	Pooling    string `json:"pooling"`
+}
+
+// GetStoredModel is this model in the words a vector is kept under, made at the
+// address given.
+func (m EmbeddingModelConfig) GetStoredModel(from string) port.EmbeddingModel {
+	return port.EmbeddingModel{
+		Name:       m.Name,
+		Dimensions: m.Dimensions,
+		MaxTokens:  m.MaxTokens,
+		Pooling:    m.Pooling,
+		From:       from,
+	}
+}
+
+// UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
+func (m *EmbeddingModelConfig) UnmarshalJSON(raw []byte) error {
+	var f struct {
+		Name       *string `json:"name"`
+		Dimensions *int    `json:"dimensions"`
+		MaxTokens  *int    `json:"max_tokens"`
+		Pooling    *string `json:"pooling"`
+	}
+	if err := json.Unmarshal(raw, &f); err != nil {
+		return err
+	}
+	assign(&m.Name, f.Name)
+	assign(&m.Dimensions, f.Dimensions)
+	assign(&m.MaxTokens, f.MaxTokens)
+	assign(&m.Pooling, f.Pooling)
+	return nil
+}
+
+// DefaultEmbedding embeds with empty model and repository defaults (no hardcoded URLs).
+func DefaultEmbedding() EmbeddingConfig {
+	here := EmbeddingProvider{
+		local: LocalModel{
+			Name:           "",
+			BatchTexts:     32,
+			ShouldDownload: true,
+		},
+		service: ServiceModel{
+			BaseURL:         "",
+			Name:            "",
+			BatchCharacters: 32000,
+			KeyEnv:          KeyEnvVar,
+		},
+	}
+	indexing := here
+	indexing.Use = UseLocal
+	return EmbeddingConfig{
+		Model: EmbeddingModelConfig{
+			Name:       "",
+			Dimensions: 384,
+			MaxTokens:  256,
+			Pooling:    PoolMean,
+		},
+		Indexing: indexing,
+		Query:    here,
+	}
+}
+
+// GetQueryProvider is where the vector of a question is made.
+func (c EmbeddingConfig) GetQueryProvider() EmbeddingProvider {
+	if c.Query.Use == "" {
+		return c.Indexing
+	}
+	return c.Query
+}
+
+// GetStoredModel is the identity every vector this installation keeps is filed
+// under.
+func (c EmbeddingConfig) GetStoredModel() port.EmbeddingModel {
+	return c.Model.GetStoredModel(c.Indexing.GetAddress())
+}
+
+// UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
+func (c *EmbeddingConfig) UnmarshalJSON(raw []byte) error {
+	var f struct {
+		Model    *EmbeddingModelConfig `json:"model"`
+		Indexing *EmbeddingProvider    `json:"indexing"`
+		Query    *EmbeddingProvider    `json:"query"`
+		Floor    *float64              `json:"floor"`
+	}
+	f.Model, f.Indexing, f.Query = &c.Model, &c.Indexing, &c.Query
+	if err := json.Unmarshal(raw, &f); err != nil {
+		return err
+	}
+	assign(&c.Floor, f.Floor)
+	if c.Model.Pooling == "" {
+		c.Model.Pooling = PoolMean
+	}
+	return nil
+}
+
+// EmbeddingProvider is where a vector is made: on this machine, or by a service.
+type EmbeddingProvider struct {
+	Use string
+
+	local   LocalModel
+	service ServiceModel
+}
+
+func (p EmbeddingProvider) Local() (LocalModel, bool) {
+	if p.Use != UseLocal {
+		return LocalModel{}, false
+	}
+	return p.local, true
+}
+
+func (p EmbeddingProvider) Service() (ServiceModel, bool) {
+	if p.Use != UseService {
+		return ServiceModel{}, false
+	}
+	return p.service, true
+}
+
+func (p EmbeddingProvider) SetLocal(m LocalModel) EmbeddingProvider {
+	p.Use, p.local = UseLocal, m
+	return p
+}
+
+func (p EmbeddingProvider) SetService(m ServiceModel) EmbeddingProvider {
+	p.Use, p.service = UseService, m
+	return p
+}
+
+func (p EmbeddingProvider) GetAddress() string {
+	if local, ok := p.Local(); ok {
+		return local.GetAddress()
+	}
+	if service, ok := p.Service(); ok {
+		return service.GetAddress()
+	}
+	return ""
+}
+
+type providerFile struct {
+	Use     *string       `json:"use"`
+	Local   *LocalModel   `json:"local"`
+	Service *ServiceModel `json:"service"`
+}
+
+func (p *EmbeddingProvider) UnmarshalJSON(raw []byte) error {
+	f := providerFile{Local: &p.local, Service: &p.service}
+	if err := json.Unmarshal(raw, &f); err != nil {
+		return err
+	}
+	assign(&p.Use, f.Use)
+	return nil
+}
+
+func (p EmbeddingProvider) MarshalJSON() ([]byte, error) {
+	return json.Marshal(providerFile{Use: &p.Use, Local: &p.local, Service: &p.service})
+}
+
+// LocalModel is how this machine reaches a model it runs.
+type LocalModel struct {
+	Name           string `json:"name"`
+	Dir            string `json:"dir"`
+	File           string `json:"file"`
+	BatchTexts     int    `json:"batch_texts"`
+	Engine         string `json:"engine"`
+	Runtime        string `json:"runtime"`
+	Threads        int    `json:"threads"`
+	Sessions       int    `json:"sessions"`
+	Provider       string `json:"provider"`
+	ShouldDownload bool   `json:"download"`
+}
+
+func (m LocalModel) GetAddress() string {
+	at := m.Name
+	if m.Dir != "" {
+		at = filepath.ToSlash(filepath.Clean(m.Dir))
+	}
+	file := m.File
+	if file == "" {
+		file = ModelFile
+	}
+	return UseLocal + ":" + at + "/" + file
+}
+
+func (m *LocalModel) UnmarshalJSON(raw []byte) error {
+	var f struct {
+		Name       *string `json:"name"`
+		Dir        *string `json:"dir"`
+		File       *string `json:"file"`
+		BatchTexts *int    `json:"batch_texts"`
+		BatchSize  *int    `json:"batch_size"`
+		Engine     *string `json:"engine"`
+		Runtime    *string `json:"runtime"`
+		Threads    *int    `json:"threads"`
+		Sessions   *int    `json:"sessions"`
+		Provider   *string `json:"provider"`
+		Download   *bool   `json:"download"`
+	}
+	if err := json.Unmarshal(raw, &f); err != nil {
+		return err
+	}
+	assign(&m.Name, f.Name)
+	assign(&m.Dir, f.Dir)
+	assign(&m.File, f.File)
+	if f.BatchSize != nil {
+		assign(&m.BatchTexts, f.BatchSize)
+	} else {
+		assign(&m.BatchTexts, f.BatchTexts)
+	}
+	assign(&m.Engine, f.Engine)
+	assign(&m.Runtime, f.Runtime)
+	assign(&m.Threads, f.Threads)
+	assign(&m.Sessions, f.Sessions)
+	assign(&m.Provider, f.Provider)
+	assign(&m.ShouldDownload, f.Download)
+	return nil
+}
+
+// ServiceModel is how a hosted model is reached over HTTP.
+type ServiceModel struct {
+	BaseURL         string `json:"base_url"`
+	Name            string `json:"name"`
+	BatchCharacters int    `json:"batch_characters"`
+	KeyEnv          string `json:"key_env"`
+	key             string
+}
+
+func (s ServiceModel) GetAddress() string {
+	return UseService + ":" + strings.TrimSuffix(s.BaseURL, "/") + "/" + s.Name
+}
+
+func (s ServiceModel) Key() string {
+	if s.key != "" {
+		return s.key
+	}
+	name := s.KeyEnv
+	if name == "" {
+		name = KeyEnvVar
+	}
+	return os.Getenv(name)
+}
+
+type serviceModelFile struct {
+	BaseURL         *string `json:"base_url"`
+	Name            *string `json:"name"`
+	BatchCharacters *int    `json:"batch_characters"`
+	KeyEnv          *string `json:"key_env"`
+	Key             *string `json:"key,omitempty"`
+}
+
+func (s *ServiceModel) UnmarshalJSON(raw []byte) error {
+	var f serviceModelFile
+	if err := json.Unmarshal(raw, &f); err != nil {
+		return err
+	}
+	assign(&s.BaseURL, f.BaseURL)
+	assign(&s.Name, f.Name)
+	assign(&s.BatchCharacters, f.BatchCharacters)
+	assign(&s.KeyEnv, f.KeyEnv)
+	assign(&s.key, f.Key)
+	return nil
+}
+
+func (s ServiceModel) MarshalJSON() ([]byte, error) {
+	return json.Marshal(serviceModelFile{
+		BaseURL:         &s.BaseURL,
+		Name:            &s.Name,
+		BatchCharacters: &s.BatchCharacters,
+		KeyEnv:          &s.KeyEnv,
+	})
 }

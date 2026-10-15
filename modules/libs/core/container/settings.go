@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -178,9 +177,6 @@ func (c Config) Models() func() []port.Model {
 // getModels is that catalogue read against the settings given.
 func getModels(held Settings) []port.Model {
 	models := make([]port.Model, 0, 12)
-	models = append(models, setUnder(
-		embed.GetModels(held.Indexing.Embedding, embed.IsFetched),
-		indexingAt, embeddingAt)...)
 	models = append(models, setUnder(agent.GetModels(held.Agent), agentAt)...)
 	models = append(models, setUnder(agent.GetPrograms(), agentAt)...)
 	return models

@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 )
 
@@ -50,11 +49,10 @@ func TestAnUntouchedInstallationEmbedsLocallyAndIsDrawnAsDesigned(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Indexing.Embedding.Indexing.Use != embed.UseLocal {
+	if cfg.Indexing.Embedding.Indexing.Use != container.UseLocal {
 		t.Errorf("uses %q", cfg.Indexing.Embedding.Indexing.Use)
 	}
-	local, _ := cfg.Indexing.Embedding.Indexing.Local()
-	if local.Name == "" || cfg.Indexing.Embedding.Model.Dimensions == 0 {
+	if cfg.Indexing.Embedding.Model.Dimensions == 0 {
 		t.Errorf("no model to run: %+v", cfg.Indexing.Embedding)
 	}
 	// Both sizes are as designed, so an installation nobody has sized draws
@@ -468,11 +466,11 @@ func TestOneSettingIsAValidFile(t *testing.T) {
 	// A file that names the window must leave the embedder alone. Both are
 	// sections of one file, and the section nobody wrote about is unchanged.
 	held, _ := cfg.Indexing.Embedding.Indexing.Local()
-	offered, _ := embed.Defaults().Indexing.Local()
+	offered, _ := container.DefaultEmbedding().Indexing.Local()
 	if held.Name != offered.Name {
 		t.Errorf("local model is %q", held.Name)
 	}
-	if cfg.Indexing.Embedding.Indexing.Use != embed.UseLocal {
+	if cfg.Indexing.Embedding.Indexing.Use != container.UseLocal {
 		t.Errorf("uses %q", cfg.Indexing.Embedding.Indexing.Use)
 	}
 }
@@ -480,14 +478,14 @@ func TestOneSettingIsAValidFile(t *testing.T) {
 // getLocalModel and asService are the halves a provider carries, whichever of them is
 // in force. The word is what puts one there, and a test reading the other says
 // so before it does.
-func getLocalModel(where embed.Provider) embed.LocalModel {
-	where.Use = embed.UseLocal
+func getLocalModel(where container.EmbeddingProvider) container.LocalModel {
+	where.Use = container.UseLocal
 	m, _ := where.Local()
 	return m
 }
 
-func getServiceModel(where embed.Provider) embed.ServiceModel {
-	where.Use = embed.UseService
+func getServiceModel(where container.EmbeddingProvider) container.ServiceModel {
+	where.Use = container.UseService
 	m, _ := where.Service()
 	return m
 }
@@ -501,27 +499,27 @@ func TestAFileNamingOneFieldKeepsTheDefaultsForTheRest(t *testing.T) {
 		t.Fatal(err)
 	}
 	e := cfg.Indexing.Embedding
-	if e.Indexing.Use != embed.UseService {
+	if e.Indexing.Use != container.UseService {
 		t.Errorf("uses %q", e.Indexing.Use)
 	}
 	if e.Model.Name != "text-embedding-3-large" || e.Model.Dimensions != 3072 {
 		t.Errorf("got %+v", e.Model)
 	}
 	// A field the file says nothing about keeps what the defaults set.
-	if e.Model.MaxTokens != embed.Defaults().Model.MaxTokens {
+	if e.Model.MaxTokens != container.DefaultEmbedding().Model.MaxTokens {
 		t.Errorf("the model cuts at %d", e.Model.MaxTokens)
 	}
 	service, _ := e.Indexing.Service()
-	if service.BaseURL != getServiceModel(embed.Defaults().Indexing).BaseURL {
+	if service.BaseURL != getServiceModel(container.DefaultEmbedding().Indexing).BaseURL {
 		t.Errorf("base URL is %q", service.BaseURL)
 	}
 	// The half the file is not on keeps the defaults as well, and the word is
 	// all that stands between the two.
-	if local := getLocalModel(e.Indexing); local.Name != getLocalModel(embed.Defaults().Indexing).Name {
+	if local := getLocalModel(e.Indexing); local.Name != getLocalModel(container.DefaultEmbedding().Indexing).Name {
 		t.Errorf("local model is %q", local.Name)
 	}
 	// A question is asked the way the vault was indexed.
-	if got := e.GetQueryProvider(); got.Use != embed.UseService {
+	if got := e.GetQueryProvider(); got.Use != container.UseService {
 		t.Errorf("questions are embedded by %+v", got)
 	}
 }
@@ -535,7 +533,7 @@ func TestAPoolingLeftOutIsTheOneEveryModelHas(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Indexing.Embedding.Model.Pooling; got != embed.PoolMean {
+	if got := cfg.Indexing.Embedding.Model.Pooling; got != container.PoolMean {
 		t.Errorf("pooled %q", got)
 	}
 }
@@ -550,7 +548,7 @@ func TestAVaultIndexedByAServiceIsAskedOnThisMachine(t *testing.T) {
 		t.Fatal(err)
 	}
 	e := cfg.Indexing.Embedding
-	if e.Model.Name != "bge-m3" || e.Model.Dimensions != 1024 || e.Model.Pooling != embed.PoolHead {
+	if e.Model.Name != "bge-m3" || e.Model.Dimensions != 1024 || e.Model.Pooling != container.PoolHead {
 		t.Errorf("the model is %+v", e.Model)
 	}
 	indexing, byService := e.Indexing.Service()
@@ -562,7 +560,7 @@ func TestAVaultIndexedByAServiceIsAskedOnThisMachine(t *testing.T) {
 		t.Errorf("asked by %+v", e.GetQueryProvider())
 	}
 	// The section nobody wrote about keeps its default.
-	if indexing.BatchCharacters != getServiceModel(embed.Defaults().Indexing).BatchCharacters {
+	if indexing.BatchCharacters != getServiceModel(container.DefaultEmbedding().Indexing).BatchCharacters {
 		t.Errorf("batch is %d", indexing.BatchCharacters)
 	}
 }
@@ -582,7 +580,7 @@ func TestAnInstallationMayNameNoModelAtAll(t *testing.T) {
 }
 
 func TestTheKeyComesFromTheFileOrTheEnvironment(t *testing.T) {
-	t.Setenv(embed.KeyEnvVar, "from-the-environment")
+	t.Setenv(container.KeyEnvVar, "from-the-environment")
 
 	cfg, err := openAt(write(t, `{"indexing":{"embedding":{"indexing":{"service":{"key":"from-the-file"}}}}}`))
 	if err != nil {

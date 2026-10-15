@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/trash"
@@ -82,7 +81,7 @@ type Config struct {
 	// point reads the settings and says what it found, so nothing below one
 	// reaches the machine's own file. A zero value names no embedder, and nothing
 	// is embedded.
-	Embedding embed.Config
+	Embedding EmbeddingConfig
 
 	// Proofreading is what puts a recognition right. It arrives the way Embedding
 	// does, and naming no profile here is naming no proofreader.
@@ -129,10 +128,8 @@ func NewPluginHost(target string, dirs ...string) *plugin.Host {
 	return host
 }
 
-// bytesPerMB is the size of the megabyte the detected memory is counted in.
-const bytesPerMB = 1 << 20
-
 // Clock is the clock every scenario assembled here is handed.
+
 func (c Config) Clock() port.Clock {
 	if c.Now != nil {
 		return c.Now
