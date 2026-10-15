@@ -1,0 +1,20 @@
+{
+  "id": "md.numen.proofreading",
+  "name": "LLM Proofreading",
+  "version": "1.0.0",
+  "description": "Proofreading and correction engine using large language models",
+  "capabilities": ["proofreading"],
+  "targets": ["desktop.editor"],
+  "activationEvents": ["onCommand:proofread"],
+  "permissions": ["vault:read"],
+  "lifecycle": {
+    "mode": "on-demand",
+    "idleTimeoutSeconds": 180,
+    "keepAliveWhileVisible": false
+  },
+  "backend": {
+    "type": "process",
+    "entrypoint": "bin/proofreading",
+    "serviceName": "numen.v1.ProofreadingService"
+  }
+}

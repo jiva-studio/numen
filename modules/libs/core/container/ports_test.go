@@ -172,9 +172,9 @@ func (c Config) Trash() port.Trash { return nil }`,
 		{
 			what: "an adapter the compiler holds, kept to this package",
 			src: `package container
-import "` + module + `internal/adapter/proofreading"
-func (c Config) profile(name string) (proofreading.Profile, error) {
-	return proofreading.Profile{}, nil
+import "` + module + `internal/adapter/theme"
+func (c Config) someTheme() (theme.Theme, error) {
+	return theme.Theme{}, nil
 }`,
 			isRefused: false,
 		},

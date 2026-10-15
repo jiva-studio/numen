@@ -8,7 +8,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
@@ -19,13 +18,13 @@ import (
 // scanned reading is another setting and is not read here.
 func TestATranscriptIsPutRightWithTheProfileNamedForSpeech(t *testing.T) {
 	cfg := Config{ServiceDir: ".numen"}
-	cfg.Proofreading = proofreading.Defaults()
-	cfg.Proofreading.Profiles = map[string]proofreading.Profile{
-		"speech": {Use: proofreading.UseAgent, Model: "one model", BatchSize: 1, InFlight: 1},
-		"scans":  {Use: proofreading.UseAgent, Model: "another model", BatchSize: 1, InFlight: 1},
+	cfg.Proofreading = DefaultProofreading()
+	cfg.Proofreading.Profiles = map[string]Profile{
+		"speech": {Use: UseAgent, Model: "one model", BatchSize: 1, InFlight: 1},
+		"scans":  {Use: UseAgent, Model: "another model", BatchSize: 1, InFlight: 1},
 	}
-	cfg.TranscriptProofreading = proofreading.Proofread{Profile: "speech"}
-	cfg.ScanProofreading = proofreading.Proofread{Profile: "scans", IsAutomatic: true}
+	cfg.TranscriptProofreading = Proofread{Profile: "speech"}
+	cfg.ScanProofreading = Proofread{Profile: "scans", IsAutomatic: true}
 
 	var opened ProofreaderSpec
 	cfg.AgentProofreader = func(said ProofreaderSpec) (port.Proofreader, error) {
@@ -53,7 +52,7 @@ func TestAProofreadingIsOfferedWhereAProfileIsNamed(t *testing.T) {
 		t.Error("an installation naming no profile offers the run")
 	}
 
-	cfg.TranscriptProofreading = proofreading.Proofread{Profile: "by hand"}
+	cfg.TranscriptProofreading = Proofread{Profile: "by hand"}
 	if !cfg.OpenTranscriptionWorker(t.Context(), nil, nil, nil).ProofreaderReady() {
 		t.Error("an installation naming a profile does not offer the run")
 	}

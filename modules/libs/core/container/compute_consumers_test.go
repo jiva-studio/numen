@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/openai"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
 
@@ -16,13 +15,13 @@ func makePlan(workers, llm int) settings.ResolvedCompute {
 	return settings.ResolvedCompute{Workers: workers, LlmConcurrency: llm}
 }
 
-func makeProofreading(inFlight int) proofreading.Config {
-	service := proofreading.ServiceDefaults()
+func makeProofreading(inFlight int) ProofreadingConfig {
+	service := ServiceDefaults()
 	service.Name, service.InFlight = "some-model", inFlight
-	agent := proofreading.AgentDefaults()
+	agent := AgentDefaults()
 	agent.Model, agent.InFlight = "haiku", inFlight
-	cfg := proofreading.Defaults()
-	cfg.Profiles = map[string]proofreading.Profile{"service": service, "agent": agent}
+	cfg := DefaultProofreading()
+	cfg.Profiles = map[string]Profile{"service": service, "agent": agent}
 	return cfg
 }
 
@@ -53,8 +52,8 @@ func TestAProofreadingProfileNamingNoNumberAtOnceTakesTheLlmConcurrencyOfThePlan
 	scan := Config{
 		Proofreading:           cfg.Proofreading,
 		ResolvedCompute:        cfg.ResolvedCompute,
-		ScanProofreading:       proofreading.Proofread{Profile: "service"},
-		TranscriptProofreading: proofreading.Proofread{Profile: "agent"},
+		ScanProofreading:       Proofread{Profile: "service"},
+		TranscriptProofreading: Proofread{Profile: "agent"},
 	}
 	if got := scan.GetScanProofreading().InFlight; got != 6 {
 		t.Errorf("a scan is proofread %d batches at once, want the 6 planned", got)
@@ -74,9 +73,9 @@ func TestAProofreadingProfileWithoutAPlanTakesTheDefaultOfItsKind(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if service.InFlight != proofreading.DefaultInFlight || agent.InFlight != proofreading.DefaultAgentInFlight {
+	if service.InFlight != DefaultInFlight || agent.InFlight != DefaultAgentInFlight {
 		t.Errorf("a service asks about %d and the command line %d batches at once, want %d and %d",
-			service.InFlight, agent.InFlight, proofreading.DefaultInFlight, proofreading.DefaultAgentInFlight)
+			service.InFlight, agent.InFlight, DefaultInFlight, DefaultAgentInFlight)
 	}
 }
 
