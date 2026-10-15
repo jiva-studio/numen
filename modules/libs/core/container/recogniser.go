@@ -2,46 +2,35 @@ package container
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
-	ocrmodels "github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
+var (
+	errRecognitionUnavailable = errors.New("recognition plugin is unavailable or not installed")
+)
+
 // RecogniserReady says whether a document could be read now without waiting for
-// anything to arrive. Which models those are is settled here, with every other
-// choice of adapter.
+// anything to arrive.
 func (c Config) RecogniserReady() bool {
 	if c.PluginHost != nil {
 		if _, ok := c.PluginHost.FindPluginByCapability("recognition"); ok {
 			return true
 		}
 	}
-	return ocrmodels.Ready(c.Recognition)
+	return false
 }
 
-// PrepareRecogniser makes the runtime this process reads a page through, and is
-// called before a window is made. One made after a window reads every page it is
-// given as nothing.
-//
-// A machine holding no runtime says so and is left as it is: reading is what
-// fetches one.
-func (c Config) PrepareRecogniser(ctx context.Context) error {
-	if c.PluginHost != nil {
-		if _, ok := c.PluginHost.FindPluginByCapability("recognition"); ok {
-			return nil
-		}
-	}
-	return ocrmodels.Prepare(ctx, c.Recognition)
+// PrepareRecogniser makes the runtime this process reads a page through.
+func (c Config) PrepareRecogniser(_ context.Context) error {
+	return nil
 }
 
-// Recogniser is what reads a scanned page on this machine, opened now: the
-// recogniser, what gives it back, and why there is none.
-//
-// It waits for whatever is missing, so it is for a terminal, where waiting is
-// what a person came for. A window asks Recognising instead.
+// Recogniser is what reads a scanned page on this machine, opened now.
 func (c Config) Recogniser(ctx context.Context) (recogniser port.Recogniser, closer func() error, why error) {
 	if c.PluginHost != nil {
 		if _, ok := c.PluginHost.FindPluginByCapability("recognition"); ok {
@@ -52,26 +41,15 @@ func (c Config) Recogniser(ctx context.Context) (recogniser port.Recogniser, clo
 			return bridge, bridge.Close, nil
 		}
 	}
-	models, err := ocrmodels.Open(ctx, c.getRecognition())
-	if err != nil {
-		return nil, nil, err
-	}
-	return models, models.Close, nil
+	return nil, nil, errRecognitionUnavailable
 }
 
-// Recognise is one document read with the recogniser given, for a caller that
-// asked for that document and waits for it. Recognising is the queue that reads
-// what nobody asked about.
+// Recognise is one document read with the recogniser given.
 func (c Config) Recognise(sources port.SourceRepository, by port.Recogniser) recognition.Recognise {
 	return recognition.NewRecognise(c.VaultReaders(), sources, c.GetDerivedStores(), c.PageRenderer(), by)
 }
 
-// OpenRecognitionWorker is the queue that reads this installation's scanned
-// documents, built against the adapters it was configured with and reporting
-// itself into the list of what is being done.
-//
-// models is what it takes its turn at with the queue that listens to
-// recordings: one run holds this machine's models at a time.
+// OpenRecognitionWorker is the queue that reads this installation's scanned documents.
 func (c Config) OpenRecognitionWorker(
 	ctx context.Context,
 	sources port.SourceRepository,
@@ -96,7 +74,7 @@ func (c Config) OpenRecognitionWorker(
 }
 
 func (c Config) openRecognitionRuntime(
-	ctx context.Context, tell func(what string, done, total int64),
+	ctx context.Context, _ func(what string, done, total int64),
 ) (port.Recogniser, func() error, error) {
 	if c.PluginHost != nil {
 		if _, ok := c.PluginHost.FindPluginByCapability("recognition"); ok {
@@ -107,13 +85,7 @@ func (c Config) openRecognitionRuntime(
 			return bridge, bridge.Close, nil
 		}
 	}
-	cfg := c.getRecognition()
-	cfg.Progress = tell
-	models, err := ocrmodels.Open(ctx, cfg)
-	if err != nil {
-		return nil, nil, err
-	}
-	return models, models.Close, nil
+	return nil, nil, errRecognitionUnavailable
 }
 
 func (c Config) isRecognitionPrepared() bool {
@@ -122,16 +94,5 @@ func (c Config) isRecognitionPrepared() bool {
 			return true
 		}
 	}
-	return ocrmodels.IsPrepared()
-}
-
-// getRecognition is the recognition settings with the thread count and the
-// number of sessions the performance profile resolves to.
-func (c Config) getRecognition() ocrmodels.Config {
-	cfg := c.Recognition
-	cfg.Compute = ocrmodels.Compute{
-		Threads: c.ResolvedCompute.OcrThreads,
-		Jobs:    c.ResolvedCompute.OcrSessions,
-	}
-	return cfg
+	return false
 }

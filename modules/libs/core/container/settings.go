@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -150,7 +149,6 @@ func (c Config) getSettingsOrDefaults() Settings {
 // off.
 func (c Config) SetSettings(said Settings) Config {
 	c.Embedding = said.Indexing.Embedding
-	c.Recognition = said.Indexing.Recognition.Config
 	c.Proofreading = said.Indexing.Proofreading
 	c.ScanProofreading = said.Indexing.Recognition.Proofread
 	c.TranscriptProofreading = said.Indexing.Transcription.Proofread
@@ -183,9 +181,6 @@ func getModels(held Settings) []port.Model {
 	models = append(models, setUnder(
 		embed.GetModels(held.Indexing.Embedding, embed.IsFetched),
 		indexingAt, embeddingAt)...)
-	models = append(models, setUnder(
-		recognition.GetModels(held.Indexing.Recognition.Config, recognition.IsFetched),
-		indexingAt, recognitionAt)...)
 	models = append(models, setUnder(agent.GetModels(held.Agent), agentAt)...)
 	models = append(models, setUnder(agent.GetPrograms(), agentAt)...)
 	return models

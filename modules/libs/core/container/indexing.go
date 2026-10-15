@@ -5,7 +5,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
 )
 
@@ -44,11 +43,8 @@ type Indexing struct {
 	TranscribeUnderMB int `json:"transcribe_under_mb"`
 }
 
-// Recognition is how a scanned document is read, and which profile puts that
-// recognition right afterwards.
+// Recognition holds settings for putting recognition right afterwards.
 type Recognition struct {
-	recognition.Config
-
 	// Proofread names the profile a recognition is put right at. Automatically
 	// there says whether a recognition just made is put right without anybody
 	// asking.
@@ -73,7 +69,7 @@ func DefaultIndexing() Indexing {
 	set := true
 	return Indexing{
 		Embedding:            embed.Defaults(),
-		Recognition:          Recognition{Config: recognition.Defaults()},
+		Recognition:          Recognition{Proofread: proofreading.Proofread{}},
 		Proofreading:         proofreading.Defaults(),
 		Transcription:        Transcription{Config: transcription.Defaults()},
 		TranscribeRecordings: &set,

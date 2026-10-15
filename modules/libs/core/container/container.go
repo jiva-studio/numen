@@ -21,7 +21,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/trash"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -52,9 +51,6 @@ type Config struct {
 	// BookExtensions are the file extensions treated as books. Empty means the
 	// default, which is every format a reader takes text out of.
 	BookExtensions []string
-
-	// Recognition is how a scanned document is read when a person asks for it.
-	Recognition recognition.Config
 
 	// Transcription is how a recording is listened to.
 	Transcription transcription.Config

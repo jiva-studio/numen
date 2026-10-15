@@ -19,9 +19,6 @@ func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 	if !reflect.DeepEqual(cfg.Embedding, said.Embedding) {
 		t.Error("the embedding section did not arrive")
 	}
-	if !reflect.DeepEqual(cfg.Recognition, said.Recognition.Config) {
-		t.Error("the recognition section did not arrive")
-	}
 	if !reflect.DeepEqual(cfg.Proofreading, said.Proofreading) {
 		t.Error("the proofreading section did not arrive")
 	}
