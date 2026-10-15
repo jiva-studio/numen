@@ -161,5 +161,6 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
     runSupport: runs,
     copyPath: (path) => void navigator.clipboard?.writeText(path),
     writeMessage,
+    emitEvent: (event) => (core as { emitEvent?: (event: string) => void }).emitEvent?.(event),
   }
 }

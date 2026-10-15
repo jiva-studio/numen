@@ -254,14 +254,14 @@ describe('the settings tab', () => {
     expect(open).toHaveBeenCalledOnce()
   })
 
-  it('generates palette commands for active plugins with palette: true', () => {
+  it('generates palette commands for installed plugins with palette: true regardless of isActive', () => {
     createSettings()
     const plugin = {
       id: 'plugin.ocr',
       name: 'OCR Plugin',
       version: '1.0.0',
       description: 'OCR',
-      isActive: true,
+      isActive: false,
       settings: [
         {
           key: 'autoScan',

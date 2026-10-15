@@ -268,6 +268,19 @@ describe('every command that is offered', () => {
       expect(one.done, command.id).not.toStrictEqual([])
     }
   })
+
+  it('emits onCommand:<id> when a command is executed', async () => {
+    const events: string[] = []
+    const one = window()
+    const onWithEmit: CommandDeps = {
+      ...one.on,
+      emitEvent: (ev) => events.push(ev),
+    }
+
+    await carry(createInvocation('read', front()), onWithEmit)
+
+    expect(events).toStrictEqual(['onCommand:read'])
+  })
 })
 
 describe('a note put in front of the person', () => {

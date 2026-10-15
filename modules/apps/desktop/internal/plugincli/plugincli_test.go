@@ -176,6 +176,48 @@ func TestPluginValidate_InvalidPermission(t *testing.T) {
 	}
 }
 
+func TestPluginValidate_AllowedPermissionsAndNetworkAlias(t *testing.T) {
+	tmpDir := t.TempDir()
+	manifestPath := filepath.Join(tmpDir, "manifest.json")
+
+	manifest := `{
+  "id": "md.numen.valid",
+  "name": "Valid",
+  "version": "1.0.0",
+  "permissions": ["vault:read", "vault:write", "network", "network:outbound"]
+}`
+	if err := os.WriteFile(manifestPath, []byte(manifest), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	issues, err := Validate(tmpDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(issues) > 0 {
+		t.Fatalf("expected no issues for allowed permissions, got: %v", issues)
+	}
+
+	// Verify rejected deprecated/unsupported permissions
+	badManifest := `{
+  "id": "md.numen.bad",
+  "name": "Bad",
+  "version": "1.0.0",
+  "permissions": ["shell", "notifications", "clipboard"]
+}`
+	if err := os.WriteFile(manifestPath, []byte(badManifest), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	issues, err = Validate(tmpDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(issues) != 3 {
+		t.Fatalf("expected 3 issues for invalid permissions, got %d: %v", len(issues), issues)
+	}
+}
+
 func TestPluginPackage_Success(t *testing.T) {
 	tmpDir := t.TempDir()
 	pluginDir := filepath.Join(tmpDir, "my-plugin")

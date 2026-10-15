@@ -151,6 +151,7 @@ export interface CommandDeps extends VaultContext, TabContext, RunContext, Voice
   readonly settings: SettingsWriter
   /** A path put on the clipboard. */
   copyPath(path: string): void
+  readonly emitEvent?: (event: string) => void
 }
 
 /** One command, carried out. */

@@ -201,3 +201,53 @@ func TestIsWhitelistedEnv(t *testing.T) {
 		}
 	}
 }
+
+func TestHostEmitEventActivation(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+
+	cmd := exec.Command("sleep", "10")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start mock proc failed: %v", err)
+	}
+	defer func() {
+		_ = cmd.Process.Kill()
+		_, _ = cmd.Process.Wait()
+	}()
+
+	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
+		actualPort := port
+		if actualPort == 0 {
+			actualPort = 54321
+		}
+		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", actualPort))
+		return cmd.Process, io.NopCloser(r), nil
+	})
+
+	ctx := t.Context()
+
+	// Initial state is dormant
+	sup := host.supervisors["md.numen.ocr"]
+	if sup == nil || sup.GetState() != StateDormant {
+		t.Fatalf("expected initial state dormant, got %v", sup.GetState())
+	}
+
+	// Emit onFile event via debounced event bus
+	host.EmitEvent("onFile:document.pdf")
+	host.GetEventBus().Flush(ctx)
+
+	// Plugin should now be activated
+	if sup.GetState() != StateActive && sup.GetState() != StateIdle {
+		t.Fatalf("expected state active or idle after EmitEvent, got %v", sup.GetState())
+	}
+
+	host.Release("md.numen.ocr")
+	if err := host.TeardownAll(ctx, 50*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}

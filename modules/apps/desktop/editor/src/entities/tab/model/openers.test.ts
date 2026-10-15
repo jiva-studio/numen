@@ -369,3 +369,49 @@ describe('reconciling open tabs when a file is opened', () => {
     expect(reconciled).toStrictEqual([{ path: 'Physics.pdf', newKind: 'document' }])
   })
 })
+
+describe('emitting onFile events when opening files', () => {
+  it('emits onFile:<ext> on openFile', async () => {
+    const events: string[] = []
+    const one = vault({ 'Physics.pdf': DOCUMENT })
+    const core: FileOpenerDeps = {
+      ...one.core,
+      emitEvent: (ev) => events.push(ev),
+    }
+    const tabOpeners = fileOpeners(core)
+    editors(tabOpeners)
+
+    await tabOpeners.openFile('Physics.pdf')
+
+    expect(events).toStrictEqual(['onFile:pdf'])
+  })
+
+  it('emits onFile:<ext> on openFileAt', async () => {
+    const events: string[] = []
+    const one = vault({ 'Gita.epub': BOOK })
+    const core: FileOpenerDeps = {
+      ...one.core,
+      emitEvent: (ev) => events.push(ev),
+    }
+    const tabOpeners = fileOpeners(core)
+    editors(tabOpeners)
+
+    await tabOpeners.openFileAt('Gita.epub', [{ from: 0, to: 10 }])
+
+    expect(events).toStrictEqual(['onFile:epub'])
+  })
+
+  it('emits onFile:<ext> on openNewFile', () => {
+    const events: string[] = []
+    const core: FileOpenerDeps = {
+      ...vault().core,
+      emitEvent: (ev) => events.push(ev),
+    }
+    const tabOpeners = fileOpeners(core)
+    editors(tabOpeners)
+
+    tabOpeners.openNewFile('Notes.md', 'Notes', 'note')
+
+    expect(events).toStrictEqual(['onFile:md'])
+  })
+})

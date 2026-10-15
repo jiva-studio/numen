@@ -65,6 +65,12 @@ func TestReadManifest(t *testing.T) {
 	if !m.CanActivateOn("onFile:document.pdf") {
 		t.Errorf("expected activation on onFile:document.pdf")
 	}
+	if !m.CanActivateOn("onFile:pdf") {
+		t.Errorf("expected activation on onFile:pdf")
+	}
+	if !m.CanActivateOn("onFile:.pdf") {
+		t.Errorf("expected activation on onFile:.pdf")
+	}
 	if m.CanActivateOn("onFile:book.epub") {
 		t.Errorf("unexpected activation on onFile:book.epub")
 	}

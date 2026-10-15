@@ -31,6 +31,9 @@ type Assembly interface {
 	// OpenBookClient opens a client to the book reader plugin, returning the client and a closer.
 	OpenBookClient(ctx context.Context) (any, func(), error)
 
+	// EmitEvent sends an event notification to listeners and registered plugins.
+	EmitEvent(event string)
+
 	// GetRegistry is the list of vaults this installation holds.
 	GetRegistry() port.VaultRegistry
 

@@ -13,7 +13,7 @@ import (
 var (
 	validIDPattern      = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
 	validSemverPattern  = regexp.MustCompile(`^v?\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$`)
-	allowedPermissions  = []string{"vault:read", "vault:write", "network", "shell", "notifications", "clipboard"}
+	allowedPermissions  = []string{"vault:read", "vault:write", "network:outbound"}
 	allowedModes        = []string{"on-demand", "persistent", "manual", "daemon"}
 	allowedBackendTypes = []string{"process", "wasm"}
 	allowedSettingTypes = []string{"string", "boolean", "number", "range", "enum", "select"}
@@ -91,9 +91,18 @@ func checkLifecycle(m *manifestJSON, issues *[]string) {
 	}
 }
 
+func normalizePermission(perm string) string {
+	if perm == "network" {
+		return "network:outbound"
+	}
+	return perm
+}
+
 func checkPermissions(m *manifestJSON, issues *[]string) {
-	for _, perm := range m.Permissions {
-		if !slices.Contains(allowedPermissions, perm) {
+	for i, perm := range m.Permissions {
+		norm := normalizePermission(perm)
+		m.Permissions[i] = norm
+		if !slices.Contains(allowedPermissions, norm) {
 			*issues = append(*issues, fmt.Sprintf("permission %q is unknown; allowed permissions: %v", perm, allowedPermissions))
 		}
 	}
