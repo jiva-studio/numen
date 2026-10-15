@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"net"
@@ -19,6 +20,7 @@ import (
 
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/modules/plugins/transcription/backend/engine"
 )
 
 type lifecycleServer struct {
@@ -48,110 +50,164 @@ func (s *lifecycleServer) Shutdown(
 	}), nil
 }
 
-type recordedAudio struct {
-	duration int32
-	segments []*numenv1.AudioSegment
-}
-
 type transcriptionServer struct {
-	mu         sync.Mutex
-	nextID     int64
-	recordings map[string]*recordedAudio
+	mu          sync.Mutex
+	cfg         engine.Config
+	transcriber *engine.Transcriber
+	nextID      int64
+	recordings  map[string]engine.Recording
 }
 
-func newTranscriptionServer() *transcriptionServer {
+func newTranscriptionServer(cfg engine.Config) *transcriptionServer {
 	return &transcriptionServer{
-		recordings: make(map[string]*recordedAudio),
+		cfg:        cfg,
+		recordings: make(map[string]engine.Recording),
 	}
+}
+
+func (s *transcriptionServer) getTranscriber(ctx context.Context) (*engine.Transcriber, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.transcriber != nil {
+		return s.transcriber, nil
+	}
+	t, err := engine.Open(ctx, s.cfg)
+	if err != nil {
+		return nil, err
+	}
+	s.transcriber = t
+	return s.transcriber, nil
+}
+
+func (s *transcriptionServer) close() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, rec := range s.recordings {
+		_ = rec.Close()
+	}
+	clear(s.recordings)
+	if s.transcriber != nil {
+		_ = s.transcriber.Close()
+		s.transcriber = nil
+	}
+	return nil
 }
 
 func (s *transcriptionServer) GetTranscriptionModel(
 	_ context.Context,
 	_ *connect.Request[numenv1.GetTranscriptionModelRequest],
 ) (*connect.Response[numenv1.GetTranscriptionModelResponse], error) {
+	s.mu.Lock()
+	t := s.transcriber
+	s.mu.Unlock()
+
+	if t != nil {
+		m := t.GetTranscriptionModel()
+		return connect.NewResponse(&numenv1.GetTranscriptionModelResponse{
+			Model:     m.Model,
+			Segmenter: m.Segmenter,
+			Cutting:   m.Cutting,
+			From:      m.From,
+		}), nil
+	}
+
 	return connect.NewResponse(&numenv1.GetTranscriptionModelResponse{
-		Model:     "parakeet-tdt-0.6b-v3-int8",
-		Segmenter: "silero-vad",
-		Cutting:   "0.50/500/200/30000/100/2500",
+		Model:     s.cfg.Model.Name,
+		Segmenter: s.cfg.Segmenter.Name,
+		Cutting:   s.cfg.Segmenter.DescribeSegmentSettings(),
 		From:      "builtin",
 	}), nil
 }
 
 func (s *transcriptionServer) OpenRecording(
-	_ context.Context,
+	ctx context.Context,
 	req *connect.Request[numenv1.OpenRecordingRequest],
 ) (*connect.Response[numenv1.OpenRecordingResponse], error) {
 	data := req.Msg.GetAudioData()
-	durationMs := int32(len(data) / 32)
-	if durationMs < 1000 {
-		durationMs = 1000
+	if len(data) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("empty audio data"))
+	}
+
+	t, err := s.getTranscriber(ctx)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("transcriber open: %w", err))
+	}
+
+	rec, err := t.Open(ctx, data)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("open recording: %w", err))
 	}
 
 	s.mu.Lock()
 	s.nextID++
 	id := fmt.Sprintf("rec-%d", s.nextID)
-	s.recordings[id] = &recordedAudio{
-		duration: durationMs,
-		segments: []*numenv1.AudioSegment{
-			{
-				FromMs:  0,
-				ToMs:    durationMs,
-				Samples: make([]float32, 160),
-			},
-		},
-	}
+	s.recordings[id] = rec
 	s.mu.Unlock()
 
 	return connect.NewResponse(&numenv1.OpenRecordingResponse{
 		RecordingId: id,
-		DurationMs:  durationMs,
+		DurationMs:  int32(rec.GetDuration()),
 	}), nil
 }
 
 func (s *transcriptionServer) GetSegments(
-	_ context.Context,
+	ctx context.Context,
 	req *connect.Request[numenv1.GetSegmentsRequest],
 ) (*connect.Response[numenv1.GetSegmentsResponse], error) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	rec, ok := s.recordings[req.Msg.GetRecordingId()]
+	s.mu.Unlock()
+
 	if !ok {
-		return connect.NewResponse(&numenv1.GetSegmentsResponse{
-			Segments: nil,
-		}), nil
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("recording %q not found", req.Msg.GetRecordingId()))
 	}
 
-	from := req.Msg.GetFromMs()
-	count := int(req.Msg.GetCount())
-	var out []*numenv1.AudioSegment
-	for _, seg := range rec.segments {
-		if seg.GetFromMs() < from {
-			continue
-		}
-		out = append(out, seg)
-		if count > 0 && len(out) == count {
-			break
-		}
+	found, err := rec.GetSegments(ctx, int(req.Msg.GetFromMs()), int(req.Msg.GetCount()))
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("get segments: %w", err))
+	}
+
+	segments := make([]*numenv1.AudioSegment, 0, len(found))
+	for _, one := range found {
+		segments = append(segments, &numenv1.AudioSegment{
+			FromMs:  int32(one.From),
+			ToMs:    int32(one.To),
+			Samples: one.Samples,
+		})
 	}
 
 	return connect.NewResponse(&numenv1.GetSegmentsResponse{
-		Segments: out,
+		Segments: segments,
 	}), nil
 }
 
 func (s *transcriptionServer) Transcribe(
-	_ context.Context,
+	ctx context.Context,
 	req *connect.Request[numenv1.TranscribeRequest],
 ) (*connect.Response[numenv1.TranscribeResponse], error) {
-	if len(req.Msg.GetSamples()) == 0 {
+	samples := req.Msg.GetSamples()
+	if len(samples) == 0 {
 		return connect.NewResponse(&numenv1.TranscribeResponse{
 			Text: "",
 		}), nil
 	}
 
+	t, err := s.getTranscriber(ctx)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("transcriber open: %w", err))
+	}
+
+	text, err := t.Transcribe(ctx, engine.Audio{
+		Samples: samples,
+		From:    int(req.Msg.GetFromMs()),
+		To:      int(req.Msg.GetToMs()),
+	})
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("transcribe: %w", err))
+	}
+
 	return connect.NewResponse(&numenv1.TranscribeResponse{
-		Text: "Transcribed speech from native transcription plugin.",
+		Text: text,
 	}), nil
 }
 
@@ -160,8 +216,13 @@ func (s *transcriptionServer) CloseRecording(
 	req *connect.Request[numenv1.CloseRecordingRequest],
 ) (*connect.Response[numenv1.CloseRecordingResponse], error) {
 	s.mu.Lock()
+	rec, ok := s.recordings[req.Msg.GetRecordingId()]
 	delete(s.recordings, req.Msg.GetRecordingId())
 	s.mu.Unlock()
+
+	if ok && rec != nil {
+		_ = rec.Close()
+	}
 
 	return connect.NewResponse(&numenv1.CloseRecordingResponse{
 		Success: true,
@@ -171,9 +232,13 @@ func (s *transcriptionServer) CloseRecording(
 func main() {
 	var portFlag int
 	var tokenFlag string
+	var modelsDirFlag string
+	var runtimeFlag string
 
 	flag.IntVar(&portFlag, "port", 0, "Port to listen on")
 	flag.StringVar(&tokenFlag, "token", "", "Authentication token")
+	flag.StringVar(&modelsDirFlag, "models-dir", "", "Directory holding model weights")
+	flag.StringVar(&runtimeFlag, "runtime", "", "Path to ONNX runtime library")
 	flag.Parse()
 
 	if portFlag == 0 {
@@ -187,6 +252,18 @@ func main() {
 		tokenFlag = os.Getenv("NUMEN_PLUGIN_TOKEN")
 	}
 
+	cfg := engine.Defaults()
+	if modelsDirFlag != "" {
+		cfg.Dir = modelsDirFlag
+	} else if envDir := os.Getenv("NUMEN_MODELS_DIR"); envDir != "" {
+		cfg.Dir = envDir
+	}
+	if runtimeFlag != "" {
+		cfg.Runtime = runtimeFlag
+	} else if envRuntime := os.Getenv("NUMEN_ONNX_RUNTIME"); envRuntime != "" {
+		cfg.Runtime = envRuntime
+	}
+
 	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", portFlag))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to listen: %v\n", err)
@@ -198,7 +275,8 @@ func main() {
 
 	shutdownCh := make(chan struct{})
 	life := &lifecycleServer{shutdownTrigger: shutdownCh}
-	trans := newTranscriptionServer()
+	trans := newTranscriptionServer(cfg)
+	defer trans.close()
 
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(life))
@@ -230,5 +308,6 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
+	_ = trans.close()
 	_ = srv.Shutdown(ctx)
 }
