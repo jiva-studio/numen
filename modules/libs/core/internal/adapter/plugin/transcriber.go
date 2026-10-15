@@ -71,15 +71,57 @@ func (b *TranscriberBridge) GetTranscriptionModel() port.TranscriptionModel {
 
 // Open sends recording raw bytes to the plugin to calculate duration and prepare segmentation.
 func (b *TranscriberBridge) Open(ctx context.Context, raw []byte) (port.Recording, error) {
+	return b.OpenSource(ctx, raw)
+}
+
+// OpenPath sends recording file path to the plugin to calculate duration and prepare segmentation.
+func (b *TranscriberBridge) OpenPath(ctx context.Context, path string) (port.Recording, error) {
+	return b.OpenSource(ctx, path)
+}
+
+// OpenSource sends recording raw bytes or file path to the plugin to calculate duration and prepare segmentation.
+func (b *TranscriberBridge) OpenSource(ctx context.Context, source any) (port.Recording, error) {
 	if b.host != nil {
 		if err := b.host.CheckPluginPermission(b.pluginID, PermissionVaultRead); err != nil {
 			return nil, err
 		}
 	}
 
-	req := connect.NewRequest(&v1.OpenRecordingRequest{
-		AudioData: raw,
-	})
+	var req *connect.Request[v1.OpenRecordingRequest]
+
+	switch s := source.(type) {
+	case string:
+		validated, err := b.resolveNamedPath(s)
+		if err != nil {
+			return nil, err
+		}
+		req = connect.NewRequest(&v1.OpenRecordingRequest{
+			Path: validated,
+		})
+	case interface{ Path() string }:
+		validated, err := b.resolveNamedPath(s.Path())
+		if err != nil {
+			return nil, err
+		}
+		req = connect.NewRequest(&v1.OpenRecordingRequest{
+			Path: validated,
+		})
+	case interface{ Name() string }:
+		validated, err := b.resolveNamedPath(s.Name())
+		if err != nil {
+			return nil, err
+		}
+		req = connect.NewRequest(&v1.OpenRecordingRequest{
+			Path: validated,
+		})
+	case []byte:
+		req = connect.NewRequest(&v1.OpenRecordingRequest{
+			AudioData: s,
+		})
+	default:
+		return nil, errors.New("unsupported audio source type")
+	}
+
 	resp, err := b.client.OpenRecording(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("rpc open recording: %w", err)
@@ -90,6 +132,13 @@ func (b *TranscriberBridge) Open(ctx context.Context, raw []byte) (port.Recordin
 		recordingID: resp.Msg.GetRecordingId(),
 		durationMs:  int(resp.Msg.GetDurationMs()),
 	}, nil
+}
+
+func (b *TranscriberBridge) resolveNamedPath(rawPath string) (string, error) {
+	if b.host == nil || b.host.GetVaultPath() == "" {
+		return rawPath, nil
+	}
+	return b.host.ValidatePluginPath(b.pluginID, rawPath)
 }
 
 // Transcribe decodes one audio segment into text words.
