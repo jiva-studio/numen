@@ -6,7 +6,7 @@ require (
 	connectrpc.com/connect v1.21.0
 	github.com/ebitengine/purego v0.11.0
 	github.com/getcharzp/onnxruntime_purego v1.24.0
-	github.com/gomlx/go-huggingface v0.4.15
+	github.com/gomlx/go-huggingface v0.4.1
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
 	golang.org/x/net v0.58.0
 )
