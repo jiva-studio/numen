@@ -23,10 +23,6 @@
     "entrypoint": "bin/transcription",
     "serviceName": "numen.v1.TranscriptionService"
   },
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  },
   "settings": [
     {
       "key": "autoTranscribeOnImport",

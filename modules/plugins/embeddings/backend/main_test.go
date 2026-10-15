@@ -54,3 +54,50 @@ func TestEmbeddingServerEnvOverrides(t *testing.T) {
 		t.Errorf("expected mean pooling, got %s", msg.GetPooling())
 	}
 }
+
+func TestLifecyclePing(t *testing.T) {
+	server := &lifecycleServer{shutdownTrigger: make(chan struct{})}
+	resp, err := server.Ping(context.Background(), connect.NewRequest(&numenv1.PingRequest{}))
+	if err != nil {
+		t.Fatalf("ping failed: %v", err)
+	}
+	if resp.Msg.GetStatus() != "ok" {
+		t.Errorf("status = %q, want %q", resp.Msg.GetStatus(), "ok")
+	}
+}
+
+func TestLifecycleShutdown(t *testing.T) {
+	server := &lifecycleServer{shutdownTrigger: make(chan struct{})}
+	resp, err := server.Shutdown(context.Background(), connect.NewRequest(&numenv1.ShutdownRequest{}))
+	if err != nil {
+		t.Fatalf("shutdown failed: %v", err)
+	}
+	if !resp.Msg.GetSuccess() {
+		t.Error("shutdown success = false, want true")
+	}
+}
+
+func TestLifecycleConfigure(t *testing.T) {
+	emb := newEmbeddingServer()
+	server := &lifecycleServer{
+		shutdownTrigger: make(chan struct{}),
+		emb:             emb,
+	}
+
+	req := connect.NewRequest(&numenv1.ConfigureRequest{
+		PluginId: "md.numen.embeddings",
+		Values: map[string]string{
+			"model": "text-embedding-3-small",
+		},
+	})
+	resp, err := server.Configure(context.Background(), req)
+	if err != nil {
+		t.Fatalf("configure failed: %v", err)
+	}
+	if !resp.Msg.GetSuccess() {
+		t.Error("configure success = false, want true")
+	}
+	if emb.modelInfo.Name != "text-embedding-3-small" {
+		t.Errorf("expected model text-embedding-3-small, got %s", emb.modelInfo.Name)
+	}
+}

@@ -21,8 +21,8 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/epub"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/plugins/reader-epub/backend/epub"
 )
 
 // ErrUnreadable is a file that is there and says nothing this can use. It is

@@ -17,10 +17,6 @@
     "entrypoint": "bin/ocr",
     "serviceName": "numen.v1.RecognitionService"
   },
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  },
   "settings": [
     {
       "key": "dpi",

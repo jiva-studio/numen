@@ -139,3 +139,103 @@ func TestHostSettingsOverlayAndPersistence(t *testing.T) {
 		t.Errorf("expected updated setting enabled=false, got %v", toggledSettings["enabled"])
 	}
 }
+
+func TestPluginEnablementAndStatus(t *testing.T) {
+	tmp := t.TempDir()
+	pDir := filepath.Join(tmp, "sample")
+	if err := os.MkdirAll(pDir, 0o755); err != nil {
+		t.Fatalf("mkdir failed: %v", err)
+	}
+
+	manifest := `{
+		"id": "md.numen.toggleable",
+		"name": "Toggleable Plugin",
+		"version": "1.0.0",
+		"description": "Can be toggled",
+		"capabilities": ["text-processing"],
+		"targets": ["desktop.editor"],
+		"activation_events": ["on-edit"],
+		"fileExtensions": [".txt"]
+	}`
+	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
+		t.Fatalf("write manifest failed: %v", err)
+	}
+
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("discover failed: %v", err)
+	}
+
+	pluginID := "md.numen.toggleable"
+
+	// 1. Initial state is enabled
+	if !host.IsPluginEnabled(pluginID) {
+		t.Errorf("expected plugin to be enabled initially")
+	}
+
+	st, ok := host.GetPluginStatus(pluginID)
+	if !ok {
+		t.Fatalf("expected status to exist for %s", pluginID)
+	}
+	if !st.Enabled {
+		t.Errorf("status.Enabled = false, want true")
+	}
+	if st.IsActive {
+		t.Errorf("status.IsActive = true, want false")
+	}
+
+	if _, found := host.FindPluginByCapability("text-processing"); !found {
+		t.Errorf("expected capability text-processing to be found")
+	}
+	if _, found := host.FindPluginByFileExtension(".txt"); !found {
+		t.Errorf("expected extension .txt to be found")
+	}
+
+	// 2. Disable plugin
+	host.SetPluginEnabled(pluginID, false)
+
+	if host.IsPluginEnabled(pluginID) {
+		t.Errorf("expected plugin to be disabled")
+	}
+
+	st, ok = host.GetPluginStatus(pluginID)
+	if !ok || st.Enabled {
+		t.Errorf("expected status.Enabled = false after disable")
+	}
+
+	if _, found := host.FindPluginByCapability("text-processing"); found {
+		t.Errorf("expected disabled plugin to not be found by capability")
+	}
+	if _, found := host.FindPluginByFileExtension(".txt"); found {
+		t.Errorf("expected disabled plugin to not be found by extension")
+	}
+
+	ctx := t.Context()
+	triggered, err := host.TriggerEvent(ctx, "on-edit")
+	if err != nil {
+		t.Fatalf("TriggerEvent error: %v", err)
+	}
+	if len(triggered) != 0 {
+		t.Errorf("expected 0 triggered plugins for disabled plugin, got %d", len(triggered))
+	}
+
+	_, err = host.EnsureActive(ctx, pluginID)
+	if err == nil {
+		t.Errorf("expected EnsureActive to fail for disabled plugin")
+	}
+
+	// 3. Re-enable plugin
+	host.SetPluginEnabled(pluginID, true)
+
+	if !host.IsPluginEnabled(pluginID) {
+		t.Errorf("expected plugin to be enabled after toggle")
+	}
+	if _, found := host.FindPluginByCapability("text-processing"); !found {
+		t.Errorf("expected capability text-processing to be found after re-enabling")
+	}
+
+	all := host.GetPluginStatuses()
+	if len(all) != 1 || !all[0].Enabled {
+		t.Errorf("expected 1 enabled plugin in GetPluginStatuses")
+	}
+}

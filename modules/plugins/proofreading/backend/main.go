@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 type lifecycleServer struct {
 	numenv1connect.UnimplementedPluginLifecycleServiceHandler
 	shutdownTrigger chan struct{}
+	proof           *proofreadingServer
 }
 
 func (s *lifecycleServer) Ping(
@@ -35,6 +37,18 @@ func (s *lifecycleServer) Ping(
 ) (*connect.Response[numenv1.PingResponse], error) {
 	return connect.NewResponse(&numenv1.PingResponse{
 		Status: "ok",
+	}), nil
+}
+
+func (s *lifecycleServer) Configure(
+	_ context.Context,
+	req *connect.Request[numenv1.ConfigureRequest],
+) (*connect.Response[numenv1.ConfigureResponse], error) {
+	if s.proof != nil {
+		s.proof.updateConfig(req.Msg.GetValues())
+	}
+	return connect.NewResponse(&numenv1.ConfigureResponse{
+		Success: true,
 	}), nil
 }
 
@@ -52,14 +66,25 @@ func (s *lifecycleServer) Shutdown(
 }
 
 type proofreadingServer struct {
+	mu        sync.RWMutex
 	modelName string
+}
+
+func (s *proofreadingServer) updateConfig(values map[string]string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if m, ok := values["model"]; ok && m != "" {
+		s.modelName = m
+	}
 }
 
 func (s *proofreadingServer) GetProofreaderInfo(
 	_ context.Context,
 	_ *connect.Request[numenv1.GetProofreaderInfoRequest],
 ) (*connect.Response[numenv1.GetProofreaderInfoResponse], error) {
+	s.mu.RLock()
 	name := s.modelName
+	s.mu.RUnlock()
 	if name == "" {
 		name = "llm-proofreader"
 	}
@@ -108,10 +133,14 @@ func (s *proofreadingServer) Proofread(
 
 	replies := make(map[int32]string, len(batches))
 
+	s.mu.RLock()
+	model := s.modelName
+	s.mu.RUnlock()
+
 	if key != "" {
 		client := &http.Client{Timeout: 60 * time.Second}
 		for _, b := range batches {
-			reply, err := callLLM(ctx, client, baseURL, key, s.modelName, req.Msg.GetInstruction(), b.GetPrompt())
+			reply, err := callLLM(ctx, client, baseURL, key, model, req.Msg.GetInstruction(), b.GetPrompt())
 			if err != nil {
 				return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("batch %d: %w", b.GetNumber(), err))
 			}
@@ -226,8 +255,8 @@ func main() {
 	actualPort := listener.Addr().(*net.TCPAddr).Port
 
 	shutdownCh := make(chan struct{})
-	life := &lifecycleServer{shutdownTrigger: shutdownCh}
 	proof := &proofreadingServer{modelName: os.Getenv("NUMEN_PROOFREADING_MODEL")}
+	life := &lifecycleServer{shutdownTrigger: shutdownCh, proof: proof}
 
 	interceptors := connect.WithInterceptors(authCheck(tokenFlag))
 

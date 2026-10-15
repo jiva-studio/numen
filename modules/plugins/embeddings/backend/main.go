@@ -29,6 +29,7 @@ import (
 type lifecycleServer struct {
 	numenv1connect.UnimplementedPluginLifecycleServiceHandler
 	shutdownTrigger chan struct{}
+	emb             *embeddingServer
 }
 
 func (s *lifecycleServer) Ping(
@@ -53,6 +54,18 @@ func (s *lifecycleServer) Shutdown(
 	}), nil
 }
 
+func (s *lifecycleServer) Configure(
+	_ context.Context,
+	req *connect.Request[numenv1.ConfigureRequest],
+) (*connect.Response[numenv1.ConfigureResponse], error) {
+	if s.emb != nil {
+		s.emb.updateConfig(req.Msg.GetValues())
+	}
+	return connect.NewResponse(&numenv1.ConfigureResponse{
+		Success: true,
+	}), nil
+}
+
 type embeddingServer struct {
 	numenv1connect.UnimplementedEmbeddingServiceHandler
 
@@ -61,6 +74,14 @@ type embeddingServer struct {
 
 	mu       sync.Mutex
 	embedder *engine.Embedder
+}
+
+func (s *embeddingServer) updateConfig(values map[string]string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if model, ok := values["model"]; ok && model != "" {
+		s.modelInfo.Name = model
+	}
 }
 
 func newEmbeddingServer() *embeddingServer {
@@ -362,8 +383,8 @@ func main() {
 	actualPort := listener.Addr().(*net.TCPAddr).Port
 
 	shutdownCh := make(chan struct{})
-	life := &lifecycleServer{shutdownTrigger: shutdownCh}
 	embedSrv := newEmbeddingServer()
+	life := &lifecycleServer{shutdownTrigger: shutdownCh, emb: embedSrv}
 
 	interceptors := connect.WithInterceptors(authCheck(tokenFlag))
 

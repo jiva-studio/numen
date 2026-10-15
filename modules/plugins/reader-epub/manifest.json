@@ -5,7 +5,6 @@
   "description": "EPUB reflowable book reader and metadata parser",
   "capabilities": ["book"],
   "targets": ["desktop.editor"],
-  "target": ["desktop.editor"],
   "fileExtensions": [".epub"],
   "activationEvents": ["onFile:*.epub"],
   "permissions": ["vault:read"],

@@ -28,6 +28,7 @@ import (
 type lifecycleServer struct {
 	numenv1connect.UnimplementedPluginLifecycleServiceHandler
 	shutdownTrigger chan struct{}
+	agent           *agentServer
 }
 
 func (s *lifecycleServer) Ping(
@@ -48,6 +49,18 @@ func (s *lifecycleServer) Shutdown(
 		close(s.shutdownTrigger)
 	}()
 	return connect.NewResponse(&numenv1.ShutdownResponse{
+		Success: true,
+	}), nil
+}
+
+func (s *lifecycleServer) Configure(
+	_ context.Context,
+	req *connect.Request[numenv1.ConfigureRequest],
+) (*connect.Response[numenv1.ConfigureResponse], error) {
+	if s.agent != nil {
+		s.agent.updateConfig(req.Msg.GetValues())
+	}
+	return connect.NewResponse(&numenv1.ConfigureResponse{
 		Success: true,
 	}), nil
 }
@@ -86,6 +99,17 @@ type toolCall struct {
 	ID       string           `json:"id"`
 	Type     string           `json:"type"`
 	Function toolCallFunction `json:"function"`
+}
+
+func (s *agentServer) updateConfig(values map[string]string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if prompt, ok := values["system_prompt"]; ok && prompt != "" {
+		s.systemPrompt = prompt
+	}
+	if model, ok := values["model"]; ok && model != "" {
+		s.modelName = model
+	}
 }
 
 type chatMessage struct {
@@ -526,7 +550,6 @@ func callChat(
 	return &chatResp.Choices[0].Message, nil
 }
 
-
 func splitChunks(s string, chunkSize int) []string {
 	if len(s) <= chunkSize {
 		return []string{s}
@@ -618,12 +641,12 @@ func main() {
 	systemPrompt, tools := loadManifest("manifest.json")
 
 	shutdownCh := make(chan struct{})
-	life := &lifecycleServer{shutdownTrigger: shutdownCh}
 	agentSvc := &agentServer{
 		systemPrompt: systemPrompt,
 		tools:        tools,
 		modelName:    os.Getenv("NUMEN_AGENT_MODEL"),
 	}
+	life := &lifecycleServer{shutdownTrigger: shutdownCh, agent: agentSvc}
 
 	interceptors := connect.WithInterceptors(authCheck(tokenFlag))
 
