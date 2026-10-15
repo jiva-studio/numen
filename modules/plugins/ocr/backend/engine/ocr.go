@@ -1,0 +1,213 @@
+package engine
+
+import (
+	"cmp"
+	"image"
+	"iter"
+	"slices"
+	"strings"
+	"unicode"
+	"unicode/utf8"
+)
+
+// Region is one part of a page: what it is, where it is, and where it comes
+// in the order the page is read.
+type Region struct {
+	Label string
+	Score float32
+	Rect  image.Rectangle
+	Order int
+}
+
+// Line is a run of words a detector found, and what a recogniser read in it.
+type Line struct {
+	Box   image.Rectangle
+	Text  string
+	Score float32
+}
+
+// ByteSpan represents a byte offset range.
+type ByteSpan struct {
+	From int
+	To   int
+}
+
+// Box is one box of a region: the rectangle it covers on the page, and the run of bytes it produced.
+type Box struct {
+	Rect image.Rectangle
+	Span ByteSpan
+}
+
+// Block is one region of a page, written out.
+type Block struct {
+	Label     string
+	Text      string
+	IsHeading bool
+	Depth     int
+	Boxes     []Box
+}
+
+// Distinct drops a region that covers one already kept.
+func Distinct(regions []Region, most float64) []Region {
+	slices.SortStableFunc(regions, func(a, b Region) int {
+		switch {
+		case a.Score > b.Score:
+			return -1
+		case b.Score > a.Score:
+			return 1
+		}
+		return 0
+	})
+
+	kept := regions[:0]
+	for _, r := range regions {
+		covered := false
+		for _, k := range kept {
+			if overlap(r.Rect, k.Rect) > most || isInside(r.Rect, k.Rect) {
+				covered = true
+				break
+			}
+		}
+		if !covered {
+			kept = append(kept, r)
+		}
+	}
+	slices.SortStableFunc(kept, func(a, b Region) int { return cmp.Compare(a.Order, b.Order) })
+	return kept
+}
+
+func overlap(a, b image.Rectangle) float64 {
+	both := a.Intersect(b)
+	if both.Empty() {
+		return 0
+	}
+	common := float64(both.Dx() * both.Dy())
+	either := float64(a.Dx()*a.Dy()) + float64(b.Dx()*b.Dy()) - common
+	if either <= 0 {
+		return 0
+	}
+	return common / either
+}
+
+func isInside(a, b image.Rectangle) bool {
+	both := a.Intersect(b)
+	if both.Empty() {
+		return false
+	}
+	return float64(both.Dx()*both.Dy()) > 0.9*float64(a.Dx()*a.Dy())
+}
+
+// Assemble writes one region out as running prose, and says where on the page
+// each run of it was read.
+func Assemble(lines []Line) (string, []Box) {
+	size := len(lines)
+	for _, one := range lines {
+		size += len(one.Text)
+	}
+	out := make([]byte, 0, size)
+	kept := make([]Box, 0, len(lines))
+	for line := range group(lines) {
+		text, boxes := writeLine(line)
+		if text == "" {
+			continue
+		}
+		if n := getHyphenLength(out); n > 0 {
+			out = out[:len(out)-n]
+			if k := len(kept); k > 0 {
+				kept[k-1].Span.To -= n
+			}
+		} else if len(out) > 0 {
+			out = append(out, ' ')
+		}
+		at := len(out)
+		for _, box := range boxes {
+			box.Span.From += at
+			box.Span.To += at
+			kept = append(kept, box)
+		}
+		out = append(out, text...)
+	}
+	return string(out), kept
+}
+
+func getHyphenLength(text []byte) int {
+	mark, width := utf8.DecodeLastRune(text)
+	if !isHyphen(mark) {
+		return 0
+	}
+	letter, _ := utf8.DecodeLastRune(text[:len(text)-width])
+	if !unicode.IsLetter(letter) {
+		return 0
+	}
+	return width
+}
+
+func isHyphen(r rune) bool {
+	switch r {
+	case '-', '\u2010', '\u2011', '\u00ad':
+		return true
+	}
+	return false
+}
+
+func group(lines []Line) iter.Seq[[]Line] {
+	sorted := slices.Clone(lines)
+	slices.SortStableFunc(sorted, func(a, b Line) int { return cmp.Compare(a.Box.Min.Y, b.Box.Min.Y) })
+
+	return func(yield func([]Line) bool) {
+		start := 0
+		for i, line := range sorted {
+			if i > start && measureVerticalOverlap(sorted[start:i], line) < 0.5 {
+				if !yield(sortLine(sorted[start:i])) {
+					return
+				}
+				start = i
+			}
+		}
+		if start < len(sorted) {
+			yield(sortLine(sorted[start:]))
+		}
+	}
+}
+
+func sortLine(line []Line) []Line {
+	slices.SortStableFunc(line, func(a, b Line) int { return cmp.Compare(a.Box.Min.X, b.Box.Min.X) })
+	return line
+}
+
+func measureVerticalOverlap(line []Line, box Line) float64 {
+	top, bottom := box.Box.Min.Y, box.Box.Max.Y
+	height := box.Box.Dy()
+	for _, l := range line {
+		top = max(top, l.Box.Min.Y)
+		bottom = min(bottom, l.Box.Max.Y)
+		height = min(height, l.Box.Dy())
+	}
+	if height <= 0 {
+		return 0
+	}
+	return float64(max(bottom-top, 0)) / float64(height)
+}
+
+func writeLine(line []Line) (string, []Box) {
+	size := len(line)
+	for _, one := range line {
+		size += len(one.Text)
+	}
+	var out strings.Builder
+	out.Grow(size)
+	kept := make([]Box, 0, len(line))
+	for _, one := range line {
+		text := strings.TrimSpace(one.Text)
+		if text == "" {
+			continue
+		}
+		if out.Len() > 0 {
+			out.WriteString(" ")
+		}
+		at := out.Len()
+		kept = append(kept, Box{Rect: one.Box, Span: ByteSpan{From: at, To: at + len(text)}})
+		out.WriteString(text)
+	}
+	return out.String(), kept
+}
