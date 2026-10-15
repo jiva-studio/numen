@@ -28,6 +28,7 @@ import (
 type lifecycleServer struct {
 	numenv1connect.UnimplementedPluginLifecycleServiceHandler
 	shutdownTrigger chan struct{}
+	ts              *transcriptionServer
 }
 
 func (s *lifecycleServer) Ping(
@@ -52,12 +53,32 @@ func (s *lifecycleServer) Shutdown(
 	}), nil
 }
 
+func (s *lifecycleServer) Configure(
+	_ context.Context,
+	req *connect.Request[numenv1.ConfigureRequest],
+) (*connect.Response[numenv1.ConfigureResponse], error) {
+	if s.ts != nil {
+		s.ts.updateConfig(req.Msg.GetValues())
+	}
+	return connect.NewResponse(&numenv1.ConfigureResponse{
+		Success: true,
+	}), nil
+}
+
 type transcriptionServer struct {
 	mu          sync.Mutex
 	cfg         engine.Config
 	transcriber *engine.Transcriber
 	nextID      int64
 	recordings  map[string]engine.Recording
+}
+
+func (s *transcriptionServer) updateConfig(values map[string]string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if lang, ok := values["language"]; ok && lang != "" {
+		s.cfg.Model.Name = lang
+	}
 }
 
 func newTranscriptionServer(cfg engine.Config) *transcriptionServer {
@@ -321,9 +342,9 @@ func main() {
 	actualPort := listener.Addr().(*net.TCPAddr).Port
 
 	shutdownCh := make(chan struct{})
-	life := &lifecycleServer{shutdownTrigger: shutdownCh}
 	trans := newTranscriptionServer(cfg)
 	defer trans.close()
+	life := &lifecycleServer{shutdownTrigger: shutdownCh, ts: trans}
 
 	interceptors := connect.WithInterceptors(authCheck(tokenFlag))
 

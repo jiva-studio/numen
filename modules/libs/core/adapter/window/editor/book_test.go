@@ -22,8 +22,8 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/epub"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/plugins/reader-epub/backend/epub"
 )
 
 // Where the book a test reads sits in its vault, and the documents it is read
@@ -100,6 +100,10 @@ func TestAFileThatIsNoBook(t *testing.T) {
 	})
 	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(testsupport.Documents{}))
 	api.state.setVault(vault)
+	client := &testBookClient{api: api}
+	api.Book.openClient = func(context.Context) (any, func(), error) {
+		return client, func() {}, nil
+	}
 	t.Cleanup(api.Document.viewer.close)
 
 	for _, one := range []struct {
@@ -210,6 +214,10 @@ func TestACoverIsDrawnFromThePictureItWraps(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{reflowed: string(newCoveredBook(t))})
 	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(testsupport.Documents{}))
 	api.state.setVault(vault)
+	client := &testBookClient{api: api}
+	api.Book.openClient = func(context.Context) (any, func(), error) {
+		return client, func() {}, nil
+	}
 	t.Cleanup(api.Document.viewer.close)
 	handler := api.NewHandler(http.NotFoundHandler())
 	mark := printOf(t, api, reflowed)
@@ -376,12 +384,72 @@ func TestTheBooksOfAVaultAreLetGoWhenAnotherComesIn(t *testing.T) {
 // openBooks is how many books are held.
 func openBooks(held *pool.Books) int { return held.Len() }
 
+type testBookClient struct {
+	api *Services
+}
+
+func (c *testBookClient) GetBook(ctx context.Context, r *connect.Request[v1.GetBookRequest]) (*connect.Response[v1.GetBookResponse], error) {
+	showing, err := c.api.state.getShownVault()
+	if err != nil {
+		return nil, connect.NewError(getDrawCode(err), err)
+	}
+	read, err := c.api.Book.getBook.Execute(ctx, showing, r.Msg.GetPath())
+	if err != nil {
+		return nil, connect.NewError(getDrawCode(err), err)
+	}
+	out := &v1.GetBookResponse{
+		Title:       read.Book.Title,
+		PageCount:   int32(read.Book.PageCount()),
+		TextBytes:   int32(len(read.Book.Text)),
+		PageBytes:   int32(read.Book.PageBytes()),
+		Fingerprint: newWireFingerprint(read.Fingerprint),
+	}
+	for _, doc := range read.Book.Documents[:min(len(read.Book.Documents), mostListed)] {
+		out.Documents = append(out.Documents, &v1.SpineDocument{
+			Path:   doc.Path,
+			Offset: int32(doc.Offset),
+			Length: int32(doc.Length),
+		})
+	}
+	for _, part := range read.Book.Parts[:min(len(read.Book.Parts), mostListed)] {
+		out.Parts = append(out.Parts, &v1.BookPart{
+			Title:  part.Title,
+			Offset: int32(part.Offset),
+			Level:  int32(part.Level),
+		})
+	}
+	for _, page := range read.Book.Pages[:min(len(read.Book.Pages), mostListed)] {
+		out.PrintedPages = append(out.PrintedPages, &v1.PrintedPage{Label: page.Label, Offset: int32(page.Offset)})
+	}
+	return connect.NewResponse(out), nil
+}
+
+func (c *testBookClient) ReadBookMarkup(ctx context.Context, r *connect.Request[v1.ReadBookMarkupRequest]) (*connect.Response[v1.ReadBookMarkupResponse], error) {
+	showing, err := c.api.state.getShownVault()
+	if err != nil {
+		return nil, connect.NewError(getDrawCode(err), err)
+	}
+	var baseline *document.Fingerprint
+	if named := r.Msg.GetBaseline(); named != nil {
+		baseline = &document.Fingerprint{Size: named.GetSize(), Mtime: named.GetMtime()}
+	}
+	markup, err := c.api.Book.getBookMarkup.Execute(ctx, showing, r.Msg.GetPath(), baseline, r.Msg.GetDocument())
+	if err != nil {
+		return nil, connect.NewError(getDrawCode(err), err)
+	}
+	return connect.NewResponse(&v1.ReadBookMarkupResponse{Markup: markup}), nil
+}
+
 // readFrom is a window looking at one book of its vault.
 func readFrom(t *testing.T) (*Services, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{reflowed: string(bookOf(t))})
 	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(testsupport.Documents{}))
 	api.state.setVault(vault)
+	client := &testBookClient{api: api}
+	api.Book.openClient = func(context.Context) (any, func(), error) {
+		return client, func() {}, nil
+	}
 	t.Cleanup(api.Document.viewer.close)
 	return api, api.NewHandler(http.NotFoundHandler())
 }

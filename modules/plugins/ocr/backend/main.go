@@ -31,6 +31,7 @@ import (
 type lifecycleServer struct {
 	numenv1connect.UnimplementedPluginLifecycleServiceHandler
 	shutdownTrigger chan struct{}
+	recog           *recognitionServer
 }
 
 func (s *lifecycleServer) Ping(
@@ -55,6 +56,18 @@ func (s *lifecycleServer) Shutdown(
 	}), nil
 }
 
+func (s *lifecycleServer) Configure(
+	_ context.Context,
+	req *connect.Request[numenv1.ConfigureRequest],
+) (*connect.Response[numenv1.ConfigureResponse], error) {
+	if s.recog != nil {
+		s.recog.updateConfig(req.Msg.GetValues())
+	}
+	return connect.NewResponse(&numenv1.ConfigureResponse{
+		Success: true,
+	}), nil
+}
+
 type recognitionServer struct {
 	numenv1connect.UnimplementedRecognitionServiceHandler
 
@@ -67,6 +80,16 @@ func newRecognitionServer(eng *engine.Recogniser, cfg engine.Config) *recognitio
 	return &recognitionServer{
 		engine: eng,
 		cfg:    cfg,
+	}
+}
+
+func (s *recognitionServer) updateConfig(values map[string]string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if dpiStr, ok := values["dpi"]; ok {
+		if dpi, err := strconv.Atoi(dpiStr); err == nil && dpi > 0 {
+			s.cfg.Recognise.DPI = dpi
+		}
 	}
 }
 
@@ -241,9 +264,9 @@ func main() {
 	}
 
 	shutdownCh := make(chan struct{})
-	life := &lifecycleServer{shutdownTrigger: shutdownCh}
 	recog := newRecognitionServer(nil, cfg)
 	defer recog.close()
+	life := &lifecycleServer{shutdownTrigger: shutdownCh, recog: recog}
 
 	interceptors := connect.WithInterceptors(authCheck(tokenFlag))
 

@@ -49,6 +49,32 @@ func TestLifecycleShutdown(t *testing.T) {
 	}
 }
 
+func TestLifecycleConfigure(t *testing.T) {
+	cfg := engine.Defaults()
+	recog := newRecognitionServer(nil, cfg)
+	server := &lifecycleServer{
+		shutdownTrigger: make(chan struct{}),
+		recog:           recog,
+	}
+
+	req := connect.NewRequest(&numenv1.ConfigureRequest{
+		PluginId: "md.numen.ocr",
+		Values: map[string]string{
+			"dpi": "450",
+		},
+	})
+	resp, err := server.Configure(context.Background(), req)
+	if err != nil {
+		t.Fatalf("configure failed: %v", err)
+	}
+	if !resp.Msg.GetSuccess() {
+		t.Error("configure success = false, want true")
+	}
+	if recog.cfg.Recognise.DPI != 450 {
+		t.Errorf("expected DPI 450, got %d", recog.cfg.Recognise.DPI)
+	}
+}
+
 func TestGetRecognitionModelDefault(t *testing.T) {
 	cfg := engine.Defaults()
 	cfg.Layout.Name = "custom-layout.onnx"

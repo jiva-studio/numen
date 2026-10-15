@@ -32,6 +32,13 @@ type Launcher func(ctx context.Context, p DiscoveredPlugin, port int, token stri
 // PersistHandler persists a changed plugin setting to host configuration.
 type PersistHandler func(pluginID string, key string, value any) error
 
+// PluginStatus describes the enablement and runtime status of a plugin.
+type PluginStatus struct {
+	ID       string `json:"id"`
+	Enabled  bool   `json:"enabled"`
+	IsActive bool   `json:"isActive"`
+}
+
 // Host manages the discovery, lifecycle, activation, and communication endpoints of plugins.
 type Host struct {
 	mu             sync.RWMutex
@@ -50,6 +57,7 @@ type Host struct {
 	evictDone      chan struct{}
 	evictWg        sync.WaitGroup
 	isEvictStopped bool
+	enabled        map[string]bool
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
@@ -69,6 +77,7 @@ func NewHost(target string, dirs ...string) *Host {
 		persistHandler: nil,
 		evictTicker:    time.NewTicker(30 * time.Second),
 		evictDone:      make(chan struct{}),
+		enabled:        make(map[string]bool),
 	}
 	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
@@ -221,6 +230,9 @@ func (h *Host) FindPluginByCapability(capability string) (DiscoveredPlugin, bool
 	}
 
 	for _, p := range h.plugins {
+		if !h.isPluginEnabledLocked(p.Manifest.ID) {
+			continue
+		}
 		if p.Manifest.HasCapability(capability) {
 			return p, true
 		}
@@ -233,6 +245,9 @@ func (h *Host) FindPluginByFileExtension(ext string) (DiscoveredPlugin, bool) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	for _, p := range h.plugins {
+		if !h.isPluginEnabledLocked(p.Manifest.ID) {
+			continue
+		}
 		if p.Manifest.HasFileExtension(ext) {
 			return p, true
 		}
@@ -249,6 +264,9 @@ func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error)
 	}
 	candidates := make([]string, 0)
 	for id, p := range h.plugins {
+		if !h.isPluginEnabledLocked(id) {
+			continue
+		}
 		if p.Manifest.CanActivateOn(event) {
 			candidates = append(candidates, id)
 		}
@@ -278,6 +296,11 @@ func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, err
 	if !ok {
 		h.mu.Unlock()
 		return Endpoint{Host: "", Port: 0, Token: ""}, errPluginNotFound
+	}
+
+	if !h.isPluginEnabledLocked(pluginID) {
+		h.mu.Unlock()
+		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("plugin %s is disabled", pluginID)
 	}
 
 	sup := h.supervisors[pluginID]
@@ -446,7 +469,90 @@ func (h *Host) SetSettings(all map[string]map[string]any) {
 		for k, v := range cfg {
 			h.settings[pluginID][k] = v
 		}
+		if val, ok := cfg["enabled"].(bool); ok {
+			h.enabled[pluginID] = val
+		}
 	}
+}
+
+// IsPluginEnabled reports whether the specified plugin is enabled.
+func (h *Host) IsPluginEnabled(pluginID string) bool {
+	return h.isPluginEnabled(pluginID)
+}
+
+func (h *Host) isPluginEnabled(pluginID string) bool {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.isPluginEnabledLocked(pluginID)
+}
+
+func (h *Host) isPluginEnabledLocked(pluginID string) bool {
+	if val, ok := h.enabled[pluginID]; ok {
+		return val
+	}
+	settings := h.getPluginSettingsLocked(pluginID)
+	if val, ok := settings["enabled"].(bool); ok {
+		return val
+	}
+	return true
+}
+
+// SetPluginEnabled sets whether the plugin is enabled and updates its configuration.
+func (h *Host) SetPluginEnabled(pluginID string, enabled bool) {
+	h.mu.Lock()
+	if h.enabled == nil {
+		h.enabled = make(map[string]bool)
+	}
+	h.enabled[pluginID] = enabled
+	if _, ok := h.settings[pluginID]; !ok {
+		h.settings[pluginID] = make(map[string]any)
+	}
+	h.settings[pluginID]["enabled"] = enabled
+	persist := h.persistHandler
+	h.mu.Unlock()
+
+	if persist != nil {
+		_ = persist(pluginID, "enabled", enabled)
+	}
+}
+
+// GetPluginStatus returns the status of the specified plugin.
+func (h *Host) GetPluginStatus(pluginID string) (PluginStatus, bool) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	p, ok := h.plugins[pluginID]
+	if !ok {
+		return PluginStatus{}, false
+	}
+	return PluginStatus{
+		ID:       p.Manifest.ID,
+		Enabled:  h.isPluginEnabledLocked(p.Manifest.ID),
+		IsActive: h.isPluginActiveLocked(p.Manifest.ID),
+	}, true
+}
+
+// GetPluginStatuses returns statuses for all registered plugins.
+func (h *Host) GetPluginStatuses() []PluginStatus {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	statuses := make([]PluginStatus, 0, len(h.plugins))
+	for _, p := range h.plugins {
+		statuses = append(statuses, PluginStatus{
+			ID:       p.Manifest.ID,
+			Enabled:  h.isPluginEnabledLocked(p.Manifest.ID),
+			IsActive: h.isPluginActiveLocked(p.Manifest.ID),
+		})
+	}
+	return statuses
+}
+
+func (h *Host) isPluginActiveLocked(pluginID string) bool {
+	if sup, ok := h.supervisors[pluginID]; ok {
+		return sup.GetState() == StateActive || sup.GetState() == StateIdle
+	}
+	return false
 }
 
 // GetPluginSettings returns resolved settings for a plugin with defaults overlaid by stored values.
@@ -598,8 +704,7 @@ func (h *Host) GetPluginInfos() []*v1.PluginInfo {
 
 	result := make([]*v1.PluginInfo, 0, len(h.plugins))
 	for _, p := range h.plugins {
-		sup, hasSup := h.supervisors[p.Manifest.ID]
-		isActive := hasSup && (sup.GetState() == StateActive || sup.GetState() == StateIdle)
+		isActive := h.isPluginActiveLocked(p.Manifest.ID)
 
 		settings := make([]*v1.PluginSetting, 0, len(p.Manifest.Settings))
 		for _, s := range p.Manifest.Settings {

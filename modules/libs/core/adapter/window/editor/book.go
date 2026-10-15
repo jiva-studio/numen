@@ -11,8 +11,8 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/epub"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
+	"github.com/jiva-studio/numen/modules/plugins/reader-epub/backend/epub"
 )
 
 // bookHandler answers what a book that reflows is, and the pictures it carries.
@@ -42,54 +42,17 @@ func (h *bookHandler) GetBook(
 	ctx context.Context,
 	r *connect.Request[v1.GetBookRequest],
 ) (*connect.Response[v1.GetBookResponse], error) {
-	if client, closeClient, err := h.getClient(ctx); err == nil && client != nil {
-		if closeClient != nil {
-			defer closeClient()
-		}
-		return client.GetBook(ctx, r)
+	client, closeClient, err := h.getClient(ctx)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-
-	if h.getBook == nil {
-
+	if client == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 	}
-	showing, err := h.state.getShownVault()
-	if err != nil {
-		return nil, connect.NewError(getDrawCode(err), err)
+	if closeClient != nil {
+		defer closeClient()
 	}
-	ctx, cancel := context.WithTimeout(ctx, h.viewer.patience)
-	defer cancel()
-
-	read, err := h.getBook.Execute(ctx, showing, r.Msg.GetPath())
-	if err != nil {
-		return nil, connect.NewError(getDrawCode(err), err)
-	}
-
-	out := &v1.GetBookResponse{
-		Title:       read.Book.Title,
-		PageCount:   int32(read.Book.PageCount()),
-		TextBytes:   int32(len(read.Book.Text)),
-		PageBytes:   int32(read.Book.PageBytes()),
-		Fingerprint: newWireFingerprint(read.Fingerprint),
-	}
-	for _, doc := range read.Book.Documents[:min(len(read.Book.Documents), mostListed)] {
-		out.Documents = append(out.Documents, &v1.SpineDocument{
-			Path:   doc.Path,
-			Offset: int32(doc.Offset),
-			Length: int32(doc.Length),
-		})
-	}
-	for _, part := range read.Book.Parts[:min(len(read.Book.Parts), mostListed)] {
-		out.Parts = append(out.Parts, &v1.BookPart{
-			Title:  part.Title,
-			Offset: int32(part.Offset),
-			Level:  int32(part.Level),
-		})
-	}
-	for _, page := range read.Book.Pages[:min(len(read.Book.Pages), mostListed)] {
-		out.PrintedPages = append(out.PrintedPages, &v1.PrintedPage{Label: page.Label, Offset: int32(page.Offset)})
-	}
-	return connect.NewResponse(out), nil
+	return client.GetBook(ctx, r)
 }
 
 // ReadBookMarkup answers with one document of a book, as the markup a window
@@ -101,33 +64,17 @@ func (h *bookHandler) ReadBookMarkup(
 	ctx context.Context,
 	r *connect.Request[v1.ReadBookMarkupRequest],
 ) (*connect.Response[v1.ReadBookMarkupResponse], error) {
-	if client, closeClient, err := h.getClient(ctx); err == nil && client != nil {
-		if closeClient != nil {
-			defer closeClient()
-		}
-		return client.ReadBookMarkup(ctx, r)
+	client, closeClient, err := h.getClient(ctx)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-
-	if h.getBookMarkup == nil {
-
+	if client == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 	}
-	showing, err := h.state.getShownVault()
-	if err != nil {
-		return nil, connect.NewError(getDrawCode(err), err)
+	if closeClient != nil {
+		defer closeClient()
 	}
-	ctx, cancel := context.WithTimeout(ctx, h.viewer.patience)
-	defer cancel()
-
-	var baseline *document.Fingerprint
-	if named := r.Msg.GetBaseline(); named != nil {
-		baseline = &document.Fingerprint{Size: named.GetSize(), Mtime: named.GetMtime()}
-	}
-	markup, err := h.getBookMarkup.Execute(ctx, showing, r.Msg.GetPath(), baseline, r.Msg.GetDocument())
-	if err != nil {
-		return nil, connect.NewError(getDrawCode(err), err)
-	}
-	return connect.NewResponse(&v1.ReadBookMarkupResponse{Markup: markup}), nil
+	return client.ReadBookMarkup(ctx, r)
 }
 
 // Entry answers with the bytes of one entry of a book's archive, which is how a

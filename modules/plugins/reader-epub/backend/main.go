@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -29,6 +30,8 @@ const mostListed = 10_000
 type lifecycleServer struct {
 	numenv1connect.UnimplementedPluginLifecycleServiceHandler
 	shutdownTrigger chan struct{}
+	mu              sync.RWMutex
+	config          map[string]string
 }
 
 func (s *lifecycleServer) Ping(
@@ -37,6 +40,23 @@ func (s *lifecycleServer) Ping(
 ) (*connect.Response[numenv1.PingResponse], error) {
 	return connect.NewResponse(&numenv1.PingResponse{
 		Status: "ok",
+	}), nil
+}
+
+func (s *lifecycleServer) Configure(
+	_ context.Context,
+	req *connect.Request[numenv1.ConfigureRequest],
+) (*connect.Response[numenv1.ConfigureResponse], error) {
+	s.mu.Lock()
+	if s.config == nil {
+		s.config = make(map[string]string)
+	}
+	for k, v := range req.Msg.GetValues() {
+		s.config[k] = v
+	}
+	s.mu.Unlock()
+	return connect.NewResponse(&numenv1.ConfigureResponse{
+		Success: true,
 	}), nil
 }
 
