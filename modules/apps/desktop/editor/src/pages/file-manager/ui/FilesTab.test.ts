@@ -317,7 +317,7 @@ describe('a folder that could not be read', () => {
 describe('a drop of several addresses on the files tab', () => {
   it('imports all dropped addresses into the folder', async () => {
     const { done, window } = await mountFiles()
-    await window.find('.files-tab').trigger('drop', {
+    await window.find('.files').trigger('drop', {
       dataTransfer: {
         getData: (type: string) =>
           type === 'text/uri-list' ? 'https://first.org/\nhttps://second.org/' : '',
