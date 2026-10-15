@@ -24,7 +24,7 @@ import { generateId } from '../lib/workspace'
 const generatePaneId = () => crypto.randomUUID()
 
 export function useWindowTabs() {
-  const { byKind, registerKinds } = createTabRegistry()
+  const { byKind, registerKinds, registerKind } = createTabRegistry()
   const { scopes, drop } = createTabScopes()
   const open = shallowRef<ReadonlyMap<string, WindowTab>>(new Map())
   const layout = ref<Workspace>({
@@ -53,6 +53,7 @@ export function useWindowTabs() {
     tabs,
     handle,
     registerKinds,
+    registerKind,
     getTab: queries.getTab,
     getTabStateIn: queries.getTabStateIn,
     createTab: openers.createTab,
@@ -75,7 +76,13 @@ function createTabRegistry() {
   const registerKinds = (kinds: readonly AnyTabKind[]) => {
     for (const one of kinds) byKind.set(one.kind, one)
   }
-  return { byKind, registerKinds }
+  const registerKind = (kind: AnyTabKind): (() => void) => {
+    byKind.set(kind.kind, kind)
+    return () => {
+      byKind.delete(kind.kind)
+    }
+  }
+  return { byKind, registerKinds, registerKind }
 }
 
 /** Effect scope manager for active tabs. */

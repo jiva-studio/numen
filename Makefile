@@ -71,6 +71,9 @@ plugins_lint: $(addprefix plugin_,$(addsuffix _lint,$(PLUGIN_NAMES))) ## lint al
 .PHONY: plugins_test
 plugins_test: $(addprefix plugin_,$(addsuffix _test,$(PLUGIN_NAMES))) ## run tests across all plugins
 
+.PHONY: plugins_package
+plugins_package: $(addprefix plugin_,$(addsuffix _package,$(PLUGIN_NAMES))) ## package all plugins into zip archives
+
 .PHONY: flashcards
 flashcards: app_desktop_flashcards_bin ## build flashcards standalone window
 
@@ -375,6 +378,10 @@ $(addprefix plugin_,$(addsuffix _test,$(PLUGIN_NAMES))): plugin_%_test:
 	@if [ -f $(PLUGINS)/$*/go.mod ]; then \
 		cd $(PLUGINS)/$* && go test ./... ; \
 	fi
+
+.PHONY: $(addprefix plugin_,$(addsuffix _package,$(PLUGIN_NAMES)))
+$(addprefix plugin_,$(addsuffix _package,$(PLUGIN_NAMES))): plugin_%_package: plugin_%_build
+	cd $(DESKTOP) && go run ./cmd/numen-plugin package ../../../$(PLUGINS)/$*
 
 .PHONY: $(addprefix plugin_,$(addsuffix _clean,$(PLUGIN_NAMES)))
 $(addprefix plugin_,$(addsuffix _clean,$(PLUGIN_NAMES))): plugin_%_clean:
