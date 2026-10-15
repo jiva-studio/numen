@@ -47,6 +47,7 @@ type DeckContents struct {
 // StencilContents is one stencil as a read hands it over.
 type StencilContents struct {
 	Path    string
+	Title   string
 	Outcome note.ReadOutcome
 	Type    domain.NoteType
 	// Body is what the file says: the fields a card is asked for and the faces
@@ -211,6 +212,7 @@ func (u Read) Stencil(ctx context.Context, v domain.Vault, path string) (Stencil
 		return StencilContents{}, err
 	}
 	out.Fingerprint, out.Outcome, out.Type = ref, outcome, n.Type
+	out.Title = n.Title
 	if outcome == note.Ok {
 		out.Body = format.ReadStencil(n)
 	}

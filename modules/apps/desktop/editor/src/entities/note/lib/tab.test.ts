@@ -759,6 +759,18 @@ describe('the vault changes', () => {
     expect(next.effects).toEqual([{ kind: 'read', path: 'Note.md', generation: 2 }])
   })
 
+  it('reads again when a gone tab is changed on disk', () => {
+    const gone = tab({ isDeleted: true, reading: 1 })
+    const next = transitionTab(gone, {
+      kind: 'changed',
+      paths: ['Note.md'],
+      renamed: [],
+    })
+
+    expect(next.tab.reading).toBe(2)
+    expect(next.effects).toEqual([{ kind: 'read', path: 'Note.md', generation: 2 }])
+  })
+
   it('does nothing to a tab with something unsaved, reload or not', () => {
     const unsaved = tab({ shown: 'mine', since: 10 })
 

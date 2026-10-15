@@ -51,6 +51,7 @@ var doing = map[string]Tool{
 	"note_focus":          {Kind: domain.StepRead},
 	"file_read":           {Kind: domain.StepRead},
 	"card_stencil_list":   {Kind: domain.StepRead},
+	"card_stencil_read":   {Kind: domain.StepRead},
 	"card_read":           {Kind: domain.StepRead},
 	"card_current":        {Kind: domain.StepRead},
 	"card_add":            {Kind: domain.StepEdit},
@@ -62,6 +63,7 @@ var doing = map[string]Tool{
 	"card_section_remove": {Kind: domain.StepRemove},
 	"card_deck_create":    {Kind: domain.StepEdit},
 	"card_stencil_create": {Kind: domain.StepEdit},
+	"card_stencil_edit":   {Kind: domain.StepEdit},
 	// A field's name stands in the stencil that declares it and in every card
 	// that stencil cuts, so renaming it is a write to as many files as hold one.
 	"card_field_rename": {Kind: domain.StepMove},

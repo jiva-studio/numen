@@ -108,6 +108,8 @@ type Vaults struct {
 
 // Cards is the use cases that read and change the decks and stencils of a vault.
 type Cards struct {
+	Read            cards.Read
+	Write           cards.Write
 	GetCardPage     cards.GetCardPage
 	AddCard         cards.AddCard
 	EditCard        cards.EditCard

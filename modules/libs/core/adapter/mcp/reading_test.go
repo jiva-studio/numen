@@ -272,7 +272,7 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 			GetTitles:     note.NewGetTitles(queries),
 			Links:         note.NewShowLinks(db.Links()),
 		},
-		Cards:   mcp.Cards{GetCardPage: cards.GetCardPage, List: cards.List},
+		Cards:   mcp.Cards{Read: cards.Read, GetCardPage: cards.GetCardPage, List: cards.List},
 		Sources: mcp.Sources{GetDocumentList: source.NewGetDocumentList(db.SourcesKnown()), GetDocumentText: source.NewGetDocumentText(readers, db.SourcesKnown(), nil, nil)},
 	}
 }

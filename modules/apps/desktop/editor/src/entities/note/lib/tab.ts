@@ -180,7 +180,8 @@ const applyChange = (tab: Tab, paths: readonly string[], renames: readonly Move[
   const next = went ? { ...tab, path: went.to, isDeleted: false } : tab
 
   const mine = paths.length === 0 || paths.includes(next.path) || went !== undefined
-  if (!mine || getState(next) !== 'clean') return keepTab(next)
+  const state = getState(next)
+  if (!mine || (state !== 'clean' && state !== 'gone')) return keepTab(next)
   const reading = next.reading + 1
   return {
     tab: { ...next, reading },

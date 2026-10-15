@@ -97,6 +97,8 @@ func newCoreWithQueries(t *testing.T, notes map[string]string) (domain.Vault, mc
 
 	core := mcp.Core{
 		Cards: mcp.Cards{
+			Read:            cards.Read,
+			Write:           cards.Write,
 			GetCardPage:     cards.GetCardPage,
 			List:            cards.List,
 			Create:          cards.Create,

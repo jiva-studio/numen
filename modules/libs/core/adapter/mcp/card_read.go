@@ -2,16 +2,21 @@ package mcp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 func addCardReadTools(server *sdk.Server, core Core) {
 	addCardStencilList(server, core)
+	addCardStencilRead(server, core)
 	addCardRead(server, core)
 }
 
@@ -82,6 +87,61 @@ func listCardStencils(ctx context.Context, core Core, in stencilListInput) (sten
 		})
 	}
 	return res, nil
+}
+
+type stencilReadInput struct {
+	Path string `json:"path" jsonschema:"the stencil to read"`
+}
+
+type stencilReadOutput struct {
+	Path        string   `json:"path"`
+	Title       string   `json:"title"`
+	Fields      []string `json:"fields"`
+	Faces       []Face   `json:"faces"`
+	Fingerprint string   `json:"fingerprint" jsonschema:"hand this to card_stencil_edit to refuse a write over an edit you did not see"`
+}
+
+func addCardStencilRead(server *sdk.Server, core Core) {
+	addTool(server, &sdk.Tool{
+		Name:  "card_stencil_read",
+		Title: "Read a stencil",
+		Description: "The fields and faces of one stencil: what it is called, the " +
+			"fields a card cut by it is asked for, and the ways a card is shown through " +
+			"it. Hand the fingerprint back to `card_stencil_edit` to edit the stencil in place.",
+	}, newHandler(func(ctx context.Context, in stencilReadInput) (stencilReadOutput, error) {
+		return readCardStencil(ctx, core, in)
+	}))
+}
+
+func readCardStencil(ctx context.Context, core Core, in stencilReadInput) (stencilReadOutput, error) {
+	s, err := core.Cards.Read.Stencil(ctx, core.getCurrentVault().Vault, in.Path)
+	if err != nil {
+		return stencilReadOutput{}, err
+	}
+	if s.Outcome != note.Ok {
+		if reason, refused := wire.ConvertOutcomeToErrorCode(s.Outcome); refused {
+			return stencilReadOutput{}, errors.New(describeCode(reason))
+		}
+		return stencilReadOutput{}, fmt.Errorf("%s: %s", in.Path, s.Outcome)
+	}
+	if s.Type != domain.TypeStencil {
+		return stencilReadOutput{}, errors.New(describeCode(v1.ErrorCode_ERROR_CODE_NOT_A_STENCIL))
+	}
+	title := s.Title
+	if title == "" {
+		title = domain.Basename(in.Path)
+	}
+	fields := s.Body.Fields
+	if fields == nil {
+		fields = []string{}
+	}
+	return stencilReadOutput{
+		Path:        in.Path,
+		Title:       title,
+		Fields:      fields,
+		Faces:       newFaces(s.Body.Faces),
+		Fingerprint: fingerprintOf(s.Fingerprint),
+	}, nil
 }
 
 type cardReadInput struct {

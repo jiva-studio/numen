@@ -134,3 +134,11 @@ func newFaceTemplates(fs []Face) []format.FaceTemplate {
 	}
 	return out
 }
+
+func newFaces(templates []format.FaceTemplate) []Face {
+	out := make([]Face, 0, len(templates))
+	for _, t := range templates {
+		out = append(out, Face{Name: t.Name, Front: t.Front, Back: t.Back})
+	}
+	return out
+}
