@@ -721,7 +721,7 @@ func (c *EmbeddingConfig) UnmarshalJSON(raw []byte) error {
 
 // EmbeddingProvider is where a vector is made: on this machine, or by a service.
 type EmbeddingProvider struct {
-	Use string
+	Use string `json:"use"`
 
 	local   LocalModel
 	service ServiceModel
