@@ -171,12 +171,3 @@ func TestThePdfPoolOfAContainerWithoutAPlanStartsWithOneWorkerPerCPU(t *testing.
 		t.Errorf("the pool starts with %d workers, want %d", got, want)
 	}
 }
-
-func TestTheTranscriberIsGivenTheWorkersOfThePlan(t *testing.T) {
-	if got := (Config{ResolvedCompute: makePlan(4, 2)}).getTranscription().Workers; got != 4 {
-		t.Errorf("the transcriber is given %d workers, want the 4 planned", got)
-	}
-	if got := (Config{}).getTranscription().Workers; got != 0 {
-		t.Errorf("a container without a plan gives the transcriber %d workers, want none", got)
-	}
-}

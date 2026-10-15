@@ -22,7 +22,7 @@ func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 	if !reflect.DeepEqual(cfg.Proofreading, said.Proofreading) {
 		t.Error("the proofreading section did not arrive")
 	}
-	if !reflect.DeepEqual(cfg.Transcription, said.Transcription.Config) {
+	if !reflect.DeepEqual(cfg.Transcription, said.Transcription.TranscriptionConfig) {
 		t.Error("the transcription section did not arrive")
 	}
 	if !reflect.DeepEqual(cfg.ScanProofreading, said.Recognition.Proofread) {

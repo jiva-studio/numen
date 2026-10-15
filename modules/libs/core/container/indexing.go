@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
 )
 
 // Indexing is how a vault is made searchable. It is one section of the settings
@@ -150,7 +149,7 @@ type RegionKinds struct {
 // Transcription is how a recording is listened to, and which profile puts what
 // was heard right afterwards.
 type Transcription struct {
-	transcription.Config
+	TranscriptionConfig
 
 	// Proofread names the profile a transcript is put right at. Automatically
 	// there says whether a transcript already written down is put right
@@ -414,6 +413,72 @@ func assign[T any](dst *T, src *T) {
 	}
 }
 
+// TranscriptionConfig holds the configuration for audio and video transcription.
+type TranscriptionConfig struct {
+	// Runtime is the ONNX Runtime shared library. Empty means the one beside
+	// the application, and then the one the platform holds.
+	Runtime string `json:"runtime"`
+
+	// Dir is a folder holding the models. Empty means the folder beside the
+	// application, and then the download cache.
+	Dir string `json:"dir"`
+
+	// ShouldDownload allows fetching what is not on this machine.
+	ShouldDownload bool `json:"download"`
+
+	// Threads is how many threads the encoder may use. Zero takes one per core, up to eight.
+	Threads int `json:"threads"`
+
+	Model     ParakeetModel  `json:"model"`
+	Segmenter SegmenterModel `json:"segmenter"`
+}
+
+// ParakeetModel turns speech into words. It is exported as three graphs and the
+// pieces they write, and all four are one model: three graphs from two exports
+// answer with nothing anybody can read.
+type ParakeetModel struct {
+	// Name is what this model is called in the record kept beside a text.
+	Name string `json:"name"`
+	// Repo is the folder the four files are fetched from.
+	Repo string `json:"from"`
+
+	// Encoder, Decoder, Joiner and Tokens are the files on this machine. A path
+	// is used as given; an empty one is the file of that name under Repo.
+	Encoder string `json:"encoder"`
+	Decoder string `json:"decoder"`
+	Joiner  string `json:"joiner"`
+	Tokens  string `json:"tokens"`
+}
+
+// SegmenterModel finds where in a recording somebody is speaking. What it cuts is
+// what the transcriber is given, so where it cuts is part of what the words
+// are.
+type SegmenterModel struct {
+	// Name is what this segmenter is called in the record kept beside a text.
+	Name string `json:"name"`
+	// Repo is where the model is fetched from, and Path is a file on this
+	// machine. A path is used as given; Repo is looked for in Dir first.
+	Repo string `json:"from"`
+	Path string `json:"path"`
+
+	// Threshold is how sure the model has to be that a window carries speech.
+	Threshold float32 `json:"threshold"`
+	// Silence is how much quiet, in milliseconds, closes a segment.
+	Silence int `json:"silence"`
+	// Pad is how many milliseconds are kept on each side of a segment, so that
+	// the first and last sound of a word are inside it.
+	Pad int `json:"pad"`
+	// Longest is how many milliseconds one segment may run to. Speech that goes
+	// on longer is cut at the quietest window this side of the limit.
+	Longest int `json:"longest"`
+	// Shortest is how many milliseconds a segment carries to be a segment at
+	// all.
+	Shortest int `json:"shortest"`
+	// Least is how many milliseconds a segment runs to before it stands as a
+	// line of its own. A shorter one is put together with the segment after it.
+	Least int `json:"least"`
+}
+
 // DefaultIndexing is what an installation nobody has configured makes a vault
 // searchable with.
 func DefaultIndexing() Indexing {
@@ -460,8 +525,27 @@ func DefaultIndexing() Indexing {
 				IsAutomatic: false,
 			},
 		},
-		Proofreading:         DefaultProofreading(),
-		Transcription:        Transcription{Config: transcription.Defaults()},
+		Proofreading: DefaultProofreading(),
+		Transcription: Transcription{
+			TranscriptionConfig: TranscriptionConfig{
+				Runtime:        "",
+				Dir:            "",
+				ShouldDownload: true,
+				Threads:        0,
+				Model: ParakeetModel{
+					Name: "",
+					Repo: "",
+				},
+				Segmenter: SegmenterModel{
+					Name: "",
+					Repo: "",
+				},
+			},
+			Proofread: Proofread{
+				Profile:     "",
+				IsAutomatic: false,
+			},
+		},
 		TranscribeRecordings: &set,
 	}
 }

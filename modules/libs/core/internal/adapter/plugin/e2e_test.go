@@ -100,3 +100,67 @@ func TestRealProofreadingPluginProcessE2E(t *testing.T) {
 		t.Fatal("expected non-empty reply for batch 1")
 	}
 }
+
+func TestRealTranscriptionPluginProcessE2E(t *testing.T) {
+	pluginsDir, err := filepath.Abs("../../../../../plugins")
+	if err != nil {
+		t.Fatalf("resolve plugins dir: %v", err)
+	}
+
+	transBin := filepath.Join(pluginsDir, "transcription", "bin", "transcription")
+	if _, err := os.Stat(transBin); os.IsNotExist(err) {
+		t.Skipf("transcription binary not found at %s; skipping real process E2E test", transBin)
+	}
+
+	host := plugin.NewHost("desktop.editor", pluginsDir)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+
+	plugins := host.GetPlugins()
+	if len(plugins) == 0 {
+		t.Fatal("expected to discover transcription plugin in real modules/plugins")
+	}
+
+	ctx := t.Context()
+	bridge, err := plugin.OpenTranscriberBridge(ctx, host)
+	if err != nil {
+		t.Fatalf("OpenTranscriberBridge with real binary failed: %v", err)
+	}
+	defer func() {
+		_ = bridge.Close()
+		_ = host.TeardownAll(ctx, 1*time.Second)
+	}()
+
+	model := bridge.GetTranscriptionModel()
+	if model.Model == "" || model.Segmenter == "" {
+		t.Fatalf("expected valid model from real transcription plugin, got %+v", model)
+	}
+
+	rec, err := bridge.Open(ctx, []byte("test-audio-recording"))
+	if err != nil {
+		t.Fatalf("Open failed: %v", err)
+	}
+	defer rec.Close()
+
+	if rec.GetDuration() <= 0 {
+		t.Fatalf("expected positive duration, got %d", rec.GetDuration())
+	}
+
+	segments, err := rec.GetSegments(ctx, 0, 5)
+	if err != nil {
+		t.Fatalf("GetSegments failed: %v", err)
+	}
+	if len(segments) == 0 {
+		t.Fatal("expected at least 1 audio segment")
+	}
+
+	text, err := bridge.Transcribe(ctx, segments[0])
+	if err != nil {
+		t.Fatalf("Transcribe failed: %v", err)
+	}
+	if text == "" {
+		t.Fatal("expected non-empty transcribed text")
+	}
+}
+
