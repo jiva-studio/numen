@@ -11,7 +11,7 @@ func TestReadManifest(t *testing.T) {
 		"name": "Document OCR",
 		"version": "1.0.0",
 		"description": "Optical character recognition",
-		"capabilities": ["recogniser"],
+		"capabilities": ["recognition"],
 		"targets": ["desktop.editor"],
 		"activationEvents": ["onFile:*.pdf", "onCommand:ocr.recognize"],
 		"permissions": ["vault:read"],
@@ -59,7 +59,7 @@ func TestReadManifest(t *testing.T) {
 	if m.CanTarget("desktop.flashcards") {
 		t.Errorf("expected target desktop.flashcards to be rejected")
 	}
-	if !m.HasCapability("recogniser") {
+	if !m.HasCapability("recognition") {
 		t.Errorf("expected capability recogniser")
 	}
 	if !m.CanActivateOn("onFile:document.pdf") {

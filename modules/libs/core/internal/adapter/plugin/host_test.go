@@ -24,7 +24,7 @@ func createTestPluginTree(t *testing.T, dir string) {
 		"name": "OCR Plugin",
 		"version": "1.0.0",
 		"description": "OCR",
-		"capabilities": ["recogniser"],
+		"capabilities": ["recognition"],
 		"targets": ["desktop.editor"],
 		"activationEvents": ["onFile:*.pdf"],
 		"permissions": [],
@@ -68,7 +68,7 @@ func TestHostDiscoveryAndLookup(t *testing.T) {
 		t.Fatal("expected to find md.numen.ocr")
 	}
 
-	capPlugin, ok := host.FindPluginByCapability("recogniser")
+	capPlugin, ok := host.FindPluginByCapability("recognition")
 	if !ok || capPlugin.Manifest.ID != "md.numen.ocr" {
 		t.Fatal("expected to find plugin by capability recogniser")
 	}

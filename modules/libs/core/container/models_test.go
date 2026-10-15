@@ -1,8 +1,6 @@
 package container
 
 import (
-	"errors"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -12,17 +10,15 @@ import (
 
 	adapteragent "github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // Where each setting that names a model stands in the file: the section it
 // belongs to, and the place the adapter that owns it reads it at.
 var (
-	embeddingModelAt   = slices.Concat([]string{indexingAt, embeddingAt}, embed.ModelAt)
-	recognitionModelAt = slices.Concat([]string{indexingAt, recognitionAt}, recognition.ModelAt)
-	agentModelAt       = slices.Concat([]string{agentAt}, adapteragent.ModelAt)
-	agentUseAt         = slices.Concat([]string{agentAt}, adapteragent.UseAt)
+	embeddingModelAt = slices.Concat([]string{indexingAt, embeddingAt}, embed.ModelAt)
+	agentModelAt     = slices.Concat([]string{agentAt}, adapteragent.ModelAt)
+	agentUseAt       = slices.Concat([]string{agentAt}, adapteragent.UseAt)
 )
 
 // A section stands under the key the document spells on the field that holds
@@ -76,7 +72,7 @@ func TestOneModelToASettingIsTheDefault(t *testing.T) {
 		}
 	}
 	for _, setting := range []string{
-		formatPath(embeddingModelAt), formatPath(recognitionModelAt),
+		formatPath(embeddingModelAt),
 		formatPath(agentModelAt), formatPath(agentUseAt),
 	} {
 		if byDefault[setting] != 1 {
@@ -177,40 +173,6 @@ func TestAModelReachedOverTheNetworkHasNothingToFetch(t *testing.T) {
 	}
 }
 
-// A cache nothing has been fetched into is a model not fetched, and asking
-// leaves the folder as absent as it was.
-func TestACacheThatIsNotThereIsAModelNotFetched(t *testing.T) {
-	held := newIsolatedSettings(t)
-	dir := filepath.Join(t.TempDir(), "cache")
-	held.Indexing.Recognition.Dir = dir
-
-	if got := modelsAt(t, held, recognitionModelAt)[0].Presence; got != port.NotFetched {
-		t.Errorf("a model under a cache that is not there stands at %v", got)
-	}
-	if _, err := os.Stat(dir); !errors.Is(err, fs.ErrNotExist) {
-		t.Errorf("asking made %s", dir)
-	}
-}
-
-// The model the settings name is answered for whether it is one of those
-// offered or not.
-func TestTheModelTheSettingsNameIsOfferedToo(t *testing.T) {
-	held := newIsolatedSettings(t)
-	dir := t.TempDir()
-	held.Indexing.Recognition.Dir = dir
-	held.Indexing.Recognition.Recognise.Name = "https://example.invalid/reads-tamil.onnx"
-	writeEmptyFile(t, filepath.Join(dir, "reads-tamil.onnx"))
-
-	got := modelsAt(t, held, recognitionModelAt)
-	one := got[len(got)-1]
-	if one.Name != held.Indexing.Recognition.Recognise.Name {
-		t.Fatalf("the model the settings name is offered as %+v", one)
-	}
-	if one.Presence != port.Present {
-		t.Errorf("the file in %s stands at %v", dir, one.Presence)
-	}
-}
-
 // A provider reaching a service fetches nothing, whichever model a row names.
 // The files of a model this machine once ran stay in the cache, and they say
 // nothing about a vault indexed over the network.
@@ -244,36 +206,12 @@ func TestAProviderRunningAModelHereSaysWhereItsFilesAre(t *testing.T) {
 	}
 }
 
-// Each row is asked about its own files. A path written down is the file the
-// settings read, and it is not the file the row beside it names.
-func TestARowIsAskedAboutItsOwnFilesAndNotItsNeighbours(t *testing.T) {
-	held := newIsolatedSettings(t)
-	mine := filepath.Join(t.TempDir(), "of-my-own.onnx")
-	writeEmptyFile(t, mine)
-	held.Indexing.Recognition.Recognise.Name = "https://models.example/of-my-own.onnx"
-	held.Indexing.Recognition.Recognise.Path = mine
-
-	got := modelsAt(t, held, recognitionModelAt)
-	if len(got) != 2 {
-		t.Fatalf("the setting offers %d rows", len(got))
-	}
-	// The file written down is the one the settings name, and the preset is a
-	// different model that nothing has fetched.
-	if got[len(got)-1].Presence != port.Present {
-		t.Errorf("the file at %s stands at %v", mine, got[len(got)-1].Presence)
-	}
-	if got[0].Presence != port.NotFetched {
-		t.Errorf("the model the preset offers stands at %v", got[0].Presence)
-	}
-}
-
 // newIsolatedSettings is the defaults with the caches of this machine out of reach, so what a
 // test reads is what the test wrote.
 func newIsolatedSettings(t *testing.T) Settings {
 	t.Helper()
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	held := DefaultSettings()
-	held.Indexing.Recognition.Dir = t.TempDir()
 	return setModelDir(t, held, t.TempDir())
 }
 

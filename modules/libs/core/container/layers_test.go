@@ -29,6 +29,7 @@ var driving = map[string]bool{
 	"adapter/mcp":               true,
 	"adapter/window/editor":     true,
 	"adapter/window/flashcards": true,
+	"internal/adapter/plugin":   true,
 	"internal/adapter/theme":    true,
 	"internal/adapterlib/wire":  true,
 }
@@ -1250,7 +1251,7 @@ func TestTheCoresPublicAdaptersAreTheseAndNoOthers(t *testing.T) {
 // makes a new one arrive as a decision.
 var held = []string{
 	"appstate", "download", "embed", "filesystem", "pdf", "plugin", "proofreading",
-	"recognition", "theme", "transcription", "trash",
+	"theme", "transcription", "trash",
 }
 
 // The adapters under internal/ are these and no others.

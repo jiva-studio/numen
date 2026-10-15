@@ -135,7 +135,6 @@ func closeIfOpen(closeFn func() error) {
 func createRecognition(
 	ctx context.Context, cfg container.Config, v domain.Vault, fetching func(),
 ) (cli.Recognise, error) {
-	//nolint:contextcheck // whether a model is on this machine is asked of the disk, and waits for nothing
 	if !cfg.RecogniserReady() {
 		fetching()
 	}

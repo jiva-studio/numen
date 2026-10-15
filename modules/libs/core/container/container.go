@@ -19,8 +19,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/trash"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -51,9 +51,6 @@ type Config struct {
 	// BookExtensions are the file extensions treated as books. Empty means the
 	// default, which is every format a reader takes text out of.
 	BookExtensions []string
-
-	// Recognition is how a scanned document is read when a person asks for it.
-	Recognition recognition.Config
 
 	// Transcription is how a recording is listened to.
 	Transcription transcription.Config
@@ -118,10 +115,20 @@ type Config struct {
 	// it carries on past. An installation that sets none is told nothing.
 	ErrorHandler port.ErrorHandler
 
+	// PluginHost manages out-of-process plugins and their communication endpoints.
+	PluginHost *plugin.Host
+
 	// Now is what time it is, for every scenario that stamps a note or asks
 	// what is due today. An installation that names none reads this machine's
 	// clock, and this is the one place in the core allowed to.
 	Now port.Clock
+}
+
+// NewPluginHost creates and initializes a plugin host for the specified target and search directories.
+func NewPluginHost(target string, dirs ...string) *plugin.Host {
+	host := plugin.NewHost(target, dirs...)
+	_ = host.Discover()
+	return host
 }
 
 // Clock is the clock every scenario assembled here is handed.

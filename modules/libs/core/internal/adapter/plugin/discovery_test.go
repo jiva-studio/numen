@@ -18,7 +18,7 @@ func TestDiscoverPlugins(t *testing.T) {
 		"name": "OCR",
 		"version": "1.0.0",
 		"description": "OCR plugin",
-		"capabilities": ["recogniser"],
+		"capabilities": ["recognition"],
 		"targets": ["desktop.editor"],
 		"activationEvents": ["onFile:*.pdf"],
 		"permissions": [],
@@ -71,7 +71,7 @@ func TestDiscoverPlugins(t *testing.T) {
 		t.Errorf("unexpected flashcards plugins: %v", flashcardsPlugins)
 	}
 
-	ocrPlugin, ok := FindPluginByCapability(found, "recogniser")
+	ocrPlugin, ok := FindPluginByCapability(found, "recognition")
 	if !ok || ocrPlugin.Manifest.ID != "md.numen.ocr" {
 		t.Errorf("expected to find ocr plugin by capability")
 	}
