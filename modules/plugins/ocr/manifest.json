@@ -3,7 +3,7 @@
   "name": "Document OCR",
   "version": "1.0.0",
   "description": "Optical character recognition using PaddleOCR and ONNX Runtime",
-  "capabilities": ["recogniser"],
+  "capabilities": ["recognition"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onFile:*.pdf", "onCommand:ocr.recognize"],
   "permissions": ["vault:read"],

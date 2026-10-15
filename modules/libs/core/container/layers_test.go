@@ -29,6 +29,7 @@ var driving = map[string]bool{
 	"adapter/mcp":               true,
 	"adapter/window/editor":     true,
 	"adapter/window/flashcards": true,
+	"internal/adapter/plugin":   true,
 	"internal/adapter/theme":    true,
 	"internal/adapterlib/wire":  true,
 }

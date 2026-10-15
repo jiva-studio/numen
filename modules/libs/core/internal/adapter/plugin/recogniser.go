@@ -31,7 +31,7 @@ type RecogniserBridge struct {
 
 // OpenRecogniserBridge activates or connects to the OCR plugin and returns a port.Recogniser.
 func OpenRecogniserBridge(ctx context.Context, host *Host) (*RecogniserBridge, error) {
-	plugin, ok := host.FindPluginByCapability("recogniser")
+	plugin, ok := host.FindPluginByCapability("recognition")
 	if !ok {
 		return nil, errNoRecogniserPlugin
 	}

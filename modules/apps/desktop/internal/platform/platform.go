@@ -6,6 +6,9 @@
 package platform
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -14,7 +17,33 @@ import (
 // GetConfig is the core's configuration with what this machine supplies already in
 // it. What a settings file says is read over it.
 func GetConfig() container.Config {
-	return container.Config{AgentProofreader: openProofreader}
+	return container.Config{
+		AgentProofreader: openProofreader,
+		PluginHost:       container.NewPluginHost("desktop.editor", getPluginsDirs()...),
+	}
+}
+
+func getPluginsDirs() []string {
+	var dirs []string
+	if custom := os.Getenv("NUMEN_PLUGINS_PATH"); custom != "" {
+		dirs = append(dirs, custom)
+	}
+
+	execPath, err := os.Executable()
+	if err == nil {
+		execDir := filepath.Dir(execPath)
+		dirs = append(dirs, filepath.Join(execDir, "plugins"))
+		dirs = append(dirs, filepath.Join(execDir, "modules", "plugins"))
+	}
+
+	dirs = append(dirs, "modules/plugins", "plugins")
+
+	configDir, err := os.UserConfigDir()
+	if err == nil {
+		dirs = append(dirs, filepath.Join(configDir, "numen", "plugins"))
+	}
+
+	return dirs
 }
 
 // openProofreader opens a proofreading profile that reaches the command line

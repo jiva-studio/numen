@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	ocrmodels "github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
@@ -12,7 +13,14 @@ import (
 // RecogniserReady says whether a document could be read now without waiting for
 // anything to arrive. Which models those are is settled here, with every other
 // choice of adapter.
-func (c Config) RecogniserReady() bool { return ocrmodels.Ready(c.Recognition) }
+func (c Config) RecogniserReady() bool {
+	if c.PluginHost != nil {
+		if _, ok := c.PluginHost.FindPluginByCapability("recognition"); ok {
+			return true
+		}
+	}
+	return ocrmodels.Ready(c.Recognition)
+}
 
 // PrepareRecogniser makes the runtime this process reads a page through, and is
 // called before a window is made. One made after a window reads every page it is
@@ -21,6 +29,11 @@ func (c Config) RecogniserReady() bool { return ocrmodels.Ready(c.Recognition) }
 // A machine holding no runtime says so and is left as it is: reading is what
 // fetches one.
 func (c Config) PrepareRecogniser(ctx context.Context) error {
+	if c.PluginHost != nil {
+		if _, ok := c.PluginHost.FindPluginByCapability("recognition"); ok {
+			return nil
+		}
+	}
 	return ocrmodels.Prepare(ctx, c.Recognition)
 }
 
@@ -30,6 +43,15 @@ func (c Config) PrepareRecogniser(ctx context.Context) error {
 // It waits for whatever is missing, so it is for a terminal, where waiting is
 // what a person came for. A window asks Recognising instead.
 func (c Config) Recogniser(ctx context.Context) (recogniser port.Recogniser, closer func() error, why error) {
+	if c.PluginHost != nil {
+		if _, ok := c.PluginHost.FindPluginByCapability("recognition"); ok {
+			bridge, err := plugin.OpenRecogniserBridge(ctx, c.PluginHost)
+			if err != nil {
+				return nil, nil, err
+			}
+			return bridge, bridge.Close, nil
+		}
+	}
 	models, err := ocrmodels.Open(ctx, c.getRecognition())
 	if err != nil {
 		return nil, nil, err
@@ -64,23 +86,43 @@ func (c Config) OpenRecognitionWorker(
 		Tasks:     tasks,
 		Models:    models,
 		Runtime: recognition.Runtime{
-			Open: func(
-				ctx context.Context, tell func(what string, done, total int64),
-			) (port.Recogniser, func() error, error) {
-				cfg := c.getRecognition()
-				cfg.Progress = tell
-				models, err := ocrmodels.Open(ctx, cfg)
-				if err != nil {
-					return nil, nil, err
-				}
-				return models, models.Close, nil
-			},
+			Open:     c.openRecognitionRuntime,
 			Ready:    c.RecogniserReady,
-			Prepared: ocrmodels.IsPrepared,
+			Prepared: c.isRecognitionPrepared,
 		},
 		Proofreading: c.getProofreading(c.ScanProofreading),
 		Wait:         c.GetWait(),
 	})
+}
+
+func (c Config) openRecognitionRuntime(
+	ctx context.Context, tell func(what string, done, total int64),
+) (port.Recogniser, func() error, error) {
+	if c.PluginHost != nil {
+		if _, ok := c.PluginHost.FindPluginByCapability("recognition"); ok {
+			bridge, err := plugin.OpenRecogniserBridge(ctx, c.PluginHost)
+			if err != nil {
+				return nil, nil, err
+			}
+			return bridge, bridge.Close, nil
+		}
+	}
+	cfg := c.getRecognition()
+	cfg.Progress = tell
+	models, err := ocrmodels.Open(ctx, cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	return models, models.Close, nil
+}
+
+func (c Config) isRecognitionPrepared() bool {
+	if c.PluginHost != nil {
+		if _, ok := c.PluginHost.FindPluginByCapability("recognition"); ok {
+			return true
+		}
+	}
+	return ocrmodels.IsPrepared()
 }
 
 // getRecognition is the recognition settings with the thread count and the
