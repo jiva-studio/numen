@@ -326,5 +326,3 @@ func TestRealDocumentPluginProcessE2E(t *testing.T) {
 		t.Fatal("expected non-nil rendered image")
 	}
 }
-
-
