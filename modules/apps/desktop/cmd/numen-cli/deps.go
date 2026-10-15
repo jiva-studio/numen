@@ -164,7 +164,6 @@ func createRecognition(
 func createTranscription(
 	ctx context.Context, cfg container.Config, v domain.Vault, fetching func(),
 ) (cli.Transcribe, error) {
-	//nolint:contextcheck // whether a model is on this machine is asked of the disk, and waits for nothing
 	if !cfg.TranscriberReady() {
 		fetching()
 	}
