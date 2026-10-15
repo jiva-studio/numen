@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"os/exec"
 	"runtime"
@@ -276,8 +275,17 @@ func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, err
 
 	p, ok := h.plugins[pluginID]
 	if !ok {
-		h.mu.Unlock()
-		return Endpoint{Host: "", Port: 0, Token: ""}, errPluginNotFound
+		p, ok = h.resolveMonolithPlugin(pluginID)
+		if !ok {
+			h.mu.Unlock()
+			return Endpoint{Host: "", Port: 0, Token: ""}, errPluginNotFound
+		}
+		h.plugins[pluginID] = p
+		if _, hasSup := h.supervisors[pluginID]; !hasSup {
+			sup := NewSupervisor()
+			sup.SetPermissions(p.Manifest.Permissions)
+			h.supervisors[pluginID] = sup
+		}
 	}
 
 	sup := h.supervisors[pluginID]
@@ -289,7 +297,7 @@ func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, err
 		return endpoint, nil
 	}
 
-	endpoint, err := h.startPluginProcess(ctx, p, sup)
+	endpoint, err := h.activatePlugin(ctx, p, sup)
 	h.mu.Unlock()
 	if err != nil {
 		return endpoint, err
@@ -340,6 +348,69 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 	h.endpoints[p.Manifest.ID] = endpoint
 
 	return endpoint, nil
+}
+
+func isWhitelistedEnv(key string) bool {
+	upper := strings.ToUpper(key)
+	switch upper {
+	case "PATH", "HOME", "USER", "TMP", "TEMP", "SYSTEMROOT", "SYSTEMDRIVE", "APPDATA", "LOCALAPPDATA", "LANG":
+		return true
+	}
+	return strings.HasPrefix(upper, "LC_")
+}
+
+func (h *Host) defaultLauncher(
+	ctx context.Context,
+	p DiscoveredPlugin,
+	port int,
+	token string,
+) (*os.Process, io.ReadCloser, error) {
+	if p.Manifest.Backend.Entrypoint == "" {
+		return nil, nil, errEmptyEntrypoint
+	}
+
+	entrypoint := p.Manifest.Backend.Entrypoint
+	if runtime.GOOS == "windows" && !strings.HasSuffix(strings.ToLower(entrypoint), ".exe") {
+		entrypoint += ".exe"
+	}
+
+	binPath, err := validateExecutablePath(p.Dir, entrypoint)
+	if err != nil {
+		return nil, nil, fmt.Errorf("validate plugin binary: %w", err)
+	}
+
+	cmd := exec.CommandContext(ctx, binPath, "--port="+strconv.Itoa(port), "--token="+token)
+	cmd.Dir = p.Dir
+	configJSON, _ := h.getPluginConfigJSONLocked(p.Manifest.ID)
+
+	var env []string
+	for _, entry := range os.Environ() {
+		key, _, found := strings.Cut(entry, "=")
+		if found && isWhitelistedEnv(key) {
+			env = append(env, entry)
+		}
+	}
+	env = append(
+		env,
+		"NUMEN_VAULT_PATH="+h.vaultPath,
+		"NUMEN_PLUGIN_PORT="+strconv.Itoa(port),
+		"NUMEN_PLUGIN_TOKEN="+token,
+		"NUMEN_PLUGIN_ID="+p.Manifest.ID,
+		"NUMEN_PLUGIN_CONFIG="+configJSON,
+	)
+	cmd.Env = env
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, nil, fmt.Errorf("pipe stdout: %w", err)
+	}
+
+	if err := cmd.Start(); err != nil {
+		_ = stdout.Close()
+		return nil, nil, fmt.Errorf("start %s: %w", binPath, err)
+	}
+
+	return cmd.Process, stdout, nil
 }
 
 // Release decrements the active consumer reference count for a plugin.
@@ -549,8 +620,12 @@ func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
 	}
 	h.mu.RUnlock()
 
+	httpClient := endpoint.HTTPClient()
+	if endpoint.Transport == nil {
+		httpClient.Timeout = 3 * time.Second
+	}
 	client := numenv1connect.NewPluginLifecycleServiceClient(
-		&http.Client{Timeout: 3 * time.Second},
+		httpClient,
 		endpoint.BaseURL(),
 		connect.WithInterceptors(authInterceptor(endpoint.Token)),
 	)
@@ -659,65 +734,3 @@ func (s *PluginServiceServer) GetPlugins(
 	}), nil
 }
 
-func isWhitelistedEnv(key string) bool {
-	upper := strings.ToUpper(key)
-	switch upper {
-	case "PATH", "HOME", "USER", "TMP", "TEMP", "SYSTEMROOT", "SYSTEMDRIVE", "APPDATA", "LOCALAPPDATA", "LANG":
-		return true
-	}
-	return strings.HasPrefix(upper, "LC_")
-}
-
-func (h *Host) defaultLauncher(
-	ctx context.Context,
-	p DiscoveredPlugin,
-	port int,
-	token string,
-) (*os.Process, io.ReadCloser, error) {
-	if p.Manifest.Backend.Entrypoint == "" {
-		return nil, nil, errEmptyEntrypoint
-	}
-
-	entrypoint := p.Manifest.Backend.Entrypoint
-	if runtime.GOOS == "windows" && !strings.HasSuffix(strings.ToLower(entrypoint), ".exe") {
-		entrypoint += ".exe"
-	}
-
-	binPath, err := validateExecutablePath(p.Dir, entrypoint)
-	if err != nil {
-		return nil, nil, fmt.Errorf("validate plugin binary: %w", err)
-	}
-
-	cmd := exec.CommandContext(ctx, binPath, "--port="+strconv.Itoa(port), "--token="+token)
-	cmd.Dir = p.Dir
-	configJSON, _ := h.getPluginConfigJSONLocked(p.Manifest.ID)
-
-	var env []string
-	for _, entry := range os.Environ() {
-		key, _, found := strings.Cut(entry, "=")
-		if found && isWhitelistedEnv(key) {
-			env = append(env, entry)
-		}
-	}
-	env = append(
-		env,
-		"NUMEN_VAULT_PATH="+h.vaultPath,
-		"NUMEN_PLUGIN_PORT="+strconv.Itoa(port),
-		"NUMEN_PLUGIN_TOKEN="+token,
-		"NUMEN_PLUGIN_ID="+p.Manifest.ID,
-		"NUMEN_PLUGIN_CONFIG="+configJSON,
-	)
-	cmd.Env = env
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, nil, fmt.Errorf("pipe stdout: %w", err)
-	}
-
-	if err := cmd.Start(); err != nil {
-		_ = stdout.Close()
-		return nil, nil, fmt.Errorf("start %s: %w", binPath, err)
-	}
-
-	return cmd.Process, stdout, nil
-}

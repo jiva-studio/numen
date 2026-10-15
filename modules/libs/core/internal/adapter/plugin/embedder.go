@@ -38,7 +38,7 @@ func OpenEmbedderBridge(ctx context.Context, host *Host) (*EmbedderBridge, error
 		return nil, fmt.Errorf("ensure active %s: %w", plugin.Manifest.ID, err)
 	}
 
-	httpClient := defaultPluginClient
+	httpClient := endpoint.HTTPClient()
 	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
 	client := numenv1connect.NewEmbeddingServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 

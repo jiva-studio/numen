@@ -36,20 +36,38 @@ var defaultPluginClient = &http.Client{
 	},
 }
 
-// Endpoint holds loopback connection parameters and credentials for an active plugin.
+// Endpoint holds connection parameters and credentials for an active plugin.
 type Endpoint struct {
-	Host  string
-	Port  int
-	Token string
+	Host      string
+	Port      int
+	Token     string
+	Transport http.RoundTripper
+}
+
+// HTTPClient returns an HTTP client routed to this endpoint.
+func (e Endpoint) HTTPClient() *http.Client {
+	if e.Transport != nil {
+		return &http.Client{Transport: e.Transport}
+	}
+	return defaultPluginClient
 }
 
 // Address returns host and port joined with a colon.
 func (e Endpoint) Address() string {
+	if e.Port == 0 {
+		return e.Host
+	}
 	return net.JoinHostPort(e.Host, strconv.Itoa(e.Port))
 }
 
 // BaseURL returns the HTTP scheme, host, and port for the plugin server.
 func (e Endpoint) BaseURL() string {
+	if e.Port == 0 {
+		if e.Host != "" {
+			return fmt.Sprintf("http://%s", e.Host)
+		}
+		return "http://inprocess"
+	}
 	return fmt.Sprintf("http://%s:%d", e.Host, e.Port)
 }
 
