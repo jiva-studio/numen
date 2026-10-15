@@ -1,0 +1,126 @@
+package plugin
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+)
+
+// DiscoveredPlugin is a validated plugin located on disk.
+type DiscoveredPlugin struct {
+	Dir      string
+	Manifest Manifest
+}
+
+// DiscoverPlugins scans directories and loads all valid plugin manifests found.
+func DiscoverPlugins(dirs []string) ([]DiscoveredPlugin, error) {
+	seen := make(map[string]string)
+	var found []DiscoveredPlugin
+
+	for _, dir := range dirs {
+		if dir == "" {
+			continue
+		}
+		plugins, err := scanDirectory(dir, seen)
+		if err != nil {
+			return nil, err
+		}
+		found = append(found, plugins...)
+	}
+	return found, nil
+}
+
+func scanDirectory(dir string, seen map[string]string) ([]DiscoveredPlugin, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("read plugin dir %s: %w", dir, err)
+	}
+
+	var found []DiscoveredPlugin
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		p, ok, err := scanPluginDir(filepath.Join(dir, entry.Name()), seen)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			found = append(found, p)
+		}
+	}
+	return found, nil
+}
+
+func scanPluginDir(pluginDir string, seen map[string]string) (DiscoveredPlugin, bool, error) {
+	manifestPath := filepath.Join(pluginDir, "manifest.json")
+	m, err := readManifestPath(manifestPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return emptyDiscoveredPlugin(), false, nil
+		}
+		return emptyDiscoveredPlugin(), false, fmt.Errorf("read manifest %s: %w", manifestPath, err)
+	}
+
+	if existingDir, ok := seen[m.ID]; ok {
+		return emptyDiscoveredPlugin(), false, fmt.Errorf("duplicate plugin id %q in %s and %s", m.ID, existingDir, pluginDir)
+	}
+	seen[m.ID] = pluginDir
+	return DiscoveredPlugin{
+		Dir:      pluginDir,
+		Manifest: m,
+	}, true, nil
+}
+
+func readManifestPath(path string) (Manifest, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return Manifest{}, err
+	}
+	defer file.Close()
+	return ReadManifest(file)
+}
+
+func emptyDiscoveredPlugin() DiscoveredPlugin {
+	return DiscoveredPlugin{
+		Dir: "",
+		Manifest: Manifest{
+			ID:               "",
+			Name:             "",
+			Version:          "",
+			Description:      "",
+			Capabilities:     nil,
+			Targets:          nil,
+			ActivationEvents: nil,
+			Permissions:      nil,
+			Lifecycle:        Lifecycle{Mode: "", IdleTimeoutSeconds: 0, KeepAliveWhileVisible: false},
+			Backend:          Backend{Type: "", Entrypoint: "", ServiceName: ""},
+			Frontend:         Frontend{Entrypoint: "", Styles: ""},
+			Settings:         nil,
+		},
+	}
+}
+
+// FilterPluginsByTarget returns only plugins that can run in the target workspace.
+func FilterPluginsByTarget(plugins []DiscoveredPlugin, target string) []DiscoveredPlugin {
+	var matched []DiscoveredPlugin
+	for _, p := range plugins {
+		if p.Manifest.CanTarget(target) {
+			matched = append(matched, p)
+		}
+	}
+	return matched
+}
+
+// FindPluginByCapability returns the first plugin providing the specified capability.
+func FindPluginByCapability(plugins []DiscoveredPlugin, capability string) (DiscoveredPlugin, bool) {
+	for _, p := range plugins {
+		if p.Manifest.HasCapability(capability) {
+			return p, true
+		}
+	}
+	return emptyDiscoveredPlugin(), false
+}
