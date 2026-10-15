@@ -1,4 +1,4 @@
-package acp
+package main
 
 import (
 	"encoding/json"
@@ -6,9 +6,13 @@ import (
 	"path/filepath"
 )
 
-// setupAntigravityHome makes a home folder for the agent that links to the real
-// one, and carries the vault's tools in its MCP configuration. The cleanup
-// removes it.
+// Endpoint is where the agent reaches the tools of this vault over MCP.
+type Endpoint struct {
+	URL   string
+	Token string
+}
+
+// setupAntigravityHome creates a temporary HOME folder with symlinked configs and Numen MCP.
 func setupAntigravityHome(tools Endpoint) (string, func(), error) {
 	tempHome, err := os.MkdirTemp("", "numen-antigravity-*")
 	if err != nil {
@@ -36,8 +40,6 @@ func setupAntigravityHome(tools Endpoint) (string, func(), error) {
 	return tempHome, cleanup, nil
 }
 
-// linkEntries links every entry of a folder into another, but the one named
-// except.
 func linkEntries(from, into, except string) {
 	entries, err := os.ReadDir(from)
 	if err != nil {
@@ -51,8 +53,6 @@ func linkEntries(from, into, except string) {
 	}
 }
 
-// makeMCPConfig is the MCP configuration naming the vault's tools, beside the
-// servers the existing configuration file names.
 func makeMCPConfig(tools Endpoint, existingPath string) map[string]any {
 	servers := map[string]any{
 		"numen": map[string]any{

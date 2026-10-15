@@ -13,6 +13,9 @@ func (c Config) AgentPort() port.Agent {
 		if _, ok := c.PluginHost.FindPluginByCapability("agent"); ok {
 			return hostAgentPort{host: c.PluginHost}
 		}
+		if _, ok := c.PluginHost.FindPluginByCapability("ai.agent.provider"); ok {
+			return hostAgentPort{host: c.PluginHost}
+		}
 	}
 	return nil
 }
