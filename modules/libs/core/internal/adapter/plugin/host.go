@@ -733,4 +733,3 @@ func (s *PluginServiceServer) GetPlugins(
 		Plugins: s.host.GetPluginInfos(),
 	}), nil
 }
-
