@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	validIDPattern      = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
+	validIDPattern      = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)*$`)
 	validSemverPattern  = regexp.MustCompile(`^v?\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$`)
 	allowedPermissions  = []string{"vault:read", "vault:write", "network:outbound"}
 	allowedModes        = []string{"on-demand", "persistent", "manual", "daemon"}
