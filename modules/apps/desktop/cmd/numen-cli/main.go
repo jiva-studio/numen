@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/plugincli"
@@ -19,14 +20,24 @@ func main() {
 		os.Exit(plugincli.Run(os.Args[2:], os.Stdout, os.Stderr))
 	}
 
+	os.Exit(run())
+}
+
+func run() int {
 	// The settings are read here and nowhere below: an entry point says what it
 	// found, and nothing further down can reach the machine's own file.
 	cfg := platform.GetConfig()
+	if cfg.PluginHost != nil {
+		defer func() {
+			_ = cfg.PluginHost.TeardownAll(context.Background(), 2*time.Second)
+		}()
+	}
+
 	chosen, err := cfg.Settings()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "numen-cli:", err)
-		os.Exit(1)
+		return 1
 	}
 	cfg = cfg.SetSettings(chosen)
-	os.Exit(cli.Main(context.Background(), os.Stdout, os.Stderr, os.Args[1:], makeDeps(cfg)))
+	return cli.Main(context.Background(), os.Stdout, os.Stderr, os.Args[1:], makeDeps(cfg))
 }

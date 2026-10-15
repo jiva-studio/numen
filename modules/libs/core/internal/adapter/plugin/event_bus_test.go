@@ -95,3 +95,28 @@ func TestEventBusFlush(t *testing.T) {
 		t.Fatalf("got %q, want onFile:notes/test.md", received)
 	}
 }
+
+func TestEventBusUnsubscribe(t *testing.T) {
+	bus := NewEventBus(nil, 10*time.Millisecond, 50*time.Millisecond)
+	defer bus.Close(t.Context())
+
+	var count atomic.Int32
+	unsub := bus.Subscribe("testEvent", func(_ context.Context, _ string) error {
+		count.Add(1)
+		return nil
+	})
+
+	bus.Publish("testEvent:1")
+	bus.Flush(t.Context())
+	if got := count.Load(); got != 1 {
+		t.Fatalf("expected 1 call before unsubscribe, got %d", got)
+	}
+
+	unsub()
+
+	bus.Publish("testEvent:2")
+	bus.Flush(t.Context())
+	if got := count.Load(); got != 1 {
+		t.Fatalf("expected 1 call after unsubscribe, got %d", got)
+	}
+}

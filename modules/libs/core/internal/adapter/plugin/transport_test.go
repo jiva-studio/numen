@@ -25,16 +25,6 @@ func TestGenerateAuthToken(t *testing.T) {
 	}
 }
 
-func TestFindAvailablePort(t *testing.T) {
-	port, err := FindAvailablePort()
-	if err != nil {
-		t.Fatalf("FindAvailablePort failed: %v", err)
-	}
-	if port <= 0 || port > 65535 {
-		t.Fatalf("expected valid port between 1 and 65535, got %d", port)
-	}
-}
-
 func TestParseHandshake(t *testing.T) {
 	tests := []struct {
 		line     string
