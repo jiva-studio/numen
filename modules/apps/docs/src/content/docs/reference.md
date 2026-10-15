@@ -79,7 +79,7 @@ How a vault is made searchable.
 | `embedding.query.service.key_env` | text | names the environment variable holding the key, for an installation that keeps it out of the file. |
 | `embedding.floor` | a number | the cosine similarity a passage reaches to be an answer, in the units the model in use measures in. |
 | `recognition` |  | how a scanned document is read when a person asks for it. |
-| `recognition.runtime` | text | the ONNX shared library. Empty means the one beside the application, and then the one the platform holds. |
+| `recognition.runtime` | text | the shared library of ONNX runtime. Empty means the one beside the application. |
 | `recognition.dir` | text | a folder holding the models. Empty means the folder beside the application, and then the download cache. |
 | `recognition.download` | yes or no | allows fetching what is not on this machine. |
 | `recognition.layout` |  | divides a page into its parts and puts them in reading order. |
