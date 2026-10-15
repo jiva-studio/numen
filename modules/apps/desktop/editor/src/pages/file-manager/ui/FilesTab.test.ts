@@ -46,7 +46,7 @@ const mountFiles = async (open: readonly string[] = []) => {
     createPreset: async (folderPath, name) => `${folderPath}${name}`,
     importUrl: async (folderPath, url) => void done.push(`imports ${folderPath} ${url}`) as never,
     importUrls: async (folderPath, urls) => {
-      done.push(`imports-multi ${folderPath} ${urls.join(' ')}`)
+      done.push(`imports-multi ${folderPath || '/'} ${urls.join(' ')}`)
       return []
     },
     showError: (text) => void done.push(`says ${text}`),
