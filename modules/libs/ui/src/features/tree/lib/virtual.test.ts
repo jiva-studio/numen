@@ -119,22 +119,42 @@ describe('computeScrollTarget', () => {
   const viewportHeight = 240
 
   it('returns current scroll when row is already visible', () => {
-    const target = computeScrollTarget(6, rowHeight, viewportHeight, 100)
+    const target = computeScrollTarget({
+      targetIndex: 6,
+      rowHeight,
+      viewportHeight,
+      currentScrollTop: 100,
+    })
     expect(target).toBe(100)
   })
 
   it('scrolls up when row is above current viewport', () => {
-    const target = computeScrollTarget(2, rowHeight, viewportHeight, 200)
+    const target = computeScrollTarget({
+      targetIndex: 2,
+      rowHeight,
+      viewportHeight,
+      currentScrollTop: 200,
+    })
     expect(target).toBe(48)
   })
 
   it('scrolls down when row is below current viewport', () => {
-    const target = computeScrollTarget(12, rowHeight, viewportHeight, 0)
+    const target = computeScrollTarget({
+      targetIndex: 12,
+      rowHeight,
+      viewportHeight,
+      currentScrollTop: 0,
+    })
     expect(target).toBe(72)
   })
 
   it('returns current scroll when viewport height is zero', () => {
-    const target = computeScrollTarget(12, rowHeight, 0, 50)
+    const target = computeScrollTarget({
+      targetIndex: 12,
+      rowHeight,
+      viewportHeight: 0,
+      currentScrollTop: 50,
+    })
     expect(target).toBe(50)
   })
 })

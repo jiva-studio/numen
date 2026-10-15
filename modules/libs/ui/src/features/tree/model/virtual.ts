@@ -44,12 +44,12 @@ export function useVirtualTree(
   const scrollToRow = (index: number): void => {
     if (!container.value) return
     const rowHeight = getRowHeight()
-    const target = computeScrollTarget(
-      index,
+    const target = computeScrollTarget({
+      targetIndex: index,
       rowHeight,
-      viewportHeight.value,
-      container.value.scrollTop,
-    )
+      viewportHeight: viewportHeight.value,
+      currentScrollTop: container.value.scrollTop,
+    })
     container.value.scrollTop = target
     scrollTop.value = target
   }

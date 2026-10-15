@@ -36,12 +36,15 @@ export function computeVirtualWindow(config: VirtualConfig): VirtualWindow {
   return { startIndex, endIndex, offsetY, totalHeight }
 }
 
-export function computeScrollTarget(
-  targetIndex: number,
-  rowHeight: number,
-  viewportHeight: number,
-  currentScrollTop: number,
-): number {
+export interface ScrollTargetConfig {
+  readonly targetIndex: number
+  readonly rowHeight: number
+  readonly viewportHeight: number
+  readonly currentScrollTop: number
+}
+
+export function computeScrollTarget(config: ScrollTargetConfig): number {
+  const { targetIndex, rowHeight, viewportHeight, currentScrollTop } = config
   if (viewportHeight <= 0 || rowHeight <= 0) {
     return currentScrollTop
   }

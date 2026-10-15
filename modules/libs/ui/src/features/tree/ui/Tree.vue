@@ -106,6 +106,12 @@ const virtualRows = computed(() =>
   shown.value.slice(virtual.window.value.startIndex, virtual.window.value.endIndex),
 )
 
+const rowsStyle = computed(() => ({
+  blockSize: `${virtual.window.value.totalHeight}px`,
+  paddingBlockStart: `${virtual.window.value.offsetY}px`,
+  boxSizing: 'border-box' as const,
+}))
+
 const rows = useDrawnRows(
   () => shown.value,
   () => props.selected,
@@ -205,11 +211,7 @@ function getRowHeight(): number {
       role="tree"
       aria-multiselectable="true"
       :aria-label="name"
-      :style="{
-        blockSize: `${virtual.window.value.totalHeight}px`,
-        paddingBlockStart: `${virtual.window.value.offsetY}px`,
-        boxSizing: 'border-box',
-      }"
+      :style="rowsStyle"
       @keydown="onKeyDown"
     >
       <TreeRow
