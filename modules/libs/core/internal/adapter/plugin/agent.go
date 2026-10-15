@@ -63,29 +63,6 @@ func OpenAgentBridgeForPlugin(ctx context.Context, host *Host, pluginID string) 
 	}, nil
 }
 
-// OpenAgentBridgeForPlugin activates or connects to the specified agent plugin and returns an AgentBridge.
-func OpenAgentBridgeForPlugin(ctx context.Context, host *Host, pluginID string) (*AgentBridge, error) {
-	p, ok := host.GetPlugin(pluginID)
-	if !ok {
-		return nil, fmt.Errorf("plugin %s: %w", pluginID, ErrNoAgentPlugin)
-	}
-
-	endpoint, err := host.EnsureActive(ctx, p.Manifest.ID)
-	if err != nil {
-		return nil, fmt.Errorf("ensure active %s: %w", p.Manifest.ID, err)
-	}
-
-	httpClient := defaultPluginClient
-	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
-	client := numenv1connect.NewAgentServiceClient(httpClient, endpoint.BaseURL(), interceptor)
-
-	return &AgentBridge{
-		host:     host,
-		pluginID: p.Manifest.ID,
-		client:   client,
-	}, nil
-}
-
 // StartRun starts execution of the given task through the agent plugin.
 func (b *AgentBridge) StartRun(ctx context.Context, task port.Task) (port.Run, error) {
 	req := connect.NewRequest(&v1.AskAgentRequest{
