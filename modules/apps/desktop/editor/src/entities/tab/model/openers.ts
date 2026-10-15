@@ -71,6 +71,30 @@ const emitFileEvent = (path: string, emit?: (event: string) => void): void => {
   }
 }
 
+const findExtensionReader = (
+  extensionReaders: ReadonlyMap<string, SourceReader>,
+  path: string,
+): SourceReader | undefined => {
+  const dotIndex = path.lastIndexOf('.')
+  if (dotIndex === -1) return undefined
+  const ext = path.slice(dotIndex + 1).toLowerCase()
+  return extensionReaders.get(ext)
+}
+
+const fetchFileKind = async (vault: FileOpenerDeps, path: string): Promise<FileKind | null> => {
+  try {
+    return (await vault.fileKinds([path])).get(path) ?? null
+  } catch {
+    return ORDINARY
+  }
+}
+
+const findReader = (
+  readers: ReadonlyMap<string, SourceReader>,
+  kind: FileKind,
+): SourceReader | undefined =>
+  readers.get(createReaderKey(kind.kind, kind.format)) ?? readers.get(createReaderKey(kind.kind))
+
 export function fileOpeners(vault: FileOpenerDeps) {
   /** The editor each kind of note opens in, as its kind handed it over. */
   const editors = new Map<EditorKind, FileOpener>()
@@ -80,6 +104,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
    * kind, and the format where the kind reads one of them its own way.
    */
   const readers = new Map<string, SourceReader>()
+  const extensionReaders = new Map<string, SourceReader>()
 
   /** A kind of tab hands over the way it puts a file in front of the person. */
   const registerEditor = (type: EditorKind, open: FileOpener) => {
@@ -94,28 +119,13 @@ export function fileOpeners(vault: FileOpenerDeps) {
     readers.set(createReaderKey(key.kind, key.format), read)
   }
 
-  /**
-   * What stands at a path. Nothing stands where the vault answers nothing; a
-   * vault that cannot be asked at all leaves it the ordinary note it reads as.
-   */
-  const fetchFileKind = async (path: string): Promise<FileKind | null> => {
-    try {
-      return (await vault.fileKinds([path])).get(path) ?? null
-    } catch {
-      // A vault that cannot be asked says nothing about the file, and the tab
-      // that opens is the one every file opens in.
-      return ORDINARY
+  const registerExtensionReader = (extension: string, read: SourceReader): (() => void) => {
+    const ext = extension.startsWith('.') ? extension.slice(1).toLowerCase() : extension.toLowerCase()
+    extensionReaders.set(ext, read)
+    return () => {
+      extensionReaders.delete(ext)
     }
   }
-
-  /**
-   * The reader a source opens in. One format of a source may be read its own
-   * way, and the source's reader is the one where none claims the format: a
-   * book that reflows is turned a spread at a time, and every other book is
-   * the row of pages it is drawn as.
-   */
-  const findReader = (kind: FileKind): SourceReader | undefined =>
-    readers.get(createReaderKey(kind.kind, kind.format)) ?? readers.get(createReaderKey(kind.kind))
 
   /**
    * A file just made here, put in front of the person as what it was made as.
@@ -144,14 +154,16 @@ export function fileOpeners(vault: FileOpenerDeps) {
     options?: PlexDestination | OpenPlacement,
   ): Promise<void> => {
     emitFileEvent(path, vault.emitEvent)
-    const kind = await fetchFileKind(path)
+    const extReader = findExtensionReader(extensionReaders, path)
+    if (extReader) return void extReader(path, [])
+    const kind = await fetchFileKind(vault, path)
     if (!kind) return
     if (kind.kind === 'note') {
       const placement = typeof options === 'string' ? { where: options } : options
       return void openNewFile(path, title, { type: kind.type, ...placement })
     }
     vault.reconcileTab?.(path, mapTargetKind(kind))
-    findReader(kind)?.(path, [])
+    findReader(readers, kind)?.(path, [])
   }
 
   /**
@@ -162,14 +174,16 @@ export function fileOpeners(vault: FileOpenerDeps) {
    */
   const openFileAt = async (path: string, spans: readonly Span[]): Promise<void> => {
     emitFileEvent(path, vault.emitEvent)
-    const kind = await fetchFileKind(path)
+    const extReader = findExtensionReader(extensionReaders, path)
+    if (extReader) return void extReader(path, spans)
+    const kind = await fetchFileKind(vault, path)
     if (!kind) return
     if (kind.kind === 'note') return void openNewFile(path, '', kind.type)
     vault.reconcileTab?.(path, mapTargetKind(kind))
-    findReader(kind)?.(path, spans)
+    findReader(readers, kind)?.(path, spans)
   }
 
-  return { registerEditor, registerReader, openFile, openFileAt, openNewFile }
+  return { registerEditor, registerReader, registerExtensionReader, openFile, openFileAt, openNewFile }
 }
 
 /** The kind of tab a file opens in. */

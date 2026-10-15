@@ -14,7 +14,9 @@
 
     "paths": {
       "@/*": ["./src/*"],
-      "@plugins/*": ["../../../plugins/*"]
+      "@plugins/*": ["../../../plugins/*"],
+      "@numen/plugin-sdk": ["../../../libs/plugin-sdk/src/index.ts"],
+      "@numen/plugin-sdk/*": ["../../../libs/plugin-sdk/src/*"]
     }
   },
   "include": [

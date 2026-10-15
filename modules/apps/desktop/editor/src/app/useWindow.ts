@@ -3,8 +3,8 @@
  * few things one kind asks of another.
  */
 import { watch } from 'vue'
-import { core, type VaultCore } from './vault'
-import { presets } from '@/entities/deck'
+import { core } from './vault'
+import { resolveDeckPreset } from './deckPreset'
 import { runSupport, type CommandTarget, type NoteLookup } from '@/features/command-palette'
 import { AGENT, FILES, PLEX, createWorkspace, fileOpeners, useWindowTabs } from '@/entities/tab'
 import { createMessageLog } from '@/shared/notices/messages'
@@ -24,6 +24,8 @@ import { useWindowKinds } from './useWindowKinds'
 import { useWindowStatusBar } from './useWindowStatusBar'
 import { useAppHotkeys } from './useAppHotkeys'
 import { useAppBootstrap } from './useAppBootstrap'
+import { createPluginHost } from '@/entities/plugin'
+import { createPluginLoader } from '@/features/plugin-loader'
 
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { PathRename } from '@/shared/paths'
@@ -86,28 +88,6 @@ function createTargetResolver(
   }
 }
 
-interface DeckPresetHandlers {
-  openPreset: (path: string, title?: string) => Promise<void> | void
-  writeMessage: MessageWriter
-}
-
-async function resolveDeckPreset(
-  vaultCore: VaultCore,
-  path: string,
-  handlers: DeckPresetHandlers,
-): Promise<void> {
-  const kind = (await vaultCore.fileKinds([path])).get(path)
-  if (kind?.type !== 'deck') {
-    await handlers.openPreset(path)
-    return
-  }
-  const answer = await presets.getDeckPreset(path)
-  if (!answer.ok) return handlers.writeMessage(words.errors[answer.error], 'error')
-  const read = answer.value.preset
-  if (!read?.path) return handlers.writeMessage(words.noPreset, 'caution')
-  await handlers.openPreset(read.path, read.title)
-}
-
 interface WindowCommandsOptions {
   held: ReturnType<typeof useWindowTabs>
   getTarget: () => CommandTarget
@@ -120,6 +100,7 @@ interface WindowCommandsOptions {
   window: ReturnType<typeof useWindowDisplay>
   writeMessage: MessageWriter
   log: ReturnType<typeof createMessageLog>
+  pluginHost?: import('@/entities/plugin').PluginHost
 }
 
 function initWindowCommands(deps: WindowCommandsOptions) {
@@ -135,6 +116,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     window,
     writeMessage,
     log,
+    pluginHost,
   } = deps
   return useCommands({
     core,
@@ -168,6 +150,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     agents: () => kinds.agents,
     getOpeningNote: () => window.opening.value,
     writeMessage,
+    ...(pluginHost !== undefined ? { pluginHost } : {}),
   })
 }
 
@@ -177,6 +160,7 @@ interface AppLifecycleDeps {
   settings: ReturnType<typeof useSettings>
   window: ReturnType<typeof useWindowDisplay>
   editing: ReturnType<typeof useNoteEditors>
+  pluginLoader?: ReturnType<typeof createPluginLoader>
 }
 
 function initAppLifecycle(deps: AppLifecycleDeps) {
@@ -193,12 +177,18 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     loadVaults: () => vaultsModule.loadVaults(),
     startSettings: () => settings.start(),
     startLayout,
+    startPlugins: async () => {
+      await deps.pluginLoader?.start()
+    },
     startWindow: () => window.start(),
     startEditing: () => void editing.fileFlush.start(),
     closeWindow: () => window.close(),
     closeEditing: () => editing.close(),
     closeTabs: () => held.close(),
     closeSettings: () => settings.close(),
+    closePlugins: async () => {
+      await deps.pluginLoader?.close()
+    },
   })
 }
 
@@ -210,7 +200,13 @@ function initWindowCore() {
   const tabOpeners = fileOpeners({ ...core, reconcileTab: held.reconcileTab })
   const runs = runSupport()
   const plays = createMediaTypeProbe()
-  return { log, writeMessage, held, tabLinks, tabOpeners, runs, plays }
+  const pluginHost = createPluginHost({
+    registerKind: held.registerKind,
+    registerExtensionReader: tabOpeners.registerExtensionReader,
+    openTab: held.openTabOfKind,
+  })
+  const pluginLoader = createPluginLoader({ host: pluginHost })
+  return { log, writeMessage, held, tabLinks, tabOpeners, runs, plays, pluginHost, pluginLoader }
 }
 
 type WindowCore = ReturnType<typeof initWindowCore>
@@ -321,6 +317,7 @@ function initWindowKindsAndCommands(
     window,
     writeMessage: base.writeMessage,
     log: base.log,
+    pluginHost: base.pluginHost,
   })
 
   return { getTarget, runCommand }
@@ -344,7 +341,14 @@ export const useWindow = () => {
   }
 
   useAppHotkeys(ctx.commands.onKeyDown)
-  initAppLifecycle({ vaultsModule: ctx.vaults, held: base.held, settings, window, editing })
+  initAppLifecycle({
+    vaultsModule: ctx.vaults,
+    held: base.held,
+    settings,
+    window,
+    editing,
+    pluginLoader: base.pluginLoader,
+  })
 
   return {
     runCommand,
