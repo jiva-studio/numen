@@ -39,7 +39,7 @@ func OpenAgentBridge(ctx context.Context, host *Host) (*AgentBridge, error) {
 		return nil, fmt.Errorf("ensure active %s: %w", p.Manifest.ID, err)
 	}
 
-	httpClient := defaultPluginClient
+	httpClient := endpoint.HTTPClient()
 	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
 	client := numenv1connect.NewAgentServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 

@@ -36,7 +36,7 @@ func OpenTranscriberBridge(ctx context.Context, host *Host) (*TranscriberBridge,
 		return nil, fmt.Errorf("ensure active %s: %w", plugin.Manifest.ID, err)
 	}
 
-	httpClient := defaultPluginClient
+	httpClient := endpoint.HTTPClient()
 	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
 	client := numenv1connect.NewTranscriptionServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 

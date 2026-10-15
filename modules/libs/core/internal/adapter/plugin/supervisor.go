@@ -146,8 +146,16 @@ func (s *Supervisor) Teardown(
 ) error {
 	s.mu.Lock()
 	if s.process == nil {
+		if s.state == StateDormant {
+			s.mu.Unlock()
+			return errProcessNotRunning
+		}
+		s.state = StateDormant
 		s.mu.Unlock()
-		return errProcessNotRunning
+		if rpcShutdown != nil {
+			_ = rpcShutdown(ctx)
+		}
+		return nil
 	}
 	s.state = StateDeactivating
 	proc := s.process

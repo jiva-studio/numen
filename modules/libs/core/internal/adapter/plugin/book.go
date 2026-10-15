@@ -37,7 +37,7 @@ func OpenBookBridge(ctx context.Context, host *Host) (*BookBridge, error) {
 		return nil, fmt.Errorf("ensure active %s: %w", p.Manifest.ID, err)
 	}
 
-	httpClient := defaultPluginClient
+	httpClient := endpoint.HTTPClient()
 	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
 	client := numenv1connect.NewBookServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 
