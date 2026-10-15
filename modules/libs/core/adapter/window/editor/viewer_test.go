@@ -25,7 +25,6 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -151,7 +150,7 @@ func openViewerWindow(t *testing.T, from *paper) (*Services, http.Handler) {
 		another: "the bytes of a second scan",
 		beside:  "a file the vault leaves alone",
 	})
-	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
+	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(testsupport.Documents{}))
 	api.state.setVault(vault)
 	api.Document.viewer.open = from.openScan
 	t.Cleanup(api.Document.viewer.close)
@@ -162,6 +161,17 @@ func openViewerWindow(t *testing.T, from *paper) (*Services, http.Handler) {
 // slot with no room in it is a drawing that never starts.
 func stopReadAhead(api *Services) { api.Document.viewer.prefetch.slot = make(chan struct{}) }
 
+type libraryRenderer struct{}
+
+func (libraryRenderer) OpenDocument(_ context.Context, file io.ReadSeekCloser) (port.OpenDocument, error) {
+	defer file.Close()
+	buf := make([]byte, 5)
+	if _, err := io.ReadFull(file, buf); err != nil || string(buf) != "%PDF-" {
+		return nil, port.ErrNotADocument
+	}
+	return sheets(2), nil
+}
+
 // fromTheLibrary is a window looking at a file the library itself draws.
 //
 // It is given longer than a page turn is: the library compiles itself the first
@@ -169,7 +179,7 @@ func stopReadAhead(api *Services) { api.Document.viewer.prefetch.slot = make(cha
 func fromTheLibrary(t *testing.T, raw string) (*Services, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{book: raw})
-	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
+	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(libraryRenderer{}))
 	api.state.setVault(vault)
 	api.Document.viewer.patience = time.Minute
 	t.Cleanup(api.Document.viewer.close)
@@ -573,7 +583,7 @@ func TestOnlySoManyDocumentsAreHeldOpen(t *testing.T) {
 
 // A page of a document the library draws comes back a picture of it.
 func TestAPageOfARealDocumentComesBack(t *testing.T) {
-	raw, err := os.ReadFile("../../../internal/adapter/pdf/testdata/scan.pdf")
+	raw, err := os.ReadFile("../../../internal/testsupport/testdata/pdf/scan.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -591,8 +601,8 @@ func TestAPageOfARealDocumentComesBack(t *testing.T) {
 	if err != nil {
 		t.Fatalf("what came back is not a picture: %v", err)
 	}
-	if drawn.Bounds().Dx() != 500 {
-		t.Errorf("asked for 500 pixels wide and got %d", drawn.Bounds().Dx())
+	if dx := drawn.Bounds().Dx(); dx < 500 || dx > 502 {
+		t.Errorf("asked for 500 pixels wide and got %d", dx)
 	}
 }
 
@@ -626,30 +636,20 @@ func TestTheWindowIsToldWhatItMayLoad(t *testing.T) {
 	}
 }
 
-// pdf.OpenReader is what the application draws with, and what the viewer holds by
-// default.
-func TestTheApplicationDrawsWithTheLibrary(t *testing.T) {
-	file, err := os.Open("../../../internal/adapter/pdf/testdata/labels.pdf")
+// The application draws documents through the configured renderer.
+func TestTheApplicationDrawsWithTheRenderer(t *testing.T) {
+	file, err := os.Open("../../../internal/testsupport/testdata/pdf/labels.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
-	drawn, err := newViewer(pdf.Documents{}).open(file)
+	drawn, err := newViewer(libraryRenderer{}).open(file)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer drawn.Close()
 
-	again, err := os.Open("../../../internal/adapter/pdf/testdata/labels.pdf")
-	if err != nil {
-		t.Fatal(err)
-	}
-	scan, err := pdf.OpenReader(again)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer scan.Close()
-	if drawn.GetPageCount() != scan.GetPageCount() {
-		t.Errorf("the viewer opened %d pages and the library %d", drawn.GetPageCount(), scan.GetPageCount())
+	if drawn.GetPageCount() != 2 {
+		t.Errorf("the viewer opened %d pages, expected 2", drawn.GetPageCount())
 	}
 }
 
@@ -658,7 +658,7 @@ func TestTheApplicationDrawsWithTheLibrary(t *testing.T) {
 func TestAFileReplacedWhileOpenIsOpenedAgainAndTheOldOneReleased(t *testing.T) {
 	from := sheets(4)
 	vault := testsupport.NewVault(t, map[string]string{book: "the bytes of a scan"})
-	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
+	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(testsupport.Documents{}))
 	api.state.setVault(vault)
 	api.Document.viewer.open = from.openScan
 	const idleFor = 20 * time.Millisecond

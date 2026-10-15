@@ -4,10 +4,27 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/responses"
 )
+
+// A Rect is a place on a page, in fractions of it.
+type Rect struct {
+	MinX, MinY, MaxX, MaxY float32
+}
+
+// A ByteSpan is a half-open range of byte offsets in the text.
+type ByteSpan struct {
+	From, To int
+}
+
+// A HighlightBox is one run of prose and where it was read: the page it is on,
+// the run of bytes in the text, and the rectangle it covers.
+type HighlightBox struct {
+	Page int
+	ByteSpan
+	Rect
+}
 
 // A word ends where the printing leaves a gap. The gaps are fractions of the
 // height of the line, so they hold for a page set in any size.
@@ -26,7 +43,7 @@ const (
 //
 // A page whose text layer says nothing gives no boxes, and a scan gives none at
 // all.
-func (b *Book) Highlights(raw []byte, pages []int) ([]domain.HighlightBox, error) {
+func (b *Book) Highlights(raw []byte, pages []int) ([]HighlightBox, error) {
 	wanted := getOrderedPages(pages, len(b.Pages))
 	if len(wanted) == 0 {
 		return nil, nil
@@ -38,7 +55,7 @@ func (b *Book) Highlights(raw []byte, pages []int) ([]domain.HighlightBox, error
 	}
 	defer doc.close()
 
-	var boxes []domain.HighlightBox
+	var boxes []HighlightBox
 	for _, page := range wanted {
 		boxes = append(boxes, doc.words(page, b.Pages[page].Offset)...)
 	}
@@ -66,7 +83,7 @@ func getOrderedPages(pages []int, most int) []int {
 //
 // A page that cannot be measured, or cannot be read, says nothing about where
 // its words are.
-func (d *document) words(index, offset int) []domain.HighlightBox {
+func (d *document) words(index, offset int) []HighlightBox {
 	page := requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}}
 	sheet, ok := d.getSheet(page)
 	if !ok {
@@ -100,7 +117,7 @@ func (d *document) words(index, offset int) []domain.HighlightBox {
 type wordReading struct {
 	sheet  pageGeometry
 	index  int
-	boxes  []domain.HighlightBox
+	boxes  []HighlightBox
 	word   responses.CharPosition
 	start  int
 	length int
@@ -181,13 +198,13 @@ func (d *document) getSheet(page requests.Page) (pageGeometry, bool) {
 }
 
 // getWordBox is one word of a page, over the fraction of it the word covers.
-func (p pageGeometry) getWordBox(page, start, length int, word responses.CharPosition) domain.HighlightBox {
+func (p pageGeometry) getWordBox(page, start, length int, word responses.CharPosition) HighlightBox {
 	x0, y0 := p.getPagePoint(word.Left, word.Top)
 	x1, y1 := p.getPagePoint(word.Right, word.Bottom)
-	return domain.HighlightBox{
+	return HighlightBox{
 		Page:     page,
-		ByteSpan: domain.ByteSpan{From: start, To: start + length},
-		Rect: domain.Rect{
+		ByteSpan: ByteSpan{From: start, To: start + length},
+		Rect: Rect{
 			MinX: clampToPage(min(x0, x1)),
 			MinY: clampToPage(min(y0, y1)),
 			MaxX: clampToPage(max(x0, x1)),

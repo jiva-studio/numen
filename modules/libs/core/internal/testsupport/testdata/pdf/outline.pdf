@@ -1,0 +1,259 @@
+%PDF-1.7
+%µ¶
+% Written by MuPDF 1.28.2
+
+1 0 obj
+<<
+  /Type /Catalog
+  /Pages 2 0 R
+  /Info <<
+    /Producer (MuPDF 1.28.2)
+  >>
+  /Outlines 17 0 R
+>>
+endobj
+
+2 0 obj
+<<
+  /Type /Pages
+  /Count 4
+  /Kids [ 4 0 R 8 0 R 11 0 R 14 0 R ]
+>>
+endobj
+
+3 0 obj
+<<
+  /Font <<
+    /helv 5 0 R
+  >>
+>>
+endobj
+
+4 0 obj
+<<
+  /Type /Page
+  /MediaBox [ 0 0 200 200 ]
+  /Rotate 0
+  /Resources 3 0 R
+  /Parent 2 0 R
+  /Contents [ 6 0 R ]
+>>
+endobj
+
+5 0 obj
+<<
+  /Type /Font
+  /Subtype /Type1
+  /BaseFont /Helvetica
+  /Encoding /WinAnsiEncoding
+>>
+endobj
+
+6 0 obj
+<<
+  /Length 72
+>>
+stream
+
+q
+BT
+1 0 0 1 20 150 Tm
+/helv 12 Tf [<46726f6e74206d6174746572>]TJ
+ET
+Q
+
+endstream
+endobj
+
+7 0 obj
+<<
+  /Font <<
+    /helv 5 0 R
+  >>
+>>
+endobj
+
+8 0 obj
+<<
+  /Type /Page
+  /MediaBox [ 0 0 200 200 ]
+  /Rotate 0
+  /Resources 7 0 R
+  /Parent 2 0 R
+  /Contents [ 9 0 R ]
+>>
+endobj
+
+9 0 obj
+<<
+  /Length 74
+>>
+stream
+
+q
+BT
+1 0 0 1 20 150 Tm
+/helv 12 Tf [<4f70656e696e6720776f726473>]TJ
+ET
+Q
+
+endstream
+endobj
+
+10 0 obj
+<<
+  /Font <<
+    /helv 5 0 R
+  >>
+>>
+endobj
+
+11 0 obj
+<<
+  /Type /Page
+  /MediaBox [ 0 0 200 200 ]
+  /Rotate 0
+  /Resources 10 0 R
+  /Parent 2 0 R
+  /Contents [ 12 0 R ]
+>>
+endobj
+
+12 0 obj
+<<
+  /Length 80
+>>
+stream
+
+q
+BT
+1 0 0 1 20 150 Tm
+/helv 12 Tf [<4120636c6f7365722072656164696e67>]TJ
+ET
+Q
+
+endstream
+endobj
+
+13 0 obj
+<<
+  /Font <<
+    /helv 5 0 R
+  >>
+>>
+endobj
+
+14 0 obj
+<<
+  /Type /Page
+  /MediaBox [ 0 0 200 200 ]
+  /Rotate 0
+  /Resources 13 0 R
+  /Parent 2 0 R
+  /Contents [ 15 0 R ]
+>>
+endobj
+
+15 0 obj
+<<
+  /Length 66
+>>
+stream
+
+q
+BT
+1 0 0 1 20 150 Tm
+/helv 12 Tf [<4166746572776f7264>]TJ
+ET
+Q
+
+endstream
+endobj
+
+16 0 obj
+<<
+  /Title (A Document With Parts)
+>>
+endobj
+
+17 0 obj
+<<
+  /Count 2
+  /First 18 0 R
+  /Last 20 0 R
+  /Type /Outlines
+>>
+endobj
+
+18 0 obj
+<<
+  /Count -1
+  /A <<
+    /S /GoTo
+    /D [ 8 0 R /XYZ 72 164 0 ]
+  >>
+  /First 19 0 R
+  /Last 19 0 R
+  /Next 20 0 R
+  /Parent 17 0 R
+  /Title (The First Part)
+>>
+endobj
+
+19 0 obj
+<<
+  /A <<
+    /S /GoTo
+    /D [ 11 0 R /XYZ 72 164 0 ]
+  >>
+  /Parent 18 0 R
+  /Title (A Closer Reading)
+>>
+endobj
+
+20 0 obj
+<<
+  /A <<
+    /S /GoTo
+    /D [ 14 0 R /XYZ 72 164 0 ]
+  >>
+  /Parent 17 0 R
+  /Prev 18 0 R
+  /Title (Afterword)
+>>
+endobj
+
+xref
+0 21
+0000000000 65535 f 
+0000000042 00000 n 
+0000000160 00000 n 
+0000000246 00000 n 
+0000000300 00000 n 
+0000000433 00000 n 
+0000000539 00000 n 
+0000000664 00000 n 
+0000000718 00000 n 
+0000000851 00000 n 
+0000000978 00000 n 
+0000001033 00000 n 
+0000001169 00000 n 
+0000001303 00000 n 
+0000001358 00000 n 
+0000001494 00000 n 
+0000001614 00000 n 
+0000001670 00000 n 
+0000001753 00000 n 
+0000001934 00000 n 
+0000002060 00000 n 
+
+trailer
+<<
+  /Size 21
+  /Info 16 0 R
+  /Root 1 0 R
+  /ID [ <C3B051C291C395C3BB0BC398C2BB0DC3> <A631EF791CF238AA2DBED149FDF2E95B> ]
+>>
+startxref
+2194
+%%EOF

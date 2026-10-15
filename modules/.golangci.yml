@@ -105,7 +105,6 @@ linters:
             - "**/internal/adapter/download/**"
             - "**/internal/adapter/embed/**"
             - "**/internal/adapter/filesystem/**"
-            - "**/internal/adapter/pdf/**"
             - "**/internal/adapter/proofreading/**"
             - "**/internal/adapter/recognition/**"
             - "**/internal/adapter/transcription/**"

@@ -68,7 +68,7 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 		{"usecase/note", wire + "/gen/numen/v1", true},
 		{"usecase/note", module + "domain", false},
 		{"domain", module + "adapter/index", true},
-		{"text", module + "internal/adapter/pdf", true},
+		{"text", module + "internal/adapter/filesystem", true},
 
 		// The composition root is built from the adapters and answers for what
 		// it names. The schema is the one thing it may not name.

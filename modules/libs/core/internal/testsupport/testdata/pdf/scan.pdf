@@ -1,0 +1,19 @@
+%PDF-1.4
+% Two pages that draw a line each and carry no text layer at all. This is what
+% a scan is before anything has read it.
+1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
+2 0 obj << /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >> endobj
+3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >> endobj
+4 0 obj << /Length 33 >>
+stream
+20 20 m 180 180 l 1 w S
+endstream
+endobj
+5 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 6 0 R >> endobj
+6 0 obj << /Length 33 >>
+stream
+20 180 m 180 20 l 1 w S
+endstream
+endobj
+trailer << /Root 1 0 R /Size 7 >>
+%%EOF

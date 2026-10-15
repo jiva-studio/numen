@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/document.proto.
  */
 export const file_numen_v1_document: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9kb2N1bWVudC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkiYAoTR2V0RG9jdW1lbnRSZXNwb25zZRIdCgVwYWdlcxgBIAMoCzIOLm51bWVuLnYxLlBhZ2USKgoLZmluZ2VycHJpbnQYAiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCIlCgRQYWdlEg0KBXdpZHRoGAEgASgBEg4KBmhlaWdodBgCIAEoATJdCg9Eb2N1bWVudFNlcnZpY2USSgoLR2V0RG9jdW1lbnQSHC5udW1lbi52MS5HZXREb2N1bWVudFJlcXVlc3QaHS5udW1lbi52MS5HZXREb2N1bWVudFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9kb2N1bWVudC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkiYAoTR2V0RG9jdW1lbnRSZXNwb25zZRIdCgVwYWdlcxgBIAMoCzIOLm51bWVuLnYxLlBhZ2USKgoLZmluZ2VycHJpbnQYAiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCIlCgRQYWdlEg0KBXdpZHRoGAEgASgBEg4KBmhlaWdodBgCIAEoASJTChlSZW5kZXJEb2N1bWVudFBhZ2VSZXF1ZXN0EgwKBHBhdGgYASABKAkSDAoEcGFnZRgCIAEoBRILCgNkcGkYAyABKAUSDQoFd2lkdGgYBCABKAUiZQoaUmVuZGVyRG9jdW1lbnRQYWdlUmVzcG9uc2USEgoKaW1hZ2VfZGF0YRgBIAEoDBIUCgxjb250ZW50X3R5cGUYAiABKAkSDQoFd2lkdGgYAyABKAESDgoGaGVpZ2h0GAQgASgBIjgKGkV4dHJhY3REb2N1bWVudFRleHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSDAoEZGF0YRgCIAEoDCJAChtFeHRyYWN0RG9jdW1lbnRUZXh0UmVzcG9uc2USDAoEdGV4dBgBIAEoCRITCgtwYWdlX3N0YXJ0cxgCIAMoBTKSAgoPRG9jdW1lbnRTZXJ2aWNlEkoKC0dldERvY3VtZW50EhwubnVtZW4udjEuR2V0RG9jdW1lbnRSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0RG9jdW1lbnRSZXNwb25zZRJXCgpSZW5kZXJQYWdlEiMubnVtZW4udjEuUmVuZGVyRG9jdW1lbnRQYWdlUmVxdWVzdBokLm51bWVuLnYxLlJlbmRlckRvY3VtZW50UGFnZVJlc3BvbnNlEloKC0V4dHJhY3RUZXh0EiQubnVtZW4udjEuRXh0cmFjdERvY3VtZW50VGV4dFJlcXVlc3QaJS5udW1lbi52MS5FeHRyYWN0RG9jdW1lbnRUZXh0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetDocumentRequest
@@ -96,6 +96,114 @@ export const PageSchema: GenMessage<Page> = /*@__PURE__*/
   messageDesc(file_numen_v1_document, 2);
 
 /**
+ * @generated from message numen.v1.RenderDocumentPageRequest
+ */
+export type RenderDocumentPageRequest = Message<"numen.v1.RenderDocumentPageRequest"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * @generated from field: int32 page = 2;
+   */
+  page: number;
+
+  /**
+   * @generated from field: int32 dpi = 3;
+   */
+  dpi: number;
+
+  /**
+   * @generated from field: int32 width = 4;
+   */
+  width: number;
+};
+
+/**
+ * Describes the message numen.v1.RenderDocumentPageRequest.
+ * Use `create(RenderDocumentPageRequestSchema)` to create a new message.
+ */
+export const RenderDocumentPageRequestSchema: GenMessage<RenderDocumentPageRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_document, 3);
+
+/**
+ * @generated from message numen.v1.RenderDocumentPageResponse
+ */
+export type RenderDocumentPageResponse = Message<"numen.v1.RenderDocumentPageResponse"> & {
+  /**
+   * @generated from field: bytes image_data = 1;
+   */
+  imageData: Uint8Array;
+
+  /**
+   * @generated from field: string content_type = 2;
+   */
+  contentType: string;
+
+  /**
+   * @generated from field: double width = 3;
+   */
+  width: number;
+
+  /**
+   * @generated from field: double height = 4;
+   */
+  height: number;
+};
+
+/**
+ * Describes the message numen.v1.RenderDocumentPageResponse.
+ * Use `create(RenderDocumentPageResponseSchema)` to create a new message.
+ */
+export const RenderDocumentPageResponseSchema: GenMessage<RenderDocumentPageResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_document, 4);
+
+/**
+ * @generated from message numen.v1.ExtractDocumentTextRequest
+ */
+export type ExtractDocumentTextRequest = Message<"numen.v1.ExtractDocumentTextRequest"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * @generated from field: bytes data = 2;
+   */
+  data: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.ExtractDocumentTextRequest.
+ * Use `create(ExtractDocumentTextRequestSchema)` to create a new message.
+ */
+export const ExtractDocumentTextRequestSchema: GenMessage<ExtractDocumentTextRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_document, 5);
+
+/**
+ * @generated from message numen.v1.ExtractDocumentTextResponse
+ */
+export type ExtractDocumentTextResponse = Message<"numen.v1.ExtractDocumentTextResponse"> & {
+  /**
+   * @generated from field: string text = 1;
+   */
+  text: string;
+
+  /**
+   * @generated from field: repeated int32 page_starts = 2;
+   */
+  pageStarts: number[];
+};
+
+/**
+ * Describes the message numen.v1.ExtractDocumentTextResponse.
+ * Use `create(ExtractDocumentTextResponseSchema)` to create a new message.
+ */
+export const ExtractDocumentTextResponseSchema: GenMessage<ExtractDocumentTextResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_document, 6);
+
+/**
  * DocumentService answers what a document is, for whatever opens one.
  *
  * It is a service apart from the vault's notes for one reason: a window that
@@ -120,6 +228,26 @@ export const DocumentService: GenService<{
     methodKind: "unary";
     input: typeof GetDocumentRequestSchema;
     output: typeof GetDocumentResponseSchema;
+  },
+  /**
+   * RenderPage draws one page of a document and answers with the drawn image bytes.
+   *
+   * @generated from rpc numen.v1.DocumentService.RenderPage
+   */
+  renderPage: {
+    methodKind: "unary";
+    input: typeof RenderDocumentPageRequestSchema;
+    output: typeof RenderDocumentPageResponseSchema;
+  },
+  /**
+   * ExtractText extracts text and page boundaries from a document.
+   *
+   * @generated from rpc numen.v1.DocumentService.ExtractText
+   */
+  extractText: {
+    methodKind: "unary";
+    input: typeof ExtractDocumentTextRequestSchema;
+    output: typeof ExtractDocumentTextResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_document, 0);

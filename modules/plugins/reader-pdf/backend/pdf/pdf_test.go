@@ -1,12 +1,13 @@
 package pdf_test
 
 import (
+	"bytes"
 	"errors"
 	"os"
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
+	"github.com/jiva-studio/numen/modules/plugins/reader-pdf/backend/pdf"
 )
 
 // The fixtures are six documents, and each is one thing a reader has to get
@@ -332,3 +333,11 @@ func TestAPageSaysHowBigItIs(t *testing.T) {
 		})
 	}
 }
+
+// bytesFile is a document held in memory, with a Close that has nothing to release.
+type bytesFile struct{ *bytes.Reader }
+
+func (bytesFile) Close() error { return nil }
+
+func readerOf(raw []byte) bytesFile { return bytesFile{bytes.NewReader(raw)} }
+

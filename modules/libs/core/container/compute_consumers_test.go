@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/openai"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
 
@@ -147,27 +146,5 @@ func TestTheCardPoolsRunAsManyPlacesAsThePlanHasWorkers(t *testing.T) {
 func TestTheCardPoolsOfAContainerWithoutAPlanRunOnePlacePerCPU(t *testing.T) {
 	if got, want := (Config{}).getCores(), runtime.GOMAXPROCS(0); got != want {
 		t.Errorf("cards are parsed on %d places, want %d", got, want)
-	}
-}
-
-func TestThePdfPoolStartsWithAsManyWorkersAsThePlanHas(t *testing.T) {
-	t.Cleanup(func() { pdf.SetWorkers(0) })
-	Config{ResolvedCompute: makePlan(6, 2)}.TextExtractor()
-	if got := pdf.GetWorkers(); got != 6 {
-		t.Errorf("the pool starts with %d workers, want the 6 planned", got)
-	}
-	pdf.SetWorkers(0)
-	Config{ResolvedCompute: makePlan(7, 2)}.PageRenderer()
-	if got := pdf.GetWorkers(); got != 7 {
-		t.Errorf("the pool starts with %d workers, want the 7 planned", got)
-	}
-}
-
-func TestThePdfPoolOfAContainerWithoutAPlanStartsWithOneWorkerPerCPU(t *testing.T) {
-	t.Cleanup(func() { pdf.SetWorkers(0) })
-	pdf.SetWorkers(9)
-	Config{}.TextExtractor()
-	if got, want := pdf.GetWorkers(), max(runtime.NumCPU(), 2); got != want {
-		t.Errorf("the pool starts with %d workers, want %d", got, want)
 	}
 }

@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
@@ -51,15 +50,14 @@ func (i indexed) GetSourcesUnder(context.Context, domain.VaultID, string) ([]dom
 
 // openHighlightWindow is a window over a vault holding one document with a text layer, and
 // that document read, so a test can name a word and ask where it is.
-func openHighlightWindow(t *testing.T) (*Services, http.Handler, *pdf.Book) {
+func openHighlightWindow(t *testing.T) (*Services, http.Handler, *testsupport.PDFBook) {
 	t.Helper()
-	raw, err := os.ReadFile("../../../internal/adapter/pdf/testdata/tiny.pdf")
+	raw, err := os.ReadFile("../../../internal/testsupport/testdata/pdf/tiny.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
-	doc, err := pdf.Read(raw)
-	if err != nil {
-		t.Fatal(err)
+	doc := &testsupport.PDFBook{
+		Text: "Alpha Beta\nGamma Delta\n",
 	}
 	vault := testsupport.NewVault(t, map[string]string{
 		book:   string(raw),
@@ -70,7 +68,7 @@ func openHighlightWindow(t *testing.T) (*Services, http.Handler, *pdf.Book) {
 		indexed{book: {Fingerprint: domain.Fingerprint{Path: book}}},
 		nil,
 	)
-	hl.Documents = pdf.Documents{}
+	hl.Documents = testsupport.Documents{}
 	api := newBareServices()
 	api.readFiles(filesystem.VaultReaders{})
 	api.Ocr.highlight = &hl
@@ -83,7 +81,7 @@ func openHighlightWindow(t *testing.T) (*Services, http.Handler, *pdf.Book) {
 }
 
 // where is where a word of the document is, as the window would ask about it.
-func where(t *testing.T, doc *pdf.Book, word string) *v1.Span {
+func where(t *testing.T, doc *testsupport.PDFBook, word string) *v1.Span {
 	t.Helper()
 	at := strings.Index(doc.Text, word)
 	if at < 0 {
@@ -142,7 +140,7 @@ func TestARunOfTheProseComesBackAsTextAndBoxes(t *testing.T) {
 func TestASourceNothingIsKnownAboutComesBackEmpty(t *testing.T) {
 	api, _, doc := openHighlightWindow(t)
 	hl := source.NewHighlight(filesystem.VaultReaders{}, indexed{}, nil)
-	hl.Documents = pdf.Documents{}
+	hl.Documents = testsupport.Documents{}
 	api.Ocr.highlight = &hl
 
 	runs, err := reads(api, book, where(t, doc, "Delta"))
