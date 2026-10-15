@@ -638,6 +638,15 @@ func (s *PluginServiceServer) GetPlugins(
 	}), nil
 }
 
+func isWhitelistedEnv(key string) bool {
+	upper := strings.ToUpper(key)
+	switch upper {
+	case "PATH", "HOME", "USER", "TMP", "TEMP", "SYSTEMROOT", "SYSTEMDRIVE", "APPDATA", "LOCALAPPDATA", "LANG":
+		return true
+	}
+	return strings.HasPrefix(upper, "LC_")
+}
+
 func (h *Host) defaultLauncher(
 	ctx context.Context,
 	p DiscoveredPlugin,
@@ -661,13 +670,23 @@ func (h *Host) defaultLauncher(
 	cmd := exec.CommandContext(ctx, binPath, "--port="+strconv.Itoa(port), "--token="+token)
 	cmd.Dir = p.Dir
 	configJSON, _ := h.getPluginConfigJSONLocked(p.Manifest.ID)
-	cmd.Env = append(
-		os.Environ(),
+
+	var env []string
+	for _, entry := range os.Environ() {
+		key, _, found := strings.Cut(entry, "=")
+		if found && isWhitelistedEnv(key) {
+			env = append(env, entry)
+		}
+	}
+	env = append(
+		env,
+		"NUMEN_VAULT_PATH="+h.vaultPath,
 		"NUMEN_PLUGIN_PORT="+strconv.Itoa(port),
 		"NUMEN_PLUGIN_TOKEN="+token,
 		"NUMEN_PLUGIN_ID="+p.Manifest.ID,
 		"NUMEN_PLUGIN_CONFIG="+configJSON,
 	)
+	cmd.Env = env
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {

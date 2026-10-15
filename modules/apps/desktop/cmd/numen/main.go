@@ -174,7 +174,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 
 	app := makeApplication(opened, pages, behind, going, seen)
 	window = makeWindow(app, opened)
-	connectWindow(ctx, window, opened, reachable)
+	connectWindow(ctx, cfg, window, opened, reachable)
 
 	// A hook runs before the window is destroyed and on a thread of its own, so
 	// the page is still drawn and still answered while what it owes is written.
@@ -280,7 +280,7 @@ func makeWindow(app *application.App, opened *editor.Installation) *application.
 // connectWindow wires what the window owns into the installation: the folder
 // dialog, the title, dropped files and opening another vault.
 func connectWindow(
-	ctx context.Context, window *application.WebviewWindow, opened *editor.Installation,
+	ctx context.Context, cfg container.Config, window *application.WebviewWindow, opened *editor.Installation,
 	reachable *agents.Endpoint,
 ) {
 	// Choosing a folder is the machine's own, and it opens over this window.
@@ -299,6 +299,9 @@ func connectWindow(
 	// vault they are working when their session opens, so the endpoint they
 	// reach it through is stopped and started again around the swap.
 	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
+		if cfg.PluginHost != nil {
+			cfg.PluginHost.SetVaultPath(v.Path)
+		}
 		err := reachable.RunWhileStopped(func() error { return opened.Show(ctx, v) })
 		naming(opened.State.GetOpenTabs())
 		return err

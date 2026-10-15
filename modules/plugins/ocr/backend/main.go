@@ -187,6 +187,21 @@ func (s *recognitionServer) RecognisePage(
 	}), nil
 }
 
+func authCheck(expectedToken string) connect.UnaryInterceptorFunc {
+	return func(next connect.UnaryFunc) connect.UnaryFunc {
+		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			if expectedToken != "" {
+				authHeader := req.Header().Get("Authorization")
+				expected := "Bearer " + expectedToken
+				if authHeader != expected {
+					return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("invalid token"))
+				}
+			}
+			return next(ctx, req)
+		}
+	}
+}
+
 func main() {
 	var portFlag int
 	var tokenFlag string
@@ -230,9 +245,11 @@ func main() {
 	recog := newRecognitionServer(nil, cfg)
 	defer recog.close()
 
+	interceptors := connect.WithInterceptors(authCheck(tokenFlag))
+
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(life))
-	mux.Handle(numenv1connect.NewRecognitionServiceHandler(recog))
+	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(life, interceptors))
+	mux.Handle(numenv1connect.NewRecognitionServiceHandler(recog, interceptors))
 
 	handler := h2c.NewHandler(mux, &http2.Server{})
 	srv := &http.Server{

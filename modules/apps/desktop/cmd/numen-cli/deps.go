@@ -37,21 +37,39 @@ func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 			Vaults: func() (cli.Vaults, error) { return createVaults(cfg) },
 			Links:  func(ctx context.Context) (cli.Links, error) { return createLinks(ctx, cfg) },
 			Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
+				if cfg.PluginHost != nil {
+					cfg.PluginHost.SetVaultPath(v.Path)
+				}
 				return createScan(ctx, cfg, v, rebuild)
 			},
 			Recognise: func(ctx context.Context, v domain.Vault, fetching func()) (cli.Recognise, error) {
+				if cfg.PluginHost != nil {
+					cfg.PluginHost.SetVaultPath(v.Path)
+				}
 				return createRecognition(ctx, cfg, v, fetching)
 			},
 			Transcribe: func(ctx context.Context, v domain.Vault, fetching func()) (cli.Transcribe, error) {
+				if cfg.PluginHost != nil {
+					cfg.PluginHost.SetVaultPath(v.Path)
+				}
 				return createTranscription(ctx, cfg, v, fetching)
 			},
-			ImportURL: func(ctx context.Context, _ domain.Vault) (cli.ImportURL, error) {
+			ImportURL: func(ctx context.Context, v domain.Vault) (cli.ImportURL, error) {
+				if cfg.PluginHost != nil {
+					cfg.PluginHost.SetVaultPath(v.Path)
+				}
 				return createImportURL(ctx, cfg)
 			},
 			ProofreadRecognition: func(ctx context.Context, v domain.Vault) (cli.ProofreadRecognition, error) {
+				if cfg.PluginHost != nil {
+					cfg.PluginHost.SetVaultPath(v.Path)
+				}
 				return createProofreadRecognition(ctx, cfg, v)
 			},
 			ProofreadTranscript: func(ctx context.Context, v domain.Vault) (cli.ProofreadTranscript, error) {
+				if cfg.PluginHost != nil {
+					cfg.PluginHost.SetVaultPath(v.Path)
+				}
 				return createProofreadTranscript(ctx, cfg, v)
 			},
 			Search: func(ctx context.Context, errorHandler port.ErrorHandler) (cli.Search, error) {
@@ -101,6 +119,9 @@ func createLinks(ctx context.Context, cfg container.Config) (cli.Links, error) {
 func createScan(
 	ctx context.Context, cfg container.Config, v domain.Vault, rebuild bool,
 ) (cli.Scan, error) {
+	if cfg.PluginHost != nil {
+		cfg.PluginHost.SetVaultPath(v.Path)
+	}
 	indexing := cfg
 	indexing.ShouldRebuildIndex = rebuild
 	db, err := indexing.OpenIndex(ctx)
@@ -139,6 +160,9 @@ func closeIfOpen(closeFn func() error) {
 func createRecognition(
 	ctx context.Context, cfg container.Config, v domain.Vault, fetching func(),
 ) (cli.Recognise, error) {
+	if cfg.PluginHost != nil {
+		cfg.PluginHost.SetVaultPath(v.Path)
+	}
 	if !cfg.RecogniserReady() {
 		fetching()
 	}
@@ -168,6 +192,9 @@ func createRecognition(
 func createTranscription(
 	ctx context.Context, cfg container.Config, v domain.Vault, fetching func(),
 ) (cli.Transcribe, error) {
+	if cfg.PluginHost != nil {
+		cfg.PluginHost.SetVaultPath(v.Path)
+	}
 	if !cfg.TranscriberReady() {
 		fetching()
 	}
@@ -233,6 +260,9 @@ func createImportURL(ctx context.Context, cfg container.Config) (cli.ImportURL, 
 func createProofreadRecognition(
 	ctx context.Context, cfg container.Config, v domain.Vault,
 ) (cli.ProofreadRecognition, error) {
+	if cfg.PluginHost != nil {
+		cfg.PluginHost.SetVaultPath(v.Path)
+	}
 	proofread, held, err := cfg.CreateRecognitionProofread()
 	if err != nil || !held {
 		return cli.ProofreadRecognition{}, err
@@ -251,6 +281,9 @@ func createProofreadRecognition(
 func createProofreadTranscript(
 	ctx context.Context, cfg container.Config, v domain.Vault,
 ) (cli.ProofreadTranscript, error) {
+	if cfg.PluginHost != nil {
+		cfg.PluginHost.SetVaultPath(v.Path)
+	}
 	proofread, held, err := cfg.CreateTranscriptProofread()
 	if err != nil || !held {
 		return cli.ProofreadTranscript{}, err
