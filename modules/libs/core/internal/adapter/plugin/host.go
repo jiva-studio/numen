@@ -519,6 +519,65 @@ func (h *Host) UpdatePluginSetting(ctx context.Context, pluginID, key string, va
 	return h.NotifyPluginConfig(ctx, pluginID)
 }
 
+// PaletteCommand declares a command palette toggle or option action for a plugin setting.
+type PaletteCommand struct {
+	ID       string `json:"id"`
+	PluginID string `json:"pluginId"`
+	Key      string `json:"key"`
+	Title    string `json:"title"`
+	Type     string `json:"type"`
+}
+
+// GetPaletteCommands returns command definitions for all registered plugin settings declaring palette: true.
+func (h *Host) GetPaletteCommands() []PaletteCommand {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	var commands []PaletteCommand
+	for _, p := range h.plugins {
+		for _, s := range p.Manifest.Settings {
+			if s.Palette {
+				commands = append(commands, PaletteCommand{
+					ID:       fmt.Sprintf("plugin-setting:%s:%s", p.Manifest.ID, s.Key),
+					PluginID: p.Manifest.ID,
+					Key:      s.Key,
+					Title:    fmt.Sprintf("%s: %s", p.Manifest.Name, s.Title),
+					Type:     s.Type,
+				})
+			}
+		}
+	}
+	return commands
+}
+
+// TogglePluginSetting inverts the boolean value of a setting with palette flag.
+func (h *Host) TogglePluginSetting(ctx context.Context, pluginID, key string) (bool, error) {
+	h.mu.RLock()
+	p, ok := h.plugins[pluginID]
+	if !ok {
+		h.mu.RUnlock()
+		return false, errPluginNotFound
+	}
+	var isBool bool
+	for _, s := range p.Manifest.Settings {
+		if s.Key == key && s.Type == "boolean" {
+			isBool = true
+			break
+		}
+	}
+	if !isBool {
+		h.mu.RUnlock()
+		return false, errors.New("setting is not a boolean")
+	}
+	current := h.getPluginSettingsLocked(pluginID)
+	curVal, _ := current[key].(bool)
+	newVal := !curVal
+	h.mu.RUnlock()
+
+	err := h.SetPluginSetting(ctx, pluginID, key, newVal)
+	return newVal, err
+}
+
 // NotifyPluginConfig sends the resolved configuration to a running plugin process.
 func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
 	h.mu.RLock()

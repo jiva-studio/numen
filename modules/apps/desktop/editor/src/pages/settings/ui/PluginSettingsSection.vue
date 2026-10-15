@@ -17,7 +17,7 @@ const fields = createSettingFields(() => props.state.installation)
 
 const plugins = computed<readonly PluginInfo[]>(() => {
   const list = installation.value.plugins?.value ?? []
-  return list.filter((one) => one.isActive && one.settings.length > 0)
+  return list.filter((one) => one.settings.length > 0)
 })
 
 /* -------------------------------- Handlers -------------------------------- */

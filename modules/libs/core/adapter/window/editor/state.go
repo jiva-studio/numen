@@ -100,6 +100,9 @@ type State struct {
 	// moment it goes.
 	Window *wire.Window
 
+	// EmitEvent queues an event into the plugin host event bus.
+	EmitEvent func(event string)
+
 	Indexing IndexState
 }
 

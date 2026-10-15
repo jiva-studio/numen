@@ -130,6 +130,7 @@ export async function runInvocation(
   const handler = HANDLERS[invocation.id]
   if (!isPlugin && !handler) return
   on.writeMessage('')
+  on.emitEvent?.(`onCommand:${invocation.id}`)
   try {
     if (isPlugin) {
       await handlePluginInvocation(invocation, on)

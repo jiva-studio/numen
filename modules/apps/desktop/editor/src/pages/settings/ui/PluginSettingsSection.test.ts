@@ -94,6 +94,17 @@ describe('PluginSettingsSection', () => {
     expect(wrapper.find('.settings__plugins').exists()).toBe(false)
   })
 
+  it('draws installed plugins even when isActive is false', () => {
+    const inactivePlugin: PluginInfo = {
+      ...SAMPLE_PLUGIN,
+      isActive: false,
+    }
+    const { wrapper } = createSection({}, [inactivePlugin])
+    expect(wrapper.find('.settings__plugins').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Transcription Plugin')
+    expect(wrapper.text()).toContain('Auto Run')
+  })
+
   it('draws active plugins and their setting controls', () => {
     const { wrapper } = createSection()
     expect(wrapper.find('.settings__plugins').exists()).toBe(true)

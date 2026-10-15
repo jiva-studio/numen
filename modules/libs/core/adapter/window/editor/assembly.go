@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
@@ -30,6 +31,9 @@ import (
 type Assembly interface {
 	// OpenBookClient opens a client to the book reader plugin, returning the client and a closer.
 	OpenBookClient(ctx context.Context) (any, func(), error)
+
+	// GetPluginHost returns the host managing external modular plugins, or nil.
+	GetPluginHost() *plugin.Host
 
 	// GetRegistry is the list of vaults this installation holds.
 	GetRegistry() port.VaultRegistry

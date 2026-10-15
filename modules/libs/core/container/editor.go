@@ -63,6 +63,8 @@ func (e EditorAssembly) OpenBookClient(ctx context.Context) (any, func(), error)
 	return bridge, func() { _ = bridge.Close() }, nil
 }
 
+func (e EditorAssembly) GetPluginHost() *plugin.Host { return e.cfg.PluginHost }
+
 func (e EditorAssembly) GetRegistry() port.VaultRegistry { return e.registry }
 
 func (e EditorAssembly) GetVaultReaders() port.VaultReaders   { return e.cfg.VaultReaders() }

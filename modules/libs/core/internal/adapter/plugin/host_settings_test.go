@@ -116,4 +116,26 @@ func TestHostSettingsOverlayAndPersistence(t *testing.T) {
 	if pInfo.Settings[0].Key != "enabled" || !pInfo.Settings[0].Palette {
 		t.Errorf("setting 0: expected key=enabled and palette=true")
 	}
+
+	// 6. Host.GetPaletteCommands
+	palCmds := host.GetPaletteCommands()
+	if len(palCmds) != 1 {
+		t.Fatalf("expected 1 palette command, got %d", len(palCmds))
+	}
+	if palCmds[0].ID != "plugin-setting:md.numen.sample:enabled" {
+		t.Errorf("got palette command ID %s, want plugin-setting:md.numen.sample:enabled", palCmds[0].ID)
+	}
+
+	// 7. Host.TogglePluginSetting
+	newVal, err := host.TogglePluginSetting(ctx, "md.numen.sample", "enabled")
+	if err != nil {
+		t.Fatalf("TogglePluginSetting failed: %v", err)
+	}
+	if newVal != false {
+		t.Errorf("expected toggled value false, got %v", newVal)
+	}
+	toggledSettings := host.GetPluginSettings("md.numen.sample")
+	if toggledSettings["enabled"] != false {
+		t.Errorf("expected updated setting enabled=false, got %v", toggledSettings["enabled"])
+	}
 }

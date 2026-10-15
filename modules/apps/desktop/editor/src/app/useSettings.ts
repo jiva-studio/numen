@@ -157,7 +157,6 @@ function getPluginStepGroups(
 export function createPluginSettingCommands(plugins: readonly PluginInfo[]): readonly Command[] {
   const result: Command[] = []
   for (const plugin of plugins) {
-    if (!plugin.isActive) continue
     for (const setting of plugin.settings) {
       if (!setting.palette) continue
       result.push({

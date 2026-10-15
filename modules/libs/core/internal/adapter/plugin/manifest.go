@@ -250,10 +250,12 @@ func matchFilePattern(pattern, target string) bool {
 	}
 	if strings.HasPrefix(pattern, "*.") {
 		ext := strings.TrimPrefix(pattern, "*")
-		return strings.HasSuffix(target, ext)
+		rawExt := strings.TrimPrefix(pattern, "*.")
+		return strings.HasSuffix(target, ext) || target == rawExt || target == ext
 	}
 	if strings.HasPrefix(pattern, ".") {
-		return strings.HasSuffix(target, pattern)
+		rawExt := strings.TrimPrefix(pattern, ".")
+		return strings.HasSuffix(target, pattern) || target == rawExt
 	}
 	return false
 }

@@ -47,6 +47,7 @@ export type SourceReader = (path: string, spans: readonly Span[]) => void
 export interface FileOpenerDeps {
   fileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>>
   reconcileTab?(path: string, newKind: string): void
+  emitEvent?(event: string): void
 }
 
 /** A source a reader is asked for, by kind and, where one format is read its own way, by format. */
@@ -108,6 +109,14 @@ export function fileOpeners(vault: FileOpenerDeps) {
   const findReader = (kind: FileKind): SourceReader | undefined =>
     readers.get(createReaderKey(kind.kind, kind.format)) ?? readers.get(createReaderKey(kind.kind))
 
+  const emitFileEvent = (path: string): void => {
+    const dot = path.lastIndexOf('.')
+    if (dot !== -1) {
+      const ext = path.slice(dot + 1).toLowerCase()
+      if (ext) vault.emitEvent?.(`onFile:${ext}`)
+    }
+  }
+
   /**
    * A file just made here, put in front of the person as what it was made as.
    * The vault is not asked what stands there.
@@ -117,6 +126,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
     title: string,
     options: EditorKind | OpenNewFileOptions,
   ): void => {
+    emitFileEvent(path)
     const type = typeof options === 'string' ? options : options.type
     const placement = typeof options === 'string' ? undefined : options
     vault.reconcileTab?.(path, type)
@@ -133,6 +143,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
     title = '',
     options?: PlexDestination | OpenPlacement,
   ): Promise<void> => {
+    emitFileEvent(path)
     const kind = await fetchFileKind(path)
     if (!kind) return
     if (kind.kind === 'note') {
@@ -150,6 +161,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
    * opens whole.
    */
   const openFileAt = async (path: string, spans: readonly Span[]): Promise<void> => {
+    emitFileEvent(path)
     const kind = await fetchFileKind(path)
     if (!kind) return
     if (kind.kind === 'note') return void openNewFile(path, '', kind.type)
