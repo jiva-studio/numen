@@ -7,12 +7,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os/exec"
 	"slices"
+	"sync/atomic"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/acp"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/runner"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -32,7 +35,6 @@ type Router struct {
 func NewRouter(opts Options, url, secret string, vocabulary map[string]mcp.Tool) *Router {
 	settings := opts.Config.Agent
 	report := func(err error) { fmt.Fprintln(opts.Out, "agent:", err) }
-	tools := acp.Endpoint{URL: url, Token: secret}
 
 	use := settings.Use
 	if use == "" {
@@ -44,6 +46,9 @@ func NewRouter(opts Options, url, secret string, vocabulary map[string]mcp.Tool)
 	}
 	slices.Sort(names)
 
+	closedAntigravity := &atomic.Bool{}
+	closedCodex := &atomic.Bool{}
+
 	return &Router{
 		agents: map[string]port.Agent{
 			agent.UseClaude: claudecode.New(claudecode.Options{
@@ -54,20 +59,20 @@ func NewRouter(opts Options, url, secret string, vocabulary map[string]mcp.Tool)
 				Preview:          opts.Preview,
 				ErrorHandler:     report,
 			}),
-			agent.UseAntigravity: acp.New(acp.Options{
-				Program:      agent.UseAntigravity,
-				Settings:     settings.Antigravity,
-				Root:         opts.Root,
-				Tools:        tools,
-				ErrorHandler: report,
-			}),
-			agent.UseCodex: acp.New(acp.Options{
-				Program:      agent.UseCodex,
-				Settings:     settings.Codex,
-				Root:         opts.Root,
-				Tools:        tools,
-				ErrorHandler: report,
-			}),
+			agent.UseAntigravity: externalAgent{
+				name:    agent.UseAntigravity,
+				cfg:     opts.Config,
+				command: settings.Antigravity.Command,
+				root:    opts.Root,
+				closed:  closedAntigravity,
+			},
+			agent.UseCodex: externalAgent{
+				name:    agent.UseCodex,
+				cfg:     opts.Config,
+				command: settings.Codex.Command,
+				root:    opts.Root,
+				closed:  closedCodex,
+			},
 		},
 		maxSteps: map[string]int{
 			agent.UseClaude:      settings.Claude.MaxSteps,
@@ -78,6 +83,81 @@ func NewRouter(opts Options, url, secret string, vocabulary map[string]mcp.Tool)
 		use:   use,
 		out:   opts.Out,
 	}
+}
+
+type externalAgent struct {
+	name    string
+	cfg     container.Config
+	command []string
+	root    string
+	closed  *atomic.Bool
+}
+
+func (e externalAgent) Close() error {
+	e.closed.Store(true)
+	return nil
+}
+
+func (e externalAgent) StartRun(ctx context.Context, task port.Task) (port.Run, error) {
+	if e.closed.Load() {
+		return nil, errors.New("agent is closed")
+	}
+	task.Agent = e.name
+	if port := e.cfg.AgentPort(); port != nil {
+		return port.StartRun(ctx, task)
+	}
+	if len(e.command) > 0 {
+		return runFallbackCommand(ctx, e.command, e.root, task)
+	}
+	return nil, fmt.Errorf("no agent plugin available for %q", e.name)
+}
+
+func (e externalAgent) EndConversation(ctx context.Context, conversation string) error {
+	if port := e.cfg.AgentPort(); port != nil {
+		return port.EndConversation(ctx, conversation)
+	}
+	return nil
+}
+
+type fallbackRun struct {
+	steps  chan port.Step
+	cmd    *exec.Cmd
+	cancel context.CancelFunc
+}
+
+func (f *fallbackRun) GetSteps() <-chan port.Step {
+	return f.steps
+}
+
+func (f *fallbackRun) Stop() error {
+	f.cancel()
+	if f.cmd != nil && f.cmd.Process != nil {
+		_ = f.cmd.Process.Kill()
+	}
+	return nil
+}
+
+func runFallbackCommand(ctx context.Context, command []string, root string, task port.Task) (port.Run, error) {
+	runCtx, cancel := context.WithCancel(ctx)
+	args := append([]string{}, command[1:]...)
+	args = append(args, task.Question)
+	cmd := exec.CommandContext(runCtx, command[0], args...)
+	cmd.Dir = root
+	runner.Supervise(cmd)
+	if err := cmd.Start(); err != nil {
+		cancel()
+		return nil, err
+	}
+	run := &fallbackRun{
+		steps:  make(chan port.Step, 4),
+		cmd:    cmd,
+		cancel: cancel,
+	}
+	go func() {
+		defer close(run.steps)
+		_ = cmd.Wait()
+	}()
+	return run, nil
 }
 
 // getToolDeclarations is how the agent speaks about the tools the vault serves.

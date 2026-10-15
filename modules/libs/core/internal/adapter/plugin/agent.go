@@ -29,14 +29,24 @@ type AgentBridge struct {
 
 // OpenAgentBridge activates or connects to the agent plugin and returns an AgentBridge.
 func OpenAgentBridge(ctx context.Context, host *Host) (*AgentBridge, error) {
+	if p, ok := host.GetPlugin("agent-acp"); ok {
+		return OpenAgentBridgeForPlugin(ctx, host, p.Manifest.ID)
+	}
 	p, ok := host.FindPluginByCapability("agent")
 	if !ok {
-		return nil, ErrNoAgentPlugin
+		p, ok = host.FindPluginByCapability("ai.agent.provider")
+		if !ok {
+			return nil, ErrNoAgentPlugin
+		}
 	}
+	return OpenAgentBridgeForPlugin(ctx, host, p.Manifest.ID)
+}
 
-	endpoint, err := host.EnsureActive(ctx, p.Manifest.ID)
+// OpenAgentBridgeForPlugin activates or connects to a specific agent plugin and returns an AgentBridge.
+func OpenAgentBridgeForPlugin(ctx context.Context, host *Host, pluginID string) (*AgentBridge, error) {
+	endpoint, err := host.EnsureActive(ctx, pluginID)
 	if err != nil {
-		return nil, fmt.Errorf("ensure active %s: %w", p.Manifest.ID, err)
+		return nil, fmt.Errorf("ensure active %s: %w", pluginID, err)
 	}
 
 	httpClient := defaultPluginClient
@@ -45,7 +55,7 @@ func OpenAgentBridge(ctx context.Context, host *Host) (*AgentBridge, error) {
 
 	return &AgentBridge{
 		host:     host,
-		pluginID: p.Manifest.ID,
+		pluginID: pluginID,
 		client:   client,
 	}, nil
 }
