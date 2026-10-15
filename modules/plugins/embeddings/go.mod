@@ -4,11 +4,20 @@ go 1.26.9
 
 require (
 	connectrpc.com/connect v1.21.0
+	github.com/ebitengine/purego v0.11.0
+	github.com/getcharzp/onnxruntime_purego v1.24.0
+	github.com/gomlx/go-huggingface v0.4.1
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
 	golang.org/x/net v0.58.0
 )
 
 require (
+	github.com/gofrs/flock v0.13.0 // indirect
+	github.com/gomlx/compute v0.1.3 // indirect
+	github.com/google/uuid v1.6.0 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+	github.com/up-zero/gotool v0.0.0-20260105010850-4a05e8fadd54 // indirect
+	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 )
