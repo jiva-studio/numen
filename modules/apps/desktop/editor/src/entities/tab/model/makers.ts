@@ -105,5 +105,21 @@ export function createFileCreators(
       createAndOpenFile('stencil', folder, { name, fields }),
     createPreset: (folder: string, name: string) => createAndOpenFile('preset', folder, name),
     createUrl: (folder: string, address: string) => createAndOpenFile('url', folder, address),
+    createUrls: async (
+      folder: string,
+      addresses: readonly string[],
+    ): Promise<readonly string[]> => {
+      if (addresses.length === 0) return []
+      if (addresses.length === 1 && addresses[0]) {
+        const path = await createAndOpenFile('url', folder, addresses[0])
+        return path ? [path] : []
+      }
+      const paths: string[] = []
+      for (const address of addresses) {
+        const path = await createFile('url', folder, address)
+        if (path) paths.push(path)
+      }
+      return paths
+    },
   }
 }

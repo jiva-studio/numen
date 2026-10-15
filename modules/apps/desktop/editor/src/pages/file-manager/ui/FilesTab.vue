@@ -11,7 +11,7 @@ import { findIcon } from '@/shared/icons'
 import { getEntryIcon } from '../lib/icons'
 import type { DropPosition, FilesTabState } from '../types'
 import { getRows } from '../lib/rows'
-import { getDroppedUrl, hasUrl } from '../lib/drag'
+import { getDroppedUrls, hasUrl } from '../lib/drag'
 import { createMenuItems } from '../lib/menu'
 import { WORDS as words } from '../words'
 
@@ -64,10 +64,10 @@ onUnmounted(() => globalThis.removeEventListener('focus', refreshTree))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onDrop(event: DragEvent) {
-  const url = getDroppedUrl(event.dataTransfer)
-  if (!url) return
+  const urls = getDroppedUrls(event.dataTransfer)
+  if (urls.length === 0) return
   event.preventDefault()
-  void props.state.importUrl(url)
+  void props.state.importUrls(urls)
 }
 
 function onDragOver(event: DragEvent) {

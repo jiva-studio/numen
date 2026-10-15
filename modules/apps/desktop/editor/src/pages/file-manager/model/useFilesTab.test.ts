@@ -99,6 +99,10 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
       done.push(`imports ${folderPath === ROOT ? '/' : folderPath} ${url}`)
       return fails ? '' : 'made.url'
     },
+    importUrls: async (folderPath, urls) => {
+      done.push(`imports-multi ${folderPath === ROOT ? '/' : folderPath} ${urls.join(' ')}`)
+      return fails ? [] : urls.map(() => 'made.url')
+    },
     showError: (text) => void done.push(`says ${text}`),
   })
   return { done, list, one: gestures, asked, sources, getState: () => receivedState }
@@ -316,6 +320,7 @@ describe('rows let go of', () => {
       createStencil: async () => '',
       createPreset: async () => '',
       importUrl: async () => '',
+      importUrls: async () => [],
       showError: () => {},
     })
     await list.openFolder(ROOT)
@@ -651,6 +656,9 @@ describe('useFilesTab helper and interaction methods', () => {
 
     one.importUrl('https://example.com/video')
     expect(done).toContain('imports physics https://example.com/video')
+
+    one.importUrls(['https://example.com/1', 'https://example.com/2'])
+    expect(done).toContain('imports-multi physics https://example.com/1 https://example.com/2')
 
     expect(one.getNameOf('Entropy.md')).toBe('Entropy.md')
     expect(one.getNameOf('nonexistent/file.txt')).toBe('file.txt')

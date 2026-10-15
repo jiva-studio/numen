@@ -50,6 +50,7 @@ export interface FilesTabDeps {
   createStencil(folder: string, name: string): Promise<string>
   createPreset(folder: string, name: string): Promise<string>
   importUrl(folder: string, url: string): Promise<string>
+  importUrls(folder: string, urls: readonly string[]): Promise<readonly string[]>
   showError(text: string): void
   canRun?: RunGuard
   getArtifactStates?(path: string): ArtifactStates
@@ -99,6 +100,7 @@ export interface FilesTabState {
   createNote(path: string | null): Promise<void>
   createOne(path: string | null, createEntry: FileMaker, name: string): Promise<void>
   importUrl(url: string): Promise<string>
+  importUrls(urls: readonly string[]): Promise<readonly string[]>
   openMenu(asked: MenuRequest): void
   dismissMenu(): void
   chooseMenuItem(id: string): void

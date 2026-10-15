@@ -44,7 +44,11 @@ const mountFiles = async (open: readonly string[] = []) => {
     createDeck: async (folderPath, name) => `${folderPath}${name}`,
     createStencil: async (folderPath, name) => `${folderPath}${name}`,
     createPreset: async (folderPath, name) => `${folderPath}${name}`,
-    importUrl: async () => '',
+    importUrl: async (folderPath, url) => void done.push(`imports ${folderPath} ${url}`) as never,
+    importUrls: async (folderPath, urls) => {
+      done.push(`imports-multi ${folderPath || '/'} ${urls.join(' ')}`)
+      return []
+    },
     showError: (text) => void done.push(`says ${text}`),
   })
   await list.openFolder(ROOT)
@@ -292,6 +296,7 @@ describe('a folder that could not be read', () => {
       createStencil: async () => '',
       createPreset: async () => '',
       importUrl: async () => '',
+      importUrls: async () => [],
       showError: () => {},
     })
     await list.openFolder(ROOT)
@@ -306,5 +311,13 @@ describe('a folder that could not be read', () => {
     const { window } = await mountFiles()
 
     expect(window.find('.caution').exists()).toBe(false)
+  })
+})
+
+describe('several addresses imported into the files tab', () => {
+  it('imports all addresses into the folder', async () => {
+    const { done, tab } = await mountFiles()
+    await tab.importUrls(['https://first.org/', 'https://second.org/'])
+    expect(done).toContain('imports-multi / https://first.org/ https://second.org/')
   })
 })
