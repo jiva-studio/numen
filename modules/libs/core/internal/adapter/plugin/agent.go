@@ -29,6 +29,9 @@ type AgentBridge struct {
 
 // OpenAgentBridge activates or connects to the agent plugin and returns an AgentBridge.
 func OpenAgentBridge(ctx context.Context, host *Host) (*AgentBridge, error) {
+	if p, ok := host.GetPlugin("md.numen.agent-acp"); ok {
+		return OpenAgentBridgeForPlugin(ctx, host, p.Manifest.ID)
+	}
 	if p, ok := host.GetPlugin("agent-acp"); ok {
 		return OpenAgentBridgeForPlugin(ctx, host, p.Manifest.ID)
 	}
