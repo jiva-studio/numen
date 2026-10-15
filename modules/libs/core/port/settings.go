@@ -55,3 +55,28 @@ const (
 	// fetched when the model is next needed.
 	NotFetched
 )
+
+// PluginSetting declares one configuration field managed by the core host.
+type PluginSetting struct {
+	Key         string
+	Type        string
+	Title       string
+	Description string
+	DefaultJSON string
+	Palette     bool
+	Options     []string
+	Min         *float64
+	Max         *float64
+	Step        *float64
+}
+
+// PluginInfo describes a discovered plugin and its declarative settings.
+type PluginInfo struct {
+	ID           string
+	Name         string
+	Version      string
+	Description  string
+	Capabilities []string
+	Settings     []PluginSetting
+	IsActive     bool
+}

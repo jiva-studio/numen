@@ -17,6 +17,7 @@ type Current struct {
 	NestedHeadingLimitBounds Bounds
 	LatestDayStartTime       string
 	Day                      string
+	Plugins                  []PluginInfo
 }
 
 // Get reads every setting, the models a setting can name, and the limits the
@@ -28,6 +29,7 @@ type Get struct {
 	latestDayStartTime       string
 	day                      review.Day
 	now                      port.Clock
+	plugins                  func() []PluginInfo
 }
 
 func NewGet(
@@ -37,6 +39,7 @@ func NewGet(
 	latestDayStartTime string,
 	day review.Day,
 	now port.Clock,
+	plugins func() []PluginInfo,
 ) *Get {
 	return &Get{
 		read:                     read,
@@ -45,6 +48,7 @@ func NewGet(
 		latestDayStartTime:       latestDayStartTime,
 		day:                      day,
 		now:                      now,
+		plugins:                  plugins,
 	}
 }
 
@@ -57,6 +61,10 @@ func (u *Get) Execute() (Current, error) {
 	if u.models != nil {
 		models = u.models()
 	}
+	var pluginInfos []PluginInfo
+	if u.plugins != nil {
+		pluginInfos = u.plugins()
+	}
 	return Current{
 		Written:                  written,
 		Path:                     path,
@@ -64,5 +72,6 @@ func (u *Get) Execute() (Current, error) {
 		NestedHeadingLimitBounds: u.nestedHeadingLimitBounds,
 		LatestDayStartTime:       u.latestDayStartTime,
 		Day:                      u.day.GetName(u.now()),
+		Plugins:                  pluginInfos,
 	}, nil
 }

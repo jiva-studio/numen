@@ -112,6 +112,8 @@ export interface SettingsWriter {
   choosePerformance(chosen: string): Promise<void>
   /** The indexing model chosen. */
   chooseIndexingModel(chosen: string): Promise<void>
+  /** A declarative plugin setting chosen. */
+  choosePluginSetting?(pluginId: string, key: string, chosen: unknown): Promise<void>
 }
 
 /** The one line the window says a command's answer in. */

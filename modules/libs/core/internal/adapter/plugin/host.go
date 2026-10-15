@@ -2,9 +2,11 @@ package plugin
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"runtime"
@@ -12,6 +14,10 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"connectrpc.com/connect"
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 var (
@@ -23,33 +29,40 @@ var (
 // Launcher is a function that spawns a plugin process and provides its stdout stream.
 type Launcher func(ctx context.Context, p DiscoveredPlugin, port int, token string) (*os.Process, io.ReadCloser, error)
 
+// PersistHandler persists a changed plugin setting to host configuration.
+type PersistHandler func(pluginID string, key string, value any) error
+
 // Host manages the discovery, lifecycle, activation, and communication endpoints of plugins.
 type Host struct {
-	mu          sync.RWMutex
-	target      string
-	dirs        []string
-	plugins     map[string]DiscoveredPlugin
-	supervisors map[string]*Supervisor
-	endpoints   map[string]Endpoint
-	launcher    Launcher
-	safeMode    bool
-	vaultPath   string
-	bus         *EventBus
+	mu             sync.RWMutex
+	target         string
+	dirs           []string
+	plugins        map[string]DiscoveredPlugin
+	supervisors    map[string]*Supervisor
+	endpoints      map[string]Endpoint
+	launcher       Launcher
+	safeMode       bool
+	vaultPath      string
+	bus            *EventBus
+	settings       map[string]map[string]any
+	persistHandler PersistHandler
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
 func NewHost(target string, dirs ...string) *Host {
 	h := &Host{
-		mu:          sync.RWMutex{},
-		target:      target,
-		dirs:        dirs,
-		plugins:     make(map[string]DiscoveredPlugin),
-		supervisors: make(map[string]*Supervisor),
-		endpoints:   make(map[string]Endpoint),
-		launcher:    defaultLauncher,
-		safeMode:    false,
-		vaultPath:   "",
-		bus:         nil,
+		mu:             sync.RWMutex{},
+		target:         target,
+		dirs:           dirs,
+		plugins:        make(map[string]DiscoveredPlugin),
+		supervisors:    make(map[string]*Supervisor),
+		endpoints:      make(map[string]Endpoint),
+		launcher:       nil,
+		safeMode:       false,
+		vaultPath:      "",
+		bus:            nil,
+		settings:       make(map[string]map[string]any),
+		persistHandler: nil,
 	}
 	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
 	return h
@@ -248,14 +261,15 @@ func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error)
 // EnsureActive ensures the plugin process is running and returns its endpoint.
 func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, error) {
 	h.mu.Lock()
-	defer h.mu.Unlock()
 
 	if h.safeMode {
+		h.mu.Unlock()
 		return Endpoint{Host: "", Port: 0, Token: ""}, errSafeModeActive
 	}
 
 	p, ok := h.plugins[pluginID]
 	if !ok {
+		h.mu.Unlock()
 		return Endpoint{Host: "", Port: 0, Token: ""}, errPluginNotFound
 	}
 
@@ -263,10 +277,19 @@ func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, err
 	state := sup.GetState()
 	if state == StateActive || state == StateIdle {
 		sup.Acquire(time.Now())
-		return h.endpoints[pluginID], nil
+		endpoint := h.endpoints[pluginID]
+		h.mu.Unlock()
+		return endpoint, nil
 	}
 
-	return h.startPluginProcess(ctx, p, sup)
+	endpoint, err := h.startPluginProcess(ctx, p, sup)
+	h.mu.Unlock()
+	if err != nil {
+		return endpoint, err
+	}
+
+	_ = h.NotifyPluginConfig(ctx, p.Manifest.ID)
+	return endpoint, nil
 }
 
 func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *Supervisor) (Endpoint, error) {
@@ -280,7 +303,12 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("find port: %w", err)
 	}
 
-	proc, stdout, err := h.launcher(ctx, p, port, token)
+	launcher := h.launcher
+	if launcher == nil {
+		launcher = h.defaultLauncher
+	}
+
+	proc, stdout, err := launcher(ctx, p, port, token)
 	if err != nil {
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("launch plugin %s: %w", p.Manifest.ID, err)
 	}
@@ -308,6 +336,7 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 		Token: token,
 	}
 	h.endpoints[p.Manifest.ID] = endpoint
+
 	return endpoint, nil
 }
 
@@ -365,7 +394,217 @@ func (h *Host) TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 	return firstErr
 }
 
-func defaultLauncher(
+// SetPersistHandler registers a callback that writes plugin settings changes into core configuration.
+func (h *Host) SetPersistHandler(handler PersistHandler) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.persistHandler = handler
+}
+
+// SetSettings loads persisted plugin configurations into host memory.
+func (h *Host) SetSettings(all map[string]map[string]any) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for pluginID, cfg := range all {
+		if _, ok := h.settings[pluginID]; !ok {
+			h.settings[pluginID] = make(map[string]any)
+		}
+		for k, v := range cfg {
+			h.settings[pluginID][k] = v
+		}
+	}
+}
+
+// GetPluginSettings returns resolved settings for a plugin with defaults overlaid by stored values.
+func (h *Host) GetPluginSettings(pluginID string) map[string]any {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.getPluginSettingsLocked(pluginID)
+}
+
+func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
+	result := make(map[string]any)
+	if p, ok := h.plugins[pluginID]; ok {
+		for _, s := range p.Manifest.Settings {
+			if s.Default != nil {
+				result[s.Key] = s.Default
+			}
+		}
+	}
+	if stored, ok := h.settings[pluginID]; ok {
+		for k, v := range stored {
+			result[k] = v
+		}
+	}
+	return result
+}
+
+// GetPluginConfigJSON returns serialized JSON configuration for the specified plugin.
+func (h *Host) GetPluginConfigJSON(pluginID string) (string, error) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.getPluginConfigJSONLocked(pluginID)
+}
+
+func (h *Host) getPluginConfigJSONLocked(pluginID string) (string, error) {
+	cfg := h.getPluginSettingsLocked(pluginID)
+	data, err := json.Marshal(cfg)
+	if err != nil {
+		return "", fmt.Errorf("marshal plugin %s settings: %w", pluginID, err)
+	}
+	return string(data), nil
+}
+
+// SetPluginSetting writes one setting value to memory, persists it, and notifies the plugin.
+func (h *Host) SetPluginSetting(ctx context.Context, pluginID, key string, value any) error {
+	h.mu.Lock()
+	if _, ok := h.settings[pluginID]; !ok {
+		h.settings[pluginID] = make(map[string]any)
+	}
+	h.settings[pluginID][key] = value
+	persist := h.persistHandler
+	h.mu.Unlock()
+
+	if persist != nil {
+		if err := persist(pluginID, key, value); err != nil {
+			return fmt.Errorf("persist plugin setting: %w", err)
+		}
+	}
+	return h.NotifyPluginConfig(ctx, pluginID)
+}
+
+// UpdatePluginSetting updates the setting in memory and notifies the plugin without re-persisting.
+func (h *Host) UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error {
+	h.mu.Lock()
+	if _, ok := h.settings[pluginID]; !ok {
+		h.settings[pluginID] = make(map[string]any)
+	}
+	h.settings[pluginID][key] = value
+	h.mu.Unlock()
+
+	return h.NotifyPluginConfig(ctx, pluginID)
+}
+
+// NotifyPluginConfig sends the resolved configuration to a running plugin process.
+func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
+	h.mu.RLock()
+	endpoint, hasEndpoint := h.endpoints[pluginID]
+	sup, hasSup := h.supervisors[pluginID]
+	if !hasEndpoint || !hasSup {
+		h.mu.RUnlock()
+		return nil
+	}
+	state := sup.GetState()
+	if state != StateActive && state != StateIdle {
+		h.mu.RUnlock()
+		return nil
+	}
+	cfgJSON, err := h.getPluginConfigJSONLocked(pluginID)
+	if err != nil {
+		h.mu.RUnlock()
+		return err
+	}
+	rawSettings := h.getPluginSettingsLocked(pluginID)
+	values := make(map[string]string, len(rawSettings))
+	for k, v := range rawSettings {
+		if b, err := json.Marshal(v); err == nil {
+			values[k] = string(b)
+		} else {
+			values[k] = fmt.Sprint(v)
+		}
+	}
+	h.mu.RUnlock()
+
+	client := numenv1connect.NewPluginLifecycleServiceClient(
+		&http.Client{Timeout: 3 * time.Second},
+		endpoint.BaseURL(),
+		connect.WithInterceptors(authInterceptor(endpoint.Token)),
+	)
+	req := connect.NewRequest(&v1.ConfigureRequest{
+		PluginId:          pluginID,
+		ConfigurationJson: cfgJSON,
+		Values:            values,
+	})
+	_, err = client.Configure(ctx, req)
+	if err != nil {
+		var connectErr *connect.Error
+		if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented {
+			return nil
+		}
+		return fmt.Errorf("configure plugin %s: %w", pluginID, err)
+	}
+	return nil
+}
+
+// GetPluginInfos returns wire specifications of all registered plugins and their settings schemas.
+func (h *Host) GetPluginInfos() []*v1.PluginInfo {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	result := make([]*v1.PluginInfo, 0, len(h.plugins))
+	for _, p := range h.plugins {
+		sup, hasSup := h.supervisors[p.Manifest.ID]
+		isActive := hasSup && (sup.GetState() == StateActive || sup.GetState() == StateIdle)
+
+		settings := make([]*v1.PluginSetting, 0, len(p.Manifest.Settings))
+		for _, s := range p.Manifest.Settings {
+			defJSON := ""
+			if s.Default != nil {
+				if b, err := json.Marshal(s.Default); err == nil {
+					defJSON = string(b)
+				}
+			}
+			minVal := s.Min
+			maxVal := s.Max
+			stepVal := s.Step
+			settings = append(settings, &v1.PluginSetting{
+				Key:         s.Key,
+				Type:        s.Type,
+				Title:       s.Title,
+				Description: s.Description,
+				DefaultJson: defJSON,
+				Palette:     s.Palette,
+				Options:     s.Options,
+				Min:         &minVal,
+				Max:         &maxVal,
+				Step:        &stepVal,
+			})
+		}
+
+		result = append(result, &v1.PluginInfo{
+			Id:           p.Manifest.ID,
+			Name:         p.Manifest.Name,
+			Version:      p.Manifest.Version,
+			Description:  p.Manifest.Description,
+			Capabilities: p.Manifest.Capabilities,
+			Settings:     settings,
+			IsActive:     isActive,
+		})
+	}
+	return result
+}
+
+// PluginServiceServer implements numenv1connect.PluginServiceHandler.
+type PluginServiceServer struct {
+	host *Host
+}
+
+// NewPluginServiceServer creates a server exposing plugin schemas over Connect-RPC.
+func NewPluginServiceServer(host *Host) *PluginServiceServer {
+	return &PluginServiceServer{host: host}
+}
+
+// GetPlugins returns discovered plugins and declarative settings schemas.
+func (s *PluginServiceServer) GetPlugins(
+	_ context.Context,
+	_ *connect.Request[v1.GetPluginsRequest],
+) (*connect.Response[v1.GetPluginsResponse], error) {
+	return connect.NewResponse(&v1.GetPluginsResponse{
+		Plugins: s.host.GetPluginInfos(),
+	}), nil
+}
+
+func (h *Host) defaultLauncher(
 	ctx context.Context,
 	p DiscoveredPlugin,
 	port int,
@@ -387,11 +626,13 @@ func defaultLauncher(
 
 	cmd := exec.CommandContext(ctx, binPath, "--port="+strconv.Itoa(port), "--token="+token)
 	cmd.Dir = p.Dir
+	configJSON, _ := h.getPluginConfigJSONLocked(p.Manifest.ID)
 	cmd.Env = append(
 		os.Environ(),
 		"NUMEN_PLUGIN_PORT="+strconv.Itoa(port),
 		"NUMEN_PLUGIN_TOKEN="+token,
 		"NUMEN_PLUGIN_ID="+p.Manifest.ID,
+		"NUMEN_PLUGIN_CONFIG="+configJSON,
 	)
 
 	stdout, err := cmd.StdoutPipe()

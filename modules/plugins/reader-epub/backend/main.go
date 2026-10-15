@@ -27,6 +27,7 @@ import (
 const mostListed = 10_000
 
 type lifecycleServer struct {
+	numenv1connect.UnimplementedPluginLifecycleServiceHandler
 	shutdownTrigger chan struct{}
 }
 

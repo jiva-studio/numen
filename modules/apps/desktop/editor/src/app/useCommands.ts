@@ -23,6 +23,7 @@ import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { createFileCreators } from '@/entities/tab'
 import type { useWindowTabs } from '@/entities/tab'
 import { WORDS } from '@/shared/words'
+import { createPluginSettingCommands } from './useSettings'
 import type { NoteCreator } from '@/pages/note-editor'
 import type { VaultCore } from './vault'
 
@@ -56,6 +57,7 @@ export interface CommandsDepsOptions {
   rest: {
     writeSettings: (written: readonly SettingEdit[]) => Promise<void> | void
     getModelsAt?: (at: readonly string[]) => readonly import('@/entities/settings').Model[]
+    plugins?: import('vue').Ref<readonly import('@/entities/settings').PluginInfo[]>
   }
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   pointed: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
@@ -73,7 +75,9 @@ export function useCommands(options: CommandsDepsOptions) {
   const { core, words, held, getTarget, knows, kept, runs, coverage, writeMessage } = options
 
   const palette = useSearch(core, words, { coverage })
-  const commands = useCommandPalette(core, words, getTarget, knows, kept, runs)
+  const commands = useCommandPalette(core, words, getTarget, knows, kept, runs, undefined, () =>
+    createPluginSettingCommands(options.rest.plugins?.value ?? []),
+  )
 
   const commandDeps: CommandDeps = createCommandDeps({
     ...options,

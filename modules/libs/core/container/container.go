@@ -7,6 +7,7 @@
 package container
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -242,7 +243,26 @@ func (c Config) GetSettingsWriter() func(written []port.Setting) error {
 			return err
 		}
 		into := DefaultSettings()
-		return settings.Save(path, &into, held...)
+		if err := settings.Save(path, &into, held...); err != nil {
+			return err
+		}
+		notifyPluginSettings(c.PluginHost, written)
+		return nil
+	}
+}
+
+func notifyPluginSettings(host *plugin.Host, written []port.Setting) {
+	if host == nil {
+		return
+	}
+	for _, one := range written {
+		if len(one.Path) < 3 || one.Path[0] != "plugins" {
+			continue
+		}
+		var val any
+		if err := json.Unmarshal([]byte(one.JSON), &val); err == nil {
+			_ = host.UpdatePluginSetting(context.Background(), one.Path[1], one.Path[2], val)
+		}
 	}
 }
 

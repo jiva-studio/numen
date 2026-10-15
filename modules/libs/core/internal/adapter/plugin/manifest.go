@@ -22,11 +22,18 @@ const (
 )
 
 var (
-	errEmptyID           = errors.New("plugin id cannot be empty")
-	errEmptyName         = errors.New("plugin name cannot be empty")
-	errEmptyVersion      = errors.New("plugin version cannot be empty")
-	errInvalidPermission = errors.New("invalid permission")
+	errEmptyID             = errors.New("plugin id cannot be empty")
+	errEmptyName           = errors.New("plugin name cannot be empty")
+	errEmptyVersion        = errors.New("plugin version cannot be empty")
+	errInvalidPermission   = errors.New("invalid permission")
+	errEmptySettingKey     = errors.New("setting key cannot be empty")
+	errDuplicateSettingKey = errors.New("duplicate setting key")
+	errInvalidSettingType  = errors.New("invalid setting type")
+	errEnumMissingOptions  = errors.New("enum setting must define options")
+	errRangeInvalidBounds  = errors.New("range min cannot exceed max")
 )
+
+var validSettingTypes = []string{"boolean", "string", "number", "enum", "range"}
 
 // Lifecycle defines how the host activates and evicts a plugin from memory.
 type Lifecycle struct {
@@ -48,24 +55,47 @@ type Frontend struct {
 	Styles     string `json:"styles"`
 }
 
-// SettingOption defines one selectable choice in an enum setting.
-type SettingOption struct {
-	Value string `json:"value"`
-	Label string `json:"label"`
+// SettingOptions is a slice of option values supporting string arrays and object arrays.
+type SettingOptions []string
+
+func (o *SettingOptions) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" || len(data) == 0 {
+		*o = nil
+		return nil
+	}
+	var stringSlice []string
+	if err := json.Unmarshal(data, &stringSlice); err == nil {
+		*o = stringSlice
+		return nil
+	}
+
+	var objSlice []struct {
+		Value string `json:"value"`
+	}
+	if err := json.Unmarshal(data, &objSlice); err == nil {
+		vals := make([]string, len(objSlice))
+		for i, obj := range objSlice {
+			vals[i] = obj.Value
+		}
+		*o = vals
+		return nil
+	}
+
+	return fmt.Errorf("options must be array of strings or objects with value")
 }
 
 // Setting declares one configuration field managed by the core host.
 type Setting struct {
-	Key         string          `json:"key"`
-	Type        string          `json:"type"`
-	Title       string          `json:"title"`
-	Description string          `json:"description"`
-	Default     any             `json:"default"`
-	Palette     bool            `json:"palette"`
-	Options     []SettingOption `json:"options"`
-	Min         float64         `json:"min"`
-	Max         float64         `json:"max"`
-	Step        float64         `json:"step"`
+	Key         string         `json:"key"`
+	Type        string         `json:"type"`
+	Title       string         `json:"title"`
+	Description string         `json:"description"`
+	Default     any            `json:"default"`
+	Palette     bool           `json:"palette,omitempty"`
+	Options     SettingOptions `json:"options,omitempty"`
+	Min         float64        `json:"min,omitempty"`
+	Max         float64        `json:"max,omitempty"`
+	Step        float64        `json:"step,omitempty"`
 }
 
 // AgentTool declares a custom tool provided or required by an agent plugin.
@@ -110,7 +140,7 @@ func ReadManifest(r io.Reader) (Manifest, error) {
 	return m, nil
 }
 
-// Validate checks that required fields are present and valid.
+// Validate checks that required fields and settings are present and valid.
 func (m Manifest) Validate() error {
 	if strings.TrimSpace(m.ID) == "" {
 		return errEmptyID
@@ -121,7 +151,10 @@ func (m Manifest) Validate() error {
 	if strings.TrimSpace(m.Version) == "" {
 		return errEmptyVersion
 	}
-	return m.ValidatePermissions()
+	if err := m.ValidatePermissions(); err != nil {
+		return err
+	}
+	return validateSettings(m.Settings)
 }
 
 // ValidatePermissions verifies that all declared permissions are recognized capabilities.
@@ -132,6 +165,37 @@ func (m Manifest) ValidatePermissions() error {
 		default:
 			return fmt.Errorf("%w: %s", errInvalidPermission, p)
 		}
+	}
+	return nil
+}
+
+func validateSettings(settings []Setting) error {
+	seenKeys := make(map[string]bool, len(settings))
+	for _, s := range settings {
+		key := strings.TrimSpace(s.Key)
+		if key == "" {
+			return errEmptySettingKey
+		}
+		if seenKeys[key] {
+			return fmt.Errorf("%w: %s", errDuplicateSettingKey, key)
+		}
+		seenKeys[key] = true
+		if err := validateSetting(s, key); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateSetting(s Setting, key string) error {
+	if !slices.Contains(validSettingTypes, s.Type) {
+		return fmt.Errorf("%w: %q for %s", errInvalidSettingType, s.Type, key)
+	}
+	if s.Type == "enum" && len(s.Options) == 0 {
+		return fmt.Errorf("%w: %s", errEnumMissingOptions, key)
+	}
+	if s.Type == "range" && (s.Min != 0 || s.Max != 0) && s.Min > s.Max {
+		return fmt.Errorf("%w: %s", errRangeInvalidBounds, key)
 	}
 	return nil
 }

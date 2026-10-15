@@ -18,12 +18,12 @@ import {
   useNestingSetting,
   createWindowAppearance,
 } from '@/features/settings-commands'
-import { createReviewSetting, type SettingEdit } from '@/entities/settings'
+import { createReviewSetting, type PluginInfo, type SettingEdit } from '@/entities/settings'
 import { createSettingsStore } from '@/entities/settings'
 import { useSettingsTab, paths, createChoices } from '@/pages/settings'
 import type { SelectChoice } from '@numen/ui'
 import { createTextEditorTabKind } from '@/pages/text-editor'
-import type { PaletteLists } from '@/features/command-palette'
+import type { Command, PaletteLists } from '@/features/command-palette'
 import type { SettingsPort } from '@/app/ports/settings'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
@@ -78,6 +78,100 @@ function getIndexingModelStepGroups(rest: ReturnType<typeof createSettingsStore>
   }))
 }
 
+interface PluginGroupContext {
+  readonly id: string
+  readonly title: string
+  readonly words: Words
+}
+
+function createPluginBooleanGroup(ctx: PluginGroupContext, isOn: boolean) {
+  return [
+    {
+      id: ctx.id,
+      title: ctx.title,
+      items: [
+        {
+          id: 'on',
+          title: ctx.words.on,
+          ...(isOn ? { detail: ctx.words.current, isCurrent: true } : {}),
+        },
+        {
+          id: 'off',
+          title: ctx.words.off,
+          ...(!isOn ? { detail: ctx.words.current, isCurrent: true } : {}),
+        },
+      ],
+    },
+  ]
+}
+
+function createPluginEnumGroup(
+  ctx: PluginGroupContext,
+  current: string,
+  options: readonly string[],
+) {
+  return [
+    {
+      id: ctx.id,
+      title: ctx.title,
+      items: options.map((opt) => ({
+        id: opt,
+        title: opt,
+        ...(opt === current ? { detail: ctx.words.current, isCurrent: true } : {}),
+      })),
+    },
+  ]
+}
+
+function findPluginSetting(plugins: readonly PluginInfo[], command: string) {
+  const [, pluginId, key] = command.split(':')
+  if (!pluginId || !key) return null
+  const plugin = plugins.find((p) => p.id === pluginId)
+  const setting = plugin?.settings.find((s) => s.key === key)
+  if (!setting) return null
+  return { pluginId, key, setting }
+}
+
+function getPluginStepGroups(
+  command: string,
+  rest: ReturnType<typeof createSettingsStore>,
+  words: Words,
+) {
+  const match = findPluginSetting(rest.plugins.value, command)
+  if (!match) return []
+  const { pluginId, key, setting } = match
+  const current = rest.getSetting(['plugins', pluginId, key])
+  const ctx: PluginGroupContext = { id: `plugin-${pluginId}-${key}`, title: setting.title, words }
+
+  if (setting.type === 'boolean') {
+    const isOn = current !== undefined ? Boolean(current) : Boolean(setting.default)
+    return createPluginBooleanGroup(ctx, isOn)
+  }
+  if (setting.type === 'enum' && setting.options) {
+    const currentVal = current !== undefined ? String(current) : String(setting.default ?? '')
+    return createPluginEnumGroup(ctx, currentVal, setting.options)
+  }
+  return []
+}
+
+export function createPluginSettingCommands(plugins: readonly PluginInfo[]): readonly Command[] {
+  const result: Command[] = []
+  for (const plugin of plugins) {
+    if (!plugin.isActive) continue
+    for (const setting of plugin.settings) {
+      if (!setting.palette) continue
+      result.push({
+        id: `plugin-setting:${plugin.id}:${setting.key}`,
+        text: `${plugin.name}: ${setting.title}`,
+        group: 'window',
+        needs: 'choosing',
+        isOffered: () => true,
+      })
+    }
+  }
+  return result
+}
+
 interface SettingsTabConfigDeps {
   dressed: ReturnType<typeof createWindowAppearance>
   sync: ReturnType<typeof syncSetting>
@@ -114,6 +208,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     getSetting: (at: readonly string[]) => rest.getSetting(at),
     getModels: (at: readonly string[]) => rest.getModelsAt(at),
     write: (written: readonly SettingEdit[]) => void rest.writeSettings(written),
+    plugins: rest.plugins,
     file: rest.path,
     openFile: () => file.openSettingsFile(),
   }
@@ -127,19 +222,30 @@ interface PaletteListsDeps {
   words: Words
 }
 
+function getAppearanceStepGroups(
+  command: string,
+  dressed: ReturnType<typeof createWindowAppearance>,
+  typed: string,
+) {
+  if (command === APPEARANCE) return dressed.getThemeGroups()
+  if (command === MODE) return dressed.getModeGroups()
+  if (command === INTERFACE_SCALE || command === TEXT_SCALE)
+    return dressed.getSizeGroups(command, typed)
+  return []
+}
+
 function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
   const { dressed, sync, nesting, rest, words } = deps
   return {
     getStepGroups: (command, typed) => {
-      if (command === APPEARANCE) return dressed.getThemeGroups()
-      if (command === MODE) return dressed.getModeGroups()
-      if (command === INTERFACE_SCALE || command === TEXT_SCALE)
-        return dressed.getSizeGroups(command, typed)
+      const appearance = getAppearanceStepGroups(command, dressed, typed)
+      if (appearance.length > 0) return appearance
       if (command === SYNCING) return sync.getSyncingGroups()
       if (command === NESTING) return nesting.getNestingGroups()
       if (command === HEADINGS) return nesting.getHeadingsGroups()
       if (command === 'performanceProfile') return getPerformanceStepGroups(words)
       if (command === 'indexingModel') return getIndexingModelStepGroups(rest, words)
+      if (command.startsWith('plugin-setting:')) return getPluginStepGroups(command, rest, words)
       return []
     },
     previewItem: (command, item) => {

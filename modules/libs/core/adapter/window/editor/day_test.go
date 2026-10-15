@@ -41,7 +41,7 @@ func TestBothWindowsAreToldTheSameDay(t *testing.T) {
 	clock := func() time.Time { return morning }
 
 	getting := setting.NewGet(
-		func() (string, string, error) { return "{}", "", nil }, nil, setting.Bounds{}, "", day, clock,
+		func() (string, string, error) { return "{}", "", nil }, nil, setting.Bounds{}, "", day, clock, nil,
 	)
 	editing := &settingsHandler{get: getting}
 	said, err := editing.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))

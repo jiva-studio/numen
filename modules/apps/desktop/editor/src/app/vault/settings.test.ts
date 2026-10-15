@@ -166,7 +166,63 @@ describe('every setting', () => {
           presence: 'not fetched',
         },
       ],
+      plugins: [],
     })
+  })
+
+  it('comes with active plugins and their declarative settings', async () => {
+    asked.getSettings.mockResolvedValue(
+      answer(
+        { a: 1 },
+        {
+          plugins: [
+            {
+              id: 'sample.plugin',
+              name: 'Sample',
+              version: '1.0.0',
+              description: 'Sample plugin',
+              isActive: true,
+              settings: [
+                {
+                  key: 'autoRun',
+                  type: 'boolean',
+                  title: 'Auto Run',
+                  description: 'Run automatically',
+                  defaultJson: 'true',
+                  palette: true,
+                  options: [],
+                },
+              ],
+            },
+          ],
+        },
+      ),
+    )
+
+    const got = await core.getSettings()
+    expect(got.plugins).toStrictEqual([
+      {
+        id: 'sample.plugin',
+        name: 'Sample',
+        version: '1.0.0',
+        description: 'Sample plugin',
+        isActive: true,
+        settings: [
+          {
+            key: 'autoRun',
+            type: 'boolean',
+            title: 'Auto Run',
+            description: 'Run automatically',
+            default: true,
+            palette: true,
+            options: [],
+            min: undefined,
+            max: undefined,
+            step: undefined,
+          },
+        ],
+      },
+    ])
   })
 
   it('is written with each value as it was given', async () => {

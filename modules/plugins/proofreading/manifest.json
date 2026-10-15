@@ -16,5 +16,22 @@
     "type": "process",
     "entrypoint": "bin/proofreading",
     "serviceName": "numen.v1.ProofreadingService"
-  }
+  },
+  "settings": [
+    {
+      "key": "strictMode",
+      "type": "boolean",
+      "title": "Strict Proofreading",
+      "description": "Enforce strict grammatical and punctuation rules",
+      "default": false,
+      "palette": true
+    },
+    {
+      "key": "maxSuggestions",
+      "type": "number",
+      "title": "Max Suggestions",
+      "description": "Maximum number of corrections suggested per passage",
+      "default": 5
+    }
+  ]
 }

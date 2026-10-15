@@ -15,6 +15,7 @@ Two things are not settings and are not in here: which files count as notes, and
 | | | |
 | --- | --- | --- |
 | `v` | a number | the shape of the file. Nothing reads it yet, and it is written so that the day a section changes shape there is something to tell the two apart. |
+| `plugins` |  | the configuration for modular plugins, keyed by plugin ID. |
 
 ### `appearance`
 
