@@ -113,4 +113,37 @@ describe('the keyboard put onto a row', () => {
     await expect(rows.focusRow('gone')).resolves.toBeUndefined()
     expect(rows.here.value).toBe('gone')
   })
+
+  it('calls scroll callback before focusing', async () => {
+    const scrollToRow = vi.fn<(index: number) => void>()
+    const rows = useDrawnRows(
+      () => flatten(ROWS, new Set()),
+      () => [],
+      scrollToRow,
+    )
+    const { focus, drawn } = createDrawn()
+    rows.setRowElement('notes', drawn)
+
+    await rows.focusRow('notes')
+
+    expect(scrollToRow).toHaveBeenCalledWith(1)
+    expect(focus).toHaveBeenCalledTimes(1)
+  })
+
+  it('uses explicitly provided scroll callback over default', async () => {
+    const defaultScroll = vi.fn<(index: number) => void>()
+    const explicitScroll = vi.fn<(index: number) => void>()
+    const rows = useDrawnRows(
+      () => flatten(ROWS, new Set()),
+      () => [],
+      defaultScroll,
+    )
+    const { drawn } = createDrawn()
+    rows.setRowElement('notes', drawn)
+
+    await rows.focusRow('notes', explicitScroll)
+
+    expect(defaultScroll).not.toHaveBeenCalled()
+    expect(explicitScroll).toHaveBeenCalledWith(1)
+  })
 })

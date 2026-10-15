@@ -7,13 +7,14 @@
  * and which are selected are the caller's to hold: the tree works out what a
  * press with a modifier means and says the selection it came to.
  */
-import { computed, useTemplateRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { flatten, getMarkOf, type Row, type RowMarker, type RowId } from '../lib/row'
 import type { RowDropTarget } from '../lib/drop'
 import { useRowDrag } from '../model/drag'
 import { useTreeGestures } from '../model/gestures'
 import { useDrawnRows } from '../model/rows'
 import { useRowSelection } from '../model/selection'
+import { useVirtualTree } from '../model/virtual'
 import type { Position } from '@/shared/lib/geometry'
 import { browserClock, type Clock } from '@/shared/lib/clock'
 import { useRefRegistry } from '@/shared/lib/refs'
@@ -99,9 +100,16 @@ const box = useTemplateRef<HTMLElement>('box')
 
 const shown = computed(() => flatten(props.rows, new Set(props.open)))
 
+const virtual = useVirtualTree(box, () => shown.value.length, getRowHeight)
+
+const virtualRows = computed(() =>
+  shown.value.slice(virtual.window.value.startIndex, virtual.window.value.endIndex),
+)
+
 const rows = useDrawnRows(
   () => shown.value,
   () => props.selected,
+  (index) => virtual.scrollToRow(index),
 )
 const { tabbed, setRowElement } = rows
 const { getRef: getRowRef } = useRefRegistry<RowId>(setRowElement)
@@ -120,9 +128,9 @@ const drag = useRowDrag({
     const drawn = list.value
     const over = box.value?.getBoundingClientRect()
     if (!drawn || !over) return null
-    const first = shown.value[0]
-    const row = first && rows.getRowElement(first.id)?.getBoundingClientRect()
-    return { over, top: drawn.getBoundingClientRect().top, height: row ? row.height : 0 }
+    const anyRow = drawn.querySelector('[data-tree-row]')
+    const rowHeight = anyRow ? anyRow.getBoundingClientRect().height : 24
+    return { over, top: drawn.getBoundingClientRect().top, height: rowHeight }
   },
   getThreshold: () => props.threshold,
   getClock: () => props.clock,
@@ -150,11 +158,36 @@ const {
   selection,
   drag,
   getMenuAt: (row) => {
-    const box = rows.getRowElement(row)?.getBoundingClientRect()
-    return box ? { x: box.left, y: box.bottom } : null
+    const targetBox = rows.getRowElement(row)?.getBoundingClientRect()
+    return targetBox ? { x: targetBox.left, y: targetBox.bottom } : null
   },
   tell: emit,
 })
+
+let observer: ResizeObserver | null = null
+
+/* --------------------------------- Hooks ---------------------------------- */
+onMounted(() => {
+  virtual.measureViewport()
+  if (typeof ResizeObserver !== 'undefined' && box.value) {
+    observer = new ResizeObserver(() => {
+      virtual.measureViewport()
+    })
+    observer.observe(box.value)
+  }
+})
+
+onBeforeUnmount(() => {
+  observer?.disconnect()
+})
+
+/* -------------------------------- Helpers --------------------------------- */
+function getRowHeight(): number {
+  const drawn = list.value
+  const anyRow = drawn?.querySelector('[data-tree-row]')
+  const height = anyRow?.getBoundingClientRect().height
+  return height && height > 0 ? height : 24
+}
 </script>
 
 <template>
@@ -163,6 +196,7 @@ const {
     class="tree numen bg-surface text-ink min-h-0 font-sans text-base"
     :data-into="at && 'into' in at && at.into === null ? '' : undefined"
     v-bind="getMarkOf(marking, null)"
+    @scroll.passive="virtual.onScroll"
     @contextmenu.prevent="onContextMenu"
   >
     <div
@@ -171,10 +205,15 @@ const {
       role="tree"
       aria-multiselectable="true"
       :aria-label="name"
+      :style="{
+        blockSize: `${virtual.window.value.totalHeight}px`,
+        paddingBlockStart: `${virtual.window.value.offsetY}px`,
+        boxSizing: 'border-box',
+      }"
       @keydown="onKeyDown"
     >
       <TreeRow
-        v-for="row in shown"
+        v-for="row in virtualRows"
         :ref="getRowRef(row.id)"
         :key="row.id"
         :row="row"
