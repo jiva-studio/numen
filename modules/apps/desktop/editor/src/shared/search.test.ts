@@ -76,7 +76,7 @@ describe('a text typed', () => {
     scope.run(() => {
       useDebouncedAsk({
         guard: {
-          ask: () => ({ isCurrent: true }),
+          ask: () => ({ isCurrent: true, claim: () => true }),
           drop: vi.fn(),
           close: () => {
             isClosed = true

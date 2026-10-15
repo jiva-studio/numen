@@ -251,7 +251,7 @@ describe('answers arriving', () => {
         path: 'note.md',
         title: 'Note',
         text: 'some snippet',
-        at: 'line 1',
+        at: [],
         isNote: true,
         start: 0,
         length: 10,
