@@ -96,6 +96,11 @@ Section "Numen"
   File "/oname=numen.ico" "${NUMEN_ICON}"
   File "/oname=numen-flashcards.ico" "${FLASHCARDS_ICON}"
 
+!ifdef PLUGINS_DIR
+  SetOutPath "$INSTDIR\plugins"
+  File /r "${PLUGINS_DIR}\*.*"
+!endif
+
   WriteRegStr HKLM "Software\Numen" "InstallDir" "$INSTDIR"
   WriteUninstaller "$INSTDIR\uninstall.exe"
 
@@ -125,6 +130,7 @@ Section "Uninstall"
   Delete "$INSTDIR\numen-flashcards.exe"
   Delete "$INSTDIR\numen.ico"
   Delete "$INSTDIR\numen-flashcards.ico"
+  RMDir /r "$INSTDIR\plugins"
   Delete "$INSTDIR\uninstall.exe"
   RMDir "$INSTDIR"
   Delete "$SMPROGRAMS\Numen.lnk"

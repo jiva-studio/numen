@@ -28,6 +28,10 @@ modules:
     build-commands:
       - install -Dm755 numen /app/bin/numen
       - install -Dm755 numen-flashcards /app/bin/numen-flashcards
+      - |
+        if [ -d plugins ]; then
+          cp -r plugins /app/bin/
+        fi
 
       # A file a flatpak hands to the desktop is named for the application it
       # belongs to, and only such a file is handed over at all.

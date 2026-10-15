@@ -23,6 +23,9 @@ contents:
     dst: /usr/bin/numen-flashcards
   - src: ./numen-flashcards.desktop
     dst: /usr/share/applications/numen-flashcards.desktop
+  - src: ./plugins
+    dst: /usr/lib/numen/plugins
+    type: tree
   # Each window wears its own mark, under the name its desktop entry asks for.
   # The drawing itself is what a desktop scales to whatever it needs; the
   # rasters are for the ones that will not scale it.
