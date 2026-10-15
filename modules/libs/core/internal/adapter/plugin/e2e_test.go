@@ -163,4 +163,3 @@ func TestRealTranscriptionPluginProcessE2E(t *testing.T) {
 		t.Fatal("expected non-empty transcribed text")
 	}
 }
-
