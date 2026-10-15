@@ -21,6 +21,7 @@ import (
 )
 
 type lifecycleServer struct {
+	numenv1connect.UnimplementedPluginLifecycleServiceHandler
 	shutdownTrigger chan struct{}
 }
 

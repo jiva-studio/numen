@@ -78,55 +78,79 @@ function getIndexingModelStepGroups(rest: ReturnType<typeof createSettingsStore>
   }))
 }
 
+interface PluginGroupContext {
+  readonly id: string
+  readonly title: string
+  readonly words: Words
+}
+
+function createPluginBooleanGroup(ctx: PluginGroupContext, isOn: boolean) {
+  return [
+    {
+      id: ctx.id,
+      title: ctx.title,
+      items: [
+        {
+          id: 'on',
+          title: ctx.words.on,
+          ...(isOn ? { detail: ctx.words.current, isCurrent: true } : {}),
+        },
+        {
+          id: 'off',
+          title: ctx.words.off,
+          ...(!isOn ? { detail: ctx.words.current, isCurrent: true } : {}),
+        },
+      ],
+    },
+  ]
+}
+
+function createPluginEnumGroup(
+  ctx: PluginGroupContext,
+  current: string,
+  options: readonly string[],
+) {
+  return [
+    {
+      id: ctx.id,
+      title: ctx.title,
+      items: options.map((opt) => ({
+        id: opt,
+        title: opt,
+        ...(opt === current ? { detail: ctx.words.current, isCurrent: true } : {}),
+      })),
+    },
+  ]
+}
+
+function findPluginSetting(plugins: readonly PluginInfo[], command: string) {
+  const [, pluginId, key] = command.split(':')
+  if (!pluginId || !key) return null
+  const plugin = plugins.find((p) => p.id === pluginId)
+  const setting = plugin?.settings.find((s) => s.key === key)
+  if (!setting) return null
+  return { pluginId, key, setting }
+}
+
 function getPluginStepGroups(
-  pluginId: string,
-  key: string,
+  command: string,
   rest: ReturnType<typeof createSettingsStore>,
   words: Words,
 ) {
-  const plugins = rest.plugins.value
-  const plugin = plugins.find((p) => p.id === pluginId)
-  const setting = plugin?.settings.find((s) => s.key === key)
-  if (!setting) return []
-
+  const match = findPluginSetting(rest.plugins.value, command)
+  if (!match) return []
+  const { pluginId, key, setting } = match
   const current = rest.getSetting(['plugins', pluginId, key])
-  if (setting.type === 'boolean') {
-    const isCurrentlyOn = current !== undefined ? Boolean(current) : Boolean(setting.default)
-    return [
-      {
-        id: `plugin-${pluginId}-${key}`,
-        title: setting.title,
-        items: [
-          {
-            id: 'on',
-            title: words.on,
-            ...(isCurrentlyOn ? { detail: words.current, isCurrent: true } : {}),
-          },
-          {
-            id: 'off',
-            title: words.off,
-            ...(!isCurrentlyOn ? { detail: words.current, isCurrent: true } : {}),
-          },
-        ],
-      },
-    ]
-  }
+  const ctx: PluginGroupContext = { id: `plugin-${pluginId}-${key}`, title: setting.title, words }
 
+  if (setting.type === 'boolean') {
+    const isOn = current !== undefined ? Boolean(current) : Boolean(setting.default)
+    return createPluginBooleanGroup(ctx, isOn)
+  }
   if (setting.type === 'enum' && setting.options) {
     const currentVal = current !== undefined ? String(current) : String(setting.default ?? '')
-    return [
-      {
-        id: `plugin-${pluginId}-${key}`,
-        title: setting.title,
-        items: setting.options.map((opt) => ({
-          id: opt,
-          title: opt,
-          ...(opt === currentVal ? { detail: words.current, isCurrent: true } : {}),
-        })),
-      },
-    ]
+    return createPluginEnumGroup(ctx, currentVal, setting.options)
   }
-
   return []
 }
 
@@ -198,25 +222,30 @@ interface PaletteListsDeps {
   words: Words
 }
 
+function getAppearanceStepGroups(
+  command: string,
+  dressed: ReturnType<typeof createWindowAppearance>,
+  typed: string,
+) {
+  if (command === APPEARANCE) return dressed.getThemeGroups()
+  if (command === MODE) return dressed.getModeGroups()
+  if (command === INTERFACE_SCALE || command === TEXT_SCALE)
+    return dressed.getSizeGroups(command, typed)
+  return []
+}
+
 function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
   const { dressed, sync, nesting, rest, words } = deps
   return {
     getStepGroups: (command, typed) => {
-      if (command === APPEARANCE) return dressed.getThemeGroups()
-      if (command === MODE) return dressed.getModeGroups()
-      if (command === INTERFACE_SCALE || command === TEXT_SCALE)
-        return dressed.getSizeGroups(command, typed)
+      const appearance = getAppearanceStepGroups(command, dressed, typed)
+      if (appearance.length > 0) return appearance
       if (command === SYNCING) return sync.getSyncingGroups()
       if (command === NESTING) return nesting.getNestingGroups()
       if (command === HEADINGS) return nesting.getHeadingsGroups()
       if (command === 'performanceProfile') return getPerformanceStepGroups(words)
       if (command === 'indexingModel') return getIndexingModelStepGroups(rest, words)
-      if (command.startsWith('plugin-setting:')) {
-        const parts = command.split(':')
-        const pluginId = parts[1]
-        const key = parts[2]
-        if (pluginId && key) return getPluginStepGroups(pluginId, key, rest, words)
-      }
+      if (command.startsWith('plugin-setting:')) return getPluginStepGroups(command, rest, words)
       return []
     },
     previewItem: (command, item) => {

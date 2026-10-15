@@ -255,7 +255,7 @@ describe('the settings tab', () => {
   })
 
   it('generates palette commands for active plugins with palette: true', () => {
-    const { settings } = createSettings()
+    createSettings()
     const plugin = {
       id: 'plugin.ocr',
       name: 'OCR Plugin',

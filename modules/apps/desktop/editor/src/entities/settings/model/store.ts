@@ -27,7 +27,7 @@ export interface SettingsStoreDeps {
     readonly written: string
     readonly path: string
     readonly models: readonly Model[]
-    readonly plugins?: readonly PluginInfo[]
+    readonly plugins?: readonly PluginInfo[] | undefined
   }>
   /** Settings written. A value the settings cannot hold is refused. */
   updateSettings(edits: readonly SettingEdit[]): Promise<void>

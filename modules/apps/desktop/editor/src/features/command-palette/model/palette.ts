@@ -148,31 +148,32 @@ function createPaletteCommands(deps: PaletteCommandsDeps) {
   return { startCommand, getObjection }
 }
 
+type PaletteRestArgs = [
+  Words?,
+  (() => CommandTarget)?,
+  NoteLookup?,
+  PaletteLists?,
+  RunSupport?,
+  Wait?,
+  (() => readonly Command[])?,
+]
+
 function parsePaletteDeps(
   coreOrDeps: CommandsDeps | CommandPaletteDeps,
-  args: [
-    Words?,
-    (() => CommandTarget)?,
-    NoteLookup?,
-    PaletteLists?,
-    RunSupport?,
-    Wait?,
-    (() => readonly Command[])?,
-  ],
+  args: PaletteRestArgs,
 ): CommandPaletteDeps {
   const [words, at, knows, lists, runs, wait, getExtraCommands] = args
-  return 'core' in coreOrDeps
-    ? coreOrDeps
-    : {
-        core: coreOrDeps,
-        words: words!,
-        at: at!,
-        knows: knows!,
-        lists: lists!,
-        runs: runs!,
-        ...(wait !== undefined ? { wait } : {}),
-        ...(getExtraCommands !== undefined ? { getExtraCommands } : {}),
-      }
+  if ('core' in coreOrDeps) return coreOrDeps
+  return {
+    core: coreOrDeps,
+    words: words!,
+    at: at!,
+    knows: knows!,
+    lists: lists!,
+    runs: runs!,
+    ...(wait !== undefined ? { wait } : {}),
+    ...(getExtraCommands !== undefined ? { getExtraCommands } : {}),
+  }
 }
 
 function createPaletteState(wait?: Wait) {
@@ -183,7 +184,6 @@ function createPaletteState(wait?: Wait) {
   const showing = ref(BLANK.showing)
   const isWorking = ref(BLANK.isWorking)
   const failureMessage = ref(BLANK.failureMessage)
-
   const asked = latest()
   const debounced = useDebouncedAsk({ guard: asked, ...(wait ? { wait } : {}) })
 
@@ -306,10 +306,7 @@ function createPalettePresentation(
 ) {
   const { steps, on, invocation } = context
   const staticCommands = createCommands(deps.words)
-  const getCommands = (): readonly Command[] => [
-    ...staticCommands,
-    ...(deps.getExtraCommands ? deps.getExtraCommands() : []),
-  ]
+  const getCommands = () => [...staticCommands, ...(deps.getExtraCommands?.() ?? [])]
   const byId = computed(() => new Map(getCommands().map((one) => [one.id, one])))
 
   const draws = getPaletteView({
@@ -352,15 +349,7 @@ function createPalettePresentation(
 
 export function useCommandPalette(
   coreOrDeps: CommandsDeps | CommandPaletteDeps,
-  ...args: [
-    words?: Words,
-    at?: () => CommandTarget,
-    knows?: NoteLookup,
-    lists?: PaletteLists,
-    runs?: RunSupport,
-    wait?: Wait,
-    getExtraCommands?: () => readonly Command[],
-  ]
+  ...args: PaletteRestArgs
 ) {
   const deps = parsePaletteDeps(coreOrDeps, args)
   const state = createPaletteState(deps.wait)
