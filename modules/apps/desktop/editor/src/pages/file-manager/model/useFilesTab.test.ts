@@ -49,7 +49,7 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
       return vault[at] ?? []
     },
   })
-  let receivedState: FilesTabState | null = null
+  let receivedState: FilesTabState | undefined = undefined
   const gestures = useFilesTab(list, {
     openDestination: (landing, state) => {
       receivedState = state

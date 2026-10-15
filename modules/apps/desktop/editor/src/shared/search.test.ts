@@ -81,6 +81,7 @@ describe('a text typed', () => {
           close: () => {
             isClosed = true
           },
+          open: () => true,
         },
       })
     })
