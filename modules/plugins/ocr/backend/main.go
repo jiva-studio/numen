@@ -1,23 +1,31 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
+	"sync"
 	"syscall"
 	"time"
 
 	"connectrpc.com/connect"
+	_ "golang.org/x/image/webp"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/modules/plugins/ocr/backend/engine"
 )
 
 type lifecycleServer struct {
@@ -47,52 +55,135 @@ func (s *lifecycleServer) Shutdown(
 	}), nil
 }
 
-type recognitionServer struct{}
+type recognitionServer struct {
+	numenv1connect.UnimplementedRecognitionServiceHandler
+
+	mu     sync.Mutex
+	engine *engine.Recogniser
+	cfg    engine.Config
+}
+
+func newRecognitionServer(eng *engine.Recogniser, cfg engine.Config) *recognitionServer {
+	return &recognitionServer{
+		engine: eng,
+		cfg:    cfg,
+	}
+}
+
+func (s *recognitionServer) getEngine(ctx context.Context) (*engine.Recogniser, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.engine != nil {
+		return s.engine, nil
+	}
+	eng, err := engine.Open(ctx, s.cfg)
+	if err != nil {
+		return nil, err
+	}
+	s.engine = eng
+	return s.engine, nil
+}
+
+func (s *recognitionServer) close() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.engine != nil {
+		err := s.engine.Close()
+		s.engine = nil
+		return err
+	}
+	return nil
+}
 
 func (s *recognitionServer) GetRecognitionModel(
-	_ context.Context,
+	ctx context.Context,
 	_ *connect.Request[numenv1.GetRecognitionModelRequest],
 ) (*connect.Response[numenv1.GetRecognitionModelResponse], error) {
+	s.mu.Lock()
+	eng := s.engine
+	s.mu.Unlock()
+
+	if eng != nil {
+		m := eng.GetRecognitionModel()
+		return connect.NewResponse(&numenv1.GetRecognitionModelResponse{
+			Layout:     m.Layout,
+			Recogniser: m.Recogniser,
+			Dpi:        int32(m.DPI),
+			From:       m.From,
+		}), nil
+	}
+
+	eng, err := s.getEngine(ctx)
+	if err == nil {
+		m := eng.GetRecognitionModel()
+		return connect.NewResponse(&numenv1.GetRecognitionModelResponse{
+			Layout:     m.Layout,
+			Recogniser: m.Recogniser,
+			Dpi:        int32(m.DPI),
+			From:       m.From,
+		}), nil
+	}
+
 	return connect.NewResponse(&numenv1.GetRecognitionModelResponse{
-		Layout:     "pp-layout",
-		Recogniser: "pp-ocrv6-small",
+		Layout:     s.cfg.Layout.Name,
+		Recogniser: s.cfg.Recognise.Name,
 		Dpi:        300,
-		From:       "builtin",
+		From:       "defaults",
 	}), nil
 }
 
 func (s *recognitionServer) RecognisePage(
-	_ context.Context,
+	ctx context.Context,
 	req *connect.Request[numenv1.RecognisePageRequest],
 ) (*connect.Response[numenv1.RecognisePageResponse], error) {
-	if len(req.Msg.GetImageData()) == 0 {
+	data := req.Msg.GetImageData()
+	if len(data) == 0 {
 		return connect.NewResponse(&numenv1.RecognisePageResponse{
 			Blocks: nil,
 		}), nil
 	}
 
-	// Default recognition response for processed page
-	return connect.NewResponse(&numenv1.RecognisePageResponse{
-		Blocks: []*numenv1.OcrBlock{
-			{
-				Label:     "paragraph",
-				Text:      "Recognised content from native OCR plugin.",
-				IsHeading: false,
-				Depth:     0,
-				Boxes: []*numenv1.OcrBox{
-					{
-						MinX: 10,
-						MinY: 10,
-						MaxX: 100,
-						MaxY: 30,
-						Span: &numenv1.Span{
-							From: 0,
-							To:   42,
-						},
-					},
+	eng, err := s.getEngine(ctx)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("open recognition engine: %w", err))
+	}
+
+	img, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("decode image: %w", err))
+	}
+
+	blocks, err := eng.Recognise(ctx, img)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("recognise page: %w", err))
+	}
+
+	outBlocks := make([]*numenv1.OcrBlock, 0, len(blocks))
+	for _, b := range blocks {
+		boxes := make([]*numenv1.OcrBox, 0, len(b.Boxes))
+		for _, bx := range b.Boxes {
+			boxes = append(boxes, &numenv1.OcrBox{
+				MinX: int32(bx.Rect.Min.X),
+				MinY: int32(bx.Rect.Min.Y),
+				MaxX: int32(bx.Rect.Max.X),
+				MaxY: int32(bx.Rect.Max.Y),
+				Span: &numenv1.Span{
+					From: int32(bx.Span.From),
+					To:   int32(bx.Span.To),
 				},
-			},
-		},
+			})
+		}
+		outBlocks = append(outBlocks, &numenv1.OcrBlock{
+			Label:     b.Label,
+			Text:      b.Text,
+			IsHeading: b.IsHeading,
+			Depth:     int32(b.Depth),
+			Boxes:     boxes,
+		})
+	}
+
+	return connect.NewResponse(&numenv1.RecognisePageResponse{
+		Blocks: outBlocks,
 	}), nil
 }
 
@@ -124,9 +215,20 @@ func main() {
 
 	actualPort := listener.Addr().(*net.TCPAddr).Port
 
+	cfg := engine.Defaults()
+	if dir := os.Getenv("NUMEN_OCR_DIR"); dir != "" {
+		cfg.Dir = dir
+	} else if modelsDir := os.Getenv("NUMEN_MODELS_DIR"); modelsDir != "" {
+		cfg.Dir = modelsDir
+	}
+	if rt := os.Getenv("NUMEN_OCR_RUNTIME"); rt != "" {
+		cfg.Runtime = rt
+	}
+
 	shutdownCh := make(chan struct{})
 	life := &lifecycleServer{shutdownTrigger: shutdownCh}
-	recog := &recognitionServer{}
+	recog := newRecognitionServer(nil, cfg)
+	defer recog.close()
 
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(life))
@@ -144,7 +246,6 @@ func main() {
 		}
 	}()
 
-	// Output ready handshake for plugin host
 	fmt.Printf("NUMEN_READY port=%d\n", actualPort)
 	os.Stdout.Sync()
 
