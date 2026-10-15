@@ -97,6 +97,8 @@ func newCoreWithQueries(t *testing.T, notes map[string]string) (domain.Vault, mc
 
 	core := mcp.Core{
 		Cards: mcp.Cards{
+			Read:            cards.Read,
+			Write:           cards.Write,
 			GetCardPage:     cards.GetCardPage,
 			List:            cards.List,
 			Create:          cards.Create,
@@ -240,10 +242,10 @@ func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 		"note_create", "note_rewrite", "note_edit", "note_rename", "note_move", "note_remove",
 		"file_read",
 		"link_add", "link_update", "link_remove", "link_list",
-		"card_stencil_list", "card_read", "card_add", "card_edit",
+		"card_stencil_list", "card_stencil_read", "card_read", "card_add", "card_edit",
 		"card_value_remove", "card_remove",
 		"card_section_add", "card_section_rename", "card_section_remove",
-		"card_deck_create", "card_stencil_create", "card_field_rename",
+		"card_deck_create", "card_stencil_create", "card_stencil_edit", "card_field_rename",
 		"vault_get", "vault_problems",
 		"source_list", "source_read", "source_recognise", "source_transcribe",
 	})
@@ -269,10 +271,10 @@ func TestTheWindowAPersonWritesInServesEveryToolTheVaultHas(t *testing.T) {
 		"note_focus",
 		"file_read",
 		"link_add", "link_update", "link_remove", "link_list",
-		"card_stencil_list", "card_read", "card_add", "card_edit",
+		"card_stencil_list", "card_stencil_read", "card_read", "card_add", "card_edit",
 		"card_value_remove", "card_remove",
 		"card_section_add", "card_section_rename", "card_section_remove",
-		"card_deck_create", "card_stencil_create", "card_field_rename",
+		"card_deck_create", "card_stencil_create", "card_stencil_edit", "card_field_rename",
 		"vault_get", "vault_problems",
 		"vault_list", "vault_add", "vault_rename", "vault_remove", "vault_open",
 		"source_list", "source_read", "source_recognise", "source_transcribe",

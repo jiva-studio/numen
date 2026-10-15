@@ -2,12 +2,17 @@ package mcp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // addCardEditTools adds the tools that change the cards of an existing deck.
@@ -247,4 +252,56 @@ func addCardSectionRemove(server *sdk.Server, core Core) {
 			return core.Cards.RemoveSection.Execute(ctx, v, at, in.Section)
 		})
 	}))
+}
+
+type stencilEditInput struct {
+	Path        string   `json:"path" jsonschema:"the stencil to edit"`
+	Fields      []string `json:"fields" jsonschema:"the names of the fields, in the order a person is asked for them; a card's heading is read from the first"`
+	Faces       []Face   `json:"faces" jsonschema:"the ways a card cut by this stencil is shown"`
+	Fingerprint string   `json:"fingerprint" jsonschema:"what card_stencil_read said the stencil was, which refuses a write over somebody else's edit"`
+}
+
+func addCardStencilEdit(server *sdk.Server, core Core) {
+	addTool(server, &sdk.Tool{
+		Name:  "card_stencil_edit",
+		Title: "Edit a stencil",
+		Description: "Change a stencil in place: its fields and the faces a card cut by " +
+			"it is shown through. Hand back the fingerprint from `card_stencil_read` so " +
+			"the write is refused if the stencil has changed in the meantime.",
+	}, newHandler(func(ctx context.Context, in stencilEditInput) (WriteOutcome, error) {
+		return writeCardStencilEdit(ctx, core, in)
+	}))
+}
+
+func writeCardStencilEdit(ctx context.Context, core Core, in stencilEditInput) (WriteOutcome, error) {
+	fp, err := parseFingerprint(in.Fingerprint)
+	if err != nil {
+		return WriteOutcome{}, err
+	}
+	v := core.getCurrentVault().Vault
+	current, err := core.Cards.Read.Stencil(ctx, v, in.Path)
+	if err != nil {
+		return WriteOutcome{}, err
+	}
+	if current.Outcome != note.Ok {
+		if reason, refused := wire.ConvertOutcomeToErrorCode(current.Outcome); refused {
+			return WriteOutcome{}, errors.New(describeCode(reason))
+		}
+		return WriteOutcome{}, fmt.Errorf("%s: %s", in.Path, current.Outcome)
+	}
+	if current.Type != domain.TypeStencil {
+		return WriteOutcome{}, errors.New(describeCode(v1.ErrorCode_ERROR_CODE_NOT_A_STENCIL))
+	}
+	body, err := format.StencilBody(current.Body.Preamble, newFaceTemplates(in.Faces), current.Body.Tail)
+	if err != nil {
+		return WriteOutcome{}, err
+	}
+	newFp, err := core.Cards.Write.Stencil(ctx, v, in.Path, body, in.Fields, fp)
+	if err != nil {
+		return WriteOutcome{}, err
+	}
+	return WriteOutcome{
+		Path:        in.Path,
+		Fingerprint: fingerprintOf(newFp),
+	}, nil
 }

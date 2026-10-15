@@ -174,6 +174,8 @@ func makeReviewCore(
 		},
 
 		Cards: mcp.Cards{
+			Read:            cards.Read,
+			Write:           cards.Write,
 			GetCardPage:     cards.GetCardPage,
 			AddCard:         cards.AddCard,
 			EditCard:        cards.EditCard,

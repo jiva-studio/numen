@@ -19,6 +19,7 @@ func addCardWriteTools(server *sdk.Server, core Core) {
 func addCardCreateTools(server *sdk.Server, core Core) {
 	addCardDeckCreate(server, core)
 	addCardStencilCreate(server, core)
+	addCardStencilEdit(server, core)
 	addCardFieldRename(server, core)
 }
 
@@ -131,6 +132,14 @@ func newFaceTemplates(fs []Face) []format.FaceTemplate {
 	out := make([]format.FaceTemplate, 0, len(fs))
 	for _, f := range fs {
 		out = append(out, format.FaceTemplate{Name: f.Name, Front: f.Front, Back: f.Back})
+	}
+	return out
+}
+
+func newFaces(templates []format.FaceTemplate) []Face {
+	out := make([]Face, 0, len(templates))
+	for _, t := range templates {
+		out = append(out, Face{Name: t.Name, Front: t.Front, Back: t.Back})
 	}
 	return out
 }

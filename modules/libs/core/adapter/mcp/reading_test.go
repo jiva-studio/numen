@@ -25,7 +25,7 @@ import (
 var reads = []string{
 	"note_search", "note_titles", "note_read", "note_neighbourhood",
 	"link_list", "source_list", "source_read",
-	"card_stencil_list", "card_read", "vault_get",
+	"card_stencil_list", "card_stencil_read", "card_read", "vault_get",
 }
 
 // The reading server stands on what it does not serve, so the list is exact:
@@ -75,6 +75,7 @@ func TestEveryReadingToolAnswersWithoutAWriter(t *testing.T) {
 		{"source_list", map[string]any{}},
 		{"source_read", map[string]any{"path": "Entropy.md", "start": 0, "length": 200}},
 		{"card_stencil_list", map[string]any{}},
+		{"card_stencil_read", map[string]any{"path": "Physics.md"}},
 		{"card_read", map[string]any{"path": "Kinetics.md"}},
 		{"vault_get", map[string]any{}},
 	}
@@ -272,7 +273,7 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 			GetTitles:     note.NewGetTitles(queries),
 			Links:         note.NewShowLinks(db.Links()),
 		},
-		Cards:   mcp.Cards{GetCardPage: cards.GetCardPage, List: cards.List},
+		Cards:   mcp.Cards{Read: cards.Read, GetCardPage: cards.GetCardPage, List: cards.List},
 		Sources: mcp.Sources{GetDocumentList: source.NewGetDocumentList(db.SourcesKnown()), GetDocumentText: source.NewGetDocumentText(readers, db.SourcesKnown(), nil, nil)},
 	}
 }

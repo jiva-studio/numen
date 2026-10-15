@@ -923,3 +923,91 @@ func TestASectionIsRemovedAndNoCardIs(t *testing.T) {
 		t.Errorf("removing a section twice was answered %q", said)
 	}
 }
+
+type readStencilResult struct {
+	Path   string   `json:"path"`
+	Title  string   `json:"title"`
+	Fields []string `json:"fields"`
+	Faces  []struct {
+		Name  string `json:"name"`
+		Front string `json:"front"`
+		Back  string `json:"back"`
+	} `json:"faces"`
+	Fingerprint string `json:"fingerprint"`
+}
+
+func readStencil(t *testing.T, s *sdk.ClientSession, path string) readStencilResult {
+	t.Helper()
+	return call[readStencilResult](t, s, "card_stencil_read", map[string]any{"path": path})
+}
+
+// A stencil is read as its declared fields and face templates, and edited in
+// place while preserving its existing structure and checking the fingerprint.
+func TestAStencilIsReadAndEditedInPlace(t *testing.T) {
+	session, v := newSession(t, vault())
+
+	s := readStencil(t, session, "Animal.md")
+	if s.Title != "Animal" || s.Path != "Animal.md" {
+		t.Fatalf("stencil title = %q, path = %q", s.Title, s.Path)
+	}
+	if len(s.Fields) != 3 || s.Fields[0] != "Name" || s.Fields[1] != "Height" || s.Fields[2] != "Life span" {
+		t.Fatalf("stencil fields = %+v", s.Fields)
+	}
+	if len(s.Faces) != 1 || s.Faces[0].Name != "Recognise" || s.Faces[0].Front != "{{Name}}" || s.Faces[0].Back != "{{Height}}" {
+		t.Fatalf("stencil faces = %+v", s.Faces)
+	}
+	if s.Fingerprint == "" {
+		t.Fatal("stencil fingerprint is empty")
+	}
+
+	outcome := call[struct {
+		Path        string `json:"path"`
+		Fingerprint string `json:"fingerprint"`
+	}](t, session, "card_stencil_edit", map[string]any{
+		"path":        "Animal.md",
+		"fields":      []string{"Name", "Weight"},
+		"faces":       []map[string]string{{"name": "Recognise", "front": "{{Name}}", "back": "{{Weight}}"}},
+		"fingerprint": s.Fingerprint,
+	})
+	if outcome.Path != "Animal.md" || outcome.Fingerprint == "" || outcome.Fingerprint == s.Fingerprint {
+		t.Fatalf("edit outcome = %+v", outcome)
+	}
+
+	updated := readStencil(t, session, "Animal.md")
+	if len(updated.Fields) != 2 || updated.Fields[1] != "Weight" {
+		t.Fatalf("updated fields = %+v", updated.Fields)
+	}
+	if len(updated.Faces) != 1 || updated.Faces[0].Back != "{{Weight}}" {
+		t.Fatalf("updated faces = %+v", updated.Faces)
+	}
+	if updated.Fingerprint != outcome.Fingerprint {
+		t.Fatalf("updated fingerprint = %q, expected %q", updated.Fingerprint, outcome.Fingerprint)
+	}
+
+	fileContent := readVaultFile(t, v, "Animal.md")
+	if !strings.Contains(fileContent, "Weight") || strings.Contains(fileContent, "Life span") {
+		t.Fatalf("file content on disk: %s", fileContent)
+	}
+
+	said := getRefusal(t, session, "card_stencil_edit", map[string]any{
+		"path":        "Animal.md",
+		"fields":      []string{"Name"},
+		"faces":       []map[string]string{{"name": "Recognise", "front": "{{Name}}", "back": ""}},
+		"fingerprint": s.Fingerprint,
+	})
+	if said == "" {
+		t.Error("stale fingerprint edit was not refused")
+	}
+}
+
+// Reading a non-stencil note as a stencil is refused.
+func TestAStencilReadRefusesNonStencil(t *testing.T) {
+	session, _ := newSession(t, vault())
+
+	said := getRefusal(t, session, "card_stencil_read", map[string]any{
+		"path": "Entropy.md",
+	})
+	if !strings.Contains(said, "not a stencil") {
+		t.Errorf("reading non-stencil was answered %q", said)
+	}
+}

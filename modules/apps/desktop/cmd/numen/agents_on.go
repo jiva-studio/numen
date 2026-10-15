@@ -148,6 +148,8 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 		},
 
 		Cards: mcp.Cards{
+			Read:            cards.Read,
+			Write:           cards.Write,
 			GetCardPage:     cards.GetCardPage,
 			AddCard:         cards.AddCard,
 			EditCard:        cards.EditCard,
