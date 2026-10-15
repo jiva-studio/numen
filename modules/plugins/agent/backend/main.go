@@ -408,7 +408,7 @@ func (s *agentServer) defaultExecuteTool(ctx context.Context, name, args string)
 	}
 	bytes, err := json.Marshal(out)
 	if err != nil {
-		return fmt.Sprintf(`{"status":"ok","tool":%q}`, name), nil
+		return "", fmt.Errorf("marshal tool result: %w", err)
 	}
 	return string(bytes), nil
 }
@@ -526,33 +526,6 @@ func callChat(
 	return &chatResp.Choices[0].Message, nil
 }
 
-func callLLM(
-	ctx context.Context,
-	client *http.Client,
-	baseURL, key, model, systemPrompt, prompt string,
-) (string, error) {
-	var messages []chatMessage
-	if systemPrompt != "" {
-		sp := systemPrompt
-		messages = append(messages, chatMessage{
-			Role:    "system",
-			Content: &sp,
-		})
-	}
-	p := prompt
-	messages = append(messages, chatMessage{
-		Role:    "user",
-		Content: &p,
-	})
-	msg, err := callChat(ctx, client, baseURL, key, model, messages, nil)
-	if err != nil {
-		return "", err
-	}
-	if msg.Content != nil {
-		return *msg.Content, nil
-	}
-	return "", nil
-}
 
 func splitChunks(s string, chunkSize int) []string {
 	if len(s) <= chunkSize {
