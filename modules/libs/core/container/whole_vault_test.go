@@ -9,7 +9,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
@@ -69,7 +68,7 @@ func TestAScanTakesItsTurnsFromTheIndexAndHonoursARebuild(t *testing.T) {
 func TestTheCutOfASourceIsGivenWhatItReadsWith(t *testing.T) {
 	db := makeIndex(t)
 	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n"})
-	held := container.Config{Embedding: embed.Defaults(), ServiceDir: ".numen", ShouldRebuildIndex: true}
+	held := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen", ShouldRebuildIndex: true}
 
 	cut, err := held.Extract(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
@@ -94,7 +93,7 @@ func TestTheVectorsOfASourceAreMadeByTheModelGiven(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n"})
 	model := unit{"first"}
 
-	made, err := container.Config{Embedding: embed.Defaults(), ServiceDir: ".numen"}.Embed(db, model, v)
+	made, err := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}.Embed(db, model, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,7 +110,7 @@ func TestTheVectorsOfASourceAreMadeByTheModelGiven(t *testing.T) {
 
 func TestAVaultWhoseFolderIsGoneIsNotMadeSearchable(t *testing.T) {
 	db := makeIndex(t)
-	held := container.Config{Embedding: embed.Defaults(), ServiceDir: ".numen"}
+	held := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}
 	v := missingVault(t)
 
 	if _, err := held.Extract(db.Sources(), db.SourcesKnown(), v); err == nil {
@@ -142,7 +141,7 @@ func owingAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
 	t.Helper()
 	db := makeIndex(t)
 	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
-	held := container.Config{Embedding: embed.Defaults(), ServiceDir: ".numen"}
+	held := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}
 	first, second := unit{"first"}, unit{"second"}
 
 	whole, err := held.ReadWholeVault(t.Context(), db, first, v)
@@ -188,7 +187,7 @@ func makeSwitchedIndex(t *testing.T) (*container.Index, domain.Vault) {
 	t.Helper()
 	db := makeIndex(t)
 	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
-	whole, err := container.Config{Embedding: embed.Defaults(), ServiceDir: ".numen"}.ReadWholeVault(t.Context(), db, unit{"first"}, v)
+	whole, err := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}.ReadWholeVault(t.Context(), db, unit{"first"}, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -212,7 +211,7 @@ func TestARebuildThatCannotForgetTheOtherVectorsIsRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	held := container.Config{Embedding: embed.Defaults(), ServiceDir: ".numen", ShouldRebuildIndex: true}
+	held := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen", ShouldRebuildIndex: true}
 	if _, err := held.ReadWholeVault(t.Context(), db, unit{"second"}, v); err == nil || !strings.Contains(err.Error(), "kept") {
 		t.Errorf("got %v", err)
 	}

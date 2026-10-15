@@ -144,8 +144,8 @@ func (c Config) Vaults() filesystem.VaultReaders { return filesystem.VaultReader
 		{
 			what: "the same, behind a pointer and inside a slice",
 			src: `package container
-import "` + module + `internal/adapter/embed"
-func (c Config) Embedders() ([]*embed.Model, error) { return nil, nil }`,
+import "` + module + `internal/adapter/trash"
+func (c Config) Cleaners() ([]*trash.Cleaner, error) { return nil, nil }`,
 			isRefused: true,
 		},
 		{

@@ -5,8 +5,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/openai"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
 
@@ -75,51 +73,6 @@ func TestAProofreadingProfileWithoutAPlanTakesTheDefaultOfItsKind(t *testing.T) 
 	if service.InFlight != DefaultInFlight || agent.InFlight != DefaultAgentInFlight {
 		t.Errorf("a service asks about %d and the command line %d batches at once, want %d and %d",
 			service.InFlight, agent.InFlight, DefaultInFlight, DefaultAgentInFlight)
-	}
-}
-
-func newServiceModel(t *testing.T) (embed.ServiceModel, embed.Config) {
-	t.Helper()
-	t.Setenv(embed.KeyEnvVar, "sk-test")
-	cfg := embed.Defaults()
-	cfg.Model.Name = "bge-m3"
-	cfg.Model.Dimensions = 4
-	cfg.Indexing = newPlanServiceProvider(cfg.Indexing)
-	service, _ := cfg.Indexing.Service()
-	return service, cfg
-}
-
-func newPlanServiceProvider(where embed.Provider) embed.Provider {
-	where.Use = embed.UseService
-	service, _ := where.Service()
-	service.Name, service.BaseURL = "bge-m3", "http://127.0.0.1:1/v1"
-	return where.SetService(service)
-}
-
-func TestTheEmbeddingClientSendsAsManyRequestsAtOnceAsThePlanAllows(t *testing.T) {
-	service, cfg := newServiceModel(t)
-	client, err := Config{ResolvedCompute: makePlan(8, 3)}.openServiceClient(cfg.GetStoredModel(), service)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if client.InFlight != 3 {
-		t.Errorf("the client sends %d requests at once, want the 3 planned", client.InFlight)
-	}
-}
-
-func TestTheEmbeddingClientOfAContainerWithoutAPlanKeepsItsOwnLimit(t *testing.T) {
-	service, cfg := newServiceModel(t)
-	is := cfg.GetStoredModel()
-	own, err := openai.New(is, service)
-	if err != nil {
-		t.Fatal(err)
-	}
-	client, err := Config{}.openServiceClient(is, service)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if client.InFlight != own.InFlight {
-		t.Errorf("the client sends %d requests at once, want %d", client.InFlight, own.InFlight)
 	}
 }
 
