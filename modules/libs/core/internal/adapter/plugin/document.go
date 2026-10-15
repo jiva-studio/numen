@@ -9,9 +9,9 @@ import (
 	_ "image/jpeg" // register JPEG decoder for page images
 	_ "image/png"  // register PNG decoder for page images
 	"io"
-	"net/http"
 	"os"
 	"strings"
+	"sync"
 
 	"connectrpc.com/connect"
 
@@ -46,7 +46,7 @@ func OpenDocumentBridge(ctx context.Context, host *Host) (*DocumentBridge, error
 		return nil, fmt.Errorf("ensure active %s: %w", p.Manifest.ID, err)
 	}
 
-	httpClient := &http.Client{}
+	httpClient := defaultPluginClient
 	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
 	client := numenv1connect.NewDocumentServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 
@@ -243,18 +243,23 @@ func (b *DocumentBridge) OpenDocument(ctx context.Context, file io.ReadSeekClose
 	}
 
 	return &remoteDocument{
-		client:  b.client,
-		path:    path,
-		pages:   resp.Msg.GetPages(),
-		cleanup: cleanup,
+		host:     b.host,
+		pluginID: b.pluginID,
+		client:   b.client,
+		path:     path,
+		pages:    resp.Msg.GetPages(),
+		cleanup:  cleanup,
 	}, nil
 }
 
 type remoteDocument struct {
-	client  numenv1connect.DocumentServiceClient
-	path    string
-	pages   []*v1.Page
-	cleanup func()
+	host      *Host
+	pluginID  string
+	client    numenv1connect.DocumentServiceClient
+	path      string
+	pages     []*v1.Page
+	cleanup   func()
+	closeOnce sync.Once
 }
 
 func (d *remoteDocument) GetPageCount() int {
@@ -288,9 +293,16 @@ func (d *remoteDocument) RenderPage(index, dpi int) (image.Image, error) {
 }
 
 func (d *remoteDocument) Close() {
-	if d.cleanup != nil {
-		d.cleanup()
-	}
+	d.closeOnce.Do(func() {
+		if d.cleanup != nil {
+			d.cleanup()
+			d.cleanup = nil
+		}
+		if d.host != nil && d.pluginID != "" {
+			d.host.Release(d.pluginID)
+			d.host = nil
+		}
+	})
 }
 
 func (b *DocumentBridge) resolveNamedPath(rawPath string) (string, error) {

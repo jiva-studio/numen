@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -20,9 +20,10 @@ var (
 
 // EmbedderBridge connects port.Embedder calls to an out-of-process embedding plugin via Connect-RPC.
 type EmbedderBridge struct {
-	host     *Host
-	pluginID string
-	client   numenv1connect.EmbeddingServiceClient
+	host        *Host
+	pluginID    string
+	client      numenv1connect.EmbeddingServiceClient
+	concurrency int
 }
 
 // OpenEmbedderBridge activates or connects to the embedding plugin and returns a port.Embedder.
@@ -37,20 +38,28 @@ func OpenEmbedderBridge(ctx context.Context, host *Host) (*EmbedderBridge, error
 		return nil, fmt.Errorf("ensure active %s: %w", plugin.Manifest.ID, err)
 	}
 
-	httpClient := &http.Client{}
+	httpClient := defaultPluginClient
 	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
 	client := numenv1connect.NewEmbeddingServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 
+	concurrency := 1
+	modelReq := connect.NewRequest(&v1.GetEmbeddingModelRequest{})
+	if resp, err := client.GetEmbeddingModel(ctx, modelReq); err == nil && resp.Msg.GetConcurrency() > 0 {
+		concurrency = int(resp.Msg.GetConcurrency())
+	}
+
 	return &EmbedderBridge{
-		host:     host,
-		pluginID: plugin.Manifest.ID,
-		client:   client,
+		host:        host,
+		pluginID:    plugin.Manifest.ID,
+		client:      client,
+		concurrency: concurrency,
 	}, nil
 }
 
 // GetModel queries the embedding plugin for its model specification.
 func (b *EmbedderBridge) GetModel() port.EmbeddingModel {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	req := connect.NewRequest(&v1.GetEmbeddingModelRequest{})
 	resp, err := b.client.GetEmbeddingModel(ctx, req)
 	if err != nil {
@@ -96,13 +105,10 @@ func (b *EmbedderBridge) Embed(ctx context.Context, texts []string) ([][]float32
 
 // Concurrency returns how many batches the embedder runs in parallel.
 func (b *EmbedderBridge) Concurrency() int {
-	ctx := context.Background()
-	req := connect.NewRequest(&v1.GetEmbeddingModelRequest{})
-	resp, err := b.client.GetEmbeddingModel(ctx, req)
-	if err != nil || resp.Msg.GetConcurrency() <= 0 {
+	if b.concurrency <= 0 {
 		return 1
 	}
-	return int(resp.Msg.GetConcurrency())
+	return b.concurrency
 }
 
 // Close releases the active reference count for the embedding plugin in the host supervisor.

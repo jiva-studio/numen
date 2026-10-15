@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"image"
 	"image/png"
-	"net/http"
 
 	"connectrpc.com/connect"
 
@@ -41,7 +40,7 @@ func OpenRecogniserBridge(ctx context.Context, host *Host) (*RecogniserBridge, e
 		return nil, fmt.Errorf("ensure active %s: %w", plugin.Manifest.ID, err)
 	}
 
-	httpClient := &http.Client{}
+	httpClient := defaultPluginClient
 	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
 	client := numenv1connect.NewRecognitionServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 
@@ -83,7 +82,8 @@ func (b *RecogniserBridge) Recognise(ctx context.Context, page image.Image) ([]d
 	}
 
 	var buf bytes.Buffer
-	if err := png.Encode(&buf, page); err != nil {
+	enc := png.Encoder{CompressionLevel: png.BestSpeed}
+	if err := enc.Encode(&buf, page); err != nil {
 		return nil, fmt.Errorf("encode page png: %w", err)
 	}
 

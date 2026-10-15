@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"sync"
 
 	"connectrpc.com/connect"
@@ -40,7 +39,7 @@ func OpenAgentBridge(ctx context.Context, host *Host) (*AgentBridge, error) {
 		return nil, fmt.Errorf("ensure active %s: %w", p.Manifest.ID, err)
 	}
 
-	httpClient := &http.Client{}
+	httpClient := defaultPluginClient
 	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
 	client := numenv1connect.NewAgentServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 
@@ -72,6 +71,7 @@ func (b *AgentBridge) StartRun(ctx context.Context, task port.Task) (port.Run, e
 	}
 
 	run := &pluginRun{
+		ctx:    runCtx,
 		stream: stream,
 		cancel: cancel,
 		steps:  make(chan port.Step, 16),
@@ -140,6 +140,7 @@ func (b *AgentBridge) Close() error {
 }
 
 type pluginRun struct {
+	ctx       context.Context
 	stream    *connect.ServerStreamForClient[v1.AskAgentResponse]
 	cancel    context.CancelFunc
 	steps     chan port.Step
@@ -173,7 +174,11 @@ func (r *pluginRun) readSteps() {
 	for r.stream.Receive() {
 		msg := r.stream.Msg()
 		step := convertResponseStep(msg)
-		r.steps <- step
+		select {
+		case <-r.ctx.Done():
+			return
+		case r.steps <- step:
+		}
 		if step.Kind == domain.StepStop {
 			return
 		}

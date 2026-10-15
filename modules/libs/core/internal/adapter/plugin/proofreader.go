@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	"connectrpc.com/connect"
 
@@ -60,8 +59,9 @@ func (b *ProofreaderBridge) Proofread(ctx context.Context, batches []domain.Proo
 	if err != nil {
 		return nil, fmt.Errorf("ensure active %s: %w", b.pluginID, err)
 	}
+	defer b.host.Release(b.pluginID)
 
-	httpClient := &http.Client{}
+	httpClient := defaultPluginClient
 	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
 	client := numenv1connect.NewProofreadingServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 
