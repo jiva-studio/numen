@@ -4,6 +4,7 @@ CORE     := modules/libs/core
 UI       := modules/libs/ui
 WIRE     := modules/libs/wire
 PROTOCOL := modules/libs/protocol
+PLUGIN_SDK := modules/libs/plugin-sdk
 
 DESKTOP  := modules/apps/desktop
 MOBILE   := modules/apps/mobile
@@ -139,6 +140,26 @@ lib_wire_test: ## run wire tests
 .PHONY: lib_wire_lint
 lib_wire_lint: ## lint wire package
 	cd $(WIRE) && npm run typecheck
+
+# ------------------------------ Lib: Plugin SDK -------------------------------
+.PHONY: lib_plugin_sdk_typecheck
+lib_plugin_sdk_typecheck: ## typecheck plugin-sdk package
+	cd $(PLUGIN_SDK) && npm run typecheck
+
+.PHONY: lib_plugin_sdk_compile
+lib_plugin_sdk_compile: lib_plugin_sdk_typecheck
+
+.PHONY: lib_plugin_sdk_test
+lib_plugin_sdk_test: ## run plugin-sdk unit tests
+	cd $(PLUGIN_SDK) && npm test
+
+.PHONY: lib_plugin_sdk_lint
+lib_plugin_sdk_lint: lib_plugin_sdk_typecheck
+
+# ------------------------------ Plugins Tooling -------------------------------
+.PHONY: create_plugin
+create_plugin: ## scaffold a new plugin (usage: make create_plugin name=<id> [template=<reader|compute|agent>] [type=<native|frontend>])
+	cd $(DESKTOP) && go run ./cmd/numen-plugin create $(name) --template=$(template) --type=$(type)
 
 # -------------------------------- App: Desktop --------------------------------
 ifeq ($(shell uname -s),Darwin)

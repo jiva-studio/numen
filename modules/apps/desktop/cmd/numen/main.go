@@ -24,6 +24,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/platform"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/plugincli"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
@@ -34,6 +35,10 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "plugin" {
+		os.Exit(plugincli.Run(os.Args[2:], os.Stdout, os.Stderr))
+	}
+
 	cfg := makeConfig(os.Stderr)
 	var agentFlags agentOptions
 	var scaleFlags scaleSettings
