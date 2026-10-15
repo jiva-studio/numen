@@ -11,10 +11,13 @@ on:
       - "!modules/libs/core/**/*.md"
       - "modules/libs/protocol/**"
       - "!modules/libs/protocol/**/*.md"
+      - "modules/plugins/**"
+      - "!modules/plugins/**/*.md"
       - "!docs/**"
       - ".github/workflows/desktop-backend.yml"
       # The rules the linter is held to, and the ones written here in Go.
       - "modules/.golangci.yml"
+      - "modules/plugins/.golangci.yml"
       - "**/gorules/**"
   push:
     branches: [main]
@@ -27,10 +30,13 @@ on:
       - "!modules/libs/core/**/*.md"
       - "modules/libs/protocol/**"
       - "!modules/libs/protocol/**/*.md"
+      - "modules/plugins/**"
+      - "!modules/plugins/**/*.md"
       - "!docs/**"
       - ".github/workflows/desktop-backend.yml"
       # The rules the linter is held to, and the ones written here in Go.
       - "modules/.golangci.yml"
+      - "modules/plugins/.golangci.yml"
       - "**/gorules/**"
 
 # One run at a time per branch, and on a pull request the newest is the one that
@@ -82,6 +88,10 @@ jobs:
           version: v2.14.0
           working-directory: modules/apps/desktop
           args: --timeout 15m
+
+      - name: Run plugin linters
+        working-directory: .
+        run: make plugins_lint
 
       # The vulnerability list is kept elsewhere and read at the time of the
       # run, so this step can find something on a branch that changed nothing.
@@ -136,6 +146,17 @@ jobs:
         run: go test -race ./...
         env:
           TMPDIR: /dev/shm
+
+      - name: Verify dual-mode builds
+        run: |
+          go build -tags plugins_monolith -o /dev/null ./cmd/numen
+          go build -tags plugins_modular -o /dev/null ./cmd/numen
+
+      - name: Build and test modular plugins
+        working-directory: .
+        run: |
+          make plugins_build
+          make plugins_test
 
       # A push to main writes what it built, and every other run only reads it.
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

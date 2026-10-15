@@ -34,6 +34,10 @@ func getPluginsDirs() []string {
 		execDir := filepath.Dir(execPath)
 		dirs = append(dirs, filepath.Join(execDir, "plugins"))
 		dirs = append(dirs, filepath.Join(execDir, "modules", "plugins"))
+		dirs = append(dirs, filepath.Join(execDir, "..", "PlugIns"))
+		dirs = append(dirs, filepath.Join(execDir, "..", "Resources", "plugins"))
+		dirs = append(dirs, filepath.Join(execDir, "..", "lib", "numen", "plugins"))
+		dirs = append(dirs, filepath.Join(execDir, "..", "share", "numen", "plugins"))
 	}
 
 	dirs = append(dirs, "modules/plugins", "plugins")
@@ -41,6 +45,10 @@ func getPluginsDirs() []string {
 	configDir, err := os.UserConfigDir()
 	if err == nil {
 		dirs = append(dirs, filepath.Join(configDir, "numen", "plugins"))
+	}
+
+	if localAppData := os.Getenv("LOCALAPPDATA"); localAppData != "" {
+		dirs = append(dirs, filepath.Join(localAppData, "Programs", "Numen", "plugins"))
 	}
 
 	return dirs

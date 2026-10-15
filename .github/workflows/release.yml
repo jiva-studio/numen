@@ -259,8 +259,22 @@ jobs:
           tree="$RUNNER_TEMP/tree"
           at=modules/apps/desktop/build/linux
 
+          make plugins_build
+
           install -Dm755 "$RUNNER_TEMP/numen" "$tree/numen"
           install -Dm755 "$RUNNER_TEMP/numen-flashcards" "$tree/numen-flashcards"
+
+          if [ -d modules/plugins ]; then
+            for p in modules/plugins/*; do
+              if [ -f "$p/manifest.json" ] && [ -d "$p/bin" ]; then
+                name=$(basename "$p")
+                mkdir -p "$tree/plugins/$name"
+                cp "$p/manifest.json" "$tree/plugins/$name/"
+                cp -r "$p/bin" "$tree/plugins/$name/"
+                if [ -d "$p/dist" ]; then cp -r "$p/dist" "$tree/plugins/$name/"; fi
+              fi
+            done
+          fi
 
           install -Dm644 "$at/numen.desktop" -t "$tree/share/applications"
           install -Dm644 "$at/numen-flashcards.desktop" -t "$tree/share/applications"
@@ -282,7 +296,7 @@ jobs:
           VERSION: ${{ needs.naming.outputs.version }}
         run: |
           tar czf "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.tar.gz" \
-            -C "$RUNNER_TEMP/tree" numen numen-flashcards share
+            -C "$RUNNER_TEMP/tree" numen numen-flashcards share plugins
 
       # One description, both package managers. What goes into a package is
       # gathered beside it first, because the paths in it are read from
@@ -298,6 +312,7 @@ jobs:
           mkdir -p "$staged"
           cp "$RUNNER_TEMP/numen" "$staged/numen"
           cp "$RUNNER_TEMP/numen-flashcards" "$staged/numen-flashcards"
+          cp -r "$RUNNER_TEMP/tree/plugins" "$staged/"
           cp modules/apps/desktop/build/linux/numen.desktop "$staged/"
           cp modules/apps/desktop/build/linux/numen-flashcards.desktop "$staged/"
           cp modules/apps/desktop/build/linux/nfpm.yaml "$staged/"
@@ -634,10 +649,21 @@ jobs:
               -o "$RUNNER_TEMP/$window.exe" "./cmd/$window"
           done
 
+          mkdir -p "$RUNNER_TEMP/plugins"
+          for p in ../../plugins/*; do
+            if [ -f "$p/manifest.json" ] && [ -d "$p/backend" ]; then
+              name=$(basename "$p")
+              mkdir -p "$RUNNER_TEMP/plugins/$name/bin"
+              GOOS=windows GOARCH=amd64 go build -trimpath -o "$RUNNER_TEMP/plugins/$name/bin/$name.exe" "$p/backend"
+              cp "$p/manifest.json" "$RUNNER_TEMP/plugins/$name/"
+              if [ -d "$p/dist" ]; then cp -r "$p/dist" "$RUNNER_TEMP/plugins/$name/"; fi
+            fi
+          done
+
       - name: Create Windows zip archive
         env:
           VERSION: ${{ needs.naming.outputs.version }}
-        run: cd "$RUNNER_TEMP" && zip -q "numen_${VERSION}_windows_amd64.zip" numen.exe numen-flashcards.exe
+        run: cd "$RUNNER_TEMP" && zip -qr "numen_${VERSION}_windows_amd64.zip" numen.exe numen-flashcards.exe plugins
 
       # The installer carries Microsoft's own bootstrapper and runs it on a
       # machine whose Windows does not already have the engine the window draws
@@ -662,6 +688,7 @@ jobs:
             "-DFLASHCARDS=$RUNNER_TEMP/numen-flashcards.exe" \
             "-DFLASHCARDS_ICON=$GITHUB_WORKSPACE/modules/apps/desktop/build/windows/numen-flashcards.ico" \
             "-DWEBVIEW2=$RUNNER_TEMP/webview2.exe" \
+            "-DPLUGINS_DIR=$RUNNER_TEMP/plugins" \
             "-DOUTFILE=$RUNNER_TEMP/Numen-${VERSION}.exe" \
             modules/apps/desktop/build/windows/installer.nsi
           ls -la "$RUNNER_TEMP"/Numen-*.exe
@@ -732,6 +759,20 @@ jobs:
             rm "$RUNNER_TEMP/$window-arm64" "$RUNNER_TEMP/$window-amd64"
           done
 
+          mkdir -p "$RUNNER_TEMP/plugins"
+          for p in ../../plugins/*; do
+            if [ -f "$p/manifest.json" ] && [ -d "$p/backend" ]; then
+              name=$(basename "$p")
+              mkdir -p "$RUNNER_TEMP/plugins/$name/bin"
+              CGO_ENABLED=1 GOARCH=arm64 go build -trimpath -o "$RUNNER_TEMP/plugins/$name/bin/$name-arm64" "$p/backend"
+              CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -trimpath -o "$RUNNER_TEMP/plugins/$name/bin/$name-amd64" "$p/backend"
+              lipo -create "$RUNNER_TEMP/plugins/$name/bin/$name-arm64" "$RUNNER_TEMP/plugins/$name/bin/$name-amd64" -output "$RUNNER_TEMP/plugins/$name/bin/$name"
+              rm "$RUNNER_TEMP/plugins/$name/bin/$name-arm64" "$RUNNER_TEMP/plugins/$name/bin/$name-amd64"
+              cp "$p/manifest.json" "$RUNNER_TEMP/plugins/$name/"
+              if [ -d "$p/dist" ]; then cp -r "$p/dist" "$RUNNER_TEMP/plugins/$name/"; fi
+            fi
+          done
+
       - name: Assemble macOS application bundle
         env:
           VERSION: ${{ needs.naming.outputs.version }}
@@ -743,6 +784,10 @@ jobs:
             mv "$RUNNER_TEMP/$2" "$APP/Contents/MacOS/$2"
             cp "modules/apps/desktop/build/darwin/$3" "$APP/Contents/Info.plist"
             cp "modules/apps/desktop/build/darwin/$4" "$APP/Contents/Resources/$4"
+            if [ -d "$RUNNER_TEMP/plugins" ]; then
+              mkdir -p "$APP/Contents/PlugIns"
+              cp -r "$RUNNER_TEMP/plugins/"* "$APP/Contents/PlugIns/"
+            fi
             printf 'APPL????' > "$APP/Contents/PkgInfo"
             plutil -replace CFBundleShortVersionString -string "$VERSION" "$APP/Contents/Info.plist"
             plutil -replace CFBundleVersion -string "$BUILD" "$APP/Contents/Info.plist"
@@ -786,6 +831,16 @@ jobs:
 
       - name: Sign application bundle
         run: |
+          if [ -d "$RUNNER_TEMP/Numen.app/Contents/PlugIns" ]; then
+            find "$RUNNER_TEMP/Numen.app/Contents/PlugIns" -type f -perm +111 | while read -r plugin_bin; do
+              codesign --force --timestamp --options runtime \
+                --entitlements modules/apps/desktop/build/darwin/entitlements.plist \
+                --keychain "$KEYCHAIN" --sign "$IDENTITY" \
+                "$plugin_bin"
+              codesign --verify --strict --verbose=2 "$plugin_bin"
+            done
+          fi
+
           for app in "$RUNNER_TEMP/Numen.app" "$RUNNER_TEMP/Numen Flashcards.app"; do
             codesign --force --timestamp --options runtime \
               --entitlements modules/apps/desktop/build/darwin/entitlements.plist \
