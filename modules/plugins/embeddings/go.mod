@@ -1,6 +1,6 @@
 module github.com/jiva-studio/numen/modules/plugins/embeddings
 
-go 1.27
+go 1.26.9
 
 require (
 	connectrpc.com/connect v1.21.0
@@ -13,7 +13,7 @@ require (
 
 require (
 	github.com/gofrs/flock v0.13.0 // indirect
-	github.com/gomlx/compute v0.1.14 // indirect
+	github.com/gomlx/compute v0.1.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/up-zero/gotool v0.0.0-20260105010850-4a05e8fadd54 // indirect
