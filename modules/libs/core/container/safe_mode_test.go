@@ -17,7 +17,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 		"id": "md.numen.pdf",
 		"name": "PDF",
 		"version": "1.0.0",
-		"capabilities": ["document", "recognition", "transcription", "proofreading"],
+		"capabilities": ["document", "recognition", "transcription", "proofreading", "embedding"],
 		"targets": ["desktop.editor"],
 		"permissions": ["vault:read"],
 		"backend": {"type": "process", "entrypoint": "bin/doc", "serviceName": "numen.v1.DocumentService"}
@@ -67,11 +67,49 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 		if !errors.Is(err, errRecognitionUnavailable) {
 			t.Fatalf("expected errRecognitionUnavailable, got %v", err)
 		}
+		if cfg.isRecognitionPrepared() {
+			t.Fatal("expected isRecognitionPrepared to report false in safe mode")
+		}
+		_, _, err = cfg.openRecognitionRuntime(ctx, nil)
+		if !errors.Is(err, errRecognitionUnavailable) {
+			t.Fatalf("expected openRecognitionRuntime to return errRecognitionUnavailable, got %v", err)
+		}
+	})
+
+	t.Run("embedder reports not ready", func(t *testing.T) {
+		if cfg.EmbedderReady() {
+			t.Fatal("expected EmbedderReady to report false in safe mode")
+		}
+		indexing, asking, closer, err := cfg.Embedders(ctx, nil)
+		if err != nil {
+			t.Fatalf("expected nil error from Embedders in safe mode, got %v", err)
+		}
+		if indexing != nil || asking != nil {
+			t.Fatal("expected nil embedders from Embedders in safe mode")
+		}
+		_ = closer()
+
+		embedder, closer, err := cfg.Embedder(ctx)
+		if err != nil {
+			t.Fatalf("expected nil error from Embedder in safe mode, got %v", err)
+		}
+		if embedder != nil {
+			t.Fatal("expected nil embedder from Embedder in safe mode")
+		}
+		_ = closer()
 	})
 
 	t.Run("proofreader reports not ready", func(t *testing.T) {
 		if cfg.ProofreaderReady() {
 			t.Fatal("expected ProofreaderReady to report false in safe mode")
+		}
+	})
+
+	t.Run("plugin processes were never started", func(t *testing.T) {
+		for _, info := range cfg.PluginHost.GetPluginInfos() {
+			if info.IsActive {
+				t.Fatalf("expected plugin %s to remain inactive in safe mode", info.Id)
+			}
 		}
 	})
 }

@@ -76,7 +76,7 @@ func (c Config) OpenRecognitionWorker(
 func (c Config) openRecognitionRuntime(
 	ctx context.Context, _ func(what string, done, total int64),
 ) (port.Recogniser, func() error, error) {
-	if c.PluginHost != nil {
+	if c.PluginHost != nil && !c.SafeMode {
 		if _, ok := c.PluginHost.FindPluginByCapability("recognition"); ok {
 			bridge, err := plugin.OpenRecogniserBridge(ctx, c.PluginHost)
 			if err != nil {
@@ -89,7 +89,7 @@ func (c Config) openRecognitionRuntime(
 }
 
 func (c Config) isRecognitionPrepared() bool {
-	if c.PluginHost != nil {
+	if c.PluginHost != nil && !c.SafeMode {
 		if _, ok := c.PluginHost.FindPluginByCapability("recognition"); ok {
 			return true
 		}

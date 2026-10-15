@@ -208,6 +208,12 @@ func (c Config) WriteConfiguredFile() func(written string, baseline *string) err
 			return err
 		}
 		adapteragent.RefreshModels()
+		if c.PluginHost != nil {
+			if held.Plugins != nil {
+				c.PluginHost.SetSettings(held.Plugins)
+			}
+			_ = c.PluginHost.NotifyAllPluginConfigs(context.Background())
+		}
 		return nil
 	}
 }

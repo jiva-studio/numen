@@ -72,7 +72,7 @@ func (c Config) OpenTranscriptionWorker(
 func (c Config) openTranscriptionRuntime(
 	ctx context.Context, _ func(what string, done, total int64),
 ) (port.Transcriber, func() error, error) {
-	if c.PluginHost != nil {
+	if c.PluginHost != nil && !c.SafeMode {
 		if _, ok := c.PluginHost.FindPluginByCapability("transcription"); ok {
 			bridge, err := plugin.OpenTranscriberBridge(ctx, c.PluginHost)
 			if err != nil {

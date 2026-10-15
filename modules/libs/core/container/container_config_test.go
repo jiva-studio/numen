@@ -244,6 +244,27 @@ func TestTheSettingsFileIsReplacedWholeByWhatWasTyped(t *testing.T) {
 	}
 }
 
+func TestWriteConfiguredFileUpdatesPluginSettings(t *testing.T) {
+	cfg, _ := writeSettings(t, `{"appearance": {"theme": "mine:sea"}}`)
+	tmp := t.TempDir()
+	host := NewPluginHost("desktop.editor", tmp)
+	cfg.PluginHost = host
+
+	const typed = `{"appearance": {"theme": "mine:sand"}, "plugins": {"md.numen.pdf": {"engine": "mupdf", "max_pages": 50}}}`
+	if err := cfg.WriteConfiguredFile()(typed, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	pluginSettings := host.GetPluginSettings("md.numen.pdf")
+	if got := pluginSettings["engine"]; got != "mupdf" {
+		t.Errorf("expected engine mupdf, got %v", got)
+	}
+	if got := pluginSettings["max_pages"]; got != float64(50) && got != 50 {
+		t.Errorf("expected max_pages 50, got %v", got)
+	}
+}
+
+
 func TestTheSettingsFileIsLeftAloneWhenItMovedSinceItWasRead(t *testing.T) {
 	const standing = `{"appearance": {"theme": "mine:sea"}}`
 	cfg, path := writeSettings(t, standing)

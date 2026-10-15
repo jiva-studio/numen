@@ -11,7 +11,7 @@ import (
 
 // EmbedderReady reports whether an embedding plugin is active or present.
 func (c Config) EmbedderReady() bool {
-	if c.PluginHost != nil {
+	if c.PluginHost != nil && !c.SafeMode {
 		if _, ok := c.PluginHost.FindPluginByCapability("embedding"); ok {
 			return true
 		}
@@ -25,7 +25,7 @@ func (c Config) EmbedderReady() bool {
 // When the embedding plugin is absent or disabled, search queries seamlessly fall
 // back to SQLite FTS5 full-text search without throwing errors.
 func (c Config) Embedders(ctx context.Context, _ *run.Tasks) (indexing, asking port.Embedder, closer func() error, why error) {
-	if c.PluginHost != nil {
+	if c.PluginHost != nil && !c.SafeMode {
 		if _, ok := c.PluginHost.FindPluginByCapability("embedding"); ok {
 			bridge, err := plugin.OpenEmbedderBridge(ctx, c.PluginHost)
 			if err != nil {
@@ -39,7 +39,7 @@ func (c Config) Embedders(ctx context.Context, _ *run.Tasks) (indexing, asking p
 
 // Embedder is what makes the vectors a vault is searched by, waited for.
 func (c Config) Embedder(ctx context.Context) (port.Embedder, func() error, error) {
-	if c.PluginHost != nil {
+	if c.PluginHost != nil && !c.SafeMode {
 		if _, ok := c.PluginHost.FindPluginByCapability("embedding"); ok {
 			bridge, err := plugin.OpenEmbedderBridge(ctx, c.PluginHost)
 			if err != nil {

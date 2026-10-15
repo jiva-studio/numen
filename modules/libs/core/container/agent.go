@@ -9,7 +9,7 @@ import (
 
 // AgentPort provides an implementation of port.Agent via the plugin host if available.
 func (c Config) AgentPort() port.Agent {
-	if c.PluginHost != nil {
+	if c.PluginHost != nil && !c.SafeMode {
 		if _, ok := c.PluginHost.FindPluginByCapability("agent"); ok {
 			return hostAgentPort{host: c.PluginHost}
 		}
