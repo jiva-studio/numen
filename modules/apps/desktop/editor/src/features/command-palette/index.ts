@@ -21,6 +21,7 @@ export type { CommandDeps } from './model/deps'
 export { ANSWER_WORDS } from './words'
 export type { AnswerWords } from './words'
 export type {
+  Command,
   CommandsDeps,
   CommandTarget,
   NoteLookup,

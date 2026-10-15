@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"io/fs"
+	"path/filepath"
+	"strings"
 
 	"connectrpc.com/connect"
 
@@ -80,6 +82,14 @@ func (h *fileHandler) ListFileKinds(
 	paths, err := eachOnce(r.Msg.GetPaths())
 	if err != nil {
 		return nil, err
+	}
+	if h.state.EmitEvent != nil {
+		for _, p := range paths {
+			ext := strings.TrimPrefix(filepath.Ext(p), ".")
+			if ext != "" {
+				h.state.EmitEvent("onFile:" + ext)
+			}
+		}
 	}
 	listing, err := h.getFileKinds.Execute(ctx, showing, paths)
 	if err != nil {

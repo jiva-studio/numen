@@ -19,9 +19,19 @@ func TestGetAnswersTheSettingsTheirModelsAndTheDay(t *testing.T) {
 	morning := time.Date(2026, 9, 5, 1, 0, 0, 0, time.UTC)
 	models := []port.Model{{Name: "base"}}
 	bounds := settings.Bounds{Least: 1, Most: 6}
+	pluginList := []port.PluginInfo{
+		{
+			ID:   "md.numen.test",
+			Name: "Test Plugin",
+			Settings: []port.PluginSetting{
+				{Key: "active", Type: "boolean", Title: "Active"},
+			},
+		},
+	}
 	get := settings.NewGet(
 		read, func() []port.Model { return models }, bounds, "08:00",
 		review.Day{Starts: review.DayStartTime, In: time.UTC}, func() time.Time { return morning },
+		func() []port.PluginInfo { return pluginList },
 	)
 
 	got, err := get.Execute()
@@ -35,6 +45,9 @@ func TestGetAnswersTheSettingsTheirModelsAndTheDay(t *testing.T) {
 	if len(got.Models) != 1 || got.Models[0].Name != "base" {
 		t.Errorf("the models are %v", got.Models)
 	}
+	if len(got.Plugins) != 1 || got.Plugins[0].ID != "md.numen.test" {
+		t.Errorf("the plugins are %v", got.Plugins)
+	}
 	if got.NestedHeadingLimitBounds != bounds || got.LatestDayStartTime != "08:00" {
 		t.Errorf("the limits are %v and %q", got.NestedHeadingLimitBounds, got.LatestDayStartTime)
 	}
@@ -45,7 +58,7 @@ func TestGetAnswersTheSettingsTheirModelsAndTheDay(t *testing.T) {
 
 func TestGetAnswersNoModelsWhereNoneAreBound(t *testing.T) {
 	t.Parallel()
-	get := settings.NewGet(read, nil, settings.Bounds{}, "", review.Day{In: time.UTC}, time.Now)
+	get := settings.NewGet(read, nil, settings.Bounds{}, "", review.Day{In: time.UTC}, time.Now, nil)
 
 	got, err := get.Execute()
 	if err != nil {
@@ -54,13 +67,16 @@ func TestGetAnswersNoModelsWhereNoneAreBound(t *testing.T) {
 	if len(got.Models) != 0 {
 		t.Errorf("the models are %v", got.Models)
 	}
+	if len(got.Plugins) != 0 {
+		t.Errorf("the plugins are %v", got.Plugins)
+	}
 }
 
 func TestGetRefusesWhenTheFileCannotBeRead(t *testing.T) {
 	t.Parallel()
 	get := settings.NewGet(
 		func() (string, string, error) { return "", "", errRead },
-		nil, settings.Bounds{}, "", review.Day{In: time.UTC}, time.Now,
+		nil, settings.Bounds{}, "", review.Day{In: time.UTC}, time.Now, nil,
 	)
 
 	if _, err := get.Execute(); !errors.Is(err, errRead) {

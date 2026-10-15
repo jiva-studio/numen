@@ -134,6 +134,9 @@ function createSettingsCommands(options: CommandDepsOptions): CommandDeps['setti
         await rest.writeSettings([{ at: ['indexing', 'model', 'name'], value: write(chosen) }])
       }
     },
+    choosePluginSetting: async (pluginId: string, key: string, chosen: unknown) => {
+      await rest.writeSettings([{ at: ['plugins', pluginId, key], value: write(chosen) }])
+    },
   }
 }
 
@@ -158,5 +161,6 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
     runSupport: runs,
     copyPath: (path) => void navigator.clipboard?.writeText(path),
     writeMessage,
+    emitEvent: (event) => (core as { emitEvent?: (event: string) => void }).emitEvent?.(event),
   }
 }

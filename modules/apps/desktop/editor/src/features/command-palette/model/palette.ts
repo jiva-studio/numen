@@ -47,6 +47,7 @@ export interface CommandPaletteDeps {
   readonly lists: PaletteLists
   readonly runs: RunSupport
   readonly wait?: Wait
+  readonly getExtraCommands?: () => readonly Command[]
 }
 
 interface PaletteSearchDeps {
@@ -117,7 +118,7 @@ function createVaultsLoader(deps: PaletteVaultsDeps) {
 }
 
 interface PaletteCommandsDeps {
-  readonly byId: Map<string, Command>
+  readonly byId: { get(id: string): Command | undefined }
   readonly runs: RunSupport
   readonly open: Ref<boolean>
   readonly words: Words
@@ -147,22 +148,32 @@ function createPaletteCommands(deps: PaletteCommandsDeps) {
   return { startCommand, getObjection }
 }
 
+type PaletteRestArgs = [
+  Words?,
+  (() => CommandTarget)?,
+  NoteLookup?,
+  PaletteLists?,
+  RunSupport?,
+  Wait?,
+  (() => readonly Command[])?,
+]
+
 function parsePaletteDeps(
   coreOrDeps: CommandsDeps | CommandPaletteDeps,
-  args: [Words?, (() => CommandTarget)?, NoteLookup?, PaletteLists?, RunSupport?, Wait?],
+  args: PaletteRestArgs,
 ): CommandPaletteDeps {
-  const [words, at, knows, lists, runs, wait] = args
-  return 'core' in coreOrDeps
-    ? coreOrDeps
-    : {
-        core: coreOrDeps,
-        words: words!,
-        at: at!,
-        knows: knows!,
-        lists: lists!,
-        runs: runs!,
-        ...(wait !== undefined ? { wait } : {}),
-      }
+  const [words, at, knows, lists, runs, wait, getExtraCommands] = args
+  if ('core' in coreOrDeps) return coreOrDeps
+  return {
+    core: coreOrDeps,
+    words: words!,
+    at: at!,
+    knows: knows!,
+    lists: lists!,
+    runs: runs!,
+    ...(wait !== undefined ? { wait } : {}),
+    ...(getExtraCommands !== undefined ? { getExtraCommands } : {}),
+  }
 }
 
 function createPaletteState(wait?: Wait) {
@@ -173,7 +184,6 @@ function createPaletteState(wait?: Wait) {
   const showing = ref(BLANK.showing)
   const isWorking = ref(BLANK.isWorking)
   const failureMessage = ref(BLANK.failureMessage)
-
   const asked = latest()
   const debounced = useDebouncedAsk({ guard: asked, ...(wait ? { wait } : {}) })
 
@@ -249,7 +259,7 @@ function createPaletteStepsAndSearch(
 }
 
 function createPaletteExecution(options: {
-  byId: Map<string, Command>
+  byId: { get(id: string): Command | undefined }
   runs: RunSupport
   open: Ref<boolean>
   words: Words
@@ -295,13 +305,18 @@ function createPalettePresentation(
   },
 ) {
   const { steps, on, invocation } = context
-  const commands = createCommands(deps.words)
-  const byId = new Map(commands.map((one) => [one.id, one]))
+  const staticCommands = createCommands(deps.words)
+  const getCommands = () => [...staticCommands, ...(deps.getExtraCommands?.() ?? [])]
+  const byId = computed(() => new Map(getCommands().map((one) => [one.id, one])))
 
   const draws = getPaletteView({
     words: deps.words,
-    commands,
-    byId,
+    get commands() {
+      return getCommands()
+    },
+    get byId() {
+      return byId.value
+    },
     runs: deps.runs,
     lists: deps.lists,
     found: state.found,
@@ -315,7 +330,9 @@ function createPalettePresentation(
 
   const groups = computed(() => draws.createGroups(steps.here.value, on.value, state.typed.value))
   const execution = createPaletteExecution({
-    byId,
+    get byId() {
+      return byId.value
+    },
     runs: deps.runs,
     open: state.open,
     words: deps.words,
@@ -332,14 +349,7 @@ function createPalettePresentation(
 
 export function useCommandPalette(
   coreOrDeps: CommandsDeps | CommandPaletteDeps,
-  ...args: [
-    words?: Words,
-    at?: () => CommandTarget,
-    knows?: NoteLookup,
-    lists?: PaletteLists,
-    runs?: RunSupport,
-    wait?: Wait,
-  ]
+  ...args: PaletteRestArgs
 ) {
   const deps = parsePaletteDeps(coreOrDeps, args)
   const state = createPaletteState(deps.wait)

@@ -5,9 +5,11 @@ import "github.com/jiva-studio/numen/modules/libs/core/port"
 // Setting is one setting of the file, and what to put there. Model is a model a
 // setting can name, and Presence is what its files are on this machine.
 type (
-	Setting  = port.Setting
-	Model    = port.Model
-	Presence = port.Presence
+	Setting       = port.Setting
+	Model         = port.Model
+	Presence      = port.Presence
+	PluginSetting = port.PluginSetting
+	PluginInfo    = port.PluginInfo
 )
 
 // What a model's files are on this machine.

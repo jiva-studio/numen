@@ -1,0 +1,213 @@
+package plugin
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"connectrpc.com/connect"
+
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+var (
+	errNoTranscriptionPlugin = errors.New("no active audio/video transcription plugin found")
+)
+
+// TranscriberBridge connects port.Transcriber calls to an out-of-process transcription plugin via Connect-RPC.
+type TranscriberBridge struct {
+	host     *Host
+	pluginID string
+	client   numenv1connect.TranscriptionServiceClient
+}
+
+// OpenTranscriberBridge activates or connects to the transcription plugin and returns a port.Transcriber.
+func OpenTranscriberBridge(ctx context.Context, host *Host) (*TranscriberBridge, error) {
+	plugin, ok := host.FindPluginByCapability("transcription")
+	if !ok {
+		return nil, errNoTranscriptionPlugin
+	}
+
+	endpoint, err := host.EnsureActive(ctx, plugin.Manifest.ID)
+	if err != nil {
+		return nil, fmt.Errorf("ensure active %s: %w", plugin.Manifest.ID, err)
+	}
+
+	httpClient := endpoint.HTTPClient()
+	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
+	client := numenv1connect.NewTranscriptionServiceClient(httpClient, endpoint.BaseURL(), interceptor)
+
+	return &TranscriberBridge{
+		host:     host,
+		pluginID: plugin.Manifest.ID,
+		client:   client,
+	}, nil
+}
+
+// GetTranscriptionModel queries the transcription plugin for its model specification.
+func (b *TranscriberBridge) GetTranscriptionModel() port.TranscriptionModel {
+	ctx := context.Background()
+	req := connect.NewRequest(&v1.GetTranscriptionModelRequest{})
+	resp, err := b.client.GetTranscriptionModel(ctx, req)
+	if err != nil {
+		return port.TranscriptionModel{
+			Model:     "unknown",
+			Segmenter: "unknown",
+			Cutting:   "",
+			From:      "plugin-error",
+		}
+	}
+
+	return port.TranscriptionModel{
+		Model:     resp.Msg.GetModel(),
+		Segmenter: resp.Msg.GetSegmenter(),
+		Cutting:   resp.Msg.GetCutting(),
+		From:      resp.Msg.GetFrom(),
+	}
+}
+
+// Open sends recording raw bytes to the plugin to calculate duration and prepare segmentation.
+func (b *TranscriberBridge) Open(ctx context.Context, raw []byte) (port.Recording, error) {
+	return b.OpenSource(ctx, raw)
+}
+
+// OpenPath sends recording file path to the plugin to calculate duration and prepare segmentation.
+func (b *TranscriberBridge) OpenPath(ctx context.Context, path string) (port.Recording, error) {
+	return b.OpenSource(ctx, path)
+}
+
+// OpenSource sends recording raw bytes or file path to the plugin to calculate duration and prepare segmentation.
+func (b *TranscriberBridge) OpenSource(ctx context.Context, source any) (port.Recording, error) {
+	if b.host != nil {
+		if err := b.host.CheckPluginPermission(b.pluginID, PermissionVaultRead); err != nil {
+			return nil, err
+		}
+	}
+
+	var req *connect.Request[v1.OpenRecordingRequest]
+
+	switch s := source.(type) {
+	case string:
+		validated, err := b.resolveNamedPath(s)
+		if err != nil {
+			return nil, err
+		}
+		req = connect.NewRequest(&v1.OpenRecordingRequest{
+			Path: validated,
+		})
+	case interface{ Path() string }:
+		validated, err := b.resolveNamedPath(s.Path())
+		if err != nil {
+			return nil, err
+		}
+		req = connect.NewRequest(&v1.OpenRecordingRequest{
+			Path: validated,
+		})
+	case interface{ Name() string }:
+		validated, err := b.resolveNamedPath(s.Name())
+		if err != nil {
+			return nil, err
+		}
+		req = connect.NewRequest(&v1.OpenRecordingRequest{
+			Path: validated,
+		})
+	case []byte:
+		req = connect.NewRequest(&v1.OpenRecordingRequest{
+			AudioData: s,
+		})
+	default:
+		return nil, errors.New("unsupported audio source type")
+	}
+
+	resp, err := b.client.OpenRecording(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("rpc open recording: %w", err)
+	}
+
+	return &pluginRecording{
+		client:      b.client,
+		recordingID: resp.Msg.GetRecordingId(),
+		durationMs:  int(resp.Msg.GetDurationMs()),
+	}, nil
+}
+
+func (b *TranscriberBridge) resolveNamedPath(rawPath string) (string, error) {
+	if b.host == nil || b.host.GetVaultPath() == "" {
+		return rawPath, nil
+	}
+	return b.host.ValidatePluginPath(b.pluginID, rawPath)
+}
+
+// Transcribe decodes one audio segment into text words.
+func (b *TranscriberBridge) Transcribe(ctx context.Context, audio port.Audio) (string, error) {
+	if b.host != nil {
+		if err := b.host.CheckPluginPermission(b.pluginID, PermissionVaultRead); err != nil {
+			return "", err
+		}
+	}
+
+	req := connect.NewRequest(&v1.TranscribeRequest{
+		Samples: audio.Samples,
+		FromMs:  int32(audio.From),
+		ToMs:    int32(audio.To),
+	})
+	resp, err := b.client.Transcribe(ctx, req)
+	if err != nil {
+		return "", fmt.Errorf("rpc transcribe: %w", err)
+	}
+	return resp.Msg.GetText(), nil
+}
+
+// Close releases the active reference count for the transcription plugin in the host supervisor.
+func (b *TranscriberBridge) Close() error {
+	b.host.Release(b.pluginID)
+	return nil
+}
+
+type pluginRecording struct {
+	client      numenv1connect.TranscriptionServiceClient
+	recordingID string
+	durationMs  int
+}
+
+func (r *pluginRecording) GetDuration() int {
+	return r.durationMs
+}
+
+func (r *pluginRecording) GetSegments(ctx context.Context, from, count int) ([]port.Audio, error) {
+	req := connect.NewRequest(&v1.GetSegmentsRequest{
+		RecordingId: r.recordingID,
+		FromMs:      int32(from),
+		Count:       int32(count),
+	})
+	resp, err := r.client.GetSegments(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("rpc get segments: %w", err)
+	}
+
+	segments := make([]port.Audio, 0, len(resp.Msg.GetSegments()))
+	for _, s := range resp.Msg.GetSegments() {
+		segments = append(segments, port.Audio{
+			Samples: s.GetSamples(),
+			From:    int(s.GetFromMs()),
+			To:      int(s.GetToMs()),
+		})
+	}
+	return segments, nil
+}
+
+func (r *pluginRecording) Close() error {
+	if r.recordingID == "" {
+		return nil
+	}
+	ctx := context.Background()
+	req := connect.NewRequest(&v1.CloseRecordingRequest{
+		RecordingId: r.recordingID,
+	})
+	_, _ = r.client.CloseRecording(ctx, req)
+	r.recordingID = ""
+	return nil
+}

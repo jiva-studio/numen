@@ -2,25 +2,46 @@ package container
 
 import (
 	"context"
+	"errors"
+	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
-// Downloader is what reaches an address on this machine.
-//
-// A page needs no tool, so every build has one. Which addresses it reaches is
-// the machine's: a video is asked of yt-dlp, and a machine without it says so
-// when one is asked for.
-func (c Config) Downloader(ctx context.Context) port.Downloader {
-	downloader, err := download.New(ctx, c.Importing)
-	if err != nil {
-		c.handleError(err)
-		return nil
+var (
+	errDownloaderUnavailable = errors.New("downloader plugin is unavailable or not installed")
+)
+
+var _ port.Downloader = (*hostDownloaderPort)(nil)
+var _ port.Downloader = (*unavailableDownloader)(nil)
+
+// DownloaderReady says whether a downloader plugin is active or present.
+func (c Config) DownloaderReady() bool {
+	if c.PluginHost != nil && !c.SafeMode {
+		if _, ok := c.PluginHost.FindPluginByCapability("downloader"); ok {
+			return true
+		}
+		if _, ok := c.PluginHost.FindPluginByCapability("media.download"); ok {
+			return true
+		}
 	}
-	return downloader
+	return false
+}
+
+// Downloader is what reaches an address on this machine.
+func (c Config) Downloader(ctx context.Context) port.Downloader {
+	if c.PluginHost != nil && !c.SafeMode {
+		if _, ok := c.PluginHost.FindPluginByCapability("downloader"); ok {
+			return hostDownloaderPort{host: c.PluginHost}
+		}
+		if _, ok := c.PluginHost.FindPluginByCapability("media.download"); ok {
+			return hostDownloaderPort{host: c.PluginHost}
+		}
+	}
+	return unavailableDownloader{}
 }
 
 // ImportURL is one link note's address, downloaded into the vault, with the
@@ -46,4 +67,70 @@ func (c Config) ImportURL(ctx context.Context, db *Index, by port.Downloader) so
 			return named.Path, err
 		},
 	}
+}
+
+type hostDownloaderPort struct {
+	host *plugin.Host
+}
+
+func (h hostDownloaderPort) GetDownloadModel(at domain.URL) port.DownloadModel {
+	bridge, err := plugin.OpenDownloaderBridge(context.Background(), h.host)
+	if err != nil {
+		return port.DownloadModel{
+			Tool:     "unavailable",
+			Version:  "unavailable",
+			Producer: "plugin-error",
+		}
+	}
+	defer bridge.Close()
+	return bridge.GetDownloadModel(at)
+}
+
+func (h hostDownloaderPort) GetMetadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
+	bridge, err := plugin.OpenDownloaderBridge(ctx, h.host)
+	if err != nil {
+		return port.Metadata{}, err
+	}
+	defer bridge.Close()
+	return bridge.GetMetadata(ctx, at)
+}
+
+func (h hostDownloaderPort) GetText(ctx context.Context, at domain.URL, want port.PreferredCaptions) (port.Text, error) {
+	bridge, err := plugin.OpenDownloaderBridge(ctx, h.host)
+	if err != nil {
+		return port.Text{}, err
+	}
+	defer bridge.Close()
+	return bridge.GetText(ctx, at, want)
+}
+
+func (h hostDownloaderPort) Download(ctx context.Context, at domain.URL, into io.Writer) (port.Copy, error) {
+	bridge, err := plugin.OpenDownloaderBridge(ctx, h.host)
+	if err != nil {
+		return port.Copy{}, err
+	}
+	defer bridge.Close()
+	return bridge.Download(ctx, at, into)
+}
+
+type unavailableDownloader struct{}
+
+func (unavailableDownloader) GetDownloadModel(_ domain.URL) port.DownloadModel {
+	return port.DownloadModel{
+		Tool:     "unavailable",
+		Version:  "unavailable",
+		Producer: "unavailable",
+	}
+}
+
+func (unavailableDownloader) GetMetadata(_ context.Context, _ domain.URL) (port.Metadata, error) {
+	return port.Metadata{}, errDownloaderUnavailable
+}
+
+func (unavailableDownloader) GetText(_ context.Context, _ domain.URL, _ port.PreferredCaptions) (port.Text, error) {
+	return port.Text{}, errDownloaderUnavailable
+}
+
+func (unavailableDownloader) Download(_ context.Context, _ domain.URL, _ io.Writer) (port.Copy, error) {
+	return port.Copy{}, errDownloaderUnavailable
 }

@@ -2,8 +2,10 @@ package container
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
@@ -50,6 +52,23 @@ func NewEditorAssembly(cfg Config, registry port.VaultRegistry, db *Index) Edito
 	return EditorAssembly{cfg: cfg, registry: registry, db: db}
 }
 
+func (e EditorAssembly) OpenBookClient(ctx context.Context) (any, func(), error) {
+	if e.cfg.PluginHost == nil || e.cfg.SafeMode {
+		return nil, nil, errors.New("no plugin host configured")
+	}
+	bridge, err := plugin.OpenBookBridge(ctx, e.cfg.PluginHost)
+	if err != nil {
+		return nil, nil, err
+	}
+	return bridge, func() { _ = bridge.Close() }, nil
+}
+
+func (e EditorAssembly) EmitEvent(event string) {
+	if e.cfg.PluginHost != nil {
+		e.cfg.PluginHost.EmitEvent(event)
+	}
+}
+
 func (e EditorAssembly) GetRegistry() port.VaultRegistry { return e.registry }
 
 func (e EditorAssembly) GetVaultReaders() port.VaultReaders   { return e.cfg.VaultReaders() }
@@ -76,7 +95,7 @@ func (e EditorAssembly) OpenGetSettings(day flashcards.Day) *settings.Get {
 	held := e.cfg.NestedHeadingLimitBounds()
 	return settings.NewGet(
 		e.cfg.ReadSettings(), e.cfg.Models(), settings.Bounds{Least: held.Least, Most: held.Most},
-		e.cfg.GetLatestDayStart(), day, e.cfg.Clock(),
+		e.cfg.GetLatestDayStart(), day, e.cfg.Clock(), e.cfg.Plugins(),
 	)
 }
 

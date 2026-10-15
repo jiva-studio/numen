@@ -4,7 +4,7 @@
  * piece of code the palette does.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { useSettings } from './useSettings'
+import { createPluginSettingCommands, useSettings } from './useSettings'
 import { WORDS } from '@/shared/words'
 import type { Model } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
@@ -252,5 +252,101 @@ describe('the settings tab', () => {
     settings.configured.state.installation.openFile()
 
     expect(open).toHaveBeenCalledOnce()
+  })
+
+  it('generates palette commands for installed plugins with palette: true regardless of isActive', () => {
+    createSettings()
+    const plugin = {
+      id: 'plugin.ocr',
+      name: 'OCR Plugin',
+      version: '1.0.0',
+      description: 'OCR',
+      isActive: false,
+      settings: [
+        {
+          key: 'autoScan',
+          type: 'boolean' as const,
+          title: 'Auto Scan',
+          description: 'Scan on drop',
+          default: false,
+          palette: true,
+        },
+        {
+          key: 'hiddenSetting',
+          type: 'boolean' as const,
+          title: 'Hidden',
+          description: 'Not in palette',
+          default: false,
+        },
+      ],
+    }
+
+    const commands = createPluginSettingCommands([plugin])
+
+    expect(commands).toStrictEqual([
+      {
+        id: 'plugin-setting:plugin.ocr:autoScan',
+        text: 'OCR Plugin: Auto Scan',
+        group: 'window',
+        needs: 'choosing',
+        isOffered: expect.any(Function),
+      },
+    ])
+  })
+
+  it('returns step groups for plugin boolean and enum settings', () => {
+    const { settings } = createSettings()
+    settings.rest.plugins.value = [
+      {
+        id: 'plugin.ocr',
+        name: 'OCR Plugin',
+        version: '1.0.0',
+        description: 'OCR',
+        isActive: true,
+        settings: [
+          {
+            key: 'autoScan',
+            type: 'boolean',
+            title: 'Auto Scan',
+            description: 'Scan on drop',
+            default: false,
+            palette: true,
+          },
+          {
+            key: 'engine',
+            type: 'enum',
+            title: 'Engine',
+            description: 'OCR Engine',
+            default: 'tesseract',
+            options: ['tesseract', 'apple'],
+            palette: true,
+          },
+        ],
+      },
+    ]
+
+    const boolGroups = settings.kept.getStepGroups('plugin-setting:plugin.ocr:autoScan', '')
+    expect(boolGroups).toStrictEqual([
+      {
+        id: 'plugin-plugin.ocr-autoScan',
+        title: 'Auto Scan',
+        items: [
+          { id: 'on', title: 'On' },
+          { id: 'off', title: 'Off', detail: WORDS.current, isCurrent: true },
+        ],
+      },
+    ])
+
+    const enumGroups = settings.kept.getStepGroups('plugin-setting:plugin.ocr:engine', '')
+    expect(enumGroups).toStrictEqual([
+      {
+        id: 'plugin-plugin.ocr-engine',
+        title: 'Engine',
+        items: [
+          { id: 'tesseract', title: 'tesseract', detail: WORDS.current, isCurrent: true },
+          { id: 'apple', title: 'apple' },
+        ],
+      },
+    ])
   })
 })

@@ -1,24 +1,103 @@
 package container
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
+	"context"
+	"errors"
+	"image"
+	"io"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// TextExtractor takes the text out of a file whose text is laid out on printed
-// pages. Which library does it is settled here, with every other choice of
-// adapter.
-func (c Config) TextExtractor() port.TextExtractor { return c.getDocuments() }
+var (
+	errDocumentUnavailable = errors.New("document plugin is unavailable or not installed")
+)
 
-// PageRenderer draws such a document's pages. The library behind it holds
-// workers for the life of the process, started when the first document is
-// opened.
-func (c Config) PageRenderer() port.PageRenderer { return c.getDocuments() }
+var _ port.Document = (*unavailableOpenDocument)(nil)
 
-// getDocuments is the document library, its worker pool sized by the compute plan.
-// A container without a plan leaves the pool at one worker per CPU.
-func (c Config) getDocuments() pdf.Documents {
-	pdf.SetWorkers(c.ResolvedCompute.Workers)
-	pdf.SetIdleWorkers(pdf.ComputeIdleWorkers(c.ResolvedCompute.Workers, c.Hardware.AvailableRAMMB*bytesPerMB))
-	return pdf.Documents{}
+// DocumentRenderer is the port that renders pages of documents.
+// Core retains abstract port.DocumentRenderer / port.Document ports.
+func (c Config) DocumentRenderer() port.DocumentRenderer { return c.PageRenderer() }
+
+// TextExtractor takes the text out of a file whose text is laid out on printed pages.
+func (c Config) TextExtractor() port.TextExtractor {
+	if c.PluginHost != nil && !c.SafeMode {
+		if _, ok := c.PluginHost.FindPluginByCapability("document"); ok {
+			return hostDocumentPort{host: c.PluginHost}
+		}
+	}
+	return unavailableDocument{}
 }
+
+// PageRenderer draws such a document's pages.
+func (c Config) PageRenderer() port.PageRenderer {
+	if c.PluginHost != nil && !c.SafeMode {
+		if _, ok := c.PluginHost.FindPluginByCapability("document"); ok {
+			return hostDocumentPort{host: c.PluginHost}
+		}
+	}
+	return unavailableDocument{}
+}
+
+type hostDocumentPort struct {
+	host *plugin.Host
+}
+
+func (h hostDocumentPort) Read(ctx context.Context, raw []byte) (domain.TextLayer, error) {
+	bridge, err := plugin.OpenDocumentBridge(ctx, h.host)
+	if err != nil {
+		return domain.TextLayer{}, err
+	}
+	defer bridge.Close()
+	return bridge.Read(ctx, raw)
+}
+
+func (h hostDocumentPort) GetHighlights(ctx context.Context, raw []byte, starts []int, pages []int) ([]domain.HighlightBox, error) {
+	bridge, err := plugin.OpenDocumentBridge(ctx, h.host)
+	if err != nil {
+		return nil, err
+	}
+	defer bridge.Close()
+	return bridge.GetHighlights(ctx, raw, starts, pages)
+}
+
+func (h hostDocumentPort) OpenDocument(ctx context.Context, file io.ReadSeekCloser) (port.OpenDocument, error) {
+	bridge, err := plugin.OpenDocumentBridge(ctx, h.host)
+	if err != nil {
+		if file != nil {
+			_ = file.Close()
+		}
+		return nil, err
+	}
+	return bridge.OpenDocument(ctx, file)
+}
+
+type unavailableDocument struct{}
+
+func (unavailableDocument) Read(_ context.Context, _ []byte) (domain.TextLayer, error) {
+	return domain.TextLayer{}, errDocumentUnavailable
+}
+
+func (unavailableDocument) GetHighlights(_ context.Context, _ []byte, _ []int, _ []int) ([]domain.HighlightBox, error) {
+	return nil, errDocumentUnavailable
+}
+
+func (unavailableDocument) OpenDocument(_ context.Context, file io.ReadSeekCloser) (port.OpenDocument, error) {
+	if file != nil {
+		_ = file.Close()
+	}
+	return nil, errDocumentUnavailable
+}
+
+type unavailableOpenDocument struct{}
+
+func (unavailableOpenDocument) GetPageCount() int { return 0 }
+func (unavailableOpenDocument) GetPageSize(_ int) (float64, float64, error) {
+	return 0, 0, errDocumentUnavailable
+}
+func (unavailableOpenDocument) RenderPage(_, _ int) (image.Image, error) {
+	return nil, errDocumentUnavailable
+}
+func (unavailableOpenDocument) Close() {}

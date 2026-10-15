@@ -26,6 +26,15 @@ service DocumentService {
   // could not have one inside the wait is answered unavailable and asks again;
   // a held request is not an answer.
   rpc GetDocument(GetDocumentRequest) returns (GetDocumentResponse);
+
+  // RenderPage draws one page of a document and answers with the drawn image bytes.
+  rpc RenderPage(RenderPageRequest) returns (RenderPageResponse);
+
+  // ExtractText extracts text and page boundaries from a document.
+  rpc ExtractText(ExtractTextRequest) returns (ExtractTextResponse);
+
+  // GetHighlights extracts quotation highlights from a document.
+  rpc GetHighlights(GetHighlightsRequest) returns (GetHighlightsResponse);
 }
 
 message GetDocumentRequest {
@@ -50,4 +59,43 @@ message GetDocumentResponse {
 message Page {
   double width = 1;
   double height = 2;
+}
+
+message RenderPageRequest {
+  string path = 1;
+  int32 page = 2;
+  int32 dpi = 3;
+  int32 width = 4;
+}
+
+message RenderPageResponse {
+  bytes image_data = 1;
+  string content_type = 2;
+  double width = 3;
+  double height = 4;
+}
+
+message ExtractTextRequest {
+  string path = 1;
+  bytes data = 2;
+}
+
+message ExtractTextResponse {
+  string text = 1;
+  repeated int32 page_starts = 2;
+}
+
+message GetHighlightsRequest {
+  string path = 1;
+}
+
+message DocumentHighlight {
+  uint32 page_number = 1;
+  repeated float quad_points = 2;
+  string color = 3;
+  string text = 4;
+}
+
+message GetHighlightsResponse {
+  repeated DocumentHighlight highlights = 1;
 }

@@ -44,4 +44,8 @@ package() {
   install -Dm755 numen-flashcards "$pkgdir/usr/bin/numen-flashcards"
   install -d "$pkgdir/usr/share"
   cp -r share/. "$pkgdir/usr/share/"
+  if [ -d plugins ]; then
+    install -d "$pkgdir/usr/lib/numen"
+    cp -r plugins "$pkgdir/usr/lib/numen/"
+  fi
 }

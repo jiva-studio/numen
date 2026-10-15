@@ -105,18 +105,38 @@ const HANDLERS: Record<string, CommandHandler> = {
   eraseVault: (invocation, on, words) => removeVault(invocation, on, { shouldErase: true, words }),
 }
 
-/** A command carried out. Nothing chosen does nothing at all. */
+async function handlePluginInvocation(
+  invocation: CommandInvocation,
+  on: CommandDeps,
+): Promise<void> {
+  const [, pluginId, key] = invocation.id.split(':')
+  if (!pluginId || !key || !on.settings.choosePluginSetting) return
+  let value: unknown = invocation.name
+  if (invocation.name === 'on') {
+    value = true
+  } else if (invocation.name === 'off') {
+    value = false
+  }
+  await on.settings.choosePluginSetting(pluginId, key, value)
+}
+
 export async function runInvocation(
   invocation: CommandInvocation | null,
   on: CommandDeps,
   words: AnswerWords,
 ): Promise<void> {
   if (!invocation) return
+  const isPlugin = invocation.id.startsWith('plugin-setting:')
   const handler = HANDLERS[invocation.id]
-  if (!handler) return
+  if (!isPlugin && !handler) return
   on.writeMessage('')
+  on.emitEvent?.(`onCommand:${invocation.id}`)
   try {
-    await handler(withCurrentNotePath(invocation, on), on, words)
+    if (isPlugin) {
+      await handlePluginInvocation(invocation, on)
+    } else {
+      await handler!(withCurrentNotePath(invocation, on), on, words)
+    }
   } catch (error) {
     on.writeMessage(formatErrorMessage(error), 'error')
   }

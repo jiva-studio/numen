@@ -19,13 +19,10 @@ func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 	if !reflect.DeepEqual(cfg.Embedding, said.Embedding) {
 		t.Error("the embedding section did not arrive")
 	}
-	if !reflect.DeepEqual(cfg.Recognition, said.Recognition.Config) {
-		t.Error("the recognition section did not arrive")
-	}
 	if !reflect.DeepEqual(cfg.Proofreading, said.Proofreading) {
 		t.Error("the proofreading section did not arrive")
 	}
-	if !reflect.DeepEqual(cfg.Transcription, said.Transcription.Config) {
+	if !reflect.DeepEqual(cfg.Transcription, said.Transcription.TranscriptionConfig) {
 		t.Error("the transcription section did not arrive")
 	}
 	if !reflect.DeepEqual(cfg.ScanProofreading, said.Recognition.Proofread) {
@@ -54,7 +51,7 @@ func TestASectionAddedToTheSettingsIsCarriedToo(t *testing.T) {
 	}
 	// The document holds the sections the file does, and the line a person is
 	// left about what it says.
-	if held := reflect.TypeOf(container.Settings{}).NumField(); held != 9 {
+	if held := reflect.TypeOf(container.Settings{}).NumField(); held != 10 {
 		t.Errorf("the settings hold %d sections; carry the new one in Config.SetSettings", held)
 	}
 }

@@ -10,7 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
@@ -20,7 +20,7 @@ import (
 // against the allocator's own movement.
 const paddingSize = 64 << 20
 
-const pdfTestdata = "../../internal/adapter/pdf/testdata/"
+const pdfTestdata = "../../internal/testsupport/testdata/pdf/"
 
 // newDiskVault is a vault folder holding one file, and the vault over it.
 func newDiskVault(t *testing.T, raw []byte) domain.Vault {
@@ -33,7 +33,7 @@ func newDiskVault(t *testing.T, raw []byte) domain.Vault {
 }
 
 func newDiskRecognise(onPage func()) (recognition.Recognise, func(domain.VaultID, string) string) {
-	return recognition.NewMemoryRecognise(filesystem.VaultReaders{}, pdf.Documents{}, onPage)
+	return recognition.NewMemoryRecognise(filesystem.VaultReaders{}, testsupport.Documents{}, onPage)
 }
 
 func TestRecognisingAFileOnDiskHoldsNoCopyOfIt(t *testing.T) {

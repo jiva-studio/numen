@@ -45,6 +45,7 @@ func (h *settingsHandler) GetSettings(
 		},
 		LatestDayStartTime: got.LatestDayStartTime,
 		Day:                got.Day,
+		Plugins:            newWirePluginInfos(got.Plugins),
 	}), nil
 }
 
@@ -141,4 +142,36 @@ func newWireSettings(held []settings.Setting) []*v1.Setting {
 		written = append(written, &v1.Setting{At: one.Path, Value: one.JSON})
 	}
 	return written
+}
+
+// newWirePluginInfos is the discovered plugins and their declarative settings, as the wire carries it.
+func newWirePluginInfos(held []settings.PluginInfo) []*v1.PluginInfo {
+	infos := make([]*v1.PluginInfo, 0, len(held))
+	for _, one := range held {
+		pluginSettings := make([]*v1.PluginSetting, 0, len(one.Settings))
+		for _, s := range one.Settings {
+			pluginSettings = append(pluginSettings, &v1.PluginSetting{
+				Key:         s.Key,
+				Type:        s.Type,
+				Title:       s.Title,
+				Description: s.Description,
+				DefaultJson: s.DefaultJSON,
+				Palette:     s.Palette,
+				Options:     s.Options,
+				Min:         s.Min,
+				Max:         s.Max,
+				Step:        s.Step,
+			})
+		}
+		infos = append(infos, &v1.PluginInfo{
+			Id:           one.ID,
+			Name:         one.Name,
+			Version:      one.Version,
+			Description:  one.Description,
+			Capabilities: one.Capabilities,
+			Settings:     pluginSettings,
+			IsActive:     one.IsActive,
+		})
+	}
+	return infos
 }

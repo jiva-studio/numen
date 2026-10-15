@@ -25,6 +25,15 @@ service AgentService {
   // answers is the installation's, not the vault's, so every window asks the
   // same question here and none of them carries the answer in its own state.
   rpc GetAgentState(GetAgentStateRequest) returns (GetAgentStateResponse);
+
+  // RegisterTool registers a custom tool with the agent.
+  rpc RegisterTool(RegisterToolRequest) returns (RegisterToolResponse);
+
+  // ExtendSystemPrompt extends the agent's system instructions.
+  rpc ExtendSystemPrompt(ExtendSystemPromptRequest) returns (ExtendSystemPromptResponse);
+
+  // GetAgentTools lists the registered tools and prompt extension.
+  rpc GetAgentTools(GetAgentToolsRequest) returns (GetAgentToolsResponse);
 }
 
 message GetAgentStateRequest {}
@@ -57,6 +66,12 @@ message AskAgentRequest {
   string agent = 6;
   // Which model answers (e.g. "gemini-3.7-flash-high", "gpt-4o", "sonnet"). Empty uses default.
   string model = 7;
+  // Instructions told about the task.
+  string instructions = 8;
+  // Vault tools the agent may call.
+  repeated string tools = 9;
+  // Maximum steps the agent may take.
+  int32 max_steps = 10;
 }
 
 message FinishConversationRequest {
@@ -115,4 +130,35 @@ message ToolCall {
   // The run of that source's text the call names, counted in bytes. An empty
   // span is a call that named the source and no place inside it.
   Span span = 5;
+}
+
+// AgentToolDefinition describes a tool registered with or provided by the agent service.
+message AgentToolDefinition {
+  string name = 1;
+  string description = 2;
+  string parameters_json_schema = 3;
+}
+
+message RegisterToolRequest {
+  AgentToolDefinition tool = 1;
+}
+
+message RegisterToolResponse {
+  bool success = 1;
+}
+
+message ExtendSystemPromptRequest {
+  string extension = 1;
+}
+
+message ExtendSystemPromptResponse {
+  bool success = 1;
+  string full_prompt = 2;
+}
+
+message GetAgentToolsRequest {}
+
+message GetAgentToolsResponse {
+  repeated AgentToolDefinition tools = 1;
+  string system_prompt_extension = 2;
 }

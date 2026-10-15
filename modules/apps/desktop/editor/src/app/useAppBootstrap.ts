@@ -9,10 +9,12 @@ export interface BootstrapDeps {
   startWindow(): Promise<void>
   startEditing(): void
   startLayout(): Promise<void>
+  startPlugins?(): Promise<void>
   closeWindow(): void
   closeEditing(): void
   closeTabs(): void
   closeSettings(): void
+  closePlugins?(): void | Promise<void>
 }
 
 export function useAppBootstrap(deps: BootstrapDeps) {
@@ -22,9 +24,11 @@ export function useAppBootstrap(deps: BootstrapDeps) {
     await deps.startLayout()
     void deps.startWindow()
     deps.startEditing()
+    await deps.startPlugins?.()
   })
 
   onUnmounted(() => {
+    void deps.closePlugins?.()
     deps.closeWindow()
     deps.closeEditing()
     deps.closeTabs()

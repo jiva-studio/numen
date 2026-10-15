@@ -5,8 +5,8 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/epub"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/plugins/reader-epub/backend/epub"
 )
 
 // Document is what GetDocument and GetBook read: which bytes they came from, and

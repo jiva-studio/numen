@@ -7,6 +7,7 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -14,7 +15,10 @@ import (
 )
 
 // agentHandler answers for the agent the panel's tasks go to.
-type agentHandler struct{ state *State }
+type agentHandler struct {
+	numenv1connect.UnimplementedAgentServiceHandler
+	state *State
+}
 
 // errNoAgent is an installation with none. Whether one can be reached is asked
 // of GetAgentState.

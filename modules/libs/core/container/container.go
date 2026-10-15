@@ -7,6 +7,7 @@
 package container
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -17,11 +18,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/trash"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -52,11 +50,8 @@ type Config struct {
 	// default, which is every format a reader takes text out of.
 	BookExtensions []string
 
-	// Recognition is how a scanned document is read when a person asks for it.
-	Recognition recognition.Config
-
 	// Transcription is how a recording is listened to.
-	Transcription transcription.Config
+	Transcription TranscriptionConfig
 
 	// Performance is the active workload and compute calibration profile.
 	Performance settings.Performance
@@ -87,17 +82,20 @@ type Config struct {
 	// point reads the settings and says what it found, so nothing below one
 	// reaches the machine's own file. A zero value names no embedder, and nothing
 	// is embedded.
-	Embedding embed.Config
+	Embedding EmbeddingConfig
 
 	// Proofreading is what puts a recognition right. It arrives the way Embedding
 	// does, and naming no profile here is naming no proofreader.
-	Proofreading proofreading.Config
+	Proofreading ProofreadingConfig
 
 	// ScanProofreading and TranscriptProofreading name the profile each kind of
 	// text is put right at, and say whether that happens without anybody
 	// asking.
-	ScanProofreading       proofreading.Proofread
-	TranscriptProofreading proofreading.Proofread
+	ScanProofreading       Proofread
+	TranscriptProofreading Proofread
+
+	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.
+	PluginHost *plugin.Host
 
 	// AgentProofreader opens a profile that reaches the command line a person
 	// already has. The platform supplies it, since core starts no process; an
@@ -114,6 +112,9 @@ type Config struct {
 	// are holding.
 	ShouldRebuildIndex bool
 
+	// SafeMode disables loading non-essential plugins for emergency recovery.
+	SafeMode bool
+
 	// ErrorHandler is where what is assembled here says what went wrong in work
 	// it carries on past. An installation that sets none is told nothing.
 	ErrorHandler port.ErrorHandler
@@ -124,7 +125,15 @@ type Config struct {
 	Now port.Clock
 }
 
+// NewPluginHost creates and initializes a plugin host for the specified target and search directories.
+func NewPluginHost(target string, dirs ...string) *plugin.Host {
+	host := plugin.NewHost(target, dirs...)
+	_ = host.Discover()
+	return host
+}
+
 // Clock is the clock every scenario assembled here is handed.
+
 func (c Config) Clock() port.Clock {
 	if c.Now != nil {
 		return c.Now
@@ -199,6 +208,12 @@ func (c Config) WriteConfiguredFile() func(written string, baseline *string) err
 			return err
 		}
 		adapteragent.RefreshModels()
+		if c.PluginHost != nil {
+			if held.Plugins != nil {
+				c.PluginHost.SetSettings(held.Plugins)
+			}
+			_ = c.PluginHost.NotifyAllPluginConfigs(context.Background())
+		}
 		return nil
 	}
 }
@@ -234,7 +249,26 @@ func (c Config) GetSettingsWriter() func(written []port.Setting) error {
 			return err
 		}
 		into := DefaultSettings()
-		return settings.Save(path, &into, held...)
+		if err := settings.Save(path, &into, held...); err != nil {
+			return err
+		}
+		notifyPluginSettings(c.PluginHost, written)
+		return nil
+	}
+}
+
+func notifyPluginSettings(host *plugin.Host, written []port.Setting) {
+	if host == nil {
+		return
+	}
+	for _, one := range written {
+		if len(one.Path) < 3 || one.Path[0] != "plugins" {
+			continue
+		}
+		var val any
+		if err := json.Unmarshal([]byte(one.JSON), &val); err == nil {
+			_ = host.UpdatePluginSetting(context.Background(), one.Path[1], one.Path[2], val)
+		}
 	}
 }
 

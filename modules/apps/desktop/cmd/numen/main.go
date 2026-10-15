@@ -18,12 +18,14 @@ import (
 	"os"
 	"path"
 	"runtime/debug"
+	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/platform"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/plugincli"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
@@ -34,6 +36,10 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "plugin" {
+		os.Exit(plugincli.Run(os.Args[2:], os.Stdout, os.Stderr))
+	}
+
 	cfg := makeConfig(os.Stderr)
 	var agentFlags agentOptions
 	var scaleFlags scaleSettings
@@ -52,8 +58,13 @@ func main() {
 		"how large the text a person reads is set, 1 being as designed; this launch alone")
 	flag.BoolVar(&cfg.ShouldRebuildIndex, "rebuild-index", false,
 		"read every file and put it in the index again, whatever the index remembers")
+	flag.BoolVar(&cfg.SafeMode, "safe-mode", false, "disable plugins for emergency recovery")
 	flag.BoolVar(&showVersion, "version", false, "say what this build is and stop")
 	flag.Parse()
+
+	if cfg.SafeMode && cfg.PluginHost != nil {
+		cfg.PluginHost.SetSafeMode(true)
+	}
 
 	if showVersion {
 		fmt.Println(version.GetVersionLine("numen"))
@@ -95,6 +106,12 @@ func (s scaleSettings) validate() error {
 }
 
 func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleSettings) error {
+	if cfg.PluginHost != nil {
+		defer func() {
+			_ = cfg.PluginHost.TeardownAll(context.Background(), 2*time.Second)
+		}()
+	}
+
 	if err := scaleFlags.validate(); err != nil {
 		return err
 	}
@@ -127,10 +144,16 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 
 	reachable := makeEndpoint(ctx, cfg, opened, mcp)
 	going := &vaultFlush{flush: opened.FlushPending}
-	// The agents stop, the installation closes, then the context they ran under ends.
+	// The agents stop, the installation closes, plugins teardown, then the context they ran under ends.
 	behind := shutdown.NewSequence(
 		reachable.Stop,
 		shutdown.Report("numen", os.Stderr, "", opened.Close),
+		shutdown.Report("numen", os.Stderr, "plugins", func() error {
+			if cfg.PluginHost != nil {
+				return cfg.PluginHost.TeardownAll(context.Background(), 2*time.Second)
+			}
+			return nil
+		}),
 		stop,
 	)
 
@@ -151,7 +174,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 
 	app := makeApplication(opened, pages, behind, going, seen)
 	window = makeWindow(app, opened)
-	connectWindow(ctx, window, opened, reachable)
+	connectWindow(ctx, cfg, window, opened, reachable)
 
 	// A hook runs before the window is destroyed and on a thread of its own, so
 	// the page is still drawn and still answered while what it owes is written.
@@ -194,6 +217,9 @@ func openInstallation(
 	opened, err := editor.Open(ctx, made, vault, os.Stdout)
 	if err != nil {
 		return shownInstallation{}, err
+	}
+	if cfg.PluginHost != nil {
+		cfg.PluginHost.SetVaultPath(opened.GetCurrentVault().Path)
 	}
 	return shownInstallation{pages: pages, opened: opened}, nil
 }
@@ -254,7 +280,7 @@ func makeWindow(app *application.App, opened *editor.Installation) *application.
 // connectWindow wires what the window owns into the installation: the folder
 // dialog, the title, dropped files and opening another vault.
 func connectWindow(
-	ctx context.Context, window *application.WebviewWindow, opened *editor.Installation,
+	ctx context.Context, cfg container.Config, window *application.WebviewWindow, opened *editor.Installation,
 	reachable *agents.Endpoint,
 ) {
 	// Choosing a folder is the machine's own, and it opens over this window.
@@ -273,6 +299,9 @@ func connectWindow(
 	// vault they are working when their session opens, so the endpoint they
 	// reach it through is stopped and started again around the swap.
 	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
+		if cfg.PluginHost != nil {
+			cfg.PluginHost.SetVaultPath(v.Path)
+		}
 		err := reachable.RunWhileStopped(func() error { return opened.Show(ctx, v) })
 		naming(opened.State.GetOpenTabs())
 		return err

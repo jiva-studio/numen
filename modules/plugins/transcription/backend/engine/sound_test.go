@@ -1,0 +1,131 @@
+package engine
+
+import (
+	"bytes"
+	"encoding/binary"
+	"math"
+	"math/rand"
+	"testing"
+)
+
+// encodeWav is a wav file of one signal: a header saying what the samples are,
+// and the samples.
+func encodeWav(rate, channels int, samples []int16) []byte {
+	body := new(bytes.Buffer)
+	for _, one := range samples {
+		_ = binary.Write(body, binary.LittleEndian, one)
+	}
+
+	out := new(bytes.Buffer)
+	out.WriteString("RIFF")
+	_ = binary.Write(out, binary.LittleEndian, uint32(36+body.Len()))
+	out.WriteString("WAVEfmt ")
+	_ = binary.Write(out, binary.LittleEndian, uint32(16))
+	_ = binary.Write(out, binary.LittleEndian, uint16(wavInteger))
+	_ = binary.Write(out, binary.LittleEndian, uint16(channels))
+	_ = binary.Write(out, binary.LittleEndian, uint32(rate))
+	_ = binary.Write(out, binary.LittleEndian, uint32(rate*channels*2))
+	_ = binary.Write(out, binary.LittleEndian, uint16(channels*2))
+	_ = binary.Write(out, binary.LittleEndian, uint16(16))
+	out.WriteString("data")
+	_ = binary.Write(out, binary.LittleEndian, uint32(body.Len()))
+	out.Write(body.Bytes())
+	return out.Bytes()
+}
+
+// How long a recording is comes out of its header, before a sample is decoded.
+func TestDurationFromTheHeader(t *testing.T) {
+	raw := encodeWav(16000, 1, make([]int16, 8000))
+	got, err := getDuration(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != 500 {
+		t.Errorf("half a second of one channel is %d ms", got)
+	}
+
+	raw = encodeWav(8000, 2, make([]int16, 8000))
+	if got, err = getDuration(raw); err != nil || got != 500 {
+		t.Errorf("half a second of two channels is %d ms (%v)", got, err)
+	}
+}
+
+// A file in a container this does not read is said to be one, and is not read
+// as something else.
+func TestARecordingInNoContainerThisReads(t *testing.T) {
+	if _, err := getDuration([]byte("this is not a recording")); err == nil {
+		t.Error("a file that is not a recording was read")
+	}
+}
+
+// Two channels are heard as one: what they say at each moment, averaged.
+func TestChannelsAreHeardAsOne(t *testing.T) {
+	raw := encodeWav(16000, 2, []int16{16384, 0, -16384, 0})
+	sound, rate, err := readSamples(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rate != 16000 {
+		t.Fatalf("the recording is at %d hertz", rate)
+	}
+	if len(sound) != 2 {
+		t.Fatalf("two channels of four samples came out as %d", len(sound))
+	}
+	if math.Abs(float64(sound[0])-0.25) > 1e-6 || math.Abs(float64(sound[1])+0.25) > 1e-6 {
+		t.Errorf("the two channels came out as %v", sound)
+	}
+}
+
+func TestSignedSamplesOfAnyWidth(t *testing.T) {
+	for _, one := range []struct {
+		raw  []byte
+		want int64
+	}{
+		{[]byte{0x00, 0x40}, 16384},
+		{[]byte{0x00, 0xC0}, -16384},
+		{[]byte{0xFF, 0xFF, 0x7F}, 8388607},
+		{[]byte{0x00, 0x00, 0x80}, -8388608},
+	} {
+		if got := readSigned(one.raw); got != one.want {
+			t.Errorf("%v is %d and should be %d", one.raw, got, one.want)
+		}
+	}
+}
+
+func BenchmarkWavDecode16Bit(b *testing.B) {
+	pcm := make([]int16, 44100*60)
+	rng := rand.New(rand.NewSource(1))
+	for i := range pcm {
+		pcm[i] = int16(rng.Intn(65536) - 32768)
+	}
+	w, err := parseWav(encodeWav(44100, 1, pcm))
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.SetBytes(int64(len(w.samples)))
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := w.readSound(); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+// The 16-bit decoder agrees bit for bit with the per-sample decoder on random
+// samples of every length remainder.
+func TestInt16DecoderMatchesPerSampleDecoder(t *testing.T) {
+	rng := rand.New(rand.NewSource(7))
+	for _, count := range []int{0, 1, 2, 3, 4, 5, 7, 8, 1001, 65536} {
+		raw := make([]byte, count*2)
+		rng.Read(raw)
+		got := make([]float32, count)
+		readInt16(got, raw)
+		for i := range got {
+			want := float32(readSigned(raw[i*2:(i+1)*2])) / float32(int64(1)<<15)
+			if math.Float32bits(got[i]) != math.Float32bits(want) {
+				t.Fatalf("count %d sample %d is %v and should be %v", count, i, got[i], want)
+			}
+		}
+	}
+}

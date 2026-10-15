@@ -15,6 +15,7 @@ Two things are not settings and are not in here: which files count as notes, and
 | | | |
 | --- | --- | --- |
 | `v` | a number | the shape of the file. Nothing reads it yet, and it is written so that the day a section changes shape there is something to tell the two apart. |
+| `plugins` |  | the configuration for modular plugins, keyed by plugin ID. |
 
 ### `appearance`
 
@@ -36,50 +37,18 @@ How a vault is made searchable.
 | | | |
 | --- | --- | --- |
 | `embedding` |  | which model turns text into vectors, and how it is reached. |
-| `embedding.model` |  | what a vector is, and it is said once. A vector made while a vault is indexed is claimed again by a question, so the two are one model or the comparison between them means nothing. |
-| `embedding.model.name` | text | what the model is called here. |
-| `embedding.model.dimensions` | a number | how wide its vectors are. The coarse index is built for one width, and changing it builds that index again from the vectors held. |
-| `embedding.model.max_tokens` | a number | where the model truncates what it is given. A window cut somewhere else is a window whose vector describes text it does not hold. |
-| `embedding.model.pooling` | text | `mean` or `head`. Empty is `mean`. |
-| `embedding.indexing` |  | makes the vectors a vault is searched by. `query` makes the vector a question is asked with, and taking nothing here is asking the way the vault was indexed. |
-| `embedding.indexing.use` | text | `local` or `service`, and names which of the two sections below is the one in force. |
-| `embedding.indexing.local` |  | how this machine reaches a model it runs. |
-| `embedding.indexing.local.name` | text | a HuggingFace repository. |
-| `embedding.indexing.local.dir` | text | holds the model and tokenizer.json. Empty means the download cache. |
-| `embedding.indexing.local.file` | text | the model inside the repository or the directory. |
-| `embedding.indexing.local.batch_texts` | a number | how many texts one forward pass carries. |
-| `embedding.indexing.local.engine` | text | engineRuntime or EnginePureGo. Empty takes ONNX `runtime` where this platform has one published, and the Go backend where it has none. |
-| `embedding.indexing.local.runtime` | text | the ONNX shared library. Empty means the one beside the application, and then the one the platform holds. |
-| `embedding.indexing.local.threads` | a number | how many threads the model's intra-op pool runs. |
-| `embedding.indexing.local.sessions` | a number | how many forward passes run at once on the model. |
-| `embedding.indexing.local.provider` | text | the execution provider for ONNX `runtime` (auto, cpu, coreml, cuda). |
-| `embedding.indexing.local.download` | yes or no | allows fetching the model when it is not on this machine. |
-| `embedding.indexing.service` |  | how a hosted model is reached over HTTP. |
-| `embedding.indexing.service.base_url` | text | points at anything speaking the /v1/embeddings request shape. |
-| `embedding.indexing.service.name` | text | what that service calls the model. |
-| `embedding.indexing.service.batch_characters` | a number | bounds one request by the characters of everything in it. |
-| `embedding.indexing.service.key_env` | text | names the environment variable holding the key, for an installation that keeps it out of the file. |
+| `embedding.model` |  | what a vector is: everything that decides the space it lands in. |
+| `embedding.model.name` | text |  |
+| `embedding.model.dimensions` | a number |  |
+| `embedding.model.max_tokens` | a number |  |
+| `embedding.model.pooling` | text |  |
+| `embedding.indexing` |  | where a vector is made: on this machine, or by a service. |
+| `embedding.indexing.use` | text |  |
 | `embedding.query` |  | where a vector is made: on this machine, or by a service. |
-| `embedding.query.use` | text | `local` or `service`, and names which of the two sections below is the one in force. |
-| `embedding.query.local` |  | how this machine reaches a model it runs. |
-| `embedding.query.local.name` | text | a HuggingFace repository. |
-| `embedding.query.local.dir` | text | holds the model and tokenizer.json. Empty means the download cache. |
-| `embedding.query.local.file` | text | the model inside the repository or the directory. |
-| `embedding.query.local.batch_texts` | a number | how many texts one forward pass carries. |
-| `embedding.query.local.engine` | text | engineRuntime or EnginePureGo. Empty takes ONNX `runtime` where this platform has one published, and the Go backend where it has none. |
-| `embedding.query.local.runtime` | text | the ONNX shared library. Empty means the one beside the application, and then the one the platform holds. |
-| `embedding.query.local.threads` | a number | how many threads the model's intra-op pool runs. |
-| `embedding.query.local.sessions` | a number | how many forward passes run at once on the model. |
-| `embedding.query.local.provider` | text | the execution provider for ONNX `runtime` (auto, cpu, coreml, cuda). |
-| `embedding.query.local.download` | yes or no | allows fetching the model when it is not on this machine. |
-| `embedding.query.service` |  | how a hosted model is reached over HTTP. |
-| `embedding.query.service.base_url` | text | points at anything speaking the /v1/embeddings request shape. |
-| `embedding.query.service.name` | text | what that service calls the model. |
-| `embedding.query.service.batch_characters` | a number | bounds one request by the characters of everything in it. |
-| `embedding.query.service.key_env` | text | names the environment variable holding the key, for an installation that keeps it out of the file. |
-| `embedding.floor` | a number | the cosine similarity a passage reaches to be an answer, in the units the model in use measures in. |
+| `embedding.query.use` | text |  |
+| `embedding.floor` | a number |  |
 | `recognition` |  | how a scanned document is read when a person asks for it. |
-| `recognition.runtime` | text | the ONNX shared library. Empty means the one beside the application, and then the one the platform holds. |
+| `recognition.runtime` | text | the shared library of ONNX runtime. Empty means the one beside the application. |
 | `recognition.dir` | text | a folder holding the models. Empty means the folder beside the application, and then the download cache. |
 | `recognition.download` | yes or no | allows fetching what is not on this machine. |
 | `recognition.layout` |  | divides a page into its parts and puts them in reading order. |

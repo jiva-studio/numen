@@ -240,6 +240,8 @@ const window = (
       chooseHeadings: async (chosen) => void done.push(`headings ${chosen}`),
       choosePerformance: async (chosen) => void done.push(`performance ${chosen}`),
       chooseIndexingModel: async (chosen) => void done.push(`indexingModel ${chosen}`),
+      choosePluginSetting: async (pluginId, key, chosen) =>
+        void done.push(`plugin ${pluginId} ${key} ${chosen}`),
     },
     runSupport: runs,
     copyPath: (path) => void done.push(`copies ${path}`),
@@ -265,6 +267,19 @@ describe('every command that is offered', () => {
 
       expect(one.done, command.id).not.toStrictEqual([])
     }
+  })
+
+  it('emits onCommand:<id> when a command is executed', async () => {
+    const events: string[] = []
+    const one = window()
+    const onWithEmit: CommandDeps = {
+      ...one.on,
+      emitEvent: (ev) => events.push(ev),
+    }
+
+    await carry(createInvocation('read', front()), onWithEmit)
+
+    expect(events).toStrictEqual(['onCommand:read'])
   })
 })
 
@@ -1411,5 +1426,29 @@ describe('the tab holding a note flushed', () => {
       isWaiting: true,
     })
     expect(one.done).toStrictEqual([])
+  })
+})
+
+describe('plugin setting invocation', () => {
+  it('calls choosePluginSetting with boolean and enum values', async () => {
+    const one = window()
+
+    await carry(
+      createInvocation('plugin-setting:md.numen.transcription:autoRun', front(), 'on'),
+      one.on,
+    )
+    expect(one.done).toStrictEqual(['plugin md.numen.transcription autoRun true'])
+
+    await carry(
+      createInvocation('plugin-setting:md.numen.transcription:autoRun', front(), 'off'),
+      one.on,
+    )
+    expect(one.done[1]).toBe('plugin md.numen.transcription autoRun false')
+
+    await carry(
+      createInvocation('plugin-setting:md.numen.transcription:language', front(), 'en'),
+      one.on,
+    )
+    expect(one.done[2]).toBe('plugin md.numen.transcription language en')
   })
 })

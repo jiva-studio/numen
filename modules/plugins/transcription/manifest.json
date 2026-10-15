@@ -1,0 +1,45 @@
+{
+  "id": "md.numen.transcription",
+  "name": "Audio/Video Transcription",
+  "version": "1.0.0",
+  "description": "Speech-to-text audio and video transcription using native plugin backend",
+  "capabilities": ["transcription"],
+  "targets": ["desktop.editor"],
+  "activationEvents": [
+    "onFile:*.mp3",
+    "onFile:*.wav",
+    "onFile:*.m4a",
+    "onFile:*.mp4",
+    "onCommand:transcribe"
+  ],
+  "permissions": ["vault:read"],
+  "lifecycle": {
+    "mode": "on-demand",
+    "idleTimeoutSeconds": 180,
+    "keepAliveWhileVisible": false
+  },
+  "backend": {
+    "type": "process",
+    "entrypoint": "bin/transcription",
+    "serviceName": "numen.v1.TranscriptionService"
+  },
+  "settings": [
+    {
+      "key": "autoTranscribeOnImport",
+      "type": "boolean",
+      "title": "Auto-transcribe on import",
+      "description": "Automatically transcribe audio and video files added to the vault",
+      "default": false,
+      "palette": true
+    },
+    {
+      "key": "language",
+      "type": "enum",
+      "title": "Transcription Language",
+      "description": "Preferred language model for audio recognition",
+      "default": "auto",
+      "options": ["auto", "en", "es", "fr", "de", "zh", "ja"],
+      "palette": true
+    }
+  ]
+}

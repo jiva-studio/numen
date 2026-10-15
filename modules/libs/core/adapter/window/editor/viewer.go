@@ -20,10 +20,10 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/epub"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/plugins/reader-epub/backend/epub"
 )
 
 // documentHandler answers what a document of the vault is, and draws its pages.
@@ -222,6 +222,55 @@ func (h *documentHandler) GetDocument(
 		out.Pages[i] = &v1.Page{Width: size[0], Height: size[1]}
 	}
 	return connect.NewResponse(out), nil
+}
+
+func (h *documentHandler) RenderPage(
+	ctx context.Context,
+	r *connect.Request[v1.RenderPageRequest],
+) (*connect.Response[v1.RenderPageResponse], error) {
+	if h.getPage == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
+	}
+	showing, err := h.state.getShownVault()
+	if err != nil {
+		return nil, connect.NewError(getDrawCode(err), err)
+	}
+	ctx, cancel := context.WithTimeout(ctx, h.viewer.patience)
+	defer cancel()
+
+	wide := int(r.Msg.GetWidth())
+	if wide <= 0 {
+		wide = 800
+	}
+	key := document.PageKey{
+		Document: document.Fingerprint{Path: r.Msg.GetPath()},
+		Page:     int(r.Msg.GetPage()),
+		Width:    wide,
+	}
+	body, err := h.getPage.Execute(ctx, showing, key)
+	if err != nil {
+		return nil, connect.NewError(getDrawCode(err), err)
+	}
+	return connect.NewResponse(&v1.RenderPageResponse{
+		ImageData:   body,
+		ContentType: "image/jpeg",
+		Width:       float64(wide),
+		Height:      0,
+	}), nil
+}
+
+func (h *documentHandler) ExtractText(
+	_ context.Context,
+	_ *connect.Request[v1.ExtractTextRequest],
+) (*connect.Response[v1.ExtractTextResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
+}
+
+func (h *documentHandler) GetHighlights(
+	_ context.Context,
+	_ *connect.Request[v1.GetHighlightsRequest],
+) (*connect.Response[v1.GetHighlightsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 }
 
 // newWireFingerprint is a fingerprint as the schema carries it.

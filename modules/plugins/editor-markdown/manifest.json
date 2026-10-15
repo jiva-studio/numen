@@ -1,0 +1,19 @@
+{
+  "id": "editor-markdown",
+  "name": "Markdown Editor",
+  "version": "1.0.0",
+  "description": "Modular Markdown and plain text editor with CodeMirror 6 and wikilinks support",
+  "capabilities": ["reader.markdown", "editor.markdown"],
+  "targets": ["desktop.editor"],
+  "fileExtensions": [".md", ".txt", ".markdown"],
+  "activationEvents": ["onFile:.md", "onFile:.txt", "onFile:.markdown"],
+  "permissions": ["vault:read", "vault:write"],
+  "lifecycle": {
+    "mode": "on-demand",
+    "idleTimeoutSeconds": 300,
+    "keepAliveWhileVisible": true
+  },
+  "frontend": {
+    "entrypoint": "frontend/index.ts"
+  }
+}

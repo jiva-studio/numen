@@ -23,6 +23,7 @@ import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { createFileCreators } from '@/entities/tab'
 import type { useWindowTabs } from '@/entities/tab'
 import { WORDS } from '@/shared/words'
+import { createPluginSettingCommands } from './useSettings'
 import type { NoteCreator } from '@/pages/note-editor'
 import type { VaultCore } from './vault'
 
@@ -56,6 +57,7 @@ export interface CommandsDepsOptions {
   rest: {
     writeSettings: (written: readonly SettingEdit[]) => Promise<void> | void
     getModelsAt?: (at: readonly string[]) => readonly import('@/entities/settings').Model[]
+    plugins?: import('vue').Ref<readonly import('@/entities/settings').PluginInfo[]>
   }
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   pointed: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
@@ -67,13 +69,22 @@ export interface CommandsDepsOptions {
   agents: () => { askQuestion: (text: string) => Promise<void> | void }
   getOpeningNote: () => string
   writeMessage: MessageWriter
+  pluginHost?: import('@/entities/plugin').PluginHost | undefined
 }
 
 export function useCommands(options: CommandsDepsOptions) {
   const { core, words, held, getTarget, knows, kept, runs, coverage, writeMessage } = options
 
   const palette = useSearch(core, words, { coverage })
-  const commands = useCommandPalette(core, words, getTarget, knows, kept, runs)
+  const commands = useCommandPalette(core, words, getTarget, knows, kept, runs, undefined, () => [
+    ...createPluginSettingCommands(options.rest.plugins?.value ?? []),
+    ...(options.pluginHost?.getPaletteCommands().map((cmd) => ({
+      id: cmd.id,
+      text: cmd.title,
+      group: 'window' as const,
+      isOffered: () => cmd.isOffered(),
+    })) ?? []),
+  ])
 
   const commandDeps: CommandDeps = createCommandDeps({
     ...options,
@@ -84,6 +95,11 @@ export function useCommands(options: CommandsDepsOptions) {
   })
 
   const runCommand = (id: string, at: CommandTarget) => {
+    if (options.pluginHost?.hasCommand(id)) {
+      commands.setOpen(false)
+      void options.pluginHost.executeCommand(id)
+      return
+    }
     const invocation = commands.startCommand(id, at)
     if (invocation) return void runInvocation(invocation, commandDeps, ANSWER_WORDS)
     if (commands.open.value) return void palette.setOpen(false)
@@ -93,6 +109,7 @@ export function useCommands(options: CommandsDepsOptions) {
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
     if (held.onKeyPress(event)) return event.preventDefault()
+    if (options.pluginHost?.handleShortcut(event)) return event.preventDefault()
     if (!isChord(event)) return
     const command = findChordCommand(event.key.toLowerCase(), event.shiftKey)
     if (!command) return

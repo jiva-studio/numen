@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// ProofreadingService coordinates LLM-based proofreading of text batches.
+service ProofreadingService {
+  // GetProofreaderInfo returns information about the active proofreader model or engine.
+  rpc GetProofreaderInfo(GetProofreaderInfoRequest) returns (GetProofreaderInfoResponse);
+
+  // Proofread submits text batches to be proofread and returns corrections.
+  rpc Proofread(ProofreadRequest) returns (ProofreadResponse);
+}
+
+message GetProofreaderInfoRequest {}
+
+message GetProofreaderInfoResponse {
+  string name = 1;
+}
+
+message ProofreadBatch {
+  int32 number = 1;
+  string prompt = 2;
+}
+
+message ProofreadRequest {
+  repeated ProofreadBatch batches = 1;
+  string instruction = 2;
+}
+
+message ProofreadResponse {
+  // Map of batch number to proofread reply.
+  map<int32, string> replies = 1;
+}

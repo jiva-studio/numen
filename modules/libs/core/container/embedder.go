@@ -2,71 +2,64 @@ package container
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
-
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/gomlx"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/onnx"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/openai"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
 
+// EmbedderReady reports whether an embedding plugin is active or present.
+func (c Config) EmbedderReady() bool {
+	if c.PluginHost != nil && !c.SafeMode {
+		if _, ok := c.PluginHost.FindPluginByCapability("embedding"); ok {
+			return true
+		}
+	}
+	return false
+}
+
 // Embedders are what makes the vectors a vault is searched by and what makes
 // the vector a question is asked with.
 //
-// They are one model where the settings name one provider. Naming a provider
-// for questions is what puts a vault indexed over a network within reach of a
-// machine that has none, and the two are held to being one model behind this.
-//
-// An embedder is optional: an installation naming no provider answers with
-// nothing. A provider that cannot be built — no key, no base URL — is a
-// reason, and nothing is built at all.
-func (c Config) Embedders(ctx context.Context, tasks *run.Tasks) (indexing, asking port.Embedder, closer func() error, why error) {
-	first, why := c.getProvider(c.Embedding.Indexing)
-	if why != nil {
-		return nil, nil, nil, why
+// When the embedding plugin is absent or disabled, search queries seamlessly fall
+// back to SQLite FTS5 full-text search without throwing errors.
+func (c Config) Embedders(ctx context.Context, _ *run.Tasks) (indexing, asking port.Embedder, closer func() error, why error) {
+	if c.PluginHost != nil && !c.SafeMode {
+		if _, ok := c.PluginHost.FindPluginByCapability("embedding"); ok {
+			bridge, err := plugin.OpenEmbedderBridge(ctx, c.PluginHost)
+			if err != nil {
+				return nil, nil, func() error { return nil }, err
+			}
+			return bridge, bridge, bridge.Close, nil
+		}
 	}
-	second, why := c.getProvider(c.Embedding.Query)
-	if why != nil {
-		return nil, nil, nil, why
-	}
-	indexing, asking, closer = embedding.Open(ctx, tasks, first, second)
-	return indexing, asking, closer, nil
+	return nil, nil, func() error { return nil }, nil
 }
 
-// Embedder is what makes the vectors a vault is searched by, waited for. A run
-// with nowhere to show that a model is arriving waits for it instead.
+// Embedder is what makes the vectors a vault is searched by, waited for.
 func (c Config) Embedder(ctx context.Context) (port.Embedder, func() error, error) {
-	held, err := c.getProvider(c.Embedding.Indexing)
-	if err != nil {
-		return nil, nil, err
+	if c.PluginHost != nil && !c.SafeMode {
+		if _, ok := c.PluginHost.FindPluginByCapability("embedding"); ok {
+			bridge, err := plugin.OpenEmbedderBridge(ctx, c.PluginHost)
+			if err != nil {
+				return nil, nil, err
+			}
+			return bridge, bridge.Close, nil
+		}
 	}
-	embedder, closer := embedding.OpenOne(ctx, held)
-	return embedder, closer, nil
+	return nil, func() error { return nil }, nil
 }
 
 // OpenQuestionEmbedder is what embeds a question, for a run that fills no
-// index. Only the provider that answers questions is opened, and it answers
-// under the identity the index is filled with.
+// index. Only the provider that answers questions is opened.
 func (c Config) OpenQuestionEmbedder(ctx context.Context) (port.Embedder, func() error, error) {
-	held, err := c.getProvider(c.Embedding.GetQueryProvider())
-	if err != nil {
-		return nil, nil, err
-	}
-	embedder, closer := embedding.OpenOne(ctx, held)
-	return embedder, closer, nil
+	return c.Embedder(ctx)
 }
 
 // NewSearch is the search a question is answered by, put together the one way:
 // the passages, the vault's files, the text read out of books, and the model a
 // question is embedded by.
-//
-// errorHandler is where a half that could not run is said. A search short of
-// the half that asks by meaning is a search the words answer.
 func (c Config) NewSearch(db *Index, asking port.Embedder, errorHandler func(error)) search.Search {
 	return c.NewSearchOver(db.Passages(), asking, errorHandler)
 }
@@ -76,89 +69,4 @@ func (c Config) NewSearch(db *Index, asking port.Embedder, errorHandler func(err
 func (c Config) NewSearchOver(passages port.PassageQueries, asking port.Embedder, errorHandler func(error)) search.Search {
 	return search.New(passages, c.VaultReaders(), c.GetDerivedStores(), c.TextExtractor(),
 		asking, c.Embedding.Floor, errorHandler).WithExtractors(c.ResolvedCompute.Workers)
-}
-
-// getProvider is which adapter answers for one half of the work, under the
-// identity the index is filled with and the name that half is reached by.
-//
-// Nothing for a getProvider that names neither kind. A word that is neither is a
-// word nobody implements: left to mean nothing, it is a vault searched by its
-// words and no reason given.
-func (c Config) getProvider(where embed.Provider) (embedding.Provider, error) {
-	is := c.Embedding.GetStoredModel()
-	switch where.Use {
-	case embed.UseService:
-		service, _ := where.Service()
-		client, err := c.openServiceClient(is, service)
-		if err != nil {
-			return embedding.Provider{}, err
-		}
-		return embedding.NewReached(is, service.Name, client), nil
-
-	case embed.UseLocal:
-		local, _ := where.Local()
-		local = c.planLocalModel(local)
-		open, err := openLocal(is, local)
-		if err != nil {
-			return embedding.Provider{}, err
-		}
-		return embedding.NewFetched(is, local.Name, open), nil
-
-	case "":
-		return embedding.Provider{}, nil
-	}
-	return embedding.Provider{}, fmt.Errorf("vectors are made %q, and they are made %q or %q",
-		where.Use, embed.UseLocal, embed.UseService)
-}
-
-// embedderMemoryPercent is the share of the available memory the passes of the
-// embedder may hold together; the rest stays with the other pipelines and the
-// interface.
-const embedderMemoryPercent = 25
-
-// planLocalModel is a model on this machine with the compute plan's share: the
-// batch it embeds in one pass unless the settings name one, and the threads, the
-// passes at once and the memory they may hold. A container without a plan leaves all three to
-// the model's own fallbacks.
-func (c Config) planLocalModel(local embed.LocalModel) embed.LocalModel {
-	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a plan of zero texts a pass copies zero over the zero the model already holds"
-	if c.ResolvedCompute.EmbeddingBatchSize > 0 && local.BatchTexts == 0 {
-		local.BatchTexts = c.ResolvedCompute.EmbeddingBatchSize
-	}
-	local.ThreadBudget = c.ResolvedCompute.CoreBudget
-	local.PassBudget = c.ResolvedCompute.Workers
-	local.PassMemory = c.Hardware.AvailableRAMMB * bytesPerMB / 100 * embedderMemoryPercent
-	return local
-}
-
-// openServiceClient is the client for a hosted model, sending as many requests
-// at once as the compute plan's LLM concurrency. A container without a plan
-// leaves the client's own limit.
-func (c Config) openServiceClient(is port.EmbeddingModel, service embed.ServiceModel) (*openai.Client, error) {
-	client, err := openai.New(is, service)
-	if err != nil {
-		return nil, err
-	}
-	if c.ResolvedCompute.LlmConcurrency > 0 {
-		client.InFlight = c.ResolvedCompute.LlmConcurrency
-	}
-	return client, nil
-}
-
-// openLocal is the engine that runs the model on this machine. A desktop runs
-// it through ONNX Runtime; a platform the runtime is not published for runs it
-// on the backend written in Go, which the settings may also ask for by name.
-func openLocal(is port.EmbeddingModel, cfg embed.LocalModel) (embedding.OpenModel, error) {
-	switch cfg.GetEngine() {
-	case embed.EngineRuntime:
-		return func(ctx context.Context, tell func(done, total int64)) (port.Embedder, error) {
-			return onnx.Open(ctx, is, cfg, tell)
-		}, nil
-	case embed.EnginePureGo:
-		return func(ctx context.Context, tell func(done, total int64)) (port.Embedder, error) {
-			return gomlx.Open(ctx, is, cfg, tell)
-		}, nil
-	}
-	return nil, fmt.Errorf("a model is run on %q, and it is run on %q or %q",
-		cfg.GetEngine(), embed.EngineRuntime, embed.EnginePureGo)
 }

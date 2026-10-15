@@ -68,6 +68,7 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	// Empty is the folder this installation writes into a vault by default,
 	// which is the answer for every other location here too.
 	fs.StringVar(&where.ServiceDir, "service-dir", "", "vault service folder")
+	fs.BoolVar(&where.SafeMode, "safe-mode", false, "disable plugins for emergency recovery")
 
 	// A plain parse: it stops at the first argument that is not a flag, which
 	// is the command. Anything after that belongs to the command and is parsed

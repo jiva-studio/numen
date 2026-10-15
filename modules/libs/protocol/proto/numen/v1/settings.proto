@@ -12,6 +12,7 @@ syntax = "proto3";
 // through the file. It is the only tree here that goes undescribed.
 package numen.v1;
 
+import "numen/v1/plugin.proto";
 import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
@@ -64,6 +65,9 @@ message GetSettingsResponse {
   // day. A day of review begins at the hour the settings name, so an hour past
   // midnight is still the day before.
   string day = 6;
+
+  // Active plugins and their declarative settings schema.
+  repeated PluginInfo plugins = 7;
 }
 
 // Model is one model a setting that names a model can be set to.

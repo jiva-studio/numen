@@ -77,6 +77,75 @@ describe('what stands at a setting', () => {
     expect(kept.getSetting(['agent'])).toBeUndefined()
     expect(said).toHaveBeenLastCalledWith('The settings could not be read.', 'error')
   })
+
+  it('falls back to declarative plugin default when unset in settings file', async () => {
+    const core: SettingsStoreDeps = {
+      getSettings: () =>
+        Promise.resolve({
+          written: '{}',
+          path: '/numen.json',
+          models: [],
+          plugins: [
+            {
+              id: 'my.plugin',
+              name: 'My Plugin',
+              version: '1.0.0',
+              description: 'A test plugin',
+              isActive: true,
+              settings: [
+                {
+                  key: 'enabled',
+                  type: 'boolean',
+                  title: 'Enabled',
+                  description: 'Enable feature',
+                  default: true,
+                },
+              ],
+            },
+          ],
+        }),
+      updateSettings: () => Promise.resolve(),
+    }
+    const store = createSettingsStore(core, words, vi.fn())
+    await store.start()
+
+    expect(store.getSetting(['plugins', 'my.plugin', 'enabled'])).toBe(true)
+    expect(store.getSetting(['plugins', 'my.plugin', 'nonexistent'])).toBeUndefined()
+  })
+
+  it('prefers explicit configuration over declarative plugin default', async () => {
+    const core: SettingsStoreDeps = {
+      getSettings: () =>
+        Promise.resolve({
+          written: JSON.stringify({ plugins: { 'my.plugin': { enabled: false } } }),
+          path: '/numen.json',
+          models: [],
+          plugins: [
+            {
+              id: 'my.plugin',
+              name: 'My Plugin',
+              version: '1.0.0',
+              description: 'A test plugin',
+              isActive: true,
+              settings: [
+                {
+                  key: 'enabled',
+                  type: 'boolean',
+                  title: 'Enabled',
+                  description: 'Enable feature',
+                  default: true,
+                },
+              ],
+            },
+          ],
+        }),
+      updateSettings: () => Promise.resolve(),
+    }
+    const store = createSettingsStore(core, words, vi.fn())
+    await store.start()
+
+    expect(store.getSetting(['plugins', 'my.plugin', 'enabled'])).toBe(false)
+  })
 })
 
 describe('the models a setting offers', () => {

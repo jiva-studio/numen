@@ -1,14 +1,18 @@
 package container
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading/openai"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
+)
+
+var (
+	errProofreadingUnavailable = errors.New("proofreading plugin is unavailable or not installed")
 )
 
 // ProofreaderSpec is what the platform is told to start: the command line,
@@ -21,25 +25,21 @@ type ProofreaderSpec struct {
 }
 
 // getProfile is the place a recognition is put right at, by the name a consumer
-// names it under. A name no getProfile carries is an error: a person who named one
-// is owed the news that it is not there.
-//
-// It is not exported: `proofreading.Profile` is the adapter's own type, and
-// what an application is handed is the proofreader itself.
-func (c Config) getProfile(name string) (proofreading.Profile, error) {
+// names it under.
+func (c Config) getProfile(name string) (Profile, error) {
 	profile, held := c.Proofreading.Profiles[name]
 	if !held {
-		return proofreading.Profile{}, fmt.Errorf("no proofreading profile named %q", name)
+		return Profile{}, fmt.Errorf("no proofreading profile named %q", name)
 	}
 	switch profile.Use {
-	case proofreading.UseService, proofreading.UseAgent:
+	case UseService, UseAgent:
 	default:
-		return proofreading.Profile{}, fmt.Errorf(
+		return Profile{}, fmt.Errorf(
 			"proofreading profile %q is used through %q, which is neither %q nor %q",
-			name, profile.Use, proofreading.UseService, proofreading.UseAgent)
+			name, profile.Use, UseService, UseAgent)
 	}
 	if !profile.HasModel() {
-		return proofreading.Profile{}, fmt.Errorf(
+		return Profile{}, fmt.Errorf(
 			"proofreading profile %q names no model to use with %q", name, profile.Use)
 	}
 	return c.resolveInFlight(profile), nil
@@ -48,17 +48,26 @@ func (c Config) getProfile(name string) (proofreading.Profile, error) {
 // resolveInFlight is the profile with the number of batches it asks about at once
 // settled: its own, then the performance profile's LLM concurrency, then the
 // default of its kind.
-func (c Config) resolveInFlight(profile proofreading.Profile) proofreading.Profile {
+func (c Config) resolveInFlight(profile Profile) Profile {
 	profile.InFlight = profile.GetInFlight(c.ResolvedCompute.LlmConcurrency)
 	return profile
+}
+
+// ProofreaderReady says whether a proofreading plugin is available and ready.
+func (c Config) ProofreaderReady() bool {
+	if c.PluginHost != nil && !c.SafeMode {
+		if _, ok := c.PluginHost.FindPluginByCapability("proofreading"); ok {
+			return true
+		}
+	}
+	return false
 }
 
 // Proofreader is what puts a recognition right at the profile named, told what it
 // is proofreading.
 //
 // Naming no profile is naming no proofreader: nothing comes back and a recognition
-// is used exactly as it was read. A profile that is named and cannot be opened
-// — no key — is an error, and the reason travels in it.
+// is used exactly as it was read.
 func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) {
 	if name == "" {
 		return nil, nil
@@ -68,12 +77,13 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 		return nil, err
 	}
 
-	if profile.Use == proofreading.UseService {
-		client, err := openai.New(profile, instruction)
-		if err != nil {
-			return nil, err
+	if profile.Use == UseService {
+		if c.PluginHost != nil && !c.SafeMode {
+			if _, ok := c.PluginHost.FindPluginByCapability("proofreading"); ok {
+				return plugin.OpenProofreaderBridge(c.PluginHost)
+			}
 		}
-		return client, nil
+		return nil, errProofreadingUnavailable
 	}
 	if c.AgentProofreader == nil {
 		return nil, fmt.Errorf(
@@ -101,7 +111,7 @@ func (c Config) GetSpeechProofreading() run.ProofreadingConfig {
 
 // getProofreading is what a recognition of one kind is put right with: the profile
 // the settings name for it, opened when there is something to put right.
-func (c Config) getProofreading(config proofreading.Proofread) run.ProofreadingConfig {
+func (c Config) getProofreading(config Proofread) run.ProofreadingConfig {
 	profile := c.resolveInFlight(c.Proofreading.Profiles[config.Profile])
 	return run.ProofreadingConfig{
 		IsNamed:     config.Profile != "",
@@ -119,22 +129,15 @@ func (c Config) getProofreading(config proofreading.Proofread) run.ProofreadingC
 
 // ProofreadQueue is where batches are left for the profile named to answer
 // about later. A profile with no queue leaves nothing.
-func (c Config) ProofreadQueue(name, instruction string) (port.ProofreadQueue, error) {
+func (c Config) ProofreadQueue(name, _ string) (port.ProofreadQueue, error) {
 	if name == "" {
 		return nil, nil
 	}
-	profile, err := c.getProfile(name)
+	_, err := c.getProfile(name)
 	if err != nil {
 		return nil, err
 	}
-	if profile.Use != proofreading.UseService || profile.BatchURL == "" {
-		return nil, nil
-	}
-	client, err := openai.New(profile, instruction)
-	if err != nil {
-		return nil, err
-	}
-	return client, nil
+	return nil, nil
 }
 
 // CreateRecognitionProofread is what puts a document's recognition right, and

@@ -144,8 +144,8 @@ func (c Config) Vaults() filesystem.VaultReaders { return filesystem.VaultReader
 		{
 			what: "the same, behind a pointer and inside a slice",
 			src: `package container
-import "` + module + `internal/adapter/embed"
-func (c Config) Embedders() ([]*embed.Model, error) { return nil, nil }`,
+import "` + module + `internal/adapter/trash"
+func (c Config) Cleaners() ([]*trash.Cleaner, error) { return nil, nil }`,
 			isRefused: true,
 		},
 		{
@@ -172,9 +172,9 @@ func (c Config) Trash() port.Trash { return nil }`,
 		{
 			what: "an adapter the compiler holds, kept to this package",
 			src: `package container
-import "` + module + `internal/adapter/proofreading"
-func (c Config) profile(name string) (proofreading.Profile, error) {
-	return proofreading.Profile{}, nil
+import "` + module + `internal/adapter/theme"
+func (c Config) someTheme() (theme.Theme, error) {
+	return theme.Theme{}, nil
 }`,
 			isRefused: false,
 		},

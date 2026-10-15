@@ -5,7 +5,7 @@ import (
 	"image"
 	"io"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/epub"
+	"github.com/jiva-studio/numen/modules/plugins/reader-epub/backend/epub"
 )
 
 // Scan is a document held open, for the length of one call.

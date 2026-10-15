@@ -8,8 +8,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -58,6 +56,9 @@ type Settings struct {
 
 	// Performance is the workload and resource calibration profile.
 	Performance settings.Performance `json:"performance"`
+
+	// Plugins is the configuration for modular plugins, keyed by plugin ID.
+	Plugins map[string]map[string]any `json:"plugins,omitempty"`
 
 	// Notices is what reading the file leaves a person something to do about: a
 	// number written where a setting does not go that far. Each is one line of
@@ -150,11 +151,10 @@ func (c Config) getSettingsOrDefaults() Settings {
 // off.
 func (c Config) SetSettings(said Settings) Config {
 	c.Embedding = said.Indexing.Embedding
-	c.Recognition = said.Indexing.Recognition.Config
 	c.Proofreading = said.Indexing.Proofreading
 	c.ScanProofreading = said.Indexing.Recognition.Proofread
 	c.TranscriptProofreading = said.Indexing.Transcription.Proofread
-	c.Transcription = said.Indexing.Transcription.Config
+	c.Transcription = said.Indexing.Transcription.TranscriptionConfig
 	c.ShouldTranscribe = said.Indexing.CanTranscribe()
 	c.TranscribesUnder = said.Indexing.GetTranscribeLimit()
 	c.Agent = said.Agent
@@ -162,7 +162,63 @@ func (c Config) SetSettings(said Settings) Config {
 	c.Performance = said.Performance
 	c.Hardware = settings.DetectHardware()
 	c.ResolvedCompute = settings.ResolveCompute(said.Performance.Profile, c.Hardware, said.Performance.Custom)
+	if c.PluginHost != nil {
+		if said.Plugins != nil {
+			c.PluginHost.SetSettings(said.Plugins)
+		}
+		c.PluginHost.SetPersistHandler(func(pluginID string, key string, value any) error {
+			writer := c.GetSettingsWriter()
+			raw, err := json.Marshal(value)
+			if err != nil {
+				return err
+			}
+			return writer([]port.Setting{
+				{
+					Path: []string{"plugins", pluginID, key},
+					JSON: string(raw),
+				},
+			})
+		})
+	}
 	return c
+}
+
+// Plugins reads, as the window asks, the discovered plugins and their settings schemas.
+func (c Config) Plugins() func() []port.PluginInfo {
+	return func() []port.PluginInfo {
+		if c.PluginHost == nil {
+			return nil
+		}
+		infos := c.PluginHost.GetPluginInfos()
+		result := make([]port.PluginInfo, 0, len(infos))
+		for _, info := range infos {
+			settingsList := make([]port.PluginSetting, 0, len(info.Settings))
+			for _, s := range info.Settings {
+				settingsList = append(settingsList, port.PluginSetting{
+					Key:         s.Key,
+					Type:        s.Type,
+					Title:       s.Title,
+					Description: s.Description,
+					DefaultJSON: s.DefaultJson,
+					Palette:     s.Palette,
+					Options:     s.Options,
+					Min:         s.Min,
+					Max:         s.Max,
+					Step:        s.Step,
+				})
+			}
+			result = append(result, port.PluginInfo{
+				ID:           info.Id,
+				Name:         info.Name,
+				Version:      info.Version,
+				Description:  info.Description,
+				Capabilities: info.Capabilities,
+				Settings:     settingsList,
+				IsActive:     info.IsActive,
+			})
+		}
+		return result
+	}
 }
 
 // Models reads, as the window asks, the models each setting that names one can
@@ -180,12 +236,6 @@ func (c Config) Models() func() []port.Model {
 // getModels is that catalogue read against the settings given.
 func getModels(held Settings) []port.Model {
 	models := make([]port.Model, 0, 12)
-	models = append(models, setUnder(
-		embed.GetModels(held.Indexing.Embedding, embed.IsFetched),
-		indexingAt, embeddingAt)...)
-	models = append(models, setUnder(
-		recognition.GetModels(held.Indexing.Recognition.Config, recognition.IsFetched),
-		indexingAt, recognitionAt)...)
 	models = append(models, setUnder(agent.GetModels(held.Agent), agentAt)...)
 	models = append(models, setUnder(agent.GetPrograms(), agentAt)...)
 	return models

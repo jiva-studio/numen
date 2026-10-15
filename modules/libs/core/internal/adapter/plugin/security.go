@@ -1,0 +1,158 @@
+package plugin
+
+import (
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+var (
+	errEmptyPath         = errors.New("path cannot be empty")
+	errEmptyVaultRoot    = errors.New("vault root cannot be empty")
+	errProhibitedTempDir = errors.New("executing plugin binaries from temporary directory is prohibited")
+	errEntrypointEscape  = errors.New("plugin entrypoint escapes plugin directory")
+)
+
+// VaultPathValidator verifies that file paths accessed by plugins reside within the active vault.
+type VaultPathValidator struct{}
+
+// NewVaultPathValidator creates a new path validator.
+func NewVaultPathValidator() VaultPathValidator {
+	return VaultPathValidator{}
+}
+
+// ValidatePath checks that targetPath is located within vaultRoot and contains no traversal outside it.
+func (v VaultPathValidator) ValidatePath(vaultRoot, targetPath string) (string, error) {
+	if strings.TrimSpace(targetPath) == "" {
+		return "", errEmptyPath
+	}
+	if strings.TrimSpace(vaultRoot) == "" {
+		return "", errEmptyVaultRoot
+	}
+
+	cleanVault, err := filepath.Abs(filepath.Clean(vaultRoot))
+	if err != nil {
+		return "", fmt.Errorf("resolve vault root: %w", err)
+	}
+
+	var cleanTarget string
+	if filepath.IsAbs(targetPath) {
+		cleanTarget = filepath.Clean(targetPath)
+	} else {
+		cleanTarget = filepath.Join(cleanVault, targetPath)
+	}
+
+	cleanTarget, err = filepath.Abs(cleanTarget)
+	if err != nil {
+		return "", fmt.Errorf("resolve target path: %w", err)
+	}
+
+	rel, err := filepath.Rel(cleanVault, cleanTarget)
+	if err != nil {
+		return "", port.ErrPathTraversal
+	}
+
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", port.ErrPathTraversal
+	}
+
+	realVault, errV := filepath.EvalSymlinks(cleanVault)
+	realTarget, errT := filepath.EvalSymlinks(cleanTarget)
+	if errV == nil && errT == nil {
+		relReal, errRel := filepath.Rel(realVault, realTarget)
+		if errRel != nil || relReal == ".." || strings.HasPrefix(relReal, ".."+string(filepath.Separator)) {
+			return "", port.ErrPathTraversal
+		}
+	}
+
+	return cleanTarget, nil
+}
+
+// isSystemTempDir reports whether the given path resides within an operating system temporary directory.
+func isSystemTempDir(path string) bool {
+	clean, err := filepath.Abs(filepath.Clean(path))
+	if err != nil {
+		return false
+	}
+	eval, _ := filepath.EvalSymlinks(clean)
+
+	for _, tempDir := range getSystemTempDirs() {
+		relClean, errClean := filepath.Rel(tempDir, clean)
+		if errClean == nil && relClean != ".." && !strings.HasPrefix(relClean, ".."+string(filepath.Separator)) {
+			return true
+		}
+		if eval != "" {
+			relEval, errEval := filepath.Rel(tempDir, eval)
+			if errEval == nil && relEval != ".." && !strings.HasPrefix(relEval, ".."+string(filepath.Separator)) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func getSystemTempDirs() []string {
+	seen := make(map[string]struct{})
+	var dirs []string
+	record := func(p string) {
+		if strings.TrimSpace(p) == "" {
+			return
+		}
+		clean, err := filepath.Abs(filepath.Clean(p))
+		if err == nil {
+			if _, ok := seen[clean]; !ok {
+				seen[clean] = struct{}{}
+				dirs = append(dirs, clean)
+			}
+		}
+		if eval, err := filepath.EvalSymlinks(clean); err == nil {
+			if _, ok := seen[eval]; !ok {
+				seen[eval] = struct{}{}
+				dirs = append(dirs, eval)
+			}
+		}
+	}
+
+	record(os.TempDir())
+	record(os.Getenv("TEMP"))
+	record(os.Getenv("TMP"))
+	if runtime.GOOS != "windows" {
+		record("/tmp")
+		record("/var/tmp")
+	}
+	return dirs
+}
+
+// validateExecutablePath ensures an entrypoint stays within the plugin directory and outside temporary locations.
+func validateExecutablePath(pluginDir, entrypoint string) (string, error) {
+	if strings.TrimSpace(entrypoint) == "" {
+		return "", errEmptyEntrypoint
+	}
+
+	cleanDir, err := filepath.Abs(filepath.Clean(pluginDir))
+	if err != nil {
+		return "", fmt.Errorf("resolve plugin directory: %w", err)
+	}
+
+	binPath := filepath.Join(cleanDir, entrypoint)
+	cleanBin, err := filepath.Abs(filepath.Clean(binPath))
+	if err != nil {
+		return "", fmt.Errorf("resolve binary path: %w", err)
+	}
+
+	rel, err := filepath.Rel(cleanDir, cleanBin)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", errEntrypointEscape
+	}
+
+	if isSystemTempDir(cleanBin) || isSystemTempDir(cleanDir) {
+		return "", errProhibitedTempDir
+	}
+
+	return cleanBin, nil
+}

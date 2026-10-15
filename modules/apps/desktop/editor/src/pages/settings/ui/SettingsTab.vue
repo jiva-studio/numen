@@ -10,20 +10,19 @@ import WindowSettingsSection from './WindowSettingsSection.vue'
 import MediaSettingsSection from './MediaSettingsSection.vue'
 import PerformanceSettingsSection from './PerformanceSettingsSection.vue'
 import AgentSettingsSection from './AgentSettingsSection.vue'
+import PluginSettingsSection from './PluginSettingsSection.vue'
 import { WORDS as words } from '../words'
 
-// --- Props & Emits ---
+/* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{ state: SettingsTabState }>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
 
-// --- Handlers ---
+/* -------------------------------- Handlers -------------------------------- */
 function onOpenFile() {
   installation.value.openFile()
 }
-
-// --- Helpers ---
 </script>
 
 <template>
@@ -40,6 +39,7 @@ function onOpenFile() {
       <MediaSettingsSection :state="props.state" />
       <PerformanceSettingsSection :state="props.state" />
       <AgentSettingsSection :state="props.state" />
+      <PluginSettingsSection :state="props.state" />
     </div>
   </div>
 </template>

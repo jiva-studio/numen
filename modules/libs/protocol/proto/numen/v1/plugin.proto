@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// PluginLifecycleService handles lifecycle, ping, and graceful shutdown for all plugins.
+service PluginLifecycleService {
+  rpc Ping(PingRequest) returns (PingResponse);
+  rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
+  rpc Configure(ConfigureRequest) returns (ConfigureResponse);
+}
+
+message PingRequest {}
+
+message PingResponse {
+  string status = 1;
+}
+
+message ShutdownRequest {
+  int32 timeout_seconds = 1;
+}
+
+message ShutdownResponse {
+  bool success = 1;
+}
+
+message ConfigureRequest {
+  string plugin_id = 1;
+  string configuration_json = 2;
+  map<string, string> values = 3;
+}
+
+message ConfigureResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+// PluginSetting declares one setting in the plugin's declarative settings schema.
+message PluginSetting {
+  string key = 1;
+  string type = 2;
+  string title = 3;
+  string description = 4;
+  string default_json = 5;
+  bool palette = 6;
+  repeated string options = 7;
+  optional double min = 8;
+  optional double max = 9;
+  optional double step = 10;
+}
+
+// PluginInfo describes a discovered plugin and its declarative settings.
+message PluginInfo {
+  string id = 1;
+  string name = 2;
+  string version = 3;
+  string description = 4;
+  repeated string capabilities = 5;
+  repeated PluginSetting settings = 6;
+  bool is_active = 7;
+}
+
+// PluginService allows querying discovered plugins and their settings schemas.
+service PluginService {
+  rpc GetPlugins(GetPluginsRequest) returns (GetPluginsResponse);
+}
+
+message GetPluginsRequest {}
+
+message GetPluginsResponse {
+  repeated PluginInfo plugins = 1;
+}

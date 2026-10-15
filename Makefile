@@ -4,6 +4,7 @@ CORE     := modules/libs/core
 UI       := modules/libs/ui
 WIRE     := modules/libs/wire
 PROTOCOL := modules/libs/protocol
+PLUGIN_SDK := modules/libs/plugin-sdk
 
 DESKTOP  := modules/apps/desktop
 MOBILE   := modules/apps/mobile
@@ -12,8 +13,15 @@ LANDING  := modules/apps/landing
 
 ICON     := modules/tools/icon
 STORIES  := modules/tools/stories
+PLUGINS  := modules/plugins
+PLUGIN_NAMES := $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLUGINS)/*/manifest.json))))
 
 INSTALL  ?= npm install
+
+EXE      ?=
+ifeq ($(OS),Windows_NT)
+EXE      := .exe
+endif
 
 # ------------------------------------ Help ------------------------------------
 .PHONY: help
@@ -42,6 +50,29 @@ generate-check: lib_protocol_generate_check ## verify generated code matches sch
 
 .PHONY: desktop
 desktop: app_desktop_build ## build desktop application
+
+.PHONY: desktop_monolith
+desktop_monolith: ## build desktop application in monolithic mode
+	$(MAKE) app_desktop_build BUILD_TAGS=plugins_monolith
+
+.PHONY: desktop_modular
+desktop_modular: plugins_build ## build desktop application in modular mode
+	$(MAKE) app_desktop_build BUILD_TAGS=plugins_modular
+
+.PHONY: plugins
+plugins: plugins_build ## build all native plugins
+
+.PHONY: plugins_build
+plugins_build: $(addprefix plugin_,$(addsuffix _build,$(PLUGIN_NAMES))) ## build all native plugins
+
+.PHONY: plugins_lint
+plugins_lint: $(addprefix plugin_,$(addsuffix _lint,$(PLUGIN_NAMES))) ## lint all native plugins
+
+.PHONY: plugins_test
+plugins_test: $(addprefix plugin_,$(addsuffix _test,$(PLUGIN_NAMES))) ## run tests across all plugins
+
+.PHONY: plugins_package
+plugins_package: $(addprefix plugin_,$(addsuffix _package,$(PLUGIN_NAMES))) ## package all plugins into zip archives
 
 .PHONY: flashcards
 flashcards: app_desktop_flashcards_bin ## build flashcards standalone window
@@ -140,7 +171,33 @@ lib_wire_test: ## run wire tests
 lib_wire_lint: ## lint wire package
 	cd $(WIRE) && npm run typecheck
 
+# ------------------------------ Lib: Plugin SDK -------------------------------
+.PHONY: lib_plugin_sdk_typecheck
+lib_plugin_sdk_typecheck: ## typecheck plugin-sdk package
+	cd $(PLUGIN_SDK) && npm run typecheck
+
+.PHONY: lib_plugin_sdk_compile
+lib_plugin_sdk_compile: lib_plugin_sdk_typecheck
+
+.PHONY: lib_plugin_sdk_test
+lib_plugin_sdk_test: ## run plugin-sdk unit tests
+	cd $(PLUGIN_SDK) && npm test
+
+.PHONY: lib_plugin_sdk_lint
+lib_plugin_sdk_lint: lib_plugin_sdk_typecheck
+
+# ------------------------------ Plugins Tooling -------------------------------
+.PHONY: create_plugin
+create_plugin: ## scaffold a new plugin (usage: make create_plugin name=<id> [template=<reader|compute|agent>] [type=<native|frontend>])
+	cd $(DESKTOP) && go run ./cmd/numen-plugin create $(name) --template=$(template) --type=$(type)
+
 # -------------------------------- App: Desktop --------------------------------
+BUILD_TAGS ?=
+TAGS_FLAG :=
+ifneq ($(BUILD_TAGS),)
+TAGS_FLAG := -tags $(BUILD_TAGS)
+endif
+
 ifeq ($(shell uname -s),Darwin)
 define bundle
 	rm -rf "$(1).app"
@@ -148,6 +205,21 @@ define bundle
 	mv $(2) "$(1).app/Contents/MacOS/$(2)"
 	cp $(DESKTOP)/build/darwin/$(3) "$(1).app/Contents/Info.plist"
 	cp $(DESKTOP)/build/darwin/$(4) "$(1).app/Contents/Resources/$(4)"
+	mkdir -p "$(1).app/Contents/PlugIns"
+	for p in $$(find $(PLUGINS) -mindepth 1 -maxdepth 1 -type d); do \
+		if [ -f "$$p/manifest.json" ] && [ -d "$$p/bin" ]; then \
+			name=$$(basename "$$p"); \
+			mkdir -p "$(1).app/Contents/PlugIns/$$name"; \
+			cp "$$p/manifest.json" "$(1).app/Contents/PlugIns/$$name/"; \
+			cp -r "$$p/bin" "$(1).app/Contents/PlugIns/$$name/"; \
+			if [ -d "$$p/dist" ]; then cp -r "$$p/dist" "$(1).app/Contents/PlugIns/$$name/"; fi; \
+			for bin in "$(1).app/Contents/PlugIns/$$name/bin/"*; do \
+				if [ -f "$$bin" ] && [ -x "$$bin" ]; then \
+					codesign --force -s - "$$bin"; \
+				fi; \
+			done; \
+		fi; \
+	done
 	printf 'APPL????' > "$(1).app/Contents/PkgInfo"
 	plutil -lint "$(1).app/Contents/Info.plist"
 	codesign --force -s - "$(1).app"
@@ -167,7 +239,7 @@ app_desktop_flashcards_build: lib_ui_build
 
 .PHONY: app_desktop_build
 app_desktop_build: interface ## build desktop binary
-	cd $(DESKTOP) && CGO_ENABLED=1 go build -o ../../../numen ./cmd/numen
+	cd $(DESKTOP) && CGO_ENABLED=1 go build $(TAGS_FLAG) -o ../../../numen ./cmd/numen
 	$(call bundle,Numen,numen,Info.plist,numen.icns)
 
 .PHONY: app_desktop_pgo
@@ -272,3 +344,48 @@ tool_icon_build: ## cut application icons
 .PHONY: tool_stories_check
 tool_stories_check: ## verify story references
 	cd $(STORIES) && npm run check
+
+# ---------------------------------- Plugins -----------------------------------
+.PHONY: $(addprefix plugin_,$(addsuffix _build,$(PLUGIN_NAMES)))
+$(addprefix plugin_,$(addsuffix _build,$(PLUGIN_NAMES))): plugin_%_build: plugin_%_backend_build plugin_%_frontend_build
+
+.PHONY: $(addprefix plugin_,$(addsuffix _backend_build,$(PLUGIN_NAMES)))
+$(addprefix plugin_,$(addsuffix _backend_build,$(PLUGIN_NAMES))): plugin_%_backend_build:
+	@if [ -d $(PLUGINS)/$*/backend ]; then \
+		mkdir -p $(PLUGINS)/$*/bin && \
+		cd $(PLUGINS)/$* && go build -o bin/$*$(EXE) ./backend ; \
+	fi
+
+.PHONY: $(addprefix plugin_,$(addsuffix _frontend_build,$(PLUGIN_NAMES)))
+$(addprefix plugin_,$(addsuffix _frontend_build,$(PLUGIN_NAMES))): plugin_%_frontend_build:
+	@if [ -f $(PLUGINS)/$*/package.json ]; then \
+		cd $(PLUGINS)/$* && npm run build ; \
+	elif [ -d $(PLUGINS)/$*/frontend ]; then \
+		mkdir -p $(PLUGINS)/$*/dist ; \
+		if [ -f $(PLUGINS)/$*/frontend/styles.css ]; then \
+			cp $(PLUGINS)/$*/frontend/styles.css $(PLUGINS)/$*/dist/styles.css ; \
+		fi ; \
+	fi
+
+.PHONY: $(addprefix plugin_,$(addsuffix _lint,$(PLUGIN_NAMES)))
+$(addprefix plugin_,$(addsuffix _lint,$(PLUGIN_NAMES))): plugin_%_lint:
+	@if [ -f $(PLUGINS)/$*/go.mod ]; then \
+		cd $(PLUGINS)/$* && go vet ./... && golangci-lint run ./... ; \
+	fi
+
+.PHONY: $(addprefix plugin_,$(addsuffix _test,$(PLUGIN_NAMES)))
+$(addprefix plugin_,$(addsuffix _test,$(PLUGIN_NAMES))): plugin_%_test:
+	@if [ -f $(PLUGINS)/$*/go.mod ]; then \
+		cd $(PLUGINS)/$* && go test ./... ; \
+	fi
+
+.PHONY: $(addprefix plugin_,$(addsuffix _package,$(PLUGIN_NAMES)))
+$(addprefix plugin_,$(addsuffix _package,$(PLUGIN_NAMES))): plugin_%_package: plugin_%_build
+	cd $(DESKTOP) && go run ./cmd/numen-plugin package ../../../$(PLUGINS)/$*
+
+.PHONY: $(addprefix plugin_,$(addsuffix _clean,$(PLUGIN_NAMES)))
+$(addprefix plugin_,$(addsuffix _clean,$(PLUGIN_NAMES))): plugin_%_clean:
+	rm -rf $(PLUGINS)/$*/bin $(PLUGINS)/$*/dist
+
+.PHONY: plugins_clean
+plugins_clean: $(addprefix plugin_,$(addsuffix _clean,$(PLUGIN_NAMES))) ## clean all plugin artifacts

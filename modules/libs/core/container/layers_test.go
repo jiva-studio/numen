@@ -29,6 +29,7 @@ var driving = map[string]bool{
 	"adapter/mcp":               true,
 	"adapter/window/editor":     true,
 	"adapter/window/flashcards": true,
+	"internal/adapter/plugin":   true,
 	"internal/adapter/theme":    true,
 	"internal/adapterlib/wire":  true,
 }
@@ -1249,8 +1250,8 @@ func TestTheCoresPublicAdaptersAreTheseAndNoOthers(t *testing.T) {
 // held are the adapters the compiler keeps to this module. Naming them is what
 // makes a new one arrive as a decision.
 var held = []string{
-	"appstate", "download", "embed", "filesystem", "pdf", "proofreading",
-	"recognition", "theme", "transcription", "trash",
+	"appstate", "download", "filesystem", "plugin",
+	"theme", "trash",
 }
 
 // The adapters under internal/ are these and no others.
@@ -1290,7 +1291,7 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		// The window is given what it needs and assembles nothing, and one
 		// settings file is the union of sections each adapter owns.
 		{"adapter/window/editor", "container", true},
-		{"adapter/settings", "internal/adapter/embed", true},
+		{"adapter/settings", "internal/adapter/filesystem", true},
 
 		// The folder holding one adapter to a window is not an adapter, so the
 		// two windows are two adapters and neither is given the other.
@@ -1317,7 +1318,7 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"internal/adapterlib/wire", "internal/adapter/trash", true},
 		{"internal/adapterlib/wire", "usecase/note", false},
 		{"internal/adapterlib/onnxruntime", "usecase/note", true},
-		{"internal/adapterlib/onnxruntime", "internal/adapter/embed", true},
+		{"internal/adapterlib/onnxruntime", "internal/adapter/filesystem", true},
 		{"internal/adapterlib/onnxruntime", "port", false},
 
 		// Fixtures build the real adapters.
