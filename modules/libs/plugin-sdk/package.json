@@ -1,0 +1,25 @@
+{
+  "name": "@numen/plugin-sdk",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Developer SDK and type definitions for Numen plugins.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.3",
+    "vue": "^3.5.0"
+  }
+}
