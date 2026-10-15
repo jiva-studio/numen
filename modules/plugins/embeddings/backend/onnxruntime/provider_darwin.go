@@ -137,3 +137,16 @@ func appendCoreMLCached(handle, optHandle uintptr, units ComputeUnits) bool {
 	runtime.KeepAlive(values)
 	return status == 0
 }
+
+// getCoreMLOptions is the option list the keyed CoreML entry point is given.
+func getCoreMLOptions(cacheDir string, units ComputeUnits) [][2]string {
+	if units == ComputeUnitsDefault {
+		units = ComputeUnitsAll
+	}
+	return [][2]string{
+		{"ModelCacheDirectory", cacheDir},
+		{"EnableOnSubgraphs", "1"},
+		{"CreateMLProgram", "1"},
+		{"MLComputeUnits", string(units)},
+	}
+}
