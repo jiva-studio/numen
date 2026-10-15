@@ -10,7 +10,9 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -59,8 +61,12 @@ func (s *documentServer) GetDocument(
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
+	cleanPath := filepath.Clean(path)
+	if strings.Contains(cleanPath, "..") {
+		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope"))
+	}
 
-	file, err := os.Open(path)
+	file, err := os.Open(cleanPath)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("open file: %w", err))
 	}
@@ -98,8 +104,12 @@ func (s *documentServer) RenderPage(
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
+	cleanPath := filepath.Clean(path)
+	if strings.Contains(cleanPath, "..") {
+		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope"))
+	}
 
-	file, err := os.Open(path)
+	file, err := os.Open(cleanPath)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("open file: %w", err))
 	}

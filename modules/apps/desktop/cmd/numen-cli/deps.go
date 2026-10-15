@@ -25,6 +25,10 @@ func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 		cfg.IndexPath = where.Index
 		cfg.RegistryPath = where.Registry
 		cfg.ServiceDir = where.ServiceDir
+		cfg.SafeMode = where.SafeMode
+		if cfg.SafeMode && cfg.PluginHost != nil {
+			cfg.PluginHost.SetSafeMode(true)
+		}
 		if chosen, err := cfg.Settings(); err == nil {
 			cfg = cfg.SetSettings(chosen)
 		}

@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -18,6 +17,7 @@ import (
 var (
 	errPluginNotFound  = errors.New("plugin not found")
 	errEmptyEntrypoint = errors.New("plugin entrypoint is empty")
+	errSafeModeActive  = errors.New("plugin host is running in safe mode")
 )
 
 // Launcher is a function that spawns a plugin process and provides its stdout stream.
@@ -32,11 +32,14 @@ type Host struct {
 	supervisors map[string]*Supervisor
 	endpoints   map[string]Endpoint
 	launcher    Launcher
+	safeMode    bool
+	vaultPath   string
+	bus         *EventBus
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
 func NewHost(target string, dirs ...string) *Host {
-	return &Host{
+	h := &Host{
 		mu:          sync.RWMutex{},
 		target:      target,
 		dirs:        dirs,
@@ -44,7 +47,12 @@ func NewHost(target string, dirs ...string) *Host {
 		supervisors: make(map[string]*Supervisor),
 		endpoints:   make(map[string]Endpoint),
 		launcher:    defaultLauncher,
+		safeMode:    false,
+		vaultPath:   "",
+		bus:         nil,
 	}
+	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
+	return h
 }
 
 // SetLauncher overrides the process launcher for testing.
@@ -54,10 +62,86 @@ func (h *Host) SetLauncher(l Launcher) {
 	h.launcher = l
 }
 
+// SetSafeMode enables or disables safe recovery mode.
+func (h *Host) SetSafeMode(enabled bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.safeMode = enabled
+}
+
+// IsSafeMode reports whether the host operates in safe recovery mode.
+func (h *Host) IsSafeMode() bool {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.safeMode
+}
+
+// SetVaultPath sets the active vault root path for path traversal checks.
+func (h *Host) SetVaultPath(path string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.vaultPath = path
+}
+
+// GetVaultPath returns the currently configured active vault path.
+func (h *Host) GetVaultPath() string {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.vaultPath
+}
+
+// CheckPluginPermission verifies that the specified plugin holds the required permission.
+func (h *Host) CheckPluginPermission(pluginID, permission string) error {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	sup, ok := h.supervisors[pluginID]
+	if !ok {
+		return errPluginNotFound
+	}
+	return sup.CheckPermission(permission)
+}
+
+// ValidatePluginPath verifies that targetPath is within the active vault and permitted for the plugin.
+func (h *Host) ValidatePluginPath(pluginID, targetPath string) (string, error) {
+	h.mu.RLock()
+	sup, ok := h.supervisors[pluginID]
+	vaultPath := h.vaultPath
+	h.mu.RUnlock()
+
+	if !ok {
+		return "", errPluginNotFound
+	}
+	return sup.ValidatePath(vaultPath, targetPath)
+}
+
+// EmitEvent queues an event into the debounced and throttled event bus.
+func (h *Host) EmitEvent(event string) {
+	h.mu.RLock()
+	bus := h.bus
+	isSafe := h.safeMode
+	h.mu.RUnlock()
+
+	if isSafe || bus == nil {
+		return
+	}
+	bus.Publish(event)
+}
+
+// GetEventBus returns the event bus attached to this host.
+func (h *Host) GetEventBus() *EventBus {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.bus
+}
+
 // Discover scans configured directories and registers eligible plugins.
 func (h *Host) Discover() error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+
+	if h.safeMode {
+		return nil
+	}
 
 	all, err := DiscoverPlugins(h.dirs)
 	if err != nil {
@@ -68,9 +152,12 @@ func (h *Host) Discover() error {
 
 	for _, p := range discovered {
 		h.plugins[p.Manifest.ID] = p
-		if _, exists := h.supervisors[p.Manifest.ID]; !exists {
-			h.supervisors[p.Manifest.ID] = NewSupervisor()
+		sup, exists := h.supervisors[p.Manifest.ID]
+		if !exists {
+			sup = NewSupervisor()
+			h.supervisors[p.Manifest.ID] = sup
 		}
+		sup.SetPermissions(p.Manifest.Permissions)
 	}
 	return nil
 }
@@ -79,6 +166,10 @@ func (h *Host) Discover() error {
 func (h *Host) GetPlugins() []DiscoveredPlugin {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
+
+	if h.safeMode {
+		return nil
+	}
 
 	result := make([]DiscoveredPlugin, 0, len(h.plugins))
 	for _, p := range h.plugins {
@@ -91,6 +182,11 @@ func (h *Host) GetPlugins() []DiscoveredPlugin {
 func (h *Host) GetPlugin(id string) (DiscoveredPlugin, bool) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
+
+	if h.safeMode {
+		return emptyDiscoveredPlugin(), false
+	}
+
 	p, ok := h.plugins[id]
 	return p, ok
 }
@@ -99,6 +195,11 @@ func (h *Host) GetPlugin(id string) (DiscoveredPlugin, bool) {
 func (h *Host) FindPluginByCapability(capability string) (DiscoveredPlugin, bool) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
+
+	if h.safeMode {
+		return emptyDiscoveredPlugin(), false
+	}
+
 	for _, p := range h.plugins {
 		if p.Manifest.HasCapability(capability) {
 			return p, true
@@ -122,6 +223,10 @@ func (h *Host) FindPluginByFileExtension(ext string) (DiscoveredPlugin, bool) {
 // TriggerEvent activates all dormant or idle plugins registered for the given event.
 func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error) {
 	h.mu.RLock()
+	if h.safeMode {
+		h.mu.RUnlock()
+		return nil, nil
+	}
 	candidates := make([]string, 0)
 	for id, p := range h.plugins {
 		if p.Manifest.CanActivateOn(event) {
@@ -144,6 +249,10 @@ func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error)
 func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+
+	if h.safeMode {
+		return Endpoint{Host: "", Port: 0, Token: ""}, errSafeModeActive
+	}
 
 	p, ok := h.plugins[pluginID]
 	if !ok {
@@ -240,6 +349,10 @@ func (h *Host) TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
+	if h.bus != nil {
+		h.bus.Close(ctx)
+	}
+
 	var firstErr error
 	for id, sup := range h.supervisors {
 		if sup.GetState() != StateDormant {
@@ -267,7 +380,11 @@ func defaultLauncher(
 		entrypoint += ".exe"
 	}
 
-	binPath := filepath.Join(p.Dir, entrypoint)
+	binPath, err := validateExecutablePath(p.Dir, entrypoint)
+	if err != nil {
+		return nil, nil, fmt.Errorf("validate plugin binary: %w", err)
+	}
+
 	cmd := exec.CommandContext(ctx, binPath, "--port="+strconv.Itoa(port), "--token="+token)
 	cmd.Dir = p.Dir
 	cmd.Env = append(

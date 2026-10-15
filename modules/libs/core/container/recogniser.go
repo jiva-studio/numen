@@ -17,7 +17,7 @@ var (
 // RecogniserReady says whether a document could be read now without waiting for
 // anything to arrive.
 func (c Config) RecogniserReady() bool {
-	if c.PluginHost != nil {
+	if c.PluginHost != nil && !c.SafeMode {
 		if _, ok := c.PluginHost.FindPluginByCapability("recognition"); ok {
 			return true
 		}
@@ -32,7 +32,7 @@ func (c Config) PrepareRecogniser(_ context.Context) error {
 
 // Recogniser is what reads a scanned page on this machine, opened now.
 func (c Config) Recogniser(ctx context.Context) (recogniser port.Recogniser, closer func() error, why error) {
-	if c.PluginHost != nil {
+	if c.PluginHost != nil && !c.SafeMode {
 		if _, ok := c.PluginHost.FindPluginByCapability("recognition"); ok {
 			bridge, err := plugin.OpenRecogniserBridge(ctx, c.PluginHost)
 			if err != nil {

@@ -76,6 +76,12 @@ func (b *RecogniserBridge) GetRecognitionModel() port.RecognitionModel {
 
 // Recognise sends page image bytes to the OCR plugin process and decodes returned blocks.
 func (b *RecogniserBridge) Recognise(ctx context.Context, page image.Image) ([]domain.OCRBlock, error) {
+	if b.host != nil {
+		if err := b.host.CheckPluginPermission(b.pluginID, PermissionVaultRead); err != nil {
+			return nil, err
+		}
+	}
+
 	var buf bytes.Buffer
 	if err := png.Encode(&buf, page); err != nil {
 		return nil, fmt.Errorf("encode page png: %w", err)

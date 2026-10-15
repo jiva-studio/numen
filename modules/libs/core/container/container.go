@@ -111,6 +111,9 @@ type Config struct {
 	// are holding.
 	ShouldRebuildIndex bool
 
+	// SafeMode disables loading non-essential plugins for emergency recovery.
+	SafeMode bool
+
 	// ErrorHandler is where what is assembled here says what went wrong in work
 	// it carries on past. An installation that sets none is told nothing.
 	ErrorHandler port.ErrorHandler

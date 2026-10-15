@@ -64,6 +64,12 @@ func (b *DocumentBridge) Close() error {
 
 // Read implements port.TextExtractor.
 func (b *DocumentBridge) Read(ctx context.Context, raw []byte) (domain.TextLayer, error) {
+	if b.host != nil {
+		if err := b.host.CheckPluginPermission(b.pluginID, PermissionVaultRead); err != nil {
+			return domain.TextLayer{}, err
+		}
+	}
+
 	req := connect.NewRequest(&v1.ExtractTextRequest{
 		Data: raw,
 	})
@@ -93,21 +99,26 @@ func (b *DocumentBridge) OpenDocument(ctx context.Context, file io.ReadSeekClose
 	}
 	defer file.Close()
 
+	if b.host != nil {
+		if err := b.host.CheckPluginPermission(b.pluginID, PermissionVaultRead); err != nil {
+			return nil, err
+		}
+	}
+
 	var path string
 	if named, ok := file.(interface{ Name() string }); ok {
-		path = named.Name()
-	} else {
-		tmp, err := os.CreateTemp("", "numen-doc-*.pdf")
+		validated, err := b.resolveNamedPath(named.Name())
 		if err != nil {
 			return nil, err
 		}
-		defer os.Remove(tmp.Name())
-		if _, err := io.Copy(tmp, file); err != nil {
-			_ = tmp.Close()
+		path = validated
+	} else {
+		tmpPath, cleanup, err := bufferTempDocument(file)
+		if err != nil {
 			return nil, err
 		}
-		_ = tmp.Close()
-		path = tmp.Name()
+		defer cleanup()
+		path = tmpPath
 	}
 
 	req := connect.NewRequest(&v1.GetDocumentRequest{
@@ -162,3 +173,25 @@ func (d *remoteDocument) RenderPage(index, dpi int) (image.Image, error) {
 }
 
 func (d *remoteDocument) Close() {}
+
+func (b *DocumentBridge) resolveNamedPath(rawPath string) (string, error) {
+	if b.host == nil || b.host.GetVaultPath() == "" {
+		return rawPath, nil
+	}
+	return b.host.ValidatePluginPath(b.pluginID, rawPath)
+}
+
+func bufferTempDocument(file io.Reader) (string, func(), error) {
+	tmp, err := os.CreateTemp("", "numen-doc-*.pdf")
+	if err != nil {
+		return "", nil, err
+	}
+	cleanup := func() { _ = os.Remove(tmp.Name()) }
+	if _, err := io.Copy(tmp, file); err != nil {
+		_ = tmp.Close()
+		cleanup()
+		return "", nil, err
+	}
+	_ = tmp.Close()
+	return tmp.Name(), cleanup, nil
+}

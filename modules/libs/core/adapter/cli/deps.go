@@ -20,6 +20,7 @@ type Locations struct {
 	Index      string
 	Registry   string
 	ServiceDir string
+	SafeMode   bool
 }
 
 // Deps is what one run of the terminal works through: one opener for each

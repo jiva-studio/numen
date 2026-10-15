@@ -60,7 +60,7 @@ func createTestProofreadingPluginTree(t *testing.T, dir string) {
 		"capabilities": ["proofreading"],
 		"targets": ["desktop.editor"],
 		"activationEvents": ["onCommand:proofread"],
-		"permissions": [],
+		"permissions": ["vault:read"],
 		"lifecycle": {
 			"mode": "on-demand",
 			"idleTimeoutSeconds": 1,
