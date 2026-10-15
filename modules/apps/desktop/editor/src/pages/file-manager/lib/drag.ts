@@ -14,17 +14,23 @@ export const hasUrl = (types: readonly string[] | undefined): boolean =>
   types?.includes(URI_LIST) ?? false
 
 /**
- * The url a drag carries, and nothing where it carries none.
+ * The urls text carries, in the order they stand.
  *
  * The format is one url a line, and a line opening with `#` is a comment.
- * A drag of several is the first of them: one drop makes one file.
  */
-export const getFirstUrl = (text: string): string =>
+export const getUrls = (text: string): readonly string[] =>
   text
-    .split('\n')
+    .split(/\r?\n/)
     .map((line) => line.trim())
-    .find((line) => line !== '' && !line.startsWith('#')) ?? ''
+    .filter((line) => line !== '' && !line.startsWith('#'))
 
-/** The url a drag let go over the tree carries, read out of what it holds. */
+/** The first url text carries, or empty string. */
+export const getFirstUrl = (text: string): string => getUrls(text)[0] ?? ''
+
+/** The urls a drag let go over the tree carries, read out of what it holds. */
+export const getDroppedUrls = (transfer: DataTransfer | null | undefined): readonly string[] =>
+  getUrls(transfer?.getData(URI_LIST) ?? '')
+
+/** The first url a drag let go over the tree carries. */
 export const getDroppedUrl = (transfer: DataTransfer | null | undefined): string =>
   getFirstUrl(transfer?.getData(URI_LIST) ?? '')

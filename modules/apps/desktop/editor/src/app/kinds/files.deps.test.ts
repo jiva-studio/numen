@@ -408,6 +408,28 @@ describe('what the files tab asks of the window', () => {
     expect(createUrl).toHaveBeenCalledWith('https://example.test', 'dir')
   })
 
+  it('imports several addresses into a folder without opening tabs', async () => {
+    const { deps, createUrl, openNewFile } = setup()
+    createUrl
+      .mockResolvedValueOnce({ ok: true, value: { path: 'dir/A.md' } })
+      .mockResolvedValueOnce({ ok: true, value: { path: 'dir/B.md' } })
+
+    expect(await deps.importUrls('dir', ['https://a.test', 'https://b.test'])).toEqual([
+      'dir/A.md',
+      'dir/B.md',
+    ])
+    expect(createUrl).toHaveBeenCalledTimes(2)
+    expect(openNewFile).not.toHaveBeenCalled()
+  })
+
+  it('imports a single address via importUrls and opens it in a tab', async () => {
+    const { deps, createUrl, openNewFile } = setup()
+    createUrl.mockResolvedValue({ ok: true, value: { path: 'dir/A.md' } })
+
+    expect(await deps.importUrls('dir', ['https://a.test'])).toEqual(['dir/A.md'])
+    expect(openNewFile).toHaveBeenCalledWith('dir/A.md', '', 'url')
+  })
+
   it('shows an error as an error message', () => {
     const { deps, writeMessage } = setup()
 

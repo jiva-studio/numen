@@ -614,6 +614,7 @@ const files = (open: readonly string[]) => {
     createStencil: async () => '',
     createPreset: async () => '',
     importUrl: async () => '',
+    importUrls: async () => [],
     showError: () => {},
   })
   const read = (async () => {

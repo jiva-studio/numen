@@ -176,3 +176,43 @@ describe('a note pointing at an address made', () => {
     expect(opened).toStrictEqual([])
   })
 })
+
+describe('several notes pointing at addresses made', () => {
+  it('opens the single file when given one address', async () => {
+    const vault = maker()
+    const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
+    const opened: string[] = []
+    tabOpeners.registerEditor('url', (path) => opened.push(path))
+    const made = createCreators(vault, tabOpeners)
+
+    const paths = await made.createUrls('links', ['example.org'])
+
+    expect(vault.asked).toStrictEqual(['link links example.org'])
+    expect(paths).toStrictEqual(['links/example.org.md'])
+    expect(opened).toStrictEqual(['links/example.org.md'])
+  })
+
+  it('creates every note and opens none when given several addresses', async () => {
+    const vault = maker()
+    const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
+    const opened: string[] = []
+    tabOpeners.registerEditor('url', (path) => opened.push(path))
+    const made = createCreators(vault, tabOpeners)
+
+    const paths = await made.createUrls('links', ['first.org', 'second.org'])
+
+    expect(vault.asked).toStrictEqual(['link links first.org', 'link links second.org'])
+    expect(paths).toStrictEqual(['links/first.org.md', 'links/second.org.md'])
+    expect(opened).toStrictEqual([])
+  })
+
+  it('answers nothing when given an empty list', async () => {
+    const vault = maker()
+    const made = createCreators(vault)
+
+    const paths = await made.createUrls('links', [])
+
+    expect(vault.asked).toStrictEqual([])
+    expect(paths).toStrictEqual([])
+  })
+})

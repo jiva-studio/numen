@@ -48,6 +48,7 @@ const createFilesTab = (open: readonly string[]): FilesTabState => {
     createStencil: async (at, name) => `${at}${name}`,
     createPreset: async (at, name) => `${at}${name}`,
     importUrl: async () => '',
+    importUrls: async () => [],
     showError: () => {},
   })
 

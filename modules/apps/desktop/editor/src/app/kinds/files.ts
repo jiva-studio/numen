@@ -160,6 +160,7 @@ function createFilesTabDeps(config: FilesTabConfigDeps): FilesTabDeps {
       made.createFile('stencil', folder, { name, fields: [cardWords.newField] }),
     createPreset: (folder, name) => made.createFile('preset', folder, name),
     importUrl: (folder, url) => made.createUrl(folder, url),
+    importUrls: (folder, urls) => made.createUrls(folder, urls),
     showError: (text) => writeMessage(text, 'error'),
     canRun: (run) => runs.canRun(run),
     getArtifactStates: (path) => vaults.makes.value.get(path) ?? {},
