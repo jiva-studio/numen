@@ -12,7 +12,17 @@
     "jsx": "preserve",
     "types": ["vite/client"],
 
-    "paths": { "@/*": ["./src/*"] }
+    "paths": {
+      "@/*": ["./src/*"],
+      "@plugins/*": ["../../../plugins/*"]
+    }
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts", "vitest.setup.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "vite.config.ts",
+    "vitest.setup.ts",
+    "../../../plugins/**/*.ts",
+    "../../../plugins/**/*.vue"
+  ]
 }

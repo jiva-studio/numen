@@ -7,6 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"connectrpc.com/connect"
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 )
@@ -161,5 +164,39 @@ func TestRealTranscriptionPluginProcessE2E(t *testing.T) {
 	}
 	if text == "" {
 		t.Fatal("expected non-empty transcribed text")
+	}
+}
+
+func TestRealBookPluginProcessE2E(t *testing.T) {
+	pluginsDir, err := filepath.Abs("../../../../../plugins")
+	if err != nil {
+		t.Fatalf("resolve plugins dir: %v", err)
+	}
+
+	bookBin := filepath.Join(pluginsDir, "reader-epub", "bin", "reader-epub")
+	if _, err := os.Stat(bookBin); os.IsNotExist(err) {
+		t.Skipf("reader-epub binary not found at %s; skipping real process E2E test", bookBin)
+	}
+
+	host := plugin.NewHost("desktop.editor", pluginsDir)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+
+	ctx := t.Context()
+	bridge, err := plugin.OpenBookBridge(ctx, host)
+	if err != nil {
+		t.Fatalf("OpenBookBridge with real binary failed: %v", err)
+	}
+	defer func() {
+		_ = bridge.Close()
+		_ = host.TeardownAll(ctx, 1*time.Second)
+	}()
+
+	// Query non-existent book - expect error from plugin service
+	req := connect.NewRequest(&v1.GetBookRequest{Path: "nonexistent.epub"})
+	_, err = bridge.GetBook(ctx, req)
+	if err == nil {
+		t.Fatal("expected error querying nonexistent book from real plugin")
 	}
 }

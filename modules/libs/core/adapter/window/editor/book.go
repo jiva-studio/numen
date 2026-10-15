@@ -9,6 +9,7 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/epub"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
@@ -18,6 +19,7 @@ import (
 type bookHandler struct {
 	state          *State
 	viewer         *viewer
+	openClient     func(context.Context) (any, func(), error)
 	getBook        *document.GetBook
 	getBookMarkup  *document.GetBookMarkup
 	getBookPicture *document.GetBookPicture
@@ -40,7 +42,15 @@ func (h *bookHandler) GetBook(
 	ctx context.Context,
 	r *connect.Request[v1.GetBookRequest],
 ) (*connect.Response[v1.GetBookResponse], error) {
+	if client, closeClient, err := h.getClient(ctx); err == nil && client != nil {
+		if closeClient != nil {
+			defer closeClient()
+		}
+		return client.GetBook(ctx, r)
+	}
+
 	if h.getBook == nil {
+
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 	}
 	showing, err := h.state.getShownVault()
@@ -91,7 +101,15 @@ func (h *bookHandler) ReadBookMarkup(
 	ctx context.Context,
 	r *connect.Request[v1.ReadBookMarkupRequest],
 ) (*connect.Response[v1.ReadBookMarkupResponse], error) {
+	if client, closeClient, err := h.getClient(ctx); err == nil && client != nil {
+		if closeClient != nil {
+			defer closeClient()
+		}
+		return client.ReadBookMarkup(ctx, r)
+	}
+
 	if h.getBookMarkup == nil {
+
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 	}
 	showing, err := h.state.getShownVault()
@@ -159,4 +177,22 @@ func isMisnamed(err error) bool {
 		errors.Is(err, epub.ErrNoPackage) ||
 		errors.Is(err, epub.ErrEncrypted) ||
 		errors.Is(err, document.ErrNotAPicture)
+}
+
+func (h *bookHandler) getClient(ctx context.Context) (numenv1connect.BookServiceClient, func(), error) {
+	if h.openClient == nil {
+		return nil, nil, nil
+	}
+	raw, closer, err := h.openClient(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	client, ok := raw.(numenv1connect.BookServiceClient)
+	if !ok {
+		if closer != nil {
+			closer()
+		}
+		return nil, nil, nil
+	}
+	return client, closer, nil
 }

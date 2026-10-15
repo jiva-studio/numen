@@ -28,6 +28,9 @@ import (
 // The cache is answered as the ports asked of it, so this window names no
 // store. It is opened before the window is, and the window closes it.
 type Assembly interface {
+	// OpenBookClient opens a client to the book reader plugin, returning the client and a closer.
+	OpenBookClient(ctx context.Context) (any, func(), error)
+
 	// GetRegistry is the list of vaults this installation holds.
 	GetRegistry() port.VaultRegistry
 

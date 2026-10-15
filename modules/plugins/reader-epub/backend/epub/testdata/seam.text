@@ -1,0 +1,31 @@
+title	A Book Across the Seam
+tier	headings
+layout	reflowable
+direction	
+bytes	531
+page	1154
+pages	1
+
+documents
+	0	113	true	OEBPS/opening.xhtml
+	113	418	true	OEBPS/middle.xhtml
+
+parts
+	0	4	The Opening
+	113	4	Слово о свете
+
+printed
+	328	23
+
+text
+The Opening
+A document before the one the markup is taken from, so that document begins where nothing else does.
+Слово о свете
+सत्यं ज्ञानमनन्तं ब्रह्म — the syllables are three bytes apiece.
+An ampersand &, an angle <p>, and a run set apart in the middle of a sentence.
+The kings and what they are counted in
+Name Chariots
+Bhīṣma Ten thousand
+Drona Eight thousand
+Back to the opening, and down to the note, and away to somewhere else entirely.
+The note pointed down to.

@@ -1,0 +1,25 @@
+{
+  "id": "md.numen.epub",
+  "name": "EPUB Book Reader",
+  "version": "1.0.0",
+  "description": "EPUB reflowable book reader and metadata parser",
+  "capabilities": ["book"],
+  "targets": ["desktop.editor"],
+  "target": ["desktop.editor"],
+  "fileExtensions": [".epub"],
+  "activationEvents": ["onFile:*.epub"],
+  "permissions": ["vault:read"],
+  "lifecycle": {
+    "mode": "on-demand",
+    "idleTimeoutSeconds": 300,
+    "keepAliveWhileVisible": true
+  },
+  "backend": {
+    "type": "process",
+    "entrypoint": "bin/reader-epub",
+    "serviceName": "numen.v1.BookService"
+  },
+  "frontend": {
+    "entrypoint": "frontend/BookTab.vue"
+  }
+}

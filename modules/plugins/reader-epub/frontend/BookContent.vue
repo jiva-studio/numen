@@ -3,8 +3,8 @@ import { useTemplateRef } from 'vue'
 import { Book } from '@numen/ui'
 import { ListTree } from '@lucide/vue'
 import type { Span } from '@/shared/span'
-import type { BookHandle } from '../types'
-import { WORDS as words } from '../words'
+import type { BookHandle } from './types'
+import { WORDS as words } from './words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{

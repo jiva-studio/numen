@@ -19,7 +19,6 @@ const props = withDefaults(
   {
     pages: () => [],
     currentPage: 0,
-    pageImageUrl: undefined,
     isLoading: false,
     error: '',
   },

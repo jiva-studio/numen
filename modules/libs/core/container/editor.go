@@ -2,8 +2,10 @@ package container
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
@@ -48,6 +50,17 @@ func (c Config) GetEditorAssembly(ctx context.Context) (EditorAssembly, error) {
 // open, for a caller that opened them itself.
 func NewEditorAssembly(cfg Config, registry port.VaultRegistry, db *Index) EditorAssembly {
 	return EditorAssembly{cfg: cfg, registry: registry, db: db}
+}
+
+func (e EditorAssembly) OpenBookClient(ctx context.Context) (any, func(), error) {
+	if e.cfg.PluginHost == nil {
+		return nil, nil, errors.New("no plugin host configured")
+	}
+	bridge, err := plugin.OpenBookBridge(ctx, e.cfg.PluginHost)
+	if err != nil {
+		return nil, nil, err
+	}
+	return bridge, func() { _ = bridge.Close() }, nil
 }
 
 func (e EditorAssembly) GetRegistry() port.VaultRegistry { return e.registry }
