@@ -6,15 +6,14 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"hash/fnv"
 	"io"
-	"math"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -24,6 +23,7 @@ import (
 
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/modules/plugins/embeddings/backend/engine"
 )
 
 type lifecycleServer struct {
@@ -54,44 +54,108 @@ func (s *lifecycleServer) Shutdown(
 }
 
 type embeddingServer struct {
-	modelName   string
-	dimensions  int
-	maxTokens   int
-	pooling     string
-	concurrency int
+	numenv1connect.UnimplementedEmbeddingServiceHandler
+
+	modelInfo  engine.ModelInfo
+	localModel engine.LocalModel
+
+	mu       sync.Mutex
+	embedder *engine.Embedder
 }
 
 func newEmbeddingServer() *embeddingServer {
-	name := os.Getenv("NUMEN_EMBEDDING_MODEL")
-	if name == "" {
-		name = "bge-m3"
-	}
-	dim := 384
-	if envDim := os.Getenv("NUMEN_EMBEDDING_DIMENSIONS"); envDim != "" {
-		if d, err := strconv.Atoi(envDim); err == nil && d > 0 {
-			dim = d
+	info, local := engine.DefaultBGEM3Config()
+
+	if name := os.Getenv("NUMEN_EMBEDDING_MODEL"); name != "" {
+		info.Name = name
+		if name != "bge-m3" && name != "bge-m3-int8" {
+			local.Name = name
 		}
 	}
-	return &embeddingServer{
-		modelName:   name,
-		dimensions:  dim,
-		maxTokens:   256,
-		pooling:     "mean",
-		concurrency: 4,
+	if repo := os.Getenv("NUMEN_EMBEDDING_REPO"); repo != "" {
+		local.Name = repo
 	}
+	if dir := os.Getenv("NUMEN_EMBEDDING_DIR"); dir != "" {
+		local.Dir = dir
+	}
+	if file := os.Getenv("NUMEN_EMBEDDING_FILE"); file != "" {
+		local.File = file
+	}
+	if envDim := os.Getenv("NUMEN_EMBEDDING_DIMENSIONS"); envDim != "" {
+		if d, err := strconv.Atoi(envDim); err == nil && d > 0 {
+			info.Dimensions = d
+		}
+	}
+	if envTokens := os.Getenv("NUMEN_EMBEDDING_MAX_TOKENS"); envTokens != "" {
+		if t, err := strconv.Atoi(envTokens); err == nil && t > 0 {
+			info.MaxTokens = t
+		}
+	}
+	if pooling := os.Getenv("NUMEN_EMBEDDING_POOLING"); pooling != "" {
+		info.Pooling = pooling
+	}
+	if runtimeLib := os.Getenv("NUMEN_ONNX_RUNTIME"); runtimeLib != "" {
+		local.Runtime = runtimeLib
+	}
+	if provider := os.Getenv("NUMEN_ONNX_PROVIDER"); provider != "" {
+		local.Provider = provider
+	}
+	if threads := os.Getenv("NUMEN_ONNX_THREADS"); threads != "" {
+		if th, err := strconv.Atoi(threads); err == nil && th > 0 {
+			local.Threads = th
+		}
+	}
+
+	return &embeddingServer{
+		modelInfo:  info,
+		localModel: local,
+	}
+}
+
+func (s *embeddingServer) getEmbedder(ctx context.Context) (*engine.Embedder, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.embedder != nil {
+		return s.embedder, nil
+	}
+
+	emb, err := engine.Open(ctx, s.modelInfo, s.localModel, nil)
+	if err != nil {
+		return nil, fmt.Errorf("opening onnx embedding engine: %w", err)
+	}
+	s.embedder = emb
+	s.modelInfo.Concurrency = emb.Concurrency()
+	return emb, nil
+}
+
+func (s *embeddingServer) Close() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.embedder != nil {
+		err := s.embedder.Close()
+		s.embedder = nil
+		return err
+	}
+	return nil
 }
 
 func (s *embeddingServer) GetEmbeddingModel(
 	_ context.Context,
 	_ *connect.Request[numenv1.GetEmbeddingModelRequest],
 ) (*connect.Response[numenv1.GetEmbeddingModelResponse], error) {
+	concurrency := s.modelInfo.Concurrency
+	if concurrency <= 0 {
+		concurrency = 4
+	}
 	return connect.NewResponse(&numenv1.GetEmbeddingModelResponse{
-		Name:        s.modelName,
-		Dimensions:  int32(s.dimensions),
-		MaxTokens:   int32(s.maxTokens),
-		Pooling:     s.pooling,
-		From:        "plugin:md.numen.embeddings",
-		Concurrency: int32(s.concurrency),
+		Name:        s.modelInfo.Name,
+		Dimensions:  int32(s.modelInfo.Dimensions),
+		MaxTokens:   int32(s.modelInfo.MaxTokens),
+		Pooling:     s.modelInfo.Pooling,
+		From:        s.modelInfo.From,
+		Concurrency: int32(concurrency),
 	}), nil
 }
 
@@ -100,12 +164,32 @@ func (s *embeddingServer) EmbedText(
 	req *connect.Request[numenv1.EmbedTextRequest],
 ) (*connect.Response[numenv1.EmbedTextResponse], error) {
 	text := req.Msg.GetText()
-	vec, err := s.computeVector(ctx, text)
+
+	if isServiceConfigured() {
+		vec, err := s.computeServiceVector(ctx, text)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		return connect.NewResponse(&numenv1.EmbedTextResponse{
+			Vector: vec,
+		}), nil
+	}
+
+	emb, err := s.getEmbedder(ctx)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+
+	vectors, err := emb.Embed(ctx, []string{text})
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("embed text: %w", err))
+	}
+	if len(vectors) == 0 {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("no vector returned for text"))
+	}
+
 	return connect.NewResponse(&numenv1.EmbedTextResponse{
-		Vector: vec,
+		Vector: vectors[0],
 	}), nil
 }
 
@@ -120,14 +204,39 @@ func (s *embeddingServer) EmbedBatch(
 		}), nil
 	}
 
-	vectors := make([]*numenv1.FloatVector, len(texts))
-	for i, t := range texts {
-		vec, err := s.computeVector(ctx, t)
-		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("text %d: %w", i, err))
+	if isServiceConfigured() {
+		vectors := make([]*numenv1.FloatVector, len(texts))
+		for i, t := range texts {
+			vec, err := s.computeServiceVector(ctx, t)
+			if err != nil {
+				return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("service text %d: %w", i, err))
+			}
+			vectors[i] = &numenv1.FloatVector{
+				Values: vec,
+			}
 		}
+		return connect.NewResponse(&numenv1.EmbedBatchResponse{
+			Vectors: vectors,
+		}), nil
+	}
+
+	emb, err := s.getEmbedder(ctx)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	denseVectors, err := emb.Embed(ctx, texts)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("embed batch: %w", err))
+	}
+	if len(denseVectors) != len(texts) {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("expected %d vectors, got %d", len(texts), len(denseVectors)))
+	}
+
+	vectors := make([]*numenv1.FloatVector, len(denseVectors))
+	for i, v := range denseVectors {
 		vectors[i] = &numenv1.FloatVector{
-			Values: vec,
+			Values: v,
 		}
 	}
 
@@ -148,76 +257,65 @@ type openAIEmbeddingResponse struct {
 	} `json:"data"`
 }
 
-func (s *embeddingServer) computeVector(ctx context.Context, text string) ([]float32, error) {
+func isServiceConfigured() bool {
 	key := os.Getenv("NUMEN_EMBEDDING_KEY")
 	if key == "" {
 		key = os.Getenv("OPENAI_API_KEY")
 	}
 	baseURL := os.Getenv("NUMEN_EMBEDDING_URL")
-
-	if key != "" && baseURL != "" {
-		client := &http.Client{Timeout: 30 * time.Second}
-		endpoint := strings.TrimSuffix(baseURL, "/") + "/embeddings"
-		reqBody, err := json.Marshal(openAIEmbeddingRequest{
-			Input: []string{text},
-			Model: s.modelName,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(reqBody))
-		if err != nil {
-			return nil, err
-		}
-		httpReq.Header.Set("Content-Type", "application/json")
-		httpReq.Header.Set("Authorization", "Bearer "+key)
-
-		resp, err := client.Do(httpReq)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-
-		respBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-		if resp.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("status %d: %s", resp.StatusCode, string(respBytes))
-		}
-
-		var openAIResp openAIEmbeddingResponse
-		if err := json.Unmarshal(respBytes, &openAIResp); err != nil {
-			return nil, err
-		}
-		if len(openAIResp.Data) > 0 && len(openAIResp.Data[0].Embedding) > 0 {
-			return openAIResp.Data[0].Embedding, nil
-		}
-	}
-
-	return generateDeterministicVector(text, s.dimensions), nil
+	return key != "" && baseURL != ""
 }
 
-func generateDeterministicVector(text string, dim int) []float32 {
-	vec := make([]float32, dim)
-	h := fnv.New64a()
-	_, _ = h.Write([]byte(text))
-	seed := h.Sum64()
-	var sumSq float64
-	for i := 0; i < dim; i++ {
-		seed = seed*6364136223846793005 + 1442695040888963407
-		val := float32(float64(int64(seed)%1000) / 1000.0)
-		vec[i] = val
-		sumSq += float64(val * val)
+func (s *embeddingServer) computeServiceVector(ctx context.Context, text string) ([]float32, error) {
+	key := os.Getenv("NUMEN_EMBEDDING_KEY")
+	if key == "" {
+		key = os.Getenv("OPENAI_API_KEY")
 	}
-	if sumSq > 0 {
-		norm := float32(math.Sqrt(sumSq))
-		for i := range vec {
-			vec[i] /= norm
-		}
+	baseURL := os.Getenv("NUMEN_EMBEDDING_URL")
+	if key == "" || baseURL == "" {
+		return nil, fmt.Errorf("remote service configuration is missing")
 	}
-	return vec
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	endpoint := strings.TrimSuffix(baseURL, "/") + "/embeddings"
+	reqBody, err := json.Marshal(openAIEmbeddingRequest{
+		Input: []string{text},
+		Model: s.modelInfo.Name,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(reqBody))
+	if err != nil {
+		return nil, err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Authorization", "Bearer "+key)
+
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	respBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status %d: %s", resp.StatusCode, string(respBytes))
+	}
+
+	var openAIResp openAIEmbeddingResponse
+	if err := json.Unmarshal(respBytes, &openAIResp); err != nil {
+		return nil, err
+	}
+	if len(openAIResp.Data) > 0 && len(openAIResp.Data[0].Embedding) > 0 {
+		return openAIResp.Data[0].Embedding, nil
+	}
+
+	return nil, fmt.Errorf("no embedding returned by service")
 }
 
 func authCheck(expectedToken string) connect.UnaryInterceptorFunc {
@@ -295,6 +393,8 @@ func main() {
 	case <-sigCh:
 	case <-shutdownCh:
 	}
+
+	_ = embedSrv.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
