@@ -17,6 +17,11 @@ type eventState struct {
 	event     string
 }
 
+type subscriber struct {
+	id      uint64
+	handler EventHandler
+}
+
 // EventBus debounces and throttles events sent to plugins to protect the UI main thread.
 type EventBus struct {
 	mu               sync.Mutex
@@ -24,7 +29,8 @@ type EventBus struct {
 	debounceDelay    time.Duration
 	throttleInterval time.Duration
 	pending          map[string]*eventState
-	subscribers      map[string][]EventHandler
+	subscribers      map[string][]subscriber
+	nextSubID        uint64
 	isClosed         bool
 }
 
@@ -42,7 +48,8 @@ func NewEventBus(host *Host, debounceDelay, throttleInterval time.Duration) *Eve
 		debounceDelay:    debounceDelay,
 		throttleInterval: throttleInterval,
 		pending:          make(map[string]*eventState),
-		subscribers:      make(map[string][]EventHandler),
+		subscribers:      make(map[string][]subscriber),
+		nextSubID:        0,
 		isClosed:         false,
 	}
 }
@@ -106,15 +113,23 @@ func (b *EventBus) Subscribe(prefix string, handler EventHandler) func() {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	b.subscribers[prefix] = append(b.subscribers[prefix], handler)
+	b.nextSubID++
+	subID := b.nextSubID
+	b.subscribers[prefix] = append(b.subscribers[prefix], subscriber{
+		id:      subID,
+		handler: handler,
+	})
 
 	return func() {
 		b.mu.Lock()
 		defer b.mu.Unlock()
 		handlers := b.subscribers[prefix]
-		for i, h := range handlers {
-			if &h == &handler {
+		for i, sub := range handlers {
+			if sub.id == subID {
 				b.subscribers[prefix] = append(handlers[:i], handlers[i+1:]...)
+				if len(b.subscribers[prefix]) == 0 {
+					delete(b.subscribers, prefix)
+				}
 				break
 			}
 		}
@@ -178,7 +193,9 @@ func (b *EventBus) findMatchingHandlers(event string) []EventHandler {
 	var result []EventHandler
 	for prefix, list := range b.subscribers {
 		if prefix == "" || prefix == "*" || strings.HasPrefix(event, prefix) {
-			result = append(result, list...)
+			for _, sub := range list {
+				result = append(result, sub.handler)
+			}
 		}
 	}
 	return result

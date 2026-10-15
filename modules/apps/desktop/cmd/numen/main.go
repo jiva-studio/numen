@@ -18,6 +18,7 @@ import (
 	"os"
 	"path"
 	"runtime/debug"
+	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -105,6 +106,12 @@ func (s scaleSettings) validate() error {
 }
 
 func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleSettings) error {
+	if cfg.PluginHost != nil {
+		defer func() {
+			_ = cfg.PluginHost.TeardownAll(context.Background(), 2*time.Second)
+		}()
+	}
+
 	if err := scaleFlags.validate(); err != nil {
 		return err
 	}
@@ -137,10 +144,16 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 
 	reachable := makeEndpoint(ctx, cfg, opened, mcp)
 	going := &vaultFlush{flush: opened.FlushPending}
-	// The agents stop, the installation closes, then the context they ran under ends.
+	// The agents stop, the installation closes, plugins teardown, then the context they ran under ends.
 	behind := shutdown.NewSequence(
 		reachable.Stop,
 		shutdown.Report("numen", os.Stderr, "", opened.Close),
+		shutdown.Report("numen", os.Stderr, "plugins", func() error {
+			if cfg.PluginHost != nil {
+				return cfg.PluginHost.TeardownAll(context.Background(), 2*time.Second)
+			}
+			return nil
+		}),
 		stop,
 	)
 

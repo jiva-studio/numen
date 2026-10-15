@@ -93,7 +93,11 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	}()
 
 	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
-		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", port))
+		actualPort := port
+		if actualPort == 0 {
+			actualPort = 54321
+		}
+		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", actualPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})
 
@@ -139,5 +143,25 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	host.Release("md.numen.ocr")
 	if err := host.TeardownAll(ctx, 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}
+
+func TestHostEvictLoopTeardown(t *testing.T) {
+	host := NewHost("desktop.editor")
+	if host.isEvictStopped {
+		t.Fatal("expected evict loop to be running")
+	}
+
+	ctx := t.Context()
+	if err := host.TeardownAll(ctx, 50*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
+	}
+
+	if !host.isEvictStopped {
+		t.Fatal("expected evict loop to be stopped after TeardownAll")
+	}
+
+	if err := host.TeardownAll(ctx, 50*time.Millisecond); err != nil {
+		t.Fatalf("second TeardownAll failed: %v", err)
 	}
 }

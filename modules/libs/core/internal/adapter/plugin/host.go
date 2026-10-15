@@ -46,6 +46,10 @@ type Host struct {
 	bus            *EventBus
 	settings       map[string]map[string]any
 	persistHandler PersistHandler
+	evictTicker    *time.Ticker
+	evictDone      chan struct{}
+	evictWg        sync.WaitGroup
+	isEvictStopped bool
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
@@ -63,8 +67,11 @@ func NewHost(target string, dirs ...string) *Host {
 		bus:            nil,
 		settings:       make(map[string]map[string]any),
 		persistHandler: nil,
+		evictTicker:    time.NewTicker(30 * time.Second),
+		evictDone:      make(chan struct{}),
 	}
 	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
+	h.startEvictLoop()
 	return h
 }
 
@@ -298,17 +305,12 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("generate token: %w", err)
 	}
 
-	port, err := FindAvailablePort()
-	if err != nil {
-		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("find port: %w", err)
-	}
-
 	launcher := h.launcher
 	if launcher == nil {
 		launcher = h.defaultLauncher
 	}
 
-	proc, stdout, err := launcher(ctx, p, port, token)
+	proc, stdout, err := launcher(ctx, p, 0, token)
 	if err != nil {
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("launch plugin %s: %w", p.Manifest.ID, err)
 	}
@@ -373,8 +375,40 @@ func (h *Host) EvictIdle(ctx context.Context, defaultThreshold, gracePeriod time
 	return evicted
 }
 
+func (h *Host) startEvictLoop() {
+	h.evictWg.Add(1)
+	go func() {
+		defer h.evictWg.Done()
+		for {
+			select {
+			case <-h.evictDone:
+				return
+			case <-h.evictTicker.C:
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				_ = h.EvictIdle(ctx, 3*time.Minute, 2*time.Second)
+				cancel()
+			}
+		}
+	}()
+}
+
+func (h *Host) stopEvictLoop() {
+	h.mu.Lock()
+	if !h.isEvictStopped {
+		h.isEvictStopped = true
+		if h.evictTicker != nil {
+			h.evictTicker.Stop()
+		}
+		close(h.evictDone)
+	}
+	h.mu.Unlock()
+	h.evictWg.Wait()
+}
+
 // TeardownAll shuts down all active plugin processes.
 func (h *Host) TeardownAll(ctx context.Context, gracePeriod time.Duration) error {
+	h.stopEvictLoop()
+
 	h.mu.Lock()
 	defer h.mu.Unlock()
 

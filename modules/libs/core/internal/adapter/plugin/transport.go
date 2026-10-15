@@ -44,23 +44,6 @@ func GenerateAuthToken() (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-// FindAvailablePort reserves an unused TCP port on loopback interface and releases it.
-func FindAvailablePort() (int, error) {
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		return 0, fmt.Errorf("listen loopback: %w", err)
-	}
-	defer func() {
-		_ = listener.Close()
-	}()
-
-	addr, ok := listener.Addr().(*net.TCPAddr)
-	if !ok {
-		return 0, errors.New("failed to cast net.Addr to *net.TCPAddr")
-	}
-	return addr.Port, nil
-}
-
 // ParseHandshake scans a text line for readiness indicator and allocated port.
 func ParseHandshake(line string) (int, bool) {
 	trimmed := strings.TrimSpace(line)
