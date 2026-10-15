@@ -16,11 +16,12 @@ describe('view-file-tree plugin', () => {
 
   it('subscribes to vault change and file select events', () => {
     const ctx = createMockPluginContext({ pluginId: 'view-file-tree' })
-    const disposable = activate(ctx)
+    activate(ctx)
 
     expect(ctx.subscriptions.length).toBeGreaterThanOrEqual(3)
 
-    disposable.dispose()
+    ctx.dispose()
+    expect(ctx.subscriptions).toHaveLength(0)
   })
 
   it('activates correctly using default plugin lifecycle', async () => {

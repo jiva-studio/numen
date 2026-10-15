@@ -6,7 +6,6 @@ import { WORDS as words } from './words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = withDefaults(defineProps<FileTreeViewProps>(), {
-  context: undefined,
   initialPath: '',
   entries: () => [],
 })

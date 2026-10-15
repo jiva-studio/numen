@@ -8,7 +8,7 @@ export interface FileTreeEntry {
 }
 
 export interface FileTreeViewProps {
-  readonly context?: PluginContext
+  readonly context?: PluginContext | undefined
   readonly initialPath?: string
   readonly entries?: readonly FileTreeEntry[]
 }
