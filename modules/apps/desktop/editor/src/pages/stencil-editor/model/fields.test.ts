@@ -221,4 +221,14 @@ describe('what a gesture makes of the stencil', () => {
     expect(fields.getStencil('a').faces[0]?.back).toBe('changed')
     expect(fields.getStencil('a').faces[0]?.front).toBe('{{Height}}')
   })
+
+  it('accepts options object as single dependency argument', () => {
+    const fields = createStencilFields({
+      getBody: () => 'body',
+      onTyped: vi.fn(),
+      getProblems: () => [],
+      renameFieldOnWire: vi.fn(),
+    })
+    expect(fields.getStencil('id')).toBeDefined()
+  })
 })

@@ -143,6 +143,7 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
   const listening = new AbortController()
 
   const reporterHolder: { current?: ReturnType<typeof createFlushReporter> } = {}
+  // Stryker disable next-line OptionalChaining: Assigned synchronously before conflict callbacks run.
   const registry = createConflictRegistry(() => void reporterHolder.current?.report())
   const reporter = createFlushReporter(core, registry, handlers)
   reporterHolder.current = reporter

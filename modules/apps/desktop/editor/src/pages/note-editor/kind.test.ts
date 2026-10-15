@@ -676,6 +676,42 @@ describe('a note put in front of the person', () => {
 
     expect(drew.focused).toEqual([7])
   })
+
+  it('opens beside when asked with a string destination', async () => {
+    const store = notes()
+    const drawing = drawings()
+    const held = useWindowTabs()
+    const openTabBeside = vi.fn(held.handle.openTabBeside)
+    const openTab = vi.fn(held.handle.openTab)
+    const handle = { ...held.handle, openTab, openTabBeside }
+    const tabOpeners = fileOpeners({
+      fileKinds: async () => new Map(),
+    })
+    useNoteTab(vault(), store.store, drawing.store, handle, tabOpeners)
+
+    await tabOpeners.openFile('Beside.md', '', 'beside')
+
+    expect(openTabBeside).toHaveBeenCalledTimes(1)
+    expect(openTab).not.toHaveBeenCalled()
+  })
+
+  it('opens here by default when asked without options', async () => {
+    const store = notes()
+    const drawing = drawings()
+    const held = useWindowTabs()
+    const openTabBeside = vi.fn(held.handle.openTabBeside)
+    const openTab = vi.fn(held.handle.openTab)
+    const handle = { ...held.handle, openTab, openTabBeside }
+    const tabOpeners = fileOpeners({
+      fileKinds: async () => new Map(),
+    })
+    useNoteTab(vault(), store.store, drawing.store, handle, tabOpeners)
+
+    await tabOpeners.openFile('Here.md', '')
+
+    expect(openTab).toHaveBeenCalledTimes(1)
+    expect(openTabBeside).not.toHaveBeenCalled()
+  })
 })
 
 describe('a note tab whose note the store has let go of', () => {

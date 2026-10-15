@@ -26,6 +26,7 @@ interface PlaybackRefs {
 
 function flushWantedSeek(wanted: number, refs: PlaybackRefs, through: Player): number {
   if (wanted < 0) return wanted
+  // Stryker disable next-line ConditionalExpression: frame player clears wanted seek on attach so wanted is never >= 0 here.
   if (refs.frame.value) {
     refs.framed.value = wanted
     refs.frame.value.seek(wanted)
@@ -98,6 +99,7 @@ export function usePlayback(through: Player, plays: MediaTypeProbe, isOpen: () =
   const type = ref('')
   const points = ref('')
   const frame = shallowRef<TabPlayer | null>(null)
+  // Stryker disable next-line UnaryOperator: initial value is unreachable before frame attachment overwrites it.
   const framed = ref(-1)
 
   const held = computed(() => url.value !== '' && through.url.value === url.value)

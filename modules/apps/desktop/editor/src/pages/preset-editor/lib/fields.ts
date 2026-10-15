@@ -102,6 +102,7 @@ export const getGoalField = (goal: Goal): Field => {
  * again.
  */
 export const getShapeKey = (settings: Settings): string => {
+  // Stryker disable next-line ArrayDeclaration: Goal field byDate excludes no fields from shape key.
   const own = new Set<Field>(getGoalField(settings.goal) === 'byDate' ? [] : ['byDate'])
   const values: Record<Field, string> = {
     newADay: `${settings.newADay}`,

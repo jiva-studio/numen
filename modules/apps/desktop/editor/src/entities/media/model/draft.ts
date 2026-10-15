@@ -76,6 +76,7 @@ export function useTranscriptDraft(how: DraftOptions) {
       if (!isOpen()) return
       if (result.isSaved) {
         error.value = ''
+        // Stryker disable next-line ConditionalExpression: An unsuccessful save carries errorText when open.
       } else if (result.errorText) {
         owed = true
         error.value = result.errorText

@@ -64,7 +64,7 @@ describe('what is written back', () => {
   })
 
   it('is the writes of a preset where the name is one', () => {
-    const writes = [{ at: AT, value: '"x"' }]
+    const writes = [{ at: AT, value: '"preset-x-value"' }]
     const { fields, written } = setup({}, [createModel('x', writes)])
     fields.chooseModel(AT, 'x')
     expect(written).toStrictEqual([writes])

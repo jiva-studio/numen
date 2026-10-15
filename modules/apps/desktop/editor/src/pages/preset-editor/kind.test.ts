@@ -1150,6 +1150,12 @@ describe('a preset opened from elsewhere in the window', () => {
     kind.openPreset('presets/Plan.md', '', 'beside')
     expect(opened).toStrictEqual(['beside presets/Plan.md'])
   })
+
+  it('opens beside when asked with an options object', async () => {
+    const { kind, opened } = await openPresetTab()
+    kind.openPreset('presets/Plan.md', '', { where: 'beside' })
+    expect(opened).toStrictEqual(['beside presets/Plan.md'])
+  })
 })
 
 describe('the tab closed by the window', () => {

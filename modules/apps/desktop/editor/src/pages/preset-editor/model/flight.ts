@@ -93,6 +93,7 @@ export const requestWrite = (flight: WriteFlight, options: FlightOptions): Promi
 export const flushWrites = async (flight: WriteFlight, options: FlightOptions): Promise<void> => {
   if (flight.theirs.size > 0 && !flight.hasChanged.value) {
     await requestWrite(flight, options)
+    // Stryker disable next-line ConditionalExpression: Settled flight is null and awaiting null resolves immediately.
   } else if (flight.flight) {
     await flight.flight
   }

@@ -47,6 +47,7 @@ const countSame = (
   was: readonly Cue[],
 ): { head: number; tail: number } => {
   let head = 0
+  // Stryker disable next-line ConditionalExpression: out of bounds lines[head] evaluates to undefined and halts loop.
   while (head < lines.length && head < was.length && lines[head] === was[head]!.text) head++
   let tail = 0
   while (

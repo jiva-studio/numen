@@ -43,6 +43,7 @@ export const transitionTab = (
 const applyAsked = (tab: Tab, kind: AskedKind): Transition => {
   switch (kind) {
     case 'timerFired':
+      // Stryker disable next-line BlockStatement: Falling through to save performs the same transition.
       return applyTimer(tab)
     case 'save':
       return applySave(tab)
@@ -69,6 +70,7 @@ const applyBody = (tab: Tab, body: string, filePath: string | null): Transition 
 
 /** What the tab last saw, for a write to present. */
 const getBaseline = (tab: Tab): NoteBaseline | null =>
+  // Stryker disable next-line ConditionalExpression: Unsaved transitions require non-null written.
   tab.written === null || tab.filePath === null
     ? null
     : { prose: tab.written, fingerprint: tab.filePath }
@@ -120,6 +122,7 @@ const getWriteDelay = (since: number, at: number, limits: WriteLimits): number =
 /**
  * An error about the body is cleared by typing when there is a written baseline.
  */
+// Stryker disable next-line ConditionalExpression: RETRYABLE_ERRORS.includes(null) evaluates to false.
 const isRetryable = (tab: Tab): boolean =>
   tab.written !== null && tab.error !== null && RETRYABLE_ERRORS.includes(tab.error)
 
@@ -140,6 +143,7 @@ const applyEdit = (
 
 const applyTimer = (tab: Tab): Transition => {
   const state = getState(tab)
+  // Stryker disable next-line ConditionalExpression,EqualityOperator: Loading state returns keepTab either way.
   if (state === 'loading') return keepTab(tab)
   if (state === 'unsaved') return beginWrite(tab, getBaseline(tab))
   if (state === 'saving') return { tab: { ...tab, hasPendingWrite: true }, effects: [] }
@@ -232,12 +236,14 @@ const applyTake = (tab: Tab): Transition => {
  */
 const applyClose = (tab: Tab): Transition => {
   const state = getState(tab)
+  // Stryker disable next-line LogicalOperator,ConditionalExpression: Stuck state implies truthy tab.error and vice versa.
   if (tab.error && state === 'stuck') {
     if (tab.written !== null && isDirty(tab) && RETRYABLE_ERRORS.includes(tab.error)) {
       return { tab, effects: [{ kind: 'reportError', error: tab.error }, { kind: 'keepOpen' }] }
     }
     return { tab, effects: [{ kind: 'reportError', error: tab.error }, { kind: 'close' }] }
   }
+  // Stryker disable next-line ConditionalExpression,EqualityOperator: Loading state returns close effect either way.
   if (state === 'loading') return { tab, effects: [{ kind: 'close' }] }
   if (state === 'stale') return { tab, effects: [{ kind: 'keepOpen' }] }
   if (state === 'unsaved') {

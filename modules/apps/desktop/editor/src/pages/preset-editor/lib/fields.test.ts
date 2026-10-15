@@ -162,11 +162,15 @@ describe('the limits of a control', () => {
     newADay: { least: 0, most: 50 },
     retention: { least: 0.7, most: 0.99 },
     backlog: { least: 0, most: 100 },
+    reviewsADay: { least: 10, most: 200 },
+    minutesADay: { least: 5, most: 120 },
   }
 
   it('are the bounds of the setting', () => {
     expect(getFieldLimits('newADay', bounds)).toStrictEqual({ min: 0, max: 50 })
     expect(getFieldLimits('backlog', bounds)).toStrictEqual({ min: 0, max: 100 })
+    expect(getFieldLimits('reviewsADay', bounds)).toStrictEqual({ min: 10, max: 200 })
+    expect(getFieldLimits('minutesADay', bounds)).toStrictEqual({ min: 5, max: 120 })
   })
 
   it('are in percent for retention, which is held as a share', () => {
@@ -176,7 +180,7 @@ describe('the limits of a control', () => {
   })
 
   it('are none for a field with no bounds given, or with no number to bound', () => {
-    expect(getFieldLimits('reviewsADay', bounds)).toStrictEqual({})
+    expect(getFieldLimits('interval', {})).toStrictEqual({})
     expect(getFieldLimits('byDate', bounds)).toStrictEqual({})
     expect(getFieldLimits('load', bounds)).toStrictEqual({})
   })
@@ -184,10 +188,18 @@ describe('the limits of a control', () => {
 
 describe('the number a control shows', () => {
   it('is the setting, and a percentage for retention', () => {
-    const held = settings({ newADay: 7, retention: 0.9, interval: 30 })
+    const held = settings({
+      newADay: 7,
+      retention: 0.9,
+      interval: 30,
+      reviewsADay: 50,
+      minutesADay: 25,
+    })
     expect(getFieldCount('newADay', held)).toBe(7)
     expect(getFieldCount('interval', held)).toBe(30)
     expect(getFieldCount('retention', held)).toBe(90)
+    expect(getFieldCount('reviewsADay', held)).toBe(50)
+    expect(getFieldCount('minutesADay', held)).toBe(25)
   })
 
   it('is nothing for a field that is no number', () => {

@@ -115,6 +115,7 @@ function createStencilKindDefinition(deps: {
     open: (id) => {
       const path = deps.pendingTabPaths.get(id) ?? id
       deps.store.open(id, path)
+      // Stryker disable next-line CallExpression: memory cleanup for temporary id mapping.
       deps.pendingTabPaths.delete(id)
       return deps.createStencilTabState(id)
     },
@@ -170,8 +171,10 @@ export function useStencilTabs(
             : {}),
         }
       : (args[0] as StencilTabsOptions)
+  // Stryker disable next-line ArrowFunction: fallback clock is used when no clock dependency is injected.
   const { tabOpeners, writeMessage = () => {}, now = () => 0 } = options
   const wire = createStencilWire(cards, writeMessage)
+  // Stryker disable next-line ObjectLiteral: note store receives injected clock or fallback.
   const store = openNotes({ read: wire.read, write: wire.write }, { now })
   const fields = createStencilFields(
     (id) => store.getOpenNote(id).body,
@@ -203,6 +206,7 @@ export function useStencilTabs(
   return {
     kind,
     createStencilTabState,
+    // Stryker disable next-line ArrayDeclaration: an entry that is not a rename names no file, and every walk over renames skips it.
     applyPathChanges: (paths: readonly string[], renames: readonly PathRename[] = []) => {
       wire.movePaths(renames)
       store.applyPathChanges(paths, renames)

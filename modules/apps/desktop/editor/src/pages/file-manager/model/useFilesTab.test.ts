@@ -49,9 +49,12 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
       return vault[at] ?? []
     },
   })
+  let receivedState: FilesTabState | null = null
   const gestures = useFilesTab(list, {
-    openDestination: (landing) =>
-      void done.push(`lands ${landing ? `${landing.at} ${landing.path}` : '—'}`),
+    openDestination: (landing, state) => {
+      receivedState = state
+      done.push(`lands ${landing ? `${landing.at} ${landing.path}` : '—'}`)
+    },
     runCommand: (id, paths, target) => {
       done.push(`runs ${id} ${paths.join(' ')} ${target.name}`)
       sources.push(target.source)
@@ -98,7 +101,7 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
     },
     showError: (text) => void done.push(`says ${text}`),
   })
-  return { done, list, one: gestures, asked, sources }
+  return { done, list, one: gestures, asked, sources, getState: () => receivedState }
 }
 
 describe('where a row activated takes the person', () => {
@@ -149,12 +152,13 @@ describe('where a row activated takes the person', () => {
 
 describe('a row activated', () => {
   it('takes the person to the note it stands for', async () => {
-    const { done, list, one } = tab()
+    const { done, list, one, getState } = tab()
     await list.openFolder(ROOT)
 
     one.activate('Entropy.md')
 
     expect(done).toStrictEqual(['lands file Entropy.md'])
+    expect(getState()).toBe(one)
   })
 
   it('takes the person to the book it stands for', async () => {

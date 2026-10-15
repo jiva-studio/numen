@@ -41,6 +41,7 @@ function discardTab(context: NoteStoreContext, id: string): void {
   context.reportedIds.delete(id)
 }
 
+// Stryker disable next-line all: effects handled by queue do not overlap with outer effect switch.
 function executeQueueEffect(queue: NoteStoreContext['queue'], id: string, effect: Effect): boolean {
   switch (effect.kind) {
     case 'read':
@@ -67,6 +68,7 @@ function executeEffect(context: NoteStoreContext, id: string, effect: Effect): v
       context.bodies.set(id, effect.body)
       context.onReplaced(context.tabs.get(id)?.path ?? id)
       return
+    // Stryker disable next-line StringLiteral: keepOpen is checked at transition level, no-op in effect execution.
     case 'keepOpen':
       return
     case 'reportError':
@@ -88,6 +90,7 @@ function applyTabTransition(
 
   const isKeptOpen = next.effects.some((effect) => effect.kind === 'keepOpen')
   const isWriting = next.effects.some((effect) => effect.kind === 'write')
+  // Stryker disable next-line OptionalChaining: closeCallbacks entry is deleted only after close dispatch completes.
   if (isKeptOpen && !isWriting) context.closeCallbacks.get(id)?.(false)
 
   if (next.tab.pendingWrite === null) context.queue.resolveFlush(id)
@@ -124,6 +127,7 @@ function createNoteStoreContext(
     dispatch,
     hasTab: (id) => tabs.has(id),
     setAddress: (id, addr) => {
+      // Stryker disable next-line ConditionalExpression: deleted key and key set to undefined both evaluate to null via link() fallback.
       if (addr) addresses.set(id, addr)
       else addresses.delete(id)
     },
@@ -174,6 +178,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
       bodies.set(id, body)
       dispatch(id, { kind: 'edited', body, at: now() })
     },
+    // Stryker disable next-line ArrayDeclaration: an entry that is not a rename names no file, and every walk over renames skips it.
     applyPathChanges: (paths: readonly string[], renamed: readonly Move[] = []) =>
       conflicts.notifyChanged(getOpenIds, paths, renamed),
     save: (id: string) => dispatch(id, { kind: 'save' }),

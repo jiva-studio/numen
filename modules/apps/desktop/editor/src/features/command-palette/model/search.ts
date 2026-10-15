@@ -79,6 +79,7 @@ async function fillSearchGroup<T>(options: FillOptions<T>) {
     into([])
     onFailed(group)
   } finally {
+    // Stryker disable next-line ConditionalExpression: Outdated queries skip group completion.
     if (mine.isCurrent) onDone(group)
   }
 }
@@ -149,6 +150,7 @@ async function executeSearchQuery(
     state.failureMessages.value = { ...state.failureMessages.value, [g]: ctx.notAskedWord }
   }
   const onDone = (g: SearchGroup) => {
+    // Stryker disable next-line ConditionalExpression: Outdated queries do not update working state.
     if (ctx.mine.isCurrent) state.isWorking.value = { ...state.isWorking.value, [g]: false }
   }
 
