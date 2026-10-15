@@ -1,0 +1,20 @@
+{
+  "id": "md.numen.agent-claude",
+  "name": "Claude Code Agent",
+  "version": "1.0.0",
+  "description": "Claude Code CLI agent runner and provider service",
+  "capabilities": ["agent", "ai.agent.provider"],
+  "targets": ["desktop.editor"],
+  "activationEvents": ["onCommand:askClaude", "onView:agent"],
+  "permissions": ["network", "vault:read", "vault:write"],
+  "lifecycle": {
+    "mode": "on-demand",
+    "idleTimeoutSeconds": 180,
+    "keepAliveWhileVisible": false
+  },
+  "backend": {
+    "type": "process",
+    "entrypoint": "bin/agent-claude",
+    "serviceName": "numen.v1.AgentService"
+  }
+}

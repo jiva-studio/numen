@@ -3,6 +3,7 @@
 package agents
 
 import (
+	"context"
 	"io"
 	"os"
 	"path/filepath"
@@ -149,5 +150,50 @@ func TestNoAgentTakesWorkAfterTheRouterIsClosed(t *testing.T) {
 		if _, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: name}); err == nil {
 			t.Errorf("%s took work after the router was closed", name)
 		}
+	}
+}
+
+type mockAgent struct {
+	called bool
+}
+
+func (m *mockAgent) StartRun(_ context.Context, _ port.Task) (port.Run, error) {
+	m.called = true
+	return mockRun{}, nil
+}
+
+func (m *mockAgent) EndConversation(_ context.Context, _ string) error {
+	return nil
+}
+
+type mockRun struct{}
+
+func (m mockRun) GetSteps() <-chan port.Step {
+	ch := make(chan port.Step)
+	close(ch)
+	return ch
+}
+
+func (m mockRun) Stop() error {
+	return nil
+}
+
+func TestRouterUsesProvidedClaudeAgent(t *testing.T) {
+	mock := &mockAgent{}
+	opts := Options{
+		Config:      makeInstallation(t),
+		ClaudeAgent: mock,
+		Out:         io.Discard,
+	}
+	router := NewRouter(opts, "http://127.0.0.1:7717/mcp", "secret", nil)
+	t.Cleanup(func() { _ = router.Close() })
+
+	run, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: agent.UseClaude})
+	if err != nil {
+		t.Fatalf("StartRun failed: %v", err)
+	}
+	drain(t, run)
+	if !mock.called {
+		t.Errorf("expected mock claude agent to be called")
 	}
 }

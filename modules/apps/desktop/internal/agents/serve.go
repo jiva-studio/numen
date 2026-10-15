@@ -51,6 +51,8 @@ type Options struct {
 	Root string
 	// Preview is how a change the agent is making is drawn before it lands.
 	Preview claudecode.EditPreview
+	// ClaudeAgent overrides the claude provider agent when specified.
+	ClaudeAgent port.Agent
 	// Out is where what happened is said.
 	Out io.Writer
 }
