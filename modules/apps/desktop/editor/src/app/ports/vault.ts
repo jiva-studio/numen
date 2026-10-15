@@ -64,4 +64,6 @@ export interface VaultPort {
   watchQuit(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
   /** Everything this client owed has been written. */
   reportFlush(token: string, owed?: 'written' | 'asking'): Promise<void>
+  /** Detach a tab into a new window at the given screen coordinates. */
+  detachTab(tabId: string, at: { x: number; y: number }): Promise<void>
 }

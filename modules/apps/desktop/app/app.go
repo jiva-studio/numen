@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"runtime/debug"
@@ -202,6 +203,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 		return debugOpts.serveHTTP(ctx, cfg, opened, pages, reachable)
 	}
 
+	tracker := newWindowTracker()
 	var window *application.WebviewWindow
 	seen := visibility{
 		hide: func() { window.Hide() },
@@ -210,10 +212,11 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 
 	app := makeApplication(opened, pages, behind, going, seen)
 	window = makeWindow(app, opened)
-	connectWindow(ctx, cfg, window, opened, reachable)
+	tracker.addWindow()
+	connectWindow(ctx, app, cfg, window, opened, reachable, tracker, going)
 
 	window.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
-		if !closeWindow(ctx, going, seen, opened.WaitForFlush, window.Close) {
+		if !handleWindowClosing(ctx, tracker, going, seen, opened.WaitForFlush, window.Close) {
 			event.Cancel()
 		}
 	})
@@ -294,9 +297,32 @@ func makeWindow(app *application.App, opened *editor.Installation) *application.
 	})
 }
 
+// makeSecondaryWindow creates a new window displaying a torn-off tab at the specified position.
+func makeSecondaryWindow(
+	app *application.App, opened *editor.Installation, tabID string, x, y int,
+) *application.WebviewWindow {
+	destURL := "/?window=secondary"
+	if tabID != "" {
+		destURL = "/?window=secondary&tab=" + url.QueryEscape(tabID)
+	}
+	opts := application.WebviewWindowOptions{
+		Title:          getWindowTitle(opened.GetCurrentVault(), opened.State.GetOpenTabs()),
+		Width:          1280,
+		Height:         860,
+		URL:            destURL,
+		EnableFileDrop: true,
+	}
+	if x != 0 || y != 0 {
+		opts.InitialPosition = application.WindowXY
+		opts.X = x
+		opts.Y = y
+	}
+	return app.Window.NewWithOptions(opts)
+}
+
 func connectWindow(
-	ctx context.Context, cfg container.Config, window *application.WebviewWindow, opened *editor.Installation,
-	reachable *agents.Endpoint,
+	ctx context.Context, app *application.App, cfg container.Config, window *application.WebviewWindow, opened *editor.Installation,
+	reachable *agents.Endpoint, tracker *windowTracker, going *vaultFlush,
 ) {
 	opened.Services.SetFolderDialog(&folderDialog{window: window})
 
@@ -314,6 +340,24 @@ func connectWindow(
 		err := reachable.RunWhileStopped(func() error { return opened.Show(ctx, v) })
 		naming(opened.State.GetOpenTabs())
 		return err
+	}
+
+	opened.State.DetachTab = func(_ context.Context, tabID string, x, y int) error {
+		tracker.addWindow()
+		secWindow := makeSecondaryWindow(app, opened, tabID, x, y)
+		secSeen := visibility{
+			hide: func() { secWindow.Hide() },
+			show: func() { secWindow.Show() },
+		}
+		secWindow.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
+			if !handleWindowClosing(ctx, tracker, going, secSeen, opened.WaitForFlush, secWindow.Close) {
+				event.Cancel()
+			}
+		})
+		secWindow.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
+			importDroppedFiles(ctx, opened, event)
+		})
+		return nil
 	}
 
 	reachable.Start()
@@ -349,7 +393,9 @@ type agentOptions struct {
 }
 
 func teardownPlugins(host any) error {
-	if ctrl, ok := host.(interface{ TeardownAll(context.Context, time.Duration) error }); ok {
+	if ctrl, ok := host.(interface {
+		TeardownAll(context.Context, time.Duration) error
+	}); ok {
 		return ctrl.TeardownAll(context.Background(), 2*time.Second)
 	}
 	return nil

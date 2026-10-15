@@ -13,6 +13,7 @@ import { WORDS as words } from '@/shared/words'
 import { convertErrorCode, ERROR_MESSAGES } from '@/entities/note'
 import { useTabLinks } from '@/features/tab-linking'
 import { useTabSync } from './useTabSync'
+import { useCrossWindowTabs } from './useCrossWindowTabs'
 
 import { useNoteEditors } from './useNoteEditors'
 import { useSettings } from './useSettings'
@@ -46,29 +47,20 @@ interface WindowCommandsOptions {
 }
 
 function initWindowCommands(deps: WindowCommandsOptions) {
-  const {
-    held,
-    getTarget,
-    knows,
-    settings,
-    runs,
-    vaultsModule,
-    editing,
-    kinds,
-    window,
-    writeMessage,
-    log,
-    pluginHost,
-  } = deps
+  const { held, settings, vaultsModule, editing, kinds, window, writeMessage } = deps
+  const rec = kinds as unknown as {
+    recorded?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
+    pointed?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
+  }
   return useCommands({
     core,
     words,
-    log,
+    log: deps.log,
     held,
-    getTarget,
-    knows,
+    getTarget: deps.getTarget,
+    knows: deps.knows,
     kept: settings.kept,
-    runs,
+    runs: deps.runs,
     coverage: vaultsModule.coverage,
     making: editing.making,
     made: kinds.made,
@@ -85,18 +77,14 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     oneName: settings.oneName,
     nesting: settings.nesting,
     rest: settings.rest,
-    recorded:
-      (kinds as unknown as { recorded?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void } })
-        .recorded ?? {},
-    pointed:
-      (kinds as unknown as { pointed?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void } })
-        .pointed ?? {},
+    recorded: rec.recorded ?? {},
+    pointed: rec.pointed ?? {},
     files: () => kinds.files,
     plexes: () => kinds.plexes,
     agents: () => kinds.agents,
     getOpeningNote: () => window.opening.value,
     writeMessage,
-    ...(pluginHost !== undefined ? { pluginHost } : {}),
+    ...(deps.pluginHost !== undefined ? { pluginHost: deps.pluginHost } : {}),
   })
 }
 
@@ -113,6 +101,23 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
   const { vaultsModule, held, settings, window, editing } = deps
   const startLayout = async () => {
     if (!vaultsModule.shown.value.id) return
+    const search = typeof globalThis.location !== 'undefined' ? globalThis.location.search : ''
+    const params = search ? new URLSearchParams(search) : null
+    const initialTab = params?.get('tab')
+    if (initialTab) {
+      const colonIdx = initialTab.indexOf(':')
+      const kind = colonIdx !== -1 ? initialTab.slice(0, colonIdx) : initialTab
+      const at = colonIdx !== -1 ? initialTab.slice(colonIdx + 1) : ''
+      const opened = await held.openTabOfKind(kind, at)
+      if (opened) {
+        held.layout.value = {
+          root: { kind: 'pane', id: 'main', tabs: [opened], active: opened },
+          axis: 'horizontal',
+          focus: 'main',
+        }
+        return
+      }
+    }
     const plex = await held.openTabOfKind(PLEX)
     const talk = await held.openTabOfKind(AGENT)
     const tree = await held.openTabOfKind(FILES)
@@ -286,6 +291,12 @@ function initWindowKindsAndCommands(
   return { getTarget, runCommand }
 }
 
+function isSecondaryWindow(): boolean {
+  if (typeof globalThis.location === 'undefined') return false
+  const params = new URLSearchParams(globalThis.location.search)
+  return params.get('window') === 'secondary' || params.has('secondary')
+}
+
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
   const settingsHolder: { current?: ReturnType<typeof useSettings> } = {}
@@ -306,6 +317,10 @@ export const useWindow = () => {
   }
 
   useAppHotkeys(ctx.commands.onKeyDown)
+  const crossWindowTabs = useCrossWindowTabs({
+    held: base.held,
+    closeWindowIfEmpty: isSecondaryWindow() ? () => window.close() : undefined,
+  })
   initAppLifecycle({
     vaultsModule: ctx.vaults,
     held: base.held,
@@ -334,5 +349,7 @@ export const useWindow = () => {
     getTitle: editing.getTitle,
     getTarget,
     tabLinks: base.tabLinks,
+    detachTab: core.detachTab,
+    dockToOtherWindow: crossWindowTabs.dockToOtherWindow,
   }
 }

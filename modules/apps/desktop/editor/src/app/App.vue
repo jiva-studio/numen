@@ -46,6 +46,7 @@ const {
   getTitle,
   getTarget,
   tabLinks,
+  detachTab,
 } = useWindow()
 
 const linkMenu = useTabLinkMenu({
@@ -53,10 +54,20 @@ const linkMenu = useTabLinkMenu({
   getTabs: () => held.tabs.value,
   getKind: (id) => held.getTab(id)?.kind.kind,
 })
+const writeMessage = log.getWriter('window')
 
 /* -------------------------------- Handlers -------------------------------- */
 function onCloseTab(id: string, hold?: () => void) {
   closeTab(id, hold)
+}
+
+async function onTearOffTab(id: string, at: { x: number; y: number }) {
+  try {
+    await detachTab(id, at)
+    onCloseTab(id)
+  } catch (err) {
+    writeMessage(err instanceof Error ? err.message : String(err), 'error')
+  }
 }
 
 function onShowTab(id: string) {
@@ -83,6 +94,7 @@ function onTabContextMenu(tabId: string, at: { x: number; y: number }) {
       @close="onCloseTab"
       @show="onShowTab"
       @tab-context-menu="onTabContextMenu"
+      @tear-off="onTearOffTab"
     >
       <template #icon="{ id }">
         <component :is="getTabIcon(id)" v-if="getTabIcon(id)" class="tab-icon" />

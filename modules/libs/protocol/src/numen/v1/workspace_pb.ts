@@ -19,7 +19,51 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/workspace.proto.
  */
 export const file_numen_v1_workspace: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS93b3Jrc3BhY2UucHJvdG8SCG51bWVuLnYxIhMKEVdhdGNoRm9jdXNSZXF1ZXN0IkEKEldhdGNoRm9jdXNSZXNwb25zZRIMCgRwYXRoGAEgASgJEh0KBXNwYW5zGAIgAygLMg4ubnVtZW4udjEuU3BhbiJCChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIhcKFVdyaXRlT3BlblRhYnNSZXNwb25zZSLAAQoDVGFiEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDAoEcGF0aBgDIAEoCRINCgV0aXRsZRgEIAEoCRIsCghkb2N1bWVudBgFIAEoCzIaLm51bWVuLnYxLkRvY3VtZW50UHJvZ3Jlc3MSLgoJcmVjb3JkaW5nGAYgASgLMhsubnVtZW4udjEuUmVjb3JkaW5nUHJvZ3Jlc3MSJAoEYm9vaxgHIAEoCzIWLm51bWVuLnYxLkJvb2tQcm9ncmVzcyI0ChBEb2N1bWVudFByb2dyZXNzEgwKBHBhZ2UYASABKAUSEgoKcGFnZV9jb3VudBgCIAEoBSJACgxCb29rUHJvZ3Jlc3MSDgoGb2Zmc2V0GAEgASgFEgwKBHBhZ2UYAiABKAUSEgoKcGFnZV9jb3VudBgDIAEoBSJJChFSZWNvcmRpbmdQcm9ncmVzcxIfChd0cmFuc2NyaWJlZF9kdXJhdGlvbl9tcxgBIAEoBRITCgtkdXJhdGlvbl9tcxgCIAEoBTKvAQoQV29ya3NwYWNlU2VydmljZRJJCgpXYXRjaEZvY3VzEhsubnVtZW4udjEuV2F0Y2hGb2N1c1JlcXVlc3QaHC5udW1lbi52MS5XYXRjaEZvY3VzUmVzcG9uc2UwARJQCg1Xcml0ZU9wZW5UYWJzEh4ubnVtZW4udjEuV3JpdGVPcGVuVGFic1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZU9wZW5UYWJzUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("ChhudW1lbi92MS93b3Jrc3BhY2UucHJvdG8SCG51bWVuLnYxIjgKEERldGFjaFRhYlJlcXVlc3QSDgoGdGFiX2lkGAEgASgJEgkKAXgYAiABKAUSCQoBeRgDIAEoBSITChFEZXRhY2hUYWJSZXNwb25zZSITChFXYXRjaEZvY3VzUmVxdWVzdCJBChJXYXRjaEZvY3VzUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIdCgVzcGFucxgCIAMoCzIOLm51bWVuLnYxLlNwYW4iQgoUV3JpdGVPcGVuVGFic1JlcXVlc3QSGwoEdGFicxgBIAMoCzINLm51bWVuLnYxLlRhYhINCgVmcm9udBgCIAEoCSIXChVXcml0ZU9wZW5UYWJzUmVzcG9uc2UiwAEKA1RhYhIKCgJpZBgBIAEoCRIMCgRraW5kGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFdGl0bGUYBCABKAkSLAoIZG9jdW1lbnQYBSABKAsyGi5udW1lbi52MS5Eb2N1bWVudFByb2dyZXNzEi4KCXJlY29yZGluZxgGIAEoCzIbLm51bWVuLnYxLlJlY29yZGluZ1Byb2dyZXNzEiQKBGJvb2sYByABKAsyFi5udW1lbi52MS5Cb29rUHJvZ3Jlc3MiNAoQRG9jdW1lbnRQcm9ncmVzcxIMCgRwYWdlGAEgASgFEhIKCnBhZ2VfY291bnQYAiABKAUiQAoMQm9va1Byb2dyZXNzEg4KBm9mZnNldBgBIAEoBRIMCgRwYWdlGAIgASgFEhIKCnBhZ2VfY291bnQYAyABKAUiSQoRUmVjb3JkaW5nUHJvZ3Jlc3MSHwoXdHJhbnNjcmliZWRfZHVyYXRpb25fbXMYASABKAUSEwoLZHVyYXRpb25fbXMYAiABKAUy9QEKEFdvcmtzcGFjZVNlcnZpY2USSQoKV2F0Y2hGb2N1cxIbLm51bWVuLnYxLldhdGNoRm9jdXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hGb2N1c1Jlc3BvbnNlMAESUAoNV3JpdGVPcGVuVGFicxIeLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVPcGVuVGFic1Jlc3BvbnNlEkQKCURldGFjaFRhYhIaLm51bWVuLnYxLkRldGFjaFRhYlJlcXVlc3QaGy5udW1lbi52MS5EZXRhY2hUYWJSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
+
+/**
+ * @generated from message numen.v1.DetachTabRequest
+ */
+export type DetachTabRequest = Message<"numen.v1.DetachTabRequest"> & {
+  /**
+   * The tab to open in a new window.
+   *
+   * @generated from field: string tab_id = 1;
+   */
+  tabId: string;
+
+  /**
+   * The position on screen to open the new window at.
+   *
+   * @generated from field: int32 x = 2;
+   */
+  x: number;
+
+  /**
+   * @generated from field: int32 y = 3;
+   */
+  y: number;
+};
+
+/**
+ * Describes the message numen.v1.DetachTabRequest.
+ * Use `create(DetachTabRequestSchema)` to create a new message.
+ */
+export const DetachTabRequestSchema: GenMessage<DetachTabRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 0);
+
+/**
+ * @generated from message numen.v1.DetachTabResponse
+ */
+export type DetachTabResponse = Message<"numen.v1.DetachTabResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.DetachTabResponse.
+ * Use `create(DetachTabResponseSchema)` to create a new message.
+ */
+export const DetachTabResponseSchema: GenMessage<DetachTabResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 1);
 
 /**
  * @generated from message numen.v1.WatchFocusRequest
@@ -32,7 +76,7 @@ export type WatchFocusRequest = Message<"numen.v1.WatchFocusRequest"> & {
  * Use `create(WatchFocusRequestSchema)` to create a new message.
  */
 export const WatchFocusRequestSchema: GenMessage<WatchFocusRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 0);
+  messageDesc(file_numen_v1_workspace, 2);
 
 /**
  * @generated from message numen.v1.WatchFocusResponse
@@ -61,7 +105,7 @@ export type WatchFocusResponse = Message<"numen.v1.WatchFocusResponse"> & {
  * Use `create(WatchFocusResponseSchema)` to create a new message.
  */
 export const WatchFocusResponseSchema: GenMessage<WatchFocusResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 1);
+  messageDesc(file_numen_v1_workspace, 3);
 
 /**
  * @generated from message numen.v1.WriteOpenTabsRequest
@@ -88,7 +132,7 @@ export type WriteOpenTabsRequest = Message<"numen.v1.WriteOpenTabsRequest"> & {
  * Use `create(WriteOpenTabsRequestSchema)` to create a new message.
  */
 export const WriteOpenTabsRequestSchema: GenMessage<WriteOpenTabsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 2);
+  messageDesc(file_numen_v1_workspace, 4);
 
 /**
  * @generated from message numen.v1.WriteOpenTabsResponse
@@ -101,7 +145,7 @@ export type WriteOpenTabsResponse = Message<"numen.v1.WriteOpenTabsResponse"> & 
  * Use `create(WriteOpenTabsResponseSchema)` to create a new message.
  */
 export const WriteOpenTabsResponseSchema: GenMessage<WriteOpenTabsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 3);
+  messageDesc(file_numen_v1_workspace, 5);
 
 /**
  * A Tab is one tab of the window: what kind it is, and what it holds.
@@ -167,7 +211,7 @@ export type Tab = Message<"numen.v1.Tab"> & {
  * Use `create(TabSchema)` to create a new message.
  */
 export const TabSchema: GenMessage<Tab> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 4);
+  messageDesc(file_numen_v1_workspace, 6);
 
 /**
  * A DocumentProgress is how far through a document the person reading it is.
@@ -195,7 +239,7 @@ export type DocumentProgress = Message<"numen.v1.DocumentProgress"> & {
  * Use `create(DocumentProgressSchema)` to create a new message.
  */
 export const DocumentProgressSchema: GenMessage<DocumentProgress> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 5);
+  messageDesc(file_numen_v1_workspace, 7);
 
 /**
  * A BookProgress is how far through a book that reflows the person reading it
@@ -232,7 +276,7 @@ export type BookProgress = Message<"numen.v1.BookProgress"> & {
  * Use `create(BookProgressSchema)` to create a new message.
  */
 export const BookProgressSchema: GenMessage<BookProgress> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 6);
+  messageDesc(file_numen_v1_workspace, 8);
 
 /**
  * A RecordingProgress is how far into a recording the words written down reach.
@@ -262,7 +306,7 @@ export type RecordingProgress = Message<"numen.v1.RecordingProgress"> & {
  * Use `create(RecordingProgressSchema)` to create a new message.
  */
 export const RecordingProgressSchema: GenMessage<RecordingProgress> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 7);
+  messageDesc(file_numen_v1_workspace, 9);
 
 /**
  * WorkspaceService answers where in the vault the person stands, and takes what
@@ -295,6 +339,16 @@ export const WorkspaceService: GenService<{
     methodKind: "unary";
     input: typeof WriteOpenTabsRequestSchema;
     output: typeof WriteOpenTabsResponseSchema;
+  },
+  /**
+   * DetachTab asks that a tab be opened in a new window of its own.
+   *
+   * @generated from rpc numen.v1.WorkspaceService.DetachTab
+   */
+  detachTab: {
+    methodKind: "unary";
+    input: typeof DetachTabRequestSchema;
+    output: typeof DetachTabResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_workspace, 0);

@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -100,5 +101,47 @@ func TestFrontedIsTheTabThePersonIsLookingAt(t *testing.T) {
 				t.Errorf("the tab in front holds %q", front.Path)
 			}
 		})
+	}
+}
+
+func TestDetachTabInvokesState(t *testing.T) {
+	var calledTab string
+	var calledX, calledY int
+	state := &State{
+		DetachTab: func(_ context.Context, tab string, x, y int) error {
+			calledTab = tab
+			calledX = x
+			calledY = y
+			return nil
+		},
+	}
+	api := &workspaceHandler{state: state}
+
+	_, err := api.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{
+		TabId: "tab-123",
+		X:     150,
+		Y:     250,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if calledTab != "tab-123" || calledX != 150 || calledY != 250 {
+		t.Errorf("detached tab: got (%q, %d, %d), want (%q, 150, 250)", calledTab, calledX, calledY, "tab-123")
+	}
+}
+
+func TestDetachTabFailsWhenUnimplemented(t *testing.T) {
+	state := &State{}
+	api := &workspaceHandler{state: state}
+
+	_, err := api.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{
+		TabId: "tab-123",
+	}))
+	if err == nil {
+		t.Fatal("expected error when DetachTab is nil, got nil")
+	}
+	if connect.CodeOf(err) != connect.CodeUnavailable {
+		t.Errorf("got code %v, want %v", connect.CodeOf(err), connect.CodeUnavailable)
 	}
 }

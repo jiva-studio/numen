@@ -32,7 +32,13 @@ const getTab = (id: string): Tab | undefined => {
  * A workspace drawn in a frame at (100, 50), 1000 by 600. `main` is the left half and holds one
  * tab; `aside` is the right half and holds two. A strip is the top 30 of a pane.
  */
-function createDrag(options: { getTab?: typeof getTab; hasFrame?: boolean } = {}) {
+function createDrag(
+  options: {
+    getTab?: typeof getTab
+    hasFrame?: boolean
+    onTearOff?: (tab: string, at: { x: number; y: number }) => void
+  } = {},
+) {
   const frame = createBox('div', null, [100, 50, 1000, 600])
   const main = createBox('div', ['data-workspace-pane', 'main'], [100, 50, 500, 600])
   const aside = createBox('div', ['data-workspace-pane', 'aside'], [600, 50, 500, 600])
@@ -72,6 +78,7 @@ function createDrag(options: { getTab?: typeof getTab; hasFrame?: boolean } = {}
       getEdge: () => 10,
       getThreshold: () => 4,
       getClock: () => clock,
+      onTearOff: options.onTearOff,
     }),
   )!
 
@@ -340,5 +347,26 @@ describe('letting go of a tab', () => {
     release(350, 300)
 
     expect(workspace.value).toBe(before)
+  })
+
+  it('reports a tab let go over no drop target to onTearOff with screen offset', () => {
+    let torn: { tab: string; at: { x: number; y: number } } | null = null
+    const originalScreenX = window.screenX
+    const originalScreenY = window.screenY
+    Object.defineProperty(window, 'screenX', { value: 100, configurable: true })
+    Object.defineProperty(window, 'screenY', { value: 50, configurable: true })
+
+    const { dragTo, release } = start({
+      onTearOff: (tab, at) => {
+        torn = { tab, at }
+      },
+    })
+    dragTo('plex', [350, 300], [20, 300])
+    release(20, 300)
+
+    expect(torn).toStrictEqual({ tab: 'plex', at: { x: 120, y: 350 } })
+
+    Object.defineProperty(window, 'screenX', { value: originalScreenX, configurable: true })
+    Object.defineProperty(window, 'screenY', { value: originalScreenY, configurable: true })
   })
 })

@@ -25,7 +25,21 @@ service WorkspaceService {
   // changes, and an agent working the vault beside them reads what it last
   // said.
   rpc WriteOpenTabs(WriteOpenTabsRequest) returns (WriteOpenTabsResponse);
+
+  // DetachTab asks that a tab be opened in a new window of its own.
+  rpc DetachTab(DetachTabRequest) returns (DetachTabResponse);
 }
+
+message DetachTabRequest {
+  // The tab to open in a new window.
+  string tab_id = 1;
+
+  // The position on screen to open the new window at.
+  int32 x = 2;
+  int32 y = 3;
+}
+
+message DetachTabResponse {}
 
 message WatchFocusRequest {}
 

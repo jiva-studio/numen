@@ -42,6 +42,8 @@ export interface TabDragOptions {
   /** How far the pointer travels before a press becomes a drag. */
   readonly getThreshold: () => number
   readonly getClock: () => Clock
+  /** Called when a tab is dragged and released outside of any workspace drop target. */
+  readonly onTearOff?: ((tab: TabId, at: Position) => void) | undefined
 }
 
 export interface TabDragState {
@@ -60,6 +62,8 @@ export interface TabDragState {
 }
 
 export function useTabDrag(options: TabDragOptions): TabDragState {
+  let lastPosition: Position = { x: 0, y: 0 }
+
   const {
     dragging,
     at: dropTarget,
@@ -68,9 +72,21 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
   } = usePressDrag<Drag, TabDropTarget>({
     getThreshold: options.getThreshold,
     getClock: options.getClock,
-    getDropTargetAt: (_item, at) => resolveDropTarget(at, options.frame.value, options.getEdge),
+    getDropTargetAt: (_item, at) => {
+      lastPosition = at
+      return resolveDropTarget(at, options.frame.value, options.getEdge)
+    },
     commit: (item, at) => {
-      if (at) land(item, at)
+      if (at) {
+        land(item, at)
+      } else if (options.onTearOff) {
+        const screenX = typeof window !== 'undefined' ? window.screenX : 0
+        const screenY = typeof window !== 'undefined' ? window.screenY : 0
+        options.onTearOff(item.tab, {
+          x: screenX + lastPosition.x,
+          y: screenY + lastPosition.y,
+        })
+      }
     },
   })
 
@@ -85,9 +101,9 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
   function press(tab: TabId, at: PointerEvent): void {
     if (at.button !== 0) return
 
-    const holder = document
-      .elementFromPoint(at.clientX, at.clientY)
-      ?.closest('[data-workspace-pane]')
+    const holder = document.elementFromPoint
+      ? document.elementFromPoint(at.clientX, at.clientY)?.closest('[data-workspace-pane]')
+      : null
     const from = holder?.getAttribute('data-workspace-pane') ?? options.workspace.value.focus
 
     lift({ tab, from }, at)
@@ -184,7 +200,7 @@ function resolveDropTarget(
   if (!isInside(at, outer)) return null
 
   const local = (box: Rect): Rect => ({ ...box, x: box.x - outer.x, y: box.y - outer.y })
-  const under = document.elementFromPoint(at.x, at.y)
+  const under = document.elementFromPoint ? document.elementFromPoint(at.x, at.y) : null
 
   const strip = getClosest(under, '[data-workspace-strip]')
   const pane = getClosest(under, '[data-workspace-pane]')

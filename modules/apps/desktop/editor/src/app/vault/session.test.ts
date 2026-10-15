@@ -14,6 +14,7 @@ const asked = vi.hoisted(() => ({
   watchFocus: vi.fn(),
   watchTasks: vi.fn(),
   watchQuit: vi.fn(),
+  detachTab: vi.fn(),
 }))
 
 vi.mock('@/shared/clients', () => ({
@@ -182,5 +183,14 @@ describe('the streams a window follows', () => {
       ],
     ])
     expect(asked.watchTasks).toHaveBeenCalledWith({ window: 'editor' }, { signal })
+  })
+})
+
+describe('detaching a tab', () => {
+  it('asks the workspace to open a new window for the tab', async () => {
+    asked.detachTab.mockResolvedValue({})
+    await sessionCore.detachTab('tab-42', { x: 100, y: 200 })
+
+    expect(asked.detachTab).toHaveBeenCalledWith({ tabId: 'tab-42', x: 100, y: 200 })
   })
 })
