@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -157,8 +156,8 @@ func TestSettingsThatCannotBeWrittenAreRefused(t *testing.T) {
 // plan is resolved from the performance section.
 func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 	said := DefaultSettings()
-	said.Indexing.Recognition.Proofread = proofreading.Proofread{Profile: "for scans", IsAutomatic: true}
-	said.Indexing.Transcription.Proofread = proofreading.Proofread{Profile: "for speech"}
+	said.Indexing.Recognition.Proofread = Proofread{Profile: "for scans", IsAutomatic: true}
+	said.Indexing.Transcription.Proofread = Proofread{Profile: "for speech"}
 	said.Agent.Use = "claude"
 	said.Importing.Captions = []string{"sa", "en"}
 	said.Performance = settings.Performance{Profile: settings.ProfileEco}

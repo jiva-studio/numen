@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 )
 
@@ -749,7 +748,7 @@ func TestEachKindOfProofreadingProfileIsRead(t *testing.T) {
 	if !service.HasModel() || service.Name != "google/gemini-2.5-flash" || service.BatchSize != 25 {
 		t.Errorf("the service profile is %+v", service)
 	}
-	if service.BaseURL != proofreading.ServiceDefaults().BaseURL {
+	if service.BaseURL != container.ServiceDefaults().BaseURL {
 		t.Errorf("base URL is %q", service.BaseURL)
 	}
 
@@ -794,7 +793,7 @@ func TestTheEditDistanceIsReadFromAboveTheProfiles(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := silent.Indexing.Proofreading.Distance(); got != proofreading.DefaultMaxEditDistance {
+	if got := silent.Indexing.Proofreading.Distance(); got != container.DefaultMaxEditDistance {
 		t.Errorf("a file saying nothing gives %v", got)
 	}
 }

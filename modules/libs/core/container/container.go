@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/trash"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -88,13 +87,16 @@ type Config struct {
 
 	// Proofreading is what puts a recognition right. It arrives the way Embedding
 	// does, and naming no profile here is naming no proofreader.
-	Proofreading proofreading.Config
+	Proofreading ProofreadingConfig
 
 	// ScanProofreading and TranscriptProofreading name the profile each kind of
 	// text is put right at, and say whether that happens without anybody
 	// asking.
-	ScanProofreading       proofreading.Proofread
-	TranscriptProofreading proofreading.Proofread
+	ScanProofreading       Proofread
+	TranscriptProofreading Proofread
+
+	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.
+	PluginHost *plugin.Host
 
 	// AgentProofreader opens a profile that reaches the command line a person
 	// already has. The platform supplies it, since core starts no process; an
@@ -114,9 +116,6 @@ type Config struct {
 	// ErrorHandler is where what is assembled here says what went wrong in work
 	// it carries on past. An installation that sets none is told nothing.
 	ErrorHandler port.ErrorHandler
-
-	// PluginHost manages out-of-process plugins and their communication endpoints.
-	PluginHost *plugin.Host
 
 	// Now is what time it is, for every scenario that stamps a note or asks
 	// what is due today. An installation that names none reads this machine's
