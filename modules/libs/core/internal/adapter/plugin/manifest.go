@@ -56,21 +56,34 @@ type Setting struct {
 	Step        float64         `json:"step"`
 }
 
+// AgentTool declares a custom tool provided or required by an agent plugin.
+type AgentTool struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+// AgentConfig declares agent system prompt extensions and custom tools in the manifest.
+type AgentConfig struct {
+	SystemPrompt string      `json:"systemPrompt"`
+	Tools        []AgentTool `json:"tools"`
+}
+
 // Manifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.
 type Manifest struct {
-	ID               string    `json:"id"`
-	Name             string    `json:"name"`
-	Version          string    `json:"version"`
-	Description      string    `json:"description"`
-	Capabilities     []string  `json:"capabilities"`
-	Targets          []string  `json:"targets"`
-	FileExtensions   []string  `json:"fileExtensions,omitempty"`
-	ActivationEvents []string  `json:"activationEvents"`
-	Permissions      []string  `json:"permissions"`
-	Lifecycle        Lifecycle `json:"lifecycle"`
-	Backend          Backend   `json:"backend"`
-	Frontend         Frontend  `json:"frontend"`
-	Settings         []Setting `json:"settings"`
+	ID               string      `json:"id"`
+	Name             string      `json:"name"`
+	Version          string      `json:"version"`
+	Description      string      `json:"description"`
+	Capabilities     []string    `json:"capabilities"`
+	Targets          []string    `json:"targets"`
+	FileExtensions   []string    `json:"fileExtensions,omitempty"`
+	ActivationEvents []string    `json:"activationEvents"`
+	Permissions      []string    `json:"permissions"`
+	Lifecycle        Lifecycle   `json:"lifecycle"`
+	Backend          Backend     `json:"backend"`
+	Frontend         Frontend    `json:"frontend"`
+	Settings         []Setting   `json:"settings"`
+	Agent            AgentConfig `json:"agent"`
 }
 
 // ReadManifest decodes and validates a manifest from JSON input.
