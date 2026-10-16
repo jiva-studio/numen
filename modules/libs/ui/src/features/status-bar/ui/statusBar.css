@@ -199,3 +199,10 @@
 .text-alarm {
   color: var(--numen-alarm);
 }
+
+.status-bar__trailing {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}

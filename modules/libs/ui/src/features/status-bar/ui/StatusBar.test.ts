@@ -181,4 +181,19 @@ describe('StatusBar', () => {
     expect(wrapper.text()).toContain('1 в работе')
     expect(wrapper.text()).toContain('1 с ошибкой')
   })
+
+  it('renders trailing slot content when provided', () => {
+    const wrapper = mount(StatusBar, {
+      props: {
+        tasks: [],
+      },
+      slots: {
+        trailing: '<div class="custom-trailing">Update available</div>',
+      },
+    })
+
+    const trailing = wrapper.find('.status-bar__trailing')
+    expect(trailing.exists()).toBe(true)
+    expect(trailing.text()).toBe('Update available')
+  })
 })

@@ -112,5 +112,9 @@ function onDismiss(id: string) {
         @dismiss="onDismiss"
       />
     </div>
+
+    <div v-if="$slots.trailing" class="status-bar__trailing">
+      <slot name="trailing" />
+    </div>
   </footer>
 </template>
