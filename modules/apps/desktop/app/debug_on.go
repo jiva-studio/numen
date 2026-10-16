@@ -105,7 +105,7 @@ func (d *DebugOptions) serveHTTP(
 	defer ln.Close()
 
 	var tlsConf *tls.Config
-	if os.Getenv("NUMEN_DEBUG_TLS") == "true" {
+	if os.Getenv("NUMEN_DEBUG_TLS") != "false" {
 		cert, err := generateSelfSignedCert()
 		if err != nil {
 			return fmt.Errorf("generate debug tls cert: %w", err)
