@@ -8,6 +8,7 @@ import (
 
 	"connectrpc.com/connect"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/plugins/reader-pdf/backend/service"
 )
 
 func TestPdfServerVaultBoundary(t *testing.T) {
@@ -20,7 +21,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	_ = os.WriteFile(outsidePath, []byte("%PDF-1.4 dummy"), 0o644)
 
 	t.Setenv("NUMEN_VAULT_PATH", vaultDir)
-	server := &documentServer{}
+	server := service.NewDocumentServer()
 	ctx := context.Background()
 
 	// 1. GetDocument outside vault -> PermissionDenied
