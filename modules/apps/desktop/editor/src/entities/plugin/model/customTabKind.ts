@@ -11,10 +11,12 @@ import {
   ref,
   Teleport,
   type Component,
+  type Ref,
+  type VNodeChild,
 } from 'vue'
 import type { ReaderRegistration, TabKindRegistration } from '@numen/plugin-sdk'
 import type { AnyTabKind } from '@/entities/tab/@x/plugin'
-import { getPluginStyle } from './styles'
+import { attachPluginShadow, getPluginStyle, PANE_HOST_STYLE, PANE_LAYOUT_STYLE } from './styles'
 import type { PluginHostDeps } from './types'
 
 type AsyncComponentRegistration = {
@@ -83,19 +85,6 @@ function getReaderTargetSource(path: string | undefined): 'recording' | 'book' |
   return 'other'
 }
 
-function attachPluginShadow(el: HTMLElement | null): ShadowRoot | null {
-  if (!el) return null
-  if (el.shadowRoot) return el.shadowRoot
-  if (typeof el.attachShadow === 'function') {
-    try {
-      return el.attachShadow({ mode: 'open' })
-    } catch {
-      return el.shadowRoot
-    }
-  }
-  return null
-}
-
 function renderFallback(pluginId: string, error: Error) {
   return h('div', { class: 'plugin-error-fallback p-4 text-red-500' }, [
     h('h3', { class: 'font-bold' }, `Plugin "${pluginId}" crashed`),
@@ -127,12 +116,38 @@ function renderPaneContent(deps: PaneContentDeps) {
   const styleNode = styleUrl
     ? h('link', { rel: 'stylesheet', href: styleUrl, 'data-plugin-id': deps.pluginId })
     : null
-  const inner = h('div', { class: deps.containerClass }, [child])
+  const layoutStyleNode = h('style', PANE_LAYOUT_STYLE)
+  const inner = h(
+    'div',
+    {
+      class: `${deps.containerClass} h-full w-full min-h-0 min-w-0 flex flex-col flex-1`,
+      style: PANE_HOST_STYLE,
+    },
+    [child],
+  )
 
   if (deps.shadowRoot) {
-    return h(Teleport, { to: deps.shadowRoot }, [styleNode, inner])
+    return h(Teleport, { to: deps.shadowRoot }, [layoutStyleNode, styleNode, inner])
   }
-  return [styleNode, inner]
+  return [layoutStyleNode, styleNode, inner]
+}
+
+function renderWrapper(opts: {
+  wrapperClass: string
+  pluginId: string
+  hostEl: Ref<HTMLElement | null>
+  content: VNodeChild
+}) {
+  return h(
+    'div',
+    {
+      class: `${opts.wrapperClass} h-full w-full min-h-0 min-w-0 flex flex-col flex-1`,
+      'data-plugin-id': opts.pluginId,
+      ref: opts.hostEl,
+      style: PANE_HOST_STYLE,
+    },
+    [opts.content],
+  )
 }
 
 export function createPluginPaneWrapper(
@@ -169,17 +184,16 @@ export function createPluginPaneWrapper(
 
       return () => {
         if (error.value) return renderFallback(pluginId, error.value)
-        return h('div', { class: classes.wrapper, 'data-plugin-id': pluginId, ref: hostEl }, [
-          isReady.value
-            ? renderPaneContent({
-                pluginId,
-                component,
-                state: props.state,
-                shadowRoot: shadowRoot.value,
-                containerClass: classes.container,
-              })
-            : null,
-        ])
+        const content = isReady.value
+          ? renderPaneContent({
+              pluginId,
+              component,
+              state: props.state,
+              shadowRoot: shadowRoot.value,
+              containerClass: classes.container,
+            })
+          : null
+        return renderWrapper({ wrapperClass: classes.wrapper, pluginId, hostEl, content })
       }
     },
   })
