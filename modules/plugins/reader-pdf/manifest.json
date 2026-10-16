@@ -19,7 +19,6 @@
     "serviceName": "numen.v1.DocumentService"
   },
   "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
+    "entrypoint": "frontend/DocumentTab.vue"
   }
 }
