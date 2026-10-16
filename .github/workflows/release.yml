@@ -1189,6 +1189,7 @@ jobs:
     # The tag is pushed and the release is made from here, and nowhere else.
     permissions:
       contents: write
+      id-token: write
     steps:
       # The one clone that keeps the token: the tag is pushed through it.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1204,6 +1205,42 @@ jobs:
         with:
           name: notes
           path: ${{ runner.temp }}
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Sign release assets with Cosign
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+          STAMP: ${{ needs.naming.outputs.stamp }}
+          SHELF: ${{ needs.naming.outputs.shelf }}
+        run: |
+          set -euo pipefail
+          upload="$RUNNER_TEMP/upload"
+
+          if [ "$SHELF" = latest ]; then
+            kept="releases/$VERSION"
+          else
+            kept="builds/$STAMP"
+          fi
+
+          declare -A seen
+          unique_files=()
+          mapfile -t candidates < <(find "$upload/$kept" "$upload/$SHELF" -maxdepth 1 -type f ! -name 'notes.md' ! -name '*.sigstore.json' ! -name '*.intoto.jsonl' | sort -u)
+          for file in "${candidates[@]}"; do
+            base=$(basename "$file")
+            if [[ -z "${seen[$base]:-}" ]]; then
+              seen["$base"]=1
+              unique_files+=("$file")
+            fi
+          done
+
+          echo "{}" > "$RUNNER_TEMP/predicate.json"
+          for file in "${unique_files[@]}"; do
+            echo "Signing $file..."
+            cosign sign-blob --yes --bundle "${file}.sigstore.json" "$file"
+            cosign attest-blob --yes --bundle "${file}.intoto.jsonl" --predicate "$RUNNER_TEMP/predicate.json" --type https://in-toto.io/Statement/v0.1 "$file"
+          done
 
       - name: Create and push Git tag
         env:
@@ -1234,8 +1271,17 @@ jobs:
             kept="builds/$STAMP"
           fi
 
-          mapfile -t files < <(find "$upload/$SHELF" "$upload/$kept" -maxdepth 1 -type f ! -name 'notes.md' | sort -u)
-          printf '%s\n' "${files[@]}"
+          declare -A seen
+          release_assets=()
+          mapfile -t all_assets < <(find "$upload/$kept" "$upload/$SHELF" -maxdepth 1 -type f ! -name 'notes.md' | sort -u)
+          for f in "${all_assets[@]}"; do
+            base=$(basename "$f")
+            if [[ -z "${seen[$base]:-}" ]]; then
+              seen["$base"]=1
+              release_assets+=("$f")
+            fi
+          done
+          printf '%s\n' "${release_assets[@]}"
 
           prerelease=
           [ "$CHANNEL" = stable ] || prerelease=--prerelease
@@ -1244,4 +1290,4 @@ jobs:
             --title "$VERSION" \
             --notes-file "$RUNNER_TEMP/notes.md" \
             $prerelease \
-            "${files[@]}"
+            "${release_assets[@]}"
