@@ -4,13 +4,12 @@ tone_instructions: "Be concise and technical. Respect coding guidelines in AGENT
 
 reviews:
   profile: "chill"
-  request_changes_workflow: false
+  request_changes_workflow: true
   high_level_summary: true
   poem: false
   auto_review:
     enabled: true
     drafts: false
-    auto_approve: true
   tools:
     ast-grep:
       enabled: true
