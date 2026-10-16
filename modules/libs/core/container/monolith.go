@@ -31,3 +31,19 @@ func RegisterTranscriptionServiceHandler(h numenv1connect.TranscriptionServiceHa
 func RegisterEmbeddingServiceHandler(h numenv1connect.EmbeddingServiceHandler) {
 	plugin.RegisterEmbeddingServiceHandler(h)
 }
+
+// RegisterDownloadServiceHandler sets the in-process DownloadServiceHandler.
+func RegisterDownloadServiceHandler(h numenv1connect.DownloadServiceHandler) {
+	plugin.RegisterDownloadServiceHandler(h)
+}
+
+// RegisterAgentServiceHandler sets the in-process AgentServiceHandler.
+func RegisterAgentServiceHandler(h numenv1connect.AgentServiceHandler) {
+	plugin.RegisterAgentServiceHandler(h)
+}
+
+// RegisterProofreadingServiceHandler sets the in-process ProofreadingServiceHandler.
+func RegisterProofreadingServiceHandler(h numenv1connect.ProofreadingServiceHandler) {
+	plugin.RegisterProofreadingServiceHandler(h)
+}
+
