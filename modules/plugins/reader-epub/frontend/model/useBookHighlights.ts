@@ -3,7 +3,7 @@
  * and the others named with it.
  */
 import { shallowRef } from 'vue'
-import type { Span } from '@/shared/span'
+import type { Span } from '@numen/plugin-sdk'
 
 export function useBookHighlights(
   goToOffset: (offset: number) => Promise<void>,

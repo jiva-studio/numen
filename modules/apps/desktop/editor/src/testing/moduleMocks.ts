@@ -8,7 +8,6 @@
 import { vi } from 'vitest'
 import { asValue } from '@numen/wire'
 import type { Cards } from '@/entities/deck'
-import type { Books } from '@/pages/book-reader/types'
 import type { Documents } from '@/pages/document-viewer/types'
 import { requests } from './requests'
 import { held, maker, said } from './answers'
@@ -26,32 +25,6 @@ vi.mock('@/pages/document-viewer/api/wire', () => documentsSaid)
 vi.mock('@/pages/document-viewer', async (original) => ({
   ...(await original<typeof import('@/pages/document-viewer')>()),
   ...documentsSaid,
-}))
-
-// The port is named in the type, so a member the slice renames stops the
-// typecheck here instead of answering undefined to a test that still passes.
-const booksSaid: { books: Books } = {
-  books: {
-    getBook: async (path: string) => ({
-      title: path,
-      span: { from: 0, to: 900 },
-      documents: [{ path: 'text/one.xhtml', span: { from: 0, to: 900 } }],
-      parts: [],
-      printedPages: [],
-      pages: 1,
-      pageBytes: 900,
-      fingerprint: '20480 1700000000000000000 book.epub',
-    }),
-    readMarkup: async () => '<p data-offset="0">the book</p>',
-    getEntryUrl: () => '',
-  },
-}
-
-vi.mock('@/pages/book-reader/api/wire', () => booksSaid)
-
-vi.mock('@/pages/book-reader', async (original) => ({
-  ...(await original<typeof import('@/pages/book-reader')>()),
-  ...booksSaid,
 }))
 
 const recordingsSaid = {

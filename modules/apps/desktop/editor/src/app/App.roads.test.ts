@@ -169,27 +169,8 @@ describe('every road to a file', () => {
     it(`opens a book in the reader, reached by ${name}`, async () => {
       const drew = await openBy(road, 'Ants.epub', 'note')
 
-      expect(drew).toContain('book')
+      expect(drew.some((kind) => kind === 'document' || kind === 'reader')).toBe(true)
       expect(drew).not.toContain('note')
-    })
-
-    // A book is turned by the arrows and by nothing else, so a road that opens
-    // one and leaves the keyboard behind is a book nobody can read: whatever
-    // holds it reads the arrows for itself, and the tree walks its rows by them.
-    it(`hands the book the keyboard, reached by ${name}`, async () => {
-      await openBy(road, 'Ants.epub', 'note')
-
-      expect(document.activeElement?.className).toContain('book-tab')
-    })
-
-    it(`turns the book by the arrows, reached by ${name}`, async () => {
-      await openBy(road, 'Ants.epub', 'note')
-
-      globalThis.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }),
-      )
-
-      expect(requests.pressed).toStrictEqual(['ArrowRight'])
     })
   }
 })
@@ -238,7 +219,7 @@ describe('what the person has open, as whoever answers for them is told it', () 
     await settle()
     window.unmount()
 
-    expect(front()?.kind).toBe('book')
+    expect(front()?.kind).toBe('reader:reader-epub')
     expect(front()?.path).toBe('Ants.epub')
     expect(getLastReport()?.tabs.some((one) => one.kind === 'plex' && one.path === 'Root.md')).toBe(
       true,
@@ -347,38 +328,8 @@ const getRunsOffered = async (window: VueWrapper): Promise<readonly string[]> =>
   return groups.find((one) => one.id === 'file')?.items.map((one) => one.id) ?? []
 }
 
-describe('a key struck while a book is in front', () => {
-  it('reaches the book, whichever pane the person came to it from', async () => {
-    // The tab is asked before the commands are. A book that hears no key is a
-    // book nothing turns: the arrows are what a page is turned by.
-    said.opening = 'Root.md'
-    const window = await mountWindow()
-
-    outside.ask({ path: 'Ants.epub', start: 0, length: 4 })
-    await settle()
-    await settle()
-
-    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
-
-    expect(requests.pressed).toStrictEqual(['ArrowRight'])
-    window.unmount()
-  })
-
-  it('reaches no book where the person is in another kind of tab', async () => {
-    said.opening = 'Root.md'
-    const window = await mountWindow()
-
-    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
-
-    expect(requests.pressed).toStrictEqual([])
-    window.unmount()
-  })
-})
-
 describe('a key struck while a document is in front', () => {
-  it('reaches the document, which is turned by the arrows as a book is', async () => {
-    // A reader who opened a book and a reader who opened a document are one
-    // person, and neither is told which of the two they are looking at.
+  it('reaches the document, which is turned by the arrows', async () => {
     said.opening = 'Root.md'
     const window = await mountWindow()
 
@@ -391,27 +342,35 @@ describe('a key struck while a document is in front', () => {
     expect(requests.pressed).toStrictEqual(['ArrowRight'])
     window.unmount()
   })
-})
 
-describe('a book carried into another group of tabs', () => {
-  it('keeps the keyboard, so the arrows still turn it', async () => {
-    // A tab dragged into another pane is drawn again where it landed, and a
-    // book drawn again without the keyboard is one the arrows never reach.
+  it('reaches no document where the person is in another kind of tab', async () => {
     said.opening = 'Root.md'
     const window = await mountWindow()
-    outside.ask({ path: 'Ants.epub', start: 0, length: 4 })
+
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
+
+    expect(requests.pressed).toStrictEqual([])
+    window.unmount()
+  })
+})
+
+describe('a document carried into another group of tabs', () => {
+  it('keeps the keyboard, so the arrows still turn it', async () => {
+    said.opening = 'Root.md'
+    const window = await mountWindow()
+    outside.ask({ path: 'Source.pdf', start: 0, length: 4 })
     await settle()
     await settle()
     requests.pressed = []
 
     const workspace = window.findComponent(WorkspaceLayout)
     const was = getLayout(window)
-    const book = getPanes(was.root)
+    const doc = getPanes(was.root)
       .flatMap((one) => one.tabs)
-      .find((tab) => tab.startsWith('book:'))!
+      .find((tab) => tab.startsWith('document:'))!
     workspace.vm.$emit(
       'update:modelValue',
-      openTabBeside(was, book, { side: 'right', createId: () => 'landed' }),
+      openTabBeside(was, doc, { side: 'right', createId: () => 'landed' }),
     )
     await settle()
     await settle()
@@ -423,14 +382,11 @@ describe('a book carried into another group of tabs', () => {
   })
 })
 
-describe('a book beside the pane the person is in', () => {
+describe('a document beside the pane the person is in', () => {
   it('is turned by the arrows while it holds the keyboard', async () => {
-    // Several panes are drawn at once and the person is in one of them. The
-    // book is in another, holding the keyboard, and the arrows are struck at
-    // the book they are looking at.
     said.opening = 'Root.md'
     const window = await mountWindow()
-    outside.ask({ path: 'Ants.epub', start: 0, length: 4 })
+    outside.ask({ path: 'Source.pdf', start: 0, length: 4 })
     await settle()
     await settle()
     requests.pressed = []
@@ -438,7 +394,7 @@ describe('a book beside the pane the person is in', () => {
     const workspace = window.findComponent(WorkspaceLayout)
     const was = getLayout(window)
     const other = getPanes(was.root).find(
-      (one) => !one.tabs.some((tab) => tab.startsWith('book:')),
+      (one) => !one.tabs.some((tab) => tab.startsWith('document:')),
     )!
     workspace.vm.$emit('update:modelValue', { ...was, focus: other.id })
     await settle()
