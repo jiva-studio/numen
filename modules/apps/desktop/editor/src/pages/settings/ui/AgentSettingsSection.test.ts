@@ -1,0 +1,115 @@
+import { describe, expect, it } from 'vitest'
+import { ref } from 'vue'
+import { mount } from '@vue/test-utils'
+
+import type { Model, SettingEdit } from '@/entities/settings'
+import { getSettingAt as at } from '@/entities/settings'
+import AgentSettingsSection from './AgentSettingsSection.vue'
+import type { Installation, SettingsTabState } from '../types'
+
+const CLAUDE_MODELS: readonly Model[] = [
+  {
+    namedAt: ['agent', 'claude', 'model'],
+    name: 'haiku',
+    title: 'Haiku',
+    group: 'In full',
+    isDefault: true,
+    writes: [{ at: ['agent', 'claude', 'model'], value: '"haiku"' }],
+    presence: 'present',
+  },
+  {
+    namedAt: ['agent', 'claude', 'model'],
+    name: 'sonnet',
+    title: 'Sonnet',
+    group: 'In full',
+    isDefault: false,
+    writes: [{ at: ['agent', 'claude', 'model'], value: '"sonnet"' }],
+    presence: 'present',
+  },
+]
+
+const ANTIGRAVITY_MODELS: readonly Model[] = [
+  {
+    namedAt: ['agent', 'antigravity', 'model'],
+    name: 'gemini-2.5-flash',
+    title: 'Gemini 2.5 Flash',
+    group: 'In full',
+    isDefault: true,
+    writes: [{ at: ['agent', 'antigravity', 'model'], value: '"gemini-2.5-flash"' }],
+    presence: 'present',
+  },
+  {
+    namedAt: ['agent', 'antigravity', 'model'],
+    name: 'gemini-2.5-pro',
+    title: 'Gemini 2.5 Pro',
+    group: 'In full',
+    isDefault: false,
+    writes: [{ at: ['agent', 'antigravity', 'model'], value: '"gemini-2.5-pro"' }],
+    presence: 'present',
+  },
+]
+
+const createSection = (file: Record<string, unknown> = {}) => {
+  const written: SettingEdit[] = []
+  const installation: Installation = {
+    getSetting: (path) => at(file, path),
+    getModels: (path) => {
+      if (path.join('.') === 'agent.claude.model') return CLAUDE_MODELS
+      if (path.join('.') === 'agent.antigravity.model') return ANTIGRAVITY_MODELS
+      return []
+    },
+    write: (edits) => {
+      written.push(...edits)
+    },
+    themes: ref([]),
+    applied: ref('default'),
+    mode: ref('light'),
+    isPinned: ref(false),
+    sizes: ref({ interfaceScale: 1, textScale: 1 }),
+    bounds: ref({
+      interfaceScale: { least: 0.8, most: 2 },
+      textScale: { least: 0.8, most: 1.75 },
+    }),
+    choose: () => {},
+    isSyncing: ref(false),
+    isNesting: ref(false),
+    headings: ref(1),
+    headingsBounds: ref({ least: 1, most: 6 }),
+    chooseHeadings: () => {},
+    dayStartTime: ref('04:00'),
+    latestDayStartTime: ref('12:00'),
+    chooseDayStartTime: () => {},
+    file: ref('/test/settings.json'),
+    openFile: () => {},
+  }
+  const state: SettingsTabState = { installation }
+  const wrapper = mount(AgentSettingsSection, { props: { state } })
+  return { wrapper, written }
+}
+
+describe('AgentSettingsSection', () => {
+  it('reads model choices for claude by default', () => {
+    const { wrapper } = createSection({ agent: { use: 'claude', claude: { model: 'haiku' } } })
+    const rows = wrapper.findAllComponents({ name: 'SettingRow' })
+    const modelRow = rows.find((r) => r.props('at') === 'agent-model')
+    expect(modelRow).toBeDefined()
+    expect(modelRow?.exists()).toBe(true)
+  })
+
+  it('reads model choices for antigravity when antigravity is active', () => {
+    const { wrapper } = createSection({
+      agent: { use: 'antigravity', antigravity: { model: 'gemini-2.5-flash' } },
+    })
+    const rows = wrapper.findAllComponents({ name: 'SettingRow' })
+    const modelRow = rows.find((r) => r.props('at') === 'agent-model')
+    expect(modelRow).toBeDefined()
+    expect(modelRow?.exists()).toBe(true)
+  })
+
+  it('hides model and step rows when no agent is active', () => {
+    const { wrapper } = createSection({ agent: { use: '' } })
+    const rows = wrapper.findAllComponents({ name: 'SettingRow' })
+    const modelRow = rows.find((r) => r.props('at') === 'agent-model')
+    expect(modelRow).toBeUndefined()
+  })
+})

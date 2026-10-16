@@ -12,6 +12,7 @@ import (
 	"connectrpc.com/connect"
 
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/plugins/reader-epub/backend/service"
 )
 
 func TestLifecycleServerPingAndShutdown(t *testing.T) {
@@ -121,7 +122,7 @@ func TestBookServerGetBookAndMarkup(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	server := &bookServer{}
+	server := service.NewBookServer()
 	ctx := context.Background()
 
 	// Test GetBook
@@ -178,7 +179,7 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	}
 
 	t.Setenv("NUMEN_VAULT_PATH", vaultDir)
-	server := &bookServer{}
+	server := service.NewBookServer()
 	ctx := context.Background()
 
 	// 1. Path outside vault should fail with permission denied

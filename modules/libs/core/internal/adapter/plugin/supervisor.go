@@ -41,6 +41,8 @@ type Supervisor struct {
 	activeRefCount int
 	permissions    []string
 	validator      VaultPathValidator
+	exitCh         chan struct{}
+	onExit         func()
 }
 
 // NewSupervisor creates an idle supervisor for a plugin.
@@ -53,7 +55,16 @@ func NewSupervisor() *Supervisor {
 		activeRefCount: 0,
 		permissions:    nil,
 		validator:      NewVaultPathValidator(),
+		exitCh:         nil,
+		onExit:         nil,
 	}
+}
+
+// SetOnExit sets a callback invoked when the plugin process terminates.
+func (s *Supervisor) SetOnExit(fn func()) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.onExit = fn
 }
 
 // GetState returns the current lifecycle state of the supervised plugin.
@@ -67,13 +78,24 @@ func (s *Supervisor) GetState() ProcessState {
 func (s *Supervisor) SetPermissions(permissions []string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.permissions = slices.Clone(permissions)
+	norm := make([]string, len(permissions))
+	for i, p := range permissions {
+		if p == "network" {
+			norm[i] = PermissionNetworkOutbound
+		} else {
+			norm[i] = p
+		}
+	}
+	s.permissions = norm
 }
 
 // HasPermission reports whether the supervised plugin holds the given permission.
 func (s *Supervisor) HasPermission(permission string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if permission == "network" {
+		permission = PermissionNetworkOutbound
+	}
 	return slices.Contains(s.permissions, permission)
 }
 
@@ -103,6 +125,25 @@ func (s *Supervisor) Attach(p *os.Process, now time.Time) error {
 	s.process = p
 	s.state = StateActive
 	s.lastActiveTime = now
+	exitCh := make(chan struct{})
+	s.exitCh = exitCh
+	go func() {
+		_, _ = p.Wait()
+		close(exitCh)
+		s.mu.Lock()
+		if s.process == p {
+			s.process = nil
+			s.state = StateDormant
+			s.activeRefCount = 0
+			onExit := s.onExit
+			s.mu.Unlock()
+			if onExit != nil {
+				onExit()
+			}
+			return
+		}
+		s.mu.Unlock()
+	}()
 	return nil
 }
 
@@ -159,19 +200,17 @@ func (s *Supervisor) Teardown(
 	}
 	s.state = StateDeactivating
 	proc := s.process
+	exitCh := s.exitCh
 	s.mu.Unlock()
-
-	exited := make(chan struct{})
-	go s.waitForExit(proc, exited)
 
 	_ = s.requestGracefulShutdown(ctx, rpcShutdown)
 
 	select {
-	case <-exited:
+	case <-exitCh:
 		s.markDormant()
 		return nil
 	case <-time.After(gracePeriod):
-		return s.forceKill(proc, exited)
+		return s.forceKill(proc, exitCh)
 	}
 }
 
@@ -182,18 +221,13 @@ func (s *Supervisor) requestGracefulShutdown(ctx context.Context, rpcShutdown fu
 	return nil
 }
 
-func (s *Supervisor) waitForExit(proc *os.Process, exited chan struct{}) {
-	if proc != nil {
-		_, _ = proc.Wait()
-	}
-	close(exited)
-}
-
-func (s *Supervisor) forceKill(proc *os.Process, exited chan struct{}) error {
+func (s *Supervisor) forceKill(proc *os.Process, exitCh chan struct{}) error {
 	if proc != nil {
 		_ = proc.Kill()
 	}
-	<-exited
+	if exitCh != nil {
+		<-exitCh
+	}
 	s.markDormant()
 	return nil
 }

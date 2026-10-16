@@ -28,6 +28,8 @@ import (
 // Config is what the user may point somewhere else. Empty fields mean the
 // platform's own locations.
 type Config struct {
+	// IsMockML uses fast synthetic stubs for automated test runs.
+	IsMockML     bool
 	IndexPath    string
 	RegistryPath string
 	ServiceDir   string
@@ -128,7 +130,9 @@ type Config struct {
 // NewPluginHost creates and initializes a plugin host for the specified target and search directories.
 func NewPluginHost(target string, dirs ...string) *plugin.Host {
 	host := plugin.NewHost(target, dirs...)
-	_ = host.Discover()
+	if err := host.Discover(); err != nil {
+		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", err)
+	}
 	return host
 }
 

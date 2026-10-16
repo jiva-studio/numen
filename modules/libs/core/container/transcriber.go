@@ -17,6 +17,9 @@ var (
 // TranscriberReady says whether a recording could be listened to now without
 // waiting for anything to arrive.
 func (c Config) TranscriberReady() bool {
+	if c.IsMockML {
+		return true
+	}
 	if c.PluginHost != nil && !c.SafeMode {
 		if _, ok := c.PluginHost.FindPluginByCapability("transcription"); ok {
 			return true
@@ -27,6 +30,10 @@ func (c Config) TranscriberReady() bool {
 
 // Transcriber is what listens to a recording on this machine, opened now.
 func (c Config) Transcriber(ctx context.Context) (transcriber port.Transcriber, closer func() error, why error) {
+	if c.IsMockML {
+		mock := NewMockTranscriber()
+		return mock, mock.Close, nil
+	}
 	if c.PluginHost != nil && !c.SafeMode {
 		if _, ok := c.PluginHost.FindPluginByCapability("transcription"); ok {
 			bridge, err := plugin.OpenTranscriberBridge(ctx, c.PluginHost)
@@ -72,6 +79,10 @@ func (c Config) OpenTranscriptionWorker(
 func (c Config) openTranscriptionRuntime(
 	ctx context.Context, _ func(what string, done, total int64),
 ) (port.Transcriber, func() error, error) {
+	if c.IsMockML {
+		mock := NewMockTranscriber()
+		return mock, mock.Close, nil
+	}
 	if c.PluginHost != nil && !c.SafeMode {
 		if _, ok := c.PluginHost.FindPluginByCapability("transcription"); ok {
 			bridge, err := plugin.OpenTranscriberBridge(ctx, c.PluginHost)

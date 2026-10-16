@@ -151,6 +151,9 @@ func (m Manifest) Validate() error {
 	if strings.TrimSpace(m.Version) == "" {
 		return errEmptyVersion
 	}
+	if m.Backend.Type != "" && m.Backend.Type != "process" {
+		return fmt.Errorf("unsupported backend type: %s", m.Backend.Type)
+	}
 	if err := m.ValidatePermissions(); err != nil {
 		return err
 	}
@@ -161,7 +164,7 @@ func (m Manifest) Validate() error {
 func (m Manifest) ValidatePermissions() error {
 	for _, p := range m.Permissions {
 		switch p {
-		case PermissionVaultRead, PermissionVaultWrite, PermissionNetworkOutbound:
+		case PermissionVaultRead, PermissionVaultWrite, PermissionNetworkOutbound, "network":
 		default:
 			return fmt.Errorf("%w: %s", errInvalidPermission, p)
 		}
@@ -202,6 +205,9 @@ func validateSetting(s Setting, key string) error {
 
 // HasPermission reports whether this plugin requests the given permission.
 func (m Manifest) HasPermission(permission string) bool {
+	if permission == PermissionNetworkOutbound || permission == "network" {
+		return slices.Contains(m.Permissions, PermissionNetworkOutbound) || slices.Contains(m.Permissions, "network")
+	}
 	return slices.Contains(m.Permissions, permission)
 }
 

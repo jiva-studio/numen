@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	"connectrpc.com/connect"
 
@@ -127,10 +128,16 @@ func (b *TranscriberBridge) OpenSource(ctx context.Context, source any) (port.Re
 		return nil, fmt.Errorf("rpc open recording: %w", err)
 	}
 
+	if b.host != nil {
+		b.host.Acquire(b.pluginID)
+	}
+
 	return &pluginRecording{
 		client:      b.client,
 		recordingID: resp.Msg.GetRecordingId(),
 		durationMs:  int(resp.Msg.GetDurationMs()),
+		host:        b.host,
+		pluginID:    b.pluginID,
 	}, nil
 }
 
@@ -168,9 +175,12 @@ func (b *TranscriberBridge) Close() error {
 }
 
 type pluginRecording struct {
+	mu          sync.Mutex
 	client      numenv1connect.TranscriptionServiceClient
 	recordingID string
 	durationMs  int
+	host        *Host
+	pluginID    string
 }
 
 func (r *pluginRecording) GetDuration() int {
@@ -200,14 +210,22 @@ func (r *pluginRecording) GetSegments(ctx context.Context, from, count int) ([]p
 }
 
 func (r *pluginRecording) Close() error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if r.recordingID == "" {
 		return nil
 	}
-	ctx := context.Background()
-	req := connect.NewRequest(&v1.CloseRecordingRequest{
-		RecordingId: r.recordingID,
-	})
-	_, _ = r.client.CloseRecording(ctx, req)
+	if r.client != nil {
+		ctx := context.Background()
+		req := connect.NewRequest(&v1.CloseRecordingRequest{
+			RecordingId: r.recordingID,
+		})
+		_, _ = r.client.CloseRecording(ctx, req)
+	}
 	r.recordingID = ""
+	if r.host != nil && r.pluginID != "" {
+		r.host.Release(r.pluginID)
+		r.host = nil
+	}
 	return nil
 }

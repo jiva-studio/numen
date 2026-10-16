@@ -15,7 +15,7 @@ var (
 	validSemverPattern  = regexp.MustCompile(`^v?\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$`)
 	allowedPermissions  = []string{"vault:read", "vault:write", "network:outbound"}
 	allowedModes        = []string{"on-demand", "persistent", "manual", "daemon"}
-	allowedBackendTypes = []string{"process", "wasm"}
+	allowedBackendTypes = []string{"process"}
 	allowedSettingTypes = []string{"string", "boolean", "number", "range", "enum", "select"}
 )
 

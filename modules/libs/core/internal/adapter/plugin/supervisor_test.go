@@ -110,3 +110,53 @@ func TestSupervisorTeardownForceKill(t *testing.T) {
 		t.Fatalf("expected StateDormant, got %v", sup.GetState())
 	}
 }
+
+func TestSupervisorPermissionNormalization(t *testing.T) {
+	sup := NewSupervisor()
+	sup.SetPermissions([]string{PermissionVaultRead, "network"})
+
+	if !sup.HasPermission(PermissionVaultRead) {
+		t.Errorf("expected permission %s to be present", PermissionVaultRead)
+	}
+	if !sup.HasPermission(PermissionNetworkOutbound) {
+		t.Errorf("expected permission %s to be normalized and present", PermissionNetworkOutbound)
+	}
+	if !sup.HasPermission("network") {
+		t.Errorf("expected alias network to return true")
+	}
+	if err := sup.CheckPermission(PermissionNetworkOutbound); err != nil {
+		t.Errorf("expected CheckPermission for %s to pass: %v", PermissionNetworkOutbound, err)
+	}
+	if sup.HasPermission(PermissionVaultWrite) {
+		t.Errorf("expected undeclared permission %s to be false", PermissionVaultWrite)
+	}
+}
+
+func TestSupervisorProcessCrashTriggersOnExit(t *testing.T) {
+	cmd := exec.Command("sleep", "1")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start process: %v", err)
+	}
+
+	sup := NewSupervisor()
+	onExitCh := make(chan struct{})
+	sup.SetOnExit(func() {
+		close(onExitCh)
+	})
+
+	if err := sup.Attach(cmd.Process, time.Now()); err != nil {
+		t.Fatalf("attach process: %v", err)
+	}
+
+	_ = cmd.Process.Kill()
+
+	select {
+	case <-onExitCh:
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for onExit callback on crashed process")
+	}
+
+	if sup.GetState() != StateDormant {
+		t.Errorf("expected StateDormant after crash, got %v", sup.GetState())
+	}
+}

@@ -142,24 +142,38 @@ func (s *transcriptionServer) GetTranscriptionModel(
 	}), nil
 }
 
-func readAudioFile(path string) ([]byte, error) {
+func validateVaultPath(path string) (string, error) {
 	if path == "" {
-		return nil, errors.New("empty audio path")
+		return "", errors.New("empty audio path")
 	}
 	cleanPath := filepath.Clean(path)
 	if strings.Contains(cleanPath, "..") {
-		return nil, errors.New("path traversal outside allowed scope")
+		return "", errors.New("path traversal outside allowed scope")
 	}
-	raw, err := os.ReadFile(cleanPath)
-	if err == nil {
-		return raw, nil
-	}
-	if vaultDir := os.Getenv("NUMEN_VAULT_PATH"); vaultDir != "" {
-		if raw, err := os.ReadFile(filepath.Join(vaultDir, path)); err == nil {
-			return raw, nil
+
+	vaultRoot := os.Getenv("NUMEN_VAULT_PATH")
+	if vaultRoot != "" {
+		cleanVault := filepath.Clean(vaultRoot)
+		if !filepath.IsAbs(cleanPath) {
+			cleanPath = filepath.Join(cleanVault, cleanPath)
+		}
+		prefix := cleanVault
+		if !strings.HasSuffix(prefix, string(filepath.Separator)) {
+			prefix += string(filepath.Separator)
+		}
+		if cleanPath != cleanVault && !strings.HasPrefix(cleanPath, prefix) {
+			return "", errors.New("path outside allowed vault root")
 		}
 	}
-	return nil, err
+	return cleanPath, nil
+}
+
+func readAudioFile(path string) ([]byte, error) {
+	cleanPath, err := validateVaultPath(path)
+	if err != nil {
+		return nil, err
+	}
+	return os.ReadFile(cleanPath)
 }
 
 func (s *transcriptionServer) OpenRecording(
@@ -171,6 +185,9 @@ func (s *transcriptionServer) OpenRecording(
 		var err error
 		data, err = readAudioFile(path)
 		if err != nil {
+			if strings.Contains(err.Error(), "vault") || strings.Contains(err.Error(), "traversal") {
+				return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read audio %s: %w", path, err))
+			}
 			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("read audio %s: %w", path, err))
 		}
 	} else {
@@ -368,12 +385,25 @@ func main() {
 	fmt.Printf("NUMEN_READY port=%d\n", actualPort)
 	os.Stdout.Sync()
 
+	stdinEOF := make(chan struct{})
+	go func() {
+		buf := make([]byte, 1)
+		for {
+			n, err := os.Stdin.Read(buf)
+			if err != nil || n == 0 {
+				close(stdinEOF)
+				return
+			}
+		}
+	}()
+
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
 	select {
 	case <-sigCh:
 	case <-shutdownCh:
+	case <-stdinEOF:
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)

@@ -45,6 +45,7 @@ func main() {
 	var scaleFlags scaleSettings
 	var vault string
 	var showVersion bool
+	debugOpts := registerDebugFlags(flag.CommandLine)
 	flag.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
 	flag.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
 	flag.StringVar(&vault, "vault", "",
@@ -71,9 +72,11 @@ func main() {
 		return
 	}
 
-	if err := run(cfg, agentFlags, vault, scaleFlags); err != nil {
+	if err := run(cfg, agentFlags, vault, scaleFlags, debugOpts); err != nil {
 		fmt.Fprintln(os.Stderr, "numen:", err)
-		refuse(cfg, err)
+		if !debugOpts.isServingHTTP() {
+			refuse(cfg, err)
+		}
 		os.Exit(1)
 	}
 }
@@ -105,13 +108,16 @@ func (s scaleSettings) validate() error {
 	return nil
 }
 
-func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleSettings) error {
+func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleSettings, debugOpts *debugOptions) error {
+	debugOpts.apply(&cfg)
+	if err := debugOpts.ensureVault(cfg, vault); err != nil {
+		return err
+	}
 	if cfg.PluginHost != nil {
 		defer func() {
 			_ = cfg.PluginHost.TeardownAll(context.Background(), 2*time.Second)
 		}()
 	}
-
 	if err := scaleFlags.validate(); err != nil {
 		return err
 	}
@@ -163,6 +169,10 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 		going.flushVault()
 		behind.Run()
 	}()
+
+	if debugOpts.isServingHTTP() {
+		return debugOpts.serveHTTP(ctx, cfg, opened, pages, reachable)
+	}
 
 	// The window is hidden before the vault is flushed and shown again when a
 	// page calls the close off.

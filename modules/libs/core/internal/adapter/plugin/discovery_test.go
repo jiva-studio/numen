@@ -114,3 +114,31 @@ func TestDiscoverPluginsDuplicateID(t *testing.T) {
 		t.Fatalf("expected error on duplicate plugin id, got nil")
 	}
 }
+
+func TestDiscoverPluginsSameDirectoryRepeated(t *testing.T) {
+	tempDir := t.TempDir()
+	p := filepath.Join(tempDir, "p1")
+	_ = os.Mkdir(p, 0o755)
+	manifest := `{
+		"id": "single.id",
+		"name": "Single",
+		"version": "1.0.0",
+		"description": "Single",
+		"capabilities": ["embedding"],
+		"targets": ["desktop.editor"],
+		"activationEvents": [],
+		"permissions": [],
+		"lifecycle": {"mode": "", "idleTimeoutSeconds": 0, "keepAliveWhileVisible": false},
+		"backend": {"type": "", "entrypoint": "", "serviceName": ""},
+		"frontend": {"entrypoint": "", "styles": ""},
+		"settings": []
+	}`
+	_ = os.WriteFile(filepath.Join(p, "manifest.json"), []byte(manifest), 0o644)
+
+	// Passing same directory twice (e.g. from NUMEN_PLUGINS_PATH and executable relative path)
+	found, err := DiscoverPlugins([]string{tempDir, tempDir})
+	t.Logf("found: %d, err: %v", len(found), err)
+	if err != nil {
+		t.Fatalf("unexpected error when directory is repeated: %v", err)
+	}
+}

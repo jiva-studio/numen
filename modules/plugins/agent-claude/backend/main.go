@@ -405,12 +405,25 @@ func main() {
 	fmt.Printf("NUMEN_READY port=%d\n", actualPort)
 	_ = os.Stdout.Sync()
 
+	stdinEOF := make(chan struct{})
+	go func() {
+		buf := make([]byte, 1)
+		for {
+			n, err := os.Stdin.Read(buf)
+			if err != nil || n == 0 {
+				close(stdinEOF)
+				return
+			}
+		}
+	}()
+
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
 	select {
 	case <-sigCh:
 	case <-shutdownCh:
+	case <-stdinEOF:
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)

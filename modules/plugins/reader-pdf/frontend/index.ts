@@ -1,9 +1,14 @@
-import type { PluginContext } from '@numen/plugin-sdk'
+import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 
-export function activate(_context?: PluginContext | undefined): void {
-  // Plugin UI activation hook
+export function activate(_context?: PluginContext): void {
+  // PDF reader plugin activation
 }
 
-export default {
+export function deactivate(): void {
+  // Deactivation hook
+}
+
+export default definePlugin({
   activate,
-}
+  deactivate,
+})

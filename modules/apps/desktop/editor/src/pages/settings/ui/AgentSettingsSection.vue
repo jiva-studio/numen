@@ -2,6 +2,7 @@
 /**
  * Settings for the AI agent and indexing model.
  */
+import { computed } from 'vue'
 import { NumberField, Select, Switch } from '@numen/ui'
 import type { SelectChoice } from '@numen/ui'
 import SettingRow from './setting-row/SettingRow.vue'
@@ -11,19 +12,29 @@ import { createModelChoices } from '../lib/models'
 import { createSettingFields } from '@/entities/settings'
 import { WORDS as words } from '../words'
 
-// --- Props & Emits ---
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ state: SettingsTabState }>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 const fields = createSettingFields(() => props.state.installation)
 
 const WHOLE = Number.MAX_SAFE_INTEGER
 const STEPS = { least: 1, most: WHOLE }
 
+const rawAgent = computed(() => props.state.installation.getSetting(paths.agent))
+const hasAgent = computed(() => rawAgent.value !== '')
+const activeProgram = computed(() =>
+  typeof rawAgent.value === 'string' && rawAgent.value !== '' ? rawAgent.value : 'claude',
+)
+
+const agentModelPath = computed(() => ['agent', activeProgram.value, 'model'] as const)
+const agentStepsPath = computed(() => ['agent', activeProgram.value, 'max_steps'] as const)
+const agentHooksPath = computed(() => ['agent', activeProgram.value, 'reads_hooks_and_skills'] as const)
+
 const getChoices = (at: readonly string[]): readonly SelectChoice[] =>
   createModelChoices(fields, at, words)
 
-// --- Handlers ---
+/* -------------------------------- Handlers -------------------------------- */
 function onIndexingModelChange(name: string) {
   fields.chooseModel(paths.indexingModel, name)
 }
@@ -33,11 +44,11 @@ function onAgentUseChange(name: string) {
 }
 
 function onAgentModelChange(name: string) {
-  fields.chooseModel(paths.agentModel, name)
+  fields.chooseModel(agentModelPath.value, name)
 }
 
 function onAgentStepsChange(count: number | null) {
-  if (count !== null) fields.setValue(paths.agentSteps, count)
+  if (count !== null) fields.setValue(agentStepsPath.value, count)
 }
 
 function onAgentToolsChange(value: boolean) {
@@ -45,7 +56,7 @@ function onAgentToolsChange(value: boolean) {
 }
 
 function onAgentHooksChange(value: boolean) {
-  fields.setValue(paths.agentHooks, value)
+  fields.setValue(agentHooksPath.value, value)
 }
 </script>
 
@@ -90,14 +101,15 @@ function onAgentHooksChange(value: boolean) {
     </SettingRow>
 
     <SettingRow
+      v-if="hasAgent"
       v-slot="{ labelledBy }"
       at="agent-model"
       :name="words.agentModel"
       :detail="words.agentModelDetail"
     >
       <Select
-        :model-value="fields.getString(paths.agentModel)"
-        :choices="getChoices(paths.agentModel)"
+        :model-value="fields.getString(agentModelPath)"
+        :choices="getChoices(agentModelPath)"
         :name="words.agentModel"
         :aria-labelledby="labelledBy"
         class="settings__choice"
@@ -106,13 +118,14 @@ function onAgentHooksChange(value: boolean) {
     </SettingRow>
 
     <SettingRow
+      v-if="hasAgent"
       v-slot="{ labelledBy }"
       at="agent-steps"
       :name="words.agentSteps"
       :detail="words.agentStepsDetail"
     >
       <NumberField
-        :model-value="fields.getNumber(paths.agentSteps)"
+        :model-value="fields.getNumber(agentStepsPath)"
         :min="STEPS.least"
         :max="STEPS.most"
         :step="1"
@@ -136,13 +149,14 @@ function onAgentHooksChange(value: boolean) {
     </SettingRow>
 
     <SettingRow
+      v-if="hasAgent"
       v-slot="{ labelledBy }"
       at="agent-hooks"
       :name="words.agentHooks"
       :detail="words.agentHooksDetail"
     >
       <Switch
-        :model-value="fields.isEnabled(paths.agentHooks)"
+        :model-value="fields.isEnabled(agentHooksPath)"
         :aria-labelledby="labelledBy"
         @update:model-value="onAgentHooksChange"
       />

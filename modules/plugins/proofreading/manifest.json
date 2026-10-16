@@ -32,6 +32,13 @@
       "title": "Max Suggestions",
       "description": "Maximum number of corrections suggested per passage",
       "default": 5
+    },
+    {
+      "key": "model",
+      "type": "string",
+      "title": "Proofreading Model",
+      "description": "Language model name used for proofreading",
+      "default": "llm-proofreader"
     }
   ]
 }

@@ -15,13 +15,23 @@ type DiscoveredPlugin struct {
 // DiscoverPlugins scans directories and loads all valid plugin manifests found.
 func DiscoverPlugins(dirs []string) ([]DiscoveredPlugin, error) {
 	seen := make(map[string]string)
+	seenDirs := make(map[string]bool)
 	var found []DiscoveredPlugin
 
 	for _, dir := range dirs {
 		if dir == "" {
 			continue
 		}
-		plugins, err := scanDirectory(dir, seen)
+		cleanDir := filepath.Clean(dir)
+		if abs, err := filepath.Abs(cleanDir); err == nil {
+			cleanDir = abs
+		}
+		if seenDirs[cleanDir] {
+			continue
+		}
+		seenDirs[cleanDir] = true
+
+		plugins, err := scanDirectory(cleanDir, seen)
 		if err != nil {
 			return nil, err
 		}
@@ -65,12 +75,20 @@ func scanPluginDir(pluginDir string, seen map[string]string) (DiscoveredPlugin, 
 		return emptyDiscoveredPlugin(), false, fmt.Errorf("read manifest %s: %w", manifestPath, err)
 	}
 
-	if existingDir, ok := seen[m.ID]; ok {
-		return emptyDiscoveredPlugin(), false, fmt.Errorf("duplicate plugin id %q in %s and %s", m.ID, existingDir, pluginDir)
+	cleanPluginDir := filepath.Clean(pluginDir)
+	if abs, err := filepath.Abs(cleanPluginDir); err == nil {
+		cleanPluginDir = abs
 	}
-	seen[m.ID] = pluginDir
+
+	if existingDir, ok := seen[m.ID]; ok {
+		if existingDir == cleanPluginDir {
+			return emptyDiscoveredPlugin(), false, nil
+		}
+		return emptyDiscoveredPlugin(), false, fmt.Errorf("duplicate plugin id %q in %s and %s", m.ID, existingDir, cleanPluginDir)
+	}
+	seen[m.ID] = cleanPluginDir
 	return DiscoveredPlugin{
-		Dir:      pluginDir,
+		Dir:      cleanPluginDir,
 		Manifest: m,
 	}, true, nil
 }

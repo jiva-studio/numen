@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	"connectrpc.com/connect"
 
@@ -22,6 +23,8 @@ type ProofreaderBridge struct {
 	host     *Host
 	pluginID string
 	name     string
+	mu       sync.Mutex
+	acquired bool
 }
 
 // OpenProofreaderBridge activates or connects to the proofreading plugin and returns a port.Proofreader.
@@ -35,6 +38,7 @@ func OpenProofreaderBridge(host *Host) (*ProofreaderBridge, error) {
 		host:     host,
 		pluginID: plugin.Manifest.ID,
 		name:     plugin.Manifest.Name,
+		acquired: false,
 	}, nil
 }
 
@@ -91,6 +95,11 @@ func (b *ProofreaderBridge) Proofread(ctx context.Context, batches []domain.Proo
 
 // Close releases the active reference count for the proofreading plugin in the host supervisor.
 func (b *ProofreaderBridge) Close() error {
-	b.host.Release(b.pluginID)
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.acquired && b.host != nil {
+		b.host.Release(b.pluginID)
+		b.acquired = false
+	}
 	return nil
 }
