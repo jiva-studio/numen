@@ -110,6 +110,27 @@ const transcriptCues = computed<readonly CueItem[]>(() => {
   return []
 })
 
+const isTranscribable = computed(() => {
+  if (transcriptCues.value.length > 0) return false
+  if (props.state?.transcribable !== undefined) {
+    const val = props.state.transcribable
+    return typeof val === 'object' && val !== null && 'value' in val
+      ? Boolean((val as { value?: unknown }).value)
+      : Boolean(val)
+  }
+  return true
+})
+
+const isDeletable = computed(() => {
+  if (props.state?.deletable !== undefined) {
+    const val = props.state.deletable
+    return typeof val === 'object' && val !== null && 'value' in val
+      ? Boolean((val as { value?: unknown }).value)
+      : Boolean(val)
+  }
+  return true
+})
+
 /**
  * Generate 64 normalized amplitude bars for waveform visualization.
  */
@@ -318,7 +339,7 @@ function formatClock(ms: number): string {
 
       <div class="media__actions audio-player__actions">
         <button
-          v-if="!transcriptCues.length"
+          v-if="isTranscribable"
           type="button"
           class="audio-player__btn audio-player__transcribe-btn"
           @click="onTranscribe"
@@ -326,6 +347,7 @@ function formatClock(ms: number): string {
           Transcribe
         </button>
         <button
+          v-if="isDeletable"
           type="button"
           class="media__more audio-player__btn"
           aria-label="More actions"
@@ -333,7 +355,7 @@ function formatClock(ms: number): string {
         >
           ···
         </button>
-        <div v-if="isMenuOpen" class="audio-player__dropdown">
+        <div v-if="isMenuOpen && isDeletable" class="audio-player__dropdown">
           <button
             type="button"
             class="audio-player__dropdown-item"

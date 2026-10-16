@@ -162,11 +162,13 @@ function createCustomTabState(at: string, pluginId: string, deps?: PluginHostDep
   const noteRef = ref({ path: at, body: '' })
   const errorMessageRef = ref('')
   let hasEdited = false
+  let isInitialReadComplete = false
 
   if (deps?.readNote) {
     void deps
       .readNote(at)
       .then((result) => {
+        isInitialReadComplete = true
         if (hasEdited) return
         if (typeof result === 'string') {
           noteRef.value = { path: at, body: result }
@@ -180,8 +182,11 @@ function createCustomTabState(at: string, pluginId: string, deps?: PluginHostDep
         }
       })
       .catch((err) => {
+        isInitialReadComplete = true
         errorMessageRef.value = err instanceof Error ? err.message : String(err)
       })
+  } else {
+    isInitialReadComplete = true
   }
   return {
     at,
@@ -197,6 +202,7 @@ function createCustomTabState(at: string, pluginId: string, deps?: PluginHostDep
       void deps?.writeNote?.(at, body)
     },
     save: () => {
+      if (!isInitialReadComplete && !hasEdited) return
       void deps?.writeNote?.(at, noteRef.value.body)
     },
     addCard: (_stencil: string, values: readonly { field: string; text: string }[]) => {
