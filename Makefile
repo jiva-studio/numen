@@ -252,7 +252,7 @@ endif
 
 .PHONY: app_desktop_editor_build
 app_desktop_editor_build: lib_ui_build
-	cd $(DESKTOP)/editor && VITE_NUMEN_VERSION=$${VITE_NUMEN_VERSION:-$$(git describe --tags --always 2>/dev/null || echo 0.0.0-dev)} VITE_NUMEN_BUILD=$${VITE_NUMEN_BUILD:-$$(git rev-list --count HEAD 2>/dev/null || echo 0)} npm run build
+	cd $(DESKTOP)/editor && npm run build
 
 .PHONY: app_desktop_flashcards_build
 app_desktop_flashcards_build: lib_ui_build
