@@ -287,3 +287,11 @@ func GetWorkers() int {
 	defer workers.Unlock()
 	return getPoolSize()
 }
+
+// Warmup starts the pool and keeps at least one worker ready to serve requests.
+func Warmup() {
+	worker, err := getWorker()
+	if err == nil {
+		putWorker(worker)
+	}
+}

@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -332,6 +333,10 @@ func main() {
 	defer listener.Close()
 
 	actualPort := listener.Addr().(*net.TCPAddr).Port
+
+	pdf.SetWorkers(runtime.NumCPU())
+	pdf.SetIdleWorkers(max(2, min(runtime.NumCPU(), 4)))
+	go pdf.Warmup()
 
 	shutdownCh := make(chan struct{})
 	life := &lifecycleServer{shutdownTrigger: shutdownCh}

@@ -21,8 +21,11 @@ const fields = createSettingFields(() => props.state.installation)
 const WHOLE = Number.MAX_SAFE_INTEGER
 const STEPS = { least: 1, most: WHOLE }
 
-const activeProgram = computed(() => fields.getString(paths.agent) || 'claude')
-const hasActiveProgram = computed(() => fields.getString(paths.agent) !== '')
+const rawAgent = computed(() => props.state.installation.getSetting(paths.agent))
+const hasAgent = computed(() => rawAgent.value !== '')
+const activeProgram = computed(() =>
+  typeof rawAgent.value === 'string' && rawAgent.value !== '' ? rawAgent.value : 'claude',
+)
 
 const agentModelPath = computed(() => ['agent', activeProgram.value, 'model'] as const)
 const agentStepsPath = computed(() => ['agent', activeProgram.value, 'max_steps'] as const)
@@ -98,7 +101,7 @@ function onAgentHooksChange(value: boolean) {
     </SettingRow>
 
     <SettingRow
-      v-if="hasActiveProgram"
+      v-if="hasAgent"
       v-slot="{ labelledBy }"
       at="agent-model"
       :name="words.agentModel"
@@ -115,7 +118,7 @@ function onAgentHooksChange(value: boolean) {
     </SettingRow>
 
     <SettingRow
-      v-if="hasActiveProgram"
+      v-if="hasAgent"
       v-slot="{ labelledBy }"
       at="agent-steps"
       :name="words.agentSteps"
@@ -146,7 +149,7 @@ function onAgentHooksChange(value: boolean) {
     </SettingRow>
 
     <SettingRow
-      v-if="hasActiveProgram"
+      v-if="hasAgent"
       v-slot="{ labelledBy }"
       at="agent-hooks"
       :name="words.agentHooks"
