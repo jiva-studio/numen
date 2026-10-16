@@ -60,8 +60,9 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 	// directly: a host is told which address holds its player, and a window
 	// drawn from a scheme of its own has none to give.
 	policy := csp.Sources{
-		Media:  s.Playing.getPlayOrigins(),
-		Frames: s.Playing.getPlayOrigins(),
+		Media:   s.Playing.getPlayOrigins(),
+		Frames:  s.Playing.getPlayOrigins(),
+		Connect: []string{"https://dl.numen.md", "https://numen-dl.b-cdn.net"},
 	}.Policy()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", policy)

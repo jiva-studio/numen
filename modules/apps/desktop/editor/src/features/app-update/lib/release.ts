@@ -9,10 +9,14 @@ export type ClientPlatform = 'darwin' | 'windows' | 'linux'
  * Checks whether the remote release build is newer than the local build.
  */
 export function isNewerRelease(currentBuild: number, latestBuild: number): boolean {
-  if (currentBuild <= 0 || latestBuild <= 0) {
+  if (currentBuild < 0 || latestBuild <= 0) {
     return false
   }
   return latestBuild > currentBuild
+}
+
+function toPositiveInt(num: number): number {
+  return Number.isFinite(num) && num > 0 ? Math.floor(num) : 0
 }
 
 /**
@@ -20,16 +24,20 @@ export function isNewerRelease(currentBuild: number, latestBuild: number): boole
  */
 export function parseBuildNumber(val: string | number | undefined): number {
   if (typeof val === 'number') {
-    return Number.isFinite(val) && val > 0 ? Math.floor(val) : 0
+    return toPositiveInt(val)
   }
-  if (!val || typeof val !== 'string') {
+  if (typeof val !== 'string' || val.length === 0) {
     return 0
   }
 
-  const match = val.match(/(?:-beta\.|\b)(\d+)(?:-[a-f0-9]{7})?$/)
-  const candidate = match && match[1] ? match[1] : val.trim()
-  const parsed = parseInt(candidate, 10)
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0
+  const trimmed = val.trim()
+  if (trimmed.includes('.') && !trimmed.includes('-')) {
+    return 0
+  }
+
+  const match = trimmed.match(/(?:-beta\.|\b)(\d+)(?:-[a-f0-9]{7})?$/)
+  const candidate = match?.[1] ?? trimmed
+  return toPositiveInt(parseInt(candidate, 10))
 }
 
 /**
@@ -65,8 +73,8 @@ export function findPlatformFile(
 
   if (platform === 'darwin') {
     return (
-      files.find((f) => f.platform === 'darwin' && f.kind === 'dmg') ??
-      files.find((f) => f.platform === 'darwin')
+      files.find((f) => (f.platform === 'darwin' || f.platform === 'macos') && f.kind === 'dmg') ??
+      files.find((f) => f.platform === 'darwin' || f.platform === 'macos')
     )
   }
 

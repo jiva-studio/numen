@@ -23,12 +23,14 @@ export interface UpdateOptions {
 }
 
 const FALLBACK_VERSION: string = import.meta.env.VITE_NUMEN_VERSION ?? '0.0.0-dev'
+const FALLBACK_BUILD: number =
+  parseBuildNumber(import.meta.env.VITE_NUMEN_BUILD) || parseBuildNumber(FALLBACK_VERSION)
 
 export function useAppUpdate(options: UpdateOptions = {}) {
   const endpointUrl = options.endpointUrl ?? DEFAULT_ENDPOINT
   const checkIntervalMs = options.checkIntervalMs ?? DEFAULT_INTERVAL_MS
   const currentVersion = options.currentVersion ?? FALLBACK_VERSION
-  const currentBuild = options.currentBuild ?? parseBuildNumber(currentVersion)
+  const currentBuild = options.currentBuild ?? FALLBACK_BUILD
   const platform = options.platform ?? resolveCurrentPlatform()
   const fetchClient = options.fetchFn ?? (typeof fetch !== 'undefined' ? fetch : undefined)
   const openExternal = options.openUrl ?? ((url: string) => window.open(url, '_blank'))

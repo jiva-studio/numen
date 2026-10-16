@@ -19,10 +19,14 @@ describe('release helpers', () => {
       expect(isNewerRelease(105, 100)).toBe(false)
     })
 
-    it('returns false when either build is zero or negative', () => {
-      expect(isNewerRelease(0, 100)).toBe(false)
-      expect(isNewerRelease(100, 0)).toBe(false)
+    it('returns true when running an unversioned dev build (build 0) and remote build is positive', () => {
+      expect(isNewerRelease(0, 100)).toBe(true)
+    })
+
+    it('returns false when local build is negative or remote build is non-positive', () => {
       expect(isNewerRelease(-1, 100)).toBe(false)
+      expect(isNewerRelease(100, 0)).toBe(false)
+      expect(isNewerRelease(100, -1)).toBe(false)
     })
   })
 
@@ -41,6 +45,12 @@ describe('release helpers', () => {
     it('parses build number from beta stamps', () => {
       expect(parseBuildNumber('2026.10.1-beta.920')).toBe(920)
       expect(parseBuildNumber('0.4.0-alpha.1-364-283d1d5')).toBe(364)
+      expect(parseBuildNumber('2026.10.2-144-ab260c4')).toBe(144)
+    })
+
+    it('returns zero for pure calendar or semver version without build stamp', () => {
+      expect(parseBuildNumber('2026.10.2')).toBe(0)
+      expect(parseBuildNumber('0.0.0-dev')).toBe(0)
     })
 
     it('returns zero on unparseable inputs', () => {
@@ -73,7 +83,7 @@ describe('release helpers', () => {
     const files: readonly ReleaseFile[] = [
       {
         name: 'numen-macos.dmg',
-        platform: 'darwin',
+        platform: 'macos',
         arch: 'universal',
         kind: 'dmg',
         url: 'https://dl.numen.md/numen-macos.dmg',
@@ -100,7 +110,7 @@ describe('release helpers', () => {
       },
     ]
 
-    it('finds darwin dmg artifact', () => {
+    it('finds darwin dmg artifact even when manifest labels platform macos', () => {
       const match = findPlatformFile(files, 'darwin')
       expect(match?.name).toBe('numen-macos.dmg')
     })

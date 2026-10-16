@@ -99,7 +99,9 @@ func getResponse(handler http.Handler, path string) *httptest.ResponseRecorder {
 // refused by `img-src` and `font-src`, and the element the theme is spliced
 // into is permitted by `style-src`.
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
-	held := csp.Sources{}.Policy()
+	held := csp.Sources{
+		Connect: []string{"https://dl.numen.md", "https://numen-dl.b-cdn.net"},
+	}.Policy()
 
 	handler := newBareServices().NewHandler(http.NotFoundHandler())
 	for _, path := range []string{"", "/", "/index.html", "/built/index.css", assetURL("a.pdf")} {

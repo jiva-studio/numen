@@ -179,6 +179,52 @@ describe('useAppUpdate', () => {
     expect(updateState.isChecking.value).toBe(false)
   })
 
+  it('detects available update for unversioned dev build', async () => {
+    const fetchFn = createMockFetch(sampleManifest)
+
+    let updateState!: ReturnType<typeof useAppUpdate>
+    const TestComponent = defineComponent({
+      setup() {
+        updateState = useAppUpdate({
+          currentVersion: '0.0.0-dev',
+          currentBuild: 0,
+          platform: 'darwin',
+          fetchFn,
+          checkIntervalMs: 0,
+        })
+        return () => h('div')
+      },
+    })
+
+    mount(TestComponent)
+    await new Promise((done) => setTimeout(done, 10))
+
+    expect(updateState.hasUpdate.value).toBe(true)
+    expect(updateState.updateInfo.value?.latestVersion).toBe('2026.10.1')
+  })
+
+  it('reports no update when current version matches remote version', async () => {
+    const fetchFn = createMockFetch(sampleManifest)
+
+    let updateState!: ReturnType<typeof useAppUpdate>
+    const TestComponent = defineComponent({
+      setup() {
+        updateState = useAppUpdate({
+          currentVersion: '2026.10.1',
+          currentBuild: 0,
+          fetchFn,
+          checkIntervalMs: 0,
+        })
+        return () => h('div')
+      },
+    })
+
+    mount(TestComponent)
+    await new Promise((done) => setTimeout(done, 10))
+
+    expect(updateState.hasUpdate.value).toBe(false)
+  })
+
   it('clears interval timer on unmount', () => {
     vi.useFakeTimers()
     const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval')

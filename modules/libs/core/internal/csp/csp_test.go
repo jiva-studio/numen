@@ -51,3 +51,16 @@ func TestAFormIsSubmittedNowhere(t *testing.T) {
 		t.Error("a form on the page could be submitted somewhere")
 	}
 }
+
+// A window connecting to external services names where it reaches.
+func TestAWindowConnectingOutsideSaysSoAndNoMore(t *testing.T) {
+	own := csp.Sources{}.Policy()
+	with := csp.Sources{Connect: []string{"https://dl.numen.md"}}.Policy()
+
+	if with == own {
+		t.Fatal("naming where connections go changed nothing")
+	}
+	if !strings.Contains(with, "connect-src 'self' https://dl.numen.md;") {
+		t.Errorf("the policy reads %q", with)
+	}
+}

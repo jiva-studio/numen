@@ -33,6 +33,10 @@ export function evaluateManifest(
   manifest: ReleaseManifest,
   context: ClientContext,
 ): UpdateInfo | null {
+  if (context.currentVersion && context.currentVersion === manifest.version) {
+    return null
+  }
+
   const remoteBuild = parseBuildNumber(manifest.build)
   if (!isNewerRelease(context.currentBuild, remoteBuild)) {
     return null
