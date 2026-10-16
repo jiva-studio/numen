@@ -27,4 +27,28 @@ test.describe('PDF Document Reader', () => {
     // Verify reader canvas / page rendered
     await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
   })
+
+  test('opens paper.pdf document from vault assets', async ({ page }) => {
+    await page.goto('/')
+
+    await expect(page.locator('text=Ready')).toBeVisible()
+
+    // Switch to Files tab
+    await page.getByText('Files').first().click()
+
+    // Expand assets folder
+    const assetsRow = page.locator('[data-tree-row="assets"]')
+    await expect(assetsRow).toBeVisible()
+    await assetsRow.press('Enter')
+
+    // Target paper.pdf in tree
+    const paperRow = page.locator('[data-tree-row="assets/paper.pdf"]')
+    await expect(paperRow).toBeVisible()
+    await paperRow.press('Enter')
+
+    // Verify document tab opened and reader rendered
+    await expect(page.locator('.fallback-panel')).not.toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('text=something inside numen went wrong')).not.toBeVisible()
+    await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
+  })
 })
