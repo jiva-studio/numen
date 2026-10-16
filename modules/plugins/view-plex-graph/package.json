@@ -7,7 +7,7 @@
   "main": "./frontend/index.ts",
   "types": "./frontend/index.ts",
   "scripts": {
-    "build": "mkdir -p dist",
+    "build": "vite build",
     "test": "vitest run"
   },
   "dependencies": {

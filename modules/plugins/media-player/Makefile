@@ -7,23 +7,20 @@ all: build
 build: frontend_build
 
 frontend_build:
-	@mkdir -p dist
-	@if [ -x ../../node_modules/.bin/vite ]; then \
-		../../node_modules/.bin/vite build --config frontend/vite.config.ts ; \
-	elif [ -f frontend/styles.css ]; then \
-		cp frontend/styles.css dist/styles.css ; \
-		touch dist/index.js ; \
+	@if [ -f package.json ]; then \
+		npm run build ; \
+	elif [ -d frontend ]; then \
+		mkdir -p dist ; \
+		if [ -f frontend/styles.css ]; then \
+			cp frontend/styles.css dist/styles.css ; \
+		fi ; \
 	fi
 
 lint:
-	@echo "media-player lint ok"
+	@if [ -f package.json ]; then npm run lint --if-present; fi
 
 test:
-	@if [ -x ../../node_modules/.bin/vitest ]; then \
-		../../node_modules/.bin/vitest run --config vitest.config.ts ; \
-	else \
-		echo "media-player test ok" ; \
-	fi
+	@if [ -f package.json ]; then npm test; fi
 
 clean:
 	rm -rf bin dist

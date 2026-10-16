@@ -7,8 +7,14 @@ import { setPdfPluginActive } from '@/pages/document-viewer/model/pluginState'
 
 export { DocumentTab }
 
-export function activate(_context?: PluginContext): void {
+export function activate(context?: PluginContext): void {
   setPdfPluginActive(true)
+  context?.registerReader({
+    id: 'reader-pdf',
+    fileExtensions: ['.pdf'],
+    component: DocumentTab,
+    title: 'PDF Reader',
+  })
 }
 
 export function deactivate(): void {

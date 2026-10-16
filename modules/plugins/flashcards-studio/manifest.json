@@ -13,6 +13,7 @@
     "keepAliveWhileVisible": true
   },
   "frontend": {
-    "entrypoint": "frontend/index.ts"
+    "entrypoint": "dist/index.js",
+    "styles": "dist/styles.css"
   }
 }

@@ -1,9 +1,24 @@
-import { defineConfig } from 'vite'
+import { existsSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { resolve } from 'path'
+
+function ensureStylesPlugin(): Plugin {
+  return {
+    name: 'ensure-styles',
+    apply: 'build',
+    closeBundle() {
+      const distDir = resolve(import.meta.dirname, 'dist')
+      const cssPath = resolve(distDir, 'styles.css')
+      if (!existsSync(cssPath)) {
+        writeFileSync(cssPath, '')
+      }
+    },
+  }
+}
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), ensureStylesPlugin()],
   build: {
     lib: {
       entry: resolve(import.meta.dirname, 'frontend/index.ts'),
@@ -12,7 +27,7 @@ export default defineConfig({
       cssFileName: 'styles',
     },
     outDir: 'dist',
-    emptyOutDir: false,
+    emptyOutDir: true,
     rollupOptions: {
       external: [
         'vue',
@@ -22,6 +37,12 @@ export default defineConfig({
         '@connectrpc/connect',
         '@connectrpc/connect-web',
       ],
+      output: {
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name?.endsWith('.css')) return 'styles.css'
+          return assetInfo.name || 'asset'
+        },
+      },
     },
   },
 })
