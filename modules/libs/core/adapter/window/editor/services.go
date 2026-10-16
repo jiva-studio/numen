@@ -48,6 +48,9 @@ type Services struct {
 	// together. A build put together without a catalogue serves no ThemeService.
 	Themes numenv1connect.ThemeServiceHandler
 
+	// Plugin answers questions about the plugins installed in the application.
+	Plugin numenv1connect.PluginServiceHandler
+
 	// Playing is the socket a recording is played from. A build without one
 	// answers with no address, and the window says the recording cannot be
 	// played here.
@@ -85,6 +88,7 @@ func createServices(state *State) *Services {
 		Recording:  &recordingHandler{files: files},
 		Book:       book,
 		Asset:      &assetHandler{document: document, book: book},
+		Plugin:     numenv1connect.UnimplementedPluginServiceHandler{},
 		files:      files,
 		server:     &fileServer{state: state, files: files},
 	}

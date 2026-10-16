@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -20,6 +21,14 @@ func GetConfig() container.Config {
 	return container.Config{
 		AgentProofreader: openProofreader,
 		PluginHost:       container.NewPluginHost("desktop.editor", getPluginsDirs()...),
+	}
+}
+
+// WirePluginService wires the plugin service server from the configuration into
+// the editor window services.
+func WirePluginService(services *editor.Services, cfg container.Config) {
+	if services != nil && cfg.PluginHost != nil {
+		services.Plugin = container.NewPluginServiceServer(cfg.PluginHost)
 	}
 }
 

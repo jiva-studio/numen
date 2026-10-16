@@ -155,6 +155,16 @@ func TestEveryServiceTheVaultIsAskedAboutIsMounted(t *testing.T) {
 	}
 }
 
+// TestPluginServiceIsMounted asserts that PluginServiceHandler is mounted behind
+// the handler the application hands over.
+func TestPluginServiceIsMounted(t *testing.T) {
+	handler := newBareServices().NewHandler(http.NotFoundHandler())
+	route := numenv1connect.PluginServiceGetPluginsProcedure
+	if code := getResponse(handler, route).Code; code != http.StatusMethodNotAllowed {
+		t.Errorf("%s answered %d, want %d", route, code, http.StatusMethodNotAllowed)
+	}
+}
+
 // A search, a note and a link are read straight from the index, and the index
 // closes behind the door. Every question is refused at it, whatever it would
 // have reached into.
