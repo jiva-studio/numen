@@ -445,16 +445,6 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 	<-answered
 }
 
-type stubPluginManager struct {
-	port.PluginManager
-	plugins map[string]port.DiscoveredPlugin
-}
-
-func (s stubPluginManager) GetPlugin(id string) (port.DiscoveredPlugin, bool) {
-	p, ok := s.plugins[id]
-	return p, ok
-}
-
 func TestPluginAssetsAreServed(t *testing.T) {
 	pluginDir := t.TempDir()
 	distDir := filepath.Join(pluginDir, "dist")
@@ -473,20 +463,11 @@ func TestPluginAssetsAreServed(t *testing.T) {
 	}
 
 	services := newBareServices()
-	services.Plugins = stubPluginManager{
-		plugins: map[string]port.DiscoveredPlugin{
-			"sample.plugin": {
-				Dir: pluginDir,
-				Manifest: port.PluginManifest{
-					ID:   "sample.plugin",
-					Name: "Sample Plugin",
-					Frontend: port.PluginFrontend{
-						Entrypoint: "dist/index.js",
-						Styles:     "dist/styles.css",
-					},
-				},
-			},
-		},
+	services.getPluginDir = func(id string) (string, bool) {
+		if id == "sample.plugin" {
+			return pluginDir, true
+		}
+		return "", false
 	}
 	handler := services.NewHandler(http.NotFoundHandler())
 

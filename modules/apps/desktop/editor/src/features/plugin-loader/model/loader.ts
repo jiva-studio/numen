@@ -80,12 +80,17 @@ function getLifecycleHooks(resolved: unknown): {
   return { activate, deactivate }
 }
 
+interface LoadModuleOptions {
+  readonly baseUrl: string
+  readonly fetchFn: typeof fetch
+  readonly importFn: (url: string) => Promise<unknown>
+}
+
 async function loadDynamicModule(
   pluginId: string,
-  baseUrl: string,
-  fetchFn: typeof fetch,
-  importFn: (url: string) => Promise<unknown>,
+  options: LoadModuleOptions,
 ): Promise<unknown> {
+  const { baseUrl, fetchFn, importFn } = options
   let entrypoint = 'dist/index.js'
   try {
     const res = await fetchFn(`${baseUrl}/${pluginId}/manifest.json`)
@@ -107,13 +112,14 @@ async function loadDynamicModule(
   return importFn(moduleUrl)
 }
 
+interface ResolveModuleContext extends LoadModuleOptions {
+  readonly loaders: Map<string, () => Promise<unknown>>
+}
+
 async function resolveModule(
-  loaders: Map<string, () => Promise<unknown>>,
   pluginId: string,
   candidate: unknown,
-  baseUrl: string,
-  fetchFn: typeof fetch,
-  importFn: (url: string) => Promise<unknown>,
+  ctx: ResolveModuleContext,
 ): Promise<unknown> {
   if (candidate !== undefined) {
     if (typeof candidate === 'function' && !('activate' in candidate)) {
@@ -121,18 +127,14 @@ async function resolveModule(
     }
     return candidate
   }
-  const loader = loaders.get(pluginId)
+  const loader = ctx.loaders.get(pluginId)
   if (loader) return loader()
-  return loadDynamicModule(pluginId, baseUrl, fetchFn, importFn)
+  return loadDynamicModule(pluginId, ctx)
 }
 
-interface ActivateContext {
+interface ActivateContext extends ResolveModuleContext {
   readonly host: PluginHost
-  readonly loaders: Map<string, () => Promise<unknown>>
   readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
-  readonly baseUrl: string
-  readonly fetchFn: typeof fetch
-  readonly importFn: (url: string) => Promise<unknown>
 }
 
 async function activateEntry(
@@ -140,10 +142,10 @@ async function activateEntry(
   pluginId: string,
   pluginModule?: unknown,
 ): Promise<boolean> {
-  const { host, loaders, activePlugins, baseUrl, fetchFn, importFn } = ctx
+  const { host, activePlugins } = ctx
   if (activePlugins.value.has(pluginId)) return true
   try {
-    const resolved = await resolveModule(loaders, pluginId, pluginModule, baseUrl, fetchFn, importFn)
+    const resolved = await resolveModule(pluginId, pluginModule, ctx)
     if (!resolved) return false
 
     const { activate, deactivate } = getLifecycleHooks(resolved)

@@ -211,7 +211,7 @@ func (s *Services) servePluginAsset(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	if s.Plugins == nil {
+	if s.getPluginDir == nil {
 		http.Error(w, "plugin manager not configured", http.StatusNotFound)
 		return
 	}
@@ -224,13 +224,13 @@ func (s *Services) servePluginAsset(w http.ResponseWriter, r *http.Request) {
 	pluginID := parts[0]
 	filePath := parts[1]
 
-	plugin, ok := s.Plugins.GetPlugin(pluginID)
+	pluginDir, ok := s.getPluginDir(pluginID)
 	if !ok {
 		http.Error(w, "plugin not found", http.StatusNotFound)
 		return
 	}
 
-	cleanDir, err := filepath.Abs(filepath.Clean(plugin.Dir))
+	cleanDir, err := filepath.Abs(filepath.Clean(pluginDir))
 	if err != nil {
 		http.Error(w, "cannot resolve plugin directory", http.StatusInternalServerError)
 		return

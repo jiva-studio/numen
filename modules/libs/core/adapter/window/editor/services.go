@@ -51,8 +51,8 @@ type Services struct {
 	// Plugin answers questions about the plugins installed in the application.
 	Plugin numenv1connect.PluginServiceHandler
 
-	// Plugins coordinates plugin processes, discovery, and manifests.
-	Plugins port.PluginManager
+	// getPluginDir returns the root directory of an installed plugin by ID, or false if not found.
+	getPluginDir func(id string) (string, bool)
 
 	// Playing is the socket a recording is played from. A build without one
 	// answers with no address, and the window says the recording cannot be

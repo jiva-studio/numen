@@ -333,7 +333,7 @@ func createWindow(
 	}
 	shown := newCachingViewer(made.GetPageRenderer())
 	services := createServices(state)
-	services.Plugins = made.GetPluginManager()
+	services.getPluginDir = made.GetPluginDir
 	state.EmitEvent = made.EmitEvent
 	readers := made.GetVaultReaders()
 	services.readFiles(readers)
