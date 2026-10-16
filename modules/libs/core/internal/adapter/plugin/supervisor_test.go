@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"errors"
 	"os/exec"
 	"testing"
 	"time"
@@ -158,5 +159,83 @@ func TestSupervisorProcessCrashTriggersOnExit(t *testing.T) {
 
 	if sup.GetState() != StateDormant {
 		t.Errorf("expected StateDormant after crash, got %v", sup.GetState())
+	}
+}
+
+func TestSupervisorActivationLifecycle(t *testing.T) {
+	sup := NewSupervisor()
+	if sup.GetState() != StateDormant {
+		t.Fatalf("expected StateDormant, got %v", sup.GetState())
+	}
+
+	closedCh := sup.ActivatingChan()
+	select {
+	case <-closedCh:
+	default:
+		t.Fatal("expected closed channel when not activating")
+	}
+
+	ch1 := sup.SetActivating()
+	if sup.GetState() != StateActivating {
+		t.Fatalf("expected StateActivating, got %v", sup.GetState())
+	}
+	ch2 := sup.ActivatingChan()
+
+	select {
+	case <-ch1:
+		t.Fatal("channel should not be closed while activating")
+	default:
+	}
+
+	expectedErr := errors.New("activation failed")
+	sup.SetDormant(expectedErr)
+	if sup.GetState() != StateDormant {
+		t.Fatalf("expected StateDormant, got %v", sup.GetState())
+	}
+	if !errors.Is(sup.ActivationError(), expectedErr) {
+		t.Fatalf("expected %v, got %v", expectedErr, sup.ActivationError())
+	}
+
+	select {
+	case <-ch1:
+	default:
+		t.Fatal("expected ch1 to be closed after SetDormant")
+	}
+	select {
+	case <-ch2:
+	default:
+		t.Fatal("expected ch2 to be closed after SetDormant")
+	}
+
+	ch3 := sup.SetActivating()
+	if sup.ActivationError() != nil {
+		t.Fatal("expected ActivationError to be cleared on new activation")
+	}
+	sup.FinishActivating()
+	if sup.GetState() != StateActive {
+		t.Fatalf("expected StateActive, got %v", sup.GetState())
+	}
+	select {
+	case <-ch3:
+	default:
+		t.Fatal("expected ch3 to be closed after FinishActivating")
+	}
+}
+
+func TestSupervisorTeardownWhileActivating(t *testing.T) {
+	sup := NewSupervisor()
+	ch := sup.SetActivating()
+
+	err := sup.Teardown(t.Context(), 50*time.Millisecond, nil)
+	if err != nil {
+		t.Fatalf("expected teardown during activation to succeed, got %v", err)
+	}
+	if sup.GetState() != StateDormant {
+		t.Fatalf("expected StateDormant after teardown, got %v", sup.GetState())
+	}
+	select {
+	case <-ch:
+	default:
+		t.Fatal("expected activating channel to be closed on teardown")
 	}
 }

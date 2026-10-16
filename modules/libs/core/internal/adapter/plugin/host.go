@@ -294,21 +294,24 @@ func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error)
 
 // EnsureActive ensures the plugin process is running and returns its endpoint.
 func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, error) {
-	h.mu.Lock()
+	for {
+		h.mu.Lock()
 
-	if h.safeMode {
-		h.mu.Unlock()
-		return Endpoint{Host: "", Port: 0, Token: ""}, errSafeModeActive
-	}
-
-	p, ok := h.plugins[pluginID]
-	if !ok {
-		p, ok = h.resolveMonolithPlugin(pluginID)
-		if !ok {
+		if h.safeMode {
 			h.mu.Unlock()
-			return Endpoint{Host: "", Port: 0, Token: ""}, errPluginNotFound
+			return Endpoint{Host: "", Port: 0, Token: ""}, errSafeModeActive
 		}
-		h.plugins[pluginID] = p
+
+		p, ok := h.plugins[pluginID]
+		if !ok {
+			p, ok = h.resolveMonolithPlugin(pluginID)
+			if !ok {
+				h.mu.Unlock()
+				return Endpoint{Host: "", Port: 0, Token: ""}, errPluginNotFound
+			}
+			h.plugins[pluginID] = p
+		}
+
 		if _, hasSup := h.supervisors[pluginID]; !hasSup {
 			sup := NewSupervisor()
 			sup.SetPermissions(p.Manifest.Permissions)
@@ -320,45 +323,85 @@ func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, err
 			})
 			h.supervisors[pluginID] = sup
 		}
-	}
 
-	if !h.isPluginEnabledLocked(pluginID) {
-		h.mu.Unlock()
-		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("plugin %s is disabled", pluginID)
-	}
+		if !h.isPluginEnabledLocked(pluginID) {
+			h.mu.Unlock()
+			return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("plugin %s is disabled", pluginID)
+		}
 
-	sup := h.supervisors[pluginID]
-	state := sup.GetState()
-	if state == StateActive || state == StateIdle {
-		sup.Acquire(time.Now())
-		endpoint := h.endpoints[pluginID]
+		sup := h.supervisors[pluginID]
+		state := sup.GetState()
+		if state == StateActive || state == StateIdle {
+			sup.Acquire(time.Now())
+			endpoint := h.endpoints[pluginID]
+			h.mu.Unlock()
+			return endpoint, nil
+		}
+
+		if state == StateActivating {
+			waitCh := sup.ActivatingChan()
+			h.mu.Unlock()
+
+			select {
+			case <-ctx.Done():
+				return Endpoint{Host: "", Port: 0, Token: ""}, ctx.Err()
+			case <-waitCh:
+			}
+
+			h.mu.Lock()
+			if sup.GetState() == StateActive || sup.GetState() == StateIdle {
+				sup.Acquire(time.Now())
+				endpoint := h.endpoints[pluginID]
+				h.mu.Unlock()
+				return endpoint, nil
+			}
+			err := sup.ActivationError()
+			h.mu.Unlock()
+			if err != nil {
+				return Endpoint{Host: "", Port: 0, Token: ""}, err
+			}
+			continue
+		}
+
+		sup.SetActivating()
 		h.mu.Unlock()
+
+		endpoint, err := h.activatePlugin(ctx, p, sup)
+		if err != nil {
+			h.mu.Lock()
+			if sup.GetState() == StateActivating {
+				sup.SetDormant(err)
+			}
+			h.mu.Unlock()
+			return endpoint, err
+		}
+
+		_ = h.NotifyPluginConfig(ctx, p.Manifest.ID)
 		return endpoint, nil
 	}
-
-	endpoint, err := h.activatePlugin(ctx, p, sup)
-	h.mu.Unlock()
-	if err != nil {
-		return endpoint, err
-	}
-
-	_ = h.NotifyPluginConfig(ctx, p.Manifest.ID)
-	return endpoint, nil
 }
 
 func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *Supervisor) (Endpoint, error) {
 	token, err := GenerateAuthToken()
 	if err != nil {
+		h.mu.Lock()
+		sup.SetDormant(err)
+		h.mu.Unlock()
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("generate token: %w", err)
 	}
 
+	h.mu.RLock()
 	launcher := h.launcher
+	h.mu.RUnlock()
 	if launcher == nil {
 		launcher = h.defaultLauncher
 	}
 
 	proc, stdout, err := launcher(ctx, p, 0, token)
 	if err != nil {
+		h.mu.Lock()
+		sup.SetDormant(err)
+		h.mu.Unlock()
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("launch plugin %s: %w", p.Manifest.ID, err)
 	}
 
@@ -373,6 +416,9 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 			delete(h.stdins, p.Manifest.ID)
 		}
 		h.stdinsMu.Unlock()
+		h.mu.Lock()
+		sup.SetDormant(err)
+		h.mu.Unlock()
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("handshake plugin %s: %w", p.Manifest.ID, err)
 	}
 
@@ -382,7 +428,24 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 	}()
 
 	now := time.Now()
+	h.mu.Lock()
+	if sup.GetState() != StateActivating {
+		h.mu.Unlock()
+		_ = proc.Kill()
+		_, _ = proc.Wait()
+		_ = stdout.Close()
+		h.stdinsMu.Lock()
+		if c, ok := h.stdins[p.Manifest.ID]; ok {
+			_ = c.Close()
+			delete(h.stdins, p.Manifest.ID)
+		}
+		h.stdinsMu.Unlock()
+		return Endpoint{Host: "", Port: 0, Token: ""}, errors.New("plugin activation aborted")
+	}
+
 	if err := sup.Attach(proc, now); err != nil {
+		sup.SetDormant(err)
+		h.mu.Unlock()
 		_ = proc.Kill()
 		_, _ = proc.Wait()
 		_ = stdout.Close()
@@ -414,6 +477,8 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 		Token: token,
 	}
 	h.endpoints[p.Manifest.ID] = endpoint
+	sup.FinishActivating()
+	h.mu.Unlock()
 
 	return endpoint, nil
 }
@@ -452,7 +517,11 @@ func (h *Host) defaultLauncher(
 	cmd := exec.CommandContext(context.Background(), binPath, "--port="+strconv.Itoa(port), "--token="+token)
 	configureSysProcAttr(cmd)
 	cmd.Dir = p.Dir
+
+	h.mu.RLock()
+	vaultPath := h.vaultPath
 	configJSON, _ := h.getPluginConfigJSONLocked(p.Manifest.ID)
+	h.mu.RUnlock()
 
 	var env []string
 	for _, entry := range os.Environ() {
@@ -463,7 +532,7 @@ func (h *Host) defaultLauncher(
 	}
 	env = append(
 		env,
-		"NUMEN_VAULT_PATH="+h.vaultPath,
+		"NUMEN_VAULT_PATH="+vaultPath,
 		"NUMEN_PLUGIN_PORT="+strconv.Itoa(port),
 		"NUMEN_PLUGIN_TOKEN="+token,
 		"NUMEN_PLUGIN_ID="+p.Manifest.ID,
