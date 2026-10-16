@@ -1,4 +1,4 @@
-name: Desktop E2E
+name: End-to-End
 
 on:
   push:
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   e2e:
-    name: Desktop E2E
+    name: End-to-End
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
