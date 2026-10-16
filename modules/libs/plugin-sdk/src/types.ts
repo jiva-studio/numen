@@ -113,6 +113,7 @@ export interface PluginContext {
   emitFileSelect(event: FileSelectEvent): void
   openTab?(kind: string, at?: string): Promise<string> | void
   closeTab?(id: string): void
+  hasPermission?(permission: string): boolean
 }
 
 // PluginManifest describes the metadata in manifest.json.

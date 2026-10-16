@@ -64,7 +64,12 @@ describe('PluginContext', () => {
 
   it('tracks subscriptions and delegates registrations to host', async () => {
     const { host } = createMockHost()
-    const ctx = createPluginContext('test.plugin', host)
+    const ctx = createPluginContext('test.plugin', host, {
+      id: 'test.plugin',
+      name: 'Test Plugin',
+      version: '1.0.0',
+      permissions: ['vault:read', 'vault:write'],
+    })
 
     expect(ctx.pluginId).toBe('test.plugin')
     expect(ctx.subscriptions).toHaveLength(0)
@@ -75,7 +80,10 @@ describe('PluginContext', () => {
       component: null,
     })
     expect(ctx.subscriptions).toHaveLength(1)
-    expect(host.registerReader).toHaveBeenCalledWith('test.plugin', expect.objectContaining({ id: 'pdf' }))
+    expect(host.registerReader).toHaveBeenCalledWith(
+      'test.plugin',
+      expect.objectContaining({ id: 'pdf' }),
+    )
 
     const sub2 = ctx.registerCommand({
       id: 'cmd1',
@@ -83,14 +91,20 @@ describe('PluginContext', () => {
       handler: async () => {},
     })
     expect(ctx.subscriptions).toHaveLength(2)
-    expect(host.registerCommand).toHaveBeenCalledWith('test.plugin', expect.objectContaining({ id: 'cmd1' }))
+    expect(host.registerCommand).toHaveBeenCalledWith(
+      'test.plugin',
+      expect.objectContaining({ id: 'cmd1' }),
+    )
 
     const sub3 = ctx.registerTabKind({
       kind: 'custom-tab',
       component: null,
     })
     expect(ctx.subscriptions).toHaveLength(3)
-    expect(host.registerTabKind).toHaveBeenCalledWith('test.plugin', expect.objectContaining({ kind: 'custom-tab' }))
+    expect(host.registerTabKind).toHaveBeenCalledWith(
+      'test.plugin',
+      expect.objectContaining({ kind: 'custom-tab' }),
+    )
 
     const sub4 = ctx.registerAgentProvider({
       id: 'agent1',
@@ -98,14 +112,21 @@ describe('PluginContext', () => {
       createAgent: vi.fn(),
     })
     expect(ctx.subscriptions).toHaveLength(4)
-    expect(host.registerAgentProvider).toHaveBeenCalledWith('test.plugin', expect.objectContaining({ id: 'agent1' }))
+    expect(host.registerAgentProvider).toHaveBeenCalledWith(
+      'test.plugin',
+      expect.objectContaining({ id: 'agent1' }),
+    )
 
     expect(ctx.getSetting('enabled')).toBe(true)
     expect(host.getSetting).toHaveBeenCalledWith('test.plugin', 'enabled')
 
     const sub5 = ctx.onSettingChange('enabled', () => {})
     expect(ctx.subscriptions).toHaveLength(5)
-    expect(host.onSettingChange).toHaveBeenCalledWith('test.plugin', 'enabled', expect.any(Function))
+    expect(host.onSettingChange).toHaveBeenCalledWith(
+      'test.plugin',
+      'enabled',
+      expect.any(Function),
+    )
 
     const sub6 = ctx.onVaultChange(() => {})
     expect(ctx.subscriptions).toHaveLength(6)
@@ -130,5 +151,52 @@ describe('PluginContext', () => {
     sub5.dispose()
     sub6.dispose()
     sub7.dispose()
+  })
+
+  it('enforces vault:read permission for onVaultChange, onFileSelect, and emitFileSelect', () => {
+    const { host } = createMockHost()
+    const ctxNoPerms = createPluginContext('restricted.plugin', host, {
+      id: 'restricted.plugin',
+      name: 'Restricted',
+      version: '1.0.0',
+      permissions: [],
+    })
+
+    expect(() => ctxNoPerms.onVaultChange(() => {})).toThrowError(/vault:read/)
+    expect(() => ctxNoPerms.onFileSelect(() => {})).toThrowError(/vault:read/)
+    expect(() => ctxNoPerms.emitFileSelect({ path: '/test.md' })).toThrowError(/vault:read/)
+
+    const ctxWithRead = createPluginContext('reader.plugin', host, {
+      id: 'reader.plugin',
+      name: 'Reader',
+      version: '1.0.0',
+      permissions: ['vault:read'],
+    })
+
+    expect(() => ctxWithRead.onVaultChange(() => {})).not.toThrow()
+    expect(() => ctxWithRead.onFileSelect(() => {})).not.toThrow()
+    expect(() => ctxWithRead.emitFileSelect({ path: '/test.md' })).not.toThrow()
+  })
+
+  it('enforces vault:write permission for emitVaultChange', () => {
+    const { host } = createMockHost()
+    const ctxReadOnly = createPluginContext('readonly.plugin', host, {
+      id: 'readonly.plugin',
+      name: 'Read Only',
+      version: '1.0.0',
+      permissions: ['vault:read'],
+    })
+
+    expect(() => ctxReadOnly.emitVaultChange({ vaultPath: '/test' })).toThrowError(/vault:write/)
+
+    const ctxWrite = createPluginContext('writer.plugin', host, {
+      id: 'writer.plugin',
+      name: 'Writer',
+      version: '1.0.0',
+      permissions: ['vault:write'],
+    })
+
+    expect(() => ctxWrite.emitVaultChange({ vaultPath: '/test' })).not.toThrow()
+    expect(host.emitVaultChange).toHaveBeenCalledWith({ vaultPath: '/test' })
   })
 })

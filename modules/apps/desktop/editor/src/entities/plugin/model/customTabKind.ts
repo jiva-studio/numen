@@ -7,11 +7,14 @@ import {
   defineComponent,
   h,
   onErrorCaptured,
+  onMounted,
   ref,
+  Teleport,
   type Component,
 } from 'vue'
 import type { ReaderRegistration, TabKindRegistration } from '@numen/plugin-sdk'
 import type { AnyTabKind } from '@/entities/tab/@x/plugin'
+import { getPluginStyle } from './styles'
 import type { PluginHostDeps } from './types'
 
 type AsyncComponentRegistration = {
@@ -80,6 +83,58 @@ function getReaderTargetSource(path: string | undefined): 'recording' | 'book' |
   return 'other'
 }
 
+function attachPluginShadow(el: HTMLElement | null): ShadowRoot | null {
+  if (!el) return null
+  if (el.shadowRoot) return el.shadowRoot
+  if (typeof el.attachShadow === 'function') {
+    try {
+      return el.attachShadow({ mode: 'open' })
+    } catch {
+      return el.shadowRoot
+    }
+  }
+  return null
+}
+
+function renderFallback(pluginId: string, error: Error) {
+  return h('div', { class: 'plugin-error-fallback p-4 text-red-500' }, [
+    h('h3', { class: 'font-bold' }, `Plugin "${pluginId}" crashed`),
+    h('pre', { class: 'text-xs mt-2' }, error.message),
+  ])
+}
+
+interface PaneContentDeps {
+  readonly pluginId: string
+  readonly component: Component | null
+  readonly state: unknown
+  readonly shadowRoot: ShadowRoot | null
+  readonly containerClass: string
+}
+
+function renderPaneContent(deps: PaneContentDeps) {
+  if (!deps.component) return null
+  const stateObj =
+    typeof deps.state === 'object' && deps.state !== null
+      ? (deps.state as Record<string, unknown>)
+      : {}
+  const path = extractStatePath(deps.state)
+  const child = h(deps.component, {
+    ...stateObj,
+    ...(path ? { path, filePath: path, file: path } : {}),
+    state: deps.state,
+  })
+  const styleUrl = getPluginStyle(deps.pluginId)
+  const styleNode = styleUrl
+    ? h('link', { rel: 'stylesheet', href: styleUrl, 'data-plugin-id': deps.pluginId })
+    : null
+  const inner = h('div', { class: deps.containerClass }, [child])
+
+  if (deps.shadowRoot) {
+    return h(Teleport, { to: deps.shadowRoot }, [styleNode, inner])
+  }
+  return [styleNode, inner]
+}
+
 export function createPluginPaneWrapper(
   pluginIdOrComponent: string | unknown,
   maybeComponent?: unknown,
@@ -87,39 +142,44 @@ export function createPluginPaneWrapper(
   const pluginId = typeof pluginIdOrComponent === 'string' ? pluginIdOrComponent : 'plugin'
   const rawComponent = maybeComponent !== undefined ? maybeComponent : pluginIdOrComponent
   const component = resolvePluginComponent(rawComponent)
+  const sanitizedId = pluginId.replace(/[^a-zA-Z0-9_-]/g, '-')
+  const classes = {
+    wrapper: `plugin-pane-wrapper plugin-pane-${sanitizedId}`,
+    container: `plugin-view-container plugin-view-${sanitizedId}`,
+  }
 
   return defineComponent({
     name: `PluginPaneWrapper[${pluginId}]`,
-    props: {
-      state: {
-        type: null,
-        required: true,
-      },
-    },
+    props: { state: { type: null, required: true } },
     setup(props) {
       const error = ref<Error | null>(null)
+      const hostEl = ref<HTMLElement | null>(null)
+      const shadowRoot = ref<ShadowRoot | null>(null)
+      const isReady = ref(false)
+
       onErrorCaptured((err) => {
         error.value = err instanceof Error ? err : new Error(String(err))
         return false
       })
+
+      onMounted(() => {
+        shadowRoot.value = attachPluginShadow(hostEl.value)
+        isReady.value = true
+      })
+
       return () => {
-        if (error.value) {
-          return h('div', { class: 'plugin-error-fallback p-4 text-red-500' }, [
-            h('h3', { class: 'font-bold' }, `Plugin "${pluginId}" crashed`),
-            h('pre', { class: 'text-xs mt-2' }, error.value.message),
-          ])
-        }
-        if (!component) return null
-        const stateObj =
-          typeof props.state === 'object' && props.state !== null
-            ? (props.state as Record<string, unknown>)
-            : {}
-        const path = extractStatePath(props.state)
-        return h(component as Component, {
-          ...stateObj,
-          ...(path ? { path, filePath: path, file: path } : {}),
-          state: props.state,
-        })
+        if (error.value) return renderFallback(pluginId, error.value)
+        return h('div', { class: classes.wrapper, 'data-plugin-id': pluginId, ref: hostEl }, [
+          isReady.value
+            ? renderPaneContent({
+                pluginId,
+                component,
+                state: props.state,
+                shadowRoot: shadowRoot.value,
+                containerClass: classes.container,
+              })
+            : null,
+        ])
       }
     },
   })

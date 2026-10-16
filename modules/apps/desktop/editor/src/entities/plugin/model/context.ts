@@ -7,77 +7,79 @@ import type {
   Disposable,
   FileSelectEvent,
   PluginContext,
+  PluginManifest,
   ReaderRegistration,
   TabKindRegistration,
   VaultChangeEvent,
 } from '@numen/plugin-sdk'
 import type { PluginContextHost } from './types'
 
-export function createPluginContext(pluginId: string, host: PluginContextHost): PluginContext {
-  const subscriptions: Disposable[] = []
-
-  function addSubscription(disposable: Disposable): Disposable {
-    subscriptions.push(disposable)
-    return {
-      dispose() {
-        const index = subscriptions.indexOf(disposable)
-        if (index !== -1) {
-          subscriptions.splice(index, 1)
-        }
-        disposable.dispose()
-      },
-    }
+function trackSubscription(subscriptions: Disposable[], disposable: Disposable): Disposable {
+  subscriptions.push(disposable)
+  return {
+    dispose() {
+      const index = subscriptions.indexOf(disposable)
+      if (index !== -1) {
+        subscriptions.splice(index, 1)
+      }
+      disposable.dispose()
+    },
   }
+}
+
+interface PermissionTarget {
+  readonly pluginId: string
+  readonly manifest?: PluginManifest | { permissions?: readonly string[] } | undefined
+}
+
+function checkPermission(target: PermissionTarget, permission: string, operation: string): void {
+  if (!(target.manifest?.permissions?.includes(permission) ?? false)) {
+    throw new Error(
+      `Plugin "${target.pluginId}" lacks required permission "${permission}" for ${operation}`,
+    )
+  }
+}
+
+export function createPluginContext(
+  pluginId: string,
+  host: PluginContextHost,
+  manifest?: PluginManifest | { permissions?: readonly string[] },
+): PluginContext {
+  const subscriptions: Disposable[] = []
+  const add = (d: Disposable) => trackSubscription(subscriptions, d)
+  const target: PermissionTarget = { pluginId, manifest }
+  const requirePerm = (p: string, op: string) => checkPermission(target, p, op)
 
   return {
     pluginId,
     subscriptions,
-
-    registerReader(registration: ReaderRegistration): Disposable {
-      return addSubscription(host.registerReader(pluginId, registration))
+    hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
+    registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
+    registerTabKind: (reg: TabKindRegistration) => add(host.registerTabKind(pluginId, reg)),
+    registerCommand: (reg: CommandRegistration) => add(host.registerCommand(pluginId, reg)),
+    registerAgentProvider: (reg: AgentProviderRegistration) =>
+      add(host.registerAgentProvider(pluginId, reg)),
+    getSetting: <T = unknown>(key: string) => host.getSetting<T>(pluginId, key),
+    onSettingChange: <T = unknown>(key: string, h: (v: T) => void) =>
+      add(host.onSettingChange<T>(pluginId, key, h)),
+    onVaultChange: (h: (e: VaultChangeEvent) => void | Promise<void>) => {
+      requirePerm('vault:read', 'onVaultChange')
+      return add(host.onVaultChange ? host.onVaultChange(h) : { dispose: () => {} })
     },
-
-    registerTabKind(registration: TabKindRegistration): Disposable {
-      return addSubscription(host.registerTabKind(pluginId, registration))
+    onFileSelect: (h: (e: FileSelectEvent) => void | Promise<void>) => {
+      requirePerm('vault:read', 'onFileSelect')
+      return add(host.onFileSelect ? host.onFileSelect(h) : { dispose: () => {} })
     },
-
-    registerCommand(registration: CommandRegistration): Disposable {
-      return addSubscription(host.registerCommand(pluginId, registration))
+    emitVaultChange: (e: VaultChangeEvent) => {
+      requirePerm('vault:write', 'emitVaultChange')
+      host.emitVaultChange?.(e)
     },
-
-    registerAgentProvider(registration: AgentProviderRegistration): Disposable {
-      return addSubscription(host.registerAgentProvider(pluginId, registration))
+    emitFileSelect: (e: FileSelectEvent) => {
+      requirePerm('vault:read', 'emitFileSelect')
+      host.emitFileSelect?.(e)
     },
-
-    getSetting<T = unknown>(key: string): T | undefined {
-      return host.getSetting<T>(pluginId, key)
-    },
-
-    onSettingChange<T = unknown>(key: string, handler: (value: T) => void): Disposable {
-      return addSubscription(host.onSettingChange<T>(pluginId, key, handler))
-    },
-
-    onVaultChange(handler: (event: VaultChangeEvent) => void | Promise<void>): Disposable {
-      return addSubscription(host.onVaultChange ? host.onVaultChange(handler) : { dispose: () => {} })
-    },
-
-    onFileSelect(handler: (event: FileSelectEvent) => void | Promise<void>): Disposable {
-      return addSubscription(host.onFileSelect ? host.onFileSelect(handler) : { dispose: () => {} })
-    },
-
-    emitVaultChange(event: VaultChangeEvent): void {
-      host.emitVaultChange?.(event)
-    },
-
-    emitFileSelect(event: FileSelectEvent): void {
-      host.emitFileSelect?.(event)
-    },
-
-    openTab(kind: string, at?: string): Promise<string> | void {
-      return host.openTab?.(kind, at)
-    },
-
-    closeTab(id: string): void {
+    openTab: (kind: string, at?: string) => host.openTab?.(kind, at),
+    closeTab: (id: string) => {
       host.closeTab?.(id)
     },
   }
