@@ -26,6 +26,22 @@ const FALLBACK_VERSION: string = import.meta.env.VITE_NUMEN_VERSION ?? '0.0.0-de
 const FALLBACK_BUILD: number =
   parseBuildNumber(import.meta.env.VITE_NUMEN_BUILD) || parseBuildNumber(FALLBACK_VERSION)
 
+const runtime = '/wails/runtime.js'
+const wails =
+  typeof window !== 'undefined'
+    ? import(/* @vite-ignore */ runtime).catch(() => undefined)
+    : Promise.resolve(undefined)
+
+function openExternalUrl(url: string): void {
+  void wails.then((it) => {
+    if (it?.Browser?.OpenURL) {
+      it.Browser.OpenURL(url)
+    } else if (typeof window !== 'undefined') {
+      window.open(url, '_blank')
+    }
+  })
+}
+
 export function useAppUpdate(options: UpdateOptions = {}) {
   const endpointUrl = options.endpointUrl ?? DEFAULT_ENDPOINT
   const checkIntervalMs = options.checkIntervalMs ?? DEFAULT_INTERVAL_MS
@@ -33,7 +49,7 @@ export function useAppUpdate(options: UpdateOptions = {}) {
   const currentBuild = options.currentBuild ?? FALLBACK_BUILD
   const platform = options.platform ?? resolveCurrentPlatform()
   const fetchClient = options.fetchFn ?? (typeof fetch !== 'undefined' ? fetch : undefined)
-  const openExternal = options.openUrl ?? ((url: string) => window.open(url, '_blank'))
+  const openExternal = options.openUrl ?? openExternalUrl
 
   const isChecking: Ref<boolean> = ref(false)
   const isDismissed: Ref<boolean> = ref(false)

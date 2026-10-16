@@ -32,7 +32,7 @@ const platformMessage = computed(() => {
   if (props.platform === 'darwin') {
     return 'Download the disk image to update Numen.'
   }
-  return 'Update via your package manager or download the new version.'
+  return 'View release notes and packages on GitHub.'
 })
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -76,22 +76,26 @@ function onDismiss() {
     </div>
 
     <footer class="update-popover__actions">
-      <button
-        type="button"
+      <a
+        :href="updateInfo.downloadUrl"
+        target="_blank"
+        rel="noopener noreferrer"
         class="update-popover__btn update-popover__btn--primary"
         @click="onDownload"
       >
-        Download update
-      </button>
+        {{ platform === 'linux' ? 'View on GitHub' : 'Download update' }}
+      </a>
 
-      <button
-        v-if="updateInfo.notesUrl"
-        type="button"
+      <a
+        v-if="platform !== 'linux' && updateInfo.notesUrl"
+        :href="updateInfo.notesUrl"
+        target="_blank"
+        rel="noopener noreferrer"
         class="update-popover__btn update-popover__btn--ghost"
         @click="onReleaseNotes"
       >
         Release notes
-      </button>
+      </a>
 
       <button
         type="button"

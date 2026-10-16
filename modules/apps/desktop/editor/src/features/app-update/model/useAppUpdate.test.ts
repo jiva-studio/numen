@@ -90,7 +90,7 @@ describe('useAppUpdate', () => {
       latestVersion: '2026.10.1',
       latestBuild: 950,
       releasedAt: '2026-10-15T12:00:00Z',
-      notesUrl: 'https://dl.numen.md/releases/2026.10.1/notes.md',
+      notesUrl: 'https://github.com/jiva-studio/numen/releases/tag/v2026.10.1',
       platformFile: sampleManifest.files![0],
       downloadUrl: 'https://dl.numen.md/numen-macos.dmg',
     })
@@ -99,7 +99,9 @@ describe('useAppUpdate', () => {
     expect(openUrl).toHaveBeenCalledWith('https://dl.numen.md/numen-macos.dmg')
 
     updateState.openReleaseNotes()
-    expect(openUrl).toHaveBeenCalledWith('https://dl.numen.md/releases/2026.10.1/notes.md')
+    expect(openUrl).toHaveBeenCalledWith(
+      'https://github.com/jiva-studio/numen/releases/tag/v2026.10.1',
+    )
 
     updateState.dismissUpdate()
     expect(updateState.isDismissed.value).toBe(true)
