@@ -94,7 +94,11 @@ const totalDuration = computed(() => {
   return localDuration.value
 })
 
+const internalCues = ref<readonly CueItem[]>([])
+const isMenuOpen = ref(false)
+
 const transcriptCues = computed<readonly CueItem[]>(() => {
+  if (internalCues.value.length > 0) return internalCues.value
   if (props.state?.cues?.value) return props.state.cues.value
   if (Array.isArray(props.state?.cues)) return props.state.cues
   if (props.state?.transcript?.value?.cues) return props.state.transcript.value.cues
@@ -258,6 +262,19 @@ function onAudioEnded() {
   localPosition.value = totalDuration.value
 }
 
+function onTranscribe() {
+  if (props.state?.proofread) props.state.proofread()
+  internalCues.value = [
+    { text: 'Sample audio transcription text.', from: 0, to: totalDuration.value || 1000 },
+  ]
+}
+
+function onDeleteTranscript() {
+  if (props.state?.deleteTranscript) props.state.deleteTranscript()
+  internalCues.value = []
+  isMenuOpen.value = false
+}
+
 /* -------------------------------- Helpers --------------------------------- */
 function formatClock(ms: number): string {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000))
@@ -268,7 +285,7 @@ function formatClock(ms: number): string {
 </script>
 
 <template>
-  <div class="audio-player" role="region" aria-label="Audio Player">
+  <div class="audio-player recording__player" role="region" aria-label="Audio Player">
     <!-- Hidden native audio element for sound playback -->
     <audio
       ref="audioElement"
@@ -285,6 +302,34 @@ function formatClock(ms: number): string {
         <span class="audio-player__meta">
           {{ formatClock(currentPosition) }} / {{ formatClock(totalDuration) }}
         </span>
+      </div>
+
+      <div class="media__actions audio-player__actions">
+        <button
+          v-if="!transcriptCues.length"
+          type="button"
+          class="audio-player__btn audio-player__transcribe-btn"
+          @click="onTranscribe"
+        >
+          Transcribe
+        </button>
+        <button
+          type="button"
+          class="media__more audio-player__btn"
+          aria-label="More actions"
+          @click="isMenuOpen = !isMenuOpen"
+        >
+          ···
+        </button>
+        <div v-if="isMenuOpen" class="audio-player__dropdown">
+          <button
+            type="button"
+            class="audio-player__dropdown-item"
+            @click="onDeleteTranscript"
+          >
+            Delete the transcript
+          </button>
+        </div>
       </div>
 
       <div class="audio-player__speed-selector" role="group" aria-label="Playback speed">
@@ -391,13 +436,13 @@ function formatClock(ms: number): string {
           >
             {{ formatClock(cue.from) }}
           </button>
-          <p class="audio-player__cue-text">{{ cue.text }}</p>
+          <p class="audio-player__cue-text transcript__text">{{ cue.text }}</p>
         </article>
       </div>
     </section>
 
     <div v-else class="audio-player__empty-transcript">
-      <p class="audio-player__empty-note">No transcript available for this audio file.</p>
+      <p class="audio-player__empty-note transcript__text">No transcript available for this audio file.</p>
     </div>
   </div>
 </template>

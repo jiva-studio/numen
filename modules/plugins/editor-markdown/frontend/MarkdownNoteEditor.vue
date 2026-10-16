@@ -12,6 +12,7 @@ interface Props {
   readonly modelValue?: string
   readonly path?: string
   readonly filePath?: string
+  readonly errorMessage?: string
   readonly isReadOnly?: boolean
   readonly extensions?: Extension | readonly Extension[]
   readonly state?: Record<string, unknown>
@@ -21,6 +22,7 @@ const props = withDefaults(defineProps<Props>(), {
   modelValue: '',
   path: '',
   filePath: '',
+  errorMessage: '',
   isReadOnly: false,
 })
 
@@ -66,6 +68,38 @@ const initialContent = ref(getInitialBody())
 
 const isDirty = computed(() => docContent.value !== initialContent.value)
 const frontmatter = computed<FrontmatterResult>(() => parseFrontmatter(docContent.value))
+
+const frontmatterError = computed(() => {
+  if (docContent.value.startsWith('---\n') || docContent.value.startsWith('---\r\n')) {
+    const newlineOffset = docContent.value.indexOf('\n')
+    const rest = docContent.value.slice(newlineOffset + 1)
+    const delimiterMatch = rest.match(/\n---\s*(\r?\n|$)/)
+    if (delimiterMatch && delimiterMatch.index !== undefined) {
+      const rawYaml = rest.slice(0, delimiterMatch.index)
+      for (const line of rawYaml.split(/\r?\n/)) {
+        const trimmed = line.trim()
+        if (trimmed.includes('[') && !trimmed.includes(']')) {
+          return 'the frontmatter of this note cannot be read'
+        }
+        if ((trimmed.match(/:/g) || []).length > 1 && !trimmed.includes('"') && !trimmed.includes("'")) {
+          return 'the frontmatter of this note cannot be read'
+        }
+      }
+    }
+  }
+  return ''
+})
+
+const displayErrorMessage = computed(() => {
+  if (props.errorMessage) return props.errorMessage
+  const stateErr = props.state?.errorMessage
+  if (typeof stateErr === 'string' && stateErr) return stateErr
+  if (typeof stateErr === 'object' && stateErr !== null && 'value' in stateErr) {
+    const val = (stateErr as { value?: unknown }).value
+    if (typeof val === 'string' && val) return val
+  }
+  return frontmatterError.value
+})
 
 watch(
   () => {
@@ -175,6 +209,7 @@ defineExpose({
 
 <template>
   <div class="markdown-note-editor note">
+    <p v-if="displayErrorMessage" class="caution" role="alert">{{ displayErrorMessage }}</p>
     <Editor
       ref="editorRef"
       :model-value="docContent"
@@ -195,6 +230,14 @@ defineExpose({
   flex-direction: column;
   block-size: 100%;
   min-block-size: 0;
+}
+
+.caution {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  background-color: var(--numen-warning-subtle, #fef3c7);
+  color: var(--numen-warning, #b45309);
+  font-size: 0.875rem;
 }
 
 .markdown-note-editor__pane {

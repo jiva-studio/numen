@@ -153,12 +153,17 @@ function extractWhere(options?: unknown): unknown {
   return undefined
 }
 
+const BUILTIN_TAB_KINDS = new Set(['deck', 'stencil', 'preset'])
+
 function registerTabKindEntry(
   deps: PluginHostDeps,
   tabKinds: Map<string, RegisteredTabKind>,
   item: PluginItemRegistration<TabKindRegistration>,
 ): Disposable {
   const { pluginId, registration } = item
+  if (BUILTIN_TAB_KINDS.has(registration.kind)) {
+    return { dispose: () => {} }
+  }
   const cleanups: (() => void)[] = [deps.registerKind(createCustomTabKind(pluginId, registration, deps))]
   if (deps.registerEditor) {
     const unreg = deps.registerEditor(

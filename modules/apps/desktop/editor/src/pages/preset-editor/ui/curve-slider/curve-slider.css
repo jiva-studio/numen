@@ -1,0 +1,275 @@
+/*
+ * The chrome a plot of the one slider is drawn in: the name up its side, the
+ * room the picture takes, and the numbers read off its edges.
+ *
+ * The curve and the backlog under it are two pictures, and this is what they draw
+ * alike. The lengths come off `.curve-slider`, which both stand inside.
+ */
+
+/* The y's name beside the plot, and the plot. */
+.curve-slider__frame {
+  display: flex;
+  align-items: stretch;
+  gap: var(--numen-node-gap);
+}
+
+/*
+ * The room the y's name runs in. It is a box of its own width and no height of
+ * its own, so however long the name is the plot keeps its height.
+ */
+.curve-slider__axis {
+  position: relative;
+  flex: none;
+  inline-size: var(--curve-slider-axis);
+}
+
+.curve-slider__name {
+  margin: 0;
+  color: var(--numen-hushed);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+  line-height: 1;
+}
+
+/* Read up the picture, the way an axis is named on a chart. */
+.curve-slider__name--y {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  rotate: 180deg;
+  overflow: hidden;
+}
+
+.curve-slider__name--x {
+  text-align: center;
+}
+
+/* Everything read off the picture keeps the picture's own width. */
+.curve-slider__foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--numen-dot-gap);
+  padding-inline-start: calc(var(--curve-slider-axis) + var(--numen-node-gap));
+}
+
+/* The picture, and what is named over it. */
+.curve-slider__over {
+  position: relative;
+  flex: 1;
+  min-inline-size: 0;
+}
+
+/*
+ * The room a plot is drawn in. It stands at the plot's own proportion whatever
+ * is inside it, so the box is one size while the answer is worked out, once it
+ * has landed, and where there is nothing to draw.
+ */
+.curve-slider__room {
+  inline-size: 100%;
+}
+
+.curve-slider__picture {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  touch-action: none;
+  cursor: ew-resize;
+  border-radius: var(--numen-radius-tight);
+}
+
+.curve-slider__rule {
+  stroke: var(--numen-rule);
+  stroke-width: 1;
+}
+
+/*
+ * A number read off the picture: the ends of the extent against the lines they
+ * are the height of, and the value the knob stands at under it. The halo keeps
+ * it legible where the line runs behind it.
+ */
+.curve-slider__number {
+  position: absolute;
+  padding-inline: var(--numen-edge-label-halo);
+  color: var(--numen-hushed);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-shadow:
+    0 0 var(--numen-edge-label-halo) var(--numen-raised),
+    0 0 var(--numen-edge-label-halo) var(--numen-raised);
+  pointer-events: none;
+}
+
+.curve-slider__ends {
+  display: flex;
+  justify-content: space-between;
+  min-block-size: var(--curve-slider-line);
+  margin: 0;
+  padding-inline: var(--numen-inset);
+  color: var(--numen-hushed);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.curve-slider {
+  --curve-slider-line: calc(var(--numen-text-1) * 1.4);
+  --curve-slider-axis: calc(var(--numen-text-1) * 1.6);
+  --curve-slider-tail: 0.4375rem;
+  --curve-slider-lead: 0.125rem;
+  --curve-slider-tile: calc(
+    var(--numen-text-2) * 1.1 + var(--numen-dot-gap) + var(--numen-text-1) * 1.2 + 2 *
+      var(--numen-inset) + 2 * var(--numen-stroke)
+  );
+  display: flex;
+  flex-direction: column;
+  gap: var(--numen-node-gap);
+}
+
+.curve-slider__tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--numen-dot-gap);
+  min-inline-size: 0;
+  padding: calc(var(--numen-inset) - var(--curve-slider-lead)) var(--numen-box-air);
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-radius-tight);
+  background: var(--numen-raised);
+}
+
+.curve-slider__figure {
+  color: var(--numen-ink);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-2);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.curve-slider__word {
+  color: var(--numen-hushed);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+  line-height: 1;
+  overflow-wrap: break-word;
+}
+
+.curve-slider__under {
+  position: relative;
+  margin: 0;
+  block-size: var(--curve-slider-line);
+}
+
+.curve-slider__picture:focus-visible {
+  outline: none;
+}
+
+.curve-slider__picture:focus-visible .curve-slider__knob {
+  stroke: var(--numen-ring);
+  stroke-width: 3;
+}
+
+.curve-slider__gridline {
+  stroke: var(--numen-rule);
+  stroke-width: 1;
+  stroke-dasharray: 2 5;
+}
+
+.curve-slider__line {
+  fill: none;
+  stroke: var(--numen-accent);
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.curve-slider__short {
+  fill: none;
+  stroke: var(--numen-caution-fg);
+  stroke-width: 1.25;
+  stroke-linecap: round;
+}
+
+.curve-slider__drop {
+  stroke: var(--numen-accent);
+  stroke-width: 1;
+  stroke-dasharray: var(--numen-thread-dash);
+}
+
+.curve-slider__suggested {
+  fill: var(--numen-accent);
+}
+
+.curve-slider__number--knob {
+  color: var(--numen-accent);
+}
+
+.curve-slider__callout {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: var(--numen-dot-gap);
+  padding: var(--numen-inset);
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-radius-tight);
+  background: var(--numen-raised);
+  box-shadow: var(--numen-shadow-card);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.curve-slider__tail {
+  position: absolute;
+  inline-size: var(--curve-slider-tail);
+  block-size: var(--curve-slider-tail);
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-block-start: 0;
+  border-inline-start: 0;
+  background: var(--numen-raised);
+  rotate: 45deg;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+
+.curve-slider__tail--under {
+  border-block-start: var(--numen-stroke) solid var(--numen-rule);
+  border-inline-start: var(--numen-stroke) solid var(--numen-rule);
+  border-block-end: 0;
+  border-inline-end: 0;
+}
+
+.curve-slider__bought {
+  color: var(--numen-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.curve-slider__bought:first-child {
+  color: var(--numen-accent);
+}
+
+.curve-slider__label {
+  position: absolute;
+  color: var(--numen-accent);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow:
+    0 0 var(--numen-edge-label-halo) var(--numen-raised),
+    0 0 var(--numen-edge-label-halo) var(--numen-raised);
+  pointer-events: none;
+}
+
+.curve-slider__knob {
+  fill: var(--numen-accent);
+  stroke: var(--numen-raised);
+  stroke-width: 2;
+}

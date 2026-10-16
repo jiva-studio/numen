@@ -58,7 +58,7 @@ function extractStatePath(state: unknown): string {
 
 function getReaderTargetSource(path: string | undefined): 'recording' | 'book' | 'other' {
   if (!path) return 'other'
-  if (/\.(mp3|m4a|wav|ogg|aac)$/i.test(path)) return 'recording'
+  if (/\.(mp3|m4a|wav|ogg|aac|flac)$/i.test(path)) return 'recording'
   if (/\.(epub)$/i.test(path)) return 'book'
   return 'other'
 }
@@ -145,10 +145,18 @@ export function createReaderTabKind(pluginId: string, registration: ReaderRegist
 function createCustomTabState(at: string, pluginId: string, deps?: PluginHostDeps) {
   const defaultName = stripMarkdownExtension(extractFilename(at))
   const noteRef = ref({ path: at, body: '' })
+  const errorMessageRef = ref('')
   if (deps?.readNote) {
-    void deps.readNote(at).then((body) => {
-      if (body !== undefined) {
-        noteRef.value = { path: at, body }
+    void deps.readNote(at).then((result) => {
+      if (typeof result === 'string') {
+        noteRef.value = { path: at, body: result }
+      } else if (result && typeof result === 'object') {
+        if (result.body !== undefined) {
+          noteRef.value = { path: at, body: result.body }
+        }
+        if (result.error) {
+          errorMessageRef.value = result.error
+        }
       }
     })
   }
@@ -158,6 +166,7 @@ function createCustomTabState(at: string, pluginId: string, deps?: PluginHostDep
     pluginId,
     title: defaultName,
     note: noteRef,
+    errorMessage: errorMessageRef,
     body: computed(() => noteRef.value.body),
     updateBody: (body: string) => {
       noteRef.value = { path: at, body }

@@ -51,7 +51,9 @@ export interface PluginHostDeps {
   ) => () => void
   readonly closeTabsForPlugin?: (pluginId: string) => void
   readonly onCustomCardAdded?: (at: string, values: readonly { field: string; text: string }[]) => void
-  readonly readNote?: ((path: string) => Promise<string | undefined>) | undefined
+  readonly readNote?: (
+    (path: string) => Promise<{ body?: string; error?: string } | string | undefined>
+  ) | undefined
   readonly writeNote?: ((path: string, body: string) => Promise<void>) | undefined
 }
 

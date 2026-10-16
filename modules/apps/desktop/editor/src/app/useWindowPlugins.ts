@@ -11,7 +11,9 @@ export interface PluginSupportDeps {
   readonly tabLinks: ReturnType<typeof useTabLinks>
   readonly tabOpeners: ReturnType<typeof fileOpeners>
   readonly settingsHolder: { current?: ReturnType<typeof useSettings> }
-  readonly readNote?: (path: string) => Promise<string | undefined>
+  readonly readNote?: (
+    path: string,
+  ) => Promise<{ body?: string; error?: string } | string | undefined>
   readonly writeNote?: (path: string, body: string) => Promise<void>
 }
 
@@ -98,9 +100,10 @@ export function watchPluginSettings(
     (plugins) => {
       void (async () => {
         for (const plugin of plugins) {
-          if (!plugin.isActive && pluginLoader.isPluginActive(plugin.id)) {
+          const isExplicitlyDisabled = settings.rest.getSetting(['plugins', plugin.id, 'enabled']) === false
+          if (isExplicitlyDisabled && pluginLoader.isPluginActive(plugin.id)) {
             await pluginLoader.deactivatePlugin(plugin.id)
-          } else if (plugin.isActive && !pluginLoader.isPluginActive(plugin.id)) {
+          } else if (!isExplicitlyDisabled && !pluginLoader.isPluginActive(plugin.id)) {
             await pluginLoader.activatePlugin(plugin.id)
           }
         }

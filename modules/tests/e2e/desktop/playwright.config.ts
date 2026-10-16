@@ -24,7 +24,7 @@ export default defineConfig({
     viewport: { width: 1280, height: 860 },
   },
   webServer: {
-    command: 'node ./scripts/start-server.mjs',
+    command: `node ${new URL('./scripts/start-server.mjs', import.meta.url).pathname}`,
     url: baseURL,
     ignoreHTTPSErrors: true,
     reuseExistingServer: !process.env.CI,
