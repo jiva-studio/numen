@@ -1649,4 +1649,3 @@ func TestContainerDoesNotDowncastPluginHost(t *testing.T) {
 		})
 	}
 }
-
