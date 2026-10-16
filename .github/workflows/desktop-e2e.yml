@@ -46,13 +46,14 @@ jobs:
         with:
           browsers: "chromium"
 
+      - name: Build UI library
+        run: npm run build --prefix modules/libs/ui
+
       - name: Build modular plugins
         run: make plugins_build
 
-      - name: Build frontend assets
-        run: |
-          npm run build --prefix modules/libs/ui
-          npm run build --prefix modules/apps/desktop/editor
+      - name: Build desktop editor
+        run: npm run build --prefix modules/apps/desktop/editor
 
       - name: Build debug desktop binary
         run: |
