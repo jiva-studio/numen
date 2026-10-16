@@ -11,6 +11,8 @@ export interface PluginSupportDeps {
   readonly tabLinks: ReturnType<typeof useTabLinks>
   readonly tabOpeners: ReturnType<typeof fileOpeners>
   readonly settingsHolder: { current?: ReturnType<typeof useSettings> }
+  readonly readNote?: (path: string) => Promise<string | undefined>
+  readonly writeNote?: (path: string, body: string) => Promise<void>
 }
 
 function createPluginSettingsAccessor(settingsHolder: { current?: ReturnType<typeof useSettings> }) {
@@ -79,6 +81,8 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     onSettingChange,
     closeTabsForPlugin,
     onCustomCardAdded: writeCustomCard,
+    ...(deps.readNote !== undefined ? { readNote: deps.readNote } : {}),
+    ...(deps.writeNote !== undefined ? { writeNote: deps.writeNote } : {}),
   })
   const pluginLoader = createPluginLoader({ host: pluginHost })
 

@@ -150,6 +150,13 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     tabLinks,
     tabOpeners,
     settingsHolder,
+    readNote: async (path: string) => {
+      const res = await core.read(path)
+      return res.ok ? res.value.body : undefined
+    },
+    writeNote: async (path: string, body: string) => {
+      await core.write(path, body, null)
+    },
   })
   return { log, writeMessage, held, tabLinks, tabOpeners, runs, plays, pluginHost, pluginLoader }
 }
