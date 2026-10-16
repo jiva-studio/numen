@@ -87,8 +87,9 @@ func applyCgroupMemoryLimit(pid int, limitBytes uint64) error {
 	}
 	limitStr := strconv.FormatUint(limitBytes, 10)
 	if err := os.WriteFile(filepath.Join(pluginDir, "memory.high"), []byte(limitStr), 0o600); err != nil {
-		cleanupProcessCgroup(pid)
-		if errors.Is(err, os.ErrPermission) {
+		_ = os.WriteFile(filepath.Join(baseDir, "cgroup.procs"), []byte(strconv.Itoa(pid)), 0o600)
+		_ = os.Remove(pluginDir)
+		if errors.Is(err, os.ErrPermission) || errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("%w: %w", errCgroupUnavailable, err)
 		}
 		return fmt.Errorf("write memory.high: %w", err)
