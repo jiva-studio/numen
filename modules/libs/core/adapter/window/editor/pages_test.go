@@ -543,4 +543,3 @@ func TestPluginAssetsAreServed(t *testing.T) {
 		}
 	})
 }
-
