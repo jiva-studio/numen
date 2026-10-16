@@ -112,7 +112,7 @@ func (d *DebugOptions) serveHTTP(
 		}
 		tlsConf = &tls.Config{
 			Certificates: []tls.Certificate{cert},
-			MinVersion:   tls.VersionTLS13,
+			NextProtos:   []string{"h2", "http/1.1"},
 		}
 		ln = tls.NewListener(ln, tlsConf)
 	}
@@ -165,13 +165,17 @@ func generateSelfSignedCert() (tls.Certificate, error) {
 	}
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(1),
-		Subject:      pkix.Name{CommonName: "127.0.0.1"},
-		IPAddresses:  []net.IP{net.ParseIP("127.0.0.1"), net.IPv6loopback},
-		DNSNames:     []string{"localhost"},
-		NotBefore:    time.Now().Add(-time.Hour),
-		NotAfter:     time.Now().Add(24 * time.Hour),
-		KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
-		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		Subject: pkix.Name{
+			Organization: []string{"Numen Debug"},
+			CommonName:   "127.0.0.1",
+		},
+		IPAddresses:           []net.IP{net.ParseIP("127.0.0.1"), net.IPv6loopback},
+		DNSNames:              []string{"localhost"},
+		NotBefore:             time.Now().Add(-1 * time.Hour),
+		NotAfter:              time.Now().Add(24 * time.Hour),
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
 	}
 	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
 	if err != nil {

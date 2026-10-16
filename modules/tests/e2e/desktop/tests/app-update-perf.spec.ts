@@ -44,7 +44,8 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
     await expect(page.getByRole('tab', { name: /Settings/i })).toBeVisible({ timeout: 10_000 })
 
     // Verify OCR settings section is rendered
-    const ocrSection = page.getByRole('region', { name: /Optical character recognition|OCR/i })
+    const ocrSection = page
+      .getByRole('region', { name: /Optical character recognition|OCR/i })
       .or(page.getByRole('heading', { name: /Optical character recognition|OCR/i }))
       .first()
     await expect(ocrSection).toBeVisible({ timeout: 10_000 })
@@ -68,16 +69,21 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
     await paletteInput.fill('Dark')
     await page.waitForTimeout(300)
     await page.keyboard.press('Enter')
+    await expect(paletteInput).not.toBeVisible({ timeout: 5_000 })
 
     // Verify dark mode is applied to root element
-    const colorSchemeBefore = await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)
+    const colorSchemeBefore = await page.evaluate(
+      () => getComputedStyle(document.documentElement).colorScheme,
+    )
     expect(colorSchemeBefore).toContain('dark')
 
     // Reload page and verify setting persists
-    await page.reload()
+    await page.goto('/')
     await expect(page.locator('text=Ready')).toBeVisible({ timeout: 10_000 })
 
-    const colorSchemeAfter = await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)
+    const colorSchemeAfter = await page.evaluate(
+      () => getComputedStyle(document.documentElement).colorScheme,
+    )
     expect(colorSchemeAfter).toContain('dark')
   })
 })

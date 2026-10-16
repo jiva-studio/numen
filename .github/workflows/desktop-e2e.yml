@@ -16,7 +16,7 @@ jobs:
   e2e:
     name: Desktop E2E
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -64,5 +64,7 @@ jobs:
         if: failure()
         with:
           name: playwright-report
-          path: modules/tests/e2e/desktop/test-results/
+          path: |
+            modules/tests/e2e/desktop/playwright-report/
+            modules/tests/e2e/desktop/test-results/
           retention-days: 7
