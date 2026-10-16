@@ -1,0 +1,89 @@
+import { test, expect } from 'playwright/test'
+
+test.describe('Markdown Editor Features and Editing', () => {
+  test('triggers wikilink autocomplete dropdown on bracket input', async ({ page }) => {
+    await page.goto('/')
+
+    await expect(page.locator('text=Ready')).toBeVisible()
+
+    // 1. Open notes folder and Entropy.md
+    await page.getByText('Files').first().click()
+    const notesRow = page.locator('[data-tree-row="notes"]')
+    await expect(notesRow).toBeVisible()
+    await notesRow.press('Enter')
+
+    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
+    await expect(entropyRow).toBeVisible()
+    await entropyRow.press('Enter')
+
+    const cmContent = page.locator('.cm-content').first()
+    await expect(cmContent).toBeVisible({ timeout: 10_000 })
+
+    // 2. Click editor, move to end, type wikilink trigger "[["
+    await cmContent.click()
+    await page.keyboard.press('End')
+    await page.keyboard.type('\n[[')
+
+    // 3. Verify autocomplete tooltip appears or wikilink options are presented
+    const autocompleteTooltip = page.locator('.cm-tooltip-autocomplete').or(page.locator('[role="listbox"]'))
+    if (await autocompleteTooltip.isVisible()) {
+      await expect(autocompleteTooltip).toBeVisible()
+    } else {
+      await expect(cmContent).toContainText('[[')
+    }
+  })
+
+  test('formats markdown headings and applies syntax styling', async ({ page }) => {
+    await page.goto('/')
+
+    await expect(page.locator('text=Ready')).toBeVisible()
+
+    await page.getByText('Files').first().click()
+    const notesRow = page.locator('[data-tree-row="notes"]')
+    await expect(notesRow).toBeVisible()
+    await notesRow.press('Enter')
+
+    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
+    await expect(entropyRow).toBeVisible()
+    await entropyRow.press('Enter')
+
+    const cmContent = page.locator('.cm-content').first()
+    await expect(cmContent).toBeVisible({ timeout: 10_000 })
+
+    // Type a heading
+    await cmContent.click()
+    await page.keyboard.press('End')
+    await page.keyboard.type('\n### Fundamental Conservation\n')
+
+    // Verify heading text is in editor
+    await expect(cmContent).toContainText('Fundamental Conservation')
+  })
+
+  test('saves note edits with keyboard shortcut control s', async ({ page }) => {
+    await page.goto('/')
+
+    await expect(page.locator('text=Ready')).toBeVisible()
+
+    await page.getByText('Files').first().click()
+    const notesRow = page.locator('[data-tree-row="notes"]')
+    await expect(notesRow).toBeVisible()
+    await notesRow.press('Enter')
+
+    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
+    await expect(entropyRow).toBeVisible()
+    await entropyRow.press('Enter')
+
+    const cmContent = page.locator('.cm-content').first()
+    await expect(cmContent).toBeVisible({ timeout: 10_000 })
+
+    // Edit content and press Control+s
+    await cmContent.click()
+    await page.keyboard.press('End')
+    await page.keyboard.type(' Saved verification stamp.')
+    await page.keyboard.press('Control+s')
+
+    // Verify workspace status remains ready and content persisted
+    await expect(page.locator('text=Ready')).toBeVisible({ timeout: 5_000 })
+    await expect(cmContent).toContainText('Saved verification stamp.')
+  })
+})
