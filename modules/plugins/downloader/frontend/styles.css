@@ -1,0 +1,5 @@
+/* Media Downloader plugin styles */
+.media-downloader {
+  font-family: inherit;
+  color: var(--numen-ink, #000);
+}

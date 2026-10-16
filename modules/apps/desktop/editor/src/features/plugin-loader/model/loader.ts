@@ -23,6 +23,7 @@ const IN_TREE_LOADERS: Record<string, () => Promise<unknown>> = {
   'md.numen.view-file-tree': () => import('@plugins/view-file-tree/frontend'),
   'md.numen.view-plex-graph': () => import('@plugins/view-plex-graph/frontend'),
   'md.numen.media-player': () => import('@plugins/media-player/frontend'),
+  'md.numen.downloader': () => import('@plugins/downloader/frontend'),
 }
 
 function extractLifecycleFunction(

@@ -260,6 +260,7 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
       if (!deps.onSettingChange) return { dispose: () => {} }
       return { dispose: deps.onSettingChange(pluginId, key, handler as (v: unknown) => void | Promise<void>) }
     },
+    openTab: (kind: string, at?: string) => deps.openTab(kind, at),
   }
 }
 

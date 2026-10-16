@@ -159,7 +159,6 @@ beforeEach(() => {
       agents: { name: 'agents' },
       made: {},
       recorded: {},
-      pointed: {},
       destinations: {},
     },
   }

@@ -160,6 +160,10 @@ export function createMockPluginContext(
       }
     },
 
+    openTab(kind: string, at?: string): Promise<string> {
+      return Promise.resolve(`${kind}:${at ?? ''}`)
+    },
+
     getRegisteredReaders(): ReaderRegistration[] {
       return [...readers]
     },

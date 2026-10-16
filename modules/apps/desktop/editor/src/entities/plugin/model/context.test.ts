@@ -56,12 +56,13 @@ describe('PluginContext', () => {
       emitFileSelect: vi.fn((_event) => {
         calls.emitFileSelect++
       }),
+      openTab: vi.fn(async (_kind, _at) => 'opened-tab-id'),
     }
 
     return { host, calls }
   }
 
-  it('tracks subscriptions and delegates registrations to host', () => {
+  it('tracks subscriptions and delegates registrations to host', async () => {
     const { host } = createMockHost()
     const ctx = createPluginContext('test.plugin', host)
 
@@ -117,6 +118,10 @@ describe('PluginContext', () => {
 
     ctx.emitFileSelect({ path: '/file.md' })
     expect(host.emitFileSelect).toHaveBeenCalledWith({ path: '/file.md' })
+
+    const opened = await ctx.openTab?.('url', 'https://example.com')
+    expect(opened).toBe('opened-tab-id')
+    expect(host.openTab).toHaveBeenCalledWith('url', 'https://example.com')
 
     sub1.dispose()
     sub2.dispose()

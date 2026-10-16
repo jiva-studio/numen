@@ -61,4 +61,5 @@ export interface PluginContextHost {
   onFileSelect?(handler: (event: FileSelectEvent) => void | Promise<void>): Disposable
   emitVaultChange?(event: VaultChangeEvent): void
   emitFileSelect?(event: FileSelectEvent): void
+  openTab?(kind: string, at?: string): Promise<string>
 }

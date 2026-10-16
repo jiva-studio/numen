@@ -60,7 +60,7 @@ export interface CommandsDepsOptions {
     plugins?: import('vue').Ref<readonly import('@/entities/settings').PluginInfo[]>
   }
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
-  pointed: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
+  pointed?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   files: () => { revealPath: (path: string) => void }
   plexes: () => {
     travel: (path: string) => Promise<void> | void

@@ -108,4 +108,11 @@ describe('mock plugin context', () => {
     ctx.dispose()
     expect(ctx.subscriptions.length).toBe(0)
   })
+
+  it('opens tab through openTab method', async () => {
+    const ctx = createMockPluginContext()
+    const result = await ctx.openTab?.('url', 'https://example.com')
+    expect(result).toBe('url:https://example.com')
+  })
 })
+

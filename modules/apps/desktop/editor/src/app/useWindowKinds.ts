@@ -5,7 +5,6 @@ import { shallowRef } from 'vue'
 import type { DestinationDeps } from '@/features/command-palette'
 import { createAgentKind } from './kinds/agent'
 import { createFilesKind } from './kinds/files'
-import { createMediaKinds } from './kinds/media'
 import { createPlexKind } from './kinds/plex'
 import { createReaderKinds } from './kinds/readers'
 import type { WindowKindsDeps } from './kinds/deps'
@@ -37,8 +36,6 @@ export function useWindowKinds(deps: WindowKindsDeps) {
 
   const { read } = createReaderKinds(deps)
 
-  const { pointed } = createMediaKinds(deps)
-
   const destinations: DestinationDeps = {
     travel: (path) => plexes.travel(path),
     openFileAt: (path, run) => tabOpeners.openFileAt(path, [run]),
@@ -53,7 +50,6 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     plexes.kind,
     agents.kind,
     read.kind,
-    pointed.kind,
     files.kind,
   ])
 
@@ -61,7 +57,6 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     plexes,
     agents,
     read,
-    pointed,
     files,
     made,
     destinations,
