@@ -6,6 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,6 +17,10 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"connectrpc.com/connect"
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 func createNamedTestPlugin(t *testing.T, dir, id string) {
@@ -671,4 +678,288 @@ func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
 	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
+}
+
+type testCloser struct {
+	mu     sync.Mutex
+	closed bool
+}
+
+func (c *testCloser) Close() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.closed = true
+	return nil
+}
+
+func (c *testCloser) isClosed() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.closed
+}
+
+type testLifecycleHandler struct {
+	numenv1connect.UnimplementedPluginLifecycleServiceHandler
+	mu             sync.Mutex
+	shutdownCalled bool
+	timeoutSecs    int32
+	onShutdown     func()
+}
+
+func (h *testLifecycleHandler) Shutdown(
+	_ context.Context,
+	req *connect.Request[v1.ShutdownRequest],
+) (*connect.Response[v1.ShutdownResponse], error) {
+	h.mu.Lock()
+	h.shutdownCalled = true
+	h.timeoutSecs = req.Msg.GetTimeoutSeconds()
+	onShutdown := h.onShutdown
+	h.mu.Unlock()
+	if onShutdown != nil {
+		onShutdown()
+	}
+	return connect.NewResponse(&v1.ShutdownResponse{Success: true}), nil
+}
+
+func (h *testLifecycleHandler) isShutdownCalled() bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.shutdownCalled
+}
+
+func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+
+	handler := &testLifecycleHandler{}
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(handler))
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	tcpAddr, ok := srv.Listener.Addr().(*net.TCPAddr)
+	if !ok {
+		t.Fatalf("expected *net.TCPAddr, got %T", srv.Listener.Addr())
+	}
+	serverPort := tcpAddr.Port
+
+	cmd := exec.Command("sleep", "10")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start mock proc failed: %v", err)
+	}
+	defer func() {
+		if cmd.Process != nil {
+			_ = cmd.Process.Kill()
+			_, _ = cmd.Process.Wait()
+		}
+	}()
+
+	handler.onShutdown = func() {
+		_ = cmd.Process.Kill()
+	}
+
+	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
+		return cmd.Process, io.NopCloser(r), nil
+	})
+
+	ctx := t.Context()
+	endpoint, err := host.EnsureActive(ctx, "md.numen.ocr")
+	if err != nil {
+		t.Fatalf("EnsureActive failed: %v", err)
+	}
+	if endpoint.Port != serverPort {
+		t.Fatalf("expected port %d, got %d", serverPort, endpoint.Port)
+	}
+
+	closer := &testCloser{}
+	host.stdinsMu.Lock()
+	host.stdins["md.numen.ocr"] = closer
+	host.stdinsMu.Unlock()
+
+	host.mu.Lock()
+	p := host.plugins["md.numen.ocr"]
+	p.Manifest.Lifecycle.IdleTimeoutSeconds = 0
+	host.plugins["md.numen.ocr"] = p
+	host.mu.Unlock()
+
+	host.Release("md.numen.ocr")
+	host.Release("md.numen.ocr")
+
+	evicted := host.EvictIdle(ctx, 0, 500*time.Millisecond)
+	if len(evicted) != 1 || evicted[0] != "md.numen.ocr" {
+		t.Fatalf("expected md.numen.ocr to be evicted, got %v", evicted)
+	}
+
+	if !handler.isShutdownCalled() {
+		t.Error("expected PluginLifecycleService.Shutdown RPC to be sent")
+	}
+
+	if !closer.isClosed() {
+		t.Error("expected stdin closer to be closed on eviction")
+	}
+
+	host.stdinsMu.Lock()
+	_, stdinExists := host.stdins["md.numen.ocr"]
+	host.stdinsMu.Unlock()
+	if stdinExists {
+		t.Error("expected stdin pipe to be deleted from host.stdins")
+	}
+
+	sup := host.supervisors["md.numen.ocr"]
+	if sup.GetState() != StateDormant {
+		t.Errorf("expected StateDormant, got %v", sup.GetState())
+	}
+}
+
+func TestHostTeardownAllSendsRPCShutdownAndClosesStdin(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+
+	handler := &testLifecycleHandler{}
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(handler))
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	tcpAddr, ok := srv.Listener.Addr().(*net.TCPAddr)
+	if !ok {
+		t.Fatalf("expected *net.TCPAddr, got %T", srv.Listener.Addr())
+	}
+	serverPort := tcpAddr.Port
+
+	cmd := exec.Command("sleep", "10")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start mock proc failed: %v", err)
+	}
+	defer func() {
+		if cmd.Process != nil {
+			_ = cmd.Process.Kill()
+			_, _ = cmd.Process.Wait()
+		}
+	}()
+
+	handler.onShutdown = func() {
+		_ = cmd.Process.Kill()
+	}
+
+	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
+		return cmd.Process, io.NopCloser(r), nil
+	})
+
+	ctx := t.Context()
+	if _, err := host.EnsureActive(ctx, "md.numen.ocr"); err != nil {
+		t.Fatalf("EnsureActive failed: %v", err)
+	}
+
+	closer := &testCloser{}
+	host.stdinsMu.Lock()
+	host.stdins["md.numen.ocr"] = closer
+	host.stdinsMu.Unlock()
+
+	if err := host.TeardownAll(ctx, 500*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
+	}
+
+	if !handler.isShutdownCalled() {
+		t.Error("expected PluginLifecycleService.Shutdown RPC to be sent during TeardownAll")
+	}
+
+	if !closer.isClosed() {
+		t.Error("expected stdin closer to be closed during TeardownAll")
+	}
+
+	host.stdinsMu.Lock()
+	stdinCount := len(host.stdins)
+	host.stdinsMu.Unlock()
+	if stdinCount != 0 {
+		t.Errorf("expected empty host.stdins, got %d entries", stdinCount)
+	}
+}
+
+func TestHostEvictIdleNonBlocking(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+
+	handler := &testLifecycleHandler{}
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(handler))
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	tcpAddr, ok := srv.Listener.Addr().(*net.TCPAddr)
+	if !ok {
+		t.Fatalf("expected *net.TCPAddr, got %T", srv.Listener.Addr())
+	}
+	serverPort := tcpAddr.Port
+
+	cmd := exec.Command("sleep", "10")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start mock proc failed: %v", err)
+	}
+	defer func() {
+		if cmd.Process != nil {
+			_ = cmd.Process.Kill()
+			_, _ = cmd.Process.Wait()
+		}
+	}()
+
+	rpcReceived := make(chan struct{})
+	releaseShutdown := make(chan struct{})
+	handler.onShutdown = func() {
+		close(rpcReceived)
+		<-releaseShutdown
+		_ = cmd.Process.Kill()
+	}
+
+	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
+		return cmd.Process, io.NopCloser(r), nil
+	})
+
+	ctx := t.Context()
+	if _, err := host.EnsureActive(ctx, "md.numen.ocr"); err != nil {
+		t.Fatalf("EnsureActive failed: %v", err)
+	}
+
+	host.mu.Lock()
+	p := host.plugins["md.numen.ocr"]
+	p.Manifest.Lifecycle.IdleTimeoutSeconds = 0
+	host.plugins["md.numen.ocr"] = p
+	host.mu.Unlock()
+
+	host.Release("md.numen.ocr")
+	host.Release("md.numen.ocr")
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_ = host.EvictIdle(ctx, 0, 1*time.Second)
+	}()
+
+	<-rpcReceived
+
+	if !host.mu.TryLock() {
+		t.Fatal("expected host.mu to be unlocked while EvictIdle is tearing down")
+	}
+	host.mu.Unlock()
+
+	close(releaseShutdown)
+	<-done
 }
