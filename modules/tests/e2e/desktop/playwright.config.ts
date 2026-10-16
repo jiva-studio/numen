@@ -13,11 +13,16 @@ export default defineConfig({
   expect: {
     timeout: 10_000,
   },
+  reporter: [
+    ['list'],
+    ['html', { open: 'never', outputFolder: 'playwright-report' }],
+  ],
   use: {
     baseURL,
     ignoreHTTPSErrors: true,
-    trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
+    trace: process.env.PLAYWRIGHT_VIDEO ? 'on' : 'retain-on-failure',
+    video: process.env.PLAYWRIGHT_VIDEO ? 'on' : 'off',
+    screenshot: process.env.PLAYWRIGHT_VIDEO ? 'on' : 'only-on-failure',
     viewport: { width: 1280, height: 860 },
   },
   webServer: {
