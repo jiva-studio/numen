@@ -47,5 +47,6 @@ jobs:
 
       - name: Measure unified coverage and update badge
         env:
-          GH_TOKEN: ${{ github.token }}
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN || github.token }}
+          GH_TOKEN: ${{ secrets.GIST_TOKEN || github.token }}
         run: node modules/tools/coverage/collect.mjs

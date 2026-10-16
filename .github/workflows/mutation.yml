@@ -237,5 +237,6 @@ jobs:
       - name: Update mutation score badge
         if: always()
         env:
-          GH_TOKEN: ${{ github.token }}
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN || github.token }}
+          GH_TOKEN: ${{ secrets.GIST_TOKEN || github.token }}
         run: node modules/tools/mutation/badge.mjs
