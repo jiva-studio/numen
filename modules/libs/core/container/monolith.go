@@ -46,4 +46,3 @@ func RegisterAgentServiceHandler(h numenv1connect.AgentServiceHandler) {
 func RegisterProofreadingServiceHandler(h numenv1connect.ProofreadingServiceHandler) {
 	plugin.RegisterProofreadingServiceHandler(h)
 }
-
