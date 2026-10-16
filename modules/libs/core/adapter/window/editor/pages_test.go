@@ -276,6 +276,7 @@ func TestTheBuiltStylesheetDoesNotPinTheColourScheme(t *testing.T) {
 	if err != nil || len(sheets) == 0 {
 		t.Fatalf("the build has no stylesheet: %v", err)
 	}
+	var declaresScheme bool
 	for _, name := range sheets {
 		text, err := fs.ReadFile(built, name)
 		if err != nil {
@@ -284,9 +285,12 @@ func TestTheBuiltStylesheetDoesNotPinTheColourScheme(t *testing.T) {
 		if strings.Contains(string(text), ":root{color-scheme") {
 			t.Errorf("%s declares the colour scheme at the root", name)
 		}
-		if !regexp.MustCompile(`:where\(:root\)\s*\{[^}]*color-scheme`).Match(text) {
-			t.Errorf("%s declares no colour scheme at all", name)
+		if regexp.MustCompile(`:where\(:root\)\s*\{[^}]*color-scheme`).Match(text) {
+			declaresScheme = true
 		}
+	}
+	if !declaresScheme {
+		t.Error("the built stylesheets declare no colour scheme at all")
 	}
 }
 

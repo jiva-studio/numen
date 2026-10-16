@@ -78,13 +78,24 @@ func (s *Supervisor) GetState() ProcessState {
 func (s *Supervisor) SetPermissions(permissions []string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.permissions = slices.Clone(permissions)
+	norm := make([]string, len(permissions))
+	for i, p := range permissions {
+		if p == "network" {
+			norm[i] = PermissionNetworkOutbound
+		} else {
+			norm[i] = p
+		}
+	}
+	s.permissions = norm
 }
 
 // HasPermission reports whether the supervised plugin holds the given permission.
 func (s *Supervisor) HasPermission(permission string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if permission == "network" {
+		permission = PermissionNetworkOutbound
+	}
 	return slices.Contains(s.permissions, permission)
 }
 

@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -285,5 +286,30 @@ func TestTranscriberBridgeOpenPathAndNamed(t *testing.T) {
 	_, err = bridge.OpenPath(ctx, "../outside.mp3")
 	if err == nil {
 		t.Fatal("expected error on path traversal outside vault, got nil")
+	}
+}
+
+func TestPluginRecordingConcurrentClose(t *testing.T) {
+	host := NewHost(t.TempDir(), "desktop.editor")
+	rec := &pluginRecording{
+		client:      nil,
+		recordingID: "rec-test",
+		durationMs:  1000,
+		host:        host,
+		pluginID:    "test-plugin",
+	}
+
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_ = rec.Close()
+		}()
+	}
+	wg.Wait()
+
+	if rec.recordingID != "" {
+		t.Errorf("expected empty recordingID after Close, got %s", rec.recordingID)
 	}
 }
