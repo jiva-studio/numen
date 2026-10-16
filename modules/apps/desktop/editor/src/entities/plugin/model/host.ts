@@ -110,9 +110,10 @@ function createReaderTabKind(pluginId: string, registration: ReaderRegistration)
     identity: (at: string) => at,
     getTarget: (state: unknown) => {
       const path = (state as { path?: string } | undefined)?.path
+      const isAudio = path ? /\.(mp3|m4a|wav|ogg|aac)$/i.test(path) : false
       return {
         ...(path !== undefined ? { file: path } : {}),
-        source: 'other' as const,
+        source: isAudio ? ('recording' as const) : ('other' as const),
       }
     },
     getOpenTab: (state: unknown) => ({ path: (state as { path?: string })?.path ?? '' }),

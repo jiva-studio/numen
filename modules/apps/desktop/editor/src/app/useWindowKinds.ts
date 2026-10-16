@@ -37,7 +37,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
 
   const { read, turned } = createReaderKinds(deps)
 
-  const { recorded, pointed } = createMediaKinds(deps)
+  const { pointed } = createMediaKinds(deps)
 
   const destinations: DestinationDeps = {
     travel: (path) => plexes.travel(path),
@@ -54,7 +54,6 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     agents.kind,
     read.kind,
     turned.kind,
-    recorded.kind,
     pointed.kind,
     files.kind,
   ])
@@ -64,7 +63,6 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     agents,
     read,
     turned,
-    recorded,
     pointed,
     files,
     made,

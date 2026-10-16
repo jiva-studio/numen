@@ -84,7 +84,9 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     oneName: settings.oneName,
     nesting: settings.nesting,
     rest: settings.rest,
-    recorded: kinds.recorded,
+    recorded:
+      (kinds as unknown as { recorded?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void } })
+        .recorded ?? {},
     pointed: kinds.pointed,
     files: () => kinds.files,
     plexes: () => kinds.plexes,

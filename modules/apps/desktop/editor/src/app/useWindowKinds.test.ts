@@ -26,7 +26,7 @@ vi.mock('./kinds/readers', () => ({
   createReaderKinds: () => ({ read: { kind: 'read' }, turned: { kind: 'turned' } }),
 }))
 vi.mock('./kinds/media', () => ({
-  createMediaKinds: () => ({ recorded: { kind: 'recorded' }, pointed: { kind: 'pointed' } }),
+  createMediaKinds: () => ({ pointed: { kind: 'pointed' } }),
 }))
 vi.mock('./kinds/files', () => ({
   createFilesKind: (args: unknown) => {
@@ -86,7 +86,6 @@ describe('the window kinds', () => {
       'agent',
       'read',
       'turned',
-      'recorded',
       'pointed',
       'files',
     ])
