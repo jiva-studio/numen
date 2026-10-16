@@ -66,6 +66,10 @@ function onWiden(wide: number) {
 function onPageTurnKey(event: KeyboardEvent) {
   if (activeState.value?.handleKeyPress(event)) event.preventDefault()
 }
+
+function onSetPageHandle(reader: unknown) {
+  activeState.value?.setPageHandle(reader)
+}
 </script>
 
 <template>
@@ -77,7 +81,7 @@ function onPageTurnKey(event: KeyboardEvent) {
   >
     <Reader
       v-if="activeState"
-      :ref="(reader: unknown) => activeState?.setPageHandle(reader)"
+      :ref="onSetPageHandle"
       :pages="activeState.pages.value"
       :at="activeState.pageNumber.value"
       :picture="activeState.getPageImageUrl"
