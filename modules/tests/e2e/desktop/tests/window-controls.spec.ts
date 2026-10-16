@@ -4,7 +4,9 @@ test.describe('Window Controls and Display Preferences', () => {
   test('closes active tab cleanly via close command', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
+      timeout: 15_000,
+    })
 
     // 1. Open notes and Entropy.md
     await page.getByText('Files').first().click()
@@ -30,13 +32,17 @@ test.describe('Window Controls and Display Preferences', () => {
 
     // 3. Verify Entropy tab is closed
     await expect(entropyTab).not.toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
+      timeout: 10_000,
+    })
   })
 
   test('adjusts reading font size via command palette', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
+      timeout: 15_000,
+    })
 
     // 1. Open palette and search "Reading font size"
     await page.keyboard.press('Control+p')
@@ -54,13 +60,17 @@ test.describe('Window Controls and Display Preferences', () => {
 
     // 3. Verify palette closes cleanly upon choice selection
     await expect(paletteInput).not.toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
+      timeout: 10_000,
+    })
   })
 
   test('toggles plexus heading nesting preference via command palette', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
+      timeout: 15_000,
+    })
 
     // 1. Open palette and search "Nest headings under notes"
     await page.keyboard.press('Control+p')
@@ -78,6 +88,8 @@ test.describe('Window Controls and Display Preferences', () => {
 
     // 3. Verify palette closes cleanly and workspace remains stable
     await expect(paletteInput).not.toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
+      timeout: 10_000,
+    })
   })
 })

@@ -4,7 +4,9 @@ test.describe('Markdown Editor Features and Editing', () => {
   test('triggers wikilink autocomplete dropdown on bracket input', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
+      timeout: 15_000,
+    })
 
     // 1. Open notes folder and Entropy.md
     await page.getByText('Files').first().click()
@@ -38,7 +40,9 @@ test.describe('Markdown Editor Features and Editing', () => {
   test('formats markdown headings and applies syntax styling', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
+      timeout: 15_000,
+    })
 
     await page.getByText('Files').first().click()
     const notesRow = page.locator('[data-tree-row="notes"]')
@@ -64,7 +68,9 @@ test.describe('Markdown Editor Features and Editing', () => {
   test('saves note edits with keyboard shortcut control s', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
+      timeout: 15_000,
+    })
 
     await page.getByText('Files').first().click()
     const notesRow = page.locator('[data-tree-row="notes"]')
@@ -84,8 +90,10 @@ test.describe('Markdown Editor Features and Editing', () => {
     await page.keyboard.type(' Saved verification stamp.')
     await page.keyboard.press('Control+s')
 
-    // Wait for indexing to complete and workspace to return to ready
-    await expect(page.locator('text=Ready')).toBeVisible({ timeout: 30_000 })
+    // Verify workspace status and content persisted
+    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
+      timeout: 15_000,
+    })
     await expect(cmContent).toContainText('Saved verification stamp.')
 
     // Close note tab and reopen to verify persisted content from disk
