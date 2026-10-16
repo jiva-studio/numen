@@ -1,16 +1,30 @@
-/** The tab kinds a window offers, and what it keeps across them. */
-import { ref } from 'vue'
+/**
+ * Tab kinds and openers declared for the desktop window.
+ */
+import { shallowRef } from 'vue'
+import type { DestinationDeps } from '@/features/command-palette'
 import { createAgentKind } from './kinds/agent'
-import { createReaderKinds } from './kinds/readers'
-import { createFilesKind, type DestinationDeps } from './kinds/files'
+import { createFilesKind } from './kinds/files'
 import { createPlexKind } from './kinds/plex'
+import { createReaderKinds } from './kinds/readers'
 import type { WindowKindsDeps } from './kinds/deps'
 
-export function useWindowKinds(deps: WindowKindsDeps) {
-  const { held, editing, settings, writeMessage, tabOpeners } = deps
-  const dragged = ref<readonly string[]>([])
+export type { WindowKindsDeps } from './kinds/deps'
 
-  const plexes = createPlexKind({ ...deps, dragged })
+/**
+ * Initializes and registers view kinds for the desktop window.
+ */
+export function useWindowKinds(deps: WindowKindsDeps) {
+  const { log, tabOpeners, held, editing, settings } = deps
+  const writeMessage = log.getWriter('command')
+  const dragged = shallowRef<readonly string[]>([])
+
+  const plexes = createPlexKind({
+    ...deps,
+    dragged,
+    writeMessage,
+    askAgent: (text) => void agents.askQuestion(text),
+  })
 
   const agents = createAgentKind({
     ...deps,

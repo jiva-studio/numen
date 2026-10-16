@@ -83,6 +83,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     dressed: settings.dressed,
     oneName: settings.oneName,
     nesting: settings.nesting,
+    rest: settings.rest,
     recorded:
       (kinds as unknown as { recorded?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void } })
         .recorded ?? {},
