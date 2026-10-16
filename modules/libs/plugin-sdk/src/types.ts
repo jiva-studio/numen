@@ -10,9 +10,7 @@ export interface Span {
 }
 
 // Result is the discriminated outcome of a fallible operation.
-export type Result<T, E = string> =
-  | { ok: true; value: T }
-  | { ok: false; error: E }
+export type Result<T, E = string> = { ok: true; value: T } | { ok: false; error: E }
 
 // SettingOption declares one choice in an enumerated setting.
 export interface SettingOption {
@@ -39,6 +37,9 @@ export interface ReaderRegistration {
   fileExtensions: string[]
   component: unknown
   title?: string
+  source?: 'note' | 'book' | 'recording' | 'url' | 'other' | string
+  capabilities?: readonly string[]
+  metadata?: Record<string, unknown>
 }
 
 // ReaderPaneProps describes the props passed to a reader component by the host pane wrapper.
@@ -55,6 +56,8 @@ export interface TabKindRegistration {
   kind: string
   component: unknown
   title?: string
+  source?: 'note' | 'book' | 'recording' | 'url' | 'other' | string
+  actions?: Record<string, (at: string, ...args: unknown[]) => unknown>
   onClose?: (state: unknown, id: string) => boolean
 }
 

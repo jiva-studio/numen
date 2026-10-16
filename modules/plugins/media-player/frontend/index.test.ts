@@ -15,6 +15,8 @@ describe('media-player plugin', () => {
       fileExtensions: ['.mp3', '.m4a', '.wav', '.ogg', '.aac', '.flac'],
       component: AudioPlayerTab,
       title: 'Audio Player',
+      source: 'recording',
+      capabilities: ['recording', 'media', 'audio'],
     })
 
     expect(registerTabKindSpy).toHaveBeenCalledWith({
