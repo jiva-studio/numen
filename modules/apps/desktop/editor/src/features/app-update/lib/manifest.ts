@@ -45,7 +45,7 @@ export function evaluateManifest(
   const githubReleaseUrl = `https://github.com/jiva-studio/numen/releases/tag/v${manifest.version}`
   const platformFile: ReleaseFile | undefined = findPlatformFile(manifest.files, context.platform)
   const downloadUrl =
-    context.platform === 'linux' ? githubReleaseUrl : (platformFile?.url ?? githubReleaseUrl)
+    context.platform === 'linux' ? DEFAULT_DOWNLOAD_URL : (platformFile?.url ?? DEFAULT_DOWNLOAD_URL)
 
   return {
     currentVersion: context.currentVersion,

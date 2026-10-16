@@ -32,22 +32,7 @@ const platformMessage = computed(() => {
   if (props.platform === 'darwin') {
     return 'Download the disk image to update Numen.'
   }
-  return 'View release notes and packages on GitHub.'
-})
-
-const isSingleAction = computed(() => {
-  return (
-    props.platform === 'linux' ||
-    !props.updateInfo.notesUrl ||
-    props.updateInfo.downloadUrl === props.updateInfo.notesUrl
-  )
-})
-
-const actionLabel = computed(() => {
-  if (props.platform === 'linux' || isGitHubUrl(props.updateInfo.downloadUrl)) {
-    return 'View on GitHub'
-  }
-  return 'Download update'
+  return 'Visit the download page or update via your package manager.'
 })
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -65,16 +50,6 @@ function onReleaseNotes() {
 
 function onDismiss() {
   emit('dismiss')
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-function isGitHubUrl(rawUrl: string): boolean {
-  try {
-    const parsed = new URL(rawUrl)
-    return parsed.hostname === 'github.com' || parsed.hostname === 'www.github.com'
-  } catch {
-    return false
-  }
 }
 </script>
 
@@ -108,11 +83,11 @@ function isGitHubUrl(rawUrl: string): boolean {
         class="update-popover__btn update-popover__btn--primary"
         @click="onDownload"
       >
-        {{ actionLabel }}
+        Download
       </a>
 
       <a
-        v-if="!isSingleAction && updateInfo.notesUrl"
+        v-if="updateInfo.notesUrl && updateInfo.notesUrl !== updateInfo.downloadUrl"
         :href="updateInfo.notesUrl"
         target="_blank"
         rel="noopener noreferrer"

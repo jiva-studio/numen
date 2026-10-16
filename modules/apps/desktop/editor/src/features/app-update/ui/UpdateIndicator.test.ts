@@ -136,7 +136,7 @@ describe('UpdateIndicator', () => {
     expect(wrapper.find('.update-popover').exists()).toBe(false)
   })
 
-  it('renders single GitHub action button on Linux', async () => {
+  it('renders download and release notes buttons on Linux', async () => {
     const fetchFn = createMockFetch(sampleManifest)
     const openUrl = vi.fn()
 
@@ -158,13 +158,18 @@ describe('UpdateIndicator', () => {
     await wrapper.find('.update-indicator__trigger').trigger('click')
 
     expect(wrapper.find('.update-popover').exists()).toBe(true)
-    expect(wrapper.text()).toContain('View release notes and packages on GitHub.')
-    expect(wrapper.text()).toContain('View on GitHub')
-    expect(wrapper.text()).not.toContain('Release notes')
+    expect(wrapper.text()).toContain('Visit the download page or update via your package manager.')
+    expect(wrapper.text()).toContain('Download')
+    expect(wrapper.text()).toContain('Release notes')
     expect(wrapper.text()).toContain('Dismiss')
 
     const downloadBtn = wrapper.find('.update-popover__btn--primary')
     await downloadBtn.trigger('click')
+    expect(openUrl).toHaveBeenCalledWith('https://numen.md/#get')
+
+    await wrapper.find('.update-indicator__trigger').trigger('click')
+    const notesBtn = wrapper.find('.update-popover__btn--ghost')
+    await notesBtn.trigger('click')
     expect(openUrl).toHaveBeenCalledWith(
       'https://github.com/jiva-studio/numen/releases/tag/v2026.10.1',
     )
