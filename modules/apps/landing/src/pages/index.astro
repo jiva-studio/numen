@@ -41,7 +41,7 @@ import pacingDark from '../assets/window-pacing-dark.webp'
  * are two separate things. Each name holds the newest build and does not
  * change, so a link written here goes on working after every release.
  */
-const SHELF = `${import.meta.env.PUBLIC_NUMEN_DOWNLOADS_BASE ?? 'https://numen-dl.b-cdn.net'}/latest`
+const SHELF = import.meta.env.PUBLIC_NUMEN_DOWNLOADS_BASE ?? 'https://github.com/jiva-studio/numen/releases/latest/download'
 
 /**
  * What there is to take, by the machine it runs on. The first of a platform's
@@ -761,7 +761,10 @@ const description =
 
     if (first) {
       try {
-        const answer = await fetch(new URL('latest.json', first.href), { cache: 'no-cache' })
+        const manifestUrl = import.meta.env.PUBLIC_NUMEN_DOWNLOADS_BASE
+          ? new URL('latest.json', `${import.meta.env.PUBLIC_NUMEN_DOWNLOADS_BASE}/`)
+          : new URL('https://numen-dl.b-cdn.net/latest/latest.json')
+        const answer = await fetch(manifestUrl, { cache: 'no-cache' })
         if (!answer.ok) throw new Error(String(answer.status))
         const shelf: Shelf = await answer.json()
 
@@ -772,7 +775,9 @@ const description =
             take.hidden = true
             continue
           }
-          take.href = file.url
+          if (import.meta.env.PUBLIC_NUMEN_DOWNLOADS_BASE) {
+            take.href = file.url
+          }
           const weight = take.querySelector('.take__weight')
           if (weight && file.size) weight.textContent = `${Math.round(file.size / 1e6)} MB`
         }
