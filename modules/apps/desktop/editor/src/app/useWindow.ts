@@ -27,6 +27,7 @@ import { useAppBootstrap } from './useAppBootstrap'
 import { createPluginSupport, watchPluginSettings } from './useWindowPlugins'
 
 import { createDisplayOptions, createTargetResolver } from './useWindowDisplayOptions'
+import type { MessageWriter } from '@/shared/notices/messages'
 
 interface WindowCommandsOptions {
   held: ReturnType<typeof useWindowTabs>
@@ -100,7 +101,7 @@ interface AppLifecycleDeps {
   settings: ReturnType<typeof useSettings>
   window: ReturnType<typeof useWindowDisplay>
   editing: ReturnType<typeof useNoteEditors>
-  pluginLoader?: ReturnType<typeof createPluginLoader>
+  pluginLoader?: import('@/features/plugin-loader').PluginLoader
 }
 
 function initAppLifecycle(deps: AppLifecycleDeps) {

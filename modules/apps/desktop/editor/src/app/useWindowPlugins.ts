@@ -1,10 +1,9 @@
 import { watch } from 'vue'
 import { createPluginHost } from '@/entities/plugin'
 import { createPluginLoader, type PluginLoader } from '@/features/plugin-loader'
-import type { useWindowTabs } from './tabs/useWindowTabs'
-import type { useTabLinks } from './tabs/useTabLinks'
-import type { fileOpeners } from './tabs/fileOpeners'
-import type { useSettings } from '@/pages/settings'
+import type { fileOpeners, useWindowTabs } from '@/entities/tab'
+import type { useTabLinks } from '@/features/tab-linking'
+import type { useSettings } from './useSettings'
 
 export interface PluginSupportDeps {
   readonly held: ReturnType<typeof useWindowTabs>
@@ -34,7 +33,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     const value = rest.getSetting?.(['plugins', pluginId, key])
     if (value !== undefined) return value
     if (key === 'enabled') {
-      const info = rest.plugins?.value?.find((p) => p.id === pluginId)
+      const info = rest.plugins?.value?.find((p: { id: string; isActive?: boolean }) => p.id === pluginId)
       if (info !== undefined) return info.isActive
       return true
     }
@@ -44,13 +43,13 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   const onSettingChange = (
     pluginId: string,
     key: string,
-    handler: (value: unknown) => void,
+    handler: (value: unknown) => void | Promise<void>,
   ): (() => void) => {
     return watch(
       () => getSetting(pluginId, key),
       (newVal, oldVal) => {
         if (newVal !== oldVal) {
-          handler(newVal)
+          void handler(newVal)
         }
       },
     )

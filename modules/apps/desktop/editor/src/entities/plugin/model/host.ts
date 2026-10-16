@@ -263,7 +263,7 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
 }
 
 function extractPaletteCommands(
-  commands: ReadonlyMap<string, { reg: PluginCommand }>,
+  commands: ReadonlyMap<string, { reg: CommandRegistration }>,
 ): PluginPaletteCommand[] {
   const list: PluginPaletteCommand[] = []
   for (const { reg } of commands.values()) {
