@@ -1,6 +1,6 @@
 //go:build !nomcp
 
-package main
+package app
 
 import (
 	"encoding/json"
