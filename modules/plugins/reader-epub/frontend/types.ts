@@ -1,7 +1,9 @@
 /**
  * Types and interfaces for book reading and navigation.
  */
-import type { Span } from '@/shared/span'
+import type { Span } from '@numen/plugin-sdk'
+
+export type { Span }
 
 /** One document of a book spine and its text range. */
 export interface SpineDocument {

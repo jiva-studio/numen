@@ -109,6 +109,7 @@ export { Book } from './features/book'
 /** What a book divides into, as a list to reach any of it by. */
 export { BookContents } from './features/book'
 export type { ContentsEntry } from './features/book'
+export type { Span } from './shared/lib/span'
 
 export { WorkspaceLayout } from './features/workspace'
 export { closeTab, openTab, openTabBeside, type OpenBesidePlacement } from './features/workspace'

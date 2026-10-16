@@ -10,7 +10,7 @@ import {
   type Book,
   type Books,
 } from './useBookReader'
-import type { MessageWriter } from '@/shared/notices/messages'
+import type { MessageWriter } from './useBookDocument'
 
 const WORDS = { page: 'Page' }
 

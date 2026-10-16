@@ -1,18 +1,18 @@
-import BookTab from './BookTab.vue'
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
-import { setBookPluginActive } from '@/pages/book-reader/model/pluginState'
+import BookTab from './BookTab.vue'
 
 export { BookTab }
 
-export function activate(_context?: PluginContext): void {
-  setBookPluginActive(true)
-}
-
-export function deactivate(): void {
-  setBookPluginActive(false)
-}
-
 export default definePlugin({
-  activate,
-  deactivate,
+  activate(context: PluginContext) {
+    context.registerReader({
+      id: 'reader-epub',
+      fileExtensions: ['.epub'],
+      component: BookTab,
+      title: 'EPUB Reader',
+    })
+  },
+  deactivate() {
+    // Cleanup if needed
+  },
 })

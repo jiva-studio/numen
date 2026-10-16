@@ -3,6 +3,12 @@ export interface Disposable {
   dispose(): void
 }
 
+// Span describes a run of text by start and end boundaries.
+export interface Span {
+  readonly from: number
+  readonly to: number
+}
+
 // Result is the discriminated outcome of a fallible operation.
 export type Result<T, E = string> =
   | { ok: true; value: T }
@@ -33,6 +39,15 @@ export interface ReaderRegistration {
   fileExtensions: string[]
   component: unknown
   title?: string
+}
+
+// ReaderPaneProps describes the props passed to a reader component by the host pane wrapper.
+export interface ReaderPaneProps {
+  readonly path: string
+  readonly file?: string
+  readonly pluginId?: string
+  readonly title?: string
+  readonly state?: unknown
 }
 
 // TabKindRegistration registers a custom workspace tab.

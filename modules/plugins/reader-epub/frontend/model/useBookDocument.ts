@@ -3,10 +3,11 @@
  */
 import { computed, ref, shallowRef, type Ref } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import type { Span } from '@/shared/span'
-import type { MessageWriter } from '@/shared/notices/messages'
+import type { Span } from '@numen/plugin-sdk'
 import { resolveImageUrls } from '../lib/markup'
 import type { Books, SpineDocument } from '../types'
+
+export type MessageWriter = (text: string, tone?: 'info' | 'error') => void
 
 export interface BookDocumentOptions {
   fingerprint: Ref<string>

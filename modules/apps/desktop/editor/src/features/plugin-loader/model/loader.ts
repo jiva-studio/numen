@@ -14,6 +14,8 @@ interface ActivePluginEntry {
   readonly lifecycle?: PluginLifecycle
 }
 
+const loadInTree = (name: string) => import(`@plugins/${name}/frontend/index.ts`)
+
 const IN_TREE_LOADERS: Record<string, () => Promise<unknown>> = {
   'md.numen.pdf': () => import('@plugins/reader-pdf/frontend'),
   'md.numen.epub': () => import('@plugins/reader-epub/frontend'),

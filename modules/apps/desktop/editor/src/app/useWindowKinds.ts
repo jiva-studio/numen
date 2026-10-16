@@ -35,7 +35,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     },
   })
 
-  const { read, turned } = createReaderKinds(deps)
+  const { read } = createReaderKinds(deps)
 
   const { pointed } = createMediaKinds(deps)
 
@@ -53,7 +53,6 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     plexes.kind,
     agents.kind,
     read.kind,
-    turned.kind,
     pointed.kind,
     files.kind,
   ])
@@ -62,7 +61,6 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     plexes,
     agents,
     read,
-    turned,
     pointed,
     files,
     made,

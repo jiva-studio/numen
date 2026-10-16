@@ -6,17 +6,13 @@
  * the three parts the schema holds it in, or not at all.
  */
 import { describe, expect, it, vi } from 'vitest'
-
-vi.mock('@/shared/clients', () => ({
-  books: asked,
-}))
+import { books, client } from './wire'
 
 const asked = {
   getBook: vi.fn(),
   readBookMarkup: vi.fn(),
 }
-
-const { books } = await import('./wire')
+client.books = asked as any
 
 /** An answer with nothing in it, for a test that cares about one field only. */
 const nothing = {

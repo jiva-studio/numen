@@ -3,9 +3,8 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { useBookDocument } from './useBookDocument'
+import { useBookDocument, type MessageWriter } from './useBookDocument'
 import type { Books, SpineDocument } from '../types'
-import type { MessageWriter } from '@/shared/notices/messages'
 
 const FIRST: SpineDocument = { path: 'text/one.xhtml', span: { from: 0, to: 100 } }
 const SECOND: SpineDocument = { path: 'text/two.xhtml', span: { from: 100, to: 200 } }

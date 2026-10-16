@@ -7,15 +7,36 @@ import { Waiting } from '@numen/ui'
 import BookContent from './BookContent.vue'
 import { BookListing } from './book-listing'
 import { WORDS as words } from './words'
-import type { BookTabState } from '@/pages/book-reader/model/useBookTab'
+import { books } from './api/wire'
+import { useBookReader } from './model/useBookReader'
+import { useBookTab, type BookTabState } from './model/useBookTab'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{ state: BookTabState }>()
+interface Props {
+  path?: string
+  state?: BookTabState | { path?: string; [key: string]: unknown }
+}
+
+const props = defineProps<Props>()
+
+function isBookTabState(s: unknown): s is BookTabState {
+  return typeof s === 'object' && s !== null && 'isLoading' in s && 'setBookHandle' in s
+}
+
+const targetPath =
+  props.path ??
+  (props.state && 'path' in props.state && typeof props.state.path === 'string'
+    ? props.state.path
+    : '')
+
+const isExistingState = isBookTabState(props.state)
+const internalState = isExistingState ? null : useBookTab(useBookReader(books, targetPath, { words }))
+const tabState = isExistingState ? props.state! : internalState!
 
 /* --------------------------------- State ---------------------------------- */
 const isListingOpen = ref(false)
 const bookContent = useTemplateRef<InstanceType<typeof BookContent>>('bookContent')
-watchEffect(() => props.state.setBookHandle(bookContent.value ?? null))
+watchEffect(() => tabState.setBookHandle(bookContent.value ?? null))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onDismissListing() {
@@ -28,12 +49,12 @@ function onEscapeListing() {
 }
 
 function onPageTurnKey(event: KeyboardEvent) {
-  if (props.state.handleKeyPress(event)) event.preventDefault()
+  if (tabState.handleKeyPress(event)) event.preventDefault()
 }
 
 function onSelectEntry(offset: number) {
   isListingOpen.value = false
-  void props.state.goToOffset(offset)
+  void tabState.goToOffset(offset)
 }
 
 function onToggleListing() {
@@ -41,30 +62,30 @@ function onToggleListing() {
 }
 
 function onMove(offset: number) {
-  void props.state.goToOffset(offset)
+  void tabState.goToOffset(offset)
 }
 
-function onFollow(targetPath: string) {
-  void props.state.followLink(targetPath)
+function onFollow(destPath: string) {
+  void tabState.followLink(destPath)
 }
 </script>
 
 <template>
   <div
-    :ref="(held: unknown) => props.state.setTabElement(held as HTMLElement | null)"
+    :ref="(held: unknown) => tabState.setTabElement(held as HTMLElement | null)"
     class="book-tab"
     tabindex="-1"
     @keydown="onPageTurnKey"
   >
     <!-- Until the book has been read, a blank page and a book with no text in
          it are drawn the same way. -->
-    <Waiting v-if="props.state.isLoading.value" :label="words.loading" />
+    <Waiting v-if="tabState.isLoading.value" :label="words.loading" />
 
     <div v-else class="book-tab__reading">
       <BookListing
         :is-open="isListingOpen"
-        :entries="props.state.contents.value"
-        :at="props.state.offset.value"
+        :entries="tabState.contents.value"
+        :at="tabState.offset.value"
         @go="onSelectEntry"
         @dismiss="onDismissListing"
         @escape="onEscapeListing"
@@ -72,14 +93,14 @@ function onFollow(targetPath: string) {
 
       <BookContent
         ref="bookContent"
-        :markup="props.state.markup.value"
-        :path="props.state.drawn.value"
-        :reading="props.state.reading.value"
-        :book-span="props.state.span.value"
-        :offset="props.state.offset.value"
-        :highlights="props.state.highlights.value"
-        :other-highlights="props.state.otherHighlights.value"
-        :chapter="props.state.chapter.value"
+        :markup="tabState.markup.value"
+        :path="tabState.drawn.value"
+        :reading="tabState.reading.value"
+        :book-span="tabState.span.value"
+        :offset="tabState.offset.value"
+        :highlights="tabState.highlights.value"
+        :other-highlights="tabState.otherHighlights.value"
+        :chapter="tabState.chapter.value"
         :is-listing-open="isListingOpen"
         @move="onMove"
         @follow="onFollow"
