@@ -295,6 +295,11 @@ export function createPluginHost(deps: PluginHostDeps) {
       return ctx
     },
     registerManifest: (pluginId: string, manifest: PluginManifest): void => {
+      if (registry.contexts.has(pluginId)) {
+        throw new Error(
+          `Cannot replace the manifest for plugin "${pluginId}" while its context is cached`,
+        )
+      }
       registry.manifests.set(pluginId, manifest)
     },
     getPaletteCommands: () => extractPaletteCommands(registry.commands.value),

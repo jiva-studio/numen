@@ -160,6 +160,27 @@ describe('createPluginHost', () => {
     expect(sub).toHaveProperty('dispose')
   })
 
+  it('rejects manifest registration when context already exists', () => {
+    const { deps } = createMockDeps()
+    const host = createPluginHost(deps)
+    const initialManifest = {
+      id: 'test.plugin',
+      name: 'Original',
+      version: '1.0.0',
+      permissions: [],
+    }
+    host.createContext('test.plugin', initialManifest)
+
+    expect(() => {
+      host.registerManifest('test.plugin', {
+        id: 'test.plugin',
+        name: 'Tampered',
+        version: '2.0.0',
+        permissions: ['vault:read'],
+      })
+    }).toThrow('Cannot replace the manifest for plugin "test.plugin" while its context is cached')
+  })
+
   it('isolates crashing plugin components with error boundary fallback', async () => {
     const CrashingComponent = defineComponent({
       name: 'CrashingComponent',
