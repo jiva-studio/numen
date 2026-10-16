@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createPluginHost } from './host'
+import { defineComponent } from 'vue'
+import { mount } from '@vue/test-utils'
+import { createPluginHost, createPluginPaneWrapper } from './host'
 import type { PluginHostDeps } from './types'
 
 describe('createPluginHost', () => {
@@ -151,5 +153,26 @@ describe('createPluginHost', () => {
     const sub = host.onSettingChange('test.plugin', 'fontSize', handler)
     expect(deps.onSettingChange).toHaveBeenCalledWith('test.plugin', 'fontSize', expect.any(Function))
     expect(sub).toHaveProperty('dispose')
+  })
+
+  it('isolates crashing plugin components with error boundary fallback', async () => {
+    const CrashingComponent = defineComponent({
+      name: 'CrashingComponent',
+      setup() {
+        return () => {
+          throw new Error('Simulated plugin component render crash')
+        }
+      },
+    })
+
+    const Wrapper = createPluginPaneWrapper('crashing.plugin', CrashingComponent)
+    const wrapper = mount(Wrapper, {
+      props: { state: { path: '/test/note.md' } },
+    })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.plugin-error-fallback').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Plugin "crashing.plugin" crashed')
+    expect(wrapper.text()).toContain('Simulated plugin component render crash')
   })
 })

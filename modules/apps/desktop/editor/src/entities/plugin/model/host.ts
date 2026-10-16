@@ -1,7 +1,7 @@
 /**
  * Plugin host managing dynamic registration of readers, tab kinds, and commands.
  */
-import { defineComponent, h, shallowRef, type Component } from 'vue'
+import { defineComponent, h, onErrorCaptured, ref, shallowRef, type Component } from 'vue'
 import type {
   AgentProviderRegistration,
   CommandRegistration,
@@ -14,9 +14,11 @@ import type { AnyTabKind } from '@/entities/tab/@x/plugin'
 import { createPluginContext } from './context'
 import type { PluginContextHost, PluginHostDeps, PluginPaletteCommand } from './types'
 
-export function createPluginPaneWrapper(component: unknown): Component {
+export function createPluginPaneWrapper(pluginIdOrComponent: string | unknown, maybeComponent?: unknown): Component {
+  const pluginId = typeof pluginIdOrComponent === 'string' ? pluginIdOrComponent : 'plugin'
+  const component = maybeComponent !== undefined ? maybeComponent : pluginIdOrComponent
   return defineComponent({
-    name: 'PluginPaneWrapper',
+    name: `PluginPaneWrapper[${pluginId}]`,
     props: {
       state: {
         type: null,
@@ -24,7 +26,18 @@ export function createPluginPaneWrapper(component: unknown): Component {
       },
     },
     setup(props) {
+      const error = ref<Error | null>(null)
+      onErrorCaptured((err) => {
+        error.value = err instanceof Error ? err : new Error(String(err))
+        return false // Prevent crash propagation to host window
+      })
       return () => {
+        if (error.value) {
+          return h('div', { class: 'plugin-error-fallback p-4 text-red-500' }, [
+            h('h3', { class: 'font-bold' }, `Plugin "${pluginId}" crashed`),
+            h('pre', { class: 'text-xs mt-2' }, error.value.message),
+          ])
+        }
         if (!component) return null
         const stateObj =
           typeof props.state === 'object' && props.state !== null
@@ -106,7 +119,7 @@ function createReaderTabKind(pluginId: string, registration: ReaderRegistration)
       const s = state as { title?: string; path?: string } | undefined
       return registration.title ?? (s?.title || s?.path?.split('/').pop() || s?.path || '')
     },
-    pane: createPluginPaneWrapper(registration.component),
+    pane: createPluginPaneWrapper(pluginId, registration.component),
     identity: (at: string) => at,
     getTarget: (state: unknown) => {
       const path = (state as { path?: string } | undefined)?.path
@@ -133,7 +146,7 @@ function createCustomTabKind(pluginId: string, registration: TabKindRegistration
       const s = state as { title?: string; at?: string } | undefined
       return registration.title ?? (s?.title || s?.at || registration.kind)
     },
-    pane: createPluginPaneWrapper(registration.component),
+    pane: createPluginPaneWrapper(pluginId, registration.component),
     identity: (at: string) => at || registration.kind,
   }
 }

@@ -444,3 +444,102 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 	}
 	<-answered
 }
+
+func TestPluginAssetsAreServed(t *testing.T) {
+	pluginDir := t.TempDir()
+	distDir := filepath.Join(pluginDir, "dist")
+	if err := os.MkdirAll(distDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	jsContent := []byte("console.log('plugin loaded');")
+	cssContent := []byte(".plugin-widget { color: red; }")
+
+	if err := os.WriteFile(filepath.Join(distDir, "index.js"), jsContent, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(distDir, "styles.css"), cssContent, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	services := newBareServices()
+	services.getPluginDir = func(id string) (string, bool) {
+		if id == "sample.plugin" {
+			return pluginDir, true
+		}
+		return "", false
+	}
+	handler := services.NewHandler(http.NotFoundHandler())
+
+	t.Run("serves javascript module with correct mime", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/api/plugins/sample.plugin/dist/index.js", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, r)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d", w.Code)
+		}
+		if ct := w.Header().Get("Content-Type"); ct != "application/javascript" {
+			t.Errorf("expected application/javascript, got %s", ct)
+		}
+		if w.Body.String() != string(jsContent) {
+			t.Errorf("unexpected content: %s", w.Body.String())
+		}
+	})
+
+	t.Run("serves css stylesheet with correct mime", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/api/plugins/sample.plugin/dist/styles.css", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, r)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d", w.Code)
+		}
+		if ct := w.Header().Get("Content-Type"); ct != "text/css" {
+			t.Errorf("expected text/css, got %s", ct)
+		}
+		if w.Body.String() != string(cssContent) {
+			t.Errorf("unexpected content: %s", w.Body.String())
+		}
+	})
+
+	t.Run("rejects path traversal", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/api/plugins/sample.plugin/../../secret", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, r)
+
+		if w.Code != http.StatusForbidden && w.Code != http.StatusBadRequest {
+			t.Fatalf("expected 403 or 400, got %d", w.Code)
+		}
+	})
+
+	t.Run("returns 404 for unknown plugin", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/api/plugins/unknown.plugin/dist/index.js", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, r)
+
+		if w.Code != http.StatusNotFound {
+			t.Fatalf("expected 404, got %d", w.Code)
+		}
+	})
+
+	t.Run("returns 404 for nonexistent asset", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/api/plugins/sample.plugin/dist/missing.js", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, r)
+
+		if w.Code != http.StatusNotFound {
+			t.Fatalf("expected 404, got %d", w.Code)
+		}
+	})
+
+	t.Run("returns 405 for POST method", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodPost, "/api/plugins/sample.plugin/dist/index.js", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, r)
+
+		if w.Code != http.StatusMethodNotAllowed {
+			t.Fatalf("expected 405, got %d", w.Code)
+		}
+	})
+}

@@ -31,6 +31,9 @@ type Assembly interface {
 	// OpenBookClient opens a client to the book reader plugin, returning the client and a closer.
 	OpenBookClient(ctx context.Context) (any, func(), error)
 
+	// GetPluginDir returns the root directory of an installed plugin by ID, or false if not found.
+	GetPluginDir(id string) (string, bool)
+
 	// EmitEvent sends an event notification to listeners and registered plugins.
 	EmitEvent(event string)
 

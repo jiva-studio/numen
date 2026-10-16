@@ -5,6 +5,8 @@ import (
 	"embed"
 	"errors"
 	"net/http"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -175,10 +177,20 @@ func (s *Services) newServices() []service {
 	}
 }
 
+// pluginAssetsRoute is the path prefix where plugin bundles and assets are served.
+const pluginAssetsRoute = "/api/plugins/"
+
 // serveBeside answers what no service does: the bytes of a file, the page the
 // interface opens at, and every other file the interface is made of.
 func (s *Services) serveBeside(w http.ResponseWriter, r *http.Request, hasAssets bool, files http.Handler) {
 	switch {
+	case strings.HasPrefix(r.URL.Path, pluginAssetsRoute):
+		if !s.state.questions.begin() {
+			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
+			return
+		}
+		defer s.state.questions.finish()
+		s.servePluginAsset(w, r)
 	case hasAssets && strings.HasPrefix(r.URL.EscapedPath(), assetsRoute):
 		if !s.state.questions.begin() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
@@ -191,6 +203,82 @@ func (s *Services) serveBeside(w http.ResponseWriter, r *http.Request, hasAssets
 	default:
 		files.ServeHTTP(w, r)
 	}
+}
+
+func resolvePluginAssetTarget(pluginDir, filePath string) (string, error) {
+	cleanDir, err := filepath.Abs(filepath.Clean(pluginDir))
+	if err != nil {
+		return "", err
+	}
+	cleanTarget, err := filepath.Abs(filepath.Join(cleanDir, filepath.Clean(filePath)))
+	if err != nil {
+		return "", err
+	}
+	rel, err := filepath.Rel(cleanDir, cleanTarget)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", os.ErrPermission
+	}
+	return cleanTarget, nil
+}
+
+func setPluginAssetContentType(w http.ResponseWriter, path string) {
+	switch filepath.Ext(path) {
+	case ".js", ".mjs":
+		w.Header().Set("Content-Type", "application/javascript")
+	case ".css":
+		w.Header().Set("Content-Type", "text/css")
+	case ".json":
+		w.Header().Set("Content-Type", "application/json")
+	case ".svg":
+		w.Header().Set("Content-Type", "image/svg+xml")
+	case ".png":
+		w.Header().Set("Content-Type", "image/png")
+	case ".wasm":
+		w.Header().Set("Content-Type", "application/wasm")
+	}
+}
+
+// servePluginAsset writes the bytes of a plugin's frontend bundle or stylesheet.
+func (s *Services) servePluginAsset(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if s.getPluginDir == nil {
+		http.Error(w, "plugin manager not configured", http.StatusNotFound)
+		return
+	}
+	trimmed := strings.TrimPrefix(r.URL.Path, pluginAssetsRoute)
+	parts := strings.SplitN(trimmed, "/", 2)
+	if len(parts) < 2 || parts[0] == "" || parts[1] == "" {
+		http.Error(w, "invalid plugin asset path", http.StatusBadRequest)
+		return
+	}
+
+	pluginDir, ok := s.getPluginDir(parts[0])
+	if !ok {
+		http.Error(w, "plugin not found", http.StatusNotFound)
+		return
+	}
+
+	cleanTarget, err := resolvePluginAssetTarget(pluginDir, parts[1])
+	if err != nil {
+		if errors.Is(err, os.ErrPermission) {
+			http.Error(w, "forbidden: path escapes plugin directory", http.StatusForbidden)
+		} else {
+			http.Error(w, "cannot resolve asset path", http.StatusBadRequest)
+		}
+		return
+	}
+
+	info, err := os.Stat(cleanTarget)
+	if err != nil || info.IsDir() {
+		http.Error(w, "plugin asset not found", http.StatusNotFound)
+		return
+	}
+
+	setPluginAssetContentType(w, cleanTarget)
+	http.ServeFile(w, r, cleanTarget)
 }
 
 // newQuestionCounter takes every question a client asks and gives it back when it is

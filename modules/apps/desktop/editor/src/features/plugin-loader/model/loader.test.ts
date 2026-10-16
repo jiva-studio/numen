@@ -183,4 +183,99 @@ describe('createPluginLoader', () => {
     expect(activated).toBe(true)
     expect(loader.isPluginActive('toggleable.plugin')).toBe(true)
   })
+
+  it('loads plugin dynamically via manifest URL and mounts/unmounts stylesheet', async () => {
+    const host = createMockHost()
+    let dynamicImportCalledWith = ''
+    let manifestFetchedUrl = ''
+
+    let activated = false
+    let deactivated = false
+
+    const mockFetch = vi.fn(async (url: string | URL | Request) => {
+      manifestFetchedUrl = String(url)
+      return {
+        ok: true,
+        json: async () => ({
+          id: 'dynamic.sample',
+          name: 'Dynamic Sample',
+          frontend: {
+            entrypoint: 'dist/bundle.js',
+            styles: 'dist/bundle.css',
+          },
+        }),
+      } as Response
+    })
+
+    const mockDynamicImport = vi.fn(async (url: string) => {
+      dynamicImportCalledWith = url
+      return {
+        activate: () => {
+          activated = true
+        },
+        deactivate: () => {
+          deactivated = true
+        },
+      }
+    })
+
+    const loader = createPluginLoader({
+      host,
+      fetch: mockFetch as unknown as typeof fetch,
+      dynamicImport: mockDynamicImport,
+    })
+
+    const success = await loader.activatePlugin('dynamic.sample')
+    expect(success).toBe(true)
+    expect(activated).toBe(true)
+    expect(manifestFetchedUrl).toBe('/api/plugins/dynamic.sample/manifest.json')
+    expect(dynamicImportCalledWith).toBe('/api/plugins/dynamic.sample/dist/bundle.js')
+
+    const link = document.querySelector('link[data-plugin-id="dynamic.sample"]')
+    expect(link).not.toBeNull()
+    expect(link?.getAttribute('href')).toBe('/api/plugins/dynamic.sample/dist/bundle.css')
+
+    const deactivateSuccess = await loader.deactivatePlugin('dynamic.sample')
+    expect(deactivateSuccess).toBe(true)
+    expect(deactivated).toBe(true)
+
+    const linkAfter = document.querySelector('link[data-plugin-id="dynamic.sample"]')
+    expect(linkAfter).toBeNull()
+  })
+
+  it('handles dynamic load failures gracefully without throwing', async () => {
+    const host = createMockHost()
+    const mockDynamicImport = vi.fn(async () => {
+      throw new Error('Network failure or invalid bundle')
+    })
+
+    const loader = createPluginLoader({
+      host,
+      dynamicImport: mockDynamicImport,
+    })
+
+    const success = await loader.activatePlugin('failing.plugin')
+    expect(success).toBe(false)
+    expect(loader.isPluginActive('failing.plugin')).toBe(false)
+    expect(host.disposePlugin).toHaveBeenCalledWith('failing.plugin')
+  })
+
+  it('handles activation throws gracefully and cleans up', async () => {
+    const host = createMockHost()
+    const mockDynamicImport = vi.fn(async () => ({
+      activate: () => {
+        throw new Error('Activation error in plugin code')
+      },
+    }))
+
+    const loader = createPluginLoader({
+      host,
+      dynamicImport: mockDynamicImport,
+    })
+
+    const success = await loader.activatePlugin('throwing.plugin')
+    expect(success).toBe(false)
+    expect(loader.isPluginActive('throwing.plugin')).toBe(false)
+    expect(host.disposePlugin).toHaveBeenCalledWith('throwing.plugin')
+  })
 })
