@@ -23,22 +23,41 @@ export interface NoteEditorsDeps {
   day: () => string
 }
 
-export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditorsDeps) {
-  const changes = {
+function createNullChanges() {
+  return {
     close: () => {},
     reportChange: () => {},
     reportNoteChange: () => {},
   }
-  const notes = openNotes(core, { onReplaced: changes.reportNoteChange })
-  const making = createNoteWriter(core, log.getWriter('made'))
+}
 
-  const noted = {
+function createNoted(notes: ReturnType<typeof openNotes>) {
+  return {
     loadInTab: async (id: string, path: string, _title?: string) => {
       await notes.flushPending(id)
       notes.reload(id, path)
     },
     measureAll: () => {},
   }
+}
+
+function createNotedStore(notes: ReturnType<typeof openNotes>): Store {
+  return {
+    has: (id) => notes.has(id),
+    getPath: (id) => notes.getPath(id),
+    getTitle: (id) => notes.getPath(id),
+    asking: (id) => notes.stale(id) !== null,
+    flushPending: (id) => notes.flushPending(id),
+    close: (id) => void notes.close(id),
+    getTabAt: () => null,
+  }
+}
+
+export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditorsDeps) {
+  const changes = createNullChanges()
+  const notes = openNotes(core, { onReplaced: changes.reportNoteChange })
+  const making = createNoteWriter(core, log.getWriter('made'))
+  const noted = createNoted(notes)
 
   const decks = useDeckTabs(cards, presets, { handle: held.handle, tabOpeners })
   const stencils = useStencilTabs(cards, held.handle, {
@@ -63,16 +82,7 @@ export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditors
   raiseConflicts(decks, fileFlush)
   raiseConflicts(stencils, fileFlush)
 
-  const notedStore: Store = {
-    has: (id) => notes.has(id),
-    getPath: (id) => notes.getPath(id),
-    getTitle: (id) => notes.getPath(id),
-    asking: (id) => notes.stale(id) !== null,
-    flushPending: (id) => notes.flushPending(id),
-    close: (id) => void notes.close(id),
-    getTabAt: () => null,
-  }
-
+  const notedStore = createNotedStore(notes)
   const stores: readonly Store[] = [notedStore, decks.kept, stencils.kept]
   const reached = createNotes(stores, tabOpeners)
   const getTitle = (id: string): string => stores.find((one) => one.has(id))?.getTitle(id) ?? ''

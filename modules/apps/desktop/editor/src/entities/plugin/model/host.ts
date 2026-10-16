@@ -223,6 +223,14 @@ function registerReaderEntry(
   return { dispose: cleanup }
 }
 
+function extractWhere(options?: unknown): unknown {
+  if (typeof options === 'string') return options
+  if (typeof options === 'object' && options !== null && 'where' in options) {
+    return (options as { where?: unknown }).where
+  }
+  return undefined
+}
+
 function registerTabKindEntry(
   deps: PluginHostDeps,
   tabKinds: Map<string, RegisteredTabKind>,
@@ -231,14 +239,17 @@ function registerTabKindEntry(
   const { pluginId, registration } = item
   const cleanups: (() => void)[] = [deps.registerKind(createCustomTabKind(pluginId, registration))]
   if (deps.registerEditor) {
-    const unreg = deps.registerEditor(registration.kind, (path: string, _title: string, options: any) => {
-      const where = typeof options === 'string' ? options : options?.where
-      if (where === 'beside' && deps.openTabBeside) {
-        void deps.openTabBeside(registration.kind, path)
-      } else {
-        void deps.openTab(registration.kind, path)
-      }
-    })
+    const unreg = deps.registerEditor(
+      registration.kind,
+      (path: string, _title: string, options?: unknown) => {
+        const where = extractWhere(options)
+        if (where === 'beside' && deps.openTabBeside) {
+          void deps.openTabBeside(registration.kind, path)
+        } else {
+          void deps.openTab(registration.kind, path)
+        }
+      },
+    )
     if (typeof unreg === 'function') cleanups.push(unreg)
   }
   let isDisposed = false

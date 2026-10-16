@@ -43,9 +43,6 @@ const model = (over: Partial<Model> = {}): Model => ({
   ...over,
 })
 
-/** A moment for what a call set going to land. */
-const settle = () => new Promise((done) => setTimeout(done, 0))
-
 describe('the settings as they are put together', () => {
   it('gives each setting a message writer under a name of its own', () => {
     const { writers } = createSettings()
