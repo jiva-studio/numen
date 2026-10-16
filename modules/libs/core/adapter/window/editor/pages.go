@@ -166,6 +166,12 @@ func (s *Services) newServices() []service {
 		{numenv1connect.BookServiceName, func(c connect.HandlerOption) (string, http.Handler) {
 			return numenv1connect.NewBookServiceHandler(s.Book, c)
 		}},
+		{numenv1connect.PluginServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			if s.Plugin == nil {
+				return numenv1connect.NewPluginServiceHandler(numenv1connect.UnimplementedPluginServiceHandler{}, c)
+			}
+			return numenv1connect.NewPluginServiceHandler(s.Plugin, c)
+		}},
 	}
 }
 
