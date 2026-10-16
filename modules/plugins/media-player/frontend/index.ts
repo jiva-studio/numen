@@ -8,7 +8,7 @@ export function activate(context: PluginContext): void {
   // Register audio file extensions (.mp3, .wav, etc.)
   context.registerReader({
     id: 'media-player',
-    fileExtensions: ['.mp3', '.m4a', '.wav', '.ogg', '.aac'],
+    fileExtensions: ['.mp3', '.m4a', '.wav', '.ogg', '.aac', '.flac'],
     component: AudioPlayerTab,
     title: 'Audio Player',
   })

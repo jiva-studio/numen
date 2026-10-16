@@ -2,14 +2,8 @@ name: Workflows
 
 on:
   pull_request:
-    paths:
-      - ".github/workflows/**"
-      - "modules/apps/mobile/android/gradle/**"
   push:
     branches: [main]
-    paths:
-      - ".github/workflows/**"
-      - "modules/apps/mobile/android/gradle/**"
 
 # One run at a time per branch, and on a pull request the newest is the one that
 # matters.

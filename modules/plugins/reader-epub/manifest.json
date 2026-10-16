@@ -19,6 +19,6 @@
     "serviceName": "numen.v1.BookService"
   },
   "frontend": {
-    "entrypoint": "frontend/BookTab.vue"
+    "entrypoint": "frontend/index.ts"
   }
 }

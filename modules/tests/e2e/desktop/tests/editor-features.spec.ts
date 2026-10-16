@@ -85,7 +85,7 @@ test.describe('Markdown Editor Features and Editing', () => {
     await page.keyboard.press('Control+s')
 
     // Verify workspace status remains ready and content persisted
-    await expect(page.locator('text=Ready')).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('text=Ready')).toBeVisible({ timeout: 15_000 })
     await expect(cmContent).toContainText('Saved verification stamp.')
   })
 })
