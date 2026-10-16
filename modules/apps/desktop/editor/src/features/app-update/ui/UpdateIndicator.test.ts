@@ -72,7 +72,8 @@ describe('UpdateIndicator', () => {
     await new Promise((done) => setTimeout(done, 10))
 
     expect(wrapper.find('.update-indicator').exists()).toBe(true)
-    expect(wrapper.text()).toContain('v2026.10.1 available')
+    expect(wrapper.text()).toContain('v2026.10.1')
+    expect(wrapper.text()).not.toContain('available')
     expect(wrapper.find('.update-popover').exists()).toBe(false)
 
     // Toggle popover

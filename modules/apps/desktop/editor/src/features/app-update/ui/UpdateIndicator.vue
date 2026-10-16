@@ -90,8 +90,7 @@ function onKeyDown(event: KeyboardEvent) {
       aria-label="Application update available"
       @click="onToggle"
     >
-      <span class="update-indicator__dot" />
-      <span class="update-indicator__label">v{{ updateInfo.latestVersion }} available</span>
+      <span class="update-indicator__label">v{{ updateInfo.latestVersion }}</span>
     </button>
 
     <UpdatePopover
