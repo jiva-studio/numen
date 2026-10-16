@@ -12,6 +12,7 @@ import (
 
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 )
 
 func TestAgentServerRPC(t *testing.T) {
@@ -124,7 +125,7 @@ func TestAgentServerRPC(t *testing.T) {
 
 func TestLifecycleServer(t *testing.T) {
 	shutdownCh := make(chan struct{})
-	life := &lifecycleServer{shutdownTrigger: shutdownCh}
+	life := server.NewLifecycleServer(shutdownCh)
 
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(life))

@@ -1,0 +1,29 @@
+version: "2"
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - nilerr
+    - bodyclose
+    - contextcheck
+    - staticcheck
+    - unused
+
+  exclusions:
+    presets:
+      - std-error-handling
+    rules:
+      - text: "SA1019.*h2c"
+        linters: [staticcheck]
+      - source: ^\s*(defer )?.*\.Close\(\)$
+        linters: [errcheck]
+      - source: ^\s*os\.Stdout\.Sync\(\)$
+        linters: [errcheck]
+      - path: _test\.go$
+        text: "QF1001"
+        linters: [staticcheck]

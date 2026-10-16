@@ -7,6 +7,7 @@ require (
 	github.com/ebitengine/purego v0.11.1
 	github.com/getcharzp/onnxruntime_purego v1.24.0
 	github.com/hajimehoshi/go-mp3 v0.3.4
+	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go v0.0.0
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
 	github.com/mewkiz/flac v1.0.14
 	golang.org/x/net v0.58.0
@@ -20,5 +21,7 @@ require (
 	golang.org/x/text v0.41.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 )
+
+replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go => ../../libs/plugin-sdk-go
 
 replace github.com/jiva-studio/numen/modules/libs/protocol => ../../libs/protocol

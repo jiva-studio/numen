@@ -9,21 +9,26 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 func TestLifecycleServer(t *testing.T) {
 	shutdownCh := make(chan struct{})
-	life := &lifecycleServer{shutdownTrigger: shutdownCh}
+	agentSvc := &agentServer{}
+	life := server.NewLifecycleServer(shutdownCh, server.WithLifecycleConfigure(func(ctx context.Context, values map[string]string) error {
+		agentSvc.applyConfig(ctx, values)
+		return nil
+	}))
 
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(life))
 
-	server := httptest.NewServer(mux)
-	defer server.Close()
+	testServer := httptest.NewServer(mux)
+	defer testServer.Close()
 
-	client := numenv1connect.NewPluginLifecycleServiceClient(http.DefaultClient, server.URL)
+	client := numenv1connect.NewPluginLifecycleServiceClient(http.DefaultClient, testServer.URL)
 	ctx := context.Background()
 
 	pingResp, err := client.Ping(ctx, connect.NewRequest(&numenv1.PingRequest{}))
@@ -34,8 +39,6 @@ func TestLifecycleServer(t *testing.T) {
 		t.Errorf("unexpected status: %s", pingResp.Msg.GetStatus())
 	}
 
-	agentSvc := &agentServer{}
-	life.agent = agentSvc
 	_, err = client.Configure(ctx, connect.NewRequest(&numenv1.ConfigureRequest{
 		Values: map[string]string{
 			"model": "claude-3-5-sonnet-latest",

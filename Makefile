@@ -5,6 +5,7 @@ UI       := modules/libs/ui
 WIRE     := modules/libs/wire
 PROTOCOL := modules/libs/protocol
 PLUGIN_SDK := modules/libs/plugin-sdk
+PLUGIN_SDK_GO := modules/libs/plugin-sdk-go
 
 DESKTOP  := modules/apps/desktop
 DESKTOP_MONOLITH := modules/apps/desktop-monolith
@@ -35,7 +36,7 @@ install: ## fetch all workspace dependencies
 	cd $(MODULES) && $(INSTALL)
 
 .PHONY: compile
-compile: lib_core_compile lib_protocol_compile lib_ui_compile lib_wire_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
+compile: lib_core_compile lib_protocol_compile lib_ui_compile lib_wire_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
 
 .PHONY: build
 build: interface lib_core_build app_desktop_build ## build all application artifacts
@@ -188,6 +189,23 @@ lib_plugin_sdk_test: ## run plugin-sdk unit tests
 
 .PHONY: lib_plugin_sdk_lint
 lib_plugin_sdk_lint: lib_plugin_sdk_typecheck
+ 
+# ---------------------------- Lib: Plugin SDK Go ------------------------------
+.PHONY: lib_plugin_sdk_go_build
+lib_plugin_sdk_go_build: ## build plugin-sdk-go Go library
+	cd $(PLUGIN_SDK_GO) && go build ./...
+
+.PHONY: lib_plugin_sdk_go_compile
+lib_plugin_sdk_go_compile: lib_plugin_sdk_go_build
+
+.PHONY: lib_plugin_sdk_go_test
+lib_plugin_sdk_go_test: ## run plugin-sdk-go tests with race detector
+	cd $(PLUGIN_SDK_GO) && go test ./... -race
+
+.PHONY: lib_plugin_sdk_go_lint
+lib_plugin_sdk_go_lint: ## run linters for plugin-sdk-go
+	cd $(PLUGIN_SDK_GO) && go vet ./...
+	cd $(PLUGIN_SDK_GO) && golangci-lint run ./...
 
 # ------------------------------ Plugins Tooling -------------------------------
 .PHONY: create_plugin
