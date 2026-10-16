@@ -42,11 +42,19 @@ func (c Config) PageRenderer() port.PageRenderer {
 }
 
 type hostDocumentPort struct {
-	host *plugin.Host
+	host port.PluginManager
+}
+
+func (h hostDocumentPort) openBridge(ctx context.Context) (*plugin.DocumentBridge, error) {
+	host, ok := h.host.(*plugin.Host)
+	if !ok {
+		return nil, errDocumentUnavailable
+	}
+	return plugin.OpenDocumentBridge(ctx, host)
 }
 
 func (h hostDocumentPort) Read(ctx context.Context, raw []byte) (domain.TextLayer, error) {
-	bridge, err := plugin.OpenDocumentBridge(ctx, h.host)
+	bridge, err := h.openBridge(ctx)
 	if err != nil {
 		return domain.TextLayer{}, err
 	}
@@ -55,7 +63,7 @@ func (h hostDocumentPort) Read(ctx context.Context, raw []byte) (domain.TextLaye
 }
 
 func (h hostDocumentPort) GetHighlights(ctx context.Context, raw []byte, starts []int, pages []int) ([]domain.HighlightBox, error) {
-	bridge, err := plugin.OpenDocumentBridge(ctx, h.host)
+	bridge, err := h.openBridge(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +72,7 @@ func (h hostDocumentPort) GetHighlights(ctx context.Context, raw []byte, starts 
 }
 
 func (h hostDocumentPort) OpenDocument(ctx context.Context, file io.ReadSeekCloser) (port.OpenDocument, error) {
-	bridge, err := plugin.OpenDocumentBridge(ctx, h.host)
+	bridge, err := h.openBridge(ctx)
 	if err != nil {
 		if file != nil {
 			_ = file.Close()

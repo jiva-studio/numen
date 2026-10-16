@@ -25,28 +25,24 @@ func (c Config) EmbedderReady() bool {
 // When the embedding plugin is absent or disabled, search queries seamlessly fall
 // back to SQLite FTS5 full-text search without throwing errors.
 func (c Config) Embedders(ctx context.Context, _ *run.Tasks) (indexing, asking port.Embedder, closer func() error, why error) {
-	if c.PluginHost != nil && !c.SafeMode {
-		if _, ok := c.PluginHost.FindPluginByCapability("embedding"); ok {
-			bridge, err := plugin.OpenEmbedderBridge(ctx, c.PluginHost)
-			if err != nil {
-				return nil, nil, func() error { return nil }, err
-			}
-			return bridge, bridge, bridge.Close, nil
+	if host, ok := c.findPluginHost("embedding"); ok {
+		bridge, err := plugin.OpenEmbedderBridge(ctx, host)
+		if err != nil {
+			return nil, nil, func() error { return nil }, err
 		}
+		return bridge, bridge, bridge.Close, nil
 	}
 	return nil, nil, func() error { return nil }, nil
 }
 
 // Embedder is what makes the vectors a vault is searched by, waited for.
 func (c Config) Embedder(ctx context.Context) (port.Embedder, func() error, error) {
-	if c.PluginHost != nil && !c.SafeMode {
-		if _, ok := c.PluginHost.FindPluginByCapability("embedding"); ok {
-			bridge, err := plugin.OpenEmbedderBridge(ctx, c.PluginHost)
-			if err != nil {
-				return nil, nil, err
-			}
-			return bridge, bridge.Close, nil
+	if host, ok := c.findPluginHost("embedding"); ok {
+		bridge, err := plugin.OpenEmbedderBridge(ctx, host)
+		if err != nil {
+			return nil, nil, err
 		}
+		return bridge, bridge.Close, nil
 	}
 	return nil, func() error { return nil }, nil
 }

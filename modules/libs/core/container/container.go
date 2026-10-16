@@ -97,7 +97,7 @@ type Config struct {
 	TranscriptProofreading Proofread
 
 	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.
-	PluginHost *plugin.Host
+	PluginHost port.PluginManager
 
 	// AgentProofreader opens a profile that reaches the command line a person
 	// already has. The platform supplies it, since core starts no process; an
@@ -134,6 +134,17 @@ func NewPluginHost(target string, dirs ...string) *plugin.Host {
 		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", err)
 	}
 	return host
+}
+
+func (c Config) findPluginHost(capability string) (*plugin.Host, bool) {
+	if c.PluginHost == nil || c.SafeMode {
+		return nil, false
+	}
+	if _, ok := c.PluginHost.FindPluginByCapability(capability); !ok {
+		return nil, false
+	}
+	host, _ := c.PluginHost.(*plugin.Host)
+	return host, host != nil
 }
 
 // Clock is the clock every scenario assembled here is handed.
@@ -261,7 +272,7 @@ func (c Config) GetSettingsWriter() func(written []port.Setting) error {
 	}
 }
 
-func notifyPluginSettings(host *plugin.Host, written []port.Setting) {
+func notifyPluginSettings(host port.PluginManager, written []port.Setting) {
 	if host == nil {
 		return
 	}

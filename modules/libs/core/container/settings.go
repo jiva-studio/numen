@@ -189,35 +189,7 @@ func (c Config) Plugins() func() []port.PluginInfo {
 		if c.PluginHost == nil {
 			return nil
 		}
-		infos := c.PluginHost.GetPluginInfos()
-		result := make([]port.PluginInfo, 0, len(infos))
-		for _, info := range infos {
-			settingsList := make([]port.PluginSetting, 0, len(info.Settings))
-			for _, s := range info.Settings {
-				settingsList = append(settingsList, port.PluginSetting{
-					Key:         s.Key,
-					Type:        s.Type,
-					Title:       s.Title,
-					Description: s.Description,
-					DefaultJSON: s.DefaultJson,
-					Palette:     s.Palette,
-					Options:     s.Options,
-					Min:         s.Min,
-					Max:         s.Max,
-					Step:        s.Step,
-				})
-			}
-			result = append(result, port.PluginInfo{
-				ID:           info.Id,
-				Name:         info.Name,
-				Version:      info.Version,
-				Description:  info.Description,
-				Capabilities: info.Capabilities,
-				Settings:     settingsList,
-				IsActive:     info.IsActive,
-			})
-		}
-		return result
+		return c.PluginHost.GetPluginInfos()
 	}
 }
 

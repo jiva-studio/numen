@@ -56,7 +56,11 @@ func (e EditorAssembly) OpenBookClient(ctx context.Context) (any, func(), error)
 	if e.cfg.PluginHost == nil || e.cfg.SafeMode {
 		return nil, nil, errors.New("no plugin host configured")
 	}
-	bridge, err := plugin.OpenBookBridge(ctx, e.cfg.PluginHost)
+	host, ok := e.cfg.PluginHost.(*plugin.Host)
+	if !ok {
+		return nil, nil, errors.New("no plugin host configured")
+	}
+	bridge, err := plugin.OpenBookBridge(ctx, host)
 	if err != nil {
 		return nil, nil, err
 	}

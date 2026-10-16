@@ -73,7 +73,7 @@ func Run(opts ...*Options) error {
 	cfg.ShouldRebuildIndex = opt.RebuildIndex
 	cfg.SafeMode = opt.SafeMode
 	if cfg.SafeMode && cfg.PluginHost != nil {
-		cfg.PluginHost.SetSafeMode(true)
+		setPluginSafeMode(cfg.PluginHost, true)
 	}
 
 	agentFlags := agentOptions{
@@ -150,7 +150,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 	}
 	if cfg.PluginHost != nil {
 		defer func() {
-			_ = cfg.PluginHost.TeardownAll(context.Background(), 2*time.Second)
+			_ = teardownPlugins(cfg.PluginHost)
 		}()
 	}
 	if err := scaleFlags.validate(); err != nil {
@@ -186,7 +186,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 		shutdown.Report("numen", os.Stderr, "", opened.Close),
 		shutdown.Report("numen", os.Stderr, "plugins", func() error {
 			if cfg.PluginHost != nil {
-				return cfg.PluginHost.TeardownAll(context.Background(), 2*time.Second)
+				return teardownPlugins(cfg.PluginHost)
 			}
 			return nil
 		}),
@@ -246,7 +246,7 @@ func openInstallation(
 		return shownInstallation{}, err
 	}
 	if cfg.PluginHost != nil {
-		cfg.PluginHost.SetVaultPath(opened.GetCurrentVault().Path)
+		setPluginVaultPath(cfg.PluginHost, opened.GetCurrentVault().Path)
 	}
 	return shownInstallation{pages: pages, opened: opened}, nil
 }
@@ -309,7 +309,7 @@ func connectWindow(
 
 	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
 		if cfg.PluginHost != nil {
-			cfg.PluginHost.SetVaultPath(v.Path)
+			setPluginVaultPath(cfg.PluginHost, v.Path)
 		}
 		err := reachable.RunWhileStopped(func() error { return opened.Show(ctx, v) })
 		naming(opened.State.GetOpenTabs())
@@ -346,4 +346,23 @@ func getWindowTitle(v domain.Vault, open domain.OpenTabs) string {
 type agentOptions struct {
 	addr  string
 	isOff bool
+}
+
+func teardownPlugins(host any) error {
+	if ctrl, ok := host.(interface{ TeardownAll(context.Context, time.Duration) error }); ok {
+		return ctrl.TeardownAll(context.Background(), 2*time.Second)
+	}
+	return nil
+}
+
+func setPluginSafeMode(host any, safeMode bool) {
+	if ctrl, ok := host.(interface{ SetSafeMode(bool) }); ok {
+		ctrl.SetSafeMode(safeMode)
+	}
+}
+
+func setPluginVaultPath(host any, path string) {
+	if ctrl, ok := host.(interface{ SetVaultPath(string) }); ok {
+		ctrl.SetVaultPath(path)
+	}
 }

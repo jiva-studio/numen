@@ -70,11 +70,19 @@ func (c Config) ImportURL(ctx context.Context, db *Index, by port.Downloader) so
 }
 
 type hostDownloaderPort struct {
-	host *plugin.Host
+	host port.PluginManager
+}
+
+func (h hostDownloaderPort) openBridge(ctx context.Context) (*plugin.DownloaderBridge, error) {
+	host, ok := h.host.(*plugin.Host)
+	if !ok {
+		return nil, errDownloaderUnavailable
+	}
+	return plugin.OpenDownloaderBridge(ctx, host)
 }
 
 func (h hostDownloaderPort) GetDownloadModel(at domain.URL) port.DownloadModel {
-	bridge, err := plugin.OpenDownloaderBridge(context.Background(), h.host)
+	bridge, err := h.openBridge(context.Background())
 	if err != nil {
 		return port.DownloadModel{
 			Tool:     "unavailable",
@@ -87,7 +95,7 @@ func (h hostDownloaderPort) GetDownloadModel(at domain.URL) port.DownloadModel {
 }
 
 func (h hostDownloaderPort) GetMetadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
-	bridge, err := plugin.OpenDownloaderBridge(ctx, h.host)
+	bridge, err := h.openBridge(ctx)
 	if err != nil {
 		return port.Metadata{}, err
 	}
@@ -96,7 +104,7 @@ func (h hostDownloaderPort) GetMetadata(ctx context.Context, at domain.URL) (por
 }
 
 func (h hostDownloaderPort) GetText(ctx context.Context, at domain.URL, want port.PreferredCaptions) (port.Text, error) {
-	bridge, err := plugin.OpenDownloaderBridge(ctx, h.host)
+	bridge, err := h.openBridge(ctx)
 	if err != nil {
 		return port.Text{}, err
 	}
@@ -105,7 +113,7 @@ func (h hostDownloaderPort) GetText(ctx context.Context, at domain.URL, want por
 }
 
 func (h hostDownloaderPort) Download(ctx context.Context, at domain.URL, into io.Writer) (port.Copy, error) {
-	bridge, err := plugin.OpenDownloaderBridge(ctx, h.host)
+	bridge, err := h.openBridge(ctx)
 	if err != nil {
 		return port.Copy{}, err
 	}

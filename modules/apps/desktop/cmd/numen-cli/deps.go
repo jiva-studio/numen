@@ -20,7 +20,9 @@ func configureLocations(cfg container.Config, where cli.Locations) container.Con
 	cfg.ServiceDir = where.ServiceDir
 	cfg.SafeMode = where.SafeMode
 	if cfg.SafeMode && cfg.PluginHost != nil {
-		cfg.PluginHost.SetSafeMode(true)
+		if host, ok := cfg.PluginHost.(interface{ SetSafeMode(bool) }); ok {
+			host.SetSafeMode(true)
+		}
 	}
 	if chosen, err := cfg.Settings(); err == nil {
 		cfg = cfg.SetSettings(chosen)
@@ -30,7 +32,9 @@ func configureLocations(cfg container.Config, where cli.Locations) container.Con
 
 func setVaultPath(cfg container.Config, p string) {
 	if cfg.PluginHost != nil {
-		cfg.PluginHost.SetVaultPath(p)
+		if host, ok := cfg.PluginHost.(interface{ SetVaultPath(string) }); ok {
+			host.SetVaultPath(p)
+		}
 	}
 }
 

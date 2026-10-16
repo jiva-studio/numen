@@ -40,7 +40,7 @@ func OpenRecogniserBridge(ctx context.Context, host *Host) (*RecogniserBridge, e
 		return nil, fmt.Errorf("ensure active %s: %w", plugin.Manifest.ID, err)
 	}
 
-	httpClient := endpoint.HTTPClient()
+	httpClient := EndpointClient(endpoint)
 	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
 	client := numenv1connect.NewRecognitionServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 

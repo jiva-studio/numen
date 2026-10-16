@@ -2,9 +2,14 @@ package container
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+var (
+	errAgentUnavailable = errors.New("agent plugin is unavailable or not installed")
 )
 
 // AgentPort provides an implementation of port.Agent via the plugin host if available.
@@ -31,15 +36,19 @@ func (c Config) AgentPortFor(pluginID string) port.Agent {
 }
 
 type hostAgentPort struct {
-	host     *plugin.Host
+	host     port.PluginManager
 	pluginID string
 }
 
 func (h hostAgentPort) openBridge(ctx context.Context) (*plugin.AgentBridge, error) {
-	if h.pluginID != "" {
-		return plugin.OpenAgentBridgeForPlugin(ctx, h.host, h.pluginID)
+	host, ok := h.host.(*plugin.Host)
+	if !ok {
+		return nil, errAgentUnavailable
 	}
-	return plugin.OpenAgentBridge(ctx, h.host)
+	if h.pluginID != "" {
+		return plugin.OpenAgentBridgeForPlugin(ctx, host, h.pluginID)
+	}
+	return plugin.OpenAgentBridge(ctx, host)
 }
 
 func (h hostAgentPort) StartRun(ctx context.Context, task port.Task) (port.Run, error) {
