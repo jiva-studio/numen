@@ -25,30 +25,46 @@ func GetConfig() container.Config {
 
 func getPluginsDirs() []string {
 	var dirs []string
+	seen := make(map[string]bool)
+	addDir := func(dir string) {
+		if dir == "" {
+			return
+		}
+		clean := filepath.Clean(dir)
+		if abs, err := filepath.Abs(clean); err == nil {
+			clean = abs
+		}
+		if !seen[clean] {
+			seen[clean] = true
+			dirs = append(dirs, clean)
+		}
+	}
+
 	if custom := os.Getenv("NUMEN_PLUGINS_PATH"); custom != "" {
-		dirs = append(dirs, custom)
+		addDir(custom)
 	}
 
 	execPath, err := os.Executable()
 	if err == nil {
 		execDir := filepath.Dir(execPath)
-		dirs = append(dirs, filepath.Join(execDir, "plugins"))
-		dirs = append(dirs, filepath.Join(execDir, "modules", "plugins"))
-		dirs = append(dirs, filepath.Join(execDir, "..", "PlugIns"))
-		dirs = append(dirs, filepath.Join(execDir, "..", "Resources", "plugins"))
-		dirs = append(dirs, filepath.Join(execDir, "..", "lib", "numen", "plugins"))
-		dirs = append(dirs, filepath.Join(execDir, "..", "share", "numen", "plugins"))
+		addDir(filepath.Join(execDir, "plugins"))
+		addDir(filepath.Join(execDir, "modules", "plugins"))
+		addDir(filepath.Join(execDir, "..", "PlugIns"))
+		addDir(filepath.Join(execDir, "..", "Resources", "plugins"))
+		addDir(filepath.Join(execDir, "..", "lib", "numen", "plugins"))
+		addDir(filepath.Join(execDir, "..", "share", "numen", "plugins"))
 	}
 
-	dirs = append(dirs, "modules/plugins", "plugins")
+	addDir("modules/plugins")
+	addDir("plugins")
 
 	configDir, err := os.UserConfigDir()
 	if err == nil {
-		dirs = append(dirs, filepath.Join(configDir, "numen", "plugins"))
+		addDir(filepath.Join(configDir, "numen", "plugins"))
 	}
 
 	if localAppData := os.Getenv("LOCALAPPDATA"); localAppData != "" {
-		dirs = append(dirs, filepath.Join(localAppData, "Programs", "Numen", "plugins"))
+		addDir(filepath.Join(localAppData, "Programs", "Numen", "plugins"))
 	}
 
 	return dirs

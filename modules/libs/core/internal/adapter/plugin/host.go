@@ -416,10 +416,11 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 func isWhitelistedEnv(key string) bool {
 	upper := strings.ToUpper(key)
 	switch upper {
-	case "PATH", "HOME", "USER", "TMP", "TEMP", "SYSTEMROOT", "SYSTEMDRIVE", "APPDATA", "LOCALAPPDATA", "LANG":
+	case "PATH", "HOME", "USER", "TMP", "TEMP", "SYSTEMROOT", "SYSTEMDRIVE", "APPDATA", "LOCALAPPDATA", "LANG",
+		"SSL_CERT_FILE", "SSL_CERT_DIR", "LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH", "OPENAI_API_KEY":
 		return true
 	}
-	return strings.HasPrefix(upper, "LC_")
+	return strings.HasPrefix(upper, "LC_") || strings.HasPrefix(upper, "NUMEN_") || strings.HasPrefix(upper, "XDG_") || strings.HasPrefix(upper, "NIX_")
 }
 
 func (h *Host) defaultLauncher(

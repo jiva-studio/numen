@@ -91,9 +91,50 @@ func getModels(kept *catalogue, agents []listed) []port.Model {
 	return models
 }
 
+func getFallbackModels(at []string) []AgentModel {
+	if len(at) < 2 || at[1] != "model" {
+		return nil
+	}
+	switch at[0] {
+	case UseClaude:
+		return []AgentModel{
+			{Name: "claude-3-7-sonnet-latest", Title: "Claude 3.7 Sonnet"},
+			{Name: "claude-3-5-sonnet-latest", Title: "Claude 3.5 Sonnet"},
+			{Name: "claude-3-5-haiku-latest", Title: "Claude 3.5 Haiku"},
+			{Name: "claude-3-opus-latest", Title: "Claude 3 Opus"},
+			{Name: "sonnet", Title: "Sonnet"},
+			{Name: "haiku", Title: "Haiku", IsDefault: true},
+			{Name: "opus", Title: "Opus"},
+		}
+	case UseAntigravity:
+		return []AgentModel{
+			{Name: "gemini-3.8-flash-high", Title: "Gemini 3.8 Flash (High)"},
+			{Name: "gemini-3.8-flash-medium", Title: "Gemini 3.8 Flash (Medium)"},
+			{Name: "gemini-3.8-flash-low", Title: "Gemini 3.8 Flash (Low)"},
+			{Name: "gemini-2.5-pro", Title: "Gemini 2.5 Pro"},
+			{Name: "gemini-2.5-flash", Title: "Gemini 2.5 Flash", IsDefault: true},
+			{Name: "claude-opus-5-5-high", Title: "Claude Opus 5.5 (High)"},
+			{Name: "claude-sonnet-5-5-high", Title: "Claude Sonnet 5.5 (High)"},
+			{Name: "gpt-oss-120b-medium", Title: "GPT-OSS 120B (Medium)"},
+		}
+	case UseCodex:
+		return []AgentModel{
+			{Name: "o3-mini", Title: "o3-mini"},
+			{Name: "o1", Title: "o1"},
+			{Name: "gpt-4o", Title: "GPT-4o", IsDefault: true},
+			{Name: "gpt-4o-mini", Title: "GPT-4o mini"},
+		}
+	default:
+		return nil
+	}
+}
+
 // getAgentModels are the rows of one agent: what it reported, or the model the
 // settings name alone where it reported none.
 func getAgentModels(at []string, set string, offered []AgentModel) []port.Model {
+	if len(offered) == 0 {
+		offered = getFallbackModels(at)
+	}
 	var models []port.Model
 	switch {
 	case len(offered) == 0 && set != "":
