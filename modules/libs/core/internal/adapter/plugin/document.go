@@ -27,15 +27,23 @@ var (
 	ErrNoDocumentPlugin = errors.New("no active document plugin found")
 )
 
+// DocumentPluginHost provides plugin resolution, activation, permissions, and path validation.
+type DocumentPluginHost interface {
+	port.PluginResolver
+	port.PluginActivator
+	port.PluginAuthorizer
+	port.PluginPathValidator
+}
+
 // DocumentBridge connects document and text extraction ports to an out-of-process PDF plugin via Connect-RPC.
 type DocumentBridge struct {
-	host     port.PluginManager
+	host     DocumentPluginHost
 	pluginID string
 	client   numenv1connect.DocumentServiceClient
 }
 
 // OpenDocumentBridge activates or connects to the document plugin and returns a DocumentBridge.
-func OpenDocumentBridge(ctx context.Context, host port.PluginManager) (*DocumentBridge, error) {
+func OpenDocumentBridge(ctx context.Context, host DocumentPluginHost) (*DocumentBridge, error) {
 	p, ok := host.FindPluginByCapability("document")
 	if !ok {
 		return nil, ErrNoDocumentPlugin
@@ -253,7 +261,7 @@ func (b *DocumentBridge) OpenDocument(ctx context.Context, file io.ReadSeekClose
 }
 
 type remoteDocument struct {
-	host      port.PluginManager
+	host      port.PluginActivator
 	pluginID  string
 	client    numenv1connect.DocumentServiceClient
 	path      string

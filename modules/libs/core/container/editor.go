@@ -76,7 +76,8 @@ func (e EditorAssembly) OpenBookClient(ctx context.Context) (any, func(), error)
 
 func (e EditorAssembly) EmitEvent(event string) {
 	if e.cfg.PluginHost != nil {
-		e.cfg.PluginHost.EmitEvent(event)
+		var emitter port.PluginEventEmitter = e.cfg.PluginHost
+		emitter.EmitEvent(event)
 	}
 }
 

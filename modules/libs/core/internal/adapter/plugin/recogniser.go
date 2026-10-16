@@ -21,15 +21,22 @@ var (
 	errNoRecogniserPlugin = errors.New("no active OCR recognition plugin found")
 )
 
+// RecogniserPluginHost provides plugin resolution, activation, and permission checking for OCR.
+type RecogniserPluginHost interface {
+	port.PluginResolver
+	port.PluginActivator
+	port.PluginAuthorizer
+}
+
 // RecogniserBridge connects port.Recogniser calls to an out-of-process OCR plugin via Connect-RPC.
 type RecogniserBridge struct {
-	host     port.PluginManager
+	host     RecogniserPluginHost
 	pluginID string
 	client   numenv1connect.RecognitionServiceClient
 }
 
 // OpenRecogniserBridge activates or connects to the OCR plugin and returns a port.Recogniser.
-func OpenRecogniserBridge(ctx context.Context, host port.PluginManager) (*RecogniserBridge, error) {
+func OpenRecogniserBridge(ctx context.Context, host RecogniserPluginHost) (*RecogniserBridge, error) {
 	plugin, ok := host.FindPluginByCapability("recognition")
 	if !ok {
 		return nil, errNoRecogniserPlugin

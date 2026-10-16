@@ -189,7 +189,8 @@ func (c Config) Plugins() func() []port.PluginInfo {
 		if c.PluginHost == nil {
 			return nil
 		}
-		return c.PluginHost.GetPluginInfos()
+		var discoverer port.PluginDiscoverer = c.PluginHost
+		return discoverer.GetPluginInfos()
 	}
 }
 

@@ -20,15 +20,21 @@ var (
 	ErrNoAgentPlugin = errors.New("no active agent plugin found")
 )
 
+// AgentPluginHost provides plugin resolution and activation for AI agents.
+type AgentPluginHost interface {
+	port.PluginResolver
+	port.PluginActivator
+}
+
 // AgentBridge connects port.Agent calls to an out-of-process agent plugin via Connect-RPC.
 type AgentBridge struct {
-	host     port.PluginManager
+	host     port.PluginActivator
 	pluginID string
 	client   numenv1connect.AgentServiceClient
 }
 
 // OpenAgentBridge activates or connects to the agent plugin and returns an AgentBridge.
-func OpenAgentBridge(ctx context.Context, host port.PluginManager) (*AgentBridge, error) {
+func OpenAgentBridge(ctx context.Context, host AgentPluginHost) (*AgentBridge, error) {
 	if p, ok := host.GetPlugin("md.numen.agent-acp"); ok {
 		return OpenAgentBridgeForPlugin(ctx, host, p.Manifest.ID)
 	}
@@ -46,7 +52,7 @@ func OpenAgentBridge(ctx context.Context, host port.PluginManager) (*AgentBridge
 }
 
 // OpenAgentBridgeForPlugin activates or connects to a specific agent plugin and returns an AgentBridge.
-func OpenAgentBridgeForPlugin(ctx context.Context, host port.PluginManager, pluginID string) (*AgentBridge, error) {
+func OpenAgentBridgeForPlugin(ctx context.Context, host port.PluginActivator, pluginID string) (*AgentBridge, error) {
 	endpoint, err := host.EnsureActive(ctx, pluginID)
 	if err != nil {
 		return nil, fmt.Errorf("ensure active %s: %w", pluginID, err)

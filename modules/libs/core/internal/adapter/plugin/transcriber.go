@@ -18,15 +18,24 @@ var (
 	errNoTranscriptionPlugin = errors.New("no active audio/video transcription plugin found")
 )
 
+// TranscriberPluginHost provides resolution, activation, reference tracking, permissions, and path validation.
+type TranscriberPluginHost interface {
+	port.PluginResolver
+	port.PluginActivator
+	port.PluginAcquirer
+	port.PluginAuthorizer
+	port.PluginPathValidator
+}
+
 // TranscriberBridge connects port.Transcriber calls to an out-of-process transcription plugin via Connect-RPC.
 type TranscriberBridge struct {
-	host     port.PluginManager
+	host     TranscriberPluginHost
 	pluginID string
 	client   numenv1connect.TranscriptionServiceClient
 }
 
 // OpenTranscriberBridge activates or connects to the transcription plugin and returns a port.Transcriber.
-func OpenTranscriberBridge(ctx context.Context, host port.PluginManager) (*TranscriberBridge, error) {
+func OpenTranscriberBridge(ctx context.Context, host TranscriberPluginHost) (*TranscriberBridge, error) {
 	plugin, ok := host.FindPluginByCapability("transcription")
 	if !ok {
 		return nil, errNoTranscriptionPlugin
@@ -179,7 +188,7 @@ type pluginRecording struct {
 	client      numenv1connect.TranscriptionServiceClient
 	recordingID string
 	durationMs  int
-	host        port.PluginManager
+	host        port.PluginActivator
 	pluginID    string
 }
 

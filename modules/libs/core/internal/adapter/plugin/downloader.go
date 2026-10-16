@@ -19,15 +19,22 @@ var (
 	errNoDownloaderPlugin = errors.New("no active media downloader plugin found")
 )
 
+// DownloaderPluginHost provides plugin resolution, activation, and permission checking for downloads.
+type DownloaderPluginHost interface {
+	port.PluginResolver
+	port.PluginActivator
+	port.PluginAuthorizer
+}
+
 // DownloaderBridge connects port.Downloader calls to an out-of-process downloader plugin via Connect-RPC.
 type DownloaderBridge struct {
-	host     port.PluginManager
+	host     DownloaderPluginHost
 	pluginID string
 	client   numenv1connect.DownloadServiceClient
 }
 
 // OpenDownloaderBridge activates or connects to the downloader plugin and returns a port.Downloader.
-func OpenDownloaderBridge(ctx context.Context, host port.PluginManager) (*DownloaderBridge, error) {
+func OpenDownloaderBridge(ctx context.Context, host DownloaderPluginHost) (*DownloaderBridge, error) {
 	plugin, ok := host.FindPluginByCapability("downloader")
 	if !ok {
 		plugin, ok = host.FindPluginByCapability("media.download")
@@ -41,7 +48,7 @@ func OpenDownloaderBridge(ctx context.Context, host port.PluginManager) (*Downlo
 		return nil, fmt.Errorf("ensure active %s: %w", plugin.Manifest.ID, err)
 	}
 
-	httpClient := defaultPluginClient
+	httpClient := EndpointClient(endpoint)
 	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
 	client := numenv1connect.NewDownloadServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 
