@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 import dts from 'vite-plugin-dts'
 
 export default defineConfig({
-  plugins: [vue(), tailwindcss(), dts({ include: ['src'], bundleTypes: true })],
+  plugins: [vue(), tailwindcss(), dts({ include: ['src'], entryRoot: 'src' })],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
