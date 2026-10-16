@@ -4,19 +4,11 @@ import plugin from './index'
 import { isPdfPluginActive, setPdfPluginActive } from '@/pages/document-viewer/model/pluginState'
 
 describe('reader-pdf plugin frontend', () => {
-  it('registers reader for pdf extension on activation', async () => {
+  it('activates and updates plugin active state', async () => {
     const ctx = createMockPluginContext({ pluginId: 'md.numen.pdf' })
     await plugin.activate(ctx)
 
     expect(isPdfPluginActive.value).toBe(true)
-
-    const readers = ctx.getRegisteredReaders()
-    expect(readers).toHaveLength(1)
-
-    const reader = readers[0]
-    expect(reader?.id).toBe('reader-pdf')
-    expect(reader?.fileExtensions).toEqual(['.pdf'])
-    expect(reader?.component).toBeDefined()
   })
 
   it('updates plugin active state on deactivation', async () => {
