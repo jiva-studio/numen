@@ -7,21 +7,22 @@ import (
 	"connectrpc.com/connect"
 
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 )
 
 func TestLifecycleConfigure(t *testing.T) {
 	proof := &proofreadingServer{modelName: "initial-model"}
-	server := &lifecycleServer{
-		shutdownTrigger: make(chan struct{}),
-		proof:           proof,
-	}
+	life := server.NewLifecycleServer(
+		make(chan struct{}),
+		server.WithLifecycleUpdateConfig(proof.updateConfig),
+	)
 
 	req := connect.NewRequest(&numenv1.ConfigureRequest{
 		Values: map[string]string{
 			"model": "anthropic/claude-3-haiku",
 		},
 	})
-	resp, err := server.Configure(context.Background(), req)
+	resp, err := life.Configure(context.Background(), req)
 	if err != nil {
 		t.Fatalf("Configure failed: %v", err)
 	}

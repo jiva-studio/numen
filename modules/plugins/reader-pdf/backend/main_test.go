@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/plugins/reader-pdf/backend/service"
 )
@@ -66,8 +67,8 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 }
 
 func TestPdfAuthCheckInterceptor(t *testing.T) {
-	interceptor := authCheck("secret-token")
-	wrapped := interceptor(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+	interceptor := server.NewAuthInterceptor("secret-token")
+	wrapped := interceptor.WrapUnary(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		return nil, nil
 	})
 

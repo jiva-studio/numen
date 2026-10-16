@@ -13,6 +13,7 @@ import (
 	read "github.com/getcharzp/go-ocr"
 
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/modules/plugins/ocr/backend/engine"
 )
 
@@ -28,8 +29,8 @@ func createTestPNG(t *testing.T, w, h int) []byte {
 }
 
 func TestLifecyclePing(t *testing.T) {
-	server := &lifecycleServer{shutdownTrigger: make(chan struct{})}
-	resp, err := server.Ping(context.Background(), connect.NewRequest(&numenv1.PingRequest{}))
+	life := server.NewLifecycleServer(make(chan struct{}))
+	resp, err := life.Ping(context.Background(), connect.NewRequest(&numenv1.PingRequest{}))
 	if err != nil {
 		t.Fatalf("ping failed: %v", err)
 	}
@@ -39,8 +40,8 @@ func TestLifecyclePing(t *testing.T) {
 }
 
 func TestLifecycleShutdown(t *testing.T) {
-	server := &lifecycleServer{shutdownTrigger: make(chan struct{})}
-	resp, err := server.Shutdown(context.Background(), connect.NewRequest(&numenv1.ShutdownRequest{}))
+	life := server.NewLifecycleServer(make(chan struct{}))
+	resp, err := life.Shutdown(context.Background(), connect.NewRequest(&numenv1.ShutdownRequest{}))
 	if err != nil {
 		t.Fatalf("shutdown failed: %v", err)
 	}
@@ -52,10 +53,10 @@ func TestLifecycleShutdown(t *testing.T) {
 func TestLifecycleConfigure(t *testing.T) {
 	cfg := engine.Defaults()
 	recog := newRecognitionServer(nil, cfg)
-	server := &lifecycleServer{
-		shutdownTrigger: make(chan struct{}),
-		recog:           recog,
-	}
+	life := server.NewLifecycleServer(
+		make(chan struct{}),
+		server.WithLifecycleUpdateConfig(recog.updateConfig),
+	)
 
 	req := connect.NewRequest(&numenv1.ConfigureRequest{
 		PluginId: "md.numen.ocr",
@@ -63,7 +64,7 @@ func TestLifecycleConfigure(t *testing.T) {
 			"dpi": "450",
 		},
 	})
-	resp, err := server.Configure(context.Background(), req)
+	resp, err := life.Configure(context.Background(), req)
 	if err != nil {
 		t.Fatalf("configure failed: %v", err)
 	}

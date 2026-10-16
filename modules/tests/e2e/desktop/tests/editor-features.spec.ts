@@ -84,8 +84,18 @@ test.describe('Markdown Editor Features and Editing', () => {
     await page.keyboard.type(' Saved verification stamp.')
     await page.keyboard.press('Control+s')
 
-    // Verify workspace status remains ready and content persisted
-    await expect(page.locator('text=Ready')).toBeVisible({ timeout: 15_000 })
+    // Wait for indexing to complete and workspace to return to ready
+    await expect(page.locator('text=Ready')).toBeVisible({ timeout: 30_000 })
     await expect(cmContent).toContainText('Saved verification stamp.')
+
+    // Close note tab and reopen to verify persisted content from disk
+    const entropyTab = page.getByRole('tab', { name: /Entropy/i }).first()
+    await page.locator('button[aria-label="Close Entropy"]').first().click()
+    await expect(entropyTab).not.toBeVisible({ timeout: 5_000 })
+
+    await entropyRow.press('Enter')
+    const reloadedContent = page.locator('.cm-content').first()
+    await expect(reloadedContent).toBeVisible({ timeout: 10_000 })
+    await expect(reloadedContent).toContainText('Saved verification stamp.')
   })
 })
