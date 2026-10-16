@@ -3,15 +3,52 @@ package plugin
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
+
+func createNamedTestPlugin(t *testing.T, dir, id string) {
+	t.Helper()
+	pDir := filepath.Join(dir, id)
+	if err := os.MkdirAll(pDir, 0o755); err != nil {
+		t.Fatalf("mkdir failed: %v", err)
+	}
+
+	manifest := fmt.Sprintf(`{
+		"id": %q,
+		"name": %q,
+		"version": "1.0.0",
+		"description": "test plugin",
+		"capabilities": ["test"],
+		"targets": ["desktop.editor"],
+		"permissions": ["vault:read"],
+		"lifecycle": {
+			"mode": "on-demand",
+			"idleTimeoutSeconds": 10
+		},
+		"backend": {
+			"type": "process",
+			"entrypoint": "bin/test",
+			"serviceName": "numen.v1.TestService"
+		},
+		"frontend": {
+			"entrypoint": "dist/index.js"
+		},
+		"settings": []
+	}`, id, id)
+	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
+		t.Fatalf("write manifest failed: %v", err)
+	}
+}
 
 func createTestPluginTree(t *testing.T, dir string) {
 	t.Helper()
@@ -316,6 +353,322 @@ func TestHostDrainsStdoutAfterHandshake(t *testing.T) {
 
 	host.Release("md.numen.ocr")
 	if err := host.TeardownAll(ctx, 50*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}
+
+func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
+	tmp := t.TempDir()
+	createNamedTestPlugin(t, tmp, "test.concurrent")
+
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+
+	cmd := exec.Command("sleep", "10")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start mock proc failed: %v", err)
+	}
+	defer func() {
+		_ = cmd.Process.Kill()
+		_, _ = cmd.Process.Wait()
+	}()
+
+	var launchCount atomic.Int32
+	launchStarted := make(chan struct{})
+	allowHandshake := make(chan struct{})
+	var once sync.Once
+
+	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
+		launchCount.Add(1)
+		once.Do(func() {
+			close(launchStarted)
+		})
+		<-allowHandshake
+		actualPort := port
+		if actualPort == 0 {
+			actualPort = 54321
+		}
+		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", actualPort))
+		return cmd.Process, io.NopCloser(r), nil
+	})
+
+	const numGoroutines = 8
+	var wg sync.WaitGroup
+	endpoints := make([]Endpoint, numGoroutines)
+	errs := make([]error, numGoroutines)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		endpoints[0], errs[0] = host.EnsureActive(t.Context(), "test.concurrent")
+	}()
+
+	<-launchStarted
+
+	for i := 1; i < numGoroutines; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			endpoints[idx], errs[idx] = host.EnsureActive(t.Context(), "test.concurrent")
+		}(i)
+	}
+
+	close(allowHandshake)
+	wg.Wait()
+
+	for i := range numGoroutines {
+		if errs[i] != nil {
+			t.Fatalf("goroutine %d returned error: %v", i, errs[i])
+		}
+		if endpoints[i].Port != 54321 {
+			t.Fatalf("goroutine %d port = %d, want 54321", i, endpoints[i].Port)
+		}
+		if endpoints[i].Token != endpoints[0].Token {
+			t.Fatalf("goroutine %d token mismatch: %s vs %s", i, endpoints[i].Token, endpoints[0].Token)
+		}
+	}
+
+	if count := launchCount.Load(); count != 1 {
+		t.Fatalf("expected 1 process launch, got %d", count)
+	}
+
+	for range numGoroutines {
+		host.Release("test.concurrent")
+	}
+	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}
+
+func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
+	tmp := t.TempDir()
+	createNamedTestPlugin(t, tmp, "plugin.slow")
+	createNamedTestPlugin(t, tmp, "plugin.fast")
+
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+
+	cmdSlow := exec.Command("sleep", "10")
+	if err := cmdSlow.Start(); err != nil {
+		t.Fatalf("start slow proc failed: %v", err)
+	}
+	defer func() {
+		_ = cmdSlow.Process.Kill()
+		_, _ = cmdSlow.Process.Wait()
+	}()
+
+	cmdFast := exec.Command("sleep", "10")
+	if err := cmdFast.Start(); err != nil {
+		t.Fatalf("start fast proc failed: %v", err)
+	}
+	defer func() {
+		_ = cmdFast.Process.Kill()
+		_, _ = cmdFast.Process.Wait()
+	}()
+
+	slowStarted := make(chan struct{})
+	slowAllowHandshake := make(chan struct{})
+
+	host.SetLauncher(func(_ context.Context, p DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
+		if p.Manifest.ID == "plugin.slow" {
+			close(slowStarted)
+			<-slowAllowHandshake
+			actualPort := port
+			if actualPort == 0 {
+				actualPort = 11111
+			}
+			return cmdSlow.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", actualPort))), nil
+		}
+		actualPort := port
+		if actualPort == 0 {
+			actualPort = 22222
+		}
+		return cmdFast.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", actualPort))), nil
+	})
+
+	var slowWg sync.WaitGroup
+	var slowEndpoint Endpoint
+	var slowErr error
+
+	slowWg.Add(1)
+	go func() {
+		defer slowWg.Done()
+		slowEndpoint, slowErr = host.EnsureActive(t.Context(), "plugin.slow")
+	}()
+
+	<-slowStarted
+
+	fastEndpoint, err := host.EnsureActive(t.Context(), "plugin.fast")
+	if err != nil {
+		t.Fatalf("EnsureActive on fast plugin failed while slow plugin was handshaking: %v", err)
+	}
+	if fastEndpoint.Port != 22222 {
+		t.Fatalf("fast plugin expected port 22222, got %d", fastEndpoint.Port)
+	}
+
+	plugins := host.GetPlugins()
+	if len(plugins) != 2 {
+		t.Fatalf("expected 2 plugins, got %d", len(plugins))
+	}
+	status, ok := host.GetPluginStatus("plugin.fast")
+	if !ok || !status.IsActive {
+		t.Fatalf("expected plugin.fast to be active, got ok=%v, active=%v", ok, status.IsActive)
+	}
+
+	close(slowAllowHandshake)
+	slowWg.Wait()
+
+	if slowErr != nil {
+		t.Fatalf("slow plugin EnsureActive failed: %v", slowErr)
+	}
+	if slowEndpoint.Port != 11111 {
+		t.Fatalf("slow plugin expected port 11111, got %d", slowEndpoint.Port)
+	}
+
+	host.Release("plugin.slow")
+	host.Release("plugin.fast")
+	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}
+
+func TestHostEnsureActiveConcurrentFailure(t *testing.T) {
+	tmp := t.TempDir()
+	createNamedTestPlugin(t, tmp, "test.fail")
+
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+
+	launchStarted := make(chan struct{})
+	allowFailure := make(chan struct{})
+	var once sync.Once
+	failErr := errors.New("simulated launch failure")
+
+	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		once.Do(func() {
+			close(launchStarted)
+		})
+		<-allowFailure
+		return nil, nil, failErr
+	})
+
+	const numGoroutines = 4
+	var wg sync.WaitGroup
+	errs := make([]error, numGoroutines)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		_, errs[0] = host.EnsureActive(t.Context(), "test.fail")
+	}()
+
+	<-launchStarted
+
+	for i := 1; i < numGoroutines; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			_, errs[idx] = host.EnsureActive(t.Context(), "test.fail")
+		}(i)
+	}
+
+	close(allowFailure)
+	wg.Wait()
+
+	for i := range numGoroutines {
+		if errs[i] == nil {
+			t.Fatalf("goroutine %d expected error, got nil", i)
+		}
+	}
+
+	status, ok := host.GetPluginStatus("test.fail")
+	if !ok {
+		t.Fatal("expected status for test.fail")
+	}
+	if status.IsActive {
+		t.Fatal("expected plugin to be inactive after failure")
+	}
+}
+
+func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
+	tmp := t.TempDir()
+	createNamedTestPlugin(t, tmp, "test.cancel")
+
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+
+	cmd := exec.Command("sleep", "10")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start mock proc failed: %v", err)
+	}
+	defer func() {
+		_ = cmd.Process.Kill()
+		_, _ = cmd.Process.Wait()
+	}()
+
+	launchStarted := make(chan struct{})
+	allowHandshake := make(chan struct{})
+
+	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
+		close(launchStarted)
+		<-allowHandshake
+		actualPort := port
+		if actualPort == 0 {
+			actualPort = 54321
+		}
+		return cmd.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", actualPort))), nil
+	})
+
+	var wg sync.WaitGroup
+	var activeEp Endpoint
+	var activeErr error
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		activeEp, activeErr = host.EnsureActive(t.Context(), "test.cancel")
+	}()
+
+	<-launchStarted
+
+	cancelCtx, cancel := context.WithCancel(t.Context())
+	cancelErrCh := make(chan error, 1)
+	go func() {
+		_, err := host.EnsureActive(cancelCtx, "test.cancel")
+		cancelErrCh <- err
+	}()
+
+	cancel()
+
+	select {
+	case err := <-cancelErrCh:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("expected context.Canceled, got %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for canceled EnsureActive call")
+	}
+
+	close(allowHandshake)
+	wg.Wait()
+
+	if activeErr != nil {
+		t.Fatalf("primary activation failed: %v", activeErr)
+	}
+	if activeEp.Port != 54321 {
+		t.Fatalf("expected port 54321, got %d", activeEp.Port)
+	}
+
+	host.Release("test.cancel")
+	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }

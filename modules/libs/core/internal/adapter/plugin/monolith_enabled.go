@@ -220,12 +220,12 @@ func (s *monolithLifecycleServer) Configure(
 }
 
 func (h *Host) activatePlugin(ctx context.Context, p DiscoveredPlugin, sup *Supervisor) (Endpoint, error) {
-	if h.launcher != nil {
+	h.mu.RLock()
+	launcher := h.launcher
+	h.mu.RUnlock()
+	if launcher != nil {
 		return h.startPluginProcess(ctx, p, sup)
 	}
-
-	now := time.Now()
-	sup.Acquire(now)
 
 	handler := h.getMonolithHandler(p.Manifest.ID)
 	transport := NewInProcessTransport(handler)
@@ -236,7 +236,14 @@ func (h *Host) activatePlugin(ctx context.Context, p DiscoveredPlugin, sup *Supe
 		Token:     "monolith",
 		Transport: transport,
 	}
+
+	now := time.Now()
+	h.mu.Lock()
+	sup.Acquire(now)
 	h.endpoints[p.Manifest.ID] = endpoint
+	sup.FinishActivating()
+	h.mu.Unlock()
+
 	return endpoint, nil
 }
 

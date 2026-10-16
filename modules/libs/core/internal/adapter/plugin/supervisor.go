@@ -43,6 +43,8 @@ type Supervisor struct {
 	validator      VaultPathValidator
 	exitCh         chan struct{}
 	onExit         func()
+	activatingCh   chan struct{}
+	activationErr  error
 }
 
 // NewSupervisor creates an idle supervisor for a plugin.
@@ -57,6 +59,8 @@ func NewSupervisor() *Supervisor {
 		validator:      NewVaultPathValidator(),
 		exitCh:         nil,
 		onExit:         nil,
+		activatingCh:   nil,
+		activationErr:  nil,
 	}
 }
 
@@ -72,6 +76,61 @@ func (s *Supervisor) GetState() ProcessState {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.state
+}
+
+// SetActivating transitions the supervisor state to StateActivating.
+func (s *Supervisor) SetActivating() <-chan struct{} {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.state = StateActivating
+	s.activationErr = nil
+	s.activatingCh = make(chan struct{})
+	return s.activatingCh
+}
+
+// ActivatingChan returns a channel closed when the pending activation completes.
+func (s *Supervisor) ActivatingChan() <-chan struct{} {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.activatingCh == nil {
+		closed := make(chan struct{})
+		close(closed)
+		return closed
+	}
+	return s.activatingCh
+}
+
+// ActivationError returns the error from the most recent failed activation attempt.
+func (s *Supervisor) ActivationError() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.activationErr
+}
+
+// FinishActivating transitions the supervisor state to StateActive and unblocks waiters.
+func (s *Supervisor) FinishActivating() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.state = StateActive
+	s.activationErr = nil
+	if s.activatingCh != nil {
+		close(s.activatingCh)
+		s.activatingCh = nil
+	}
+}
+
+// SetDormant transitions the supervisor state to StateDormant and clears activation state.
+func (s *Supervisor) SetDormant(err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.state = StateDormant
+	s.process = nil
+	s.activeRefCount = 0
+	s.activationErr = err
+	if s.activatingCh != nil {
+		close(s.activatingCh)
+		s.activatingCh = nil
+	}
 }
 
 // SetPermissions stores the security permissions declared by the supervised plugin.
@@ -125,6 +184,11 @@ func (s *Supervisor) Attach(p *os.Process, now time.Time) error {
 	s.process = p
 	s.state = StateActive
 	s.lastActiveTime = now
+	s.activationErr = nil
+	if s.activatingCh != nil {
+		close(s.activatingCh)
+		s.activatingCh = nil
+	}
 	exitCh := make(chan struct{})
 	s.exitCh = exitCh
 	go func() {
@@ -192,6 +256,11 @@ func (s *Supervisor) Teardown(
 			return errProcessNotRunning
 		}
 		s.state = StateDormant
+		s.activeRefCount = 0
+		if s.activatingCh != nil {
+			close(s.activatingCh)
+			s.activatingCh = nil
+		}
 		s.mu.Unlock()
 		if rpcShutdown != nil {
 			_ = rpcShutdown(ctx)
@@ -199,6 +268,10 @@ func (s *Supervisor) Teardown(
 		return nil
 	}
 	s.state = StateDeactivating
+	if s.activatingCh != nil {
+		close(s.activatingCh)
+		s.activatingCh = nil
+	}
 	proc := s.process
 	exitCh := s.exitCh
 	s.mu.Unlock()
@@ -233,9 +306,5 @@ func (s *Supervisor) forceKill(proc *os.Process, exitCh chan struct{}) error {
 }
 
 func (s *Supervisor) markDormant() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.state = StateDormant
-	s.process = nil
-	s.activeRefCount = 0
+	s.SetDormant(nil)
 }
