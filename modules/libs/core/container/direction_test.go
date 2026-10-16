@@ -127,14 +127,22 @@ func TestNothingTheCoreIsCompiledFromReachesOutward(t *testing.T) {
 		t.Run(one.goos+"/"+one.goarch, func(t *testing.T) {
 			inward(t, one.goos, one.goarch)
 		})
+		t.Run(one.goos+"/"+one.goarch+"/monolith", func(t *testing.T) {
+			inward(t, one.goos, one.goarch, "plugins_monolith")
+		})
 	}
 }
 
 // inward reads the tree as one platform's build resolves it and holds every
 // package of it to what answering says it may be compiled from.
-func inward(t *testing.T, goos, goarch string) {
+func inward(t *testing.T, goos, goarch string, tags ...string) {
 	t.Helper()
-	listing := exec.CommandContext(t.Context(), "go", "list", "-json", "./...")
+	args := []string{"list", "-json"}
+	if len(tags) > 0 {
+		args = append(args, "-tags", strings.Join(tags, ","))
+	}
+	args = append(args, "./...")
+	listing := exec.CommandContext(t.Context(), "go", args...)
 	listing.Dir = ".."
 	listing.Env = append(os.Environ(), "GOOS="+goos, "GOARCH="+goarch)
 	listed, err := listing.Output()
