@@ -76,5 +76,9 @@ export function createPluginContext(pluginId: string, host: PluginContextHost): 
     openTab(kind: string, at?: string): Promise<string> | void {
       return host.openTab?.(kind, at)
     },
+
+    closeTab(id: string): void {
+      host.closeTab?.(id)
+    },
   }
 }

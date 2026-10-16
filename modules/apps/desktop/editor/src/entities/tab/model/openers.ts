@@ -107,10 +107,12 @@ export function fileOpeners(vault: FileOpenerDeps) {
   const extensionReaders = new Map<string, SourceReader>()
 
   /** A kind of tab hands over the way it puts a file in front of the person. */
-  const registerEditor = (type: EditorKind, open: FileOpener) => {
-    editors.set(type, open)
+  const registerEditor = (type: EditorKind | string, open: FileOpener): (() => void) => {
+    editors.set(type as EditorKind, open)
     return () => {
-      editors.delete(type)
+      if (editors.get(type as EditorKind) === open) {
+        editors.delete(type as EditorKind)
+      }
     }
   }
 

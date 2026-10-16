@@ -140,8 +140,38 @@ function createSettingsCommands(options: CommandDepsOptions): CommandDeps['setti
   }
 }
 
+function tabMatchesPath(
+  windowTab: ReturnType<ReturnType<typeof useWindowTabs>['getTab']>,
+  path: string,
+): boolean {
+  if (!windowTab) return false
+  const openPath = windowTab.kind.getOpenTab?.(windowTab.state)?.path
+  if (openPath === path) return true
+  const target = windowTab.kind.getTarget?.(windowTab.state)
+  return target?.file === path || target?.path === path
+}
+
+function findHeldTabAt(held: ReturnType<typeof useWindowTabs>, path: string): string | null {
+  if (!path || !held?.tabs?.value || typeof held.getTab !== 'function') return null
+  for (const tab of held.tabs.value) {
+    if (tabMatchesPath(held.getTab(tab.id), path)) return tab.id
+  }
+  return null
+}
+
+function createCommandNotes(reached: Notes, held: ReturnType<typeof useWindowTabs>): Notes {
+  return {
+    ...reached,
+    getTabAt: (path: string) => reached?.getTabAt?.(path) ?? findHeldTabAt(held, path),
+    close: (id: string) => {
+      reached?.close?.(id)
+      held?.requestClose?.(id)
+    },
+  }
+}
+
 export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
-  const { core, making, made, setVaultName, reload, reached, runs, writeMessage } = options
+  const { core, making, made, setVaultName, reload, reached, held, runs, writeMessage } = options
 
   return {
     files: createFileCommands(core, making),
@@ -157,7 +187,7 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
     },
     goes: createNavigationCommands(options),
     settings: createSettingsCommands(options),
-    notes: reached,
+    notes: createCommandNotes(reached, held),
     runSupport: runs,
     copyPath: (path) => void navigator.clipboard?.writeText(path),
     writeMessage,

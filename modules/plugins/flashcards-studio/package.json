@@ -1,0 +1,25 @@
+{
+  "name": "@numen/flashcards-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Flashcards and SRS scheduler studio plugin for Numen",
+  "main": "./frontend/index.ts",
+  "types": "./frontend/index.ts",
+  "scripts": {
+    "build": "mkdir -p dist",
+    "test": "npm --prefix frontend test"
+  },
+  "dependencies": {
+    "@numen/plugin-sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@numen/plugin-sdk": "workspace:*",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.3",
+    "vue": "^3.5.0"
+  }
+}

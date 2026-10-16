@@ -77,7 +77,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     reached: editing.reached,
     openPreset: (path) =>
       resolveDeckPreset(core, path, {
-        openPreset: editing.schedules.openPreset,
+        openPreset: (presetPath) => void held.openTabOfKind('preset', presetPath),
         writeMessage,
       }),
     dressed: settings.dressed,

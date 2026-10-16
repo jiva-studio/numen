@@ -17,6 +17,8 @@ interface ActivePluginEntry {
   readonly lifecycle?: PluginLifecycle
 }
 
+import * as flashcardsStudio from '@plugins/flashcards-studio/frontend'
+
 const IN_TREE_LOADERS: Record<string, () => Promise<unknown>> = {
   'md.numen.pdf': () => import('@plugins/reader-pdf/frontend'),
   'md.numen.epub': () => import('@plugins/reader-epub/frontend'),
@@ -25,6 +27,7 @@ const IN_TREE_LOADERS: Record<string, () => Promise<unknown>> = {
   'md.numen.view-plex-graph': () => import('@plugins/view-plex-graph/frontend'),
   'md.numen.media-player': () => import('@plugins/media-player/frontend'),
   'md.numen.downloader': () => import('@plugins/downloader/frontend'),
+  'md.numen.flashcards-studio': async () => flashcardsStudio,
 }
 
 function injectPluginStyles(baseUrl: string, pluginId: string, stylesPath: string): void {
@@ -242,7 +245,7 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
   const fetchFn = deps.fetch ?? ((input: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(input, init))
   const importFn = deps.dynamicImport ?? ((url: string) => import(/* @vite-ignore */ url))
   const activePlugins = shallowRef<ReadonlyMap<string, ActivePluginEntry>>(new Map())
-  const moduleLoaders = new Map<string, () => Promise<unknown>>()
+  const moduleLoaders = new Map<string, () => Promise<unknown>>(Object.entries(IN_TREE_LOADERS))
   const settingSubscriptions = new Map<string, Disposable>()
   let hasStarted = false
 

@@ -36,12 +36,13 @@ export interface PluginPaletteCommand {
 export interface PluginHostDeps {
   readonly registerKind: (kind: AnyTabKind) => () => void
   readonly registerExtensionReader: (extension: string, read: SourceReader) => () => void
-  readonly openTab: (kind: string, at?: string) => Promise<string>
-  readonly openTabBeside?: (kind: string, at?: string) => Promise<string>
   readonly registerEditor?: (
     type: string,
-    open: (path: string, title: string, options?: unknown) => void,
+    open: (path: string, title?: string, options?: unknown) => void,
   ) => (() => void) | void
+  readonly openTab: (kind: string, at?: string) => Promise<string>
+  readonly openTabBeside?: (kind: string, at?: string) => Promise<string>
+  readonly closeTab?: (id: string) => void
   readonly getSetting?: (pluginId: string, key: string) => unknown
   readonly onSettingChange?: (
     pluginId: string,
@@ -49,6 +50,7 @@ export interface PluginHostDeps {
     handler: (value: unknown) => void | Promise<void>,
   ) => () => void
   readonly closeTabsForPlugin?: (pluginId: string) => void
+  readonly onCustomCardAdded?: (at: string, values: readonly { field: string; text: string }[]) => void
 }
 
 export interface PluginContextHost {
@@ -67,4 +69,5 @@ export interface PluginContextHost {
   emitVaultChange?(event: VaultChangeEvent): void
   emitFileSelect?(event: FileSelectEvent): void
   openTab?(kind: string, at?: string): Promise<string>
+  closeTab?(id: string): void
 }

@@ -42,6 +42,9 @@ type Config struct {
 	// a test names one of its own rather than filling the machine's.
 	SchedulesPath string
 
+	// Scheduler is the algorithm that spaces flashcard reviews. Empty uses FSRS.
+	Scheduler port.ScheduleAlgorithm
+
 	// InterfaceScale is how large the window is drawn and TextScale how large the
 	// text a person reads is set, said for this launch alone. Each stands over
 	// the settings file until a person chooses that size themselves, and zero is

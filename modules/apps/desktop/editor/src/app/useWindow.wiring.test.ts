@@ -104,9 +104,6 @@ beforeEach(() => {
     },
     editing: {
       notes: { applyPathChanges: vi.fn() },
-      decks: { applyPathChanges: vi.fn() },
-      stencils: { applyPathChanges: vi.fn() },
-      schedules: { applyPathChanges: vi.fn(), openPreset: vi.fn() },
       changes: { reportChange: vi.fn() },
       noted: { measureAll: vi.fn() },
       reached: { getTabAt: vi.fn(() => null) },
@@ -261,9 +258,7 @@ describe('the parts of the window', () => {
 
     await h.args.display.onVaultChanged(paths, renamed)
 
-    for (const one of ['notes', 'decks', 'stencils', 'schedules']) {
-      expect(h.f.editing[one].applyPathChanges).toHaveBeenCalledWith(paths, renamed)
-    }
+    expect(h.f.editing.notes.applyPathChanges).toHaveBeenCalledWith(paths, renamed)
     expect(h.f.commands.commands.applyRenames).toHaveBeenCalledWith(renamed)
     expect(h.f.kinds.files.refreshChangedPaths).toHaveBeenCalledWith(paths, renamed)
     expect(h.f.kinds.plexes.refresh).toHaveBeenCalledWith(renamed)
@@ -406,7 +401,7 @@ describe('a preset opened', () => {
     await h.args.commands.openPreset('a.md')
 
     expect(h.core.fileKinds).toHaveBeenCalledWith(['a.md'])
-    expect(h.f.editing.schedules.openPreset).toHaveBeenCalledWith('a.md')
+    expect(h.f.held.openTabOfKind).toHaveBeenCalledWith('preset', 'a.md')
     expect(h.getDeckPreset).not.toHaveBeenCalled()
   })
 
@@ -416,7 +411,7 @@ describe('a preset opened', () => {
 
     await h.args.commands.openPreset('a.md')
 
-    expect(h.f.editing.schedules.openPreset).toHaveBeenCalledWith('a.md')
+    expect(h.f.held.openTabOfKind).toHaveBeenCalledWith('preset', 'a.md')
     expect(h.getDeckPreset).not.toHaveBeenCalled()
   })
 
@@ -429,7 +424,7 @@ describe('a preset opened', () => {
 
     expect(h.getDeckPreset).toHaveBeenCalledWith('a.md')
     expect(h.f.writer).toHaveBeenCalledWith(WORDS.errors.missing, 'error')
-    expect(h.f.editing.schedules.openPreset).not.toHaveBeenCalled()
+    expect(h.f.held.openTabOfKind).not.toHaveBeenCalled()
   })
 
   it('says a deck has no preset where the answer names none', async () => {
@@ -440,7 +435,7 @@ describe('a preset opened', () => {
     await h.args.commands.openPreset('a.md')
 
     expect(h.f.writer).toHaveBeenCalledWith(WORDS.noPreset, 'caution')
-    expect(h.f.editing.schedules.openPreset).not.toHaveBeenCalled()
+    expect(h.f.held.openTabOfKind).not.toHaveBeenCalled()
   })
 
   it('says a deck has no preset where the answer holds none', async () => {
@@ -463,7 +458,7 @@ describe('a preset opened', () => {
 
     await h.args.commands.openPreset('a.md')
 
-    expect(h.f.editing.schedules.openPreset).toHaveBeenCalledWith('Presets/Fast.md', 'Fast')
+    expect(h.f.held.openTabOfKind).toHaveBeenCalledWith('preset', 'Presets/Fast.md')
     expect(h.f.writer).not.toHaveBeenCalled()
   })
 })

@@ -1,7 +1,7 @@
 /**
  * Plugin host managing dynamic registration of readers, tab kinds, and commands.
  */
-import { defineComponent, h, onErrorCaptured, ref, shallowRef, type Component } from 'vue'
+import { shallowRef } from 'vue'
 import type {
   AgentProviderRegistration,
   CommandRegistration,
@@ -10,47 +10,15 @@ import type {
   ReaderRegistration,
   TabKindRegistration,
 } from '@numen/plugin-sdk'
-import type { AnyTabKind } from '@/entities/tab/@x/plugin'
 import { createPluginContext } from './context'
+import {
+  createPluginPaneWrapper,
+  createReaderTabKind,
+  createCustomTabKind,
+} from './customTabKind'
 import type { PluginContextHost, PluginHostDeps, PluginPaletteCommand } from './types'
 
-export function createPluginPaneWrapper(pluginIdOrComponent: string | unknown, maybeComponent?: unknown): Component {
-  const pluginId = typeof pluginIdOrComponent === 'string' ? pluginIdOrComponent : 'plugin'
-  const component = maybeComponent !== undefined ? maybeComponent : pluginIdOrComponent
-  return defineComponent({
-    name: `PluginPaneWrapper[${pluginId}]`,
-    props: {
-      state: {
-        type: null,
-        required: true,
-      },
-    },
-    setup(props) {
-      const error = ref<Error | null>(null)
-      onErrorCaptured((err) => {
-        error.value = err instanceof Error ? err : new Error(String(err))
-        return false // Prevent crash propagation to host window
-      })
-      return () => {
-        if (error.value) {
-          return h('div', { class: 'plugin-error-fallback p-4 text-red-500' }, [
-            h('h3', { class: 'font-bold' }, `Plugin "${pluginId}" crashed`),
-            h('pre', { class: 'text-xs mt-2' }, error.value.message),
-          ])
-        }
-        if (!component) return null
-        const stateObj =
-          typeof props.state === 'object' && props.state !== null
-            ? (props.state as Record<string, unknown>)
-            : {}
-        return h(component as Component, {
-          ...stateObj,
-          state: props.state,
-        })
-      }
-    },
-  })
-}
+export { createPluginPaneWrapper }
 
 function matchesShortcut(event: KeyboardEvent, shortcut?: string): boolean {
   if (!shortcut) return false
@@ -103,57 +71,6 @@ interface HostRegistry {
 interface PluginItemRegistration<T> {
   readonly pluginId: string
   readonly registration: T
-}
-
-function createReaderTabKind(pluginId: string, registration: ReaderRegistration): AnyTabKind {
-  const kindId = registration.id.startsWith('reader:') ? registration.id : `reader:${registration.id}`
-  return {
-    kind: kindId,
-    open: (at: string) => ({
-      path: at,
-      file: at,
-      pluginId,
-      title: registration.title ?? at.split('/').pop() ?? at,
-    }),
-    getTitle: (state: unknown) => {
-      const s = state as { title?: string; path?: string } | undefined
-      return registration.title ?? (s?.title || s?.path?.split('/').pop() || s?.path || '')
-    },
-    pane: createPluginPaneWrapper(pluginId, registration.component),
-    identity: (at: string) => at,
-    getTarget: (state: unknown) => {
-      const path = (state as { path?: string } | undefined)?.path
-      const isAudio = path ? /\.(mp3|m4a|wav|ogg|aac)$/i.test(path) : false
-      return {
-        ...(path !== undefined ? { file: path } : {}),
-        source: isAudio ? ('recording' as const) : ('other' as const),
-      }
-    },
-    getOpenTab: (state: unknown) => ({ path: (state as { path?: string })?.path ?? '' }),
-  }
-}
-
-function createCustomTabKind(pluginId: string, registration: TabKindRegistration): AnyTabKind {
-  return {
-    kind: registration.kind,
-    open: (at: string) => ({
-      at,
-      path: at,
-      pluginId,
-      title: registration.title ?? registration.kind,
-    }),
-    getTitle: (state: unknown) => {
-      const s = state as { title?: string; at?: string } | undefined
-      return registration.title ?? (s?.title || s?.at || registration.kind)
-    },
-    pane: createPluginPaneWrapper(pluginId, registration.component),
-    identity: (at: string) => at || registration.kind,
-    onShow: (state: unknown) => {
-      const s = state as { measure?: () => void; editor?: { measure?: () => void } } | undefined
-      s?.measure?.()
-      s?.editor?.measure?.()
-    },
-  }
 }
 
 function clearSubscriptions(ctx?: PluginContext): void {
@@ -242,11 +159,11 @@ function registerTabKindEntry(
   item: PluginItemRegistration<TabKindRegistration>,
 ): Disposable {
   const { pluginId, registration } = item
-  const cleanups: (() => void)[] = [deps.registerKind(createCustomTabKind(pluginId, registration))]
+  const cleanups: (() => void)[] = [deps.registerKind(createCustomTabKind(pluginId, registration, deps))]
   if (deps.registerEditor) {
     const unreg = deps.registerEditor(
       registration.kind,
-      (path: string, _title: string, options?: unknown) => {
+      (path: string, _title?: string, options?: unknown) => {
         const where = extractWhere(options)
         if (where === 'beside' && deps.openTabBeside) {
           void deps.openTabBeside(registration.kind, path)
@@ -301,6 +218,7 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
       return { dispose: deps.onSettingChange(pluginId, key, handler as (v: unknown) => void | Promise<void>) }
     },
     openTab: (kind: string, at?: string) => deps.openTab(kind, at),
+    closeTab: (id: string) => deps.closeTab?.(id),
   }
 }
 
