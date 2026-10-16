@@ -1,31 +1,16 @@
-/**
- * Tab kinds and openers declared for the desktop window.
- */
-import { shallowRef } from 'vue'
-import type { DestinationDeps } from '@/features/command-palette'
+/** The tab kinds a window offers, and what it keeps across them. */
+import { ref } from 'vue'
 import { createAgentKind } from './kinds/agent'
-import { createFilesKind } from './kinds/files'
-import { createMediaKinds } from './kinds/media'
-import { createPlexKind } from './kinds/plex'
 import { createReaderKinds } from './kinds/readers'
+import { createFilesKind, type DestinationDeps } from './kinds/files'
+import { createPlexKind } from './kinds/plex'
 import type { WindowKindsDeps } from './kinds/deps'
 
-export type { WindowKindsDeps } from './kinds/deps'
-
-/**
- * Initializes and registers view kinds for the desktop window.
- */
 export function useWindowKinds(deps: WindowKindsDeps) {
-  const { log, tabOpeners, held, editing, settings } = deps
-  const writeMessage = log.getWriter('command')
-  const dragged = shallowRef<readonly string[]>([])
+  const { held, editing, settings, writeMessage, tabOpeners } = deps
+  const dragged = ref<readonly string[]>([])
 
-  const plexes = createPlexKind({
-    ...deps,
-    dragged,
-    writeMessage,
-    askAgent: (text) => void agents.askQuestion(text),
-  })
+  const plexes = createPlexKind({ ...deps, dragged })
 
   const agents = createAgentKind({
     ...deps,
@@ -36,8 +21,6 @@ export function useWindowKinds(deps: WindowKindsDeps) {
   })
 
   const { read } = createReaderKinds(deps)
-
-  const { pointed } = createMediaKinds(deps)
 
   const destinations: DestinationDeps = {
     travel: (path) => plexes.travel(path),
@@ -53,7 +36,6 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     plexes.kind,
     agents.kind,
     read.kind,
-    pointed.kind,
     files.kind,
   ])
 
@@ -61,7 +43,6 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     plexes,
     agents,
     read,
-    pointed,
     files,
     made,
     destinations,

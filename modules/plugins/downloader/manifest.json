@@ -5,7 +5,7 @@
   "description": "Media and web page downloader with transcript extraction via yt-dlp",
   "capabilities": ["media.download", "downloader"],
   "targets": ["desktop.editor"],
-  "activationEvents": ["onCommand:downloadMedia"],
+  "activationEvents": ["onCommand:downloadMedia", "onCommand:downloader.open"],
   "permissions": ["network:outbound", "vault:write"],
   "lifecycle": {
     "mode": "on-demand",
@@ -16,5 +16,9 @@
     "type": "process",
     "entrypoint": "bin/downloader",
     "serviceName": "numen.v1.DownloadService"
+  },
+  "frontend": {
+    "entrypoint": "dist/index.js",
+    "styles": "dist/styles.css"
   }
 }

@@ -26,7 +26,13 @@ vi.mock('./kinds/readers', () => ({
   createReaderKinds: () => ({ read: { kind: 'read' } }),
 }))
 vi.mock('./kinds/media', () => ({
+<<<<<<< HEAD
   createMediaKinds: () => ({ pointed: { kind: 'pointed' } }),
+||||||| parent of 0a672bae7 (feat(plugins): extract Media URL downloader UI into downloader plugin frontend (#1140))
+  createMediaKinds: () => ({ recorded: { kind: 'recorded' }, pointed: { kind: 'pointed' } }),
+=======
+  createMediaKinds: () => ({ recorded: { kind: 'recorded' } }),
+>>>>>>> 0a672bae7 (feat(plugins): extract Media URL downloader UI into downloader plugin frontend (#1140))
 }))
 vi.mock('./kinds/files', () => ({
   createFilesKind: (args: unknown) => {
@@ -85,7 +91,6 @@ describe('the window kinds', () => {
       'plex',
       'agent',
       'read',
-      'pointed',
       'files',
     ])
   })

@@ -72,5 +72,9 @@ export function createPluginContext(pluginId: string, host: PluginContextHost): 
     emitFileSelect(event: FileSelectEvent): void {
       host.emitFileSelect?.(event)
     },
+
+    openTab(kind: string, at?: string): Promise<string> | void {
+      return host.openTab?.(kind, at)
+    },
   }
 }

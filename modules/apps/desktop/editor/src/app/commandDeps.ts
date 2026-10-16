@@ -29,7 +29,7 @@ export interface CommandDepsOptions {
     getModelsAt?: (at: readonly string[]) => readonly import('@/entities/settings').Model[]
   }
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
-  pointed: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
+  pointed?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   files: () => { revealPath: (path: string) => void }
   plexes: () => {
     travel: (path: string) => Promise<void> | void
@@ -75,7 +75,7 @@ function createRunCommands(options: CommandDepsOptions): CommandDeps['runs'] {
       const able = await running.deleteTranscript(path)
       if (able) {
         ;(recorded.onDelete ?? recorded.reloadTranscript)?.(path)
-        ;(pointed.onDelete ?? pointed.reloadTranscript)?.(path)
+        ;(pointed?.onDelete ?? pointed?.reloadTranscript)?.(path)
       }
       void loadArtifactStates(path)
       return able
