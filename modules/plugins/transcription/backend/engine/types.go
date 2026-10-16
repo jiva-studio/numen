@@ -24,3 +24,11 @@ type Recording interface {
 	GetSegments(ctx context.Context, from, count int) ([]Audio, error)
 	Close() error
 }
+
+// TranscriberPort is the port interface for speech recognition and segmentation.
+type TranscriberPort interface {
+	GetTranscriptionModel() TranscriptionModel
+	Open(ctx context.Context, raw []byte) (Recording, error)
+	Transcribe(ctx context.Context, audio Audio) (string, error)
+	Close() error
+}

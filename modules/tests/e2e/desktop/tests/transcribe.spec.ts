@@ -37,4 +37,30 @@ test.describe('Audio Transcription Pipeline', () => {
     const editor = page.locator('.transcript__text')
     await expect(editor).toBeVisible({ timeout: 15_000 })
   })
+
+  test('opens mp3 audio file and renders media recording player', async ({ page }) => {
+    await page.goto('/')
+
+    await expect(page.locator('text=Ready')).toBeVisible()
+
+    // Switch to Files tab
+    await page.getByText('Files').first().click()
+
+    // Expand assets folder
+    const assetsRow = page.locator('[data-tree-row="assets"]')
+    await expect(assetsRow).toBeVisible()
+    await assetsRow.press('Enter')
+
+    // Verify sample.mp3 is listed
+    const mp3Row = page.locator('[data-tree-row="assets/sample.mp3"]')
+    await expect(mp3Row).toBeVisible()
+
+    // Activate sample.mp3
+    await mp3Row.press('Enter')
+
+    // Verify recording player or recording note rendered
+    await expect(
+      page.locator('.recording__player').or(page.locator('.recording__note')),
+    ).toBeVisible({ timeout: 10_000 })
+  })
 })

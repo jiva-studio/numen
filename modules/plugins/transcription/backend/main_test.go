@@ -33,7 +33,7 @@ func TestLifecycleShutdown(t *testing.T) {
 }
 
 func TestLifecycleConfigure(t *testing.T) {
-	ts := newTranscriptionServer(engine.Config{})
+	ts := newTranscriptionServer(engine.Config{}, defaultEngineFactory)
 	server := &lifecycleServer{
 		shutdownTrigger: make(chan struct{}),
 		ts:              ts,

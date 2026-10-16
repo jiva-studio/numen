@@ -37,7 +37,10 @@ test.describe('Workspace Tab Management', () => {
     const tabs = page.locator('.tab')
     await expect(tabs.first()).toBeVisible()
 
-    // 4. Ensure application remains ready and healthy
-    await expect(page.locator('text=Ready')).toBeVisible()
+    // 4. Switch back to Entropy note tab and verify content
+    const entropyTab = page.getByRole('tab', { name: /Entropy/i })
+    await expect(entropyTab).toBeVisible()
+    await entropyTab.click()
+    await expect(page.locator('.note').first()).toBeVisible()
   })
 })

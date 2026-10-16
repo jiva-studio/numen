@@ -48,6 +48,9 @@ createSampleWav(path.join(tmpVault, 'assets', 'sample.wav'))
 // Copy dynamic fixtures into isolated vault to prevent template fixture pollution.
 fs.copyFileSync(path.join(fixturesDir, 'sample.pdf'), path.join(tmpVault, 'assets', 'sample.pdf'))
 fs.copyFileSync(path.join(fixturesDir, 'sample.epub'), path.join(tmpVault, 'assets', 'sample.epub'))
+fs.writeFileSync(path.join(tmpVault, 'assets', 'corrupted.pdf'), 'INVALID_PDF_HEADER')
+fs.writeFileSync(path.join(tmpVault, 'assets', 'corrupted.epub'), 'INVALID_EPUB_ZIP')
+fs.writeFileSync(path.join(tmpVault, 'assets', 'sample.mp3'), Buffer.alloc(512))
 
 const testConfigDir = path.join(tmpVault, '.config')
 fs.mkdirSync(testConfigDir, { recursive: true })

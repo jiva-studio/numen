@@ -65,12 +65,22 @@ func (s *lifecycleServer) Configure(
 	}), nil
 }
 
+type engineFactory func(ctx context.Context, cfg engine.Config) (engine.TranscriberPort, error)
+
+func defaultEngineFactory(ctx context.Context, cfg engine.Config) (engine.TranscriberPort, error) {
+	if os.Getenv("NUMEN_MOCK_ML") == "true" {
+		return engine.NewMockTranscriber(), nil
+	}
+	return engine.Open(ctx, cfg)
+}
+
 type transcriptionServer struct {
-	mu          sync.Mutex
-	cfg         engine.Config
-	transcriber *engine.Transcriber
-	nextID      int64
-	recordings  map[string]engine.Recording
+	mu         sync.Mutex
+	cfg        engine.Config
+	factory    engineFactory
+	engine     engine.TranscriberPort
+	nextID     int64
+	recordings map[string]engine.Recording
 }
 
 func (s *transcriptionServer) updateConfig(values map[string]string) {
@@ -81,25 +91,26 @@ func (s *transcriptionServer) updateConfig(values map[string]string) {
 	}
 }
 
-func newTranscriptionServer(cfg engine.Config) *transcriptionServer {
+func newTranscriptionServer(cfg engine.Config, factory engineFactory) *transcriptionServer {
 	return &transcriptionServer{
 		cfg:        cfg,
+		factory:    factory,
 		recordings: make(map[string]engine.Recording),
 	}
 }
 
-func (s *transcriptionServer) getTranscriber(ctx context.Context) (*engine.Transcriber, error) {
+func (s *transcriptionServer) getEngine(ctx context.Context) (engine.TranscriberPort, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.transcriber != nil {
-		return s.transcriber, nil
+	if s.engine != nil {
+		return s.engine, nil
 	}
-	t, err := engine.Open(ctx, s.cfg)
+	e, err := s.factory(ctx, s.cfg)
 	if err != nil {
 		return nil, err
 	}
-	s.transcriber = t
-	return s.transcriber, nil
+	s.engine = e
+	return s.engine, nil
 }
 
 func (s *transcriptionServer) close() error {
@@ -109,23 +120,23 @@ func (s *transcriptionServer) close() error {
 		_ = rec.Close()
 	}
 	clear(s.recordings)
-	if s.transcriber != nil {
-		_ = s.transcriber.Close()
-		s.transcriber = nil
+	if s.engine != nil {
+		_ = s.engine.Close()
+		s.engine = nil
 	}
 	return nil
 }
 
 func (s *transcriptionServer) GetTranscriptionModel(
-	_ context.Context,
+	ctx context.Context,
 	_ *connect.Request[numenv1.GetTranscriptionModelRequest],
 ) (*connect.Response[numenv1.GetTranscriptionModelResponse], error) {
 	s.mu.Lock()
-	t := s.transcriber
+	e := s.engine
 	s.mu.Unlock()
 
-	if t != nil {
-		m := t.GetTranscriptionModel()
+	if e != nil {
+		m := e.GetTranscriptionModel()
 		return connect.NewResponse(&numenv1.GetTranscriptionModelResponse{
 			Model:     m.Model,
 			Segmenter: m.Segmenter,
@@ -198,7 +209,7 @@ func (s *transcriptionServer) OpenRecording(
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("empty audio data"))
 	}
 
-	t, err := s.getTranscriber(ctx)
+	t, err := s.getEngine(ctx)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("transcriber open: %w", err))
 	}
@@ -262,7 +273,7 @@ func (s *transcriptionServer) Transcribe(
 		}), nil
 	}
 
-	t, err := s.getTranscriber(ctx)
+	t, err := s.getEngine(ctx)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("transcriber open: %w", err))
 	}
@@ -359,7 +370,7 @@ func main() {
 	actualPort := listener.Addr().(*net.TCPAddr).Port
 
 	shutdownCh := make(chan struct{})
-	trans := newTranscriptionServer(cfg)
+	trans := newTranscriptionServer(cfg, defaultEngineFactory)
 	defer trans.close()
 	life := &lifecycleServer{shutdownTrigger: shutdownCh, ts: trans}
 
