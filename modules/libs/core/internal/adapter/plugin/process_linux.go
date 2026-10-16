@@ -130,20 +130,25 @@ func terminateCgroupProcs(pluginDir string) {
 	}
 }
 
-func cleanupProcessCgroup(pid int) {
+func cleanupProcessCgroup(pid int) error {
 	baseDir, err := findCgroupV2Dir(os.Getpid())
 	if err != nil {
-		return
+		return err
 	}
 	pluginDir := filepath.Join(baseDir, fmt.Sprintf("numen-plugin-%d", pid))
 	terminateCgroupProcs(pluginDir)
+	var removeErr error
 	for attempt := 0; attempt < 5; attempt++ {
-		if err := os.Remove(pluginDir); err == nil || errors.Is(err, os.ErrNotExist) {
-			return
+		removeErr = os.Remove(pluginDir)
+		if removeErr == nil || errors.Is(removeErr, os.ErrNotExist) {
+			return nil
 		}
 		terminateCgroupProcs(pluginDir)
 	}
-	_ = os.Remove(pluginDir)
+	if removeErr != nil && !errors.Is(removeErr, os.ErrNotExist) {
+		return fmt.Errorf("remove plugin cgroup %s: %w", pluginDir, removeErr)
+	}
+	return nil
 }
 
 func readProcessRSS(pid int) (uint64, error) {

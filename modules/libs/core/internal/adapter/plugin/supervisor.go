@@ -45,6 +45,7 @@ type Supervisor struct {
 	onExit         func()
 	activatingCh   chan struct{}
 	activationErr  error
+	cleanupErr     error
 
 	memoryLimitBytes  uint64
 	monitorInterval   time.Duration
@@ -120,6 +121,13 @@ func (s *Supervisor) ActivationError() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.activationErr
+}
+
+// CleanupError returns any error from the most recent cgroup cleanup.
+func (s *Supervisor) CleanupError() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.cleanupErr
 }
 
 // FinishActivating transitions the supervisor state to StateActive and unblocks waiters.
@@ -213,8 +221,9 @@ func (s *Supervisor) Attach(p *os.Process, now time.Time) error {
 	go func() {
 		_, _ = p.Wait()
 		close(exitCh)
-		cleanupProcessCgroup(p.Pid)
+		cleanupErr := cleanupProcessCgroup(p.Pid)
 		s.mu.Lock()
+		s.cleanupErr = cleanupErr
 		s.stopMemoryMonitorLocked()
 		if s.process == p {
 			s.process = nil
