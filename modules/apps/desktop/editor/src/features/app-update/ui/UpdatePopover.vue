@@ -35,6 +35,21 @@ const platformMessage = computed(() => {
   return 'View release notes and packages on GitHub.'
 })
 
+const isSingleAction = computed(() => {
+  return (
+    props.platform === 'linux' ||
+    !props.updateInfo.notesUrl ||
+    props.updateInfo.downloadUrl === props.updateInfo.notesUrl
+  )
+})
+
+const actionLabel = computed(() => {
+  if (props.platform === 'linux' || props.updateInfo.downloadUrl.includes('github.com')) {
+    return 'View on GitHub'
+  }
+  return 'Download update'
+})
+
 /* -------------------------------- Handlers -------------------------------- */
 function onClose() {
   emit('close')
@@ -83,11 +98,11 @@ function onDismiss() {
         class="update-popover__btn update-popover__btn--primary"
         @click="onDownload"
       >
-        {{ platform === 'linux' ? 'View on GitHub' : 'Download update' }}
+        {{ actionLabel }}
       </a>
 
       <a
-        v-if="platform !== 'linux' && updateInfo.notesUrl"
+        v-if="!isSingleAction && updateInfo.notesUrl"
         :href="updateInfo.notesUrl"
         target="_blank"
         rel="noopener noreferrer"

@@ -18,8 +18,15 @@ const props = withDefaults(
 )
 
 /* --------------------------------- State ---------------------------------- */
-const { hasUpdate, isDismissed, updateInfo, dismissUpdate, openDownload, openReleaseNotes } =
-  useAppUpdate(props.options)
+const {
+  hasUpdate,
+  isDismissed,
+  updateInfo,
+  platform,
+  dismissUpdate,
+  openDownload,
+  openReleaseNotes,
+} = useAppUpdate(props.options)
 
 const isOpen = ref(false)
 const rootRef = useTemplateRef<HTMLElement>('rootRef')
@@ -96,7 +103,7 @@ function onKeyDown(event: KeyboardEvent) {
     <UpdatePopover
       v-if="isOpen"
       :update-info="updateInfo"
-      :platform="options.platform"
+      :platform="platform"
       @close="onClose"
       @download="onDownload"
       @release-notes="onReleaseNotes"

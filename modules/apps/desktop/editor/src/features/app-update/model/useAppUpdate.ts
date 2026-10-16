@@ -100,6 +100,7 @@ export function useAppUpdate(options: UpdateOptions = {}) {
     isDismissed,
     hasUpdate,
     updateInfo,
+    platform,
     checkUpdate,
     dismissUpdate,
     openDownload,

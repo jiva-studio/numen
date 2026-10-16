@@ -135,4 +135,38 @@ describe('UpdateIndicator', () => {
 
     expect(wrapper.find('.update-popover').exists()).toBe(false)
   })
+
+  it('renders single GitHub action button on Linux', async () => {
+    const fetchFn = createMockFetch(sampleManifest)
+    const openUrl = vi.fn()
+
+    const wrapper = mount(UpdateIndicator, {
+      props: {
+        options: {
+          currentVersion: '2026.9.1',
+          currentBuild: 900,
+          platform: 'linux',
+          fetchFn,
+          openUrl,
+          checkIntervalMs: 0,
+        },
+      },
+      attachTo: document.body,
+    })
+
+    await new Promise((done) => setTimeout(done, 10))
+    await wrapper.find('.update-indicator__trigger').trigger('click')
+
+    expect(wrapper.find('.update-popover').exists()).toBe(true)
+    expect(wrapper.text()).toContain('View release notes and packages on GitHub.')
+    expect(wrapper.text()).toContain('View on GitHub')
+    expect(wrapper.text()).not.toContain('Release notes')
+    expect(wrapper.text()).toContain('Dismiss')
+
+    const downloadBtn = wrapper.find('.update-popover__btn--primary')
+    await downloadBtn.trigger('click')
+    expect(openUrl).toHaveBeenCalledWith(
+      'https://github.com/jiva-studio/numen/releases/tag/v2026.10.1',
+    )
+  })
 })
