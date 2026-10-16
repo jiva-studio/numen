@@ -20,13 +20,13 @@ var (
 
 // TranscriberBridge connects port.Transcriber calls to an out-of-process transcription plugin via Connect-RPC.
 type TranscriberBridge struct {
-	host     *Host
+	host     port.PluginManager
 	pluginID string
 	client   numenv1connect.TranscriptionServiceClient
 }
 
 // OpenTranscriberBridge activates or connects to the transcription plugin and returns a port.Transcriber.
-func OpenTranscriberBridge(ctx context.Context, host *Host) (*TranscriberBridge, error) {
+func OpenTranscriberBridge(ctx context.Context, host port.PluginManager) (*TranscriberBridge, error) {
 	plugin, ok := host.FindPluginByCapability("transcription")
 	if !ok {
 		return nil, errNoTranscriptionPlugin
@@ -179,7 +179,7 @@ type pluginRecording struct {
 	client      numenv1connect.TranscriptionServiceClient
 	recordingID string
 	durationMs  int
-	host        *Host
+	host        port.PluginManager
 	pluginID    string
 }
 

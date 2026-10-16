@@ -1607,3 +1607,45 @@ func run(at time.Time) {
 		t.Errorf("the rule refuses the timers %v, want %v", arms, want)
 	}
 }
+
+// TestContainerDoesNotDowncastPluginHost ensures container code interacts with
+// plugin supervisor solely through port.PluginManager interface, never downcasting
+// to concrete *plugin.Host.
+func TestContainerDoesNotDowncastPluginHost(t *testing.T) {
+	files, err := filepath.Glob("*.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fset := token.NewFileSet()
+	for _, file := range files {
+		if strings.HasSuffix(file, "_test.go") {
+			continue
+		}
+		node, err := parser.ParseFile(fset, file, nil, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ast.Inspect(node, func(n ast.Node) bool {
+			ta, ok := n.(*ast.TypeAssertExpr)
+			if !ok {
+				return true
+			}
+			star, ok := ta.Type.(*ast.StarExpr)
+			if !ok {
+				return true
+			}
+			sel, ok := star.X.(*ast.SelectorExpr)
+			if !ok {
+				return true
+			}
+			pkg, ok := sel.X.(*ast.Ident)
+			if !ok {
+				return true
+			}
+			if pkg.Name == "plugin" && sel.Sel.Name == "Host" {
+				t.Errorf("%s: downcast to *plugin.Host is forbidden; use port.PluginManager", file)
+			}
+			return true
+		})
+	}
+}

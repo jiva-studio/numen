@@ -20,14 +20,14 @@ var (
 
 // EmbedderBridge connects port.Embedder calls to an out-of-process embedding plugin via Connect-RPC.
 type EmbedderBridge struct {
-	host        *Host
+	host        port.PluginManager
 	pluginID    string
 	client      numenv1connect.EmbeddingServiceClient
 	concurrency int
 }
 
 // OpenEmbedderBridge activates or connects to the embedding plugin and returns a port.Embedder.
-func OpenEmbedderBridge(ctx context.Context, host *Host) (*EmbedderBridge, error) {
+func OpenEmbedderBridge(ctx context.Context, host port.PluginManager) (*EmbedderBridge, error) {
 	plugin, ok := host.FindPluginByCapability("embedding")
 	if !ok {
 		return nil, errNoEmbedderPlugin

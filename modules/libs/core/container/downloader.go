@@ -74,11 +74,10 @@ type hostDownloaderPort struct {
 }
 
 func (h hostDownloaderPort) openBridge(ctx context.Context) (*plugin.DownloaderBridge, error) {
-	host, ok := h.host.(*plugin.Host)
-	if !ok {
+	if h.host == nil {
 		return nil, errDownloaderUnavailable
 	}
-	return plugin.OpenDownloaderBridge(ctx, host)
+	return plugin.OpenDownloaderBridge(ctx, h.host)
 }
 
 func (h hostDownloaderPort) GetDownloadModel(at domain.URL) port.DownloadModel {

@@ -29,13 +29,13 @@ var (
 
 // DocumentBridge connects document and text extraction ports to an out-of-process PDF plugin via Connect-RPC.
 type DocumentBridge struct {
-	host     *Host
+	host     port.PluginManager
 	pluginID string
 	client   numenv1connect.DocumentServiceClient
 }
 
 // OpenDocumentBridge activates or connects to the document plugin and returns a DocumentBridge.
-func OpenDocumentBridge(ctx context.Context, host *Host) (*DocumentBridge, error) {
+func OpenDocumentBridge(ctx context.Context, host port.PluginManager) (*DocumentBridge, error) {
 	p, ok := host.FindPluginByCapability("document")
 	if !ok {
 		return nil, ErrNoDocumentPlugin
@@ -253,7 +253,7 @@ func (b *DocumentBridge) OpenDocument(ctx context.Context, file io.ReadSeekClose
 }
 
 type remoteDocument struct {
-	host      *Host
+	host      port.PluginManager
 	pluginID  string
 	client    numenv1connect.DocumentServiceClient
 	path      string
