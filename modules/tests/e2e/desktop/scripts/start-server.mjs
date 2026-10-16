@@ -49,6 +49,9 @@ createSampleWav(path.join(tmpVault, 'assets', 'sample.wav'))
 fs.copyFileSync(path.join(fixturesDir, 'sample.pdf'), path.join(tmpVault, 'assets', 'sample.pdf'))
 fs.copyFileSync(path.join(fixturesDir, 'sample.epub'), path.join(tmpVault, 'assets', 'sample.epub'))
 
+const testConfigDir = path.join(tmpVault, '.config')
+fs.mkdirSync(testConfigDir, { recursive: true })
+
 function cleanup() {
   try {
     fs.rmSync(tmpVault, { recursive: true, force: true })
@@ -64,6 +67,7 @@ const child = spawn(
     stdio: 'inherit',
     env: {
       ...process.env,
+      XDG_CONFIG_HOME: testConfigDir,
       NUMEN_MOCK_ML: 'true',
       NUMEN_PLUGINS_PATH: pluginsPath,
     },

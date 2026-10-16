@@ -1,7 +1,7 @@
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 
 export function activate(_context?: PluginContext): void {
-  // Activation hook
+  // PDF reader plugin activation
 }
 
 export function deactivate(): void {

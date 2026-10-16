@@ -130,7 +130,9 @@ type Config struct {
 // NewPluginHost creates and initializes a plugin host for the specified target and search directories.
 func NewPluginHost(target string, dirs ...string) *plugin.Host {
 	host := plugin.NewHost(target, dirs...)
-	_ = host.Discover()
+	if err := host.Discover(); err != nil {
+		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", err)
+	}
 	return host
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	"connectrpc.com/connect"
 
@@ -174,6 +175,7 @@ func (b *TranscriberBridge) Close() error {
 }
 
 type pluginRecording struct {
+	mu          sync.Mutex
 	client      numenv1connect.TranscriptionServiceClient
 	recordingID string
 	durationMs  int
@@ -208,14 +210,18 @@ func (r *pluginRecording) GetSegments(ctx context.Context, from, count int) ([]p
 }
 
 func (r *pluginRecording) Close() error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if r.recordingID == "" {
 		return nil
 	}
-	ctx := context.Background()
-	req := connect.NewRequest(&v1.CloseRecordingRequest{
-		RecordingId: r.recordingID,
-	})
-	_, _ = r.client.CloseRecording(ctx, req)
+	if r.client != nil {
+		ctx := context.Background()
+		req := connect.NewRequest(&v1.CloseRecordingRequest{
+			RecordingId: r.recordingID,
+		})
+		_, _ = r.client.CloseRecording(ctx, req)
+	}
 	r.recordingID = ""
 	if r.host != nil && r.pluginID != "" {
 		r.host.Release(r.pluginID)

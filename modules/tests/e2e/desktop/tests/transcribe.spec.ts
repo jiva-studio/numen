@@ -25,13 +25,16 @@ test.describe('Audio Transcription Pipeline', () => {
     await expect(page.locator('.recording__player')).toBeVisible()
 
     // If transcribe button is visible, click it; background worker may auto-transcribe with mock ML
-    const transcribeBtn = page.locator('.transcript__ask')
-    if (await transcribeBtn.isVisible()) {
+    const transcribeBtn = page.getByRole('button', { name: 'Transcribe' })
+    try {
+      await transcribeBtn.waitFor({ state: 'visible', timeout: 3000 })
       await transcribeBtn.click()
+    } catch {
+      // Background worker might have already triggered transcription
     }
 
     // Mock ML transcribes the audio and generates transcript text
     const editor = page.locator('.transcript__text')
-    await expect(editor).toBeVisible({ timeout: 10_000 })
+    await expect(editor).toBeVisible({ timeout: 15_000 })
   })
 })

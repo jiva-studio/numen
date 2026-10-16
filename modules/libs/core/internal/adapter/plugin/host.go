@@ -367,6 +367,12 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 		_ = proc.Kill()
 		_, _ = proc.Wait()
 		_ = stdout.Close()
+		h.stdinsMu.Lock()
+		if c, ok := h.stdins[p.Manifest.ID]; ok {
+			_ = c.Close()
+			delete(h.stdins, p.Manifest.ID)
+		}
+		h.stdinsMu.Unlock()
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("handshake plugin %s: %w", p.Manifest.ID, err)
 	}
 
@@ -375,9 +381,19 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 		_ = proc.Kill()
 		_, _ = proc.Wait()
 		_ = stdout.Close()
+		h.stdinsMu.Lock()
+		if c, ok := h.stdins[p.Manifest.ID]; ok {
+			_ = c.Close()
+			delete(h.stdins, p.Manifest.ID)
+		}
+		h.stdinsMu.Unlock()
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("attach plugin %s: %w", p.Manifest.ID, err)
 	}
 	sup.SetOnExit(func() {
+		h.mu.Lock()
+		delete(h.endpoints, p.Manifest.ID)
+		h.mu.Unlock()
+
 		h.stdinsMu.Lock()
 		if c, ok := h.stdins[p.Manifest.ID]; ok {
 			_ = c.Close()
@@ -400,10 +416,11 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 func isWhitelistedEnv(key string) bool {
 	upper := strings.ToUpper(key)
 	switch upper {
-	case "PATH", "HOME", "USER", "TMP", "TEMP", "SYSTEMROOT", "SYSTEMDRIVE", "APPDATA", "LOCALAPPDATA", "LANG":
+	case "PATH", "HOME", "USER", "TMP", "TEMP", "SYSTEMROOT", "SYSTEMDRIVE", "APPDATA", "LOCALAPPDATA", "LANG",
+		"SSL_CERT_FILE", "SSL_CERT_DIR", "LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH", "OPENAI_API_KEY":
 		return true
 	}
-	return strings.HasPrefix(upper, "LC_")
+	return strings.HasPrefix(upper, "LC_") || strings.HasPrefix(upper, "NUMEN_") || strings.HasPrefix(upper, "XDG_") || strings.HasPrefix(upper, "NIX_")
 }
 
 func (h *Host) defaultLauncher(

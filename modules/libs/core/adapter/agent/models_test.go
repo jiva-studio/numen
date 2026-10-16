@@ -72,3 +72,22 @@ func TestAProgramOnThePathIsPresent(t *testing.T) {
 		})
 	}
 }
+
+func TestGetModelsProvidesFallbackForKnownAgents(t *testing.T) {
+	cfg := agent.Defaults()
+	models := agent.GetModels(cfg)
+	if len(models) == 0 {
+		t.Fatalf("expected models to be returned, got empty slice")
+	}
+
+	foundClaudeModel := false
+	for _, m := range models {
+		if len(m.Path) == 2 && m.Path[0] == "claude" && m.Path[1] == "model" {
+			foundClaudeModel = true
+			break
+		}
+	}
+	if !foundClaudeModel {
+		t.Errorf("expected at least one claude model in catalogue, got none")
+	}
+}

@@ -2,16 +2,13 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strconv"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -22,10 +19,8 @@ import (
 
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
-	"github.com/jiva-studio/numen/modules/plugins/reader-epub/backend/epub"
+	"github.com/jiva-studio/numen/modules/plugins/reader-epub/backend/service"
 )
-
-const mostListed = 10_000
 
 type lifecycleServer struct {
 	numenv1connect.UnimplementedPluginLifecycleServiceHandler
@@ -70,136 +65,6 @@ func (s *lifecycleServer) Shutdown(
 	}()
 	return connect.NewResponse(&numenv1.ShutdownResponse{
 		Success: true,
-	}), nil
-}
-
-type bookServer struct{}
-
-var (
-	errEmptyBookPath = errors.New("empty book path")
-	errPathTraversal = errors.New("path traversal outside allowed scope")
-	errOutsideVault  = errors.New("path outside allowed vault root")
-)
-
-func validateVaultPath(path string) (string, error) {
-	if path == "" {
-		return "", errEmptyBookPath
-	}
-	cleanPath := filepath.Clean(path)
-	if strings.Contains(cleanPath, "..") {
-		return "", errPathTraversal
-	}
-
-	vaultRoot := os.Getenv("NUMEN_VAULT_PATH")
-	if vaultRoot != "" {
-		cleanVault := filepath.Clean(vaultRoot)
-		if !filepath.IsAbs(cleanPath) {
-			cleanPath = filepath.Join(cleanVault, cleanPath)
-		}
-		prefix := cleanVault
-		if !strings.HasSuffix(prefix, string(filepath.Separator)) {
-			prefix += string(filepath.Separator)
-		}
-		if cleanPath != cleanVault && !strings.HasPrefix(cleanPath, prefix) {
-			return "", errOutsideVault
-		}
-	}
-	return cleanPath, nil
-}
-
-func readBookFile(path string) ([]byte, error) {
-	cleanPath, err := validateVaultPath(path)
-	if err != nil {
-		return nil, err
-	}
-	return os.ReadFile(cleanPath)
-}
-
-func (s *bookServer) GetBook(
-	_ context.Context,
-	req *connect.Request[numenv1.GetBookRequest],
-) (*connect.Response[numenv1.GetBookResponse], error) {
-	path := req.Msg.GetPath()
-	if path == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
-	}
-	raw, err := readBookFile(path)
-	if err != nil {
-		if errors.Is(err, errOutsideVault) || errors.Is(err, errPathTraversal) {
-			return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
-		}
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
-	}
-
-	book, err := epub.Read(raw)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("parse epub %s: %w", path, err))
-	}
-
-	resp := &numenv1.GetBookResponse{
-		Title:     book.Title,
-		PageCount: int32(book.PageCount()),
-		TextBytes: int32(len(book.Text)),
-		PageBytes: int32(book.PageBytes()),
-	}
-
-	docCount := min(len(book.Documents), mostListed)
-	for _, doc := range book.Documents[:docCount] {
-		resp.Documents = append(resp.Documents, &numenv1.SpineDocument{
-			Path:   doc.Path,
-			Offset: int32(doc.Offset),
-			Length: int32(doc.Length),
-		})
-	}
-
-	partCount := min(len(book.Parts), mostListed)
-	for _, part := range book.Parts[:partCount] {
-		resp.Parts = append(resp.Parts, &numenv1.BookPart{
-			Title:  part.Title,
-			Offset: int32(part.Offset),
-			Level:  int32(part.Level),
-		})
-	}
-
-	pageCount := min(len(book.Pages), mostListed)
-	for _, page := range book.Pages[:pageCount] {
-		resp.PrintedPages = append(resp.PrintedPages, &numenv1.PrintedPage{
-			Label:  page.Label,
-			Offset: int32(page.Offset),
-		})
-	}
-
-	return connect.NewResponse(resp), nil
-}
-
-func (s *bookServer) ReadBookMarkup(
-	_ context.Context,
-	req *connect.Request[numenv1.ReadBookMarkupRequest],
-) (*connect.Response[numenv1.ReadBookMarkupResponse], error) {
-	path := req.Msg.GetPath()
-	if path == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
-	}
-	raw, err := readBookFile(path)
-	if err != nil {
-		if errors.Is(err, errOutsideVault) || errors.Is(err, errPathTraversal) {
-			return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
-		}
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
-	}
-
-	book, err := epub.Read(raw)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("parse epub %s: %w", path, err))
-	}
-
-	drawn, err := book.Markup(req.Msg.GetDocument())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read document markup %s: %w", req.Msg.GetDocument(), err))
-	}
-
-	return connect.NewResponse(&numenv1.ReadBookMarkupResponse{
-		Markup: drawn.HTML(),
 	}), nil
 }
 
@@ -248,7 +113,7 @@ func main() {
 
 	shutdownCh := make(chan struct{})
 	life := &lifecycleServer{shutdownTrigger: shutdownCh}
-	book := &bookServer{}
+	book := service.NewBookServer()
 
 	interceptors := connect.WithInterceptors(authCheck(tokenFlag))
 
@@ -268,8 +133,9 @@ func main() {
 		}
 	}()
 
+	// Output ready handshake for plugin host
 	fmt.Printf("NUMEN_READY port=%d\n", actualPort)
-	_ = os.Stdout.Sync()
+	os.Stdout.Sync()
 
 	stdinEOF := make(chan struct{})
 	go func() {
