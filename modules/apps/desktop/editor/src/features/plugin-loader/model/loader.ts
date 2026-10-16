@@ -19,6 +19,7 @@ const IN_TREE_LOADERS: Record<string, () => Promise<unknown>> = {
   'md.numen.epub': () => import('@plugins/reader-epub/frontend'),
   'md.numen.editor-markdown': () => import('@plugins/editor-markdown/frontend'),
   'md.numen.view-file-tree': () => import('@plugins/view-file-tree/frontend'),
+  'md.numen.view-plex-graph': () => import('@plugins/view-plex-graph/frontend'),
 }
 
 function extractLifecycleFunction(
