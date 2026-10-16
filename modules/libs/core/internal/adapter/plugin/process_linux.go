@@ -83,7 +83,6 @@ func applyCgroupMemoryLimit(pid int, limitBytes uint64) error {
 	}
 	limitStr := strconv.FormatUint(limitBytes, 10)
 	_ = os.WriteFile(filepath.Join(pluginDir, "memory.high"), []byte(limitStr), 0o600)
-	_ = os.WriteFile(filepath.Join(pluginDir, "memory.max"), []byte(limitStr), 0o600)
 	return nil
 }
 
@@ -92,8 +91,11 @@ func readCgroupMemory(pid int) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	pluginDir := filepath.Join(baseDir, fmt.Sprintf("numen-plugin-%d", pid))
-	data, err := os.ReadFile(filepath.Join(pluginDir, "memory.current"))
+	expectedName := fmt.Sprintf("numen-plugin-%d", pid)
+	if filepath.Base(baseDir) != expectedName {
+		return 0, errors.New("cgroup v2 directory not matched")
+	}
+	data, err := os.ReadFile(filepath.Join(baseDir, "memory.current"))
 	if err != nil {
 		return 0, err
 	}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"slices"
 	"strings"
 )
@@ -54,6 +55,9 @@ func (l *PluginLifecycle) UnmarshalJSON(data []byte) error {
 	}
 	*l = PluginLifecycle(raw.rawLifecycle)
 	if l.MemoryLimitBytes == 0 && raw.MemoryLimitMB > 0 {
+		if raw.MemoryLimitMB > math.MaxUint64/(1024*1024) {
+			return errors.New("memory limit in megabytes exceeds maximum value")
+		}
 		l.MemoryLimitBytes = raw.MemoryLimitMB * 1024 * 1024
 	}
 	return nil
