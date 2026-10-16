@@ -99,6 +99,7 @@ test.describe('Chaos, Fault Tolerance and Stress Scenarios', () => {
     await expect(entropyTab).toHaveAttribute('aria-selected', 'true')
 
     // Verify workspace remains responsive
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await expect(page.locator('.status-bar')).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
   })
 })

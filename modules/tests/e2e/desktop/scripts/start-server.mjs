@@ -77,6 +77,11 @@ fs.writeFileSync(
     ).join('\n\n'),
 )
 
+// Ensure Thermodynamics.md is the most recently modified note so it is always the initial opening note.
+const thermoFile = path.join(tmpVault, 'Thermodynamics.md')
+const futureTime = new Date(Date.now() + 100_000)
+fs.utimesSync(thermoFile, futureTime, futureTime)
+
 const testConfigDir = path.join(tmpVault, '.config')
 fs.mkdirSync(testConfigDir, { recursive: true })
 
