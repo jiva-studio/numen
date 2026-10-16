@@ -591,13 +591,17 @@ func (h *Host) Release(pluginID string) {
 	}
 }
 
+type pluginTeardownTarget struct {
+	id       string
+	sup      *Supervisor
+	endpoint Endpoint
+}
+
 // EvictIdle stops idle plugins whose idle duration exceeds their configured timeout.
 func (h *Host) EvictIdle(ctx context.Context, defaultThreshold, gracePeriod time.Duration) []string {
 	h.mu.Lock()
-	defer h.mu.Unlock()
-
 	now := time.Now()
-	evicted := make([]string, 0)
+	var targets []pluginTeardownTarget
 
 	for id, sup := range h.supervisors {
 		threshold := defaultThreshold
@@ -606,10 +610,27 @@ func (h *Host) EvictIdle(ctx context.Context, defaultThreshold, gracePeriod time
 		}
 
 		if sup.IsIdle(threshold, now) {
-			_ = sup.Teardown(ctx, gracePeriod, nil)
+			targets = append(targets, pluginTeardownTarget{
+				id:       id,
+				sup:      sup,
+				endpoint: h.endpoints[id],
+			})
 			delete(h.endpoints, id)
-			evicted = append(evicted, id)
 		}
+	}
+	h.mu.Unlock()
+
+	evicted := make([]string, 0, len(targets))
+	for _, target := range targets {
+		rpcShutdown := h.createRPCShutdown(target.endpoint, gracePeriod)
+		_ = target.sup.Teardown(ctx, gracePeriod, rpcShutdown)
+		h.stdinsMu.Lock()
+		if c, ok := h.stdins[target.id]; ok {
+			_ = c.Close()
+			delete(h.stdins, target.id)
+		}
+		h.stdinsMu.Unlock()
+		evicted = append(evicted, target.id)
 	}
 	return evicted
 }
@@ -648,20 +669,29 @@ func (h *Host) stopEvictLoop() {
 func (h *Host) TeardownAll(ctx context.Context, gracePeriod time.Duration) error {
 	h.stopEvictLoop()
 
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
 	if h.bus != nil {
 		h.bus.Close(ctx)
 	}
 
-	var firstErr error
+	h.mu.Lock()
+	var targets []pluginTeardownTarget
 	for id, sup := range h.supervisors {
 		if sup.GetState() != StateDormant {
-			if err := sup.Teardown(ctx, gracePeriod, nil); err != nil && firstErr == nil {
-				firstErr = err
-			}
+			targets = append(targets, pluginTeardownTarget{
+				id:       id,
+				sup:      sup,
+				endpoint: h.endpoints[id],
+			})
 			delete(h.endpoints, id)
+		}
+	}
+	h.mu.Unlock()
+
+	var firstErr error
+	for _, target := range targets {
+		rpcShutdown := h.createRPCShutdown(target.endpoint, gracePeriod)
+		if err := target.sup.Teardown(ctx, gracePeriod, rpcShutdown); err != nil && firstErr == nil {
+			firstErr = err
 		}
 	}
 	h.stdinsMu.Lock()
@@ -672,6 +702,32 @@ func (h *Host) TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 	h.stdinsMu.Unlock()
 	return firstErr
 }
+
+func (h *Host) createRPCShutdown(endpoint Endpoint, gracePeriod time.Duration) func(context.Context) error {
+	if endpoint.Host == "" && endpoint.Port == 0 && endpoint.Transport == nil {
+		return nil
+	}
+	return func(ctx context.Context) error {
+		timeout := gracePeriod
+		if timeout <= 0 {
+			timeout = 2 * time.Second
+		}
+		rpcCtx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+
+		client := numenv1connect.NewPluginLifecycleServiceClient(
+			endpoint.HTTPClient(),
+			endpoint.BaseURL(),
+			connect.WithInterceptors(authInterceptor(endpoint.Token)),
+		)
+		req := connect.NewRequest(&v1.ShutdownRequest{
+			TimeoutSeconds: int32(gracePeriod.Seconds()),
+		})
+		_, err := client.Shutdown(rpcCtx, req)
+		return err
+	}
+}
+
 
 // SetPersistHandler registers a callback that writes plugin settings changes into core configuration.
 func (h *Host) SetPersistHandler(handler PersistHandler) {

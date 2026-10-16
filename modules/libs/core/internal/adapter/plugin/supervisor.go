@@ -280,7 +280,7 @@ func (s *Supervisor) Teardown(
 
 	select {
 	case <-exitCh:
-		s.markDormant()
+		s.markDormant(proc)
 		return nil
 	case <-time.After(gracePeriod):
 		return s.forceKill(proc, exitCh)
@@ -301,10 +301,22 @@ func (s *Supervisor) forceKill(proc *os.Process, exitCh chan struct{}) error {
 	if exitCh != nil {
 		<-exitCh
 	}
-	s.markDormant()
+	s.markDormant(proc)
 	return nil
 }
 
-func (s *Supervisor) markDormant() {
-	s.SetDormant(nil)
+func (s *Supervisor) markDormant(proc *os.Process) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if proc == nil || s.process == proc {
+		s.state = StateDormant
+		s.process = nil
+		s.activeRefCount = 0
+		s.activationErr = nil
+		if s.activatingCh != nil {
+			close(s.activatingCh)
+			s.activatingCh = nil
+		}
+	}
 }
+

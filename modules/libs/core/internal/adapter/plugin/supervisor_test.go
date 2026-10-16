@@ -81,16 +81,42 @@ func TestSupervisorTeardownGraceful(t *testing.T) {
 		t.Fatalf("failed to attach: %v", err)
 	}
 
+	rpcCalled := false
 	err := sup.Teardown(t.Context(), 200*time.Millisecond, func(_ context.Context) error {
+		rpcCalled = true
 		return cmd.Process.Kill()
 	})
 	if err != nil {
 		t.Fatalf("expected successful graceful teardown, got: %v", err)
 	}
+	if !rpcCalled {
+		t.Fatal("expected rpcShutdown callback to be invoked")
+	}
 	if sup.GetState() != StateDormant {
 		t.Fatalf("expected StateDormant, got %v", sup.GetState())
 	}
 }
+
+func TestSupervisorTeardownInProcessCallsRPC(t *testing.T) {
+	sup := NewSupervisor()
+	sup.Acquire(time.Now())
+
+	rpcCalled := false
+	err := sup.Teardown(t.Context(), 50*time.Millisecond, func(_ context.Context) error {
+		rpcCalled = true
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("expected successful in-process teardown, got: %v", err)
+	}
+	if !rpcCalled {
+		t.Fatal("expected rpcShutdown to be invoked for in-process supervisor")
+	}
+	if sup.GetState() != StateDormant {
+		t.Fatalf("expected StateDormant, got %v", sup.GetState())
+	}
+}
+
 
 func TestSupervisorTeardownForceKill(t *testing.T) {
 	cmd := exec.Command("sleep", "5")
