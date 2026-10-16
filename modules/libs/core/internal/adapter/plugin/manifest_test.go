@@ -201,3 +201,27 @@ func TestManifestSelectSetting(t *testing.T) {
 		}
 	})
 }
+
+func TestManifestLifecycleMemoryLimit(t *testing.T) {
+	t.Run("decodes memoryLimitBytes", func(t *testing.T) {
+		raw := `{"id":"a","name":"A","version":"1","lifecycle":{"mode":"on-demand","memoryLimitBytes":1073741824}}`
+		m, err := ReadManifest(strings.NewReader(raw))
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if m.Lifecycle.MemoryLimitBytes != 1073741824 {
+			t.Errorf("got memoryLimitBytes %d, want 1073741824", m.Lifecycle.MemoryLimitBytes)
+		}
+	})
+
+	t.Run("decodes memoryLimitMB", func(t *testing.T) {
+		raw := `{"id":"a","name":"A","version":"1","lifecycle":{"mode":"on-demand","memoryLimitMB":512}}`
+		m, err := ReadManifest(strings.NewReader(raw))
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if m.Lifecycle.MemoryLimitBytes != 512*1024*1024 {
+			t.Errorf("got memoryLimitBytes %d, want %d", m.Lifecycle.MemoryLimitBytes, 512*1024*1024)
+		}
+	})
+}

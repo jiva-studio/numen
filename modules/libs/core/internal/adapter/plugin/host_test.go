@@ -9,9 +9,11 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -812,6 +814,93 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	}
 
 	sup := host.supervisors["md.numen.ocr"]
+	if sup.GetState() != StateDormant {
+		t.Errorf("expected StateDormant, got %v", sup.GetState())
+	}
+}
+
+func TestHostEvictMemoryExceeded(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+
+	handler := &testLifecycleHandler{}
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(handler))
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	serverURL, err := url.Parse(server.URL)
+	if err != nil {
+		t.Fatalf("parse server URL: %v", err)
+	}
+	serverPort, err := strconv.Atoi(serverURL.Port())
+	if err != nil {
+		t.Fatalf("parse port: %v", err)
+	}
+
+	cmd := exec.Command("sleep", "10")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start sleep: %v", err)
+	}
+	defer func() {
+		_ = cmd.Process.Kill()
+		_, _ = cmd.Process.Wait()
+	}()
+
+	handler.onShutdown = func() {
+		_ = cmd.Process.Kill()
+	}
+
+	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
+		return cmd.Process, io.NopCloser(r), nil
+	})
+
+	ctx := t.Context()
+	_, err = host.EnsureActive(ctx, "md.numen.ocr")
+	if err != nil {
+		t.Fatalf("EnsureActive failed: %v", err)
+	}
+
+	closer := &testCloser{}
+	host.stdinsMu.Lock()
+	host.stdins["md.numen.ocr"] = closer
+	host.stdinsMu.Unlock()
+
+	sup := host.supervisors["md.numen.ocr"]
+	sup.SetMemoryLimit(100 * 1024 * 1024)
+
+	// Simulate RSS below limit
+	sup.SetRSSReader(func(_ int) (uint64, error) {
+		return 50 * 1024 * 1024, nil
+	})
+	evicted := host.EvictMemoryExceeded(ctx, 500*time.Millisecond)
+	if len(evicted) != 0 {
+		t.Fatalf("expected no eviction when below limit, got %v", evicted)
+	}
+
+	// Simulate RSS above limit
+	sup.SetRSSReader(func(_ int) (uint64, error) {
+		return 200 * 1024 * 1024, nil
+	})
+	evicted = host.EvictMemoryExceeded(ctx, 500*time.Millisecond)
+	if len(evicted) != 1 || evicted[0] != "md.numen.ocr" {
+		t.Fatalf("expected md.numen.ocr to be evicted for memory, got %v", evicted)
+	}
+
+	if !handler.isShutdownCalled() {
+		t.Error("expected PluginLifecycleService.Shutdown RPC to be sent")
+	}
+
+	if !closer.isClosed() {
+		t.Error("expected stdin closer to be closed on eviction")
+	}
+
 	if sup.GetState() != StateDormant {
 		t.Errorf("expected StateDormant, got %v", sup.GetState())
 	}

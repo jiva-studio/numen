@@ -264,3 +264,70 @@ func TestSupervisorTeardownWhileActivating(t *testing.T) {
 		t.Fatal("expected activating channel to be closed on teardown")
 	}
 }
+
+func TestSupervisorMemoryTrackingAndEviction(t *testing.T) {
+	cmd := exec.Command("sleep", "10")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("failed to start mock process: %v", err)
+	}
+	defer func() {
+		_ = cmd.Process.Kill()
+		_, _ = cmd.Process.Wait()
+	}()
+
+	sup := NewSupervisor()
+	sup.SetMemoryLimit(100 * 1024 * 1024)
+	if sup.GetMemoryLimit() != 100*1024*1024 {
+		t.Fatalf("got memory limit %d, want %d", sup.GetMemoryLimit(), 100*1024*1024)
+	}
+
+	if err := sup.Attach(cmd.Process, time.Now()); err != nil {
+		t.Fatalf("failed to attach process: %v", err)
+	}
+
+	rss, err := sup.GetResidentMemory()
+	if err != nil {
+		t.Fatalf("GetResidentMemory failed: %v", err)
+	}
+	if rss > 100*1024*1024 {
+		t.Fatalf("expected initial RSS to be below 100MB, got %d", rss)
+	}
+	if sup.IsMemoryExceeded() {
+		t.Fatal("expected IsMemoryExceeded to be false")
+	}
+
+	// Override RSS reader to simulate memory limit exceeded
+	sup.SetRSSReader(func(_ int) (uint64, error) {
+		return 200 * 1024 * 1024, nil
+	})
+
+	if !sup.IsMemoryExceeded() {
+		t.Fatal("expected IsMemoryExceeded to be true when simulated RSS exceeds limit")
+	}
+
+	rpcCalled := make(chan struct{})
+	sup.SetRPCShutdown(func(_ context.Context) error {
+		close(rpcCalled)
+		_ = cmd.Process.Kill()
+		return nil
+	})
+	sup.SetMemoryGracePeriod(100 * time.Millisecond)
+	sup.SetMemoryMonitorInterval(10 * time.Millisecond)
+
+	// Trigger memory monitor by re-setting limit or wait for monitor tick
+	sup.SetMemoryLimit(50 * 1024 * 1024)
+
+	select {
+	case <-rpcCalled:
+	case <-time.After(2 * time.Second):
+		t.Fatal("expected graceful RPC shutdown on memory limit exceeded")
+	}
+
+	deadline := time.Now().Add(2 * time.Second)
+	for sup.GetState() != StateDormant && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if sup.GetState() != StateDormant {
+		t.Fatalf("expected StateDormant after eviction, got %v", sup.GetState())
+	}
+}

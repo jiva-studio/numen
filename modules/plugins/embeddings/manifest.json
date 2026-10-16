@@ -10,7 +10,8 @@
   "lifecycle": {
     "mode": "daemon",
     "idleTimeoutSeconds": 0,
-    "keepAliveWhileVisible": true
+    "keepAliveWhileVisible": true,
+    "memoryLimitBytes": 2147483648
   },
   "backend": {
     "type": "process",

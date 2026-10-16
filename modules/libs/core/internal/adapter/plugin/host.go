@@ -95,6 +95,13 @@ func (h *Host) SetProcessLimits(limits ProcessLimits) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.processLimits = limits
+	for id, sup := range h.supervisors {
+		if p, ok := h.plugins[id]; ok && p.Manifest.Lifecycle.MemoryLimitBytes > 0 {
+			sup.SetMemoryLimit(p.Manifest.Lifecycle.MemoryLimitBytes)
+		} else {
+			sup.SetMemoryLimit(limits.MemoryLimitBytes)
+		}
+	}
 }
 
 // SetLauncher overrides the process launcher for testing.
@@ -206,6 +213,11 @@ func (h *Host) Discover() error {
 			h.supervisors[p.Manifest.ID] = sup
 		}
 		sup.SetPermissions(p.Manifest.Permissions)
+		memLimit := h.processLimits.MemoryLimitBytes
+		if p.Manifest.Lifecycle.MemoryLimitBytes > 0 {
+			memLimit = p.Manifest.Lifecycle.MemoryLimitBytes
+		}
+		sup.SetMemoryLimit(memLimit)
 	}
 	return nil
 }
@@ -329,6 +341,11 @@ func (h *Host) prepareSupervisorLocked(pluginID string) (DiscoveredPlugin, *Supe
 		})
 		h.supervisors[pluginID] = sup
 	}
+	memLimit := h.processLimits.MemoryLimitBytes
+	if p.Manifest.Lifecycle.MemoryLimitBytes > 0 {
+		memLimit = p.Manifest.Lifecycle.MemoryLimitBytes
+	}
+	sup.SetMemoryLimit(memLimit)
 
 	if !h.isPluginEnabledLocked(pluginID) {
 		return DiscoveredPlugin{}, nil, fmt.Errorf("plugin %s is disabled", pluginID)
@@ -420,6 +437,7 @@ func (h *Host) cleanupAbortedProcess(proc *os.Process, stdout io.Closer, pluginI
 	h.stdinsMu.Unlock()
 }
 
+//nolint:contextcheck // background supervisor outlives request
 func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *Supervisor) (Endpoint, error) {
 	token, err := GenerateAuthToken()
 	if err != nil {
@@ -492,6 +510,7 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 		Token: token,
 	}
 	h.endpoints[p.Manifest.ID] = endpoint
+	sup.SetRPCShutdown(h.createRPCShutdown(endpoint, 2*time.Second))
 	sup.FinishActivating()
 	h.mu.Unlock()
 
@@ -523,6 +542,10 @@ func (h *Host) defaultLauncher(
 	configJSON, _ := h.getPluginConfigJSONLocked(p.Manifest.ID)
 	limits := h.processLimits
 	h.mu.RUnlock()
+
+	if p.Manifest.Lifecycle.MemoryLimitBytes > 0 {
+		limits.MemoryLimitBytes = p.Manifest.Lifecycle.MemoryLimitBytes
+	}
 
 	workDir, err := ValidateWorkingDirectory(p.Dir, p.Dir, vaultPath)
 	if err != nil {
@@ -642,6 +665,38 @@ func (h *Host) EvictIdle(ctx context.Context, defaultThreshold, gracePeriod time
 	return evicted
 }
 
+// EvictMemoryExceeded stops plugins whose resident memory exceeds their configured limit.
+func (h *Host) EvictMemoryExceeded(ctx context.Context, gracePeriod time.Duration) []string {
+	h.mu.Lock()
+	var targets []pluginTeardownTarget
+
+	for id, sup := range h.supervisors {
+		if sup.IsMemoryExceeded() {
+			targets = append(targets, pluginTeardownTarget{
+				id:       id,
+				sup:      sup,
+				endpoint: h.endpoints[id],
+			})
+			delete(h.endpoints, id)
+		}
+	}
+	h.mu.Unlock()
+
+	evicted := make([]string, 0, len(targets))
+	for _, target := range targets {
+		rpcShutdown := h.createRPCShutdown(target.endpoint, gracePeriod)
+		_ = target.sup.Teardown(ctx, gracePeriod, rpcShutdown)
+		h.stdinsMu.Lock()
+		if c, ok := h.stdins[target.id]; ok {
+			_ = c.Close()
+			delete(h.stdins, target.id)
+		}
+		h.stdinsMu.Unlock()
+		evicted = append(evicted, target.id)
+	}
+	return evicted
+}
+
 func (h *Host) startEvictLoop() {
 	h.evictWg.Add(1)
 	go func() {
@@ -653,6 +708,7 @@ func (h *Host) startEvictLoop() {
 			case <-h.evictTicker.C:
 				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 				_ = h.EvictIdle(ctx, 3*time.Minute, 2*time.Second)
+				_ = h.EvictMemoryExceeded(ctx, 2*time.Second)
 				cancel()
 			}
 		}
