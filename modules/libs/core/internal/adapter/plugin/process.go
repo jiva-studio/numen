@@ -1,0 +1,117 @@
+package plugin
+
+import (
+	"errors"
+	"fmt"
+	"path/filepath"
+	"strings"
+)
+
+var (
+	// ErrEmptyWorkingDirectory indicates that an empty working directory was provided.
+	ErrEmptyWorkingDirectory = errors.New("working directory cannot be empty")
+
+	// ErrWorkingDirectoryEscape indicates that the working directory escapes the plugin directory and vault.
+	ErrWorkingDirectoryEscape = errors.New("plugin working directory escapes plugin sandbox and vault")
+)
+
+// ProcessLimits defines resource bounds for out-of-process plugins.
+type ProcessLimits struct {
+	CPULimitSeconds  uint64
+	MemoryLimitBytes uint64
+}
+
+// DefaultProcessLimits returns standard resource limits for plugin processes.
+func DefaultProcessLimits() ProcessLimits {
+	return ProcessLimits{
+		CPULimitSeconds:  1800,
+		MemoryLimitBytes: 4 * 1024 * 1024 * 1024,
+	}
+}
+
+// ValidateWorkingDirectory verifies that workDir resides within either pluginDir or vaultRoot.
+func ValidateWorkingDirectory(workDir, pluginDir, vaultRoot string) (string, error) {
+	if strings.TrimSpace(workDir) == "" {
+		return "", ErrEmptyWorkingDirectory
+	}
+
+	cleanWork, err := filepath.Abs(filepath.Clean(workDir))
+	if err != nil {
+		return "", fmt.Errorf("resolve working directory: %w", err)
+	}
+
+	if isSystemTempDir(cleanWork) {
+		return "", errProhibitedTempDir
+	}
+
+	if isPathWithin(pluginDir, cleanWork) {
+		return cleanWork, nil
+	}
+	if strings.TrimSpace(vaultRoot) != "" && isPathWithin(vaultRoot, cleanWork) {
+		return cleanWork, nil
+	}
+
+	return "", ErrWorkingDirectoryEscape
+}
+
+func isPathWithin(base, child string) bool {
+	if strings.TrimSpace(base) == "" || strings.TrimSpace(child) == "" {
+		return false
+	}
+	cleanBase, err := filepath.Abs(filepath.Clean(base))
+	if err != nil {
+		return false
+	}
+	cleanChild, err := filepath.Abs(filepath.Clean(child))
+	if err != nil {
+		return false
+	}
+
+	rel, err := filepath.Rel(cleanBase, cleanChild)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return false
+	}
+
+	realBase, errB := filepath.EvalSymlinks(cleanBase)
+	realChild, errC := filepath.EvalSymlinks(cleanChild)
+	if errB == nil && errC == nil {
+		relReal, errRel := filepath.Rel(realBase, realChild)
+		if errRel != nil || relReal == ".." || strings.HasPrefix(relReal, ".."+string(filepath.Separator)) {
+			return false
+		}
+	}
+	return true
+}
+
+func isWhitelistedEnv(key string) bool {
+	upper := strings.ToUpper(strings.TrimSpace(key))
+	if upper == "" {
+		return false
+	}
+	if strings.Contains(upper, "KEY") ||
+		strings.Contains(upper, "TOKEN") ||
+		strings.Contains(upper, "SECRET") ||
+		strings.Contains(upper, "PASSWORD") ||
+		strings.Contains(upper, "CREDENTIAL") ||
+		strings.Contains(upper, "AUTH") {
+		return false
+	}
+	switch upper {
+	case "PATH", "TMPDIR", "TMP", "TEMP", "HOME", "USER",
+		"SYSTEMROOT", "SYSTEMDRIVE", "APPDATA", "LOCALAPPDATA",
+		"LANG", "SSL_CERT_FILE", "SSL_CERT_DIR":
+		return true
+	}
+	return strings.HasPrefix(upper, "LC_")
+}
+
+func sanitizeEnvironment(environ []string, pluginVars []string) []string {
+	var env []string
+	for _, entry := range environ {
+		key, _, found := strings.Cut(entry, "=")
+		if found && isWhitelistedEnv(key) {
+			env = append(env, entry)
+		}
+	}
+	return append(env, pluginVars...)
+}

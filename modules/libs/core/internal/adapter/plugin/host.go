@@ -61,6 +61,7 @@ type Host struct {
 	enabled        map[string]bool
 	stdinsMu       sync.Mutex
 	stdins         map[string]io.Closer
+	processLimits  ProcessLimits
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
@@ -82,10 +83,18 @@ func NewHost(target string, dirs ...string) *Host {
 		evictDone:      make(chan struct{}),
 		enabled:        make(map[string]bool),
 		stdins:         make(map[string]io.Closer),
+		processLimits:  DefaultProcessLimits(),
 	}
 	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
 	return h
+}
+
+// SetProcessLimits sets execution limits for launched plugin processes.
+func (h *Host) SetProcessLimits(limits ProcessLimits) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.processLimits = limits
 }
 
 // SetLauncher overrides the process launcher for testing.
@@ -489,16 +498,6 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 	return endpoint, nil
 }
 
-func isWhitelistedEnv(key string) bool {
-	upper := strings.ToUpper(key)
-	switch upper {
-	case "PATH", "HOME", "USER", "TMP", "TEMP", "SYSTEMROOT", "SYSTEMDRIVE", "APPDATA", "LOCALAPPDATA", "LANG",
-		"SSL_CERT_FILE", "SSL_CERT_DIR", "LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH", "OPENAI_API_KEY":
-		return true
-	}
-	return strings.HasPrefix(upper, "LC_") || strings.HasPrefix(upper, "NUMEN_") || strings.HasPrefix(upper, "XDG_") || strings.HasPrefix(upper, "NIX_")
-}
-
 func (h *Host) defaultLauncher(
 	ctx context.Context,
 	p DiscoveredPlugin,
@@ -519,32 +518,30 @@ func (h *Host) defaultLauncher(
 		return nil, nil, fmt.Errorf("validate plugin binary: %w", err)
 	}
 
-	//nolint:contextcheck // the plugin process outlives the request that launched it
-	cmd := exec.CommandContext(context.Background(), binPath, "--port="+strconv.Itoa(port), "--token="+token)
-	configureSysProcAttr(cmd)
-	cmd.Dir = p.Dir
-
 	h.mu.RLock()
 	vaultPath := h.vaultPath
 	configJSON, _ := h.getPluginConfigJSONLocked(p.Manifest.ID)
+	limits := h.processLimits
 	h.mu.RUnlock()
 
-	var env []string
-	for _, entry := range os.Environ() {
-		key, _, found := strings.Cut(entry, "=")
-		if found && isWhitelistedEnv(key) {
-			env = append(env, entry)
-		}
+	workDir, err := ValidateWorkingDirectory(p.Dir, p.Dir, vaultPath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("validate plugin working directory: %w", err)
 	}
-	env = append(
-		env,
-		"NUMEN_VAULT_PATH="+vaultPath,
-		"NUMEN_PLUGIN_PORT="+strconv.Itoa(port),
-		"NUMEN_PLUGIN_TOKEN="+token,
-		"NUMEN_PLUGIN_ID="+p.Manifest.ID,
-		"NUMEN_PLUGIN_CONFIG="+configJSON,
-	)
-	cmd.Env = env
+
+	//nolint:contextcheck // the plugin process outlives the request that launched it
+	cmd := exec.CommandContext(context.Background(), binPath, "--port="+strconv.Itoa(port), "--token="+token)
+	configureSysProcAttr(cmd)
+	cmd.Dir = workDir
+
+	pluginVars := []string{
+		"NUMEN_VAULT_PATH=" + vaultPath,
+		"NUMEN_PLUGIN_PORT=" + strconv.Itoa(port),
+		"NUMEN_PLUGIN_TOKEN=" + token,
+		"NUMEN_PLUGIN_ID=" + p.Manifest.ID,
+		"NUMEN_PLUGIN_CONFIG=" + configJSON,
+	}
+	cmd.Env = sanitizeEnvironment(os.Environ(), pluginVars)
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -561,6 +558,14 @@ func (h *Host) defaultLauncher(
 		_ = stdin.Close()
 		_ = stdout.Close()
 		return nil, nil, fmt.Errorf("start %s: %w", binPath, err)
+	}
+
+	if err := applyProcessLimits(cmd.Process.Pid, limits); err != nil {
+		_ = cmd.Process.Kill()
+		_, _ = cmd.Process.Wait()
+		_ = stdin.Close()
+		_ = stdout.Close()
+		return nil, nil, fmt.Errorf("apply process limits: %w", err)
 	}
 
 	h.stdinsMu.Lock()
