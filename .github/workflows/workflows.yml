@@ -4,10 +4,12 @@ on:
   pull_request:
     paths:
       - ".github/workflows/**"
+      - "modules/apps/mobile/android/gradle/**"
   push:
     branches: [main]
     paths:
       - ".github/workflows/**"
+      - "modules/apps/mobile/android/gradle/**"
 
 # One run at a time per branch, and on a pull request the newest is the one that
 # matters.
@@ -39,3 +41,15 @@ jobs:
 
       - name: Verify GitHub Actions workflows
         run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+
+  gradle-wrapper:
+    name: "Gradle Wrapper"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
