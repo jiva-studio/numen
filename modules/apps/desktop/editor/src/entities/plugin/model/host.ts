@@ -229,12 +229,23 @@ function registerTabKindEntry(
   item: PluginItemRegistration<TabKindRegistration>,
 ): Disposable {
   const { pluginId, registration } = item
-  const unregister = deps.registerKind(createCustomTabKind(pluginId, registration))
+  const cleanups: (() => void)[] = [deps.registerKind(createCustomTabKind(pluginId, registration))]
+  if (deps.registerEditor) {
+    const unreg = deps.registerEditor(registration.kind, (path: string, _title: string, options: any) => {
+      const where = typeof options === 'string' ? options : options?.where
+      if (where === 'beside' && deps.openTabBeside) {
+        void deps.openTabBeside(registration.kind, path)
+      } else {
+        void deps.openTab(registration.kind, path)
+      }
+    })
+    if (typeof unreg === 'function') cleanups.push(unreg)
+  }
   let isDisposed = false
   const cleanup = () => {
     if (isDisposed) return
     isDisposed = true
-    unregister()
+    for (const fn of cleanups) fn()
     tabKinds.delete(registration.kind)
   }
   tabKinds.set(registration.kind, { pluginId, reg: registration, cleanup })

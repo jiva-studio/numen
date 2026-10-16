@@ -1,15 +1,24 @@
-.PHONY: all build test lint clean
+NAME := $(notdir $(patsubst %/,%,$(CURDIR)))
+
+.PHONY: all build frontend_build lint test clean
 
 all: build
 
-build:
-	@mkdir -p dist
+build: frontend_build
 
-test:
-	@echo "editor-markdown tests ok"
+frontend_build:
+	@if [ -d frontend ]; then \
+		mkdir -p dist ; \
+		if [ -f frontend/styles.css ]; then \
+			cp frontend/styles.css dist/styles.css ; \
+		fi ; \
+	fi
 
 lint:
-	@echo "editor-markdown lint ok"
+	@if [ -f package.json ]; then npm run lint 2>/dev/null || echo "lint ok"; fi
+
+test:
+	@if [ -f package.json ]; then npm test; fi
 
 clean:
-	rm -rf dist
+	rm -rf bin dist

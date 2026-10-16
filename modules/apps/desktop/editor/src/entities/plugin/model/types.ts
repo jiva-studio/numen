@@ -37,6 +37,8 @@ export interface PluginHostDeps {
   readonly registerKind: (kind: AnyTabKind) => () => void
   readonly registerExtensionReader: (extension: string, read: SourceReader) => () => void
   readonly openTab: (kind: string, at?: string) => Promise<string>
+  readonly openTabBeside?: (kind: string, at?: string) => Promise<string>
+  readonly registerEditor?: (type: any, open: any) => (() => void) | void
   readonly getSetting?: (pluginId: string, key: string) => unknown
   readonly onSettingChange?: (
     pluginId: string,

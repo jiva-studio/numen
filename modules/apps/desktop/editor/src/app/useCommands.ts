@@ -24,7 +24,7 @@ import type { createFileCreators } from '@/entities/tab'
 import type { useWindowTabs } from '@/entities/tab'
 import { WORDS } from '@/shared/words'
 import { createPluginSettingCommands } from './useSettings'
-import type { NoteCreator } from '@/pages/note-editor'
+import type { NoteCreator } from '@/entities/note'
 import type { VaultCore } from './vault'
 
 type Words = typeof WORDS

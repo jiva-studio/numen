@@ -22,7 +22,6 @@ import { createReviewSetting, type PluginInfo, type SettingEdit } from '@/entiti
 import { createSettingsStore } from '@/entities/settings'
 import { useSettingsTab, paths, createChoices } from '@/pages/settings'
 import type { SelectChoice } from '@numen/ui'
-import { createTextEditorTabKind } from '@/pages/text-editor'
 import type { Command, PaletteLists } from '@/features/command-palette'
 import type { SettingsPort } from '@/app/ports/settings'
 import type { MessageLog } from '@/shared/notices/messages'
@@ -177,7 +176,7 @@ interface SettingsTabConfigDeps {
   nesting: ReturnType<typeof useNestingSetting>
   dayBegins: ReturnType<typeof createReviewSetting>
   rest: ReturnType<typeof createSettingsStore>
-  file: ReturnType<typeof createTextEditorTabKind>
+  file: { openSettingsFile: () => void }
 }
 
 function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
@@ -260,7 +259,13 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
   const sync = syncSetting(core, words, log.getWriter('named'))
   const rest = createSettingsStore(core, words, log.getWriter('configured'))
 
-  const file = createTextEditorTabKind(windowTabs.handle, core, () => void rest.start())
+  const file = {
+    openSettingsFile: () => {
+      if (rest.path.value) {
+        void windowTabs.handle.openTabBeside('note', rest.path.value)
+      }
+    },
+  }
 
   const configured = useSettingsTab(
     windowTabs.handle,
@@ -271,7 +276,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
 
   const kept = createSettingsPaletteLists({ dressed, sync, nesting, rest, words })
 
-  const kinds = [configured.kind, file.kind]
+  const kinds = [configured.kind]
 
   const start = async () => {
     await dayBegins.start()

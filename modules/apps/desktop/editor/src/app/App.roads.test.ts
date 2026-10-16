@@ -21,7 +21,6 @@ import {
   type Workspace,
 } from '@numen/ui'
 import { DocumentTab } from '@/pages/document-viewer'
-import { NoteTab } from '@/pages/note-editor'
 import { AudioPlayerTab } from '@plugins/media-player/frontend'
 import {
   requests,
@@ -144,6 +143,7 @@ describe('every road to a file', () => {
     await road(window, path)
     await settle()
     await settle()
+    await settle()
     return paneKinds(window).flat()
   }
 
@@ -234,8 +234,8 @@ describe('a note asked for in the plex', () => {
     window.findComponent(Plex).vm.$emit('show', nodeInPlex(window), 'here')
     await settle()
 
-    expect(window.findComponent(NoteTab).exists()).toBe(true)
-    expect(window.findComponent(NoteTab).findComponent(Editor).exists()).toBe(true)
+    expect(paneKinds(window).flat()).toContain('note')
+    expect(window.findComponent(Editor).exists()).toBe(true)
   })
 
   it('is asked for by the node, and a path opens nothing', async () => {
@@ -244,7 +244,7 @@ describe('a note asked for in the plex', () => {
     window.findComponent(Plex).vm.$emit('show', 'Root.md', 'here')
     await settle()
 
-    expect(window.findComponent(NoteTab).exists()).toBe(false)
+    expect(paneKinds(window).flat()).not.toContain('note')
   })
 })
 

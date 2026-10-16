@@ -59,6 +59,8 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     registerKind: held.registerKind,
     registerExtensionReader: tabOpeners.registerExtensionReader,
     openTab: held.openTabOfKind,
+    openTabBeside: (kind, at) => held.handle.openTabBeside(kind, at),
+    registerEditor: tabOpeners.registerEditor,
     getSetting,
     onSettingChange,
     closeTabsForPlugin,

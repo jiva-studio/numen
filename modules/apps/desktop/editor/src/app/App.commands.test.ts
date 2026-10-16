@@ -11,7 +11,6 @@ import { branch, pane, Palette, Tree, WorkspaceLayout, type PaletteGroup } from 
 import { AgentTab } from '@/pages/agent-chat'
 import { DeckTab } from '@/pages/deck-editor'
 import { FilesTab, NEW_DECK, NEW_STENCIL } from '@/pages/file-manager'
-import { NoteTab } from '@/pages/note-editor'
 import { PlexTab, WORDS as plexWords } from '@/pages/plex-graph'
 import {
   requests,
@@ -171,7 +170,7 @@ describe('the palette', () => {
     await openFromSearch(window, 'Animals.md')
 
     expect(paneKinds(window).flat()).toContain('deck')
-    expect(window.findComponent(NoteTab).exists()).toBe(false)
+    expect(paneKinds(window).flat()).not.toContain('note')
   })
 
   it('opens a stencil it turned up in the editor of its fields and faces', async () => {
@@ -182,7 +181,7 @@ describe('the palette', () => {
     await openFromSearch(window, 'Animal.md')
 
     expect(paneKinds(window).flat()).toContain('stencil')
-    expect(window.findComponent(NoteTab).exists()).toBe(false)
+    expect(paneKinds(window).flat()).not.toContain('note')
   })
 
   it('opens an ordinary note the same search turned up in a note tab', async () => {
@@ -192,7 +191,7 @@ describe('the palette', () => {
     await openFromSearch(window, 'Animals.md')
 
     expect(paneKinds(window).flat()).not.toContain('deck')
-    expect(window.findComponent(NoteTab).exists()).toBe(true)
+    expect(paneKinds(window).flat()).toContain('note')
   })
 
   it('turns from the search to the commands on the character that means them', async () => {

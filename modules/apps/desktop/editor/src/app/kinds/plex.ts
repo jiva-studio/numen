@@ -1,7 +1,7 @@
 /** The plex tab kind of a window. */
 import { computed, type ShallowRef } from 'vue'
 import { createPlexKind as buildPlexKind, usePlexView, type PlexTabState } from '@/pages/plex-graph'
-import { CREATABLE } from '@/pages/note-editor'
+import { CREATABLE } from '@/entities/note'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { searchCore } from '../vault/search'
 import type { WindowKindsDeps } from './deps'
