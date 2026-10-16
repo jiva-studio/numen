@@ -16,6 +16,8 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+var errCgroupUnavailable = errors.New("cgroup v2 unavailable")
+
 func configureSysProcAttr(cmd *exec.Cmd) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid:   true,
@@ -30,7 +32,9 @@ func applyProcessLimits(pid int, limits ProcessLimits) error {
 		}
 	}
 	if limits.MemoryLimitBytes > 0 {
-		_ = applyCgroupMemoryLimit(pid, limits.MemoryLimitBytes)
+		if err := applyCgroupMemoryLimit(pid, limits.MemoryLimitBytes); err != nil && !errors.Is(err, errCgroupUnavailable) {
+			return fmt.Errorf("set memory limit: %w", err)
+		}
 	}
 	return nil
 }
@@ -71,18 +75,24 @@ func findCgroupV2Dir(pid int) (string, error) {
 func applyCgroupMemoryLimit(pid int, limitBytes uint64) error {
 	baseDir, err := findCgroupV2Dir(pid)
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %w", errCgroupUnavailable, err)
 	}
 	pluginDir := filepath.Join(baseDir, fmt.Sprintf("numen-plugin-%d", pid))
 	if err := os.Mkdir(pluginDir, 0o755); err != nil {
-		return err
+		return fmt.Errorf("%w: %w", errCgroupUnavailable, err)
 	}
 	if err := os.WriteFile(filepath.Join(pluginDir, "cgroup.procs"), []byte(strconv.Itoa(pid)), 0o600); err != nil {
 		_ = os.Remove(pluginDir)
-		return err
+		return fmt.Errorf("%w: %w", errCgroupUnavailable, err)
 	}
 	limitStr := strconv.FormatUint(limitBytes, 10)
-	_ = os.WriteFile(filepath.Join(pluginDir, "memory.high"), []byte(limitStr), 0o600)
+	if err := os.WriteFile(filepath.Join(pluginDir, "memory.high"), []byte(limitStr), 0o600); err != nil {
+		cleanupProcessCgroup(pid)
+		if errors.Is(err, os.ErrPermission) {
+			return fmt.Errorf("%w: %w", errCgroupUnavailable, err)
+		}
+		return fmt.Errorf("write memory.high: %w", err)
+	}
 	return nil
 }
 
@@ -102,12 +112,34 @@ func readCgroupMemory(pid int) (uint64, error) {
 	return strconv.ParseUint(strings.TrimSpace(string(data)), 10, 64)
 }
 
+func terminateCgroupProcs(pluginDir string) {
+	_ = os.WriteFile(filepath.Join(pluginDir, "cgroup.kill"), []byte("1"), 0o600)
+	data, err := os.ReadFile(filepath.Join(pluginDir, "cgroup.procs"))
+	if err != nil {
+		return
+	}
+	scanner := bufio.NewScanner(strings.NewReader(string(data)))
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if childPid, err := strconv.Atoi(line); err == nil && childPid > 0 {
+			_ = syscall.Kill(childPid, syscall.SIGKILL)
+		}
+	}
+}
+
 func cleanupProcessCgroup(pid int) {
 	baseDir, err := findCgroupV2Dir(os.Getpid())
 	if err != nil {
 		return
 	}
 	pluginDir := filepath.Join(baseDir, fmt.Sprintf("numen-plugin-%d", pid))
+	terminateCgroupProcs(pluginDir)
+	for attempt := 0; attempt < 5; attempt++ {
+		if err := os.Remove(pluginDir); err == nil || errors.Is(err, os.ErrNotExist) {
+			return
+		}
+		terminateCgroupProcs(pluginDir)
+	}
 	_ = os.Remove(pluginDir)
 }
 
