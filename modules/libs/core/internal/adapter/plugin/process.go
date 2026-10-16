@@ -16,6 +16,7 @@ var (
 )
 
 // ProcessLimits defines resource bounds for out-of-process plugins.
+// MemoryLimitBytes specifies resident memory threshold monitored by the supervisor.
 type ProcessLimits struct {
 	CPULimitSeconds  uint64
 	MemoryLimitBytes uint64

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"slices"
 	"strings"
 )
@@ -39,6 +40,27 @@ type PluginLifecycle struct {
 	Mode                  string `json:"mode"`
 	IdleTimeoutSeconds    int    `json:"idleTimeoutSeconds"`
 	KeepAliveWhileVisible bool   `json:"keepAliveWhileVisible"`
+	MemoryLimitBytes      uint64 `json:"memoryLimitBytes,omitempty"`
+}
+
+// UnmarshalJSON decodes lifecycle settings, accepting memoryLimitBytes or memoryLimitMB.
+func (l *PluginLifecycle) UnmarshalJSON(data []byte) error {
+	type rawLifecycle PluginLifecycle
+	var raw struct {
+		rawLifecycle
+		MemoryLimitMB uint64 `json:"memoryLimitMB,omitempty"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	*l = PluginLifecycle(raw.rawLifecycle)
+	if l.MemoryLimitBytes == 0 && raw.MemoryLimitMB > 0 {
+		if raw.MemoryLimitMB > math.MaxUint64/(1024*1024) {
+			return errors.New("memory limit in megabytes exceeds maximum value")
+		}
+		l.MemoryLimitBytes = raw.MemoryLimitMB * 1024 * 1024
+	}
+	return nil
 }
 
 // PluginBackend describes the server-side executable or wasm module of a plugin.

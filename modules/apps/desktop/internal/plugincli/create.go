@@ -37,6 +37,7 @@ type lifecycleJSON struct {
 	Mode                  string `json:"mode"`
 	IdleTimeoutSeconds    int    `json:"idleTimeoutSeconds"`
 	KeepAliveWhileVisible bool   `json:"keepAliveWhileVisible"`
+	MemoryLimitBytes      uint64 `json:"memoryLimitBytes,omitempty"`
 }
 
 type backendJSON struct {
