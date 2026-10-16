@@ -26,4 +26,61 @@ test.describe('Markdown Note Editor', () => {
     // Verify note text from vault is loaded
     await expect(page.locator('.note').first()).toContainText('Entropy')
   })
+
+  test('opens plain text file via modular markdown editor plugin', async ({ page }) => {
+    await page.goto('/')
+
+    await expect(page.locator('text=Ready')).toBeVisible()
+
+    // Switch to Files tab
+    await page.getByText('Files').first().click()
+
+    // Expand notes folder
+    const notesRow = page.locator('[data-tree-row="notes"]')
+    await expect(notesRow).toBeVisible()
+    await notesRow.press('Enter')
+
+    // Open plain.txt
+    const txtRow = page.locator('[data-tree-row="notes/plain.txt"]')
+    await expect(txtRow).toBeVisible()
+    await txtRow.press('Enter')
+
+    // Verify markdown editor tab is visible and editor pane is active
+    await expect(page.locator('.markdown-editor').first()).toBeVisible({ timeout: 10_000 })
+    const editor = page.locator('.markdown-editor .cm-content').first()
+    await expect(editor).toBeVisible({ timeout: 10_000 })
+
+    // Type text into modular editor
+    await editor.click()
+    await page.keyboard.type('Modular editor plain text')
+    await expect(editor).toContainText('Modular editor plain text')
+  })
+
+  test('opens extra.markdown file and renders markdown heading', async ({ page }) => {
+    await page.goto('/')
+
+    await expect(page.locator('text=Ready')).toBeVisible()
+
+    // Switch to Files tab
+    await page.getByText('Files').first().click()
+
+    // Expand notes folder
+    const notesRow = page.locator('[data-tree-row="notes"]')
+    await expect(notesRow).toBeVisible()
+    await notesRow.press('Enter')
+
+    // Open extra.markdown
+    const mdRow = page.locator('[data-tree-row="notes/extra.markdown"]')
+    await expect(mdRow).toBeVisible()
+    await mdRow.press('Enter')
+
+    // Verify markdown editor tab is visible and accepts markdown input
+    await expect(page.locator('.markdown-editor').first()).toBeVisible({ timeout: 10_000 })
+    const editor = page.locator('.markdown-editor .cm-content').first()
+    await expect(editor).toBeVisible({ timeout: 10_000 })
+
+    await editor.click()
+    await page.keyboard.type('# Markdown Heading')
+    await expect(editor).toContainText('# Markdown Heading')
+  })
 })

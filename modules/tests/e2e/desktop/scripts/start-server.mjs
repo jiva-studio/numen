@@ -51,6 +51,9 @@ fs.copyFileSync(path.join(fixturesDir, 'sample.epub'), path.join(tmpVault, 'asse
 fs.writeFileSync(path.join(tmpVault, 'assets', 'corrupted.pdf'), 'INVALID_PDF_HEADER')
 fs.writeFileSync(path.join(tmpVault, 'assets', 'corrupted.epub'), 'INVALID_EPUB_ZIP')
 fs.writeFileSync(path.join(tmpVault, 'assets', 'sample.mp3'), Buffer.alloc(512))
+fs.writeFileSync(path.join(tmpVault, 'assets', 'sample.flac'), Buffer.alloc(512))
+fs.writeFileSync(path.join(tmpVault, 'notes', 'plain.txt'), 'Plain text file opened via markdown editor plugin.')
+fs.writeFileSync(path.join(tmpVault, 'notes', 'extra.markdown'), '# Markdown heading\nContent from extra markdown file.')
 
 const testConfigDir = path.join(tmpVault, '.config')
 fs.mkdirSync(testConfigDir, { recursive: true })

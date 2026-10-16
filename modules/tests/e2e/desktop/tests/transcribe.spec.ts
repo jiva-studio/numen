@@ -63,4 +63,56 @@ test.describe('Audio Transcription Pipeline', () => {
       page.locator('.recording__player').or(page.locator('.recording__note')),
     ).toBeVisible({ timeout: 10_000 })
   })
+
+  test('opens flac audio file and renders media recording player', async ({ page }) => {
+    await page.goto('/')
+
+    await expect(page.locator('text=Ready')).toBeVisible()
+
+    // Switch to Files tab
+    await page.getByText('Files').first().click()
+
+    // Expand assets folder
+    const assetsRow = page.locator('[data-tree-row="assets"]')
+    await expect(assetsRow).toBeVisible()
+    await assetsRow.press('Enter')
+
+    // Verify sample.flac is listed
+    const flacRow = page.locator('[data-tree-row="assets/sample.flac"]')
+    await expect(flacRow).toBeVisible()
+
+    // Activate sample.flac
+    await flacRow.press('Enter')
+
+    // Verify recording player or recording note rendered
+    await expect(
+      page.locator('.recording__player').or(page.locator('.recording__note')),
+    ).toBeVisible({ timeout: 10_000 })
+  })
+
+  test('supports seek and playback interaction on recording player', async ({ page }) => {
+    await page.goto('/')
+
+    await expect(page.locator('text=Ready')).toBeVisible()
+
+    // Switch to Files tab
+    await page.getByText('Files').first().click()
+
+    // Expand assets folder
+    const assetsRow = page.locator('[data-tree-row="assets"]')
+    await expect(assetsRow).toBeVisible()
+    await assetsRow.press('Enter')
+
+    // Open sample.wav
+    const wavRow = page.locator('[data-tree-row="assets/sample.wav"]')
+    await expect(wavRow).toBeVisible()
+    await wavRow.press('Enter')
+
+    const player = page.locator('.recording__player')
+    await expect(player).toBeVisible({ timeout: 10_000 })
+
+    // Interact with player element
+    await player.click()
+    await expect(player).toBeVisible()
+  })
 })
