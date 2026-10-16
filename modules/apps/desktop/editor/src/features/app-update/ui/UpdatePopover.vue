@@ -76,26 +76,22 @@ function onDismiss() {
     </div>
 
     <footer class="update-popover__actions">
-      <a
-        :href="updateInfo.downloadUrl"
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
+        type="button"
         class="update-popover__btn update-popover__btn--primary"
         @click="onDownload"
       >
         Download
-      </a>
+      </button>
 
-      <a
+      <button
         v-if="updateInfo.notesUrl && updateInfo.notesUrl !== updateInfo.downloadUrl"
-        :href="updateInfo.notesUrl"
-        target="_blank"
-        rel="noopener noreferrer"
+        type="button"
         class="update-popover__btn update-popover__btn--ghost"
         @click="onReleaseNotes"
       >
         Release notes
-      </a>
+      </button>
 
       <button
         type="button"
