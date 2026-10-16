@@ -295,6 +295,13 @@ func (s *embeddingServer) computeServiceVector(ctx context.Context, text string)
 }
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	s := server.New()
 
 	embedSrv := newEmbeddingServer()
@@ -303,8 +310,5 @@ func main() {
 	s.Lifecycle().SetUpdateConfig(embedSrv.updateConfig)
 	s.Register(numenv1connect.NewEmbeddingServiceHandler(embedSrv, s.HandlerOptions()...))
 
-	if err := s.Serve(); err != nil {
-		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
-		os.Exit(1)
-	}
+	return s.Serve()
 }

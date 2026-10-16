@@ -263,6 +263,13 @@ func (s *transcriptionServer) CloseRecording(
 }
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	var modelsDirFlag string
 	var runtimeFlag string
 
@@ -289,8 +296,5 @@ func main() {
 	s.Lifecycle().SetUpdateConfig(trans.updateConfig)
 	s.Register(numenv1connect.NewTranscriptionServiceHandler(trans, s.HandlerOptions()...))
 
-	if err := s.Serve(); err != nil {
-		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
-		os.Exit(1)
-	}
+	return s.Serve()
 }

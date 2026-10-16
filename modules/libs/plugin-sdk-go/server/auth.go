@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/subtle"
 	"errors"
 	"net/http"
 	"strings"
@@ -27,8 +28,11 @@ func (a *AuthInterceptor) checkToken(header http.Header) error {
 		return nil
 	}
 	authHeader := header.Get("Authorization")
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		return connect.NewError(connect.CodeUnauthenticated, ErrUnauthorized)
+	}
 	token := strings.TrimPrefix(authHeader, "Bearer ")
-	if token != a.token {
+	if subtle.ConstantTimeCompare([]byte(token), []byte(a.token)) != 1 {
 		return connect.NewError(connect.CodeUnauthenticated, ErrUnauthorized)
 	}
 	return nil

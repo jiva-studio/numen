@@ -167,6 +167,13 @@ func resolveMCPEndpoint() Endpoint {
 }
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	s := server.New()
 
 	reg := NewRegistry()
@@ -178,8 +185,5 @@ func main() {
 
 	s.Register(numenv1connect.NewAgentServiceHandler(agentSvc, s.HandlerOptions()...))
 
-	if err := s.Serve(); err != nil {
-		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
-		os.Exit(1)
-	}
+	return s.Serve()
 }
