@@ -192,7 +192,7 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
   })
 }
 
-function initWindowCore() {
+function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSettings> }) {
   const log = createMessageLog()
   const writeMessage = log.getWriter('command')
   const held = useWindowTabs()
@@ -200,10 +200,54 @@ function initWindowCore() {
   const tabOpeners = fileOpeners({ ...core, reconcileTab: held.reconcileTab })
   const runs = runSupport()
   const plays = createMediaTypeProbe()
+
+  const closeTabsForPlugin = (pluginId: string) => {
+    for (const tab of held.tabs.value) {
+      const windowTab = held.getTab(tab.id)
+      if (!windowTab) continue
+      const state = windowTab.state as { pluginId?: string } | undefined
+      if (state?.pluginId === pluginId) {
+        tabLinks.removeClosedTab(tab.id)
+        held.requestClose(tab.id)
+      }
+    }
+  }
+
+  const getSetting = (pluginId: string, key: string): unknown => {
+    const rest = settingsHolder.current?.rest
+    if (!rest) return undefined
+    const value = rest.getSetting?.(['plugins', pluginId, key])
+    if (value !== undefined) return value
+    if (key === 'enabled') {
+      const info = rest.plugins?.value?.find((p) => p.id === pluginId)
+      if (info !== undefined) return info.isActive
+      return true
+    }
+    return undefined
+  }
+
+  const onSettingChange = (
+    pluginId: string,
+    key: string,
+    handler: (value: unknown) => void,
+  ): (() => void) => {
+    return watch(
+      () => getSetting(pluginId, key),
+      (newVal, oldVal) => {
+        if (newVal !== oldVal) {
+          handler(newVal)
+        }
+      },
+    )
+  }
+
   const pluginHost = createPluginHost({
     registerKind: held.registerKind,
     registerExtensionReader: tabOpeners.registerExtensionReader,
     openTab: held.openTabOfKind,
+    getSetting,
+    onSettingChange,
+    closeTabsForPlugin,
   })
   const pluginLoader = createPluginLoader({ host: pluginHost })
   return { log, writeMessage, held, tabLinks, tabOpeners, runs, plays, pluginHost, pluginLoader }
@@ -217,8 +261,11 @@ interface WindowContext {
   vaults: ReturnType<typeof useVaults>
 }
 
-function initWindowServices(base: WindowCore, ctx: WindowContext) {
-  const settingsHolder: { current?: ReturnType<typeof useSettings> } = {}
+function initWindowServices(
+  base: WindowCore,
+  ctx: WindowContext,
+  settingsHolder: { current?: ReturnType<typeof useSettings> },
+) {
   const editing = useNoteEditors({
     core,
     log: base.log,
@@ -325,11 +372,25 @@ function initWindowKindsAndCommands(
 
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
-  const base = initWindowCore()
+  const settingsHolder: { current?: ReturnType<typeof useSettings> } = {}
+  const base = initWindowCore(settingsHolder)
   const ctx = {} as WindowContext
-  const services = initWindowServices(base, ctx)
+  const services = initWindowServices(base, ctx, settingsHolder)
   const { getTarget, runCommand } = initWindowKindsAndCommands(base, ctx, services)
   const { editing, window, settings } = services
+
+  watch(
+    () => settings.rest?.plugins?.value ?? [],
+    async (plugins) => {
+      for (const plugin of plugins) {
+        if (!plugin.isActive && base.pluginLoader.isPluginActive(plugin.id)) {
+          await base.pluginLoader.deactivatePlugin(plugin.id)
+        } else if (plugin.isActive && !base.pluginLoader.isPluginActive(plugin.id)) {
+          await base.pluginLoader.activatePlugin(plugin.id)
+        }
+      }
+    },
+  )
 
   const notices = useWindowNotices({ log: base.log, window, settings, vaults: ctx.vaults })
   const statusBar = useWindowStatusBar({ tasks: window.tasks })

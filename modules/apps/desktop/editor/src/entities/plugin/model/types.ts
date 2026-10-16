@@ -43,6 +43,7 @@ export interface PluginHostDeps {
     key: string,
     handler: (value: unknown) => void,
   ) => () => void
+  readonly closeTabsForPlugin?: (pluginId: string) => void
 }
 
 export interface PluginContextHost {
