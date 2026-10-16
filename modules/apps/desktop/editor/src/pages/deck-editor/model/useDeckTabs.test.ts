@@ -548,8 +548,13 @@ describe('a section of a deck the window holds', () => {
   it('takes away its heading and nothing else when it goes', async () => {
     const { tab } = await open({
       sections: [{ name: 'Roots', preamble: '' }],
-      cards: CARDS.map((card) => ({ ...card, section: 0 })),
+      cards: CARDS.map((card) => ({ ...card, sectionIndex: 0 })),
     })
+
+    expect(tab.drawn.value.map((card) => card.section)).toStrictEqual([
+      tab.sections.value[0]?.id,
+      tab.sections.value[0]?.id,
+    ])
 
     tab.removeSection(tab.sections.value[0]?.id ?? '')
 

@@ -200,7 +200,7 @@ function onDateChange(event: Event) {
 }
 
 .preset-settings__day:focus-visible {
-  outline: none;
+  outline: var(--numen-stroke) solid var(--numen-ring, currentColor);
   outline-offset: var(--numen-stroke);
 }
 </style>

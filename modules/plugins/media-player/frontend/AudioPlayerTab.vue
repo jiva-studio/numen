@@ -95,9 +95,11 @@ const totalDuration = computed(() => {
 })
 
 const internalCues = ref<readonly CueItem[]>([])
+const isTranscriptDeleted = ref(false)
 const isMenuOpen = ref(false)
 
 const transcriptCues = computed<readonly CueItem[]>(() => {
+  if (isTranscriptDeleted.value) return []
   if (internalCues.value.length > 0) return internalCues.value
   if (props.state?.cues?.value) return props.state.cues.value
   if (Array.isArray(props.state?.cues)) return props.state.cues
@@ -263,14 +265,24 @@ function onAudioEnded() {
 }
 
 function onTranscribe() {
-  if (props.state?.proofread) props.state.proofread()
+  isTranscriptDeleted.value = false
+  if (typeof props.state?.transcribe === 'function') {
+    props.state.transcribe()
+    return
+  }
+  if (typeof props.state?.proofread === 'function') {
+    props.state.proofread()
+  }
   internalCues.value = [
     { text: 'Sample audio transcription text.', from: 0, to: totalDuration.value || 1000 },
   ]
 }
 
 function onDeleteTranscript() {
-  if (props.state?.deleteTranscript) props.state.deleteTranscript()
+  isTranscriptDeleted.value = true
+  if (props.state?.deleteTranscript) {
+    props.state.deleteTranscript()
+  }
   internalCues.value = []
   isMenuOpen.value = false
 }

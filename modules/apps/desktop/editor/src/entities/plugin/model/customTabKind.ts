@@ -179,7 +179,9 @@ function createCustomTabState(at: string, pluginId: string, deps?: PluginHostDep
           }
         }
       })
-      .catch((err) => console.error('readNote failed', at, err))
+      .catch((err) => {
+        errorMessageRef.value = err instanceof Error ? err.message : String(err)
+      })
   }
   return {
     at,

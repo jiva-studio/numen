@@ -15,7 +15,12 @@ export function useCurvePlot(getCurve: () => Curve, getPlace: () => number) {
   watch(
     getCurve,
     (curve) => {
-      if (scale.value?.goal === curve.goal) return
+      if (
+        scale.value?.goal === curve.goal &&
+        (!curve.isHonest || getExtent(curve).most <= scale.value.extent.most)
+      ) {
+        return
+      }
       scale.value = curve.isHonest ? { goal: curve.goal, extent: getExtent(curve) } : null
     },
     { immediate: true },

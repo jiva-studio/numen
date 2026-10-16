@@ -2,14 +2,14 @@
 /**
  * Renders the deck preset schedule bar and selector menu.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, useId } from 'vue'
 import { Menu } from '@numen/ui'
 import type { Position } from '@numen/ui'
 import { ChevronDown } from '@lucide/vue'
 import type { Choice, DeckPreset } from '../model/useDeckSchedule'
 import { WORDS as words } from '@/entities/deck'
 
-// --- Props & Emits ---
+/* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   scheduled: DeckPreset
   choices: readonly Choice[]
@@ -19,7 +19,10 @@ const emit = defineEmits<{
   choose: [preset: string]
 }>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
+const labelId = useId()
+const choiceId = useId()
+
 const presetMenuItems = computed(() =>
   props.choices.map((one) => ({
     id: one.path,
@@ -30,7 +33,7 @@ const presetMenuItems = computed(() =>
 
 const scheduleMenuTarget = ref<{ at: Position; from: HTMLElement } | null>(null)
 
-// --- Handlers ---
+/* -------------------------------- Handlers -------------------------------- */
 function onOpenScheduleMenu(event: Event) {
   const line = event.currentTarget
   if (!(line instanceof HTMLElement)) return
@@ -50,12 +53,13 @@ function onDismissScheduleMenu() {
 
 <template>
   <p class="deck-tab__scheduled">
-    <span id="deck-scheduled" class="deck-tab__by">{{ words.scheduledBy }}</span>
+    <span :id="labelId" class="deck-tab__by">{{ words.scheduledBy }}</span>
     <button
+      :id="choiceId"
       type="button"
       class="deck-tab__choice"
       aria-haspopup="menu"
-      aria-labelledby="deck-scheduled"
+      :aria-labelledby="`${labelId} ${choiceId}`"
       @click="onOpenScheduleMenu"
     >
       {{ props.scheduled.name }}
@@ -111,7 +115,7 @@ function onDismissScheduleMenu() {
 }
 
 .deck-tab__choice:focus-visible {
-  outline: none;
+  outline: var(--numen-stroke) solid var(--numen-ring, currentColor);
   outline-offset: var(--numen-stroke);
 }
 

@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import { defineConfig, devices } from 'playwright/test'
 
 const port = process.env.NUMEN_TEST_PORT ?? '3456'
@@ -24,7 +25,7 @@ export default defineConfig({
     viewport: { width: 1280, height: 860 },
   },
   webServer: {
-    command: `node ${new URL('./scripts/start-server.mjs', import.meta.url).pathname}`,
+    command: `node "${fileURLToPath(new URL('./scripts/start-server.mjs', import.meta.url))}"`,
     url: baseURL,
     ignoreHTTPSErrors: true,
     reuseExistingServer: !process.env.CI,

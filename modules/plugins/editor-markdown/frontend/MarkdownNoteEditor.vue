@@ -81,9 +81,6 @@ const frontmatterError = computed(() => {
         if (trimmed.includes('[') && !trimmed.includes(']')) {
           return 'the frontmatter of this note cannot be read'
         }
-        if ((trimmed.match(/:/g) || []).length > 1 && !trimmed.includes('"') && !trimmed.includes("'")) {
-          return 'the frontmatter of this note cannot be read'
-        }
       }
     }
   }
