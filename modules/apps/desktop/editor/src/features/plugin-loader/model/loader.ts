@@ -204,16 +204,18 @@ async function startLoader(
   deps: StartLoaderDeps,
   activate: (id: string) => Promise<boolean>,
 ) {
+  const activations: Promise<void>[] = []
   for (const pluginId of deps.moduleLoaders.keys()) {
     deps.listen(pluginId)
     if (deps.isEnabled(pluginId)) {
-      try {
-        await activate(pluginId)
-      } catch {
-        // Plugin activation failure should not halt startup
-      }
+      activations.push(
+        activate(pluginId)
+          .then(() => {})
+          .catch(() => {}),
+      )
     }
   }
+  await Promise.all(activations)
 }
 
 interface CloseLoaderDeps {

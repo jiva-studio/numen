@@ -148,6 +148,11 @@ function createCustomTabKind(pluginId: string, registration: TabKindRegistration
     },
     pane: createPluginPaneWrapper(pluginId, registration.component),
     identity: (at: string) => at || registration.kind,
+    onShow: (state: unknown) => {
+      const s = state as { measure?: () => void; editor?: { measure?: () => void } } | undefined
+      s?.measure?.()
+      s?.editor?.measure?.()
+    },
   }
 }
 
@@ -223,18 +228,40 @@ function registerReaderEntry(
   return { dispose: cleanup }
 }
 
+function extractWhere(options?: unknown): unknown {
+  if (typeof options === 'string') return options
+  if (typeof options === 'object' && options !== null && 'where' in options) {
+    return (options as { where?: unknown }).where
+  }
+  return undefined
+}
+
 function registerTabKindEntry(
   deps: PluginHostDeps,
   tabKinds: Map<string, RegisteredTabKind>,
   item: PluginItemRegistration<TabKindRegistration>,
 ): Disposable {
   const { pluginId, registration } = item
-  const unregister = deps.registerKind(createCustomTabKind(pluginId, registration))
+  const cleanups: (() => void)[] = [deps.registerKind(createCustomTabKind(pluginId, registration))]
+  if (deps.registerEditor) {
+    const unreg = deps.registerEditor(
+      registration.kind,
+      (path: string, _title: string, options?: unknown) => {
+        const where = extractWhere(options)
+        if (where === 'beside' && deps.openTabBeside) {
+          void deps.openTabBeside(registration.kind, path)
+        } else {
+          void deps.openTab(registration.kind, path)
+        }
+      },
+    )
+    if (typeof unreg === 'function') cleanups.push(unreg)
+  }
   let isDisposed = false
   const cleanup = () => {
     if (isDisposed) return
     isDisposed = true
-    unregister()
+    for (const fn of cleanups) fn()
     tabKinds.delete(registration.kind)
   }
   tabKinds.set(registration.kind, { pluginId, reg: registration, cleanup })

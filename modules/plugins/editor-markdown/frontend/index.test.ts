@@ -1,18 +1,35 @@
-import { describe, expect, it } from 'vitest'
-import { createMockPluginContext } from '@numen/plugin-sdk/testing'
-import plugin from './index'
+import { describe, expect, it, vi } from 'vitest'
+import type { PluginContext } from '@numen/plugin-sdk'
+import { activate, deactivate } from './index'
 
-describe('editor-markdown plugin', () => {
-  it('registers reader for markdown and text extensions on activation', async () => {
-    const ctx = createMockPluginContext({ pluginId: 'editor-markdown' })
-    await plugin.activate(ctx)
+describe('editor-markdown plugin lifecycle', () => {
+  it('registers markdown reader and note tab kind on activation', () => {
+    const registerReader = vi.fn()
+    const registerTabKind = vi.fn()
+    const context = {
+      registerReader,
+      registerTabKind,
+    } as unknown as PluginContext
 
-    const readers = ctx.getRegisteredReaders()
-    expect(readers).toHaveLength(1)
+    activate(context)
 
-    const reader = readers[0]
-    expect(reader?.id).toBe('editor-markdown')
-    expect(reader?.fileExtensions).toEqual(['.md', '.txt', '.markdown'])
-    expect(reader?.component).toBeDefined()
+    expect(registerReader).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'editor-markdown',
+        fileExtensions: ['.md', '.markdown', '.txt', '.note'],
+        title: 'Markdown Note Editor',
+      }),
+    )
+
+    expect(registerTabKind).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'note',
+        title: 'Note',
+      }),
+    )
+  })
+
+  it('runs deactivation hook cleanly', () => {
+    expect(() => deactivate()).not.toThrow()
   })
 })

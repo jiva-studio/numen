@@ -5,4 +5,4 @@
  * is said about it is said in these words. This is the whole of what one says to
  * the other.
  */
-export type { MoveResult, NoteType } from '../types'
+export type { CreateResult, MoveResult, NoteType } from '../types'

@@ -15,6 +15,10 @@ vi.mock('@/entities/note', () => ({
     h.calls.openNotes = args
     return h.parts.notes
   },
+  createNoteWriter: (...args: unknown[]) => {
+    h.calls.writer = args
+    return h.parts.making
+  },
 }))
 vi.mock('@/pages/deck-editor', () => ({
   useDeckTabs: (...args: unknown[]) => {
@@ -32,17 +36,6 @@ vi.mock('@/pages/preset-editor', () => ({
   usePresetTab: (...args: unknown[]) => {
     h.calls.schedules = args
     return h.parts.schedules
-  },
-}))
-vi.mock('@/pages/note-editor', () => ({
-  createNoteChanges: () => h.parts.changes,
-  createNoteWriter: (...args: unknown[]) => {
-    h.calls.writer = args
-    return h.parts.making
-  },
-  useNoteTab: (...args: unknown[]) => {
-    h.calls.noted = args
-    return h.parts.noted
   },
 }))
 vi.mock('@/features/file-conflict', () => ({
@@ -71,9 +64,15 @@ beforeEach(() => {
   const flush = (name: string) => ({ name: `${name}.flush` })
   h.parts = {
     changes: { reportNoteChange: vi.fn(), close: vi.fn() },
-    notes: { flush: flush('notes') },
+    notes: {
+      flush: flush('notes'),
+      has: (id: string) => id === 'known-note',
+      getPath: (id: string) => 'title of ' + id,
+      stale: () => null,
+      flushPending: vi.fn(),
+      close: vi.fn(),
+    },
     making: { name: 'making' },
-    noted: { kept: store('note'), kind: 'noteKind' },
     decks: { flush: flush('decks'), kept: store('deck'), kind: 'deckKind' },
     stencils: { flush: flush('stencils'), kept: store('stencil'), kind: 'stencilKind' },
     schedules: { flush: flush('schedules'), kind: 'scheduleKind' },
@@ -100,8 +99,7 @@ describe('the note editors', () => {
     const { core } = create()
 
     expect(h.calls.openNotes[0]).toBe(core)
-    expect(h.calls.openNotes[1]).toEqual({ onReplaced: h.parts.changes.reportNoteChange })
-    expect(h.calls.openNotes[1].onReplaced).toBe(h.parts.changes.reportNoteChange)
+    expect(typeof h.calls.openNotes[1].onReplaced).toBe('function')
   })
 
   it('writes each editor message through the writer of its own name', () => {
@@ -138,22 +136,25 @@ describe('the note editors', () => {
   it('keeps the stores of notes, decks and stencils and reaches notes through them', () => {
     const { editors, tabOpeners } = create()
 
-    expect(editors.stores).toEqual([h.parts.noted.kept, h.parts.decks.kept, h.parts.stencils.kept])
+    expect(editors.stores.length).toBe(3)
+    expect(editors.stores[1]).toBe(h.parts.decks.kept)
+    expect(editors.stores[2]).toBe(h.parts.stencils.kept)
     expect(h.calls.reached[0]).toBe(editors.stores)
     expect(h.calls.reached[1]).toBe(tabOpeners)
     expect(editors.reached).toBe(h.parts.reached)
   })
 
-  it('lists the kinds of the note, deck, stencil and schedule editors', () => {
+  it('lists the kinds of the deck, stencil and schedule editors', () => {
     const { editors } = create()
 
-    expect(editors.kinds).toEqual(['noteKind', 'deckKind', 'stencilKind', 'scheduleKind'])
+    expect(editors.kinds).toEqual(['deckKind', 'stencilKind', 'scheduleKind'])
   })
 
   it('gets a title from the first store that has the id, and an empty one from none', () => {
     const { editors } = create()
 
     expect(editors.getTitle('known-deck')).toBe('title of known-deck')
+    expect(editors.getTitle('known-note')).toBe('title of known-note')
     expect(editors.getTitle('unknown')).toBe('')
   })
 
@@ -162,7 +163,6 @@ describe('the note editors', () => {
 
     editors.close()
 
-    expect(h.parts.changes.close).toHaveBeenCalledTimes(1)
     expect(h.parts.fileFlush.close).toHaveBeenCalledTimes(1)
   })
 })

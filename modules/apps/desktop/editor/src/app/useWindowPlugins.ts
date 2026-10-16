@@ -59,6 +59,9 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     registerKind: held.registerKind,
     registerExtensionReader: tabOpeners.registerExtensionReader,
     openTab: held.openTabOfKind,
+    openTabBeside: (kind: string, at?: string) => held.handle.openTabBeside(kind, at),
+    registerEditor: (type: string, open: (path: string, title: string, options?: unknown) => void) =>
+      tabOpeners.registerEditor(type as import('@/entities/tab').EditorKind, open as import('@/entities/tab').FileOpener),
     getSetting,
     onSettingChange,
     closeTabsForPlugin,

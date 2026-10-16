@@ -109,6 +109,9 @@ export function fileOpeners(vault: FileOpenerDeps) {
   /** A kind of tab hands over the way it puts a file in front of the person. */
   const registerEditor = (type: EditorKind, open: FileOpener) => {
     editors.set(type, open)
+    return () => {
+      editors.delete(type)
+    }
   }
 
   /**
@@ -130,7 +133,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
     path: string,
     title: string,
     options: EditorKind | OpenNewFileOptions,
-  ): void => dispatchNewFile(path, title, { options, vault, editors })
+  ): void => dispatchNewFile(path, title, { options, vault, editors, extensionReaders })
 
   /**
    * A file put in front of the person in the editor made for what it is, in the
@@ -221,11 +224,18 @@ function dispatchNewFile(
     options: EditorKind | OpenNewFileOptions
     vault: FileOpenerDeps
     editors: Map<EditorKind, FileOpener>
+    extensionReaders?: Map<string, SourceReader>
   },
 ): void {
   emitFileEvent(path, context.vault.emitEvent)
   const type = typeof context.options === 'string' ? context.options : context.options.type
   const placement = typeof context.options === 'string' ? undefined : context.options
   context.vault.reconcileTab?.(path, type)
-  context.editors.get(type)?.(path, title, placement)
+  const editor = context.editors.get(type)
+  if (editor) {
+    editor(path, title, placement)
+  } else if (context.extensionReaders) {
+    const extReader = findExtensionReader(context.extensionReaders, path)
+    if (extReader) extReader(path, [])
+  }
 }

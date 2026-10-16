@@ -70,6 +70,8 @@ async function mountWindow() {
   await settle()
   await settle()
   await settle()
+  await settle()
+  await settle()
   return window
 }
 

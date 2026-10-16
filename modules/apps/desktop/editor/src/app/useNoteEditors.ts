@@ -6,8 +6,7 @@ import { presets } from '@/entities/deck'
 import { useDeckTabs } from '@/pages/deck-editor'
 import { useStencilTabs } from '@/pages/stencil-editor'
 import { usePresetTab } from '@/pages/preset-editor'
-import { createNoteChanges, createNoteWriter, useNoteTab } from '@/pages/note-editor'
-import { openNotes } from '@/entities/note'
+import { openNotes, createNoteWriter } from '@/entities/note'
 import { raiseConflicts, useFileFlush } from '@/features/file-conflict'
 import { createNotes, type SearchDeps, type Store } from '@/features/command-palette'
 import type { NotePort } from '@/app/ports/notes'
@@ -24,12 +23,54 @@ export interface NoteEditorsDeps {
   day: () => string
 }
 
+function createNullChanges() {
+  return {
+    close: () => {},
+    reportChange: () => {},
+    reportNoteChange: () => {},
+  }
+}
+
+function createNoted(notes: ReturnType<typeof openNotes>, held: ReturnType<typeof useWindowTabs>) {
+  return {
+    loadInTab: async (id: string, path: string, _title?: string) => {
+      await notes.flushPending(id)
+      notes.reload(id, path)
+    },
+    measureAll: () => {
+      for (const tab of held.tabs.value) {
+        const windowTab = held.getTab(tab.id)
+        const state = windowTab?.state as
+          | { measure?: () => void; editor?: { measure?: () => void } }
+          | undefined
+        if (state?.measure) {
+          state.measure()
+        } else if (state?.editor?.measure) {
+          state.editor.measure()
+        }
+      }
+    },
+  }
+}
+
+function createNotedStore(notes: ReturnType<typeof openNotes>): Store {
+  return {
+    has: (id) => notes.has(id),
+    getPath: (id) => notes.getPath(id),
+    getTitle: (id) => notes.getPath(id),
+    asking: (id) => notes.stale(id) !== null,
+    flushPending: (id) => notes.flushPending(id),
+    close: (id) => void notes.close(id),
+    getTabAt: () => null,
+  }
+}
+
 export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditorsDeps) {
-  const changes = createNoteChanges()
+  const changes = createNullChanges()
   const notes = openNotes(core, { onReplaced: changes.reportNoteChange })
   const making = createNoteWriter(core, log.getWriter('made'))
+  const noted = createNoted(notes, held)
 
-  const noted = useNoteTab(core, notes, { changes, handle: held.handle, tabOpeners })
   const decks = useDeckTabs(cards, presets, { handle: held.handle, tabOpeners })
   const stencils = useStencilTabs(cards, held.handle, {
     tabOpeners,
@@ -53,11 +94,12 @@ export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditors
   raiseConflicts(decks, fileFlush)
   raiseConflicts(stencils, fileFlush)
 
-  const stores: readonly Store[] = [noted.kept, decks.kept, stencils.kept]
+  const notedStore = createNotedStore(notes)
+  const stores: readonly Store[] = [notedStore, decks.kept, stencils.kept]
   const reached = createNotes(stores, tabOpeners)
   const getTitle = (id: string): string => stores.find((one) => one.has(id))?.getTitle(id) ?? ''
 
-  const kinds = [noted.kind, decks.kind, stencils.kind, schedules.kind]
+  const kinds = [decks.kind, stencils.kind, schedules.kind]
 
   const close = () => {
     changes.close()

@@ -15,6 +15,7 @@ import type { useWindowTabs } from '@/entities/tab'
 const createSettings = () => {
   const writers: string[] = []
   const core = {
+    getSettings: async () => ({ written: '{}', path: '/vault/.numen/settings.json', models: [] }),
     getSettingsFile: async () => ({ written: '{}', path: '/vault/.numen/settings.json' }),
     saveSettingsFile: async () => ({ isChanged: false }),
   } as unknown as SettingsPort
@@ -24,11 +25,10 @@ const createSettings = () => {
       return () => {}
     },
   } as unknown as MessageLog
-  const windowTabs = {
-    handle: { openTab: async () => '', openTabBeside: async () => '' },
-  } as unknown as ReturnType<typeof useWindowTabs>
+  const handle = { openTab: vi.fn(async () => ''), openTabBeside: vi.fn(async () => '') }
+  const windowTabs = { handle } as unknown as ReturnType<typeof useWindowTabs>
   const settings = useSettings({ core, words: WORDS, log, windowTabs, onSizeChanged: () => {} })
-  return { settings, writers }
+  return { settings, writers, handle }
 }
 
 /** One model the settings offer, at the setting that names the indexing model. */
@@ -43,9 +43,6 @@ const model = (over: Partial<Model> = {}): Model => ({
   ...over,
 })
 
-/** A moment for what a call set going to land. */
-const settle = () => new Promise((done) => setTimeout(done, 0))
-
 describe('the settings as they are put together', () => {
   it('gives each setting a message writer under a name of its own', () => {
     const { writers } = createSettings()
@@ -53,10 +50,10 @@ describe('the settings as they are put together', () => {
     expect(writers).toStrictEqual(['reviewed', 'nesting', 'worn', 'named', 'configured'])
   })
 
-  it('opens the settings tab and the settings file as kinds of tab', () => {
+  it('opens the settings tab as kind of tab', () => {
     const { settings } = createSettings()
 
-    expect(settings.kinds).toStrictEqual([settings.configured.kind, settings.file.kind])
+    expect(settings.kinds).toStrictEqual([settings.configured.kind])
   })
 
   it('puts the appearance away when it is put away', () => {
@@ -68,16 +65,12 @@ describe('the settings as they are put together', () => {
     expect(close).toHaveBeenCalledOnce()
   })
 
-  it('reads every setting again once the settings file is saved', async () => {
-    const { settings } = createSettings()
-    const start = vi.spyOn(settings.rest, 'start').mockResolvedValue()
-    const tab = settings.file.kind.open('')
-    await settle()
+  it('opens the settings file beside the current tab', async () => {
+    const { settings, handle } = createSettings()
+    await settings.rest.start()
+    settings.file.openSettingsFile()
 
-    tab.type('{ "a": 1 }')
-    await tab.save()
-
-    expect(start).toHaveBeenCalledOnce()
+    expect(handle.openTabBeside).toHaveBeenCalledWith('note', '/vault/.numen/settings.json')
   })
 })
 

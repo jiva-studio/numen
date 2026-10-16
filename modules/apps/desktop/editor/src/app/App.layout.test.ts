@@ -11,7 +11,6 @@ import { Plex, Tree, WelcomePage, WorkspaceLayout } from '@numen/ui'
 import { AgentTab } from '@/pages/agent-chat'
 import { DocumentTab } from '@/pages/document-viewer'
 import { FilesTab } from '@/pages/file-manager'
-import { NoteTab } from '@/pages/note-editor'
 import { PlexTab } from '@/pages/plex-graph'
 import { getPanes } from '@numen/ui'
 import {
@@ -198,39 +197,40 @@ describe('a row activated in the files', () => {
   it('opens a note in a tab of its own', async () => {
     const window = await activateRow('Root.md')
 
-    expect(window.findComponent(NoteTab).exists()).toBe(true)
+    expect(paneKinds(window).flat()).toContain('note')
   })
 
   it('opens nothing at all for a file the vault holds no source for', async () => {
     const window = await activateRow('Cover.png')
 
-    expect(window.findComponent(NoteTab).exists()).toBe(false)
+    expect(paneKinds(window).flat()).not.toContain('note')
     expect(window.findComponent(DocumentTab).exists()).toBe(false)
   })
 
   it('opens nothing for a folder, which turns where it stands', async () => {
     const window = await activateRow('physics')
 
-    expect(window.findComponent(NoteTab).exists()).toBe(false)
+    expect(paneKinds(window).flat()).not.toContain('note')
   })
 })
 
 describe('a tab asked to close', () => {
   it('is told to hold while a kind with something to finish is still closing it', async () => {
+    said.types['Root.md'] = 'deck'
     const window = await mountWindow()
     window.findComponent(Tree).vm.$emit('activate', 'Root.md')
     await settle()
     await settle()
 
-    const noteId = getTabs(window).find((tab) => tab.id.startsWith('note:'))?.id
-    expect(noteId).toBeTruthy()
+    const deckId = getTabs(window).find((tab) => tab.id.startsWith('deck:'))?.id
+    expect(deckId).toBeTruthy()
 
     let held = false
-    window.findComponent(WorkspaceLayout).vm.$emit('close', noteId, () => {
+    window.findComponent(WorkspaceLayout).vm.$emit('close', deckId, () => {
       held = true
     })
 
-    // A note tab finishes its own close asynchronously, so the layout is
+    // A deck tab finishes its own close asynchronously, so the layout is
     // told to hold it open rather than drop it from the tree on the spot.
     expect(held).toBe(true)
   })
