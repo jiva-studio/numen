@@ -44,7 +44,7 @@ const isSingleAction = computed(() => {
 })
 
 const actionLabel = computed(() => {
-  if (props.platform === 'linux' || props.updateInfo.downloadUrl.includes('github.com')) {
+  if (props.platform === 'linux' || isGitHubUrl(props.updateInfo.downloadUrl)) {
     return 'View on GitHub'
   }
   return 'Download update'
@@ -65,6 +65,16 @@ function onReleaseNotes() {
 
 function onDismiss() {
   emit('dismiss')
+}
+
+/* -------------------------------- Helpers --------------------------------- */
+function isGitHubUrl(rawUrl: string): boolean {
+  try {
+    const parsed = new URL(rawUrl)
+    return parsed.hostname === 'github.com' || parsed.hostname === 'www.github.com'
+  } catch {
+    return false
+  }
 }
 </script>
 
