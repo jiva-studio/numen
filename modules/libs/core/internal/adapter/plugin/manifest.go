@@ -33,7 +33,7 @@ var (
 	errRangeInvalidBounds  = errors.New("range min cannot exceed max")
 )
 
-var validSettingTypes = []string{"boolean", "string", "number", "enum", "range"}
+var validSettingTypes = []string{"boolean", "string", "number", "enum", "select", "range"}
 
 // Lifecycle defines how the host activates and evicts a plugin from memory.
 type Lifecycle struct {
@@ -194,7 +194,7 @@ func validateSetting(s Setting, key string) error {
 	if !slices.Contains(validSettingTypes, s.Type) {
 		return fmt.Errorf("%w: %q for %s", errInvalidSettingType, s.Type, key)
 	}
-	if s.Type == "enum" && len(s.Options) == 0 {
+	if (s.Type == "enum" || s.Type == "select") && len(s.Options) == 0 {
 		return fmt.Errorf("%w: %s", errEnumMissingOptions, key)
 	}
 	if s.Type == "range" && (s.Min != 0 || s.Max != 0) && s.Min > s.Max {
