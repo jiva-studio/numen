@@ -426,7 +426,8 @@ func (h *Host) defaultLauncher(
 		return nil, nil, fmt.Errorf("validate plugin binary: %w", err)
 	}
 
-	cmd := exec.Command(binPath, "--port="+strconv.Itoa(port), "--token="+token)
+	//nolint:contextcheck // the plugin process outlives the request that launched it
+	cmd := exec.CommandContext(context.Background(), binPath, "--port="+strconv.Itoa(port), "--token="+token)
 	configureSysProcAttr(cmd)
 	cmd.Dir = p.Dir
 	configJSON, _ := h.getPluginConfigJSONLocked(p.Manifest.ID)
@@ -830,19 +831,7 @@ func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
 		return err
 	}
 	rawSettings := h.getPluginSettingsLocked(pluginID)
-	values := make(map[string]string, len(rawSettings))
-	for k, v := range rawSettings {
-		switch val := v.(type) {
-		case string:
-			values[k] = val
-		default:
-			if b, err := json.Marshal(v); err == nil {
-				values[k] = string(b)
-			} else {
-				values[k] = fmt.Sprint(v)
-			}
-		}
-	}
+	values := formatPluginSettings(rawSettings)
 	h.mu.RUnlock()
 
 	httpClient := endpoint.HTTPClient()
@@ -955,4 +944,20 @@ func (s *PluginServiceServer) GetPlugins(
 	return connect.NewResponse(&v1.GetPluginsResponse{
 		Plugins: s.host.GetPluginInfos(),
 	}), nil
+}
+
+func formatPluginSettings(rawSettings map[string]any) map[string]string {
+	values := make(map[string]string, len(rawSettings))
+	for k, v := range rawSettings {
+		if val, ok := v.(string); ok {
+			values[k] = val
+			continue
+		}
+		if b, err := json.Marshal(v); err == nil {
+			values[k] = string(b)
+		} else {
+			values[k] = fmt.Sprint(v)
+		}
+	}
+	return values
 }

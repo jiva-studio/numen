@@ -82,7 +82,7 @@ func validateVaultPath(path string) (string, error) {
 	}
 
 	tempDir := filepath.Clean(os.TempDir())
-	if cleanPath == tempDir || strings.HasPrefix(cleanPath, tempDir+string(filepath.Separator)) {
+	if filepath.Dir(cleanPath) == tempDir && strings.HasPrefix(filepath.Base(cleanPath), "numen-doc-") {
 		return cleanPath, nil
 	}
 

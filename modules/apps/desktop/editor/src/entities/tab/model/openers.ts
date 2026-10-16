@@ -119,15 +119,8 @@ export function fileOpeners(vault: FileOpenerDeps) {
     readers.set(createReaderKey(key.kind, key.format), read)
   }
 
-  const registerExtensionReader = (extension: string, read: SourceReader): (() => void) => {
-    const ext = extension.startsWith('.')
-      ? extension.slice(1).toLowerCase()
-      : extension.toLowerCase()
-    extensionReaders.set(ext, read)
-    return () => {
-      extensionReaders.delete(ext)
-    }
-  }
+  const registerExtensionReader = (extension: string, read: SourceReader): (() => void) =>
+    addExtensionReader(extensionReaders, extension, read)
 
   /**
    * A file just made here, put in front of the person as what it was made as.
@@ -137,13 +130,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
     path: string,
     title: string,
     options: EditorKind | OpenNewFileOptions,
-  ): void => {
-    emitFileEvent(path, vault.emitEvent)
-    const type = typeof options === 'string' ? options : options.type
-    const placement = typeof options === 'string' ? undefined : options
-    vault.reconcileTab?.(path, type)
-    editors.get(type)?.(path, title, placement)
-  }
+  ): void => dispatchNewFile(path, title, { options, vault, editors })
 
   /**
    * A file put in front of the person in the editor made for what it is, in the
@@ -161,28 +148,20 @@ export function fileOpeners(vault: FileOpenerDeps) {
       const placement = typeof options === 'string' ? { where: options } : options
       return void openNewFile(path, title, { type: kind.type, ...placement })
     }
-    const extReader = findExtensionReader(extensionReaders, path)
-    if (extReader) return void extReader(path, [])
-    if (!kind) return
-    vault.reconcileTab?.(path, mapTargetKind(kind))
-    findReader(readers, kind)?.(path, [])
+    dispatchReader(
+      { path, kind, spans: [] },
+      { readers, extensionReaders, reconcileTab: vault.reconcileTab },
+    )
   }
 
-  /**
-   * A source put in front of the person at spans of its own text: a book in
-   * the reader and a recording in the player, at the first of them. A span
-   * of a note's bytes names no line for the keyboard to stand on, so a note
-   * opens whole.
-   */
   const openFileAt = async (path: string, spans: readonly Span[]): Promise<void> => {
     emitFileEvent(path, vault.emitEvent)
     const kind = await fetchFileKind(vault, path)
     if (kind?.kind === 'note') return void openNewFile(path, '', kind.type)
-    const extReader = findExtensionReader(extensionReaders, path)
-    if (extReader) return void extReader(path, spans)
-    if (!kind) return
-    vault.reconcileTab?.(path, mapTargetKind(kind))
-    findReader(readers, kind)?.(path, spans)
+    dispatchReader(
+      { path, kind, spans },
+      { readers, extensionReaders, reconcileTab: vault.reconcileTab },
+    )
   }
 
   return {
@@ -205,3 +184,48 @@ const mapTargetKind = (kind: FileKind): string => {
 
 /** What the window puts files in front of the person with. */
 export type FileOpeners = ReturnType<typeof fileOpeners>
+
+interface ReaderDispatchContext {
+  readers: Map<string, SourceReader>
+  extensionReaders: Map<string, SourceReader>
+  reconcileTab?: ((path: string, kind: string) => void) | undefined
+}
+
+function dispatchReader(
+  target: { path: string; kind: FileKind | null; spans: readonly Span[] },
+  context: ReaderDispatchContext,
+): void {
+  const extReader = findExtensionReader(context.extensionReaders, target.path)
+  if (extReader) return void extReader(target.path, target.spans)
+  if (!target.kind) return
+  context.reconcileTab?.(target.path, mapTargetKind(target.kind))
+  findReader(context.readers, target.kind)?.(target.path, target.spans)
+}
+
+function addExtensionReader(
+  extensionReaders: Map<string, SourceReader>,
+  extension: string,
+  read: SourceReader,
+): () => void {
+  const ext = extension.startsWith('.') ? extension.slice(1).toLowerCase() : extension.toLowerCase()
+  extensionReaders.set(ext, read)
+  return () => {
+    extensionReaders.delete(ext)
+  }
+}
+
+function dispatchNewFile(
+  path: string,
+  title: string,
+  context: {
+    options: EditorKind | OpenNewFileOptions
+    vault: FileOpenerDeps
+    editors: Map<EditorKind, FileOpener>
+  },
+): void {
+  emitFileEvent(path, context.vault.emitEvent)
+  const type = typeof context.options === 'string' ? context.options : context.options.type
+  const placement = typeof context.options === 'string' ? undefined : context.options
+  context.vault.reconcileTab?.(path, type)
+  context.editors.get(type)?.(path, title, placement)
+}

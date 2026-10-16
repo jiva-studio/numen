@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const sourceVault = path.resolve(__dirname, '../../../vault')
+const fixturesDir = path.resolve(__dirname, '../fixtures')
 const binaryPath = path.resolve(__dirname, '../../../../apps/desktop/numen-debug')
 const repoRoot = path.resolve(__dirname, '../../../../..')
 const pluginsPath = path.resolve(repoRoot, 'modules/plugins')
@@ -43,6 +44,10 @@ function createSampleWav(targetPath) {
 const tmpVault = fs.mkdtempSync(path.join(os.tmpdir(), 'numen-e2e-vault-'))
 fs.cpSync(sourceVault, tmpVault, { recursive: true })
 createSampleWav(path.join(tmpVault, 'assets', 'sample.wav'))
+
+// Copy dynamic fixtures into isolated vault to prevent template fixture pollution.
+fs.copyFileSync(path.join(fixturesDir, 'sample.pdf'), path.join(tmpVault, 'assets', 'sample.pdf'))
+fs.copyFileSync(path.join(fixturesDir, 'sample.epub'), path.join(tmpVault, 'assets', 'sample.epub'))
 
 function cleanup() {
   try {
