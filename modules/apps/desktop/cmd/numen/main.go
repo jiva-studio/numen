@@ -143,7 +143,6 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 	}
 	pages, opened := shown.pages, shown.opened
 	opened.Services.Themes = themes.Load(cfg.Themes, opened.SayTheme, os.Stdout)
-	platform.WirePluginService(opened.Services, cfg)
 
 	// What reading the settings had to tell a person goes where they are: a
 	// window opened from a desktop entry has no terminal to write to.
@@ -231,7 +230,6 @@ func openInstallation(
 	}
 	if cfg.PluginHost != nil {
 		cfg.PluginHost.SetVaultPath(opened.GetCurrentVault().Path)
-		platform.WirePluginService(opened.Services, cfg)
 	}
 	return shownInstallation{pages: pages, opened: opened}, nil
 }

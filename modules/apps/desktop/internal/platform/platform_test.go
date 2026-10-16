@@ -3,8 +3,6 @@ package platform
 import (
 	"path/filepath"
 	"testing"
-
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 )
 
 func TestGetPluginsDirs(t *testing.T) {
@@ -25,15 +23,6 @@ func TestGetConfig(t *testing.T) {
 	cfg := GetConfig()
 	if cfg.PluginHost == nil {
 		t.Fatal("expected configured plugin host")
-	}
-}
-
-func TestWirePluginService(t *testing.T) {
-	cfg := GetConfig()
-	var services editor.Services
-	WirePluginService(&services, cfg)
-	if services.Plugin == nil {
-		t.Fatal("expected wired plugin service handler")
 	}
 }
 

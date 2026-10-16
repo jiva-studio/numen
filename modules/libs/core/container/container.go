@@ -23,7 +23,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/trash"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 // Config is what the user may point somewhere else. Empty fields mean the
@@ -137,18 +136,6 @@ func NewPluginHost(target string, dirs ...string) *plugin.Host {
 	return host
 }
 
-// NewPluginServiceServer creates a server exposing plugin schemas over Connect-RPC.
-func NewPluginServiceServer(host *plugin.Host) numenv1connect.PluginServiceHandler {
-	if host == nil {
-		return nil
-	}
-	return plugin.NewPluginServiceServer(host)
-}
-
-// PluginServiceServer returns a server exposing plugin schemas over Connect-RPC.
-func (c Config) PluginServiceServer() numenv1connect.PluginServiceHandler {
-	return NewPluginServiceServer(c.PluginHost)
-}
 
 // Clock is the clock every scenario assembled here is handed.
 
