@@ -114,7 +114,7 @@ The flatpak and the snap are made from what the Linux job built, each in a job o
 
 What has landed since the last stable release is worked out before anything is uploaded, and goes up beside the builds as `notes.md`, which is the address `latest.json` carries. The repository is closed, so that copy is the one a reader of the page can reach.
 
-Then it tags the commit it built and makes a release on GitHub carrying the same notes and the same files, which is where the tag and the history live for us. A beta's release is marked as a prerelease. The tag is made once the builds are up, so no tag names a build that failed.
+Then it tags the commit it built and makes a release on GitHub carrying the notes, the canonical and stamped builds, `checksums.txt`, and `latest.json`. A beta's release is marked as a prerelease. The tag is made once the builds are up, so no tag names a build that failed.
 
 `latest/latest.json` is the one file asked for over and over by machines that already hold the rest, and the pull zone has to be told to hold it no longer than a minute — today it says thirty days. Everything under `releases/` and `builds/` is written once, and the zone can hold it for as long as it likes.
 

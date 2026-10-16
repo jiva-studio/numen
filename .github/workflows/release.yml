@@ -1067,7 +1067,17 @@ jobs:
             done < "$RUNNER_TEMP/made"
             printf '\n  ]\n}\n'
           } > "$shelf/latest.json"
+          cp "$shelf/latest.json" "$RUNNER_TEMP/upload/$kept/latest.json"
           cat "$shelf/latest.json"
+
+          # Checksum file in standard format
+          {
+            while IFS='|' read -r name platform arch kind at; do
+              sha256=$(sha256sum "$shelf/$name" | cut -d' ' -f1)
+              printf '%s  %s\n' "$sha256" "$name"
+            done < "$RUNNER_TEMP/made"
+          } > "$shelf/checksums.txt"
+          cp "$shelf/checksums.txt" "$RUNNER_TEMP/upload/$kept/checksums.txt"
 
       # Bunny takes a file by PUT at the path it is stored under. Storage is
       # never readable without its password: the pull zone in front of it is
@@ -1160,6 +1170,13 @@ jobs:
             fi
           done
 
+      - name: Save staged release artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-staged
+          path: ${{ runner.temp }}/upload
+          retention-days: 1
+
   # What the release is called and what it says it holds. The tag is made when
   # the builds are up and not before, so nothing names a build that failed.
   announce:
@@ -1180,8 +1197,8 @@ jobs:
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          path: ${{ runner.temp }}/built
-          pattern: numen-*
+          name: release-staged
+          path: ${{ runner.temp }}/upload
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -1204,10 +1221,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.naming.outputs.version }}
+          STAMP: ${{ needs.naming.outputs.stamp }}
+          SHELF: ${{ needs.naming.outputs.shelf }}
           CHANNEL: ${{ needs.naming.outputs.channel }}
         run: |
           set -euo pipefail
-          mapfile -t files < <(find "$RUNNER_TEMP/built" -type f | sort)
+          upload="$RUNNER_TEMP/upload"
+
+          if [ "$SHELF" = latest ]; then
+            kept="releases/$VERSION"
+          else
+            kept="builds/$STAMP"
+          fi
+
+          mapfile -t files < <(find "$upload/$SHELF" "$upload/$kept" -maxdepth 1 -type f ! -name 'notes.md' | sort -u)
           printf '%s\n' "${files[@]}"
 
           prerelease=
