@@ -4,13 +4,14 @@ on:
   pull_request:
     types: [closed]
 
-permissions:
-  actions: write
+permissions: {}
 
 jobs:
   cleanup:
     name: "Clean :: Pull Request Cache"
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
     steps:
       - name: Delete pull request caches
         env:
