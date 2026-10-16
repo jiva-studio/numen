@@ -1,11 +1,18 @@
+/**
+ * Frontend entrypoint for the PDF Reader plugin.
+ */
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import DocumentTab from './DocumentTab.vue'
+import { setPdfPluginActive } from '@/pages/document-viewer/model/pluginState'
+
+export { DocumentTab }
 
 export function activate(_context?: PluginContext): void {
-  // PDF reader plugin activation
+  setPdfPluginActive(true)
 }
 
 export function deactivate(): void {
-  // Deactivation hook
+  setPdfPluginActive(false)
 }
 
 export default definePlugin({
