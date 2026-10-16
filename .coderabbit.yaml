@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+tone_instructions: "Be concise and technical. Respect coding guidelines in AGENTS.md."
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_approve: true
+  tools:
+    ast-grep:
+      enabled: true
+
+chat:
+  auto_reply: true
