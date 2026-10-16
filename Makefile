@@ -377,15 +377,11 @@ $(addprefix plugin_,$(addsuffix _frontend_build,$(PLUGIN_NAMES))): plugin_%_fron
 
 .PHONY: $(addprefix plugin_,$(addsuffix _lint,$(PLUGIN_NAMES)))
 $(addprefix plugin_,$(addsuffix _lint,$(PLUGIN_NAMES))): plugin_%_lint:
-	@if [ -f $(PLUGINS)/$*/go.mod ]; then \
-		cd $(PLUGINS)/$* && go vet ./... && golangci-lint run ./... ; \
-	fi
+	$(MAKE) -C $(PLUGINS)/$* lint
 
 .PHONY: $(addprefix plugin_,$(addsuffix _test,$(PLUGIN_NAMES)))
 $(addprefix plugin_,$(addsuffix _test,$(PLUGIN_NAMES))): plugin_%_test:
-	@if [ -f $(PLUGINS)/$*/go.mod ]; then \
-		cd $(PLUGINS)/$* && go test ./... ; \
-	fi
+	$(MAKE) -C $(PLUGINS)/$* test
 
 .PHONY: $(addprefix plugin_,$(addsuffix _package,$(PLUGIN_NAMES)))
 $(addprefix plugin_,$(addsuffix _package,$(PLUGIN_NAMES))): plugin_%_package: plugin_%_build

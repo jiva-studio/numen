@@ -7,18 +7,20 @@ all: build
 build: frontend_build
 
 frontend_build:
-	@mkdir -p dist
-	@if [ -d frontend ]; then \
+	@if [ -f package.json ]; then \
+		npm run build ; \
+	elif [ -d frontend ]; then \
+		mkdir -p dist ; \
 		if [ -f frontend/styles.css ]; then \
 			cp frontend/styles.css dist/styles.css ; \
 		fi ; \
 	fi
 
 lint:
-	@if [ -f frontend/package.json ]; then cd frontend && npm run lint 2>/dev/null || true; fi
+	@if [ -f package.json ]; then npm run lint --if-present; fi
 
 test:
-	@if [ -f frontend/package.json ]; then cd frontend && npm test 2>/dev/null || true; fi
+	@if [ -f package.json ]; then npm test; fi
 
 clean:
 	rm -rf bin dist

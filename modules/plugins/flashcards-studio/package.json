@@ -7,8 +7,8 @@
   "main": "./frontend/index.ts",
   "types": "./frontend/index.ts",
   "scripts": {
-    "build": "mkdir -p dist",
-    "test": "npm --prefix frontend test"
+    "build": "vite build",
+    "test": "vitest run"
   },
   "dependencies": {
     "@numen/plugin-sdk": "workspace:*"

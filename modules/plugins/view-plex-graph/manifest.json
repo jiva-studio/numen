@@ -8,6 +8,7 @@
   "activationEvents": ["onStartupFinished", "onView:plex"],
   "permissions": ["vault:read"],
   "frontend": {
-    "entrypoint": "frontend/index.ts"
+    "entrypoint": "dist/index.js",
+    "styles": "dist/styles.css"
   }
 }

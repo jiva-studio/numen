@@ -29,9 +29,11 @@ frontend_build:
 lint:
 	go vet ./...
 	golangci-lint run ./...
+	@if [ -f package.json ]; then npm run lint --if-present; fi
 
 test:
 	go test ./...
+	@if [ -f package.json ]; then npm test; fi
 
 clean:
 	rm -rf bin dist
