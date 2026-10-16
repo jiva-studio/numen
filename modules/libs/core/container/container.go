@@ -136,7 +136,6 @@ func NewPluginHost(target string, dirs ...string) *plugin.Host {
 	return host
 }
 
-
 // Clock is the clock every scenario assembled here is handed.
 
 func (c Config) Clock() port.Clock {
