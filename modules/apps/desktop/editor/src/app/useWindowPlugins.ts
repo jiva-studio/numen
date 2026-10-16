@@ -1,6 +1,7 @@
 import { watch } from 'vue'
 import { createPluginHost } from '@/entities/plugin'
 import { createPluginLoader, type PluginLoader } from '@/features/plugin-loader'
+import { cards } from '@/entities/deck'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { useTabLinks } from '@/features/tab-linking'
 import type { useSettings } from './useSettings'
@@ -12,21 +13,7 @@ export interface PluginSupportDeps {
   readonly settingsHolder: { current?: ReturnType<typeof useSettings> }
 }
 
-export function createPluginSupport(deps: PluginSupportDeps) {
-  const { held, tabLinks, tabOpeners, settingsHolder } = deps
-
-  const closeTabsForPlugin = (pluginId: string) => {
-    for (const tab of held.tabs.value) {
-      const windowTab = held.getTab(tab.id)
-      if (!windowTab) continue
-      const state = windowTab.state as { pluginId?: string } | undefined
-      if (state?.pluginId === pluginId) {
-        tabLinks.removeClosedTab(tab.id)
-        held.requestClose(tab.id)
-      }
-    }
-  }
-
+function createPluginSettingsAccessor(settingsHolder: { current?: ReturnType<typeof useSettings> }) {
   const getSetting = (pluginId: string, key: string): unknown => {
     const rest = settingsHolder.current?.rest
     if (!rest) return undefined
@@ -34,8 +21,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     if (value !== undefined) return value
     if (key === 'enabled') {
       const info = rest.plugins?.value?.find((p: { id: string; isActive?: boolean }) => p.id === pluginId)
-      if (info !== undefined) return info.isActive
-      return true
+      return info?.isActive ?? true
     }
     return undefined
   }
@@ -44,27 +30,54 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     pluginId: string,
     key: string,
     handler: (value: unknown) => void | Promise<void>,
-  ): (() => void) => {
-    return watch(
+  ): (() => void) =>
+    watch(
       () => getSetting(pluginId, key),
       (newVal, oldVal) => {
-        if (newVal !== oldVal) {
-          void handler(newVal)
-        }
+        if (newVal !== oldVal) void handler(newVal)
       },
     )
+
+  return { getSetting, onSettingChange }
+}
+
+function writeCustomCard(at: string, values: readonly { field: string; text: string }[]) {
+  void cards.writeDeck(
+    at,
+    {
+      preamble: '',
+      cards: [{ values }] as unknown as Parameters<typeof cards.writeDeck>[1]['cards'],
+      sections: [],
+      tail: '',
+    },
+    null,
+  )
+}
+
+export function createPluginSupport(deps: PluginSupportDeps) {
+  const { held, tabLinks, tabOpeners, settingsHolder } = deps
+  const { getSetting, onSettingChange } = createPluginSettingsAccessor(settingsHolder)
+
+  const closeTabsForPlugin = (pluginId: string) => {
+    for (const tab of held.tabs.value) {
+      const windowTab = held.getTab(tab.id)
+      if ((windowTab?.state as { pluginId?: string } | undefined)?.pluginId === pluginId) {
+        tabLinks.removeClosedTab(tab.id)
+        held.requestClose(tab.id)
+      }
+    }
   }
 
   const pluginHost = createPluginHost({
     registerKind: held.registerKind,
     registerExtensionReader: tabOpeners.registerExtensionReader,
+    registerEditor: tabOpeners.registerEditor,
     openTab: held.openTabOfKind,
-    openTabBeside: (kind: string, at?: string) => held.handle.openTabBeside(kind, at),
-    registerEditor: (type: string, open: (path: string, title: string, options?: unknown) => void) =>
-      tabOpeners.registerEditor(type as import('@/entities/tab').EditorKind, open as import('@/entities/tab').FileOpener),
+    openTabBeside: held.openTabBesideOfKind,
     getSetting,
     onSettingChange,
     closeTabsForPlugin,
+    onCustomCardAdded: writeCustomCard,
   })
   const pluginLoader = createPluginLoader({ host: pluginHost })
 

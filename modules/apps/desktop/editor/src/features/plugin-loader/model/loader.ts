@@ -17,6 +17,8 @@ interface ActivePluginEntry {
   readonly lifecycle?: PluginLifecycle
 }
 
+import * as flashcardsStudio from '@plugins/flashcards-studio/frontend'
+
 const IN_TREE_LOADERS: Record<string, () => Promise<unknown>> = {
   'md.numen.pdf': () => import('@plugins/reader-pdf/frontend'),
   'md.numen.epub': () => import('@plugins/reader-epub/frontend'),
@@ -25,6 +27,7 @@ const IN_TREE_LOADERS: Record<string, () => Promise<unknown>> = {
   'md.numen.view-plex-graph': () => import('@plugins/view-plex-graph/frontend'),
   'md.numen.media-player': () => import('@plugins/media-player/frontend'),
   'md.numen.downloader': () => import('@plugins/downloader/frontend'),
+  'md.numen.flashcards-studio': async () => flashcardsStudio,
 }
 
 function injectPluginStyles(baseUrl: string, pluginId: string, stylesPath: string): void {

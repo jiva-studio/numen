@@ -51,6 +51,7 @@ type Config struct {
 	DayStart  func() time.Duration
 	Now       port.Clock
 	Cores     int
+	Scheduler port.ScheduleAlgorithm
 }
 
 // New builds the scenarios that run a vault's cards against this installation.
@@ -87,14 +88,26 @@ func NewScenarios(cfg Config) Scenarios {
 
 	// Each card is worked out at the share of the cards its own preset asks
 	// for, which is what says which preset a card face stands under.
-	schedules := NewSchedules(cfg.Logs, review.NewFSRS(), day, faces, presets)
+	var defaultScheduler review.Scheduler = review.NewFSRS()
+	var at func(retention float64) review.Scheduler
+	if cfg.Scheduler != nil {
+		defaultScheduler = cfg.Scheduler.CreateScheduler(review.Defaults().Retention)
+		at = cfg.Scheduler.CreateScheduler
+	}
+	schedules := NewSchedules(cfg.Logs, defaultScheduler, day, faces, presets)
 	schedules.Cache = cfg.Schedules
+	if at != nil {
+		schedules.At = at
+	}
 
 	counted := NewCountReviews(cfg.Logs, schedules, day, cfg.Now)
 	counted.Cache = cfg.DayCounts
 
 	curves := NewProjectCurve(faces, schedules, presets, day, cfg.Now)
 	curves.Cores = cfg.Cores
+	if at != nil {
+		curves.By = at
+	}
 
 	return Scenarios{
 		CardFaces:     faces,

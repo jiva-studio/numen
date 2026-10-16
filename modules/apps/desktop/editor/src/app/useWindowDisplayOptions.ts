@@ -21,9 +21,6 @@ export function createDisplayOptions(deps: DisplayWiring) {
   return {
     onVaultChanged: async (paths: readonly string[], renamed: readonly PathRename[]) => {
       editing.notes.applyPathChanges(paths, renamed)
-      editing.decks.applyPathChanges(paths, renamed)
-      editing.stencils.applyPathChanges(paths, renamed)
-      editing.schedules.applyPathChanges(paths, renamed)
       getCommands().commands.applyRenames(renamed)
       await getKinds().files.refreshChangedPaths(paths, renamed)
       await getKinds().plexes.refresh(renamed)

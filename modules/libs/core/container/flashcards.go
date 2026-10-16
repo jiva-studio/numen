@@ -126,5 +126,6 @@ func (c Config) Flashcards(
 		DayStart:  c.GetDayStartTime,
 		Now:       now,
 		Cores:     c.getCores(),
+		Scheduler: c.Scheduler,
 	})
 }

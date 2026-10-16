@@ -23,9 +23,11 @@ import {
   type PresetTabState,
   type Settings as Scheduling,
   type SettingsBounds,
-} from '@/pages/preset-editor'
-import { DeckTab, type DeckTabState } from '@/pages/deck-editor'
-import { StencilTab, type StencilTabState } from '@/pages/stencil-editor'
+  DeckTab,
+  type DeckTabState,
+  StencilTab,
+  type StencilTabState,
+} from '@plugins/flashcards-studio/frontend'
 import type { Marks } from '@/entities/deck'
 import { AudioPlayerTab } from '@plugins/media-player/frontend'
 import { useTranscript, type Cue, type Player, type Recordings } from '@/entities/media'

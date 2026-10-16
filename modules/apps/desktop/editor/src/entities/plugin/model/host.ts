@@ -133,7 +133,11 @@ function createReaderTabKind(pluginId: string, registration: ReaderRegistration)
   }
 }
 
-function createCustomTabKind(pluginId: string, registration: TabKindRegistration): AnyTabKind {
+function createCustomTabKind(
+  pluginId: string,
+  registration: TabKindRegistration,
+  deps?: PluginHostDeps,
+): AnyTabKind {
   return {
     kind: registration.kind,
     open: (at: string) => ({
@@ -141,6 +145,10 @@ function createCustomTabKind(pluginId: string, registration: TabKindRegistration
       path: at,
       pluginId,
       title: registration.title ?? registration.kind,
+      note: { value: { path: at } },
+      addCard: (_stencil: string, values: readonly { field: string; text: string }[]) => {
+        deps?.onCustomCardAdded?.(at, values)
+      },
     }),
     getTitle: (state: unknown) => {
       const s = state as { title?: string; at?: string } | undefined
@@ -152,6 +160,19 @@ function createCustomTabKind(pluginId: string, registration: TabKindRegistration
       const s = state as { measure?: () => void; editor?: { measure?: () => void } } | undefined
       s?.measure?.()
       s?.editor?.measure?.()
+    },
+    getTarget: (state: unknown) => {
+      const s = state as { path?: string; at?: string; title?: string } | undefined
+      const p = s?.path ?? s?.at ?? ''
+      return {
+        ...(p ? { file: p, path: p } : {}),
+        title: s?.title ?? registration.title ?? registration.kind,
+        source: 'note' as const,
+      }
+    },
+    getOpenTab: (state: unknown) => {
+      const s = state as { path?: string; at?: string } | undefined
+      return { path: s?.path ?? s?.at ?? '' }
     },
   }
 }
@@ -242,11 +263,11 @@ function registerTabKindEntry(
   item: PluginItemRegistration<TabKindRegistration>,
 ): Disposable {
   const { pluginId, registration } = item
-  const cleanups: (() => void)[] = [deps.registerKind(createCustomTabKind(pluginId, registration))]
+  const cleanups: (() => void)[] = [deps.registerKind(createCustomTabKind(pluginId, registration, deps))]
   if (deps.registerEditor) {
     const unreg = deps.registerEditor(
       registration.kind,
-      (path: string, _title: string, options?: unknown) => {
+      (path: string, _title?: string, options?: unknown) => {
         const where = extractWhere(options)
         if (where === 'beside' && deps.openTabBeside) {
           void deps.openTabBeside(registration.kind, path)
