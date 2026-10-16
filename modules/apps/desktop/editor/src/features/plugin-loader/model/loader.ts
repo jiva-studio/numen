@@ -2,7 +2,7 @@
  * Dynamic frontend plugin loader for desktop editor.
  */
 import { shallowRef } from 'vue'
-import type { PluginLifecycle } from '@numen/plugin-sdk'
+import type { Disposable, PluginLifecycle } from '@numen/plugin-sdk'
 import type { PluginHost } from '@/entities/plugin'
 
 export interface PluginLoaderDeps {
@@ -66,72 +66,158 @@ async function resolveModule(
   return loader ? loader() : undefined
 }
 
+interface ActivateContext {
+  readonly host: PluginHost
+  readonly loaders: Map<string, () => Promise<unknown>>
+  readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
+}
+
+async function activateEntry(
+  ctx: ActivateContext,
+  pluginId: string,
+  pluginModule?: unknown,
+): Promise<boolean> {
+  const { host, loaders, activePlugins } = ctx
+  if (activePlugins.value.has(pluginId)) return true
+  const resolved = await resolveModule(loaders, pluginId, pluginModule)
+  if (!resolved) return false
+
+  const { activate, deactivate } = getLifecycleHooks(resolved)
+  if (activate) {
+    await activate(host.createContext(pluginId))
+  }
+
+  const lifecycle: PluginLifecycle = {
+    activate: activate ?? (() => {}),
+    ...(deactivate ? { deactivate } : {}),
+  }
+
+  const next = new Map(activePlugins.value)
+  next.set(pluginId, { pluginId, lifecycle })
+  activePlugins.value = next
+  return true
+}
+
+async function deactivateEntry(
+  host: PluginHost,
+  activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> },
+  pluginId: string,
+): Promise<boolean> {
+  const entry = activePlugins.value.get(pluginId)
+  if (!entry) {
+    host.disposePlugin(pluginId)
+    return false
+  }
+  try {
+    if (entry.lifecycle?.deactivate) {
+      await entry.lifecycle.deactivate()
+    }
+  } finally {
+    host.disposePlugin(pluginId)
+    const next = new Map(activePlugins.value)
+    next.delete(pluginId)
+    activePlugins.value = next
+  }
+  return true
+}
+
+interface StartLoaderDeps {
+  readonly moduleLoaders: Map<string, () => Promise<unknown>>
+  readonly listen: (id: string) => void
+  readonly isEnabled: (id: string) => boolean
+}
+
+async function startLoader(
+  deps: StartLoaderDeps,
+  activate: (id: string) => Promise<boolean>,
+) {
+  for (const pluginId of deps.moduleLoaders.keys()) {
+    deps.listen(pluginId)
+    if (deps.isEnabled(pluginId)) {
+      try {
+        await activate(pluginId)
+      } catch {
+        // Plugin activation failure should not halt startup
+      }
+    }
+  }
+}
+
+interface CloseLoaderDeps {
+  readonly host: PluginHost
+  readonly subscriptions: Map<string, Disposable>
+}
+
+async function closeLoader(
+  deps: CloseLoaderDeps,
+  activeIds: readonly string[],
+  deactivate: (id: string) => Promise<boolean>,
+) {
+  for (const sub of deps.subscriptions.values()) sub.dispose()
+  deps.subscriptions.clear()
+  for (const pluginId of activeIds) {
+    await deactivate(pluginId)
+  }
+  deps.host.disposeAll()
+}
+
 export function createPluginLoader(deps: PluginLoaderDeps) {
   const { host } = deps
   const activePlugins = shallowRef<ReadonlyMap<string, ActivePluginEntry>>(new Map())
   const moduleLoaders = new Map<string, () => Promise<unknown>>(Object.entries(IN_TREE_LOADERS))
+  const settingSubscriptions = new Map<string, Disposable>()
+  let hasStarted = false
 
-  async function activatePlugin(pluginId: string, pluginModule?: unknown): Promise<boolean> {
-    if (activePlugins.value.has(pluginId)) return true
-    const resolved = await resolveModule(moduleLoaders, pluginId, pluginModule)
-    if (!resolved) return false
-
-    const { activate, deactivate } = getLifecycleHooks(resolved)
-    if (activate) {
-      await activate(host.createContext(pluginId))
-    }
-
-    const lifecycle: PluginLifecycle = {
-      activate: activate ?? (() => {}),
-      ...(deactivate ? { deactivate } : {}),
-    }
-
-    const next = new Map(activePlugins.value)
-    next.set(pluginId, { pluginId, lifecycle })
-    activePlugins.value = next
+  const isPluginEnabled = (pluginId: string): boolean => {
+    const val = host.getSetting?.(pluginId, 'enabled')
+    if (typeof val === 'boolean') return val
     return true
   }
 
-  async function deactivatePlugin(pluginId: string): Promise<boolean> {
-    const entry = activePlugins.value.get(pluginId)
-    if (!entry) return false
-    try {
-      if (entry.lifecycle?.deactivate) {
-        await entry.lifecycle.deactivate()
-      }
-    } finally {
-      host.disposePlugin(pluginId)
-      const next = new Map(activePlugins.value)
-      next.delete(pluginId)
-      activePlugins.value = next
-    }
-    return true
+  const activatePlugin = (pluginId: string, pluginModule?: unknown) =>
+    activateEntry({ host, loaders: moduleLoaders, activePlugins }, pluginId, pluginModule)
+
+  const deactivatePlugin = (pluginId: string) =>
+    deactivateEntry(host, activePlugins, pluginId)
+
+  function listenToPluginState(pluginId: string) {
+    if (settingSubscriptions.has(pluginId) || !host.onSettingChange) return
+    const sub = host.onSettingChange<boolean>(pluginId, 'enabled', async (enabled) => {
+      if (enabled === false) await deactivatePlugin(pluginId)
+      else await activatePlugin(pluginId)
+    })
+    settingSubscriptions.set(pluginId, sub)
   }
 
   return {
     registerPluginModule: (pluginId: string, loader: () => Promise<unknown>) => {
       moduleLoaders.set(pluginId, loader)
+      if (hasStarted) {
+        listenToPluginState(pluginId)
+        if (isPluginEnabled(pluginId)) void activatePlugin(pluginId)
+      }
     },
     activatePlugin,
     deactivatePlugin,
     isPluginActive: (pluginId: string) => activePlugins.value.has(pluginId),
     getActivePluginIds: () => [...activePlugins.value.keys()],
     start: async (): Promise<void> => {
-      for (const pluginId of moduleLoaders.keys()) {
-        try {
-          await activatePlugin(pluginId)
-        } catch {
-          // Plugin activation failure should not halt startup
-        }
-      }
+      hasStarted = true
+      await startLoader(
+        { moduleLoaders, listen: listenToPluginState, isEnabled: isPluginEnabled },
+        activatePlugin,
+      )
     },
     close: async (): Promise<void> => {
-      for (const pluginId of [...activePlugins.value.keys()]) {
-        await deactivatePlugin(pluginId)
-      }
-      host.disposeAll()
+      hasStarted = false
+      await closeLoader(
+        { host, subscriptions: settingSubscriptions },
+        [...activePlugins.value.keys()],
+        deactivatePlugin,
+      )
     },
   }
 }
 
 export type PluginLoader = ReturnType<typeof createPluginLoader>
+

@@ -130,4 +130,26 @@ describe('createPluginHost', () => {
     expect(host.hasCommand('cmd1')).toBe(false)
     expect(host.getRegisteredReaders()).toHaveLength(0)
   })
+
+  it('calls closeTabsForPlugin when plugin is disposed', () => {
+    const { deps } = createMockDeps()
+    const closeTabsForPlugin = vi.fn()
+    const host = createPluginHost({ ...deps, closeTabsForPlugin })
+
+    host.disposePlugin('test.plugin')
+    expect(closeTabsForPlugin).toHaveBeenCalledWith('test.plugin')
+  })
+
+  it('delegates getSetting and onSettingChange through host', () => {
+    const { deps } = createMockDeps()
+    const host = createPluginHost(deps)
+
+    expect(host.getSetting('test.plugin', 'fontSize')).toBe(14)
+    expect(deps.getSetting).toHaveBeenCalledWith('test.plugin', 'fontSize')
+
+    const handler = vi.fn()
+    const sub = host.onSettingChange('test.plugin', 'fontSize', handler)
+    expect(deps.onSettingChange).toHaveBeenCalledWith('test.plugin', 'fontSize', expect.any(Function))
+    expect(sub).toHaveProperty('dispose')
+  })
 })

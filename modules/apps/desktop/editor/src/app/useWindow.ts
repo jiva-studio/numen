@@ -24,69 +24,10 @@ import { useWindowKinds } from './useWindowKinds'
 import { useWindowStatusBar } from './useWindowStatusBar'
 import { useAppHotkeys } from './useAppHotkeys'
 import { useAppBootstrap } from './useAppBootstrap'
-import { createPluginHost } from '@/entities/plugin'
-import { createPluginLoader } from '@/features/plugin-loader'
+import { createPluginSupport, watchPluginSettings } from './useWindowPlugins'
 
+import { createDisplayOptions, createTargetResolver } from './useWindowDisplayOptions'
 import type { MessageWriter } from '@/shared/notices/messages'
-import type { PathRename } from '@/shared/paths'
-import type { Span } from '@/shared/span'
-
-interface DisplayWiring {
-  editing: ReturnType<typeof useNoteEditors>
-  getCommands: () => ReturnType<typeof useCommands>
-  getKinds: () => ReturnType<typeof useWindowKinds>
-  tabOpeners: ReturnType<typeof fileOpeners>
-  getVaults: () => ReturnType<typeof useVaults>
-}
-
-function createDisplayOptions(deps: DisplayWiring) {
-  const { editing, getCommands, getKinds, tabOpeners, getVaults } = deps
-  return {
-    onVaultChanged: async (paths: readonly string[], renamed: readonly PathRename[]) => {
-      editing.notes.applyPathChanges(paths, renamed)
-      editing.decks.applyPathChanges(paths, renamed)
-      editing.stencils.applyPathChanges(paths, renamed)
-      editing.schedules.applyPathChanges(paths, renamed)
-      getCommands().commands.applyRenames(renamed)
-      await getKinds().files.refreshChangedPaths(paths, renamed)
-      await getKinds().plexes.refresh(renamed)
-    },
-    reportChange: editing.changes.reportChange,
-    travelTo: (path: string) => getKinds().plexes.travel(path),
-    openFileAt: (path: string, spans: readonly Span[]) => void tabOpeners.openFileAt(path, spans),
-    reload: () => getVaults().reload(),
-  }
-}
-
-function createTargetResolver(
-  held: ReturnType<typeof useWindowTabs>,
-  getVaults: () => ReturnType<typeof useVaults>,
-  window: ReturnType<typeof useWindowDisplay>,
-) {
-  const getFront = () => {
-    const front = held.handle.front()
-    const tab = front?.id ?? ''
-    const on = front && held.getTab(tab)?.kind.getTarget?.(front.state)
-    return { tab, kind: front?.kind ?? null, on }
-  }
-  const getMade = (file: string) => (file && getVaults().makes.value.get(file)) || {}
-
-  return (): CommandTarget => {
-    const { tab, kind, on } = getFront()
-    const file = on?.file ?? ''
-    return {
-      tab,
-      kind,
-      path: on?.path ?? '',
-      title: on?.title ?? '',
-      file,
-      source: on?.source ?? null,
-      made: getMade(file),
-      vault: getVaults().shown.value,
-      isReady: !window.failure.value,
-    }
-  }
-}
 
 interface WindowCommandsOptions {
   held: ReturnType<typeof useWindowTabs>
@@ -160,7 +101,7 @@ interface AppLifecycleDeps {
   settings: ReturnType<typeof useSettings>
   window: ReturnType<typeof useWindowDisplay>
   editing: ReturnType<typeof useNoteEditors>
-  pluginLoader?: ReturnType<typeof createPluginLoader>
+  pluginLoader?: import('@/features/plugin-loader').PluginLoader
 }
 
 function initAppLifecycle(deps: AppLifecycleDeps) {
@@ -192,7 +133,7 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
   })
 }
 
-function initWindowCore() {
+function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSettings> }) {
   const log = createMessageLog()
   const writeMessage = log.getWriter('command')
   const held = useWindowTabs()
@@ -200,12 +141,12 @@ function initWindowCore() {
   const tabOpeners = fileOpeners({ ...core, reconcileTab: held.reconcileTab })
   const runs = runSupport()
   const plays = createMediaTypeProbe()
-  const pluginHost = createPluginHost({
-    registerKind: held.registerKind,
-    registerExtensionReader: tabOpeners.registerExtensionReader,
-    openTab: held.openTabOfKind,
+  const { pluginHost, pluginLoader } = createPluginSupport({
+    held,
+    tabLinks,
+    tabOpeners,
+    settingsHolder,
   })
-  const pluginLoader = createPluginLoader({ host: pluginHost })
   return { log, writeMessage, held, tabLinks, tabOpeners, runs, plays, pluginHost, pluginLoader }
 }
 
@@ -217,8 +158,11 @@ interface WindowContext {
   vaults: ReturnType<typeof useVaults>
 }
 
-function initWindowServices(base: WindowCore, ctx: WindowContext) {
-  const settingsHolder: { current?: ReturnType<typeof useSettings> } = {}
+function initWindowServices(
+  base: WindowCore,
+  ctx: WindowContext,
+  settingsHolder: { current?: ReturnType<typeof useSettings> },
+) {
   const editing = useNoteEditors({
     core,
     log: base.log,
@@ -325,11 +269,13 @@ function initWindowKindsAndCommands(
 
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
-  const base = initWindowCore()
+  const settingsHolder: { current?: ReturnType<typeof useSettings> } = {}
+  const base = initWindowCore(settingsHolder)
   const ctx = {} as WindowContext
-  const services = initWindowServices(base, ctx)
+  const services = initWindowServices(base, ctx, settingsHolder)
   const { getTarget, runCommand } = initWindowKindsAndCommands(base, ctx, services)
   const { editing, window, settings } = services
+  watchPluginSettings(settings, base.pluginLoader)
 
   const notices = useWindowNotices({ log: base.log, window, settings, vaults: ctx.vaults })
   const statusBar = useWindowStatusBar({ tasks: window.tasks })

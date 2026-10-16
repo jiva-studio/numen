@@ -149,7 +149,7 @@ function cleanupMapItems(
   items: Map<string, { pluginId: string; cleanup: () => void }>,
   pluginId: string,
 ): void {
-  for (const item of items.values()) {
+  for (const item of [...items.values()]) {
     if (item.pluginId === pluginId) item.cleanup()
   }
 }
@@ -160,7 +160,8 @@ function cleanupProviderItems(items: Map<string, { pluginId: string }>, pluginId
   }
 }
 
-function disposePluginEntry(pluginId: string, registry: HostRegistry): void {
+function disposePluginEntry(pluginId: string, registry: HostRegistry, deps?: PluginHostDeps): void {
+  deps?.closeTabsForPlugin?.(pluginId)
   clearSubscriptions(registry.contexts.get(pluginId))
   registry.contexts.delete(pluginId)
   cleanupMapItems(registry.readers, pluginId)
@@ -197,7 +198,10 @@ function registerReaderEntry(
   for (const ext of registration.fileExtensions) {
     cleanups.push(deps.registerExtensionReader(ext, (path) => void deps.openTab(kindId, path)))
   }
+  let isDisposed = false
   const cleanup = () => {
+    if (isDisposed) return
+    isDisposed = true
     for (const fn of cleanups) fn()
     readers.delete(registration.id)
   }
@@ -212,7 +216,10 @@ function registerTabKindEntry(
 ): Disposable {
   const { pluginId, registration } = item
   const unregister = deps.registerKind(createCustomTabKind(pluginId, registration))
+  let isDisposed = false
   const cleanup = () => {
+    if (isDisposed) return
+    isDisposed = true
     unregister()
     tabKinds.delete(registration.kind)
   }
@@ -244,11 +251,42 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
     },
     getSetting: <T = unknown>(pluginId: string, key: string) =>
       deps.getSetting ? (deps.getSetting(pluginId, key) as T | undefined) : undefined,
-    onSettingChange: <T = unknown>(pluginId: string, key: string, handler: (value: T) => void) => {
+    onSettingChange: <T = unknown>(
+      pluginId: string,
+      key: string,
+      handler: (value: T) => void | Promise<void>,
+    ) => {
       if (!deps.onSettingChange) return { dispose: () => {} }
-      return { dispose: deps.onSettingChange(pluginId, key, handler as (v: unknown) => void) }
+      return { dispose: deps.onSettingChange(pluginId, key, handler as (v: unknown) => void | Promise<void>) }
     },
   }
+}
+
+function extractPaletteCommands(
+  commands: ReadonlyMap<string, { reg: CommandRegistration }>,
+): PluginPaletteCommand[] {
+  const list: PluginPaletteCommand[] = []
+  for (const { reg } of commands.values()) {
+    if (reg.canShowInPalette === false) continue
+    list.push({
+      id: `plugin:${reg.id}`,
+      title: reg.title,
+      ...(reg.shortcut ? { shortcut: reg.shortcut } : {}),
+      isOffered: () => true,
+    })
+  }
+  return list
+}
+
+function disposeAllEntries(registry: HostRegistry, deps: PluginHostDeps) {
+  const allPluginIds = new Set<string>([
+    ...registry.contexts.keys(),
+    ...[...registry.readers.values()].map((r) => r.pluginId),
+    ...[...registry.tabKinds.values()].map((t) => t.pluginId),
+    ...[...registry.commands.value.values()].map((c) => c.pluginId),
+    ...[...registry.agentProviders.values()].map((p) => p.pluginId),
+  ])
+  for (const pluginId of allPluginIds) disposePluginEntry(pluginId, registry, deps)
 }
 
 export function createPluginHost(deps: PluginHostDeps) {
@@ -261,7 +299,7 @@ export function createPluginHost(deps: PluginHostDeps) {
   }
 
   const contextHost = createHostContextBridge(deps, registry)
-  const disposePlugin = (pluginId: string) => disposePluginEntry(pluginId, registry)
+  const disposePlugin = (pluginId: string) => disposePluginEntry(pluginId, registry, deps)
 
   return {
     contextHost,
@@ -273,19 +311,7 @@ export function createPluginHost(deps: PluginHostDeps) {
       }
       return ctx
     },
-    getPaletteCommands: (): PluginPaletteCommand[] => {
-      const list: PluginPaletteCommand[] = []
-      for (const { reg } of registry.commands.value.values()) {
-        if (reg.canShowInPalette === false) continue
-        list.push({
-          id: `plugin:${reg.id}`,
-          title: reg.title,
-          ...(reg.shortcut ? { shortcut: reg.shortcut } : {}),
-          isOffered: () => true,
-        })
-      }
-      return list
-    },
+    getPaletteCommands: () => extractPaletteCommands(registry.commands.value),
     hasCommand: (id: string): boolean => resolveCommand(registry.commands.value, id) !== undefined,
     executeCommand: async (id: string): Promise<boolean> => {
       const reg = resolveCommand(registry.commands.value, id)
@@ -302,10 +328,10 @@ export function createPluginHost(deps: PluginHostDeps) {
       }
       return false
     },
+    getSetting: contextHost.getSetting,
+    onSettingChange: contextHost.onSettingChange,
     disposePlugin,
-    disposeAll: () => {
-      for (const pluginId of [...registry.contexts.keys()]) disposePlugin(pluginId)
-    },
+    disposeAll: () => disposeAllEntries(registry, deps),
     getRegisteredReaders: () => [...registry.readers.values()].map((r) => r.reg),
     getRegisteredTabKinds: () => [...registry.tabKinds.values()].map((t) => t.reg),
     getRegisteredCommands: () => [...registry.commands.value.values()].map((c) => c.reg),

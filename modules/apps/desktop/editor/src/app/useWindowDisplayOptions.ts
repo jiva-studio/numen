@@ -1,0 +1,66 @@
+import type { fileOpeners, useWindowTabs } from '@/entities/tab'
+import type { CommandTarget } from '@/features/command-palette'
+import type { PathRename } from '@/shared/paths'
+import type { Span } from '@/shared/span'
+import type { useCommands } from './useCommands'
+import type { useNoteEditors } from './useNoteEditors'
+import type { useVaults } from './useVaults'
+import type { useWindowDisplay } from './useWindowDisplay'
+import type { useWindowKinds } from './useWindowKinds'
+
+export interface DisplayWiring {
+  editing: ReturnType<typeof useNoteEditors>
+  getCommands: () => ReturnType<typeof useCommands>
+  getKinds: () => ReturnType<typeof useWindowKinds>
+  tabOpeners: ReturnType<typeof fileOpeners>
+  getVaults: () => ReturnType<typeof useVaults>
+}
+
+export function createDisplayOptions(deps: DisplayWiring) {
+  const { editing, getCommands, getKinds, tabOpeners, getVaults } = deps
+  return {
+    onVaultChanged: async (paths: readonly string[], renamed: readonly PathRename[]) => {
+      editing.notes.applyPathChanges(paths, renamed)
+      editing.decks.applyPathChanges(paths, renamed)
+      editing.stencils.applyPathChanges(paths, renamed)
+      editing.schedules.applyPathChanges(paths, renamed)
+      getCommands().commands.applyRenames(renamed)
+      await getKinds().files.refreshChangedPaths(paths, renamed)
+      await getKinds().plexes.refresh(renamed)
+    },
+    reportChange: editing.changes.reportChange,
+    travelTo: (path: string) => getKinds().plexes.travel(path),
+    openFileAt: (path: string, spans: readonly Span[]) => void tabOpeners.openFileAt(path, spans),
+    reload: () => getVaults().reload(),
+  }
+}
+
+export function createTargetResolver(
+  held: ReturnType<typeof useWindowTabs>,
+  getVaults: () => ReturnType<typeof useVaults>,
+  window: ReturnType<typeof useWindowDisplay>,
+) {
+  const getFront = () => {
+    const front = held.handle.front()
+    const tab = front?.id ?? ''
+    const on = front && held.getTab(tab)?.kind.getTarget?.(front.state)
+    return { tab, kind: front?.kind ?? null, on }
+  }
+  const getMade = (file: string) => (file && getVaults().makes.value.get(file)) || {}
+
+  return (): CommandTarget => {
+    const { tab, kind, on } = getFront()
+    const file = on?.file ?? ''
+    return {
+      tab,
+      kind,
+      path: on?.path ?? '',
+      title: on?.title ?? '',
+      file,
+      source: on?.source ?? null,
+      made: getMade(file),
+      vault: getVaults().shown.value,
+      isReady: !window.failure.value,
+    }
+  }
+}
