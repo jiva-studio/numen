@@ -38,7 +38,7 @@ const isListingOpen = ref(false)
 const bookContent = useTemplateRef<InstanceType<typeof BookContent>>('bookContent')
 watchEffect(() => tabState.setBookHandle(bookContent.value ?? null))
 watchEffect(() => {
-  if (props.state && typeof props.state === 'object' && tabState.title.value) {
+  if (!isExistingState && props.state && typeof props.state === 'object' && tabState.title.value) {
     (props.state as Record<string, unknown>).title = tabState.title.value
   }
 })

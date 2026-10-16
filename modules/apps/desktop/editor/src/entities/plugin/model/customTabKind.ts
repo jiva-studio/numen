@@ -14,9 +14,23 @@ import type { ReaderRegistration, TabKindRegistration } from '@numen/plugin-sdk'
 import type { AnyTabKind } from '@/entities/tab/@x/plugin'
 import type { PluginHostDeps } from './types'
 
-function isAsyncComponent(comp: unknown): comp is () => Promise<Component> {
+type AsyncComponentRegistration = {
+  type: 'async'
+  loader: () => Promise<Component>
+}
+
+function isAsyncComponent(comp: unknown): comp is (() => Promise<Component>) | AsyncComponentRegistration {
+  if (typeof comp === 'object' && comp !== null && (comp as { type?: unknown }).type === 'async') {
+    return typeof (comp as { loader?: unknown }).loader === 'function'
+  }
   if (typeof comp !== 'function') return false
-  return !('setup' in comp || 'render' in comp || 'props' in comp || (comp as { length?: number }).length! > 0)
+  return !(
+    'setup' in comp ||
+    'render' in comp ||
+    'props' in comp ||
+    '__name' in comp ||
+    (comp as { length?: number }).length! > 0
+  )
 }
 
 function resolvePluginComponent(rawComponent: unknown): Component | null {
@@ -27,7 +41,8 @@ function resolvePluginComponent(rawComponent: unknown): Component | null {
       : rawComponent
   if (!comp) return null
   if (isAsyncComponent(comp)) {
-    return defineAsyncComponent(comp)
+    const loader = typeof comp === 'function' ? comp : comp.loader
+    return defineAsyncComponent(loader)
   }
   return comp as Component
 }
@@ -146,19 +161,25 @@ function createCustomTabState(at: string, pluginId: string, deps?: PluginHostDep
   const defaultName = stripMarkdownExtension(extractFilename(at))
   const noteRef = ref({ path: at, body: '' })
   const errorMessageRef = ref('')
+  let hasEdited = false
+
   if (deps?.readNote) {
-    void deps.readNote(at).then((result) => {
-      if (typeof result === 'string') {
-        noteRef.value = { path: at, body: result }
-      } else if (result && typeof result === 'object') {
-        if (result.body !== undefined) {
-          noteRef.value = { path: at, body: result.body }
+    void deps
+      .readNote(at)
+      .then((result) => {
+        if (hasEdited) return
+        if (typeof result === 'string') {
+          noteRef.value = { path: at, body: result }
+        } else if (result && typeof result === 'object') {
+          if (result.body !== undefined) {
+            noteRef.value = { path: at, body: result.body }
+          }
+          if (result.error) {
+            errorMessageRef.value = result.error
+          }
         }
-        if (result.error) {
-          errorMessageRef.value = result.error
-        }
-      }
-    })
+      })
+      .catch((err) => console.error('readNote failed', at, err))
   }
   return {
     at,
@@ -169,6 +190,7 @@ function createCustomTabState(at: string, pluginId: string, deps?: PluginHostDep
     errorMessage: errorMessageRef,
     body: computed(() => noteRef.value.body),
     updateBody: (body: string) => {
+      hasEdited = true
       noteRef.value = { path: at, body }
       void deps?.writeNote?.(at, body)
     },
@@ -211,7 +233,7 @@ export function createCustomTabKind(
       const defaultName = stripMarkdownExtension(extractFilename(p))
       return {
         ...(p ? { file: p, path: p } : {}),
-        title: s?.title ?? defaultName ?? registration.title ?? registration.kind,
+        title: s?.title || defaultName || registration.title || registration.kind,
         source: 'note' as const,
       }
     },
