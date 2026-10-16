@@ -55,6 +55,7 @@ export interface TabKindRegistration {
   kind: string
   component: unknown
   title?: string
+  onClose?: (state: unknown, id: string) => boolean
 }
 
 // CommandRegistration registers a palette or keybound action.
@@ -108,6 +109,7 @@ export interface PluginContext {
   emitVaultChange(event: VaultChangeEvent): void
   emitFileSelect(event: FileSelectEvent): void
   openTab?(kind: string, at?: string): Promise<string> | void
+  closeTab?(id: string): void
 }
 
 // PluginManifest describes the metadata in manifest.json.

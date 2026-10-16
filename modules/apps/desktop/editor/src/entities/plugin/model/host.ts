@@ -174,6 +174,9 @@ function createCustomTabKind(
       const s = state as { path?: string; at?: string } | undefined
       return { path: s?.path ?? s?.at ?? '' }
     },
+    onClose: registration.onClose
+      ? (state: unknown, id: string) => registration.onClose!(state, id)
+      : undefined,
   }
 }
 
@@ -322,6 +325,7 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
       return { dispose: deps.onSettingChange(pluginId, key, handler as (v: unknown) => void | Promise<void>) }
     },
     openTab: (kind: string, at?: string) => deps.openTab(kind, at),
+    closeTab: (id: string) => deps.closeTab?.(id),
   }
 }
 

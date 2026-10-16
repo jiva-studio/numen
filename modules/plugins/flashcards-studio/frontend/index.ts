@@ -13,6 +13,14 @@ export function activate(context: PluginContext): void {
     kind: 'deck',
     component: DeckEditorTab,
     title: 'Deck Editor',
+    onClose: (_state, id) => {
+      if (typeof window !== 'undefined') {
+        setTimeout(() => {
+          context.closeTab?.(id)
+        }, 0)
+      }
+      return false
+    },
   })
   context.registerTabKind({
     kind: 'stencil',

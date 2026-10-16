@@ -42,6 +42,7 @@ export interface PluginHostDeps {
   ) => (() => void) | void
   readonly openTab: (kind: string, at?: string) => Promise<string>
   readonly openTabBeside?: (kind: string, at?: string) => Promise<string>
+  readonly closeTab?: (id: string) => void
   readonly getSetting?: (pluginId: string, key: string) => unknown
   readonly onSettingChange?: (
     pluginId: string,
@@ -68,4 +69,5 @@ export interface PluginContextHost {
   emitVaultChange?(event: VaultChangeEvent): void
   emitFileSelect?(event: FileSelectEvent): void
   openTab?(kind: string, at?: string): Promise<string>
+  closeTab?(id: string): void
 }

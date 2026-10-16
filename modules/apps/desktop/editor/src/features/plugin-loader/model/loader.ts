@@ -245,7 +245,7 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
   const fetchFn = deps.fetch ?? ((input: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(input, init))
   const importFn = deps.dynamicImport ?? ((url: string) => import(/* @vite-ignore */ url))
   const activePlugins = shallowRef<ReadonlyMap<string, ActivePluginEntry>>(new Map())
-  const moduleLoaders = new Map<string, () => Promise<unknown>>()
+  const moduleLoaders = new Map<string, () => Promise<unknown>>(Object.entries(IN_TREE_LOADERS))
   const settingSubscriptions = new Map<string, Disposable>()
   let hasStarted = false
 
