@@ -29,59 +29,107 @@ var (
 )
 
 // RegisterDocumentServiceHandler sets the in-process DocumentServiceHandler.
-func RegisterDocumentServiceHandler(h numenv1connect.DocumentServiceHandler) {
+func RegisterDocumentServiceHandler(h any) {
 	monolithMu.Lock()
 	defer monolithMu.Unlock()
-	documentHandler = h
+	if h == nil {
+		documentHandler = nil
+		return
+	}
+	if handler, ok := h.(numenv1connect.DocumentServiceHandler); ok {
+		documentHandler = handler
+	}
 }
 
 // RegisterRecognitionServiceHandler sets the in-process RecognitionServiceHandler.
-func RegisterRecognitionServiceHandler(h numenv1connect.RecognitionServiceHandler) {
+func RegisterRecognitionServiceHandler(h any) {
 	monolithMu.Lock()
 	defer monolithMu.Unlock()
-	recognitionHandler = h
+	if h == nil {
+		recognitionHandler = nil
+		return
+	}
+	if handler, ok := h.(numenv1connect.RecognitionServiceHandler); ok {
+		recognitionHandler = handler
+	}
 }
 
 // RegisterBookServiceHandler sets the in-process BookServiceHandler.
-func RegisterBookServiceHandler(h numenv1connect.BookServiceHandler) {
+func RegisterBookServiceHandler(h any) {
 	monolithMu.Lock()
 	defer monolithMu.Unlock()
-	bookHandler = h
+	if h == nil {
+		bookHandler = nil
+		return
+	}
+	if handler, ok := h.(numenv1connect.BookServiceHandler); ok {
+		bookHandler = handler
+	}
 }
 
 // RegisterTranscriptionServiceHandler sets the in-process TranscriptionServiceHandler.
-func RegisterTranscriptionServiceHandler(h numenv1connect.TranscriptionServiceHandler) {
+func RegisterTranscriptionServiceHandler(h any) {
 	monolithMu.Lock()
 	defer monolithMu.Unlock()
-	transcriptionHandler = h
+	if h == nil {
+		transcriptionHandler = nil
+		return
+	}
+	if handler, ok := h.(numenv1connect.TranscriptionServiceHandler); ok {
+		transcriptionHandler = handler
+	}
 }
 
 // RegisterEmbeddingServiceHandler sets the in-process EmbeddingServiceHandler.
-func RegisterEmbeddingServiceHandler(h numenv1connect.EmbeddingServiceHandler) {
+func RegisterEmbeddingServiceHandler(h any) {
 	monolithMu.Lock()
 	defer monolithMu.Unlock()
-	embeddingHandler = h
+	if h == nil {
+		embeddingHandler = nil
+		return
+	}
+	if handler, ok := h.(numenv1connect.EmbeddingServiceHandler); ok {
+		embeddingHandler = handler
+	}
 }
 
 // RegisterDownloadServiceHandler sets the in-process DownloadServiceHandler.
-func RegisterDownloadServiceHandler(h numenv1connect.DownloadServiceHandler) {
+func RegisterDownloadServiceHandler(h any) {
 	monolithMu.Lock()
 	defer monolithMu.Unlock()
-	downloadHandler = h
+	if h == nil {
+		downloadHandler = nil
+		return
+	}
+	if handler, ok := h.(numenv1connect.DownloadServiceHandler); ok {
+		downloadHandler = handler
+	}
 }
 
 // RegisterAgentServiceHandler sets the in-process AgentServiceHandler.
-func RegisterAgentServiceHandler(h numenv1connect.AgentServiceHandler) {
+func RegisterAgentServiceHandler(h any) {
 	monolithMu.Lock()
 	defer monolithMu.Unlock()
-	agentHandler = h
+	if h == nil {
+		agentHandler = nil
+		return
+	}
+	if handler, ok := h.(numenv1connect.AgentServiceHandler); ok {
+		agentHandler = handler
+	}
 }
 
 // RegisterProofreadingServiceHandler sets the in-process ProofreadingServiceHandler.
-func RegisterProofreadingServiceHandler(h numenv1connect.ProofreadingServiceHandler) {
+func RegisterProofreadingServiceHandler(h any) {
 	monolithMu.Lock()
 	defer monolithMu.Unlock()
-	proofreadingHandler = h
+	if h == nil {
+		proofreadingHandler = nil
+		return
+	}
+	if handler, ok := h.(numenv1connect.ProofreadingServiceHandler); ok {
+		proofreadingHandler = handler
+	}
 }
 
 // RegisterMonolithPluginHandler sets a dedicated handler for a plugin ID.

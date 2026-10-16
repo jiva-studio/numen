@@ -152,7 +152,7 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 		t.Fatal("expected non-nil in-process transport")
 	}
 
-	docClient := numenv1connect.NewDocumentServiceClient(EndpointClient(endpointDoc), endpointDoc.BaseURL())
+	docClient := numenv1connect.NewDocumentServiceClient(plugin.EndpointClient(endpointDoc), endpointDoc.BaseURL())
 	docResp, err := docClient.ExtractText(ctx, connect.NewRequest(&v1.ExtractTextRequest{}))
 	if err != nil {
 		t.Fatalf("docClient.ExtractText failed: %v", err)
@@ -166,7 +166,7 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive(ocr) failed: %v", err)
 	}
-	recogClient := numenv1connect.NewRecognitionServiceClient(EndpointClient(endpointOcr), endpointOcr.BaseURL())
+	recogClient := numenv1connect.NewRecognitionServiceClient(plugin.EndpointClient(endpointOcr), endpointOcr.BaseURL())
 	recogResp, err := recogClient.GetRecognitionModel(ctx, connect.NewRequest(&v1.GetRecognitionModelRequest{}))
 	if err != nil {
 		t.Fatalf("recogClient.GetRecognitionModel failed: %v", err)
@@ -180,7 +180,7 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive(epub) failed: %v", err)
 	}
-	bookClient := numenv1connect.NewBookServiceClient(EndpointClient(endpointBook), endpointBook.BaseURL())
+	bookClient := numenv1connect.NewBookServiceClient(plugin.EndpointClient(endpointBook), endpointBook.BaseURL())
 	bookResp, err := bookClient.GetBook(ctx, connect.NewRequest(&v1.GetBookRequest{}))
 	if err != nil {
 		t.Fatalf("bookClient.GetBook failed: %v", err)
@@ -194,7 +194,7 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive(transcription) failed: %v", err)
 	}
-	transClient := numenv1connect.NewTranscriptionServiceClient(EndpointClient(endpointTrans), endpointTrans.BaseURL())
+	transClient := numenv1connect.NewTranscriptionServiceClient(plugin.EndpointClient(endpointTrans), endpointTrans.BaseURL())
 	transResp, err := transClient.GetTranscriptionModel(ctx, connect.NewRequest(&v1.GetTranscriptionModelRequest{}))
 	if err != nil {
 		t.Fatalf("transClient.GetTranscriptionModel failed: %v", err)
@@ -208,7 +208,7 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive(embeddings) failed: %v", err)
 	}
-	embedClient := numenv1connect.NewEmbeddingServiceClient(EndpointClient(endpointEmbed), endpointEmbed.BaseURL())
+	embedClient := numenv1connect.NewEmbeddingServiceClient(plugin.EndpointClient(endpointEmbed), endpointEmbed.BaseURL())
 	embedResp, err := embedClient.GetEmbeddingModel(ctx, connect.NewRequest(&v1.GetEmbeddingModelRequest{}))
 	if err != nil {
 		t.Fatalf("embedClient.GetEmbeddingModel failed: %v", err)
@@ -222,7 +222,7 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive(downloader) failed: %v", err)
 	}
-	downloadClient := numenv1connect.NewDownloadServiceClient(EndpointClient(endpointDownloader), endpointDownloader.BaseURL())
+	downloadClient := numenv1connect.NewDownloadServiceClient(plugin.EndpointClient(endpointDownloader), endpointDownloader.BaseURL())
 	downloadResp, err := downloadClient.GetDownloadModel(ctx, connect.NewRequest(&v1.GetDownloadModelRequest{}))
 	if err != nil {
 		t.Fatalf("downloadClient.GetDownloadModel failed: %v", err)
@@ -236,7 +236,7 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive(agent) failed: %v", err)
 	}
-	agentClient := numenv1connect.NewAgentServiceClient(EndpointClient(endpointAgent), endpointAgent.BaseURL())
+	agentClient := numenv1connect.NewAgentServiceClient(plugin.EndpointClient(endpointAgent), endpointAgent.BaseURL())
 	agentResp, err := agentClient.GetAgentTools(ctx, connect.NewRequest(&v1.GetAgentToolsRequest{}))
 	if err != nil {
 		t.Fatalf("agentClient.GetAgentTools failed: %v", err)
@@ -250,7 +250,7 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive(proofreading) failed: %v", err)
 	}
-	proofClient := numenv1connect.NewProofreadingServiceClient(EndpointClient(endpointProof), endpointProof.BaseURL())
+	proofClient := numenv1connect.NewProofreadingServiceClient(plugin.EndpointClient(endpointProof), endpointProof.BaseURL())
 	proofResp, err := proofClient.GetProofreaderInfo(ctx, connect.NewRequest(&v1.GetProofreaderInfoRequest{}))
 	if err != nil {
 		t.Fatalf("proofClient.GetProofreaderInfo failed: %v", err)
