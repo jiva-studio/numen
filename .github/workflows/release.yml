@@ -1189,6 +1189,7 @@ jobs:
     # The tag is pushed and the release is made from here, and nowhere else.
     permissions:
       contents: write
+      id-token: write
     steps:
       # The one clone that keeps the token: the tag is pushed through it.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1214,6 +1215,30 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git tag -a "v$VERSION" -m "v$VERSION"
           git push origin "v$VERSION"
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Sign release assets with Cosign
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+          STAMP: ${{ needs.naming.outputs.stamp }}
+          SHELF: ${{ needs.naming.outputs.shelf }}
+        run: |
+          set -euo pipefail
+          upload="$RUNNER_TEMP/upload"
+
+          if [ "$SHELF" = latest ]; then
+            kept="releases/$VERSION"
+          else
+            kept="builds/$STAMP"
+          fi
+
+          mapfile -t files < <(find "$upload/$SHELF" "$upload/$kept" -maxdepth 1 -type f ! -name 'notes.md' -a ! -name '*.bundle' | sort -u)
+          for file in "${files[@]}"; do
+            echo "Signing $file..."
+            cosign sign-blob --yes --bundle "${file}.bundle" "$file"
+          done
 
       # The builds are on the release as well as on the shelf: the shelf is what
       # the page hands out, and this is what the version is kept under.
