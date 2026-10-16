@@ -17,8 +17,12 @@ test.describe('Chaos, Fault Tolerance and Stress Scenarios', () => {
     await expect(malformedRow).toBeVisible()
     await malformedRow.press('Enter')
 
-    // Verify note is rendered without crashing the application
-    await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
+    // Verify note editor detects malformed frontmatter and displays explicit alert banner
+    const alertBanner = page.getByRole('alert')
+    await expect(alertBanner).toBeVisible({ timeout: 10_000 })
+    await expect(alertBanner).toContainText('the frontmatter of this note cannot be read')
+
+    // Verify application remains interactive
     await expect(page.locator('text=Ready')).toBeVisible()
   })
 
@@ -38,10 +42,12 @@ test.describe('Chaos, Fault Tolerance and Stress Scenarios', () => {
     await expect(largeRow).toBeVisible()
     await largeRow.press('Enter')
 
-    // Verify large document editor is rendered
+    // Verify large document editor is rendered and contains expected content
     await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
     const content = page.locator('.note__text .cm-content').first()
     await expect(content).toBeVisible({ timeout: 10_000 })
+    await expect(content).toContainText('Large Document')
+    await expect(content).toContainText('Paragraph line 1')
   })
 
   test('handles rapid tab switching and closing across heterogeneous file types', async ({ page }) => {
@@ -83,8 +89,11 @@ test.describe('Chaos, Fault Tolerance and Stress Scenarios', () => {
     await expect(pdfTab).toBeVisible({ timeout: 10_000 })
 
     await entropyTab.click()
+    await expect(entropyTab).toHaveAttribute('aria-selected', 'true')
     await pdfTab.click()
+    await expect(pdfTab).toHaveAttribute('aria-selected', 'true')
     await entropyTab.click()
+    await expect(entropyTab).toHaveAttribute('aria-selected', 'true')
 
     // Verify workspace remains responsive
     await expect(page.locator('text=Ready')).toBeVisible()

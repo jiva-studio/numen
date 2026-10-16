@@ -22,12 +22,16 @@ test.describe('Spaced Repetition and Preset Editor', () => {
     await page.waitForTimeout(300)
     await page.keyboard.press('Enter')
 
-    // Verify preset tab is opened
+    // Verify preset tab is opened and contains goal options
     await expect(
       page.getByRole('tab', { name: /PhysicsSRS/i })
         .or(page.locator('[aria-label*="PhysicsSRS"]'))
         .first(),
     ).toBeVisible({ timeout: 10_000 })
+
+    await expect(page.getByRole('region', { name: 'Goal', exact: true })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('radio', { name: 'Minutes a day' })).toBeVisible()
+    await expect(page.getByRole('radio', { name: 'Retention' })).toBeVisible()
   })
 
   test('validates preset retention and interval boundaries with problem hints', async ({ page }) => {
@@ -41,19 +45,30 @@ test.describe('Spaced Repetition and Preset Editor', () => {
     await expect(paletteInput).toBeVisible({ timeout: 5_000 })
 
     await paletteInput.fill('New preset')
+    await page.waitForTimeout(300)
     await page.keyboard.press('Enter')
 
     await expect(paletteInput).toBeVisible({ timeout: 5_000 })
     await paletteInput.fill('StrictSRS')
+    await page.waitForTimeout(300)
     await page.keyboard.press('Enter')
 
     await expect(
       page.getByRole('tab', { name: /StrictSRS/i }).first(),
     ).toBeVisible({ timeout: 10_000 })
 
-    // Verify preset settings panel is rendered
-    const presetPanel = page.locator('.settings').or(page.locator('form')).or(page.locator('main')).first()
-    await expect(presetPanel).toBeVisible()
+    // Verify initial radio state
+    const minutesRadio = page.getByRole('radio', { name: 'Minutes a day' })
+    const retentionRadio = page.getByRole('radio', { name: 'Retention' })
+
+    await expect(minutesRadio).toBeChecked()
+
+    // Verify daily schedule toolbar
+    await expect(page.getByRole('toolbar', { name: 'Load by day' })).toBeVisible()
+
+    // Switch goal to Retention
+    await retentionRadio.click()
+    await expect(retentionRadio).toBeChecked()
   })
 
   test('assigns custom preset to active note via preset command', async ({ page }) => {
@@ -79,13 +94,16 @@ test.describe('Spaced Repetition and Preset Editor', () => {
     await expect(paletteInput).toBeVisible({ timeout: 5_000 })
 
     await paletteInput.fill('Preset')
+    await page.waitForTimeout(300)
     await page.keyboard.press('Enter')
 
-    // Verify preset editor is opened for the note
+    // Verify preset editor is opened for the note with goal region and defaults explanation
     await expect(
       page.getByRole('tab', { name: /Entropy\.md/i })
-        .or(page.getByRole('region', { name: 'Goal' }))
+        .or(page.getByRole('region', { name: 'Goal', exact: true }))
         .first(),
     ).toBeVisible({ timeout: 10_000 })
+
+    await expect(page.getByRole('region', { name: 'Goal', exact: true })).toBeVisible({ timeout: 10_000 })
   })
 })

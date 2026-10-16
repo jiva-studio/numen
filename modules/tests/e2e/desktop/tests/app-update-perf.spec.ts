@@ -13,10 +13,18 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
 
     // Choose Performance profile command
     await paletteInput.fill('Performance profile')
+    await page.waitForTimeout(300)
     await page.keyboard.press('Enter')
 
-    // Verify option choices are rendered
+    // Verify option choices are rendered and select Balanced
     await expect(paletteInput).toBeVisible({ timeout: 5_000 })
+    await paletteInput.fill('Balanced')
+    await page.waitForTimeout(300)
+    await page.keyboard.press('Enter')
+
+    // Verify command executes and palette closes
+    await expect(paletteInput).not.toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('text=Ready')).toBeVisible()
   })
 
   test('inspects ocr engine language options in settings tab', async ({ page }) => {
@@ -24,19 +32,22 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
 
     await expect(page.locator('text=Ready')).toBeVisible()
 
-    // Open settings tab
+    // Open settings tab via command palette
     await page.keyboard.press('Control+p')
     const paletteInput = page.locator('input[data-palette="field"]').first()
     await expect(paletteInput).toBeVisible({ timeout: 5_000 })
 
     await paletteInput.fill('Settings')
+    await page.waitForTimeout(300)
     await page.keyboard.press('Enter')
 
     await expect(page.getByRole('tab', { name: /Settings/i })).toBeVisible({ timeout: 10_000 })
 
-    // Verify settings tab content is displayed
-    const settingsContainer = page.locator('.settings').or(page.locator('main')).first()
-    await expect(settingsContainer).toBeVisible()
+    // Verify OCR settings section is rendered
+    const ocrSection = page.getByRole('region', { name: /Optical character recognition|OCR/i })
+      .or(page.getByRole('heading', { name: /Optical character recognition|OCR/i }))
+      .first()
+    await expect(ocrSection).toBeVisible({ timeout: 10_000 })
   })
 
   test('persists interface scale and theme across full application reload', async ({ page }) => {
@@ -44,18 +55,29 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
 
     await expect(page.locator('text=Ready')).toBeVisible()
 
-    // Open Settings tab
+    // Change theme mode to Dark via palette
     await page.keyboard.press('Control+p')
     const paletteInput = page.locator('input[data-palette="field"]').first()
     await expect(paletteInput).toBeVisible({ timeout: 5_000 })
 
-    await paletteInput.fill('Settings')
+    await paletteInput.fill('Light or dark')
+    await page.waitForTimeout(300)
     await page.keyboard.press('Enter')
 
-    await expect(page.getByRole('tab', { name: /Settings/i })).toBeVisible({ timeout: 10_000 })
+    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
+    await paletteInput.fill('Dark')
+    await page.waitForTimeout(300)
+    await page.keyboard.press('Enter')
 
-    // Reload page
+    // Verify dark mode is applied to root element
+    const colorSchemeBefore = await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)
+    expect(colorSchemeBefore).toContain('dark')
+
+    // Reload page and verify setting persists
     await page.reload()
     await expect(page.locator('text=Ready')).toBeVisible({ timeout: 10_000 })
+
+    const colorSchemeAfter = await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)
+    expect(colorSchemeAfter).toContain('dark')
   })
 })
