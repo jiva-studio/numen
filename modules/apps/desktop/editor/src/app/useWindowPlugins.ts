@@ -93,6 +93,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     openTab: held.openTabOfKind,
     openTabBeside: held.openTabBesideOfKind,
     closeTab: held.finishClose,
+    getTabState: (id: string) => held.getTab(id)?.state,
     getSetting,
     onSettingChange,
     closeTabsForPlugin,

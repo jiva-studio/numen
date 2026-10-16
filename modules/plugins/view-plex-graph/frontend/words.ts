@@ -34,4 +34,16 @@ export const WORDS = {
   done: 'Done',
   /** Button to cancel and close inspector without saving. */
   cancel: 'Cancel',
+  /** Menu command labels */
+  read: 'Open the note',
+  travel: 'Show in plex',
+  preset: 'Open the preset',
+  copy: 'Copy path',
+  reveal: 'Show this note in the files',
+  child: 'New child note',
+  parent: 'New parent note',
+  jump: 'New jump note',
+  title: 'Change title',
+  ask: 'Ask the agent',
+  remove: 'Remove note',
 }

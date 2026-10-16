@@ -1,7 +1,9 @@
 /**
  * Types and interfaces for PDF document viewing and navigation.
  */
-import type { Span } from '@/shared/span'
+import type { Span } from '@numen/plugin-sdk'
+
+export type { Span }
 
 /** Bounding rectangle on a page, in normalized fractions (0 to 1). */
 export interface Rect {

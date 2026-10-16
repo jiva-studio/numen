@@ -11,7 +11,7 @@ import { branch, pane, Palette, Tree, WorkspaceLayout, type PaletteGroup } from 
 import { AgentTab } from '@/pages/agent-chat'
 import { DeckTab } from '@/pages/deck-editor'
 import { FilesTab, NEW_DECK, NEW_STENCIL } from '@/pages/file-manager'
-import { PlexTab, WORDS as plexWords } from '@/pages/plex-graph'
+import { PlexTab, WORDS as plexWords } from '@plugins/view-plex-graph/frontend'
 import {
   requests,
   cards,

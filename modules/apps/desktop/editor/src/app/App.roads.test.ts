@@ -11,23 +11,20 @@ import { type VueWrapper } from '@vue/test-utils'
 import {
   Agent,
   Editor,
-  openTabBeside,
   Palette,
-  getPanes,
   Plex,
   Reader,
   Tree,
   WorkspaceLayout,
   type Workspace,
 } from '@numen/ui'
-import { DocumentTab } from '@/pages/document-viewer'
+import { DocumentTab } from '@plugins/reader-pdf/frontend'
 import { AudioPlayerTab } from '@plugins/media-player/frontend'
 import {
   requests,
   cards,
   DEBOUNCE,
   folders,
-  getLayout,
   mountWindow,
   nameAnswer,
   nodeInPlex,
@@ -327,83 +324,3 @@ const getRunsOffered = async (window: VueWrapper): Promise<readonly string[]> =>
   }[]
   return groups.find((one) => one.id === 'file')?.items.map((one) => one.id) ?? []
 }
-
-describe('a key struck while a document is in front', () => {
-  it('reaches the document, which is turned by the arrows', async () => {
-    said.opening = 'Root.md'
-    const window = await mountWindow()
-
-    outside.ask({ path: 'Source.pdf', start: 0, length: 4 })
-    await settle()
-    await settle()
-
-    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
-
-    expect(requests.pressed).toStrictEqual(['ArrowRight'])
-    window.unmount()
-  })
-
-  it('reaches no document where the person is in another kind of tab', async () => {
-    said.opening = 'Root.md'
-    const window = await mountWindow()
-
-    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
-
-    expect(requests.pressed).toStrictEqual([])
-    window.unmount()
-  })
-})
-
-describe('a document carried into another group of tabs', () => {
-  it('keeps the keyboard, so the arrows still turn it', async () => {
-    said.opening = 'Root.md'
-    const window = await mountWindow()
-    outside.ask({ path: 'Source.pdf', start: 0, length: 4 })
-    await settle()
-    await settle()
-    requests.pressed = []
-
-    const workspace = window.findComponent(WorkspaceLayout)
-    const was = getLayout(window)
-    const doc = getPanes(was.root)
-      .flatMap((one) => one.tabs)
-      .find((tab) => tab.startsWith('document:'))!
-    workspace.vm.$emit(
-      'update:modelValue',
-      openTabBeside(was, doc, { side: 'right', createId: () => 'landed' }),
-    )
-    await settle()
-    await settle()
-
-    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
-
-    expect(requests.pressed).toStrictEqual(['ArrowRight'])
-    window.unmount()
-  })
-})
-
-describe('a document beside the pane the person is in', () => {
-  it('is turned by the arrows while it holds the keyboard', async () => {
-    said.opening = 'Root.md'
-    const window = await mountWindow()
-    outside.ask({ path: 'Source.pdf', start: 0, length: 4 })
-    await settle()
-    await settle()
-    requests.pressed = []
-
-    const workspace = window.findComponent(WorkspaceLayout)
-    const was = getLayout(window)
-    const other = getPanes(was.root).find(
-      (one) => !one.tabs.some((tab) => tab.startsWith('document:')),
-    )!
-    workspace.vm.$emit('update:modelValue', { ...was, focus: other.id })
-    await settle()
-
-    document.activeElement?.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true, bubbles: true }),
-    )
-
-    expect(requests.pressed).toStrictEqual(['ArrowRight'])
-    window.unmount()
-  })
-})

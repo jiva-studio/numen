@@ -3,17 +3,19 @@
  * PDF document viewer tab component.
  * Renders document pages, toolbar controls, and text highlights.
  */
-import { computed, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Reader, Waiting } from '@numen/ui'
 import { WORDS as words } from './words'
-import type { DocumentTabState } from '@/pages/document-viewer/model/useDocumentTab'
-import { useDocumentTab } from '@/pages/document-viewer/model/useDocumentTab'
-import { useDocumentReader } from '@/pages/document-viewer/model/useDocumentReader'
-import { documents } from '@/pages/document-viewer/api/wire'
+import type { Span } from './types'
+import type { DocumentTabState } from './model/useDocumentTab'
+import { useDocumentTab } from './model/useDocumentTab'
+import { useDocumentReader } from './model/useDocumentReader'
+import { documents } from './api/wire'
 
 /* --------------------------------- Props ---------------------------------- */
 interface Props {
-  readonly state?: DocumentTabState | { readonly path?: string; readonly file?: string; [key: string]: unknown }
+  readonly state?:
+    DocumentTabState | { readonly path?: string; readonly file?: string; [key: string]: unknown }
   readonly path?: string
   readonly file?: string
 }
@@ -40,9 +42,10 @@ const targetPath = computed(() => {
   return s?.path ?? s?.file ?? ''
 })
 
-const internalState = !isDocumentTabState(props.state) && targetPath.value
-  ? useDocumentTab(useDocumentReader(documents, targetPath.value))
-  : null
+const internalState =
+  !isDocumentTabState(props.state) && targetPath.value
+    ? useDocumentTab(useDocumentReader(documents, targetPath.value))
+    : null
 
 const activeState = computed<DocumentTabState | null>(() => {
   if (isDocumentTabState(props.state)) return props.state
@@ -50,6 +53,22 @@ const activeState = computed<DocumentTabState | null>(() => {
 })
 
 /* --------------------------------- Hooks ---------------------------------- */
+onMounted(() => {
+  const spans = (props.state as { spans?: readonly Span[] } | undefined)?.spans
+  if (activeState.value && spans && spans.length > 0) {
+    void activeState.value.focusSpans(...spans)
+  }
+})
+
+watch(
+  () => (props.state as { spans?: readonly Span[] } | undefined)?.spans,
+  (spans) => {
+    if (activeState.value && spans && spans.length > 0) {
+      void activeState.value.focusSpans(...spans)
+    }
+  },
+)
+
 onUnmounted(() => {
   if (internalState) internalState.close()
 })
@@ -73,12 +92,7 @@ function onSetPageHandle(reader: unknown) {
 </script>
 
 <template>
-  <div
-    ref="rootElement"
-    class="pdf-viewer-tab"
-    tabindex="-1"
-    @keydown="onPageTurnKey"
-  >
+  <div ref="rootElement" class="pdf-viewer-tab" tabindex="-1" @keydown="onPageTurnKey">
     <Reader
       v-if="activeState"
       :ref="onSetPageHandle"

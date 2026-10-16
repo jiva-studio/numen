@@ -118,6 +118,7 @@ export function createReaderTabKind(
         file: at,
         pluginId,
         title: filename,
+        spans: [] as readonly unknown[],
       }
     },
     getTitle: (state: unknown) => {

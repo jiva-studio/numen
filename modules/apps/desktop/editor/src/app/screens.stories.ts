@@ -37,7 +37,7 @@ import {
   useDocumentReader,
   useDocumentTab,
   type Documents,
-} from '@/pages/document-viewer'
+} from '@plugins/reader-pdf/frontend'
 import { FilesTab, ROOT, useFilesTab, useFileTree } from '@/pages/file-manager'
 import type { Entry } from '@/entities/file'
 import { findTabKindIcon } from '@/entities/tab'

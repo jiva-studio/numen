@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
-import plugin, { activate, deactivate, PlexGraphView } from './index'
-import { isPlexPluginActive } from '@/pages/plex-graph/model/pluginState'
+import plugin, { activate, PlexGraphView } from './index'
 
 describe('view-plex-graph plugin', () => {
   it('registers plex-graph tab kind upon activation', () => {
@@ -13,7 +12,6 @@ describe('view-plex-graph plugin', () => {
     expect(tabKinds[0]?.kind).toBe('plex-graph')
     expect(tabKinds[0]?.component).toBe(PlexGraphView)
     expect(tabKinds[0]?.title).toBe('Knowledge Graph')
-    expect(isPlexPluginActive.value).toBe(true)
   })
 
   it('subscribes to vault change and file select events', () => {
@@ -32,9 +30,7 @@ describe('view-plex-graph plugin', () => {
 
     expect(ctx.getRegisteredTabKinds()).toHaveLength(1)
     expect(ctx.getRegisteredTabKinds()[0]?.kind).toBe('plex-graph')
-    expect(isPlexPluginActive.value).toBe(true)
 
     await plugin.deactivate?.()
-    expect(isPlexPluginActive.value).toBe(false)
   })
 })

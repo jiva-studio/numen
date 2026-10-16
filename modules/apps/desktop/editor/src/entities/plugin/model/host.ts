@@ -136,7 +136,21 @@ function registerReaderEntry(
     : `reader:${registration.id}`
   const cleanups: (() => void)[] = [deps.registerKind(createReaderTabKind(pluginId, registration))]
   for (const ext of registration.fileExtensions) {
-    cleanups.push(deps.registerExtensionReader(ext, (path) => void deps.openTab(kindId, path)))
+    cleanups.push(
+      deps.registerExtensionReader(ext, (path, spans) => {
+        void deps.openTab(kindId, path).then((tabId) => {
+          if (spans && spans.length > 0 && deps.getTabState) {
+            const state = deps.getTabState(tabId) as
+              | { spans?: unknown; focusSpans?: (...s: readonly unknown[]) => Promise<void> }
+              | undefined
+            if (state) {
+              state.spans = spans
+              void state.focusSpans?.(...spans)
+            }
+          }
+        })
+      }),
+    )
   }
   let isDisposed = false
   const cleanup = () => {

@@ -3,7 +3,7 @@
  */
 import type { useWindowTabs } from '@/entities/tab'
 import type { useNoteEditors } from '@/app/useNoteEditors'
-import type { PlexTabState } from '@/pages/plex-graph'
+import type { PlexTabState } from '@plugins/view-plex-graph/frontend'
 import type { FilesTabState } from '@/pages/file-manager'
 import type { TabId, TabLinksState } from '@/features/tab-linking'
 
