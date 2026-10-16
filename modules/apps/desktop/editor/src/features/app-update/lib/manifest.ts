@@ -4,7 +4,7 @@
 import type { ReleaseFile, ReleaseManifest, UpdateInfo } from '../model/types'
 import { findPlatformFile, isNewerRelease, parseBuildNumber, type ClientPlatform } from './release'
 
-export const DEFAULT_ENDPOINT = 'https://dl.numen.md/latest/latest.json'
+export const DEFAULT_ENDPOINT = '/api/app-update/latest.json'
 export const DEFAULT_INTERVAL_MS = 4 * 60 * 60 * 1000 // 4 hours
 export const DEFAULT_DOWNLOAD_URL = 'https://numen.md/#get'
 

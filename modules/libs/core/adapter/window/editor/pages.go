@@ -4,11 +4,13 @@ import (
 	"context"
 	"embed"
 	"errors"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -181,10 +183,18 @@ func (s *Services) newServices() []service {
 // pluginAssetsRoute is the path prefix where plugin bundles and assets are served.
 const pluginAssetsRoute = "/api/plugins/"
 
+// updateRoute is the endpoint the window asks for release updates.
+const updateRoute = "/api/app-update/latest.json"
+
+// updateEndpoint is where the published release manifest sits.
+const updateEndpoint = "https://dl.numen.md/latest/latest.json"
+
 // serveBeside answers what no service does: the bytes of a file, the page the
 // interface opens at, and every other file the interface is made of.
 func (s *Services) serveBeside(w http.ResponseWriter, r *http.Request, hasAssets bool, files http.Handler) {
 	switch {
+	case r.URL.Path == updateRoute:
+		s.serveUpdate(w, r)
 	case strings.HasPrefix(r.URL.Path, pluginAssetsRoute):
 		if !s.state.questions.begin() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
@@ -204,6 +214,33 @@ func (s *Services) serveBeside(w http.ResponseWriter, r *http.Request, hasAssets
 	default:
 		files.ServeHTTP(w, r)
 	}
+}
+
+// serveUpdate proxies the release manifest to the window.
+func (s *Services) serveUpdate(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, updateEndpoint, nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	req.Header.Set("Accept", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(resp.StatusCode)
+	_, _ = io.Copy(w, resp.Body)
 }
 
 func resolvePluginAssetTarget(pluginDir, filePath string) (string, error) {

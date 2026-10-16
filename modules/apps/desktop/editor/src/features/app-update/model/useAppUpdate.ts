@@ -42,7 +42,9 @@ export function useAppUpdate(options: UpdateOptions = {}) {
   let timerId: ReturnType<typeof setInterval> | null = null
 
   async function checkUpdate(): Promise<boolean> {
-    if (!fetchClient) return false
+    if (!fetchClient) {
+      return false
+    }
     isChecking.value = true
     const manifest = await fetchManifest(fetchClient, endpointUrl)
     const context = { currentBuild, currentVersion, platform }
