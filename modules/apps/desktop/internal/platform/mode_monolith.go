@@ -9,7 +9,6 @@ import (
 	"image/jpeg"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"connectrpc.com/connect"
@@ -33,10 +32,6 @@ func init() {
 }
 
 func wireMonolithHandlers() {
-	pdf.SetWorkers(runtime.NumCPU())
-	pdf.SetIdleWorkers(max(2, min(runtime.NumCPU(), 4)))
-	go pdf.Warmup()
-
 	container.RegisterDocumentServiceHandler(&monolithDocumentServer{})
 	container.RegisterBookServiceHandler(&monolithBookServer{})
 	container.RegisterRecognitionServiceHandler(&monolithRecognitionServer{})
