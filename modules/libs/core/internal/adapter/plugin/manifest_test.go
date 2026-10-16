@@ -201,4 +201,3 @@ func TestManifestSelectSetting(t *testing.T) {
 		}
 	})
 }
-
