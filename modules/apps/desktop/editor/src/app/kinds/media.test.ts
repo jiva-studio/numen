@@ -1,4 +1,4 @@
-/** What the recording and url kinds are handed by the window. */
+/** What the url kind is handed by the window. */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { createMediaKinds, type MediaKindsDeps } from './media'
@@ -26,12 +26,11 @@ vi.mock('@/entities/media', () => ({
     createState: unknown,
     options: { deps: unknown; as: unknown },
   ) => {
-    const name = h.made.length === 0 ? 'recorded' : 'pointed'
+    const name = 'pointed'
     h.made.push({ createState, deps: options.deps, as: options.as })
     return { updateTasks: (tasks: unknown) => h.updated.push([name, tasks]) }
   },
 }))
-vi.mock('@/pages/media-recording', () => ({ RECORDINGS: { name: 'recordings medium' } }))
 vi.mock('@/pages/media-url', () => ({ URLS: { name: 'urls medium' } }))
 
 const plays = { name: 'plays' }
@@ -50,8 +49,8 @@ const setup = () => {
     getTarget: () => ({ tab: 't1', vault: 'v' }),
     runCommand: (id: string, at: unknown) => commands.push([id, at]),
   } as unknown as MediaKindsDeps)
-  const [recorded, pointed] = h.made as Made[]
-  return { kinds, commands, tasks, recorded: recorded!, pointed: pointed! }
+  const [pointed] = h.made as Made[]
+  return { kinds, commands, tasks, pointed: pointed! }
 }
 
 beforeEach(() => {
@@ -60,43 +59,27 @@ beforeEach(() => {
   h.updated.length = 0
 })
 
-describe('the recording and url kinds', () => {
-  it('are drawn as their own mediums', () => {
+describe('the url kind', () => {
+  it('is drawn as its own medium', () => {
     const one = setup()
 
-    expect(one.recorded.as).toStrictEqual({ name: 'recordings medium' })
     expect(one.pointed.as).toStrictEqual({ name: 'urls medium' })
   })
 
-  it('read a transcript of the recordings at the path, with the player probe', () => {
+  it('reads a transcript of the recordings at the path, with the player probe', () => {
     const one = setup()
 
-    one.recorded.createState('a.mp3')
     one.pointed.createState('b.mp3')
 
-    expect(h.useTranscript).toHaveBeenNthCalledWith(1, { name: 'recordings' }, 'a.mp3', { plays })
-    expect(h.useTranscript).toHaveBeenNthCalledWith(2, { name: 'recordings' }, 'b.mp3', { plays })
+    expect(h.useTranscript).toHaveBeenCalledWith({ name: 'recordings' }, 'b.mp3', { plays })
   })
 
-  it('run a command over the file, as the source of their medium, with what the vault makes of it', () => {
+  it('runs a command over the file, as the source of its medium, with what the vault makes of it', () => {
     const one = setup()
 
-    one.recorded.deps.runCommand('proofread', 'a.mp3', 'A talk')
     one.pointed.deps.runCommand('proofread', 'none.mp3', 'Another')
 
     expect(one.commands).toStrictEqual([
-      [
-        'proofread',
-        {
-          tab: 't1',
-          vault: 'v',
-          path: '',
-          title: 'A talk',
-          file: 'a.mp3',
-          source: 'recording',
-          made: { flashcards: true },
-        },
-      ],
       [
         'proofread',
         {
@@ -112,23 +95,20 @@ describe('the recording and url kinds', () => {
     ])
   })
 
-  it('ask the window whether a run can be made', () => {
+  it('asks the window whether a run can be made', () => {
     const one = setup()
 
-    expect(one.recorded.deps.canRun('runnable')).toBe(true)
+    expect(one.pointed.deps.canRun('runnable')).toBe(true)
     expect(one.pointed.deps.canRun('other')).toBe(false)
   })
 
-  it('are handed the tasks of the window as they change', async () => {
+  it('is handed the tasks of the window as they change', async () => {
     const one = setup()
     const next = [{ id: 'task' }]
 
     one.tasks.value = next
     await Promise.resolve()
 
-    expect(h.updated).toStrictEqual([
-      ['recorded', next],
-      ['pointed', next],
-    ])
+    expect(h.updated).toStrictEqual([['pointed', next]])
   })
 })

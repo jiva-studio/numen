@@ -27,10 +27,8 @@ import {
 import { DeckTab, type DeckTabState } from '@/pages/deck-editor'
 import { StencilTab, type StencilTabState } from '@/pages/stencil-editor'
 import type { Marks } from '@/entities/deck'
-import { RecordingTab } from '@/pages/media-recording'
-import { useTranscript, type Recordings } from '@/entities/media'
-import type { Cue } from '@/entities/media'
-import type { Player } from '@/entities/media'
+import { AudioPlayerTab } from '@plugins/media-player/frontend'
+import { useTranscript, type Cue, type Player, type Recordings } from '@/entities/media'
 import { useTranscriptTab } from '@/entities/media'
 import {
   DocumentTab,
@@ -505,7 +503,7 @@ export const Recording: Story = {
   render: () =>
     window(
       `${RECORDING}:lecture`,
-      RecordingTab,
+      AudioPlayerTab,
       useTranscriptTab(
         useTranscript(createRecordings(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }),
         { runCommand: () => {} },
@@ -518,7 +516,7 @@ export const NoTranscript: Story = {
   render: () =>
     window(
       `${RECORDING}:lecture`,
-      RecordingTab,
+      AudioPlayerTab,
       useTranscriptTab(
         useTranscript(createRecordings([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }),
         { runCommand: () => {} },
@@ -539,7 +537,7 @@ export const Transcribing: Story = {
       },
     )
     state.setWorking(true)
-    return window(`${RECORDING}:lecture`, RecordingTab, state)
+    return window(`${RECORDING}:lecture`, AudioPlayerTab, state)
   },
 }
 
@@ -780,7 +778,7 @@ export const Transcribed: Story = {
   render: () =>
     createMenuStory('Lectures/Lecture 4.mp3', ['Lectures', 'Physics', 'Reading', 'Sanskrit'], {
       tab: `${RECORDING}:lecture`,
-      pane: RecordingTab,
+      pane: AudioPlayerTab,
       state: useTranscriptTab(
         useTranscript(createRecordings(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }),
         {

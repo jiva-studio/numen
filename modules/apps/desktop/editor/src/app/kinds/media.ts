@@ -1,7 +1,6 @@
-/** The recording and url tab kinds of a window. */
+/** The url tab kind of a window. */
 import { watch } from 'vue'
 import { createRecordingKind, recordings, useTranscript, type MediaTabDeps } from '@/entities/media'
-import { RECORDINGS } from '@/pages/media-recording'
 import { URLS } from '@/pages/media-url'
 import type { Source } from '@/entities/file'
 import type { WindowKindsDeps } from './deps'
@@ -34,16 +33,6 @@ export function createMediaKinds({
     canRun: (run) => runs.canRun(run),
   })
 
-  const recorded = createRecordingKind(
-    held.handle,
-    (path) => useTranscript(recordings, path, { plays }),
-    {
-      deps: createTabDeps('recording'),
-      tabOpeners,
-      as: RECORDINGS,
-    },
-  )
-
   const pointed = createRecordingKind(
     held.handle,
     (path) => useTranscript(recordings, path, { plays }),
@@ -55,9 +44,8 @@ export function createMediaKinds({
   )
 
   watch(window.tasks, () => {
-    recorded.updateTasks(window.tasks.value)
     pointed.updateTasks(window.tasks.value)
   })
 
-  return { recorded, pointed }
+  return { pointed }
 }

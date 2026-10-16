@@ -1,0 +1,14 @@
+{
+  "id": "md.numen.media-player",
+  "name": "Audio Player & Recorder",
+  "version": "1.0.0",
+  "description": "Audio player with waveform visualization and microphone recording",
+  "capabilities": ["audio", "recording"],
+  "targets": ["desktop.editor"],
+  "fileExtensions": [".mp3", ".m4a", ".wav", ".ogg", ".aac"],
+  "activationEvents": ["onFile:*.mp3", "onFile:*.m4a", "onFile:*.wav", "onCommand:media.record"],
+  "frontend": {
+    "entrypoint": "dist/index.js",
+    "styles": "dist/styles.css"
+  }
+}

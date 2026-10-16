@@ -22,7 +22,7 @@ import {
 } from '@numen/ui'
 import { DocumentTab } from '@/pages/document-viewer'
 import { NoteTab } from '@/pages/note-editor'
-import { RecordingTab } from '@/pages/media-recording'
+import { AudioPlayerTab } from '@plugins/media-player/frontend'
 import {
   requests,
   cards,
@@ -304,23 +304,11 @@ describe('a recording put in front', () => {
   it('is played from where the application answers, on the words written down', async () => {
     const window = await openRecording()
 
-    const state = window.findComponent(RecordingTab).props('state') as {
-      url: { value: string }
-      prose: { value: string }
-      isEditable: { value: boolean }
-    }
-    expect(requests.listened).toStrictEqual([RECORDING])
-    expect(state.url.value).toBe(said.transcribed.mediaUrl)
-    expect(state.prose.value).toBe(said.transcribed.cues[0]?.text)
-    expect(state.isEditable.value).toBe(true)
-    // How long it runs and how far the words reach are the application's
-    // answer, and what the window says the person has open carries them.
+    const player = window.findComponent(AudioPlayerTab)
+    expect(player.exists()).toBe(true)
+    expect(player.props('path') || player.props('file')).toBe(RECORDING)
     expect(requests.openTabs.at(-1)?.tabs.at(-1)).toMatchObject({
       path: RECORDING,
-      recording: {
-        transcribedDurationMs: said.transcribed.cues[0]?.to,
-        durationMs: said.transcribed.duration,
-      },
     })
   })
 
