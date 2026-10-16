@@ -29,7 +29,9 @@ func run() int {
 	cfg := platform.GetConfig()
 	if cfg.PluginHost != nil {
 		defer func() {
-			if host, ok := cfg.PluginHost.(interface{ TeardownAll(context.Context, time.Duration) error }); ok {
+			if host, ok := cfg.PluginHost.(interface {
+				TeardownAll(context.Context, time.Duration) error
+			}); ok {
 				_ = host.TeardownAll(context.Background(), 2*time.Second)
 			}
 		}()
