@@ -4,14 +4,12 @@
 
 **Numen — Markdown notes with a connection graph, an AI agent and spaced repetition.**
 
-<br>
-
+<p>
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="modules/apps/landing/src/assets/window-filing-dark.webp">
   <img alt="A note in Numen, with its graph and the agent panel" src="modules/apps/landing/src/assets/window-filing-light.webp" width="920">
 </picture>
-
-<br>
+</p>
 
 [![Latest Release](https://img.shields.io/github/v/release/jiva-studio/numen?logo=github&color=blue)](https://github.com/jiva-studio/numen/releases/latest)
 [![Total Downloads](https://img.shields.io/github/downloads/jiva-studio/numen/total?color=2ea44f&logo=github)](https://github.com/jiva-studio/numen/releases)
@@ -20,8 +18,6 @@
 [![End-to-End](https://img.shields.io/github/actions/workflow/status/jiva-studio/numen/desktop-e2e.yml?branch=main&label=End-to-End)](https://github.com/jiva-studio/numen/actions/workflows/desktop-e2e.yml)
 [![Scorecard](https://img.shields.io/ossf-scorecard/github.com/jiva-studio/numen?label=Scorecard)](https://securityscorecards.dev/viewer/?uri=github.com/jiva-studio/numen)
 [![CodeQL](https://github.com/jiva-studio/numen/actions/workflows/codeql.yml/badge.svg)](https://github.com/jiva-studio/numen/actions/workflows/codeql.yml)
-
-<br>
 
 **[Download](#download)** · [Website](https://numen.md) · [User Manual](https://docs.numen.md) · [Forum](https://forum.numen.md)
 
