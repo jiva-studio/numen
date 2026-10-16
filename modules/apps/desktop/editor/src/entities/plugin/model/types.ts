@@ -41,7 +41,7 @@ export interface PluginHostDeps {
   readonly onSettingChange?: (
     pluginId: string,
     key: string,
-    handler: (value: unknown) => void,
+    handler: (value: unknown) => void | Promise<void>,
   ) => () => void
   readonly closeTabsForPlugin?: (pluginId: string) => void
 }
@@ -55,7 +55,7 @@ export interface PluginContextHost {
   onSettingChange<T = unknown>(
     pluginId: string,
     key: string,
-    handler: (value: T) => void,
+    handler: (value: T) => void | Promise<void>,
   ): Disposable
   onVaultChange?(handler: (event: VaultChangeEvent) => void | Promise<void>): Disposable
   onFileSelect?(handler: (event: FileSelectEvent) => void | Promise<void>): Disposable
