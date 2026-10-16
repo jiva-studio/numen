@@ -27,7 +27,9 @@ test.describe('Tab Linking and Split Pane Coordination', () => {
     await page.keyboard.press('Enter')
 
     // 3. Verify split separator is active
-    await expect(page.getByRole('separator', { name: 'Resize panes' })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('separator', { name: 'Resize panes' })).toBeVisible({
+      timeout: 10_000,
+    })
   })
 
   test('links tabs across split panes into coordinated group', async ({ page }) => {
@@ -56,8 +58,12 @@ test.describe('Tab Linking and Split Pane Coordination', () => {
     await entropyRow.press('Enter')
 
     // Verify both tab headers exist in tablists
-    await expect(page.getByRole('tab', { name: /sample\.pdf/i }).first()).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByRole('tab', { name: /Entropy/i }).first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('tab', { name: /sample\.pdf/i }).first()).toBeVisible({
+      timeout: 10_000,
+    })
+    await expect(page.getByRole('tab', { name: /Entropy/i }).first()).toBeVisible({
+      timeout: 10_000,
+    })
   })
 
   test('cleans up tab link group when one linked tab is closed', async ({ page }) => {

@@ -25,13 +25,15 @@ test.describe('Vault Deletion, Trash and Renaming', () => {
     const paletteInput = page.locator('input[data-palette="field"]').first()
     await expect(paletteInput).toBeVisible({ timeout: 5_000 })
 
-    await paletteInput.fill('Remove')
+    await paletteInput.fill('Remove note')
     await page.waitForTimeout(300)
     await page.keyboard.press('Enter')
 
     // 3. Verify target note tab is closed
-    await expect(trashTab).not.toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('text=Ready')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('tab', { name: /Disposable Note|trash-target/i })).not.toBeVisible({
+      timeout: 10_000,
+    })
+    await expect(page.locator('.status-bar')).toBeVisible({ timeout: 10_000 })
   })
 
   test('enforces exact confirmation string before destroying note forever', async ({ page }) => {

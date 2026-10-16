@@ -29,12 +29,14 @@ test.describe('Workspace Layout and Split Panes', () => {
     await expect(page.locator('.book-tab').first()).toBeVisible({ timeout: 10_000 })
 
     // Verify left and right split panes coexist
-    await expect(page.getByRole('tab', { name: /Thermodynamics/ }).first()).toBeVisible()
+    await expect(page.getByRole('tab', { name: /Entropy/ }).first()).toBeVisible()
     await expect(page.locator('.book-tab').first()).toBeVisible()
     await expect(page.getByRole('separator', { name: 'Resize panes' })).toBeVisible()
   })
 
-  test('resizes workspace panes via separator handle without breaking plugin canvas', async ({ page }) => {
+  test('resizes workspace panes via separator handle without breaking plugin canvas', async ({
+    page,
+  }) => {
     await page.goto('/')
 
     await expect(page.locator('text=Ready')).toBeVisible()

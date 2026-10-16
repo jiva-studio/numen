@@ -25,7 +25,9 @@ test.describe('Markdown Editor Features and Editing', () => {
     await page.keyboard.type('\n[[')
 
     // 3. Verify autocomplete tooltip appears or wikilink options are presented
-    const autocompleteTooltip = page.locator('.cm-tooltip-autocomplete').or(page.locator('[role="listbox"]'))
+    const autocompleteTooltip = page
+      .locator('.cm-tooltip-autocomplete')
+      .or(page.locator('[role="listbox"]'))
     if (await autocompleteTooltip.isVisible()) {
       await expect(autocompleteTooltip).toBeVisible()
     } else {

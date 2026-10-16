@@ -23,7 +23,8 @@ test.describe('Chaos, Fault Tolerance and Stress Scenarios', () => {
     await expect(alertBanner).toContainText('the frontmatter of this note cannot be read')
 
     // Verify application remains interactive
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await expect(page.locator('.status-bar')).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
   })
 
   test('renders high-volume document smoothly without interface freeze', async ({ page }) => {
@@ -50,7 +51,9 @@ test.describe('Chaos, Fault Tolerance and Stress Scenarios', () => {
     await expect(content).toContainText('Paragraph line 1')
   })
 
-  test('handles rapid tab switching and closing across heterogeneous file types', async ({ page }) => {
+  test('handles rapid tab switching and closing across heterogeneous file types', async ({
+    page,
+  }) => {
     await page.goto('/')
 
     await expect(page.locator('text=Ready')).toBeVisible()

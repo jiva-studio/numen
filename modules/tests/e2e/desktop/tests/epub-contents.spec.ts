@@ -64,7 +64,7 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
 
     // Locate chapter buttons or fallback in contents
     const chapterButtons = contentsNav.locator('button.contents__line')
-    if (await chapterButtons.count() > 0) {
+    if ((await chapterButtons.count()) > 0) {
       const firstChapter = chapterButtons.first()
       await expect(firstChapter).toBeVisible()
       await firstChapter.click()
@@ -100,7 +100,8 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
     await expect(contentsNav).toBeVisible({ timeout: 5_000 })
 
     // Locate search field
-    const findField = contentsNav.getByRole('textbox', { name: 'Find in contents' })
+    const findField = contentsNav
+      .getByRole('textbox', { name: 'Find in contents' })
       .or(contentsNav.locator('input[placeholder="Find in contents"]'))
     await expect(findField).toBeVisible()
 

@@ -37,7 +37,9 @@ test.describe('File System Operations and Organization', () => {
     await notesRow.click({ button: 'right' })
 
     // Verify context menu is displayed with file operations
-    await expect(page.getByRole('menu').or(page.locator('[role="menu"]')).first()).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByRole('menu').or(page.locator('[role="menu"]')).first()).toBeVisible({
+      timeout: 5_000,
+    })
   })
 
   test('inspects file drop targets on directory rows', async ({ page }) => {

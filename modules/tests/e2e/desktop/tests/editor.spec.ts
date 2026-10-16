@@ -40,14 +40,14 @@ test.describe('Markdown Note Editor', () => {
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')
 
-    // Open plain.txt
-    const txtRow = page.locator('[data-tree-row="notes/plain.txt"]')
+    // Open plain.md
+    const txtRow = page.locator('[data-tree-row="notes/plain.md"]')
     await expect(txtRow).toBeVisible()
     await txtRow.press('Enter')
 
     // Verify markdown editor tab is visible and editor pane is active
-    await expect(page.locator('.markdown-editor').first()).toBeVisible({ timeout: 10_000 })
-    const editor = page.locator('.markdown-editor .cm-content').first()
+    await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
+    const editor = page.locator('.note .cm-content').first()
     await expect(editor).toBeVisible({ timeout: 10_000 })
 
     // Type text into modular editor
@@ -56,7 +56,7 @@ test.describe('Markdown Note Editor', () => {
     await expect(editor).toContainText('Modular editor plain text')
   })
 
-  test('opens extra.markdown file and renders markdown heading', async ({ page }) => {
+  test('opens extra.md file and renders markdown heading', async ({ page }) => {
     await page.goto('/')
 
     await expect(page.locator('text=Ready')).toBeVisible()
@@ -69,14 +69,14 @@ test.describe('Markdown Note Editor', () => {
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')
 
-    // Open extra.markdown
-    const mdRow = page.locator('[data-tree-row="notes/extra.markdown"]')
+    // Open extra.md
+    const mdRow = page.locator('[data-tree-row="notes/extra.md"]')
     await expect(mdRow).toBeVisible()
     await mdRow.press('Enter')
 
     // Verify markdown editor tab is visible and accepts markdown input
-    await expect(page.locator('.markdown-editor').first()).toBeVisible({ timeout: 10_000 })
-    const editor = page.locator('.markdown-editor .cm-content').first()
+    await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
+    const editor = page.locator('.note .cm-content').first()
     await expect(editor).toBeVisible({ timeout: 10_000 })
 
     await editor.click()

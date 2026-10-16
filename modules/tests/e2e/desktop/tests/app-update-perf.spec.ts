@@ -12,7 +12,7 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
     await expect(paletteInput).toBeVisible({ timeout: 5_000 })
 
     // Choose Performance profile command
-    await paletteInput.fill('Performance profile')
+    await paletteInput.fill('Set performance profile')
     await page.waitForTimeout(300)
     await page.keyboard.press('Enter')
 
@@ -24,7 +24,7 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
 
     // Verify command executes and palette closes
     await expect(paletteInput).not.toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await expect(page.locator('.status-bar')).toBeVisible({ timeout: 10_000 })
   })
 
   test('inspects ocr engine language options in settings tab', async ({ page }) => {

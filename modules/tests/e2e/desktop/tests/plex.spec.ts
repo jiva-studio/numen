@@ -6,8 +6,8 @@ test.describe('Plex Graph Interaction', () => {
 
     await expect(page.locator('text=Ready')).toBeVisible()
 
-    const thermoNode = page.getByText('Thermodynamics').first()
-    const entropyNode = page.getByText('Entropy').first()
+    const thermoNode = page.locator('.plex__title', { hasText: 'Thermodynamics' })
+    const entropyNode = page.locator('.plex__title', { hasText: 'Entropy' })
 
     await expect(thermoNode).toBeVisible()
     await expect(entropyNode).toBeVisible()

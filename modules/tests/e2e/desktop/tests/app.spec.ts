@@ -13,8 +13,8 @@ test.describe('Desktop Application Shell', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Verify Plex graph rendered nodes from test vault
-    await expect(page.locator('text=Thermodynamics').first()).toBeVisible()
-    await expect(page.locator('text=Entropy').first()).toBeVisible()
+    await expect(page.locator('.plex__title', { hasText: 'Thermodynamics' })).toBeVisible()
+    await expect(page.locator('.plex__title', { hasText: 'Entropy' })).toBeVisible()
 
     // Verify Agent panel rendered
     await expect(page.locator('text=Ask about the vault')).toBeVisible()

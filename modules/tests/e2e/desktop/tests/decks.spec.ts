@@ -70,7 +70,9 @@ test.describe('Flashcards and Deck Editor', () => {
     await expect(page.locator('.deck')).toBeVisible({ timeout: 10_000 })
 
     // Find first editable field in card
-    const editableField = page.locator('.card [contenteditable="true"], .card textarea, .card input').first()
+    const editableField = page
+      .locator('.card [contenteditable="true"], .card textarea, .card input')
+      .first()
     if (await editableField.isVisible()) {
       await editableField.click()
       await page.keyboard.type(' Updated')

@@ -21,7 +21,12 @@ test.describe('Note Creation and Wikilinks', () => {
     await page.keyboard.press('Enter')
 
     // Verify new note tab opened
-    await expect(page.getByRole('tab', { name: /Quantum/i }).or(page.locator('.note')).first()).toBeVisible({ timeout: 10_000 })
+    await expect(
+      page
+        .getByRole('tab', { name: /Quantum/i })
+        .or(page.locator('.note'))
+        .first(),
+    ).toBeVisible({ timeout: 10_000 })
   })
 
   test('renders wikilink syntax in markdown editor', async ({ page }) => {
@@ -71,10 +76,16 @@ test.describe('Note Creation and Wikilinks', () => {
     await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
 
     // Open Thermodynamics tab from neighbourhood / link
-    const linkBtn = page.getByRole('button', { name: /Thermodynamics/i }).or(page.getByText('Thermodynamics')).first()
-    await expect(linkBtn).toBeVisible()
-    await linkBtn.click()
+    const linkBtn = page
+      .locator('.plex')
+      .getByRole('button', { name: /Thermodynamics/i })
+      .or(page.locator('.plex .plex__title', { hasText: 'Thermodynamics' }))
+      .first()
+    await expect(linkBtn).toBeVisible({ timeout: 10_000 })
+    await linkBtn.dblclick({ force: true })
 
-    await expect(page.getByRole('tab', { name: /Thermodynamics/i }).first()).toBeVisible()
+    await expect(page.getByRole('tab', { name: /Thermodynamics/i }).first()).toBeVisible({
+      timeout: 10_000,
+    })
   })
 })

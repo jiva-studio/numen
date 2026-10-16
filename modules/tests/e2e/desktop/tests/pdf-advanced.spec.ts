@@ -58,7 +58,9 @@ test.describe('PDF Document Reader Advanced Controls', () => {
     await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
 
     // Locate page input
-    const pageInput = page.getByRole('spinbutton', { name: 'Page' }).or(page.locator('input[aria-label="Page"]'))
+    const pageInput = page
+      .getByRole('spinbutton', { name: 'Page' })
+      .or(page.locator('input[aria-label="Page"]'))
     await expect(pageInput).toBeVisible({ timeout: 5_000 })
 
     // Current page starts at 1

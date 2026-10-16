@@ -38,6 +38,8 @@ test.describe('External Media and URL Tabs', () => {
     await page.keyboard.press('Enter')
 
     // Verify application remains interactive
-    await expect(page.locator('text=Ready').or(page.locator('main')).first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('text=Ready').or(page.locator('main')).first()).toBeVisible({
+      timeout: 10_000,
+    })
   })
 })

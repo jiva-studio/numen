@@ -18,7 +18,9 @@ test.describe('Plugin Settings and Configuration', () => {
 
     // Verify Settings tab opened
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByText('Audio/Video Transcription').first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('Audio/Video Transcription').first()).toBeVisible({
+      timeout: 10_000,
+    })
   })
 
   test('displays declarative plugin settings in Settings tab', async ({ page }) => {
@@ -36,7 +38,9 @@ test.describe('Plugin Settings and Configuration', () => {
 
     // Verify declarative plugin settings are rendered
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByText('Auto-transcribe on import').first()).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText('Auto-transcribe on import').first()).toBeVisible({
+      timeout: 5_000,
+    })
     await expect(page.getByText('Transcription Language').first()).toBeVisible({ timeout: 5_000 })
   })
 
@@ -121,7 +125,10 @@ test.describe('Plugin Settings and Configuration', () => {
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
 
     // Verify switch retained the toggled value
-    await expect(page.locator('[data-slot="switch"]').first()).toHaveAttribute('data-state', toggledState)
+    await expect(page.locator('[data-slot="switch"]').first()).toHaveAttribute(
+      'data-state',
+      toggledState,
+    )
   })
 
   test('searches palette and executes Files navigation command', async ({ page }) => {

@@ -36,10 +36,11 @@ test.describe('Full-Text Search and Passage Navigation', () => {
 
     // Verify target note is opened in editor or focused
     await expect(
-      page.getByRole('tab', { name: /Entropy/i })
+      page
+        .getByRole('tab', { name: /Entropy/i })
         .or(page.locator('[aria-label*="Entropy"]'))
         .or(page.locator('.note'))
-        .first()
+        .first(),
     ).toBeVisible({ timeout: 10_000 })
   })
 })

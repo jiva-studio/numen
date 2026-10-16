@@ -24,17 +24,22 @@ test.describe('Spaced Repetition and Preset Editor', () => {
 
     // Verify preset tab is opened and contains goal options
     await expect(
-      page.getByRole('tab', { name: /PhysicsSRS/i })
+      page
+        .getByRole('tab', { name: /PhysicsSRS/i })
         .or(page.locator('[aria-label*="PhysicsSRS"]'))
         .first(),
     ).toBeVisible({ timeout: 10_000 })
 
-    await expect(page.getByRole('region', { name: 'Goal', exact: true })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('region', { name: 'Goal', exact: true })).toBeVisible({
+      timeout: 10_000,
+    })
     await expect(page.getByRole('radio', { name: 'Minutes a day' })).toBeVisible()
     await expect(page.getByRole('radio', { name: 'Retention' })).toBeVisible()
   })
 
-  test('validates preset retention and interval boundaries with problem hints', async ({ page }) => {
+  test('validates preset retention and interval boundaries with problem hints', async ({
+    page,
+  }) => {
     await page.goto('/')
 
     await expect(page.locator('text=Ready')).toBeVisible()
@@ -53,9 +58,9 @@ test.describe('Spaced Repetition and Preset Editor', () => {
     await page.waitForTimeout(300)
     await page.keyboard.press('Enter')
 
-    await expect(
-      page.getByRole('tab', { name: /StrictSRS/i }).first(),
-    ).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('tab', { name: /StrictSRS/i }).first()).toBeVisible({
+      timeout: 10_000,
+    })
 
     // Verify initial radio state
     const minutesRadio = page.getByRole('radio', { name: 'Minutes a day' })
@@ -99,11 +104,14 @@ test.describe('Spaced Repetition and Preset Editor', () => {
 
     // Verify preset editor is opened for the note with goal region and defaults explanation
     await expect(
-      page.getByRole('tab', { name: /Entropy\.md/i })
+      page
+        .getByRole('tab', { name: /Entropy\.md/i })
         .or(page.getByRole('region', { name: 'Goal', exact: true }))
         .first(),
     ).toBeVisible({ timeout: 10_000 })
 
-    await expect(page.getByRole('region', { name: 'Goal', exact: true })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('region', { name: 'Goal', exact: true })).toBeVisible({
+      timeout: 10_000,
+    })
   })
 })

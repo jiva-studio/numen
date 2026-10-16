@@ -1,7 +1,9 @@
 import { test, expect } from 'playwright/test'
 
 test.describe('Audio Citation and Backlink Navigation', () => {
-  test('follows audio passage URI link from note directly to player timestamp', async ({ page }) => {
+  test('follows audio passage URI link from note directly to player timestamp', async ({
+    page,
+  }) => {
     await page.goto('/')
 
     await expect(page.locator('text=Ready')).toBeVisible()
@@ -31,7 +33,9 @@ test.describe('Audio Citation and Backlink Navigation', () => {
     await expect(page.locator('.recording__player')).toBeVisible({ timeout: 10_000 })
   })
 
-  test('highlights corresponding transcript cue during audio backlink navigation', async ({ page }) => {
+  test('highlights corresponding transcript cue during audio backlink navigation', async ({
+    page,
+  }) => {
     await page.goto('/')
 
     await expect(page.locator('text=Ready')).toBeVisible()
@@ -55,7 +59,10 @@ test.describe('Audio Citation and Backlink Navigation', () => {
     } catch {
       // Background worker might have already triggered transcription
     }
-    const cue = page.getByRole('button', { name: '0:00' }).or(page.getByRole('textbox', { name: 'Editor' })).first()
+    const cue = page
+      .getByRole('button', { name: '0:00' })
+      .or(page.getByRole('textbox', { name: 'Editor' }))
+      .first()
     await expect(cue).toBeVisible({ timeout: 15_000 })
   })
 })

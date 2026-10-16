@@ -57,7 +57,11 @@ test.describe('Theming and Display Scaling', () => {
     await page.keyboard.press('Enter')
 
     // Verify Settings tab opened
-    await expect(page.getByRole('spinbutton', { name: 'Interface size' }).first()).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByRole('spinbutton', { name: 'Reading size' }).first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('spinbutton', { name: 'Interface size' }).first()).toBeVisible({
+      timeout: 10_000,
+    })
+    await expect(page.getByRole('spinbutton', { name: 'Reading size' }).first()).toBeVisible({
+      timeout: 10_000,
+    })
   })
 })

@@ -16,6 +16,8 @@ test.describe('Search and Indexing', () => {
     await searchInput.fill('Thermodynamics')
 
     // Verify search results are returned and visible
-    await expect(page.locator('text=Thermodynamics').first()).toBeVisible({ timeout: 5_000 })
+    await expect(
+      page.locator('[data-palette="list"]').getByText('Thermodynamics').first(),
+    ).toBeVisible({ timeout: 10_000 })
   })
 })

@@ -52,11 +52,30 @@ fs.writeFileSync(path.join(tmpVault, 'assets', 'corrupted.pdf'), 'INVALID_PDF_HE
 fs.writeFileSync(path.join(tmpVault, 'assets', 'corrupted.epub'), 'INVALID_EPUB_ZIP')
 fs.writeFileSync(path.join(tmpVault, 'assets', 'sample.mp3'), Buffer.alloc(512))
 fs.writeFileSync(path.join(tmpVault, 'assets', 'sample.flac'), Buffer.alloc(512))
-fs.writeFileSync(path.join(tmpVault, 'notes', 'plain.txt'), 'Plain text file opened via markdown editor plugin.')
-fs.writeFileSync(path.join(tmpVault, 'notes', 'extra.markdown'), '# Markdown heading\nContent from extra markdown file.')
-fs.writeFileSync(path.join(tmpVault, 'notes', 'trash-target.md'), '# Disposable Note\nThis note is created for deletion testing.')
-fs.writeFileSync(path.join(tmpVault, 'notes', 'malformed.md'), '---\ntitle: [unclosed bracket\nkey: value:\n---\n# Malformed Note\nContent after malformed frontmatter.')
-fs.writeFileSync(path.join(tmpVault, 'notes', 'large.md'), '# Large Document\n' + Array.from({ length: 800 }, (_, i) => `Paragraph line ${i + 1} with sample text for stress testing.`).join('\n\n'))
+fs.writeFileSync(
+  path.join(tmpVault, 'notes', 'plain.md'),
+  'Plain text file opened via markdown editor plugin.',
+)
+fs.writeFileSync(
+  path.join(tmpVault, 'notes', 'extra.md'),
+  '# Markdown heading\nContent from extra markdown file.',
+)
+fs.writeFileSync(
+  path.join(tmpVault, 'notes', 'trash-target.md'),
+  '# Disposable Note\nThis note is created for deletion testing.',
+)
+fs.writeFileSync(
+  path.join(tmpVault, 'notes', 'malformed.md'),
+  '---\ntitle: [unclosed bracket\nkey: value:\n---\n# Malformed Note\nContent after malformed frontmatter.',
+)
+fs.writeFileSync(
+  path.join(tmpVault, 'notes', 'large.md'),
+  '# Large Document\n' +
+    Array.from(
+      { length: 800 },
+      (_, i) => `Paragraph line ${i + 1} with sample text for stress testing.`,
+    ).join('\n\n'),
+)
 
 const testConfigDir = path.join(tmpVault, '.config')
 fs.mkdirSync(testConfigDir, { recursive: true })

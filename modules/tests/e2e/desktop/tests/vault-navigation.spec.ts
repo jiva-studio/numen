@@ -18,7 +18,10 @@ test.describe('Vault Navigation and Quick Open Palette', () => {
 
     // 3. Verify opening note is displayed in workspace
     await expect(
-      page.locator('.note').or(page.getByRole('group', { name: 'Neighbourhood' })).first(),
+      page
+        .locator('.note')
+        .or(page.getByRole('group', { name: 'Neighbourhood' }))
+        .first(),
     ).toBeVisible({ timeout: 10_000 })
   })
 

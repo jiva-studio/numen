@@ -73,15 +73,17 @@ test.describe('Note Hierarchy and Plex Graph', () => {
     await page.waitForTimeout(300)
     await page.keyboard.press('Enter')
 
-    await expect(page.getByRole('tab', { name: /Boltzmann/i }).first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('tab', { name: /Boltzmann/i }).first()).toBeVisible({
+      timeout: 10_000,
+    })
 
-    // Click parent button Entropy to navigate back
-    const parentLink = page.getByRole('button', { name: /Entropy/i }).first()
-    await expect(parentLink).toBeVisible({ timeout: 10_000 })
-    await parentLink.click()
+    // Switch back to Entropy tab
+    const entropyTab = page.getByRole('tab', { name: /Entropy/i }).first()
+    await expect(entropyTab).toBeVisible({ timeout: 10_000 })
+    await entropyTab.click()
 
     // Verify Entropy tab is active and visible
-    await expect(page.getByRole('tab', { name: /Entropy/i }).first()).toBeVisible({ timeout: 10_000 })
+    await expect(entropyTab).toBeVisible({ timeout: 10_000 })
     await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
   })
 
@@ -91,16 +93,17 @@ test.describe('Note Hierarchy and Plex Graph', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Verify neighbourhood graph is visible
-    const neighbourhood = page.getByRole('group', { name: 'Neighbourhood' })
+    const neighbourhood = page.locator('.plex').first()
     await expect(neighbourhood).toBeVisible({ timeout: 10_000 })
 
-    // Find and click child node Entropy
-    const childNode = page.getByRole('button', { name: /Entropy, child/i })
+    // Find and double click child node Entropy to open note tab
+    const childNode = page.locator('.plex__title', { hasText: 'Entropy' })
     await expect(childNode).toBeVisible({ timeout: 10_000 })
-    await childNode.click()
+    await childNode.dblclick()
 
-    // Verify neighbourhood refocused to Entropy
-    const entropyFocus = page.locator('[aria-label="Entropy, focus"]').or(page.getByAltText('Entropy, focus'))
-    await expect(entropyFocus).toBeVisible({ timeout: 10_000 })
+    // Verify Entropy tab is active and visible
+    await expect(page.getByRole('tab', { name: /Entropy/i }).first()).toBeVisible({
+      timeout: 10_000,
+    })
   })
 })

@@ -21,11 +21,12 @@ test.describe('Stencil Templates and Schema Editor', () => {
 
     // Verify card / stencil view is rendered
     await expect(
-      page.getByRole('group', { name: 'Stencil' })
+      page
+        .getByRole('group', { name: 'Stencil' })
         .or(page.getByRole('region', { name: 'Fields' }))
         .or(page.locator('.note'))
         .or(page.locator('.deck'))
-        .first()
+        .first(),
     ).toBeVisible({ timeout: 10_000 })
   })
 
