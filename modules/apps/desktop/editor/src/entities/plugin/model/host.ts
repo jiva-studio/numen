@@ -148,6 +148,11 @@ function createCustomTabKind(pluginId: string, registration: TabKindRegistration
     },
     pane: createPluginPaneWrapper(pluginId, registration.component),
     identity: (at: string) => at || registration.kind,
+    onShow: (state: unknown) => {
+      const s = state as { measure?: () => void; editor?: { measure?: () => void } } | undefined
+      s?.measure?.()
+      s?.editor?.measure?.()
+    },
   }
 }
 

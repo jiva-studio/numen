@@ -2,7 +2,7 @@
 /**
  * Standalone Markdown and plain text editor tab component using CodeMirror 6.
  */
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { Editor } from '@numen/ui'
 import type { Extension } from '@codemirror/state'
 import { parseFrontmatter, type FrontmatterResult } from './frontmatter'
@@ -68,6 +68,18 @@ watch(
     }
   },
 )
+
+/* --------------------------------- Hooks ---------------------------------- */
+function syncEditorState(val: typeof editorRef.value) {
+  if (props.state && typeof props.state === 'object') {
+    const s = props.state as Record<string, unknown>
+    s.editor = val
+    s.measure = () => val?.measure?.()
+  }
+}
+
+watch(editorRef, (val) => syncEditorState(val), { immediate: true })
+onMounted(() => syncEditorState(editorRef.value))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onUpdateModelValue(value: string) {

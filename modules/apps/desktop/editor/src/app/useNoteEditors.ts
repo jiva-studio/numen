@@ -31,13 +31,25 @@ function createNullChanges() {
   }
 }
 
-function createNoted(notes: ReturnType<typeof openNotes>) {
+function createNoted(notes: ReturnType<typeof openNotes>, held: ReturnType<typeof useWindowTabs>) {
   return {
     loadInTab: async (id: string, path: string, _title?: string) => {
       await notes.flushPending(id)
       notes.reload(id, path)
     },
-    measureAll: () => {},
+    measureAll: () => {
+      for (const tab of held.tabs.value) {
+        const windowTab = held.getTab(tab.id)
+        const state = windowTab?.state as
+          | { measure?: () => void; editor?: { measure?: () => void } }
+          | undefined
+        if (state?.measure) {
+          state.measure()
+        } else if (state?.editor?.measure) {
+          state.editor.measure()
+        }
+      }
+    },
   }
 }
 
@@ -57,7 +69,7 @@ export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditors
   const changes = createNullChanges()
   const notes = openNotes(core, { onReplaced: changes.reportNoteChange })
   const making = createNoteWriter(core, log.getWriter('made'))
-  const noted = createNoted(notes)
+  const noted = createNoted(notes, held)
 
   const decks = useDeckTabs(cards, presets, { handle: held.handle, tabOpeners })
   const stencils = useStencilTabs(cards, held.handle, {
