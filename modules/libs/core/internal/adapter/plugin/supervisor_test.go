@@ -117,7 +117,6 @@ func TestSupervisorTeardownInProcessCallsRPC(t *testing.T) {
 	}
 }
 
-
 func TestSupervisorTeardownForceKill(t *testing.T) {
 	cmd := exec.Command("sleep", "5")
 	if err := cmd.Start(); err != nil {

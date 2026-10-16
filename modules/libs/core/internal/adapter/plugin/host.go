@@ -728,7 +728,6 @@ func (h *Host) createRPCShutdown(endpoint Endpoint, gracePeriod time.Duration) f
 	}
 }
 
-
 // SetPersistHandler registers a callback that writes plugin settings changes into core configuration.
 func (h *Host) SetPersistHandler(handler PersistHandler) {
 	h.mu.Lock()

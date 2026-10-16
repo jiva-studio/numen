@@ -963,4 +963,3 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 	close(releaseShutdown)
 	<-done
 }
-

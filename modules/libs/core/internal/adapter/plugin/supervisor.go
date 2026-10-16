@@ -319,4 +319,3 @@ func (s *Supervisor) markDormant(proc *os.Process) {
 		}
 	}
 }
-
