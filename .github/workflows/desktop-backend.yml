@@ -162,6 +162,10 @@ jobs:
         working-directory: modules
         run: npm ci
 
+      - name: Build UI components
+        working-directory: modules/libs/ui
+        run: npm run build
+
       - name: Build and test modular plugins
         working-directory: .
         run: |
