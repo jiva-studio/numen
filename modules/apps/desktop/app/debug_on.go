@@ -58,11 +58,28 @@ func (d *DebugOptions) ensureVault(cfg container.Config, vaultPath string) error
 	if err != nil || !info.IsDir() {
 		return nil
 	}
-	chosen, err := cfg.Settings()
+	reg, err := cfg.Registry()
 	if err != nil {
 		return err
 	}
-	return chosen.SetLastVault(domain.Vault{Path: abs, Name: filepath.Base(abs)})
+	_, found, err := reg.FindVault(abs)
+	if err != nil {
+		return err
+	}
+	if !found {
+		v := domain.Vault{
+			ID:   domain.VaultID("01E2ETESTVAULT000000000000"),
+			Name: filepath.Base(abs),
+			Path: abs,
+		}
+		if err := reg.Save(v); err != nil {
+			return err
+		}
+		if err := reg.RecordOpened(v.ID); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (d *DebugOptions) isServingHTTP() bool {
@@ -104,7 +121,7 @@ func (d *DebugOptions) serveHTTP(
 	opened.State.NotifyOpenTabs = naming
 	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
 		if cfg.PluginHost != nil {
-			cfg.PluginHost.SetVaultPath(v.Path)
+			setPluginVaultPath(cfg.PluginHost, v.Path)
 		}
 		err := reachable.RunWhileStopped(func() error { return opened.Show(ctx, v) })
 		naming(opened.State.GetOpenTabs())

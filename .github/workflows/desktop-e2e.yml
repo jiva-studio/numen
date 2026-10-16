@@ -38,9 +38,14 @@ jobs:
       - name: Install dependencies
         run: npm ci --prefix modules
 
+      - uses: ./.github/actions/setup-webkit
+
       - uses: ./.github/actions/setup-playwright
         with:
           browsers: "chromium"
+
+      - name: Build modular plugins
+        run: make plugins_build
 
       - name: Build frontend assets
         run: |
