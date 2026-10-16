@@ -81,6 +81,45 @@ func (s *mockEmbeddingServer) GetEmbeddingModel(
 	}), nil
 }
 
+type mockDownloadServer struct {
+	numenv1connect.UnimplementedDownloadServiceHandler
+}
+
+func (s *mockDownloadServer) GetDownloadModel(
+	_ context.Context,
+	_ *connect.Request[v1.GetDownloadModelRequest],
+) (*connect.Response[v1.GetDownloadModelResponse], error) {
+	return connect.NewResponse(&v1.GetDownloadModelResponse{
+		Tool: "yt-dlp",
+	}), nil
+}
+
+type mockAgentServer struct {
+	numenv1connect.UnimplementedAgentServiceHandler
+}
+
+func (s *mockAgentServer) GetAgentTools(
+	_ context.Context,
+	_ *connect.Request[v1.GetAgentToolsRequest],
+) (*connect.Response[v1.GetAgentToolsResponse], error) {
+	return connect.NewResponse(&v1.GetAgentToolsResponse{
+		SystemPromptExtension: "monolith agent prompt",
+	}), nil
+}
+
+type mockProofreadingServer struct {
+	numenv1connect.UnimplementedProofreadingServiceHandler
+}
+
+func (s *mockProofreadingServer) GetProofreaderInfo(
+	_ context.Context,
+	_ *connect.Request[v1.GetProofreaderInfoRequest],
+) (*connect.Response[v1.GetProofreaderInfoResponse], error) {
+	return connect.NewResponse(&v1.GetProofreaderInfoResponse{
+		Name: "monolith-proofreader",
+	}), nil
+}
+
 func TestMonolithInProcessDispatch(t *testing.T) {
 	plugin.ClearMonolithHandlers()
 	defer plugin.ClearMonolithHandlers()
@@ -90,6 +129,9 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 	plugin.RegisterBookServiceHandler(&mockBookServer{})
 	plugin.RegisterTranscriptionServiceHandler(&mockTranscriptionServer{})
 	plugin.RegisterEmbeddingServiceHandler(&mockEmbeddingServer{})
+	plugin.RegisterDownloadServiceHandler(&mockDownloadServer{})
+	plugin.RegisterAgentServiceHandler(&mockAgentServer{})
+	plugin.RegisterProofreadingServiceHandler(&mockProofreadingServer{})
 
 	host := plugin.NewHost("desktop.editor")
 	if err := host.Discover(); err != nil {
@@ -175,7 +217,49 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 		t.Fatalf("unexpected embedding model: %+v", embedResp.Msg)
 	}
 
-	// 6. Teardown
+	// 6. DownloadService dispatch
+	endpointDownloader, err := host.EnsureActive(ctx, "md.numen.downloader")
+	if err != nil {
+		t.Fatalf("EnsureActive(downloader) failed: %v", err)
+	}
+	downloadClient := numenv1connect.NewDownloadServiceClient(endpointDownloader.HTTPClient(), endpointDownloader.BaseURL())
+	downloadResp, err := downloadClient.GetDownloadModel(ctx, connect.NewRequest(&v1.GetDownloadModelRequest{}))
+	if err != nil {
+		t.Fatalf("downloadClient.GetDownloadModel failed: %v", err)
+	}
+	if downloadResp.Msg.GetTool() != "yt-dlp" {
+		t.Fatalf("unexpected download model tool: %q", downloadResp.Msg.GetTool())
+	}
+
+	// 7. AgentService dispatch
+	endpointAgent, err := host.EnsureActive(ctx, "md.numen.agent")
+	if err != nil {
+		t.Fatalf("EnsureActive(agent) failed: %v", err)
+	}
+	agentClient := numenv1connect.NewAgentServiceClient(endpointAgent.HTTPClient(), endpointAgent.BaseURL())
+	agentResp, err := agentClient.GetAgentTools(ctx, connect.NewRequest(&v1.GetAgentToolsRequest{}))
+	if err != nil {
+		t.Fatalf("agentClient.GetAgentTools failed: %v", err)
+	}
+	if agentResp.Msg.GetSystemPromptExtension() != "monolith agent prompt" {
+		t.Fatalf("unexpected system prompt extension: %q", agentResp.Msg.GetSystemPromptExtension())
+	}
+
+	// 8. ProofreadingService dispatch
+	endpointProof, err := host.EnsureActive(ctx, "md.numen.proofreading")
+	if err != nil {
+		t.Fatalf("EnsureActive(proofreading) failed: %v", err)
+	}
+	proofClient := numenv1connect.NewProofreadingServiceClient(endpointProof.HTTPClient(), endpointProof.BaseURL())
+	proofResp, err := proofClient.GetProofreaderInfo(ctx, connect.NewRequest(&v1.GetProofreaderInfoRequest{}))
+	if err != nil {
+		t.Fatalf("proofClient.GetProofreaderInfo failed: %v", err)
+	}
+	if proofResp.Msg.GetName() != "monolith-proofreader" {
+		t.Fatalf("unexpected proofreader name: %q", proofResp.Msg.GetName())
+	}
+
+	// 9. Teardown
 	if err := host.TeardownAll(ctx, 100*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}

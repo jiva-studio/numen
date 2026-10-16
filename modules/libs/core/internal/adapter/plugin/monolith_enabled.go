@@ -23,6 +23,9 @@ var (
 	bookHandler          numenv1connect.BookServiceHandler
 	transcriptionHandler numenv1connect.TranscriptionServiceHandler
 	embeddingHandler     numenv1connect.EmbeddingServiceHandler
+	downloadHandler      numenv1connect.DownloadServiceHandler
+	agentHandler         numenv1connect.AgentServiceHandler
+	proofreadingHandler  numenv1connect.ProofreadingServiceHandler
 )
 
 // RegisterDocumentServiceHandler sets the in-process DocumentServiceHandler.
@@ -60,6 +63,27 @@ func RegisterEmbeddingServiceHandler(h numenv1connect.EmbeddingServiceHandler) {
 	embeddingHandler = h
 }
 
+// RegisterDownloadServiceHandler sets the in-process DownloadServiceHandler.
+func RegisterDownloadServiceHandler(h numenv1connect.DownloadServiceHandler) {
+	monolithMu.Lock()
+	defer monolithMu.Unlock()
+	downloadHandler = h
+}
+
+// RegisterAgentServiceHandler sets the in-process AgentServiceHandler.
+func RegisterAgentServiceHandler(h numenv1connect.AgentServiceHandler) {
+	monolithMu.Lock()
+	defer monolithMu.Unlock()
+	agentHandler = h
+}
+
+// RegisterProofreadingServiceHandler sets the in-process ProofreadingServiceHandler.
+func RegisterProofreadingServiceHandler(h numenv1connect.ProofreadingServiceHandler) {
+	monolithMu.Lock()
+	defer monolithMu.Unlock()
+	proofreadingHandler = h
+}
+
 // RegisterMonolithPluginHandler sets a dedicated handler for a plugin ID.
 func RegisterMonolithPluginHandler(pluginID string, h http.Handler) {
 	monolithMu.Lock()
@@ -77,6 +101,9 @@ func ClearMonolithHandlers() {
 	bookHandler = nil
 	transcriptionHandler = nil
 	embeddingHandler = nil
+	downloadHandler = nil
+	agentHandler = nil
+	proofreadingHandler = nil
 }
 
 type pipeResponseWriter struct {
@@ -240,6 +267,15 @@ func (h *Host) getMonolithHandler(pluginID string) http.Handler {
 	if embeddingHandler != nil {
 		mux.Handle(numenv1connect.NewEmbeddingServiceHandler(embeddingHandler))
 	}
+	if downloadHandler != nil {
+		mux.Handle(numenv1connect.NewDownloadServiceHandler(downloadHandler))
+	}
+	if agentHandler != nil {
+		mux.Handle(numenv1connect.NewAgentServiceHandler(agentHandler))
+	}
+	if proofreadingHandler != nil {
+		mux.Handle(numenv1connect.NewProofreadingServiceHandler(proofreadingHandler))
+	}
 
 	return mux
 }
@@ -317,6 +353,51 @@ var builtInMonolithPlugins = map[string]DiscoveredPlugin{
 			Backend: Backend{
 				Type:        "process",
 				ServiceName: "numen.v1.EmbeddingService",
+			},
+		},
+	},
+	"md.numen.downloader": {
+		Dir: "modules/plugins/downloader",
+		Manifest: Manifest{
+			ID:           "md.numen.downloader",
+			Name:         "Media Downloader",
+			Version:      "1.0.0",
+			Capabilities: []string{"downloader", "media.download"},
+			Targets:      []string{"desktop.editor"},
+			Permissions:  []string{PermissionNetworkOutbound, PermissionVaultWrite},
+			Backend: Backend{
+				Type:        "process",
+				ServiceName: "numen.v1.DownloadService",
+			},
+		},
+	},
+	"md.numen.agent": {
+		Dir: "modules/plugins/agent",
+		Manifest: Manifest{
+			ID:           "md.numen.agent",
+			Name:         "Autonomous Agent & Chat Provider",
+			Version:      "1.0.0",
+			Capabilities: []string{"agent"},
+			Targets:      []string{"desktop.editor"},
+			Permissions:  []string{PermissionVaultRead, PermissionVaultWrite},
+			Backend: Backend{
+				Type:        "process",
+				ServiceName: "numen.v1.AgentService",
+			},
+		},
+	},
+	"md.numen.proofreading": {
+		Dir: "modules/plugins/proofreading",
+		Manifest: Manifest{
+			ID:           "md.numen.proofreading",
+			Name:         "LLM Proofreading",
+			Version:      "1.0.0",
+			Capabilities: []string{"proofreading"},
+			Targets:      []string{"desktop.editor"},
+			Permissions:  []string{PermissionVaultRead},
+			Backend: Backend{
+				Type:        "process",
+				ServiceName: "numen.v1.ProofreadingService",
 			},
 		},
 	},
