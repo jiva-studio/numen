@@ -24,7 +24,7 @@ func (m mockScheduler) Endings(s review.Schedule, at time.Time) (good, again rev
 	again = m.Next(s, at, review.Again)
 	return good, again
 }
-func (m mockScheduler) IsSpaced(s review.Schedule) bool { return true }
+func (m mockScheduler) IsSpaced(_ review.Schedule) bool { return true }
 
 type mockAlgorithm struct {
 	calledWith []float64
