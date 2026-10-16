@@ -1,0 +1,349 @@
+// Package app provides the desktop application runner and host lifecycle.
+package app
+
+import (
+	"context"
+	"flag"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path"
+	"runtime/debug"
+	"time"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/platform"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/plugincli"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/shutdown"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/themes"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+)
+
+// Options holds command-line options for running the desktop application.
+type Options struct {
+	IndexPath      string
+	RegistryPath   string
+	Vault          string
+	McpAddr        string
+	NoMcp          bool
+	InterfaceScale float64
+	TextScale      float64
+	RebuildIndex   bool
+	SafeMode       bool
+	ShowVersion    bool
+	Debug          DebugOptions
+}
+
+// NewOptions creates default options for the application.
+func NewOptions() *Options {
+	return &Options{
+		McpAddr: DefaultAgentAddr,
+	}
+}
+
+// Run executes the application. If opts is not supplied or nil, command-line flags are parsed.
+func Run(opts ...*Options) error {
+	var opt *Options
+	if len(opts) > 0 && opts[0] != nil {
+		opt = opts[0]
+	} else {
+		opt = parseFlags()
+	}
+
+	if opt.ShowVersion {
+		fmt.Fprintln(os.Stdout, version.GetVersionLine("numen"))
+		return nil
+	}
+
+	cfg := makeConfig(os.Stderr)
+	if opt.IndexPath != "" {
+		cfg.IndexPath = opt.IndexPath
+	}
+	if opt.RegistryPath != "" {
+		cfg.RegistryPath = opt.RegistryPath
+	}
+	cfg.ShouldRebuildIndex = opt.RebuildIndex
+	cfg.SafeMode = opt.SafeMode
+	if cfg.SafeMode && cfg.PluginHost != nil {
+		cfg.PluginHost.SetSafeMode(true)
+	}
+
+	agentFlags := agentOptions{
+		addr:  opt.McpAddr,
+		isOff: opt.NoMcp,
+	}
+	scaleFlags := scaleSettings{
+		interfaceScale: opt.InterfaceScale,
+		textScale:      opt.TextScale,
+	}
+
+	if err := run(cfg, agentFlags, opt.Vault, scaleFlags, &opt.Debug); err != nil {
+		if !opt.Debug.isServingHTTP() {
+			refuse(cfg, err)
+		}
+		return err
+	}
+	return nil
+}
+
+func parseFlags() *Options {
+	if len(os.Args) > 1 && os.Args[1] == "plugin" {
+		os.Exit(plugincli.Run(os.Args[2:], os.Stdout, os.Stderr))
+	}
+
+	opts := NewOptions()
+	fs := flag.CommandLine
+	if !fs.Parsed() {
+		fs.StringVar(&opts.IndexPath, "index", "", "path to the index database")
+		fs.StringVar(&opts.RegistryPath, "registry", "", "path to the vault list")
+		fs.StringVar(&opts.Vault, "vault", "",
+			"the vault to open: a name, a path or an identity; the one opened last by default")
+		fs.StringVar(&opts.McpAddr, "mcp-addr", DefaultAgentAddr,
+			"where agents reach this vault; anything but a loopback address opens it to the network")
+		fs.BoolVar(&opts.NoMcp, "no-mcp", false, "do not let agents reach this vault")
+		fs.Float64Var(&opts.InterfaceScale, "interface-scale", 0,
+			"how large the interface is drawn, 1 being as designed; this launch alone")
+		fs.Float64Var(&opts.TextScale, "text-scale", 0,
+			"how large the text a person reads is set, 1 being as designed; this launch alone")
+		fs.BoolVar(&opts.RebuildIndex, "rebuild-index", false,
+			"read every file and put it in the index again, whatever the index remembers")
+		fs.BoolVar(&opts.SafeMode, "safe-mode", false, "disable plugins for emergency recovery")
+		fs.BoolVar(&opts.ShowVersion, "version", false, "say what this build is and stop")
+		RegisterDebugFlags(fs, opts)
+		_ = fs.Parse(os.Args[1:])
+	}
+	return opts
+}
+
+func makeConfig(out io.Writer) container.Config {
+	cfg := platform.GetConfig()
+	cfg.ErrorHandler = func(err error) { fmt.Fprintln(out, "numen:", err) }
+	return cfg
+}
+
+type scaleSettings struct{ interfaceScale, textScale float64 }
+
+func (s scaleSettings) validate() error {
+	if s.interfaceScale > 0 {
+		if err := settings.InterfaceScaleBounds.Check("-interface-scale", s.interfaceScale); err != nil {
+			return err
+		}
+	}
+	if s.textScale > 0 {
+		return settings.TextScaleBounds.Check("-text-scale", s.textScale)
+	}
+	return nil
+}
+
+func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleSettings, debugOpts *DebugOptions) error {
+	debugOpts.apply(&cfg)
+	if err := debugOpts.ensureVault(cfg, vault); err != nil {
+		return err
+	}
+	if cfg.PluginHost != nil {
+		defer func() {
+			_ = cfg.PluginHost.TeardownAll(context.Background(), 2*time.Second)
+		}()
+	}
+	if err := scaleFlags.validate(); err != nil {
+		return err
+	}
+
+	setSchemasDir()
+
+	ctx, stop := context.WithCancel(context.Background())
+	defer stop()
+
+	chosen, err := cfg.Settings()
+	if err != nil {
+		return err
+	}
+	cfg = cfg.SetSettings(chosen)
+	applyMemoryLimit(cfg.ResolvedCompute.MemoryLimitMB, debug.SetMemoryLimit, os.LookupEnv)
+	cfg.InterfaceScale, cfg.TextScale = scaleFlags.interfaceScale, scaleFlags.textScale
+
+	shown, err := openInstallation(ctx, cfg, vault)
+	if err != nil {
+		return err
+	}
+	pages, opened := shown.pages, shown.opened
+	opened.Services.Themes = themes.Load(cfg.Themes, opened.SayTheme, os.Stdout)
+
+	opened.Report(chosen.Notices)
+
+	reachable := makeEndpoint(ctx, cfg, opened, mcp)
+	going := &vaultFlush{flush: opened.FlushPending}
+	behind := shutdown.NewSequence(
+		reachable.Stop,
+		shutdown.Report("numen", os.Stderr, "", opened.Close),
+		shutdown.Report("numen", os.Stderr, "plugins", func() error {
+			if cfg.PluginHost != nil {
+				return cfg.PluginHost.TeardownAll(context.Background(), 2*time.Second)
+			}
+			return nil
+		}),
+		stop,
+	)
+
+	defer func() {
+		going.flushVault()
+		behind.Run()
+	}()
+
+	if debugOpts.isServingHTTP() {
+		return debugOpts.serveHTTP(ctx, cfg, opened, pages, reachable)
+	}
+
+	var window *application.WebviewWindow
+	seen := visibility{
+		hide: func() { window.Hide() },
+		show: func() { window.Show() },
+	}
+
+	app := makeApplication(opened, pages, behind, going, seen)
+	window = makeWindow(app, opened)
+	connectWindow(ctx, cfg, window, opened, reachable)
+
+	window.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
+		if !closeWindow(ctx, going, seen, opened.WaitForFlush, window.Close) {
+			event.Cancel()
+		}
+	})
+
+	return app.Run()
+}
+
+type shownInstallation struct {
+	pages  http.Handler
+	opened *editor.Installation
+}
+
+func openInstallation(
+	ctx context.Context, cfg container.Config, vault string,
+) (shownInstallation, error) {
+	if err := cfg.PrepareRecogniser(ctx); err != nil {
+		fmt.Fprintln(os.Stderr, "numen: nothing to read a scan with:", err)
+	}
+	pages, err := editor.Pages()
+	if err != nil {
+		return shownInstallation{}, err
+	}
+
+	made, err := cfg.GetEditorAssembly(ctx)
+	if err != nil {
+		return shownInstallation{}, err
+	}
+	opened, err := editor.Open(ctx, made, vault, os.Stdout)
+	if err != nil {
+		return shownInstallation{}, err
+	}
+	if cfg.PluginHost != nil {
+		cfg.PluginHost.SetVaultPath(opened.GetCurrentVault().Path)
+	}
+	return shownInstallation{pages: pages, opened: opened}, nil
+}
+
+func makeEndpoint(
+	ctx context.Context, cfg container.Config, opened *editor.Installation, mcp agentOptions,
+) *agents.Endpoint {
+	return &agents.Endpoint{
+		Serve: func() (func() error, error) {
+			return serveAgents(ctx, cfg, opened, mcp, os.Stdout)
+		},
+		GetVault:       opened.GetCurrentVault,
+		SetAgent:       opened.State.SetAgent,
+		SetUnreachable: func(said string) { opened.State.Unreachable.Store(said) },
+		ErrorHandler:   func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
+	}
+}
+
+func makeApplication(
+	opened *editor.Installation, pages http.Handler, behind *shutdown.Sequence,
+	going *vaultFlush, seen visibility,
+) *application.App {
+	return application.New(application.Options{
+		Name: "numen",
+		Assets: application.AssetOptions{
+			Handler: opened.Services.NewHandler(pages),
+		},
+		Mac: application.MacOptions{
+			ApplicationShouldTerminateAfterLastWindowClosed: true,
+		},
+		PostShutdown: behind.Run,
+		ShouldQuit: func() bool {
+			return requestQuit(going, seen, func() { application.Get().Quit() })
+		},
+	})
+}
+
+func makeWindow(app *application.App, opened *editor.Installation) *application.WebviewWindow {
+	return app.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:          getWindowTitle(opened.GetCurrentVault(), opened.State.GetOpenTabs()),
+		Width:          1280,
+		Height:         860,
+		URL:            "/",
+		EnableFileDrop: true,
+	})
+}
+
+func connectWindow(
+	ctx context.Context, cfg container.Config, window *application.WebviewWindow, opened *editor.Installation,
+	reachable *agents.Endpoint,
+) {
+	opened.Services.SetFolderDialog(&folderDialog{window: window})
+
+	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.GetCurrentVault(), open)) }
+	opened.State.NotifyOpenTabs = naming
+
+	window.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
+		importDroppedFiles(ctx, opened, event)
+	})
+
+	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
+		if cfg.PluginHost != nil {
+			cfg.PluginHost.SetVaultPath(v.Path)
+		}
+		err := reachable.RunWhileStopped(func() error { return opened.Show(ctx, v) })
+		naming(opened.State.GetOpenTabs())
+		return err
+	}
+
+	reachable.Start()
+}
+
+func importDroppedFiles(ctx context.Context, opened *editor.Installation, event *application.WindowEvent) {
+	landed := event.Context().DropTargetDetails()
+	if landed == nil {
+		return
+	}
+	into, marked := landed.Attributes[droppedInto]
+	if !marked {
+		return
+	}
+	opened.Imports(ctx, into, event.Context().DroppedFiles())
+}
+
+const droppedInto = "data-file-drop-target"
+
+func getWindowTitle(v domain.Vault, open domain.OpenTabs) string {
+	if front, held := open.GetFrontTab(); held && front.Path != "" {
+		return "numen — " + path.Base(front.Path)
+	}
+	if v.Name == "" {
+		return "numen"
+	}
+	return "numen — " + v.Name
+}
+
+type agentOptions struct {
+	addr  string
+	isOff bool
+}

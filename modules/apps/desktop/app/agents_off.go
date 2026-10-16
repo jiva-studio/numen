@@ -1,6 +1,6 @@
 //go:build nomcp
 
-package main
+package app
 
 import (
 	"context"
@@ -10,11 +10,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
-// Built with `nomcp`: no agent reaches this vault, and none of the code that
-// would let one is in the binary. The flags stay so that a script written for
-// the ordinary build does not fail on an unknown one.
-
-const defaultAgentAddr = ""
+// DefaultAgentAddr is empty in nomcp build.
+const DefaultAgentAddr = ""
 
 func serveAgents(context.Context, container.Config, *editor.Installation, agentOptions, io.Writer) (func() error, error) {
 	return func() error { return nil }, nil

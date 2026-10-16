@@ -10,29 +10,13 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
-	"path"
-	"runtime/debug"
-	"time"
 
-	"github.com/wailsapp/wails/v3/pkg/application"
-	"github.com/wailsapp/wails/v3/pkg/events"
-
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/platform"
+	"github.com/jiva-studio/numen/modules/apps/desktop/app"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/plugincli"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/shutdown"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
-	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 func main() {
@@ -40,325 +24,32 @@ func main() {
 		os.Exit(plugincli.Run(os.Args[2:], os.Stdout, os.Stderr))
 	}
 
-	cfg := makeConfig(os.Stderr)
-	var agentFlags agentOptions
-	var scaleFlags scaleSettings
-	var vault string
-	var showVersion bool
-	debugOpts := registerDebugFlags(flag.CommandLine)
-	flag.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
-	flag.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
-	flag.StringVar(&vault, "vault", "",
+	opts := app.NewOptions()
+	flag.StringVar(&opts.IndexPath, "index", "", "path to the index database")
+	flag.StringVar(&opts.RegistryPath, "registry", "", "path to the vault list")
+	flag.StringVar(&opts.Vault, "vault", "",
 		"the vault to open: a name, a path or an identity; the one opened last by default")
-	flag.StringVar(&agentFlags.addr, "mcp-addr", defaultAgentAddr,
+	flag.StringVar(&opts.McpAddr, "mcp-addr", app.DefaultAgentAddr,
 		"where agents reach this vault; anything but a loopback address opens it to the network")
-	flag.BoolVar(&agentFlags.isOff, "no-mcp", false, "do not let agents reach this vault")
-	flag.Float64Var(&scaleFlags.interfaceScale, "interface-scale", 0,
+	flag.BoolVar(&opts.NoMcp, "no-mcp", false, "do not let agents reach this vault")
+	flag.Float64Var(&opts.InterfaceScale, "interface-scale", 0,
 		"how large the interface is drawn, 1 being as designed; this launch alone")
-	flag.Float64Var(&scaleFlags.textScale, "text-scale", 0,
+	flag.Float64Var(&opts.TextScale, "text-scale", 0,
 		"how large the text a person reads is set, 1 being as designed; this launch alone")
-	flag.BoolVar(&cfg.ShouldRebuildIndex, "rebuild-index", false,
+	flag.BoolVar(&opts.RebuildIndex, "rebuild-index", false,
 		"read every file and put it in the index again, whatever the index remembers")
-	flag.BoolVar(&cfg.SafeMode, "safe-mode", false, "disable plugins for emergency recovery")
-	flag.BoolVar(&showVersion, "version", false, "say what this build is and stop")
+	flag.BoolVar(&opts.SafeMode, "safe-mode", false, "disable plugins for emergency recovery")
+	flag.BoolVar(&opts.ShowVersion, "version", false, "say what this build is and stop")
+	app.RegisterDebugFlags(flag.CommandLine, opts)
 	flag.Parse()
 
-	if cfg.SafeMode && cfg.PluginHost != nil {
-		cfg.PluginHost.SetSafeMode(true)
-	}
-
-	if showVersion {
+	if opts.ShowVersion {
 		fmt.Println(version.GetVersionLine("numen"))
 		return
 	}
 
-	if err := run(cfg, agentFlags, vault, scaleFlags, debugOpts); err != nil {
+	if err := app.Run(opts); err != nil {
 		fmt.Fprintln(os.Stderr, "numen:", err)
-		if !debugOpts.isServingHTTP() {
-			refuse(cfg, err)
-		}
 		os.Exit(1)
 	}
-}
-
-// makeConfig is what this binary starts from: what the machine supplies the
-// core, and where the core says what it went wrong at and carried on past. That
-// is the same place everything else this binary could not do is said.
-func makeConfig(out io.Writer) container.Config {
-	cfg := platform.GetConfig()
-	cfg.ErrorHandler = func(err error) { fmt.Fprintln(out, "numen:", err) }
-	return cfg
-}
-
-// scaleSettings are what the command line said about size: how large the interface is
-// drawn, and how large the text a person reads is set. Zero is not said, and
-// the settings file stands.
-type scaleSettings struct{ interfaceScale, textScale float64 }
-
-// validate is what is wrong with a number the setting it says does not take.
-func (s scaleSettings) validate() error {
-	if s.interfaceScale > 0 {
-		if err := settings.InterfaceScaleBounds.Check("-interface-scale", s.interfaceScale); err != nil {
-			return err
-		}
-	}
-	if s.textScale > 0 {
-		return settings.TextScaleBounds.Check("-text-scale", s.textScale)
-	}
-	return nil
-}
-
-func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleSettings, debugOpts *debugOptions) error {
-	debugOpts.apply(&cfg)
-	if err := debugOpts.ensureVault(cfg, vault); err != nil {
-		return err
-	}
-	if cfg.PluginHost != nil {
-		defer func() {
-			_ = cfg.PluginHost.TeardownAll(context.Background(), 2*time.Second)
-		}()
-	}
-	if err := scaleFlags.validate(); err != nil {
-		return err
-	}
-
-	// Before anything draws: the settings a folder dialog reads are looked for
-	// once, the first time something asks for one.
-	setSchemasDir()
-
-	ctx, stop := context.WithCancel(context.Background())
-	defer stop()
-
-	chosen, err := cfg.Settings()
-	if err != nil {
-		return err
-	}
-	cfg = cfg.SetSettings(chosen)
-	applyMemoryLimit(cfg.ResolvedCompute.MemoryLimitMB, debug.SetMemoryLimit, os.LookupEnv)
-	cfg.InterfaceScale, cfg.TextScale = scaleFlags.interfaceScale, scaleFlags.textScale
-
-	shown, err := openInstallation(ctx, cfg, vault)
-	if err != nil {
-		return err
-	}
-	pages, opened := shown.pages, shown.opened
-	opened.Services.Themes = themes.Load(cfg.Themes, opened.SayTheme, os.Stdout)
-
-	// What reading the settings had to tell a person goes where they are: a
-	// window opened from a desktop entry has no terminal to write to.
-	opened.Report(chosen.Notices)
-
-	reachable := makeEndpoint(ctx, cfg, opened, mcp)
-	going := &vaultFlush{flush: opened.FlushPending}
-	// The agents stop, the installation closes, plugins teardown, then the context they ran under ends.
-	behind := shutdown.NewSequence(
-		reachable.Stop,
-		shutdown.Report("numen", os.Stderr, "", opened.Close),
-		shutdown.Report("numen", os.Stderr, "plugins", func() error {
-			if cfg.PluginHost != nil {
-				return cfg.PluginHost.TeardownAll(context.Background(), 2*time.Second)
-			}
-			return nil
-		}),
-		stop,
-	)
-
-	// The vault settles before a quit is let through, so the steps behind it are
-	// asked for here with nothing left owed.
-	defer func() {
-		going.flushVault()
-		behind.Run()
-	}()
-
-	if debugOpts.isServingHTTP() {
-		return debugOpts.serveHTTP(ctx, cfg, opened, pages, reachable)
-	}
-
-	// The window is hidden before the vault is flushed and shown again when a
-	// page calls the close off.
-	var window *application.WebviewWindow
-	seen := visibility{
-		hide: func() { window.Hide() },
-		show: func() { window.Show() },
-	}
-
-	app := makeApplication(opened, pages, behind, going, seen)
-	window = makeWindow(app, opened)
-	connectWindow(ctx, cfg, window, opened, reachable)
-
-	// A hook runs before the window is destroyed and on a thread of its own, so
-	// the page is still drawn and still answered while what it owes is written.
-	// A cancelled event is where the hooks stop, and the destroy the window
-	// registered for itself is one of the listeners after them.
-	window.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
-		if !closeWindow(ctx, going, seen, opened.WaitForFlush, window.Close) {
-			event.Cancel()
-		}
-	})
-
-	return app.Run()
-}
-
-// shownInstallation is the pages of the window and the installation they show.
-type shownInstallation struct {
-	pages  http.Handler
-	opened *editor.Installation
-}
-
-// openInstallation reads the pages and opens the vault the window shows.
-func openInstallation(
-	ctx context.Context, cfg container.Config, vault string,
-) (shownInstallation, error) {
-	// Before the window: every page this process reads is read through the
-	// runtime made here, and one made after the window reads a page as nothing.
-	// A machine holding no runtime yet is told so by the first recognition.
-	if err := cfg.PrepareRecogniser(ctx); err != nil {
-		fmt.Fprintln(os.Stderr, "numen: nothing to read a scan with:", err)
-	}
-	pages, err := editor.Pages()
-	if err != nil {
-		return shownInstallation{}, err
-	}
-
-	made, err := cfg.GetEditorAssembly(ctx)
-	if err != nil {
-		return shownInstallation{}, err
-	}
-	opened, err := editor.Open(ctx, made, vault, os.Stdout)
-	if err != nil {
-		return shownInstallation{}, err
-	}
-	if cfg.PluginHost != nil {
-		cfg.PluginHost.SetVaultPath(opened.GetCurrentVault().Path)
-	}
-	return shownInstallation{pages: pages, opened: opened}, nil
-}
-
-// makeEndpoint is the agents' endpoint on the vault in the window.
-func makeEndpoint(
-	ctx context.Context, cfg container.Config, opened *editor.Installation, mcp agentOptions,
-) *agents.Endpoint {
-	return &agents.Endpoint{
-		Serve: func() (func() error, error) {
-			return serveAgents(ctx, cfg, opened, mcp, os.Stdout)
-		},
-		GetVault:       opened.GetCurrentVault,
-		SetAgent:       opened.State.SetAgent,
-		SetUnreachable: func(said string) { opened.State.Unreachable.Store(said) },
-		ErrorHandler:   func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
-	}
-}
-
-// makeApplication is the application serving the page. It ends when its last
-// window closes.
-func makeApplication(
-	opened *editor.Installation, pages http.Handler, behind *shutdown.Sequence,
-	going *vaultFlush, seen visibility,
-) *application.App {
-	return application.New(application.Options{
-		Name: "numen",
-		Assets: application.AssetOptions{
-			Handler: opened.Services.NewHandler(pages),
-		},
-		Mac: application.MacOptions{
-			ApplicationShouldTerminateAfterLastWindowClosed: true,
-		},
-		// Runs on the thread the window is drawn on, after the application has
-		// stopped dispatching.
-		PostShutdown: behind.Run,
-		// A quit that does not come through the window flushes the vault off the
-		// serving thread, then asks for the quit again. A flush that ended with a
-		// question open does not ask.
-		ShouldQuit: func() bool {
-			return requestQuit(going, seen, func() { application.Get().Quit() })
-		},
-	})
-}
-
-// makeWindow is the window the vault is shown in.
-func makeWindow(app *application.App, opened *editor.Installation) *application.WebviewWindow {
-	return app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:  getWindowTitle(opened.GetCurrentVault(), opened.State.GetOpenTabs()),
-		Width:  1280,
-		Height: 860,
-		URL:    "/",
-		// Files dragged from the desktop reach the page, which marks the drop targets.
-		EnableFileDrop: true,
-	})
-}
-
-// connectWindow wires what the window owns into the installation: the folder
-// dialog, the title, dropped files and opening another vault.
-func connectWindow(
-	ctx context.Context, cfg container.Config, window *application.WebviewWindow, opened *editor.Installation,
-	reachable *agents.Endpoint,
-) {
-	// Choosing a folder is the machine's own, and it opens over this window.
-	opened.Services.SetFolderDialog(&folderDialog{window: window})
-
-	// The window is named after what the person is looking at, and is named
-	// again each time the page says what it has open.
-	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.GetCurrentVault(), open)) }
-	opened.State.NotifyOpenTabs = naming
-
-	window.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
-		importDroppedFiles(ctx, opened, event)
-	})
-
-	// Opening another vault, as a person asks for it. The agents are told which
-	// vault they are working when their session opens, so the endpoint they
-	// reach it through is stopped and started again around the swap.
-	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
-		if cfg.PluginHost != nil {
-			cfg.PluginHost.SetVaultPath(v.Path)
-		}
-		err := reachable.RunWhileStopped(func() error { return opened.Show(ctx, v) })
-		naming(opened.State.GetOpenTabs())
-		return err
-	}
-
-	// A tool is served where what it works through is there, so the dialog and
-	// the swap above stand before the agents are let in.
-	//
-	// An agent nobody can reach is a panel that says so, not a window that does
-	// not open. Everything else the window does is the vault, and the vault is
-	// here.
-	reachable.Start()
-}
-
-// importDroppedFiles copies files dropped on the window into the folder the
-// drop target names, and ignores a drop on no target.
-func importDroppedFiles(ctx context.Context, opened *editor.Installation, event *application.WindowEvent) {
-	landed := event.Context().DropTargetDetails()
-	if landed == nil {
-		return
-	}
-	into, marked := landed.Attributes[droppedInto]
-	if !marked {
-		return
-	}
-	opened.Imports(ctx, into, event.Context().DroppedFiles())
-}
-
-// droppedInto is the attribute a page marks a drop target with. Its value is
-// the vault folder a dropped file is filed in, the root being the empty path.
-const droppedInto = "data-file-drop-target"
-
-// getWindowTitle is what the window is called: the application, and the file
-// the person is looking at. A window with no file in front of it is called
-// after the vault it is showing.
-func getWindowTitle(v domain.Vault, open domain.OpenTabs) string {
-	if front, held := open.GetFrontTab(); held && front.Path != "" {
-		return "numen — " + path.Base(front.Path)
-	}
-	if v.Name == "" {
-		return "numen"
-	}
-	return "numen — " + v.Name
-}
-
-// agentOptions is what the person said about letting agents in.
-type agentOptions struct {
-	addr  string
-	isOff bool
 }

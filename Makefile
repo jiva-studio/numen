@@ -7,6 +7,7 @@ PROTOCOL := modules/libs/protocol
 PLUGIN_SDK := modules/libs/plugin-sdk
 
 DESKTOP  := modules/apps/desktop
+DESKTOP_MONOLITH := modules/apps/desktop-monolith
 MOBILE   := modules/apps/mobile
 DOCS     := modules/apps/docs
 LANDING  := modules/apps/landing
@@ -52,12 +53,14 @@ generate-check: lib_protocol_generate_check ## verify generated code matches sch
 desktop: app_desktop_build ## build desktop application
 
 .PHONY: desktop_monolith
-desktop_monolith: ## build desktop application in monolithic mode
-	$(MAKE) app_desktop_build BUILD_TAGS=plugins_monolith
+desktop_monolith: interface ## build desktop application in monolithic mode
+	cd $(DESKTOP_MONOLITH) && CGO_ENABLED=1 go build -tags plugins_monolith -o ../../../numen .
+	$(call bundle,Numen,numen,Info.plist,numen.icns)
 
 .PHONY: desktop_modular
-desktop_modular: plugins_build ## build desktop application in modular mode
-	$(MAKE) app_desktop_build BUILD_TAGS=plugins_modular
+desktop_modular: interface plugins_build ## build desktop application in modular mode
+	cd $(DESKTOP) && CGO_ENABLED=1 go build $(TAGS_FLAG) -o ../../../numen ./cmd/numen
+	$(call bundle,Numen,numen,Info.plist,numen.icns)
 
 .PHONY: plugins
 plugins: plugins_build ## build all native plugins

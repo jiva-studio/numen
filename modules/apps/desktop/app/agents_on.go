@@ -1,6 +1,6 @@
 //go:build !nomcp
 
-package main
+package app
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 // `nomcp`, its counterpart takes its place and nothing of the tools — nor of
 // what serves them — is linked in at all.
 
-const defaultAgentAddr = mcp.DefaultAddr
+const DefaultAgentAddr = mcp.DefaultAddr
 
 // unnamed is what the panel is told where the settings name no agent.
 const unnamed = "no agent is named in the settings"

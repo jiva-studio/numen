@@ -1,6 +1,6 @@
 //go:build !linux
 
-package main
+package app
 
 // setSchemasDir leaves the search path as it is. Only the toolkit on Linux is
 // built on the settings a dialog reads.

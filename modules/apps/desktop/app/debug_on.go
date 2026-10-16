@@ -1,0 +1,167 @@
+//go:build debug
+
+package app
+
+import (
+	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"errors"
+	"flag"
+	"fmt"
+	"math/big"
+	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"syscall"
+	"time"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+)
+
+// DebugOptions holds test settings for debug builds.
+type DebugOptions struct {
+	HttpAddr string
+	IsMockML bool
+}
+
+// RegisterDebugFlags registers debug flags on the flag set.
+func RegisterDebugFlags(fs *flag.FlagSet, opts *Options) {
+	fs.StringVar(&opts.Debug.HttpAddr, "debug-http-addr", "", "serve the window over HTTP without opening an OS window")
+	fs.BoolVar(&opts.Debug.IsMockML, "debug-mock-ml", false, "use fast mock ML models for automated testing")
+}
+
+func (d *DebugOptions) apply(cfg *container.Config) {
+	if d.IsMockML || os.Getenv("NUMEN_MOCK_ML") == "true" {
+		cfg.IsMockML = true
+	}
+}
+
+func (d *DebugOptions) ensureVault(cfg container.Config, vaultPath string) error {
+	if vaultPath == "" {
+		return nil
+	}
+	abs, err := filepath.Abs(vaultPath)
+	if err != nil {
+		return err
+	}
+	info, err := os.Stat(abs)
+	if err != nil || !info.IsDir() {
+		return nil
+	}
+	chosen, err := cfg.Settings()
+	if err != nil {
+		return err
+	}
+	return chosen.SetLastVault(domain.Vault{Path: abs, Name: filepath.Base(abs)})
+}
+
+func (d *DebugOptions) isServingHTTP() bool {
+	return d.HttpAddr != ""
+}
+
+func (d *DebugOptions) serveHTTP(
+	ctx context.Context,
+	cfg container.Config,
+	opened *editor.Installation,
+	pages http.Handler,
+	reachable *agents.Endpoint,
+) error {
+	server := &http.Server{
+		Addr:    d.HttpAddr,
+		Handler: opened.Services.NewHandler(pages),
+	}
+
+	ln, err := net.Listen("tcp", d.HttpAddr)
+	if err != nil {
+		return fmt.Errorf("listen %s: %w", d.HttpAddr, err)
+	}
+	defer ln.Close()
+
+	var tlsConf *tls.Config
+	if os.Getenv("NUMEN_DEBUG_TLS") == "true" {
+		cert, err := generateSelfSignedCert()
+		if err != nil {
+			return fmt.Errorf("generate debug tls cert: %w", err)
+		}
+		tlsConf = &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			MinVersion:   tls.VersionTLS13,
+		}
+		ln = tls.NewListener(ln, tlsConf)
+	}
+
+	naming := func(open domain.OpenTabs) {}
+	opened.State.NotifyOpenTabs = naming
+	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
+		if cfg.PluginHost != nil {
+			cfg.PluginHost.SetVaultPath(v.Path)
+		}
+		err := reachable.RunWhileStopped(func() error { return opened.Show(ctx, v) })
+		naming(opened.State.GetOpenTabs())
+		return err
+	}
+	reachable.Start()
+
+	scheme := "http"
+	if tlsConf != nil {
+		scheme = "https"
+	}
+	fmt.Fprintf(os.Stdout, "numen debug server listening on %s://%s\n", scheme, ln.Addr())
+	_ = os.Stdout.Sync()
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
+	errCh := make(chan error, 1)
+	go func() {
+		if err := server.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			errCh <- err
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+	case <-sigCh:
+	case err := <-errCh:
+		return err
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	return server.Shutdown(shutdownCtx)
+}
+
+func generateSelfSignedCert() (tls.Certificate, error) {
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject:      pkix.Name{CommonName: "127.0.0.1"},
+		IPAddresses:  []net.IP{net.ParseIP("127.0.0.1"), net.IPv6loopback},
+		DNSNames:     []string{"localhost"},
+		NotBefore:    time.Now().Add(-time.Hour),
+		NotAfter:     time.Now().Add(24 * time.Hour),
+		KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+	}
+	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+	return tls.Certificate{
+		Certificate: [][]byte{certDER},
+		PrivateKey:  key,
+	}, nil
+}
