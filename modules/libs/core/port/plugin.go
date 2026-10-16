@@ -58,10 +58,14 @@ type PluginManager interface {
 	FindPluginByFileExtension(ext string) (DiscoveredPlugin, bool)
 	GetPlugin(id string) (DiscoveredPlugin, bool)
 	EnsureActive(ctx context.Context, pluginID string) (Endpoint, error)
+	Acquire(pluginID string)
 	Release(pluginID string)
 	SetSettings(all map[string]map[string]any)
 	SetPersistHandler(handler PluginPersistHandler)
 	NotifyAllPluginConfigs(ctx context.Context) error
 	UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error
 	EmitEvent(event string)
+	GetVaultPath() string
+	CheckPluginPermission(pluginID, permission string) error
+	ValidatePluginPath(pluginID, targetPath string) (string, error)
 }

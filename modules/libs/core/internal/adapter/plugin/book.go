@@ -9,6 +9,8 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 var (
@@ -17,13 +19,13 @@ var (
 
 // BookBridge connects BookService calls to an out-of-process book reader plugin via Connect-RPC.
 type BookBridge struct {
-	host     *Host
+	host     port.PluginManager
 	pluginID string
 	client   numenv1connect.BookServiceClient
 }
 
 // OpenBookBridge activates or connects to the book plugin and returns a BookBridge.
-func OpenBookBridge(ctx context.Context, host *Host) (*BookBridge, error) {
+func OpenBookBridge(ctx context.Context, host port.PluginManager) (*BookBridge, error) {
 	p, ok := host.FindPluginByCapability("book")
 	if !ok {
 		p, ok = host.FindPluginByFileExtension(".epub")

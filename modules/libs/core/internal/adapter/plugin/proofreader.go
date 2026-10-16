@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 var (
@@ -20,7 +21,7 @@ var (
 
 // ProofreaderBridge connects port.Proofreader calls to an out-of-process proofreading plugin via Connect-RPC.
 type ProofreaderBridge struct {
-	host     *Host
+	host     port.PluginManager
 	pluginID string
 	name     string
 	mu       sync.Mutex
@@ -28,7 +29,7 @@ type ProofreaderBridge struct {
 }
 
 // OpenProofreaderBridge activates or connects to the proofreading plugin and returns a port.Proofreader.
-func OpenProofreaderBridge(host *Host) (*ProofreaderBridge, error) {
+func OpenProofreaderBridge(host port.PluginManager) (*ProofreaderBridge, error) {
 	plugin, ok := host.FindPluginByCapability("proofreading")
 	if !ok {
 		return nil, errNoProofreaderPlugin

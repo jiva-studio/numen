@@ -21,13 +21,13 @@ var (
 
 // DownloaderBridge connects port.Downloader calls to an out-of-process downloader plugin via Connect-RPC.
 type DownloaderBridge struct {
-	host     *Host
+	host     port.PluginManager
 	pluginID string
 	client   numenv1connect.DownloadServiceClient
 }
 
 // OpenDownloaderBridge activates or connects to the downloader plugin and returns a port.Downloader.
-func OpenDownloaderBridge(ctx context.Context, host *Host) (*DownloaderBridge, error) {
+func OpenDownloaderBridge(ctx context.Context, host port.PluginManager) (*DownloaderBridge, error) {
 	plugin, ok := host.FindPluginByCapability("downloader")
 	if !ok {
 		plugin, ok = host.FindPluginByCapability("media.download")

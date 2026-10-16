@@ -22,13 +22,13 @@ var (
 
 // AgentBridge connects port.Agent calls to an out-of-process agent plugin via Connect-RPC.
 type AgentBridge struct {
-	host     *Host
+	host     port.PluginManager
 	pluginID string
 	client   numenv1connect.AgentServiceClient
 }
 
 // OpenAgentBridge activates or connects to the agent plugin and returns an AgentBridge.
-func OpenAgentBridge(ctx context.Context, host *Host) (*AgentBridge, error) {
+func OpenAgentBridge(ctx context.Context, host port.PluginManager) (*AgentBridge, error) {
 	if p, ok := host.GetPlugin("md.numen.agent-acp"); ok {
 		return OpenAgentBridgeForPlugin(ctx, host, p.Manifest.ID)
 	}
@@ -46,7 +46,7 @@ func OpenAgentBridge(ctx context.Context, host *Host) (*AgentBridge, error) {
 }
 
 // OpenAgentBridgeForPlugin activates or connects to a specific agent plugin and returns an AgentBridge.
-func OpenAgentBridgeForPlugin(ctx context.Context, host *Host, pluginID string) (*AgentBridge, error) {
+func OpenAgentBridgeForPlugin(ctx context.Context, host port.PluginManager, pluginID string) (*AgentBridge, error) {
 	endpoint, err := host.EnsureActive(ctx, pluginID)
 	if err != nil {
 		return nil, fmt.Errorf("ensure active %s: %w", pluginID, err)

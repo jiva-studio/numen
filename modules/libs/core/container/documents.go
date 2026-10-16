@@ -46,11 +46,10 @@ type hostDocumentPort struct {
 }
 
 func (h hostDocumentPort) openBridge(ctx context.Context) (*plugin.DocumentBridge, error) {
-	host, ok := h.host.(*plugin.Host)
-	if !ok {
+	if h.host == nil {
 		return nil, errDocumentUnavailable
 	}
-	return plugin.OpenDocumentBridge(ctx, host)
+	return plugin.OpenDocumentBridge(ctx, h.host)
 }
 
 func (h hostDocumentPort) Read(ctx context.Context, raw []byte) (domain.TextLayer, error) {

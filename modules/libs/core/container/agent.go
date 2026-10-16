@@ -41,14 +41,13 @@ type hostAgentPort struct {
 }
 
 func (h hostAgentPort) openBridge(ctx context.Context) (*plugin.AgentBridge, error) {
-	host, ok := h.host.(*plugin.Host)
-	if !ok {
+	if h.host == nil {
 		return nil, errAgentUnavailable
 	}
 	if h.pluginID != "" {
-		return plugin.OpenAgentBridgeForPlugin(ctx, host, h.pluginID)
+		return plugin.OpenAgentBridgeForPlugin(ctx, h.host, h.pluginID)
 	}
-	return plugin.OpenAgentBridge(ctx, host)
+	return plugin.OpenAgentBridge(ctx, h.host)
 }
 
 func (h hostAgentPort) StartRun(ctx context.Context, task port.Task) (port.Run, error) {

@@ -23,13 +23,13 @@ var (
 
 // RecogniserBridge connects port.Recogniser calls to an out-of-process OCR plugin via Connect-RPC.
 type RecogniserBridge struct {
-	host     *Host
+	host     port.PluginManager
 	pluginID string
 	client   numenv1connect.RecognitionServiceClient
 }
 
 // OpenRecogniserBridge activates or connects to the OCR plugin and returns a port.Recogniser.
-func OpenRecogniserBridge(ctx context.Context, host *Host) (*RecogniserBridge, error) {
+func OpenRecogniserBridge(ctx context.Context, host port.PluginManager) (*RecogniserBridge, error) {
 	plugin, ok := host.FindPluginByCapability("recognition")
 	if !ok {
 		return nil, errNoRecogniserPlugin
