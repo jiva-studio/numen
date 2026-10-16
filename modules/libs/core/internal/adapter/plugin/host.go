@@ -718,7 +718,7 @@ func (h *Host) createRPCShutdown(endpoint Endpoint, gracePeriod time.Duration) f
 		defer cancel()
 
 		client := numenv1connect.NewPluginLifecycleServiceClient(
-			endpoint.HTTPClient(),
+			EndpointClient(endpoint),
 			endpoint.BaseURL(),
 			connect.WithInterceptors(authInterceptor(endpoint.Token)),
 		)

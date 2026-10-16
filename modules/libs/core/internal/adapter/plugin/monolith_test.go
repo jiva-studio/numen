@@ -222,7 +222,7 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive(downloader) failed: %v", err)
 	}
-	downloadClient := numenv1connect.NewDownloadServiceClient(endpointDownloader.HTTPClient(), endpointDownloader.BaseURL())
+	downloadClient := numenv1connect.NewDownloadServiceClient(EndpointClient(endpointDownloader), endpointDownloader.BaseURL())
 	downloadResp, err := downloadClient.GetDownloadModel(ctx, connect.NewRequest(&v1.GetDownloadModelRequest{}))
 	if err != nil {
 		t.Fatalf("downloadClient.GetDownloadModel failed: %v", err)
@@ -236,7 +236,7 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive(agent) failed: %v", err)
 	}
-	agentClient := numenv1connect.NewAgentServiceClient(endpointAgent.HTTPClient(), endpointAgent.BaseURL())
+	agentClient := numenv1connect.NewAgentServiceClient(EndpointClient(endpointAgent), endpointAgent.BaseURL())
 	agentResp, err := agentClient.GetAgentTools(ctx, connect.NewRequest(&v1.GetAgentToolsRequest{}))
 	if err != nil {
 		t.Fatalf("agentClient.GetAgentTools failed: %v", err)
@@ -250,7 +250,7 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive(proofreading) failed: %v", err)
 	}
-	proofClient := numenv1connect.NewProofreadingServiceClient(endpointProof.HTTPClient(), endpointProof.BaseURL())
+	proofClient := numenv1connect.NewProofreadingServiceClient(EndpointClient(endpointProof), endpointProof.BaseURL())
 	proofResp, err := proofClient.GetProofreaderInfo(ctx, connect.NewRequest(&v1.GetProofreaderInfoRequest{}))
 	if err != nil {
 		t.Fatalf("proofClient.GetProofreaderInfo failed: %v", err)
