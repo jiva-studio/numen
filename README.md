@@ -8,8 +8,8 @@
 [![Total Downloads](https://img.shields.io/github/downloads/jiva-studio/numen/total?color=2ea44f&logo=github)](https://github.com/jiva-studio/numen/releases)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](https://github.com/jiva-studio/numen/releases/latest)
-[![Desktop E2E](https://github.com/jiva-studio/numen/actions/workflows/desktop-e2e.yml/badge.svg)](https://github.com/jiva-studio/numen/actions/workflows/desktop-e2e.yml)
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/jiva-studio/numen/badge)](https://securityscorecards.dev/viewer/?uri=github.com/jiva-studio/numen)
+[![End-to-End](https://img.shields.io/github/actions/workflow/status/jiva-studio/numen/desktop-e2e.yml?branch=main&label=End-to-End)](https://github.com/jiva-studio/numen/actions/workflows/desktop-e2e.yml)
+[![Scorecard](https://img.shields.io/ossf-scorecard/github.com/jiva-studio/numen?label=Scorecard)](https://securityscorecards.dev/viewer/?uri=github.com/jiva-studio/numen)
 [![CodeQL](https://github.com/jiva-studio/numen/actions/workflows/codeql.yml/badge.svg)](https://github.com/jiva-studio/numen/actions/workflows/codeql.yml)
 
 **[Download](#download)** · [Website](https://numen.md) · [User Manual](https://docs.numen.md) · [Forum](https://forum.numen.md)
