@@ -18,7 +18,6 @@ const props = withDefaults(
     at: '',
     path: '',
     title: 'Record Audio',
-    state: undefined,
   },
 )
 

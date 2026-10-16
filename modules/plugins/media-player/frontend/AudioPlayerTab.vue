@@ -26,7 +26,6 @@ const props = withDefaults(
     path: '',
     file: '',
     title: '',
-    state: undefined,
   },
 )
 
