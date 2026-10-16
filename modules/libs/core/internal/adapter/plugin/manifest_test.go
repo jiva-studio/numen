@@ -122,6 +122,14 @@ func TestReadManifestSettingsValidation(t *testing.T) {
 			json: `{"id":"a","name":"A","version":"1","settings":[{"key":"k","type":"enum","title":"T","options":[]}]}`,
 		},
 		{
+			name: "select without options",
+			json: `{"id":"a","name":"A","version":"1","settings":[{"key":"k","type":"select","title":"T","options":[]}]}`,
+		},
+		{
+			name: "select missing options",
+			json: `{"id":"a","name":"A","version":"1","settings":[{"key":"k","type":"select","title":"T"}]}`,
+		},
+		{
 			name: "range min greater than max",
 			json: `{"id":"a","name":"A","version":"1","settings":[{"key":"k","type":"range","title":"T","min":100,"max":50}]}`,
 		},
@@ -165,4 +173,31 @@ func TestReadManifestValidSettings(t *testing.T) {
 	if len(m.Settings[1].Options) != 2 {
 		t.Errorf("expected enum setting to have 2 options")
 	}
+}
+
+func TestManifestSelectSetting(t *testing.T) {
+	t.Run("passes when options are present", func(t *testing.T) {
+		raw := `{"id":"a","name":"A","version":"1","settings":[{"key":"mode","type":"select","title":"Mode","options":["fast","accurate"]}]}`
+		m, err := ReadManifest(strings.NewReader(raw))
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(m.Settings) != 1 {
+			t.Fatalf("got %d settings, want 1", len(m.Settings))
+		}
+		if m.Settings[0].Type != "select" {
+			t.Errorf("got type %q, want select", m.Settings[0].Type)
+		}
+		if len(m.Settings[0].Options) != 2 {
+			t.Errorf("expected select setting to have 2 options")
+		}
+	})
+
+	t.Run("fails when options are missing", func(t *testing.T) {
+		raw := `{"id":"a","name":"A","version":"1","settings":[{"key":"mode","type":"select","title":"Mode"}]}`
+		_, err := ReadManifest(strings.NewReader(raw))
+		if err == nil {
+			t.Fatal("expected error for select without options, got nil")
+		}
+	})
 }
