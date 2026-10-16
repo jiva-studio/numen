@@ -1235,10 +1235,11 @@ jobs:
             fi
           done
 
+          echo "{}" > "$RUNNER_TEMP/predicate.json"
           for file in "${unique_files[@]}"; do
             echo "Signing $file..."
             cosign sign-blob --yes --bundle "${file}.sigstore.json" "$file"
-            cosign attest-blob --yes --bundle "${file}.intoto.jsonl" --predicate "$RUNNER_TEMP/notes.md" --type https://in-toto.io/Statement/v0.1 "$file"
+            cosign attest-blob --yes --bundle "${file}.intoto.jsonl" --predicate "$RUNNER_TEMP/predicate.json" --type https://in-toto.io/Statement/v0.1 "$file"
           done
 
       - name: Create and push Git tag
