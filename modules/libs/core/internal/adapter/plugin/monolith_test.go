@@ -152,7 +152,7 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 		t.Fatal("expected non-nil in-process transport")
 	}
 
-	docClient := numenv1connect.NewDocumentServiceClient(endpointDoc.HTTPClient(), endpointDoc.BaseURL())
+	docClient := numenv1connect.NewDocumentServiceClient(EndpointClient(endpointDoc), endpointDoc.BaseURL())
 	docResp, err := docClient.ExtractText(ctx, connect.NewRequest(&v1.ExtractTextRequest{}))
 	if err != nil {
 		t.Fatalf("docClient.ExtractText failed: %v", err)
@@ -166,7 +166,7 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive(ocr) failed: %v", err)
 	}
-	recogClient := numenv1connect.NewRecognitionServiceClient(endpointOcr.HTTPClient(), endpointOcr.BaseURL())
+	recogClient := numenv1connect.NewRecognitionServiceClient(EndpointClient(endpointOcr), endpointOcr.BaseURL())
 	recogResp, err := recogClient.GetRecognitionModel(ctx, connect.NewRequest(&v1.GetRecognitionModelRequest{}))
 	if err != nil {
 		t.Fatalf("recogClient.GetRecognitionModel failed: %v", err)
@@ -180,7 +180,7 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive(epub) failed: %v", err)
 	}
-	bookClient := numenv1connect.NewBookServiceClient(endpointBook.HTTPClient(), endpointBook.BaseURL())
+	bookClient := numenv1connect.NewBookServiceClient(EndpointClient(endpointBook), endpointBook.BaseURL())
 	bookResp, err := bookClient.GetBook(ctx, connect.NewRequest(&v1.GetBookRequest{}))
 	if err != nil {
 		t.Fatalf("bookClient.GetBook failed: %v", err)
@@ -194,7 +194,7 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive(transcription) failed: %v", err)
 	}
-	transClient := numenv1connect.NewTranscriptionServiceClient(endpointTrans.HTTPClient(), endpointTrans.BaseURL())
+	transClient := numenv1connect.NewTranscriptionServiceClient(EndpointClient(endpointTrans), endpointTrans.BaseURL())
 	transResp, err := transClient.GetTranscriptionModel(ctx, connect.NewRequest(&v1.GetTranscriptionModelRequest{}))
 	if err != nil {
 		t.Fatalf("transClient.GetTranscriptionModel failed: %v", err)
@@ -208,7 +208,7 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive(embeddings) failed: %v", err)
 	}
-	embedClient := numenv1connect.NewEmbeddingServiceClient(endpointEmbed.HTTPClient(), endpointEmbed.BaseURL())
+	embedClient := numenv1connect.NewEmbeddingServiceClient(EndpointClient(endpointEmbed), endpointEmbed.BaseURL())
 	embedResp, err := embedClient.GetEmbeddingModel(ctx, connect.NewRequest(&v1.GetEmbeddingModelRequest{}))
 	if err != nil {
 		t.Fatalf("embedClient.GetEmbeddingModel failed: %v", err)

@@ -65,7 +65,7 @@ func (b *ProofreaderBridge) Proofread(ctx context.Context, batches []domain.Proo
 	}
 	defer b.host.Release(b.pluginID)
 
-	httpClient := endpoint.HTTPClient()
+	httpClient := EndpointClient(endpoint)
 	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
 	client := numenv1connect.NewProofreadingServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 

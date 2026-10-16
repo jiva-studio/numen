@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 var (
@@ -20,56 +22,35 @@ var (
 	errHandshakeTimeout = errors.New("timeout waiting for plugin handshake")
 )
 
+// DefaultPluginTransport is the HTTP transport for plugin endpoints.
+var DefaultPluginTransport = &http.Transport{
+	Proxy: http.ProxyFromEnvironment,
+	DialContext: (&net.Dialer{
+		Timeout:   15 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}).DialContext,
+	ForceAttemptHTTP2:     true,
+	MaxIdleConns:          100,
+	MaxIdleConnsPerHost:   20,
+	IdleConnTimeout:       90 * time.Second,
+	TLSHandshakeTimeout:   10 * time.Second,
+	ExpectContinueTimeout: 1 * time.Second,
+}
+
 var defaultPluginClient = &http.Client{
-	Transport: &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout:   15 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).DialContext,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          100,
-		MaxIdleConnsPerHost:   20,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-	},
+	Transport: DefaultPluginTransport,
+}
+
+// EndpointClient returns an HTTP client routed to this endpoint.
+func EndpointClient(e Endpoint) *http.Client {
+	if tr, ok := e.Transport.(http.RoundTripper); ok && tr != nil {
+		return &http.Client{Transport: tr}
+	}
+	return defaultPluginClient
 }
 
 // Endpoint holds connection parameters and credentials for an active plugin.
-type Endpoint struct {
-	Host      string
-	Port      int
-	Token     string
-	Transport http.RoundTripper
-}
-
-// HTTPClient returns an HTTP client routed to this endpoint.
-func (e Endpoint) HTTPClient() *http.Client {
-	if e.Transport != nil {
-		return &http.Client{Transport: e.Transport}
-	}
-	return &http.Client{Transport: defaultPluginClient.Transport}
-}
-
-// Address returns host and port joined with a colon.
-func (e Endpoint) Address() string {
-	if e.Port == 0 {
-		return e.Host
-	}
-	return net.JoinHostPort(e.Host, strconv.Itoa(e.Port))
-}
-
-// BaseURL returns the HTTP scheme, host, and port for the plugin server.
-func (e Endpoint) BaseURL() string {
-	if e.Port == 0 {
-		if e.Host != "" {
-			return fmt.Sprintf("http://%s", e.Host)
-		}
-		return "http://inprocess"
-	}
-	return fmt.Sprintf("http://%s:%d", e.Host, e.Port)
-}
+type Endpoint = port.Endpoint
 
 // GenerateAuthToken produces a cryptographically secure hex-encoded 32-byte secret token.
 func GenerateAuthToken() (string, error) {

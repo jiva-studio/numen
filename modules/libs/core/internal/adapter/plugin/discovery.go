@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // DiscoveredPlugin is a validated plugin located on disk.
-type DiscoveredPlugin struct {
-	Dir      string
-	Manifest Manifest
-}
+type DiscoveredPlugin = port.DiscoveredPlugin
 
 // DiscoverPlugins scans directories and loads all valid plugin manifests found.
 func DiscoverPlugins(dirs []string) ([]DiscoveredPlugin, error) {

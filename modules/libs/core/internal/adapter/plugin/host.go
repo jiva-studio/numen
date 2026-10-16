@@ -17,6 +17,8 @@ import (
 	"connectrpc.com/connect"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 var (
@@ -29,7 +31,7 @@ var (
 type Launcher func(ctx context.Context, p DiscoveredPlugin, port int, token string) (*os.Process, io.ReadCloser, error)
 
 // PersistHandler persists a changed plugin setting to host configuration.
-type PersistHandler func(pluginID string, key string, value any) error
+type PersistHandler = port.PluginPersistHandler
 
 // PluginStatus describes the enablement and runtime status of a plugin.
 type PluginStatus struct {
@@ -984,7 +986,7 @@ func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
 	values := formatPluginSettings(rawSettings)
 	h.mu.RUnlock()
 
-	httpClient := endpoint.HTTPClient()
+	httpClient := EndpointClient(endpoint)
 	client := numenv1connect.NewPluginLifecycleServiceClient(
 		httpClient,
 		endpoint.BaseURL(),
@@ -1029,8 +1031,55 @@ func (h *Host) NotifyAllPluginConfigs(ctx context.Context) error {
 	return firstErr
 }
 
-// GetPluginInfos returns wire specifications of all registered plugins and their settings schemas.
-func (h *Host) GetPluginInfos() []*v1.PluginInfo {
+// GetPluginInfos returns specifications of all registered plugins and their settings schemas.
+func (h *Host) GetPluginInfos() []port.PluginInfo {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	result := make([]port.PluginInfo, 0, len(h.plugins))
+	for _, p := range h.plugins {
+		isActive := h.isPluginActiveLocked(p.Manifest.ID)
+
+		settings := make([]port.PluginSetting, 0, len(p.Manifest.Settings))
+		for _, s := range p.Manifest.Settings {
+			defJSON := ""
+			if s.Default != nil {
+				if b, err := json.Marshal(s.Default); err == nil {
+					defJSON = string(b)
+				}
+			}
+			minVal := s.Min
+			maxVal := s.Max
+			stepVal := s.Step
+			settings = append(settings, port.PluginSetting{
+				Key:         s.Key,
+				Type:        s.Type,
+				Title:       s.Title,
+				Description: s.Description,
+				DefaultJSON: defJSON,
+				Palette:     s.Palette,
+				Options:     s.Options,
+				Min:         &minVal,
+				Max:         &maxVal,
+				Step:        &stepVal,
+			})
+		}
+
+		result = append(result, port.PluginInfo{
+			ID:           p.Manifest.ID,
+			Name:         p.Manifest.Name,
+			Version:      p.Manifest.Version,
+			Description:  p.Manifest.Description,
+			Capabilities: p.Manifest.Capabilities,
+			Settings:     settings,
+			IsActive:     isActive,
+		})
+	}
+	return result
+}
+
+// GetWirePluginInfos returns wire specifications of all registered plugins and their settings schemas.
+func (h *Host) GetWirePluginInfos() []*v1.PluginInfo {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
@@ -1092,7 +1141,7 @@ func (s *PluginServiceServer) GetPlugins(
 	_ *connect.Request[v1.GetPluginsRequest],
 ) (*connect.Response[v1.GetPluginsResponse], error) {
 	return connect.NewResponse(&v1.GetPluginsResponse{
-		Plugins: s.host.GetPluginInfos(),
+		Plugins: s.host.GetWirePluginInfos(),
 	}), nil
 }
 

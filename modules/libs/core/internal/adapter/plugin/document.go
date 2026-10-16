@@ -46,7 +46,7 @@ func OpenDocumentBridge(ctx context.Context, host *Host) (*DocumentBridge, error
 		return nil, fmt.Errorf("ensure active %s: %w", p.Manifest.ID, err)
 	}
 
-	httpClient := endpoint.HTTPClient()
+	httpClient := EndpointClient(endpoint)
 	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
 	client := numenv1connect.NewDocumentServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 

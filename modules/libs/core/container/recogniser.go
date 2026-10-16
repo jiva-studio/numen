@@ -32,14 +32,12 @@ func (c Config) PrepareRecogniser(_ context.Context) error {
 
 // Recogniser is what reads a scanned page on this machine, opened now.
 func (c Config) Recogniser(ctx context.Context) (recogniser port.Recogniser, closer func() error, why error) {
-	if c.PluginHost != nil && !c.SafeMode {
-		if _, ok := c.PluginHost.FindPluginByCapability("recognition"); ok {
-			bridge, err := plugin.OpenRecogniserBridge(ctx, c.PluginHost)
-			if err != nil {
-				return nil, nil, err
-			}
-			return bridge, bridge.Close, nil
+	if host, ok := c.findPluginHost("recognition"); ok {
+		bridge, err := plugin.OpenRecogniserBridge(ctx, host)
+		if err != nil {
+			return nil, nil, err
 		}
+		return bridge, bridge.Close, nil
 	}
 	return nil, nil, errRecognitionUnavailable
 }
@@ -76,14 +74,12 @@ func (c Config) OpenRecognitionWorker(
 func (c Config) openRecognitionRuntime(
 	ctx context.Context, _ func(what string, done, total int64),
 ) (port.Recogniser, func() error, error) {
-	if c.PluginHost != nil && !c.SafeMode {
-		if _, ok := c.PluginHost.FindPluginByCapability("recognition"); ok {
-			bridge, err := plugin.OpenRecogniserBridge(ctx, c.PluginHost)
-			if err != nil {
-				return nil, nil, err
-			}
-			return bridge, bridge.Close, nil
+	if host, ok := c.findPluginHost("recognition"); ok {
+		bridge, err := plugin.OpenRecogniserBridge(ctx, host)
+		if err != nil {
+			return nil, nil, err
 		}
+		return bridge, bridge.Close, nil
 	}
 	return nil, nil, errRecognitionUnavailable
 }

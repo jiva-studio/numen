@@ -34,14 +34,12 @@ func (c Config) Transcriber(ctx context.Context) (transcriber port.Transcriber, 
 		mock := NewMockTranscriber()
 		return mock, mock.Close, nil
 	}
-	if c.PluginHost != nil && !c.SafeMode {
-		if _, ok := c.PluginHost.FindPluginByCapability("transcription"); ok {
-			bridge, err := plugin.OpenTranscriberBridge(ctx, c.PluginHost)
-			if err != nil {
-				return nil, nil, err
-			}
-			return bridge, bridge.Close, nil
+	if host, ok := c.findPluginHost("transcription"); ok {
+		bridge, err := plugin.OpenTranscriberBridge(ctx, host)
+		if err != nil {
+			return nil, nil, err
 		}
+		return bridge, bridge.Close, nil
 	}
 	return nil, nil, errTranscriptionUnavailable
 }
@@ -83,14 +81,12 @@ func (c Config) openTranscriptionRuntime(
 		mock := NewMockTranscriber()
 		return mock, mock.Close, nil
 	}
-	if c.PluginHost != nil && !c.SafeMode {
-		if _, ok := c.PluginHost.FindPluginByCapability("transcription"); ok {
-			bridge, err := plugin.OpenTranscriberBridge(ctx, c.PluginHost)
-			if err != nil {
-				return nil, nil, err
-			}
-			return bridge, bridge.Close, nil
+	if host, ok := c.findPluginHost("transcription"); ok {
+		bridge, err := plugin.OpenTranscriberBridge(ctx, host)
+		if err != nil {
+			return nil, nil, err
 		}
+		return bridge, bridge.Close, nil
 	}
 	return nil, nil, errTranscriptionUnavailable
 }

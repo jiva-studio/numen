@@ -5,7 +5,12 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
+
+var _ port.PluginManager = (*plugin.Host)(nil)
 
 func TestContainerSafeModeDegradation(t *testing.T) {
 	tmp := t.TempDir()
@@ -108,7 +113,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 	t.Run("plugin processes were never started", func(t *testing.T) {
 		for _, info := range cfg.PluginHost.GetPluginInfos() {
 			if info.IsActive {
-				t.Fatalf("expected plugin %s to remain inactive in safe mode", info.Id)
+				t.Fatalf("expected plugin %s to remain inactive in safe mode", info.ID)
 			}
 		}
 	})
