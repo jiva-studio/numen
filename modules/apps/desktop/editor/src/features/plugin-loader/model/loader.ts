@@ -2,19 +2,20 @@
  * Dynamic frontend plugin loader for desktop editor.
  */
 import { shallowRef } from 'vue'
-import type { Disposable, PluginLifecycle } from '@numen/plugin-sdk'
+import type { Disposable, PluginLifecycle, PluginManifest } from '@numen/plugin-sdk'
 import type { PluginHost } from '@/entities/plugin'
 
 export interface PluginLoaderDeps {
   readonly host: PluginHost
+  readonly baseUrl?: string
+  readonly fetch?: typeof fetch
+  readonly dynamicImport?: (url: string) => Promise<unknown>
 }
 
 interface ActivePluginEntry {
   readonly pluginId: string
   readonly lifecycle?: PluginLifecycle
 }
-
-const loadInTree = (name: string) => import(`@plugins/${name}/frontend/index.ts`)
 
 const IN_TREE_LOADERS: Record<string, () => Promise<unknown>> = {
   'md.numen.pdf': () => import('@plugins/reader-pdf/frontend'),
@@ -24,6 +25,29 @@ const IN_TREE_LOADERS: Record<string, () => Promise<unknown>> = {
   'md.numen.view-plex-graph': () => import('@plugins/view-plex-graph/frontend'),
   'md.numen.media-player': () => import('@plugins/media-player/frontend'),
   'md.numen.downloader': () => import('@plugins/downloader/frontend'),
+}
+
+function injectPluginStyles(baseUrl: string, pluginId: string, stylesPath: string): void {
+  if (typeof document === 'undefined') return
+  const linkId = `plugin-styles-${pluginId}`
+  if (document.getElementById(linkId) || document.querySelector(`link[data-plugin-id="${pluginId}"]`)) {
+    return
+  }
+  const link = document.createElement('link')
+  link.id = linkId
+  link.rel = 'stylesheet'
+  const normalizedPath = stylesPath.startsWith('/') ? stylesPath.slice(1) : stylesPath
+  link.href = `${baseUrl}/${pluginId}/${normalizedPath}`
+  link.setAttribute('data-plugin-id', pluginId)
+  document.head.appendChild(link)
+}
+
+function removePluginStyles(pluginId: string): void {
+  if (typeof document === 'undefined') return
+  const links = document.querySelectorAll(`link[data-plugin-id="${pluginId}"], link#plugin-styles-${pluginId}`)
+  for (const link of links) {
+    link.remove()
+  }
 }
 
 function extractLifecycleFunction(
@@ -56,10 +80,40 @@ function getLifecycleHooks(resolved: unknown): {
   return { activate, deactivate }
 }
 
+async function loadDynamicModule(
+  pluginId: string,
+  baseUrl: string,
+  fetchFn: typeof fetch,
+  importFn: (url: string) => Promise<unknown>,
+): Promise<unknown> {
+  let entrypoint = 'dist/index.js'
+  try {
+    const res = await fetchFn(`${baseUrl}/${pluginId}/manifest.json`)
+    if (res.ok) {
+      const manifest = (await res.json()) as PluginManifest
+      if (manifest?.frontend?.styles) {
+        injectPluginStyles(baseUrl, pluginId, manifest.frontend.styles)
+      }
+      if (manifest?.frontend?.entrypoint) {
+        entrypoint = manifest.frontend.entrypoint
+      }
+    }
+  } catch {
+    // Proceed with default entrypoint
+  }
+
+  const normalizedEntrypoint = entrypoint.startsWith('/') ? entrypoint.slice(1) : entrypoint
+  const moduleUrl = `${baseUrl}/${pluginId}/${normalizedEntrypoint}`
+  return importFn(moduleUrl)
+}
+
 async function resolveModule(
   loaders: Map<string, () => Promise<unknown>>,
   pluginId: string,
-  candidate?: unknown,
+  candidate: unknown,
+  baseUrl: string,
+  fetchFn: typeof fetch,
+  importFn: (url: string) => Promise<unknown>,
 ): Promise<unknown> {
   if (candidate !== undefined) {
     if (typeof candidate === 'function' && !('activate' in candidate)) {
@@ -68,13 +122,17 @@ async function resolveModule(
     return candidate
   }
   const loader = loaders.get(pluginId)
-  return loader ? loader() : undefined
+  if (loader) return loader()
+  return loadDynamicModule(pluginId, baseUrl, fetchFn, importFn)
 }
 
 interface ActivateContext {
   readonly host: PluginHost
   readonly loaders: Map<string, () => Promise<unknown>>
   readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
+  readonly baseUrl: string
+  readonly fetchFn: typeof fetch
+  readonly importFn: (url: string) => Promise<unknown>
 }
 
 async function activateEntry(
@@ -82,25 +140,31 @@ async function activateEntry(
   pluginId: string,
   pluginModule?: unknown,
 ): Promise<boolean> {
-  const { host, loaders, activePlugins } = ctx
+  const { host, loaders, activePlugins, baseUrl, fetchFn, importFn } = ctx
   if (activePlugins.value.has(pluginId)) return true
-  const resolved = await resolveModule(loaders, pluginId, pluginModule)
-  if (!resolved) return false
+  try {
+    const resolved = await resolveModule(loaders, pluginId, pluginModule, baseUrl, fetchFn, importFn)
+    if (!resolved) return false
 
-  const { activate, deactivate } = getLifecycleHooks(resolved)
-  if (activate) {
-    await activate(host.createContext(pluginId))
+    const { activate, deactivate } = getLifecycleHooks(resolved)
+    if (activate) {
+      await activate(host.createContext(pluginId))
+    }
+
+    const lifecycle: PluginLifecycle = {
+      activate: activate ?? (() => {}),
+      ...(deactivate ? { deactivate } : {}),
+    }
+
+    const next = new Map(activePlugins.value)
+    next.set(pluginId, { pluginId, lifecycle })
+    activePlugins.value = next
+    return true
+  } catch {
+    removePluginStyles(pluginId)
+    host.disposePlugin(pluginId)
+    return false
   }
-
-  const lifecycle: PluginLifecycle = {
-    activate: activate ?? (() => {}),
-    ...(deactivate ? { deactivate } : {}),
-  }
-
-  const next = new Map(activePlugins.value)
-  next.set(pluginId, { pluginId, lifecycle })
-  activePlugins.value = next
-  return true
 }
 
 async function deactivateEntry(
@@ -110,6 +174,7 @@ async function deactivateEntry(
 ): Promise<boolean> {
   const entry = activePlugins.value.get(pluginId)
   if (!entry) {
+    removePluginStyles(pluginId)
     host.disposePlugin(pluginId)
     return false
   }
@@ -118,6 +183,7 @@ async function deactivateEntry(
       await entry.lifecycle.deactivate()
     }
   } finally {
+    removePluginStyles(pluginId)
     host.disposePlugin(pluginId)
     const next = new Map(activePlugins.value)
     next.delete(pluginId)
@@ -168,8 +234,11 @@ async function closeLoader(
 
 export function createPluginLoader(deps: PluginLoaderDeps) {
   const { host } = deps
+  const baseUrl = deps.baseUrl ?? '/api/plugins'
+  const fetchFn = deps.fetch ?? ((input: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(input, init))
+  const importFn = deps.dynamicImport ?? ((url: string) => import(/* @vite-ignore */ url))
   const activePlugins = shallowRef<ReadonlyMap<string, ActivePluginEntry>>(new Map())
-  const moduleLoaders = new Map<string, () => Promise<unknown>>(Object.entries(IN_TREE_LOADERS))
+  const moduleLoaders = new Map<string, () => Promise<unknown>>()
   const settingSubscriptions = new Map<string, Disposable>()
   let hasStarted = false
 
@@ -180,7 +249,11 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
   }
 
   const activatePlugin = (pluginId: string, pluginModule?: unknown) =>
-    activateEntry({ host, loaders: moduleLoaders, activePlugins }, pluginId, pluginModule)
+    activateEntry(
+      { host, loaders: moduleLoaders, activePlugins, baseUrl, fetchFn, importFn },
+      pluginId,
+      pluginModule,
+    )
 
   const deactivatePlugin = (pluginId: string) =>
     deactivateEntry(host, activePlugins, pluginId)

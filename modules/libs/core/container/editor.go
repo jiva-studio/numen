@@ -52,6 +52,8 @@ func NewEditorAssembly(cfg Config, registry port.VaultRegistry, db *Index) Edito
 	return EditorAssembly{cfg: cfg, registry: registry, db: db}
 }
 
+func (e EditorAssembly) GetPluginManager() port.PluginManager { return e.cfg.PluginHost }
+
 func (e EditorAssembly) OpenBookClient(ctx context.Context) (any, func(), error) {
 	if e.cfg.PluginHost == nil || e.cfg.SafeMode {
 		return nil, nil, errors.New("no plugin host configured")
