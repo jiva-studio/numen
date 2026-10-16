@@ -152,6 +152,16 @@ jobs:
           go build -tags plugins_monolith -o /dev/null ./cmd/numen
           go build -tags plugins_modular -o /dev/null ./cmd/numen
 
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      - name: Install Node dependencies
+        working-directory: modules
+        run: npm ci
+
       - name: Build and test modular plugins
         working-directory: .
         run: |
