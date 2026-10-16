@@ -23,12 +23,17 @@ type DiscoveredPlugin struct {
 	Manifest PluginManifest
 }
 
+// PluginTransport represents an underlying communication channel for a plugin endpoint.
+type PluginTransport interface {
+	RoundTripTransport()
+}
+
 // Endpoint holds connection parameters and credentials for an active plugin.
 type Endpoint struct {
 	Host      string
 	Port      int
 	Token     string
-	Transport any
+	Transport PluginTransport
 }
 
 // Address returns host and port joined with a colon.
@@ -50,22 +55,62 @@ func (e Endpoint) BaseURL() string {
 	return fmt.Sprintf("http://%s:%d", e.Host, e.Port)
 }
 
-// PluginManager coordinates process lifecycle, discovery, settings, and RPC routing for modular extensions.
-type PluginManager interface {
-	Discover() error
-	GetPluginInfos() []PluginInfo
+// PluginResolver locates plugins by capability, file extension, or identifier.
+type PluginResolver interface {
 	FindPluginByCapability(capability string) (DiscoveredPlugin, bool)
 	FindPluginByFileExtension(ext string) (DiscoveredPlugin, bool)
 	GetPlugin(id string) (DiscoveredPlugin, bool)
+}
+
+// PluginActivator activates plugins and manages active references.
+type PluginActivator interface {
 	EnsureActive(ctx context.Context, pluginID string) (Endpoint, error)
-	Acquire(pluginID string)
 	Release(pluginID string)
+}
+
+// PluginAcquirer increments the active reference count for a plugin.
+type PluginAcquirer interface {
+	Acquire(pluginID string)
+}
+
+// PluginAuthorizer verifies plugin permissions.
+type PluginAuthorizer interface {
+	CheckPluginPermission(pluginID, permission string) error
+}
+
+// PluginPathValidator validates paths within the vault boundary for plugins.
+type PluginPathValidator interface {
+	GetVaultPath() string
+	ValidatePluginPath(pluginID, targetPath string) (string, error)
+}
+
+// PluginDiscoverer scans for available plugins and returns their metadata.
+type PluginDiscoverer interface {
+	Discover() error
+	GetPluginInfos() []PluginInfo
+}
+
+// PluginConfigurator manages configuration and settings for plugins.
+type PluginConfigurator interface {
 	SetSettings(all map[string]map[string]any)
 	SetPersistHandler(handler PluginPersistHandler)
 	NotifyAllPluginConfigs(ctx context.Context) error
 	UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error
+}
+
+// PluginEventEmitter broadcasts events to plugins.
+type PluginEventEmitter interface {
 	EmitEvent(event string)
-	GetVaultPath() string
-	CheckPluginPermission(pluginID, permission string) error
-	ValidatePluginPath(pluginID, targetPath string) (string, error)
+}
+
+// PluginManager coordinates process lifecycle, discovery, settings, and RPC routing for modular extensions.
+type PluginManager interface {
+	PluginDiscoverer
+	PluginResolver
+	PluginActivator
+	PluginAcquirer
+	PluginConfigurator
+	PluginEventEmitter
+	PluginAuthorizer
+	PluginPathValidator
 }

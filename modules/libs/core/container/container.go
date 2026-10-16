@@ -274,7 +274,7 @@ func (c Config) GetSettingsWriter() func(written []port.Setting) error {
 	}
 }
 
-func notifyPluginSettings(host port.PluginManager, written []port.Setting) {
+func notifyPluginSettings(host port.PluginConfigurator, written []port.Setting) {
 	if host == nil {
 		return
 	}

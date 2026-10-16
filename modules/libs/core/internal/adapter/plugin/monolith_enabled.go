@@ -194,6 +194,9 @@ type InProcessTransport struct {
 	handler http.Handler
 }
 
+// RoundTripTransport marks InProcessTransport as satisfying port.PluginTransport.
+func (t *InProcessTransport) RoundTripTransport() {}
+
 // NewInProcessTransport wraps an HTTP handler in an in-memory round tripper.
 func NewInProcessTransport(handler http.Handler) *InProcessTransport {
 	return &InProcessTransport{handler: handler}

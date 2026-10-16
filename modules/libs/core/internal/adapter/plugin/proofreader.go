@@ -19,9 +19,16 @@ var (
 	errNoProofreaderPlugin = errors.New("no active proofreading plugin found")
 )
 
+// ProofreaderPluginHost provides plugin resolution, activation, and permission checking for proofreading.
+type ProofreaderPluginHost interface {
+	port.PluginResolver
+	port.PluginActivator
+	port.PluginAuthorizer
+}
+
 // ProofreaderBridge connects port.Proofreader calls to an out-of-process proofreading plugin via Connect-RPC.
 type ProofreaderBridge struct {
-	host     port.PluginManager
+	host     ProofreaderPluginHost
 	pluginID string
 	name     string
 	mu       sync.Mutex
@@ -29,7 +36,7 @@ type ProofreaderBridge struct {
 }
 
 // OpenProofreaderBridge activates or connects to the proofreading plugin and returns a port.Proofreader.
-func OpenProofreaderBridge(host port.PluginManager) (*ProofreaderBridge, error) {
+func OpenProofreaderBridge(host ProofreaderPluginHost) (*ProofreaderBridge, error) {
 	plugin, ok := host.FindPluginByCapability("proofreading")
 	if !ok {
 		return nil, errNoProofreaderPlugin

@@ -41,10 +41,16 @@ var defaultPluginClient = &http.Client{
 	Transport: DefaultPluginTransport,
 }
 
+// PluginTransport is an in-process or custom transport for a plugin endpoint.
+type PluginTransport = port.PluginTransport
+
 // EndpointClient returns an HTTP client routed to this endpoint.
 func EndpointClient(e Endpoint) *http.Client {
-	if tr, ok := e.Transport.(http.RoundTripper); ok && tr != nil {
-		return &http.Client{Transport: tr}
+	if e.Transport != nil {
+		e.Transport.RoundTripTransport()
+		if rt, ok := e.Transport.(http.RoundTripper); ok && rt != nil {
+			return &http.Client{Transport: rt}
+		}
 	}
 	return defaultPluginClient
 }

@@ -17,15 +17,21 @@ var (
 	ErrNoBookPlugin = errors.New("no active book reader plugin found")
 )
 
+// BookPluginHost provides plugin resolution and activation for the book bridge.
+type BookPluginHost interface {
+	port.PluginResolver
+	port.PluginActivator
+}
+
 // BookBridge connects BookService calls to an out-of-process book reader plugin via Connect-RPC.
 type BookBridge struct {
-	host     port.PluginManager
+	host     port.PluginActivator
 	pluginID string
 	client   numenv1connect.BookServiceClient
 }
 
 // OpenBookBridge activates or connects to the book plugin and returns a BookBridge.
-func OpenBookBridge(ctx context.Context, host port.PluginManager) (*BookBridge, error) {
+func OpenBookBridge(ctx context.Context, host BookPluginHost) (*BookBridge, error) {
 	p, ok := host.FindPluginByCapability("book")
 	if !ok {
 		p, ok = host.FindPluginByFileExtension(".epub")
