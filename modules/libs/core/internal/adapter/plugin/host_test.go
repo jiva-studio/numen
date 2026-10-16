@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -244,6 +245,73 @@ func TestHostEmitEventActivation(t *testing.T) {
 	// Plugin should now be activated
 	if sup.GetState() != StateActive && sup.GetState() != StateIdle {
 		t.Fatalf("expected state active or idle after EmitEvent, got %v", sup.GetState())
+	}
+
+	host.Release("md.numen.ocr")
+	if err := host.TeardownAll(ctx, 50*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}
+
+func TestHostDrainsStdoutAfterHandshake(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+
+	cmd := exec.Command("sleep", "10")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start mock proc failed: %v", err)
+	}
+	defer func() {
+		_ = cmd.Process.Kill()
+		_, _ = cmd.Process.Wait()
+	}()
+
+	pr, pw, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe failed: %v", err)
+	}
+
+	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		return cmd.Process, pr, nil
+	})
+
+	writeDone := make(chan error, 1)
+	go func() {
+		defer pw.Close()
+		if _, err := pw.Write([]byte("NUMEN_READY port=54321\n")); err != nil {
+			writeDone <- err
+			return
+		}
+		// Write >64KB to overflow the standard OS pipe buffer.
+		largePayload := bytes.Repeat([]byte("A"), 128*1024)
+		if _, err := pw.Write(largePayload); err != nil {
+			writeDone <- err
+			return
+		}
+		writeDone <- nil
+	}()
+
+	ctx := t.Context()
+	endpoint, err := host.EnsureActive(ctx, "md.numen.ocr")
+	if err != nil {
+		t.Fatalf("EnsureActive failed: %v", err)
+	}
+	if endpoint.Port != 54321 {
+		t.Fatalf("expected port 54321, got %d", endpoint.Port)
+	}
+
+	select {
+	case err := <-writeDone:
+		if err != nil {
+			t.Fatalf("write to pipe failed: %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for large stdout write to complete")
 	}
 
 	host.Release("md.numen.ocr")

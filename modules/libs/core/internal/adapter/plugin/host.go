@@ -376,6 +376,11 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("handshake plugin %s: %w", p.Manifest.ID, err)
 	}
 
+	go func() {
+		defer stdout.Close()
+		_, _ = io.Copy(io.Discard, stdout)
+	}()
+
 	now := time.Now()
 	if err := sup.Attach(proc, now); err != nil {
 		_ = proc.Kill()
