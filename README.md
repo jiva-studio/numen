@@ -4,6 +4,15 @@
 
 **Numen — Markdown notes with a connection graph, an AI agent and spaced repetition.**
 
+<br>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="modules/apps/landing/src/assets/window-filing-dark.webp">
+  <img alt="A note in Numen, with its graph and the agent panel" src="modules/apps/landing/src/assets/window-filing-light.webp" width="920">
+</picture>
+
+<br>
+
 [![Latest Release](https://img.shields.io/github/v/release/jiva-studio/numen?logo=github&color=blue)](https://github.com/jiva-studio/numen/releases/latest)
 [![Total Downloads](https://img.shields.io/github/downloads/jiva-studio/numen/total?color=2ea44f&logo=github)](https://github.com/jiva-studio/numen/releases)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
@@ -12,14 +21,9 @@
 [![Scorecard](https://img.shields.io/ossf-scorecard/github.com/jiva-studio/numen?label=Scorecard)](https://securityscorecards.dev/viewer/?uri=github.com/jiva-studio/numen)
 [![CodeQL](https://github.com/jiva-studio/numen/actions/workflows/codeql.yml/badge.svg)](https://github.com/jiva-studio/numen/actions/workflows/codeql.yml)
 
-**[Download](#download)** · [Website](https://numen.md) · [User Manual](https://docs.numen.md) · [Forum](https://forum.numen.md)
-
 <br>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="modules/apps/landing/src/assets/window-filing-dark.webp">
-  <img alt="A note in Numen, with its graph and the agent panel" src="modules/apps/landing/src/assets/window-filing-light.webp" width="920">
-</picture>
+**[Download](#download)** · [Website](https://numen.md) · [User Manual](https://docs.numen.md) · [Forum](https://forum.numen.md)
 
 </div>
 
