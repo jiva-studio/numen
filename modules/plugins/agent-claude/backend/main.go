@@ -126,7 +126,19 @@ func (s *agentServer) AskAgent(
 	}
 
 	recordSession := func(session string) { s.registry.SetSession(conversation, session) }
-	failedReason := parseStream(runCtx, out, stream.Send, getToolWords(msg.GetToolDeclarations()), recordSession)
+	reasons := make(chan string, 1)
+	go func() {
+		reasons <- parseStream(runCtx, out, stream.Send, getToolWords(msg.GetToolDeclarations()), recordSession)
+	}()
+
+	// A run let go of ends here, whatever the programs the child started hold of its output.
+	var failedReason string
+	select {
+	case failedReason = <-reasons:
+	case <-runCtx.Done():
+		_ = out.Close()
+		failedReason = <-reasons
+	}
 
 	waitErr := cmd.Wait()
 	if runCtx.Err() != nil {
