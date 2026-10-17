@@ -2,13 +2,13 @@
   "id": "md.numen.flashcards-studio",
   "name": "Flashcards Studio",
   "version": "1.0.0",
+  "protocol": 1,
   "description": "Flashcard deck editor, card stencil designer, and SRS preset studio",
   "capabilities": ["cards.deck", "cards.stencil", "cards.preset", "ui.view"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onStartupFinished", "onView:deck", "onView:stencil", "onView:preset"],
   "permissions": ["vault:read", "vault:write"],
   "lifecycle": {
-    "mode": "on-demand",
     "idleTimeoutSeconds": 300,
     "keepAliveWhileVisible": true
   },
