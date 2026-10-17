@@ -476,25 +476,36 @@ func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, err
 			continue
 		}
 
-		if err := sup.CheckActivationAllowed(time.Now()); err != nil {
+		if err := h.beginActivationLocked(pluginID, sup); err != nil {
 			h.mu.Unlock()
-			return emptyEndpoint(), fmt.Errorf("activate plugin %s: %w", pluginID, err)
+			return emptyEndpoint(), err
 		}
-
-		sup.SetActivating()
 		h.mu.Unlock()
 
-		endpoint, err := h.activatePlugin(ctx, p, sup)
-		if err != nil {
-			h.failActivation(sup, err)
-			h.recordActivationFailure(ctx, pluginID, sup, err)
-			return endpoint, err
-		}
-		sup.RecordActivationSuccess()
-
-		_ = h.NotifyPluginConfig(ctx, p.Manifest.ID)
-		return endpoint, nil
+		return h.runActivation(ctx, p, sup)
 	}
+}
+
+// beginActivationLocked moves a dormant plugin to Activating unless it is backing off or has failed.
+func (h *Host) beginActivationLocked(pluginID string, sup *Supervisor) error {
+	if err := sup.CheckActivationAllowed(time.Now()); err != nil {
+		return fmt.Errorf("activate plugin %s: %w", pluginID, err)
+	}
+	sup.SetActivating()
+	return nil
+}
+
+func (h *Host) runActivation(ctx context.Context, p DiscoveredPlugin, sup *Supervisor) (Endpoint, error) {
+	endpoint, err := h.activatePlugin(ctx, p, sup)
+	if err != nil {
+		h.failActivation(sup, err)
+		h.recordActivationFailure(ctx, p.Manifest.ID, sup, err)
+		return endpoint, err
+	}
+	sup.RecordActivationSuccess()
+
+	_ = h.NotifyPluginConfig(ctx, p.Manifest.ID)
+	return endpoint, nil
 }
 
 func (h *Host) cleanupAbortedProcess(proc *os.Process, stdout io.Closer, pluginID string) {
