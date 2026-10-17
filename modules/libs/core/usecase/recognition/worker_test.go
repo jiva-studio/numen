@@ -265,6 +265,7 @@ func TestMultipleFailedRecognitionsAreTrackedIndependently(t *testing.T) {
 // that failed.
 func TestARecognitionStoppedIsNotAFailure(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
 	w := newWatchedUnder(t, ctx, nil)
 	w.Worker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 		cancel()

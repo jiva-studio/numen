@@ -629,6 +629,7 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 func TestScanStopsWhenCancelled(t *testing.T) {
 	t.Parallel()
 	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
 	v := testsupport.GenerateVault(t, 600)
 	db := openIndex(t)
 
@@ -670,6 +671,7 @@ func TestAWarmScanStopsWhenCancelled(t *testing.T) {
 	}
 
 	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
 	warm := scanner(&cancellingReaders{VaultReaders: filesystem.VaultReaders{}, cancel: cancel}, db)
 
 	res, err := warm.Execute(ctx, v)

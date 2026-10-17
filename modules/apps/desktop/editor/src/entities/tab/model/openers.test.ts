@@ -415,3 +415,46 @@ describe('emitting onFile events when opening files', () => {
     expect(events).toStrictEqual(['onFile:md'])
   })
 })
+
+describe('an extension reader registered twice', () => {
+  it('stays registered when the disposer of the reader it replaced runs late', async () => {
+    const one = vault({ 'a.xyz': OTHER })
+    const tabOpeners = fileOpeners(one.core)
+    const opened: string[] = []
+    const disposeFirst = tabOpeners.registerExtensionReader('xyz', () => opened.push('first'))
+    tabOpeners.registerExtensionReader('xyz', () => opened.push('second'))
+
+    disposeFirst()
+    await tabOpeners.openFile('a.xyz')
+
+    expect(opened).toStrictEqual(['second'])
+  })
+
+  it('is removed by its own disposer', async () => {
+    const one = vault({ 'a.xyz': OTHER })
+    const tabOpeners = fileOpeners(one.core)
+    const opened: string[] = []
+    const dispose = tabOpeners.registerExtensionReader('xyz', () => opened.push('only'))
+
+    dispose()
+    await tabOpeners.openFile('a.xyz')
+
+    expect(opened).toStrictEqual([])
+  })
+})
+
+describe('the same extension reader registered twice', () => {
+  it('stays registered when the disposer of the first registration runs late', async () => {
+    const one = vault({ 'a.xyz': OTHER })
+    const tabOpeners = fileOpeners(one.core)
+    const opened: string[] = []
+    const read = () => opened.push('read')
+    const disposeFirst = tabOpeners.registerExtensionReader('xyz', read)
+    tabOpeners.registerExtensionReader('xyz', read)
+
+    disposeFirst()
+    await tabOpeners.openFile('a.xyz')
+
+    expect(opened).toStrictEqual(['read'])
+  })
+})

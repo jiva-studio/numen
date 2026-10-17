@@ -203,6 +203,7 @@ func TestASourceNamedTwiceWaitsOnce(t *testing.T) {
 // Rounds are run until the context ends.
 func TestRoundsRepeatUntilTheContextEnds(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
 	w := NewWorker(ctx, nil, nil)
 	var rounds atomic.Int32
 	w.Go(func() {

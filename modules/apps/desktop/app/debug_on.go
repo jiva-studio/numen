@@ -153,7 +153,7 @@ func (d *DebugOptions) serveHTTP(
 		return err
 	}
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
 	defer cancel()
 	return server.Shutdown(shutdownCtx)
 }

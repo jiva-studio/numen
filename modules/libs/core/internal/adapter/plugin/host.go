@@ -730,8 +730,7 @@ func (h *Host) defaultLauncher(
 		return nil, nil, fmt.Errorf("validate plugin working directory: %w", err)
 	}
 
-	//nolint:contextcheck // the plugin process outlives the request that launched it
-	cmd := exec.CommandContext(context.Background(), binPath, getPluginArgs(port, token)...)
+	cmd := exec.CommandContext(context.WithoutCancel(ctx), binPath, getPluginArgs(port, token)...)
 	configureSysProcAttr(cmd)
 	cmd.Dir = workDir
 
