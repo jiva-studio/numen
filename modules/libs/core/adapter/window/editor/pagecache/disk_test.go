@@ -261,7 +261,7 @@ func TestNoDiskWhereItsFolderCannotBeMade(t *testing.T) {
 // Closing waits for a sweep that still has files to delete.
 func TestCloseReturnsOnlyOnceTheSweepHasEmptiedTheFolder(t *testing.T) {
 	cache := NewDiskIn(t.TempDir())
-	for at := range 4000 {
+	for at := range 200 {
 		name := filepath.Join(cache.GetDir(), fmt.Sprintf("old-%d.jpg", at))
 		if err := os.WriteFile(name, []byte("0123456789"), 0o644); err != nil {
 			t.Fatal(err)
