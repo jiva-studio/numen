@@ -136,7 +136,7 @@ export const Dark: Story = {
 
     // A day is filled from its own ground towards the accent, and on the dark
     // set that runs towards the light, so a fuller day is a lighter one.
-    const rising = [...filled.keys()].sort().map((weight) => lightness(filled.get(weight)!))
+    const rising = [...filled.keys()].sort((a, b) => a.localeCompare(b)).map((weight) => lightness(filled.get(weight)!))
     for (const [at, fill] of rising.slice(1).entries()) {
       await expect(fill).toBeGreaterThan((rising[at] as number) + 2)
     }

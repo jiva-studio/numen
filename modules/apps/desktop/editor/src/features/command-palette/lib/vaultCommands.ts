@@ -49,7 +49,7 @@ export const createVaultCommands = (words: Words, agent: string): readonly Comma
       keeps: words.keepsVault,
       kept: words.kept,
       action: words.removeVaultAction,
-      then: words.stays,
+      detail: words.stays,
     },
   },
   {
@@ -59,6 +59,6 @@ export const createVaultCommands = (words: Words, agent: string): readonly Comma
     needs: 'vaults',
     next: 'exactly',
     isOffered: isAlwaysOffered,
-    warns: { action: words.erases, then: words.binned, back: words.typeVaultBack },
+    warns: { action: words.erases, detail: words.binned, back: words.typeVaultBack },
   },
 ]
