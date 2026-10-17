@@ -27,9 +27,11 @@ const (
 
 // keys is a key store held in memory.
 type keys struct {
-	mu     sync.Mutex
-	held   map[string]string
-	failed error
+	mu      sync.Mutex
+	held    map[string]string
+	failed  error
+	entered chan struct{}
+	gate    chan struct{}
 }
 
 func newKeys(held map[string]string) *keys {
@@ -50,6 +52,10 @@ func (k *keys) GetKey(_ context.Context, name string) (string, error) {
 }
 
 func (k *keys) SetKey(_ context.Context, name, key string) error {
+	if k.gate != nil {
+		k.entered <- struct{}{}
+		<-k.gate
+	}
 	k.mu.Lock()
 	defer k.mu.Unlock()
 	if k.failed != nil {
@@ -79,8 +85,9 @@ func (k *keys) hold(name string) (string, bool) {
 // configured records the Configure calls a plugin receives.
 type configured struct {
 	numenv1connect.UnimplementedPluginLifecycleServiceHandler
-	mu    sync.Mutex
-	calls []*v1.ConfigureRequest
+	mu            sync.Mutex
+	calls         []*v1.ConfigureRequest
+	unimplemented bool
 }
 
 func (c *configured) Configure(
@@ -89,6 +96,9 @@ func (c *configured) Configure(
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.calls = append(c.calls, req.Msg)
+	if c.unimplemented {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("no configure"))
+	}
 	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
 }
 
@@ -321,5 +331,58 @@ func TestAKeyTheStoreCannotKeepIsAnError(t *testing.T) {
 	}
 	if len(probe.calls) != 0 {
 		t.Error("the plugin was configured after a failed store")
+	}
+}
+
+// A plugin that does not answer Configure cannot be handed its key, and the
+// change of the key says so; a plugin without secrets that does not answer is
+// not an error.
+func TestAPluginThatCannotBeConfiguredHasNotBeenHandedItsKey(t *testing.T) {
+	host, probe := newSecretHost(t, newKeys(map[string]string{}))
+	probe.unimplemented = true
+	if err := host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", keychainValue); err == nil {
+		t.Error("a key the plugin never received was reported as delivered")
+	}
+
+	plain := host.plugins[secretPluginID]
+	plain.Manifest.Secrets = nil
+	host.plugins[secretPluginID] = plain
+	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+		t.Errorf("a plugin without secrets that does not answer Configure: %v", err)
+	}
+}
+
+// The changes of one plugin's secrets are applied and delivered one at a time,
+// so the plugin ends holding what the store holds.
+func TestChangesOfASecretAreAppliedOneAtATime(t *testing.T) {
+	store := newKeys(map[string]string{})
+	store.entered = make(chan struct{}, 1)
+	store.gate = make(chan struct{})
+	host, probe := newSecretHost(t, store)
+
+	setDone := make(chan error, 1)
+	go func() { setDone <- host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", keychainValue) }()
+	<-store.entered
+
+	deleteDone := make(chan error, 1)
+	go func() { deleteDone <- host.DeletePluginSecret(t.Context(), secretPluginID, "apiKey") }()
+	select {
+	case err := <-deleteDone:
+		t.Fatalf("a delete ran while a set was in flight: %v", err)
+	case <-time.After(100 * time.Millisecond):
+	}
+
+	close(store.gate)
+	if err := <-setDone; err != nil {
+		t.Fatal(err)
+	}
+	if err := <-deleteDone; err != nil {
+		t.Fatal(err)
+	}
+	if _, found := store.hold(secretPluginID + "/apiKey"); found {
+		t.Error("the store holds a key the delete removed")
+	}
+	if probe.last(t).GetValues()["apiKey"] != "" {
+		t.Errorf("the plugin holds %v after the delete", probe.last(t).GetValues())
 	}
 }

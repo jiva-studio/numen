@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"sync"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -18,9 +19,28 @@ func (h *Host) SetKeyStore(store port.KeyStore) {
 	h.keyStore = store
 }
 
+// lockSecrets takes the lock that orders the changes of one plugin's secrets
+// and the Configure calls that deliver them, and returns the call that gives it
+// back.
+func (h *Host) lockSecrets(pluginID string) func() {
+	h.secretLocksMu.Lock()
+	lock, found := h.secretLocks[pluginID]
+	if !found {
+		if h.secretLocks == nil {
+			h.secretLocks = make(map[string]*sync.Mutex)
+		}
+		lock = &sync.Mutex{}
+		h.secretLocks[pluginID] = lock
+	}
+	h.secretLocksMu.Unlock()
+	lock.Lock()
+	return lock.Unlock
+}
+
 // SetPluginSecret stores the key of a secret the plugin declares and hands the
 // plugin the secrets it holds now.
 func (h *Host) SetPluginSecret(ctx context.Context, pluginID, name, key string) error {
+	defer h.lockSecrets(pluginID)()
 	store, err := h.getSecretStore(pluginID, name)
 	if err != nil {
 		return err
@@ -34,6 +54,7 @@ func (h *Host) SetPluginSecret(ctx context.Context, pluginID, name, key string) 
 // DeletePluginSecret removes the key of a secret the plugin declares and hands
 // the plugin the secrets it holds now.
 func (h *Host) DeletePluginSecret(ctx context.Context, pluginID, name string) error {
+	defer h.lockSecrets(pluginID)()
 	store, err := h.getSecretStore(pluginID, name)
 	if err != nil {
 		return err

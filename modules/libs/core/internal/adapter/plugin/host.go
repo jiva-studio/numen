@@ -79,6 +79,8 @@ type Host struct {
 	failedPlugins  []pluginFailure
 	problems       []DiscoveryProblem
 	completer      port.Completer
+	secretLocksMu  sync.Mutex
+	secretLocks    map[string]*sync.Mutex
 	keyStore       port.KeyStore
 	hostEndpoint   *HostEndpoint
 	hostAddress    string
@@ -1275,7 +1277,7 @@ func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
 	_, err = client.Configure(configCtx, req)
 	if err != nil {
 		var connectErr *connect.Error
-		if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented {
+		if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented && len(secretNames) == 0 {
 			return secretsErr
 		}
 		return errors.Join(secretsErr, fmt.Errorf("configure plugin %s: %w", pluginID, err))
