@@ -30,6 +30,8 @@ message CompleteRequest {
 
 message CompleteResponse {
   CompletionAnswer answer = 1;
+  // Set when the call was served and refused. The answer is then unset.
+  CompletionErrorCode error = 2;
 }
 
 message HostServiceCompleteRequest {
@@ -38,6 +40,8 @@ message HostServiceCompleteRequest {
 
 message HostServiceCompleteResponse {
   CompletionAnswer answer = 1;
+  // Set when the call was served and refused. The answer is then unset.
+  CompletionErrorCode error = 2;
 }
 
 // CompletionQuestion is what a plugin asks of a model.
@@ -72,8 +76,19 @@ message CompletionHints {
   optional double temperature = 5;
 }
 
-// CompletionAnswer is what a model said. A purpose the host cannot serve fails
-// the call with a status code.
+// CompletionErrorCode is why a served completion call was refused. The zero
+// value means it was not.
+enum CompletionErrorCode {
+  COMPLETION_ERROR_CODE_UNSPECIFIED = 0;
+
+  // No agent is routed for the purpose.
+  COMPLETION_ERROR_CODE_NO_ROUTE = 1;
+
+  // The agent routed for the purpose cannot be reached.
+  COMPLETION_ERROR_CODE_UNAVAILABLE = 2;
+}
+
+// CompletionAnswer is what a model said.
 message CompletionAnswer {
   string text = 1;
 }

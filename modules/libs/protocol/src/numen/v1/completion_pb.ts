@@ -8,15 +8,15 @@
 // decides which model answers. The question carries no tools, no vault and no
 // conversation.
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/completion.proto.
  */
 export const file_numen_v1_completion: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9jb21wbGV0aW9uLnByb3RvEghudW1lbi52MSJBCg9Db21wbGV0ZVJlcXVlc3QSLgoIcXVlc3Rpb24YASABKAsyHC5udW1lbi52MS5Db21wbGV0aW9uUXVlc3Rpb24iPgoQQ29tcGxldGVSZXNwb25zZRIqCgZhbnN3ZXIYASABKAsyGi5udW1lbi52MS5Db21wbGV0aW9uQW5zd2VyIkwKGkhvc3RTZXJ2aWNlQ29tcGxldGVSZXF1ZXN0Ei4KCHF1ZXN0aW9uGAEgASgLMhwubnVtZW4udjEuQ29tcGxldGlvblF1ZXN0aW9uIkkKG0hvc3RTZXJ2aWNlQ29tcGxldGVSZXNwb25zZRIqCgZhbnN3ZXIYASABKAsyGi5udW1lbi52MS5Db21wbGV0aW9uQW5zd2VyIn4KEkNvbXBsZXRpb25RdWVzdGlvbhItCghtZXNzYWdlcxgBIAMoCzIbLm51bWVuLnYxLkNvbXBsZXRpb25NZXNzYWdlEg8KB3B1cnBvc2UYAiABKAkSKAoFaGludHMYAyABKAsyGS5udW1lbi52MS5Db21wbGV0aW9uSGludHMiLwoRQ29tcGxldGlvbk1lc3NhZ2USDAoEcm9sZRgBIAEoCRIMCgR0ZXh0GAIgASgJIpgBCg9Db21wbGV0aW9uSGludHMSGAoQcXVhbGl0eV9wcmlvcml0eRgBIAEoARIWCg5zcGVlZF9wcmlvcml0eRgCIAEoARIVCg1jb3N0X3ByaW9yaXR5GAMgASgBEhIKCm1heF90b2tlbnMYBCABKAUSGAoLdGVtcGVyYXR1cmUYBSABKAFIAIgBAUIOCgxfdGVtcGVyYXR1cmUiIAoQQ29tcGxldGlvbkFuc3dlchIMCgR0ZXh0GAEgASgJMlYKEUNvbXBsZXRpb25TZXJ2aWNlEkEKCENvbXBsZXRlEhkubnVtZW4udjEuQ29tcGxldGVSZXF1ZXN0GhoubnVtZW4udjEuQ29tcGxldGVSZXNwb25zZTJmCgtIb3N0U2VydmljZRJXCghDb21wbGV0ZRIkLm51bWVuLnYxLkhvc3RTZXJ2aWNlQ29tcGxldGVSZXF1ZXN0GiUubnVtZW4udjEuSG9zdFNlcnZpY2VDb21wbGV0ZVJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChludW1lbi92MS9jb21wbGV0aW9uLnByb3RvEghudW1lbi52MSJBCg9Db21wbGV0ZVJlcXVlc3QSLgoIcXVlc3Rpb24YASABKAsyHC5udW1lbi52MS5Db21wbGV0aW9uUXVlc3Rpb24ibAoQQ29tcGxldGVSZXNwb25zZRIqCgZhbnN3ZXIYASABKAsyGi5udW1lbi52MS5Db21wbGV0aW9uQW5zd2VyEiwKBWVycm9yGAIgASgOMh0ubnVtZW4udjEuQ29tcGxldGlvbkVycm9yQ29kZSJMChpIb3N0U2VydmljZUNvbXBsZXRlUmVxdWVzdBIuCghxdWVzdGlvbhgBIAEoCzIcLm51bWVuLnYxLkNvbXBsZXRpb25RdWVzdGlvbiJ3ChtIb3N0U2VydmljZUNvbXBsZXRlUmVzcG9uc2USKgoGYW5zd2VyGAEgASgLMhoubnVtZW4udjEuQ29tcGxldGlvbkFuc3dlchIsCgVlcnJvchgCIAEoDjIdLm51bWVuLnYxLkNvbXBsZXRpb25FcnJvckNvZGUifgoSQ29tcGxldGlvblF1ZXN0aW9uEi0KCG1lc3NhZ2VzGAEgAygLMhsubnVtZW4udjEuQ29tcGxldGlvbk1lc3NhZ2USDwoHcHVycG9zZRgCIAEoCRIoCgVoaW50cxgDIAEoCzIZLm51bWVuLnYxLkNvbXBsZXRpb25IaW50cyIvChFDb21wbGV0aW9uTWVzc2FnZRIMCgRyb2xlGAEgASgJEgwKBHRleHQYAiABKAkimAEKD0NvbXBsZXRpb25IaW50cxIYChBxdWFsaXR5X3ByaW9yaXR5GAEgASgBEhYKDnNwZWVkX3ByaW9yaXR5GAIgASgBEhUKDWNvc3RfcHJpb3JpdHkYAyABKAESEgoKbWF4X3Rva2VucxgEIAEoBRIYCgt0ZW1wZXJhdHVyZRgFIAEoAUgAiAEBQg4KDF90ZW1wZXJhdHVyZSIgChBDb21wbGV0aW9uQW5zd2VyEgwKBHRleHQYASABKAkqhwEKE0NvbXBsZXRpb25FcnJvckNvZGUSJQohQ09NUExFVElPTl9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIgoeQ09NUExFVElPTl9FUlJPUl9DT0RFX05PX1JPVVRFEAESJQohQ09NUExFVElPTl9FUlJPUl9DT0RFX1VOQVZBSUxBQkxFEAIyVgoRQ29tcGxldGlvblNlcnZpY2USQQoIQ29tcGxldGUSGS5udW1lbi52MS5Db21wbGV0ZVJlcXVlc3QaGi5udW1lbi52MS5Db21wbGV0ZVJlc3BvbnNlMmYKC0hvc3RTZXJ2aWNlElcKCENvbXBsZXRlEiQubnVtZW4udjEuSG9zdFNlcnZpY2VDb21wbGV0ZVJlcXVlc3QaJS5udW1lbi52MS5Ib3N0U2VydmljZUNvbXBsZXRlUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.CompleteRequest
@@ -43,6 +43,13 @@ export type CompleteResponse = Message<"numen.v1.CompleteResponse"> & {
    * @generated from field: numen.v1.CompletionAnswer answer = 1;
    */
   answer?: CompletionAnswer | undefined;
+
+  /**
+   * Set when the call was served and refused. The answer is then unset.
+   *
+   * @generated from field: numen.v1.CompletionErrorCode error = 2;
+   */
+  error: CompletionErrorCode;
 };
 
 /**
@@ -77,6 +84,13 @@ export type HostServiceCompleteResponse = Message<"numen.v1.HostServiceCompleteR
    * @generated from field: numen.v1.CompletionAnswer answer = 1;
    */
   answer?: CompletionAnswer | undefined;
+
+  /**
+   * Set when the call was served and refused. The answer is then unset.
+   *
+   * @generated from field: numen.v1.CompletionErrorCode error = 2;
+   */
+  error: CompletionErrorCode;
 };
 
 /**
@@ -197,8 +211,7 @@ export const CompletionHintsSchema: GenMessage<CompletionHints> = /*@__PURE__*/
   messageDesc(file_numen_v1_completion, 6);
 
 /**
- * CompletionAnswer is what a model said. A purpose the host cannot serve fails
- * the call with a status code.
+ * CompletionAnswer is what a model said.
  *
  * @generated from message numen.v1.CompletionAnswer
  */
@@ -215,6 +228,39 @@ export type CompletionAnswer = Message<"numen.v1.CompletionAnswer"> & {
  */
 export const CompletionAnswerSchema: GenMessage<CompletionAnswer> = /*@__PURE__*/
   messageDesc(file_numen_v1_completion, 7);
+
+/**
+ * CompletionErrorCode is why a served completion call was refused. The zero
+ * value means it was not.
+ *
+ * @generated from enum numen.v1.CompletionErrorCode
+ */
+export enum CompletionErrorCode {
+  /**
+   * @generated from enum value: COMPLETION_ERROR_CODE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * No agent is routed for the purpose.
+   *
+   * @generated from enum value: COMPLETION_ERROR_CODE_NO_ROUTE = 1;
+   */
+  NO_ROUTE = 1,
+
+  /**
+   * The agent routed for the purpose cannot be reached.
+   *
+   * @generated from enum value: COMPLETION_ERROR_CODE_UNAVAILABLE = 2;
+   */
+  UNAVAILABLE = 2,
+}
+
+/**
+ * Describes the enum numen.v1.CompletionErrorCode.
+ */
+export const CompletionErrorCodeSchema: GenEnum<CompletionErrorCode> = /*@__PURE__*/
+  enumDesc(file_numen_v1_completion, 0);
 
 /**
  * CompletionService is what an agent plugin answers: one completion for the

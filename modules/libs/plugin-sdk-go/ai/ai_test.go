@@ -17,6 +17,7 @@ import (
 
 type fakeHost struct {
 	numenv1connect.UnimplementedHostServiceHandler
+	code   numenv1.CompletionErrorCode
 	answer *numenv1.CompletionAnswer
 	got    *numenv1.CompletionQuestion
 	auth   string
@@ -25,7 +26,7 @@ type fakeHost struct {
 func (f *fakeHost) Complete(_ context.Context, req *connect.Request[numenv1.HostServiceCompleteRequest]) (*connect.Response[numenv1.HostServiceCompleteResponse], error) {
 	f.got = req.Msg.GetQuestion()
 	f.auth = req.Header().Get("Authorization")
-	return connect.NewResponse(&numenv1.HostServiceCompleteResponse{Answer: f.answer}), nil
+	return connect.NewResponse(&numenv1.HostServiceCompleteResponse{Answer: f.answer, Error: f.code}), nil
 }
 
 func startHost(t *testing.T, h *fakeHost) *httptest.Server {
@@ -157,3 +158,43 @@ type fakeStreamConn struct {
 }
 
 func (f *fakeStreamConn) RequestHeader() http.Header { return f.header }
+
+func TestClientCompleteReturnsRefusalOfHost(t *testing.T) {
+	cases := map[numenv1.CompletionErrorCode]error{
+		numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE:    ErrNoRoute,
+		numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE: ErrUnavailable,
+	}
+	for code, want := range cases {
+		srv := startHost(t, &fakeHost{code: code})
+
+		_, err := NewClient(srv.Client(), srv.URL, "t").Complete(context.Background(), newQuestion())
+
+		if !errors.Is(err, want) {
+			t.Errorf("%v: got %v, want %v", code, err, want)
+		}
+	}
+}
+
+func TestReadRefusalWalksEveryCode(t *testing.T) {
+	seen := map[error]numenv1.CompletionErrorCode{}
+	for value := range numenv1.CompletionErrorCode_name {
+		code := numenv1.CompletionErrorCode(value)
+		err := readRefusal(code)
+		if code == numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED {
+			if err != nil {
+				t.Errorf("unspecified must be no refusal, got %v", err)
+			}
+			continue
+		}
+		if err == nil || err.Error() == "" {
+			t.Fatalf("%v has no error", code)
+		}
+		if other, dup := seen[err]; dup {
+			t.Errorf("%v and %v share an error", code, other)
+		}
+		seen[err] = code
+	}
+	if err := readRefusal(numenv1.CompletionErrorCode(99)); err == nil {
+		t.Error("an unknown code must be an error")
+	}
+}

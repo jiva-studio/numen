@@ -27,6 +27,59 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// CompletionErrorCode is why a served completion call was refused. The zero
+// value means it was not.
+type CompletionErrorCode int32
+
+const (
+	CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED CompletionErrorCode = 0
+	// No agent is routed for the purpose.
+	CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE CompletionErrorCode = 1
+	// The agent routed for the purpose cannot be reached.
+	CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE CompletionErrorCode = 2
+)
+
+// Enum value maps for CompletionErrorCode.
+var (
+	CompletionErrorCode_name = map[int32]string{
+		0: "COMPLETION_ERROR_CODE_UNSPECIFIED",
+		1: "COMPLETION_ERROR_CODE_NO_ROUTE",
+		2: "COMPLETION_ERROR_CODE_UNAVAILABLE",
+	}
+	CompletionErrorCode_value = map[string]int32{
+		"COMPLETION_ERROR_CODE_UNSPECIFIED": 0,
+		"COMPLETION_ERROR_CODE_NO_ROUTE":    1,
+		"COMPLETION_ERROR_CODE_UNAVAILABLE": 2,
+	}
+)
+
+func (x CompletionErrorCode) Enum() *CompletionErrorCode {
+	p := new(CompletionErrorCode)
+	*p = x
+	return p
+}
+
+func (x CompletionErrorCode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (CompletionErrorCode) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_completion_proto_enumTypes[0].Descriptor()
+}
+
+func (CompletionErrorCode) Type() protoreflect.EnumType {
+	return &file_numen_v1_completion_proto_enumTypes[0]
+}
+
+func (x CompletionErrorCode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use CompletionErrorCode.Descriptor instead.
+func (CompletionErrorCode) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_completion_proto_rawDescGZIP(), []int{0}
+}
+
 type CompleteRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Question      *CompletionQuestion    `protobuf:"bytes,1,opt,name=question,proto3" json:"question,omitempty"`
@@ -72,8 +125,10 @@ func (x *CompleteRequest) GetQuestion() *CompletionQuestion {
 }
 
 type CompleteResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Answer        *CompletionAnswer      `protobuf:"bytes,1,opt,name=answer,proto3" json:"answer,omitempty"`
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Answer *CompletionAnswer      `protobuf:"bytes,1,opt,name=answer,proto3" json:"answer,omitempty"`
+	// Set when the call was served and refused. The answer is then unset.
+	Error         CompletionErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.CompletionErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -113,6 +168,13 @@ func (x *CompleteResponse) GetAnswer() *CompletionAnswer {
 		return x.Answer
 	}
 	return nil
+}
+
+func (x *CompleteResponse) GetError() CompletionErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED
 }
 
 type HostServiceCompleteRequest struct {
@@ -160,8 +222,10 @@ func (x *HostServiceCompleteRequest) GetQuestion() *CompletionQuestion {
 }
 
 type HostServiceCompleteResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Answer        *CompletionAnswer      `protobuf:"bytes,1,opt,name=answer,proto3" json:"answer,omitempty"`
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Answer *CompletionAnswer      `protobuf:"bytes,1,opt,name=answer,proto3" json:"answer,omitempty"`
+	// Set when the call was served and refused. The answer is then unset.
+	Error         CompletionErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.CompletionErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -201,6 +265,13 @@ func (x *HostServiceCompleteResponse) GetAnswer() *CompletionAnswer {
 		return x.Answer
 	}
 	return nil
+}
+
+func (x *HostServiceCompleteResponse) GetError() CompletionErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED
 }
 
 // CompletionQuestion is what a plugin asks of a model.
@@ -404,8 +475,7 @@ func (x *CompletionHints) GetTemperature() float64 {
 	return 0
 }
 
-// CompletionAnswer is what a model said. A purpose the host cannot serve fails
-// the call with a status code.
+// CompletionAnswer is what a model said.
 type CompletionAnswer struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
@@ -456,13 +526,15 @@ const file_numen_v1_completion_proto_rawDesc = "" +
 	"\n" +
 	"\x19numen/v1/completion.proto\x12\bnumen.v1\"K\n" +
 	"\x0fCompleteRequest\x128\n" +
-	"\bquestion\x18\x01 \x01(\v2\x1c.numen.v1.CompletionQuestionR\bquestion\"F\n" +
+	"\bquestion\x18\x01 \x01(\v2\x1c.numen.v1.CompletionQuestionR\bquestion\"{\n" +
 	"\x10CompleteResponse\x122\n" +
-	"\x06answer\x18\x01 \x01(\v2\x1a.numen.v1.CompletionAnswerR\x06answer\"V\n" +
+	"\x06answer\x18\x01 \x01(\v2\x1a.numen.v1.CompletionAnswerR\x06answer\x123\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x1d.numen.v1.CompletionErrorCodeR\x05error\"V\n" +
 	"\x1aHostServiceCompleteRequest\x128\n" +
-	"\bquestion\x18\x01 \x01(\v2\x1c.numen.v1.CompletionQuestionR\bquestion\"Q\n" +
+	"\bquestion\x18\x01 \x01(\v2\x1c.numen.v1.CompletionQuestionR\bquestion\"\x86\x01\n" +
 	"\x1bHostServiceCompleteResponse\x122\n" +
-	"\x06answer\x18\x01 \x01(\v2\x1a.numen.v1.CompletionAnswerR\x06answer\"\x98\x01\n" +
+	"\x06answer\x18\x01 \x01(\v2\x1a.numen.v1.CompletionAnswerR\x06answer\x123\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x1d.numen.v1.CompletionErrorCodeR\x05error\"\x98\x01\n" +
 	"\x12CompletionQuestion\x127\n" +
 	"\bmessages\x18\x01 \x03(\v2\x1b.numen.v1.CompletionMessageR\bmessages\x12\x18\n" +
 	"\apurpose\x18\x02 \x01(\tR\apurpose\x12/\n" +
@@ -479,7 +551,11 @@ const file_numen_v1_completion_proto_rawDesc = "" +
 	"\vtemperature\x18\x05 \x01(\x01H\x00R\vtemperature\x88\x01\x01B\x0e\n" +
 	"\f_temperature\"&\n" +
 	"\x10CompletionAnswer\x12\x12\n" +
-	"\x04text\x18\x01 \x01(\tR\x04text2V\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text*\x87\x01\n" +
+	"\x13CompletionErrorCode\x12%\n" +
+	"!COMPLETION_ERROR_CODE_UNSPECIFIED\x10\x00\x12\"\n" +
+	"\x1eCOMPLETION_ERROR_CODE_NO_ROUTE\x10\x01\x12%\n" +
+	"!COMPLETION_ERROR_CODE_UNAVAILABLE\x10\x022V\n" +
 	"\x11CompletionService\x12A\n" +
 	"\bComplete\x12\x19.numen.v1.CompleteRequest\x1a\x1a.numen.v1.CompleteResponse2f\n" +
 	"\vHostService\x12W\n" +
@@ -497,33 +573,37 @@ func file_numen_v1_completion_proto_rawDescGZIP() []byte {
 	return file_numen_v1_completion_proto_rawDescData
 }
 
+var file_numen_v1_completion_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_completion_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_numen_v1_completion_proto_goTypes = []any{
-	(*CompleteRequest)(nil),             // 0: numen.v1.CompleteRequest
-	(*CompleteResponse)(nil),            // 1: numen.v1.CompleteResponse
-	(*HostServiceCompleteRequest)(nil),  // 2: numen.v1.HostServiceCompleteRequest
-	(*HostServiceCompleteResponse)(nil), // 3: numen.v1.HostServiceCompleteResponse
-	(*CompletionQuestion)(nil),          // 4: numen.v1.CompletionQuestion
-	(*CompletionMessage)(nil),           // 5: numen.v1.CompletionMessage
-	(*CompletionHints)(nil),             // 6: numen.v1.CompletionHints
-	(*CompletionAnswer)(nil),            // 7: numen.v1.CompletionAnswer
+	(CompletionErrorCode)(0),            // 0: numen.v1.CompletionErrorCode
+	(*CompleteRequest)(nil),             // 1: numen.v1.CompleteRequest
+	(*CompleteResponse)(nil),            // 2: numen.v1.CompleteResponse
+	(*HostServiceCompleteRequest)(nil),  // 3: numen.v1.HostServiceCompleteRequest
+	(*HostServiceCompleteResponse)(nil), // 4: numen.v1.HostServiceCompleteResponse
+	(*CompletionQuestion)(nil),          // 5: numen.v1.CompletionQuestion
+	(*CompletionMessage)(nil),           // 6: numen.v1.CompletionMessage
+	(*CompletionHints)(nil),             // 7: numen.v1.CompletionHints
+	(*CompletionAnswer)(nil),            // 8: numen.v1.CompletionAnswer
 }
 var file_numen_v1_completion_proto_depIdxs = []int32{
-	4, // 0: numen.v1.CompleteRequest.question:type_name -> numen.v1.CompletionQuestion
-	7, // 1: numen.v1.CompleteResponse.answer:type_name -> numen.v1.CompletionAnswer
-	4, // 2: numen.v1.HostServiceCompleteRequest.question:type_name -> numen.v1.CompletionQuestion
-	7, // 3: numen.v1.HostServiceCompleteResponse.answer:type_name -> numen.v1.CompletionAnswer
-	5, // 4: numen.v1.CompletionQuestion.messages:type_name -> numen.v1.CompletionMessage
-	6, // 5: numen.v1.CompletionQuestion.hints:type_name -> numen.v1.CompletionHints
-	0, // 6: numen.v1.CompletionService.Complete:input_type -> numen.v1.CompleteRequest
-	2, // 7: numen.v1.HostService.Complete:input_type -> numen.v1.HostServiceCompleteRequest
-	1, // 8: numen.v1.CompletionService.Complete:output_type -> numen.v1.CompleteResponse
-	3, // 9: numen.v1.HostService.Complete:output_type -> numen.v1.HostServiceCompleteResponse
-	8, // [8:10] is the sub-list for method output_type
-	6, // [6:8] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	5,  // 0: numen.v1.CompleteRequest.question:type_name -> numen.v1.CompletionQuestion
+	8,  // 1: numen.v1.CompleteResponse.answer:type_name -> numen.v1.CompletionAnswer
+	0,  // 2: numen.v1.CompleteResponse.error:type_name -> numen.v1.CompletionErrorCode
+	5,  // 3: numen.v1.HostServiceCompleteRequest.question:type_name -> numen.v1.CompletionQuestion
+	8,  // 4: numen.v1.HostServiceCompleteResponse.answer:type_name -> numen.v1.CompletionAnswer
+	0,  // 5: numen.v1.HostServiceCompleteResponse.error:type_name -> numen.v1.CompletionErrorCode
+	6,  // 6: numen.v1.CompletionQuestion.messages:type_name -> numen.v1.CompletionMessage
+	7,  // 7: numen.v1.CompletionQuestion.hints:type_name -> numen.v1.CompletionHints
+	1,  // 8: numen.v1.CompletionService.Complete:input_type -> numen.v1.CompleteRequest
+	3,  // 9: numen.v1.HostService.Complete:input_type -> numen.v1.HostServiceCompleteRequest
+	2,  // 10: numen.v1.CompletionService.Complete:output_type -> numen.v1.CompleteResponse
+	4,  // 11: numen.v1.HostService.Complete:output_type -> numen.v1.HostServiceCompleteResponse
+	10, // [10:12] is the sub-list for method output_type
+	8,  // [8:10] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_completion_proto_init() }
@@ -537,13 +617,14 @@ func file_numen_v1_completion_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_completion_proto_rawDesc), len(file_numen_v1_completion_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   2,
 		},
 		GoTypes:           file_numen_v1_completion_proto_goTypes,
 		DependencyIndexes: file_numen_v1_completion_proto_depIdxs,
+		EnumInfos:         file_numen_v1_completion_proto_enumTypes,
 		MessageInfos:      file_numen_v1_completion_proto_msgTypes,
 	}.Build()
 	File_numen_v1_completion_proto = out.File

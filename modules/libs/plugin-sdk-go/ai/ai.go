@@ -28,6 +28,10 @@ const (
 var (
 	// ErrNoHost means the environment names no host endpoint.
 	ErrNoHost = errors.New("ai: " + HostPortEnv + " is not set")
+	// ErrNoRoute means the host has no agent routed for the purpose.
+	ErrNoRoute = errors.New("ai: no route for the purpose")
+	// ErrUnavailable means the agent routed for the purpose cannot be reached.
+	ErrUnavailable = errors.New("ai: routed agent unavailable")
 	// ErrNoAnswer means the host replied without an answer.
 	ErrNoAnswer = errors.New("ai: host sent no answer")
 )
@@ -60,11 +64,27 @@ func (c *Client) Complete(ctx context.Context, question *numenv1.CompletionQuest
 	if err != nil {
 		return "", fmt.Errorf("ai: complete: %w", err)
 	}
+	if err := readRefusal(res.Msg.GetError()); err != nil {
+		return "", err
+	}
 	answer := res.Msg.GetAnswer()
 	if answer == nil {
 		return "", ErrNoAnswer
 	}
 	return answer.GetText(), nil
+}
+
+// readRefusal maps the code of a refused call to its error. Unspecified is no refusal.
+func readRefusal(code numenv1.CompletionErrorCode) error {
+	switch code {
+	case numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED:
+		return nil
+	case numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE:
+		return ErrNoRoute
+	case numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE:
+		return ErrUnavailable
+	}
+	return fmt.Errorf("ai: unknown refusal code %d", code)
 }
 
 // Complete asks the host named by the environment to answer the question.
