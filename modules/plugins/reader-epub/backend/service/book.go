@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -204,14 +205,19 @@ func (s *BookServer) ReadBookEntry(
 	if err != nil {
 		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
 	}
-	info, err := os.Stat(cleanPath)
+	file, err := os.Open(cleanPath)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
+	}
+	defer file.Close()
+	info, err := file.Stat()
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
 	}
 	if baseline := req.Msg.GetBaseline(); baseline != nil && !isFingerprintOf(baseline, info) {
 		return nil, connect.NewError(connect.CodeAborted, fmt.Errorf("read book %s: the file changed", path))
 	}
-	raw, err := os.ReadFile(cleanPath)
+	raw, err := io.ReadAll(file)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
 	}
