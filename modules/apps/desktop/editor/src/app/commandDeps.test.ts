@@ -36,13 +36,14 @@ const createOptions = (over: Partial<CommandDepsOptions> = {}) => {
     loadArtifactStates: vi.fn(),
     reached: {} as never,
     openPreset: async (path) => {
+      await Promise.resolve()
       record('openPreset')(path)
     },
     dressed: { chooseItem: vi.fn() },
     oneName: { choose: vi.fn() },
     nesting: { choose: vi.fn(), chooseCount: vi.fn() },
     rest: {
-      writeSettings: async (written) => {
+      writeSettings: (written) => {
         record('writeSettings')(written)
       },
     },
@@ -78,7 +79,7 @@ describe('createCommandDeps', () => {
     const written: unknown[] = []
     const { deps } = createOptions({
       rest: {
-        writeSettings: async (w: unknown[]) => {
+        writeSettings: (w: unknown[]) => {
           written.push(...w)
         },
         getModelsAt: () => [model],
@@ -93,7 +94,7 @@ describe('createCommandDeps', () => {
     const written: unknown[] = []
     const { deps } = createOptions({
       rest: {
-        writeSettings: async (w: unknown[]) => {
+        writeSettings: (w: unknown[]) => {
           written.push(...w)
         },
       } as unknown as CommandDepsOptions['rest'],
@@ -109,7 +110,7 @@ describe('createCommandDeps', () => {
     const written: unknown[] = []
     const { deps } = createOptions({
       rest: {
-        writeSettings: async (w: unknown[]) => {
+        writeSettings: (w: unknown[]) => {
           written.push(...w)
         },
         getModelsAt: () => [],
@@ -124,7 +125,7 @@ describe('createCommandDeps', () => {
     const written: unknown[] = []
     const { deps } = createOptions({
       rest: {
-        writeSettings: async (w: unknown[]) => {
+        writeSettings: (w: unknown[]) => {
           written.push(...w)
         },
       } as unknown as CommandDepsOptions['rest'],
