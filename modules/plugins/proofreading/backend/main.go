@@ -118,6 +118,9 @@ func (s *proofreadingServer) proofread(ctx context.Context, msg *numenv1.Proofre
 			return textResult{}, connect.NewError(connect.CodeInvalidArgument, errSpeechOptions)
 		}
 		speech := options.Speech
+		if speech.GetSize() <= 0 {
+			return textResult{}, connect.NewError(connect.CodeInvalidArgument, errSpeechSize)
+		}
 		var lines []Line
 		for _, group := range groups {
 			lines = append(lines, group.Lines...)
@@ -137,6 +140,7 @@ func (s *proofreadingServer) proofread(ctx context.Context, msg *numenv1.Proofre
 var (
 	errScanOptions   = errors.New("a scan request carries scan options")
 	errSpeechOptions = errors.New("a speech request carries speech options")
+	errSpeechSize    = errors.New("a speech request holds at least one line to a model request")
 )
 
 // readModelError maps a failure to reach the model to the code the caller reads

@@ -188,6 +188,11 @@ func TestProofreadTextRefusesARequestItCannotAnswer(t *testing.T) {
 			Options: &numenv1.ProofreadTextRequest_Scan{Scan: &numenv1.ProofreadScanOptions{}},
 		},
 		"speech without options": {Kind: numenv1.ProofreadKind_PROOFREAD_KIND_SPEECH},
+		"speech without a size": {
+			Kind:    numenv1.ProofreadKind_PROOFREAD_KIND_SPEECH,
+			Groups:  []*numenv1.ProofreadGroup{page(1, line(1, "x"))},
+			Options: &numenv1.ProofreadTextRequest_Speech{Speech: &numenv1.ProofreadSpeechOptions{}},
+		},
 	}
 	for name, request := range cases {
 		_, err := proof.ProofreadText(t.Context(), connect.NewRequest(request))

@@ -155,3 +155,60 @@ func TestARefusedReplyIsNoAnswer(t *testing.T) {
 		t.Errorf("answer %+v", got)
 	}
 }
+
+// joinable is a batch of the speech lines from first to last that may be
+// answered in runs.
+func joinable(number, first, last int) Batch {
+	batch := Batch{Number: number, IsJoinable: true}
+	for at := first; at <= last; at++ {
+		batch.Lines = append(batch.Lines, makeLine(at))
+	}
+	return batch
+}
+
+// coveredOnce fails for a line two corrections cover.
+func coveredOnce(t *testing.T, put map[int]Line) {
+	t.Helper()
+	seen := map[int]int{}
+	for first, line := range put {
+		for at := first; at <= max(line.Last, line.Number); at++ {
+			if other, twice := seen[at]; twice {
+				t.Errorf("line %d is covered by the corrections of %d and %d", at, other, first)
+			}
+			seen[at] = first
+		}
+	}
+}
+
+func TestARunSeenFromFurtherBackTakesTheLineOfASingleCorrection(t *testing.T) {
+	replies := map[int]string{
+		0: "4|until the fog came in.",
+		1: "3-4|We spoke of the harbour lights until the fog came in.",
+	}
+	single, run := joinable(0, 3, 5), joinable(1, 2, 5)
+
+	put, _ := gatherReplies([]Batch{single, run}, replies, 0)
+	coveredOnce(t, put)
+	if len(put) != 1 || put[3].Last != 4 {
+		t.Errorf("gathered %v, want the run of lines 3 to 4 alone", put)
+	}
+
+	put, _ = gatherReplies([]Batch{run, single}, replies, 0)
+	coveredOnce(t, put)
+}
+
+func TestTwoRunsSharingALineAreNotBothKept(t *testing.T) {
+	replies := map[int]string{
+		0: "2-3|And the sea was calm, we spoke of the harbour lights.",
+		1: "3-4|We spoke of the harbour lights until the fog came in.",
+	}
+	earlier, later := joinable(0, 1, 4), joinable(1, 3, 5)
+
+	for _, asked := range [][]Batch{{earlier, later}, {later, earlier}} {
+		put, _ := gatherReplies(asked, replies, 0)
+		coveredOnce(t, put)
+		if len(put) != 1 {
+			t.Errorf("gathered %v, want one run", put)
+		}
+	}
+}
