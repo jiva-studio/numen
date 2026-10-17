@@ -178,7 +178,7 @@ func (h *artifactHandler) getLinkedArtifact(
 ) (*v1.Artifact, error) {
 	producer, err := h.files.getProducer(ctx, at)
 	if err != nil {
-		return nil, err
+		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
 	of := getTextKind(producer)
 	if at == "" {
