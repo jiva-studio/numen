@@ -10,7 +10,7 @@ import {
   ref,
   type Component,
 } from 'vue'
-import type { ReaderRegistration, TabKindRegistration } from '@numen/plugin-sdk'
+import type { PluginContext, ReaderRegistration, TabKindRegistration } from '@numen/plugin-sdk'
 import type { AnyTabKind } from '@/entities/tab/@x/plugin'
 import {
   attachPluginShadow,
@@ -34,6 +34,7 @@ function getReaderTargetSource(path: string | undefined): 'recording' | 'book' |
 export function createPluginPaneWrapper(
   pluginIdOrComponent: string | unknown,
   maybeComponent?: unknown,
+  getContext?: () => PluginContext | undefined,
 ): Component {
   const pluginId = typeof pluginIdOrComponent === 'string' ? pluginIdOrComponent : 'plugin'
   const rawComponent = maybeComponent !== undefined ? maybeComponent : pluginIdOrComponent
@@ -72,6 +73,7 @@ export function createPluginPaneWrapper(
               state: props.state,
               shadowRoot: shadowRoot.value,
               containerClass: classes.container,
+              context: getContext?.(),
             })
           : null
         return renderWrapper({ wrapperClass: classes.wrapper, pluginId, hostEl, content })
@@ -113,6 +115,7 @@ function resolveReaderSource(
 export function createReaderTabKind(
   pluginId: string,
   registration: ReaderRegistration,
+  getContext?: () => PluginContext | undefined,
 ): AnyTabKind {
   const kindId = registration.id.startsWith('reader:')
     ? registration.id
@@ -146,7 +149,7 @@ export function createReaderTabKind(
       if (filename) return filename
       return registration.title || ''
     },
-    pane: createPluginPaneWrapper(pluginId, registration.component),
+    pane: createPluginPaneWrapper(pluginId, registration.component, getContext),
     identity: (at: string) => at,
     getTarget: (state: unknown) => {
       const s = state as { path?: string; title?: string } | undefined
@@ -309,6 +312,7 @@ export function createCustomTabKind(
   pluginId: string,
   registration: TabKindRegistration,
   deps?: PluginHostDeps,
+  getContext?: () => PluginContext | undefined,
 ): AnyTabKind {
   return {
     kind: registration.kind,
@@ -322,7 +326,7 @@ export function createCustomTabKind(
       if (defaultName) return defaultName
       return registration.title || registration.kind
     },
-    pane: createPluginPaneWrapper(pluginId, registration.component),
+    pane: createPluginPaneWrapper(pluginId, registration.component, getContext),
     identity: (at: string) => at || registration.kind,
     onShow: (state: unknown) => {
       const s = state as { measure?: () => void; editor?: { measure?: () => void } } | undefined

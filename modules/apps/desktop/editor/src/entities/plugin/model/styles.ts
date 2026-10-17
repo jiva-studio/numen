@@ -2,6 +2,7 @@
  * Scoped stylesheet registry for plugin views and Shadow DOM style containment.
  */
 import { defineAsyncComponent, h, Teleport, type Component, type Ref, type VNodeChild } from 'vue'
+import type { PluginContext } from '@numen/plugin-sdk'
 
 type AsyncComponentRegistration = {
   type: 'async'
@@ -131,6 +132,7 @@ export interface PaneContentDeps {
   readonly state: unknown
   readonly shadowRoot: ShadowRoot | null
   readonly containerClass: string
+  readonly context?: PluginContext | undefined
 }
 
 export function renderPaneContent(deps: PaneContentDeps) {
@@ -144,6 +146,7 @@ export function renderPaneContent(deps: PaneContentDeps) {
     ...stateObj,
     ...(path ? { path, filePath: path, file: path } : {}),
     state: deps.state,
+    ...(deps.context ? { context: deps.context } : {}),
   })
   const styleUrl = getPluginStyle(deps.pluginId)
   const styleNode = styleUrl

@@ -1,9 +1,4 @@
-import {
-  definePlugin,
-  type FileSelectEvent,
-  type PluginContext,
-  type VaultChangeEvent,
-} from '@numen/plugin-sdk'
+import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import FileTreeView from './FileTreeView.vue'
 
 export { FileTreeView }
@@ -15,14 +10,6 @@ export function activate(context: PluginContext): void {
     kind: 'file-tree',
     component: FileTreeView,
     title: 'File Tree Explorer',
-  })
-
-  context.onVaultChange((_event: VaultChangeEvent) => {
-    // Vault change handling
-  })
-
-  context.onFileSelect((_event: FileSelectEvent) => {
-    // File selection handling
   })
 }
 

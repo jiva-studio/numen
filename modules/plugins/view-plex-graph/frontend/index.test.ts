@@ -14,11 +14,11 @@ describe('view-plex-graph plugin', () => {
     expect(tabKinds[0]?.title).toBe('Knowledge Graph')
   })
 
-  it('subscribes to vault change and file select events', () => {
+  it('holds one subscription: the tab kind', () => {
     const ctx = createMockPluginContext({ pluginId: 'view-plex-graph' })
     activate(ctx)
 
-    expect(ctx.subscriptions.length).toBeGreaterThanOrEqual(2)
+    expect(ctx.subscriptions).toHaveLength(1)
 
     ctx.dispose()
     expect(ctx.subscriptions).toHaveLength(0)
