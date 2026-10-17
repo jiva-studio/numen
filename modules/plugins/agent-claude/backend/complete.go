@@ -14,7 +14,7 @@ import (
 
 var (
 	errNoKey     = errors.New("no Anthropic key is configured")
-	errNoCommand = errors.New("Claude Code CLI not found")
+	errNoCommand = errors.New("the Claude Code CLI is not installed")
 )
 
 // Complete answers one question from the model with no tools, no vault and no conversation.
