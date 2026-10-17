@@ -99,16 +99,7 @@ export function adoptHostStyles(shadowRoot: ShadowRoot): void {
     'head style:not([data-plugin-id]), head link[rel="stylesheet"]:not([data-plugin-id])',
   )
   for (const node of hostStyles) {
-    if (node.tagName.toLowerCase() === 'style' && node.textContent) {
-      const copy = document.createElement('style')
-      copy.textContent = node.textContent
-      shadowRoot.appendChild(copy)
-    } else if (node.tagName.toLowerCase() === 'link') {
-      const copy = document.createElement('link')
-      copy.rel = 'stylesheet'
-      copy.href = (node as HTMLLinkElement).href
-      shadowRoot.appendChild(copy)
-    }
+    shadowRoot.appendChild(node.cloneNode(true))
   }
 }
 
