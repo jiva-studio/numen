@@ -153,9 +153,9 @@ func (h *hostAgentProvider) StartRun(ctx context.Context, task port.Task) (port.
 	if err != nil {
 		return nil, err
 	}
+	defer bridge.Close()
 	run, err := bridge.StartRun(ctx, task)
 	if err != nil {
-		_ = bridge.Close()
 		return nil, err
 	}
 

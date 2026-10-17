@@ -123,3 +123,7 @@ func WaitForHandshake(ctx context.Context, r io.Reader) (int, error) {
 		return res.port, res.err
 	}
 }
+
+// modelInfoTimeout bounds a request for the model a plugin runs. It covers the
+// time a plugin takes to load that model.
+const modelInfoTimeout = 2 * time.Minute

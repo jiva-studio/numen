@@ -257,12 +257,14 @@ func TestTheProgramListNamesClaudeWithItsModels(t *testing.T) {
 // readSteps reads a run to its end and words each step.
 func readSteps(stream *connect.ServerStreamForClient[numenv1.AskAgentResponse]) ([]string, error) {
 	var steps []string
+	var toolPaths []string
 	for stream.Receive() {
 		switch s := stream.Msg().GetStep().(type) {
 		case *numenv1.AskAgentResponse_ModelStarted:
 			steps = append(steps, "model_started")
 		case *numenv1.AskAgentResponse_ToolCall:
 			steps = append(steps, "tool_call:"+s.ToolCall.GetTool())
+			toolPaths = append(toolPaths, s.ToolCall.GetPath())
 		case *numenv1.AskAgentResponse_ToolFinished:
 			steps = append(steps, "tool_finished")
 		case *numenv1.AskAgentResponse_Said:
@@ -501,5 +503,30 @@ func TestTheProgramIsInstalledUnderTheCommandLineTheInstallationSet(t *testing.T
 	}
 	if programs := got.Msg.GetPrograms(); len(programs) != 1 || !programs[0].GetIsInstalled() {
 		t.Errorf("the programs are %v", programs)
+	}
+
+	if len(toolPaths) != 2 || toolPaths[1] != "notes/math.md" {
+		t.Errorf("expected final tool path 'notes/math.md', got %v", toolPaths)
+	}
+}
+
+func TestExtractCallDetails(t *testing.T) {
+	about, path, span := extractCallDetails(`{"query":"algebra","path":"notes/math.md","start":10,"length":5}`)
+	if path != "notes/math.md" {
+		t.Errorf("expected path notes/math.md, got %q", path)
+	}
+	if about != "algebra" {
+		t.Errorf("expected about algebra, got %q", about)
+	}
+	if span == nil || span.From != 10 || span.To != 15 {
+		t.Errorf("unexpected span: %+v", span)
+	}
+
+	aboutFile, pathFile, _ := extractCallDetails(`{"file":"notes/file.md"}`)
+	if pathFile != "notes/file.md" {
+		t.Errorf("expected path notes/file.md, got %q", pathFile)
+	}
+	if aboutFile != "notes/file.md" {
+		t.Errorf("expected about notes/file.md, got %q", aboutFile)
 	}
 }

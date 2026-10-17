@@ -15,28 +15,33 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
+// AgentPluginHost provides plugin resolution and activation for AI agents.
+type AgentPluginHost interface {
+	port.PluginResolver
+	port.PluginActivator
+	port.PluginAcquirer
+}
+
 // AgentBridge connects port.Agent calls to an out-of-process agent plugin via Connect-RPC.
 type AgentBridge struct {
-	host     port.PluginActivator
+	host     AgentPluginHost
 	pluginID string
 	client   numenv1connect.AgentServiceClient
+	lease    *pluginLease
 }
 
 // OpenAgentBridgeForPlugin activates or connects to a specific agent plugin and returns an AgentBridge.
-func OpenAgentBridgeForPlugin(ctx context.Context, host port.PluginActivator, pluginID string) (*AgentBridge, error) {
-	endpoint, err := host.EnsureActive(ctx, pluginID)
+func OpenAgentBridgeForPlugin(ctx context.Context, host AgentPluginHost, pluginID string) (*AgentBridge, error) {
+	client, lease, err := openPlugin(ctx, host, pluginID, numenv1connect.NewAgentServiceClient)
 	if err != nil {
-		return nil, fmt.Errorf("ensure active %s: %w", pluginID, err)
+		return nil, err
 	}
-
-	httpClient := EndpointClient(endpoint)
-	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
-	client := numenv1connect.NewAgentServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 
 	return &AgentBridge{
 		host:     host,
 		pluginID: pluginID,
 		client:   client,
+		lease:    lease,
 	}, nil
 }
 
@@ -72,7 +77,7 @@ func newAskRequest(task port.Task) *v1.AskAgentRequest {
 	}
 }
 
-// StartRun starts execution of the given task through the agent plugin.
+// StartRun starts execution of the given task through the agent plugin. The run holds its own reference on the plugin until it stops.
 func (b *AgentBridge) StartRun(ctx context.Context, task port.Task) (port.Run, error) {
 	req := connect.NewRequest(newAskRequest(task))
 
@@ -83,13 +88,14 @@ func (b *AgentBridge) StartRun(ctx context.Context, task port.Task) (port.Run, e
 		return nil, fmt.Errorf("rpc ask agent: %w", err)
 	}
 
+	b.host.Acquire(b.pluginID)
 	run := &pluginRun{
 		ctx:    runCtx,
 		stream: stream,
 		cancel: cancel,
 		steps:  make(chan port.Step, 16),
 		onClose: func() {
-			_ = b.Close()
+			b.host.Release(b.pluginID)
 		},
 	}
 	go run.readSteps()
@@ -178,10 +184,9 @@ func (b *AgentBridge) GetAgentTools(ctx context.Context) ([]*v1.AgentToolDefinit
 	return resp.Msg.GetTools(), resp.Msg.GetSystemPromptExtension(), nil
 }
 
-// Close releases the active reference count for the agent plugin in the host supervisor.
+// Close releases the reference the bridge holds on the agent plugin, once. A run started through the bridge holds its own.
 func (b *AgentBridge) Close() error {
-	b.host.Release(b.pluginID)
-	return nil
+	return b.lease.Close()
 }
 
 type pluginRun struct {
@@ -228,30 +233,6 @@ func (r *pluginRun) readSteps() {
 			return
 		}
 	}
-}
-
-// stepKindWords are what a call does to the vault, in the words the plugins report it in.
-var stepKindWords = map[domain.StepKind]string{
-	domain.StepRead:   "read",
-	domain.StepEdit:   "edit",
-	domain.StepRemove: "remove",
-	domain.StepMove:   "move",
-	domain.StepSearch: "search",
-}
-
-// getKindWord is the word a plugin is told what a call does by. A kind that says nothing about the
-// vault is told as no word.
-func getKindWord(kind domain.StepKind) string { return stepKindWords[kind] }
-
-// getStepKind is what a call does to the vault, by the word the plugin reports it in. A word the
-// core does not know is a call of unknown effect.
-func getStepKind(kind string) domain.StepKind {
-	for effect, word := range stepKindWords {
-		if word == kind {
-			return effect
-		}
-	}
-	return domain.StepToolCall
 }
 
 func convertResponseStep(msg *v1.AskAgentResponse) port.Step {
@@ -308,4 +289,28 @@ func convertResponseStep(msg *v1.AskAgentResponse) port.Step {
 			Kind: domain.StepSay,
 		}
 	}
+}
+
+// stepKindWords are what a call does to the vault, in the words the plugins report it in.
+var stepKindWords = map[domain.StepKind]string{
+	domain.StepRead:   "read",
+	domain.StepEdit:   "edit",
+	domain.StepRemove: "remove",
+	domain.StepMove:   "move",
+	domain.StepSearch: "search",
+}
+
+// getKindWord is the word a plugin is told what a call does by. A kind that says nothing about the
+// vault is told as no word.
+func getKindWord(kind domain.StepKind) string { return stepKindWords[kind] }
+
+// getStepKind is what a call does to the vault, by the word the plugin reports it in. A word the
+// core does not know is a call of unknown effect.
+func getStepKind(kind string) domain.StepKind {
+	for effect, word := range stepKindWords {
+		if word == kind {
+			return effect
+		}
+	}
+	return domain.StepToolCall
 }
