@@ -43,7 +43,7 @@ export const createNoteCommands = (words: Words, agent: string): readonly Comman
     group: 'note',
     needs: 'exactly',
     isOffered: isNoteOpen,
-    warns: { action: words.destroys, then: words.forever, back: words.typeBack },
+    warns: { action: words.destroys, detail: words.forever, back: words.typeBack },
   },
   { id: 'ask', text: words.ask, group: 'note', isOffered: isNoteOpen },
   { id: 'copy', text: words.copy, group: 'note', isOffered: isNoteOpen },
