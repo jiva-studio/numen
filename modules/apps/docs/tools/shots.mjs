@@ -14,9 +14,9 @@
  * that ships with the application, which the window is drawn wearing.
  */
 export const SHOTS = [
-  { name: 'window', story: 'application-window--map', width: 1180, height: 740 },
-  { name: 'theme-dracula', story: 'application-window--map', width: 1180, height: 740, preset: 'dracula' },
-  { name: 'theme-solarized', story: 'application-window--map', width: 1180, height: 740, preset: 'solarized' },
+  { name: 'window', story: 'application-window--plex-map', width: 1180, height: 740 },
+  { name: 'theme-dracula', story: 'application-window--plex-map', width: 1180, height: 740, preset: 'dracula' },
+  { name: 'theme-solarized', story: 'application-window--plex-map', width: 1180, height: 740, preset: 'solarized' },
   { name: 'searching', story: 'application-window--searching', width: 1180, height: 740 },
   { name: 'asking', story: 'application-window--asking', width: 1180, height: 740 },
   { name: 'plex', story: 'application-window--mapping', width: 1180, height: 740 },
