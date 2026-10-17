@@ -80,6 +80,7 @@ type Host struct {
 	problems       []DiscoveryProblem
 	completer      port.Completer
 	hostEndpoint   *HostEndpoint
+	hostAddress    string
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.

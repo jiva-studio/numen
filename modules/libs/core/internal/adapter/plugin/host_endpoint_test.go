@@ -251,7 +251,7 @@ func TestAPluginCancellingEndsTheQuestion(t *testing.T) {
 // The endpoint listens on the loopback interface and answers for a token.
 func TestTheHostEndpointListensOnLoopbackAndServes(t *testing.T) {
 	held := newCallers(completerFunc(func(context.Context, port.Question) (string, error) { return "ok", nil }))
-	endpoint, err := OpenHostEndpoint(t.Context(), held)
+	endpoint, err := OpenHostEndpoint(t.Context(), hostEndpointAddress, held)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -358,5 +358,44 @@ func TestThePluginEnvironmentCarriesTheHostPort(t *testing.T) {
 		if strings.HasPrefix(entry, "NUMEN_HOST_PORT=") {
 			t.Errorf("environment %v names a host that is not serving", without)
 		}
+	}
+}
+
+// A plugin process launched while the host endpoint serves is told its port.
+func TestALaunchedPluginIsToldTheHostPort(t *testing.T) {
+	host := NewHost("desktop.editor")
+	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	host.SetCompleter(completerFunc(func(context.Context, port.Question) (string, error) { return "", nil }))
+
+	vars, err := host.getLaunchVars(t.Context(), "md.numen.a", 5, "t")
+	if err != nil {
+		t.Fatal(err)
+	}
+	served, _ := host.openHostEndpoint(t.Context())
+	if want := fmt.Sprintf("NUMEN_HOST_PORT=%d", served); served == 0 || !slices.Contains(vars, want) {
+		t.Errorf("environment %v lacks %s", vars, want)
+	}
+}
+
+// An endpoint that cannot start is reported and does not stop a plugin from launching.
+func TestAHostEndpointThatCannotStartDoesNotStopALaunch(t *testing.T) {
+	host := NewHost("desktop.editor")
+	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	host.hostAddress = "127.0.0.1:-1"
+	host.SetCompleter(completerFunc(func(context.Context, port.Question) (string, error) { return "", nil }))
+	var reported []error
+	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
+
+	vars, err := host.getLaunchVars(t.Context(), "md.numen.a", 5, "t")
+	if err != nil {
+		t.Fatalf("the launch failed: %v", err)
+	}
+	for _, entry := range vars {
+		if strings.HasPrefix(entry, "NUMEN_HOST_PORT=") {
+			t.Errorf("environment %v names a host that is not serving", vars)
+		}
+	}
+	if len(reported) != 1 || !strings.Contains(reported[0].Error(), "md.numen.a") {
+		t.Errorf("reported %v", reported)
 	}
 }

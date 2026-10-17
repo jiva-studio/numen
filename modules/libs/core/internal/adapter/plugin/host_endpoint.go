@@ -47,18 +47,19 @@ type HostEndpoint struct {
 	port    int
 }
 
-// OpenHostEndpoint starts serving the host service on a free loopback port.
-func OpenHostEndpoint(ctx context.Context, callers HostCallers) (*HostEndpoint, error) {
-	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", hostEndpointAddress)
+// OpenHostEndpoint starts serving the host service on the address, which is a
+// free loopback port by default.
+func OpenHostEndpoint(ctx context.Context, address string, callers HostCallers) (*HostEndpoint, error) {
+	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", address)
 	if err != nil {
 		return nil, fmt.Errorf("listen for plugins: %w", err)
 	}
-	address, ok := listener.Addr().(*net.TCPAddr)
+	bound, ok := listener.Addr().(*net.TCPAddr)
 	if !ok {
 		_ = listener.Close()
 		return nil, fmt.Errorf("%w: %s", errNotTCP, listener.Addr())
 	}
-	endpoint := &HostEndpoint{callers: callers, port: address.Port}
+	endpoint := &HostEndpoint{callers: callers, port: bound.Port}
 
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostServiceHandler(endpoint))
@@ -177,7 +178,7 @@ func (h *Host) openHostEndpoint(ctx context.Context) (int, error) {
 	if h.completer == nil || h.isClosed {
 		return 0, nil
 	}
-	endpoint, err := OpenHostEndpoint(ctx, h)
+	endpoint, err := OpenHostEndpoint(ctx, h.hostAddress, h)
 	if err != nil {
 		return 0, err
 	}
@@ -198,11 +199,14 @@ func (h *Host) closeHostEndpoint(ctx context.Context) error {
 }
 
 // getLaunchVars is the environment variables the host sets for a plugin process
-// about to start. The host endpoint is started for it if a completer is set.
+// about to start. The host endpoint is started for it if a completer is set. An
+// endpoint that cannot start is reported and leaves the plugin without
+// NUMEN_HOST_PORT; the plugins that never call the host launch all the same.
 func (h *Host) getLaunchVars(ctx context.Context, pluginID string, processPort int, token string) ([]string, error) {
 	hostPort, err := h.openHostEndpoint(ctx)
 	if err != nil {
-		return nil, err
+		h.reportError(fmt.Errorf("open host endpoint for plugin %s: %w", pluginID, err))
+		hostPort = 0
 	}
 	h.mu.RLock()
 	defer h.mu.RUnlock()
