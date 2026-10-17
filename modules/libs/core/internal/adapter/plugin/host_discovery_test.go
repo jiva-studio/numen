@@ -51,12 +51,12 @@ func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
-	var procsHolder []*os.Process
-	host.SetLauncher(startSleepLauncher(t, &atomic.Int32{}, &procsHolder))
+	host.SetLauncher(startSleepLauncher(t, &atomic.Int32{}, nil))
 	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 	host.Release("md.numen.ocr")
+	exited := getExitSignal(host.supervisors["md.numen.ocr"])
 
 	if err := os.RemoveAll(filepath.Join(tmp, "ocr")); err != nil {
 		t.Fatal(err)
@@ -68,7 +68,7 @@ func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 	if _, ok := host.GetPlugin("md.numen.ocr"); ok {
 		t.Fatal("a plugin removed from disk is still registered")
 	}
-	waitForProcessExit(t, procsHolder[0])
+	waitForProcessExit(t, exited)
 	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); !errors.Is(err, errPluginNotFound) {
 		t.Fatalf("expected errPluginNotFound, got %v", err)
 	}
@@ -81,12 +81,12 @@ func TestAChangedManifestReplacesTheRegisteredOneAndRestartsThePlugin(t *testing
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
-	var procsHolder []*os.Process
-	host.SetLauncher(startSleepLauncher(t, &atomic.Int32{}, &procsHolder))
+	host.SetLauncher(startSleepLauncher(t, &atomic.Int32{}, nil))
 	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 	host.Release("md.numen.ocr")
+	exited := getExitSignal(host.supervisors["md.numen.ocr"])
 
 	manifestPath := filepath.Join(tmp, "ocr", "manifest.json")
 	data, err := os.ReadFile(manifestPath)
@@ -105,7 +105,7 @@ func TestAChangedManifestReplacesTheRegisteredOneAndRestartsThePlugin(t *testing
 	if !ok || p.Manifest.Description != "changed" {
 		t.Fatalf("expected the changed manifest to be registered, got %+v", p.Manifest)
 	}
-	waitForProcessExit(t, procsHolder[0])
+	waitForProcessExit(t, exited)
 	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
