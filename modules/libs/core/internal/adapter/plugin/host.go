@@ -727,7 +727,7 @@ func (h *Host) defaultLauncher(
 	}
 
 	//nolint:contextcheck // the plugin process outlives the request that launched it
-	cmd := exec.CommandContext(context.Background(), binPath, "--port="+strconv.Itoa(port), "--token="+token)
+	cmd := exec.CommandContext(context.WithoutCancel(ctx), binPath, "--port="+strconv.Itoa(port), "--token="+token)
 	configureSysProcAttr(cmd)
 	cmd.Dir = workDir
 
