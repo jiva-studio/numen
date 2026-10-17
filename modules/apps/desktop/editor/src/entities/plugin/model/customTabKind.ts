@@ -312,7 +312,9 @@ function resolveCustomTabTarget(state: unknown, registration: TabKindRegistratio
 export function createCustomTabKind(
   pluginId: string,
   registration: TabKindRegistration,
-  deps?: PluginHostDeps & { readonly getContext?: () => PluginContext | undefined },
+  deps?: PluginHostDeps & {
+    readonly getContext?: (() => PluginContext | undefined) | undefined
+  },
 ): AnyTabKind {
   return {
     kind: registration.kind,

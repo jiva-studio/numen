@@ -137,7 +137,7 @@ describe('a tab kind component', () => {
     })
     ctx.registerTabKind({ kind: 'tree-kind', component: View, title: 'Tree' })
 
-    mount(kind!.pane as never, { props: { state: {} }, attachTo: document.body })
+    mount(kind!.pane as never, { props: { state: {} }, attachTo: document.body } as never)
     await Promise.resolve()
     await Promise.resolve()
 
