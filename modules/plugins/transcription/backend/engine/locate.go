@@ -10,6 +10,7 @@ import (
 
 	ort "github.com/getcharzp/onnxruntime_purego"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 	"github.com/jiva-studio/numen/modules/plugins/transcription/backend/onnxruntime"
 )
 
@@ -96,15 +97,19 @@ func model(ctx context.Context, cfg Config, path, name, kind string) (string, er
 	if name == "" {
 		return "", fmt.Errorf("no %s: name one, or say where it is", kind)
 	}
+	sum := getPinnedSum(name)
 	for _, at := range onnxruntime.GetPaths(cfg.Dir, filepath.Base(name)) {
-		if _, err := os.Stat(at); err == nil {
+		if _, err := os.Stat(at); err != nil {
+			continue
+		}
+		if sum == "" || models.VerifyFile(at, sum) == nil {
 			return at, nil
 		}
 	}
-	if !onnxruntime.IsAddress(name) {
+	if !models.IsAddress(name) {
 		return "", fmt.Errorf("the %s %q is not beside the application, and is not somewhere to fetch it from", kind, name)
 	}
-	found, err := onnxruntime.Fetch(ctx, cfg.settings(), name)
+	found, err := onnxruntime.Fetch(ctx, cfg.settings(), name, sum)
 	if err != nil {
 		return "", fmt.Errorf("the %s: %w", kind, err)
 	}

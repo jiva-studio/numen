@@ -45,11 +45,11 @@ func newEmbeddingServer() *embeddingServer {
 	if name := os.Getenv("NUMEN_EMBEDDING_MODEL"); name != "" {
 		info.Name = name
 		if name != "bge-m3" && name != "bge-m3-int8" {
-			local.Name = name
+			local = local.WithRepository(name)
 		}
 	}
 	if repo := os.Getenv("NUMEN_EMBEDDING_REPO"); repo != "" {
-		local.Name = repo
+		local = local.WithRepository(repo)
 	}
 	if dir := os.Getenv("NUMEN_EMBEDDING_DIR"); dir != "" {
 		local.Dir = dir
