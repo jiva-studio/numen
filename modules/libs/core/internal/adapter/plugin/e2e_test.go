@@ -83,7 +83,7 @@ func TestRealProofreadingPluginProcessE2E(t *testing.T) {
 	}
 
 	ctx := t.Context()
-	bridge, err := plugin.OpenProofreaderBridge(host)
+	bridge, err := plugin.OpenProofreaderBridge(host, "proofread the speech")
 	if err != nil {
 		t.Fatalf("OpenProofreaderBridge failed: %v", err)
 	}

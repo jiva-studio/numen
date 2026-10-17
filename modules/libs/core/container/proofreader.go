@@ -79,7 +79,7 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 
 	if profile.Use == UseService {
 		if host, ok := c.findPluginHost("proofreading"); ok {
-			return plugin.OpenProofreaderBridge(host)
+			return plugin.OpenProofreaderBridge(host, instruction)
 		}
 		return nil, errProofreadingUnavailable
 	}

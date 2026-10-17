@@ -31,22 +31,26 @@ type ProofreaderBridge struct {
 	host     ProofreaderPluginHost
 	pluginID string
 	name     string
-	mu       sync.Mutex
-	acquired bool
+	// instruction is what the plugin is told it is proofreading.
+	instruction string
+	mu          sync.Mutex
+	acquired    bool
 }
 
-// OpenProofreaderBridge activates or connects to the proofreading plugin and returns a port.Proofreader.
-func OpenProofreaderBridge(host ProofreaderPluginHost) (*ProofreaderBridge, error) {
+// OpenProofreaderBridge activates or connects to the proofreading plugin and returns a port.Proofreader
+// that sends instruction with every request.
+func OpenProofreaderBridge(host ProofreaderPluginHost, instruction string) (*ProofreaderBridge, error) {
 	plugin, ok := host.FindPluginByCapability("proofreading")
 	if !ok {
 		return nil, errNoProofreaderPlugin
 	}
 
 	return &ProofreaderBridge{
-		host:     host,
-		pluginID: plugin.Manifest.ID,
-		name:     plugin.Manifest.Name,
-		acquired: false,
+		host:        host,
+		pluginID:    plugin.Manifest.ID,
+		name:        plugin.Manifest.Name,
+		instruction: instruction,
+		acquired:    false,
 	}, nil
 }
 
@@ -86,7 +90,8 @@ func (b *ProofreaderBridge) Proofread(ctx context.Context, batches []domain.Proo
 	}
 
 	req := connect.NewRequest(&v1.ProofreadRequest{
-		Batches: reqBatches,
+		Batches:     reqBatches,
+		Instruction: b.instruction,
 	})
 
 	resp, err := client.Proofread(ctx, req)

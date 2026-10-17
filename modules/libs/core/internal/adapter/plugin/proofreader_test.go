@@ -39,7 +39,7 @@ func (s *mockProofreadingServer) Proofread(
 ) (*connect.Response[v1.ProofreadResponse], error) {
 	replies := make(map[int32]string)
 	for _, batch := range req.Msg.GetBatches() {
-		replies[batch.GetNumber()] = "corrected: " + batch.GetPrompt()
+		replies[batch.GetNumber()] = req.Msg.GetInstruction() + " corrected: " + batch.GetPrompt()
 	}
 	return connect.NewResponse(&v1.ProofreadResponse{
 		Replies: replies,
@@ -114,7 +114,7 @@ func TestProofreaderBridge(t *testing.T) {
 		return cmd.Process, io.NopCloser(r), nil
 	})
 
-	bridge, err := OpenProofreaderBridge(host)
+	bridge, err := OpenProofreaderBridge(host, "proofread the speech")
 	if err != nil {
 		t.Fatalf("OpenProofreaderBridge failed: %v", err)
 	}
@@ -135,7 +135,7 @@ func TestProofreaderBridge(t *testing.T) {
 	if len(replies) != 2 {
 		t.Fatalf("expected 2 replies, got %d", len(replies))
 	}
-	if replies[1] != "corrected: line 1 text" {
+	if replies[1] != "proofread the speech corrected: line 1 text" {
 		t.Fatalf("unexpected reply: %s", replies[1])
 	}
 
@@ -157,7 +157,7 @@ func TestProofreaderBridgeNoPlugin(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	_, err := OpenProofreaderBridge(host)
+	_, err := OpenProofreaderBridge(host, "proofread the speech")
 	if err == nil {
 		t.Fatal("expected error when no plugin registered, got nil")
 	}
