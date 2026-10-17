@@ -1,7 +1,10 @@
 package pdf
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"sync"
 	"testing"
@@ -16,11 +19,13 @@ func TestTheIdleWorkersFitTheAvailableMemory(t *testing.T) {
 		available int64
 		want      int
 	}{
-		{"a small laptop is capped by memory", 4, 2048 * mb, int(2048 * mb / 100 * idleMemoryPercent / workerBytes)},
+		{"a small laptop is capped by memory", 4, 2048 * mb, 3},
 		{"a desktop is capped by the plan", 6, 16 * 1024 * mb, 6},
 		{"a server is capped by the plan", 32, 64 * 1024 * mb, 32},
 		{"unknown memory keeps none", 8, 0, 0},
 		{"no plan keeps none", 0, 16 * 1024 * mb, 0},
+		{"negative plan keeps none", -1, 2048 * mb, 0},
+		{"negative memory keeps none", 4, -1, 0},
 	}
 	for _, c := range cases {
 		if got := ComputeIdleWorkers(c.planned, c.available); got != c.want {
@@ -186,4 +191,145 @@ func openPath(path string) (*document, error) {
 		return nil, fmt.Errorf("pdf: %w", err)
 	}
 	return openReader(file)
+}
+
+func TestSetIdleWorkersNegativeKeepsNone(t *testing.T) {
+	workers.Lock()
+	before := workers.idle
+	workers.Unlock()
+	t.Cleanup(func() { SetIdleWorkers(before) })
+
+	SetIdleWorkers(-1)
+	workers.Lock()
+	idle := workers.idle
+	workers.Unlock()
+	if idle != 0 {
+		t.Errorf("SetIdleWorkers(-1) set idle to %d, want 0", idle)
+	}
+}
+
+func TestAcquiringDocumentCancelsPendingIdleRelease(t *testing.T) {
+	startIdlePool(t, 2, time.Hour)
+	doc, err := openPath("testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc.close()
+
+	workers.Lock()
+	hasTimer := workers.release != nil
+	workers.Unlock()
+	if !hasTimer {
+		t.Fatal("expected pending idle release timer after closing document")
+	}
+
+	again, err := openPath("testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer again.close()
+
+	workers.Lock()
+	timerStopped := workers.release == nil
+	workers.Unlock()
+	if !timerStopped {
+		t.Error("expected release timer to be cancelled and cleared upon acquiring document")
+	}
+}
+
+type seekFailCloser struct {
+	closed bool
+}
+
+func (s *seekFailCloser) Read(p []byte) (n int, err error) { return 0, io.EOF }
+func (s *seekFailCloser) Seek(offset int64, whence int) (int64, error) {
+	return 0, errors.New("seek failed")
+}
+func (s *seekFailCloser) Close() error {
+	s.closed = true
+	return nil
+}
+
+func TestOpenReaderClosesFileOnSeekError(t *testing.T) {
+	fc := &seekFailCloser{}
+	doc, err := openReader(fc)
+	if err == nil {
+		if doc != nil {
+			doc.close()
+		}
+		t.Fatal("expected error from openReader with failing seek")
+	}
+	if !fc.closed {
+		t.Error("expected file to be closed on seek failure")
+	}
+}
+
+type trackingCloser struct {
+	*bytes.Reader
+	closed bool
+}
+
+func (t *trackingCloser) Close() error {
+	t.closed = true
+	return nil
+}
+
+func TestOpenReaderEmptyFileClosesFile(t *testing.T) {
+	fc := &trackingCloser{Reader: bytes.NewReader(nil)}
+	_, err := openReader(fc)
+	if !errors.Is(err, ErrNotPDF) {
+		t.Errorf("expected ErrNotPDF for empty file, got %v", err)
+	}
+	if !fc.closed {
+		t.Error("expected empty file to be closed")
+	}
+}
+
+func TestOpenReaderInvalidContentClosesFile(t *testing.T) {
+	fc := &trackingCloser{Reader: bytes.NewReader([]byte("not a valid pdf content"))}
+	_, err := openReader(fc)
+	if !errors.Is(err, ErrNotPDF) {
+		t.Errorf("expected ErrNotPDF for invalid file, got %v", err)
+	}
+	if !fc.closed {
+		t.Error("expected invalid file to be closed")
+	}
+}
+
+func TestDocumentCloseClosesFile(t *testing.T) {
+	raw, err := os.ReadFile("testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fc := &trackingCloser{Reader: bytes.NewReader(raw)}
+	doc, err := openReader(fc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fc.closed {
+		t.Error("file should not be closed while document is open")
+	}
+	doc.close()
+	if !fc.closed {
+		t.Error("doc.close() did not close file")
+	}
+}
+
+func TestDocumentTextInvalidPageIndex(t *testing.T) {
+	raw, err := os.ReadFile("testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc, err := openBytes(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer doc.close()
+
+	if got := doc.text(-1); got != "" {
+		t.Errorf("doc.text(-1) = %q, want empty string", got)
+	}
+	if got := doc.text(9999); got != "" {
+		t.Errorf("doc.text(9999) = %q, want empty string", got)
+	}
 }

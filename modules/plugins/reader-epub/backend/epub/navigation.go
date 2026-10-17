@@ -106,6 +106,7 @@ func appendPoint(out []entry, point ncxPoint, base string) []entry {
 // its links.
 func readNavDocument(raw []byte, base string) []entry {
 	root, err := html.Parse(bytes.NewReader(raw))
+	// gomutants:disable-next-line BRANCH_IF reason="html.Parse on bytes.NewReader never errors"
 	if err != nil {
 		return nil
 	}

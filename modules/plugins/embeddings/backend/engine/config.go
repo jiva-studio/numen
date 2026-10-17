@@ -62,6 +62,7 @@ func CheckIdentity(identity ModelInfo, repository string) error {
 
 // GetProvider resolves the onnxruntime Provider.
 func (m LocalModel) GetProvider() onnxruntime.Provider {
+	// gomutants:disable-next-line BRANCH_IF reason="ParseProvider maps the empty string to ProviderAuto on the slow path"
 	if m.Provider == "" {
 		return onnxruntime.ProviderAuto
 	}
@@ -95,6 +96,7 @@ func (m LocalModel) GetPasses(provider onnxruntime.Provider) int {
 	case m.PassBudget > 0:
 		return m.PassBudget
 	}
+	// gomutants:disable-next-line INTEGER_DECREMENT reason="GOMAXPROCS reads the setting for every argument below one"
 	cpus := runtime.GOMAXPROCS(0)
 	switch {
 	case cpus <= passLadderLow:
