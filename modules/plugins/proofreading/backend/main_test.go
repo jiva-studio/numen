@@ -148,3 +148,22 @@ func TestProofreadTextRefusesWhatItCannotAnswer(t *testing.T) {
 		t.Errorf("no key gave %v", err)
 	}
 }
+
+// Every kind of text the schema names is one ProofreadText answers.
+func TestProofreadTextAnswersEveryKindTheSchemaNames(t *testing.T) {
+	t.Setenv("NUMEN_PROOFREADING_KEY", "")
+	t.Setenv("OPENAI_API_KEY", "")
+	proof := &proofreadingServer{}
+
+	values := numenv1.ProofreadKind(0).Descriptor().Values()
+	for i := range values.Len() {
+		kind := numenv1.ProofreadKind(values.Get(i).Number())
+		if kind == numenv1.ProofreadKind_PROOFREAD_KIND_UNSPECIFIED {
+			continue
+		}
+		_, err := proof.ProofreadText(context.Background(), connect.NewRequest(&numenv1.ProofreadTextRequest{Kind: kind}))
+		if connect.CodeOf(err) == connect.CodeInvalidArgument {
+			t.Errorf("%s was refused as unknown", kind)
+		}
+	}
+}

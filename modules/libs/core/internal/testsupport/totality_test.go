@@ -24,6 +24,7 @@ var walked = map[protoreflect.FullName]string{
 	"numen.v1.BudgetUnit":      "internal/adapterlib/wire: round trip through BudgetUnitIn and BudgetUnitOf",
 	"numen.v1.ErrorCode":       "adapter/mcp: worded by said",
 	"numen.v1.ProblemKind":     "adapter/window/editor: written by faultOf",
+	"numen.v1.ProofreadKind":   "internal/adapter/plugin: written by getWireKind, and plugins/proofreading: read by ProofreadText",
 	"numen.v1.FlushResult":     "internal/adapterlib/wire: read by left",
 	"numen.v1.Goal":            "internal/adapterlib/wire: round trip through GoalIn and GoalOf",
 	"numen.v1.Mode":            "internal/adapterlib/wire: round trip through ConvertModeFromWire and ConvertModeToWire",

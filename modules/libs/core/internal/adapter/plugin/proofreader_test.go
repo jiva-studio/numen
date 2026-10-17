@@ -22,6 +22,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 )
 
 type mockProofreadingServer struct{}
@@ -201,4 +202,17 @@ func TestProofreaderBridgeAsksNothingWithoutLines(t *testing.T) {
 	if err != nil || !answer.IsDone || len(answer.Corrections) != 0 {
 		t.Fatalf("answer %+v, %v", answer, err)
 	}
+}
+
+// TestEveryProofreadKindIsWrittenFromOne. A kind the schema names and nothing is
+// written as reaches the plugin as the unspecified value, and the plugin refuses
+// the request.
+func TestEveryProofreadKindIsWrittenFromOne(t *testing.T) {
+	testsupport.CheckProduced(t, map[v1.ProofreadKind]domain.ProofreadKind{
+		v1.ProofreadKind_PROOFREAD_KIND_SCAN:   domain.ProofreadScan,
+		v1.ProofreadKind_PROOFREAD_KIND_SPEECH: domain.ProofreadSpeech,
+	}, func(kind domain.ProofreadKind) v1.ProofreadKind {
+		wire, _ := getWireKind(kind)
+		return wire
+	})
 }
