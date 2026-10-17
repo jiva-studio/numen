@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"sync/atomic"
@@ -31,6 +32,9 @@ func startAgent(t *testing.T, agentSvc *agentServer) numenv1connect.AgentService
 // writeScript writes an executable shell script and answers with its path.
 func writeScript(t *testing.T, name, body string) string {
 	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("the fixtures are shell scripts")
+	}
 	path := filepath.Join(t.TempDir(), name)
 	if err := os.WriteFile(path, []byte("#!/bin/sh\n"+body), 0o755); err != nil {
 		t.Fatalf("write script: %v", err)
@@ -69,8 +73,8 @@ func TestLifecycleServer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Configure failed: %v", err)
 	}
-	if agentSvc.catalogue.key != "k" || agentSvc.catalogue.base != "http://models.test" {
-		t.Errorf("the models are asked with %q at %q", agentSvc.catalogue.key, agentSvc.catalogue.base)
+	if key, base := agentSvc.catalogue.credentials(); key != "k" || base != "http://models.test" {
+		t.Errorf("the models are asked with %q at %q", key, base)
 	}
 }
 
@@ -196,10 +200,7 @@ func TestAgentServiceRPC(t *testing.T) {
 // The state says the program is out of reach where it is nowhere to be found, and the program list
 // says it is not installed.
 func TestTheProgramIsUnreachableWhereItIsNotInstalled(t *testing.T) {
-	t.Setenv("PATH", t.TempDir())
-	t.Setenv("HOME", t.TempDir())
-	t.Setenv("NUMEN_CLAUDE_COMMAND", "")
-	t.Setenv("CLAUDE_COMMAND", "")
+	withoutClaudeAnywhere(t)
 	t.Setenv(anthropicKeyVar, "")
 	client := startAgent(t, &agentServer{})
 
@@ -469,10 +470,7 @@ func TestFinishingAConversationStopsItsRun(t *testing.T) {
 
 // A program nowhere to be found is told to the person, and the run ends.
 func TestAskAgentSaysWhenTheProgramIsNotInstalled(t *testing.T) {
-	t.Setenv("PATH", t.TempDir())
-	t.Setenv("HOME", t.TempDir())
-	t.Setenv("NUMEN_CLAUDE_COMMAND", "")
-	t.Setenv("CLAUDE_COMMAND", "")
+	withoutClaudeAnywhere(t)
 	client := startAgent(t, &agentServer{})
 
 	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{Prompt: "q"}))
@@ -507,10 +505,7 @@ func TestAClosedAgentTakesNoTask(t *testing.T) {
 // A command line the installation set counts as the program being installed, wherever the program
 // stands on this machine.
 func TestTheProgramIsInstalledUnderTheCommandLineTheInstallationSet(t *testing.T) {
-	t.Setenv("PATH", t.TempDir())
-	t.Setenv("HOME", t.TempDir())
-	t.Setenv("NUMEN_CLAUDE_COMMAND", "")
-	t.Setenv("CLAUDE_COMMAND", "")
+	withoutClaudeAnywhere(t)
 	t.Setenv(anthropicKeyVar, "")
 	client := startAgent(t, &agentServer{})
 
@@ -547,4 +542,17 @@ func TestExtractCallDetails(t *testing.T) {
 	if aboutFile != "notes/file.md" {
 		t.Errorf("expected about notes/file.md, got %q", aboutFile)
 	}
+}
+
+// withoutClaudeAnywhere makes this machine hold no Claude Code, wherever the program is searched
+// for.
+func withoutClaudeAnywhere(t *testing.T) {
+	t.Helper()
+	t.Setenv("PATH", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("NUMEN_CLAUDE_COMMAND", "")
+	t.Setenv("CLAUDE_COMMAND", "")
+	was := claudeSearchPlaces
+	claudeSearchPlaces = nil
+	t.Cleanup(func() { claudeSearchPlaces = was })
 }

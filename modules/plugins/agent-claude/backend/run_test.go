@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -220,7 +221,12 @@ func endsWithin(t *testing.T, what string, limit time.Duration, run func()) {
 
 // Finishing one conversation ends what is answering in it and leaves another answering.
 func TestFinishingOneConversationLeavesAnotherAnswering(t *testing.T) {
-	script := writeScript(t, "claude", announce+"sleep 120\n")
+	fifo := filepath.Join(t.TempDir(), "go")
+	if err := exec.Command("mkfifo", fifo).Run(); err != nil {
+		t.Skipf("no named pipe to wait on: %v", err)
+	}
+	// Each program says it runs, waits to be let go on, says so again, and then waits for good.
+	script := writeScript(t, "claude", announce+"read go < "+fifo+"\n"+announce+"sleep 120\n")
 	client := startAgent(t, &agentServer{})
 
 	streams := map[string]*connect.ServerStreamForClient[numenv1.AskAgentResponse]{}
@@ -248,16 +254,17 @@ func TestFinishingOneConversationLeavesAnotherAnswering(t *testing.T) {
 	finish("one")
 	endsWithin(t, "the finished conversation", 30*time.Second, func() { _, _ = readSteps(streams["one"]) })
 
+	// Only the program that still runs reads the pipe, and it says so again.
+	if err := os.WriteFile(fifo, []byte("go\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	awaitUp(t, streams["two"])
+
 	second := make(chan struct{})
 	go func() {
 		_, _ = readSteps(streams["two"])
 		close(second)
 	}()
-	select {
-	case <-second:
-		t.Fatal("the other conversation was stopped")
-	default:
-	}
 	finish("two")
 	endsWithin(t, "the other conversation", 30*time.Second, func() { <-second })
 }

@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -88,6 +89,7 @@ func TestAgentServerToolsAndPrompt(t *testing.T) {
 // writeScript writes an executable shell script and answers with its path.
 func writeScript(t *testing.T, name, body string) string {
 	t.Helper()
+	needsShell(t)
 	path := filepath.Join(t.TempDir(), name)
 	if err := os.WriteFile(path, []byte("#!/bin/sh\n"+body), 0o755); err != nil {
 		t.Fatal(err)
@@ -109,6 +111,7 @@ func startAgent(t *testing.T) numenv1connect.AgentServiceClient {
 // The program list names Antigravity and Codex, installed where they are found, with the models
 // Codex lists under the command line the installation set for it.
 func TestTheProgramListNamesAntigravityAndCodexWithTheModelsCodexLists(t *testing.T) {
+	needsShell(t)
 	t.Setenv("HOME", t.TempDir())
 	bin := t.TempDir()
 	for _, name := range []string{"agy", "codex"} {
@@ -292,5 +295,35 @@ func TestAProgramIsInstalledUnderTheCommandLineTheInstallationSet(t *testing.T) 
 				t.Errorf("%v", one)
 			}
 		}
+	}
+}
+
+// A listing that failed is asked for again, and what Codex lists then is kept.
+func TestAFailedCodexListingIsAskedForAgain(t *testing.T) {
+	needsShell(t)
+	t.Setenv("HOME", t.TempDir())
+	failing := writeScript(t, "codex", "exit 1\n")
+	var cache codexModelCache
+
+	if got := cache.get(t.Context(), []string{failing}); got != nil {
+		t.Fatalf("a failed listing gave %+v", got)
+	}
+	// The same command line, working now.
+	if err := os.WriteFile(failing, []byte("#!/bin/sh\n"+
+		`echo '{"id":1,"result":{}}'`+"\n"+
+		`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+
+		"while read -r _; do :; done\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if got := cache.get(t.Context(), []string{failing}); len(got) != 1 || got[0].Name != "gpt-x" {
+		t.Errorf("the next listing gave %+v", got)
+	}
+}
+
+// needsShell skips a test that runs a script where the system has no shell to run it.
+func needsShell(t *testing.T) {
+	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("the fixtures are shell scripts")
 	}
 }

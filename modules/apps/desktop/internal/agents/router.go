@@ -155,14 +155,18 @@ func (r *Router) StartRun(ctx context.Context, task port.Task) (port.Run, error)
 	task.Endpoint = r.endpoint
 	task.ToolDeclarations = r.declarations
 
+	r.mu.Lock()
+	if r.isClosed {
+		r.mu.Unlock()
+		return nil, errors.New("this router is closed")
+	}
 	if task.Conversation != "" {
-		r.mu.Lock()
 		if r.conversations == nil {
 			r.conversations = make(map[string]struct{})
 		}
 		r.conversations[task.Conversation] = struct{}{}
-		r.mu.Unlock()
 	}
+	r.mu.Unlock()
 	fmt.Fprintf(r.out, "agents: dispatching task to %s (model: %s)\n", use, task.Model)
 	run, err := r.provider.StartRun(ctx, task)
 	if err != nil {

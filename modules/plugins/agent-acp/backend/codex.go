@@ -59,7 +59,7 @@ func readCodexCache() []AgentModel {
 const codexListLimit = 15 * time.Second
 
 // codexModelCache keeps what Codex listed, for as long as the command line asked stays the same. A
-// failure is kept as none, and a request that ended before Codex answered keeps nothing.
+// failure keeps nothing, so the next request asks again.
 type codexModelCache struct {
 	mu     sync.Mutex
 	key    string
@@ -79,10 +79,7 @@ func (c *codexModelCache) get(ctx context.Context, command []string) []AgentMode
 	defer stop()
 	models, err := GetCodexModels(asking, command)
 	if err != nil {
-		if ctx.Err() != nil {
-			return nil
-		}
-		models = nil
+		return nil
 	}
 	c.key, c.models, c.isKept = key, models, true
 	return models

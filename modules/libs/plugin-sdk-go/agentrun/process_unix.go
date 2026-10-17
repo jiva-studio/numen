@@ -10,7 +10,10 @@ import (
 // detach puts the child in a process group of its own, which is what ends it and everything it
 // started in one act.
 func detach(cmd *exec.Cmd) {
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	if cmd.SysProcAttr == nil {
+		cmd.SysProcAttr = &syscall.SysProcAttr{}
+	}
+	cmd.SysProcAttr.Setpgid = true
 }
 
 // kill ends the child and everything it started.

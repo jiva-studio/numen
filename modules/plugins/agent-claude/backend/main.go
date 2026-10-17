@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"slices"
@@ -314,7 +315,10 @@ func main() {
 
 // removeFile removes the file, if there is one.
 func removeFile(path string) {
-	if path != "" {
-		_ = os.Remove(path)
+	if path == "" {
+		return
+	}
+	if err := os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		fmt.Fprintf(os.Stderr, "remove %s: %v\n", path, err)
 	}
 }
