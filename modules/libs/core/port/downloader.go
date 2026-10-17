@@ -60,7 +60,7 @@ type Downloader interface {
 	// GetDownloadModel is what this address is downloaded by. A video and a page
 	// are reached by different tools, and what is kept names the one that
 	// brought it. A provider that does not answer is an error and names nothing.
-	GetDownloadModel(at domain.URL) (DownloadModel, error)
+	GetDownloadModel(ctx context.Context, at domain.URL) (DownloadModel, error)
 
 	// GetMetadata is what the site says about the address, taking none of it.
 	GetMetadata(ctx context.Context, at domain.URL) (Metadata, error)

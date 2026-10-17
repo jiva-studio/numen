@@ -21,7 +21,7 @@ type site struct {
 	bytes []byte
 }
 
-func (s *site) GetDownloadModel(domain.URL) (port.DownloadModel, error) {
+func (s *site) GetDownloadModel(context.Context, domain.URL) (port.DownloadModel, error) {
 	return port.DownloadModel{Tool: "a test", Version: "1", Producer: domain.Captions}, nil
 }
 

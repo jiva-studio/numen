@@ -62,7 +62,11 @@ func TestAnEmbeddingPluginThatIsDownLeavesTheVectorsOfTheIndex(t *testing.T) {
 		t.Errorf("acquired %d times, released %d times", host.acquired.Load(), host.released.Load())
 	}
 
-	if _, err := held.ReadWholeVault(t.Context(), db, indexing, v); err != nil {
+	whole, err := held.ReadWholeVault(t.Context(), db, indexing, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := whole.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 	if got := owingTo(t, db, v, unit{"first"}); got != 0 {

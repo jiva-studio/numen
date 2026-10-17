@@ -26,7 +26,7 @@ type site struct {
 	refusing    error
 }
 
-func (s *site) GetDownloadModel(_ domain.URL) (port.DownloadModel, error) {
+func (s *site) GetDownloadModel(_ context.Context, _ domain.URL) (port.DownloadModel, error) {
 	producer := domain.Captions
 	if len(s.cues) == 0 && s.prose != "" {
 		producer = domain.Article

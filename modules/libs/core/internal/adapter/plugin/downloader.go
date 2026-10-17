@@ -72,8 +72,8 @@ func (b *DownloaderBridge) CanHandle(ctx context.Context, at domain.URL) (bool, 
 }
 
 // GetDownloadModel returns the tool identity and version for a given address.
-func (b *DownloaderBridge) GetDownloadModel(at domain.URL) (port.DownloadModel, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), modelInfoTimeout)
+func (b *DownloaderBridge) GetDownloadModel(ctx context.Context, at domain.URL) (port.DownloadModel, error) {
+	ctx, cancel := context.WithTimeout(ctx, modelInfoTimeout)
 	defer cancel()
 	req := connect.NewRequest(&v1.GetDownloadModelRequest{
 		Url: string(at),

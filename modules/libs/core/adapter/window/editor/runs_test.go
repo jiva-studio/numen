@@ -441,6 +441,6 @@ func TestListingWhatAFileCarriesBeginsNoRun(t *testing.T) {
 // url carries follows from what downloads it, and a test says which that is.
 type reachingASite struct{ port.Downloader }
 
-func (reachingASite) GetDownloadModel(domain.URL) (port.DownloadModel, error) {
+func (reachingASite) GetDownloadModel(context.Context, domain.URL) (port.DownloadModel, error) {
 	return port.DownloadModel{Tool: "a test", Producer: domain.Captions}, nil
 }

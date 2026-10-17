@@ -165,7 +165,7 @@ func TestDownloaderBridge(t *testing.T) {
 		t.Fatalf("CanHandle failed: %v, can=%v", err, can)
 	}
 
-	model, err := bridge.GetDownloadModel(url)
+	model, err := bridge.GetDownloadModel(ctx, url)
 	if err != nil {
 		t.Fatalf("GetDownloadModel failed: %v", err)
 	}

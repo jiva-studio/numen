@@ -133,7 +133,7 @@ func TestADownloaderThatIsDownNamesNoModel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	model, err := bridge.GetDownloadModel(domain.URL("https://example.com/video"))
+	model, err := bridge.GetDownloadModel(t.Context(), domain.URL("https://example.com/video"))
 	if err == nil {
 		t.Fatal("a download model was named by a plugin that is down")
 	}
