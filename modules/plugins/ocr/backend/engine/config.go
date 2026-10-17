@@ -68,13 +68,13 @@ type RegionKinds struct {
 func Defaults() Config {
 	return Config{
 		Layout: LayoutModel{
-			Name: "https://huggingface.co/PaddlePaddle/PP-DocLayoutV3_onnx/resolve/main/inference.onnx",
+			Name: layoutDefault,
 		},
 		Detect: DetectModel{
-			Name: "https://huggingface.co/PaddlePaddle/PP-OCRv5_mobile_det_onnx/resolve/main/inference.onnx",
+			Name: detectDefault,
 		},
 		Recognise: RecogniserModel{
-			Name: "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx",
+			Name: recogDefault,
 			DPI:  300,
 		},
 		ShouldDownload: true,

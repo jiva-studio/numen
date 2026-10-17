@@ -15,6 +15,7 @@ import (
 	"connectrpc.com/connect"
 	_ "golang.org/x/image/webp"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
@@ -176,7 +177,7 @@ func run() error {
 	cfg := engine.Defaults()
 	if dir := os.Getenv("NUMEN_OCR_DIR"); dir != "" {
 		cfg.Dir = dir
-	} else if modelsDir := os.Getenv("NUMEN_MODELS_DIR"); modelsDir != "" {
+	} else if modelsDir := os.Getenv(models.EnvDir); modelsDir != "" {
 		cfg.Dir = modelsDir
 	}
 	if rt := os.Getenv("NUMEN_OCR_RUNTIME"); rt != "" {

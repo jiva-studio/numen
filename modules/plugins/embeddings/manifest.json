@@ -6,7 +6,7 @@
   "capabilities": ["embedding"],
   "targets": ["desktop.editor"],
   "activationEvents": ["*"],
-  "permissions": ["vault:read"],
+  "permissions": ["vault:read", "network:outbound"],
   "lifecycle": {
     "mode": "daemon",
     "idleTimeoutSeconds": 0,

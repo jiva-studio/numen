@@ -9,6 +9,7 @@ import (
 
 	ort "github.com/getcharzp/onnxruntime_purego"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 	"github.com/jiva-studio/numen/modules/plugins/ocr/backend/onnxruntime"
 )
 
@@ -65,10 +66,10 @@ func model(ctx context.Context, cfg Config, path, name, kind string) (string, er
 			return at, nil
 		}
 	}
-	if !onnxruntime.IsAddress(name) {
+	if !models.IsAddress(name) {
 		return "", fmt.Errorf("the %s model %q is not beside the application, and is not somewhere to fetch it from", kind, name)
 	}
-	found, err := onnxruntime.Fetch(ctx, cfg.settings(), name)
+	found, err := onnxruntime.Fetch(ctx, cfg.settings(), name, getPinnedSum(name))
 	if err != nil {
 		return "", fmt.Errorf("the %s model: %w", kind, err)
 	}

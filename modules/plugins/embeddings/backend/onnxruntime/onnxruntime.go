@@ -27,13 +27,6 @@ type Settings struct {
 	Fetching func(what string, done, total int64)
 }
 
-// reportProgress reports how far a download has got, and does nothing when nobody asked.
-func (s Settings) reportProgress(what string, done, total int64) {
-	if s.Fetching != nil {
-		s.Fetching(what, done, total)
-	}
-}
-
 // Open is the ONNX Runtime this machine runs, opened. One engine serves every
 // caller here, and every library that makes an engine of its own makes it in the
 // same breath, so which engine a tensor is built through is settled once and
@@ -102,7 +95,7 @@ func open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	archive, err := Fetch(ctx, s, found.address())
+	archive, err := Fetch(ctx, s, found.address(), found.sum)
 	if err != nil {
 		return nil, "", fmt.Errorf("the onnx runtime: %w", err)
 	}

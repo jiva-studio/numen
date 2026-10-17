@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/gomlx/go-huggingface/hub"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 )
 
 // FetchProgress reports progress while downloading models.
@@ -55,7 +57,17 @@ func locateInDir(dir, file string) (Paths, error) {
 }
 
 func downloadModel(ctx context.Context, cfg LocalModel, file string, progress FetchProgress) (Paths, error) {
-	repo := hub.New(cfg.Name).WithProgressBar(false)
+	if models.IsOffline() {
+		return Paths{}, fmt.Errorf("%s is not on this machine, and %s forbids fetching it", cfg.Name, models.EnvOffline)
+	}
+	home, err := models.GetHome()
+	if err != nil {
+		return Paths{}, fmt.Errorf("models folder: %w", err)
+	}
+	repo := hub.New(cfg.Name).WithProgressBar(false).WithCacheDir(filepath.Join(home, "huggingface"))
+	if cfg.Revision != "" {
+		repo = repo.WithRevision(cfg.Revision)
+	}
 	folder, sizes, err := listRepoFiles(repo)
 	if err != nil {
 		return Paths{}, fmt.Errorf("listing %s: %w", cfg.Name, err)
@@ -69,17 +81,23 @@ func downloadModel(ctx context.Context, cfg LocalModel, file string, progress Fe
 	for _, name := range files {
 		total += sizes[name]
 	}
+	if err := models.CheckQuota(home, total); err != nil {
+		return Paths{}, fmt.Errorf("fetching %s: %w", cfg.Name, err)
+	}
 	if dir, err := repo.CacheDir(); err == nil {
 		defer reportProgress(dir, files, sizes, total, progress)()
 	}
 
-	p, err := fetchModelFiles(ctx, repo, files, file)
+	p, err := fetchModelFiles(ctx, repo, files, file, cfg.Sums)
 	if err != nil {
 		return Paths{}, err
 	}
 	if repo.HasFile(TokenizerFile) {
 		if p.Tokenizer, err = repo.DownloadFileCtx(ctx, TokenizerFile); err != nil {
 			return Paths{}, fmt.Errorf("fetching %s: %w", TokenizerFile, err)
+		}
+		if err := checkPinned(cfg.Sums, TokenizerFile, p.Tokenizer); err != nil {
+			return Paths{}, err
 		}
 	}
 	if p.Tokenizer == "" {
@@ -88,12 +106,15 @@ func downloadModel(ctx context.Context, cfg LocalModel, file string, progress Fe
 	return p, nil
 }
 
-func fetchModelFiles(ctx context.Context, repo *hub.Repo, files []string, file string) (Paths, error) {
+func fetchModelFiles(ctx context.Context, repo *hub.Repo, files []string, file string, sums map[string]string) (Paths, error) {
 	p := Paths{}
 	for _, name := range files {
 		at, err := repo.DownloadFileCtx(ctx, ModelFolder+"/"+name)
 		if err != nil {
 			return Paths{}, fmt.Errorf("fetching %s/%s: %w", ModelFolder, name, err)
+		}
+		if err := checkPinned(sums, ModelFolder+"/"+name, at); err != nil {
+			return Paths{}, err
 		}
 		if name == file {
 			p.Model = at
@@ -189,11 +210,24 @@ func selectModelFiles(folder []string, named string) []string {
 	return out
 }
 
-func isFileOfAnyModel(name string, models []string) bool {
-	for _, model := range models {
+func isFileOfAnyModel(name string, siblings []string) bool {
+	for _, model := range siblings {
 		if strings.HasPrefix(name, model) {
 			return true
 		}
 	}
 	return false
+}
+
+// checkPinned returns an error when the file at path holds other than the sum
+// pinned for name. A name with no pin is not checked.
+func checkPinned(sums map[string]string, name, path string) error {
+	sum, ok := sums[name]
+	if !ok {
+		return nil
+	}
+	if err := models.VerifyFile(path, sum); err != nil {
+		return fmt.Errorf("%s: %w", name, err)
+	}
+	return nil
 }
