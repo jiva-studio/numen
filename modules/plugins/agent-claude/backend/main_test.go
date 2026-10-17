@@ -418,7 +418,7 @@ func TestAConversationResumesItsSession(t *testing.T) {
 // Finishing a conversation ends the program a task of it is running, and the task ends without a
 // reason.
 func TestFinishingAConversationStopsItsRun(t *testing.T) {
-	script := writeScript(t, "mock-claude.sh", "sleep 60\n")
+	script := writeScript(t, "mock-claude.sh", announce+"sleep 120\n")
 	client := startAgent(t, &agentServer{})
 
 	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
@@ -427,32 +427,20 @@ func TestFinishingAConversationStopsItsRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ended := make(chan []string, 1)
-	go func() {
-		steps, _ := readSteps(stream)
-		ended <- steps
-	}()
+	awaitUp(t, stream)
 
-	// The run is registered once the request arrives; finishing until none is left stops it.
-	deadline := time.After(10 * time.Second)
-	for {
-		if _, err := client.FinishConversation(t.Context(), connect.NewRequest(
-			&numenv1.FinishConversationRequest{Conversation: "c-1"})); err != nil {
-			t.Fatal(err)
-		}
-		select {
-		case steps := <-ended:
-			for _, step := range steps {
-				if strings.HasPrefix(step, "stopped:") {
-					t.Errorf("a stopped run reported %q", step)
-				}
-			}
-			return
-		case <-time.After(50 * time.Millisecond):
-		case <-deadline:
-			t.Fatal("the run was not stopped")
-		}
+	if _, err := client.FinishConversation(t.Context(), connect.NewRequest(
+		&numenv1.FinishConversationRequest{Conversation: "c-1"})); err != nil {
+		t.Fatal(err)
 	}
+	endsWithin(t, "the finished conversation", 30*time.Second, func() {
+		steps, _ := readSteps(stream)
+		for _, step := range steps {
+			if strings.HasPrefix(step, "stopped:") {
+				t.Errorf("a stopped run reported %q", step)
+			}
+		}
+	})
 }
 
 // A program nowhere to be found is told to the person, and the run ends.

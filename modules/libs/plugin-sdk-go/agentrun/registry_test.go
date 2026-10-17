@@ -131,10 +131,12 @@ func TestCloseWaitsForTheReaderOfWhatWasAdded(t *testing.T) {
 		close(closed)
 	}()
 
+	// Close stops the work before it waits for the reader, and cannot return before the reader ends.
+	<-w.Stopped()
 	select {
 	case <-closed:
 		t.Fatal("Close returned while the reader of the work was still to finish")
-	case <-time.After(100 * time.Millisecond):
+	default:
 	}
 
 	w.End()

@@ -5,20 +5,20 @@ package agentrun_test
 import (
 	"bufio"
 	"context"
+	"io"
 	"os/exec"
-	"strconv"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agentrun"
 )
 
-// Cancelling the context of a supervised command ends what the command started as well.
+// Cancelling the context of a supervised command ends what the command started as well. The output
+// of the child is held by everything it started, so it ends only when all of them have ended.
 func TestSuperviseEndsWhatTheChildStarted(t *testing.T) {
 	running, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	cmd := exec.CommandContext(running, "sh", "-c", "sleep 120 & echo $!; wait")
+	cmd := exec.CommandContext(running, "sh", "-c", "sleep 120 & echo started; wait")
 	agentrun.Supervise(cmd)
 	out, err := cmd.StdoutPipe()
 	if err != nil {
@@ -28,27 +28,24 @@ func TestSuperviseEndsWhatTheChildStarted(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	line, err := bufio.NewReader(out).ReadString('\n')
-	if err != nil {
+	reader := bufio.NewReader(out)
+	if _, err := reader.ReadString('\n'); err != nil {
 		t.Fatal(err)
 	}
-	grandchild, err := strconv.Atoi(strings.TrimSpace(line))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !isRunning(grandchild) {
-		t.Fatal("the process the child started is not running")
-	}
-
 	cancel()
-	_ = cmd.Wait()
 
-	// A process whose parent was killed is waited for by init, so it stays visible for a moment.
-	for range 200 {
-		if !isRunning(grandchild) {
-			return
+	ended := make(chan error, 1)
+	go func() {
+		_, err := io.Copy(io.Discard, reader)
+		ended <- err
+	}()
+	select {
+	case err := <-ended:
+		if err != nil {
+			t.Fatal(err)
 		}
-		time.Sleep(10 * time.Millisecond)
+	case <-time.After(30 * time.Second):
+		t.Fatal("what the child started outlived it")
 	}
-	t.Error("what the child started outlived it")
+	_ = cmd.Wait()
 }

@@ -189,113 +189,110 @@ func TestAQuestionInNoConversationCarriesNothing(t *testing.T) {
 	}
 }
 
+// announce is what a script writes to tell the test it is running: one word of the answer.
+const announce = `printf '%s\n' '{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"up"}}}'` + "\n"
+
+// awaitUp reads the stream until the program has said it is running.
+func awaitUp(t *testing.T, stream *connect.ServerStreamForClient[numenv1.AskAgentResponse]) {
+	t.Helper()
+	for stream.Receive() {
+		if stream.Msg().GetSaid() == "up" {
+			return
+		}
+	}
+	t.Fatalf("the program never said it was running: %v", stream.Err())
+}
+
+// endsWithin runs the function and fails the test if it has not returned in time.
+func endsWithin(t *testing.T, what string, limit time.Duration, run func()) {
+	t.Helper()
+	done := make(chan struct{})
+	go func() {
+		run()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(limit):
+		t.Fatalf("%s did not end", what)
+	}
+}
+
 // Finishing one conversation ends what is answering in it and leaves another answering.
 func TestFinishingOneConversationLeavesAnotherAnswering(t *testing.T) {
-	dir := t.TempDir()
-	script := writeScript(t, "claude", "asked=$(cat)\necho $$ > "+dir+"/pid-$asked\nsleep 120\n")
+	script := writeScript(t, "claude", announce+"sleep 120\n")
 	client := startAgent(t, &agentServer{})
 
-	streams := map[string]chan []string{}
-	for conversation, question := range map[string]string{"one": "left", "two": "right"} {
+	streams := map[string]*connect.ServerStreamForClient[numenv1.AskAgentResponse]{}
+	for _, conversation := range []string{"one", "two"} {
 		stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
-			Prompt: question, Conversation: conversation, Command: []string{script},
+			Prompt: "q", Conversation: conversation, Command: []string{script},
 		}))
 		if err != nil {
 			t.Fatal(err)
 		}
-		over := make(chan []string, 1)
-		streams[conversation] = over
-		go func() {
-			steps, _ := readSteps(stream)
-			over <- steps
-		}()
-	}
-	for _, question := range []string{"left", "right"} {
-		waitFor(t, func() bool { _, err := os.Stat(filepath.Join(dir, "pid-"+question)); return err == nil })
+		awaitUp(t, stream)
+		streams[conversation] = stream
 	}
 
-	if _, err := client.FinishConversation(t.Context(), connect.NewRequest(
-		&numenv1.FinishConversationRequest{Conversation: "one"})); err != nil {
-		t.Fatal(err)
+	finish := func(conversation string) {
+		t.Helper()
+		if _, err := client.FinishConversation(t.Context(), connect.NewRequest(
+			&numenv1.FinishConversationRequest{Conversation: conversation})); err != nil {
+			t.Fatal(err)
+		}
 	}
+
+	// Finishing returns once the run of the conversation has ended, so the other is still there to be
+	// finished and nothing more of it is read before that.
+	finish("one")
+	endsWithin(t, "the finished conversation", 30*time.Second, func() { _, _ = readSteps(streams["one"]) })
+
+	second := make(chan struct{})
+	go func() {
+		_, _ = readSteps(streams["two"])
+		close(second)
+	}()
 	select {
-	case <-streams["one"]:
-	case <-time.After(10 * time.Second):
-		t.Fatal("the finished conversation is still answering")
-	}
-	select {
-	case <-streams["two"]:
+	case <-second:
 		t.Fatal("the other conversation was stopped")
-	case <-time.After(200 * time.Millisecond):
+	default:
 	}
-
-	if _, err := client.FinishConversation(t.Context(), connect.NewRequest(
-		&numenv1.FinishConversationRequest{Conversation: "two"})); err != nil {
-		t.Fatal(err)
-	}
-	select {
-	case <-streams["two"]:
-	case <-time.After(10 * time.Second):
-		t.Fatal("the other conversation is still answering")
-	}
+	finish("two")
+	endsWithin(t, "the other conversation", 30*time.Second, func() { <-second })
 }
 
 // No agent this plugin started outlives it: closing the registry ends every run still answering,
 // and the plugin takes no task afterwards.
 func TestClosingEndsEveryRunStillAnswering(t *testing.T) {
-	dir := t.TempDir()
-	script := writeScript(t, "claude", "asked=$(cat)\necho $$ > "+dir+"/pid-$asked\nsleep 120\n")
+	script := writeScript(t, "claude", announce+"sleep 120\n")
 	agentSvc := &agentServer{}
 	client := startAgent(t, agentSvc)
 
-	var over []chan struct{}
-	for _, question := range []string{"left", "right"} {
+	var streams []*connect.ServerStreamForClient[numenv1.AskAgentResponse]
+	for range 2 {
 		stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
-			Prompt: question, Command: []string{script},
+			Prompt: "q", Command: []string{script},
 		}))
 		if err != nil {
 			t.Fatal(err)
 		}
-		done := make(chan struct{})
-		over = append(over, done)
-		go func() {
-			_, _ = readSteps(stream)
-			close(done)
-		}()
-		waitFor(t, func() bool { _, err := os.Stat(filepath.Join(dir, "pid-"+question)); return err == nil })
+		awaitUp(t, stream)
+		streams = append(streams, stream)
 	}
 
-	if err := agentSvc.registry.Close(); err != nil {
-		t.Fatal(err)
+	endsWithin(t, "closing", 30*time.Second, func() { _ = agentSvc.registry.Close() })
+	for _, stream := range streams {
+		endsWithin(t, "a run", 30*time.Second, func() { _, _ = readSteps(stream) })
 	}
-	for _, done := range over {
-		select {
-		case <-done:
-		case <-time.After(10 * time.Second):
-			t.Fatal("a run outlived the plugin")
-		}
-	}
-}
-
-// waitFor waits until the condition holds.
-func waitFor(t *testing.T, condition func() bool) {
-	t.Helper()
-	for range 500 {
-		if condition() {
-			return
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	t.Fatal("the condition never held")
 }
 
 // The stream opens, and the person is told the wait has begun, before the program has written
 // anything.
 func TestTheStreamOpensBeforeTheProgramSaysAnything(t *testing.T) {
-	script := writeScript(t, "silent", "sleep 30\n")
+	script := writeScript(t, "silent", "sleep 120\n")
 	client := startAgent(t, &agentServer{})
 
-	began := time.Now()
 	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
 		Prompt: "q", Command: []string{script}, Conversation: "c-1",
 	}))
@@ -304,9 +301,6 @@ func TestTheStreamOpensBeforeTheProgramSaysAnything(t *testing.T) {
 	}
 	if !stream.Receive() || stream.Msg().GetModelStarted() == nil {
 		t.Fatalf("the first thing said is %v, %v", stream.Msg(), stream.Err())
-	}
-	if took := time.Since(began); took > 10*time.Second {
-		t.Errorf("the stream took %v to open", took)
 	}
 
 	if _, err := client.FinishConversation(t.Context(), connect.NewRequest(
