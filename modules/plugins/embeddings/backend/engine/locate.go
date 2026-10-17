@@ -249,17 +249,15 @@ func locateCached(repo *hub.Repo, cfg LocalModel, file string) (Paths, bool, err
 	}
 	cache, err := repo.CacheDir()
 	if err != nil {
-		return Paths{}, false, nil
+		return Paths{}, false, fmt.Errorf("cache folder of %s: %w", cfg.Name, err)
 	}
 	snapshot := filepath.Join(cache, "snapshots", cfg.Revision)
 	p := Paths{
 		Model:     filepath.Join(snapshot, ModelFolder, file),
 		Tokenizer: filepath.Join(snapshot, TokenizerFile),
 	}
-	for _, required := range []string{p.Model, p.Tokenizer} {
-		if _, err := os.Stat(required); err != nil {
-			return Paths{}, false, nil
-		}
+	if !hasFile(p.Model) || !hasFile(p.Tokenizer) {
+		return Paths{}, false, nil
 	}
 	if err := checkPinned(cfg.Sums, ModelFolder+"/"+file, p.Model); err != nil {
 		return Paths{}, false, err
@@ -268,4 +266,9 @@ func locateCached(repo *hub.Repo, cfg LocalModel, file string) (Paths, bool, err
 		return Paths{}, false, err
 	}
 	return p, true, nil
+}
+
+func hasFile(name string) bool {
+	info, err := os.Stat(name)
+	return err == nil && !info.IsDir()
 }
