@@ -63,14 +63,14 @@ func (s *agentServer) AskAgent(
 	for {
 		select {
 		case <-ctx.Done():
-			work.Stop()
+			_ = work.Stop()
 			return ctx.Err()
 		case resp, ok := <-work.Output:
 			if !ok {
 				return nil
 			}
 			if err := stream.Send(resp); err != nil {
-				work.Stop()
+				_ = work.Stop()
 				return err
 			}
 		}
