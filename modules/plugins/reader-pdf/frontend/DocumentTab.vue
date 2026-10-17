@@ -59,6 +59,7 @@ onMounted(() => {
     const s = props.state as Record<string, unknown>
     s.focusTab = () => rootElement.value?.focus()
     s.handleKeyPress = (e: KeyboardEvent) => activeState.value?.handleKeyPress(e) ?? false
+    s.focusSpans = (...spans: readonly Span[]) => activeState.value?.focusSpans(...spans)
   }
   const spans = (props.state as { spans?: readonly Span[] } | undefined)?.spans
   if (activeState.value && spans && spans.length > 0) {
