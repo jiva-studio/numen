@@ -24,10 +24,15 @@ const lifetimes = [
 const layerOrder = ['shared', 'entities', 'features', 'widgets', 'pages', 'app']
 const sliceLayers = ['entities', 'features', 'widgets', 'pages']
 
+// A plugin is an element of its own. A plugin reaches the host and another
+// plugin through no policy, so both directions are refused wherever a plugin
+// file is linted; the host reaches a plugin through the policy below.
+const pluginElement = { type: 'plugin', pattern: '../../../plugins/*', capture: ['name'] }
+
 const layerElements = createLayerElements({
   order: layerOrder,
   sliceLayers,
-  extra: [{ type: 'testing', pattern: 'src/testing' }],
+  extra: [{ type: 'testing', pattern: 'src/testing' }, pluginElement],
 })
 
 const layerPolicies = createLayerPolicies({
@@ -35,6 +40,12 @@ const layerPolicies = createLayerPolicies({
   sliceLayers,
   extra: [
     { allow: { to: { element: { type: 'testing' } } } },
+    // Host to plugin: every layer and the entry reach a plugin.
+    {
+      from: { element: { type: [...layerOrder, 'testing'] } },
+      allow: { to: { element: { type: 'plugin' } } },
+    },
+    { from: { file: { categories: 'entry' } }, allow: { to: { element: { type: 'plugin' } } } },
     { from: { element: { type: 'testing' } }, allow: { to: { element: { type: layerOrder } } } },
   ],
 })
