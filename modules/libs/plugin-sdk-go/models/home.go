@@ -73,7 +73,7 @@ const (
 // that does not exist holds none.
 func GetUsage(dir string) (int64, error) {
 	var sum int64
-	err := filepath.WalkDir(dir, func(name string, entry fs.DirEntry, err error) error {
+	err := filepath.WalkDir(resolvePath(dir), func(name string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) {
 				return nil
@@ -135,4 +135,25 @@ func CheckQuota(dir string, need int64) error {
 		return fmt.Errorf("%s holds %d bytes, and %d more would pass the %d the %s allows", dir, used, need, limit, EnvQuota)
 	}
 	return nil
+}
+
+// resolvePath returns name with the symbolic links of its existing part
+// resolved. The part that does not exist yet is kept as written.
+func resolvePath(name string) string {
+	name = filepath.Clean(name)
+	var rest []string
+	for current := name; ; {
+		if resolved, err := filepath.EvalSymlinks(current); err == nil {
+			for i := len(rest) - 1; i >= 0; i-- {
+				resolved = filepath.Join(resolved, rest[i])
+			}
+			return resolved
+		}
+		parent := filepath.Dir(current)
+		if parent == current {
+			return name
+		}
+		rest = append(rest, filepath.Base(current))
+		current = parent
+	}
 }

@@ -261,7 +261,7 @@ func getQuotaRoot(r Request) string {
 	if err != nil {
 		return r.Dir
 	}
-	relative, err := filepath.Rel(home, r.Dir)
+	relative, err := filepath.Rel(resolvePath(home), resolvePath(r.Dir))
 	if err != nil || filepath.IsAbs(relative) || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
 		return r.Dir
 	}

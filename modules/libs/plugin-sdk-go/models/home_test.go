@@ -149,3 +149,70 @@ func TestCheckQuota(t *testing.T) {
 		t.Fatal("11 of 10 bytes passed")
 	}
 }
+
+func TestResolvePathFollowsALinkInTheExistingPart(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("links need privileges on windows")
+	}
+	base, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	target := filepath.Join(base, "target")
+	if err := os.Mkdir(target, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(base, "link")
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatal(err)
+	}
+	if got := resolvePath(filepath.Join(link, "new", "deeper")); got != filepath.Join(target, "new", "deeper") {
+		t.Fatalf("resolvePath() = %q", got)
+	}
+	if got := resolvePath(link); got != target {
+		t.Fatalf("resolvePath(link) = %q", got)
+	}
+}
+
+func TestGetUsageCountsTheFilesBehindALinkedRoot(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("links need privileges on windows")
+	}
+	base := t.TempDir()
+	target := filepath.Join(base, "target")
+	if err := os.Mkdir(target, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(target, "f"), make([]byte, 7), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(base, "link")
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := GetUsage(link); err != nil || got != 7 {
+		t.Fatalf("GetUsage() = %d, %v, want 7", got, err)
+	}
+}
+
+func TestGetQuotaRootSeesThroughALinkToTheSharedFolder(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("links need privileges on windows")
+	}
+	base, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	home := filepath.Join(base, "home")
+	if err := os.Mkdir(home, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(base, "link")
+	if err := os.Symlink(home, link); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(EnvDir, home)
+	if got := getQuotaRoot(Request{Dir: link}); got != home {
+		t.Fatalf("getQuotaRoot() = %q, want %q", got, home)
+	}
+}
