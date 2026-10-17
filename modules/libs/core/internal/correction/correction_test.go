@@ -4,11 +4,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 )
 
 func TestCorrectionsComeBackAsTheyWereWritten(t *testing.T) {
-	lines := []correction.Line{
+	lines := []domain.CorrectionLine{
 		{Number: 0, Text: "Śrī Jayadeva Gosvāmī"},
 		{Number: 7, Text: ""},
 		{Number: 4096, Text: "the last line."},
@@ -27,7 +28,7 @@ func TestCorrectionsComeBackAsTheyWereWritten(t *testing.T) {
 func TestATornTailGivesBackTheWholeCorrections(t *testing.T) {
 	// A run stopped part way through writing leaves a record half written. What
 	// was written whole is still a correction.
-	lines := []correction.Line{
+	lines := []domain.CorrectionLine{
 		{Number: 0, Text: "Śrī Jayadeva Gosvāmī"},
 		{Number: 1, Text: "and the second line."},
 	}
@@ -46,12 +47,12 @@ func TestATornTailGivesBackTheWholeCorrections(t *testing.T) {
 }
 
 func TestAppendedRunsReadAsOneFile(t *testing.T) {
-	first := []correction.Line{{Number: 0, Text: "Śrī Jayadeva Gosvāmī"}}
-	second := []correction.Line{{Number: 3, Text: ""}, {Number: 4, Text: "the last line."}}
+	first := []domain.CorrectionLine{{Number: 0, Text: "Śrī Jayadeva Gosvāmī"}}
+	second := []domain.CorrectionLine{{Number: 3, Text: ""}, {Number: 4, Text: "the last line."}}
 
 	raw := append(correction.Pack(first), correction.Pack(second)...)
 
-	want := append(append([]correction.Line{}, first...), second...)
+	want := append(append([]domain.CorrectionLine{}, first...), second...)
 	if got := correction.Unpack(raw); !reflect.DeepEqual(got, want) {
 		t.Errorf("unpacked %+v, want %+v", got, want)
 	}

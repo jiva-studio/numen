@@ -176,7 +176,7 @@ func (u Highlight) read(
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return nil, err
 	}
-	return correction.Boxes(boxes, correction.Unpack(corrections)), nil
+	return domain.GetCorrectedBoxes(boxes, correction.Unpack(corrections)), nil
 }
 
 // layer is where the document's own text layer put the words, over the pages

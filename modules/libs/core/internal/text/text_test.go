@@ -53,13 +53,13 @@ func writeRecognition(t *testing.T) (raw []byte, parts []byte) {
 		depth   int
 	}{{docTitle, 0}, {sectionOne, 1}, {sectionTwo, 1}}
 
-	var found []ocr.Part
+	var found []domain.OCRPart
 	for _, n := range named {
 		at := strings.Index(prose, n.heading)
 		if at < 0 {
 			t.Fatalf("the artifact does not carry the heading %q", n.heading)
 		}
-		found = append(found, ocr.Part{Start: at, Length: len(n.heading), Depth: n.depth})
+		found = append(found, domain.OCRPart{Start: at, Length: len(n.heading), Depth: n.depth})
 	}
 	return raw, ocr.Pack(found)
 }
@@ -129,7 +129,7 @@ func TestAPartAtTheVeryStartNamesTheTextFromItsFirstByte(t *testing.T) {
 			{Label: "text", Text: birth},
 		}},
 	})
-	parts := ocr.Pack([]ocr.Part{{Start: 0, Length: len(docTitle), Depth: 0}})
+	parts := ocr.Pack([]domain.OCRPart{{Start: 0, Length: len(docTitle), Depth: 0}})
 	doc := text.ReadRecognition(raw, parts, nil, nil)
 
 	if doc.Text[:len(docTitle)] != docTitle {
@@ -142,7 +142,7 @@ func TestAPartAtTheVeryStartNamesTheTextFromItsFirstByte(t *testing.T) {
 func TestPartsOutOfOrderAreNotTrusted(t *testing.T) {
 	raw, _ := writeRecognition(t)
 	prose, _ := ocr.Read(raw)
-	parts := ocr.Pack([]ocr.Part{
+	parts := ocr.Pack([]domain.OCRPart{
 		{Start: strings.Index(prose, sectionTwo), Length: len(sectionTwo), Depth: 1},
 		{Start: strings.Index(prose, sectionOne), Length: len(sectionOne), Depth: 1},
 	})
@@ -157,7 +157,7 @@ func TestPartsOutOfOrderAreNotTrusted(t *testing.T) {
 func TestPartsNamingOffsetsPastTheTextAreNotTrusted(t *testing.T) {
 	raw, _ := writeRecognition(t)
 	prose, _ := ocr.Read(raw)
-	parts := ocr.Pack([]ocr.Part{
+	parts := ocr.Pack([]domain.OCRPart{
 		{Start: strings.Index(prose, sectionOne), Length: len(sectionOne), Depth: 1},
 		{Start: len(prose) - 4, Length: 100, Depth: 1},
 	})

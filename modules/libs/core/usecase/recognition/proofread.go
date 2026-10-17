@@ -307,7 +307,7 @@ func (u Proofread) lines(
 func (u Proofread) getCorrections(
 	asked []proofread.Batch,
 	replies map[int]string,
-) (put []correction.Line, uncorrected int) {
+) (put []domain.CorrectionLine, uncorrected int) {
 	for _, page := range asked {
 		reply, answered := replies[page.Number]
 		if !answered {
@@ -319,7 +319,7 @@ func (u Proofread) getCorrections(
 			continue
 		}
 		for _, line := range lines {
-			put = append(put, correction.Line{Number: line.Number, Text: line.Text})
+			put = append(put, domain.CorrectionLine{Number: line.Number, Text: line.Text})
 		}
 	}
 	return put, uncorrected
@@ -459,7 +459,7 @@ func dropCorrections(
 		return err
 	}
 	held := correction.Unpack(raw)
-	kept := make([]correction.Line, 0, len(held))
+	kept := make([]domain.CorrectionLine, 0, len(held))
 	for _, line := range held {
 		if line.Number < beyond {
 			kept = append(kept, line)

@@ -231,7 +231,7 @@ func ReadRecognition(raw, parts, boxes, corrections []byte) *Document {
 	prose, marks := ocr.Read(raw)
 	named := ocr.Unpack(parts)
 	if put := correction.Unpack(corrections); len(put) > 0 {
-		prose, marks, named = correction.Prose(prose, marks, highlight.Unpack(boxes), named, put)
+		prose, marks, named = domain.GetCorrectedProse(prose, marks, highlight.Unpack(boxes), named, put)
 	}
 	doc := &Document{Text: prose}
 	for _, p := range getPartStarts(prose, named) {
@@ -264,7 +264,7 @@ func ReadTranscript(raw []byte) *Document {
 // The parts of one artifact begin in the order the prose is read and end within
 // it. A sidecar that says otherwise was written for other bytes, and none of it
 // is used.
-func getPartStarts(prose string, parts []ocr.Part) []domain.PartStart {
+func getPartStarts(prose string, parts []domain.OCRPart) []domain.PartStart {
 	out := make([]domain.PartStart, 0, len(parts))
 	at := 0
 	for _, p := range parts {

@@ -1,17 +1,14 @@
-package correction
+package domain
 
 import (
 	"cmp"
 	"slices"
 	"strings"
-
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 )
 
-// A change is one box put right: which box of the recognition, the run of prose it
+// A correctionChange is one box put right: which box of the recognition, the run of prose it
 // covers, and what that run should say.
-type change struct {
+type correctionChange struct {
 	index  int
 	start  int
 	length int
@@ -19,13 +16,13 @@ type change struct {
 }
 
 // delta is how much the prose grows for this correction.
-func (c change) delta() int { return len(c.text) - c.length }
+func (c correctionChange) delta() int { return len(c.text) - c.length }
 
-// A walk is a recognition's corrections in reading order, with the growth of the
+// A correctionWalk is a recognition's corrections in reading order, with the growth of the
 // prose accumulated across them. Where the boxes land and where the prose, the
 // marks and the parts land are all read off it.
-type walk struct {
-	changes []change
+type correctionWalk struct {
+	changes []correctionChange
 	// grown[i] is the growth of the first i corrections, so grown[0] is zero.
 	grown []int
 }
@@ -33,8 +30,8 @@ type walk struct {
 // plan is the corrections a recognition's boxes answer to, in reading order. A
 // number no box answers to is dropped, a line named twice keeps what came last,
 // and a box reaching back into the one before it is left as it was.
-func plan(boxes []domain.HighlightBox, lines []Line) walk {
-	named := make([]Line, 0, len(lines))
+func planCorrections(boxes []HighlightBox, lines []CorrectionLine) correctionWalk {
+	named := make([]CorrectionLine, 0, len(lines))
 	for _, line := range lines {
 		if line.Number < 0 || line.Number >= len(boxes) {
 			continue
@@ -42,15 +39,15 @@ func plan(boxes []domain.HighlightBox, lines []Line) walk {
 		named = append(named, line)
 	}
 	if len(named) == 0 {
-		return walk{grown: []int{0}}
+		return correctionWalk{grown: []int{0}}
 	}
 
-	byNumber := func(a, b Line) int { return cmp.Compare(a.Number, b.Number) }
+	byNumber := func(a, b CorrectionLine) int { return cmp.Compare(a.Number, b.Number) }
 	if !slices.IsSortedFunc(named, byNumber) {
 		slices.SortStableFunc(named, byNumber)
 	}
 
-	w := walk{changes: make([]change, 0, len(named)), grown: make([]int, 1, len(named)+1)}
+	w := correctionWalk{changes: make([]correctionChange, 0, len(named)), grown: make([]int, 1, len(named)+1)}
 	end := 0
 	for k, line := range named {
 		if k+1 < len(named) && named[k+1].Number == line.Number {
@@ -60,7 +57,7 @@ func plan(boxes []domain.HighlightBox, lines []Line) walk {
 		if box.From < end || box.To < box.From {
 			continue
 		}
-		one := change{index: line.Number, start: box.From, length: box.Len(), text: line.Text}
+		one := correctionChange{index: line.Number, start: box.From, length: box.Len(), text: line.Text}
 		w.changes = append(w.changes, one)
 		w.grown = append(w.grown, w.grown[len(w.grown)-1]+one.delta())
 		end = box.To
@@ -70,7 +67,7 @@ func plan(boxes []domain.HighlightBox, lines []Line) walk {
 
 // getStartFrom is the position of the first correction whose box begins at or
 // after offset o.
-func (w walk) getStartFrom(o int) int {
+func (w correctionWalk) getStartFrom(o int) int {
 	low, high := 0, len(w.changes)
 	for low < high {
 		mid := int(uint(low+high) >> 1)
@@ -85,12 +82,12 @@ func (w walk) getStartFrom(o int) int {
 
 // getGrowthBefore is the growth of the prose before offset o: the corrections
 // whose box begins earlier.
-func (w walk) getGrowthBefore(o int) int {
+func (w correctionWalk) getGrowthBefore(o int) int {
 	return w.grown[w.getStartFrom(o)]
 }
 
 // getGrowthInside is the growth of the corrections lying wholly within the run.
-func (w walk) getGrowthInside(start, length int) int {
+func (w correctionWalk) getGrowthInside(start, length int) int {
 	end := start + length
 	from := w.getStartFrom(start)
 	to, high := 0, len(w.changes)
@@ -108,13 +105,13 @@ func (w walk) getGrowthInside(start, length int) int {
 	return w.grown[to] - w.grown[from]
 }
 
-// Boxes are where the runs of a recognition sit once its corrections are in it.
-func Boxes(boxes []domain.HighlightBox, lines []Line) []domain.HighlightBox {
-	w := plan(boxes, lines)
+// GetCorrectedBoxes returns where the runs of a recognition sit once its corrections are in it.
+func GetCorrectedBoxes(boxes []HighlightBox, lines []CorrectionLine) []HighlightBox {
+	w := planCorrections(boxes, lines)
 	if len(w.changes) == 0 {
 		return boxes
 	}
-	out := make([]domain.HighlightBox, len(boxes))
+	out := make([]HighlightBox, len(boxes))
 	copy(out, boxes)
 	next := 0
 	for i := range out {
@@ -129,10 +126,10 @@ func Boxes(boxes []domain.HighlightBox, lines []Line) []domain.HighlightBox {
 	return out
 }
 
-// Prose is a recognition's text with its corrections in it, and the pages and the
+// GetCorrectedProse returns a recognition's text with its corrections in it, and the pages and the
 // parts where they now stand.
-func Prose(prose string, marks []ocr.PageStart, boxes []domain.HighlightBox, parts []ocr.Part, lines []Line) (string, []ocr.PageStart, []ocr.Part) {
-	w := plan(boxes, lines)
+func GetCorrectedProse(prose string, marks []OCRPageStart, boxes []HighlightBox, parts []OCRPart, lines []CorrectionLine) (string, []OCRPageStart, []OCRPart) {
+	w := planCorrections(boxes, lines)
 	if len(w.changes) == 0 {
 		return prose, marks, parts
 	}
@@ -143,7 +140,7 @@ func Prose(prose string, marks []ocr.PageStart, boxes []domain.HighlightBox, par
 	out.Grow(len(prose) + w.grown[len(w.grown)-1])
 	cursor := 0
 	for _, one := range w.changes {
-		start, end := clamp(one.start, cursor, len(prose)), clamp(one.start+one.length, cursor, len(prose))
+		start, end := clampOffset(one.start, cursor, len(prose)), clampOffset(one.start+one.length, cursor, len(prose))
 		out.WriteString(prose[cursor:start])
 		out.WriteString(one.text)
 		cursor = end
@@ -152,16 +149,16 @@ func Prose(prose string, marks []ocr.PageStart, boxes []domain.HighlightBox, par
 
 	pages := marks
 	if len(marks) > 0 {
-		pages = make([]ocr.PageStart, len(marks))
+		pages = make([]OCRPageStart, len(marks))
 		for i, mark := range marks {
-			pages[i] = ocr.PageStart{Offset: mark.Offset + w.getGrowthBefore(mark.Offset)}
+			pages[i] = OCRPageStart{Offset: mark.Offset + w.getGrowthBefore(mark.Offset)}
 		}
 	}
 	named := parts
 	if len(parts) > 0 {
-		named = make([]ocr.Part, len(parts))
+		named = make([]OCRPart, len(parts))
 		for i, part := range parts {
-			named[i] = ocr.Part{
+			named[i] = OCRPart{
 				Start:  part.Start + w.getGrowthBefore(part.Start),
 				Length: part.Length + w.getGrowthInside(part.Start, part.Length),
 				Depth:  part.Depth,
@@ -171,8 +168,8 @@ func Prose(prose string, marks []ocr.PageStart, boxes []domain.HighlightBox, par
 	return out.String(), pages, named
 }
 
-// clamp is offset o held to the run [low, high].
-func clamp(o, low, high int) int {
+// clampOffset is offset o held to the run [low, high].
+func clampOffset(o, low, high int) int {
 	if o < low {
 		return low
 	}

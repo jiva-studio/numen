@@ -1,19 +1,14 @@
-// Package correction is a recognition put right: the printed lines a proofreader
-// corrected, and where every coordinate of the recognition stands once they are in
-// it.
+// Package correction is the byte form of the corrections a proofreading run
+// stores beside a recognition.
 //
-// It is pure: no filesystem, no clock, no model. A correction replaces the text
-// of one printed line, and the artifact it corrects is never rewritten.
+// It is pure: no filesystem, no clock, no model.
 package correction
 
-import "encoding/binary"
+import (
+	"encoding/binary"
 
-// A Line is one printed line put right: the number the line is known by in the
-// recognition, and what it should say.
-type Line struct {
-	Number int
-	Text   string
-}
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+)
 
 // A record is one corrected line: its number, the bytes of its text, and the
 // text. Records are variable width and carry no count, so a proofreading run
@@ -21,7 +16,7 @@ type Line struct {
 const head = 8
 
 // Pack is corrections as bytes.
-func Pack(lines []Line) []byte {
+func Pack(lines []domain.CorrectionLine) []byte {
 	raw := make([]byte, 0, len(lines)*(head+32))
 	var one [head]byte
 	for _, line := range lines {
@@ -35,15 +30,15 @@ func Pack(lines []Line) []byte {
 
 // Unpack is the corrections bytes hold, in file order. Bytes that stop part way
 // through a record give back the whole records before them.
-func Unpack(raw []byte) []Line {
-	var lines []Line
+func Unpack(raw []byte) []domain.CorrectionLine {
+	var lines []domain.CorrectionLine
 	for at := 0; at+head <= len(raw); {
 		n := uint64(binary.LittleEndian.Uint32(raw[at+4:]))
 		if uint64(at)+head+n > uint64(len(raw)) {
 			break
 		}
 		text := raw[at+head : at+head+int(n)]
-		lines = append(lines, Line{
+		lines = append(lines, domain.CorrectionLine{
 			Number: int(int32(binary.LittleEndian.Uint32(raw[at:]))),
 			Text:   string(text),
 		})
