@@ -192,7 +192,7 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 	}
 
 	// 2. Disable plugin
-	if err := host.SetPluginEnabled(pluginID, false); err != nil {
+	if err := host.SetPluginEnabled(t.Context(), pluginID, false); err != nil {
 		t.Fatalf("SetPluginEnabled failed: %v", err)
 	}
 
@@ -227,7 +227,7 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 	}
 
 	// 3. Re-enable plugin
-	if err := host.SetPluginEnabled(pluginID, true); err != nil {
+	if err := host.SetPluginEnabled(t.Context(), pluginID, true); err != nil {
 		t.Fatalf("SetPluginEnabled failed: %v", err)
 	}
 
