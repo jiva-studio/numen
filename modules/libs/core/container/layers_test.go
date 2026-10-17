@@ -1332,7 +1332,6 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"domain", "markdown", false},
 		{"internal/highlight", "internal/epub", true},
 		{"internal/ocr", "internal/highlight", false},
-		{"internal/ocr", "internal/correction", true},
 		{"internal/transcript", "port", true},
 		{"proofread", "internal/transcript", false},
 		{"proofread", "usecase/source", true},

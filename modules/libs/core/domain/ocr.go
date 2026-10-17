@@ -21,3 +21,21 @@ type OCRBlock struct {
 	// reports no rectangles leaves them empty.
 	Boxes []OCRBox
 }
+
+// An OCRPageStart is a page of the artifact, at the offset its prose begins.
+type OCRPageStart struct {
+	Offset int
+}
+
+// An OCRPart is one of the parts a document divides into: where its heading begins
+// in the prose, how far the heading runs, and how deep the part sits.
+//
+// A part carries a run of the prose, so a heading the scan read badly still
+// says where the part begins.
+type OCRPart struct {
+	Start  int
+	Length int
+	// Depth is how far in the part sits, counted from zero. A document title
+	// stands above the section titles within it.
+	Depth int
+}

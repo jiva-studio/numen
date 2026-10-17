@@ -1,4 +1,4 @@
-package correction_test
+package domain_test
 
 import (
 	"reflect"
@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 )
 
 // perPage is how many printed lines a page of the little book holds.
@@ -17,13 +15,13 @@ const perPage = 3
 // begins, one box for each line, and the two parts it divides into. The
 // rectangle follows the line's number, so a box that keeps its place keeps its
 // rectangle too.
-func createRecognition(lines []string) (string, []ocr.PageStart, []domain.HighlightBox, []ocr.Part) {
-	var marks []ocr.PageStart
+func createRecognition(lines []string) (string, []domain.OCRPageStart, []domain.HighlightBox, []domain.OCRPart) {
+	var marks []domain.OCRPageStart
 	var boxes []domain.HighlightBox
 	at := 0
 	for i, line := range lines {
 		if i%perPage == 0 {
-			marks = append(marks, ocr.PageStart{Offset: at})
+			marks = append(marks, domain.OCRPageStart{Offset: at})
 		}
 		boxes = append(boxes, domain.HighlightBox{
 			Page:     i / perPage,
@@ -34,7 +32,7 @@ func createRecognition(lines []string) (string, []ocr.PageStart, []domain.Highli
 		})
 		at += len(line) + len("\n")
 	}
-	parts := []ocr.Part{
+	parts := []domain.OCRPart{
 		{Start: boxes[0].From, Length: boxes[0].Len(), Depth: 0},
 		{Start: boxes[3].From, Length: boxes[3].Len(), Depth: 1},
 	}
@@ -64,7 +62,7 @@ var right = []string{
 }
 
 // put is the corrections as a proofreading run wrote them down.
-var put = []correction.Line{
+var put = []domain.CorrectionLine{
 	{Number: 1, Text: right[1]},
 	{Number: 3, Text: right[3]},
 	{Number: 4, Text: right[4]},
@@ -74,8 +72,8 @@ var put = []correction.Line{
 func TestEveryBoxStillNamesItsWords(t *testing.T) {
 	prose, marks, boxes, parts := createRecognition(read)
 
-	moved := correction.Boxes(boxes, put)
-	said, _, _ := correction.Prose(prose, marks, boxes, parts, put)
+	moved := domain.GetCorrectedBoxes(boxes, put)
+	said, _, _ := domain.GetCorrectedProse(prose, marks, boxes, parts, put)
 
 	if len(moved) != len(read) {
 		t.Fatalf("%d boxes, want %d", len(moved), len(read))
@@ -94,10 +92,10 @@ func TestACorrectedRecognitionIsTheRecognitionItShouldHaveBeen(t *testing.T) {
 	prose, marks, boxes, parts := createRecognition(read)
 	wantProse, wantMarks, wantBoxes, wantParts := createRecognition(right)
 
-	if got := correction.Boxes(boxes, put); !reflect.DeepEqual(got, wantBoxes) {
+	if got := domain.GetCorrectedBoxes(boxes, put); !reflect.DeepEqual(got, wantBoxes) {
 		t.Errorf("boxes %+v, want %+v", got, wantBoxes)
 	}
-	said, pages, named := correction.Prose(prose, marks, boxes, parts, put)
+	said, pages, named := domain.GetCorrectedProse(prose, marks, boxes, parts, put)
 	if said != wantProse {
 		t.Errorf("prose %q, want %q", said, wantProse)
 	}
@@ -113,7 +111,7 @@ func TestAHeadingPutRightKeepsItsOwnLength(t *testing.T) {
 	prose, marks, boxes, parts := createRecognition(read)
 
 	// Only the second heading, which the recognition had a letter short.
-	_, _, named := correction.Prose(prose, marks, boxes, parts, []correction.Line{{Number: 3, Text: right[3]}})
+	_, _, named := domain.GetCorrectedProse(prose, marks, boxes, parts, []domain.CorrectionLine{{Number: 3, Text: right[3]}})
 
 	if named[0].Length != parts[0].Length {
 		t.Errorf("the first heading is %d bytes, want the %d it was", named[0].Length, parts[0].Length)
@@ -128,12 +126,12 @@ func TestAHeadingPutRightKeepsItsOwnLength(t *testing.T) {
 
 func TestALineNoBoxAnswersToIsIgnored(t *testing.T) {
 	prose, marks, boxes, parts := createRecognition(read)
-	stray := []correction.Line{{Number: -1, Text: "before the book"}, {Number: 99, Text: "after it"}}
+	stray := []domain.CorrectionLine{{Number: -1, Text: "before the book"}, {Number: 99, Text: "after it"}}
 
-	if got := correction.Boxes(boxes, stray); !reflect.DeepEqual(got, boxes) {
+	if got := domain.GetCorrectedBoxes(boxes, stray); !reflect.DeepEqual(got, boxes) {
 		t.Errorf("boxes %+v, want them untouched", got)
 	}
-	said, pages, named := correction.Prose(prose, marks, boxes, parts, stray)
+	said, pages, named := domain.GetCorrectedProse(prose, marks, boxes, parts, stray)
 	if said != prose {
 		t.Errorf("prose %q, want it untouched", said)
 	}
@@ -144,10 +142,10 @@ func TestALineNoBoxAnswersToIsIgnored(t *testing.T) {
 
 func TestTheLastWordOnALineWins(t *testing.T) {
 	prose, marks, boxes, parts := createRecognition(read)
-	twice := []correction.Line{{Number: 1, Text: "a first thought"}, {Number: 1, Text: right[1]}}
+	twice := []domain.CorrectionLine{{Number: 1, Text: "a first thought"}, {Number: 1, Text: right[1]}}
 
-	said, _, _ := correction.Prose(prose, marks, boxes, parts, twice)
-	moved := correction.Boxes(boxes, twice)
+	said, _, _ := domain.GetCorrectedProse(prose, marks, boxes, parts, twice)
+	moved := domain.GetCorrectedBoxes(boxes, twice)
 
 	if got := said[moved[1].From:moved[1].To]; got != right[1] {
 		t.Errorf("the line says %q, want %q", got, right[1])
@@ -160,11 +158,11 @@ func TestTheLastWordOnALineWins(t *testing.T) {
 func TestNoCorrectionsChangesNothing(t *testing.T) {
 	prose, marks, boxes, parts := createRecognition(read)
 
-	for _, lines := range [][]correction.Line{nil, {}} {
-		if got := correction.Boxes(boxes, lines); !reflect.DeepEqual(got, boxes) {
+	for _, lines := range [][]domain.CorrectionLine{nil, {}} {
+		if got := domain.GetCorrectedBoxes(boxes, lines); !reflect.DeepEqual(got, boxes) {
 			t.Errorf("boxes %+v, want them untouched", got)
 		}
-		said, pages, named := correction.Prose(prose, marks, boxes, parts, lines)
+		said, pages, named := domain.GetCorrectedProse(prose, marks, boxes, parts, lines)
 		if said != prose {
 			t.Errorf("prose %q, want it untouched", said)
 		}
@@ -181,13 +179,13 @@ func TestCorrectionsWrittenForOtherBytesSliceNothing(t *testing.T) {
 	boxes[2].ByteSpan = domain.ByteSpan{From: len(prose) + 100, To: len(prose) + 140}
 	boxes[4].From = 0
 
-	lines := []correction.Line{{Number: 2, Text: "far past the end"}, {Number: 4, Text: "back at the start"}}
+	lines := []domain.CorrectionLine{{Number: 2, Text: "far past the end"}, {Number: 4, Text: "back at the start"}}
 
-	said, pages, named := correction.Prose(prose, marks, boxes, parts, lines)
+	said, pages, named := domain.GetCorrectedProse(prose, marks, boxes, parts, lines)
 	if said == "" {
 		t.Errorf("prose came back empty")
 	}
-	moved := correction.Boxes(boxes, lines)
+	moved := domain.GetCorrectedBoxes(boxes, lines)
 	if len(moved) != len(boxes) {
 		t.Errorf("%d boxes, want %d", len(moved), len(boxes))
 	}
@@ -198,16 +196,16 @@ func TestCorrectionsWrittenForOtherBytesSliceNothing(t *testing.T) {
 
 func TestLinesNamedOutOfOrderAndTwiceReadAsIfInOrder(t *testing.T) {
 	prose, marks, boxes, parts := createRecognition(read)
-	shuffled := []correction.Line{put[3], {Number: 1, Text: "first"}, put[1], put[0], put[2], {Number: 3, Text: "A Second Heading"}}
-	ordered := []correction.Line{put[0], {Number: 3, Text: "A Second Heading"}, put[2], put[3]}
-	ordered[0] = correction.Line{Number: 1, Text: right[1]}
+	shuffled := []domain.CorrectionLine{put[3], {Number: 1, Text: "first"}, put[1], put[0], put[2], {Number: 3, Text: "A Second Heading"}}
+	ordered := []domain.CorrectionLine{put[0], {Number: 3, Text: "A Second Heading"}, put[2], put[3]}
+	ordered[0] = domain.CorrectionLine{Number: 1, Text: right[1]}
 
-	gotProse, gotMarks, gotParts := correction.Prose(prose, marks, boxes, parts, shuffled)
-	wantProse, wantMarks, wantParts := correction.Prose(prose, marks, boxes, parts, ordered)
+	gotProse, gotMarks, gotParts := domain.GetCorrectedProse(prose, marks, boxes, parts, shuffled)
+	wantProse, wantMarks, wantParts := domain.GetCorrectedProse(prose, marks, boxes, parts, ordered)
 	if gotProse != wantProse || !reflect.DeepEqual(gotMarks, wantMarks) || !reflect.DeepEqual(gotParts, wantParts) {
 		t.Errorf("shuffled lines read differently from ordered ones")
 	}
-	if got, want := correction.Boxes(boxes, shuffled), correction.Boxes(boxes, ordered); !reflect.DeepEqual(got, want) {
+	if got, want := domain.GetCorrectedBoxes(boxes, shuffled), domain.GetCorrectedBoxes(boxes, ordered); !reflect.DeepEqual(got, want) {
 		t.Errorf("Boxes = %v, want %v", got, want)
 	}
 }

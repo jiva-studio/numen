@@ -370,7 +370,7 @@ func dropParts(ctx context.Context, store port.DerivedStore, name domain.Artifac
 		return err
 	}
 	held := ocr.Unpack(raw)
-	kept := make([]ocr.Part, 0, len(held))
+	kept := make([]domain.OCRPart, 0, len(held))
 	for _, part := range held {
 		if part.Start+part.Length <= prose {
 			kept = append(kept, part)

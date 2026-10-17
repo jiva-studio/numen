@@ -7,7 +7,6 @@ import (
 	"sort"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -176,7 +175,7 @@ func (u Highlight) read(
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return nil, err
 	}
-	return correction.Boxes(boxes, correction.Unpack(corrections)), nil
+	return domain.GetCorrectedBoxes(boxes, domain.UnpackCorrections(corrections)), nil
 }
 
 // layer is where the document's own text layer put the words, over the pages

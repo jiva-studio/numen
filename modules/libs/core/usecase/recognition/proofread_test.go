@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
@@ -105,7 +104,7 @@ func TestTheCorrectionsGoBesideTheRecognitionAndTheRecognitionIsNotTouched(t *te
 	if string(readShelf(t, shelved, names.artifact)) != string(was) {
 		t.Error("the recognition was rewritten")
 	}
-	if put := correction.Unpack(readShelf(t, shelved, names.corrections)); len(put) != 2 {
+	if put := domain.UnpackCorrections(readShelf(t, shelved, names.corrections)); len(put) != 2 {
 		t.Errorf("what is kept beside the recognition is %+v", put)
 	}
 	var stood checkpoint
