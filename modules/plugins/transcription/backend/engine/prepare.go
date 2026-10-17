@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 	"github.com/jiva-studio/numen/modules/plugins/transcription/backend/onnxruntime"
 )
 
@@ -17,7 +18,7 @@ func Ready(cfg Config) bool {
 	}
 	var resolved paths
 	for _, one := range getWantedFiles(cfg, &resolved) {
-		if _, err := model(context.Background(), cfg, one.path, one.name, one.kind); err != nil {
+		if _, err := models.Locate(context.Background(), cfg.source(), pinnedSums, one.path, one.name, one.kind); err != nil {
 			return false
 		}
 	}
@@ -31,7 +32,7 @@ func GetModelBytes(cfg Config) int64 {
 	var resolved paths
 	var total int64
 	for _, one := range getWantedFiles(cfg, &resolved) {
-		at, err := model(context.Background(), cfg, one.path, one.name, one.kind)
+		at, err := models.Locate(context.Background(), cfg.source(), pinnedSums, one.path, one.name, one.kind)
 		if err != nil {
 			return 0
 		}

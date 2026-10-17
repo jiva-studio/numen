@@ -620,3 +620,26 @@ A section is kept whether it is the one in use or not, so trying another agent f
 
 An installation naming no agent and asking for no tools opens no port and writes no token file: a person who never asked for an agent is running a window and nothing else. Where the port is open, `-mcp-addr` says which address it answers on for a single launch and `-no-mcp` shuts it for one, whatever this file says.
 
+
+## Where a plugin's questions to a model are answered
+
+`ai.routes` is where a plugin that holds the `ai:complete` permission has its questions answered. A plugin names a purpose (`proofreading`) and never a model, an agent or a key; the route of that purpose says which agent plugin answers, with which model, and how many questions it answers at once. A purpose without a route of its own is answered by the route named `default`. With neither, the plugin is told there is no route, and nothing is asked of any model.
+
+```json
+{
+  "ai": {
+    "routes": {
+      "default": { "agent": "", "model": "", "concurrency": 1 },
+      "proofreading": { "agent": "md.numen.agent-claude", "model": "sonnet", "concurrency": 2 }
+    }
+  }
+}
+```
+
+| | |
+| --- | --- |
+| `agent` | the id of the agent plugin that answers. Empty is the plugin the installation provides for the `ai.completion.provider` capability. A plugin that is not installed, or does not declare the capability, leaves the plugin told that the agent is unavailable. |
+| `model` | the model the agent answers with. Empty leaves the choice to the agent. |
+| `concurrency` | how many questions the route answers at once; the others wait for a place, and a question whose plugin gave up leaves the wait. Below one is one. |
+
+The file is read at every question, so a route written while the application runs applies to the next one.

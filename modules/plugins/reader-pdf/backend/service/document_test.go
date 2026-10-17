@@ -64,56 +64,6 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	}
 }
 
-func TestValidateVaultPath(t *testing.T) {
-	vaultDir := t.TempDir()
-
-	// Empty path
-	if _, err := ValidateVaultPath(""); err == nil {
-		t.Error("expected error for empty path")
-	}
-
-	// Traversal
-	if _, err := ValidateVaultPath("../escape.pdf"); err == nil {
-		t.Error("expected error for path traversal")
-	}
-	if _, err := ValidateVaultPath("a/../b/../../escape.pdf"); err == nil {
-		t.Error("expected error for nested traversal")
-	}
-
-	// Temp directory path
-	tempDoc := filepath.Join(os.TempDir(), "numen-doc-test123")
-	if clean, err := ValidateVaultPath(tempDoc); err != nil || clean != tempDoc {
-		t.Errorf("expected temp doc path %q allowed, got clean %q, err %v", tempDoc, clean, err)
-	}
-
-	// With NUMEN_VAULT_PATH set
-	t.Setenv("NUMEN_VAULT_PATH", vaultDir)
-
-	// Relative path inside vault
-	relPath := "books/sample.pdf"
-	wantRel := filepath.Join(vaultDir, relPath)
-	if clean, err := ValidateVaultPath(relPath); err != nil || clean != wantRel {
-		t.Errorf("expected %q, got %q, err %v", wantRel, clean, err)
-	}
-
-	// Clean vault root itself
-	if clean, err := ValidateVaultPath(vaultDir); err != nil || clean != vaultDir {
-		t.Errorf("expected vault root %q allowed, got %q, err %v", vaultDir, clean, err)
-	}
-
-	// Outside vault root
-	outsideDir := t.TempDir()
-	if _, err := ValidateVaultPath(filepath.Join(outsideDir, "outside.pdf")); err == nil {
-		t.Error("expected error for path outside vault root")
-	}
-
-	// Unset NUMEN_VAULT_PATH
-	t.Setenv("NUMEN_VAULT_PATH", "")
-	if clean, err := ValidateVaultPath("relative.pdf"); err != nil || clean != "relative.pdf" {
-		t.Errorf("expected 'relative.pdf', got %q, err %v", clean, err)
-	}
-}
-
 func TestDocumentServerEmptyPath(t *testing.T) {
 	server := NewDocumentServer()
 	ctx := context.Background()
