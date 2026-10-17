@@ -781,7 +781,7 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 
 	closer := &testCloser{}
 	host.stdinsMu.Lock()
-	host.stdins["md.numen.ocr"] = closer
+	host.stdins[stdinKey{pluginID: "md.numen.ocr", pid: cmd.Process.Pid}] = closer
 	host.stdinsMu.Unlock()
 
 	host.mu.Lock()
@@ -807,7 +807,7 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	}
 
 	host.stdinsMu.Lock()
-	_, stdinExists := host.stdins["md.numen.ocr"]
+	_, stdinExists := host.stdins[stdinKey{pluginID: "md.numen.ocr", pid: cmd.Process.Pid}]
 	host.stdinsMu.Unlock()
 	if stdinExists {
 		t.Error("expected stdin pipe to be deleted from host.stdins")
@@ -869,7 +869,7 @@ func TestHostEvictMemoryExceeded(t *testing.T) {
 
 	closer := &testCloser{}
 	host.stdinsMu.Lock()
-	host.stdins["md.numen.ocr"] = closer
+	host.stdins[stdinKey{pluginID: "md.numen.ocr", pid: cmd.Process.Pid}] = closer
 	host.stdinsMu.Unlock()
 
 	sup := host.supervisors["md.numen.ocr"]
@@ -954,7 +954,7 @@ func TestHostTeardownAllSendsRPCShutdownAndClosesStdin(t *testing.T) {
 
 	closer := &testCloser{}
 	host.stdinsMu.Lock()
-	host.stdins["md.numen.ocr"] = closer
+	host.stdins[stdinKey{pluginID: "md.numen.ocr", pid: cmd.Process.Pid}] = closer
 	host.stdinsMu.Unlock()
 
 	if err := host.TeardownAll(ctx, 500*time.Millisecond); err != nil {
@@ -1160,4 +1160,70 @@ func TestEnsureActiveActivatesWhenTheEndpointIsEmpty(t *testing.T) {
 		t.Fatal("EnsureActive returned an empty endpoint")
 	}
 	_ = host.TeardownAll(t.Context(), 50*time.Millisecond)
+}
+
+func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+	var started atomic.Int32
+	host.SetLauncher(startSleepLauncher(t, &started))
+
+	stop := make(chan struct{})
+	var evictor sync.WaitGroup
+	evictor.Add(1)
+	go func() {
+		defer evictor.Done()
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+				host.EvictIdle(context.Background(), 0, 20*time.Millisecond)
+			}
+		}
+	}()
+
+	for i := range 60 {
+		endpoint, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+		if err != nil {
+			t.Fatalf("round %d: EnsureActive failed: %v", i, err)
+		}
+		if isEmptyEndpoint(endpoint) {
+			t.Fatalf("round %d: EnsureActive returned an empty endpoint", i)
+		}
+		host.mu.RLock()
+		sup := host.supervisors["md.numen.ocr"]
+		host.mu.RUnlock()
+		time.Sleep(time.Millisecond)
+		if state := sup.GetState(); state != StateActive {
+			t.Fatalf("round %d: a held plugin is in state %v", i, state)
+		}
+		host.Release("md.numen.ocr")
+	}
+	close(stop)
+	evictor.Wait()
+	_ = host.TeardownAll(t.Context(), 50*time.Millisecond)
+}
+
+func TestClosingTheStdinOfAnEvictedProcessLeavesTheNextProcessStdinOpen(t *testing.T) {
+	host := NewHost("desktop.editor")
+	oldPipe, newPipe := &testCloser{}, &testCloser{}
+	host.stdinsMu.Lock()
+	host.stdins[stdinKey{pluginID: "p", pid: 1}] = oldPipe
+	host.stdins[stdinKey{pluginID: "p", pid: 2}] = newPipe
+	host.stdinsMu.Unlock()
+
+	host.closeStdin("p", 1)
+
+	if !oldPipe.isClosed() {
+		t.Fatal("expected the evicted process stdin to be closed")
+	}
+	if newPipe.isClosed() {
+		t.Fatal("closed the stdin of a newer process")
+	}
+	_ = host.TeardownAll(t.Context(), 10*time.Millisecond)
 }
