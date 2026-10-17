@@ -309,3 +309,13 @@ func TestManifestNetworkAlias(t *testing.T) {
 		t.Errorf("alias must validate: %v", err)
 	}
 }
+
+func TestManifestAcceptsAICompletePermission(t *testing.T) {
+	m, err := ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","permissions":["ai:complete"]}`))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !m.HasPermission(PermissionAIComplete) {
+		t.Errorf("manifest must hold %s", PermissionAIComplete)
+	}
+}
