@@ -109,6 +109,7 @@ func startAgent(t *testing.T) numenv1connect.AgentServiceClient {
 // The program list names Antigravity and Codex, installed where they are found, with the models
 // Codex lists under the command line the installation set for it.
 func TestTheProgramListNamesAntigravityAndCodexWithTheModelsCodexLists(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
 	bin := t.TempDir()
 	for _, name := range []string{"agy", "codex"} {
 		if err := os.WriteFile(filepath.Join(bin, name), []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
@@ -170,6 +171,7 @@ func TestAProgramThatIsNotInstalledListsNoModels(t *testing.T) {
 
 // What Codex listed is kept for as long as the command line stays the same.
 func TestWhatCodexListedIsKeptWhileTheCommandStaysTheSame(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
 	counter := filepath.Join(t.TempDir(), "starts")
 	command := writeScript(t, "codex",
 		"echo x >> "+counter+"\n"+
@@ -194,6 +196,7 @@ func TestWhatCodexListedIsKeptWhileTheCommandStaysTheSame(t *testing.T) {
 
 // A request that ended before Codex answered keeps nothing.
 func TestAnEndedRequestKeepsNoCodexModels(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
 	command := writeScript(t, "codex",
 		`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+

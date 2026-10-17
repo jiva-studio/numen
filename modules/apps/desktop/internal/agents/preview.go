@@ -55,12 +55,14 @@ func (d *draftingRun) Stop() error {
 func (d *draftingRun) forward(ctx context.Context, preview EditPreview) {
 	defer close(d.steps)
 
-	var drawing drawing
+	drawing := drawing{drawn: make(map[string]struct{})}
+	defer drawing.finish(ctx, preview, "")
 	for step := range d.run.GetSteps() {
 		if step.Kind == domain.StepDraft {
 			drawing.draw(ctx, preview, step)
 			continue
 		}
+		drawing.finish(ctx, preview, step.Call)
 		select {
 		case d.steps <- step:
 		case <-d.stopped:
@@ -77,6 +79,23 @@ type drawing struct {
 	call, path, stood string
 	from, to          int
 	isUnique          bool
+	// drawn are the calls a change was drawn for and that are not ended.
+	drawn map[string]struct{}
+}
+
+// finish ends the drawing of a call, or of every call where none is named.
+func (r *drawing) finish(ctx context.Context, preview EditPreview, call string) {
+	if call != "" {
+		if _, drawn := r.drawn[call]; drawn {
+			preview.Emit(ctx, domain.Edit{Change: call, IsDone: true})
+			delete(r.drawn, call)
+		}
+		return
+	}
+	for drawn := range r.drawn {
+		preview.Emit(ctx, domain.Edit{Change: drawn, IsDone: true})
+		delete(r.drawn, drawn)
+	}
 }
 
 // draw says what a draft of a change is, where the note holds the stretch it replaces.
@@ -98,4 +117,5 @@ func (r *drawing) draw(ctx context.Context, preview EditPreview, step port.Step)
 		To:     r.to,
 		Text:   step.Text,
 	})
+	r.drawn[step.Call] = struct{}{}
 }

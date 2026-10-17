@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -100,9 +101,9 @@ func TestFetchAnthropicModels(t *testing.T) {
 
 // The models are asked for once and kept until the key or the endpoint changes.
 func TestTheModelsAreKeptUntilTheKeyChanges(t *testing.T) {
-	asked := 0
+	var asked atomic.Int32
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		asked++
+		asked.Add(1)
 		_, _ = w.Write([]byte(`{"data": [{"id": "opus", "display_name": "Opus"}]}`))
 	}))
 	defer mockServer.Close()
@@ -114,14 +115,14 @@ func TestTheModelsAreKeptUntilTheKeyChanges(t *testing.T) {
 			t.Fatalf("the models are %+v", got)
 		}
 	}
-	if asked != 1 {
-		t.Errorf("the endpoint was asked %d times, want 1", asked)
+	if got := asked.Load(); got != 1 {
+		t.Errorf("the endpoint was asked %d times, want 1", got)
 	}
 
 	catalogue.update(map[string]string{"apiKey": "other", "baseUrl": mockServer.URL})
 	catalogue.get(t.Context())
-	if asked != 2 {
-		t.Errorf("a new key asked the endpoint %d times in all, want 2", asked)
+	if got := asked.Load(); got != 2 {
+		t.Errorf("a new key asked the endpoint %d times in all, want 2", got)
 	}
 }
 

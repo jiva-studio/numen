@@ -13,6 +13,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 )
 
 // AgentModel represents an AI model available from an external agent CLI.
@@ -54,6 +55,9 @@ func readCodexCache() []AgentModel {
 	return models
 }
 
+// codexListLimit is how long Codex has to list its models.
+const codexListLimit = 15 * time.Second
+
 // codexModelCache keeps what Codex listed, for as long as the command line asked stays the same. A
 // failure is kept as none, and a request that ended before Codex answered keeps nothing.
 type codexModelCache struct {
@@ -71,7 +75,9 @@ func (c *codexModelCache) get(ctx context.Context, command []string) []AgentMode
 	if c.isKept && c.key == key {
 		return c.models
 	}
-	models, err := GetCodexModels(ctx, command)
+	asking, stop := context.WithTimeout(ctx, codexListLimit)
+	defer stop()
+	models, err := GetCodexModels(asking, command)
 	if err != nil {
 		if ctx.Err() != nil {
 			return nil

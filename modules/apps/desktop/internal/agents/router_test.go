@@ -327,6 +327,7 @@ func TestADraftIsDrawnAndIsNoStep(t *testing.T) {
 	want := []domain.Edit{
 		{Change: "c-1", Path: "a.md", From: 10, To: 13, Text: "ne"},
 		{Change: "c-1", Path: "a.md", From: 10, To: 13, Text: "new text"},
+		{Change: "c-1", IsDone: true},
 	}
 	if !slices.Equal(seen.edits, want) {
 		t.Errorf("the window was told %+v, want %+v", seen.edits, want)
@@ -376,7 +377,13 @@ func TestAnotherChangeIsLookedForAgain(t *testing.T) {
 	if want := []string{"a.md:old", "a.md:old", "b.md:old", "b.md:older"}; !slices.Equal(seen.located, want) {
 		t.Errorf("looked for %q, want %q", seen.located, want)
 	}
-	if len(seen.edits) != 4 {
+	done := 0
+	for _, one := range seen.edits {
+		if one.IsDone {
+			done++
+		}
+	}
+	if len(seen.edits) != 6 || done != 2 {
 		t.Errorf("drawn %+v", seen.edits)
 	}
 }
@@ -452,7 +459,7 @@ func TestAWindowOfLimitedToolsRefusesAProgramWithToolsOfItsOwn(t *testing.T) {
 		{Name: "bounded", LimitsTools: true}, {Name: "free"},
 	}}
 	opts := Options{Config: makeInstallation(t), Root: "/vault", Out: io.Discard, LimitedToolsOnly: true}
-	opts.Config.Agents = provider
+	opts.Provider = provider
 	router := NewRouter(opts, "http://127.0.0.1:7717/mcp", "secret", vocabulary)
 
 	if _, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: "free"}); err == nil {
@@ -469,4 +476,29 @@ func TestAWindowOfLimitedToolsRefusesAProgramWithToolsOfItsOwn(t *testing.T) {
 		t.Fatal(err)
 	}
 	drain(run)
+}
+
+// The drawing of a change ends when the call making it is reported whole, before the run is over.
+func TestTheDrawingOfAChangeEndsWithItsCall(t *testing.T) {
+	provider := &fakeProvider{steps: []port.Step{
+		draftOf("c-1", "a.md", "old", "x"),
+		{Kind: domain.StepEdit, Call: "c-1"},
+		{Kind: domain.StepSay, Text: "after"},
+	}}
+	var seen drawn
+	router, _ := makeRouter(t, provider, settings.Agent{}, seen.preview(true))
+
+	run, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: "claude"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	drain(run)
+
+	want := []domain.Edit{
+		{Change: "c-1", Path: "a.md", From: 10, To: 13, Text: "x"},
+		{Change: "c-1", IsDone: true},
+	}
+	if !slices.Equal(seen.edits, want) {
+		t.Errorf("the window was told %+v, want %+v", seen.edits, want)
+	}
 }

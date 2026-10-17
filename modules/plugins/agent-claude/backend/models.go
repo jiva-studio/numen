@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -15,6 +16,9 @@ const (
 	anthropicBaseVar = "ANTHROPIC_BASE_URL"
 	anthropicHost    = "https://api.anthropic.com"
 )
+
+// modelsLimit is how long the endpoint has to list its models.
+const modelsLimit = 15 * time.Second
 
 // AgentModel is one model the endpoint lists.
 type AgentModel struct {
@@ -60,7 +64,9 @@ func (c *modelCatalogue) get(ctx context.Context) []AgentModel {
 	if c.isKept {
 		return c.kept
 	}
-	models, err := fetchAnthropicModels(ctx, c.key, c.base)
+	asking, stop := context.WithTimeout(ctx, modelsLimit)
+	defer stop()
+	models, err := fetchAnthropicModels(asking, c.key, c.base)
 	if err != nil {
 		if ctx.Err() != nil {
 			return nil

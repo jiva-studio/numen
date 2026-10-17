@@ -16,10 +16,8 @@ import (
 
 type agentServer struct {
 	numenv1connect.UnimplementedAgentServiceHandler
-	numenv1connect.UnimplementedCompletionServiceHandler
 	runner       *AgentRunner
 	codexModels  codexModelCache
-	command      []string
 	mu           sync.RWMutex
 	systemPrompt string
 	tools        []*numenv1.AgentToolDefinition
@@ -188,7 +186,6 @@ func run() error {
 	}
 
 	s.Register(numenv1connect.NewAgentServiceHandler(agentSvc, s.HandlerOptions()...))
-	s.Register(numenv1connect.NewCompletionServiceHandler(agentSvc, s.HandlerOptions()...))
 
 	return s.Serve()
 }
