@@ -99,3 +99,83 @@ func TestJoiningStopsAtTheLongest(t *testing.T) {
 		t.Errorf("joined into %v", got)
 	}
 }
+
+// Empty input returns no spans.
+func TestJoinShortSpansEmpty(t *testing.T) {
+	if got := joinShortSpans(nil, 10, 100); len(got) != 0 {
+		t.Errorf("got %v, want empty", got)
+	}
+}
+
+// Short spans with non-zero offsets are joined up to longest.
+func TestJoinShortSpansNonZeroOffset(t *testing.T) {
+	got := joinShortSpans([]span{
+		{From: 20, To: 23},
+		{From: 25, To: 28},
+	}, 10, 20)
+	want := []span{{From: 20, To: 28}}
+	if len(got) != 1 || got[0] != want[0] {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+// A span exactly equal to the shortest bound is preserved.
+func TestASpanExactlyShortestIsKept(t *testing.T) {
+	scores := buildScores(10, 2, 3, 4)
+	got := getSpans(scores, 0.5, 2, 0, 100, 3)
+	if len(got) != 1 || got[0].From != 2 || got[0].To != 5 {
+		t.Errorf("span of exact shortest length came out as %v", got)
+	}
+}
+
+// A recording of silence produces no speech spans.
+func TestSilenceProducesNoSpans(t *testing.T) {
+	scores := buildScores(10)
+	got := getSpans(scores, 0.5, 2, 0, 100, 1)
+	if len(got) != 0 {
+		t.Errorf("silence produced spans %v", got)
+	}
+}
+
+func TestSpeechPassLoad(t *testing.T) {
+	if pass, err := newSpeechPass(make([]float32, 1024)); err == nil {
+		defer pass.destroy()
+		if len(pass.window) != 512 {
+			t.Errorf("newSpeechPass window len = %d, want 512", len(pass.window))
+		}
+		if len(pass.state) != 256 {
+			t.Errorf("newSpeechPass state len = %d, want 256", len(pass.state))
+		}
+	}
+
+	sound := make([]float32, 1000)
+	for i := range sound {
+		sound[i] = float32(i + 1)
+	}
+	pass := &speechPass{
+		sound:  sound,
+		window: make([]float32, speechWindow),
+		state:  make([]float32, speechMemory),
+		count:  (len(sound) + speechWindow - 1) / speechWindow,
+	}
+	if len(pass.window) != 512 {
+		t.Errorf("window len = %d, want 512", len(pass.window))
+	}
+	if len(pass.state) != 256 {
+		t.Errorf("state len = %d, want 256", len(pass.state))
+	}
+	if pass.count != 2 {
+		t.Errorf("count = %d, want 2", pass.count)
+	}
+	pass.load(0)
+	if pass.window[0] != 1 || pass.window[511] != 512 {
+		t.Errorf("window[0] = %f, window[511] = %f", pass.window[0], pass.window[511])
+	}
+	pass.load(1)
+	if pass.window[0] != 513 || pass.window[487] != 1000 {
+		t.Errorf("window[0] = %f, window[487] = %f", pass.window[0], pass.window[487])
+	}
+	if pass.window[488] != 0 || pass.window[511] != 0 {
+		t.Errorf("window[488] = %f, window[511] = %f, want 0", pass.window[488], pass.window[511])
+	}
+}
