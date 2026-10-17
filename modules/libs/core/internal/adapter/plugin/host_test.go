@@ -1190,7 +1190,7 @@ func TestEnsureActiveRetiresARunningProcessWhoseEndpointIsMissing(t *testing.T) 
 		t.Fatalf("expected a replacement launch, got %d launches", started.Load())
 	}
 	waitUntil(t, "the unreachable process to be gone", func() bool {
-		return procs[0].Signal(syscall.Signal(0)) != nil
+		return isProcessGone(procs[0])
 	})
 	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
@@ -1292,4 +1292,8 @@ func TestClosingTheStdinOfAnEvictedProcessLeavesTheNextProcessStdinOpen(t *testi
 	if err := host.TeardownAll(t.Context(), 10*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
+}
+
+func isProcessGone(p *os.Process) bool {
+	return p.Signal(syscall.Signal(0)) != nil
 }
