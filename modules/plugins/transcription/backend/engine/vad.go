@@ -30,9 +30,7 @@ var (
 // this much state from one to the next. At 16 kHz a window is 32 milliseconds,
 // and that is how finely a span can be cut.
 const (
-	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="the window size is fixed by the Silero VAD model architecture"
 	speechWindow = 512
-	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT,ARITHMETIC_BASE reason="the state dimensions are fixed by the Silero VAD model architecture"
 	speechMemory = 2 * 128
 )
 

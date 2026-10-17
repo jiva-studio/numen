@@ -136,3 +136,46 @@ func TestSilenceProducesNoSpans(t *testing.T) {
 		t.Errorf("silence produced spans %v", got)
 	}
 }
+
+func TestSpeechPassLoad(t *testing.T) {
+	if pass, err := newSpeechPass(make([]float32, 1024)); err == nil {
+		defer pass.destroy()
+		if len(pass.window) != 512 {
+			t.Errorf("newSpeechPass window len = %d, want 512", len(pass.window))
+		}
+		if len(pass.state) != 256 {
+			t.Errorf("newSpeechPass state len = %d, want 256", len(pass.state))
+		}
+	}
+
+	sound := make([]float32, 1000)
+	for i := range sound {
+		sound[i] = float32(i + 1)
+	}
+	pass := &speechPass{
+		sound:  sound,
+		window: make([]float32, speechWindow),
+		state:  make([]float32, speechMemory),
+		count:  (len(sound) + speechWindow - 1) / speechWindow,
+	}
+	if len(pass.window) != 512 {
+		t.Errorf("window len = %d, want 512", len(pass.window))
+	}
+	if len(pass.state) != 256 {
+		t.Errorf("state len = %d, want 256", len(pass.state))
+	}
+	if pass.count != 2 {
+		t.Errorf("count = %d, want 2", pass.count)
+	}
+	pass.load(0)
+	if pass.window[0] != 1 || pass.window[511] != 512 {
+		t.Errorf("window[0] = %f, window[511] = %f", pass.window[0], pass.window[511])
+	}
+	pass.load(1)
+	if pass.window[0] != 513 || pass.window[487] != 1000 {
+		t.Errorf("window[0] = %f, window[487] = %f", pass.window[0], pass.window[487])
+	}
+	if pass.window[488] != 0 || pass.window[511] != 0 {
+		t.Errorf("window[488] = %f, window[511] = %f, want 0", pass.window[488], pass.window[511])
+	}
+}
