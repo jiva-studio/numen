@@ -128,7 +128,11 @@ func (f *artifactFiles) getProducer(at domain.URL) string {
 	if f.imports == nil || f.imports.By == nil || at == "" {
 		return ""
 	}
-	return f.imports.By.GetDownloadModel(at).Producer
+	by, err := f.imports.By.GetDownloadModel(at)
+	if err != nil {
+		return ""
+	}
+	return by.Producer
 }
 
 // getArtifactID is the name one artifact stands under in the store, and whether the

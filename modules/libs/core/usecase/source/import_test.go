@@ -26,12 +26,12 @@ type site struct {
 	refusing    error
 }
 
-func (s *site) GetDownloadModel(_ domain.URL) port.DownloadModel {
+func (s *site) GetDownloadModel(_ domain.URL) (port.DownloadModel, error) {
 	producer := domain.Captions
 	if len(s.cues) == 0 && s.prose != "" {
 		producer = domain.Article
 	}
-	return port.DownloadModel{Tool: "a test", Version: "1", Producer: producer}
+	return port.DownloadModel{Tool: "a test", Version: "1", Producer: producer}, nil
 }
 
 func (s *site) GetMetadata(ctx context.Context, at domain.URL) (port.Metadata, error) {

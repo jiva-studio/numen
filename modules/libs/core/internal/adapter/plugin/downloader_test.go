@@ -165,7 +165,10 @@ func TestDownloaderBridge(t *testing.T) {
 		t.Fatalf("CanHandle failed: %v, can=%v", err, can)
 	}
 
-	model := bridge.GetDownloadModel(url)
+	model, err := bridge.GetDownloadModel(url)
+	if err != nil {
+		t.Fatalf("GetDownloadModel failed: %v", err)
+	}
 	if model.Tool != "test-ytdlp" || model.Version != "2026.01.01" || model.Producer != "yt-dlp" {
 		t.Fatalf("unexpected model: %+v", model)
 	}

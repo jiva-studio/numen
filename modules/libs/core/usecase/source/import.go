@@ -87,7 +87,11 @@ func (u ImportURL) Execute(
 
 	// One run to an address. The name is held for as long as the download takes,
 	// and two urls on one address are one download.
-	release, err := store.ClaimArtifact(ctx, domain.NewArtifactName(domain.ArtifactPartial, u.By.GetDownloadModel(at).Producer, hash))
+	by, err := u.By.GetDownloadModel(at)
+	if err != nil {
+		return res, err
+	}
+	release, err := store.ClaimArtifact(ctx, domain.NewArtifactName(domain.ArtifactPartial, by.Producer, hash))
 	if errors.Is(err, port.ErrClaimed) {
 		return res, ErrBeingDownloaded
 	}
@@ -162,7 +166,11 @@ func (u ImportURL) writeDownload(
 func (u ImportURL) silent(
 	ctx context.Context, at domain.URL, store port.DerivedStore, hash string,
 ) error {
-	return store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactAnswer, u.By.GetDownloadModel(at).Producer, hash), []byte(text.Silent+"\n"))
+	by, err := u.By.GetDownloadModel(at)
+	if err != nil {
+		return err
+	}
+	return store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactAnswer, by.Producer, hash), []byte(text.Silent+"\n"))
 }
 
 // readURLFile is one url: where it points, the file itself, and the store what
@@ -244,6 +252,10 @@ func (u ImportURL) record(
 	at domain.URL,
 	extracted port.Text,
 ) error {
+	by, err := u.By.GetDownloadModel(at)
+	if err != nil {
+		return err
+	}
 	written, err := json.Marshal(struct {
 		Address    string `json:"address"`
 		Title      string `json:"title,omitempty"`
@@ -255,7 +267,7 @@ func (u ImportURL) record(
 		Title:      extracted.Title,
 		Length:     extracted.Length,
 		Producer:   producer,
-		Downloader: u.By.GetDownloadModel(at).Recipe(),
+		Downloader: by.Recipe(),
 	})
 	if err != nil {
 		return err
