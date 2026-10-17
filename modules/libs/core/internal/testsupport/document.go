@@ -5,6 +5,8 @@ import (
 	"context"
 	"image"
 	"io"
+	"strconv"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -75,4 +77,29 @@ func (Documents) OpenDocument(_ context.Context, file io.ReadSeekCloser) (port.O
 		_, _ = file.Seek(0, io.SeekStart)
 	}
 	return dummyOpenDocument{file: file}, nil
+}
+
+// bookMark opens the bytes of a book the stub reads. The words follow it, and
+// each line of them is a part.
+const bookMark = "%BOOK\n"
+
+// NewBook is the bytes of a book the stub reads: the words, one line to a part.
+func NewBook(words ...string) []byte {
+	return []byte(bookMark + strings.Join(words, "\n"))
+}
+
+// ReadBook reads the bytes NewBook gives: the lines are the text, and a part
+// begins at each line.
+func (Documents) ReadBook(_ context.Context, raw []byte) (domain.BookText, error) {
+	if !bytes.HasPrefix(raw, []byte(bookMark)) {
+		return domain.BookText{}, port.ErrNotADocument
+	}
+	text := string(raw[len(bookMark):])
+	out := domain.BookText{Text: text}
+	offset := 0
+	for i, line := range strings.Split(text, "\n") {
+		out.Parts = append(out.Parts, domain.PartStart{Title: "Part " + strconv.Itoa(i+1), Offset: offset})
+		offset += len(line) + 1
+	}
+	return out, nil
 }

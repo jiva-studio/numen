@@ -5,9 +5,10 @@ import (
 	"errors"
 	"image/jpeg"
 	"net/http"
-	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
@@ -115,61 +116,90 @@ func TestGetPageRefusesAPageTheDocumentDoesNotHave(t *testing.T) {
 
 const bookPath = "library/book.epub"
 
-func TestGetBookAnswersWhatTheBookIsAndWhereItWasRead(t *testing.T) {
-	t.Parallel()
-	v := vaultOf(t, map[string]string{bookPath: bookOf(t)})
-
-	got, err := document.NewGetBook(readers, kept{}).Execute(t.Context(), v, bookPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if got.Book.Title != "A Reflowed Book" || got.Fingerprint.Path != bookPath || got.Fingerprint.Size == 0 {
-		t.Errorf("the book is %q read from %+v", got.Book.Title, got.Fingerprint)
-	}
-}
-
-func TestGetBookMarkupAnswersOneDocumentOfTheBook(t *testing.T) {
-	t.Parallel()
-	v := vaultOf(t, map[string]string{bookPath: bookOf(t)})
-	book, err := document.NewGetBook(readers, kept{}).Execute(t.Context(), v, bookPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	get := document.NewGetBookMarkup(readers, kept{})
-
-	markup, err := get.Execute(t.Context(), v, bookPath, &book.Fingerprint, "OEBPS/first.xhtml")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(markup, "Alpha omega.") {
-		t.Errorf("the markup is %q", markup)
-	}
-
-	stale := document.Fingerprint{Size: 1, Mtime: 2}
-	if _, err := get.Execute(t.Context(), v, bookPath, &stale, "OEBPS/first.xhtml"); !errors.Is(err, document.ErrChanged) {
-		t.Errorf("a stale baseline was answered with %v", err)
-	}
-}
-
 func TestGetBookPictureSettlesTheTypeByTheBytes(t *testing.T) {
 	t.Parallel()
-	v := vaultOf(t, map[string]string{bookPath: bookOf(t)})
-	book, err := document.NewGetBook(readers, kept{}).Execute(t.Context(), v, bookPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	get := document.NewGetBookPicture(readers, kept{}, http.DetectContentType)
+	v := vaultOf(t, map[string]string{bookPath: "the bytes of a book"})
+	held := newBook()
+	get := document.NewGetBookPicture(readers, held, http.DetectContentType)
+	named := fingerprintOf(t, v)
 
-	got, err := get.Execute(t.Context(), v, bookPath, book.Fingerprint, "OEBPS/pictures/plate.png")
+	got, err := get.Execute(t.Context(), v, bookPath, named, "OEBPS/pictures/plate.png")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got.Type != "image/png" || string(got.Body) != plate {
 		t.Errorf("the picture is %q of %d bytes", got.Type, len(got.Body))
 	}
+	if len(held.asked) != 1 || held.asked[0] != named {
+		t.Errorf("the archive was asked at %+v, want once at %+v", held.asked, named)
+	}
 
-	if _, err := get.Execute(t.Context(), v, bookPath, book.Fingerprint, "OEBPS/pictures/cover.svg"); !errors.Is(err, document.ErrNotAPicture) {
+	if _, err := get.Execute(t.Context(), v, bookPath, named, "OEBPS/pictures/cover.svg"); !errors.Is(err, document.ErrNotAPicture) {
 		t.Errorf("a document in the archive was answered with %v", err)
 	}
+}
+
+func TestGetBookPictureRefusesAFileThatIsNotTheBytesNamed(t *testing.T) {
+	t.Parallel()
+	v := vaultOf(t, map[string]string{bookPath: "the bytes of a book"})
+	held := newBook()
+	get := document.NewGetBookPicture(readers, held, http.DetectContentType)
+
+	stale := document.Fingerprint{Path: bookPath, Size: 1, Mtime: 2}
+	if _, err := get.Execute(t.Context(), v, bookPath, stale, "OEBPS/pictures/plate.png"); !errors.Is(err, document.ErrChanged) {
+		t.Errorf("a stale fingerprint was answered with %v", err)
+	}
+	if len(held.asked) != 0 {
+		t.Errorf("the archive was asked %d times for a file that is not the one named", len(held.asked))
+	}
+}
+
+func TestGetBookPictureAnswersWithErrChangedWhereTheArchiveSaysTheFileChanged(t *testing.T) {
+	t.Parallel()
+	v := vaultOf(t, map[string]string{bookPath: "the bytes of a book"})
+	held := newBook()
+	held.failure = port.ErrBookChanged
+	get := document.NewGetBookPicture(readers, held, http.DetectContentType)
+
+	_, err := get.Execute(t.Context(), v, bookPath, fingerprintOf(t, v), "OEBPS/pictures/plate.png")
+	if !errors.Is(err, document.ErrChanged) {
+		t.Errorf("err = %v, want ErrChanged", err)
+	}
+}
+
+func TestGetBookPictureRefusesAnEntryTheArchiveLacksAndAFileThatIsNoBook(t *testing.T) {
+	t.Parallel()
+	v := vaultOf(t, map[string]string{bookPath: "the bytes of a book"})
+	named := fingerprintOf(t, v)
+
+	get := document.NewGetBookPicture(readers, newBook(), http.DetectContentType)
+	if _, err := get.Execute(t.Context(), v, bookPath, named, "OEBPS/missing.png"); !errors.Is(err, document.ErrNoEntry) {
+		t.Errorf("an entry the archive lacks was answered with %v", err)
+	}
+
+	broken := newBook()
+	broken.failure = document.ErrNotADocument
+	get = document.NewGetBookPicture(readers, broken, http.DetectContentType)
+	if _, err := get.Execute(t.Context(), v, bookPath, named, "OEBPS/pictures/plate.png"); !errors.Is(err, document.ErrNotADocument) {
+		t.Errorf("a file that is no book was answered with %v", err)
+	}
+}
+
+func TestGetBookPictureRefusesAPathTheVaultLacks(t *testing.T) {
+	t.Parallel()
+	v := vaultOf(t, map[string]string{})
+	get := document.NewGetBookPicture(readers, newBook(), http.DetectContentType)
+	if _, err := get.Execute(t.Context(), v, bookPath, document.Fingerprint{}, "OEBPS/pictures/plate.png"); err == nil {
+		t.Error("a path the vault lacks was answered")
+	}
+}
+
+// fingerprintOf is what the vault says about the book.
+func fingerprintOf(t *testing.T, v domain.Vault) document.Fingerprint {
+	t.Helper()
+	found, err := document.NewGetDocument(readers, &shelf{}).Execute(t.Context(), v, bookPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return found.Fingerprint
 }

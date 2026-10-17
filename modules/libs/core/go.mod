@@ -6,7 +6,6 @@ require (
 	connectrpc.com/connect v1.21.0
 	github.com/ebitengine/purego v0.11.0
 	github.com/google/jsonschema-go v0.4.3
-	github.com/jiva-studio/numen/modules/plugins/reader-epub v0.0.0-00010101000000-000000000000
 	github.com/modelcontextprotocol/go-sdk v1.7.0
 	github.com/open-spaced-repetition/go-fsrs/v3 v3.3.1
 	github.com/quasilyte/go-ruleguard/dsl v0.3.23
@@ -50,4 +49,3 @@ require (
 
 replace github.com/jiva-studio/numen/modules/libs/protocol => ../protocol
 
-replace github.com/jiva-studio/numen/modules/plugins/reader-epub => ../../plugins/reader-epub
