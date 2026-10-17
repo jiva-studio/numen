@@ -409,3 +409,29 @@ func TestTheRequestIsForSpeechInWindowsOfBatches(t *testing.T) {
 		t.Errorf("the windows began at %d and %d", first.FromLine, second.FromLine)
 	}
 }
+
+// stuck is a proofreader that answers and says to continue from where it began.
+type stuck struct{}
+
+func (stuck) GetName() string { return "a proofreader that stays" }
+
+func (stuck) Proofread(_ context.Context, request domain.ProofreadRequest) (domain.ProofreadAnswer, error) {
+	return domain.ProofreadAnswer{
+		Corrections: []domain.ProofreadCorrection{{Number: request.FromLine, Last: request.FromLine, Text: "changed"}},
+		NextLine:    request.FromLine,
+	}, nil
+}
+
+// A proofreader that does not move on ends the run before anything it said is
+// written down, so the next run asks about the same lines.
+func TestAProofreaderThatDoesNotMoveOnEndsTheRunUnwritten(t *testing.T) {
+	u, v, shelved, _, hash := newProofreadTranscript(t, nil, "first thing", "secnd thing")
+	u.by = stuck{}
+
+	if _, err := u.Execute(t.Context(), v, recordingPath); err == nil {
+		t.Fatal("a proofreader that stayed was waited on for ever")
+	}
+	if _, err := shelved.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash)); err == nil {
+		t.Error("what a proofreader that stayed said was written down")
+	}
+}

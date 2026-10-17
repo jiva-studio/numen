@@ -287,6 +287,9 @@ func (u Proofread) askWindows(ctx context.Context, p *transcriptProofreadJob, re
 		if err != nil {
 			return fmt.Errorf("proofread %s: %w", p.path, err)
 		}
+		if !answer.IsDone && answer.NextLine <= next {
+			return fmt.Errorf("proofread %s: the proofreader stayed at line %d", p.path, next)
+		}
 		end := answer.NextLine
 		if answer.IsDone {
 			end = len(p.cues)
@@ -304,9 +307,6 @@ func (u Proofread) askWindows(ctx context.Context, p *transcriptProofreadJob, re
 
 		if answer.IsDone {
 			return nil
-		}
-		if end <= next {
-			return fmt.Errorf("proofread %s: the proofreader stayed at line %d", p.path, next)
 		}
 		next = end
 	}
