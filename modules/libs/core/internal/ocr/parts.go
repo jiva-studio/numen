@@ -31,7 +31,7 @@ func Unpack(raw []byte) []domain.OCRPart {
 	if len(raw) < partRecord {
 		return nil
 	}
-	parts := make([]Part, 0, len(raw)/partRecord)
+	parts := make([]domain.OCRPart, 0, len(raw)/partRecord)
 	for at := 0; at+partRecord <= len(raw); at += partRecord {
 		one := raw[at : at+partRecord]
 		parts = append(parts, domain.OCRPart{
