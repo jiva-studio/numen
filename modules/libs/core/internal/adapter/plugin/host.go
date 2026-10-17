@@ -60,7 +60,7 @@ type Host struct {
 	isEvictStopped bool
 	enabled        map[string]bool
 	stdinsMu       sync.Mutex
-	stdins         map[string]io.Closer
+	stdins         map[stdinKey]io.Closer
 	processLimits  ProcessLimits
 }
 
@@ -82,7 +82,7 @@ func NewHost(target string, dirs ...string) *Host {
 		evictTicker:    time.NewTicker(30 * time.Second),
 		evictDone:      make(chan struct{}),
 		enabled:        make(map[string]bool),
-		stdins:         make(map[string]io.Closer),
+		stdins:         make(map[stdinKey]io.Closer),
 		processLimits:  DefaultProcessLimits(),
 	}
 	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
@@ -205,11 +205,7 @@ func (h *Host) Discover() error {
 		if !exists {
 			sup = NewSupervisor()
 			id := p.Manifest.ID
-			sup.SetOnExit(func() {
-				h.mu.Lock()
-				delete(h.endpoints, id)
-				h.mu.Unlock()
-			})
+			sup.SetOnExit(func() { h.dropEndpointOfStoppedPlugin(id, sup) })
 			h.supervisors[p.Manifest.ID] = sup
 		}
 		sup.SetPermissions(p.Manifest.Permissions)
@@ -334,11 +330,7 @@ func (h *Host) prepareSupervisorLocked(pluginID string) (DiscoveredPlugin, *Supe
 		sup = NewSupervisor()
 		sup.SetPermissions(p.Manifest.Permissions)
 		id := pluginID
-		sup.SetOnExit(func() {
-			h.mu.Lock()
-			delete(h.endpoints, id)
-			h.mu.Unlock()
-		})
+		sup.SetOnExit(func() { h.dropEndpointOfStoppedPlugin(id, sup) })
 		h.supervisors[pluginID] = sup
 	}
 	memLimit := h.processLimits.MemoryLimitBytes
@@ -365,10 +357,8 @@ func (h *Host) awaitActivation(ctx context.Context, pluginID string, sup *Superv
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	state := sup.GetState()
-	if state == StateActive || state == StateIdle {
-		sup.Acquire(time.Now())
-		return h.endpoints[pluginID], true, nil
+	if endpoint, ok := h.acquireRunningLocked(pluginID, sup); ok {
+		return endpoint, true, nil
 	}
 	if err := sup.ActivationError(); err != nil {
 		return Endpoint{Host: "", Port: 0, Token: ""}, false, err
@@ -376,11 +366,51 @@ func (h *Host) awaitActivation(ctx context.Context, pluginID string, sup *Superv
 	return Endpoint{Host: "", Port: 0, Token: ""}, false, nil
 }
 
+// dropEndpointOfStoppedPlugin forgets the endpoint of an exited process unless a replacement is already running.
+func (h *Host) dropEndpointOfStoppedPlugin(pluginID string, sup *Supervisor) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if state := sup.GetState(); state == StateDormant || state == StateActivating {
+		delete(h.endpoints, pluginID)
+	}
+}
+
+// acquireRunningLocked holds the plugin for a consumer when it is running with a usable endpoint.
+func (h *Host) acquireRunningLocked(pluginID string, sup *Supervisor) (Endpoint, bool) {
+	endpoint := h.endpoints[pluginID]
+	if isEmptyEndpoint(endpoint) || !sup.Acquire(time.Now()) {
+		return emptyEndpoint(), false
+	}
+	return endpoint, true
+}
+
 func (h *Host) failActivation(sup *Supervisor, err error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if sup.GetState() == StateActivating {
 		sup.SetDormant(err)
+	}
+}
+
+// settlePluginInState waits out or clears a state other than Dormant and reports whether EnsureActive is finished.
+func (h *Host) settlePluginInState(
+	ctx context.Context,
+	pluginID string,
+	sup *Supervisor,
+	state ProcessState,
+) (Endpoint, bool, error) {
+	switch state {
+	case StateDeactivating:
+		err := sup.WaitWhileDeactivating(ctx)
+		return emptyEndpoint(), err != nil, err
+	case StateActivating:
+		endpoint, ready, err := h.awaitActivation(ctx, pluginID, sup)
+		return endpoint, ready || err != nil, err
+	default:
+		if err := sup.Teardown(ctx, 0, nil); err != nil && !errors.Is(err, errProcessNotRunning) {
+			return emptyEndpoint(), true, fmt.Errorf("retire unreachable plugin %s: %w", pluginID, err)
+		}
+		return emptyEndpoint(), false, nil
 	}
 }
 
@@ -394,18 +424,15 @@ func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, err
 			return Endpoint{Host: "", Port: 0, Token: ""}, err
 		}
 
-		state := sup.GetState()
-		if state == StateActive || state == StateIdle {
-			sup.Acquire(time.Now())
-			endpoint := h.endpoints[pluginID]
+		if endpoint, ok := h.acquireRunningLocked(pluginID, sup); ok {
 			h.mu.Unlock()
 			return endpoint, nil
 		}
 
-		if state == StateActivating {
+		if state := sup.GetState(); state != StateDormant {
 			h.mu.Unlock()
-			endpoint, ready, err := h.awaitActivation(ctx, pluginID, sup)
-			if ready || err != nil {
+			endpoint, done, err := h.settlePluginInState(ctx, pluginID, sup, state)
+			if done {
 				return endpoint, err
 			}
 			continue
@@ -429,12 +456,18 @@ func (h *Host) cleanupAbortedProcess(proc *os.Process, stdout io.Closer, pluginI
 	_ = proc.Kill()
 	_, _ = proc.Wait()
 	_ = stdout.Close()
+	h.closeStdin(pluginID, proc.Pid)
+}
+
+// closeStdin closes and forgets the stdin pipe of one process generation of a plugin.
+func (h *Host) closeStdin(pluginID string, pid int) {
+	key := stdinKey{pluginID: pluginID, pid: pid}
 	h.stdinsMu.Lock()
-	if c, ok := h.stdins[pluginID]; ok {
+	defer h.stdinsMu.Unlock()
+	if c, ok := h.stdins[key]; ok {
 		_ = c.Close()
-		delete(h.stdins, pluginID)
+		delete(h.stdins, key)
 	}
-	h.stdinsMu.Unlock()
 }
 
 //nolint:contextcheck // background supervisor outlives request
@@ -491,16 +524,9 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("attach plugin %s: %w", p.Manifest.ID, err)
 	}
 	sup.SetOnExit(func() {
-		h.mu.Lock()
-		delete(h.endpoints, p.Manifest.ID)
-		h.mu.Unlock()
+		h.dropEndpointOfStoppedPlugin(p.Manifest.ID, sup)
 
-		h.stdinsMu.Lock()
-		if c, ok := h.stdins[p.Manifest.ID]; ok {
-			_ = c.Close()
-			delete(h.stdins, p.Manifest.ID)
-		}
-		h.stdinsMu.Unlock()
+		h.closeStdin(p.Manifest.ID, proc.Pid)
 	})
 	sup.Acquire(now)
 
@@ -593,9 +619,9 @@ func (h *Host) defaultLauncher(
 
 	h.stdinsMu.Lock()
 	if h.stdins == nil {
-		h.stdins = make(map[string]io.Closer)
+		h.stdins = make(map[stdinKey]io.Closer)
 	}
-	h.stdins[p.Manifest.ID] = stdin
+	h.stdins[stdinKey{pluginID: p.Manifest.ID, pid: cmd.Process.Pid}] = stdin
 	h.stdinsMu.Unlock()
 
 	return cmd.Process, stdout, nil
@@ -621,8 +647,14 @@ func (h *Host) Release(pluginID string) {
 	}
 }
 
+type stdinKey struct {
+	pluginID string
+	pid      int
+}
+
 type pluginTeardownTarget struct {
 	id       string
+	pid      int
 	sup      *Supervisor
 	endpoint Endpoint
 }
@@ -639,9 +671,11 @@ func (h *Host) EvictIdle(ctx context.Context, defaultThreshold, gracePeriod time
 			threshold = time.Duration(p.Manifest.Lifecycle.IdleTimeoutSeconds) * time.Second
 		}
 
-		if sup.IsIdle(threshold, now) {
+		pid := sup.GetProcessID()
+		if sup.BeginDeactivation(threshold, now) {
 			targets = append(targets, pluginTeardownTarget{
 				id:       id,
+				pid:      pid,
 				sup:      sup,
 				endpoint: h.endpoints[id],
 			})
@@ -654,12 +688,7 @@ func (h *Host) EvictIdle(ctx context.Context, defaultThreshold, gracePeriod time
 	for _, target := range targets {
 		rpcShutdown := h.createRPCShutdown(target.endpoint, gracePeriod)
 		_ = target.sup.Teardown(ctx, gracePeriod, rpcShutdown)
-		h.stdinsMu.Lock()
-		if c, ok := h.stdins[target.id]; ok {
-			_ = c.Close()
-			delete(h.stdins, target.id)
-		}
-		h.stdinsMu.Unlock()
+		h.closeStdin(target.id, target.pid)
 		evicted = append(evicted, target.id)
 	}
 	return evicted
@@ -674,6 +703,7 @@ func (h *Host) EvictMemoryExceeded(ctx context.Context, gracePeriod time.Duratio
 		if sup.IsMemoryExceeded() {
 			targets = append(targets, pluginTeardownTarget{
 				id:       id,
+				pid:      sup.GetProcessID(),
 				sup:      sup,
 				endpoint: h.endpoints[id],
 			})
@@ -686,12 +716,7 @@ func (h *Host) EvictMemoryExceeded(ctx context.Context, gracePeriod time.Duratio
 	for _, target := range targets {
 		rpcShutdown := h.createRPCShutdown(target.endpoint, gracePeriod)
 		_ = target.sup.Teardown(ctx, gracePeriod, rpcShutdown)
-		h.stdinsMu.Lock()
-		if c, ok := h.stdins[target.id]; ok {
-			_ = c.Close()
-			delete(h.stdins, target.id)
-		}
-		h.stdinsMu.Unlock()
+		h.closeStdin(target.id, target.pid)
 		evicted = append(evicted, target.id)
 	}
 	return evicted
@@ -760,9 +785,9 @@ func (h *Host) TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 		}
 	}
 	h.stdinsMu.Lock()
-	for id, c := range h.stdins {
+	for key, c := range h.stdins {
 		_ = c.Close()
-		delete(h.stdins, id)
+		delete(h.stdins, key)
 	}
 	h.stdinsMu.Unlock()
 	return firstErr
@@ -1222,4 +1247,12 @@ func formatPluginSettings(rawSettings map[string]any) map[string]string {
 		}
 	}
 	return values
+}
+
+func emptyEndpoint() Endpoint {
+	return Endpoint{Host: "", Port: 0, Token: ""}
+}
+
+func isEmptyEndpoint(e Endpoint) bool {
+	return e.Host == "" && e.Port == 0 && e.Transport == nil
 }
