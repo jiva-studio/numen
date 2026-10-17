@@ -72,6 +72,8 @@ type Host struct {
 	activation     ActivationPolicy
 	onPluginFailed func(pluginID string, cause error)
 	errorHandler   ErrorHandler
+	onDisk         map[string]bool
+	problems       []DiscoveryProblem
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
@@ -97,6 +99,8 @@ func NewHost(target string, dirs ...string) *Host {
 		activation:     DefaultActivationPolicy(),
 		onPluginFailed: nil,
 		errorHandler:   nil,
+		onDisk:         make(map[string]bool),
+		problems:       nil,
 	}
 	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
@@ -272,41 +276,6 @@ func (h *Host) GetEventBus() *EventBus {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.bus
-}
-
-// Discover scans configured directories and registers eligible plugins.
-func (h *Host) Discover() error {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	if h.safeMode {
-		return nil
-	}
-
-	all, err := DiscoverPlugins(h.dirs)
-	if err != nil {
-		return fmt.Errorf("discover plugins: %w", err)
-	}
-
-	discovered := FilterPluginsByTarget(all, h.target)
-
-	for _, p := range discovered {
-		h.plugins[p.Manifest.ID] = p
-		sup, exists := h.supervisors[p.Manifest.ID]
-		if !exists {
-			sup = NewSupervisor()
-			id := p.Manifest.ID
-			sup.SetOnExit(func() { h.dropEndpointOfStoppedPlugin(id, sup) })
-			h.supervisors[p.Manifest.ID] = sup
-		}
-		sup.SetPermissions(p.Manifest.Permissions)
-		memLimit := h.processLimits.MemoryLimitBytes
-		if p.Manifest.Lifecycle.MemoryLimitBytes > 0 {
-			memLimit = p.Manifest.Lifecycle.MemoryLimitBytes
-		}
-		sup.SetMemoryLimit(memLimit)
-	}
-	return nil
 }
 
 // GetPlugins returns all discovered plugins registered with the host.
@@ -1068,9 +1037,18 @@ func (h *Host) GetPluginStatuses() []PluginStatus {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	statuses := make([]PluginStatus, 0, len(h.plugins))
+	statuses := make([]PluginStatus, 0, len(h.plugins)+len(h.problems))
 	for _, p := range h.plugins {
 		statuses = append(statuses, h.getPluginStatusLocked(p.Manifest.ID))
+	}
+	for _, problem := range h.problems {
+		statuses = append(statuses, PluginStatus{
+			ID:            problem.Dir,
+			Enabled:       false,
+			IsActive:      false,
+			Failed:        true,
+			FailureReason: problem.Err.Error(),
+		})
 	}
 	return statuses
 }

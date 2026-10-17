@@ -11,11 +11,18 @@ import (
 // DiscoveredPlugin is a validated plugin located on disk.
 type DiscoveredPlugin = port.DiscoveredPlugin
 
-// DiscoverPlugins scans directories and loads all valid plugin manifests found.
-func DiscoverPlugins(dirs []string) ([]DiscoveredPlugin, error) {
+// DiscoveryProblem describes a plugin directory that could not be registered.
+type DiscoveryProblem struct {
+	Dir string
+	Err error
+}
+
+// DiscoverPlugins scans directories and loads every valid plugin manifest found; the rest are reported as problems.
+func DiscoverPlugins(dirs []string) ([]DiscoveredPlugin, []DiscoveryProblem) {
 	seen := make(map[string]string)
 	seenDirs := make(map[string]bool)
 	var found []DiscoveredPlugin
+	var problems []DiscoveryProblem
 
 	for _, dir := range dirs {
 		if dir == "" {
@@ -30,38 +37,39 @@ func DiscoverPlugins(dirs []string) ([]DiscoveredPlugin, error) {
 		}
 		seenDirs[cleanDir] = true
 
-		plugins, err := scanDirectory(cleanDir, seen)
-		if err != nil {
-			return nil, err
-		}
+		plugins, dirProblems := scanDirectory(cleanDir, seen)
 		found = append(found, plugins...)
+		problems = append(problems, dirProblems...)
 	}
-	return found, nil
+	return found, problems
 }
 
-func scanDirectory(dir string, seen map[string]string) ([]DiscoveredPlugin, error) {
+func scanDirectory(dir string, seen map[string]string) ([]DiscoveredPlugin, []DiscoveryProblem) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("read plugin dir %s: %w", dir, err)
+		return nil, []DiscoveryProblem{{Dir: dir, Err: fmt.Errorf("read plugin dir %s: %w", dir, err)}}
 	}
 
 	var found []DiscoveredPlugin
+	var problems []DiscoveryProblem
 	for _, entry := range entries {
 		if !entry.IsDir() {
 			continue
 		}
-		p, ok, err := scanPluginDir(filepath.Join(dir, entry.Name()), seen)
+		pluginDir := filepath.Join(dir, entry.Name())
+		p, ok, err := scanPluginDir(pluginDir, seen)
 		if err != nil {
-			return nil, err
+			problems = append(problems, DiscoveryProblem{Dir: pluginDir, Err: err})
+			continue
 		}
 		if ok {
 			found = append(found, p)
 		}
 	}
-	return found, nil
+	return found, problems
 }
 
 func scanPluginDir(pluginDir string, seen map[string]string) (DiscoveredPlugin, bool, error) {
