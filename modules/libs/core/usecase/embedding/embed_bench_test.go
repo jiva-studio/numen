@@ -47,7 +47,7 @@ func BenchmarkEmbedDuplicates(b *testing.B) {
 				index := newStore()
 				cutBooks(b, index, shelf, first)
 				model := &embedder{dims: dimensions}
-				embed := NewEmbed(vaults{first.ID: shelf}, index, index)
+				embed := newEmbed(vaults{first.ID: shelf}, index, index)
 				embed.Embedder = model
 				embed.BatchCharacters = 4000
 				b.StartTimer()
@@ -98,7 +98,7 @@ func BenchmarkEmbedBatchDuplicates(b *testing.B) {
 
 			model := port.EmbeddingModel{Name: "fake", Dimensions: dimensions}
 			index := newStore()
-			embed := NewEmbed(vaults{}, index, index)
+			embed := newEmbed(vaults{}, index, index)
 			embed.Embedder = &embedder{dims: dimensions}
 
 			b.ReportAllocs()

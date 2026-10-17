@@ -23,6 +23,11 @@ type TextExtractor interface {
 	// page, one box a word. Starts is where each page begins, as Read answered,
 	// and pages are the ones wanted, by index.
 	GetHighlights(ctx context.Context, raw []byte, starts []int, pages []int) ([]domain.HighlightBox, error)
+
+	// ReadBook is the whole of what a book that reflows says, the parts it names
+	// and the pages of the printed edition it was set from. Bytes that are no book
+	// are refused with ErrNotADocument, and a locked book with ErrEncrypted.
+	ReadBook(ctx context.Context, raw []byte) (domain.BookText, error)
 }
 
 // PageRenderer draws the pages of such a document as pictures, for a screen to
@@ -60,4 +65,8 @@ var (
 	ErrNotADocument = errors.New("not a document this reads")
 	// ErrEncrypted is a document whose text is locked.
 	ErrEncrypted = errors.New("the document is locked")
+	// ErrNoBookEntry is an entry the archive of a book does not hold.
+	ErrNoBookEntry = errors.New("the book has no such entry")
+	// ErrBookChanged is a book whose file is no longer the bytes an ask named.
+	ErrBookChanged = errors.New("the book changed since it was asked for")
 )

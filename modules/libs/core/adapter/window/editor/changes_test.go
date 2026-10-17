@@ -58,6 +58,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 	settings := container.Config{
 		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+		Texts:        testsupport.Documents{},
 	}
 	registry, err := settings.Registry()
 	if err != nil {

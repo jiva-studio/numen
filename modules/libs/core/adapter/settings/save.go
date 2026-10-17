@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -434,10 +435,10 @@ func runOnFile(path string, work func(path string) error) error {
 }
 
 func splice(raw []byte, from, to int, with []byte) []byte {
-	patched := make([]byte, 0, len(raw)-(to-from)+len(with))
-	patched = append(patched, raw[:from]...)
-	patched = append(patched, with...)
-	return append(patched, raw[to:]...)
+	if from < 0 || to < from || to > len(raw) {
+		return raw
+	}
+	return slices.Concat(raw[:from], with, raw[to:])
 }
 
 // writeFileAtomically writes the file beside itself and renames it over the top, so a

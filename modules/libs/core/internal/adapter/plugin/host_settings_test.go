@@ -192,7 +192,9 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 	}
 
 	// 2. Disable plugin
-	host.SetPluginEnabled(pluginID, false)
+	if err := host.SetPluginEnabled(t.Context(), pluginID, false); err != nil {
+		t.Fatalf("SetPluginEnabled failed: %v", err)
+	}
 
 	if host.IsPluginEnabled(pluginID) {
 		t.Errorf("expected plugin to be disabled")
@@ -225,7 +227,9 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 	}
 
 	// 3. Re-enable plugin
-	host.SetPluginEnabled(pluginID, true)
+	if err := host.SetPluginEnabled(t.Context(), pluginID, true); err != nil {
+		t.Fatalf("SetPluginEnabled failed: %v", err)
+	}
 
 	if !host.IsPluginEnabled(pluginID) {
 		t.Errorf("expected plugin to be enabled after toggle")

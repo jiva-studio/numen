@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -182,5 +183,27 @@ func TestDocumentBridgeNoPlugin(t *testing.T) {
 	_, err := OpenDocumentBridge(t.Context(), host)
 	if err != ErrNoDocumentPlugin {
 		t.Fatalf("got err = %v, want ErrNoDocumentPlugin", err)
+	}
+}
+
+func TestRemoteDocumentRenderPageRejectsOutOfRangeInputs(t *testing.T) {
+	// The nil client panics on any call, so a rejected input never reaches it.
+	doc := &remoteDocument{}
+	beyond := int64(math.MaxInt32) + 1
+	cases := []struct {
+		name       string
+		index, dpi int
+	}{
+		{"negative page", -1, 150},
+		{"negative dpi", 0, -1},
+		{"page above MaxInt32", int(beyond), 150},
+		{"dpi above MaxInt32", 0, int(beyond)},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := doc.RenderPage(tc.index, tc.dpi); err == nil {
+				t.Fatal("RenderPage returned nil error")
+			}
+		})
 	}
 }

@@ -15,15 +15,25 @@ import (
 // every version stand, and the span is made from the two on the way in.
 const record = 28
 
+func clampInt32(n int) int32 {
+	if n < 0 {
+		return 0
+	}
+	if n > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	return int32(n)
+}
+
 // Pack is boxes as bytes: fixed-width records, so a reader wanting one page
 // seeks to it and reads no more.
 func Pack(boxes []domain.HighlightBox) []byte {
 	raw := make([]byte, len(boxes)*record)
 	for i, box := range boxes {
 		offset := i * record
-		binary.LittleEndian.PutUint32(raw[offset:], uint32(int32(box.Page)))
-		binary.LittleEndian.PutUint32(raw[offset+4:], uint32(int32(box.From)))
-		binary.LittleEndian.PutUint32(raw[offset+8:], uint32(int32(box.Len())))
+		binary.LittleEndian.PutUint32(raw[offset:], uint32(clampInt32(box.Page)))
+		binary.LittleEndian.PutUint32(raw[offset+4:], uint32(clampInt32(box.From)))
+		binary.LittleEndian.PutUint32(raw[offset+8:], uint32(clampInt32(box.Len())))
 		binary.LittleEndian.PutUint32(raw[offset+12:], math.Float32bits(box.MinX))
 		binary.LittleEndian.PutUint32(raw[offset+16:], math.Float32bits(box.MinY))
 		binary.LittleEndian.PutUint32(raw[offset+20:], math.Float32bits(box.MaxX))

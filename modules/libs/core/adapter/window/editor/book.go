@@ -3,6 +3,7 @@ package editor
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -12,26 +13,31 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
-	"github.com/jiva-studio/numen/modules/plugins/reader-epub/backend/epub"
 )
+
+// bookClient is what a book plugin answers: the shape of a book, one document of
+// it as markup, and the bytes of one entry of its archive.
+type bookClient interface {
+	GetBook(context.Context, *connect.Request[v1.GetBookRequest]) (*connect.Response[v1.GetBookResponse], error)
+	ReadBookMarkup(
+		context.Context, *connect.Request[v1.ReadBookMarkupRequest],
+	) (*connect.Response[v1.ReadBookMarkupResponse], error)
+	ReadEntry(ctx context.Context, baseline *v1.Fingerprint, entry string) ([]byte, error)
+}
 
 // bookHandler answers what a book that reflows is, and the pictures it carries.
 type bookHandler struct {
+	numenv1connect.UnimplementedBookServiceHandler
+
 	state          *State
 	viewer         *viewer
 	openClient     func(context.Context) (any, func(), error)
-	getBook        *document.GetBook
-	getBookMarkup  *document.GetBookMarkup
 	getBookPicture *document.GetBookPicture
 }
 
 // A book that reflows reaches the window as words: the markup of one document
 // at a time, asked for over the schema, and beside it the pictures the archive
 // carries, answered at an address as the bytes they are.
-
-// mostListed is how many documents, parts and printed pages of one book cross.
-// A book names as many as it likes.
-const mostListed = 10_000
 
 // GetBook answers what a book that reflows is: what it is called, the documents
 // it is read in, and what it names inside them.
@@ -115,18 +121,32 @@ func (h *bookHandler) Entry(w http.ResponseWriter, r *http.Request, path, entry 
 	_, _ = w.Write(picture.Body)
 }
 
+// ReadEntry answers with the bytes of one entry of the archive of the book at a
+// fingerprint, read by the book plugin.
+func (h *bookHandler) ReadEntry(ctx context.Context, mark document.Fingerprint, entry string) ([]byte, error) {
+	client, closeClient, err := h.getClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("open the book plugin: %w", err)
+	}
+	if client == nil {
+		return nil, errNoDocuments
+	}
+	if closeClient != nil {
+		defer closeClient()
+	}
+	return client.ReadEntry(ctx, newWireFingerprint(mark), entry)
+}
+
 // isMisnamed is whether the bytes are not what they are called: a file that is no
 // book, and an entry of one that is no picture. It is the one thing a person can
 // act on.
 func isMisnamed(err error) bool {
-	return errors.Is(err, epub.ErrNotArchive) ||
-		errors.Is(err, epub.ErrNoContainer) ||
-		errors.Is(err, epub.ErrNoPackage) ||
-		errors.Is(err, epub.ErrEncrypted) ||
+	return errors.Is(err, document.ErrNotADocument) ||
+		errors.Is(err, document.ErrEncrypted) ||
 		errors.Is(err, document.ErrNotAPicture)
 }
 
-func (h *bookHandler) getClient(ctx context.Context) (numenv1connect.BookServiceClient, func(), error) {
+func (h *bookHandler) getClient(ctx context.Context) (bookClient, func(), error) {
 	if h.openClient == nil {
 		return nil, nil, nil
 	}
@@ -134,7 +154,7 @@ func (h *bookHandler) getClient(ctx context.Context) (numenv1connect.BookService
 	if err != nil {
 		return nil, nil, err
 	}
-	client, ok := raw.(numenv1connect.BookServiceClient)
+	client, ok := raw.(bookClient)
 	if !ok {
 		if closer != nil {
 			closer()
