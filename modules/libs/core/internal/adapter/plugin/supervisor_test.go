@@ -99,7 +99,8 @@ func TestSupervisorTeardownGraceful(t *testing.T) {
 
 func TestSupervisorTeardownInProcessCallsRPC(t *testing.T) {
 	sup := NewSupervisor()
-	sup.Acquire(time.Now())
+	sup.SetActivating()
+	sup.ActivateInProcess(time.Now())
 
 	rpcCalled := false
 	err := sup.Teardown(t.Context(), 50*time.Millisecond, func(_ context.Context) error {

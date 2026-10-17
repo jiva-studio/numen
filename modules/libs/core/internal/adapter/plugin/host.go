@@ -205,11 +205,7 @@ func (h *Host) Discover() error {
 		if !exists {
 			sup = NewSupervisor()
 			id := p.Manifest.ID
-			sup.SetOnExit(func() {
-				h.mu.Lock()
-				delete(h.endpoints, id)
-				h.mu.Unlock()
-			})
+			sup.SetOnExit(func() { h.dropEndpointOfStoppedPlugin(id, sup) })
 			h.supervisors[p.Manifest.ID] = sup
 		}
 		sup.SetPermissions(p.Manifest.Permissions)
@@ -334,11 +330,7 @@ func (h *Host) prepareSupervisorLocked(pluginID string) (DiscoveredPlugin, *Supe
 		sup = NewSupervisor()
 		sup.SetPermissions(p.Manifest.Permissions)
 		id := pluginID
-		sup.SetOnExit(func() {
-			h.mu.Lock()
-			delete(h.endpoints, id)
-			h.mu.Unlock()
-		})
+		sup.SetOnExit(func() { h.dropEndpointOfStoppedPlugin(id, sup) })
 		h.supervisors[pluginID] = sup
 	}
 	memLimit := h.processLimits.MemoryLimitBytes
@@ -365,10 +357,8 @@ func (h *Host) awaitActivation(ctx context.Context, pluginID string, sup *Superv
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	state := sup.GetState()
-	if state == StateActive || state == StateIdle {
-		sup.Acquire(time.Now())
-		return h.endpoints[pluginID], true, nil
+	if endpoint, ok := h.acquireRunningLocked(pluginID, sup); ok {
+		return endpoint, true, nil
 	}
 	if err := sup.ActivationError(); err != nil {
 		return Endpoint{Host: "", Port: 0, Token: ""}, false, err
@@ -376,11 +366,48 @@ func (h *Host) awaitActivation(ctx context.Context, pluginID string, sup *Superv
 	return Endpoint{Host: "", Port: 0, Token: ""}, false, nil
 }
 
+// dropEndpointOfStoppedPlugin forgets the endpoint of an exited process unless a replacement is already running.
+func (h *Host) dropEndpointOfStoppedPlugin(pluginID string, sup *Supervisor) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if state := sup.GetState(); state == StateDormant || state == StateActivating {
+		delete(h.endpoints, pluginID)
+	}
+}
+
+// acquireRunningLocked holds the plugin for a consumer when it is running with a usable endpoint.
+func (h *Host) acquireRunningLocked(pluginID string, sup *Supervisor) (Endpoint, bool) {
+	endpoint := h.endpoints[pluginID]
+	if isEmptyEndpoint(endpoint) || !sup.Acquire(time.Now()) {
+		return emptyEndpoint(), false
+	}
+	return endpoint, true
+}
+
 func (h *Host) failActivation(sup *Supervisor, err error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if sup.GetState() == StateActivating {
 		sup.SetDormant(err)
+	}
+}
+
+// settlePluginInState waits out or clears a state other than Dormant and reports whether EnsureActive is finished.
+func (h *Host) settlePluginInState(
+	ctx context.Context,
+	pluginID string,
+	sup *Supervisor,
+	state ProcessState,
+) (Endpoint, bool, error) {
+	switch state {
+	case StateActivating:
+		endpoint, ready, err := h.awaitActivation(ctx, pluginID, sup)
+		return endpoint, ready || err != nil, err
+	default:
+		if err := sup.Teardown(ctx, 0, nil); err != nil && !errors.Is(err, errProcessNotRunning) {
+			return emptyEndpoint(), true, fmt.Errorf("retire unreachable plugin %s: %w", pluginID, err)
+		}
+		return emptyEndpoint(), false, nil
 	}
 }
 
@@ -394,18 +421,15 @@ func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, err
 			return Endpoint{Host: "", Port: 0, Token: ""}, err
 		}
 
-		state := sup.GetState()
-		if state == StateActive || state == StateIdle {
-			sup.Acquire(time.Now())
-			endpoint := h.endpoints[pluginID]
+		if endpoint, ok := h.acquireRunningLocked(pluginID, sup); ok {
 			h.mu.Unlock()
 			return endpoint, nil
 		}
 
-		if state == StateActivating {
+		if state := sup.GetState(); state != StateDormant {
 			h.mu.Unlock()
-			endpoint, ready, err := h.awaitActivation(ctx, pluginID, sup)
-			if ready || err != nil {
+			endpoint, done, err := h.settlePluginInState(ctx, pluginID, sup, state)
+			if done {
 				return endpoint, err
 			}
 			continue
@@ -491,9 +515,7 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("attach plugin %s: %w", p.Manifest.ID, err)
 	}
 	sup.SetOnExit(func() {
-		h.mu.Lock()
-		delete(h.endpoints, p.Manifest.ID)
-		h.mu.Unlock()
+		h.dropEndpointOfStoppedPlugin(p.Manifest.ID, sup)
 
 		h.stdinsMu.Lock()
 		if c, ok := h.stdins[p.Manifest.ID]; ok {
@@ -1222,4 +1244,12 @@ func formatPluginSettings(rawSettings map[string]any) map[string]string {
 		}
 	}
 	return values
+}
+
+func emptyEndpoint() Endpoint {
+	return Endpoint{Host: "", Port: 0, Token: ""}
+}
+
+func isEmptyEndpoint(e Endpoint) bool {
+	return e.Host == "" && e.Port == 0 && e.Transport == nil
 }
