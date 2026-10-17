@@ -53,9 +53,9 @@ func TestDiscoverPlugins(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := DiscoverPlugins([]string{tempDir})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	found, problems := DiscoverPlugins([]string{tempDir})
+	if len(problems) != 0 {
+		t.Fatalf("unexpected problems: %v", problems)
 	}
 	if len(found) != 2 {
 		t.Fatalf("got %d plugins, want 2", len(found))
@@ -109,9 +109,12 @@ func TestDiscoverPluginsDuplicateID(t *testing.T) {
 	_ = os.Mkdir(p2, 0o755)
 	_ = os.WriteFile(filepath.Join(p2, "manifest.json"), []byte(manifest), 0o644)
 
-	_, err := DiscoverPlugins([]string{tempDir1, tempDir2})
-	if err == nil {
-		t.Fatalf("expected error on duplicate plugin id, got nil")
+	found, problems := DiscoverPlugins([]string{tempDir1, tempDir2})
+	if len(found) != 1 {
+		t.Fatalf("expected the first plugin with the id to be kept, got %d", len(found))
+	}
+	if len(problems) != 1 || problems[0].Dir != p2 {
+		t.Fatalf("expected the duplicate to be reported, got %v", problems)
 	}
 }
 
@@ -136,9 +139,29 @@ func TestDiscoverPluginsSameDirectoryRepeated(t *testing.T) {
 	_ = os.WriteFile(filepath.Join(p, "manifest.json"), []byte(manifest), 0o644)
 
 	// Passing same directory twice (e.g. from NUMEN_PLUGINS_PATH and executable relative path)
-	found, err := DiscoverPlugins([]string{tempDir, tempDir})
-	t.Logf("found: %d, err: %v", len(found), err)
-	if err != nil {
-		t.Fatalf("unexpected error when directory is repeated: %v", err)
+	found, problems := DiscoverPlugins([]string{tempDir, tempDir})
+	if len(problems) != 0 || len(found) != 1 {
+		t.Fatalf("expected one plugin and no problem when a directory is repeated, got %d and %v", len(found), problems)
+	}
+}
+
+func TestABrokenManifestDoesNotHideTheOtherPlugins(t *testing.T) {
+	tempDir := t.TempDir()
+	createTestPluginTree(t, tempDir)
+	broken := filepath.Join(tempDir, "broken")
+	if err := os.Mkdir(broken, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(broken, "manifest.json"), []byte("{not json"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	found, problems := DiscoverPlugins([]string{tempDir})
+
+	if len(found) != 1 || found[0].Manifest.ID != "md.numen.ocr" {
+		t.Fatalf("expected the valid plugin to be discovered, got %v", found)
+	}
+	if len(problems) != 1 || problems[0].Dir != broken || problems[0].Err == nil {
+		t.Fatalf("expected the broken manifest to be reported, got %v", problems)
 	}
 }
