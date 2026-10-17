@@ -488,27 +488,25 @@ func (h *Host) acquireRunningLocked(pluginID string, sup *Supervisor) (Endpoint,
 	return endpoint, true
 }
 
-// recordActivationFailure counts a failed activation unless the caller gave up or the activation was aborted.
-func (h *Host) recordActivationFailure(ctx context.Context, pluginID string, sup *Supervisor, cause error) {
-	if ctx.Err() != nil || errors.Is(cause, errActivationAborted) {
+// failActivation returns a plugin whose activation failed to Dormant and counts the failure in the same step,
+// so no other caller can start it again before the backoff applies.
+func (h *Host) failActivation(ctx context.Context, pluginID string, sup *Supervisor, cause error) {
+	h.mu.Lock()
+	if sup.GetState() != StateActivating {
+		h.mu.Unlock()
 		return
 	}
-	h.mu.RLock()
-	policy := h.activation
+	sup.SetDormant(cause)
 	notify := h.onPluginFailed
-	h.mu.RUnlock()
-
-	wasFailed, _ := sup.GetActivationFailure()
-	if sup.RecordActivationFailure(time.Now(), policy, cause) && !wasFailed && notify != nil {
-		notify(pluginID, cause)
+	failedNow := false
+	if ctx.Err() == nil {
+		wasFailed, _ := sup.GetActivationFailure()
+		failedNow = sup.RecordActivationFailure(time.Now(), h.activation, cause) && !wasFailed
 	}
-}
+	h.mu.Unlock()
 
-func (h *Host) failActivation(sup *Supervisor, err error) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if sup.GetState() == StateActivating {
-		sup.SetDormant(err)
+	if failedNow && notify != nil {
+		notify(pluginID, cause)
 	}
 }
 
@@ -580,8 +578,7 @@ func (h *Host) beginActivationLocked(pluginID string, sup *Supervisor) error {
 func (h *Host) runActivation(ctx context.Context, p DiscoveredPlugin, sup *Supervisor) (Endpoint, error) {
 	endpoint, err := h.activatePlugin(ctx, p, sup)
 	if err != nil {
-		h.failActivation(sup, err)
-		h.recordActivationFailure(ctx, p.Manifest.ID, sup, err)
+		h.failActivation(ctx, p.Manifest.ID, sup, err)
 		return endpoint, err
 	}
 	sup.RecordActivationSuccess()
@@ -626,9 +623,6 @@ func (h *Host) waitForReady(ctx context.Context, stdout io.Reader) (int, error) 
 func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *Supervisor) (Endpoint, error) {
 	token, err := GenerateAuthToken()
 	if err != nil {
-		h.mu.Lock()
-		sup.SetDormant(err)
-		h.mu.Unlock()
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("generate token: %w", err)
 	}
 
@@ -641,18 +635,12 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 
 	proc, stdout, err := launcher(ctx, p, 0, token)
 	if err != nil {
-		h.mu.Lock()
-		sup.SetDormant(err)
-		h.mu.Unlock()
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("launch plugin %s: %w", p.Manifest.ID, err)
 	}
 
 	actualPort, err := h.waitForReady(ctx, stdout)
 	if err != nil {
 		h.cleanupAbortedProcess(proc, stdout, p.Manifest.ID)
-		h.mu.Lock()
-		sup.SetDormant(err)
-		h.mu.Unlock()
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("handshake plugin %s: %w", p.Manifest.ID, err)
 	}
 
@@ -670,7 +658,6 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 	}
 
 	if err := sup.Attach(proc, now); err != nil {
-		sup.SetDormant(err)
 		h.mu.Unlock()
 		h.cleanupAbortedProcess(proc, stdout, p.Manifest.ID)
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("attach plugin %s: %w", p.Manifest.ID, err)
