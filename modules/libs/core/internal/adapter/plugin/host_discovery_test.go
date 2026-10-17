@@ -171,3 +171,29 @@ func TestConcurrentDiscoveriesLeaveTheRegistryConsistent(t *testing.T) {
 		t.Fatalf("expected one plugin, got %d", len(plugins))
 	}
 }
+
+func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
+	host := newDiscoveredHost(t)
+	var started atomic.Int32
+	host.SetLauncher(startSleepLauncher(t, &started, nil))
+	host.discoverMu.Lock()
+
+	answered := make(chan error, 1)
+	go func() {
+		_, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+		answered <- err
+	}()
+
+	select {
+	case err := <-answered:
+		t.Fatalf("EnsureActive answered while a discovery was in progress: %v", err)
+	case <-time.After(50 * time.Millisecond):
+	}
+	host.discoverMu.Unlock()
+	if err := <-answered; err != nil {
+		t.Fatalf("EnsureActive failed: %v", err)
+	}
+	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}

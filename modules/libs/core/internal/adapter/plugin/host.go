@@ -75,7 +75,7 @@ type Host struct {
 	onPluginFailed func(pluginID string, cause error)
 	errorHandler   ErrorHandler
 	onDisk         map[string]bool
-	discoverMu     sync.Mutex
+	discoverMu     sync.RWMutex
 	problems       []DiscoveryProblem
 }
 
@@ -103,7 +103,7 @@ func NewHost(target string, dirs ...string) *Host {
 		onPluginFailed: nil,
 		errorHandler:   nil,
 		onDisk:         make(map[string]bool),
-		discoverMu:     sync.Mutex{},
+		discoverMu:     sync.RWMutex{},
 		problems:       nil,
 	}
 	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
@@ -507,6 +507,9 @@ func (h *Host) settlePluginInState(
 
 // EnsureActive ensures the plugin process is running and returns its endpoint.
 func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, error) {
+	h.discoverMu.RLock()
+	defer h.discoverMu.RUnlock()
+
 	for {
 		h.mu.Lock()
 		p, sup, err := h.prepareSupervisorLocked(pluginID)
