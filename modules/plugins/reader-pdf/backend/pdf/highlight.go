@@ -186,7 +186,6 @@ type pageGeometry struct {
 // wide as its text is high.
 func (d *document) getSheet(page requests.Page) (pageGeometry, bool) {
 	size, err := d.worker.GetPageSize(&requests.GetPageSize{Page: page})
-	// gomutants:disable-next-line EXPRESSION_REMOVE reason="getSheet returns false when measuring page fails or size is zero"
 	if err != nil || size.Width <= 0 || size.Height <= 0 {
 		return pageGeometry{}, false
 	}

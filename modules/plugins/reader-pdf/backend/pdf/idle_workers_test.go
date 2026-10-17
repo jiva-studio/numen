@@ -285,6 +285,17 @@ func TestOpenReaderEmptyFileClosesFile(t *testing.T) {
 	}
 }
 
+func TestOpenReaderInvalidContentClosesFile(t *testing.T) {
+	fc := &trackingCloser{Reader: bytes.NewReader([]byte("not a valid pdf content"))}
+	_, err := openReader(fc)
+	if !errors.Is(err, ErrNotPDF) {
+		t.Errorf("expected ErrNotPDF for invalid file, got %v", err)
+	}
+	if !fc.closed {
+		t.Error("expected invalid file to be closed")
+	}
+}
+
 func TestDocumentCloseClosesFile(t *testing.T) {
 	raw, err := os.ReadFile("testdata/tiny.pdf")
 	if err != nil {

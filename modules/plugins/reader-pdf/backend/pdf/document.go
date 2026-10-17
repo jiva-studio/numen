@@ -234,8 +234,8 @@ func open(src source) (*document, error) {
 		closeFile()
 		return nil, fmt.Errorf("%w: the file is empty", ErrNotPDF)
 	}
-	// gomutants:disable-next-line BRANCH_IF reason="open releases source file when worker acquisition fails"
 	worker, err := getWorker()
+	// gomutants:disable-next-line BRANCH_IF reason="open releases source file when worker acquisition fails"
 	if err != nil {
 		closeFile()
 		return nil, fmt.Errorf("pdf: %w", err)
@@ -244,7 +244,6 @@ func open(src source) (*document, error) {
 	opened, err := worker.OpenDocument(&requests.OpenDocument{FileReader: src.reader, FileReaderSize: src.size})
 	if err != nil {
 		putWorker(worker)
-		// gomutants:disable-next-line STATEMENT_REMOVE reason="open releases source file when document cannot be opened"
 		closeFile()
 		// A file that asks for a password is a file whose text nobody here can
 		// read, and it is worth saying so rather than saying it is malformed.
