@@ -122,6 +122,7 @@ export function createReaderTabKind(
     : `reader:${registration.id}`
   return {
     kind: kindId,
+    pluginId,
     open: (at: string) => {
       const filename = extractFilename(at)
       return reactive({
@@ -316,6 +317,7 @@ export function createCustomTabKind(
 ): AnyTabKind {
   return {
     kind: registration.kind,
+    pluginId,
     open: (at: string) => createCustomTabState(at, { pluginId, registration, hostDeps: deps }),
     getTitle: (state: unknown) => {
       const s = state as { title?: unknown; at?: string; path?: string } | undefined

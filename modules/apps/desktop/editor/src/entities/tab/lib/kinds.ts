@@ -24,6 +24,8 @@ export type OpenTab<K extends string = string> = { readonly path: string } & Pro
 export interface TabKind<TabState, K extends string = string> {
   /** The word the identities of its tabs are filed under. */
   readonly kind: K
+  /** The plugin that registered the kind, and nothing for a kind the window declares. */
+  readonly pluginId?: string
   /**
    * What one of its tabs holds, made as the tab opens on what it was given.
    * It is made at once, so whatever it watches is caught by the tab's scope

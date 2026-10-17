@@ -19,6 +19,7 @@ import { closeTab, openTab, openTabBeside, pane, paneById, getPanes } from '@num
 import type { Tab, Workspace } from '@numen/ui'
 import type { ActiveTab, AnyTabKind, KindTab, WindowHandle, WindowTab } from '../lib/kinds'
 import { generateId } from '../lib/workspace'
+import { createUnavailableKind } from '../lib/unavailable'
 
 /** The identity a pane made by a split is filed under. */
 const generatePaneId = () => crypto.randomUUID()
@@ -79,7 +80,7 @@ function createTabRegistry() {
   const registerKind = (kind: AnyTabKind): (() => void) => {
     byKind.set(kind.kind, kind)
     return () => {
-      byKind.delete(kind.kind)
+      if (byKind.get(kind.kind) === kind) byKind.delete(kind.kind)
     }
   }
   return { byKind, registerKinds, registerKind }
@@ -137,8 +138,7 @@ function createTabQueries(
 /** Operations for creating and opening tabs. */
 function createTabOpeners(ctx: TabOpenerContext) {
   const createTab = async (kind: string, at = ''): Promise<string> => {
-    const one = ctx.byKind.get(kind)
-    if (!one) return ''
+    const one = ctx.byKind.get(kind) ?? createUnavailableKind(kind)
     const id = one.identity ? `${kind}:${one.identity(at)}` : generateId(kind)
     if (ctx.open.value.has(id)) return id
     const scope = effectScope(true)
