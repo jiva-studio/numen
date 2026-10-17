@@ -418,13 +418,20 @@ func TestAProgramAvailableOnlyThroughItsCommandIsFound(t *testing.T) {
 		map[string]*providerServer{providerOne: served})
 	provider := (container.Config{PluginHost: host}).AgentProvider()
 
-	if _, err := provider.StartRun(t.Context(), port.Task{Question: "q", Agent: "gamma"}); err == nil {
-		t.Fatal("a program nothing lists was run")
+	if _, err := provider.StartRun(t.Context(), port.Task{Question: "q", Agent: "gamma"}); err == nil ||
+		!strings.Contains(err.Error(), "no agent plugin runs") {
+		t.Fatalf("a program nothing lists was run: %v", err)
+	}
+	if len(served.getAsked()) != 0 {
+		t.Fatal("the plugin was asked for a program it did not list")
 	}
 	run, err := provider.StartRun(t.Context(), port.Task{Question: "q", Agent: "gamma", Command: []string{"/opt/gamma"}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for range run.GetSteps() {
+	}
+	if asked := served.getAsked(); len(asked) != 1 || !slices.Equal(asked[0].GetCommand(), []string{"/opt/gamma"}) {
+		t.Errorf("the plugin was asked %v", asked)
 	}
 }

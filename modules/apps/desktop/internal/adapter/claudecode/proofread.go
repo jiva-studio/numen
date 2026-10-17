@@ -1,5 +1,5 @@
 // Package claudecode puts a recognition right through the command line a person already has
-// installed. It stays until proofreading is reached through the agent plugins.
+// installed, one batch to a process.
 package claudecode
 
 import (

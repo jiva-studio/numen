@@ -141,12 +141,18 @@ const INSTALLATION: Installation = {
   chooseHeadings: () => {},
   dayStartTime: ref('04:00'),
   latestDayStartTime: ref('12:00'),
-  chooseDayStartTime: () => {},
+  chooseDayStartTime: () => {
+    // Nothing is chosen in a picture.
+  },
   getSetting: () => undefined,
   getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),
-  write: () => {},
+  write: () => {
+    // Nothing is written in a picture.
+  },
   file: ref('/numen.json'),
-  openFile: () => {},
+  openFile: () => {
+    // Nothing is opened in a picture.
+  },
 }
 
 /** Everything in numen.json a person can change, in the groups the file keeps. */

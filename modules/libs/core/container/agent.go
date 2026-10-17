@@ -137,14 +137,13 @@ func (h *hostAgentProvider) getProvider(ctx context.Context, program string, com
 	if len(command) > 0 {
 		commands = map[string][]string{program: command}
 	}
-	_, listErr := h.GetPrograms(ctx, commands)
-	h.mu.Lock()
-	id, known = h.providers[program]
-	h.mu.Unlock()
-	if !known {
-		return "", errors.Join(fmt.Errorf("no agent plugin runs %q", program), listErr)
+	programs, listErr := h.GetPrograms(ctx, commands)
+	for _, one := range programs {
+		if one.Name == program {
+			return one.Provider, nil
+		}
 	}
-	return id, nil
+	return "", errors.Join(fmt.Errorf("no agent plugin runs %q", program), listErr)
 }
 
 // StartRun starts the task on the plugin that runs the program it names.
@@ -184,20 +183,23 @@ func (h *hostAgentProvider) EndConversation(ctx context.Context, conversation st
 	h.mu.Unlock()
 
 	var failed []error
-	var kept []string
+	var ended []string
 	for _, id := range ids {
 		if err := h.endConversationOn(ctx, id, conversation); err != nil {
 			failed = append(failed, err)
-			kept = append(kept, id)
+		} else {
+			ended = append(ended, id)
 		}
 	}
 
+	// A plugin the conversation was asked in meanwhile, or whose cleanup failed, stays recorded.
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	if len(kept) == 0 {
+	left := slices.DeleteFunc(h.conversations[conversation], func(id string) bool { return slices.Contains(ended, id) })
+	if len(left) == 0 {
 		delete(h.conversations, conversation)
 	} else {
-		h.conversations[conversation] = kept
+		h.conversations[conversation] = left
 	}
 	return errors.Join(failed...)
 }

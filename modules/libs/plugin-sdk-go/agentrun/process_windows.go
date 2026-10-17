@@ -19,10 +19,10 @@ func kill(cmd *exec.Cmd) error {
 		return nil
 	}
 	ended := exec.Command(taskkill(), "/T", "/F", "/PID", strconv.Itoa(cmd.Process.Pid)).Run()
-	if err := cmd.Process.Kill(); err != nil && ended != nil {
+	if err := cmd.Process.Kill(); err != nil {
 		return err
 	}
-	return nil
+	return ended
 }
 
 // taskkill is the program that ends a tree of processes, by the path it stands at in the system
