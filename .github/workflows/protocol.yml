@@ -29,8 +29,31 @@ defaults:
     working-directory: modules/libs/protocol
 
 jobs:
+  # Whether the change is more than documentation. The checks below always start
+  # and report under their own names; a job skipped on this result reports as
+  # skipped, which a required check accepts.
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: .
+    outputs:
+      code: ${{ steps.detect.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - id: detect
+        uses: ./.github/actions/detect-code
+
   schema:
     name: Schema
+    needs: [changes]
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
