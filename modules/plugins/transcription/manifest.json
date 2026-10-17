@@ -13,7 +13,7 @@
     "onFile:*.mp4",
     "onCommand:transcribe"
   ],
-  "permissions": ["vault:read"],
+  "permissions": ["vault:read", "network:outbound"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false
