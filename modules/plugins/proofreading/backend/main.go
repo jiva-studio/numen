@@ -8,20 +8,24 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 )
 
 type proofreadingServer struct {
-	mu        sync.RWMutex
-	modelName string
+	mu             sync.RWMutex
+	modelName      string
+	baseURL        string
+	strict         bool
+	maxSuggestions int
 }
 
 func (s *proofreadingServer) updateConfig(values map[string]string) {
@@ -29,6 +33,17 @@ func (s *proofreadingServer) updateConfig(values map[string]string) {
 	defer s.mu.Unlock()
 	if m, ok := values["model"]; ok && m != "" {
 		s.modelName = m
+	}
+	if u, ok := values["baseUrl"]; ok && u != "" {
+		s.baseURL = u
+	}
+	if v, ok := values["strictMode"]; ok {
+		s.strict = v == "true"
+	}
+	if v, ok := values["maxSuggestions"]; ok {
+		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+			s.maxSuggestions = n
+		}
 	}
 }
 
@@ -46,6 +61,8 @@ func (s *proofreadingServer) GetProofreaderInfo(
 		Name: name,
 	}), nil
 }
+
+const defaultBaseURL = "https://openrouter.ai/api/v1"
 
 type chatMessage struct {
 	Role    string `json:"role"`
@@ -80,25 +97,24 @@ func (s *proofreadingServer) Proofread(
 		key = os.Getenv("OPENAI_API_KEY")
 	}
 
-	baseURL := os.Getenv("NUMEN_PROOFREADING_URL")
+	s.mu.RLock()
+	baseURL, model := s.baseURL, s.modelName
+	options := reviewOptions{strict: s.strict, maxSuggestions: s.maxSuggestions}
+	s.mu.RUnlock()
 	if baseURL == "" {
-		baseURL = "https://openrouter.ai/api/v1"
+		baseURL = defaultBaseURL
 	}
 
 	replies := make(map[int32]string, len(batches))
 
-	s.mu.RLock()
-	model := s.modelName
-	s.mu.RUnlock()
-
 	if key != "" {
 		client := &http.Client{Timeout: 60 * time.Second}
 		for _, b := range batches {
-			reply, err := callLLM(ctx, client, baseURL, key, model, req.Msg.GetInstruction(), b.GetPrompt())
+			reply, err := callLLM(ctx, client, baseURL, key, model, buildInstruction(req.Msg.GetInstruction(), options.strict), b.GetPrompt())
 			if err != nil {
 				return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("batch %d: %w", b.GetNumber(), err))
 			}
-			replies[b.GetNumber()] = reply
+			replies[b.GetNumber()] = reviewReply(b.GetPrompt(), reply, options)
 		}
 	} else {
 		for _, b := range batches {
@@ -166,7 +182,10 @@ func callLLM(
 }
 
 func main() {
-	proof := &proofreadingServer{modelName: os.Getenv("NUMEN_PROOFREADING_MODEL")}
+	proof := &proofreadingServer{
+		modelName: os.Getenv("NUMEN_PROOFREADING_MODEL"),
+		baseURL:   os.Getenv("NUMEN_PROOFREADING_URL"),
+	}
 	s := server.New(server.WithUpdateConfig(proof.updateConfig))
 	s.Register(numenv1connect.NewProofreadingServiceHandler(proof, s.HandlerOptions()...))
 
@@ -175,4 +194,3 @@ func main() {
 		os.Exit(1)
 	}
 }
-

@@ -34,6 +34,13 @@
       "default": 5
     },
     {
+      "key": "baseUrl",
+      "type": "string",
+      "title": "Endpoint URL",
+      "description": "Base URL of the OpenAI-compatible chat completions API",
+      "default": "https://openrouter.ai/api/v1"
+    },
+    {
       "key": "model",
       "type": "string",
       "title": "Proofreading Model",
