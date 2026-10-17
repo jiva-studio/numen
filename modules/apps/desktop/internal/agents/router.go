@@ -151,10 +151,10 @@ func (r *Router) getProgram(ctx context.Context, asked string) (string, error) {
 		return use, nil
 	}
 
-	programs, _ := r.provider.GetPrograms(ctx, r.settings.GetCommands())
+	programs, listErr := r.provider.GetPrograms(ctx, r.settings.GetCommands())
 	chosen, found := port.GetDefaultProgram(programs)
 	if !found {
-		return "", errNoProgram
+		return "", errors.Join(errNoProgram, listErr)
 	}
 	return chosen.Name, nil
 }

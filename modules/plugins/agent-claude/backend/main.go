@@ -103,7 +103,6 @@ func (s *agentServer) AskAgent(
 	if !s.registry.Add(work) {
 		return connect.NewError(connect.CodeUnavailable, errors.New("this agent is closing"))
 	}
-	work.Begin()
 	defer s.registry.Remove(work)
 	defer work.End()
 
@@ -189,15 +188,23 @@ func (s *agentServer) GetAgentState(
 	return connect.NewResponse(&numenv1.GetAgentStateResponse{Unreachable: unreachable}), nil
 }
 
-// GetAgentPrograms lists Claude Code, whether it is installed, and the models the endpoint lists.
+// GetAgentPrograms lists Claude Code, whether it is installed under the command line the installation
+// set or where it is found, and the models the endpoint lists.
 func (s *agentServer) GetAgentPrograms(
 	ctx context.Context,
-	_ *connect.Request[numenv1.GetAgentProgramsRequest],
+	req *connect.Request[numenv1.GetAgentProgramsRequest],
 ) (*connect.Response[numenv1.GetAgentProgramsResponse], error) {
+	var configured []string
+	for _, one := range req.Msg.GetCommands() {
+		if one.GetProgram() == programName {
+			configured = one.GetCommand()
+		}
+	}
+	command, _ := getCommand(configured)
 	program := &numenv1.AgentProgram{
 		Name:        programName,
 		Title:       programTitle,
-		IsInstalled: findClaude() != "",
+		IsInstalled: command != "",
 		IsDefault:   true,
 	}
 	for _, one := range s.catalogue.get(ctx) {

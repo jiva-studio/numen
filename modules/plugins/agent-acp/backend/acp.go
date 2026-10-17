@@ -78,6 +78,7 @@ func (r *AgentRunner) StartRun(ctx context.Context, params RunParams) (*agentrun
 	}
 
 	if err := cmd.Start(); err != nil {
+		w.End()
 		r.Registry.Remove(w)
 		_ = stdout.Close()
 		if cleanupTempHome != nil {
@@ -87,7 +88,6 @@ func (r *AgentRunner) StartRun(ctx context.Context, params RunParams) (*agentrun
 		return nil, fmt.Errorf("start %s: %w", binName, err)
 	}
 
-	w.Begin()
 	go readAgentOutput(w, r.Registry, cmd, stdout, cleanupTempHome, params.MaxSteps, params.Conversation)
 
 	return w, nil

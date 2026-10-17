@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"fmt"
+	"math"
 	"sync"
 
 	"connectrpc.com/connect"
@@ -61,7 +62,7 @@ func newAskRequest(task port.Task) *v1.AskAgentRequest {
 		Model:               task.Model,
 		Instructions:        task.Instructions,
 		Tools:               task.Tools,
-		MaxSteps:            int32(task.MaxSteps),
+		MaxSteps:            int32(min(max(task.MaxSteps, 0), math.MaxInt32)),
 		ToolDeclarations:    declarations,
 		Root:                task.Root,
 		Command:             task.Command,

@@ -490,3 +490,27 @@ func TestAClosedAgentTakesNoTask(t *testing.T) {
 		t.Error("a closed agent took a task")
 	}
 }
+
+// A command line the installation set counts as the program being installed, wherever the program
+// stands on this machine.
+func TestTheProgramIsInstalledUnderTheCommandLineTheInstallationSet(t *testing.T) {
+	t.Setenv("PATH", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("NUMEN_CLAUDE_COMMAND", "")
+	t.Setenv("CLAUDE_COMMAND", "")
+	t.Setenv(anthropicKeyVar, "")
+	client := startAgent(t, &agentServer{})
+
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{
+		Commands: []*numenv1.AgentProgramCommand{
+			{Program: "codex", Command: []string{"/bin/codex"}},
+			{Program: "claude", Command: []string{"/opt/claude/bin/claude"}},
+		},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if programs := got.Msg.GetPrograms(); len(programs) != 1 || !programs[0].GetIsInstalled() {
+		t.Errorf("the programs are %v", programs)
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -446,6 +447,21 @@ func TestTheBridgeFailsWhereThePluginListsNoPrograms(t *testing.T) {
 
 	if _, err := bridge.GetPrograms(t.Context(), nil); err == nil {
 		t.Error("a plugin that serves no program list listed some")
+	}
+}
+
+// A limit on steps that no request can carry is the largest one it can, and a negative one is none.
+func TestALimitOnStepsIsKeptWithinWhatTheRequestCarries(t *testing.T) {
+	for limit, want := range map[int]int32{
+		-5:            0,
+		0:             0,
+		7:             7,
+		math.MaxInt32: math.MaxInt32,
+		math.MaxInt:   math.MaxInt32,
+	} {
+		if got := newAskRequest(port.Task{MaxSteps: limit}).GetMaxSteps(); got != want {
+			t.Errorf("%d was sent as %d, want %d", limit, got, want)
+		}
 	}
 }
 

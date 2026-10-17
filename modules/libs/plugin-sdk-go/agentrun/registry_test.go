@@ -4,6 +4,7 @@ import (
 	"context"
 	"os/exec"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agentrun"
 )
@@ -24,7 +25,6 @@ func start(t *testing.T, registry *agentrun.Registry, conversation string) (*age
 		t.Fatal(err)
 	}
 	over := make(chan struct{})
-	w.Begin()
 	go func() {
 		defer w.End()
 		defer registry.Remove(w)
@@ -113,5 +113,34 @@ func TestStopEndsTheChildOnce(t *testing.T) {
 	}
 	if err := w.Stop(); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// A work the registry has taken in is waited for by Close until its reader says it is done, even
+// where the reader has not started.
+func TestCloseWaitsForTheReaderOfWhatWasAdded(t *testing.T) {
+	var registry agentrun.Registry
+	w := agentrun.NewWork("", 1, func() {})
+	if !registry.Add(w) {
+		t.Fatal("the registry refused work while open")
+	}
+
+	closed := make(chan struct{})
+	go func() {
+		_ = registry.Close()
+		close(closed)
+	}()
+
+	select {
+	case <-closed:
+		t.Fatal("Close returned while the reader of the work was still to finish")
+	case <-time.After(100 * time.Millisecond):
+	}
+
+	w.End()
+	select {
+	case <-closed:
+	case <-time.After(10 * time.Second):
+		t.Fatal("Close did not return once the reader finished")
 	}
 }

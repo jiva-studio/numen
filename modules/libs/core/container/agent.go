@@ -37,7 +37,10 @@ func (c Config) getAgentPrograms(held settings.Agent) []port.AgentProgram {
 	}
 	ctx, stop := context.WithTimeout(context.Background(), programsLimit)
 	defer stop()
-	programs, _ := provider.GetPrograms(ctx, held.GetCommands())
+	programs, err := provider.GetPrograms(ctx, held.GetCommands())
+	if err != nil {
+		c.handleError(fmt.Errorf("list agent programs: %w", err))
+	}
 	return programs
 }
 
@@ -48,8 +51,8 @@ type hostAgentProvider struct {
 	mu sync.Mutex
 	// providers holds the plugin that runs each program, by program.
 	providers map[string]string
-	// conversations holds the plugin each conversation was asked in, by conversation.
-	conversations map[string]string
+	// conversations holds the plugins each conversation was asked in, by conversation.
+	conversations map[string][]string
 }
 
 // getProviders are the identifiers of the plugins that run agent programs, in order.
@@ -159,25 +162,33 @@ func (h *hostAgentProvider) StartRun(ctx context.Context, task port.Task) (port.
 	if task.Conversation != "" {
 		h.mu.Lock()
 		if h.conversations == nil {
-			h.conversations = make(map[string]string)
+			h.conversations = make(map[string][]string)
 		}
-		h.conversations[task.Conversation] = id
+		if !slices.Contains(h.conversations[task.Conversation], id) {
+			h.conversations[task.Conversation] = append(h.conversations[task.Conversation], id)
+		}
 		h.mu.Unlock()
 	}
 	return run, nil
 }
 
-// EndConversation says a conversation is over to the plugin it was asked in. A conversation that
+// EndConversation says a conversation is over to every plugin it was asked in. A conversation that
 // was asked nowhere is over already.
 func (h *hostAgentProvider) EndConversation(ctx context.Context, conversation string) error {
 	h.mu.Lock()
-	id, asked := h.conversations[conversation]
+	ids := h.conversations[conversation]
 	delete(h.conversations, conversation)
 	h.mu.Unlock()
-	if !asked {
-		return nil
-	}
 
+	failed := make([]error, 0, len(ids))
+	for _, id := range ids {
+		failed = append(failed, h.endConversationOn(ctx, id, conversation))
+	}
+	return errors.Join(failed...)
+}
+
+// endConversationOn says a conversation is over to one plugin.
+func (h *hostAgentProvider) endConversationOn(ctx context.Context, id, conversation string) error {
 	bridge, err := plugin.OpenAgentBridgeForPlugin(ctx, h.host, id)
 	if err != nil {
 		return err

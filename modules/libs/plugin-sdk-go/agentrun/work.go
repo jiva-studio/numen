@@ -30,10 +30,8 @@ func NewWork(conversation string, buffer int, stop func()) *Work {
 	}
 }
 
-// Begin counts a reader that must finish before the work is over.
-func (w *Work) Begin() { w.reader.Add(1) }
-
-// End says the reader has finished.
+// End says the reader has finished. The registry counts the reader when it takes the work in, so a
+// caller that does not start the reader says so here.
 func (w *Work) End() { w.reader.Done() }
 
 // Stopped is closed once the work is asked to stop.

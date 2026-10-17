@@ -20,6 +20,7 @@ import (
 // fakeProvider is the plugins, running tasks that report the steps it is given.
 type fakeProvider struct {
 	programs []port.AgentProgram
+	listErr  error
 	steps    []port.Step
 	startErr error
 
@@ -53,7 +54,7 @@ func (f *fakeProvider) EndConversation(_ context.Context, conversation string) e
 }
 
 func (f *fakeProvider) GetPrograms(context.Context, map[string][]string) ([]port.AgentProgram, error) {
-	return f.programs, nil
+	return f.programs, f.listErr
 }
 
 // getTasks are the tasks the plugins were given.
@@ -430,5 +431,16 @@ func TestStoppingTheRunStopsThePluginsRun(t *testing.T) {
 	}
 	if err := run.Stop(); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// Where no program can be chosen because a plugin could not be asked, the refusal says why.
+func TestARefusalSaysWhyThePluginsCouldNotBeAsked(t *testing.T) {
+	provider := &fakeProvider{listErr: errors.New("plugin md.test.one cannot be started")}
+	router, _ := makeRouter(t, provider, settings.Agent{}, EditPreview{})
+
+	_, err := router.StartRun(t.Context(), port.Task{Question: "q"})
+	if err == nil || !strings.Contains(err.Error(), "cannot be started") {
+		t.Errorf("the refusal is %v", err)
 	}
 }

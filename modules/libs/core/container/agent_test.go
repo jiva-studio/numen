@@ -340,3 +340,51 @@ func TestTheWindowIsOfferedWhatThePluginsList(t *testing.T) {
 		t.Errorf("a program that is not installed offers %+v", byPath["agent.beta.model"])
 	}
 }
+
+// A conversation asked on two plugins is ended on both.
+func TestAConversationAskedOnTwoPluginsEndsOnBoth(t *testing.T) {
+	host, one, two := twoProviders(t)
+	provider := (container.Config{PluginHost: host}).AgentProvider()
+
+	for _, program := range []string{"alpha", "beta", "alpha"} {
+		run, err := provider.StartRun(t.Context(), port.Task{Question: "q", Agent: program, Conversation: "c-1"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for range run.GetSteps() {
+		}
+	}
+
+	if err := provider.EndConversation(t.Context(), "c-1"); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(one.getFinished(), []string{"c-1"}) || !slices.Equal(two.getFinished(), []string{"c-1"}) {
+		t.Errorf("the first plugin finished %v and the second %v", one.getFinished(), two.getFinished())
+	}
+}
+
+// A plugin that cannot be asked for its programs is told to whoever handles what went wrong, and
+// the programs of the others are offered.
+func TestAPluginThatCannotListItsProgramsIsToldToTheErrorHandler(t *testing.T) {
+	served := &providerServer{programs: []*v1.AgentProgram{{Name: "alpha", Title: "Alpha", IsInstalled: true}}}
+	host := hostWith(t,
+		map[string][]string{providerOne: {"ai.agent.provider"}, providerTwo: {"ai.agent.provider"}},
+		map[string]*providerServer{providerTwo: served})
+
+	var told []error
+	cfg := container.Config{PluginHost: host, ErrorHandler: func(err error) { told = append(told, err) }}
+	models := cfg.Models()()
+
+	if len(told) != 1 || !strings.Contains(told[0].Error(), providerOne) {
+		t.Errorf("the error handler was told %v", told)
+	}
+	var names []string
+	for _, one := range models {
+		if strings.Join(one.Path, ".") == "agent.use" {
+			names = append(names, one.Name)
+		}
+	}
+	if !slices.Equal(names, []string{"alpha", ""}) {
+		t.Errorf("the programs offered are %q", names)
+	}
+}
