@@ -14,6 +14,7 @@ import type { Tab, Workspace } from '@numen/ui'
 import { computed, nextTick, onMounted, ref, shallowRef, type Component } from 'vue'
 
 import { SettingsTab, type Installation } from '@/pages/settings'
+import type { Model } from '@/entities/settings'
 import {
   DEFAULTS,
   PresetTab,
@@ -106,6 +107,17 @@ const WRITING = { reach: { keeps: 'Escape hands Tab back to the page' } }
 
 /* The settings. ------------------------------------------------------------ */
 
+/** The program an installation nobody configured answers with. */
+const AGENT_USE: Model = {
+  namedAt: ['agent', 'use'],
+  name: 'claude',
+  title: 'Claude Code',
+  group: '',
+  isDefault: true,
+  writes: [{ at: ['agent', 'use'], value: '"claude"' }],
+  presence: 'present',
+}
+
 const INSTALLATION: Installation = {
   themes: ref([
     { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
@@ -131,7 +143,7 @@ const INSTALLATION: Installation = {
   latestDayStartTime: ref('12:00'),
   chooseDayStartTime: () => {},
   getSetting: () => undefined,
-  getModels: () => [],
+  getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),
   write: () => {},
   file: ref('/numen.json'),
   openFile: () => {},
