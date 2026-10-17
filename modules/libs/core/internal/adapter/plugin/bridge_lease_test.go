@@ -116,7 +116,7 @@ func TestADoubleCloseGivesTheReferenceBackOnce(t *testing.T) {
 		{"document", func(ctx context.Context, h *leaseHost) (io.Closer, error) { return OpenDocumentBridge(ctx, h) }},
 		{"book", func(ctx context.Context, h *leaseHost) (io.Closer, error) { return OpenBookBridge(ctx, h) }},
 		{"agent", func(ctx context.Context, h *leaseHost) (io.Closer, error) { return OpenAgentBridge(ctx, h) }},
-		{"proofreader", func(_ context.Context, h *leaseHost) (io.Closer, error) { return OpenProofreaderBridge(h, "") }},
+		{"proofreader", func(_ context.Context, h *leaseHost) (io.Closer, error) { return OpenProofreaderBridge(h) }},
 	}
 	for _, tc := range bridges {
 		t.Run(tc.name, func(t *testing.T) {
@@ -144,7 +144,7 @@ func TestADoubleCloseGivesTheReferenceBackOnce(t *testing.T) {
 
 func TestEveryProofreadGivesItsReferenceBack(t *testing.T) {
 	host := newLeaseHost(t)
-	bridge, err := OpenProofreaderBridge(host, "")
+	bridge, err := OpenProofreaderBridge(host)
 	if err != nil {
 		t.Fatal(err)
 	}
