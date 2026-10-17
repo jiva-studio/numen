@@ -1052,3 +1052,112 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 	close(releaseShutdown)
 	<-done
 }
+
+func startSleepLauncher(t *testing.T, started *atomic.Int32) Launcher {
+	t.Helper()
+	return func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		cmd := exec.Command("sleep", "10")
+		if err := cmd.Start(); err != nil {
+			return nil, nil, err
+		}
+		t.Cleanup(func() {
+			_ = cmd.Process.Kill()
+		})
+		started.Add(1)
+		return cmd.Process, io.NopCloser(strings.NewReader("NUMEN_READY port=54321\n")), nil
+	}
+}
+
+func TestACrashedPluginIsStartedAgainAfterAConsumerReleasesIt(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+	var started atomic.Int32
+	host.SetLauncher(startSleepLauncher(t, &started))
+
+	first, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+	if err != nil {
+		t.Fatalf("EnsureActive failed: %v", err)
+	}
+
+	host.mu.RLock()
+	sup := host.supervisors["md.numen.ocr"]
+	host.mu.RUnlock()
+	sup.mu.Lock()
+	proc := sup.process
+	sup.mu.Unlock()
+	_ = proc.Kill()
+	deadline := time.Now().Add(5 * time.Second)
+	for sup.GetState() != StateDormant {
+		if time.Now().After(deadline) {
+			t.Fatal("supervisor did not become dormant after the crash")
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	host.Release("md.numen.ocr")
+	if sup.GetState() != StateDormant {
+		t.Fatalf("Release moved a crashed plugin to %v", sup.GetState())
+	}
+
+	second, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+	if err != nil {
+		t.Fatalf("EnsureActive after crash failed: %v", err)
+	}
+	if second.Port == 0 || second.Token == "" || second.Token == first.Token {
+		t.Fatalf("expected a fresh running endpoint, got %+v", second)
+	}
+	if started.Load() != 2 {
+		t.Fatalf("expected the plugin to be launched twice, got %d", started.Load())
+	}
+	_ = host.TeardownAll(t.Context(), 50*time.Millisecond)
+}
+
+func TestAcquireAndReleaseDoNothingWithoutARunningProcess(t *testing.T) {
+	sup := NewSupervisor()
+	if sup.Acquire(time.Now()) {
+		t.Fatal("Acquire held a dormant supervisor")
+	}
+	sup.Release(time.Now())
+	if sup.GetState() != StateDormant {
+		t.Fatalf("Release moved a dormant supervisor to %v", sup.GetState())
+	}
+	sup.SetActivating()
+	if sup.Acquire(time.Now()) {
+		t.Fatal("Acquire held an activating supervisor")
+	}
+	sup.Release(time.Now())
+	if sup.GetState() != StateActivating {
+		t.Fatalf("Release moved an activating supervisor to %v", sup.GetState())
+	}
+}
+
+func TestEnsureActiveActivatesWhenTheEndpointIsEmpty(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+	var started atomic.Int32
+	host.SetLauncher(startSleepLauncher(t, &started))
+
+	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err != nil {
+		t.Fatalf("EnsureActive failed: %v", err)
+	}
+	host.mu.Lock()
+	delete(host.endpoints, "md.numen.ocr")
+	host.mu.Unlock()
+
+	endpoint, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+	if err != nil {
+		t.Fatalf("EnsureActive failed: %v", err)
+	}
+	if isEmptyEndpoint(endpoint) {
+		t.Fatal("EnsureActive returned an empty endpoint")
+	}
+	_ = host.TeardownAll(t.Context(), 50*time.Millisecond)
+}

@@ -365,15 +365,22 @@ func (h *Host) awaitActivation(ctx context.Context, pluginID string, sup *Superv
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	state := sup.GetState()
-	if state == StateActive || state == StateIdle {
-		sup.Acquire(time.Now())
-		return h.endpoints[pluginID], true, nil
+	if endpoint, ok := h.acquireRunningLocked(pluginID, sup); ok {
+		return endpoint, true, nil
 	}
 	if err := sup.ActivationError(); err != nil {
 		return Endpoint{Host: "", Port: 0, Token: ""}, false, err
 	}
 	return Endpoint{Host: "", Port: 0, Token: ""}, false, nil
+}
+
+// acquireRunningLocked holds the plugin for a consumer when it is running with a usable endpoint.
+func (h *Host) acquireRunningLocked(pluginID string, sup *Supervisor) (Endpoint, bool) {
+	endpoint := h.endpoints[pluginID]
+	if isEmptyEndpoint(endpoint) || !sup.Acquire(time.Now()) {
+		return emptyEndpoint(), false
+	}
+	return endpoint, true
 }
 
 func (h *Host) failActivation(sup *Supervisor, err error) {
@@ -394,15 +401,12 @@ func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, err
 			return Endpoint{Host: "", Port: 0, Token: ""}, err
 		}
 
-		state := sup.GetState()
-		if state == StateActive || state == StateIdle {
-			sup.Acquire(time.Now())
-			endpoint := h.endpoints[pluginID]
+		if endpoint, ok := h.acquireRunningLocked(pluginID, sup); ok {
 			h.mu.Unlock()
 			return endpoint, nil
 		}
 
-		if state == StateActivating {
+		if state := sup.GetState(); state == StateActivating {
 			h.mu.Unlock()
 			endpoint, ready, err := h.awaitActivation(ctx, pluginID, sup)
 			if ready || err != nil {
@@ -1222,4 +1226,12 @@ func formatPluginSettings(rawSettings map[string]any) map[string]string {
 		}
 	}
 	return values
+}
+
+func emptyEndpoint() Endpoint {
+	return Endpoint{Host: "", Port: 0, Token: ""}
+}
+
+func isEmptyEndpoint(e Endpoint) bool {
+	return e.Host == "" && e.Port == 0 && e.Transport == nil
 }

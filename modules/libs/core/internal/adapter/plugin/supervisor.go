@@ -37,6 +37,7 @@ type Supervisor struct {
 	mu             sync.Mutex
 	state          ProcessState
 	process        *os.Process
+	inProcess      bool
 	lastActiveTime time.Time
 	activeRefCount int
 	permissions    []string
@@ -62,6 +63,7 @@ func NewSupervisor() *Supervisor {
 		mu:                sync.Mutex{},
 		state:             StateDormant,
 		process:           nil,
+		inProcess:         false,
 		lastActiveTime:    time.Time{},
 		activeRefCount:    0,
 		permissions:       nil,
@@ -149,6 +151,7 @@ func (s *Supervisor) SetDormant(err error) {
 	s.stopMemoryMonitorLocked()
 	s.state = StateDormant
 	s.process = nil
+	s.inProcess = false
 	s.activeRefCount = 0
 	s.activationErr = err
 	if s.activatingCh != nil {
@@ -227,6 +230,7 @@ func (s *Supervisor) Attach(p *os.Process, now time.Time) error {
 		s.stopMemoryMonitorLocked()
 		if s.process == p {
 			s.process = nil
+			s.inProcess = false
 			s.state = StateDormant
 			s.activeRefCount = 0
 			onExit := s.onExit
@@ -241,19 +245,48 @@ func (s *Supervisor) Attach(p *os.Process, now time.Time) error {
 	return nil
 }
 
-// Acquire increments the active consumer count, preventing idle eviction.
-func (s *Supervisor) Acquire(now time.Time) {
+// ActivateInProcess marks a plugin served inside the host as running and held by one consumer.
+func (s *Supervisor) ActivateInProcess(now time.Time) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.inProcess = true
+	s.state = StateActive
+	s.activeRefCount = 1
+	s.lastActiveTime = now
+	s.activationErr = nil
+	if s.activatingCh != nil {
+		close(s.activatingCh)
+		s.activatingCh = nil
+	}
+}
+
+func (s *Supervisor) isRunningLocked() bool {
+	if s.state != StateActive && s.state != StateIdle {
+		return false
+	}
+	return s.process != nil || s.inProcess
+}
+
+// Acquire increments the active consumer count and reports whether a running plugin was held.
+func (s *Supervisor) Acquire(now time.Time) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !s.isRunningLocked() {
+		return false
+	}
 	s.activeRefCount++
 	s.lastActiveTime = now
 	s.state = StateActive
+	return true
 }
 
-// Release decrements active consumers and marks the plugin idle when count reaches zero.
+// Release decrements active consumers and marks a running plugin idle when the count reaches zero.
 func (s *Supervisor) Release(now time.Time) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if !s.isRunningLocked() {
+		return
+	}
 	if s.activeRefCount > 0 {
 		s.activeRefCount--
 	}
@@ -320,6 +353,7 @@ func (s *Supervisor) teardownNilProcess(ctx context.Context, rpcShutdown func(ct
 		return errProcessNotRunning
 	}
 	s.state = StateDormant
+	s.inProcess = false
 	s.activeRefCount = 0
 	if s.activatingCh != nil {
 		close(s.activatingCh)
@@ -368,6 +402,7 @@ func (s *Supervisor) markDormant(proc *os.Process) {
 		s.stopMemoryMonitorLocked()
 		s.state = StateDormant
 		s.process = nil
+		s.inProcess = false
 		s.activeRefCount = 0
 		s.activationErr = nil
 		if s.activatingCh != nil {
