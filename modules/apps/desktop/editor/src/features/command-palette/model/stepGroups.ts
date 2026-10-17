@@ -81,7 +81,7 @@ function getConfirmGroup(
     keeps = '',
     kept = '',
     action = '',
-    then = '',
+    detail = '',
   }: Partial<ConfirmWords> = step.command.answers ?? {}
   const answers: readonly (readonly [string, PaletteItem])[] = [
     [
@@ -98,7 +98,7 @@ function getConfirmGroup(
       {
         id: YES,
         title: `${action} ${label}`,
-        detail: then,
+        detail,
         actions: [{ id: YES, text: action }],
       },
     ],
@@ -118,7 +118,7 @@ function getExactlyGroup(
   text: string,
   ...[words, title]: [words: Words, title: string]
 ): PaletteGroup {
-  const { action = '', then = '' }: Partial<RetypeWords> = step.command.warns ?? {}
+  const { action = '', detail = '' }: Partial<RetypeWords> = step.command.warns ?? {}
   return {
     id: 'exactly',
     title: words.exactly,
@@ -126,7 +126,7 @@ function getExactlyGroup(
       {
         id: EXACT,
         title: `${action} “${title}”`,
-        detail: then,
+        detail,
         disabled: text.trim() !== title,
         actions: [{ id: EXACT, text: action }],
       },

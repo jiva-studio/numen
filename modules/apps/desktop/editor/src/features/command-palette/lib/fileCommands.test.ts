@@ -107,7 +107,7 @@ describe('deleting a copy', () => {
       keeps: words.keepsCopy,
       kept: words.kept,
       action: words.deletes,
-      then: words.deletedCopy,
+      detail: words.deletedCopy,
     })
   })
 

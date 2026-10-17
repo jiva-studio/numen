@@ -54,7 +54,7 @@ export function useNotices() {
    * arrives at once, so the whole list is what stands.
    */
   const setTasks = (work: readonly Task[]) => {
-    tasks.value = work.map(createNotice)
+    tasks.value = work.map((task) => createNotice(task))
   }
 
   /** One card let go of. Work put away is the corner's own to keep away. */
