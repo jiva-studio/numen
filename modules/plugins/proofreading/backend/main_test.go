@@ -60,37 +60,6 @@ func TestUpdateConfigReadsEverySettingTheManifestDeclares(t *testing.T) {
 	}
 }
 
-func TestProofreadAppliesTheSettingsToTheModelCall(t *testing.T) {
-	var system string
-	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var body chatRequest
-		_ = json.NewDecoder(r.Body).Decode(&body)
-		system = body.Messages[0].Content
-		_ = json.NewEncoder(w).Encode(map[string]any{"choices": []map[string]any{{"message": map[string]string{
-			"role": "assistant", "content": "1|the cat sat on the mat\n2|the dog sat on the mat",
-		}}}})
-	}))
-	defer api.Close()
-	t.Setenv("NUMEN_PROOFREADING_KEY", "k")
-
-	proof := &proofreadingServer{}
-	proof.updateConfig(map[string]string{"baseUrl": api.URL, "strictMode": "true", "maxSuggestions": "1"})
-	prompt := Opens + "1" + Closes + "the cta sat on the mat " + Opens + "2" + Closes + "the dgo sat on the mat"
-	resp, err := proof.Proofread(context.Background(), connect.NewRequest(&numenv1.ProofreadRequest{
-		Instruction: "base",
-		Batches:     []*numenv1.ProofreadBatch{{Number: 0, Prompt: prompt}},
-	}))
-	if err != nil {
-		t.Fatalf("Proofread failed: %v", err)
-	}
-	if got := resp.Msg.GetReplies()[0]; got != "1|the cat sat on the mat" {
-		t.Errorf("reply = %q", got)
-	}
-	if !strings.HasPrefix(system, "base") || system == "base" {
-		t.Errorf("instruction = %q, want base plus the strict rule", system)
-	}
-}
-
 func newModelAPI(t *testing.T, content string, system *string) *httptest.Server {
 	t.Helper()
 	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

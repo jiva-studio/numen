@@ -7,18 +7,16 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
-// replying is a proofreader that is asked nothing: what a run is built with,
-// and the instruction it was opened under.
-type replying struct{ told string }
+// replying is a proofreader that is asked nothing: what a run is built with.
+type replying struct{}
 
 func (r *replying) GetName() string { return "replying" }
 
-func (r *replying) Proofread(context.Context, []domain.ProofreadBatch) (map[int]string, error) {
-	return nil, nil
+func (r *replying) Proofread(context.Context, domain.ProofreadRequest) (domain.ProofreadAnswer, error) {
+	return domain.ProofreadAnswer{}, nil
 }
 
 // somewhereToProofread is a vault to read out of and a store to keep the
@@ -35,7 +33,7 @@ func TestATranscriptIsBuiltAtTheSizesTheInstallationProofreadsAt(t *testing.T) {
 	by := &replying{}
 	config := run.ProofreadingConfig{
 		IsNamed:  true,
-		By:       func(told string) (port.Proofreader, error) { by.told = told; return by, nil },
+		By:       func() (port.Proofreader, error) { return by, nil },
 		Batch:    12,
 		Overlap:  3,
 		InFlight: 5,
@@ -53,9 +51,6 @@ func TestATranscriptIsBuiltAtTheSizesTheInstallationProofreadsAt(t *testing.T) {
 	if right.by != port.Proofreader(by) {
 		t.Error("a transcript is put right by something the installation did not place")
 	}
-	if by.told != proofread.SpeechInstruction {
-		t.Error("a transcript is not proofread as speech")
-	}
 }
 
 // An installation that placed no proofreader holds none, and that is no
@@ -65,7 +60,7 @@ func TestNamingNoProofreaderHoldsNoneAndIsNoFailure(t *testing.T) {
 	readers, derived := somewhereToProofread()
 	for _, said := range []run.ProofreadingConfig{
 		{},
-		{By: func(string) (port.Proofreader, error) { return nil, nil }},
+		{By: func() (port.Proofreader, error) { return nil, nil }},
 	} {
 		right, held, err := CreateProofread(said, readers, derived)
 		if err != nil || held || right.by != nil {
@@ -80,7 +75,7 @@ func TestAProofreaderThatCannotBeOpenedIsAnError(t *testing.T) {
 	keyless := errors.New("no key is configured")
 	said := run.ProofreadingConfig{
 		IsNamed: true,
-		By:      func(string) (port.Proofreader, error) { return nil, keyless },
+		By:      func() (port.Proofreader, error) { return nil, keyless },
 	}
 	readers, derived := somewhereToProofread()
 

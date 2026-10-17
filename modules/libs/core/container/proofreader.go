@@ -15,13 +15,12 @@ var (
 	errProofreadingUnavailable = errors.New("proofreading plugin is unavailable or not installed")
 )
 
-// ProofreaderSpec is what the platform is told to start: the command line,
-// the model it answers with, and what it is being asked to put right.
+// ProofreaderSpec is what the platform is told to start: the command line
+// and the model it answers with.
 type ProofreaderSpec struct {
-	Command     []string
-	Model       string
-	Instruction string
-	InFlight    int
+	Command  []string
+	Model    string
+	InFlight int
 }
 
 // getProfile is the place a recognition is put right at, by the name a consumer
@@ -63,12 +62,11 @@ func (c Config) ProofreaderReady() bool {
 	return false
 }
 
-// Proofreader is what puts a recognition right at the profile named, told what it
-// is proofreading.
+// Proofreader is what puts a recognition right at the profile named.
 //
 // Naming no profile is naming no proofreader: nothing comes back and a recognition
 // is used exactly as it was read.
-func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) {
+func (c Config) Proofreader(name string) (port.Proofreader, error) {
 	if name == "" {
 		return nil, nil
 	}
@@ -79,7 +77,7 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 
 	if profile.Use == UseService {
 		if host, ok := c.findPluginHost("proofreading"); ok {
-			return plugin.OpenProofreaderBridge(host, instruction)
+			return plugin.OpenProofreaderBridge(host)
 		}
 		return nil, errProofreadingUnavailable
 	}
@@ -88,10 +86,10 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 			"proofreading profile %q reaches a command line this application does not start", name)
 	}
 	return c.AgentProofreader(ProofreaderSpec{
-		Command:     profile.Command,
-		Model:       profile.Model,
-		Instruction: instruction,
-		InFlight:    profile.InFlight,
+		Command:  profile.Command,
+		Model:    profile.Model,
+		Kind:     kind,
+		InFlight: profile.InFlight,
 	})
 }
 
@@ -114,9 +112,9 @@ func (c Config) getProofreading(config Proofread) run.ProofreadingConfig {
 	return run.ProofreadingConfig{
 		IsNamed:     config.Profile != "",
 		IsAutomatic: config.IsAutomatic,
-		By:          func(what string) (port.Proofreader, error) { return c.Proofreader(config.Profile, what) },
-		Queue: func(what string) (port.ProofreadQueue, error) {
-			return c.ProofreadQueue(config.Profile, what)
+		By:          func() (port.Proofreader, error) { return c.Proofreader(config.Profile) },
+		Queue: func() (port.ProofreadQueue, error) {
+			return c.ProofreadQueue(config.Profile)
 		},
 		Batch:           profile.BatchSize,
 		Overlap:         profile.Overlap,
@@ -127,7 +125,7 @@ func (c Config) getProofreading(config Proofread) run.ProofreadingConfig {
 
 // ProofreadQueue is where batches are left for the profile named to answer
 // about later. A profile with no queue leaves nothing.
-func (c Config) ProofreadQueue(name, _ string) (port.ProofreadQueue, error) {
+func (c Config) ProofreadQueue(name string) (port.ProofreadQueue, error) {
 	if name == "" {
 		return nil, nil
 	}

@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/fs"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -27,17 +28,12 @@ type puts struct {
 
 func (p *puts) GetName() string { return "a proofreader" }
 
-func (p *puts) Proofread(_ context.Context, batches []domain.ProofreadBatch) (map[int]string, error) {
+func (p *puts) Proofread(_ context.Context, request domain.ProofreadRequest) (domain.ProofreadAnswer, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	out := map[int]string{}
-	for _, batch := range batches {
-		p.asked = append(p.asked, batch.Number)
-		if said, held := p.says[batch.Number]; held {
-			out[batch.Number] = said
-		}
-	}
-	return out, nil
+	answer, asked := answerSpeech(p.says, request)
+	p.asked = append(p.asked, asked...)
+	return answer, nil
 }
 
 // lines is what this proofreader was asked about.
@@ -195,9 +191,9 @@ type corrector struct {
 	name  string
 	says  map[int]string
 	asked [][]int
-	// about is what each batch it was given said the text holds.
-	about []string
-	fail  error
+	// requests are the requests it was given.
+	requests []domain.ProofreadRequest
+	fail     error
 	// stop is called with the number of requests made so far.
 	stop func(int)
 }
@@ -209,29 +205,77 @@ func (c *corrector) GetName() string {
 	return c.name
 }
 
-func (c *corrector) Proofread(ctx context.Context, pages []domain.ProofreadBatch) (map[int]string, error) {
-	var at []int
-	for _, page := range pages {
-		at = append(at, page.Number)
-		c.about = append(c.about, page.Prompt)
-	}
-	c.asked = append(c.asked, at)
+func (c *corrector) Proofread(ctx context.Context, request domain.ProofreadRequest) (domain.ProofreadAnswer, error) {
+	c.requests = append(c.requests, request)
+	answer, asked := answerSpeech(c.says, request)
+	c.asked = append(c.asked, asked)
 	if c.stop != nil {
 		c.stop(len(c.asked))
 	}
 	if err := ctx.Err(); err != nil {
-		return nil, err
+		return domain.ProofreadAnswer{}, err
 	}
 	if c.fail != nil {
-		return nil, c.fail
+		return domain.ProofreadAnswer{}, c.fail
 	}
-	out := map[int]string{}
-	for _, page := range pages {
-		if said, has := c.says[page.Number]; has {
-			out[page.Number] = said
+	return answer, nil
+}
+
+// refused is the reply a proofreader gives that is no correction.
+const refused = "refused"
+
+// answerSpeech answers a request the way a proofreader of speech does: it takes
+// the lines from the first one asked for, at most the limit of them, and puts
+// right those that were told what to say. A saying stands for the line it is
+// keyed by. It is a row of the form "12|words" or "12-14|words", or refused.
+// The lines asked about come back with it.
+func answerSpeech(says map[int]string, request domain.ProofreadRequest) (domain.ProofreadAnswer, []int) {
+	var lines []domain.ProofreadLine
+	for _, group := range request.Groups {
+		lines = append(lines, group.Lines...)
+	}
+	at := 0
+	for at < len(lines) && lines[at].Number < request.FromLine {
+		at++
+	}
+	if at >= len(lines) {
+		return domain.ProofreadAnswer{NextLine: request.FromLine, IsDone: true}, nil
+	}
+	end := len(lines)
+	if request.LineLimit > 0 {
+		end = min(end, at+request.LineLimit)
+	}
+
+	var answer domain.ProofreadAnswer
+	var asked []int
+	for _, line := range lines[at:end] {
+		asked = append(asked, line.Number)
+		said, held := says[line.Number]
+		if !held {
+			continue
+		}
+		if said == refused {
+			answer.Uncorrected++
+			continue
+		}
+		for _, row := range strings.Split(said, "\n") {
+			head, words, _ := strings.Cut(row, "|")
+			first, last, joined := strings.Cut(head, "-")
+			number, _ := strconv.Atoi(first)
+			through := number
+			if joined {
+				through, _ = strconv.Atoi(last)
+			}
+			answer.Corrections = append(answer.Corrections, domain.ProofreadCorrection{Number: number, Last: through, Text: words})
 		}
 	}
-	return out, nil
+	if end == len(lines) {
+		answer.NextLine, answer.IsDone = lines[end-1].Number+1, true
+		return answer, asked
+	}
+	shared := min(max(request.Overlap, 0), max(request.Size-1, 0))
+	answer.NextLine = lines[max(end-shared, at+1)].Number
+	return answer, asked
 }
 
 // corrects is a reply putting one line right.

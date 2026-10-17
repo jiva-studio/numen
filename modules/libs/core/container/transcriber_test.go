@@ -8,7 +8,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
@@ -37,9 +36,6 @@ func TestATranscriptIsPutRightWithTheProfileNamedForSpeech(t *testing.T) {
 
 	if opened.Model != "one model" {
 		t.Errorf("a transcript was put right at the profile using %q", opened.Model)
-	}
-	if opened.Instruction != proofread.SpeechInstruction {
-		t.Error("what puts a transcript right was not told it is proofreading speech")
 	}
 }
 

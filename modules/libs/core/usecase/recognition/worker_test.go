@@ -59,7 +59,7 @@ func newWatchedUnder(t *testing.T, ctx context.Context, why error) *watched {
 		Tasks:     tasks,
 		Wait:      waitForContext,
 		Proofreading: run.ProofreadingConfig{
-			Queue: func(string) (port.ProofreadQueue, error) { return nil, nil },
+			Queue: func() (port.ProofreadQueue, error) { return nil, nil },
 		},
 		Runtime: Runtime{
 			Ready: func() bool { return true },
@@ -366,8 +366,8 @@ func TestAProofreadQueueThatFailedToBuildIsSaid(t *testing.T) {
 	w := newWatched(t, nil)
 	w.Worker.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true,
-		By: func(string) (port.Proofreader, error) { return &puts{}, nil },
-		Queue: func(string) (port.ProofreadQueue, error) {
+		By: func() (port.Proofreader, error) { return &puts{}, nil },
+		Queue: func() (port.ProofreadQueue, error) {
 			return nil, errors.New("no queue for the proofreading service")
 		},
 	}

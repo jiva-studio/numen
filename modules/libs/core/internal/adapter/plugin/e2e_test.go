@@ -8,6 +8,7 @@ import (
 	"image"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -67,6 +68,8 @@ func TestRealPluginProcessE2E(t *testing.T) {
 }
 
 func TestRealProofreadingPluginProcessE2E(t *testing.T) {
+	t.Setenv("NUMEN_PROOFREADING_KEY", "")
+	t.Setenv("OPENAI_API_KEY", "")
 	pluginsDir, err := filepath.Abs("../../../../../plugins")
 	if err != nil {
 		t.Fatalf("resolve plugins dir: %v", err)
@@ -83,7 +86,7 @@ func TestRealProofreadingPluginProcessE2E(t *testing.T) {
 	}
 
 	ctx := t.Context()
-	bridge, err := plugin.OpenProofreaderBridge(host, "proofread the speech")
+	bridge, err := plugin.OpenProofreaderBridge(host)
 	if err != nil {
 		t.Fatalf("OpenProofreaderBridge failed: %v", err)
 	}
@@ -92,18 +95,13 @@ func TestRealProofreadingPluginProcessE2E(t *testing.T) {
 		_ = host.TeardownAll(ctx, 1*time.Second)
 	}()
 
-	batches := []domain.ProofreadBatch{
-		{Number: 1, Prompt: "This is test sentence."},
-	}
-	replies, err := bridge.Proofread(ctx, batches)
-	if err != nil {
-		t.Fatalf("Proofread with real plugin failed: %v", err)
-	}
-	if len(replies) == 0 {
-		t.Fatal("expected at least 1 reply from real proofreading plugin")
-	}
-	if replies[1] == "" {
-		t.Fatal("expected non-empty reply for batch 1")
+	// With no key the plugin refuses, which shows the request reached it.
+	_, err = bridge.Proofread(ctx, domain.ProofreadRequest{
+		Kind:   domain.ProofreadScan,
+		Groups: []domain.ProofreadGroup{{Number: 1, Lines: []domain.ProofreadLine{{Number: 1, Text: "This is test sentence."}}}},
+	})
+	if err == nil || !strings.Contains(err.Error(), "API key") {
+		t.Fatalf("expected the real proofreading plugin to ask for a key, got %v", err)
 	}
 }
 

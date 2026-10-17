@@ -82,49 +82,6 @@ type chatResponse struct {
 	} `json:"choices"`
 }
 
-func (s *proofreadingServer) Proofread(
-	ctx context.Context,
-	req *connect.Request[numenv1.ProofreadRequest],
-) (*connect.Response[numenv1.ProofreadResponse], error) {
-	batches := req.Msg.GetBatches()
-	if len(batches) == 0 {
-		return connect.NewResponse(&numenv1.ProofreadResponse{
-			Replies: nil,
-		}), nil
-	}
-
-	key := getAPIKey()
-
-	s.mu.RLock()
-	baseURL, model := s.baseURL, s.modelName
-	options := reviewOptions{strict: s.strict, maxSuggestions: s.maxSuggestions}
-	s.mu.RUnlock()
-	if baseURL == "" {
-		baseURL = defaultBaseURL
-	}
-
-	replies := make(map[int32]string, len(batches))
-
-	if key != "" {
-		client := &http.Client{Timeout: 60 * time.Second}
-		for _, b := range batches {
-			reply, err := callLLM(ctx, client, baseURL, key, model, buildInstruction(req.Msg.GetInstruction(), options.strict), b.GetPrompt())
-			if err != nil {
-				return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("batch %d: %w", b.GetNumber(), err))
-			}
-			replies[b.GetNumber()] = reviewReply(b.GetPrompt(), reply, options)
-		}
-	} else {
-		for _, b := range batches {
-			replies[b.GetNumber()] = b.GetPrompt()
-		}
-	}
-
-	return connect.NewResponse(&numenv1.ProofreadResponse{
-		Replies: replies,
-	}), nil
-}
-
 func callLLM(
 	ctx context.Context,
 	client *http.Client,

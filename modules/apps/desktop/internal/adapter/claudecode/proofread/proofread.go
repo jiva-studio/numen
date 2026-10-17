@@ -2,8 +2,11 @@
 // and decides whether what came back is an answer to that question.
 //
 // It is pure: no network, no clock, no model. What was asked and what came back
-// are text, and every rule about them is here, so the adapter carries a request
+// are text, and every rule about them is here, so the adapter carries a prompt
 // and nothing else.
+//
+// The proofreading plugin holds the same rules for the service profile. This
+// package serves the command line profile until the Claude runner is a plugin.
 package proofread
 
 import (

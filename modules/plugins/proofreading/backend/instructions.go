@@ -59,3 +59,18 @@ as the first and the last of them:
   stays.
 - A line you would leave alone is a line you do not answer with. Speech you
   would leave alone is an empty answer.`
+
+// StrictEditDistance is how far a correction may stand from the line as read
+// when strict proofreading is on.
+const StrictEditDistance = 0.50
+
+const strictRule = "\n\nEnforce grammar, spelling and punctuation strictly: put right every error you find, whatever kind it is."
+
+// buildInstruction is the instruction the model is given. Strict proofreading
+// adds the rule that every error is put right.
+func buildInstruction(instruction string, strict bool) string {
+	if strict {
+		return instruction + strictRule
+	}
+	return instruction
+}

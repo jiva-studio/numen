@@ -3,7 +3,7 @@ package proofread_test
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode/proofread"
 )
 
 // batch is a page as it was read, misreadings and all.

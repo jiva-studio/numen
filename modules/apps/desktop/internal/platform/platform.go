@@ -74,9 +74,8 @@ func getPluginsDirs() []string {
 // the person already has installed.
 func openProofreader(spec container.ProofreaderSpec) (port.Proofreader, error) {
 	return &claudecode.Proofreader{
-		Command:     spec.Command,
-		Model:       spec.Model,
-		Instruction: spec.Instruction,
-		InFlight:    spec.InFlight,
+		Command:  spec.Command,
+		Model:    spec.Model,
+		InFlight: spec.InFlight,
 	}, nil
 }

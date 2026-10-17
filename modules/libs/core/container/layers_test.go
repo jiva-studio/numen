@@ -42,7 +42,7 @@ var driving = map[string]bool{
 // sibling of the core carries goroutines, channels and a schema.
 var pure = []string{
 	"domain", "flashcards", "markdown", "internal/cardid", "internal/ulid",
-	"internal/highlight", "internal/ocr", "internal/transcript", "proofread",
+	"internal/highlight", "internal/ocr", "internal/transcript",
 }
 
 // The core is reached by the adapters and reaches none of them, an adapter is
@@ -1333,8 +1333,6 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"internal/highlight", "internal/epub", true},
 		{"internal/ocr", "internal/highlight", false},
 		{"internal/transcript", "port", true},
-		{"proofread", "internal/transcript", false},
-		{"proofread", "usecase/source", true},
 		{"flashcards/format", "domain", false},
 
 		// The composition root does none of the core's work.

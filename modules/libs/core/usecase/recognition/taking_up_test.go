@@ -56,8 +56,8 @@ func newHaltedWorker(
 	w.Worker.with.Readers = vaults{v.ID: shelved}
 	w.Worker.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true, Batch: 1,
-		By:    func(string) (port.Proofreader, error) { return by, nil },
-		Queue: func(string) (port.ProofreadQueue, error) { return nil, nil },
+		By:    func() (port.Proofreader, error) { return by, nil },
+		Queue: func() (port.ProofreadQueue, error) { return nil, nil },
 	}
 
 	hash := text.Fingerprint(raw)
@@ -183,7 +183,7 @@ func TestARecognitionWithABatchOutIsLeftToTheCollection(t *testing.T) {
 	lines := []string{"the words one", "the words two"}
 	by := &puts{says: map[int]string{1: newReply(1, lines[1])}}
 	w, v, _, _ := newHaltedWorker(t, by, 1, lines...)
-	w.Worker.with.Proofreading.Queue = func(string) (port.ProofreadQueue, error) { return leaves{}, nil }
+	w.Worker.with.Proofreading.Queue = func() (port.ProofreadQueue, error) { return leaves{}, nil }
 
 	w.TakeUp(t.Context(), books{}, v)
 	w.Wait()
@@ -199,14 +199,14 @@ type leaves struct{}
 
 func (leaves) GetName() string { return "a queue" }
 
-func (leaves) Proofread(context.Context, []domain.ProofreadBatch) (map[int]string, error) {
-	return nil, nil
+func (leaves) Proofread(context.Context, domain.ProofreadRequest) (domain.ProofreadAnswer, error) {
+	return domain.ProofreadAnswer{}, nil
 }
 
-func (leaves) Submit(context.Context, []domain.ProofreadBatch) (string, error) { return "a batch", nil }
+func (leaves) Submit(context.Context, domain.ProofreadRequest) (string, error) { return "a batch", nil }
 
-func (leaves) GetReplies(context.Context, string) (map[int]string, bool, error) {
-	return nil, false, nil
+func (leaves) GetAnswer(context.Context, string) (domain.ProofreadAnswer, bool, error) {
+	return domain.ProofreadAnswer{}, false, nil
 }
 
 // One run to a recognition. A run that finds it held leaves the list to the run that

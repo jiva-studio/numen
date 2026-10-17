@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/fs"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -27,17 +28,12 @@ type puts struct {
 
 func (p *puts) GetName() string { return "a proofreader" }
 
-func (p *puts) Proofread(_ context.Context, batches []domain.ProofreadBatch) (map[int]string, error) {
+func (p *puts) Proofread(_ context.Context, request domain.ProofreadRequest) (domain.ProofreadAnswer, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	out := map[int]string{}
-	for _, batch := range batches {
-		p.asked = append(p.asked, batch.Number)
-		if said, held := p.says[batch.Number]; held {
-			out[batch.Number] = said
-		}
-	}
-	return out, nil
+	answer, asked := answerScan(p.says, request)
+	p.asked = append(p.asked, asked...)
+	return answer, nil
 }
 
 // lines is what this proofreader was asked about.
@@ -188,9 +184,9 @@ type corrector struct {
 	name  string
 	says  map[int]string
 	asked [][]int
-	// about is what each batch it was given said the text holds.
-	about []string
-	fail  error
+	// requests are the requests it was given.
+	requests []domain.ProofreadRequest
+	fail     error
 	// stop is called with the number of requests made so far.
 	stop func(int)
 }
@@ -202,29 +198,49 @@ func (c *corrector) GetName() string {
 	return c.name
 }
 
-func (c *corrector) Proofread(ctx context.Context, pages []domain.ProofreadBatch) (map[int]string, error) {
-	var at []int
-	for _, page := range pages {
-		at = append(at, page.Number)
-		c.about = append(c.about, page.Prompt)
-	}
-	c.asked = append(c.asked, at)
+func (c *corrector) Proofread(ctx context.Context, request domain.ProofreadRequest) (domain.ProofreadAnswer, error) {
+	c.requests = append(c.requests, request)
+	answer, asked := answerScan(c.says, request)
+	c.asked = append(c.asked, asked)
 	if c.stop != nil {
 		c.stop(len(c.asked))
 	}
 	if err := ctx.Err(); err != nil {
-		return nil, err
+		return domain.ProofreadAnswer{}, err
 	}
 	if c.fail != nil {
-		return nil, c.fail
+		return domain.ProofreadAnswer{}, c.fail
 	}
-	out := map[int]string{}
-	for _, page := range pages {
-		if said, has := c.says[page.Number]; has {
-			out[page.Number] = said
+	return answer, nil
+}
+
+// refused is the reply a proofreader gives that is no correction.
+const refused = "refused"
+
+// answerScan answers a request the way a proofreader of scans does: each page
+// it was told what to say about is answered with that, a row of the form
+// "12|words" or several of them, or refused. The pages asked about come back with
+// it.
+func answerScan(says map[int]string, request domain.ProofreadRequest) (domain.ProofreadAnswer, []int) {
+	answer := domain.ProofreadAnswer{IsDone: true}
+	var asked []int
+	for _, page := range request.Groups {
+		asked = append(asked, page.Number)
+		said, held := says[page.Number]
+		if !held {
+			continue
+		}
+		if said == refused {
+			answer.Uncorrected++
+			continue
+		}
+		for _, row := range strings.Split(said, "\n") {
+			head, words, _ := strings.Cut(row, "|")
+			number, _ := strconv.Atoi(head)
+			answer.Corrections = append(answer.Corrections, domain.ProofreadCorrection{Number: number, Last: number, Text: words})
 		}
 	}
-	return out, nil
+	return answer, asked
 }
 
 // corrects is a reply putting one line right.

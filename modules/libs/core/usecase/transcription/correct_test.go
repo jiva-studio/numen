@@ -101,7 +101,7 @@ func newStoppedWorker(
 	held, v := newTranscriptionWorker(t, &deaf{}, recording)
 	held.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true, Batch: 1, InFlight: 1,
-		By: func(string) (port.Proofreader, error) { return by, nil },
+		By: func() (port.Proofreader, error) { return by, nil },
 	}
 
 	reader, err := held.with.Readers.Open(v)
@@ -247,8 +247,8 @@ type refuses struct{ why error }
 
 func (r *refuses) GetName() string { return "a proofreader that will not answer" }
 
-func (r *refuses) Proofread(context.Context, []domain.ProofreadBatch) (map[int]string, error) {
-	return nil, r.why
+func (r *refuses) Proofread(context.Context, domain.ProofreadRequest) (domain.ProofreadAnswer, error) {
+	return domain.ProofreadAnswer{}, r.why
 }
 
 // A transcript this proofreader has been over every line of is asked about
@@ -300,10 +300,10 @@ type waits struct {
 
 func (w *waits) GetName() string { return "a proofreader that waits" }
 
-func (w *waits) Proofread(context.Context, []domain.ProofreadBatch) (map[int]string, error) {
+func (w *waits) Proofread(context.Context, domain.ProofreadRequest) (domain.ProofreadAnswer, error) {
 	w.once.Do(func() { close(w.asked) })
 	<-w.on
-	return map[int]string{}, nil
+	return domain.ProofreadAnswer{IsDone: true}, nil
 }
 
 // A run a person asked for stands in the list from the moment they asked, and
@@ -313,7 +313,7 @@ func TestAProofreadingAskedForStandsInTheListBeforeItOpensTheProofreader(t *test
 	by := &puts{}
 	held, v, _, _ := newStoppedWorker(t, by, 0, "first thing", "second thing")
 	reached, stand := make(chan struct{}), make(chan struct{})
-	held.with.Proofreading.By = func(string) (port.Proofreader, error) {
+	held.with.Proofreading.By = func() (port.Proofreader, error) {
 		close(reached)
 		<-stand
 		return by, nil

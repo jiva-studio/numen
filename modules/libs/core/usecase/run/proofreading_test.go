@@ -7,15 +7,14 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
 type answering struct{}
 
 func (answering) GetName() string { return "answering" }
 
-func (answering) Proofread(context.Context, []domain.ProofreadBatch) (map[int]string, error) {
-	return nil, nil
+func (answering) Proofread(context.Context, domain.ProofreadRequest) (domain.ProofreadAnswer, error) {
+	return domain.ProofreadAnswer{}, nil
 }
 
 type readers struct{}
@@ -49,7 +48,7 @@ func TestAProofreadingNeedsAVaultAStoreAndAProofreader(t *testing.T) {
 
 // Nothing is opened where an installation placed nothing to open.
 func TestNothingIsOpenedWhereNothingWasPlaced(t *testing.T) {
-	if by, err := OpenProofreader(nil, proofread.ScanInstruction); by != nil || err != nil {
+	if by, err := OpenProofreader(nil); by != nil || err != nil {
 		t.Errorf("got %v, %v", by, err)
 	}
 }

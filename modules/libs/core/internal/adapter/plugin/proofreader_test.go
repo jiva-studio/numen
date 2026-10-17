@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -33,16 +35,25 @@ func (s *mockProofreadingServer) GetProofreaderInfo(
 	}), nil
 }
 
-func (s *mockProofreadingServer) Proofread(
+func (s *mockProofreadingServer) ProofreadText(
 	_ context.Context,
-	req *connect.Request[v1.ProofreadRequest],
-) (*connect.Response[v1.ProofreadResponse], error) {
-	replies := make(map[int32]string)
-	for _, batch := range req.Msg.GetBatches() {
-		replies[batch.GetNumber()] = req.Msg.GetInstruction() + " corrected: " + batch.GetPrompt()
+	req *connect.Request[v1.ProofreadTextRequest],
+) (*connect.Response[v1.ProofreadTextResponse], error) {
+	var corrections []*v1.ProofreadCorrection
+	for _, group := range req.Msg.GetGroups() {
+		for _, line := range group.GetLines() {
+			corrections = append(corrections, &v1.ProofreadCorrection{
+				Number: line.GetNumber(),
+				Last:   line.GetNumber() + 1,
+				Text:   req.Msg.GetKind().String() + ": " + line.GetText(),
+			})
+		}
 	}
-	return connect.NewResponse(&v1.ProofreadResponse{
-		Replies: replies,
+	return connect.NewResponse(&v1.ProofreadTextResponse{
+		Corrections: corrections,
+		Uncorrected: req.Msg.GetSize(),
+		NextLine:    req.Msg.GetFromLine(),
+		IsDone:      req.Msg.GetLineLimit() == 0,
 	}), nil
 }
 
@@ -114,7 +125,7 @@ func TestProofreaderBridge(t *testing.T) {
 		return cmd.Process, io.NopCloser(r), nil
 	})
 
-	bridge, err := OpenProofreaderBridge(host, "proofread the speech")
+	bridge, err := OpenProofreaderBridge(host)
 	if err != nil {
 		t.Fatalf("OpenProofreaderBridge failed: %v", err)
 	}
@@ -124,19 +135,30 @@ func TestProofreaderBridge(t *testing.T) {
 		t.Fatalf("unexpected name: %s", name)
 	}
 
-	batches := []domain.ProofreadBatch{
-		{Number: 1, Prompt: "line 1 text"},
-		{Number: 2, Prompt: "line 2 text"},
-	}
-	replies, err := bridge.Proofread(t.Context(), batches)
+	answer, err := bridge.Proofread(t.Context(), domain.ProofreadRequest{
+		Kind: domain.ProofreadSpeech,
+		Groups: []domain.ProofreadGroup{{Number: 1, Lines: []domain.ProofreadLine{
+			{Number: 4, Text: "line 4 text"},
+			{Number: 5, Text: "line 5 text"},
+		}}},
+		Size:      7,
+		FromLine:  2,
+		LineLimit: 0,
+	})
 	if err != nil {
 		t.Fatalf("Proofread failed: %v", err)
 	}
-	if len(replies) != 2 {
-		t.Fatalf("expected 2 replies, got %d", len(replies))
+	want := domain.ProofreadAnswer{
+		Corrections: []domain.ProofreadCorrection{
+			{Number: 4, Last: 5, Text: "PROOFREAD_KIND_SPEECH: line 4 text"},
+			{Number: 5, Last: 6, Text: "PROOFREAD_KIND_SPEECH: line 5 text"},
+		},
+		Uncorrected: 7,
+		NextLine:    2,
+		IsDone:      true,
 	}
-	if replies[1] != "proofread the speech corrected: line 1 text" {
-		t.Fatalf("unexpected reply: %s", replies[1])
+	if !reflect.DeepEqual(answer, want) {
+		t.Fatalf("answer %+v, want %+v", answer, want)
 	}
 
 	host.mu.RLock()
@@ -157,8 +179,26 @@ func TestProofreaderBridgeNoPlugin(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	_, err := OpenProofreaderBridge(host, "proofread the speech")
+	_, err := OpenProofreaderBridge(host)
 	if err == nil {
 		t.Fatal("expected error when no plugin registered, got nil")
+	}
+}
+
+func TestProofreaderBridgeRefusesAnUnknownKind(t *testing.T) {
+	bridge := &ProofreaderBridge{}
+	_, err := bridge.Proofread(t.Context(), domain.ProofreadRequest{
+		Groups: []domain.ProofreadGroup{{Number: 1}},
+	})
+	if !errors.Is(err, errUnknownProofreadKind) {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func TestProofreaderBridgeAsksNothingWithoutLines(t *testing.T) {
+	bridge := &ProofreaderBridge{}
+	answer, err := bridge.Proofread(t.Context(), domain.ProofreadRequest{Kind: domain.ProofreadScan})
+	if err != nil || !answer.IsDone || len(answer.Corrections) != 0 {
+		t.Fatalf("answer %+v, %v", answer, err)
 	}
 }

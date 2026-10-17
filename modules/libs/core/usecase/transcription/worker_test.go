@@ -487,7 +487,7 @@ func TestTakingUpTranscriptProofreadingDoesNotReadTheSourceFileWhenHashIsKnown(t
 	corr := &corrector{says: map[int]string{0: "0|FIRST THING"}}
 	held.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true, Batch: 1,
-		By: func(string) (port.Proofreader, error) { return corr, nil },
+		By: func() (port.Proofreader, error) { return corr, nil },
 	}
 	held.with.Readers = brokenReaders{}
 

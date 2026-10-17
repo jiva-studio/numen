@@ -9,9 +9,6 @@ service ProofreadingService {
   // GetProofreaderInfo returns information about the active proofreader model or engine.
   rpc GetProofreaderInfo(GetProofreaderInfoRequest) returns (GetProofreaderInfoResponse);
 
-  // Proofread submits text batches to be proofread and returns corrections.
-  rpc Proofread(ProofreadRequest) returns (ProofreadResponse);
-
   // ProofreadText proofreads numbered lines of one kind of text and returns the
   // corrections the proofreader stands behind.
   rpc ProofreadText(ProofreadTextRequest) returns (ProofreadTextResponse);
@@ -21,21 +18,6 @@ message GetProofreaderInfoRequest {}
 
 message GetProofreaderInfoResponse {
   string name = 1;
-}
-
-message ProofreadBatch {
-  int32 number = 1;
-  string prompt = 2;
-}
-
-message ProofreadRequest {
-  repeated ProofreadBatch batches = 1;
-  string instruction = 2;
-}
-
-message ProofreadResponse {
-  // Map of batch number to proofread reply.
-  map<int32, string> replies = 1;
 }
 
 // ProofreadKind is what is being proofread. The proofreader chooses its own

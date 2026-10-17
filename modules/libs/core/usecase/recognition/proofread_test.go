@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
@@ -135,7 +134,7 @@ func TestACorrectedRecognitionIsTheTextTheSourceIsCutFrom(t *testing.T) {
 
 func TestAPageWhoseReplyIsNoAnswerIsLeftAsItWasRead(t *testing.T) {
 	put, v, shelved, _ := newProofreadRecognition(t, map[int]string{
-		0: corrects(0, "the "+proofread.Opens+"WORDS"+proofread.Closes+" 1"),
+		0: refused,
 		1: corrects(1, "the WORDS 2"),
 	})
 
@@ -345,7 +344,7 @@ func textNames(t *testing.T, shelved *shelf) names {
 // told it is ready.
 type proofreadQueue struct {
 	*corrector
-	left  map[string][]int
+	left  map[string]domain.ProofreadRequest
 	ready map[string]bool
 	// isGone is a batch the proofreader will never answer about.
 	isGone bool
@@ -354,35 +353,26 @@ type proofreadQueue struct {
 func newProofreadQueue(says map[int]string) *proofreadQueue {
 	return &proofreadQueue{
 		corrector: &corrector{says: says},
-		left:      map[string][]int{},
+		left:      map[string]domain.ProofreadRequest{},
 		ready:     map[string]bool{},
 	}
 }
 
-func (q *proofreadQueue) Submit(_ context.Context, pages []domain.ProofreadBatch) (string, error) {
-	var at []int
-	for _, page := range pages {
-		at = append(at, page.Number)
-	}
+func (q *proofreadQueue) Submit(_ context.Context, request domain.ProofreadRequest) (string, error) {
 	name := fmt.Sprintf("batch-%d", len(q.left)+1)
-	q.left[name] = at
+	q.left[name] = request
 	return name, nil
 }
 
-func (q *proofreadQueue) GetReplies(_ context.Context, name string) (map[int]string, bool, error) {
+func (q *proofreadQueue) GetAnswer(_ context.Context, name string) (domain.ProofreadAnswer, bool, error) {
 	if q.isGone {
-		return nil, false, errors.New("the proofreader has forgotten this batch")
+		return domain.ProofreadAnswer{}, false, errors.New("the proofreader has forgotten this batch")
 	}
 	if !q.ready[name] {
-		return nil, false, nil
+		return domain.ProofreadAnswer{}, false, nil
 	}
-	out := map[int]string{}
-	for _, at := range q.left[name] {
-		if said, has := q.says[at]; has {
-			out[at] = said
-		}
-	}
-	return out, true, nil
+	answer, _ := answerScan(q.says, q.left[name])
+	return answer, true, nil
 }
 
 // getCheckpoint is what the recognition says about who put it right and how far
@@ -466,7 +456,7 @@ func TestABatchTheProofreaderHasForgottenIsLeftAgain(t *testing.T) {
 	if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}
-	if same := left.left["batch-2"]; len(same) != 2 || same[0] != 0 {
+	if same := left.left["batch-2"].Groups; len(same) != 2 || same[0].Number != 0 {
 		t.Errorf("the pages left again are %v", same)
 	}
 }
@@ -510,5 +500,24 @@ func TestAProofreadingGivenAKnownHashDoesNotReadTheSourceFile(t *testing.T) {
 	}
 	if res.Fixed != 1 {
 		t.Errorf("expected 1 fixed line, got %+v", res)
+	}
+}
+
+// The proofreader is asked about pages of a scan, and told how far a correction
+// may stand from its line.
+func TestTheRequestIsForAScanAtTheEditLimitOfTheRun(t *testing.T) {
+	put, v, _, by := newProofreadRecognition(t, nil)
+	put.MaxEditDistance = 0.2
+
+	if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
+		t.Fatal(err)
+	}
+	if len(by.requests) == 0 {
+		t.Fatal("the proofreader was asked nothing")
+	}
+	for _, request := range by.requests {
+		if request.Kind != domain.ProofreadScan || request.MaxEditDistance != 0.2 || len(request.Groups) == 0 {
+			t.Errorf("asked %+v", request)
+		}
 	}
 }

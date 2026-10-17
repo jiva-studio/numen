@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
 // box is one printed line on a page, over a run of the prose.

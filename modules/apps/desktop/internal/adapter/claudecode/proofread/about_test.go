@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
 // makeCues is a transcript of the words, one cue to each of them.

@@ -43,12 +43,12 @@ func makeCounter(t *testing.T) (command []string, most func() int) {
 	}
 }
 
-func batches(n int) []domain.ProofreadBatch {
-	out := make([]domain.ProofreadBatch, n)
+func pages(n int) domain.ProofreadRequest {
+	out := make([]domain.ProofreadGroup, n)
 	for i := range out {
-		out[i] = domain.ProofreadBatch{Number: i, Prompt: "a line"}
+		out[i] = domain.ProofreadGroup{Number: i, Lines: []domain.ProofreadLine{{Number: i, Text: "a line"}}}
 	}
-	return out
+	return domain.ProofreadRequest{Kind: domain.ProofreadScan, Groups: out}
 }
 
 // A person's own model is left most of itself: no more runs stand at once than
@@ -56,9 +56,9 @@ func batches(n int) []domain.ProofreadBatch {
 func TestRunsNeverExceedInFlightLimit(t *testing.T) {
 	for _, allowed := range []int{1, 2, 3} {
 		command, most := makeCounter(t)
-		by := &Proofreader{Command: command, Instruction: "put it right", InFlight: allowed}
+		by := &Proofreader{Command: command, InFlight: allowed}
 
-		if _, err := by.Proofread(t.Context(), batches(6)); err != nil {
+		if _, err := by.Proofread(t.Context(), pages(6)); err != nil {
 			t.Fatal(err)
 		}
 		if got := most(); got > allowed {
@@ -72,9 +72,9 @@ func TestRunsNeverExceedInFlightLimit(t *testing.T) {
 // A profile naming none runs one at a time.
 func TestAProfileNamingNoneRunsOneAtATime(t *testing.T) {
 	command, most := makeCounter(t)
-	by := &Proofreader{Command: command, Instruction: "put it right"}
+	by := &Proofreader{Command: command}
 
-	if _, err := by.Proofread(t.Context(), batches(4)); err != nil {
+	if _, err := by.Proofread(t.Context(), pages(4)); err != nil {
 		t.Fatal(err)
 	}
 	if got := most(); got != 1 {
@@ -86,14 +86,14 @@ func TestAProfileNamingNoneRunsOneAtATime(t *testing.T) {
 // take no more of a person's own model between them than the profile allows.
 func TestTwoCallersAtOnceShareTheLimit(t *testing.T) {
 	command, most := makeCounter(t)
-	by := &Proofreader{Command: command, Instruction: "put it right", InFlight: 2}
+	by := &Proofreader{Command: command, InFlight: 2}
 
 	var wg sync.WaitGroup
 	for range 2 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if _, err := by.Proofread(t.Context(), batches(3)); err != nil {
+			if _, err := by.Proofread(t.Context(), pages(3)); err != nil {
 				t.Error(err)
 			}
 		}()

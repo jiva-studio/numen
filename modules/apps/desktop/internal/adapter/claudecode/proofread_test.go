@@ -6,11 +6,13 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
@@ -44,14 +46,22 @@ func readFile(t *testing.T, dir, name string) string {
 	return string(raw)
 }
 
-const (
-	scanInstruction   = "proofread scan"
-	speechInstruction = "proofread speech"
-)
+const aPrompt = "⟦0⟧the qulck brown fox ⟦1⟧jumped ovcr the lazy dog"
 
-var aBatch = domain.ProofreadBatch{
-	Number: 7,
-	Prompt: "⟦0⟧the qulck brown fox ⟦1⟧jumped ovcr the lazy dog",
+// aPage is a page of two lines, whose prompt is aPage.
+var aPage = domain.ProofreadRequest{
+	Kind: domain.ProofreadScan,
+	Groups: []domain.ProofreadGroup{{Number: 7, Lines: []domain.ProofreadLine{
+		{Number: 0, Text: "the qulck brown fox"},
+		{Number: 1, Text: "jumped ovcr the lazy dog"},
+	}}},
+}
+
+// someSpeech is the same lines as speech.
+var someSpeech = domain.ProofreadRequest{
+	Kind:   domain.ProofreadSpeech,
+	Groups: aPage.Groups,
+	Size:   10,
 }
 
 // The batch goes on the input and the flags on the command line: the tool list
@@ -59,24 +69,24 @@ var aBatch = domain.ProofreadBatch{
 // is longer than a command line holds.
 func TestABatchGoesOnTheInputAndTheFlagsOnTheCommandLine(t *testing.T) {
 	command, wrote := recorder(t, "0|the quick brown fox")
-	by := &Proofreader{Command: command, Model: "haiku", Instruction: scanInstruction}
+	by := &Proofreader{Command: command, Model: "haiku"}
 
-	out, err := by.Proofread(t.Context(), []domain.ProofreadBatch{aBatch})
+	out, err := by.Proofread(t.Context(), aPage)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out[7] != "0|the quick brown fox" {
-		t.Errorf("the reply came back as %q", out[7])
+	if want := []domain.ProofreadCorrection{{Number: 0, Text: "the quick brown fox"}}; !reflect.DeepEqual(out.Corrections, want) {
+		t.Errorf("the reply came back as %+v", out.Corrections)
 	}
 
-	if got := readFile(t, wrote, "stdin"); got != aBatch.Prompt {
+	if got := readFile(t, wrote, "stdin"); got != aPrompt {
 		t.Errorf("the input was %q", got)
 	}
 
 	argv := strings.Split(strings.TrimSuffix(readFile(t, wrote, "argv"), "\036"), "\036")
 	want := append([]string{"-p", "--strict-mcp-config", "--model", "haiku", "--disallowed-tools"},
 		disallowed...)
-	want = append(want, "--append-system-prompt", scanInstruction)
+	want = append(want, "--append-system-prompt", proofread.ScanInstruction)
 	if !slices.Equal(argv, want) {
 		t.Errorf("started with\n%q\nand not\n%q", argv, want)
 	}
@@ -86,9 +96,9 @@ func TestABatchGoesOnTheInputAndTheFlagsOnTheCommandLine(t *testing.T) {
 // started, and those would land in the proofreading prompt.
 func TestTheCommandLineIsStartedInAnEmptyFolder(t *testing.T) {
 	command, wrote := recorder(t, "")
-	by := &Proofreader{Command: command, Model: "haiku", Instruction: scanInstruction}
+	by := &Proofreader{Command: command, Model: "haiku"}
 
-	if _, err := by.Proofread(t.Context(), []domain.ProofreadBatch{aBatch}); err != nil {
+	if _, err := by.Proofread(t.Context(), aPage); err != nil {
 		t.Fatal(err)
 	}
 
@@ -97,17 +107,17 @@ func TestTheCommandLineIsStartedInAnEmptyFolder(t *testing.T) {
 	}
 }
 
-// The caller says what is being corrected: a scan and speech are corrected for
-// different mistakes.
-func TestTheInstructionIsTheCallersOwn(t *testing.T) {
+// The kind of text says what is being corrected: a scan and speech are
+// corrected for different mistakes.
+func TestTheInstructionIsTheKindOfTextItIsAskedAbout(t *testing.T) {
 	command, wrote := recorder(t, "")
-	by := &Proofreader{Command: command, Instruction: speechInstruction}
+	by := &Proofreader{Command: command}
 
-	if _, err := by.Proofread(t.Context(), []domain.ProofreadBatch{aBatch}); err != nil {
+	if _, err := by.Proofread(t.Context(), someSpeech); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(readFile(t, wrote, "argv"), speechInstruction) {
-		t.Error("the instruction the caller gave was not appended")
+	if !strings.Contains(readFile(t, wrote, "argv"), proofread.SpeechInstruction) {
+		t.Error("the instruction for speech was not appended")
 	}
 	if strings.Contains(readFile(t, wrote, "argv"), "--model") {
 		t.Error("a model nobody named was chosen")
@@ -129,13 +139,13 @@ func TestACommandLineThatFailedEndsTheRun(t *testing.T) {
 	if err := os.WriteFile(script, []byte("#!/bin/sh\necho 'no model' >&2\nexit 1\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	by := &Proofreader{Command: []string{script}, Instruction: scanInstruction}
+	by := &Proofreader{Command: []string{script}}
 
-	out, err := by.Proofread(t.Context(), []domain.ProofreadBatch{aBatch})
+	out, err := by.Proofread(t.Context(), aPage)
 	if err == nil {
 		t.Fatal("no error")
 	}
-	if out != nil {
+	if !reflect.DeepEqual(out, domain.ProofreadAnswer{}) {
 		t.Errorf("got %v", out)
 	}
 	if !strings.Contains(err.Error(), "no model") {
@@ -160,9 +170,9 @@ func TestTheFolderTheRunWasStartedInGoesWithIt(t *testing.T) {
 			if err := os.WriteFile(script, []byte(written), 0o755); err != nil {
 				t.Fatal(err)
 			}
-			by := &Proofreader{Command: []string{script}, Instruction: scanInstruction}
+			by := &Proofreader{Command: []string{script}}
 
-			_, _ = by.Proofread(t.Context(), []domain.ProofreadBatch{aBatch})
+			_, _ = by.Proofread(t.Context(), aPage)
 
 			where := strings.TrimSpace(readFile(t, filepath.Dir(told), "where"))
 			if where == "" {
@@ -186,7 +196,7 @@ func TestARunTheContextKilledEndsWithIt(t *testing.T) {
 	if err := os.WriteFile(script, []byte(written), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	by := &Proofreader{Command: []string{script}, Instruction: scanInstruction}
+	by := &Proofreader{Command: []string{script}}
 
 	ctx, stop := context.WithCancel(t.Context())
 	go func() {
@@ -195,13 +205,13 @@ func TestARunTheContextKilledEndsWithIt(t *testing.T) {
 	}()
 
 	began := time.Now()
-	out, err := by.Proofread(ctx, []domain.ProofreadBatch{aBatch})
+	out, err := by.Proofread(ctx, aPage)
 	took := time.Since(began)
 
 	if err == nil {
 		t.Fatal("a run that was killed came back with no reason")
 	}
-	if out != nil {
+	if !reflect.DeepEqual(out, domain.ProofreadAnswer{}) {
 		t.Errorf("what a killed run wrote was taken as an answer: %v", out)
 	}
 	if took > 10*time.Second {
@@ -217,13 +227,13 @@ func TestWhatAFailedRunWroteIsNotAnAnswer(t *testing.T) {
 	if err := os.WriteFile(script, []byte(written), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	by := &Proofreader{Command: []string{script}, Instruction: scanInstruction}
+	by := &Proofreader{Command: []string{script}}
 
-	out, err := by.Proofread(t.Context(), []domain.ProofreadBatch{aBatch})
+	out, err := by.Proofread(t.Context(), aPage)
 	if err == nil {
 		t.Fatal("a run that failed came back with no reason")
 	}
-	if out != nil {
+	if !reflect.DeepEqual(out, domain.ProofreadAnswer{}) {
 		t.Errorf("what a failed run wrote was taken as an answer: %v", out)
 	}
 }

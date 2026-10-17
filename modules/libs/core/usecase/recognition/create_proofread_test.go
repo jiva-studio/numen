@@ -8,27 +8,25 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
-// replying is a proofreader that is asked nothing: what a run is built with,
-// and the instruction it was opened under.
-type replying struct{ told string }
+// replying is a proofreader that is asked nothing: what a run is built with.
+type replying struct{}
 
 func (r *replying) GetName() string { return "replying" }
 
-func (r *replying) Proofread(context.Context, []domain.ProofreadBatch) (map[int]string, error) {
-	return nil, nil
+func (r *replying) Proofread(context.Context, domain.ProofreadRequest) (domain.ProofreadAnswer, error) {
+	return domain.ProofreadAnswer{}, nil
 }
 
 // queued is a proofreader with a queue, which is asked nothing either.
 type queued struct{ replying }
 
-func (q *queued) Submit(context.Context, []domain.ProofreadBatch) (string, error) { return "", nil }
+func (q *queued) Submit(context.Context, domain.ProofreadRequest) (string, error) { return "", nil }
 
-func (q *queued) GetReplies(context.Context, string) (map[int]string, bool, error) {
-	return nil, false, nil
+func (q *queued) GetAnswer(context.Context, string) (domain.ProofreadAnswer, bool, error) {
+	return domain.ProofreadAnswer{}, false, nil
 }
 
 // somewhereToProofread is a vault to read out of and a store to keep the
@@ -43,8 +41,8 @@ func somewhereToProofread() (port.VaultReaders, port.DerivedStores) {
 func newProofreadingConfig(by *replying, queue *queued) run.ProofreadingConfig {
 	return run.ProofreadingConfig{
 		IsNamed:         true,
-		By:              func(told string) (port.Proofreader, error) { by.told = told; return by, nil },
-		Queue:           func(told string) (port.ProofreadQueue, error) { queue.told = told; return queue, nil },
+		By:              func() (port.Proofreader, error) { return by, nil },
+		Queue:           func() (port.ProofreadQueue, error) { return queue, nil },
 		Batch:           12,
 		Overlap:         3,
 		InFlight:        5,
@@ -78,20 +76,6 @@ func TestARecognitionIsBuiltAtTheSizesTheInstallationProofreadsAt(t *testing.T) 
 	}
 }
 
-// A document's recognition is proofread under the instruction written for a
-// scan.
-func TestARecognitionIsProofreadAsAScan(t *testing.T) {
-	t.Parallel()
-	by, queue := &replying{}, &queued{}
-	readers, derived := somewhereToProofread()
-	if _, _, err := CreateProofread(newProofreadingConfig(by, queue), readers, derived); err != nil {
-		t.Fatal(err)
-	}
-	if by.told != proofread.ScanInstruction || queue.told != proofread.ScanInstruction {
-		t.Error("a document's recognition is not proofread as a scan")
-	}
-}
-
 // An installation that placed no proofreader holds none, and that is no
 // failure: the recognition is used exactly as it was read.
 func TestNamingNoProofreaderHoldsNoneAndIsNoFailure(t *testing.T) {
@@ -99,7 +83,7 @@ func TestNamingNoProofreaderHoldsNoneAndIsNoFailure(t *testing.T) {
 	readers, derived := somewhereToProofread()
 	for _, said := range []run.ProofreadingConfig{
 		{},
-		{By: func(string) (port.Proofreader, error) { return nil, nil }},
+		{By: func() (port.Proofreader, error) { return nil, nil }},
 	} {
 		right, held, err := CreateProofread(said, readers, derived)
 		if err != nil || held || right.by != nil {
@@ -115,7 +99,7 @@ func TestAProofreaderThatCannotBeOpenedSaysWhatCouldNotBeDone(t *testing.T) {
 	keyless := errors.New("no key is configured")
 	said := run.ProofreadingConfig{
 		IsNamed: true,
-		By:      func(string) (port.Proofreader, error) { return nil, keyless },
+		By:      func() (port.Proofreader, error) { return nil, keyless },
 	}
 	readers, derived := somewhereToProofread()
 
@@ -136,8 +120,8 @@ func TestAQueueThatCannotBeOpenedSaysThePagesCannotBeLeft(t *testing.T) {
 	by := &replying{}
 	said := run.ProofreadingConfig{
 		IsNamed: true,
-		By:      func(string) (port.Proofreader, error) { return by, nil },
-		Queue:   func(string) (port.ProofreadQueue, error) { return nil, shut },
+		By:      func() (port.Proofreader, error) { return by, nil },
+		Queue:   func() (port.ProofreadQueue, error) { return nil, shut },
 	}
 	readers, derived := somewhereToProofread()
 

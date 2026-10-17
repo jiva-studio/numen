@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
 // A sentence a recording broke across three stretches of speech.

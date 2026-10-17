@@ -10,13 +10,14 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode/proofread"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/runner"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // Proofreader puts a recognition right through the command line a person already
-// has installed. It is a child process and nothing more: a batch on its input,
+// has installed. It is a child process and nothing more: a prompt on its input,
 // the lines it would put right on its output.
 type Proofreader struct {
 	// Command starts it. Empty means `claude` from the path.
@@ -24,10 +25,6 @@ type Proofreader struct {
 	// Model is which model corrects a recognition, by the name the command line
 	// knows it as. Empty leaves the choice to the installation.
 	Model string
-	// Instruction is what the proofreader is told it is doing. A scan and
-	// speech are corrected for different mistakes, and the caller says which.
-	Instruction string
-
 	// InFlight is how many batches are asked about at once. It is how much of
 	// a person's own model is taken while they are using it. Zero or less
 	// takes one.
@@ -67,17 +64,14 @@ func (p *Proofreader) GetName() string {
 	return "claude " + p.Model
 }
 
-// Proofread asks about every batch and answers with what came back about each,
-// by the batch it is about. A batch nothing came back about is left out.
+// Proofread asks the command line about the lines of a request and answers with
+// the corrections its replies make.
 //
-// One batch that fails ends the run: the batches already answered are dropped
-// and the caller asks again.
-func (p *Proofreader) Proofread(ctx context.Context, batches []domain.ProofreadBatch) (map[int]string, error) {
-	if len(batches) == 0 {
-		return nil, nil
-	}
-	if p.Instruction == "" {
-		return nil, errors.New("no instruction for the proofreading command line")
+// One prompt that fails ends the run: what was already answered is dropped and
+// the caller asks again.
+func (p *Proofreader) Proofread(ctx context.Context, request domain.ProofreadRequest) (domain.ProofreadAnswer, error) {
+	if len(request.Groups) == 0 {
+		return domain.ProofreadAnswer{IsDone: true}, nil
 	}
 
 	// The command line reads whatever standing instructions and settings live
@@ -85,67 +79,46 @@ func (p *Proofreader) Proofread(ctx context.Context, batches []domain.ProofreadB
 	// An empty folder holds none.
 	empty, err := os.MkdirTemp("", "numen-proofreading-")
 	if err != nil {
-		return nil, err
+		return domain.ProofreadAnswer{}, err
 	}
 	defer os.RemoveAll(empty)
 
-	ctx, stop := context.WithCancel(ctx)
-	defer stop()
-
-	var (
-		mu     sync.Mutex
-		out    = make(map[int]string, len(batches))
-		failed error
-		wg     sync.WaitGroup
-	)
-	for _, batch := range batches {
+	ask := func(ctx context.Context, instruction, prompt string) (string, error) {
 		turn, err := p.acquire(ctx)
 		if err != nil {
-			break
+			return "", err
 		}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			defer turn()
-			reply, err := p.runBatch(ctx, empty, batch)
-			mu.Lock()
-			defer mu.Unlock()
-			switch {
-			case err != nil:
-				if failed == nil {
-					failed = err
-					stop()
-				}
-			case reply != "":
-				out[batch.Number] = reply
-			}
-		}()
+		defer turn()
+		return p.runPrompt(ctx, empty, instruction, prompt)
 	}
-	wg.Wait()
-
-	if failed != nil {
-		return nil, failed
+	switch request.Kind {
+	case domain.ProofreadScan:
+		return proofread.Scan(ctx, ask, request.Groups, request.MaxEditDistance)
+	case domain.ProofreadSpeech:
+		return proofread.Speech(ctx, ask, request)
 	}
-	return out, ctx.Err()
+	return domain.ProofreadAnswer{}, errUnknownKind
 }
 
-// runBatch sends one batch and returns what the command line said about it.
-func (p *Proofreader) runBatch(ctx context.Context, dir string, batch domain.ProofreadBatch) (string, error) {
+var errUnknownKind = errors.New("unknown kind of text to proofread")
+
+// runPrompt sends one prompt and returns what the command line said about it.
+func (p *Proofreader) runPrompt(ctx context.Context, dir, instruction, prompt string) (string, error) {
 	name, rest := p.getCommand()
-	cmd := exec.CommandContext(ctx, name, append(rest, p.buildArguments()...)...)
+	cmd := exec.CommandContext(ctx, name, append(rest, p.buildArguments(instruction)...)...)
 	cmd.Dir = dir
 	cmd.Env = buildEnvironment(os.Environ())
 	runner.Supervise(cmd)
 
-	// The batch goes on the input: --disallowed-tools takes as many names as
-	// follow it, and a batch is longer than a command line holds.
-	cmd.Stdin = strings.NewReader(batch.Prompt)
+	// The prompt goes on the input: --disallowed-tools takes as many names as
+	// follow it, and a prompt is longer than a command line holds.
+	cmd.Stdin = strings.NewReader(prompt)
 	var said, stderr bytes.Buffer
 	cmd.Stdout = &said
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("batch %d: %w: %s", batch.Number, err, getLastLine(stderr.String()))
+		return "", fmt.Errorf("%w: %s", err, getLastLine(stderr.String()))
 	}
 	return strings.TrimSpace(said.String()), nil
 }
@@ -159,14 +132,14 @@ func (p *Proofreader) getCommand() (string, []string) {
 }
 
 // buildArguments returns what the command line is started with: one question, no
-// servers, no tools, and the caller's instruction appended to what the command
+// servers, no tools, and the instruction appended to what the command
 // line says of itself.
-func (p *Proofreader) buildArguments() []string {
+func (p *Proofreader) buildArguments(instruction string) []string {
 	args := []string{"-p", "--strict-mcp-config"}
 	if p.Model != "" {
 		args = append(args, "--model", p.Model)
 	}
 	args = append(args, "--disallowed-tools")
 	args = append(args, disallowed...)
-	return append(args, "--append-system-prompt", p.Instruction)
+	return append(args, "--append-system-prompt", instruction)
 }

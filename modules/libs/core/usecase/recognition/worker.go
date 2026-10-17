@@ -8,7 +8,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
@@ -313,7 +312,7 @@ func (r *Worker) CollectBatches(
 	every time.Duration,
 	vaults ...domain.Vault,
 ) {
-	queue, err := r.with.Proofreading.Queue(proofread.ScanInstruction)
+	queue, err := r.with.Proofreading.Queue()
 	if err != nil || queue == nil {
 		return
 	}
@@ -343,11 +342,11 @@ func (r *Worker) TakeUp(
 		return
 	}
 	r.line.Go(func() {
-		queue, err := proofreading.Queue(proofread.ScanInstruction)
+		queue, err := proofreading.Queue()
 		if err != nil || queue != nil {
 			return
 		}
-		by, err := proofreading.By(proofread.ScanInstruction)
+		by, err := proofreading.By()
 		if err != nil || by == nil {
 			return
 		}

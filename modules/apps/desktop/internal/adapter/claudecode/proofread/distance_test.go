@@ -3,7 +3,7 @@ package proofread_test
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode/proofread"
 )
 
 // A line of speech, and the words a proofreader answers with.

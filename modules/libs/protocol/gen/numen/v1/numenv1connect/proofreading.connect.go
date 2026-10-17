@@ -36,9 +36,6 @@ const (
 	// ProofreadingServiceGetProofreaderInfoProcedure is the fully-qualified name of the
 	// ProofreadingService's GetProofreaderInfo RPC.
 	ProofreadingServiceGetProofreaderInfoProcedure = "/numen.v1.ProofreadingService/GetProofreaderInfo"
-	// ProofreadingServiceProofreadProcedure is the fully-qualified name of the ProofreadingService's
-	// Proofread RPC.
-	ProofreadingServiceProofreadProcedure = "/numen.v1.ProofreadingService/Proofread"
 	// ProofreadingServiceProofreadTextProcedure is the fully-qualified name of the
 	// ProofreadingService's ProofreadText RPC.
 	ProofreadingServiceProofreadTextProcedure = "/numen.v1.ProofreadingService/ProofreadText"
@@ -48,8 +45,6 @@ const (
 type ProofreadingServiceClient interface {
 	// GetProofreaderInfo returns information about the active proofreader model or engine.
 	GetProofreaderInfo(context.Context, *connect.Request[v1.GetProofreaderInfoRequest]) (*connect.Response[v1.GetProofreaderInfoResponse], error)
-	// Proofread submits text batches to be proofread and returns corrections.
-	Proofread(context.Context, *connect.Request[v1.ProofreadRequest]) (*connect.Response[v1.ProofreadResponse], error)
 	// ProofreadText proofreads numbered lines of one kind of text and returns the
 	// corrections the proofreader stands behind.
 	ProofreadText(context.Context, *connect.Request[v1.ProofreadTextRequest]) (*connect.Response[v1.ProofreadTextResponse], error)
@@ -72,12 +67,6 @@ func NewProofreadingServiceClient(httpClient connect.HTTPClient, baseURL string,
 			connect.WithSchema(proofreadingServiceMethods.ByName("GetProofreaderInfo")),
 			connect.WithClientOptions(opts...),
 		),
-		proofread: connect.NewClient[v1.ProofreadRequest, v1.ProofreadResponse](
-			httpClient,
-			baseURL+ProofreadingServiceProofreadProcedure,
-			connect.WithSchema(proofreadingServiceMethods.ByName("Proofread")),
-			connect.WithClientOptions(opts...),
-		),
 		proofreadText: connect.NewClient[v1.ProofreadTextRequest, v1.ProofreadTextResponse](
 			httpClient,
 			baseURL+ProofreadingServiceProofreadTextProcedure,
@@ -90,18 +79,12 @@ func NewProofreadingServiceClient(httpClient connect.HTTPClient, baseURL string,
 // proofreadingServiceClient implements ProofreadingServiceClient.
 type proofreadingServiceClient struct {
 	getProofreaderInfo *connect.Client[v1.GetProofreaderInfoRequest, v1.GetProofreaderInfoResponse]
-	proofread          *connect.Client[v1.ProofreadRequest, v1.ProofreadResponse]
 	proofreadText      *connect.Client[v1.ProofreadTextRequest, v1.ProofreadTextResponse]
 }
 
 // GetProofreaderInfo calls numen.v1.ProofreadingService.GetProofreaderInfo.
 func (c *proofreadingServiceClient) GetProofreaderInfo(ctx context.Context, req *connect.Request[v1.GetProofreaderInfoRequest]) (*connect.Response[v1.GetProofreaderInfoResponse], error) {
 	return c.getProofreaderInfo.CallUnary(ctx, req)
-}
-
-// Proofread calls numen.v1.ProofreadingService.Proofread.
-func (c *proofreadingServiceClient) Proofread(ctx context.Context, req *connect.Request[v1.ProofreadRequest]) (*connect.Response[v1.ProofreadResponse], error) {
-	return c.proofread.CallUnary(ctx, req)
 }
 
 // ProofreadText calls numen.v1.ProofreadingService.ProofreadText.
@@ -113,8 +96,6 @@ func (c *proofreadingServiceClient) ProofreadText(ctx context.Context, req *conn
 type ProofreadingServiceHandler interface {
 	// GetProofreaderInfo returns information about the active proofreader model or engine.
 	GetProofreaderInfo(context.Context, *connect.Request[v1.GetProofreaderInfoRequest]) (*connect.Response[v1.GetProofreaderInfoResponse], error)
-	// Proofread submits text batches to be proofread and returns corrections.
-	Proofread(context.Context, *connect.Request[v1.ProofreadRequest]) (*connect.Response[v1.ProofreadResponse], error)
 	// ProofreadText proofreads numbered lines of one kind of text and returns the
 	// corrections the proofreader stands behind.
 	ProofreadText(context.Context, *connect.Request[v1.ProofreadTextRequest]) (*connect.Response[v1.ProofreadTextResponse], error)
@@ -133,12 +114,6 @@ func NewProofreadingServiceHandler(svc ProofreadingServiceHandler, opts ...conne
 		connect.WithSchema(proofreadingServiceMethods.ByName("GetProofreaderInfo")),
 		connect.WithHandlerOptions(opts...),
 	)
-	proofreadingServiceProofreadHandler := connect.NewUnaryHandler(
-		ProofreadingServiceProofreadProcedure,
-		svc.Proofread,
-		connect.WithSchema(proofreadingServiceMethods.ByName("Proofread")),
-		connect.WithHandlerOptions(opts...),
-	)
 	proofreadingServiceProofreadTextHandler := connect.NewUnaryHandler(
 		ProofreadingServiceProofreadTextProcedure,
 		svc.ProofreadText,
@@ -149,8 +124,6 @@ func NewProofreadingServiceHandler(svc ProofreadingServiceHandler, opts ...conne
 		switch r.URL.Path {
 		case ProofreadingServiceGetProofreaderInfoProcedure:
 			proofreadingServiceGetProofreaderInfoHandler.ServeHTTP(w, r)
-		case ProofreadingServiceProofreadProcedure:
-			proofreadingServiceProofreadHandler.ServeHTTP(w, r)
 		case ProofreadingServiceProofreadTextProcedure:
 			proofreadingServiceProofreadTextHandler.ServeHTTP(w, r)
 		default:
@@ -164,10 +137,6 @@ type UnimplementedProofreadingServiceHandler struct{}
 
 func (UnimplementedProofreadingServiceHandler) GetProofreaderInfo(context.Context, *connect.Request[v1.GetProofreaderInfoRequest]) (*connect.Response[v1.GetProofreaderInfoResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ProofreadingService.GetProofreaderInfo is not implemented"))
-}
-
-func (UnimplementedProofreadingServiceHandler) Proofread(context.Context, *connect.Request[v1.ProofreadRequest]) (*connect.Response[v1.ProofreadResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ProofreadingService.Proofread is not implemented"))
 }
 
 func (UnimplementedProofreadingServiceHandler) ProofreadText(context.Context, *connect.Request[v1.ProofreadTextRequest]) (*connect.Response[v1.ProofreadTextResponse], error) {

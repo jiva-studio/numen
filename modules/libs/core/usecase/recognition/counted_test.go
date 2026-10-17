@@ -60,7 +60,7 @@ func TestCollectingRunsBehindTheCallerAndIsCountedBeforeIt(t *testing.T) {
 	w := newWatched(t, nil)
 	w.Worker.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, Batch: 1,
-		Queue: func(string) (port.ProofreadQueue, error) { return leaves{}, nil },
+		Queue: func() (port.ProofreadQueue, error) { return leaves{}, nil },
 	}
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 	known := &holding{asked: make(chan struct{}, 1), let: make(chan struct{})}
