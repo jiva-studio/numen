@@ -10,9 +10,9 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 )
 
 func TestAgentServerRPC(t *testing.T) {
@@ -480,6 +480,78 @@ func TestToolCallingMaxTurnsLimit(t *testing.T) {
 
 	if iterations != 3 {
 		t.Errorf("expected 3 iterations, got %d", iterations)
+	}
+	if stoppedReason != "max_turns_exceeded" {
+		t.Errorf("expected stopped 'max_turns_exceeded', got %q", stoppedReason)
+	}
+}
+
+func TestToolCallingDefaultMaxTurnsLimit(t *testing.T) {
+	var iterations int
+	mockLLM := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		iterations++
+		w.Header().Set("Content-Type", "application/json")
+		resp := chatResponse{
+			Choices: []struct {
+				Message      chatMessage `json:"message"`
+				FinishReason string      `json:"finish_reason"`
+			}{
+				{
+					FinishReason: "tool_calls",
+					Message: chatMessage{
+						Role: "assistant",
+						ToolCalls: []toolCall{
+							{
+								ID:   "call_loop",
+								Type: "function",
+								Function: toolCallFunction{
+									Name:      "test_loop",
+									Arguments: `{}`,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	}))
+	defer mockLLM.Close()
+
+	agentSvc := &agentServer{
+		baseURL: mockLLM.URL,
+		apiKey:  "test-key",
+		tools: []*numenv1.AgentToolDefinition{
+			{Name: "test_loop", Description: "Loop tool"},
+		},
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewAgentServiceHandler(agentSvc))
+
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	client := numenv1connect.NewAgentServiceClient(http.DefaultClient, server.URL)
+	stream, err := client.AskAgent(context.Background(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Prompt: "Start loop with default max steps",
+	}))
+	if err != nil {
+		t.Fatalf("AskAgent failed: %v", err)
+	}
+
+	var stoppedReason string
+	for stream.Receive() {
+		if stopped, ok := stream.Msg().GetStep().(*numenv1.AskAgentResponse_Stopped); ok {
+			stoppedReason = stopped.Stopped
+		}
+	}
+	if err := stream.Err(); err != nil {
+		t.Fatalf("stream error: %v", err)
+	}
+
+	if iterations != 10 {
+		t.Errorf("expected 10 iterations, got %d", iterations)
 	}
 	if stoppedReason != "max_turns_exceeded" {
 		t.Errorf("expected stopped 'max_turns_exceeded', got %q", stoppedReason)
