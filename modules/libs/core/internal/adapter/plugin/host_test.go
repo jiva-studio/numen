@@ -1261,7 +1261,13 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 	}
 	var started atomic.Int32
 	host.SetLauncher(startSleepLauncher(t, &started, nil))
+	host.mu.Lock()
+	p := host.plugins["md.numen.ocr"]
+	p.Manifest.Lifecycle.IdleTimeoutSeconds = 0
+	host.plugins["md.numen.ocr"] = p
+	host.mu.Unlock()
 
+	var evictions atomic.Int32
 	stop := make(chan struct{})
 	var evictor sync.WaitGroup
 	evictor.Add(1)
@@ -1272,12 +1278,18 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 			case <-stop:
 				return
 			default:
-				host.EvictIdle(t.Context(), 0, 20*time.Millisecond)
+				evictions.Add(int32(len(host.EvictIdle(t.Context(), 0, 20*time.Millisecond))))
 			}
 		}
 	}()
+	var stopOnce sync.Once
+	stopEvictor := func() {
+		stopOnce.Do(func() { close(stop) })
+		evictor.Wait()
+	}
+	t.Cleanup(stopEvictor)
 
-	for i := range 60 {
+	for i := 0; i < 60 || (evictions.Load() == 0 && i < 5000); i++ {
 		endpoint, err := host.EnsureActive(t.Context(), "md.numen.ocr")
 		if err != nil {
 			t.Fatalf("round %d: EnsureActive failed: %v", i, err)
@@ -1293,8 +1305,10 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 		}
 		host.Release("md.numen.ocr")
 	}
-	close(stop)
-	evictor.Wait()
+	stopEvictor()
+	if evictions.Load() == 0 {
+		t.Fatal("the evictor never stopped an idle plugin, so the race was not exercised")
+	}
 	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
