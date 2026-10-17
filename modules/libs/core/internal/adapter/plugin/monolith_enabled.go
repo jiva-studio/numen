@@ -290,9 +290,8 @@ func (h *Host) activatePlugin(ctx context.Context, p DiscoveredPlugin, sup *Supe
 
 	now := time.Now()
 	h.mu.Lock()
-	sup.Acquire(now)
 	h.endpoints[p.Manifest.ID] = endpoint
-	sup.FinishActivating()
+	sup.ActivateInProcess(now)
 	h.mu.Unlock()
 
 	return endpoint, nil
