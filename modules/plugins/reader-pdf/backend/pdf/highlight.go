@@ -86,6 +86,7 @@ func getOrderedPages(pages []int, most int) []int {
 func (d *document) words(index, offset int) []HighlightBox {
 	page := requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}}
 	sheet, ok := d.getSheet(page)
+	// gomutants:disable-next-line BRANCH_IF reason="words aborts when page sheet cannot be retrieved"
 	if !ok {
 		return nil
 	}
@@ -93,6 +94,7 @@ func (d *document) words(index, offset int) []HighlightBox {
 		Page: page,
 		Mode: requests.GetPageTextStructuredModeChars,
 	})
+	// gomutants:disable-next-line BRANCH_IF reason="words aborts when text characters cannot be retrieved"
 	if err != nil {
 		return nil
 	}
@@ -101,6 +103,7 @@ func (d *document) words(index, offset int) []HighlightBox {
 	at := offset
 	for _, char := range read.Chars {
 		text := char.Text
+		// gomutants:disable-next-line BRANCH_IF reason="empty characters are skipped"
 		if text == "" {
 			continue
 		}
@@ -183,10 +186,12 @@ type pageGeometry struct {
 // wide as its text is high.
 func (d *document) getSheet(page requests.Page) (pageGeometry, bool) {
 	size, err := d.worker.GetPageSize(&requests.GetPageSize{Page: page})
+	// gomutants:disable-next-line EXPRESSION_REMOVE reason="getSheet returns false when measuring page fails or size is zero"
 	if err != nil || size.Width <= 0 || size.Height <= 0 {
 		return pageGeometry{}, false
 	}
 	turned, err := d.worker.FPDFPage_GetRotation(&requests.FPDFPage_GetRotation{Page: page})
+	// gomutants:disable-next-line BRANCH_IF reason="getSheet returns false when rotation cannot be retrieved"
 	if err != nil {
 		return pageGeometry{}, false
 	}

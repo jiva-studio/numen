@@ -6,7 +6,17 @@ import (
 	"testing"
 
 	"github.com/klippa-app/go-pdfium/requests"
+	"github.com/klippa-app/go-pdfium/responses"
 )
+
+func fixture(t *testing.T, name string) []byte {
+	t.Helper()
+	raw, err := os.ReadFile("testdata/" + name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return raw
+}
 
 // A page's text and the characters it is made of are one text.
 //
@@ -213,5 +223,130 @@ func TestATurnedPageIsLitTheWayItIsDrawn(t *testing.T) {
 	}
 	if first, last := boxes[0], boxes[2]; first.MinY >= last.MinY {
 		t.Errorf("the line begins at %v and ends at %v", first, last)
+	}
+}
+
+func TestIsWordContinued(t *testing.T) {
+	w := responses.CharPosition{Left: 10, Right: 20, Top: 30, Bottom: 10} // width 10, height 20
+	// 1. Same line, normal gap (high = 20, wordGap * 20 = 5)
+	mark := responses.CharPosition{Left: 22, Right: 30, Top: 30, Bottom: 10} // gap 2 <= 5
+	if !isWordContinued(w, mark) {
+		t.Error("expected word continued for adjacent char")
+	}
+
+	// 2. Gap too wide: gap 6 > 5
+	tooFar := responses.CharPosition{Left: 26, Right: 35, Top: 30, Bottom: 10}
+	if isWordContinued(w, tooFar) {
+		t.Error("expected word NOT continued when gap exceeds wordGap*high")
+	}
+
+	// 3. Different vertical line: shared height < 0.5 * 20 = 10
+	diffLine := responses.CharPosition{Left: 22, Right: 30, Top: 15, Bottom: -5}
+	if isWordContinued(w, diffLine) {
+		t.Error("expected word NOT continued when characters share less than sameLine of height")
+	}
+
+	// 4. Zero height
+	zeroHigh := responses.CharPosition{Left: 22, Right: 30, Top: 10, Bottom: 10}
+	if isWordContinued(w, zeroHigh) {
+		t.Error("expected word NOT continued for zero height char")
+	}
+
+	// 5. Backwards: mark.Right <= word.Right
+	backwards := responses.CharPosition{Left: 15, Right: 19, Top: 30, Bottom: 10}
+	if isWordContinued(w, backwards) {
+		t.Error("expected word NOT continued when char is backwards")
+	}
+}
+
+func TestGetOrderedPages(t *testing.T) {
+	got := getOrderedPages([]int{2, -1, 0, 0, 1}, 2)
+	want := []int{0, 1}
+	if len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {
+		t.Errorf("getOrderedPages got %v, want %v", got, want)
+	}
+
+	// Boundary: page == most should be excluded
+	if got := getOrderedPages([]int{2}, 2); len(got) != 0 {
+		t.Errorf("expected page >= most to be excluded, got %v", got)
+	}
+}
+
+func TestClampToPage(t *testing.T) {
+	if got := clampToPage(-0.5); got != 0 {
+		t.Errorf("clampToPage(-0.5) = %g, want 0", got)
+	}
+	if got := clampToPage(1.5); got != 1 {
+		t.Errorf("clampToPage(1.5) = %g, want 1", got)
+	}
+	if got := clampToPage(0.5); got != 0.5 {
+		t.Errorf("clampToPage(0.5) = %g, want 0.5", got)
+	}
+}
+
+func TestGetPagePointRotations(t *testing.T) {
+	// width 100, height 200
+	// Rotation 0: default -> y = p.height - y
+	p0 := pageGeometry{width: 100, height: 200, rotation: 0}
+	x, y := p0.getPagePoint(10, 20)
+	if x != 0.1 || y != 0.9 {
+		t.Errorf("rot 0: got (%g, %g), want (0.1, 0.9)", x, y)
+	}
+
+	// Rotation 1: 90 deg -> x, y, wide, high = y, x, high, wide
+	p1 := pageGeometry{width: 100, height: 200, rotation: 1}
+	x, y = p1.getPagePoint(10, 20)
+	if x != 0.1 || y != 0.1 {
+		t.Errorf("rot 1: got (%g, %g), want (0.1, 0.1)", x, y)
+	}
+
+	// Rotation 2: 180 deg -> x = width - x
+	p2 := pageGeometry{width: 100, height: 200, rotation: 2}
+	x, y = p2.getPagePoint(10, 20)
+	if x != 0.9 || y != 0.1 {
+		t.Errorf("rot 2: got (%g, %g), want (0.9, 0.1)", x, y)
+	}
+
+	// Rotation 3: 270 deg -> x, y, wide, high = height - y, width - x, high, wide
+	p3 := pageGeometry{width: 100, height: 200, rotation: 3}
+	x, y = p3.getPagePoint(10, 20)
+	if x != 0.9 || y != 0.9 {
+		t.Errorf("rot 3: got (%g, %g), want (0.9, 0.9)", x, y)
+	}
+}
+
+func TestHighlightsEmptyPagesOrInvalid(t *testing.T) {
+	raw := fixture(t, "tiny.pdf")
+	book, err := Read(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Empty wanted pages
+	boxes, err := book.Highlights(raw, nil)
+	if err != nil || boxes != nil {
+		t.Errorf("Highlights(nil) got %v, err %v; want nil, nil", boxes, err)
+	}
+	boxes, err = book.Highlights(raw, []int{})
+	if err != nil || boxes != nil {
+		t.Errorf("Highlights([]) got %v, err %v; want nil, nil", boxes, err)
+	}
+
+	// Invalid PDF bytes
+	_, err = book.Highlights([]byte("not a pdf"), []int{0})
+	if err == nil {
+		t.Error("expected error for invalid PDF bytes in Highlights")
+	}
+}
+
+func TestDocumentWordsInvalidPage(t *testing.T) {
+	doc, err := openBytes(fixture(t, "tiny.pdf"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer doc.close()
+
+	if boxes := doc.words(9999, 0); len(boxes) != 0 {
+		t.Errorf("doc.words(9999) returned %d boxes, want 0", len(boxes))
 	}
 }
