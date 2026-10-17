@@ -7,7 +7,7 @@
   "capabilities": ["proofreading"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onCommand:proofread"],
-  "permissions": ["vault:read"],
+  "permissions": ["vault:read", "ai:complete"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false
@@ -16,14 +16,5 @@
     "type": "process",
     "entrypoint": "bin/proofreading",
     "serviceName": "numen.v1.ProofreadingService"
-  },
-  "settings": [
-    {
-      "key": "model",
-      "type": "string",
-      "title": "Proofreading Model",
-      "description": "Language model name used for proofreading",
-      "default": "llm-proofreader"
-    }
-  ]
+  }
 }
