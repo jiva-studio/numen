@@ -20,6 +20,7 @@ import (
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/modules/plugins/ocr/backend/engine"
+	"github.com/jiva-studio/numen/modules/plugins/ocr/backend/onnxruntime"
 )
 
 type recognitionServer struct {
@@ -180,7 +181,7 @@ func run() error {
 	} else if modelsDir := os.Getenv(models.EnvDir); modelsDir != "" {
 		cfg.Dir = modelsDir
 	}
-	if rt := os.Getenv("NUMEN_OCR_RUNTIME"); rt != "" {
+	if rt := onnxruntime.GetLibrary(); rt != "" {
 		cfg.Runtime = rt
 	}
 

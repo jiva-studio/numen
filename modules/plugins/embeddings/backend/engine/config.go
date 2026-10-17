@@ -65,11 +65,11 @@ func CheckIdentity(identity ModelInfo, repository string) error {
 	return nil
 }
 
-// GetProvider resolves the onnxruntime Provider.
+// GetProvider resolves the onnxruntime Provider. A model that names none runs
+// on the provider the host chose.
 func (m LocalModel) GetProvider() onnxruntime.Provider {
-	// gomutants:disable-next-line BRANCH_IF reason="ParseProvider maps the empty string to ProviderAuto on the slow path"
 	if m.Provider == "" {
-		return onnxruntime.ProviderAuto
+		return ""
 	}
 	p, err := onnxruntime.ParseProvider(m.Provider)
 	if err != nil {

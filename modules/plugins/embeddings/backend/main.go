@@ -19,6 +19,7 @@ import (
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/modules/plugins/embeddings/backend/engine"
+	"github.com/jiva-studio/numen/modules/plugins/embeddings/backend/onnxruntime"
 )
 
 type embeddingServer struct {
@@ -70,11 +71,8 @@ func newEmbeddingServer() *embeddingServer {
 	if pooling := os.Getenv("NUMEN_EMBEDDING_POOLING"); pooling != "" {
 		info.Pooling = pooling
 	}
-	if runtimeLib := os.Getenv("NUMEN_ONNX_RUNTIME"); runtimeLib != "" {
+	if runtimeLib := onnxruntime.GetLibrary(); runtimeLib != "" {
 		local.Runtime = runtimeLib
-	}
-	if provider := os.Getenv("NUMEN_ONNX_PROVIDER"); provider != "" {
-		local.Provider = provider
 	}
 	if threads := os.Getenv("NUMEN_ONNX_THREADS"); threads != "" {
 		if th, err := strconv.Atoi(threads); err == nil && th > 0 {

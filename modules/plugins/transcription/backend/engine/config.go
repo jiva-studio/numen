@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 	"github.com/jiva-studio/numen/modules/plugins/transcription/backend/onnxruntime"
 )
 
@@ -13,8 +14,8 @@ import (
 // A zero field takes its default, so a settings file naming one thing leaves
 // the rest alone.
 type Config struct {
-	// Runtime is the ONNX Runtime shared library. Empty means the one beside
-	// the application, and then the one the platform holds.
+	// Runtime is the ONNX Runtime shared library. The host names it in
+	// NUMEN_ONNX_RUNTIME_LIB.
 	Runtime string `json:"runtime"`
 
 	// Dir is a folder holding the models. Empty means the folder beside the
@@ -39,14 +40,13 @@ type Config struct {
 	Progress func(what string, done, total int64) `json:"-"`
 }
 
-// settings are what the runtime and the models are found by.
-func (c Config) settings() onnxruntime.Settings {
-	return onnxruntime.Settings{
+// source is where the models are kept and whether they may be fetched.
+func (c Config) source() models.Source {
+	return models.Source{
 		Section:        "indexing.transcription",
-		Runtime:        c.Runtime,
 		Dir:            c.Dir,
 		ShouldDownload: c.ShouldDownload,
-		Fetching:       c.Progress,
+		Progress:       c.Progress,
 	}
 }
 

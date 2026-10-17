@@ -9,7 +9,7 @@ import (
 // Ready says whether everything recognising a page needs is already on this machine.
 func Ready(cfg Config) bool {
 	cfg.ShouldDownload = false
-	if !onnxruntime.IsAvailable(cfg.settings()) {
+	if !onnxruntime.IsAvailable(cfg.Runtime) {
 		return false
 	}
 	for _, one := range []struct{ path, name, what string }{

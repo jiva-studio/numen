@@ -2,6 +2,7 @@ package onnxruntime
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"strings"
 	"sync"
@@ -106,8 +107,8 @@ type Provider string
 
 const (
 	// ProviderAuto selects the best hardware accelerator available on the
-	// machine (CoreML on Apple Silicon, CUDA on supported Linux/Windows GPUs,
-	// DirectML on Windows DirectX 12 GPUs) and falls back to CPU if unavailable.
+	// machine (CoreML on Apple Silicon, CUDA on supported Linux/Windows GPUs)
+	// and falls back to CPU if unavailable.
 	ProviderAuto Provider = "auto"
 
 	// ProviderCPU runs inference on CPU using the configured intra-op threads.
@@ -118,12 +119,6 @@ const (
 
 	// ProviderCUDA runs inference on NVIDIA GPUs via CUDA.
 	ProviderCUDA Provider = "cuda"
-
-	// ProviderDirectML runs inference on DirectX 12 GPUs on Windows.
-	ProviderDirectML Provider = "directml"
-
-	// ProviderROCm runs inference on AMD GPUs on Linux.
-	ProviderROCm Provider = "rocm"
 )
 
 // ParseProvider converts a string into a valid Provider.
@@ -137,12 +132,8 @@ func ParseProvider(name string) (Provider, error) {
 		return ProviderCoreML, nil
 	case "cuda":
 		return ProviderCUDA, nil
-	case "directml", "direct-ml", "dml":
-		return ProviderDirectML, nil
-	case "rocm":
-		return ProviderROCm, nil
 	default:
-		return ProviderCPU, fmt.Errorf("unknown execution provider %q, expected one of: auto, cpu, coreml, cuda, directml, rocm", name)
+		return ProviderCPU, fmt.Errorf("unknown execution provider %q, expected one of: auto, cpu, coreml, cuda", name)
 	}
 }
 
@@ -202,6 +193,10 @@ func DefaultThreads() int {
 // NewSessionOptions creates and configures session options according to the
 // requested provider, applying hardware acceleration with fallback to CPU.
 func NewSessionOptions(engine *ort.Engine, s SessionSettings) (*ort.SessionOptions, Provider, error) {
+	provider, err := resolveProvider(s.Provider)
+	if err != nil {
+		return nil, "", err
+	}
 	opts, err := engine.NewSessionOptions()
 	if err != nil {
 		return nil, "", err
@@ -236,14 +231,23 @@ func NewSessionOptions(engine *ort.Engine, s SessionSettings) (*ort.SessionOptio
 		return nil, "", err
 	}
 
-	used, err := applyProvider(opts, s.Provider, s.ComputeUnits)
+	used, err := applyProvider(opts, provider, s.ComputeUnits)
 	if err != nil {
-		if s.Provider != ProviderAuto && s.Provider != "" {
+		if provider != ProviderAuto {
 			opts.Destroy()
-			return nil, "", fmt.Errorf("failed to enable execution provider %s: %w", s.Provider, err)
+			return nil, "", fmt.Errorf("failed to enable execution provider %s: %w", provider, err)
 		}
 		used = ProviderCPU
 	}
 
 	return opts, used, nil
+}
+
+// resolveProvider returns the requested provider, or the one the host chose
+// when none is requested.
+func resolveProvider(requested Provider) (Provider, error) {
+	if requested != "" {
+		return requested, nil
+	}
+	return ParseProvider(os.Getenv(EnvProvider))
 }

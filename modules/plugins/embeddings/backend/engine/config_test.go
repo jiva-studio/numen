@@ -131,8 +131,8 @@ func TestLocalModelGetPasses(t *testing.T) {
 }
 
 func TestLocalModelGetProvider(t *testing.T) {
-	if p := (LocalModel{}).GetProvider(); p != onnxruntime.ProviderAuto {
-		t.Errorf("expected default ProviderAuto, got %v", p)
+	if p := (LocalModel{}).GetProvider(); p != "" {
+		t.Errorf("expected the provider the host chose, got %v", p)
 	}
 	if p := (LocalModel{Provider: "invalid"}).GetProvider(); p != onnxruntime.ProviderAuto {
 		t.Errorf("expected ProviderAuto for invalid provider, got %v", p)

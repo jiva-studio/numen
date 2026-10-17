@@ -35,8 +35,6 @@ func applyProvider(opts *ort.SessionOptions, requested Provider, units ComputeUn
 			return ProviderCPU, err
 		}
 		return ProviderCUDA, nil
-	case ProviderDirectML:
-		return ProviderCPU, fmt.Errorf("directml execution provider is only available on windows")
 	default:
 		return ProviderCPU, nil
 	}
@@ -138,6 +136,7 @@ func appendCoreMLCached(handle, optHandle uintptr, units ComputeUnits) bool {
 	return status == 0
 }
 
+// getCoreMLOptions is the option list the keyed CoreML entry point is given.
 func getCoreMLOptions(cacheDir string, units ComputeUnits) [][2]string {
 	if units == ComputeUnitsDefault {
 		units = ComputeUnitsAll
@@ -149,4 +148,3 @@ func getCoreMLOptions(cacheDir string, units ComputeUnits) [][2]string {
 		{"MLComputeUnits", string(units)},
 	}
 }
-

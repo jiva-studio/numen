@@ -1,126 +1,64 @@
-// Package onnxruntime is the ONNX Runtime this process runs on: where it is
-// found, where it is fetched from, and the engine every model here reads
-// through.
+// Package onnxruntime opens sessions on the ONNX Runtime library the host
+// provisioned and gave this process.
 package onnxruntime
 
 import (
-	"context"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 	"sync"
 	"sync/atomic"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
 )
 
-// Settings are what the runtime and a model are found by. Section is the
-// settings block they were read from, and is what a person is told to change.
-type Settings struct {
-	Section        string
-	Runtime        string
-	Dir            string
-	ShouldDownload bool
+const (
+	// EnvLibrary names the absolute path of the library the host provisioned.
+	EnvLibrary = "NUMEN_ONNX_RUNTIME_LIB"
 
-	// Fetching is told how far a download has got, when anything is listening.
-	Fetching func(what string, done, total int64)
+	// EnvProvider names the execution provider the host chose.
+	EnvProvider = "NUMEN_ONNX_PROVIDER"
+)
+
+// GetLibrary returns the path of the library the host gave this process.
+func GetLibrary() string {
+	return os.Getenv(EnvLibrary)
 }
 
-// Open is the ONNX Runtime this machine runs, opened. One engine serves every
-// caller here, and every library that makes an engine of its own makes it in the
-// same breath, so which engine a tensor is built through is settled once and
-// stands for the life of the process.
-//
-// A path in the settings is used as given. Otherwise what the machine already
-// holds is tried, and only a machine holding none fetches one.
-//
-// One caller opens the runtime and the rest wait on what it is doing, each
-// against its own context. Opening it can be a download of many minutes, and a
-// caller that gave up on its own is not held to somebody else's.
-func Open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
-	for {
-		runtimeState.mu.Lock()
-		if runtimeState.engine != nil {
-			engine, at := runtimeState.engine, runtimeState.at
-			runtimeState.mu.Unlock()
-			return engine, at, nil
-		}
-		if stand := runtimeState.opening; stand != nil {
-			runtimeState.mu.Unlock()
-			select {
-			case <-stand:
-				// Whoever was opening one is done. There is an engine to hand
-				// back now, or there is the same nothing to try again.
-				continue
-			case <-ctx.Done():
-				return nil, "", ctx.Err()
-			}
-		}
-		mine := make(chan struct{})
-		runtimeState.opening = mine
-		runtimeState.mu.Unlock()
-
-		engine, at, err := open(ctx, s)
-
-		runtimeState.mu.Lock()
-		if err == nil {
-			recordRuntime(engine, at)
-		}
-		runtimeState.opening = nil
-		runtimeState.mu.Unlock()
-		close(mine)
-		return engine, at, err
+// Open returns the engine on the library at path. One engine serves every
+// caller, and every library that makes an engine of its own makes it in the same
+// breath, so which engine a tensor is built through is settled once and stands
+// for the life of the process. An empty path is an error: the host names the
+// library for a plugin that declares the runtime.
+func Open(path string) (*ort.Engine, string, error) {
+	if path == "" {
+		return nil, "", fmt.Errorf("no onnx runtime: the host names it in %s", EnvLibrary)
 	}
-}
-
-// open finds or fetches this machine's runtime. Nothing here is held under the
-// lock: it is a download, a copy and two passes of a hash.
-func open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
-	if s.Runtime != "" {
-		engine, err := ort.NewEngine(s.Runtime)
-		if err != nil {
-			return nil, "", fmt.Errorf("the onnx runtime %s: %w", s.Runtime, err)
+	runtimeState.mu.Lock()
+	defer runtimeState.mu.Unlock()
+	if runtimeState.engine != nil {
+		if runtimeState.at != path {
+			return nil, "", fmt.Errorf("the onnx runtime %s is open, and %s is asked for", runtimeState.at, path)
 		}
-		return engine, s.Runtime, nil
+		return runtimeState.engine, runtimeState.at, nil
 	}
-
 	preloadCppRuntime()
-	engine, at, refused := loadFirstLibrary(getLibraryCandidates(s))
-	if engine != nil {
-		return engine, at, nil
-	}
-
-	found, err := findRelease(s)
+	engine, err := ort.NewEngine(path)
 	if err != nil {
-		return nil, "", err
+		return nil, "", fmt.Errorf("the onnx runtime %s: %w", path, err)
 	}
-	archive, err := Fetch(ctx, s, found.address(), found.sum)
-	if err != nil {
-		return nil, "", fmt.Errorf("the onnx runtime: %w", err)
-	}
-	at, err = unpack(archive, runtimeName(), found)
-	if err != nil {
-		return nil, "", err
-	}
-	if engine, err = ort.NewEngine(at); err != nil {
-		refused = append(refused, fmt.Sprintf("%s: %v", at, err))
-		return nil, "", fmt.Errorf("no onnx runtime this machine opens — name one in %s.runtime:\n  %s",
-			s.Section, strings.Join(refused, "\n  "))
-	}
-	return engine, at, nil
+	recordRuntime(engine, path)
+	return engine, path, nil
 }
 
 // runtimeState is the runtime this process runs, and where it came from.
 //
 // One for the life of the process. The lock is over these fields and nothing
-// else; what one caller is doing to fill them, the rest wait on through opening.
+// else.
 var runtimeState struct {
-	mu      sync.Mutex
-	engine  *ort.Engine
-	at      string
-	also    []func(at string)
-	opening chan struct{}
+	mu     sync.Mutex
+	engine *ort.Engine
+	at     string
+	also   []func(at string)
 }
 
 // Register takes a library that makes an engine of its own, made where this
@@ -136,15 +74,7 @@ func Register(also func(at string)) {
 	runtimeState.also = append(runtimeState.also, also)
 }
 
-// HasRegistration says whether any library has registered an initialisation hook.
-func HasRegistration() bool {
-	runtimeState.mu.Lock()
-	defer runtimeState.mu.Unlock()
-	return len(runtimeState.also) > 0
-}
-
-// isLoaded says whether this process has its runtime. It is read without the lock,
-// so it is answered while another caller is opening one.
+// isLoaded says whether this process has its runtime. It is read without the lock.
 var isLoaded atomic.Bool
 
 // recordRuntime is the runtime this process has settled on, and the one moment every
@@ -157,22 +87,22 @@ func recordRuntime(engine *ort.Engine, at string) {
 	isLoaded.Store(true)
 }
 
-// IsAvailable says whether this process has its runtime, or this machine holds a file
-// to make one from. It opens nothing, so it is answered while another caller is
-// opening one. A name the loader would search for on its own is not a file
-// anything here can find.
-func IsAvailable(s Settings) bool {
+// IsAvailable says whether this process has its runtime, or the file at path is
+// there to make one from. It opens nothing.
+func IsAvailable(path string) bool {
 	if isLoaded.Load() {
 		return true
 	}
-	if s.Runtime != "" {
-		_, err := os.Stat(s.Runtime)
-		return err == nil
+	if path == "" {
+		return false
 	}
-	for _, at := range getLibraryCandidates(s) {
-		if filepath.IsAbs(at) {
-			return true
-		}
-	}
-	return false
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+// HasRegistration says whether any library has registered an initialisation hook.
+func HasRegistration() bool {
+	runtimeState.mu.Lock()
+	defer runtimeState.mu.Unlock()
+	return len(runtimeState.also) > 0
 }

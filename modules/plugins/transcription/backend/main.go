@@ -16,6 +16,7 @@ import (
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/modules/plugins/transcription/backend/engine"
+	"github.com/jiva-studio/numen/modules/plugins/transcription/backend/onnxruntime"
 )
 
 type engineFactory func(ctx context.Context, cfg engine.Config) (engine.TranscriberPort, error)
@@ -287,7 +288,7 @@ func run() error {
 	}
 	if runtimeFlag != "" {
 		cfg.Runtime = runtimeFlag
-	} else if envRuntime := os.Getenv("NUMEN_ONNX_RUNTIME"); envRuntime != "" {
+	} else if envRuntime := onnxruntime.GetLibrary(); envRuntime != "" {
 		cfg.Runtime = envRuntime
 	}
 

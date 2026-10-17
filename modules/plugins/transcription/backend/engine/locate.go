@@ -41,7 +41,7 @@ type paths struct {
 func locateModels(ctx context.Context, cfg Config) (onnxRuntime, paths, error) {
 	var opened onnxRuntime
 	var err error
-	if opened.engine, opened.at, err = onnxruntime.Open(ctx, cfg.settings()); err != nil {
+	if opened.engine, opened.at, err = onnxruntime.Open(cfg.Runtime); err != nil {
 		return onnxRuntime{}, paths{}, err
 	}
 
@@ -98,7 +98,7 @@ func model(ctx context.Context, cfg Config, path, name, kind string) (string, er
 		return "", fmt.Errorf("no %s: name one, or say where it is", kind)
 	}
 	sum := getPinnedSum(name)
-	for _, at := range onnxruntime.GetPaths(cfg.Dir, filepath.Base(name)) {
+	for _, at := range models.GetSearchPaths(cfg.Dir, filepath.Base(name)) {
 		if _, err := os.Stat(at); err != nil {
 			continue
 		}
@@ -109,7 +109,7 @@ func model(ctx context.Context, cfg Config, path, name, kind string) (string, er
 	if !models.IsAddress(name) {
 		return "", fmt.Errorf("the %s %q is not beside the application, and is not somewhere to fetch it from", kind, name)
 	}
-	found, err := onnxruntime.Fetch(ctx, cfg.settings(), name, sum)
+	found, err := cfg.source().Fetch(ctx, name, sum)
 	if err != nil {
 		return "", fmt.Errorf("the %s: %w", kind, err)
 	}
