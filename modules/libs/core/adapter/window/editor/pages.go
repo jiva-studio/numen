@@ -323,14 +323,26 @@ func (s *Services) servePluginAsset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	info, err := os.Stat(cleanTarget)
+	root, err := os.OpenRoot(pluginDir)
+	if err != nil {
+		http.Error(w, "plugin asset not found", http.StatusNotFound)
+		return
+	}
+	defer root.Close()
+	file, err := root.Open(filepath.Clean(parts[1]))
+	if err != nil {
+		http.Error(w, "plugin asset not found", http.StatusNotFound)
+		return
+	}
+	defer file.Close()
+	info, err := file.Stat()
 	if err != nil || info.IsDir() {
 		http.Error(w, "plugin asset not found", http.StatusNotFound)
 		return
 	}
 
 	setPluginAssetContentType(w, cleanTarget)
-	http.ServeFileFS(w, r, os.DirFS(pluginDir), filepath.ToSlash(parts[1]))
+	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
 }
 
 // newQuestionCounter takes every question a client asks and gives it back when it is
