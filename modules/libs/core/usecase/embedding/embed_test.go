@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 // dimensions is the width of the model the tests embed with. One byte per
@@ -19,7 +18,7 @@ const dimensions = 32
 // cutBooks extracts one vault's books and answers with the chunks that owe a vector.
 func cutBooks(t testing.TB, index *store, shelf *library, v domain.Vault) []storedChunk {
 	t.Helper()
-	if _, err := (source.NewExtract(vaults{v.ID: shelf}, index, index)).Execute(t.Context(), v); err != nil {
+	if _, err := (newExtract(vaults{v.ID: shelf}, index, index)).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 	small := index.small(v.ID)
@@ -43,7 +42,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 	}
 
 	stopped := &embedder{dims: dimensions, refuse: 3}
-	embed := NewEmbed(vaults{first.ID: shelf}, index, index)
+	embed := newEmbed(vaults{first.ID: shelf}, index, index)
 	embed.Embedder = stopped
 	embed.BatchCharacters = 4000
 	if _, err := embed.Execute(ctx, first); err == nil {
@@ -104,7 +103,7 @@ func TestBothRepresentationsOfAVectorAreWrittenTogether(t *testing.T) {
 
 	var progress []EmbedResult
 	model := &embedder{dims: dimensions}
-	emb := NewEmbed(vaults{first.ID: shelf}, index, index)
+	emb := newEmbed(vaults{first.ID: shelf}, index, index)
 	emb.Embedder = model
 	emb.BatchCharacters = 2000
 	emb.OnProgress = func(r EmbedResult) { progress = append(progress, r) }
@@ -155,7 +154,7 @@ func TestWithNoEmbedderTheTextIsCutAndNothingFails(t *testing.T) {
 	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 400)), 1)
 	small := cutBooks(t, index, shelf, first)
 
-	res, err := (NewEmbed(vaults{first.ID: shelf}, index, index)).Execute(ctx, first)
+	res, err := (newEmbed(vaults{first.ID: shelf}, index, index)).Execute(ctx, first)
 	if err != nil {
 		t.Fatalf("a vault with no embedder is not an error: %v", err)
 	}
@@ -220,7 +219,7 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 			small := cutBooks(t, index, shelf, first)
 			c.replace(t, shelf)
 
-			emb := NewEmbed(vaults{first.ID: shelf}, index, index)
+			emb := newEmbed(vaults{first.ID: shelf}, index, index)
 			emb.Embedder = &embedder{dims: dimensions}
 			res, err := emb.Execute(ctx, first)
 			if err != nil {
@@ -246,7 +245,7 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 	shelves[second.ID].hold("library/latin.epub", domain.KindBook,
 		bookOf(t, "Latin", words(latin, 400)), 1)
 
-	extract := source.NewExtract(shelves, index, index)
+	extract := newExtract(shelves, index, index)
 	for _, v := range []domain.Vault{first, second} {
 		if _, err := extract.Execute(ctx, v); err != nil {
 			t.Fatal(err)
@@ -257,7 +256,7 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 		t.Fatal("both vaults have to hold chunks for this to say anything")
 	}
 
-	embed := NewEmbed(shelves, index, index)
+	embed := newEmbed(shelves, index, index)
 	embed.Embedder = &embedder{dims: dimensions}
 	if _, err := embed.Execute(ctx, first); err != nil {
 		t.Fatal(err)
@@ -298,7 +297,7 @@ func TestASourceStandingOnARecognitionIsEmbeddedFromIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	extract := source.NewExtract(vaults{first.ID: shelf}, index, index)
+	extract := newExtract(vaults{first.ID: shelf}, index, index)
 	extract.Derived = made
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
@@ -311,7 +310,7 @@ func TestASourceStandingOnARecognitionIsEmbeddedFromIt(t *testing.T) {
 		t.Fatal("the book was not cut into anything that carries a vector")
 	}
 
-	embed := NewEmbed(vaults{first.ID: shelf}, index, index)
+	embed := newEmbed(vaults{first.ID: shelf}, index, index)
 	embed.Derived = made
 	embed.Embedder = &embedder{dims: dimensions}
 	embed.BatchCharacters = 4000
@@ -332,7 +331,7 @@ func TestEmbeddingWhileAnotherProcessClaimsVaultReportsBusy(t *testing.T) {
 	made.hold(domain.NewIndexClaimName())
 
 	model := &embedder{dims: dimensions}
-	embed := NewEmbed(vaults{first.ID: shelf}, index, index)
+	embed := newEmbed(vaults{first.ID: shelf}, index, index)
 	embed.Derived = made
 	embed.Embedder = model
 	embed.BatchCharacters = 4000
@@ -373,7 +372,7 @@ func TestPipelineConcurrentBatchesWithProgress(t *testing.T) {
 
 	var progressReports []EmbedResult
 	model := &embedder{dims: dimensions}
-	embed := NewEmbed(vaults{first.ID: shelf}, index, index)
+	embed := newEmbed(vaults{first.ID: shelf}, index, index)
 	embed.Embedder = model
 	embed.BatchCharacters = 1000
 	embed.OnProgress = func(r EmbedResult) {
@@ -406,7 +405,7 @@ func TestDuplicateChunksInBatchAreDeduplicated(t *testing.T) {
 	small := cutBooks(t, index, shelf, first)
 
 	model := &embedder{dims: dimensions}
-	embed := NewEmbed(vaults{first.ID: shelf}, index, index)
+	embed := newEmbed(vaults{first.ID: shelf}, index, index)
 	embed.Embedder = model
 	embed.BatchCharacters = 50000
 
@@ -451,13 +450,13 @@ func TestEmbeddingPrioritizesRecentlyModifiedSources(t *testing.T) {
 	shelf.hold("library/old.epub", domain.KindBook, bookOf(t, "Old Book", words(sanskrit, 400)), 100)
 	shelf.hold("library/recent.epub", domain.KindBook, bookOf(t, "Recent Book", words(latin, 400)), 200)
 
-	extract := source.NewExtract(vaults{first.ID: shelf}, index, index)
+	extract := newExtract(vaults{first.ID: shelf}, index, index)
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	}
 
 	model := &embedder{dims: dimensions}
-	embed := NewEmbed(vaults{first.ID: shelf}, index, index)
+	embed := newEmbed(vaults{first.ID: shelf}, index, index)
 	embed.Embedder = model
 	embed.BatchCharacters = 4000
 	if _, err := embed.Execute(ctx, first); err != nil {
@@ -491,7 +490,7 @@ func TestEmbeddingWithConcurrentWorkers(t *testing.T) {
 	}
 
 	model := &embedder{dims: dimensions}
-	embed := NewEmbed(vaults{first.ID: shelf}, index, index)
+	embed := newEmbed(vaults{first.ID: shelf}, index, index)
 	embed.Embedder = model
 	embed.BatchCharacters = 200
 	embed.Concurrency = 3

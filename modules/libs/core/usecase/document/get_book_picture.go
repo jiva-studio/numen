@@ -46,11 +46,17 @@ func NewGetBookPicture(readers port.VaultReaders, books Books, detect func([]byt
 func (u GetBookPicture) Execute(
 	ctx context.Context, v domain.Vault, path string, named Fingerprint, entry string,
 ) (Picture, error) {
-	read, _, err := readBook(ctx, u.readers, u.books, v, path, &named)
+	_, mark, err := getFingerprint(ctx, u.readers, v, path)
 	if err != nil {
 		return Picture{}, err
 	}
-	body, err := read.Entry(entry)
+	if err := checkUnchanged(named, mark); err != nil {
+		return Picture{}, err
+	}
+	body, err := u.books.ReadEntry(ctx, mark, entry)
+	if errors.Is(err, port.ErrBookChanged) {
+		return Picture{}, ErrChanged
+	}
 	if err != nil {
 		return Picture{}, err
 	}

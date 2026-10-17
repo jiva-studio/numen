@@ -290,6 +290,10 @@ func (h *Host) activatePlugin(ctx context.Context, p DiscoveredPlugin, sup *Supe
 
 	now := time.Now()
 	h.mu.Lock()
+	if sup.GetState() != StateActivating {
+		h.mu.Unlock()
+		return emptyEndpoint(), errActivationAborted
+	}
 	h.endpoints[p.Manifest.ID] = endpoint
 	sup.ActivateInProcess(now)
 	h.mu.Unlock()

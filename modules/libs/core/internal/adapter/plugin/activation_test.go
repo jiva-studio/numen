@@ -128,7 +128,9 @@ func TestAPluginIsReportedFailedAfterTheFailureLimit(t *testing.T) {
 		t.Fatalf("expected a failed status with a reason, got %+v", status)
 	}
 
-	host.SetPluginEnabled("md.numen.ocr", true)
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.ocr", true); err != nil {
+		t.Fatalf("SetPluginEnabled failed: %v", err)
+	}
 	status, ok = host.GetPluginStatus("md.numen.ocr")
 	if !ok || status.Failed {
 		t.Fatal("enabling the plugin should clear the failure")

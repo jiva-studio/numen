@@ -108,13 +108,10 @@ func (s *Services) openPlaying(playing *Loopback) {
 func (s *Services) readDocuments(readers port.VaultReaders, v *viewer) {
 	getDocument := document.NewGetDocument(readers, v)
 	getPage := document.NewGetPage(readers, v, v)
-	getBook := document.NewGetBook(readers, v)
-	getBookMarkup := document.NewGetBookMarkup(readers, v)
-	getBookPicture := document.NewGetBookPicture(readers, v, http.DetectContentType)
+	getBookPicture := document.NewGetBookPicture(readers, s.Book, http.DetectContentType)
 
 	s.Document.viewer, s.Document.getDocument, s.Document.getPage = v, &getDocument, &getPage
-	s.Book.viewer, s.Book.getBook, s.Book.getBookMarkup, s.Book.getBookPicture =
-		v, &getBook, &getBookMarkup, &getBookPicture
+	s.Book.viewer, s.Book.getBookPicture = v, &getBookPicture
 }
 
 // readFiles binds the use cases that read the files of the vaults the readers open.

@@ -23,8 +23,14 @@ func (c Config) DocumentRenderer() port.DocumentRenderer { return c.PageRenderer
 
 // TextExtractor takes the text out of a file whose text is laid out on printed pages.
 func (c Config) TextExtractor() port.TextExtractor {
+	if c.Texts != nil {
+		return c.Texts
+	}
 	if c.PluginHost != nil && !c.SafeMode {
 		if _, ok := c.PluginHost.FindPluginByCapability("document"); ok {
+			return hostDocumentPort{host: c.PluginHost}
+		}
+		if _, ok := c.PluginHost.FindPluginByCapability("book"); ok {
 			return hostDocumentPort{host: c.PluginHost}
 		}
 	}
@@ -61,6 +67,18 @@ func (h hostDocumentPort) Read(ctx context.Context, raw []byte) (domain.TextLaye
 	return bridge.Read(ctx, raw)
 }
 
+func (h hostDocumentPort) ReadBook(ctx context.Context, raw []byte) (domain.BookText, error) {
+	if h.host == nil {
+		return domain.BookText{}, errDocumentUnavailable
+	}
+	bridge, err := plugin.OpenBookBridge(ctx, h.host)
+	if err != nil {
+		return domain.BookText{}, err
+	}
+	defer bridge.Close()
+	return bridge.ReadBook(ctx, raw)
+}
+
 func (h hostDocumentPort) GetHighlights(ctx context.Context, raw []byte, starts []int, pages []int) ([]domain.HighlightBox, error) {
 	bridge, err := h.openBridge(ctx)
 	if err != nil {
@@ -94,6 +112,10 @@ func (unavailableDocument) Read(_ context.Context, _ []byte) (domain.TextLayer, 
 
 func (unavailableDocument) GetHighlights(_ context.Context, _ []byte, _ []int, _ []int) ([]domain.HighlightBox, error) {
 	return nil, errDocumentUnavailable
+}
+
+func (unavailableDocument) ReadBook(_ context.Context, _ []byte) (domain.BookText, error) {
+	return domain.BookText{}, errDocumentUnavailable
 }
 
 func (unavailableDocument) OpenDocument(_ context.Context, file io.ReadSeekCloser) (port.OpenDocument, error) {

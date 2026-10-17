@@ -24,7 +24,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
-	"github.com/jiva-studio/numen/modules/plugins/reader-epub/backend/epub"
 )
 
 // documentHandler answers what a document of the vault is, and draws its pages.
@@ -58,9 +57,6 @@ type viewer struct {
 	open          func(file io.ReadSeekCloser) (port.OpenDocument, error)
 	docs          atomic.Pointer[pool.Documents]
 	renderedPages atomic.Pointer[pagecache.Memory]
-	// books holds the books open. A book is an archive unpacked and parsed, and
-	// what it costs is memory.
-	books atomic.Pointer[pool.Books]
 	// disk is the same pages on disk, so a document opened again is not drawn
 	// again. It is nothing where this machine names no cache folder.
 	disk *pagecache.Disk
@@ -119,7 +115,6 @@ func newViewer(docs port.PageRenderer) *viewer {
 	}
 	v.docs.Store(pool.NewDocuments(pool.MaxOpenDocuments, pool.DocumentIdleTimeout))
 	v.renderedPages.Store(pagecache.NewMemory(pagecache.MaxMemoryBytes))
-	v.books.Store(pool.NewBooks(pool.MaxOpenBooks, pool.BookIdleTimeout))
 	return v
 }
 
@@ -135,15 +130,13 @@ func newCachingViewer(docs port.PageRenderer) *viewer {
 // folder they were kept in ended and waited for.
 func (v *viewer) close() {
 	v.docs.Load().Close()
-	v.books.Load().Close()
 	v.disk.Close()
 }
 
-// reset closes the documents the window has open, lets go of the books, and
-// drops the pages drawn. It goes on looking, at whatever it is given next.
+// reset closes the documents the window has open and drops the pages drawn. It
+// goes on looking, at whatever it is given next.
 func (v *viewer) reset() {
 	v.docs.Swap(pool.NewDocuments(pool.MaxOpenDocuments, pool.DocumentIdleTimeout)).Close()
-	v.books.Swap(pool.NewBooks(pool.MaxOpenBooks, pool.BookIdleTimeout)).Close()
 	v.renderedPages.Store(pagecache.NewMemory(pagecache.MaxMemoryBytes))
 }
 
@@ -164,13 +157,6 @@ func (v *viewer) UseDocument(
 		}
 		return v.open(opened)
 	}, use)
-}
-
-// GetBook is the book at a fingerprint, read where it is not held.
-func (v *viewer) GetBook(
-	ctx context.Context, mark document.Fingerprint, read func() (*epub.Book, error),
-) (*epub.Book, error) {
-	return v.books.Load().Acquire(ctx, mark, read)
 }
 
 // GetPage is one page as the bytes that cross to the window: the one held in
@@ -382,7 +368,7 @@ func getDrawCode(err error) connect.Code {
 	case errors.Is(err, pool.ErrBusy):
 		return connect.CodeUnavailable
 	case errors.Is(err, document.ErrNoPage), errors.Is(err, document.ErrChanged),
-		errors.Is(err, epub.ErrNoDocument), errors.Is(err, epub.ErrNoEntry):
+		errors.Is(err, document.ErrNoEntry):
 		return connect.CodeNotFound
 	case errors.Is(err, document.ErrNotADocument), errors.Is(err, document.ErrEncrypted), isMisnamed(err):
 		return connect.CodeFailedPrecondition
@@ -399,7 +385,7 @@ func refuse(w http.ResponseWriter, err error) {
 		w.Header().Set("Retry-After", "1")
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 	case errors.Is(err, document.ErrNoPage), errors.Is(err, document.ErrChanged), source.IsNoNote(err),
-		errors.Is(err, epub.ErrNoDocument), errors.Is(err, epub.ErrNoEntry):
+		errors.Is(err, document.ErrNoEntry):
 		http.Error(w, err.Error(), http.StatusNotFound)
 	case errors.Is(err, source.ErrOutside):
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -407,6 +393,8 @@ func refuse(w http.ResponseWriter, err error) {
 		http.Error(w, err.Error(), http.StatusUnsupportedMediaType)
 	case errors.Is(err, errNoVault):
 		http.Error(w, err.Error(), http.StatusConflict)
+	case errors.Is(err, errNoDocuments):
+		http.Error(w, err.Error(), http.StatusNotImplemented)
 	default:
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
