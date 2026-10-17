@@ -63,6 +63,7 @@ describe('the panel the deck is read in', () => {
     expect(held.notes.value).toEqual([])
     expect(notices).toHaveLength(1)
     expect(open.value).toBe(true)
+    expect(held.isWorking.value).toBe(false)
   })
 
   it('is put away and keeps what was read', async () => {
