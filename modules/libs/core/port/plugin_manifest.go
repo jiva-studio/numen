@@ -21,6 +21,9 @@ const (
 	// PermissionNetworkOutbound allows outbound network requests.
 	PermissionNetworkOutbound = "network:outbound"
 
+	// PermissionAIComplete allows asking the host for a model completion.
+	PermissionAIComplete = "ai:complete"
+
 	// PermissionNetworkAlias is the accepted short spelling of PermissionNetworkOutbound.
 	PermissionNetworkAlias = "network"
 
@@ -254,7 +257,7 @@ func (m PluginManifest) listPermissionIssues() []error {
 	var issues []error
 	for _, p := range m.Permissions {
 		switch NormalizePermission(p) {
-		case PermissionVaultRead, PermissionVaultWrite, PermissionNetworkOutbound:
+		case PermissionVaultRead, PermissionVaultWrite, PermissionNetworkOutbound, PermissionAIComplete:
 		default:
 			issues = append(issues, fmt.Errorf("%w: %s", ErrInvalidPermission, p))
 		}

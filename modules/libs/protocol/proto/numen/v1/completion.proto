@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+// A one-shot model completion: messages in, text out.
+//
+// A plugin that needs a language model states what it needs and the host
+// decides which model answers. The question carries no tools, no vault and no
+// conversation.
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// CompletionService is what an agent plugin answers: one completion for the
+// host.
+service CompletionService {
+  // Complete answers the question with text.
+  rpc Complete(CompleteRequest) returns (CompleteResponse);
+}
+
+// HostService is what the host answers for a plugin that holds the ai:complete
+// permission.
+service HostService {
+  // Complete answers the question with text from whichever model the host
+  // routes the purpose to.
+  rpc Complete(HostServiceCompleteRequest) returns (HostServiceCompleteResponse);
+}
+
+message CompleteRequest {
+  CompletionQuestion question = 1;
+}
+
+message CompleteResponse {
+  CompletionAnswer answer = 1;
+  // Set when the call was served and refused. The answer is then unset.
+  CompletionErrorCode error = 2;
+}
+
+message HostServiceCompleteRequest {
+  CompletionQuestion question = 1;
+}
+
+message HostServiceCompleteResponse {
+  CompletionAnswer answer = 1;
+  // Set when the call was served and refused. The answer is then unset.
+  CompletionErrorCode error = 2;
+}
+
+// CompletionQuestion is what a plugin asks of a model.
+message CompletionQuestion {
+  // The conversation so far, oldest first.
+  repeated CompletionMessage messages = 1;
+  // What the answer is for (e.g. "proofreading"). The host routes by it; a
+  // purpose names neither a model, an agent nor a key.
+  string purpose = 2;
+  // What the answer should favour. Unset hints leave the choice to the host.
+  CompletionHints hints = 3;
+}
+
+message CompletionMessage {
+  // Who wrote the text: "system", "user" or "assistant". Empty is read as "user".
+  string role = 1;
+  string text = 2;
+}
+
+// CompletionHints are priorities in the range 0 to 1 and are requests, not
+// guarantees.
+message CompletionHints {
+  // How much answer quality matters.
+  double quality_priority = 1;
+  // How much a quick answer matters.
+  double speed_priority = 2;
+  // How much a cheap answer matters.
+  double cost_priority = 3;
+  // The most tokens the answer may hold. Zero leaves the limit to the host.
+  int32 max_tokens = 4;
+  // Sampling temperature. Unset leaves it to the host.
+  optional double temperature = 5;
+}
+
+// CompletionErrorCode is why a served completion call was refused. The zero
+// value means it was not.
+enum CompletionErrorCode {
+  COMPLETION_ERROR_CODE_UNSPECIFIED = 0;
+
+  // No agent is routed for the purpose.
+  COMPLETION_ERROR_CODE_NO_ROUTE = 1;
+
+  // The agent routed for the purpose cannot be reached.
+  COMPLETION_ERROR_CODE_UNAVAILABLE = 2;
+}
+
+// CompletionAnswer is what a model said.
+message CompletionAnswer {
+  string text = 1;
+}

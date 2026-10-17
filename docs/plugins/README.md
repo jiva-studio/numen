@@ -101,7 +101,7 @@ The manifest declares identity, activation rules, required permissions, and serv
   - `onFile:<glob>` (e.g. `onFile:*.pdf`, `onFile:*.epub`)
   - `onCommand:<id>` (e.g. `onCommand:ocr.scan`)
   - `*` (always activated on startup)
-- **`permissions`**: Whitelisted resource access: `vault:read`, `vault:write` and `network:outbound` (`network` is accepted as an alias). Any other value is rejected. Permissions are checked by the host when a plugin calls it; the host does not sandbox the plugin process, so a plugin runs with the user rights of the host.
+- **`permissions`**: Whitelisted resource access: `vault:read`, `vault:write`, `network:outbound` (`network` is accepted as an alias) and `ai:complete` (ask the host for a model completion). Any other value is rejected. Permissions are checked by the host when a plugin calls it; the host does not sandbox the plugin process, so a plugin runs with the user rights of the host.
 - **`lifecycle`**:
   - `idleTimeoutSeconds`: Seconds of inactivity before process eviction; it cannot be negative.
   - `keepAliveWhileVisible`: Keep alive while a tab displaying the plugin is open.
