@@ -149,7 +149,10 @@ func TestEveryProofreadGivesItsReferenceBack(t *testing.T) {
 		t.Fatal(err)
 	}
 	for range 3 {
-		_, _ = bridge.Proofread(t.Context(), []domain.ProofreadBatch{{Number: 1, Prompt: "p"}})
+		_, _ = bridge.Proofread(t.Context(), domain.ProofreadRequest{
+			Kind:   domain.ProofreadScan,
+			Groups: []domain.ProofreadGroup{{Number: 1, Lines: []domain.ProofreadLine{{Number: 1, Text: "p"}}}},
+		})
 	}
 	_ = bridge.Close()
 	if host.acquired.Load() != 3 || host.released.Load() != 3 {
