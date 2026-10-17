@@ -118,6 +118,9 @@ const AGENT_USE: Model = {
   presence: 'present',
 }
 
+/** What the settings were asked to do; a picture asks nothing. */
+const DONE: string[] = []
+
 const INSTALLATION: Installation = {
   themes: ref([
     { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
@@ -141,18 +144,12 @@ const INSTALLATION: Installation = {
   chooseHeadings: () => {},
   dayStartTime: ref('04:00'),
   latestDayStartTime: ref('12:00'),
-  chooseDayStartTime: () => {
-    // Nothing is chosen in a picture.
-  },
+  chooseDayStartTime: (time) => void DONE.push(`day `),
   getSetting: () => undefined,
   getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),
-  write: () => {
-    // Nothing is written in a picture.
-  },
+  write: (edits) => void DONE.push(`write `),
   file: ref('/numen.json'),
-  openFile: () => {
-    // Nothing is opened in a picture.
-  },
+  openFile: () => void DONE.push('open'),
 }
 
 /** Everything in numen.json a person can change, in the groups the file keeps. */
