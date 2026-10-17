@@ -20,13 +20,15 @@ func TestNoReleaseIsPublishedForAPlatformThatHasNone(t *testing.T) {
 }
 
 func TestParseProvider(t *testing.T) {
-	for name, want := range map[string]Provider{"": ProviderCPU, "cpu": ProviderCPU, "CUDA": ProviderCUDA, "coreml": ProviderCoreML} {
+	for name, want := range map[string]Provider{"": ProviderCPU, "cpu": ProviderCPU, "coreml": ProviderCoreML} {
 		if got, err := ParseProvider(name); err != nil || got != want {
 			t.Errorf("ParseProvider(%q) = %q, %v, want %q", name, got, err, want)
 		}
 	}
-	if _, err := ParseProvider("directml"); err == nil {
-		t.Error("ParseProvider() accepted directml")
+	for _, name := range []string{"directml", "cuda"} {
+		if _, err := ParseProvider(name); err == nil {
+			t.Errorf("ParseProvider() accepted %s", name)
+		}
 	}
 }
 
@@ -37,9 +39,6 @@ func TestAProviderRunsWhereItsHardwareIs(t *testing.T) {
 		ok           bool
 	}{
 		{ProviderCPU, "plan9", "mips", true},
-		{ProviderCUDA, "linux", "amd64", true},
-		{ProviderCUDA, "windows", "amd64", true},
-		{ProviderCUDA, "darwin", "arm64", false},
 		{ProviderCoreML, "darwin", "arm64", true},
 		{ProviderCoreML, "darwin", "amd64", false},
 		{ProviderCoreML, "linux", "arm64", false},

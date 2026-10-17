@@ -8,7 +8,7 @@ const (
 	// EnvLibrary names the absolute path of the ONNX Runtime library.
 	EnvLibrary = "NUMEN_ONNX_RUNTIME_LIB"
 
-	// EnvProvider names the execution provider to open sessions on: cpu, cuda or coreml.
+	// EnvProvider names the execution provider to open sessions on: cpu or coreml.
 	EnvProvider = "NUMEN_ONNX_PROVIDER"
 )
 

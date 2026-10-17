@@ -389,14 +389,20 @@ func TestProvisionRefusesAnUnknownProvider(t *testing.T) {
 	}
 }
 
-func TestProvisionRefusesAProviderThisPlatformLacks(t *testing.T) {
-	provider := "coreml"
+func TestProvisionRefusesCoreMLWhereThereIsNone(t *testing.T) {
 	if runtime.GOOS == "darwin" && runtime.GOARCH == "arm64" {
-		provider = "cuda"
+		t.Skip("this platform has coreml")
 	}
-	cfg := onnxruntime.Config{Dir: t.TempDir(), Provider: provider}
-	if _, _, err := onnxruntime.New(cfg).Provision(t.Context()); err == nil || !strings.Contains(err.Error(), provider) {
+	cfg := onnxruntime.Config{Dir: t.TempDir(), Provider: "coreml"}
+	if _, _, err := onnxruntime.New(cfg).Provision(t.Context()); err == nil || !strings.Contains(err.Error(), "coreml") {
 		t.Fatalf("Provision() = %v, want the provider refused", err)
+	}
+}
+
+func TestProvisionRefusesCUDAWhileOnlyTheCPUBuildIsPinned(t *testing.T) {
+	cfg := onnxruntime.Config{Dir: t.TempDir(), Provider: "cuda"}
+	if _, _, err := onnxruntime.New(cfg).Provision(t.Context()); err == nil || !strings.Contains(err.Error(), "GPU build") {
+		t.Fatalf("Provision() = %v, want the GPU build named", err)
 	}
 }
 
@@ -427,10 +433,10 @@ func TestProvisionKeepsTheLibraryInTheModelsHome(t *testing.T) {
 }
 
 func TestFromEnvironmentReadsTheProviderAndTheOfflineSwitch(t *testing.T) {
-	t.Setenv(onnxruntime.EnvProvider, "cuda")
+	t.Setenv(onnxruntime.EnvProvider, "coreml")
 	t.Setenv(onnxruntime.EnvOffline, "1")
 	cfg := onnxruntime.FromEnvironment()
-	if cfg.Provider != "cuda" || !cfg.Offline {
+	if cfg.Provider != "coreml" || !cfg.Offline {
 		t.Errorf("FromEnvironment() = %+v", cfg)
 	}
 

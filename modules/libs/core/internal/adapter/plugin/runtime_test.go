@@ -22,7 +22,7 @@ func (r *recordingProvisioner) Provision(context.Context) (string, string, error
 }
 
 func TestThePluginEnvironmentCarriesTheRuntime(t *testing.T) {
-	runtimeVars := []string{EnvONNXRuntimeLib + "=/models/libonnxruntime.so", EnvONNXProvider + "=cuda"}
+	runtimeVars := []string{EnvONNXRuntimeLib + "=/models/libonnxruntime.so", EnvONNXProvider + "=coreml"}
 	with := getPluginVars("md.numen.a", launchEnvironment{port: 5, token: "t", runtimeVars: runtimeVars})
 	for _, want := range runtimeVars {
 		if !slices.Contains(with, want) {

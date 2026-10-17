@@ -289,7 +289,7 @@ func TestMonolithInProcessPluginIsGivenTheRuntime(t *testing.T) {
 	t.Setenv(plugin.EnvONNXProvider, "")
 
 	host := plugin.NewHost("desktop.editor")
-	host.SetRuntimeProvisioner(fixedProvisioner{library: "/models/libonnxruntime.so", provider: "cuda"})
+	host.SetRuntimeProvisioner(fixedProvisioner{library: "/models/libonnxruntime.so", provider: "coreml"})
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -299,7 +299,7 @@ func TestMonolithInProcessPluginIsGivenTheRuntime(t *testing.T) {
 	if got := os.Getenv(plugin.EnvONNXRuntimeLib); got != "/models/libonnxruntime.so" {
 		t.Errorf("%s = %q", plugin.EnvONNXRuntimeLib, got)
 	}
-	if got := os.Getenv(plugin.EnvONNXProvider); got != "cuda" {
+	if got := os.Getenv(plugin.EnvONNXProvider); got != "coreml" {
 		t.Errorf("%s = %q", plugin.EnvONNXProvider, got)
 	}
 }

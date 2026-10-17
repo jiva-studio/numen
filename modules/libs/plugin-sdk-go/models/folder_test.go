@@ -50,8 +50,13 @@ func TestFolderFetchNamesTheFolderWhenThereIsNone(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", "")
 	t.Setenv("HOME", "")
 	t.Setenv("AppData", "")
-	if _, err := (Folder{Section: "indexing.test"}).Fetch(context.Background(), "https://example.invalid/m.onnx", ""); err == nil {
-		t.Fatal("Fetch() found a folder on a machine that names none")
+	t.Setenv("home", "")
+	if dir, err := (Folder{}).GetDir(); err == nil {
+		t.Fatalf("GetDir() = %q, want an error on a machine that names no folder", dir)
+	}
+	_, err := (Folder{Section: "indexing.test"}).Fetch(context.Background(), "https://example.invalid/m.onnx", "")
+	if err == nil || strings.Contains(err.Error(), "indexing.test.download") {
+		t.Fatalf("Fetch() error = %v, want the missing folder, not the download switch", err)
 	}
 }
 

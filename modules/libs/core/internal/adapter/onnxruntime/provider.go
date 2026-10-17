@@ -12,38 +12,29 @@ const (
 	// ProviderCPU runs inference on the CPU.
 	ProviderCPU Provider = "cpu"
 
-	// ProviderCUDA runs inference on NVIDIA GPUs.
-	ProviderCUDA Provider = "cuda"
-
 	// ProviderCoreML runs inference on the Apple Neural Engine and GPU.
 	ProviderCoreML Provider = "coreml"
 )
 
-// ParseProvider converts a name into a Provider. The empty name is the CPU.
+// ParseProvider converts a name into a Provider. The empty name is the CPU. The
+// cuda provider is named in the error: the published archives are the CPU
+// builds, and a GPU build is not provisioned.
 func ParseProvider(name string) (Provider, error) {
 	switch strings.ToLower(strings.TrimSpace(name)) {
 	case "", "cpu":
 		return ProviderCPU, nil
-	case "cuda":
-		return ProviderCUDA, nil
 	case "coreml":
 		return ProviderCoreML, nil
+	case "cuda":
+		return "", fmt.Errorf("the cuda execution provider needs the GPU build of the runtime, which the host does not provision")
 	}
-	return "", fmt.Errorf("unknown execution provider %q, expected one of: cpu, cuda, coreml", name)
+	return "", fmt.Errorf("unknown execution provider %q, expected one of: cpu, coreml", name)
 }
 
 // check returns an error when the provider does not run on the platform.
 func (p Provider) check(goos, goarch string) error {
-	switch p {
-	case ProviderCPU:
-	case ProviderCUDA:
-		if goos != "linux" && goos != "windows" {
-			return fmt.Errorf("the cuda execution provider is not available on %s", goos)
-		}
-	case ProviderCoreML:
-		if goos != "darwin" || goarch != "arm64" {
-			return fmt.Errorf("the coreml execution provider is only available on darwin/arm64, not %s/%s", goos, goarch)
-		}
+	if p == ProviderCoreML && (goos != "darwin" || goarch != "arm64") {
+		return fmt.Errorf("the coreml execution provider is only available on darwin/arm64, not %s/%s", goos, goarch)
 	}
 	return nil
 }
