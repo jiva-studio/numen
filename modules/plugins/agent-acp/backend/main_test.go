@@ -157,8 +157,8 @@ func TestTheProgramListNamesAntigravityAndCodexWithTheModelsCodexLists(t *testin
 }
 
 // A program that is not installed is listed so, and Codex is not started for its models.
+func TestAProgramThatIsNotInstalledListsNoModels(t *testing.T) {
 	withoutAgentsAnywhere(t)
-	t.Setenv("HOME", t.TempDir())
 	client := startAgent(t)
 
 	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
