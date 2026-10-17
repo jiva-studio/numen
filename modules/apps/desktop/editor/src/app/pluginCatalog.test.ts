@@ -1,10 +1,9 @@
 import { readdirSync, statSync } from 'node:fs'
-import { join } from 'node:path'
-import { fileURLToPath, URL } from 'node:url'
+import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { pluginCatalog } from './pluginCatalog'
 
-const pluginsRoot = fileURLToPath(new URL('../../../../../plugins', import.meta.url))
+const pluginsRoot = resolve(process.cwd(), '../../../plugins')
 
 function listFrontendPlugins(): string[] {
   return readdirSync(pluginsRoot).filter((name) => {
