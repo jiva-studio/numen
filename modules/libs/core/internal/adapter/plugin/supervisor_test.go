@@ -339,7 +339,7 @@ func TestAcquireRefusesAPluginThatIsDeactivating(t *testing.T) {
 		t.Fatalf("failed to start process: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
+		killProcess(t, cmd.Process)
 	}()
 	sup := NewSupervisor()
 	now := time.Now()
@@ -365,7 +365,7 @@ func TestADeactivationDoesNotBeginOnAHeldPlugin(t *testing.T) {
 		t.Fatalf("failed to start process: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
+		killProcess(t, cmd.Process)
 	}()
 	sup := NewSupervisor()
 	now := time.Now()
