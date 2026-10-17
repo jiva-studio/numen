@@ -176,6 +176,7 @@ func TestATranscriptIsTakenUpWhereTheRunBeforeStopped(t *testing.T) {
 	}, words...)
 
 	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
 	by.stop = func(requests int) {
 		if requests == 3 {
 			stop()

@@ -15,25 +15,25 @@ export interface StencilFace {
 
 export interface DeckDataState {
   readonly id?: string
-  readonly note?: ComputedRef<any>
-  readonly deck?: ComputedRef<any>
+  readonly note?: ComputedRef<unknown>
+  readonly deck?: ComputedRef<unknown>
   readonly drawn?: ComputedRef<readonly DeckCard[]>
   readonly sections?: ComputedRef<readonly DeckSection[]>
   readonly stencils?: ComputedRef<readonly Stencil[]>
-  readonly marks?: ComputedRef<any>
+  readonly marks?: ComputedRef<unknown>
   readonly errorMessage?: ComputedRef<string>
 }
 
 export interface DeckScheduleState {
-  readonly scheduled?: ComputedRef<any>
-  readonly choices?: ComputedRef<readonly any[]>
+  readonly scheduled?: ComputedRef<unknown>
+  readonly choices?: ComputedRef<readonly unknown[]>
   setSchedule?(preset: string): void
 }
 
 export interface DeckActions {
-  addCard?(stencil: string, values: any, section: string | null): void
+  addCard?(stencil: string, values: unknown, section: string | null): void
   removeCard?(card: string): void
-  moveCard?(card: string, at: any): void
+  moveCard?(card: string, at: unknown): void
   writeCardField?(card: string, field: string, nth: number, text: string): void
   addSection?(name: string): void
   renameSection?(section: string, name: string): void
@@ -47,9 +47,9 @@ export type DeckTabState = DeckDataState & DeckScheduleState & DeckActions
 
 export interface StencilTabState {
   readonly id?: string
-  readonly note?: ComputedRef<any>
-  readonly stencil?: Readonly<Ref<{ fields: readonly string[]; faces: readonly any[] }>>
-  readonly marks?: Readonly<Ref<any>>
+  readonly note?: ComputedRef<unknown>
+  readonly stencil?: Readonly<Ref<{ fields: readonly string[]; faces: readonly StencilFace[] }>>
+  readonly marks?: Readonly<Ref<unknown>>
   readonly errorMessage?: Readonly<Ref<string>>
   addField?(name: string): void
   renameField?(field: string, name: string): void
@@ -61,7 +61,7 @@ export interface StencilTabState {
   moveFace?(face: string, at: InsertionPoint): void
   writeFront?(face: string, prose: string): void
   writeBack?(face: string, prose: string): void
-  writeFaceHalf?(face: string, half: any, text: string): void
+  writeFaceHalf?(face: string, half: Half, text: string): void
   keepMine?(): void
   takeFile?(): void
   close?(id: string): void
@@ -112,7 +112,7 @@ export interface PresetTabState {
   readonly settings?: Readonly<Ref<Settings>>
   readonly bounds?: Readonly<Ref<SettingsBounds>>
   readonly problems?: Readonly<Ref<readonly string[]>>
-  readonly stopped?: Readonly<Ref<any>>
+  readonly stopped?: Readonly<Ref<unknown>>
   readonly errorMessage?: Readonly<Ref<string>> | string
   readonly hasExternalChange?: Readonly<Ref<boolean>> | boolean
   readonly material?: Readonly<Ref<PresetCounts | null>>
@@ -120,10 +120,10 @@ export interface PresetTabState {
   readonly place?: Readonly<Ref<number>>
   readonly isWaiting?: Readonly<Ref<boolean>>
   reload?(): void
-  chooseGoal?(goal: any): void
+  chooseGoal?(goal: string): void
   moveSlider?(place: number): void
   flushPending?(): void
-  updateSetting?(field: any, value: any): void
+  updateSetting?(field: string, value: unknown): void
   setRetention?(retention: number): void
   setGoal?(goal: string): void
   close?(id: string): void

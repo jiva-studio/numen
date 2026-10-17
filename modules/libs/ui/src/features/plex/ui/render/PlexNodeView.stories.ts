@@ -69,11 +69,13 @@ const createNode = (a: Knobs, over: Partial<PlacedNode> = {}): PlacedNode => ({
  * and letter, and the size of a node against the size of its text is most of
  * what there is to judge here.
  */
+const DEFAULT_FRAME = { width: 480, height: 200 }
+
 const renderScene =
-  (scene: (args: Knobs) => readonly PlacedNode[], window = { width: 480, height: 200 }) =>
+  (scene: (args: Knobs) => readonly PlacedNode[], frame = DEFAULT_FRAME) =>
   (args: Knobs) => ({
     components: { PlexNodeView },
-    setup: () => ({ args, window, glyph: GLYPH, scene: computed(() => scene(args)) }),
+    setup: () => ({ args, window: frame, glyph: GLYPH, scene: computed(() => scene(args)) }),
     template: `
       <div style="height:100vh;display:grid;place-items:center;background:var(--numen-surface)">
         <svg

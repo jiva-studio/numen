@@ -80,7 +80,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     if (!pluginId) return
     for (const tab of held.tabs.value) {
       const windowTab = held.getTab(tab.id)
-      if ((windowTab?.state as { pluginId?: string } | undefined)?.pluginId === pluginId) {
+      if (windowTab?.kind.pluginId === pluginId) {
         tabLinks.removeClosedTab(tab.id)
         held.requestClose(tab.id)
       }

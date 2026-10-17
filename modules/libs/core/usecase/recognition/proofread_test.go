@@ -166,6 +166,7 @@ func TestARunStoppedPartWayIsTakenUpAtThePageItStoppedOn(t *testing.T) {
 	}}
 	put, v, shelved := held.put(t, by), held.vault, held.shelved
 	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
 	by.stop = func(requests int) {
 		if requests == 2 {
 			stop()
