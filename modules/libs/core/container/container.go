@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/onnxruntime"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/trash"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -138,8 +139,11 @@ type Config struct {
 }
 
 // NewPluginHost creates and initializes a plugin host for the specified target and search directories.
+// The host provisions the ONNX Runtime for the plugins that declare it, on the
+// provider NUMEN_ONNX_PROVIDER names (auto when unset).
 func NewPluginHost(target string, dirs ...string) *plugin.Host {
 	host := plugin.NewHost(target, dirs...)
+	host.SetRuntimeProvisioner(onnxruntime.New(onnxruntime.FromEnvironment()))
 	if err := host.Discover(); err != nil {
 		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", err)
 	}

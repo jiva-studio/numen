@@ -54,10 +54,5 @@ func name(path string) string {
 }
 
 func (c Config) source() models.Source {
-	return models.Source{
-		GetPaths: func(file string) []string { return onnxruntime.GetPaths(c.Dir, file) },
-		Fetch: func(ctx context.Context, address, sum string) (string, error) {
-			return onnxruntime.Fetch(ctx, c.settings(), address, sum)
-		},
-	}
+	return c.folder().Source()
 }

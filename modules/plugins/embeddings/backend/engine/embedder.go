@@ -12,6 +12,7 @@ import (
 	"github.com/gomlx/go-huggingface/tokenizers/api"
 	"github.com/gomlx/go-huggingface/tokenizers/hftokenizer"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 	"github.com/jiva-studio/numen/modules/plugins/embeddings/backend/onnxruntime"
 )
 
@@ -58,12 +59,7 @@ func Open(ctx context.Context, identity ModelInfo, cfg LocalModel, progress Fetc
 		return nil, err
 	}
 
-	engine, _, err := onnxruntime.Open(ctx, onnxruntime.Settings{
-		Section:        "indexing.embedding",
-		Runtime:        cfg.Runtime,
-		ShouldDownload: cfg.ShouldDownload,
-		Fetching:       createFetchListener(progress),
-	})
+	engine, _, err := onnxruntime.Open(ctx, onnxruntime.Settings{Runtime: cmp.Or(cfg.Runtime, onnx.GetLibrary())})
 	if err != nil {
 		return nil, err
 	}
@@ -362,11 +358,4 @@ func chooseOutput(named []string) (string, error) {
 		return named[0], nil
 	}
 	return "", fmt.Errorf("answers with %v, expected one of %v", named, outputs)
-}
-
-func createFetchListener(progress FetchProgress) func(string, int64, int64) {
-	if progress == nil {
-		return nil
-	}
-	return func(_ string, done, total int64) { progress(done, total) }
 }

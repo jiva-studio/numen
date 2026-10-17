@@ -4,79 +4,27 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 )
 
-// unpack takes the library out of an archive, once, and says where it now is.
-//
-// The archive carries the sum this release publishes before anything is taken
-// out of it, and one that does not is taken away so the next run fetches it
-// again. The library carries its own before it is left in the cache, and a
-// library already there carrying another sum is written over.
+// unpack takes the library called name out of an archive and writes it at at.
 //
 // The library is looked for by name at any depth: the folder inside the archive
 // is named after the release. The plain name inside is a link to the file
 // carrying the version, and what is taken out is that file.
-func unpack(archive, name string, found release) (string, error) {
-	at := filepath.Join(filepath.Dir(archive), name)
-	if verify(at, found.library) == nil {
-		return at, nil
-	}
-	if err := verify(archive, found.sum); err != nil {
-		// The archive is in the cache, and what is in the cache is handed back
-		// without being fetched again. Left there, one bad download is every
-		// later run's answer too.
-		os.Remove(archive)
-		return "", err
-	}
-	var err error
+func unpack(archive, name, at string) error {
 	if strings.HasSuffix(archive, ".zip") {
-		err = fromZip(archive, name, at)
-	} else {
-		err = fromTgz(archive, name, at)
+		return unpackZip(archive, name, at)
 	}
-	if err != nil {
-		return "", err
-	}
-	if err := verify(at, found.library); err != nil {
-		os.Remove(at)
-		return "", err
-	}
-	return at, nil
+	return unpackTgz(archive, name, at)
 }
 
-// verify says whether one file carries the sum published for it.
-func verify(at, sum string) error {
-	info, err := os.Stat(at)
-	if err != nil {
-		return err
-	}
-	if !info.Mode().IsRegular() {
-		return fmt.Errorf("%s is not a file", at)
-	}
-	file, err := os.Open(at)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	hash := sha256.New()
-	_, _ = io.Copy(hash, file)
-	if found := hex.EncodeToString(hash.Sum(nil)); found != sum {
-		return fmt.Errorf("%s carries %s, and %s is published", at, found, sum)
-	}
-	return nil
-}
-
-func fromTgz(archive, name, at string) error {
+func unpackTgz(archive, name, at string) error {
 	file, err := os.Open(archive)
 	if err != nil {
 		return err
@@ -104,7 +52,7 @@ func fromTgz(archive, name, at string) error {
 	}
 }
 
-func fromZip(archive, name, at string) error {
+func unpackZip(archive, name, at string) error {
 	held, err := zip.OpenReader(archive)
 	if err != nil {
 		return err

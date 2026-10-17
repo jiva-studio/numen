@@ -1,8 +1,12 @@
 package engine
 
 import (
+	"cmp"
+
 	"fmt"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 	"github.com/jiva-studio/numen/modules/plugins/transcription/backend/onnxruntime"
 )
 
@@ -39,14 +43,18 @@ type Config struct {
 	Progress func(what string, done, total int64) `json:"-"`
 }
 
-// settings are what the runtime and the models are found by.
+// settings are what the runtime is found by.
 func (c Config) settings() onnxruntime.Settings {
-	return onnxruntime.Settings{
+	return onnxruntime.Settings{Runtime: cmp.Or(c.Runtime, onnx.GetLibrary())}
+}
+
+// folder is where the models are kept and whether they may be fetched.
+func (c Config) folder() models.Folder {
+	return models.Folder{
 		Section:        "indexing.transcription",
-		Runtime:        c.Runtime,
 		Dir:            c.Dir,
 		ShouldDownload: c.ShouldDownload,
-		Fetching:       c.Progress,
+		Progress:       c.Progress,
 	}
 }
 

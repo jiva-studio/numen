@@ -248,8 +248,8 @@ Two providers are asked whether they are one model: both embed the same short te
 | `dir` | a folder holding the model and `tokenizer.json`, used as given. This is what an installation with no network names. |
 | `file` | which build inside the repository's `onnx/` folder. Empty is `model.onnx`. Naming another is how a quantised build is run in place of the full one. |
 | `batch_size` | how many texts one forward pass carries (`batch_texts` is supported as an alias). |
-| `engine` | what runs the model: `onnxruntime`, the library fetched at run time, or `go`, the backend in the binary. Empty takes the runtime where this platform has one published and the Go backend where it has none. The vectors are the same either way, so the index does not record which ran. |
-| `runtime` | the ONNX Runtime shared library, when the engine is `onnxruntime`. Empty takes the one the process already opened for a recognition or a transcription. |
+| `engine` | what runs the model: `onnxruntime`, the library the host provisions, or `go`, the backend in the binary. Empty takes the runtime where this platform has one published and the Go backend where it has none. The vectors are the same either way, so the index does not record which ran. |
+| `runtime` | the ONNX Runtime shared library, when the engine is `onnxruntime`. Empty takes the library the host provisioned for the plugin. |
 | `threads` | how many threads the loaded model runs its passes on. Left out, it is the performance profile's core budget. |
 | `sessions` | how many forward passes run at once on the one loaded model. Left out, it is the performance profile's workers. A model running on an accelerator runs one pass unless this is set. |
 | `download` | fetch the model when this machine does not hold it. |
@@ -425,7 +425,7 @@ The boundary the detector answers with is the text's own outline drawn inside th
 | --- | --- |
 | `transcribe_recordings` | whether a recording the vault holds no transcript for is transcribed on its own. On. A vault of a hundred hours is a day of a machine, and turning this off leaves it to the hand — the command line's `transcribe`, and the tool an agent asks through. |
 | `transcribe_max_mb` | how large a recording may be and still be transcribed unasked, in megabytes. 300, which is a talk of a few hours. A larger one waits to be asked for by name, because a folder of albums is days of a machine. A negative number is no limit. |
-| `runtime` | the ONNX Runtime shared library. Empty takes the one beside the application, then the one the platform holds, and then the published one, fetched and checked against the sum this build carries. One process opens one, and both a recognition and a transcription run their models through it. |
+| `runtime` | the ONNX Runtime shared library. Empty takes the library the host provisioned for the plugin, downloaded at the release pinned by sha256 into the models folder. One process opens one, and both a recognition and a transcription run their models through it. |
 | `dir` | a folder holding the models. Empty takes the folder beside the application, and then the download cache. |
 | `download` | whether what is not on this machine may be fetched. A model is fetched from the address named here and checked against no sum: the runtime's address is this build's and carries one, and a model's is the person's own setting, which nobody but them could publish a sum for. A model named here is a model trusted. |
 | `threads` | how many threads one model may use. 4. |

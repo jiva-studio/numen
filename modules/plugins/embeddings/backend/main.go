@@ -73,9 +73,6 @@ func newEmbeddingServer() *embeddingServer {
 	if runtimeLib := os.Getenv("NUMEN_ONNX_RUNTIME"); runtimeLib != "" {
 		local.Runtime = runtimeLib
 	}
-	if provider := os.Getenv("NUMEN_ONNX_PROVIDER"); provider != "" {
-		local.Provider = provider
-	}
 	if threads := os.Getenv("NUMEN_ONNX_THREADS"); threads != "" {
 		if th, err := strconv.Atoi(threads); err == nil && th > 0 {
 			local.Threads = th

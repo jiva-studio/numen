@@ -1,30 +1,20 @@
-// Package onnxruntime is the ONNX Runtime this process runs on: where it is
-// found, where it is fetched from, and the engine every model here reads
-// through.
+// Package onnxruntime is the ONNX Runtime this process runs on: the library the
+// host gave it, and the engine every model here reads through.
 package onnxruntime
 
 import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 	"sync"
 	"sync/atomic"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
 )
 
-// Settings are what the runtime and a model are found by. Section is the
-// settings block they were read from, and is what a person is told to change.
+// Settings are what the runtime is found by.
 type Settings struct {
-	Section        string
-	Runtime        string
-	Dir            string
-	ShouldDownload bool
-
-	// Fetching is told how far a download has got, when anything is listening.
-	Fetching func(what string, done, total int64)
+	Runtime string
 }
 
 // Open is the ONNX Runtime this machine runs, opened. One engine serves every
@@ -32,12 +22,8 @@ type Settings struct {
 // same breath, so which engine a tensor is built through is settled once and
 // stands for the life of the process.
 //
-// A path in the settings is used as given. Otherwise what the machine already
-// holds is tried, and only a machine holding none fetches one.
-//
 // One caller opens the runtime and the rest wait on what it is doing, each
-// against its own context. Opening it can be a download of many minutes, and a
-// caller that gave up on its own is not held to somebody else's.
+// against its own context.
 func Open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
 	for {
 		runtimeState.mu.Lock()
@@ -74,41 +60,17 @@ func Open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
 	}
 }
 
-// open finds or fetches this machine's runtime. Nothing here is held under the
-// lock: it is a download, a copy and two passes of a hash.
-func open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
+// open loads the library the settings name. Nothing here is held under the lock.
+func open(_ context.Context, s Settings) (*ort.Engine, string, error) {
 	if s.Runtime != "" {
+		preloadCppRuntime()
 		engine, err := ort.NewEngine(s.Runtime)
 		if err != nil {
 			return nil, "", fmt.Errorf("the onnx runtime %s: %w", s.Runtime, err)
 		}
 		return engine, s.Runtime, nil
 	}
-
-	preloadCppRuntime()
-	engine, at, refused := loadFirstLibrary(getLibraryCandidates(s))
-	if engine != nil {
-		return engine, at, nil
-	}
-
-	found, err := findRelease(s)
-	if err != nil {
-		return nil, "", err
-	}
-	archive, err := Fetch(ctx, s, found.address(), found.sum)
-	if err != nil {
-		return nil, "", fmt.Errorf("the onnx runtime: %w", err)
-	}
-	at, err = unpack(archive, runtimeName(), found)
-	if err != nil {
-		return nil, "", err
-	}
-	if engine, err = ort.NewEngine(at); err != nil {
-		refused = append(refused, fmt.Sprintf("%s: %v", at, err))
-		return nil, "", fmt.Errorf("no onnx runtime this machine opens — name one in %s.runtime:\n  %s",
-			s.Section, strings.Join(refused, "\n  "))
-	}
-	return engine, at, nil
+	return nil, "", fmt.Errorf("no onnx runtime: the host names the library of a plugin that declares one")
 }
 
 // runtimeState is the runtime this process runs, and where it came from.
@@ -157,10 +119,9 @@ func recordRuntime(engine *ort.Engine, at string) {
 	isLoaded.Store(true)
 }
 
-// IsAvailable says whether this process has its runtime, or this machine holds a file
-// to make one from. It opens nothing, so it is answered while another caller is
-// opening one. A name the loader would search for on its own is not a file
-// anything here can find.
+// IsAvailable says whether this process has its runtime, or the file the settings
+// name is there to make one from. It opens nothing, so it is answered while
+// another caller is opening one.
 func IsAvailable(s Settings) bool {
 	if isLoaded.Load() {
 		return true
@@ -168,11 +129,6 @@ func IsAvailable(s Settings) bool {
 	if s.Runtime != "" {
 		_, err := os.Stat(s.Runtime)
 		return err == nil
-	}
-	for _, at := range getLibraryCandidates(s) {
-		if filepath.IsAbs(at) {
-			return true
-		}
 	}
 	return false
 }

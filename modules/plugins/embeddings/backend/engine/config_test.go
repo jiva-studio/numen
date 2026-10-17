@@ -192,3 +192,17 @@ func TestWithRepositoryDropsThePins(t *testing.T) {
 		t.Errorf("WithRepository changed the receiver: %+v", local)
 	}
 }
+
+func TestLocalModelGetProviderFollowsTheHostUnlessTheModelNamesOne(t *testing.T) {
+	t.Setenv("NUMEN_ONNX_PROVIDER", "cpu")
+	if p := (LocalModel{}).GetProvider(); p != onnxruntime.ProviderCPU {
+		t.Errorf("expected the host's ProviderCPU, got %v", p)
+	}
+	t.Setenv("NUMEN_ONNX_PROVIDER", "cuda")
+	if p := (LocalModel{Provider: "cpu"}).GetProvider(); p != onnxruntime.ProviderCPU {
+		t.Errorf("expected the model's ProviderCPU, got %v", p)
+	}
+	if p := (LocalModel{}).GetProvider(); p != onnxruntime.ProviderCUDA {
+		t.Errorf("expected the host's ProviderCUDA, got %v", p)
+	}
+}

@@ -1,6 +1,10 @@
 package engine
 
 import (
+	"cmp"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 	"github.com/jiva-studio/numen/modules/plugins/ocr/backend/onnxruntime"
 )
 
@@ -18,12 +22,16 @@ type Config struct {
 }
 
 func (c Config) settings() onnxruntime.Settings {
-	return onnxruntime.Settings{
+	return onnxruntime.Settings{Runtime: cmp.Or(c.Runtime, onnx.GetLibrary())}
+}
+
+// folder is where the models are kept and whether they may be fetched.
+func (c Config) folder() models.Folder {
+	return models.Folder{
 		Section:        "indexing.recognition",
-		Runtime:        c.Runtime,
 		Dir:            c.Dir,
 		ShouldDownload: c.ShouldDownload,
-		Fetching:       c.Progress,
+		Progress:       c.Progress,
 	}
 }
 
