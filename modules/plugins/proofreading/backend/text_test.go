@@ -47,7 +47,7 @@ func TestAScanIsAskedPageByPageAndCorrectionsComeBackInLineOrder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []Line{{Number: 10, Text: "the cat sat"}, {Number: 12, Text: "the dog ran"}}
+	want := []Line{{Number: 10, Last: 10, Text: "the cat sat"}, {Number: 12, Last: 12, Text: "the dog ran"}}
 	if !reflect.DeepEqual(got.corrections, want) {
 		t.Errorf("corrections %v, want %v", got.corrections, want)
 	}
@@ -215,7 +215,7 @@ func TestSpeechCorrectionsComeBackInLineOrderAndAJoinedRunKeepsItsLast(t *testin
 	}
 	want := []Line{
 		{Number: 0, Last: 1, Text: "We should go. And then the next day he left."},
-		{Number: 2, Text: "The end"},
+		{Number: 2, Last: 2, Text: "The end"},
 	}
 	if !reflect.DeepEqual(got.corrections, want) {
 		t.Errorf("corrections %+v, want %+v", got.corrections, want)
