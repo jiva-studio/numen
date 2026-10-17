@@ -227,11 +227,7 @@ func (h *Host) Discover() error {
 		if !exists {
 			sup = NewSupervisor()
 			id := p.Manifest.ID
-			sup.SetOnExit(func() {
-				h.mu.Lock()
-				delete(h.endpoints, id)
-				h.mu.Unlock()
-			})
+			sup.SetOnExit(func() { h.dropEndpointOfStoppedPlugin(id, sup) })
 			h.supervisors[p.Manifest.ID] = sup
 		}
 		sup.SetPermissions(p.Manifest.Permissions)
@@ -356,11 +352,7 @@ func (h *Host) prepareSupervisorLocked(pluginID string) (DiscoveredPlugin, *Supe
 		sup = NewSupervisor()
 		sup.SetPermissions(p.Manifest.Permissions)
 		id := pluginID
-		sup.SetOnExit(func() {
-			h.mu.Lock()
-			delete(h.endpoints, id)
-			h.mu.Unlock()
-		})
+		sup.SetOnExit(func() { h.dropEndpointOfStoppedPlugin(id, sup) })
 		h.supervisors[pluginID] = sup
 	}
 	memLimit := h.processLimits.MemoryLimitBytes
@@ -394,6 +386,15 @@ func (h *Host) awaitActivation(ctx context.Context, pluginID string, sup *Superv
 		return Endpoint{Host: "", Port: 0, Token: ""}, false, err
 	}
 	return Endpoint{Host: "", Port: 0, Token: ""}, false, nil
+}
+
+// dropEndpointOfStoppedPlugin forgets the endpoint of an exited process unless a replacement is already running.
+func (h *Host) dropEndpointOfStoppedPlugin(pluginID string, sup *Supervisor) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if state := sup.GetState(); state == StateDormant || state == StateActivating {
+		delete(h.endpoints, pluginID)
+	}
 }
 
 // acquireRunningLocked holds the plugin for a consumer when it is running with a usable endpoint.
@@ -449,6 +450,14 @@ func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, err
 			h.mu.Unlock()
 			if err := sup.WaitWhileDeactivating(ctx); err != nil {
 				return emptyEndpoint(), err
+			}
+			continue
+		}
+
+		if state == StateActive || state == StateIdle {
+			h.mu.Unlock()
+			if err := sup.Teardown(ctx, 0, nil); err != nil && !errors.Is(err, errProcessNotRunning) {
+				return emptyEndpoint(), fmt.Errorf("retire unreachable plugin %s: %w", pluginID, err)
 			}
 			continue
 		}
@@ -564,9 +573,7 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("attach plugin %s: %w", p.Manifest.ID, err)
 	}
 	sup.SetOnExit(func() {
-		h.mu.Lock()
-		delete(h.endpoints, p.Manifest.ID)
-		h.mu.Unlock()
+		h.dropEndpointOfStoppedPlugin(p.Manifest.ID, sup)
 
 		h.closeStdin(p.Manifest.ID, proc.Pid)
 	})
