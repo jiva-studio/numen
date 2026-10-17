@@ -608,6 +608,19 @@ func (h *Host) closeStdin(pluginID string, pid int) {
 	}
 }
 
+// waitForReady reads the handshake of a started process within the activation deadline.
+func (h *Host) waitForReady(ctx context.Context, stdout io.Reader) (int, error) {
+	h.mu.RLock()
+	timeout := h.activation.Timeout
+	h.mu.RUnlock()
+	if timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+	return WaitForHandshake(ctx, stdout)
+}
+
 //nolint:contextcheck // background supervisor outlives request
 func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *Supervisor) (Endpoint, error) {
 	token, err := GenerateAuthToken()
@@ -633,16 +646,7 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("launch plugin %s: %w", p.Manifest.ID, err)
 	}
 
-	h.mu.RLock()
-	timeout := h.activation.Timeout
-	h.mu.RUnlock()
-	handshakeCtx := ctx
-	if timeout > 0 {
-		var cancel context.CancelFunc
-		handshakeCtx, cancel = context.WithTimeout(ctx, timeout)
-		defer cancel()
-	}
-	actualPort, err := WaitForHandshake(handshakeCtx, stdout)
+	actualPort, err := h.waitForReady(ctx, stdout)
 	if err != nil {
 		h.cleanupAbortedProcess(proc, stdout, p.Manifest.ID)
 		h.mu.Lock()

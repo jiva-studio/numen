@@ -53,7 +53,7 @@ func TestAProcessThatNeverPrintsReadyIsKilledAtTheActivationDeadline(t *testing.
 		return cmd.Process, silent, nil
 	})
 
-	_, err := host.EnsureActive(context.Background(), "md.numen.ocr")
+	_, err := host.EnsureActive(t.Context(), "md.numen.ocr")
 	if !errors.Is(err, errHandshakeTimeout) {
 		t.Fatalf("expected a handshake timeout, got %v", err)
 	}
@@ -151,7 +151,7 @@ func TestACanceledCallerDoesNotCountAsAFailedActivation(t *testing.T) {
 	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return nil, nil, errors.New("canceled")
 	})
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	if _, err := host.EnsureActive(ctx, "md.numen.ocr"); err == nil {
 		t.Fatal("expected the activation to fail")
