@@ -6,25 +6,16 @@ name: Stories
 # the manual — and nothing at all ran over the page's half, so a renamed story
 # surfaced there as a missing screenshot at a release.
 #
-# So the two lists are held against the tree here, started by a change to
-# either side. Both checks read files and nothing else, so nothing is installed
+# So the two lists are held against the tree here, on every pull request and on a push
+# to main that changes either side. Both checks read files and nothing else, so nothing is installed
 # and the run costs seconds.
 #
 # A shot names the theme it is taken in, and the manual holds that name against
-# the presets folder, so the core's themes start a run.
+# the presets folder.
 on:
   pull_request:
-    paths:
-      - "modules/libs/ui/src/**"
-      - "!modules/libs/ui/src/**/*.md"
-      - "modules/apps/desktop/editor/src/**"
-      - "!modules/apps/desktop/editor/src/**/*.md"
-      - "modules/apps/desktop/flashcards/src/**"
-      - "!modules/apps/desktop/flashcards/src/**/*.md"
-      - "modules/apps/docs/tools/**"
-      - "modules/apps/landing/tools/**"
-      - "modules/libs/core/internal/adapter/theme/presets/**"
-      - ".github/workflows/stories.yml"
+  merge_group:
+    types: [checks_requested]
   push:
     branches: [main]
     paths:

@@ -2,20 +2,8 @@ name: Desktop Frontend
 
 on:
   pull_request:
-    paths:
-      - "modules/apps/desktop/editor/**"
-      - "!modules/apps/desktop/editor/**/*.md"
-      - "modules/apps/desktop/flashcards/**"
-      - "!modules/apps/desktop/flashcards/**/*.md"
-      - "modules/libs/ui/**"
-      - "!modules/libs/ui/**/*.md"
-      - "modules/libs/wire/**"
-      - "!modules/libs/wire/**/*.md"
-      - "modules/libs/protocol/**"
-      - "!modules/libs/protocol/**/*.md"
-      - "modules/tools/stories/**"
-      - "!docs/**"
-      - ".github/workflows/desktop-frontend.yml"
+  merge_group:
+    types: [checks_requested]
   push:
     branches: [main]
     paths:
