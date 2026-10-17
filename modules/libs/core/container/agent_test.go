@@ -371,8 +371,15 @@ func TestAPluginThatCannotListItsProgramsIsToldToTheErrorHandler(t *testing.T) {
 		map[string][]string{providerOne: {"ai.agent.provider"}, providerTwo: {"ai.agent.provider"}},
 		map[string]*providerServer{providerTwo: served})
 
+	settingsFile := filepath.Join(t.TempDir(), "numen.json")
+	if err := os.WriteFile(settingsFile, []byte(`{}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
 	var told []error
-	cfg := container.Config{PluginHost: host, ErrorHandler: func(err error) { told = append(told, err) }}
+	cfg := container.Config{
+		PluginHost: host, SettingsPath: settingsFile,
+		ErrorHandler: func(err error) { told = append(told, err) },
+	}
 	models := cfg.Models()()
 
 	if len(told) != 1 || !strings.Contains(told[0].Error(), providerOne) {
