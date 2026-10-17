@@ -61,11 +61,44 @@ func (stubDocumentServer) GetDocument(
 	return connect.NewResponse(&v1.GetDocumentResponse{}), nil
 }
 
+type stubEmbeddingServer struct {
+	numenv1connect.UnimplementedEmbeddingServiceHandler
+}
+
+func (stubEmbeddingServer) GetEmbeddingModel(
+	context.Context, *connect.Request[v1.GetEmbeddingModelRequest],
+) (*connect.Response[v1.GetEmbeddingModelResponse], error) {
+	return connect.NewResponse(&v1.GetEmbeddingModelResponse{}), nil
+}
+
+type stubRecognitionServer struct {
+	numenv1connect.UnimplementedRecognitionServiceHandler
+}
+
+func (stubRecognitionServer) GetRecognitionModel(
+	context.Context, *connect.Request[v1.GetRecognitionModelRequest],
+) (*connect.Response[v1.GetRecognitionModelResponse], error) {
+	return connect.NewResponse(&v1.GetRecognitionModelResponse{}), nil
+}
+
+type stubTranscriptionServer struct {
+	numenv1connect.UnimplementedTranscriptionServiceHandler
+}
+
+func (stubTranscriptionServer) GetTranscriptionModel(
+	context.Context, *connect.Request[v1.GetTranscriptionModelRequest],
+) (*connect.Response[v1.GetTranscriptionModelResponse], error) {
+	return connect.NewResponse(&v1.GetTranscriptionModelResponse{}), nil
+}
+
 func newLeaseHost(t *testing.T) *leaseHost {
 	t.Helper()
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewAgentServiceHandler(&mockAgentServer{}))
 	mux.Handle(numenv1connect.NewDocumentServiceHandler(stubDocumentServer{}))
+	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(stubEmbeddingServer{}))
+	mux.Handle(numenv1connect.NewRecognitionServiceHandler(stubRecognitionServer{}))
+	mux.Handle(numenv1connect.NewTranscriptionServiceHandler(stubTranscriptionServer{}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return &leaseHost{endpoint: port.Endpoint{Host: "127.0.0.1", Port: server.Listener.Addr().(*net.TCPAddr).Port}}
