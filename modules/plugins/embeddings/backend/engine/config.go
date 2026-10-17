@@ -34,6 +34,11 @@ type LocalModel struct {
 	PassMemory     int64  `json:"pass_memory"`
 	Provider       string `json:"provider"`
 	ShouldDownload bool   `json:"download"`
+
+	// Revision is the commit of the repository the files are fetched at. Empty means the default branch.
+	Revision string `json:"revision"`
+	// Sums maps a path inside the repository to the sha256 its file must hold.
+	Sums map[string]string `json:"sums"`
 }
 
 // ModelInfo describes the embedding model properties exposed to clients.
@@ -135,6 +140,24 @@ func DefaultBGEM3Config() (ModelInfo, LocalModel) {
 		File:           "model_int8.onnx",
 		BatchTexts:     32,
 		ShouldDownload: true,
+		Revision:       bgeM3Revision,
+		Sums: map[string]string{
+			ModelFolder + "/model_int8.onnx": "a206e10e995aa2a833924bcd725ba5dd6c3425cd34bac3cf2b5677cd2a1c51d6",
+			TokenizerFile:                    "6710678b12670bc442b99edc952c4d996ae309a7020c1fa0096dd245c2faf790",
+		},
 	}
 	return info, local
+}
+
+// bgeM3Revision is the commit of Xenova/bge-m3 the pinned sums belong to.
+const bgeM3Revision = "4de13258303883538bd53b696b452bf8099f0858"
+
+// WithRepository returns the model fetched from another repository. The
+// revision and sums belong to the repository they were pinned for, so they are
+// dropped.
+func (m LocalModel) WithRepository(name string) LocalModel {
+	m.Name = name
+	m.Revision = ""
+	m.Sums = nil
+	return m
 }

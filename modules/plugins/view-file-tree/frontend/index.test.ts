@@ -14,11 +14,11 @@ describe('view-file-tree plugin', () => {
     expect(tabKinds[0]?.title).toBe('File Tree Explorer')
   })
 
-  it('subscribes to vault change and file select events', () => {
+  it('holds one subscription: the tab kind', () => {
     const ctx = createMockPluginContext({ pluginId: 'view-file-tree' })
     activate(ctx)
 
-    expect(ctx.subscriptions.length).toBeGreaterThanOrEqual(3)
+    expect(ctx.subscriptions).toHaveLength(1)
 
     ctx.dispose()
     expect(ctx.subscriptions).toHaveLength(0)

@@ -169,3 +169,26 @@ func TestLocalModelGetAddress(t *testing.T) {
 		t.Errorf("expected local:custom/path/weights.onnx, got %s", addr)
 	}
 }
+
+func TestDefaultBGEM3ConfigIsPinned(t *testing.T) {
+	_, local := DefaultBGEM3Config()
+	if len(local.Revision) != 40 {
+		t.Errorf("revision %q is not a commit", local.Revision)
+	}
+	for _, name := range []string{ModelFolder + "/" + local.File, TokenizerFile} {
+		if len(local.Sums[name]) != 64 {
+			t.Errorf("%s has no sha256 pinned: %q", name, local.Sums[name])
+		}
+	}
+}
+
+func TestWithRepositoryDropsThePins(t *testing.T) {
+	_, local := DefaultBGEM3Config()
+	other := local.WithRepository("owner/repo")
+	if other.Name != "owner/repo" || other.Revision != "" || other.Sums != nil {
+		t.Errorf("WithRepository() = %+v", other)
+	}
+	if local.Name != "Xenova/bge-m3" || local.Revision == "" || local.Sums == nil {
+		t.Errorf("WithRepository changed the receiver: %+v", local)
+	}
+}

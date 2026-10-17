@@ -250,3 +250,7 @@ packaged plugin: modules/plugins/sample/dist/md.numen.sample-0.1.0.zip
    ```bash
    numen plugin package .
    ```
+
+## Models
+
+A plugin that runs a model keeps it in the models folder every plugin shares: `NUMEN_MODELS_DIR`, or `numen/models` under the application data directory. A plugin that downloads a model declares `network:outbound`, fetches it at a pinned revision, and checks the sha256 of the bytes against the sum pinned in its code before the file is put in place. `NUMEN_OFFLINE=1` forbids every download and `NUMEN_MODELS_QUOTA` caps the bytes the folder holds (32 GiB by default). The helpers are the `models` package of `plugin-sdk-go`.

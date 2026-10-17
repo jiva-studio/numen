@@ -101,6 +101,10 @@ type Config struct {
 	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.
 	PluginHost port.PluginManager
 
+	// Texts takes the text out of documents and books where an installation binds
+	// its own. Left nil, the document and book plugins of PluginHost give it.
+	Texts port.TextExtractor
+
 	// AgentProofreader opens a profile that reaches the command line a person
 	// already has. The platform supplies it, since core starts no process; an
 	// installation that supplies none names no such profile.

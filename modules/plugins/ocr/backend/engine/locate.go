@@ -9,6 +9,7 @@ import (
 
 	ort "github.com/getcharzp/onnxruntime_purego"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 	"github.com/jiva-studio/numen/modules/plugins/ocr/backend/onnxruntime"
 )
 
@@ -60,15 +61,14 @@ func model(ctx context.Context, cfg Config, path, name, kind string) (string, er
 	if name == "" {
 		return "", fmt.Errorf("no %s model: name one, or say where it is", kind)
 	}
-	for _, at := range onnxruntime.GetPaths(cfg.Dir, filepath.Base(name)) {
-		if _, err := os.Stat(at); err == nil {
-			return at, nil
-		}
+	if at, ok := findLocal(cfg, name); ok {
+		return at, nil
 	}
-	if !onnxruntime.IsAddress(name) {
+	sum := getPinnedSum(name)
+	if !models.IsAddress(name) {
 		return "", fmt.Errorf("the %s model %q is not beside the application, and is not somewhere to fetch it from", kind, name)
 	}
-	found, err := onnxruntime.Fetch(ctx, cfg.settings(), name)
+	found, err := onnxruntime.Fetch(ctx, cfg.settings(), name, sum)
 	if err != nil {
 		return "", fmt.Errorf("the %s model: %w", kind, err)
 	}
@@ -77,4 +77,20 @@ func model(ctx context.Context, cfg Config, path, name, kind string) (string, er
 
 func name(path string) string {
 	return strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+}
+
+// findLocal returns the file of a model that is beside the application or in
+// the folder the settings name. A model with a pinned sum is found only when
+// the file holds that sum.
+func findLocal(cfg Config, name string) (string, bool) {
+	sum := getPinnedSum(name)
+	for _, at := range onnxruntime.GetPaths(cfg.Dir, filepath.Base(name)) {
+		if _, err := os.Stat(at); err != nil {
+			continue
+		}
+		if sum == "" || models.VerifyFile(at, sum) == nil {
+			return at, true
+		}
+	}
+	return "", false
 }

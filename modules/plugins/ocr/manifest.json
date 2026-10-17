@@ -7,7 +7,7 @@
   "capabilities": ["recognition"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onFile:*.pdf", "onCommand:ocr.recognize"],
-  "permissions": ["vault:read"],
+  "permissions": ["vault:read", "network:outbound"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false,

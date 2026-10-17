@@ -1,7 +1,6 @@
 package source
 
 import (
-	"archive/zip"
 	"bytes"
 	"cmp"
 	"context"
@@ -565,56 +564,6 @@ func (v vaults) Open(vault domain.Vault) (port.VaultReader, error) {
 	return reader, nil
 }
 
-// bookOf is the bytes of an EPUB whose spine is the parts given, each under a
-// heading of its own, so that the book names its places.
-func bookOf(t testing.TB, title string, parts ...string) []byte {
-	t.Helper()
-
-	var buf bytes.Buffer
-	archive := zip.NewWriter(&buf)
-	add := func(name, body string) {
-		file, err := archive.Create(name)
-		if err != nil {
-			t.Fatalf("write the fixture: %v", err)
-		}
-		if _, err := file.Write([]byte(body)); err != nil {
-			t.Fatalf("write the fixture: %v", err)
-		}
-	}
-
-	add("mimetype", "application/epub+zip")
-	add("META-INF/container.xml", `<?xml version="1.0"?>
-<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
-  <rootfiles>
-    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
-  </rootfiles>
-</container>`)
-
-	var manifest, spine strings.Builder
-	for i, part := range parts {
-		name := fmt.Sprintf("part%d.xhtml", i+1)
-		fmt.Fprintf(&manifest, `<item id="p%d" href="%s" media-type="application/xhtml+xml"/>`, i+1, name)
-		fmt.Fprintf(&spine, `<itemref idref="p%d"/>`, i+1)
-		add("OEBPS/"+name, fmt.Sprintf(
-			`<?xml version="1.0"?><html xmlns="http://www.w3.org/1999/xhtml"><head><title>%[1]s</title></head>`+
-				`<body><h1>Part %[2]d</h1><p>%[3]s</p></body></html>`, title, i+1, part))
-	}
-	add("OEBPS/content.opf", fmt.Sprintf(`<?xml version="1.0"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title>%[1]s</dc:title>
-    <dc:identifier id="id">%[1]s</dc:identifier>
-  </metadata>
-  <manifest>%[2]s</manifest>
-  <spine>%[3]s</spine>
-</package>`, title, manifest.String(), spine.String()))
-
-	if err := archive.Close(); err != nil {
-		t.Fatalf("write the fixture: %v", err)
-	}
-	return buf.Bytes()
-}
-
 // words is n words of one vocabulary. A vault's books are written in its own, so
 // a chunk says which vault it came from.
 func words(vocabulary []string, n int) string {
@@ -692,4 +641,44 @@ func (w writers) Lock(context.Context, domain.Vault) (func(), error) {
 
 func (l *library) OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error) {
 	return l.Open(ctx, path)
+}
+
+// bookOf is the bytes of a book whose spine is the parts given, each under a
+// heading of its own, so that the book names its places.
+func bookOf(t testing.TB, title string, parts ...string) []byte {
+	t.Helper()
+	return []byte(bookMark + title + bookSeparator + strings.Join(parts, bookSeparator))
+}
+
+// The bytes a book is written as in these tests: the mark, the title, and the
+// parts, each after a separator.
+const (
+	bookMark      = "%BOOK\n"
+	bookSeparator = "\x1f"
+)
+
+// ReadBook reads the bytes bookOf gives: each part is a heading and its words,
+// and the book names each heading.
+func (documents) ReadBook(_ context.Context, raw []byte) (domain.BookText, error) {
+	if !bytes.HasPrefix(raw, []byte(bookMark)) {
+		return domain.BookText{}, port.ErrNotADocument
+	}
+	fields := strings.Split(strings.TrimPrefix(string(raw), bookMark), bookSeparator)
+	var out domain.BookText
+	var text strings.Builder
+	for i, part := range fields[1:] {
+		title := fmt.Sprintf("Part %d", i+1)
+		out.Parts = append(out.Parts, domain.PartStart{Title: title, Offset: text.Len()})
+		text.WriteString(title + "\n" + part + "\n")
+	}
+	out.Text = text.String()
+	return out, nil
+}
+
+// newExtract is the cut of a library whose books and documents are read by the
+// stand-in.
+func newExtract(readers port.VaultReaders, sources port.SourceRepository, queries port.SourceQueries) Extract {
+	extract := NewExtract(readers, sources, queries)
+	extract.Documents = documents{}
+	return extract
 }

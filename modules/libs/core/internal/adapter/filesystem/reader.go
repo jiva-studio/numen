@@ -343,7 +343,11 @@ func (s *VaultReader) GetFingerprint(ctx context.Context, path string) (domain.F
 	if !held {
 		return domain.Fingerprint{}, s.getNotANoteError(path)
 	}
-	info, err := os.Stat(filepath.Join(s.root, filepath.FromSlash(path)))
+	target, err := getContainedPath(s.root, path, s.opts.serviceDir())
+	if err != nil {
+		return domain.Fingerprint{}, err
+	}
+	info, err := os.Stat(target)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}

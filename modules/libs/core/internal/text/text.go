@@ -22,7 +22,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/plugins/reader-epub/backend/epub"
 )
 
 // ErrUnreadable is a file that is there and says nothing this can use. It is
@@ -166,7 +165,10 @@ func Read(ctx context.Context, docs port.TextExtractor, ref domain.Fingerprint, 
 	case ReaderNote:
 		return &Document{Text: string(raw)}, nil
 	case ReaderEPUB:
-		return fromEPUB(raw)
+		if docs == nil {
+			return nil, ErrUnreadable
+		}
+		return fromEPUB(ctx, docs, raw)
 	case ReaderPDF:
 		if docs == nil {
 			return nil, ErrUnreadable
@@ -180,14 +182,17 @@ func Read(ctx context.Context, docs port.TextExtractor, ref domain.Fingerprint, 
 	return nil, ErrUnreadable
 }
 
-func fromEPUB(raw []byte) (*Document, error) {
-	book, err := epub.Read(raw)
+func fromEPUB(ctx context.Context, docs port.TextExtractor, raw []byte) (*Document, error) {
+	book, err := docs.ReadBook(ctx, raw)
 	if err != nil {
+		if ctx.Err() != nil {
+			return nil, err
+		}
 		return nil, ErrUnreadable
 	}
 	doc := &Document{Text: book.Text}
 	for _, p := range book.Parts {
-		doc.Parts = append(doc.Parts, domain.PartStart{Title: p.Title, Offset: p.Offset})
+		doc.Parts = append(doc.Parts, p)
 		doc.named = append(doc.named, namedPlace{Offset: p.Offset, Name: p.Title})
 	}
 	// A book made for a screen has no pages of its own, and those it names are

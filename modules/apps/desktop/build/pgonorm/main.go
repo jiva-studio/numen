@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	goroot   = regexp.MustCompile(`^.*/(?:go|goroot|golang.org/toolchain@[^/]+)/src/(.*)$`)
+	goroot   = regexp.MustCompile(`^.*/(?:go|goroot|golang\.org/toolchain@[^/]+)/src/(.*)$`)
 	modCache = regexp.MustCompile(`^.*/pkg/mod/(.*)$`)
 	buildDir = regexp.MustCompile(`^.*/go-build[0-9]*/(?:b[0-9]+/)?`)
 	storeLib = regexp.MustCompile(`^/nix/store/[a-z0-9]+-[^/]*/(.*)$`)
