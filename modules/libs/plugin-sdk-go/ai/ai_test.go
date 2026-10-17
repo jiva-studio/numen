@@ -81,13 +81,13 @@ func TestClientCompleteOmitsAuthorizationWithoutToken(t *testing.T) {
 	}
 }
 
-func TestClientCompleteReturnsErrRefusedWhenHostDeclines(t *testing.T) {
-	srv := startHost(t, &fakeHost{answer: &numenv1.CompletionAnswer{Error: "no route"}})
+func TestClientCompleteReturnsErrNoAnswerWhenHostSendsNone(t *testing.T) {
+	srv := startHost(t, &fakeHost{})
 
 	_, err := NewClient(srv.Client(), srv.URL, "t").Complete(context.Background(), newQuestion())
 
-	if !errors.Is(err, ErrRefused) {
-		t.Fatalf("got %v, want ErrRefused", err)
+	if !errors.Is(err, ErrNoAnswer) {
+		t.Fatalf("got %v, want ErrNoAnswer", err)
 	}
 }
 

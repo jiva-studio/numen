@@ -404,13 +404,11 @@ func (x *CompletionHints) GetTemperature() float64 {
 	return 0
 }
 
-// CompletionAnswer is what a model said.
+// CompletionAnswer is what a model said. A purpose the host cannot serve fails
+// the call with a status code.
 type CompletionAnswer struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Text  string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
-	// Set when the call was served and refused (e.g. no route for the purpose).
-	// It says why, and text is then empty.
-	Error         string `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -452,13 +450,6 @@ func (x *CompletionAnswer) GetText() string {
 	return ""
 }
 
-func (x *CompletionAnswer) GetError() string {
-	if x != nil {
-		return x.Error
-	}
-	return ""
-}
-
 var File_numen_v1_completion_proto protoreflect.FileDescriptor
 
 const file_numen_v1_completion_proto_rawDesc = "" +
@@ -486,10 +477,9 @@ const file_numen_v1_completion_proto_rawDesc = "" +
 	"\n" +
 	"max_tokens\x18\x04 \x01(\x05R\tmaxTokens\x12%\n" +
 	"\vtemperature\x18\x05 \x01(\x01H\x00R\vtemperature\x88\x01\x01B\x0e\n" +
-	"\f_temperature\"<\n" +
+	"\f_temperature\"&\n" +
 	"\x10CompletionAnswer\x12\x12\n" +
-	"\x04text\x18\x01 \x01(\tR\x04text\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error2V\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text2V\n" +
 	"\x11CompletionService\x12A\n" +
 	"\bComplete\x12\x19.numen.v1.CompleteRequest\x1a\x1a.numen.v1.CompleteResponse2f\n" +
 	"\vHostService\x12W\n" +

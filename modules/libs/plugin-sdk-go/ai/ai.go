@@ -28,8 +28,8 @@ const (
 var (
 	// ErrNoHost means the environment names no host endpoint.
 	ErrNoHost = errors.New("ai: " + HostPortEnv + " is not set")
-	// ErrRefused means the host served the call and declined to answer it.
-	ErrRefused = errors.New("ai: completion refused")
+	// ErrNoAnswer means the host replied without an answer.
+	ErrNoAnswer = errors.New("ai: host sent no answer")
 )
 
 // Client calls the host on behalf of one plugin.
@@ -60,10 +60,11 @@ func (c *Client) Complete(ctx context.Context, question *numenv1.CompletionQuest
 	if err != nil {
 		return "", fmt.Errorf("ai: complete: %w", err)
 	}
-	if msg := res.Msg.GetAnswer().GetError(); msg != "" {
-		return "", fmt.Errorf("%w: %s", ErrRefused, msg)
+	answer := res.Msg.GetAnswer()
+	if answer == nil {
+		return "", ErrNoAnswer
 	}
-	return res.Msg.GetAnswer().GetText(), nil
+	return answer.GetText(), nil
 }
 
 // Complete asks the host named by the environment to answer the question.

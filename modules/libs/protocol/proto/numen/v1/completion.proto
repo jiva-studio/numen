@@ -72,10 +72,8 @@ message CompletionHints {
   optional double temperature = 5;
 }
 
-// CompletionAnswer is what a model said.
+// CompletionAnswer is what a model said. A purpose the host cannot serve fails
+// the call with a status code.
 message CompletionAnswer {
   string text = 1;
-  // Set when the call was served and refused (e.g. no route for the purpose).
-  // It says why, and text is then empty.
-  string error = 2;
 }
