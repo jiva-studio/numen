@@ -515,6 +515,26 @@ func TestPluginAssetsAreServed(t *testing.T) {
 		}
 	})
 
+	t.Run("rejects symlink escape", func(t *testing.T) {
+		outsideDir := t.TempDir()
+		secretFile := filepath.Join(outsideDir, "secret.js")
+		if err := os.WriteFile(secretFile, []byte("secret"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		symlinkTarget := filepath.Join(distDir, "symlink.js")
+		if err := os.Symlink(secretFile, symlinkTarget); err != nil {
+			t.Fatal(err)
+		}
+
+		r := httptest.NewRequest(http.MethodGet, "/api/plugins/sample.plugin/dist/symlink.js", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, r)
+
+		if w.Code != http.StatusForbidden {
+			t.Fatalf("expected 403, got %d", w.Code)
+		}
+	})
+
 	t.Run("returns 404 for unknown plugin", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/api/plugins/unknown.plugin/dist/index.js", nil)
 		w := httptest.NewRecorder()

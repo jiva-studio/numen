@@ -251,15 +251,23 @@ func resolvePluginAssetTarget(pluginDir, filePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	cleanTarget, err := filepath.Abs(filepath.Join(cleanDir, filepath.Clean(filePath)))
+	cleanTarget := filepath.Join(cleanDir, filepath.Clean(filePath))
+	if !strings.HasPrefix(cleanTarget, cleanDir+string(filepath.Separator)) && cleanTarget != cleanDir {
+		return "", os.ErrPermission
+	}
+
+	realDir, err := filepath.EvalSymlinks(cleanDir)
 	if err != nil {
 		return "", err
 	}
-	rel, err := filepath.Rel(cleanDir, cleanTarget)
-	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+	realTarget, err := filepath.EvalSymlinks(cleanTarget)
+	if err != nil {
+		return "", err
+	}
+	if !strings.HasPrefix(realTarget, realDir+string(filepath.Separator)) && realTarget != realDir {
 		return "", os.ErrPermission
 	}
-	return cleanTarget, nil
+	return realTarget, nil
 }
 
 func setPluginAssetContentType(w http.ResponseWriter, path string) {
@@ -304,9 +312,12 @@ func (s *Services) servePluginAsset(w http.ResponseWriter, r *http.Request) {
 
 	cleanTarget, err := resolvePluginAssetTarget(pluginDir, parts[1])
 	if err != nil {
-		if errors.Is(err, os.ErrPermission) {
+		switch {
+		case errors.Is(err, os.ErrPermission):
 			http.Error(w, "forbidden: path escapes plugin directory", http.StatusForbidden)
-		} else {
+		case errors.Is(err, os.ErrNotExist):
+			http.Error(w, "plugin asset not found", http.StatusNotFound)
+		default:
 			http.Error(w, "cannot resolve asset path", http.StatusBadRequest)
 		}
 		return
@@ -319,7 +330,7 @@ func (s *Services) servePluginAsset(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setPluginAssetContentType(w, cleanTarget)
-	http.ServeFile(w, r, cleanTarget)
+	http.ServeFileFS(w, r, os.DirFS(pluginDir), filepath.ToSlash(parts[1]))
 }
 
 // newQuestionCounter takes every question a client asks and gives it back when it is
