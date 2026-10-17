@@ -1,6 +1,10 @@
 import { watch } from 'vue'
 import { createPluginHost } from '@/entities/plugin'
-import { createPluginLoader, type PluginLoader } from '@/features/plugin-loader'
+import {
+  DEFAULT_PLUGIN_ENABLED,
+  createPluginLoader,
+  type PluginLoader,
+} from '@/features/plugin-loader'
 import { pluginCatalog } from './pluginCatalog'
 import { cards } from '@/entities/deck'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
@@ -30,7 +34,7 @@ function createPluginSettingsAccessor(settingsHolder: {
       const info = rest.plugins?.value?.find(
         (p: { id: string; isActive?: boolean }) => p.id === pluginId,
       )
-      return info?.isActive ?? true
+      return info?.isActive ?? DEFAULT_PLUGIN_ENABLED
     }
     return undefined
   }
@@ -125,17 +129,7 @@ export function watchPluginSettings(
   watch(
     () => settings.rest?.plugins?.value ?? [],
     (plugins) => {
-      void (async () => {
-        for (const plugin of plugins) {
-          const isExplicitlyDisabled =
-            settings.rest.getSetting(['plugins', plugin.id, 'enabled']) === false
-          if (isExplicitlyDisabled && pluginLoader.isPluginActive(plugin.id)) {
-            await pluginLoader.deactivatePlugin(plugin.id)
-          } else if (!isExplicitlyDisabled && !pluginLoader.isPluginActive(plugin.id)) {
-            await pluginLoader.activatePlugin(plugin.id)
-          }
-        }
-      })()
+      void pluginLoader.trackPlugins(plugins.map((plugin) => plugin.id))
     },
   )
 }
