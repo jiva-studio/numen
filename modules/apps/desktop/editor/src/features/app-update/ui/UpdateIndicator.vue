@@ -56,13 +56,17 @@ function onClose() {
   isOpen.value = false
 }
 
-function onDownload() {
-  openDownload()
+function onDownload(press?: MouseEvent) {
+  if (!press?.defaultPrevented) {
+    openDownload()
+  }
   onClose()
 }
 
-function onReleaseNotes() {
-  openReleaseNotes()
+function onReleaseNotes(press?: MouseEvent) {
+  if (!press?.defaultPrevented) {
+    openReleaseNotes()
+  }
   onClose()
 }
 

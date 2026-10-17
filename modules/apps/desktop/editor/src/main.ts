@@ -17,7 +17,13 @@ const wails = import(/* @vite-ignore */ runtime).catch(() => undefined)
 // to say where it has ended up. Nothing takes it off the pages it serves: an
 // address that leads outward is opened where the person opens everything else.
 interceptOutwardLinks((href) => {
-  void wails.then((it) => it?.Browser.OpenURL(href))
+  void wails.then((it) => {
+    if (it?.Browser?.OpenURL) {
+      it.Browser.OpenURL(href)
+    } else {
+      window.open(href, '_blank')
+    }
+  })
 })
 
 createApp(App).mount('#app')

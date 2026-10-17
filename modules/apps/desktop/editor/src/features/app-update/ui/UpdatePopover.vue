@@ -15,8 +15,8 @@ const props = defineProps<{
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (event: 'close'): void
-  (event: 'download'): void
-  (event: 'release-notes'): void
+  (event: 'download', press: MouseEvent): void
+  (event: 'release-notes', press: MouseEvent): void
   (event: 'dismiss'): void
 }>()
 
@@ -40,12 +40,12 @@ function onClose() {
   emit('close')
 }
 
-function onDownload() {
-  emit('download')
+function onDownload(press: MouseEvent) {
+  emit('download', press)
 }
 
-function onReleaseNotes() {
-  emit('release-notes')
+function onReleaseNotes(press: MouseEvent) {
+  emit('release-notes', press)
 }
 
 function onDismiss() {
@@ -76,22 +76,26 @@ function onDismiss() {
     </div>
 
     <footer class="update-popover__actions">
-      <button
-        type="button"
+      <a
+        :href="updateInfo.downloadUrl"
+        target="_blank"
+        rel="noopener noreferrer"
         class="update-popover__btn update-popover__btn--primary"
         @click="onDownload"
       >
         Download
-      </button>
+      </a>
 
-      <button
+      <a
         v-if="updateInfo.notesUrl && updateInfo.notesUrl !== updateInfo.downloadUrl"
-        type="button"
+        :href="updateInfo.notesUrl"
+        target="_blank"
+        rel="noopener noreferrer"
         class="update-popover__btn update-popover__btn--ghost"
         @click="onReleaseNotes"
       >
         Release notes
-      </button>
+      </a>
 
       <button
         type="button"

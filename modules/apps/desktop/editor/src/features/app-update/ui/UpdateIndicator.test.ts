@@ -174,4 +174,66 @@ describe('UpdateIndicator', () => {
       'https://github.com/jiva-studio/numen/releases/tag/v2026.10.1',
     )
   })
+
+  it('does not open duplicate URL if download click event is defaultPrevented', async () => {
+    const fetchFn = createMockFetch(sampleManifest)
+    const openUrl = vi.fn()
+
+    const wrapper = mount(UpdateIndicator, {
+      props: {
+        options: {
+          currentVersion: '2026.9.1',
+          currentBuild: 900,
+          platform: 'darwin',
+          fetchFn,
+          openUrl,
+          checkIntervalMs: 0,
+        },
+      },
+      attachTo: document.body,
+    })
+
+    await new Promise((done) => setTimeout(done, 10))
+    await wrapper.find('.update-indicator__trigger').trigger('click')
+
+    const downloadBtn = wrapper.find('.update-popover__btn--primary')
+    const event = new MouseEvent('click', { bubbles: true, cancelable: true })
+    event.preventDefault()
+    downloadBtn.element.dispatchEvent(event)
+    await wrapper.vm.$nextTick()
+
+    expect(openUrl).not.toHaveBeenCalled()
+    expect(wrapper.find('.update-popover').exists()).toBe(false)
+  })
+
+  it('does not open duplicate URL if release notes click event is defaultPrevented', async () => {
+    const fetchFn = createMockFetch(sampleManifest)
+    const openUrl = vi.fn()
+
+    const wrapper = mount(UpdateIndicator, {
+      props: {
+        options: {
+          currentVersion: '2026.9.1',
+          currentBuild: 900,
+          platform: 'linux',
+          fetchFn,
+          openUrl,
+          checkIntervalMs: 0,
+        },
+      },
+      attachTo: document.body,
+    })
+
+    await new Promise((done) => setTimeout(done, 10))
+    await wrapper.find('.update-indicator__trigger').trigger('click')
+
+    const notesBtn = wrapper.find('.update-popover__btn--ghost')
+    const event = new MouseEvent('click', { bubbles: true, cancelable: true })
+    event.preventDefault()
+    notesBtn.element.dispatchEvent(event)
+    await wrapper.vm.$nextTick()
+
+    expect(openUrl).not.toHaveBeenCalled()
+    expect(wrapper.find('.update-popover').exists()).toBe(false)
+  })
 })
