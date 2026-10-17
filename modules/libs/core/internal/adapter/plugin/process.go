@@ -134,7 +134,9 @@ func getPluginVars(pluginID string, launch launchEnvironment) []string {
 	vars := []string{
 		"NUMEN_VAULT_PATH=" + launch.vaultPath,
 		"NUMEN_PLUGIN_PORT=" + strconv.Itoa(launch.port),
-		"NUMEN_PLUGIN_TOKEN=" + launch.token, // skipcq: SCT-A000 - builds the launch environment of a plugin process; no credential is written here
+		// This builds the launch environment of a plugin process; no credential is written here.
+		// skipcq: SCT-A000
+		"NUMEN_PLUGIN_TOKEN=" + launch.token,
 		"NUMEN_PLUGIN_ID=" + pluginID,
 		"NUMEN_PLUGIN_CONFIG=" + launch.configJSON,
 	}
