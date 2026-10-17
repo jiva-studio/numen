@@ -358,3 +358,10 @@ func TestAnAgentProfileWithoutAModelIsNotStarted(t *testing.T) {
 		t.Error("the platform was asked to start a profile naming no model")
 	}
 }
+
+func (s *mockProofreadService) ProofreadText(
+	_ context.Context,
+	_ *connect.Request[v1.ProofreadTextRequest],
+) (*connect.Response[v1.ProofreadTextResponse], error) {
+	return connect.NewResponse(&v1.ProofreadTextResponse{IsDone: true}), nil
+}
