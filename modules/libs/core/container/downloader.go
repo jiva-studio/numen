@@ -80,17 +80,13 @@ func (h hostDownloaderPort) openBridge(ctx context.Context) (*plugin.DownloaderB
 	return plugin.OpenDownloaderBridge(ctx, h.host)
 }
 
-func (h hostDownloaderPort) GetDownloadModel(at domain.URL) port.DownloadModel {
-	bridge, err := h.openBridge(context.Background())
+func (h hostDownloaderPort) GetDownloadModel(ctx context.Context, at domain.URL) (port.DownloadModel, error) {
+	bridge, err := h.openBridge(ctx)
 	if err != nil {
-		return port.DownloadModel{
-			Tool:     "unavailable",
-			Version:  "unavailable",
-			Producer: "plugin-error",
-		}
+		return port.DownloadModel{}, err
 	}
 	defer bridge.Close()
-	return bridge.GetDownloadModel(at)
+	return bridge.GetDownloadModel(ctx, at)
 }
 
 func (h hostDownloaderPort) GetMetadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
@@ -122,12 +118,8 @@ func (h hostDownloaderPort) Download(ctx context.Context, at domain.URL, into io
 
 type unavailableDownloader struct{}
 
-func (unavailableDownloader) GetDownloadModel(_ domain.URL) port.DownloadModel {
-	return port.DownloadModel{
-		Tool:     "unavailable",
-		Version:  "unavailable",
-		Producer: "unavailable",
-	}
+func (unavailableDownloader) GetDownloadModel(_ context.Context, _ domain.URL) (port.DownloadModel, error) {
+	return port.DownloadModel{}, errDownloaderUnavailable
 }
 
 func (unavailableDownloader) GetMetadata(_ context.Context, _ domain.URL) (port.Metadata, error) {
