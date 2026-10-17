@@ -53,7 +53,7 @@ jobs:
   schema:
     name: Schema
     needs: [changes]
-    if: needs.changes.outputs.code == 'true'
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

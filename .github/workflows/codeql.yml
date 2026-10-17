@@ -41,6 +41,7 @@ jobs:
   # unexpanded name, which no required check holds.
   analyze:
     needs: [changes]
+    if: ${{ !cancelled() }}
     name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -58,25 +59,25 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: needs.changes.outputs.code == 'true'
+        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
         with:
           persist-credentials: false
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        if: needs.changes.outputs.code == 'true' && matrix.language == 'go'
+        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') && matrix.language == 'go'
         with:
           go-version-file: modules/libs/core/go.mod
           cache: false
 
       - name: Initialize CodeQL
-        if: needs.changes.outputs.code == 'true'
+        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
         uses: github/codeql-action/init@ce5e7eeac396d720fe2d802714996c8ce561e311 # v3
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
 
       - name: Perform CodeQL Analysis
-        if: needs.changes.outputs.code == 'true'
+        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
         uses: github/codeql-action/analyze@ce5e7eeac396d720fe2d802714996c8ce561e311 # v3
         with:
           category: "/language:${{ matrix.language }}"

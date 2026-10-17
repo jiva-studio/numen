@@ -55,7 +55,7 @@ jobs:
   lint:
     name: Lint
     needs: [changes]
-    if: needs.changes.outputs.code == 'true'
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
@@ -110,7 +110,7 @@ jobs:
     name: Tests
     needs: [changes]
     # Heavy: runs in the merge queue and on main, and reports as skipped on a pull request.
-    if: needs.changes.outputs.code == 'true' && github.event_name != 'pull_request'
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
@@ -192,7 +192,7 @@ jobs:
   cli:
     name: CLI
     needs: [changes]
-    if: needs.changes.outputs.code == 'true'
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:
