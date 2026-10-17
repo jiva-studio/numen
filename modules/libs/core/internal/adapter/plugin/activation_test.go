@@ -5,8 +5,6 @@ import (
 	"errors"
 	"io"
 	"os"
-	"os/exec"
-	"syscall"
 	"testing"
 	"time"
 )
@@ -39,7 +37,7 @@ func TestAProcessThatNeverPrintsReadyIsKilledAtTheActivationDeadline(t *testing.
 	policy.Timeout = 50 * time.Millisecond
 	host.SetActivationPolicy(policy)
 
-	cmd := exec.Command("sleep", "10")
+	cmd := newIdleCommand()
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
@@ -59,9 +57,9 @@ func TestAProcessThatNeverPrintsReadyIsKilledAtTheActivationDeadline(t *testing.
 		t.Fatalf("expected a handshake timeout, got %v", err)
 	}
 
-	waitUntil(t, "the silent process to be killed", func() bool {
-		return cmd.Process.Signal(syscall.Signal(0)) != nil
-	})
+	if err := cmd.Process.Signal(os.Kill); !errors.Is(err, os.ErrProcessDone) {
+		t.Fatalf("expected the silent process to be killed and reaped, got %v", err)
+	}
 	if state := host.supervisors["md.numen.ocr"].GetState(); state != StateDormant {
 		t.Fatalf("expected StateDormant, got %v", state)
 	}
