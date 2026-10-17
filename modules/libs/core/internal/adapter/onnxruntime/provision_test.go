@@ -398,7 +398,7 @@ func TestProvisionAnswersTheProviderTheConfigurationNames(t *testing.T) {
 	cfg.Provider = " CPU "
 
 	_, provider, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir())
-	if err != nil || provider != "auto" {
+	if err != nil || provider != "cpu" {
 		t.Fatalf("Provision() provider = %q, %v", provider, err)
 	}
 }
