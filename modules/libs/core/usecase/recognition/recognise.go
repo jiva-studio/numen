@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math"
 	"strconv"
 	"strings"
 
@@ -452,7 +453,7 @@ func lastCount(raw []byte) (read, end int) {
 		return lastCount(raw[:at])
 	}
 	read, err := strconv.Atoi(strings.TrimSpace(line[:stop]))
-	if err != nil {
+	if err != nil || read < 0 || read > math.MaxInt32 {
 		return lastCount(raw[:at])
 	}
 	return read, at + len(resumeMark) + stop + 1

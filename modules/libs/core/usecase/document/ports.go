@@ -4,8 +4,6 @@ import (
 	"context"
 	"image"
 	"io"
-
-	"github.com/jiva-studio/numen/modules/plugins/reader-epub/backend/epub"
 )
 
 // Scan is a document held open, for the length of one call.
@@ -27,10 +25,12 @@ type Documents interface {
 	) error
 }
 
-// Books holds books read.
+// Books reads the archives of books.
 type Books interface {
-	// GetBook answers the book at a fingerprint, read where it is not held.
-	GetBook(ctx context.Context, mark Fingerprint, read func() (*epub.Book, error)) (*epub.Book, error)
+	// ReadEntry answers the bytes of one entry of the archive of the book at a
+	// fingerprint. It refuses an entry the archive lacks with ErrNoEntry, and a
+	// file that is other bytes now with port.ErrBookChanged.
+	ReadEntry(ctx context.Context, mark Fingerprint, entry string) ([]byte, error)
 }
 
 // PageKey is one drawn page: which document, which page, and how wide it was

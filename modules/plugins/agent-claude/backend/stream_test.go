@@ -1,0 +1,269 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"strings"
+	"testing"
+	"time"
+
+	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+)
+
+var testWords = map[string]toolWords{
+	"note_edit": {title: "Edit a note", kind: "edit", about: "path", match: "stood", text: "becomes"},
+	"note_read": {title: "Read notes", kind: "read", about: "paths", element: "path"},
+}
+
+func parseLines(t *testing.T, words map[string]toolWords, lines ...string) ([]*numenv1.AskAgentResponse, string) {
+	t.Helper()
+	var got []*numenv1.AskAgentResponse
+	send := func(r *numenv1.AskAgentResponse) error {
+		got = append(got, r)
+		return nil
+	}
+	tick := time.Unix(0, 0)
+	reason := parseStreamWithClock(context.Background(), strings.NewReader(strings.Join(lines, "\n")+"\n"), send, words, nil,
+		func() time.Time { tick = tick.Add(time.Second); return tick })
+	return got, reason
+}
+
+func toolCalls(steps []*numenv1.AskAgentResponse) []*numenv1.ToolCall {
+	var calls []*numenv1.ToolCall
+	for _, s := range steps {
+		if c := s.GetToolCall(); c != nil {
+			calls = append(calls, c)
+		}
+	}
+	return calls
+}
+
+const startEdit = `{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"toolu_01","name":"mcp__numen__note_edit"}}}`
+
+func delta(partial string) string {
+	return `{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"input_json_delta","partial_json":` +
+		quote(partial) + `}}}`
+}
+
+func quote(text string) string {
+	return `"` + strings.NewReplacer(`\`, `\\`, `"`, `\"`).Replace(text) + `"`
+}
+
+func TestADeclaredToolIsShownByItsTitleAndEffect(t *testing.T) {
+	steps, _ := parseLines(t, testWords, startEdit, delta(`{"path":"Note.md","stood":"a"}`),
+		`{"type":"stream_event","event":{"type":"content_block_stop"}}`)
+
+	calls := toolCalls(steps)
+	last := calls[len(calls)-1]
+	if last.GetTool() != "Edit a note" || last.GetKind() != "edit" || last.GetAbout() != "Note.md" || last.GetPath() != "Note.md" {
+		t.Fatalf("unexpected call: %+v", last)
+	}
+}
+
+func TestEveryReportOfOneCallCarriesTheNameTheAgentGaveIt(t *testing.T) {
+	steps, _ := parseLines(t, testWords, startEdit, delta(`{"path":"Note.md"}`),
+		`{"type":"stream_event","event":{"type":"content_block_stop"}}`)
+
+	for _, c := range toolCalls(steps) {
+		if c.GetCall() != "toolu_01" {
+			t.Errorf("call id %q", c.GetCall())
+		}
+	}
+}
+
+func TestAnUndeclaredToolIsNamedWithoutItsServerPrefix(t *testing.T) {
+	steps, _ := parseLines(t, nil,
+		`{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"c","name":"mcp__numen__other_tool"}}}`)
+
+	calls := toolCalls(steps)
+	if len(calls) != 1 || calls[0].GetTool() != "other_tool" || calls[0].GetKind() != "" {
+		t.Fatalf("unexpected calls: %+v", calls)
+	}
+}
+
+func TestACollectionCallIsAboutItsFirstElementAndTheRest(t *testing.T) {
+	steps, _ := parseLines(t, testWords,
+		`{"type":"assistant","message":{"content":[{"type":"tool_use","id":"c","name":"mcp__numen__note_read","input":{"paths":[{"path":"A.md"},{"path":"B.md"},{"path":"C.md"}]}}]}}`)
+
+	calls := toolCalls(steps)
+	if len(calls) != 1 || calls[0].GetAbout() != "A.md and 2 more" {
+		t.Fatalf("unexpected calls: %+v", calls)
+	}
+}
+
+func TestACallNamingARunOfTextCarriesItsSpan(t *testing.T) {
+	steps, _ := parseLines(t, testWords,
+		`{"type":"assistant","message":{"content":[{"type":"tool_use","id":"c","name":"mcp__numen__note_edit","input":{"path":"N.md","start":4,"length":6}}]}}`)
+
+	span := toolCalls(steps)[0].GetSpan()
+	if span.GetFrom() != 4 || span.GetTo() != 10 {
+		t.Fatalf("span %+v", span)
+	}
+}
+
+func editProgress(steps []*numenv1.AskAgentResponse) []*numenv1.EditProgress {
+	var out []*numenv1.EditProgress
+	for _, s := range steps {
+		if e := s.GetEditProgress(); e != nil {
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
+func TestNoChangeIsReportedBeforeItsReplacementBegins(t *testing.T) {
+	steps, _ := parseLines(t, testWords, startEdit, delta(`{"path":"Note.md",`), delta(`"stood":"A hedgehog`), delta(` is named"`))
+
+	if got := editProgress(steps); len(got) != 0 {
+		t.Fatalf("reported early: %+v", got)
+	}
+}
+
+func TestAChangeIsReportedAsItsReplacementArrives(t *testing.T) {
+	steps, _ := parseLines(t, testWords, startEdit,
+		delta(`{"path":"Note.md","stood":"A hedgehog",`), delta(`"becomes":"An axe`), delta(`, two-bladed"}`))
+
+	got := editProgress(steps)
+	if len(got) != 2 {
+		t.Fatalf("expected two reports, got %+v", got)
+	}
+	if got[0].GetPath() != "Note.md" || got[0].GetMatch() != "A hedgehog" || got[0].GetText() != "An axe" || got[0].GetCall() != "toolu_01" {
+		t.Errorf("first report %+v", got[0])
+	}
+	if got[1].GetText() != "An axe, two-bladed" {
+		t.Errorf("second report %+v", got[1])
+	}
+}
+
+func TestChangesCloserThanTheIntervalAreReportedOnce(t *testing.T) {
+	var got []*numenv1.AskAgentResponse
+	p := &streamParser{
+		send:  func(r *numenv1.AskAgentResponse) error { got = append(got, r); return nil },
+		words: testWords,
+		now:   func() time.Time { return time.Unix(100, 0) },
+	}
+	p.tool, p.callID = "mcp__numen__note_edit", "c"
+	p.arguments.WriteString(`{"path":"N.md","stood":"x","becomes":"y`)
+	p.reportEdit()
+	p.reportEdit()
+
+	if len(editProgress(got)) != 1 {
+		t.Fatalf("expected one report, got %d", len(editProgress(got)))
+	}
+}
+
+func TestSaysWhenTheVaultDidNotReachTheAgent(t *testing.T) {
+	cases := map[string]string{
+		`{"type":"system","subtype":"init","mcp_servers":[{"name":"numen","status":"failed"}]}`:         "the agent could not reach this vault",
+		`{"type":"system","subtype":"init","mcp_servers":[]}`:                                           "the agent was started without this vault",
+		`{"type":"system","subtype":"init","mcp_servers":[{"name":"numen","status":"connected"}]}`:      "",
+		`{"type":"system","subtype":"init"}`:                                                            "",
+		`{"type":"system","subtype":"init","mcp_server_errors":[{"name":"numen","message":"refused"}]}`: "the agent was not given this vault: refused",
+	}
+	for line, want := range cases {
+		if _, reason := parseLines(t, nil, line); reason != want {
+			t.Errorf("%s: got %q want %q", line, reason, want)
+		}
+	}
+}
+
+func TestAnErrorResultIsPutIntoWords(t *testing.T) {
+	cases := map[string]string{
+		`{"type":"result","is_error":true,"subtype":"error_max_turns"}`:                            "the agent reached the limit of steps without finishing",
+		`{"type":"result","is_error":true,"subtype":"error_context_length_exceeded"}`:              "the conversation is too long for the model",
+		`{"type":"result","is_error":true,"subtype":"error_something_new"}`:                        "something new",
+		`{"type":"result","is_error":true,"subtype":"error_max_turns","result":"error_max_turns"}`: "the agent reached the limit of steps without finishing",
+		`{"type":"result","is_error":true,"result":"overloaded, try later"}`:                       "overloaded, try later",
+		`{"type":"result","is_error":true}`:                                                        "the agent stopped without finishing",
+	}
+	for line, want := range cases {
+		if _, reason := parseLines(t, nil, line); reason != want {
+			t.Errorf("%s: got %q want %q", line, reason, want)
+		}
+	}
+}
+
+func TestTheFirstReasonHolds(t *testing.T) {
+	_, reason := parseLines(t, nil,
+		`{"type":"result","is_error":true,"subtype":"error_rate_limit"}`,
+		`{"type":"result","is_error":true,"subtype":"error_overloaded"}`)
+	if reason != "the rate limit was reached" {
+		t.Fatalf("got %q", reason)
+	}
+}
+
+func TestAFailedCommandIsToldByTheLastLineItWrote(t *testing.T) {
+	if got := getFailureMessage(errors.New("exit 1"), "warming up\n\nboom: no key\n"); got != "boom: no key" {
+		t.Errorf("got %q", got)
+	}
+	if got := getFailureMessage(errors.New("exit 1"), "  \n"); got != "exit 1" {
+		t.Errorf("got %q", got)
+	}
+}
+
+func TestTheAgentReadsNothingThisMachineHoldsForItByDefault(t *testing.T) {
+	args := buildClaudeArguments("", "", "cfg.json", "", 0, nil, false)
+	assertPair(t, args, "--setting-sources", "")
+	args = buildClaudeArguments("", "", "cfg.json", "", 0, nil, true)
+	assertPair(t, args, "--setting-sources", "user")
+}
+
+func TestTheAllowanceNamesTheSearchAndTheTasksTools(t *testing.T) {
+	args := buildClaudeArguments("", "", "cfg.json", "", 0, []string{"note_read", "note_edit"}, false)
+	assertPair(t, args, "--allowedTools", "WebSearch,mcp__numen__note_edit,mcp__numen__note_read")
+	assertPair(t, args, "--tools", "WebSearch")
+}
+
+func TestTheDefaultNumberOfTurnsIsOneHundred(t *testing.T) {
+	assertPair(t, buildClaudeArguments("", "", "", "", 0, nil, false), "--max-turns", "100")
+	assertPair(t, buildClaudeArguments("", "", "", "", 7, nil, false), "--max-turns", "7")
+}
+
+func assertPair(t *testing.T, args []string, flag, want string) {
+	t.Helper()
+	for i, a := range args {
+		if a == flag && i+1 < len(args) {
+			if args[i+1] != want {
+				t.Errorf("%s = %q, want %q", flag, args[i+1], want)
+			}
+			return
+		}
+	}
+	t.Errorf("%s absent from %v", flag, args)
+}
+
+func TestTheChildIsNotToldAboutSomebodyElsesSession(t *testing.T) {
+	got := buildEnvironment([]string{"PATH=/bin", "CLAUDECODE=1", "CLAUDE_CODE_SESSION_ID=x", "HOME=/h"})
+	if strings.Join(got, ",") != "PATH=/bin,HOME=/h" {
+		t.Fatalf("got %v", got)
+	}
+}
+
+func TestPartialJSONFieldIsReadAtEveryTruncation(t *testing.T) {
+	const whole = `{"path":"Note.md","stood":"abc"}`
+	for i := 0; i <= len(whole); i++ {
+		got := getPartialJSONField(whole[:i], "stood")
+		if !strings.HasPrefix("abc", got) {
+			t.Errorf("%q: %q is not a prefix", whole[:i], got)
+		}
+	}
+	if getPartialJSONField(whole, "missing") != "" {
+		t.Error("a missing field was read")
+	}
+}
+
+func TestAChangeIsLocatedByThePathArgumentAlone(t *testing.T) {
+	var got []*numenv1.AskAgentResponse
+	p := &streamParser{
+		send:  func(r *numenv1.AskAgentResponse) error { got = append(got, r); return nil },
+		words: map[string]toolWords{"note_edit": {about: "title", match: "stood", text: "becomes"}},
+		now:   func() time.Time { return time.Unix(100, 0) },
+	}
+	p.tool, p.callID = "mcp__numen__note_edit", "c"
+	p.arguments.WriteString(`{"title":"T","stood":"x","becomes":"y`)
+	p.reportEdit()
+
+	if len(editProgress(got)) != 0 {
+		t.Fatalf("a title was reported as a path: %+v", editProgress(got))
+	}
+}

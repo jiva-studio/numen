@@ -66,12 +66,25 @@ describe('what a cell holds', () => {
     expect(writeCell('a | b')).toBe('a \\| b')
   })
 
+  it('escapes a backslash that is typed into it', () => {
+    expect(writeCell('a \\ b')).toBe('a \\\\ b')
+  })
+
   it('folds a line break into a space', () => {
     expect(writeCell('a\nb')).toBe('a b')
   })
 
   it('shows an escaped pipe as a pipe', () => {
     expect(readCell('a \\| b')).toBe('a | b')
+  })
+
+  it('shows an escaped backslash as a backslash', () => {
+    expect(readCell('a \\\\ b')).toBe('a \\ b')
+  })
+
+  it('preserves backslashes and pipes together', () => {
+    const original = 'C:\\path | test'
+    expect(readCell(writeCell(original))).toBe(original)
   })
 
   it('leaves nothing around what was typed', () => {
