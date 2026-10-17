@@ -14,7 +14,7 @@ import (
 )
 
 // CapabilityAgentProvider is what a plugin declares to answer completions.
-const CapabilityAgentProvider = "ai.agent.provider"
+const CapabilityAgentProvider = "ai.completion.provider"
 
 var (
 	errNoCompletionAnswer = errors.New("agent plugin sent no answer")

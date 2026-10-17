@@ -638,7 +638,7 @@ An installation naming no agent and asking for no tools opens no port and writes
 
 | | |
 | --- | --- |
-| `agent` | the id of the agent plugin that answers. Empty is the plugin the installation provides for the `ai.agent.provider` capability. A plugin that is not installed, or does not declare the capability, leaves the plugin told that the agent is unavailable. |
+| `agent` | the id of the agent plugin that answers. Empty is the plugin the installation provides for the `ai.completion.provider` capability. A plugin that is not installed, or does not declare the capability, leaves the plugin told that the agent is unavailable. |
 | `model` | the model the agent answers with. Empty leaves the choice to the agent. |
 | `concurrency` | how many questions the route answers at once; the others wait for a place, and a question whose plugin gave up leaves the wait. Below one is one. |
 
