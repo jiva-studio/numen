@@ -512,6 +512,28 @@ func (h *Host) failActivation(sup *Supervisor, err error) {
 	}
 }
 
+// settlePluginInState waits out or clears a state other than Dormant and reports whether EnsureActive is finished.
+func (h *Host) settlePluginInState(
+	ctx context.Context,
+	pluginID string,
+	sup *Supervisor,
+	state ProcessState,
+) (Endpoint, bool, error) {
+	switch state {
+	case StateDeactivating:
+		err := sup.WaitWhileDeactivating(ctx)
+		return emptyEndpoint(), err != nil, err
+	case StateActivating:
+		endpoint, ready, err := h.awaitActivation(ctx, pluginID, sup)
+		return endpoint, ready || err != nil, err
+	default:
+		if err := sup.Teardown(ctx, 0, nil); err != nil && !errors.Is(err, errProcessNotRunning) {
+			return emptyEndpoint(), true, fmt.Errorf("retire unreachable plugin %s: %w", pluginID, err)
+		}
+		return emptyEndpoint(), false, nil
+	}
+}
+
 // EnsureActive ensures the plugin process is running and returns its endpoint.
 func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, error) {
 	for {
@@ -527,51 +549,45 @@ func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, err
 			return endpoint, nil
 		}
 
-		state := sup.GetState()
-		if state == StateDeactivating {
+		if state := sup.GetState(); state != StateDormant {
 			h.mu.Unlock()
-			if err := sup.WaitWhileDeactivating(ctx); err != nil {
-				return emptyEndpoint(), err
-			}
-			continue
-		}
-
-		if state == StateActive || state == StateIdle {
-			h.mu.Unlock()
-			if err := sup.Teardown(ctx, 0, nil); err != nil && !errors.Is(err, errProcessNotRunning) {
-				return emptyEndpoint(), fmt.Errorf("retire unreachable plugin %s: %w", pluginID, err)
-			}
-			continue
-		}
-
-		if state == StateActivating {
-			h.mu.Unlock()
-			endpoint, ready, err := h.awaitActivation(ctx, pluginID, sup)
-			if ready || err != nil {
+			endpoint, done, err := h.settlePluginInState(ctx, pluginID, sup, state)
+			if done {
 				return endpoint, err
 			}
 			continue
 		}
 
-		if err := sup.CheckActivationAllowed(time.Now()); err != nil {
+		if err := h.beginActivationLocked(pluginID, sup); err != nil {
 			h.mu.Unlock()
-			return emptyEndpoint(), fmt.Errorf("activate plugin %s: %w", pluginID, err)
+			return emptyEndpoint(), err
 		}
-
-		sup.SetActivating()
 		h.mu.Unlock()
 
-		endpoint, err := h.activatePlugin(ctx, p, sup)
-		if err != nil {
-			h.failActivation(sup, err)
-			h.recordActivationFailure(ctx, pluginID, sup, err)
-			return endpoint, err
-		}
-		sup.RecordActivationSuccess()
-
-		_ = h.NotifyPluginConfig(ctx, p.Manifest.ID)
-		return endpoint, nil
+		return h.runActivation(ctx, p, sup)
 	}
+}
+
+// beginActivationLocked moves a dormant plugin to Activating unless it is backing off or has failed.
+func (h *Host) beginActivationLocked(pluginID string, sup *Supervisor) error {
+	if err := sup.CheckActivationAllowed(time.Now()); err != nil {
+		return fmt.Errorf("activate plugin %s: %w", pluginID, err)
+	}
+	sup.SetActivating()
+	return nil
+}
+
+func (h *Host) runActivation(ctx context.Context, p DiscoveredPlugin, sup *Supervisor) (Endpoint, error) {
+	endpoint, err := h.activatePlugin(ctx, p, sup)
+	if err != nil {
+		h.failActivation(sup, err)
+		h.recordActivationFailure(ctx, p.Manifest.ID, sup, err)
+		return endpoint, err
+	}
+	sup.RecordActivationSuccess()
+
+	_ = h.NotifyPluginConfig(ctx, p.Manifest.ID)
+	return endpoint, nil
 }
 
 func (h *Host) cleanupAbortedProcess(proc *os.Process, stdout io.Closer, pluginID string) {
