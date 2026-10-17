@@ -17,7 +17,6 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"testing"
 	"time"
 
@@ -1076,11 +1075,29 @@ func waitUntil(t *testing.T, what string, condition func() bool) {
 	}
 }
 
+const helperProcessEnv = "NUMEN_TEST_HELPER_PROCESS"
+
+// TestHelperProcessIdles is the body of the child process the launcher starts; it does nothing in a normal run.
+func TestHelperProcessIdles(t *testing.T) {
+	if os.Getenv(helperProcessEnv) != "idle" {
+		return
+	}
+	time.Sleep(time.Minute)
+}
+
+// getExitSignal returns the channel the supervisor closes once it has reaped its current process.
+func getExitSignal(sup *Supervisor) <-chan struct{} {
+	sup.mu.Lock()
+	defer sup.mu.Unlock()
+	return sup.exitCh
+}
+
 func startSleepLauncher(t *testing.T, started *atomic.Int32, procs *[]*os.Process) Launcher {
 	t.Helper()
 	var mu sync.Mutex
 	return func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		cmd := exec.Command("sleep", "10")
+		cmd := exec.Command(os.Args[0], "-test.run=^TestHelperProcessIdles$")
+		cmd.Env = append(os.Environ(), helperProcessEnv+"=idle")
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}
@@ -1177,7 +1194,9 @@ func TestEnsureActiveRetiresARunningProcessWhoseEndpointIsMissing(t *testing.T) 
 	}
 	host.mu.Lock()
 	delete(host.endpoints, "md.numen.ocr")
+	sup := host.supervisors["md.numen.ocr"]
 	host.mu.Unlock()
+	firstExit := getExitSignal(sup)
 
 	endpoint, err := host.EnsureActive(t.Context(), "md.numen.ocr")
 	if err != nil {
@@ -1189,9 +1208,11 @@ func TestEnsureActiveRetiresARunningProcessWhoseEndpointIsMissing(t *testing.T) 
 	if started.Load() != 2 {
 		t.Fatalf("expected a replacement launch, got %d launches", started.Load())
 	}
-	waitUntil(t, "the unreachable process to be gone", func() bool {
-		return procs[0].Signal(syscall.Signal(0)) != nil
-	})
+	select {
+	case <-firstExit:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the unreachable process was not stopped")
+	}
 	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
