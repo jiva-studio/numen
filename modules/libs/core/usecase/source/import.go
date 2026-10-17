@@ -87,7 +87,11 @@ func (u ImportURL) Execute(
 
 	// One run to an address. The name is held for as long as the download takes,
 	// and two urls on one address are one download.
-	release, err := store.ClaimArtifact(ctx, domain.NewArtifactName(domain.ArtifactPartial, u.By.GetDownloadModel(at).Producer, hash))
+	by, err := u.By.GetDownloadModel(ctx, at)
+	if err != nil {
+		return res, err
+	}
+	release, err := store.ClaimArtifact(ctx, domain.NewArtifactName(domain.ArtifactPartial, by.Producer, hash))
 	if errors.Is(err, port.ErrClaimed) {
 		return res, ErrBeingDownloaded
 	}
@@ -120,12 +124,12 @@ func (u ImportURL) Execute(
 		// and it is written down so the address is not asked again every time
 		// the vault is scanned.
 		res.IsNothing = true
-		return res, u.silent(ctx, at, store, hash)
+		return res, u.silent(ctx, by, store, hash)
 	case err != nil:
 		return res, err
 	}
 
-	res.Producer, res.Bytes, err = u.writeDownload(ctx, store, hash, at, extracted)
+	res.Producer, res.Bytes, err = u.writeDownload(ctx, store, by, hash, at, extracted)
 	if err != nil {
 		return res, err
 	}
@@ -140,6 +144,7 @@ func (u ImportURL) Execute(
 func (u ImportURL) writeDownload(
 	ctx context.Context,
 	store port.DerivedStore,
+	by port.DownloadModel,
 	hash string,
 	at domain.URL,
 	extracted port.Text,
@@ -151,7 +156,7 @@ func (u ImportURL) writeDownload(
 	if err := store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, extracted.Producer, hash), written); err != nil {
 		return "", 0, err
 	}
-	if err := u.record(ctx, store, extracted.Producer, hash, at, extracted); err != nil {
+	if err := u.record(ctx, store, by, extracted.Producer, hash, at, extracted); err != nil {
 		return "", 0, err
 	}
 	return extracted.Producer, len(written), nil
@@ -160,9 +165,9 @@ func (u ImportURL) writeDownload(
 // silent writes down that the address published none of what was asked for, so
 // the address is not asked again every time the vault is scanned.
 func (u ImportURL) silent(
-	ctx context.Context, at domain.URL, store port.DerivedStore, hash string,
+	ctx context.Context, by port.DownloadModel, store port.DerivedStore, hash string,
 ) error {
-	return store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactAnswer, u.By.GetDownloadModel(at).Producer, hash), []byte(text.Silent+"\n"))
+	return store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactAnswer, by.Producer, hash), []byte(text.Silent+"\n"))
 }
 
 // readURLFile is one url: where it points, the file itself, and the store what
@@ -240,6 +245,7 @@ func (u ImportURL) renameURL(
 func (u ImportURL) record(
 	ctx context.Context,
 	store port.DerivedStore,
+	by port.DownloadModel,
 	producer, hash string,
 	at domain.URL,
 	extracted port.Text,
@@ -255,7 +261,7 @@ func (u ImportURL) record(
 		Title:      extracted.Title,
 		Length:     extracted.Length,
 		Producer:   producer,
-		Downloader: u.By.GetDownloadModel(at).Recipe(),
+		Downloader: by.Recipe(),
 	})
 	if err != nil {
 		return err

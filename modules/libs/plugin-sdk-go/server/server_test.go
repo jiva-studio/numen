@@ -315,3 +315,75 @@ func TestLifecycleUnitMethods(t *testing.T) {
 		t.Fatal("expected ShutdownTrigger to be closed immediately")
 	}
 }
+
+func TestServerShutdownTimeoutError(t *testing.T) {
+	reqStarted := make(chan struct{})
+	blockReq := make(chan struct{})
+	var closeOnce sync.Once
+	defer closeOnce.Do(func() {
+		close(blockReq)
+	})
+
+	s := New(
+		WithPort(0),
+		WithToken(""),
+		WithStdout(io.Discard),
+		WithStdin(nil),
+		WithShutdownTimeout(10*time.Millisecond),
+	)
+
+	s.Register("/block", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		close(reqStarted)
+		<-blockReq
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	port, err := s.Listen()
+	if err != nil {
+		t.Fatalf("Listen failed: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	serveErrCh := make(chan error, 1)
+	go func() {
+		serveErrCh <- s.ServeContext(ctx)
+	}()
+
+	reqDone := make(chan struct{})
+	go func() {
+		defer close(reqDone)
+		resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/block", port))
+		if err == nil && resp != nil {
+			_ = resp.Body.Close()
+		}
+	}()
+
+	select {
+	case <-reqStarted:
+	case <-time.After(2 * time.Second):
+		t.Fatal("in-flight request did not reach handler")
+	}
+
+	cancel()
+
+	select {
+	case err := <-serveErrCh:
+		if err == nil {
+			t.Fatal("expected shutdown error, got nil")
+		}
+		if !strings.Contains(err.Error(), "shutdown:") {
+			t.Fatalf("expected error wrapping shutdown:, got %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("ServeContext did not return within timeout")
+	}
+
+	closeOnce.Do(func() {
+		close(blockReq)
+	})
+	select {
+	case <-reqDone:
+	case <-time.After(2 * time.Second):
+		t.Fatal("in-flight request did not complete")
+	}
+}

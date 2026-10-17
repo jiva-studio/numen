@@ -373,7 +373,10 @@ func TestRealDownloaderPluginProcessE2E(t *testing.T) {
 		_ = host.TeardownAll(ctx, 1*time.Second)
 	}()
 
-	model := bridge.GetDownloadModel(domain.URL("https://example.com/test"))
+	model, err := bridge.GetDownloadModel(ctx, domain.URL("https://example.com/test"))
+	if err != nil {
+		t.Fatalf("GetDownloadModel failed: %v", err)
+	}
 	if model.Producer == "" {
 		t.Fatalf("expected valid producer from real downloader plugin, got %+v", model)
 	}
