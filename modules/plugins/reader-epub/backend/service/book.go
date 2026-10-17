@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/modules/plugins/reader-epub/backend/epub"
@@ -17,41 +16,8 @@ import (
 
 const mostListed = 1000
 
-var (
-	ErrEmptyBookPath = errors.New("path required")
-	ErrPathTraversal = errors.New("path traversal outside allowed scope")
-	ErrOutsideVault  = errors.New("path outside allowed vault root")
-)
-
-// ValidateVaultPath ensures an EPUB book path is within the allowed vault scope.
-func ValidateVaultPath(path string) (string, error) {
-	if path == "" {
-		return "", ErrEmptyBookPath
-	}
-	cleanPath := filepath.Clean(path)
-	if strings.Contains(cleanPath, "..") {
-		return "", ErrPathTraversal
-	}
-
-	vaultRoot := os.Getenv("NUMEN_VAULT_PATH")
-	if vaultRoot != "" {
-		cleanVault := filepath.Clean(vaultRoot)
-		if !filepath.IsAbs(cleanPath) {
-			cleanPath = filepath.Join(cleanVault, cleanPath)
-		}
-		prefix := cleanVault
-		if !strings.HasSuffix(prefix, string(filepath.Separator)) {
-			prefix += string(filepath.Separator)
-		}
-		if cleanPath != cleanVault && !strings.HasPrefix(cleanPath, prefix) {
-			return "", ErrOutsideVault
-		}
-	}
-	return cleanPath, nil
-}
-
 func readBookFile(path string) ([]byte, error) {
-	cleanPath, err := ValidateVaultPath(path)
+	cleanPath, err := vault.ValidatePath(path)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +45,7 @@ func (s *BookServer) GetBook(
 	}
 	raw, err := readBookFile(path)
 	if err != nil {
-		if errors.Is(err, ErrOutsideVault) || errors.Is(err, ErrPathTraversal) {
+		if errors.Is(err, vault.ErrOutsideVault) || errors.Is(err, vault.ErrPathTraversal) {
 			return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
 		}
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
@@ -137,7 +103,7 @@ func (s *BookServer) ReadBookMarkup(
 	}
 	raw, err := readBookFile(path)
 	if err != nil {
-		if errors.Is(err, ErrOutsideVault) || errors.Is(err, ErrPathTraversal) {
+		if errors.Is(err, vault.ErrOutsideVault) || errors.Is(err, vault.ErrPathTraversal) {
 			return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
 		}
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
@@ -201,7 +167,7 @@ func (s *BookServer) ReadBookEntry(
 	if req.Msg.GetEntry() == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("entry required"))
 	}
-	cleanPath, err := ValidateVaultPath(path)
+	cleanPath, err := vault.ValidatePath(path)
 	if err != nil {
 		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
 	}
