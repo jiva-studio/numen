@@ -67,7 +67,7 @@ jobs:
       - id: detect
         uses: ./.github/actions/detect-code
         with:
-          except: '(^|/)testdata/|^modules/apps/docs/(src/content|tools)/'
+          except: '(^|/)testdata/|^modules/apps/docs/src/.*\.(astro|js|jsx|mjs|ts|tsx)$|^modules/apps/docs/(src/content|tools)/'
 
   named:
     name: References
