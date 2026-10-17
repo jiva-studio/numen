@@ -1077,6 +1077,13 @@ func waitUntil(t *testing.T, what string, condition func() bool) {
 
 const helperProcessEnv = "NUMEN_TEST_HELPER_PROCESS"
 
+// newIdleCommand returns a command that runs a child process doing nothing until it is killed.
+func newIdleCommand() *exec.Cmd {
+	cmd := exec.Command(os.Args[0], "-test.run=^TestHelperProcessIdles$")
+	cmd.Env = append(os.Environ(), helperProcessEnv+"=idle")
+	return cmd
+}
+
 // TestHelperProcessIdles is the body of the child process the launcher starts; it does nothing in a normal run.
 func TestHelperProcessIdles(t *testing.T) {
 	if os.Getenv(helperProcessEnv) != "idle" {
@@ -1096,8 +1103,7 @@ func startSleepLauncher(t *testing.T, started *atomic.Int32, procs *[]*os.Proces
 	t.Helper()
 	var mu sync.Mutex
 	return func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		cmd := exec.Command(os.Args[0], "-test.run=^TestHelperProcessIdles$")
-		cmd.Env = append(os.Environ(), helperProcessEnv+"=idle")
+		cmd := newIdleCommand()
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}
