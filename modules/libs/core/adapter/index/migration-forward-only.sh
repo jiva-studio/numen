@@ -40,22 +40,22 @@ rule() {
 	fi
 
 	carried=$(git ls-tree -r --name-only "$at" -- "$folder")
-	if [ -z "$carried" ]; then
+	if [[ -z "$carried" ]]; then
 		echo "$at carries no migration under $folder/: nothing was compared" >&2
 		return 2
 	fi
 
 	here=$(find "$folder" -type f -name '*.sql' 2>/dev/null || true)
-	if [ -z "$here" ]; then
+	if [[ -z "$here" ]]; then
 		echo "$folder/ holds no migration: nothing was compared" >&2
 		return 2
 	fi
 
 	# The ten files the collapse took away are not read again; the one it left
 	# is compared against what it produced rather than against the base.
-	if [ "$(git rev-parse "$at:$folder")" = "$collapsed" ]; then
-		if [ ! -f "$folder/$kept" ] ||
-			[ "$(git hash-object --path "$folder/$kept" "$folder/$kept")" != "$produced" ]; then
+	if [[ "$(git rev-parse "$at:$folder")" == "$collapsed" ]]; then
+		if [[ ! -f "$folder/$kept" ]] ||
+			[[ "$(git hash-object --path "$folder/$kept" "$folder/$kept")" != "$produced" ]]; then
 			echo "M	$folder/$kept" >&2
 			echo "the migration the collapse left is not what it produced: add a new numbered file instead" >&2
 			return 1
@@ -67,7 +67,7 @@ rule() {
 	# Renames are off, so a migration moved to another name is the removal it
 	# is. Only A is left through.
 	touched=$(git diff --no-renames --name-status "$at" -- "$folder" | grep -v '^A' || true)
-	if [ -n "$touched" ]; then
+	if [[ -n "$touched" ]]; then
 		echo "$touched" >&2
 		echo "a migration $at already carries was changed or removed: add a new numbered file instead" >&2
 		return 1
@@ -106,11 +106,11 @@ self_test() {
 		)
 
 		said=$(cd "$where" && rule "$(git -C "$where" rev-parse main)" 2>&1) || got=$?
-		if [ "$got" != "$want" ]; then
+		if [[ "$got" != "$want" ]]; then
 			echo "$name: the rule answered $got, wanted $want" >&2
 			echo "$said" >&2
 			failed=1
-		elif [ -n "$word" ] && [[ $said != *"$word"* ]]; then
+		elif [[ -n "$word" && $said != *"$word"* ]]; then
 			echo "$name: the report does not name $word" >&2
 			echo "$said" >&2
 			failed=1
@@ -132,7 +132,7 @@ self_test() {
 		git commit -qm empty'
 	expect baseless 2 "nothing was compared" 'git checkout -q --orphan elsewhere'
 
-	if [ "$failed" != 0 ]; then
+	if [[ "$failed" -ne 0 ]]; then
 		echo "the rule does not refuse what it is meant to refuse" >&2
 		return 1
 	fi
