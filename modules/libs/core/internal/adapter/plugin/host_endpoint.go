@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/netip"
 	"strings"
 	"time"
 
@@ -28,6 +29,7 @@ const (
 var (
 	errUnknownCaller = errors.New("the token names no running plugin")
 	errNotTCP        = errors.New("the host endpoint listens on no TCP address")
+	errNotLoopback   = errors.New("the host endpoint listens on the loopback interface only")
 )
 
 // HostCallers is what the host endpoint asks the host about a call: who made
@@ -50,6 +52,9 @@ type HostEndpoint struct {
 // OpenHostEndpoint starts serving the host service on the address, which is a
 // free loopback port by default.
 func OpenHostEndpoint(ctx context.Context, address string, callers HostCallers) (*HostEndpoint, error) {
+	if err := checkLoopback(address); err != nil {
+		return nil, err
+	}
 	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", address)
 	if err != nil {
 		return nil, fmt.Errorf("listen for plugins: %w", err)
@@ -217,4 +222,18 @@ func (h *Host) getLaunchVars(ctx context.Context, pluginID string, processPort i
 	return getPluginVars(pluginID, launchEnvironment{
 		vaultPath: h.vaultPath, port: processPort, hostPort: hostPort, token: token, configJSON: configJSON,
 	}), nil
+}
+
+// checkLoopback accepts only an address that names a loopback IP: an empty host
+// or a name would bind more than the loopback interface.
+func checkLoopback(address string) error {
+	host, _, err := net.SplitHostPort(address)
+	if err != nil {
+		return fmt.Errorf("host endpoint address %q: %w", address, err)
+	}
+	ip, err := netip.ParseAddr(host)
+	if err != nil || !ip.IsLoopback() {
+		return fmt.Errorf("%w: %q", errNotLoopback, address)
+	}
+	return nil
 }

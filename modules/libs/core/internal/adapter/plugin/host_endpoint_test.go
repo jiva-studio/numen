@@ -399,3 +399,27 @@ func TestAHostEndpointThatCannotStartDoesNotStopALaunch(t *testing.T) {
 		t.Errorf("reported %v", reported)
 	}
 }
+
+// The host endpoint binds the loopback interface and refuses any address that
+// would bind more.
+func TestTheHostEndpointListensOnLoopbackOnly(t *testing.T) {
+	held := newCallers(nil)
+	for _, address := range []string{":0", "0.0.0.0:0", "[::]:0", "localhost:0", "192.168.1.5:0", "127.0.0.1", ""} {
+		endpoint, err := OpenHostEndpoint(t.Context(), address, held)
+		if err == nil {
+			_ = endpoint.Close(t.Context())
+			t.Errorf("address %q was bound", address)
+		}
+	}
+
+	host := NewHost("desktop.editor")
+	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	if host.hostAddress != "127.0.0.1:0" {
+		t.Errorf("a host listens on %q by default", host.hostAddress)
+	}
+	endpoint, err := OpenHostEndpoint(t.Context(), host.hostAddress, held)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = endpoint.Close(t.Context())
+}

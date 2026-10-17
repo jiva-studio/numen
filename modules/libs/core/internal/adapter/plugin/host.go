@@ -112,6 +112,7 @@ func NewHost(target string, dirs ...string) *Host {
 		problems:       nil,
 		completer:      nil,
 		hostEndpoint:   nil,
+		hostAddress:    hostEndpointAddress,
 	}
 	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
