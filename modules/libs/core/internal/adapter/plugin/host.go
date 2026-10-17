@@ -78,6 +78,9 @@ type Host struct {
 	discoverMu     sync.RWMutex
 	failedPlugins  []pluginFailure
 	problems       []DiscoveryProblem
+	completer      port.Completer
+	hostEndpoint   *HostEndpoint
+	hostAddress    string
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
@@ -107,6 +110,9 @@ func NewHost(target string, dirs ...string) *Host {
 		discoverMu:     sync.RWMutex{},
 		failedPlugins:  nil,
 		problems:       nil,
+		completer:      nil,
+		hostEndpoint:   nil,
+		hostAddress:    hostEndpointAddress,
 	}
 	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
@@ -708,7 +714,6 @@ func (h *Host) defaultLauncher(
 
 	h.mu.RLock()
 	vaultPath := h.vaultPath
-	configJSON, _ := h.getPluginConfigJSONLocked(p.Manifest.ID)
 	limits := h.processLimits
 	h.mu.RUnlock()
 
@@ -726,12 +731,9 @@ func (h *Host) defaultLauncher(
 	configureSysProcAttr(cmd)
 	cmd.Dir = workDir
 
-	pluginVars := []string{
-		"NUMEN_VAULT_PATH=" + vaultPath,
-		"NUMEN_PLUGIN_PORT=" + strconv.Itoa(port),
-		"NUMEN_PLUGIN_TOKEN=" + token,
-		"NUMEN_PLUGIN_ID=" + p.Manifest.ID,
-		"NUMEN_PLUGIN_CONFIG=" + configJSON,
+	pluginVars, err := h.getLaunchVars(ctx, p.Manifest.ID, port, token)
+	if err != nil {
+		return nil, nil, err
 	}
 	cmd.Env = sanitizeEnvironment(os.Environ(), pluginVars)
 
@@ -938,6 +940,9 @@ func (h *Host) TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 		delete(h.stdins, key)
 	}
 	h.stdinsMu.Unlock()
+	if err := h.closeHostEndpoint(ctx); err != nil && firstErr == nil {
+		firstErr = err
+	}
 	return firstErr
 }
 

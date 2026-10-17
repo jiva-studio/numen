@@ -181,4 +181,12 @@ The workload and resource calibration profile.
 | `custom.ocr_threads` | a number |  |
 | `custom.ocr_sessions` | a number |  |
 | `custom.llm_concurrency` | a number |  |
+
+### `ai`
+
+Where the questions plugins ask of a model are answered.
+
+| | | |
+| --- | --- | --- |
+| `routes` |  | are, by purpose and by default for the rest, the agent, the model and the number of questions answered at once. |
 <!-- END AUTOGEN -->

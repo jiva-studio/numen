@@ -1,5 +1,7 @@
 package engine
 
+import "github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
+
 // The models the defaults fetch, each at a fixed revision and with the sha256
 // its bytes must hold.
 const (
@@ -8,14 +10,8 @@ const (
 	recogDefault  = "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx"
 )
 
-var pinnedSums = map[string]string{
+var pinnedSums = models.Pins{
 	layoutDefault: "45bf71750b00739a41fc209f132eb104a4d6b5bb29483c9078164d8b87cf28ba",
 	detectDefault: "a431985659dc921974177a95adcfbb90fd9e51989a5e04d70d0b75f597b6e61d",
 	recogDefault:  "e16e242de5937ad92609223f19bc2aff3727ee40b095f996907c24749bad251b",
-}
-
-// getPinnedSum returns the sha256 pinned for an address, or "" for an address
-// a person named.
-func getPinnedSum(address string) string {
-	return pinnedSums[address]
 }

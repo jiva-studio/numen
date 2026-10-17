@@ -81,8 +81,11 @@ func (CompletionErrorCode) EnumDescriptor() ([]byte, []int) {
 }
 
 type CompleteRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Question      *CompletionQuestion    `protobuf:"bytes,1,opt,name=question,proto3" json:"question,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Question *CompletionQuestion    `protobuf:"bytes,1,opt,name=question,proto3" json:"question,omitempty"`
+	// The model the host routed the purpose to. Empty leaves the choice to the
+	// agent.
+	Model         string `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -122,6 +125,13 @@ func (x *CompleteRequest) GetQuestion() *CompletionQuestion {
 		return x.Question
 	}
 	return nil
+}
+
+func (x *CompleteRequest) GetModel() string {
+	if x != nil {
+		return x.Model
+	}
+	return ""
 }
 
 type CompleteResponse struct {
@@ -524,9 +534,10 @@ var File_numen_v1_completion_proto protoreflect.FileDescriptor
 
 const file_numen_v1_completion_proto_rawDesc = "" +
 	"\n" +
-	"\x19numen/v1/completion.proto\x12\bnumen.v1\"K\n" +
+	"\x19numen/v1/completion.proto\x12\bnumen.v1\"a\n" +
 	"\x0fCompleteRequest\x128\n" +
-	"\bquestion\x18\x01 \x01(\v2\x1c.numen.v1.CompletionQuestionR\bquestion\"{\n" +
+	"\bquestion\x18\x01 \x01(\v2\x1c.numen.v1.CompletionQuestionR\bquestion\x12\x14\n" +
+	"\x05model\x18\x02 \x01(\tR\x05model\"{\n" +
 	"\x10CompleteResponse\x122\n" +
 	"\x06answer\x18\x01 \x01(\v2\x1a.numen.v1.CompletionAnswerR\x06answer\x123\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x1d.numen.v1.CompletionErrorCodeR\x05error\"V\n" +

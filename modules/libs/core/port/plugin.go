@@ -95,6 +95,7 @@ type PluginConfigurator interface {
 	SetSettings(all map[string]map[string]any)
 	SetPersistHandler(handler PluginPersistHandler)
 	NotifyAllPluginConfigs(ctx context.Context) error
+	SetCompleter(completer Completer)
 	UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error
 }
 
