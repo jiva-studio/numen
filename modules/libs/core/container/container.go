@@ -102,6 +102,10 @@ type Config struct {
 	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.
 	PluginHost port.PluginManager
 
+	// KeyStore is where the keys of services are kept. Left nil, the system
+	// keychain.
+	KeyStore port.KeyStore
+
 	// Texts takes the text out of documents and books where an installation binds
 	// its own. Left nil, the document and book plugins of PluginHost give it.
 	Texts port.TextExtractor

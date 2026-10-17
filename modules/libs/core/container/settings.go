@@ -183,6 +183,7 @@ func (c Config) SetSettings(said Settings) Config {
 				},
 			})
 		})
+		c.PluginHost.SetKeyStore(c.GetKeyStore())
 		c.setCompleter()
 	}
 	return c

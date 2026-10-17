@@ -9,7 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"strconv"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -79,6 +79,7 @@ type Host struct {
 	failedPlugins  []pluginFailure
 	problems       []DiscoveryProblem
 	completer      port.Completer
+	keyStore       port.KeyStore
 	hostEndpoint   *HostEndpoint
 	hostAddress    string
 }
@@ -111,6 +112,7 @@ func NewHost(target string, dirs ...string) *Host {
 		failedPlugins:  nil,
 		problems:       nil,
 		completer:      nil,
+		keyStore:       nil,
 		hostEndpoint:   nil,
 		hostAddress:    hostEndpointAddress,
 	}
@@ -727,7 +729,7 @@ func (h *Host) defaultLauncher(
 	}
 
 	//nolint:contextcheck // the plugin process outlives the request that launched it
-	cmd := exec.CommandContext(context.Background(), binPath, "--port="+strconv.Itoa(port), "--token="+token)
+	cmd := exec.CommandContext(context.Background(), binPath, getPluginArgs(port, token)...)
 	configureSysProcAttr(cmd)
 	cmd.Dir = workDir
 
@@ -1114,6 +1116,11 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 			result[k] = v
 		}
 	}
+	if p, ok := h.plugins[pluginID]; ok {
+		for _, name := range p.Manifest.Secrets {
+			delete(result, name)
+		}
+	}
 	return result
 }
 
@@ -1243,7 +1250,14 @@ func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
 	}
 	rawSettings := h.getPluginSettingsLocked(pluginID)
 	values := formatPluginSettings(rawSettings)
+	secretNames := slices.Clone(h.plugins[pluginID].Manifest.Secrets)
+	store := h.keyStore
 	h.mu.RUnlock()
+
+	secrets, secretsErr := readPluginSecrets(ctx, store, pluginID, secretNames)
+	for _, name := range secretNames {
+		values[name] = secrets[name]
+	}
 
 	httpClient := EndpointClient(endpoint)
 	client := numenv1connect.NewPluginLifecycleServiceClient(
@@ -1262,11 +1276,11 @@ func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
 	if err != nil {
 		var connectErr *connect.Error
 		if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented {
-			return nil
+			return secretsErr
 		}
-		return fmt.Errorf("configure plugin %s: %w", pluginID, err)
+		return errors.Join(secretsErr, fmt.Errorf("configure plugin %s: %w", pluginID, err))
 	}
-	return nil
+	return secretsErr
 }
 
 // NotifyAllPluginConfigs sends resolved configurations to all running plugins.
