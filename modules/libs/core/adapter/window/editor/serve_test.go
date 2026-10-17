@@ -522,6 +522,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	cfg := container.Config{
 		IndexPath:          filepath.Join(t.TempDir(), "index.db"),
 		ShouldRebuildIndex: true,
+		Texts:              testsupport.Documents{},
 	}
 	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
