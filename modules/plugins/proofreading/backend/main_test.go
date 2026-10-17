@@ -281,6 +281,7 @@ func TestAFailureOfTheModelThatIsNotAbsenceIsInternal(t *testing.T) {
 
 func TestACancelledCallIsCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
 	proof := newProofreadingServer(func(context.Context, *numenv1.CompletionQuestion) (string, error) {
 		cancel()
 		return "", errors.New("interrupted")
