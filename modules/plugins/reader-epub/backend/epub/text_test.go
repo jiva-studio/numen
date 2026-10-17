@@ -27,6 +27,7 @@ func TestMarkupBecomesText(t *testing.T) {
 		{"text after a block begins a line", `<body><div>A</div>B</body>`, "A\nB\n"},
 		{"a block's end tag that closes nothing ends the line", `<body>A</p>B</body>`, "A\nB\n"},
 		{"a line break written as an end tag breaks the line", `<body>A</br>B</body>`, "A\nB\n"},
+		{"a line break written as a start tag breaks the line", `<p>A<br/>B</p>`, "A\nB\n"},
 		{"text after the body's end tag is in the body", `<html><body>One</body>Two</html>`, "OneTwo\n"},
 		{"text after the document's end tag is in the body", `<html><body>One</body></html>Two`, "OneTwo\n"},
 		{"an end tag naming no element closes nothing", `<p>v<b>i</bogus>i</b></p>`, "vii\n"},
@@ -53,6 +54,8 @@ func TestMarkupBecomesText(t *testing.T) {
 
 		{"a style and a title in the body are not text",
 			`<body><style>.x{}</style><p>Seen</p><title>Hidden</title><p>Too</p></body>`, "Seen\nToo\n"},
+		{"text following a style element in an inline container is preserved",
+			`<body><b><style>.x{}</style>Inline</b></body>`, "Inline\n"},
 		{"a head left open ends where the body begins",
 			`<html><head><meta charset="utf-8"/><body><p>Words</p></body></html>`, "Words\n"},
 		{"a head left open ends where a block begins",
@@ -269,5 +272,19 @@ func TestLineBreakHoldsNoText(t *testing.T) {
 	}
 	if got := slices.Index(names, "br"); got < 0 {
 		t.Errorf("the paragraph holds %q, want a break among them", names)
+	}
+}
+
+// Page breaks declared inside head or title metadata elements are ignored.
+func TestPagebreakInHeadIgnored(t *testing.T) {
+	book, _ := readOne(t, `<head><title epub:type="pagebreak" title="1">T</title><span epub:type="pagebreak" title="2"></span></head><body><p>Text</p></body>`)
+	if len(book.Pages) != 0 {
+		t.Errorf("got pages %v, want none", book.Pages)
+	}
+}
+
+func TestHasTokenBytesWhitespaceOnly(t *testing.T) {
+	if epub.HasTokenBytes([]byte("   "), "pagebreak") {
+		t.Errorf("hasTokenBytes on whitespace-only bytes returned true, want false")
 	}
 }

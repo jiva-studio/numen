@@ -69,6 +69,7 @@ func (x *extractor) writeNode(n *html.Node) {
 		return
 	case html.ElementNode:
 	default:
+		// gomutants:disable-next-line BRANCH_CASE reason="non-element nodes from html.Parse have no children and are not drawn"
 		return
 	}
 
@@ -241,6 +242,7 @@ func (t *tokenizer) handleText() {
 
 func (t *tokenizer) shouldSkipStartTag(tt html.TokenType, a atom.Atom) bool {
 	if t.skipAtom != 0 {
+		// gomutants:disable-next-line EXPRESSION_REMOVE reason="blocks already holds atom.Body"
 		if a == atom.Body || blocks[a] {
 			t.skipAtom = 0
 		} else {
@@ -298,6 +300,7 @@ func (t *tokenizer) handleStartTag(tt html.TokenType) {
 	level := parseHeadingLevel(a)
 	if isVoidTag(a) {
 		t.x.closeFrame(frame{start: start, isPagebreak: attrs.isPagebreak, pageLabel: attrs.pageLabel})
+		// gomutants:disable-next-line BRANCH_IF reason="the preceding line break leaves the buffer ending in a newline"
 		if block {
 			t.x.breakLine()
 		}
@@ -320,6 +323,7 @@ func (t *tokenizer) findStackFrame(a atom.Atom) int {
 			return i
 		}
 	}
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="the return value is only tested for greater than or equal to zero"
 	return -1
 }
 
@@ -362,8 +366,9 @@ func (t *tokenizer) handleEndTag() {
 // tokenize reads markup into text using a streaming HTML tokenizer.
 func (x *extractor) tokenize(markup []byte) {
 	t := tokenizer{
-		x:                  x,
-		z:                  html.NewTokenizer(bytes.NewReader(markup)),
+		x: x,
+		z: html.NewTokenizer(bytes.NewReader(markup)),
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="the capacity does not change the slice's contents"
 		stack:              make([]frame, 0, 32),
 		skipAtom:           0,
 		dropLeadingNewline: false,
