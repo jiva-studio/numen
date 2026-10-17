@@ -145,7 +145,7 @@ func TestPluginValidate_InvalidID(t *testing.T) {
 	if len(issues) == 0 {
 		t.Fatal("expected validation issues for bad id, got none")
 	}
-	if !strings.Contains(issues[0], "plugin id") {
+	if !strings.Contains(issues[0], "reverse-DNS") {
 		t.Errorf("unexpected issue message: %s", issues[0])
 	}
 }
@@ -382,8 +382,10 @@ func TestPluginValidate_ReportsCoreRules(t *testing.T) {
 		want     string
 	}{
 		{"bad semver", `{"id":"md.numen.x","name":"X","version":"1.0"}`, "semver"},
+		{"leading zero version", `{"id":"md.numen.x","name":"X","version":"01.0.0"}`, "semver"},
+		{"single segment id", `{"id":"foo","name":"X","version":"1.0.0"}`, "reverse-DNS"},
 		{"newer protocol", `{"id":"md.numen.x","name":"X","version":"1.0.0","protocol":99}`, "protocol"},
-		{"wasm backend", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"type":"wasm","entrypoint":"x.wasm"}}`, "backend"},
+		{"wasm backend", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"type":"wasm","entrypoint":"x.wasm"}}`, "must be \"process\""},
 		{"negative idle", `{"id":"md.numen.x","name":"X","version":"1.0.0","lifecycle":{"idleTimeoutSeconds":-5}}`, "idleTimeoutSeconds"},
 		{"setting without title", `{"id":"md.numen.x","name":"X","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, "title"},
 	}

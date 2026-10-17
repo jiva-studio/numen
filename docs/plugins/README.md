@@ -91,7 +91,7 @@ The manifest declares identity, activation rules, required permissions, and serv
 
 ### Manifest Fields
 
-- **`id`**: Unique identifier of dot-separated segments of letters, digits, `_` or `-`; the convention is reverse-DNS (`md.numen.<plugin-name>`).
+- **`id`**: Unique identifier of two or more dot-separated segments of letters, digits, `_` or `-`; reverse-DNS (`md.numen.<plugin-name>`).
 - **`name`**: User-facing display title.
 - **`version`**: Semantic versioning string (`X.Y.Z`, optional pre-release and build parts).
 - **`protocol`**: The plugin protocol version the plugin was written against. The host speaks protocol 1 and rejects a manifest that names a newer one. Absent means 1.

@@ -89,8 +89,8 @@ func TestReadManifestValidation(t *testing.T) {
 		json string
 	}{
 		{name: "missing id", json: `{"name":"A","version":"1.0.0"}`},
-		{name: "missing name", json: `{"id":"a","version":"1.0.0"}`},
-		{name: "missing version", json: `{"id":"a","name":"A"}`},
+		{name: "missing name", json: `{"id":"a.b","version":"1.0.0"}`},
+		{name: "missing version", json: `{"id":"a.b","name":"A"}`},
 		{name: "invalid json", json: `{invalid}`},
 	}
 
@@ -111,31 +111,31 @@ func TestReadManifestSettingsValidation(t *testing.T) {
 	}{
 		{
 			name: "empty setting key",
-			json: `{"id":"a","name":"A","version":"1.0.0","settings":[{"key":"","type":"boolean","title":"T"}]}`,
+			json: `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"","type":"boolean","title":"T"}]}`,
 		},
 		{
 			name: "duplicate setting key",
-			json: `{"id":"a","name":"A","version":"1.0.0","settings":[{"key":"k","type":"boolean","title":"T"},{"key":"k","type":"string","title":"T2"}]}`,
+			json: `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"boolean","title":"T"},{"key":"k","type":"string","title":"T2"}]}`,
 		},
 		{
 			name: "invalid setting type",
-			json: `{"id":"a","name":"A","version":"1.0.0","settings":[{"key":"k","type":"unsupported","title":"T"}]}`,
+			json: `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"unsupported","title":"T"}]}`,
 		},
 		{
 			name: "enum without options",
-			json: `{"id":"a","name":"A","version":"1.0.0","settings":[{"key":"k","type":"enum","title":"T","options":[]}]}`,
+			json: `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"enum","title":"T","options":[]}]}`,
 		},
 		{
 			name: "select without options",
-			json: `{"id":"a","name":"A","version":"1.0.0","settings":[{"key":"k","type":"select","title":"T","options":[]}]}`,
+			json: `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"select","title":"T","options":[]}]}`,
 		},
 		{
 			name: "select missing options",
-			json: `{"id":"a","name":"A","version":"1.0.0","settings":[{"key":"k","type":"select","title":"T"}]}`,
+			json: `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"select","title":"T"}]}`,
 		},
 		{
 			name: "range min greater than max",
-			json: `{"id":"a","name":"A","version":"1.0.0","settings":[{"key":"k","type":"range","title":"T","min":100,"max":50}]}`,
+			json: `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"range","title":"T","min":100,"max":50}]}`,
 		},
 	}
 
@@ -181,7 +181,7 @@ func TestReadManifestValidSettings(t *testing.T) {
 
 func TestManifestSelectSetting(t *testing.T) {
 	t.Run("passes when options are present", func(t *testing.T) {
-		raw := `{"id":"a","name":"A","version":"1.0.0","settings":[{"key":"mode","type":"select","title":"Mode","options":["fast","accurate"]}]}`
+		raw := `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"mode","type":"select","title":"Mode","options":["fast","accurate"]}]}`
 		m, err := ReadManifest(strings.NewReader(raw))
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -198,7 +198,7 @@ func TestManifestSelectSetting(t *testing.T) {
 	})
 
 	t.Run("fails when options are missing", func(t *testing.T) {
-		raw := `{"id":"a","name":"A","version":"1.0.0","settings":[{"key":"mode","type":"select","title":"Mode"}]}`
+		raw := `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"mode","type":"select","title":"Mode"}]}`
 		_, err := ReadManifest(strings.NewReader(raw))
 		if err == nil {
 			t.Fatal("expected error for select without options, got nil")
@@ -208,7 +208,7 @@ func TestManifestSelectSetting(t *testing.T) {
 
 func TestManifestLifecycleMemoryLimit(t *testing.T) {
 	t.Run("decodes memoryLimitBytes", func(t *testing.T) {
-		raw := `{"id":"a","name":"A","version":"1.0.0","lifecycle":{"mode":"on-demand","memoryLimitBytes":1073741824}}`
+		raw := `{"id":"a.b","name":"A","version":"1.0.0","lifecycle":{"mode":"on-demand","memoryLimitBytes":1073741824}}`
 		m, err := ReadManifest(strings.NewReader(raw))
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -219,7 +219,7 @@ func TestManifestLifecycleMemoryLimit(t *testing.T) {
 	})
 
 	t.Run("decodes memoryLimitMB", func(t *testing.T) {
-		raw := `{"id":"a","name":"A","version":"1.0.0","lifecycle":{"mode":"on-demand","memoryLimitMB":512}}`
+		raw := `{"id":"a.b","name":"A","version":"1.0.0","lifecycle":{"mode":"on-demand","memoryLimitMB":512}}`
 		m, err := ReadManifest(strings.NewReader(raw))
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -237,15 +237,18 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 		want error
 	}{
 		{"id with a space", `{"id":"bad id","name":"A","version":"1.0.0"}`, port.ErrInvalidID},
-		{"version without patch", `{"id":"a","name":"A","version":"1.0"}`, port.ErrInvalidVersion},
-		{"protocol newer than the host", `{"id":"a","name":"A","version":"1.0.0","protocol":2}`, port.ErrUnsupportedProtocol},
-		{"negative protocol", `{"id":"a","name":"A","version":"1.0.0","protocol":-1}`, port.ErrUnsupportedProtocol},
-		{"negative idle timeout", `{"id":"a","name":"A","version":"1.0.0","lifecycle":{"idleTimeoutSeconds":-1}}`, port.ErrInvalidLifecycle},
-		{"wasm backend", `{"id":"a","name":"A","version":"1.0.0","backend":{"type":"wasm","entrypoint":"x.wasm"}}`, port.ErrInvalidBackend},
-		{"backend without entrypoint", `{"id":"a","name":"A","version":"1.0.0","backend":{"type":"process"}}`, port.ErrInvalidBackend},
-		{"frontend without entrypoint", `{"id":"a","name":"A","version":"1.0.0","frontend":{"styles":"s.css"}}`, port.ErrInvalidFrontend},
-		{"setting without title", `{"id":"a","name":"A","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, port.ErrEmptySettingTitle},
-		{"unknown permission", `{"id":"a","name":"A","version":"1.0.0","permissions":["shell"]}`, port.ErrInvalidPermission},
+		{"version without patch", `{"id":"a.b","name":"A","version":"1.0"}`, port.ErrInvalidVersion},
+		{"version with leading zero", `{"id":"a.b","name":"A","version":"01.0.0"}`, port.ErrInvalidVersion},
+		{"prerelease with leading zero", `{"id":"a.b","name":"A","version":"1.0.0-01"}`, port.ErrInvalidVersion},
+		{"id of one segment", `{"id":"foo","name":"A","version":"1.0.0"}`, port.ErrInvalidID},
+		{"protocol newer than the host", `{"id":"a.b","name":"A","version":"1.0.0","protocol":2}`, port.ErrUnsupportedProtocol},
+		{"negative protocol", `{"id":"a.b","name":"A","version":"1.0.0","protocol":-1}`, port.ErrUnsupportedProtocol},
+		{"negative idle timeout", `{"id":"a.b","name":"A","version":"1.0.0","lifecycle":{"idleTimeoutSeconds":-1}}`, port.ErrInvalidLifecycle},
+		{"wasm backend", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"type":"wasm","entrypoint":"x.wasm"}}`, port.ErrInvalidBackend},
+		{"backend without entrypoint", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"type":"process"}}`, port.ErrInvalidBackend},
+		{"frontend without entrypoint", `{"id":"a.b","name":"A","version":"1.0.0","frontend":{"styles":"s.css"}}`, port.ErrInvalidFrontend},
+		{"setting without title", `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, port.ErrEmptySettingTitle},
+		{"unknown permission", `{"id":"a.b","name":"A","version":"1.0.0","permissions":["shell"]}`, port.ErrInvalidPermission},
 	}
 
 	for _, tc := range cases {
@@ -260,8 +263,8 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 
 func TestManifestAcceptsCurrentProtocolAndAbsentProtocol(t *testing.T) {
 	for _, raw := range []string{
-		`{"id":"a","name":"A","version":"1.0.0"}`,
-		`{"id":"a","name":"A","version":"1.0.0","protocol":1}`,
+		`{"id":"a.b","name":"A","version":"1.0.0"}`,
+		`{"id":"a.b","name":"A","version":"1.0.0","protocol":1}`,
 	} {
 		if _, err := ReadManifest(strings.NewReader(raw)); err != nil {
 			t.Errorf("%s: unexpected error: %v", raw, err)
