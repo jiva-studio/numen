@@ -99,7 +99,8 @@ func TestSupervisorTeardownGraceful(t *testing.T) {
 
 func TestSupervisorTeardownInProcessCallsRPC(t *testing.T) {
 	sup := NewSupervisor()
-	sup.Acquire(time.Now())
+	sup.SetActivating()
+	sup.ActivateInProcess(time.Now())
 
 	rpcCalled := false
 	err := sup.Teardown(t.Context(), 50*time.Millisecond, func(_ context.Context) error {
@@ -329,5 +330,51 @@ func TestSupervisorMemoryTrackingAndEviction(t *testing.T) {
 	}
 	if sup.GetState() != StateDormant {
 		t.Fatalf("expected StateDormant after eviction, got %v", sup.GetState())
+	}
+}
+
+func TestAcquireRefusesAPluginThatIsDeactivating(t *testing.T) {
+	cmd := exec.Command("sleep", "5")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("failed to start process: %v", err)
+	}
+	defer func() {
+		killProcess(t, cmd.Process)
+	}()
+	sup := NewSupervisor()
+	now := time.Now()
+	if err := sup.Attach(cmd.Process, now); err != nil {
+		t.Fatalf("failed to attach: %v", err)
+	}
+	sup.Release(now)
+
+	if !sup.BeginDeactivation(0, now) {
+		t.Fatal("expected an idle plugin to begin deactivating")
+	}
+	if sup.GetState() != StateDeactivating {
+		t.Fatalf("expected StateDeactivating, got %v", sup.GetState())
+	}
+	if sup.Acquire(now) {
+		t.Fatal("Acquire held a deactivating plugin")
+	}
+}
+
+func TestADeactivationDoesNotBeginOnAHeldPlugin(t *testing.T) {
+	cmd := exec.Command("sleep", "5")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("failed to start process: %v", err)
+	}
+	defer func() {
+		killProcess(t, cmd.Process)
+	}()
+	sup := NewSupervisor()
+	now := time.Now()
+	if err := sup.Attach(cmd.Process, now); err != nil {
+		t.Fatalf("failed to attach: %v", err)
+	}
+	sup.Acquire(now)
+
+	if sup.BeginDeactivation(0, now) {
+		t.Fatal("a held plugin began deactivating")
 	}
 }
