@@ -478,11 +478,12 @@ func TestAWindowOfLimitedToolsRefusesAProgramWithToolsOfItsOwn(t *testing.T) {
 	drain(run)
 }
 
-// The drawing of a change ends when the call making it is reported whole, before the run is over.
+// The drawing of a change ends when the tool is done, before the run is over.
 func TestTheDrawingOfAChangeEndsWithItsCall(t *testing.T) {
 	provider := &fakeProvider{steps: []port.Step{
 		draftOf("c-1", "a.md", "old", "x"),
 		{Kind: domain.StepEdit, Call: "c-1"},
+		{Kind: domain.StepToolDone},
 		{Kind: domain.StepSay, Text: "after"},
 	}}
 	var seen drawn
@@ -500,5 +501,31 @@ func TestTheDrawingOfAChangeEndsWithItsCall(t *testing.T) {
 	}
 	if !slices.Equal(seen.edits, want) {
 		t.Errorf("the window was told %+v, want %+v", seen.edits, want)
+	}
+}
+
+// Closing the router ends the conversations tasks were started in and left open.
+func TestClosingTheRouterEndsTheConversationsLeftOpen(t *testing.T) {
+	provider := &fakeProvider{}
+	router, _ := makeRouter(t, provider, settings.Agent{}, EditPreview{})
+
+	for _, conversation := range []string{"c-1", "c-2", "c-3", ""} {
+		run, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: "claude", Conversation: conversation})
+		if err != nil {
+			t.Fatal(err)
+		}
+		drain(run)
+	}
+	if err := router.EndConversation(t.Context(), "c-2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := router.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	got := slices.Clone(provider.ended)
+	slices.Sort(got)
+	if !slices.Equal(got, []string{"c-1", "c-2", "c-3"}) {
+		t.Errorf("the conversations ended are %v", got)
 	}
 }

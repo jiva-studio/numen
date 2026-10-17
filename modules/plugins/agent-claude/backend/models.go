@@ -60,21 +60,31 @@ func (c *modelCatalogue) credentials() (key, base string) {
 // get are the models the endpoint lists: the ones kept, or those it lists now.
 func (c *modelCatalogue) get(ctx context.Context) []AgentModel {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	if c.isKept {
-		return c.kept
+		kept := c.kept
+		c.mu.Unlock()
+		return kept
 	}
+	key, base := c.key, c.base
+	c.mu.Unlock()
+
 	asking, stop := context.WithTimeout(ctx, modelsLimit)
 	defer stop()
-	models, err := fetchAnthropicModels(asking, c.key, c.base)
+	models, err := fetchAnthropicModels(asking, key, base)
 	if err != nil {
 		if ctx.Err() != nil {
 			return nil
 		}
 		models = nil
 	}
-	c.kept, c.isKept = models, true
-	return c.kept
+
+	// What was listed under a key and an endpoint that have been changed since is not kept.
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.key == key && c.base == base {
+		c.kept, c.isKept = models, true
+	}
+	return models
 }
 
 // fetchAnthropicModels asks the endpoint for its models, and answers none where there is no key.

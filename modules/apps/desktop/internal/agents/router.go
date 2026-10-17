@@ -39,6 +39,8 @@ type Router struct {
 
 	mu       sync.RWMutex
 	isClosed bool
+	// conversations are the ones tasks were started in, and not ended.
+	conversations map[string]struct{}
 }
 
 // NewRouter builds the router for the settings, against the tools served at url.
@@ -89,12 +91,28 @@ func getToolDeclarations(names []string, vocabulary map[string]mcp.Tool) []port.
 	return declarations
 }
 
-// Close refuses the work that comes after it.
+// Close refuses the work that comes after it, and ends the conversations tasks were started in.
 func (r *Router) Close() error {
 	r.mu.Lock()
 	r.isClosed = true
+	ended := make([]string, 0, len(r.conversations))
+	for conversation := range r.conversations {
+		ended = append(ended, conversation)
+	}
+	r.conversations = nil
 	r.mu.Unlock()
-	return nil
+
+	if r.provider == nil {
+		return nil
+	}
+	ctx, stop := context.WithTimeout(context.Background(), bound)
+	defer stop()
+
+	var failed []error
+	for _, conversation := range ended {
+		failed = append(failed, r.provider.EndConversation(ctx, conversation))
+	}
+	return errors.Join(failed...)
 }
 
 // StartRun starts the task on the program it names, or on the configured one, under the tools,
@@ -137,6 +155,14 @@ func (r *Router) StartRun(ctx context.Context, task port.Task) (port.Run, error)
 	task.Endpoint = r.endpoint
 	task.ToolDeclarations = r.declarations
 
+	if task.Conversation != "" {
+		r.mu.Lock()
+		if r.conversations == nil {
+			r.conversations = make(map[string]struct{})
+		}
+		r.conversations[task.Conversation] = struct{}{}
+		r.mu.Unlock()
+	}
 	fmt.Fprintf(r.out, "agents: dispatching task to %s (model: %s)\n", use, task.Model)
 	run, err := r.provider.StartRun(ctx, task)
 	if err != nil {
@@ -179,6 +205,9 @@ func (r *Router) getProgram(ctx context.Context, asked string) (string, error) {
 
 // EndConversation ends the conversation on the program it was asked of.
 func (r *Router) EndConversation(ctx context.Context, conversation string) error {
+	r.mu.Lock()
+	delete(r.conversations, conversation)
+	r.mu.Unlock()
 	if r.provider == nil {
 		return nil
 	}

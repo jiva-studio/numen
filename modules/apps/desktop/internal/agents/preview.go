@@ -62,7 +62,9 @@ func (d *draftingRun) forward(ctx context.Context, preview EditPreview) {
 			drawing.draw(ctx, preview, step)
 			continue
 		}
-		drawing.finish(ctx, preview, step.Call)
+		if step.Kind == domain.StepToolDone {
+			drawing.finish(ctx, preview, "")
+		}
 		select {
 		case d.steps <- step:
 		case <-d.stopped:
