@@ -1,4 +1,4 @@
-package runner
+package agentrun
 
 import (
 	"context"
@@ -14,7 +14,8 @@ type Registry struct {
 	sessions map[string]string
 }
 
-// Add keeps the work so that Close can reach it. It is false once the registry is closed.
+// Add keeps the work so that Close can reach it, and counts its reader, which calls End on the work
+// when it is done. It is false once the registry is closed.
 func (r *Registry) Add(w *Work) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -25,6 +26,7 @@ func (r *Registry) Add(w *Work) bool {
 	if r.running == nil {
 		r.running = map[*Work]bool{}
 	}
+	w.reader.Add(1)
 	r.running[w] = true
 	return true
 }

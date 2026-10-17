@@ -11,6 +11,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"slices"
+	"strings"
+	"sync"
+	"time"
 )
 
 // AgentModel represents an AI model available from an external agent CLI.
@@ -49,6 +52,59 @@ func readCodexCache() []AgentModel {
 		}
 		models = append(models, AgentModel{Name: m.Slug, Title: m.DisplayName})
 	}
+	return models
+}
+
+// codexListLimit is how long Codex has to list its models.
+const codexListLimit = 15 * time.Second
+
+// codexFailureBackoff is how long a command line that failed to list is left alone.
+const codexFailureBackoff = 30 * time.Second
+
+// codexModelCache keeps what Codex listed, for as long as the command line asked stays the same. A
+// failure keeps nothing, and the command line that failed is left alone for a while.
+type codexModelCache struct {
+	mu     sync.Mutex
+	key    string
+	models []AgentModel
+	isKept bool
+	// failedKey and failedAt are the command line Codex last failed to list under, and when.
+	failedKey string
+	failedAt  time.Time
+	// now is the clock the backoff is kept by. Empty is the system clock.
+	now func() time.Time
+}
+
+// getNow is the time by the clock of the cache.
+func (c *codexModelCache) getNow() time.Time {
+	if c.now == nil {
+		return time.Now()
+	}
+	return c.now()
+}
+
+// get are the models Codex lists: the ones kept, or those it lists now.
+func (c *codexModelCache) get(ctx context.Context, command []string) []AgentModel {
+	key := strings.Join(command, " ")
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.isKept && c.key == key {
+		return c.models
+	}
+	if c.failedKey == key && c.getNow().Sub(c.failedAt) < codexFailureBackoff {
+		return nil
+	}
+	asking, stop := context.WithTimeout(ctx, codexListLimit)
+	defer stop()
+	models, err := GetCodexModels(asking, command)
+	if err != nil {
+		if ctx.Err() == nil {
+			c.failedKey, c.failedAt = key, c.getNow()
+		}
+		return nil
+	}
+	c.key, c.models, c.isKept = key, models, true
+	c.failedKey = ""
 	return models
 }
 

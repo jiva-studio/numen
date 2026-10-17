@@ -643,3 +643,5 @@ An installation naming no agent and asking for no tools opens no port and writes
 | `concurrency` | how many questions the route answers at once; the others wait for a place, and a question whose plugin gave up leaves the wait. Below one is one. |
 
 The file is read at every question, so a route written while the application runs applies to the next one.
+
+No key is written in this file. An agent plugin that needs one declares it under `secrets` in its manifest; the host keeps it in the system keychain and hands it to the plugin in `Configure`, so it is in neither the plugin's environment nor its command line. A machine without a keychain fails with an error saying so and keeps the key nowhere else.

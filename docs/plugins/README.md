@@ -109,6 +109,7 @@ The manifest declares identity, activation rules, required permissions, and serv
 - **`backend`**: `type` is `process` (the only backend type) and `entrypoint` is required.
 - **`frontend`**: `entrypoint` is required, `styles` is optional.
 - **`settings`**: Declarative settings schema automatically rendered in host settings and stored by the core.
+- **`secrets`**: The names of the secrets, such as an API key, the plugin asks the host to keep (letters, digits, `_` and `-`; a name is not also a setting). The host keeps them in the system keychain, never in the settings file, and hands each to the plugin as a `Configure` value under its name (empty while there is no key); a secret is never in the environment, on the command line or in `NUMEN_PLUGIN_CONFIG`.
 
 ---
 

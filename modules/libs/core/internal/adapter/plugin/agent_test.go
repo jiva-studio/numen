@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -194,9 +197,9 @@ func TestAgentBridge(t *testing.T) {
 	})
 
 	ctx := t.Context()
-	bridge, err := OpenAgentBridge(ctx, host)
+	bridge, err := OpenAgentBridgeForPlugin(ctx, host, "md.numen.agent")
 	if err != nil {
-		t.Fatalf("OpenAgentBridge failed: %v", err)
+		t.Fatalf("OpenAgentBridgeForPlugin failed: %v", err)
 	}
 
 	run, err := bridge.StartRun(ctx, port.Task{
@@ -260,17 +263,6 @@ func TestAgentBridge(t *testing.T) {
 	_ = bridge.Close()
 }
 
-func TestAgentBridgeNoPlugin(t *testing.T) {
-	tmp := t.TempDir()
-	host := NewHost("desktop.editor", tmp)
-	_ = host.Discover()
-
-	_, err := OpenAgentBridge(t.Context(), host)
-	if err != ErrNoAgentPlugin {
-		t.Fatalf("got err = %v, want ErrNoAgentPlugin", err)
-	}
-}
-
 type floodAgentServer struct {
 	numenv1connect.UnimplementedAgentServiceHandler
 }
@@ -327,9 +319,9 @@ func TestAgentBridge_UnreadChannelDoesNotDeadlock(t *testing.T) {
 	})
 
 	ctx := t.Context()
-	bridge, err := OpenAgentBridge(ctx, host)
+	bridge, err := OpenAgentBridgeForPlugin(ctx, host, "md.numen.agent")
 	if err != nil {
-		t.Fatalf("OpenAgentBridge failed: %v", err)
+		t.Fatalf("OpenAgentBridgeForPlugin failed: %v", err)
 	}
 	defer bridge.Close()
 
@@ -368,5 +360,169 @@ func TestConvertResponseStepCarriesTheCallNameAndEffect(t *testing.T) {
 		if step.Kind != want || step.Call != "toolu_01" || step.Tool != "Edit a note" {
 			t.Errorf("kind %q: got %+v", word, step)
 		}
+	}
+}
+
+// openTestBridge serves the handler as the agent plugin and opens a bridge to it.
+func openTestBridge(t *testing.T, handler numenv1connect.AgentServiceHandler) *AgentBridge {
+	t.Helper()
+
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewAgentServiceHandler(handler))
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
+
+	tmp := t.TempDir()
+	createTestAgentPluginTree(t, tmp)
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+
+	cmd := exec.Command("sleep", "10")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start mock proc failed: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = cmd.Process.Kill()
+		_, _ = cmd.Process.Wait()
+	})
+	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
+		return cmd.Process, io.NopCloser(r), nil
+	})
+
+	bridge, err := OpenAgentBridgeForPlugin(t.Context(), host, "md.numen.agent")
+	if err != nil {
+		t.Fatalf("OpenAgentBridgeForPlugin failed: %v", err)
+	}
+	t.Cleanup(func() { _ = bridge.Close() })
+	return bridge
+}
+
+type programsServer struct {
+	numenv1connect.UnimplementedAgentServiceHandler
+	asked []*v1.AgentProgramCommand
+}
+
+func (s *programsServer) GetAgentPrograms(
+	_ context.Context,
+	req *connect.Request[v1.GetAgentProgramsRequest],
+) (*connect.Response[v1.GetAgentProgramsResponse], error) {
+	s.asked = req.Msg.GetCommands()
+	return connect.NewResponse(&v1.GetAgentProgramsResponse{Programs: []*v1.AgentProgram{{
+		Name: "one", Title: "One", IsInstalled: true, IsDefault: true, LimitsTools: true,
+		Models: []*v1.AgentModel{{Name: "m1", Title: "M one", IsDefault: true}, {Name: "m2"}},
+	}}}), nil
+}
+
+// The programs a plugin lists come back under the plugin that listed them, and the command lines
+// the installation set go to it.
+func TestTheBridgeListsTheProgramsAPluginRuns(t *testing.T) {
+	served := &programsServer{}
+	bridge := openTestBridge(t, served)
+
+	got, err := bridge.GetPrograms(t.Context(), map[string][]string{"one": {"/bin/one", "--x"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []port.AgentProgram{{
+		Provider: "md.numen.agent", Name: "one", Title: "One", IsInstalled: true, IsDefault: true, LimitsTools: true,
+		Models: []port.AgentModel{{Name: "m1", Title: "M one", IsDefault: true}, {Name: "m2"}},
+	}}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v, want %+v", got, want)
+	}
+	if len(served.asked) != 1 || served.asked[0].GetProgram() != "one" ||
+		!slices.Equal(served.asked[0].GetCommand(), []string{"/bin/one", "--x"}) {
+		t.Errorf("the plugin was told %v", served.asked)
+	}
+}
+
+// A plugin that cannot list its programs is an error.
+func TestTheBridgeFailsWhereThePluginListsNoPrograms(t *testing.T) {
+	bridge := openTestBridge(t, &floodAgentServer{})
+
+	if _, err := bridge.GetPrograms(t.Context(), nil); err == nil {
+		t.Error("a plugin that serves no program list listed some")
+	}
+}
+
+// A limit on steps that no request can carry is the largest one it can, and a negative one is none.
+func TestALimitOnStepsIsKeptWithinWhatTheRequestCarries(t *testing.T) {
+	for limit, want := range map[int]int32{
+		-5:            0,
+		0:             0,
+		7:             7,
+		math.MaxInt32: math.MaxInt32,
+		math.MaxInt:   math.MaxInt32,
+	} {
+		if got := newAskRequest(port.Task{MaxSteps: limit}).GetMaxSteps(); got != want {
+			t.Errorf("%d was sent as %d, want %d", limit, got, want)
+		}
+	}
+}
+
+// Everything the task gives the agent reaches the request, and the effect of each tool goes in the
+// word the plugins read it in.
+func TestTheRequestCarriesWhatTheTaskGivesTheAgent(t *testing.T) {
+	got := newAskRequest(port.Task{
+		Question: "q", Focus: "f", Conversation: "c", Agent: "one", Model: "m", Instructions: "i",
+		Tools: []string{"note_edit"}, MaxSteps: 7, Root: "/vault", Command: []string{"/bin/one"},
+		Options:  map[string]string{"k": "true"},
+		Endpoint: port.ToolEndpoint{URL: "http://127.0.0.1:1/mcp", Token: "t"},
+		ToolDeclarations: []port.ToolDeclaration{
+			{Name: "note_edit", Title: "Edit a note", Kind: domain.StepEdit, About: "path", Match: "stood", Text: "becomes"},
+			{Name: "note_read", Kind: domain.StepToolCall, Element: "path"},
+		},
+	})
+
+	if got.GetPrompt() != "q" || got.GetFocus() != "f" || got.GetConversation() != "c" || got.GetAgent() != "one" ||
+		got.GetModel() != "m" || got.GetInstructions() != "i" || got.GetMaxSteps() != 7 ||
+		!slices.Equal(got.GetTools(), []string{"note_edit"}) {
+		t.Errorf("the question is %v", got)
+	}
+	if got.GetRoot() != "/vault" || !slices.Equal(got.GetCommand(), []string{"/bin/one"}) ||
+		got.GetOptions()["k"] != "true" || got.GetToolsUrl() != "http://127.0.0.1:1/mcp" || got.GetToolsToken() != "t" {
+		t.Errorf("what the agent is given is %v", got)
+	}
+	declared := got.GetToolDeclarations()
+	if len(declared) != 2 {
+		t.Fatalf("the declarations are %v", declared)
+	}
+	if edit := declared[0]; edit.GetName() != "note_edit" || edit.GetTitle() != "Edit a note" ||
+		edit.GetKind() != "edit" || edit.GetAbout() != "path" || edit.GetMatch() != "stood" || edit.GetText() != "becomes" {
+		t.Errorf("the edit tool is declared as %v", edit)
+	}
+	if read := declared[1]; read.GetKind() != "" || read.GetElement() != "path" {
+		t.Errorf("the other tool is declared as %v", read)
+	}
+}
+
+// The word a tool's effect is told in is the word it is read back from.
+func TestAnEffectIsToldAndReadInTheSameWord(t *testing.T) {
+	for _, effect := range []domain.StepKind{
+		domain.StepRead, domain.StepEdit, domain.StepRemove, domain.StepMove, domain.StepSearch, domain.StepToolCall,
+	} {
+		if got := getStepKind(getKindWord(effect)); got != effect {
+			t.Errorf("%v was told as %q and read as %v", effect, getKindWord(effect), got)
+		}
+	}
+}
+
+// A change being written reaches the core as a draft of the note, with the text it replaces and
+// the text that takes its place so far.
+func TestAChangeBeingWrittenIsADraft(t *testing.T) {
+	got := convertResponseStep(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_EditProgress{
+		EditProgress: &v1.EditProgress{Call: "toolu_01", Path: "a/b.md", Match: "old", Text: "new"},
+	}})
+
+	want := port.Step{
+		Kind: domain.StepDraft, Call: "toolu_01", Place: domain.Place{Path: "a/b.md"}, Match: "old", Text: "new",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v, want %+v", got, want)
 	}
 }

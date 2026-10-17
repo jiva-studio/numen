@@ -9,7 +9,7 @@ import (
 
 func TestDiscoveryWithMockBins(t *testing.T) {
 	binDir := t.TempDir()
-	tools := []string{"claude", "agy", "codex", "cursor"}
+	tools := []string{"agy", "codex", "cursor"}
 	for _, tool := range tools {
 		path := filepath.Join(binDir, tool)
 		if err := os.WriteFile(path, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
@@ -19,9 +19,6 @@ func TestDiscoveryWithMockBins(t *testing.T) {
 
 	t.Setenv("PATH", binDir)
 
-	if !IsClaudeInstalled() {
-		t.Error("expected Claude to be installed")
-	}
 	if !IsAntigravityInstalled() {
 		t.Error("expected Antigravity to be installed")
 	}
@@ -33,7 +30,7 @@ func TestDiscoveryWithMockBins(t *testing.T) {
 	}
 
 	agents := GetInstalledAgents()
-	for _, expected := range []string{"antigravity", "codex", "claude", "cursor"} {
+	for _, expected := range []string{"antigravity", "codex", "cursor"} {
 		if !slices.Contains(agents, expected) {
 			t.Errorf("expected installed agents to contain %s, got %v", expected, agents)
 		}

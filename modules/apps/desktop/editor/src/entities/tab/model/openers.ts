@@ -213,9 +213,10 @@ function addExtensionReader(
   read: SourceReader,
 ): () => void {
   const ext = extension.startsWith('.') ? extension.slice(1).toLowerCase() : extension.toLowerCase()
-  extensionReaders.set(ext, read)
+  const entry: SourceReader = (path, spans) => read(path, spans)
+  extensionReaders.set(ext, entry)
   return () => {
-    extensionReaders.delete(ext)
+    if (extensionReaders.get(ext) === entry) extensionReaders.delete(ext)
   }
 }
 

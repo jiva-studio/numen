@@ -89,7 +89,7 @@ export const createDeletionCommands = (words: Words): readonly Command[] => [
       keeps: words.keepsTranscript,
       kept: words.kept,
       action: words.deletes,
-      then: words.deleted,
+      detail: words.deleted,
     },
   },
   {
@@ -102,7 +102,7 @@ export const createDeletionCommands = (words: Words): readonly Command[] => [
       keeps: words.keepsCopy,
       kept: words.kept,
       action: words.deletes,
-      then: words.deletedCopy,
+      detail: words.deletedCopy,
     },
   },
 ]

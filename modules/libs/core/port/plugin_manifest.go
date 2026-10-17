@@ -52,10 +52,12 @@ var (
 	ErrInvalidSettingType  = errors.New("invalid setting type")
 	ErrEnumMissingOptions  = errors.New("enum setting must define options")
 	ErrRangeInvalidBounds  = errors.New("range min cannot exceed max")
+	ErrInvalidSecret       = errors.New("invalid secret")
 )
 
 var (
 	manifestIDPattern      = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
+	manifestSecretPattern  = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 	manifestVersionPattern = regexp.MustCompile(`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`)
 )
 
@@ -176,7 +178,11 @@ type PluginManifest struct {
 	Backend          PluginBackend           `json:"backend,omitzero"`
 	Frontend         PluginFrontend          `json:"frontend,omitzero"`
 	Settings         []PluginManifestSetting `json:"settings"`
-	Agent            PluginAgentConfig       `json:"agent,omitzero"`
+	// Secrets are the names of the secrets, such as an API key, the plugin asks the
+	// host to keep. The host hands them over as Configure values, empty while a
+	// secret has no key, and never puts one in the environment or on the command line.
+	Secrets []string          `json:"secrets,omitempty"`
+	Agent   PluginAgentConfig `json:"agent,omitzero"`
 }
 
 // ReadManifest decodes and validates a manifest from JSON input.
@@ -209,6 +215,7 @@ func (m PluginManifest) ListIssues() []error {
 	issues = append(issues, m.listEntrypointIssues()...)
 	issues = append(issues, m.listPermissionIssues()...)
 	issues = append(issues, m.listRuntimeIssues()...)
+	issues = append(issues, m.listSecretIssues()...)
 	return append(issues, listManifestSettingIssues(m.Settings)...)
 }
 
@@ -282,6 +289,23 @@ func (m PluginManifest) listRuntimeIssues() []error {
 			issues = append(issues, fmt.Errorf("%w: %q, expected one of %s", ErrInvalidRuntime, name, strings.Join(validRuntimes, ", ")))
 		case seen[name]:
 			issues = append(issues, fmt.Errorf("%w: %s is declared twice", ErrInvalidRuntime, name))
+		}
+		seen[name] = true
+	}
+	return issues
+}
+
+func (m PluginManifest) listSecretIssues() []error {
+	var issues []error
+	seen := make(map[string]bool, len(m.Secrets))
+	for _, name := range m.Secrets {
+		switch {
+		case !manifestSecretPattern.MatchString(name):
+			issues = append(issues, fmt.Errorf("%w: %q is not letters, digits, _ or -", ErrInvalidSecret, name))
+		case seen[name]:
+			issues = append(issues, fmt.Errorf("%w: %q is declared twice", ErrInvalidSecret, name))
+		case slices.ContainsFunc(m.Settings, func(s PluginManifestSetting) bool { return s.Key == name }):
+			issues = append(issues, fmt.Errorf("%w: %q is also a setting", ErrInvalidSecret, name))
 		}
 		seen[name] = true
 	}

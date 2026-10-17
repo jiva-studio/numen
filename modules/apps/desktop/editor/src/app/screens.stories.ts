@@ -14,6 +14,7 @@ import type { Tab, Workspace } from '@numen/ui'
 import { computed, nextTick, onMounted, ref, shallowRef, type Component } from 'vue'
 
 import { SettingsTab, type Installation } from '@/pages/settings'
+import type { Model } from '@/entities/settings'
 import {
   DEFAULTS,
   PresetTab,
@@ -106,6 +107,20 @@ const WRITING = { reach: { keeps: 'Escape hands Tab back to the page' } }
 
 /* The settings. ------------------------------------------------------------ */
 
+/** The program an installation nobody configured answers with. */
+const AGENT_USE: Model = {
+  namedAt: ['agent', 'use'],
+  name: 'claude',
+  title: 'Claude Code',
+  group: '',
+  isDefault: true,
+  writes: [{ at: ['agent', 'use'], value: '"claude"' }],
+  presence: 'present',
+}
+
+/** What the settings were asked to do; a picture asks nothing. */
+const DONE: string[] = []
+
 const INSTALLATION: Installation = {
   themes: ref([
     { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
@@ -121,20 +136,30 @@ const INSTALLATION: Installation = {
     interfaceScale: { least: 0.8, most: 2 },
     textScale: { least: 0.8, most: 1.75 },
   }),
-  choose: () => {},
+  choose: () => {
+    DONE.push('choose')
+  },
   isSyncing: ref(true),
   isNesting: ref(true),
   headings: ref(6),
   headingsBounds: ref({ least: 1, most: 12 }),
-  chooseHeadings: () => {},
+  chooseHeadings: () => {
+    DONE.push('headings')
+  },
   dayStartTime: ref('04:00'),
   latestDayStartTime: ref('12:00'),
-  chooseDayStartTime: () => {},
+  chooseDayStartTime: (time) => {
+    DONE.push(`day ${time}`)
+  },
   getSetting: () => undefined,
-  getModels: () => [],
-  write: () => {},
+  getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),
+  write: (edits) => {
+    DONE.push(`write ${edits.length}`)
+  },
   file: ref('/numen.json'),
-  openFile: () => {},
+  openFile: () => {
+    DONE.push('open')
+  },
 }
 
 /** Everything in numen.json a person can change, in the groups the file keeps. */

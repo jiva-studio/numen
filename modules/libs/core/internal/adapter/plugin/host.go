@@ -9,7 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"strconv"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -79,6 +79,9 @@ type Host struct {
 	failedPlugins  []pluginFailure
 	problems       []DiscoveryProblem
 	completer      port.Completer
+	secretLocksMu  sync.Mutex
+	secretLocks    map[string]*sync.Mutex
+	keyStore       port.KeyStore
 	hostEndpoint   *HostEndpoint
 	hostAddress    string
 	onnxRuntime    RuntimeProvisioner
@@ -112,6 +115,7 @@ func NewHost(target string, dirs ...string) *Host {
 		failedPlugins:  nil,
 		problems:       nil,
 		completer:      nil,
+		keyStore:       nil,
 		hostEndpoint:   nil,
 		hostAddress:    hostEndpointAddress,
 		onnxRuntime:    nil,
@@ -728,8 +732,7 @@ func (h *Host) defaultLauncher(
 		return nil, nil, fmt.Errorf("validate plugin working directory: %w", err)
 	}
 
-	//nolint:contextcheck // the plugin process outlives the request that launched it
-	cmd := exec.CommandContext(context.Background(), binPath, "--port="+strconv.Itoa(port), "--token="+token)
+	cmd := exec.CommandContext(context.WithoutCancel(ctx), binPath, getPluginArgs(port, token)...)
 	configureSysProcAttr(cmd)
 	cmd.Dir = workDir
 
@@ -1116,6 +1119,11 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 			result[k] = v
 		}
 	}
+	if p, ok := h.plugins[pluginID]; ok {
+		for _, name := range p.Manifest.Secrets {
+			delete(result, name)
+		}
+	}
 	return result
 }
 
@@ -1226,6 +1234,12 @@ func (h *Host) TogglePluginSetting(ctx context.Context, pluginID, key string) (b
 
 // NotifyPluginConfig sends the resolved configuration to a running plugin process.
 func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
+	defer h.lockSecrets(pluginID)()
+	return h.notifyPluginConfigLocked(ctx, pluginID)
+}
+
+// notifyPluginConfigLocked is NotifyPluginConfig for a caller holding lockSecrets(pluginID).
+func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) error {
 	h.mu.RLock()
 	endpoint, hasEndpoint := h.endpoints[pluginID]
 	sup, hasSup := h.supervisors[pluginID]
@@ -1245,7 +1259,14 @@ func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
 	}
 	rawSettings := h.getPluginSettingsLocked(pluginID)
 	values := formatPluginSettings(rawSettings)
+	secretNames := slices.Clone(h.plugins[pluginID].Manifest.Secrets)
+	store := h.keyStore
 	h.mu.RUnlock()
+
+	secrets, secretsErr := readPluginSecrets(ctx, store, pluginID, secretNames)
+	for name, key := range secrets {
+		values[name] = key
+	}
 
 	httpClient := EndpointClient(endpoint)
 	client := numenv1connect.NewPluginLifecycleServiceClient(
@@ -1263,12 +1284,12 @@ func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
 	_, err = client.Configure(configCtx, req)
 	if err != nil {
 		var connectErr *connect.Error
-		if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented {
-			return nil
+		if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented && len(secretNames) == 0 {
+			return secretsErr
 		}
-		return fmt.Errorf("configure plugin %s: %w", pluginID, err)
+		return errors.Join(secretsErr, fmt.Errorf("configure plugin %s: %w", pluginID, err))
 	}
-	return nil
+	return secretsErr
 }
 
 // NotifyAllPluginConfigs sends resolved configurations to all running plugins.

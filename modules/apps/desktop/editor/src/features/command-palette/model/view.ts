@@ -32,7 +32,7 @@ export function getPaletteView(state: ViewState) {
       ...(one.keys ? { keys: one.keys } : {}),
       actions: [
         { id: one.id, text: one.text },
-        ...(also && also.isOffered(over, runs) ? [{ id: also.id, text: also.text }] : []),
+        ...(also?.isOffered(over, runs) ? [{ id: also.id, text: also.text }] : []),
       ],
     }
   }

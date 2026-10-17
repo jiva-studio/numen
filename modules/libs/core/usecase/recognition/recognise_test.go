@@ -170,6 +170,7 @@ func TestARunThatStoppedIsTakenUpAgain(t *testing.T) {
 	u, v, _, shelf, model := recogniser(t, "A page.")
 
 	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
 	model.stop = func(pages int) {
 		if pages == 2 {
 			stop()
@@ -356,6 +357,7 @@ func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
 	u, v, index, shelf, model := recogniser(t, says)
 
 	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
 	model.stop = func(pages int) {
 		if pages == 2 {
 			stop()
@@ -418,6 +420,7 @@ func TestABatchThatDidNotLandWholeIsReadAgain(t *testing.T) {
 	u, v, index, shelf, model := recogniser(t, says)
 
 	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
 	model.stop = func(pages int) {
 		if pages == 2 {
 			stop()
@@ -469,6 +472,7 @@ func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
 	u, v, index, shelf, model := recogniser(t, says)
 
 	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
 	model.stop = func(pages int) {
 		if pages == 2 {
 			stop()
@@ -524,6 +528,7 @@ func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
 	u, v, index, shelf, model := recogniser(t, says)
 
 	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
 	model.stop = func(pages int) {
 		if pages == 2 {
 			stop()
@@ -615,6 +620,7 @@ func TestPartsAheadOfTheCountAreDropped(t *testing.T) {
 	model.heads = "A part"
 
 	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
 	model.stop = func(pages int) {
 		if pages == 2 {
 			stop()

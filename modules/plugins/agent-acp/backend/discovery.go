@@ -64,8 +64,11 @@ var cursorSearchPlaces = []string{
 	"/usr/bin/cursor",
 }
 
-// IsClaudeInstalled checks whether Claude Code CLI is available on this machine.
+// IsClaudeInstalled checks whether Claude Code CLI is available on this machine; it answers completions.
 func IsClaudeInstalled() bool { return locate([]string{"claude"}, claudeSearchPlaces) != "" }
+
+// FindClaude returns the path of the Claude Code CLI, or the bare name where not found.
+func FindClaude() string { return findCommand("claude", []string{"claude"}, claudeSearchPlaces) }
 
 // IsAntigravityInstalled checks whether Antigravity CLI is available on this machine.
 func IsAntigravityInstalled() bool {
@@ -77,9 +80,6 @@ func IsCodexInstalled() bool { return locate([]string{"codex"}, codexSearchPlace
 
 // IsCursorInstalled checks whether Cursor CLI is available on this machine.
 func IsCursorInstalled() bool { return locate([]string{"cursor"}, cursorSearchPlaces) != "" }
-
-// FindClaude returns the path of the Claude Code CLI, or the bare name where not found.
-func FindClaude() string { return findCommand("claude", []string{"claude"}, claudeSearchPlaces) }
 
 // FindAntigravity returns the path of the Antigravity CLI, or the bare name where not found.
 func FindAntigravity() string {
@@ -100,9 +100,6 @@ func GetInstalledAgents() []string {
 	}
 	if IsCodexInstalled() {
 		agents = append(agents, "codex")
-	}
-	if IsClaudeInstalled() {
-		agents = append(agents, "claude")
 	}
 	if IsCursorInstalled() {
 		agents = append(agents, "cursor")

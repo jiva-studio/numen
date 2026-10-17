@@ -8,6 +8,7 @@
   "targets": ["desktop.editor"],
   "activationEvents": ["onCommand:askClaude", "onView:agent"],
   "permissions": ["network:outbound", "vault:read", "vault:write"],
+  "secrets": ["apiKey"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false

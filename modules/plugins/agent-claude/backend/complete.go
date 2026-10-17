@@ -24,17 +24,15 @@ func (s *agentServer) Complete(
 	req *connect.Request[numenv1.CompleteRequest],
 ) (*connect.Response[numenv1.CompleteResponse], error) {
 	s.mu.RLock()
-	key, base, model, custom := s.apiKey, s.baseURL, s.modelName, s.command
+	model := s.completionModel
 	s.mu.RUnlock()
+	key, base := s.catalogue.credentials()
 
 	return completion.Answer(ctx, req.Msg.GetQuestion(), func(ctx context.Context, request completion.Request) (string, error) {
 		if key == "" {
 			return "", errNoKey
 		}
 		name, args := findClaude(), []string(nil)
-		if len(custom) > 0 {
-			name, args = custom[0], custom[1:]
-		}
 		if name == "" {
 			return "", errNoCommand
 		}

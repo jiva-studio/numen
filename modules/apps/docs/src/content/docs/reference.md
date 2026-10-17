@@ -7,7 +7,7 @@ Every key `numen.json` can hold. The pages under Settings say which of these are
 
 Each heading below is a section of the file, and the keys under it are written the way they are written inside that section — `model.name` under `indexing.embedding` is `indexing.embedding.model.name` if you write it out in full.
 
-A key you leave out keeps its default, so a file naming one setting is a complete file. A key numen does not know is carried through untouched. A row with no kind beside it is a group holding the keys under it.
+A key you leave out keeps its default, so a file naming one setting is a complete file. A key numen does not know is carried through untouched. Under `agent`, each program an agent plugin lists has a section named after it, `agent.<program>`, holding `command`, `model` and `max_steps`; any other key there is an option the program defines, such as `reads_hooks_and_skills` for Claude Code (see [the agent page](/agent/)). A row with no kind beside it is a group holding the keys under it.
 
 Two things are not settings and are not in here: which files count as notes, and what a vault's own folder is called. Both are asked for on the command line, by [`numen-cli`](/cli/#where-it-puts-things).
 
@@ -116,23 +116,8 @@ Which agent answers in the panel, and what it may reach.
 
 | | | |
 | --- | --- | --- |
-| `use` | text | names the agent. Empty answers with none, and the panel says so. |
+| `use` | text | names the program that answers. Absent, the program the providers mark as the default answers. |
 | `serve_tools` | yes or no | puts the tools on a port, which is how an agent a person runs themselves reaches this vault. |
-| `claude` |  | code, reached by starting it and reading what it prints. |
-| `claude.command` | a list of words | starts it: the command line's path, and anything it is started through. |
-| `claude.model` | text | which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. |
-| `claude.max_steps` | a number | how many times it may go to the model before it is stopped. |
-| `claude.reads_hooks_and_skills` | yes or no | lets it read what is configured for it on this machine: hooks, skills, standing instructions in CLAUDE. |
-| `antigravity` |  | google `antigravity`, reached over ACP protocol. |
-| `antigravity.command` | a list of words |  |
-| `antigravity.model` | text |  |
-| `antigravity.max_steps` | a number |  |
-| `antigravity.reads_hooks_and_skills` | yes or no |  |
-| `codex` |  | openAI `codex`, reached over ACP protocol. |
-| `codex.command` | a list of words |  |
-| `codex.model` | text |  |
-| `codex.max_steps` | a number |  |
-| `codex.reads_hooks_and_skills` | yes or no |  |
 
 ### `importing`
 
@@ -181,4 +166,12 @@ The workload and resource calibration profile.
 | `custom.ocr_threads` | a number |  |
 | `custom.ocr_sessions` | a number |  |
 | `custom.llm_concurrency` | a number |  |
+
+### `ai`
+
+Where the questions plugins ask of a model are answered.
+
+| | | |
+| --- | --- | --- |
+| `routes` |  | are, by purpose and by default for the rest, the agent, the model and the number of questions answered at once. |
 <!-- END AUTOGEN -->

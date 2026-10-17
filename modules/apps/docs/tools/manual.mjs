@@ -299,7 +299,7 @@ const fieldsOf = (source, name) => {
       doc.push(comment[1])
       continue
     }
-    const field = line.match(/^\s*([A-Z][A-Za-z0-9]*)\s+([^\s]+)\s+`json:"([^",]+)([^"]*)"`/)
+    const field = line.match(/^\s*([A-Z][A-Za-z0-9]*)\s+([^\s]+)\s+`json:"([^",]+)(?:,([^"]*))?"`/)
     const embedded = line.match(/^\s*(\*?(?:[a-z][a-z0-9]*\.)?[A-Z][A-Za-z0-9]*)\s*$/)
     if (field) {
       const [, go, type, key] = field
@@ -407,7 +407,7 @@ const PACKAGES = {
   recognition: 'internal/adapter/recognition',
   transcription: 'internal/adapter/transcription',
   proofreading: 'internal/adapter/proofreading',
-  agent: 'adapter/agent',
+  completion: 'usecase/completion',
 }
 
 const held = new Map()
@@ -562,7 +562,7 @@ const flags = async () => {
   const declared = [...main.matchAll(/\bflag\.(?:String|Bool|Float64|Int|Int64|Duration|Uint)(?:Var)?\(/g)]
   const found = [
     ...main.matchAll(
-      /flag\.(?:String|Bool|Float64|Int)Var\(\s*&[^,]+,\s*"([^"]+)",\s*([^,]+),\s*(?:\n\s*)?"([^"]*)"\s*\)/g,
+      /flag\.(?:String|Bool|Float64|Int)Var\(\s*&[^,\s]+,\s*"([^"]+)",\s*([^,\s][^,]*),\s*"([^"]*)"\s*\)/g,
     ),
   ]
   if (declared.length === 0) die('no flags are declared in cmd/numen/main.go')
@@ -612,7 +612,7 @@ const cli = async () => {
     // none of them that stands in under what is said carries the line above
     // on; anywhere else it is a line this cannot read, and dropping it is
     // dropping a command off the page.
-    const said = line.trim().match(/^(.*?)\s{2,}(.*)$/)
+    const said = line.trim().match(/^(\S.*?)\s{2,}(.*)$/)
     if (!said) {
       const above = blocks[holding].at(-1)
       const indent = line.length - line.trimStart().length

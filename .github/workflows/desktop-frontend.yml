@@ -2,20 +2,8 @@ name: Desktop Frontend
 
 on:
   pull_request:
-    paths:
-      - "modules/apps/desktop/editor/**"
-      - "!modules/apps/desktop/editor/**/*.md"
-      - "modules/apps/desktop/flashcards/**"
-      - "!modules/apps/desktop/flashcards/**/*.md"
-      - "modules/libs/ui/**"
-      - "!modules/libs/ui/**/*.md"
-      - "modules/libs/wire/**"
-      - "!modules/libs/wire/**/*.md"
-      - "modules/libs/protocol/**"
-      - "!modules/libs/protocol/**/*.md"
-      - "modules/tools/stories/**"
-      - "!docs/**"
-      - ".github/workflows/desktop-frontend.yml"
+  merge_group:
+    types: [checks_requested]
   push:
     branches: [main]
     paths:
@@ -43,8 +31,29 @@ permissions:
   contents: read
 
 jobs:
+  # Whether the change is more than documentation. The checks below always start
+  # and report under their own names; a job skipped on this result reports as
+  # skipped, which a required check accepts.
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.detect.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - id: detect
+        uses: ./.github/actions/detect-code
+
   screens:
     name: Frontend
+    needs: [changes]
+    # Heavy: runs in the merge queue and on main, and reports as skipped on a pull request.
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:

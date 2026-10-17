@@ -7,7 +7,7 @@ function ensureStylesPlugin(): Plugin {
   return {
     name: 'ensure-styles',
     apply: 'build',
-    generateBundle(this: any, _options: any, bundle: Record<string, any>) {
+    generateBundle(_options, bundle) {
       if (!bundle['styles.css']) {
         this.emitFile({
           type: 'asset',

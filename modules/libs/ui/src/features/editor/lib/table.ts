@@ -108,7 +108,7 @@ export const readCell = (text: string): string =>
 /** What typing in a cell writes. */
 export const writeCell = (text: string): string =>
   text
-    .replace(/\s*\n\s*/g, ' ')
+    .replace(/[ \t]*\r?\n[ \t]*/g, ' ')
     .replace(/\\/g, '\\\\')
     .replace(/\|/g, '\\|')
     .trim()

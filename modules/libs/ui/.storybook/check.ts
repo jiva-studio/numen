@@ -48,7 +48,7 @@ export const reachCheck =
         `the keyboard walk found ${found.stops.length} stops in ${proof.story}, where it must find ${proof.stops}`,
       )
 
-    const wrong = faults(found, Boolean(said && said.keeps))
+    const wrong = faults(found, Boolean(said?.keeps))
     if (wrong.length)
       throw new Error(`${context.id}: ${wrong.join('; ')}${found.settled ? '' : ` — ${RESTLESS}`}`)
   }

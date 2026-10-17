@@ -116,7 +116,9 @@ func TestADoubleCloseGivesTheReferenceBackOnce(t *testing.T) {
 		{"downloader", func(ctx context.Context, h *leaseHost) (io.Closer, error) { return OpenDownloaderBridge(ctx, h) }},
 		{"document", func(ctx context.Context, h *leaseHost) (io.Closer, error) { return OpenDocumentBridge(ctx, h) }},
 		{"book", func(ctx context.Context, h *leaseHost) (io.Closer, error) { return OpenBookBridge(ctx, h) }},
-		{"agent", func(ctx context.Context, h *leaseHost) (io.Closer, error) { return OpenAgentBridge(ctx, h) }},
+		{"agent", func(ctx context.Context, h *leaseHost) (io.Closer, error) {
+			return OpenAgentBridgeForPlugin(ctx, h, "md.numen.stub")
+		}},
 		{"proofreader", func(_ context.Context, h *leaseHost) (io.Closer, error) { return OpenProofreaderBridge(h) }},
 		{"completion", func(ctx context.Context, h *leaseHost) (io.Closer, error) {
 			return OpenCompletionBridge(ctx, h, "md.numen.stub")
@@ -163,7 +165,7 @@ func TestEveryProofreadGivesItsReferenceBack(t *testing.T) {
 
 func TestEveryRunOfAnAgentHoldsAndGivesBackItsOwnReference(t *testing.T) {
 	host := newLeaseHost(t)
-	bridge, err := OpenAgentBridge(t.Context(), host)
+	bridge, err := OpenAgentBridgeForPlugin(t.Context(), host, "md.numen.stub")
 	if err != nil {
 		t.Fatal(err)
 	}

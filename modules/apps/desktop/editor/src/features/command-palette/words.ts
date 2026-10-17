@@ -59,7 +59,7 @@ export interface AnswerWords {
 export interface RetypeWords {
   /** What it does, and what it leaves behind. */
   readonly action: string
-  readonly then: string
+  readonly detail: string
   /** What stands in the field: the name of the thing, typed back. */
   readonly back: string
 }
@@ -71,7 +71,7 @@ export interface ConfirmWords {
   readonly kept: string
   /** The answer that does it, and what it leaves. */
   readonly action: string
-  readonly then: string
+  readonly detail: string
 }
 
 /** Everything the commands say in the window's voice. */

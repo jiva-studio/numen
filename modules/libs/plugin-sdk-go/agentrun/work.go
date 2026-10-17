@@ -1,16 +1,16 @@
-package runner
+package agentrun
 
 import (
 	"sync"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
-// Work is one task being worked: the steps it reports, the reader producing them, and what stops
-// it. It is the port.Run of every agent.
+// Work is one task being worked: the responses it reports, the reader producing them, and what
+// stops it.
 type Work struct {
-	// Output is where the reader writes the steps. The reader closes it when it is done.
-	Output chan port.Step
+	// Output is where the reader writes the responses. The reader closes it when it is done.
+	Output chan *numenv1.AskAgentResponse
 
 	conversation string
 	stop         func()
@@ -22,20 +22,20 @@ type Work struct {
 // NewWork makes the work of a task asked in a conversation, empty for none. Stop ends the child
 // the reader reads.
 func NewWork(conversation string, buffer int, stop func()) *Work {
-	return &Work{Output: make(chan port.Step, buffer), conversation: conversation, stop: stop, stopped: make(chan struct{})}
+	return &Work{
+		Output:       make(chan *numenv1.AskAgentResponse, buffer),
+		conversation: conversation,
+		stop:         stop,
+		stopped:      make(chan struct{}),
+	}
 }
 
-// Begin counts a reader that must finish before the work is over.
-func (w *Work) Begin() { w.reader.Add(1) }
-
-// End says the reader has finished.
+// End says the reader has finished. The registry counts the reader when it takes the work in, so a
+// caller that does not start the reader says so here.
 func (w *Work) End() { w.reader.Done() }
 
 // Stopped is closed once the work is asked to stop.
 func (w *Work) Stopped() <-chan struct{} { return w.stopped }
-
-// GetSteps returns the steps in the order the agent takes them.
-func (w *Work) GetSteps() <-chan port.Step { return w.Output }
 
 // Stop ends the child and everything it started, then waits for the reader to finish.
 func (w *Work) Stop() error {

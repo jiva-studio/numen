@@ -18,7 +18,7 @@ export function activate(context: PluginContext): void {
     id: 'downloader.open',
     title: 'Media: Download from URL',
     handler: () => {
-      context.openTab?.('url')
+      void context.openTab?.('url')
     },
   })
 }

@@ -6,7 +6,12 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
+	"slices"
+	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
@@ -14,11 +19,34 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
+// startAgent serves the agent over HTTP and answers with a client of it.
+func startAgent(t *testing.T, agentSvc *agentServer) numenv1connect.AgentServiceClient {
+	t.Helper()
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewAgentServiceHandler(agentSvc))
+	testServer := httptest.NewServer(mux)
+	t.Cleanup(testServer.Close)
+	return numenv1connect.NewAgentServiceClient(http.DefaultClient, testServer.URL)
+}
+
+// writeScript writes an executable shell script and answers with its path.
+func writeScript(t *testing.T, name, body string) string {
+	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("the fixtures are shell scripts")
+	}
+	path := filepath.Join(t.TempDir(), name)
+	if err := os.WriteFile(path, []byte("#!/bin/sh\n"+body), 0o755); err != nil {
+		t.Fatalf("write script: %v", err)
+	}
+	return path
+}
+
 func TestLifecycleServer(t *testing.T) {
 	shutdownCh := make(chan struct{})
 	agentSvc := &agentServer{}
-	life := server.NewLifecycleServer(shutdownCh, server.WithLifecycleConfigure(func(ctx context.Context, values map[string]string) error {
-		agentSvc.applyConfig(ctx, values)
+	life := server.NewLifecycleServer(shutdownCh, server.WithLifecycleConfigure(func(_ context.Context, values map[string]string) error {
+		agentSvc.applyConfig(values)
 		return nil
 	}))
 
@@ -40,15 +68,13 @@ func TestLifecycleServer(t *testing.T) {
 	}
 
 	_, err = client.Configure(ctx, connect.NewRequest(&numenv1.ConfigureRequest{
-		Values: map[string]string{
-			"model": "claude-3-5-sonnet-latest",
-		},
+		Values: map[string]string{"apiKey": "k", "baseUrl": "http://models.test"},
 	}))
 	if err != nil {
 		t.Fatalf("Configure failed: %v", err)
 	}
-	if agentSvc.modelName != "claude-3-5-sonnet-latest" {
-		t.Errorf("expected modelName claude-3-5-sonnet-latest, got %q", agentSvc.modelName)
+	if key, base := agentSvc.catalogue.credentials(); key != "k" || base != "http://models.test" {
+		t.Errorf("the models are asked with %q at %q", key, base)
 	}
 }
 
@@ -77,31 +103,60 @@ func TestFetchAnthropicModels(t *testing.T) {
 	}
 }
 
+// The models are asked for once and kept until the key or the endpoint changes.
+func TestTheModelsAreKeptUntilTheKeyChanges(t *testing.T) {
+	var asked atomic.Int32
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		asked.Add(1)
+		_, _ = w.Write([]byte(`{"data": [{"id": "opus", "display_name": "Opus"}]}`))
+	}))
+	defer mockServer.Close()
+
+	var catalogue modelCatalogue
+	catalogue.update(map[string]string{"apiKey": "k", "baseUrl": mockServer.URL})
+	for range 2 {
+		if got := catalogue.get(t.Context()); len(got) != 1 || got[0].Name != "opus" {
+			t.Fatalf("the models are %+v", got)
+		}
+	}
+	if got := asked.Load(); got != 1 {
+		t.Errorf("the endpoint was asked %d times, want 1", got)
+	}
+
+	catalogue.update(map[string]string{"apiKey": "other", "baseUrl": mockServer.URL})
+	catalogue.get(t.Context())
+	if got := asked.Load(); got != 2 {
+		t.Errorf("a new key asked the endpoint %d times in all, want 2", got)
+	}
+}
+
+// A request that ends before the endpoint answers keeps nothing, so the next one asks again.
+func TestAnEndedRequestKeepsNoModels(t *testing.T) {
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"data": [{"id": "opus"}]}`))
+	}))
+	defer mockServer.Close()
+
+	var catalogue modelCatalogue
+	catalogue.update(map[string]string{"apiKey": "k", "baseUrl": mockServer.URL})
+	ended, cancel := context.WithCancel(t.Context())
+	cancel()
+	if got := catalogue.get(ended); got != nil {
+		t.Errorf("an ended request got %+v", got)
+	}
+	if got := catalogue.get(t.Context()); len(got) != 1 {
+		t.Errorf("the next request got %+v", got)
+	}
+}
+
 func TestAgentServiceRPC(t *testing.T) {
-	agentSvc := &agentServer{
+	client := startAgent(t, &agentServer{
 		systemPrompt: "Base prompt.",
 		tools: []*numenv1.AgentToolDefinition{
 			{Name: "search_tool", Description: "Search notes"},
 		},
-		command: []string{"echo"},
-	}
-
-	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewAgentServiceHandler(agentSvc))
-
-	server := httptest.NewServer(mux)
-	defer server.Close()
-
-	client := numenv1connect.NewAgentServiceClient(http.DefaultClient, server.URL)
+	})
 	ctx := context.Background()
-
-	stateResp, err := client.GetAgentState(ctx, connect.NewRequest(&numenv1.GetAgentStateRequest{}))
-	if err != nil {
-		t.Fatalf("GetAgentState failed: %v", err)
-	}
-	if stateResp.Msg.GetUnreachable() != "" {
-		t.Errorf("expected reachable, got %q", stateResp.Msg.GetUnreachable())
-	}
 
 	regResp, err := client.RegisterTool(ctx, connect.NewRequest(&numenv1.RegisterToolRequest{
 		Tool: &numenv1.AgentToolDefinition{Name: "new_tool", Description: "New tool"},
@@ -142,86 +197,329 @@ func TestAgentServiceRPC(t *testing.T) {
 	}
 }
 
+// The state says the program is out of reach where it is nowhere to be found, and the program list
+// says it is not installed.
+func TestTheProgramIsUnreachableWhereItIsNotInstalled(t *testing.T) {
+	withoutClaudeAnywhere(t)
+	t.Setenv(anthropicKeyVar, "")
+	client := startAgent(t, &agentServer{})
+
+	state, err := client.GetAgentState(t.Context(), connect.NewRequest(&numenv1.GetAgentStateRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.Msg.GetUnreachable() == "" {
+		t.Error("an agent that is not installed was said to be reachable")
+	}
+
+	programs, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(programs.Msg.GetPrograms()) != 1 || programs.Msg.GetPrograms()[0].GetIsInstalled() {
+		t.Errorf("the programs are %v", programs.Msg.GetPrograms())
+	}
+}
+
+// The program list names Claude Code as the default program, installed where it is found, with the
+// models the endpoint lists.
+func TestTheProgramListNamesClaudeWithItsModels(t *testing.T) {
+	t.Setenv("NUMEN_CLAUDE_COMMAND", writeScript(t, "claude", ""))
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"data": [{"id": "opus", "display_name": "Opus"}, {"id": "haiku"}]}`))
+	}))
+	defer mockServer.Close()
+
+	agentSvc := &agentServer{}
+	agentSvc.applyConfig(map[string]string{"apiKey": "k", "baseUrl": mockServer.URL})
+	client := startAgent(t, agentSvc)
+
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	programs := got.Msg.GetPrograms()
+	if len(programs) != 1 {
+		t.Fatalf("the programs are %v", programs)
+	}
+	program := programs[0]
+	if program.GetName() != "claude" || program.GetTitle() != "Claude Code" ||
+		!program.GetIsInstalled() || !program.GetIsDefault() || !program.GetLimitsTools() {
+		t.Errorf("the program is %v", program)
+	}
+	var names []string
+	for _, one := range program.GetModels() {
+		names = append(names, one.GetName())
+	}
+	if !slices.Equal(names, []string{"opus", "haiku"}) {
+		t.Errorf("the models are %v", names)
+	}
+}
+
+// wordStep words one step of a run.
+func wordStep(msg *numenv1.AskAgentResponse) string {
+	switch s := msg.GetStep().(type) {
+	case *numenv1.AskAgentResponse_ModelStarted:
+		return "model_started"
+	case *numenv1.AskAgentResponse_ToolCall:
+		return "tool_call:" + s.ToolCall.GetTool()
+	case *numenv1.AskAgentResponse_ToolFinished:
+		return "tool_finished"
+	case *numenv1.AskAgentResponse_Said:
+		return "said:" + s.Said
+	case *numenv1.AskAgentResponse_Stopped:
+		return "stopped:" + s.Stopped
+	}
+	return ""
+}
+
+// readSteps reads a run to its end and words each step.
+func readSteps(stream *connect.ServerStreamForClient[numenv1.AskAgentResponse]) ([]string, error) {
+	var steps []string
+	for stream.Receive() {
+		if word := wordStep(stream.Msg()); word != "" {
+			steps = append(steps, word)
+		}
+	}
+	return steps, stream.Err()
+}
+
+// collectSteps is readSteps, failing the test on an error.
+func collectSteps(t *testing.T, stream *connect.ServerStreamForClient[numenv1.AskAgentResponse]) []string {
+	t.Helper()
+	steps, err := readSteps(stream)
+	if err != nil {
+		t.Fatalf("stream error: %v", err)
+	}
+	return steps
+}
+
 func TestAskAgentWithMockScript(t *testing.T) {
-	scriptContent := "#!/bin/sh\n" +
-		"cat << 'JSONEOF'\n" +
-		"{\"type\":\"system\",\"subtype\":\"status\",\"status\":\"requesting\"}\n" +
-		"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_start\",\"content_block\":{\"type\":\"tool_use\",\"id\":\"call_1\",\"name\":\"mcp__numen__note_search\"}}}\n" +
-		"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"{\\\"query\\\":\\\"algebra\\\",\\\"path\\\":\\\"notes/math.md\\\"}\"}}}\n" +
-		"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_stop\"}}\n" +
-		"{\"type\":\"user\",\"message\":{\"content\":[{\"type\":\"tool_result\"}]}}\n" +
-		"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"Algebra notes found.\"}}}\n" +
-		"{\"type\":\"result\",\"is_error\":false}\n" +
-		"JSONEOF\n"
+	script := writeScript(t, "mock-claude.sh", "cat << 'JSONEOF'\n"+
+		"{\"type\":\"system\",\"subtype\":\"status\",\"status\":\"requesting\"}\n"+
+		"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_start\",\"content_block\":{\"type\":\"tool_use\",\"id\":\"call_1\",\"name\":\"mcp__numen__note_search\"}}}\n"+
+		"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"{\\\"query\\\":\\\"algebra\\\",\\\"path\\\":\\\"notes/math.md\\\"}\"}}}\n"+
+		"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_stop\"}}\n"+
+		"{\"type\":\"user\",\"message\":{\"content\":[{\"type\":\"tool_result\"}]}}\n"+
+		"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"Algebra notes found.\"}}}\n"+
+		"{\"type\":\"result\",\"is_error\":false}\n"+
+		"JSONEOF\n")
+	client := startAgent(t, &agentServer{})
 
-	dir := t.TempDir()
-	scriptPath := filepath.Join(dir, "mock-claude.sh")
-	if err := os.WriteFile(scriptPath, []byte(scriptContent), 0o755); err != nil {
-		t.Fatalf("write mock script: %v", err)
-	}
-
-	agentSvc := &agentServer{
-		command: []string{scriptPath},
-	}
-
-	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewAgentServiceHandler(agentSvc))
-
-	server := httptest.NewServer(mux)
-	defer server.Close()
-
-	client := numenv1connect.NewAgentServiceClient(http.DefaultClient, server.URL)
-	ctx := context.Background()
-
-	stream, err := client.AskAgent(ctx, connect.NewRequest(&numenv1.AskAgentRequest{
-		Prompt: "Find algebra notes",
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Prompt:  "Find algebra notes",
+		Command: []string{script},
 	}))
 	if err != nil {
 		t.Fatalf("AskAgent failed: %v", err)
 	}
 
-	var steps []string
-	var toolPaths []string
-	for stream.Receive() {
-		msg := stream.Msg()
-		switch s := msg.GetStep().(type) {
-		case *numenv1.AskAgentResponse_ModelStarted:
-			steps = append(steps, "model_started")
-		case *numenv1.AskAgentResponse_ToolCall:
-			steps = append(steps, "tool_call:"+s.ToolCall.GetTool())
-			toolPaths = append(toolPaths, s.ToolCall.GetPath())
-		case *numenv1.AskAgentResponse_ToolFinished:
-			steps = append(steps, "tool_finished")
-		case *numenv1.AskAgentResponse_Said:
-			steps = append(steps, "said:"+s.Said)
-		case *numenv1.AskAgentResponse_Stopped:
-			steps = append(steps, "stopped")
-		}
-	}
-	if err := stream.Err(); err != nil {
-		t.Fatalf("stream error: %v", err)
-	}
-
 	expected := []string{
+		"model_started",
 		"model_started",
 		"tool_call:note_search",
 		"tool_call:note_search",
 		"tool_finished",
 		"said:Algebra notes found.",
-		"stopped",
+		"stopped:done",
 	}
-
-	if len(steps) != len(expected) {
-		t.Fatalf("expected %d steps, got %d: %v", len(expected), len(steps), steps)
-	}
-	for i, exp := range expected {
-		if steps[i] != exp {
-			t.Errorf("step %d: got %s, want %s", i, steps[i], exp)
+	var got, paths []string
+	for stream.Receive() {
+		if call := stream.Msg().GetToolCall(); call != nil {
+			paths = append(paths, call.GetPath())
+		}
+		if word := wordStep(stream.Msg()); word != "" {
+			got = append(got, word)
 		}
 	}
+	if err := stream.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(got, expected) {
+		t.Errorf("got %v, want %v", got, expected)
+	}
+	if len(paths) != 2 || paths[1] != "notes/math.md" {
+		t.Errorf("expected final tool path 'notes/math.md', got %v", paths)
+	}
+}
 
-	if len(toolPaths) != 2 || toolPaths[1] != "notes/math.md" {
-		t.Errorf("expected final tool path 'notes/math.md', got %v", toolPaths)
+// The program is started in the folder the task names, with the arguments the request gives it, the
+// question on its input, and the tools it is given in a file that is gone when it ends.
+func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
+	root := t.TempDir()
+	out := filepath.Join(t.TempDir(), "run")
+	script := writeScript(t, "mock-claude.sh",
+		"pwd > "+out+".dir\n"+
+			"cat > "+out+".stdin\n"+
+			"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+".argv\n"+
+			"while [ $# -gt 0 ]; do if [ \"$1\" = --mcp-config ]; then cp \"$2\" "+out+".config; fi; shift; done\n"+
+			"echo '{\"type\":\"result\",\"is_error\":false}'\n")
+	client := startAgent(t, &agentServer{})
+
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Prompt:     "the question",
+		Command:    []string{script, "--first"},
+		Root:       root,
+		Model:      "opus",
+		MaxSteps:   7,
+		Tools:      []string{"note_read"},
+		Options:    map[string]string{"reads_hooks_and_skills": "true"},
+		ToolsUrl:   "http://127.0.0.1:1/mcp",
+		ToolsToken: "secret",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	collectSteps(t, stream)
+
+	read := func(suffix string) string {
+		t.Helper()
+		raw, err := os.ReadFile(out + suffix)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(raw)
+	}
+	if got := strings.TrimSpace(read(".dir")); got != root {
+		resolved, _ := filepath.EvalSymlinks(root)
+		if got != resolved {
+			t.Errorf("started in %q, want %q", got, root)
+		}
+	}
+	if got := read(".stdin"); got != "the question" {
+		t.Errorf("the input is %q", got)
+	}
+	argv := strings.Split(strings.TrimSpace(read(".argv")), "\n")
+	if argv[0] != "--first" {
+		t.Errorf("the arguments of the command line come first: %v", argv)
+	}
+	assertPair(t, argv, "--model", "opus")
+	assertPair(t, argv, "--max-turns", "7")
+	assertPair(t, argv, "--setting-sources", "user")
+	assertPair(t, argv, "--allowedTools", "WebSearch,mcp__numen__note_read")
+	if config := read(".config"); !strings.Contains(config, "http://127.0.0.1:1/mcp") ||
+		!strings.Contains(config, "Bearer secret") {
+		t.Errorf("the tools file is %q", config)
+	}
+}
+
+// A task asked again in the conversation resumes the session the first one reported.
+func TestAConversationResumesItsSession(t *testing.T) {
+	out := filepath.Join(t.TempDir(), "argv")
+	script := writeScript(t, "mock-claude.sh",
+		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+"\n"+
+			"echo '{\"type\":\"system\",\"subtype\":\"init\",\"session_id\":\"s-1\"}'\n")
+	client := startAgent(t, &agentServer{})
+
+	ask := func() []string {
+		stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+			Prompt: "q", Command: []string{script}, Conversation: "c-1",
+		}))
+		if err != nil {
+			t.Fatal(err)
+		}
+		collectSteps(t, stream)
+		raw, err := os.ReadFile(out)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return strings.Split(strings.TrimSpace(string(raw)), "\n")
+	}
+
+	if first := ask(); slices.Contains(first, "--resume") {
+		t.Errorf("the first task resumed a session: %v", first)
+	}
+	assertPair(t, ask(), "--resume", "s-1")
+
+	if _, err := client.FinishConversation(t.Context(), connect.NewRequest(
+		&numenv1.FinishConversationRequest{Conversation: "c-1"})); err != nil {
+		t.Fatal(err)
+	}
+	if again := ask(); slices.Contains(again, "--resume") {
+		t.Errorf("a finished conversation resumed a session: %v", again)
+	}
+}
+
+// Finishing a conversation ends the program a task of it is running, and the task ends without a
+// reason.
+func TestFinishingAConversationStopsItsRun(t *testing.T) {
+	script := writeScript(t, "mock-claude.sh", announce+"sleep 120\n")
+	client := startAgent(t, &agentServer{})
+
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Prompt: "q", Command: []string{script}, Conversation: "c-1",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	awaitUp(t, stream)
+
+	if _, err := client.FinishConversation(t.Context(), connect.NewRequest(
+		&numenv1.FinishConversationRequest{Conversation: "c-1"})); err != nil {
+		t.Fatal(err)
+	}
+	endsWithin(t, "the finished conversation", 30*time.Second, func() {
+		steps, _ := readSteps(stream)
+		for _, step := range steps {
+			if strings.HasPrefix(step, "stopped:") {
+				t.Errorf("a stopped run reported %q", step)
+			}
+		}
+	})
+}
+
+// A program nowhere to be found is told to the person, and the run ends.
+func TestAskAgentSaysWhenTheProgramIsNotInstalled(t *testing.T) {
+	withoutClaudeAnywhere(t)
+	client := startAgent(t, &agentServer{})
+
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{Prompt: "q"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	steps := collectSteps(t, stream)
+	if len(steps) != 2 || !strings.HasPrefix(steps[0], "said:") || steps[1] != "stopped:claude not installed" {
+		t.Errorf("the steps are %v", steps)
+	}
+}
+
+// A closed agent takes no task.
+func TestAClosedAgentTakesNoTask(t *testing.T) {
+	agentSvc := &agentServer{}
+	_ = agentSvc.registry.Close()
+	client := startAgent(t, agentSvc)
+
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Prompt: "q", Command: []string{"true"},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for stream.Receive() {
+	}
+	if stream.Err() == nil {
+		t.Error("a closed agent took a task")
+	}
+}
+
+// A command line the installation set counts as the program being installed, wherever the program
+// stands on this machine.
+func TestTheProgramIsInstalledUnderTheCommandLineTheInstallationSet(t *testing.T) {
+	withoutClaudeAnywhere(t)
+	t.Setenv(anthropicKeyVar, "")
+	client := startAgent(t, &agentServer{})
+
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{
+		Commands: []*numenv1.AgentProgramCommand{
+			{Program: "codex", Command: []string{"/bin/codex"}},
+			{Program: "claude", Command: []string{"/opt/claude/bin/claude"}},
+		},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if programs := got.Msg.GetPrograms(); len(programs) != 1 || !programs[0].GetIsInstalled() {
+		t.Errorf("the programs are %v", programs)
 	}
 }
 
@@ -244,4 +542,17 @@ func TestExtractCallDetails(t *testing.T) {
 	if aboutFile != "notes/file.md" {
 		t.Errorf("expected about notes/file.md, got %q", aboutFile)
 	}
+}
+
+// withoutClaudeAnywhere makes this machine hold no Claude Code, wherever the program is searched
+// for.
+func withoutClaudeAnywhere(t *testing.T) {
+	t.Helper()
+	t.Setenv("PATH", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("NUMEN_CLAUDE_COMMAND", "")
+	t.Setenv("CLAUDE_COMMAND", "")
+	was := claudeSearchPlaces
+	claudeSearchPlaces = nil
+	t.Cleanup(func() { claudeSearchPlaces = was })
 }

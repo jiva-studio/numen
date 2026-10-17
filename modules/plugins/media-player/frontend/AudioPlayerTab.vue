@@ -13,6 +13,18 @@ export interface CueItem {
   readonly to: number
 }
 
+export interface ExternalPlayerState {
+  readonly [key: string]: unknown
+  play?(): void
+  pause?(): void
+  go?(ms: number): void
+  seek?(ms: number): void
+  setPlaybackRate?(rate: number): void
+  transcribe?(): void
+  proofread?(): void
+  deleteTranscript?(): void
+}
+
 const props = withDefaults(
   defineProps<{
     /** Path to audio file. */
@@ -20,7 +32,7 @@ const props = withDefaults(
     file?: string
     title?: string
     /** Optional external state from desktop shell or tests. */
-    state?: Record<string, any>
+    state?: ExternalPlayerState
   }>(),
   {
     path: '',
@@ -50,46 +62,38 @@ const draggingPosition = ref<number | null>(null)
 const AVAILABLE_RATES = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0] as const
 
 const audioSource = computed(() => {
-  if (props.state?.url?.value) return props.state.url.value
-  if (typeof props.state?.url === 'string') return props.state.url
-  if (props.state?.mediaUrl?.value) return props.state.mediaUrl.value
-  if (typeof props.state?.mediaUrl === 'string') return props.state.mediaUrl
+  const url = readState<string>(props.state?.url)
+  if (typeof url === 'string' && url) return url
+  const mediaUrl = readState<string>(props.state?.mediaUrl)
+  if (typeof mediaUrl === 'string' && mediaUrl) return mediaUrl
   return props.path || props.file || ''
 })
 
 const isPlaying = computed(() => {
-  if (props.state?.isPlaying?.value !== undefined) {
-    return Boolean(props.state.isPlaying.value)
-  }
-  if (typeof props.state?.isPlaying === 'boolean') {
-    return props.state.isPlaying
+  const statePlaying = readState<boolean>(props.state?.isPlaying)
+  if (typeof statePlaying === 'boolean') {
+    return statePlaying
   }
   return isLocalPlaying.value
 })
 
 const currentPosition = computed(() => {
   if (draggingPosition.value !== null) return draggingPosition.value
-  if (props.state?.now?.value !== undefined) {
-    return Number(props.state.now.value)
-  }
-  if (typeof props.state?.now === 'number') {
-    return props.state.now
+  const now = readState<number>(props.state?.now)
+  if (typeof now === 'number') {
+    return now
   }
   return localPosition.value
 })
 
 const totalDuration = computed(() => {
-  if (props.state?.runs?.value !== undefined) {
-    return Number(props.state.runs.value)
+  const runs = readState<number>(props.state?.runs)
+  if (typeof runs === 'number') {
+    return runs
   }
-  if (typeof props.state?.runs === 'number') {
-    return props.state.runs
-  }
-  if (props.state?.duration?.value !== undefined) {
-    return Number(props.state.duration.value)
-  }
-  if (typeof props.state?.duration === 'number') {
-    return props.state.duration
+  const duration = readState<number>(props.state?.duration)
+  if (typeof duration === 'number') {
+    return duration
   }
   return localDuration.value
 })
@@ -101,11 +105,13 @@ const isMenuOpen = ref(false)
 const transcriptCues = computed<readonly CueItem[]>(() => {
   if (isTranscriptDeleted.value) return []
   if (internalCues.value.length > 0) return internalCues.value
-  if (props.state?.cues?.value) return props.state.cues.value
-  if (Array.isArray(props.state?.cues)) return props.state.cues
-  if (props.state?.transcript?.value?.cues) return props.state.transcript.value.cues
-  if (props.state?.prose?.value) {
-    return [{ text: props.state.prose.value, from: 0, to: totalDuration.value || 1000 }]
+  const cues = readState<readonly CueItem[]>(props.state?.cues)
+  if (Array.isArray(cues)) return cues
+  const transcript = readState<{ cues?: readonly CueItem[] }>(props.state?.transcript)
+  if (transcript?.cues) return transcript.cues
+  const prose = readState<string>(props.state?.prose)
+  if (prose) {
+    return [{ text: prose, from: 0, to: totalDuration.value || 1000 }]
   }
   return []
 })
@@ -113,20 +119,14 @@ const transcriptCues = computed<readonly CueItem[]>(() => {
 const isTranscribable = computed(() => {
   if (transcriptCues.value.length > 0) return false
   if (props.state?.transcribable !== undefined) {
-    const val = props.state.transcribable
-    return typeof val === 'object' && val !== null && 'value' in val
-      ? Boolean((val as { value?: unknown }).value)
-      : Boolean(val)
+    return Boolean(readState(props.state.transcribable))
   }
   return true
 })
 
 const isDeletable = computed(() => {
   if (props.state?.deletable !== undefined) {
-    const val = props.state.deletable
-    return typeof val === 'object' && val !== null && 'value' in val
-      ? Boolean((val as { value?: unknown }).value)
-      : Boolean(val)
+    return Boolean(readState(props.state.deletable))
   }
   return true
 })
@@ -309,6 +309,13 @@ function onDeleteTranscript() {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
+function readState<T>(value: unknown): T | undefined {
+  if (value && typeof value === 'object' && 'value' in value) {
+    return (value as { value: T }).value
+  }
+  return value as T | undefined
+}
+
 function formatClock(ms: number): string {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000))
   const minutes = Math.floor(totalSeconds / 60)

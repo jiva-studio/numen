@@ -96,6 +96,9 @@ type PluginConfigurator interface {
 	SetPersistHandler(handler PluginPersistHandler)
 	NotifyAllPluginConfigs(ctx context.Context) error
 	SetCompleter(completer Completer)
+	SetKeyStore(store KeyStore)
+	SetPluginSecret(ctx context.Context, pluginID, name, key string) error
+	DeletePluginSecret(ctx context.Context, pluginID, name string) error
 	UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error
 }
 

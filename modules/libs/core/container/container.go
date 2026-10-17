@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"time"
 
-	adapteragent "github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
@@ -103,6 +102,10 @@ type Config struct {
 	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.
 	PluginHost port.PluginManager
 
+	// KeyStore is where the keys of services are kept. Left nil, the system
+	// keychain.
+	KeyStore port.KeyStore
+
 	// Texts takes the text out of documents and books where an installation binds
 	// its own. Left nil, the document and book plugins of PluginHost give it.
 	Texts port.TextExtractor
@@ -114,7 +117,7 @@ type Config struct {
 
 	// Agent is which agent answers in the panel. It arrives the way Embedding
 	// does.
-	Agent adapteragent.Config
+	Agent settings.Agent
 
 	// ShouldRebuildIndex reads every file and puts it in the index again, whatever the
 	// index remembers about it. Both entry points offer it under one name: a
@@ -232,7 +235,6 @@ func (c Config) WriteConfiguredFile() func(written string, baseline *string) err
 		if err := settings.Write(path, []byte(written), baseline, &held); err != nil {
 			return err
 		}
-		adapteragent.RefreshModels()
 		if c.PluginHost != nil {
 			if held.Plugins != nil {
 				c.PluginHost.SetSettings(held.Plugins)

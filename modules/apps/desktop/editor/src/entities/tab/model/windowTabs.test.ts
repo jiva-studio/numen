@@ -110,11 +110,16 @@ describe('a tab of a kind', () => {
     expect(window.getTab(another)?.kind.kind).toBe('other')
   })
 
-  it('is nothing for a kind the window was never told about', async () => {
+  it('is a plugin unavailable tab for a kind the window was never told about', async () => {
     const window = told([kind().declared])
 
-    expect(await window.openTabOfKind('nothing')).toBe('')
-    expect(onScreen(window.layout.value)).toEqual([])
+    const id = await window.openTabOfKind('nothing', 'One.md')
+
+    expect(id).toBe('nothing:One.md')
+    expect(onScreen(window.layout.value)).toEqual([id])
+    expect(window.getTab(id)?.kind.kind).toBe('nothing')
+    expect(window.getTab(id)?.kind.getTitle?.(window.getTab(id)?.state)).toBe('Plugin unavailable')
+    expect(window.getTab(id)?.kind.getOpenTab?.(window.getTab(id)?.state)).toEqual({ path: 'One.md' })
   })
 })
 
@@ -554,14 +559,14 @@ describe('a tab opened beside', () => {
     expect(window.layout.value.axis).toBe('horizontal')
   })
 
-  it('changes nothing for a kind the window was never told about', async () => {
+  it('draws a plugin unavailable tab beside for a kind the window was never told about', async () => {
     const window = told([kind().declared])
     await window.openTabOfKind('thing', 'One.md')
-    const before = window.layout.value
 
-    expect(await window.handle.openTabBeside('nothing', 'Two.md')).toBe('')
+    const id = await window.handle.openTabBeside('nothing', 'Two.md')
 
-    expect(window.layout.value).toBe(before)
+    expect(id).toBe('nothing:Two.md')
+    expect(onScreen(window.layout.value)).toContain(id)
   })
 })
 
@@ -777,5 +782,62 @@ describe('a tab created without being shown', () => {
 
     expect(thing.opened).toEqual([''])
     expect(onScreen(window.layout.value)).not.toContain(id)
+  })
+})
+
+describe('the registration of a kind', () => {
+  it('is removed by its own disposer', async () => {
+    const window = useWindowTabs()
+    const dispose = window.registerKind(kind().one)
+
+    dispose()
+
+    const id = await window.createTab('thing', 'a')
+    expect(window.getTab(id)?.state).toEqual({ kind: 'thing', at: 'a' })
+  })
+
+  it('is kept when the disposer of a registration it replaced runs late', async () => {
+    const window = useWindowTabs()
+    const first = kind().one
+    const second = kind().one
+    const disposeFirst = window.registerKind(first)
+    window.registerKind(second)
+
+    disposeFirst()
+
+    const id = await window.createTab('thing', 'a')
+    expect(window.getTab(id)?.kind).toBe(second)
+  })
+
+  it('names the plugin of the kind of a tab', async () => {
+    const window = useWindowTabs()
+    window.registerKind({ ...kind().one, kind: 'reader:x', pluginId: 'md.numen.x' })
+
+    const id = await window.createTab('reader:x', 'a.x')
+
+    expect(window.getTab(id)?.kind.pluginId).toBe('md.numen.x')
+  })
+})
+
+describe('a tab of a kind that is not registered', () => {
+  it('opens on a restore without throwing and lists itself under the missing kind', async () => {
+    const window = useWindowTabs()
+
+    const id = await window.createTab('reader:reader-pdf', '/a.pdf')
+
+    expect(id).toBe('reader:reader-pdf:/a.pdf')
+    expect(window.tabs.value).toEqual([{ id, title: 'Plugin unavailable' }])
+  })
+
+  it('does not stop the kind being registered and opened later', async () => {
+    const window = useWindowTabs()
+    const missing = await window.createTab('thing', 'a')
+    const thing = kind()
+    window.registerKind(thing.one)
+
+    const opened = await window.createTab('thing', 'b')
+
+    expect(opened).not.toBe(missing)
+    expect(window.getTab(opened)?.state).toEqual({ at: 'b', title: 'b' })
   })
 })

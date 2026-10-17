@@ -1250,7 +1250,7 @@ func TestTheCoresPublicAdaptersAreTheseAndNoOthers(t *testing.T) {
 // held are the adapters the compiler keeps to this module. Naming them is what
 // makes a new one arrive as a decision.
 var held = []string{
-	"appstate", "download", "filesystem", "onnxruntime", "plugin",
+	"appstate", "download", "filesystem", "keychain", "onnxruntime", "plugin",
 	"theme", "trash",
 }
 

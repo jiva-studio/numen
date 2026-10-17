@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
@@ -649,11 +648,11 @@ func TestASectionSurvivesNotBeingTheOneInUse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Agent.Use != "" {
-		t.Errorf("uses %q", cfg.Agent.Use)
+	if cfg.Agent.IsNamed() || cfg.Agent.GetUse() != "" {
+		t.Errorf("uses %q", cfg.Agent.GetUse())
 	}
-	if cfg.Agent.Claude.Model != "opus" || cfg.Agent.Claude.MaxSteps != 12 {
-		t.Errorf("got %+v", cfg.Agent.Claude)
+	if got := cfg.Agent.GetProgram("claude"); got.Model != "opus" || got.MaxSteps != 12 {
+		t.Errorf("got %+v", got)
 	}
 }
 
@@ -664,13 +663,13 @@ func TestAnUntouchedInstallationCarriesAStepCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Agent.Use != agent.UseClaude {
-		t.Errorf("answers with %q", cfg.Agent.Use)
+	if !cfg.Agent.IsNamed() || cfg.Agent.GetUse() != "" {
+		t.Errorf("the choice of program is left to the default, and the settings name %q", cfg.Agent.GetUse())
 	}
-	if cfg.Agent.Claude.MaxSteps <= 0 {
-		t.Errorf("max steps is %d", cfg.Agent.Claude.MaxSteps)
+	if got := cfg.Agent.GetProgram("claude"); got.MaxSteps <= 0 {
+		t.Errorf("max steps is %d", got.MaxSteps)
 	}
-	if cfg.Agent.Claude.ShouldReadHooksAndSkills {
+	if cfg.Agent.GetProgram("claude").Options["reads_hooks_and_skills"] == "true" {
 		t.Error("reads what this machine holds for it")
 	}
 }
@@ -682,23 +681,23 @@ func TestTheCommandLineCanBeNamed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Agent.Claude.Command; len(got) != 1 || got[0] != "/opt/claude/bin/claude" {
+	if got := cfg.Agent.GetProgram("claude").Command; len(got) != 1 || got[0] != "/opt/claude/bin/claude" {
 		t.Errorf("got %q", got)
 	}
 }
 
 // One field named leaves the rest of its section alone.
 func TestOneAgentFieldKeepsTheRest(t *testing.T) {
-	was := agent.Defaults().Claude.MaxSteps
 	cfg, err := openAt(write(t, `{"agent":{"claude":{"reads_hooks_and_skills":true}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cfg.Agent.Claude.ShouldReadHooksAndSkills {
+	got := cfg.Agent.GetProgram("claude")
+	if got.Options["reads_hooks_and_skills"] != "true" {
 		t.Error("what the file said was not read")
 	}
-	if cfg.Agent.Claude.MaxSteps != was {
-		t.Errorf("max steps is %d", cfg.Agent.Claude.MaxSteps)
+	if got.MaxSteps != settings.DefaultAgentSteps {
+		t.Errorf("max steps is %d", got.MaxSteps)
 	}
 }
 

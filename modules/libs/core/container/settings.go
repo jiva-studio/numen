@@ -2,10 +2,8 @@ package container
 
 import (
 	"encoding/json"
-	"slices"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -42,7 +40,7 @@ type Settings struct {
 	Indexing Indexing `json:"indexing"`
 
 	// Agent is which agent answers in the panel, and what it may reach.
-	Agent agent.Config `json:"agent"`
+	Agent settings.Agent `json:"agent"`
 
 	// Importing is how an address a link note points at is reached, and where
 	// the tools that reach it are.
@@ -118,7 +116,6 @@ func DefaultSettings() Settings {
 		Version:     settings.DefaultVersion,
 		Appearance:  settings.DefaultAppearance(),
 		Indexing:    DefaultIndexing(),
-		Agent:       agent.Defaults(),
 		Importing:   download.Defaults(),
 		Titles:      settings.DefaultTitles(),
 		Review:      settings.DefaultReview(),
@@ -183,6 +180,7 @@ func (c Config) SetSettings(said Settings) Config {
 				},
 			})
 		})
+		c.PluginHost.SetKeyStore(c.GetKeyStore())
 		c.setCompleter()
 	}
 	return c
@@ -202,31 +200,12 @@ func (c Config) Plugins() func() []port.PluginInfo {
 // Models reads, as the window asks, the models each setting that names one can
 // be set to, and the programs the agent setting can name.
 //
-// Each catalogue is the adapter's own: it says what its setting takes and where
-// inside its section that setting stands, and where the section itself stands
-// is said here. The settings are read with them, so every row is answered
-// against what is in force; a file that cannot be read is answered against the
-// defaults.
+// The settings are read with them, so every row is answered against what is in
+// force; a file that cannot be read is answered against the defaults. The
+// programs and their models are the ones the agent plugins list.
 func (c Config) Models() func() []port.Model {
-	return func() []port.Model { return getModels(c.getSettingsOrDefaults()) }
-}
-
-// getModels is that catalogue read against the settings given.
-func getModels(held Settings) []port.Model {
-	models := make([]port.Model, 0, 12)
-	models = append(models, setUnder(agent.GetModels(held.Agent), agentAt)...)
-	models = append(models, setUnder(agent.GetPrograms(), agentAt)...)
-	return models
-}
-
-// setUnder puts a catalogue's places where the section they belong to stands:
-// the row's own, and every setting choosing it writes.
-func setUnder(models []port.Model, at ...string) []port.Model {
-	for one := range models {
-		models[one].Path = slices.Concat(at, models[one].Path)
-		for wrote := range models[one].Writes {
-			models[one].Writes[wrote].Path = slices.Concat(at, models[one].Writes[wrote].Path)
-		}
+	return func() []port.Model {
+		held := c.getSettingsOrDefaults()
+		return settings.AgentModels(agentAt, held.Agent, c.getAgentPrograms(held.Agent))
 	}
-	return models
 }

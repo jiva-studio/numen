@@ -37,7 +37,7 @@ export function parseBuildNumber(val: string | number | undefined): number {
 
   const match = trimmed.match(/(?:-beta\.|\b)(\d+)(?:-[a-f0-9]{7})?$/)
   const candidate = match?.[1] ?? trimmed
-  return toPositiveInt(parseInt(candidate, 10))
+  return toPositiveInt(Number.parseInt(candidate, 10))
 }
 
 /**

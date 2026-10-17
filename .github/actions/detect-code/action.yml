@@ -1,0 +1,46 @@
+name: "Detect code changes"
+description: "Says whether a pull request changes anything beyond documentation. Every other event counts as a change to code."
+inputs:
+  documentation:
+    description: "Extended regular expression; a changed path that matches it is documentation"
+    required: false
+    default: '^docs/|^modules/apps/docs/(src|public)/|\.mdx?$'
+  except:
+    description: "Extended regular expression; a changed path that matches it is code even when it matches the documentation expression"
+    required: false
+    default: '(^|/)testdata/|^modules/apps/docs/src/.*\.(astro|js|jsx|mjs|ts|tsx)$'
+outputs:
+  code:
+    description: "true when the change touches code, false when it touches documentation only"
+    value: ${{ steps.detect.outputs.code }}
+runs:
+  using: "composite"
+  steps:
+    - id: detect
+      shell: bash
+      env:
+        EVENT: ${{ github.event_name }}
+        BASE: ${{ github.event.pull_request.base.sha }}
+        HEAD: ${{ github.event.pull_request.head.sha }}
+        DOCUMENTATION: ${{ inputs.documentation }}
+        EXCEPT: ${{ inputs.except }}
+      run: |
+        set -euo pipefail
+
+        code=true
+        if [ "$EVENT" = pull_request ]; then
+          files=$(git diff --name-only --no-renames "$BASE...$HEAD")
+          if [ -n "$files" ]; then
+            code=false
+            while IFS= read -r file; do
+              if ! printf '%s\n' "$file" | grep -Eq "$DOCUMENTATION" \
+                || printf '%s\n' "$file" | grep -Eq "$EXCEPT"; then
+                code=true
+                echo "code: $file"
+                break
+              fi
+            done <<< "$files"
+          fi
+        fi
+        echo "code=$code" >> "$GITHUB_OUTPUT"
+        echo "code=$code"

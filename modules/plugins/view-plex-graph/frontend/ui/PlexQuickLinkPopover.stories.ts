@@ -21,7 +21,7 @@ type Story = StoryObj<typeof meta>
 const getGaps = (dropdown: HTMLElement, option: HTMLElement) => {
   const outer = dropdown.getBoundingClientRect()
   const inner = option.getBoundingClientRect()
-  const border = parseFloat(getComputedStyle(dropdown).borderTopWidth)
+  const border = Number.parseFloat(getComputedStyle(dropdown).borderTopWidth)
   return {
     top: inner.top - outer.top - border,
     bottom: outer.bottom - inner.bottom - border,

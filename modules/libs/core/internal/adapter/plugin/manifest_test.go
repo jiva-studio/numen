@@ -331,3 +331,32 @@ func TestManifestAcceptsAICompletePermission(t *testing.T) {
 		t.Errorf("manifest must hold %s", PermissionAIComplete)
 	}
 }
+
+// A secret is a plain name, declared once, and not also a setting.
+func TestAManifestDeclaresItsSecretsByPlainDistinctNames(t *testing.T) {
+	for _, one := range []struct {
+		name    string
+		secrets string
+		wrong   bool
+	}{
+		{"none", ``, false},
+		{"one", `"secrets":["apiKey"]`, false},
+		{"two", `"secrets":["apiKey","org_id-2"]`, false},
+		{"empty name", `"secrets":[""]`, true},
+		{"slash", `"secrets":["a/b"]`, true},
+		{"space", `"secrets":["api key"]`, true},
+		{"twice", `"secrets":["apiKey","apiKey"]`, true},
+		{"also a setting", `"secrets":["model"],"settings":[{"key":"model","type":"string","title":"Model"}]`, true},
+	} {
+		t.Run(one.name, func(t *testing.T) {
+			text := `{"id":"a.b","name":"A","version":"1.0.0"`
+			if one.secrets != "" {
+				text += "," + one.secrets
+			}
+			_, err := ReadManifest(strings.NewReader(text + "}"))
+			if one.wrong != errors.Is(err, port.ErrInvalidSecret) {
+				t.Errorf("error = %v, want invalid secret: %v", err, one.wrong)
+			}
+		})
+	}
+}

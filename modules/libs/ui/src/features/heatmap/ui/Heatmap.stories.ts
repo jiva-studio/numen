@@ -134,9 +134,9 @@ export const Dark: Story = {
     await expect(filled.size).toBeGreaterThan(1)
     await expect(new Set(filled.values()).size).toBe(filled.size)
 
-    // A day is filled from its own ground towards the accent, and on the dark
-    // set that runs towards the light, so a fuller day is a lighter one.
-    const rising = [...filled.keys()].sort().map((weight) => lightness(filled.get(weight)!))
+    const rising = [...filled.keys()]
+      .sort((a, b) => a.localeCompare(b))
+      .map((weight) => lightness(filled.get(weight) ?? ''))
     for (const [at, fill] of rising.slice(1).entries()) {
       await expect(fill).toBeGreaterThan((rising[at] as number) + 2)
     }
@@ -231,7 +231,7 @@ export const ADayReviewed: Story = {
     // 8rem is the least the panel is drawn at and not the most, so the panel
     // takes the width of its longest line and the share stands on one line.
     const box = came.getBoundingClientRect()
-    await expect(box.height).toBeLessThan(2 * parseFloat(getComputedStyle(came).lineHeight))
+    await expect(box.height).toBeLessThan(2 * Number.parseFloat(getComputedStyle(came).lineHeight))
     await expect(Math.round(box.width)).toBe(Math.round(said.getBoundingClientRect().width))
   },
 }
