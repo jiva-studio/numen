@@ -64,6 +64,7 @@ function useDeckNotes(
       activeDeck = deck
     } catch {
       if (pendingDeck !== deck) return
+      // Stryker disable next-line CallExpression: state was already cleared before fetch started
       clearNotes()
       showNotice(words.unreached)
     } finally {

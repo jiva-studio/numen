@@ -225,6 +225,16 @@ describe('a resize', () => {
     expect(window_.scrollLeft).toBe(0)
   })
 
+  it('cancels pending snap settling when sliding directly to a new place', async () => {
+    const { window_, scrollTo, moveTo } = createStrip('here')
+
+    scrollTo(200)
+    await moveTo('after')
+    vi.advanceTimersByTime(200)
+
+    expect(window_.scrollLeft).toBe(440)
+  })
+
   it('leaves no earlier move still running out its time', async () => {
     const { shown, scrollTo, moveTo } = createStrip('here')
 
