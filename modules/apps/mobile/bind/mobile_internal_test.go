@@ -335,6 +335,39 @@ func TestRegisterVaultFilesAVaultUnderThePathItResolvesTo(t *testing.T) {
 	}
 }
 
+func TestRegisterVaultFindsVaultWhenGivenSymlinkToExistingVault(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "target")
+	if err := os.Mkdir(target, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(dir, "link")
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatal(err)
+	}
+	resolved, err := filepath.EvalSymlinks(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := makeConfig(dir, io.Discard)
+
+	first, err := registerVault(cfg, target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first != resolved {
+		t.Errorf("first registration filed under %q, want %q", first, resolved)
+	}
+
+	second, err := registerVault(cfg, link)
+	if err != nil {
+		t.Fatalf("registering link to existing vault failed: %v", err)
+	}
+	if second != resolved {
+		t.Errorf("second registration filed under %q, want %q", second, resolved)
+	}
+}
+
 func TestRegisterVaultAnswersTheErrorOfAListItCannotRead(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "vaults.json"), []byte("{not json"), 0o600); err != nil {
