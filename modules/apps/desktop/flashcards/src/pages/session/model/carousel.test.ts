@@ -227,14 +227,17 @@ describe('a resize', () => {
 
   it('cancels pending snap settling when sliding directly to a new place', async () => {
     const { window_, scrollTo, moveTo } = createStrip('here')
+    const setTimeoutSpy = vi.spyOn(window, 'setTimeout')
     const clearTimeoutSpy = vi.spyOn(window, 'clearTimeout')
 
     scrollTo(200)
+    const snapTimer = setTimeoutSpy.mock.results[0]?.value
     clearTimeoutSpy.mockClear()
     await moveTo('after')
 
-    expect(clearTimeoutSpy).toHaveBeenCalled()
+    expect(clearTimeoutSpy).toHaveBeenCalledWith(snapTimer)
     expect(window_.scrollLeft).toBe(440)
+    setTimeoutSpy.mockRestore()
     clearTimeoutSpy.mockRestore()
   })
 
