@@ -99,12 +99,17 @@ export const getRows = (table: Table): Row[] => {
 }
 
 /** What a cell reads as. */
-export const readCell = (text: string): string => text.replace(/\\\|/g, '|').trim()
+export const readCell = (text: string): string =>
+  text
+    .replace(/\\\|/g, '|')
+    .replace(/\\\\/g, '\\')
+    .trim()
 
 /** What typing in a cell writes. */
 export const writeCell = (text: string): string =>
   text
     .replace(/\s*\n\s*/g, ' ')
+    .replace(/\\/g, '\\\\')
     .replace(/\|/g, '\\|')
     .trim()
 
