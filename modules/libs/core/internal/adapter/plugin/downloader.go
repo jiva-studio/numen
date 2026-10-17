@@ -31,6 +31,7 @@ type DownloaderBridge struct {
 	host     DownloaderPluginHost
 	pluginID string
 	client   numenv1connect.DownloadServiceClient
+	lease    *pluginLease
 }
 
 // OpenDownloaderBridge activates or connects to the downloader plugin and returns a port.Downloader.
@@ -43,19 +44,16 @@ func OpenDownloaderBridge(ctx context.Context, host DownloaderPluginHost) (*Down
 		return nil, errNoDownloaderPlugin
 	}
 
-	endpoint, err := host.EnsureActive(ctx, plugin.Manifest.ID)
+	client, lease, err := openPlugin(ctx, host, plugin.Manifest.ID, numenv1connect.NewDownloadServiceClient)
 	if err != nil {
-		return nil, fmt.Errorf("ensure active %s: %w", plugin.Manifest.ID, err)
+		return nil, err
 	}
-
-	httpClient := EndpointClient(endpoint)
-	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
-	client := numenv1connect.NewDownloadServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 
 	return &DownloaderBridge{
 		host:     host,
 		pluginID: plugin.Manifest.ID,
 		client:   client,
+		lease:    lease,
 	}, nil
 }
 
@@ -210,6 +208,5 @@ func consumeMediaStream(stream *connect.ServerStreamForClient[v1.DownloadMediaRe
 
 // Close releases the active reference count for the downloader plugin in the host supervisor.
 func (b *DownloaderBridge) Close() error {
-	b.host.Release(b.pluginID)
-	return nil
+	return b.lease.Close()
 }
