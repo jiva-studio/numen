@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"regexp"
 	"slices"
 	"strings"
 )
@@ -19,12 +20,25 @@ const (
 
 	// PermissionNetworkOutbound allows outbound network requests.
 	PermissionNetworkOutbound = "network:outbound"
+
+	// PermissionNetworkAlias is the accepted short spelling of PermissionNetworkOutbound.
+	PermissionNetworkAlias = "network"
+
+	// PluginProtocolVersion is the newest plugin protocol this host speaks.
+	PluginProtocolVersion = 1
 )
 
 var (
 	ErrEmptyID             = errors.New("plugin id cannot be empty")
 	ErrEmptyName           = errors.New("plugin name cannot be empty")
 	ErrEmptyVersion        = errors.New("plugin version cannot be empty")
+	ErrInvalidID           = errors.New("plugin id must be dot-separated segments of letters, digits, _ or - (e.g. md.numen.sample)")
+	ErrInvalidVersion      = errors.New("plugin version is not valid semver (e.g. 1.0.0)")
+	ErrUnsupportedProtocol = errors.New("unsupported plugin protocol")
+	ErrInvalidLifecycle    = errors.New("invalid lifecycle")
+	ErrEmptySettingTitle   = errors.New("setting title cannot be empty")
+	ErrInvalidBackend      = errors.New("invalid backend")
+	ErrInvalidFrontend     = errors.New("invalid frontend")
 	ErrInvalidPermission   = errors.New("invalid permission")
 	ErrEmptySettingKey     = errors.New("setting key cannot be empty")
 	ErrDuplicateSettingKey = errors.New("duplicate setting key")
@@ -33,11 +47,15 @@ var (
 	ErrRangeInvalidBounds  = errors.New("range min cannot exceed max")
 )
 
+var (
+	manifestIDPattern      = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)*$`)
+	manifestVersionPattern = regexp.MustCompile(`^v?\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$`)
+)
+
 var validSettingTypes = []string{"boolean", "string", "number", "enum", "select", "range"}
 
-// PluginLifecycle defines how the host activates and evicts a plugin from memory.
+// PluginLifecycle defines when the host evicts an idle plugin from memory.
 type PluginLifecycle struct {
-	Mode                  string `json:"mode"`
 	IdleTimeoutSeconds    int    `json:"idleTimeoutSeconds"`
 	KeepAliveWhileVisible bool   `json:"keepAliveWhileVisible"`
 	MemoryLimitBytes      uint64 `json:"memoryLimitBytes,omitempty"`
@@ -63,7 +81,7 @@ func (l *PluginLifecycle) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// PluginBackend describes the server-side executable or wasm module of a plugin.
+// PluginBackend describes the server-side executable of a plugin.
 type PluginBackend struct {
 	Type        string `json:"type"`
 	Entrypoint  string `json:"entrypoint"`
@@ -137,6 +155,7 @@ type PluginManifest struct {
 	ID               string                  `json:"id"`
 	Name             string                  `json:"name"`
 	Version          string                  `json:"version"`
+	Protocol         int                     `json:"protocol,omitempty"`
 	Description      string                  `json:"description"`
 	Capabilities     []string                `json:"capabilities"`
 	Targets          []string                `json:"targets"`
@@ -144,10 +163,10 @@ type PluginManifest struct {
 	ActivationEvents []string                `json:"activationEvents"`
 	Permissions      []string                `json:"permissions"`
 	Lifecycle        PluginLifecycle         `json:"lifecycle"`
-	Backend          PluginBackend           `json:"backend"`
-	Frontend         PluginFrontend          `json:"frontend"`
+	Backend          PluginBackend           `json:"backend,omitzero"`
+	Frontend         PluginFrontend          `json:"frontend,omitzero"`
 	Settings         []PluginManifestSetting `json:"settings"`
-	Agent            PluginAgentConfig       `json:"agent"`
+	Agent            PluginAgentConfig       `json:"agent,omitzero"`
 }
 
 // ReadManifest decodes and validates a manifest from JSON input.
@@ -162,75 +181,127 @@ func ReadManifest(r io.Reader) (PluginManifest, error) {
 	return m, nil
 }
 
-// Validate checks that required fields and settings are present and valid.
+// Validate checks the manifest and returns every violation joined into one error.
 func (m PluginManifest) Validate() error {
-	if strings.TrimSpace(m.ID) == "" {
-		return ErrEmptyID
+	return errors.Join(m.ListIssues()...)
+}
+
+// ListIssues returns every rule the manifest breaks, one error each.
+func (m PluginManifest) ListIssues() []error {
+	var issues []error
+	issues = append(issues, m.listIdentityIssues()...)
+	if m.Protocol < 0 || m.Protocol > PluginProtocolVersion {
+		issues = append(issues, fmt.Errorf("%w: %d, this host speaks up to %d", ErrUnsupportedProtocol, m.Protocol, PluginProtocolVersion))
+	}
+	if m.Lifecycle.IdleTimeoutSeconds < 0 {
+		issues = append(issues, fmt.Errorf("%w: idleTimeoutSeconds cannot be negative", ErrInvalidLifecycle))
+	}
+	issues = append(issues, m.listEntrypointIssues()...)
+	issues = append(issues, m.listPermissionIssues()...)
+	return append(issues, listManifestSettingIssues(m.Settings)...)
+}
+
+func (m PluginManifest) listIdentityIssues() []error {
+	var issues []error
+	switch {
+	case strings.TrimSpace(m.ID) == "":
+		issues = append(issues, ErrEmptyID)
+	case !manifestIDPattern.MatchString(m.ID):
+		issues = append(issues, fmt.Errorf("%w: %q", ErrInvalidID, m.ID))
 	}
 	if strings.TrimSpace(m.Name) == "" {
-		return ErrEmptyName
+		issues = append(issues, ErrEmptyName)
 	}
-	if strings.TrimSpace(m.Version) == "" {
-		return ErrEmptyVersion
+	switch {
+	case strings.TrimSpace(m.Version) == "":
+		issues = append(issues, ErrEmptyVersion)
+	case !manifestVersionPattern.MatchString(m.Version):
+		issues = append(issues, fmt.Errorf("%w: %q", ErrInvalidVersion, m.Version))
 	}
-	if m.Backend.Type != "" && m.Backend.Type != "process" {
-		return fmt.Errorf("unsupported backend type: %s", m.Backend.Type)
+	return issues
+}
+
+func (m PluginManifest) listEntrypointIssues() []error {
+	var issues []error
+	if m.Backend != (PluginBackend{}) {
+		if m.Backend.Type != "" && m.Backend.Type != "process" {
+			issues = append(issues, fmt.Errorf("%w: type %q must be \"process\" or empty", ErrInvalidBackend, m.Backend.Type))
+		}
+		if strings.TrimSpace(m.Backend.Entrypoint) == "" {
+			issues = append(issues, fmt.Errorf("%w: entrypoint cannot be empty", ErrInvalidBackend))
+		}
 	}
-	if err := m.ValidatePermissions(); err != nil {
-		return err
+	if m.Frontend != (PluginFrontend{}) && strings.TrimSpace(m.Frontend.Entrypoint) == "" {
+		issues = append(issues, fmt.Errorf("%w: entrypoint cannot be empty", ErrInvalidFrontend))
 	}
-	return validateManifestSettings(m.Settings)
+	return issues
+}
+
+// NormalizePermission maps the accepted permission spellings to their canonical form.
+func NormalizePermission(permission string) string {
+	if permission == PermissionNetworkAlias {
+		return PermissionNetworkOutbound
+	}
+	return permission
 }
 
 // ValidatePermissions verifies that all declared permissions are recognized capabilities.
 func (m PluginManifest) ValidatePermissions() error {
-	for _, p := range m.Permissions {
-		switch p {
-		case PermissionVaultRead, PermissionVaultWrite, PermissionNetworkOutbound, "network":
-		default:
-			return fmt.Errorf("%w: %s", ErrInvalidPermission, p)
-		}
-	}
-	return nil
+	return errors.Join(m.listPermissionIssues()...)
 }
 
-func validateManifestSettings(settings []PluginManifestSetting) error {
+func (m PluginManifest) listPermissionIssues() []error {
+	var issues []error
+	for _, p := range m.Permissions {
+		switch NormalizePermission(p) {
+		case PermissionVaultRead, PermissionVaultWrite, PermissionNetworkOutbound:
+		default:
+			issues = append(issues, fmt.Errorf("%w: %s", ErrInvalidPermission, p))
+		}
+	}
+	return issues
+}
+
+func listManifestSettingIssues(settings []PluginManifestSetting) []error {
+	var issues []error
 	seenKeys := make(map[string]bool, len(settings))
 	for _, s := range settings {
 		key := strings.TrimSpace(s.Key)
 		if key == "" {
-			return ErrEmptySettingKey
+			issues = append(issues, ErrEmptySettingKey)
+			continue
 		}
 		if seenKeys[key] {
-			return fmt.Errorf("%w: %s", ErrDuplicateSettingKey, key)
+			issues = append(issues, fmt.Errorf("%w: %s", ErrDuplicateSettingKey, key))
+			continue
 		}
 		seenKeys[key] = true
-		if err := validateManifestSetting(s, key); err != nil {
-			return err
-		}
+		issues = append(issues, listManifestSettingIssue(s, key)...)
 	}
-	return nil
+	return issues
 }
 
-func validateManifestSetting(s PluginManifestSetting, key string) error {
+func listManifestSettingIssue(s PluginManifestSetting, key string) []error {
+	var issues []error
+	if strings.TrimSpace(s.Title) == "" {
+		issues = append(issues, fmt.Errorf("%w: %s", ErrEmptySettingTitle, key))
+	}
 	if !slices.Contains(validSettingTypes, s.Type) {
-		return fmt.Errorf("%w: %q for %s", ErrInvalidSettingType, s.Type, key)
+		issues = append(issues, fmt.Errorf("%w: %q for %s", ErrInvalidSettingType, s.Type, key))
 	}
 	if (s.Type == "enum" || s.Type == "select") && len(s.Options) == 0 {
-		return fmt.Errorf("%w: %s", ErrEnumMissingOptions, key)
+		issues = append(issues, fmt.Errorf("%w: %s", ErrEnumMissingOptions, key))
 	}
 	if s.Type == "range" && (s.Min != 0 || s.Max != 0) && s.Min > s.Max {
-		return fmt.Errorf("%w: %s", ErrRangeInvalidBounds, key)
+		issues = append(issues, fmt.Errorf("%w: %s", ErrRangeInvalidBounds, key))
 	}
-	return nil
+	return issues
 }
 
 // HasPermission reports whether this plugin requests the given permission.
 func (m PluginManifest) HasPermission(permission string) bool {
-	if permission == PermissionNetworkOutbound || permission == "network" {
-		return slices.Contains(m.Permissions, PermissionNetworkOutbound) || slices.Contains(m.Permissions, "network")
-	}
-	return slices.Contains(m.Permissions, permission)
+	want := NormalizePermission(permission)
+	return slices.ContainsFunc(m.Permissions, func(p string) bool { return NormalizePermission(p) == want })
 }
 
 // CanTarget reports whether this plugin runs in the given workspace target.

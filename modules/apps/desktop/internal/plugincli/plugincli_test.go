@@ -145,7 +145,7 @@ func TestPluginValidate_InvalidID(t *testing.T) {
 	if len(issues) == 0 {
 		t.Fatal("expected validation issues for bad id, got none")
 	}
-	if !strings.Contains(issues[0], "reverse-DNS") {
+	if !strings.Contains(issues[0], "plugin id") {
 		t.Errorf("unexpected issue message: %s", issues[0])
 	}
 }
@@ -363,5 +363,84 @@ func TestValidateExistingRepoPlugins(t *testing.T) {
 		if len(issues) > 0 {
 			t.Errorf("validation issues in existing plugin %s: %v", entry.Name(), issues)
 		}
+	}
+}
+
+func writeManifestFile(t *testing.T, manifest string) string {
+	t.Helper()
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(manifest), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return dir
+}
+
+func TestPluginValidate_ReportsCoreRules(t *testing.T) {
+	cases := []struct {
+		name     string
+		manifest string
+		want     string
+	}{
+		{"bad semver", `{"id":"md.numen.x","name":"X","version":"1.0"}`, "semver"},
+		{"newer protocol", `{"id":"md.numen.x","name":"X","version":"1.0.0","protocol":99}`, "protocol"},
+		{"wasm backend", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"type":"wasm","entrypoint":"x.wasm"}}`, "backend"},
+		{"negative idle", `{"id":"md.numen.x","name":"X","version":"1.0.0","lifecycle":{"idleTimeoutSeconds":-5}}`, "idleTimeoutSeconds"},
+		{"setting without title", `{"id":"md.numen.x","name":"X","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, "title"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			issues, err := Validate(writeManifestFile(t, tc.manifest))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(issues) == 0 || !strings.Contains(strings.Join(issues, "\n"), tc.want) {
+				t.Fatalf("issues %v lack %q", issues, tc.want)
+			}
+		})
+	}
+}
+
+func TestPluginValidate_InvalidJSON(t *testing.T) {
+	issues, err := Validate(writeManifestFile(t, `{not json`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(issues) != 1 || !strings.Contains(issues[0], "invalid json") {
+		t.Fatalf("got %v", issues)
+	}
+}
+
+func TestPluginValidate_MissingEntrypointFiles(t *testing.T) {
+	issues, err := Validate(writeManifestFile(t, `{"id":"md.numen.x","name":"X","version":"1.0.0",
+"backend":{"type":"process","entrypoint":"bin/x"},"frontend":{"entrypoint":"dist/index.js"}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	joined := strings.Join(issues, "\n")
+	if !strings.Contains(joined, "backend entrypoint") || !strings.Contains(joined, "frontend entrypoint") {
+		t.Fatalf("got %v", issues)
+	}
+}
+
+func TestPluginValidate_MissingPath(t *testing.T) {
+	if _, err := Validate(filepath.Join(t.TempDir(), "absent")); err == nil {
+		t.Fatal("expected error for a missing path")
+	}
+}
+
+func TestPluginCreate_ManifestCarriesProtocolAndNoMode(t *testing.T) {
+	outDir := filepath.Join(t.TempDir(), "p")
+	if err := Create(CreateOptions{Name: "p", Type: "frontend", OutputDir: outDir}, &bytes.Buffer{}); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(filepath.Join(outDir, "manifest.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(raw), `"protocol": 1`) {
+		t.Errorf("manifest lacks protocol: %s", raw)
+	}
+	if strings.Contains(string(raw), `"mode"`) || strings.Contains(string(raw), `"backend"`) {
+		t.Errorf("frontend manifest carries mode or backend: %s", raw)
 	}
 }

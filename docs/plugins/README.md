@@ -19,7 +19,7 @@ Plugins communicating over Connect-RPC use loopback TCP:
   NUMEN_READY port=12345
   ```
 - All plugins implement the `numen.v1.PluginLifecycleService` providing `Ping` and `Shutdown` endpoints.
-- Plugins configured with `mode: "on-demand"` are automatically terminated after their configured idle timeout (e.g. 180 seconds without active clients).
+- A plugin whose `lifecycle.idleTimeoutSeconds` is above zero is terminated after that many seconds without active clients.
 
 ---
 
@@ -55,13 +55,13 @@ The manifest declares identity, activation rules, required permissions, and serv
   "id": "md.numen.sample",
   "name": "Sample Reader",
   "version": "0.1.0",
+  "protocol": 1,
   "description": "Custom document viewer plugin for Numen",
   "capabilities": ["document"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onFile:*.sample"],
   "permissions": ["vault:read"],
   "lifecycle": {
-    "mode": "on-demand",
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": true
   },
@@ -91,20 +91,22 @@ The manifest declares identity, activation rules, required permissions, and serv
 
 ### Manifest Fields
 
-- **`id`**: Unique reverse-DNS identifier (e.g., `md.numen.<plugin-name>`).
+- **`id`**: Unique identifier of dot-separated segments of letters, digits, `_` or `-`; the convention is reverse-DNS (`md.numen.<plugin-name>`).
 - **`name`**: User-facing display title.
-- **`version`**: Semantic versioning string (`X.Y.Z`).
+- **`version`**: Semantic versioning string (`X.Y.Z`, optional pre-release and build parts).
+- **`protocol`**: The plugin protocol version the plugin was written against. The host speaks protocol 1 and rejects a manifest that names a newer one. Absent means 1.
 - **`capabilities`**: Core capabilities provided (`document`, `compute`, `agent`, `recognition`, `transcription`, `proofreading`).
 - **`targets`**: Allowed client environments (`desktop.editor`, `desktop.flashcards`).
 - **`activationEvents`**: Triggers for host activation:
   - `onFile:<glob>` (e.g. `onFile:*.pdf`, `onFile:*.epub`)
   - `onCommand:<id>` (e.g. `onCommand:ocr.scan`)
   - `*` (always activated on startup)
-- **`permissions`**: Whitelisted resource access (`vault:read`, `vault:write`, `network`, `shell`, `notifications`, `clipboard`).
+- **`permissions`**: Whitelisted resource access: `vault:read`, `vault:write` and `network:outbound` (`network` is accepted as an alias). Any other value is rejected. Permissions are checked by the host when a plugin calls it; the host does not sandbox the plugin process, so a plugin runs with the user rights of the host.
 - **`lifecycle`**:
-  - `mode`: `"on-demand"`, `"persistent"`, or `"manual"`.
-  - `idleTimeoutSeconds`: Seconds of inactivity before process eviction.
+  - `idleTimeoutSeconds`: Seconds of inactivity before process eviction; it cannot be negative.
   - `keepAliveWhileVisible`: Keep alive while a tab displaying the plugin is open.
+- **`backend`**: `type` is `process` (the only backend type) and `entrypoint` is required.
+- **`frontend`**: `entrypoint` is required, `styles` is optional.
 - **`settings`**: Declarative settings schema automatically rendered in host settings and stored by the core.
 
 ---
@@ -191,7 +193,7 @@ Supported templates:
 
 ### 2. Validation (`validate`)
 
-Verify `manifest.json`, check permissions against whitelist, and ensure backend/frontend entrypoints resolve:
+Verify `manifest.json` with the same validator the host runs at discovery (identity, protocol, lifecycle, permissions, settings), and ensure backend/frontend entrypoints resolve:
 
 ```bash
 numen plugin validate modules/plugins/sample
@@ -205,8 +207,8 @@ plugin at modules/plugins/sample is valid
 If validation fails, each rule violation is reported:
 ```text
 validation errors:
-  - field 'id' "sample" must use reverse-DNS notation (e.g. md.numen.sample)
-  - permission "unrestricted:root" is unknown; allowed permissions: [vault:read vault:write network shell notifications clipboard]
+  - invalid permission: unrestricted:root
+  - plugin version is not valid semver (e.g. 1.0.0): "1.0"
 ```
 
 ### 3. Packaging (`package`)

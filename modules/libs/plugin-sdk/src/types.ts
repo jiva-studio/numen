@@ -121,18 +121,19 @@ export interface PluginManifest {
   id: string
   name: string
   version: string
+  /** The plugin protocol the plugin was written against; absent means 1. */
+  protocol?: number
   description?: string
   capabilities?: string[]
   targets?: string[]
   activationEvents?: string[]
   permissions?: string[]
   lifecycle?: {
-    mode: 'on-demand' | 'persistent' | 'manual'
     idleTimeoutSeconds?: number
     keepAliveWhileVisible?: boolean
   }
   backend?: {
-    type: 'process' | 'wasm'
+    type: 'process'
     entrypoint: string
     serviceName?: string
   }
