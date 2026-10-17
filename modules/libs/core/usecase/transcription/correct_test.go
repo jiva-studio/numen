@@ -29,7 +29,7 @@ func getTask(held *Worker, path string) (doing, failed string) {
 
 // openNoProofreader is a profile that cannot be opened, as a person naming one no
 // settings name is told.
-func openNoProofreader(string) (port.Proofreader, error) {
+func openNoProofreader() (port.Proofreader, error) {
 	return nil, errors.New(`no proofreading profile named "nowhere"`)
 }
 

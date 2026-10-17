@@ -88,7 +88,6 @@ func (c Config) Proofreader(name string) (port.Proofreader, error) {
 	return c.AgentProofreader(ProofreaderSpec{
 		Command:  profile.Command,
 		Model:    profile.Model,
-		Kind:     kind,
 		InFlight: profile.InFlight,
 	})
 }

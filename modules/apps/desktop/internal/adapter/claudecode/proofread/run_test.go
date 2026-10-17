@@ -53,7 +53,7 @@ func TestAScanIsAskedPageByPageAndCorrectionsComeBackInLineOrder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []domain.ProofreadCorrection{{Number: 10, Last: 0, Text: "the cat sat"}, {Number: 12, Text: "the dog ran"}}
+	want := []domain.ProofreadCorrection{{Number: 10, Last: 10, Text: "the cat sat"}, {Number: 12, Last: 12, Text: "the dog ran"}}
 	if !reflect.DeepEqual(got.Corrections, want) {
 		t.Errorf("corrections %v, want %v", got.Corrections, want)
 	}
