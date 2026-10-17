@@ -22,6 +22,17 @@ func newDiscoveredHost(t *testing.T) *Host {
 	return host
 }
 
+// activateOutsideBackoff calls EnsureActive until the answer is no longer a backoff refusal.
+func activateOutsideBackoff(t *testing.T, host *Host) error {
+	t.Helper()
+	var err error
+	waitUntil(t, "the backoff to end", func() bool {
+		_, err = host.EnsureActive(t.Context(), "md.numen.ocr")
+		return !errors.Is(err, errActivationBackoff)
+	})
+	return err
+}
+
 func TestAProcessThatNeverPrintsReadyIsKilledAtTheActivationDeadline(t *testing.T) {
 	host := newDiscoveredHost(t)
 	policy := DefaultActivationPolicy()
@@ -32,9 +43,13 @@ func TestAProcessThatNeverPrintsReadyIsKilledAtTheActivationDeadline(t *testing.
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
-	t.Cleanup(func() { _ = cmd.Process.Kill() })
+	t.Cleanup(func() { killProcess(t, cmd.Process) })
 	silent, writer := io.Pipe()
-	t.Cleanup(func() { _ = writer.Close() })
+	t.Cleanup(func() {
+		if err := writer.Close(); err != nil {
+			t.Errorf("close pipe: %v", err)
+		}
+	})
 	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, silent, nil
 	})
@@ -44,13 +59,9 @@ func TestAProcessThatNeverPrintsReadyIsKilledAtTheActivationDeadline(t *testing.
 		t.Fatalf("expected a handshake timeout, got %v", err)
 	}
 
-	deadline := time.Now().Add(5 * time.Second)
-	for cmd.Process.Signal(syscall.Signal(0)) == nil {
-		if time.Now().After(deadline) {
-			t.Fatal("the silent process is still running")
-		}
-		time.Sleep(5 * time.Millisecond)
-	}
+	waitUntil(t, "the silent process to be killed", func() bool {
+		return cmd.Process.Signal(syscall.Signal(0)) != nil
+	})
 	if state := host.supervisors["md.numen.ocr"].GetState(); state != StateDormant {
 		t.Fatalf("expected StateDormant, got %v", state)
 	}
@@ -98,13 +109,11 @@ func TestAPluginIsReportedFailedAfterTheFailureLimit(t *testing.T) {
 	})
 
 	for range policy.MaxFailures {
-		time.Sleep(10 * time.Millisecond)
-		if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err == nil {
+		if err := activateOutsideBackoff(t, host); err == nil {
 			t.Fatal("expected the activation to fail")
 		}
 	}
-	time.Sleep(10 * time.Millisecond)
-	_, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+	err := activateOutsideBackoff(t, host)
 	if !errors.Is(err, errPluginFailed) {
 		t.Fatalf("expected the plugin to be failed, got %v", err)
 	}
@@ -120,8 +129,8 @@ func TestAPluginIsReportedFailedAfterTheFailureLimit(t *testing.T) {
 	}
 
 	host.SetPluginEnabled("md.numen.ocr", true)
-	status, _ = host.GetPluginStatus("md.numen.ocr")
-	if status.Failed {
+	status, ok = host.GetPluginStatus("md.numen.ocr")
+	if !ok || status.Failed {
 		t.Fatal("enabling the plugin should clear the failure")
 	}
 }
@@ -143,7 +152,9 @@ func TestACanceledCallerDoesNotCountAsAFailedActivation(t *testing.T) {
 	})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	_, _ = host.EnsureActive(ctx, "md.numen.ocr")
+	if _, err := host.EnsureActive(ctx, "md.numen.ocr"); err == nil {
+		t.Fatal("expected the activation to fail")
+	}
 	if err := host.supervisors["md.numen.ocr"].CheckActivationAllowed(time.Now()); err != nil {
 		t.Fatalf("a canceled caller put the plugin into backoff: %v", err)
 	}
