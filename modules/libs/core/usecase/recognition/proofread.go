@@ -8,6 +8,7 @@ import (
 	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -256,7 +257,7 @@ func (u Proofread) writeCorrections(
 	put, uncorrected := u.getCorrections(asked, replies)
 	res.UncorrectedPages += uncorrected
 	if len(put) > 0 {
-		if err := p.store.AppendArtifact(ctx, p.corrections, domain.PackCorrections(put)); err != nil {
+		if err := p.store.AppendArtifact(ctx, p.corrections, correction.Pack(put)); err != nil {
 			return err
 		}
 		res.Fixed += len(put)
@@ -457,7 +458,7 @@ func dropCorrections(
 	if err != nil {
 		return err
 	}
-	held := domain.UnpackCorrections(raw)
+	held := correction.Unpack(raw)
 	kept := make([]domain.CorrectionLine, 0, len(held))
 	for _, line := range held {
 		if line.Number < beyond {
@@ -470,7 +471,7 @@ func dropCorrections(
 	// Written back whatever was dropped. An append that did not land whole leaves
 	// bytes that are not a record, and every record appended after them is read
 	// at a shifted offset.
-	return store.WriteArtifact(ctx, corrections, domain.PackCorrections(kept))
+	return store.WriteArtifact(ctx, corrections, correction.Pack(kept))
 }
 
 // opening is the number of the first line no count claims.

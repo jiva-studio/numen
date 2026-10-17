@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
@@ -82,7 +83,7 @@ func newHaltedWorker(
 	for at := range through {
 		put = append(put, domain.CorrectionLine{Number: at, Text: correctLine(lines[at])})
 	}
-	if err := store.AppendArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, "ocr", hash), domain.PackCorrections(put)); err != nil {
+	if err := store.AppendArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, "ocr", hash), correction.Pack(put)); err != nil {
 		t.Fatal(err)
 	}
 	stood, err := json.Marshal(checkpoint{By: by.GetName(), Pages: through})
@@ -129,7 +130,7 @@ func corrections(t *testing.T, store port.DerivedStore, name domain.ArtifactName
 		t.Fatal(err)
 	}
 	out := []int{}
-	for _, line := range domain.UnpackCorrections(raw) {
+	for _, line := range correction.Unpack(raw) {
 		out = append(out, line.Number)
 	}
 	return out

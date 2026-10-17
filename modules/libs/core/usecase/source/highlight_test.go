@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -376,7 +377,7 @@ func TestAProofreadRecognitionIsLitWhereItsWordsNowStand(t *testing.T) {
 	// The first line is put right and grows by three bytes, so the third line
 	// begins at 14 and runs to 19.
 	put := []domain.CorrectionLine{{Number: 0, Text: "eighteen"}}
-	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, "ocr", "abc123"), domain.PackCorrections(put)); err != nil {
+	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, "ocr", "abc123"), correction.Pack(put)); err != nil {
 		t.Fatal(err)
 	}
 

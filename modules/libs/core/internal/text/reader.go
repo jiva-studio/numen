@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
@@ -229,7 +230,7 @@ func readOptional(ctx context.Context, store port.DerivedStore, name domain.Arti
 func ReadRecognition(raw, parts, boxes, corrections []byte) *Document {
 	prose, marks := ocr.Read(raw)
 	named := ocr.Unpack(parts)
-	if put := domain.UnpackCorrections(corrections); len(put) > 0 {
+	if put := correction.Unpack(corrections); len(put) > 0 {
 		prose, marks, named = domain.GetCorrectedProse(prose, marks, highlight.Unpack(boxes), named, put)
 	}
 	doc := &Document{Text: prose}
