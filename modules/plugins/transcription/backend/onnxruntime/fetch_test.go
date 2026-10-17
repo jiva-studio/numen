@@ -28,7 +28,7 @@ func TestCacheDirIsTheSharedModelsFolder(t *testing.T) {
 
 func TestFetchReturnsAFileThatIsAlreadyThere(t *testing.T) {
 	dir := t.TempDir()
-	address, sum := "https://example.invalid/model.onnx", strings.Repeat("ab", 32)
+	address, sum := "https://example.invalid/model.onnx", "2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881"
 	at := filepath.Join(dir, models.GetCacheName(address, sum))
 	if err := os.WriteFile(at, []byte("x"), 0o644); err != nil {
 		t.Fatal(err)

@@ -57,9 +57,6 @@ func locateInDir(dir, file string) (Paths, error) {
 }
 
 func downloadModel(ctx context.Context, cfg LocalModel, file string, progress FetchProgress) (Paths, error) {
-	if models.IsOffline() {
-		return Paths{}, fmt.Errorf("%s is not on this machine, and %s forbids fetching it", cfg.Name, models.EnvOffline)
-	}
 	home, err := models.GetHome()
 	if err != nil {
 		return Paths{}, fmt.Errorf("models folder: %w", err)
@@ -67,6 +64,12 @@ func downloadModel(ctx context.Context, cfg LocalModel, file string, progress Fe
 	repo := hub.New(cfg.Name).WithProgressBar(false).WithCacheDir(filepath.Join(home, "huggingface"))
 	if cfg.Revision != "" {
 		repo = repo.WithRevision(cfg.Revision)
+	}
+	if p, ok, err := locateCached(repo, cfg, file); err != nil || ok {
+		return p, err
+	}
+	if models.IsOffline() {
+		return Paths{}, fmt.Errorf("%s is not on this machine, and %s forbids fetching it", cfg.Name, models.EnvOffline)
 	}
 	folder, sizes, err := listRepoFiles(repo)
 	if err != nil {
@@ -81,10 +84,15 @@ func downloadModel(ctx context.Context, cfg LocalModel, file string, progress Fe
 	for _, name := range files {
 		total += sizes[name]
 	}
-	if err := models.CheckQuota(home, total); err != nil {
+	dir, dirErr := repo.CacheDir()
+	need := total
+	if dirErr == nil {
+		need = max(total-sumBytes(dir, files, sizes), 0)
+	}
+	if err := models.CheckQuota(home, need); err != nil {
 		return Paths{}, fmt.Errorf("fetching %s: %w", cfg.Name, err)
 	}
-	if dir, err := repo.CacheDir(); err == nil {
+	if dirErr == nil {
 		defer reportProgress(dir, files, sizes, total, progress)()
 	}
 
@@ -230,4 +238,34 @@ func checkPinned(sums map[string]string, name, path string) error {
 		return fmt.Errorf("%s: %w", name, err)
 	}
 	return nil
+}
+
+// locateCached returns the files of a pinned snapshot that the cache already
+// holds, each checked against its pinned sum. A model with no revision is never
+// found here.
+func locateCached(repo *hub.Repo, cfg LocalModel, file string) (Paths, bool, error) {
+	if cfg.Revision == "" {
+		return Paths{}, false, nil
+	}
+	cache, err := repo.CacheDir()
+	if err != nil {
+		return Paths{}, false, nil
+	}
+	snapshot := filepath.Join(cache, "snapshots", cfg.Revision)
+	p := Paths{
+		Model:     filepath.Join(snapshot, ModelFolder, file),
+		Tokenizer: filepath.Join(snapshot, TokenizerFile),
+	}
+	for _, required := range []string{p.Model, p.Tokenizer} {
+		if _, err := os.Stat(required); err != nil {
+			return Paths{}, false, nil
+		}
+	}
+	if err := checkPinned(cfg.Sums, ModelFolder+"/"+file, p.Model); err != nil {
+		return Paths{}, false, err
+	}
+	if err := checkPinned(cfg.Sums, TokenizerFile, p.Tokenizer); err != nil {
+		return Paths{}, false, err
+	}
+	return p, true, nil
 }

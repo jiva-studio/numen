@@ -34,7 +34,9 @@ func request(t *testing.T, address, sum string) Request {
 	t.Helper()
 	t.Setenv(EnvOffline, "")
 	t.Setenv(EnvQuota, "")
-	return Request{Dir: filepath.Join(t.TempDir(), "models"), Section: "indexing.test", Address: address, Sum: sum, ShouldDownload: true}
+	dir := filepath.Join(t.TempDir(), "models")
+	t.Setenv(EnvDir, dir)
+	return Request{Dir: dir, Section: "indexing.test", Address: address, Sum: sum, ShouldDownload: true}
 }
 
 func TestFetchKeepsAPinnedFileUnderItsSum(t *testing.T) {
@@ -254,5 +256,47 @@ func TestGetCacheName(t *testing.T) {
 func TestIsAddress(t *testing.T) {
 	if !IsAddress("https://h/x") || IsAddress("http://h/x") || IsAddress("model.onnx") {
 		t.Fatal("IsAddress accepts only https")
+	}
+}
+
+func TestFetchRefusesAPresentPinnedFileWithAnotherSum(t *testing.T) {
+	r := request(t, "https://example.invalid/model.onnx", sumOf("weights"))
+	r.ShouldDownload = false
+	if err := os.MkdirAll(r.Dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	at := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
+	if err := os.WriteFile(at, []byte("corrupt"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Fetch(context.Background(), r); err == nil || !strings.Contains(err.Error(), "pinned") {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+}
+
+func TestFetchCountsTheSharedFolderAgainstTheQuota(t *testing.T) {
+	srv := serve(t, "0123456789")
+	r := request(t, srv.URL+"/model.onnx", "")
+	if err := os.MkdirAll(r.Dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(r.Dir, "other"), make([]byte, 8), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(EnvQuota, "12")
+	if _, err := Fetch(context.Background(), r); err == nil || !strings.Contains(err.Error(), EnvQuota) {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+}
+
+func TestFetchKeepsNoTemporaryFileAfterSuccess(t *testing.T) {
+	srv := serve(t, "weights")
+	r := request(t, srv.URL+"/model.onnx", "")
+	if _, err := Fetch(context.Background(), r); err != nil {
+		t.Fatal(err)
+	}
+	entries, _ := os.ReadDir(r.Dir)
+	if len(entries) != 1 || strings.Contains(entries[0].Name(), ".part") {
+		t.Fatalf("the folder holds %v", entries)
 	}
 }

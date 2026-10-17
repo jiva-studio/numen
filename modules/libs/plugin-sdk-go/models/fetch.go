@@ -111,6 +111,11 @@ func (r Request) reportProgress(done, total int64) {
 func Fetch(ctx context.Context, r Request) (string, error) {
 	at := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
 	if _, err := os.Stat(at); err == nil {
+		if r.Sum != "" {
+			if err := VerifyFile(at, r.Sum); err != nil {
+				return "", err
+			}
+		}
 		return at, nil
 	}
 	if !r.ShouldDownload {
@@ -153,28 +158,32 @@ func download(ctx context.Context, r Request, at string) error {
 		return fmt.Errorf("fetching %s: %s", r.Address, answer.Status)
 	}
 	if answer.ContentLength > 0 {
-		if err := CheckQuota(r.Dir, answer.ContentLength); err != nil {
+		if err := CheckQuota(getQuotaRoot(r), answer.ContentLength); err != nil {
 			return fmt.Errorf("fetching %s: %w", r.Address, err)
 		}
 	}
 	waited.Reset(getDownloadTimeout(answer.ContentLength))
 
-	part := at + ".part"
-	if err := write(part, answer.Body, r, answer.ContentLength); err != nil {
-		os.Remove(part)
-		return fmt.Errorf("fetching %s: %w", r.Address, err)
-	}
-	return os.Rename(part, at)
-}
-
-// write copies body into the file at part, and returns an error when the copy
-// passes the quota, or holds other than the sum.
-func write(part string, body io.Reader, r Request, total int64) error {
-	file, err := os.Create(part)
+	file, err := os.CreateTemp(r.Dir, filepath.Base(at)+".part-*")
 	if err != nil {
 		return err
 	}
-	room := max(GetQuota()-GetUsage(r.Dir), 0)
+	part := file.Name()
+	if err := write(file, answer.Body, r, answer.ContentLength); err != nil {
+		os.Remove(part)
+		return fmt.Errorf("fetching %s: %w", r.Address, err)
+	}
+	if err := os.Rename(part, at); err != nil {
+		os.Remove(part)
+		return err
+	}
+	return nil
+}
+
+// write copies body into file and closes it. It returns an error when the copy
+// passes the quota, or holds other than the sum.
+func write(file *os.File, body io.Reader, r Request, total int64) error {
+	room := max(GetQuota()-GetUsage(getQuotaRoot(r)), 0)
 	hash := sha256.New()
 	counted := &progressWriter{
 		to:         io.MultiWriter(file, hash),
@@ -216,4 +225,13 @@ func (c *progressWriter) Write(raw []byte) (int, error) {
 		c.onProgress(c.done, c.total)
 	}
 	return n, err
+}
+
+// getQuotaRoot returns the folder the quota counts: the shared models folder,
+// or the request's own folder where there is none.
+func getQuotaRoot(r Request) string {
+	if home, err := GetHome(); err == nil {
+		return home
+	}
+	return r.Dir
 }
