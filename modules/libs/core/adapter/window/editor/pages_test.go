@@ -574,6 +574,41 @@ func TestPluginAssetsAreServed(t *testing.T) {
 		}
 	})
 
+	t.Run("rejects a contained symlink that points at an escaping symlink", func(t *testing.T) {
+		outsideDir := t.TempDir()
+		if err := os.Symlink(outsideDir, filepath.Join(pluginDir, "outer")); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Symlink("outer", filepath.Join(pluginDir, "inner")); err != nil {
+			t.Fatal(err)
+		}
+
+		r := httptest.NewRequest(http.MethodGet, "/api/plugins/sample.plugin/inner/secret.js", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, r)
+
+		if w.Code != http.StatusForbidden {
+			t.Fatalf("expected 403, got %d", w.Code)
+		}
+	})
+
+	t.Run("answers 500 for a symlink loop", func(t *testing.T) {
+		if err := os.Symlink("loopb", filepath.Join(pluginDir, "loopa")); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Symlink("loopa", filepath.Join(pluginDir, "loopb")); err != nil {
+			t.Fatal(err)
+		}
+
+		r := httptest.NewRequest(http.MethodGet, "/api/plugins/sample.plugin/loopa/x.js", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, r)
+
+		if w.Code != http.StatusInternalServerError {
+			t.Fatalf("expected 500, got %d", w.Code)
+		}
+	})
+
 	t.Run("returns 404 for unknown plugin", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/api/plugins/unknown.plugin/dist/index.js", nil)
 		w := httptest.NewRecorder()

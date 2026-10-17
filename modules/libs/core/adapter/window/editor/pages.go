@@ -331,27 +331,57 @@ func openPluginAsset(ctx context.Context, pluginDir, name string) (*os.File, os.
 	return file, info, nil
 }
 
-// classifyPluginAssetError names the reason root.Open failed. A link on the path whose
-// target the root refuses to resolve leads out of the plugin directory.
+// classifyPluginAssetError names the reason root.Open failed. A name whose links lead out of
+// the plugin directory is an escape; every other failure keeps its own error.
 func classifyPluginAssetError(root *os.Root, name string, openErr error) error {
 	if errors.Is(openErr, os.ErrNotExist) || errors.Is(openErr, os.ErrPermission) {
 		return openErr
 	}
-	parts := strings.Split(filepath.ToSlash(name), "/")
-	for i := range parts {
-		prefix := strings.Join(parts[:i+1], "/")
-		linkInfo, err := root.Lstat(prefix)
-		if err != nil {
-			return openErr
-		}
-		if linkInfo.Mode()&os.ModeSymlink == 0 {
-			continue
-		}
-		if _, err := root.Stat(prefix); err != nil && !errors.Is(err, os.ErrNotExist) && !errors.Is(err, os.ErrPermission) {
-			return errPluginAssetEscapes
-		}
+	if isPluginAssetEscape(root, name) {
+		return errPluginAssetEscapes
 	}
 	return openErr
+}
+
+// maxPluginAssetLinks bounds the links followed while checking one name.
+const maxPluginAssetLinks = 40
+
+// isPluginAssetEscape follows the links on name one component at a time and reports whether
+// the walk reaches an absolute target or climbs above the root.
+func isPluginAssetEscape(root *os.Root, name string) bool {
+	pending := strings.Split(filepath.ToSlash(name), "/")
+	var resolved []string
+	links := 0
+	for len(pending) > 0 {
+		component := pending[0]
+		pending = pending[1:]
+		switch component {
+		case "", ".":
+			continue
+		case "..":
+			if len(resolved) == 0 {
+				return true
+			}
+			resolved = resolved[:len(resolved)-1]
+			continue
+		}
+		path := strings.Join(append(resolved, component), "/")
+		target, err := root.Readlink(path)
+		if err != nil {
+			resolved = append(resolved, component)
+			continue
+		}
+		links++
+		if links > maxPluginAssetLinks {
+			return false
+		}
+		target = filepath.ToSlash(target)
+		if filepath.IsAbs(target) || strings.HasPrefix(target, "/") {
+			return true
+		}
+		pending = append(strings.Split(target, "/"), pending...)
+	}
+	return false
 }
 
 // newQuestionCounter takes every question a client asks and gives it back when it is
