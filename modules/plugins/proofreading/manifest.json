@@ -19,6 +19,27 @@
   },
   "settings": [
     {
+      "key": "strictMode",
+      "type": "boolean",
+      "title": "Strict Proofreading",
+      "description": "Enforce strict grammatical and punctuation rules",
+      "default": false,
+      "palette": true
+    },
+    {
+      "key": "maxSuggestions",
+      "type": "number",
+      "title": "Max Suggestions",
+      "description": "Maximum number of corrections suggested per passage",
+      "default": 5
+    },
+    {
+      "key": "baseUrl",
+      "type": "string",
+      "title": "Endpoint URL",
+      "description": "Base URL of the OpenAI-compatible chat completions API"
+    },
+    {
       "key": "model",
       "type": "string",
       "title": "Proofreading Model",
