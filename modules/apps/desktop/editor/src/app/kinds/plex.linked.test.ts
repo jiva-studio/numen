@@ -39,7 +39,7 @@ const createPlexLinkedFixture = (neighbourhoodPath: string, neighbourhoodTitle: 
   const windowMock = {
     failure: ref(false),
     opening: ref(''),
-    readInitialNote: vi.fn(async () => ''),
+    readInitialNote: vi.fn(() => Promise.resolve('')),
   } as never
 
   const settingsMock = {
@@ -53,10 +53,11 @@ const createPlexLinkedFixture = (neighbourhoodPath: string, neighbourhoodTitle: 
 
   const plexKind = createPlexKind({
     core: {
-      neighbourhood: async (path: string) => ({
-        focus: { path, title: 'Focus' },
-        related: [{ path: neighbourhoodPath, title: neighbourhoodTitle, kind: 'link' }],
-      }),
+      neighbourhood: (path: string) =>
+        Promise.resolve({
+          focus: { path, title: 'Focus' },
+          related: [{ path: neighbourhoodPath, title: neighbourhoodTitle, kind: 'link' }],
+        }),
     } as never,
     tabOpeners: tabOpenersMock,
     held,
