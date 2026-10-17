@@ -23,8 +23,11 @@ describe('pluginCatalog', () => {
     expect(Object.keys(pluginCatalog.loaders)).toHaveLength(directories.length)
     for (const id of Object.keys(pluginCatalog.loaders)) {
       expect(pluginCatalog.manifests[id]?.id).toBe(id)
-      const loaded = (await pluginCatalog.loaders[id]?.()) as { activate?: unknown }
-      expect(typeof loaded.activate).toBe('function')
+      const loaded = (await pluginCatalog.loaders[id]?.()) as {
+        activate?: unknown
+        default?: { activate?: unknown }
+      }
+      expect(typeof (loaded.activate ?? loaded.default?.activate)).toBe('function')
     }
   })
 
