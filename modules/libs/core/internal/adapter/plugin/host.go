@@ -165,7 +165,7 @@ func (h *Host) SetSafeMode(enabled bool) {
 	h.mu.Unlock()
 
 	for _, id := range running {
-		if err := h.stopPlugin(id); err != nil {
+		if err := h.stopPlugin(context.Background(), id); err != nil {
 			h.reportError(err)
 		}
 	}
@@ -182,7 +182,7 @@ func (h *Host) getRunningPluginIDsLocked() []string {
 }
 
 // stopPlugin shuts one plugin down, whatever state it is in.
-func (h *Host) stopPlugin(pluginID string) error {
+func (h *Host) stopPlugin(ctx context.Context, pluginID string) error {
 	h.mu.Lock()
 	sup, ok := h.supervisors[pluginID]
 	if !ok {
@@ -193,7 +193,7 @@ func (h *Host) stopPlugin(pluginID string) error {
 	delete(h.endpoints, pluginID)
 	h.mu.Unlock()
 
-	ctx, cancel := context.WithTimeout(context.Background(), stopPluginTimeout)
+	ctx, cancel := context.WithTimeout(ctx, stopPluginTimeout)
 	defer cancel()
 	if err := h.teardownTarget(ctx, target, stopPluginGracePeriod); err != nil && !errors.Is(err, errProcessNotRunning) {
 		return fmt.Errorf("stop plugin %s: %w", pluginID, err)
@@ -1017,13 +1017,13 @@ func (h *Host) SetPluginEnabled(pluginID string, enabled bool) error {
 }
 
 // applyEnabledChange stops a plugin that was disabled and clears the failures of one that was enabled.
-func (h *Host) applyEnabledChange(pluginID string, value any) error {
+func (h *Host) applyEnabledChange(ctx context.Context, pluginID string, value any) error {
 	enabled, ok := value.(bool)
 	if !ok {
 		return nil
 	}
 	if !enabled {
-		return h.stopPlugin(pluginID)
+		return h.stopPlugin(ctx, pluginID)
 	}
 	h.mu.RLock()
 	sup := h.supervisors[pluginID]
@@ -1134,7 +1134,7 @@ func (h *Host) SetPluginSetting(ctx context.Context, pluginID, key string, value
 
 	var stopErr error
 	if key == settingEnabled {
-		stopErr = h.applyEnabledChange(pluginID, value)
+		stopErr = h.applyEnabledChange(ctx, pluginID, value)
 	}
 	if persist != nil {
 		if err := persist(pluginID, key, value); err != nil {
@@ -1157,7 +1157,7 @@ func (h *Host) UpdatePluginSetting(ctx context.Context, pluginID, key string, va
 	h.mu.Unlock()
 
 	if key == settingEnabled {
-		if err := h.applyEnabledChange(pluginID, value); err != nil {
+		if err := h.applyEnabledChange(ctx, pluginID, value); err != nil {
 			return err
 		}
 	}
