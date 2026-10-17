@@ -8,15 +8,15 @@
 // decides which model answers. The question carries no tools, no vault and no
 // conversation.
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/completion.proto.
  */
 export const file_numen_v1_completion: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9jb21wbGV0aW9uLnByb3RvEghudW1lbi52MSJBCg9Db21wbGV0ZVJlcXVlc3QSLgoIcXVlc3Rpb24YASABKAsyHC5udW1lbi52MS5Db21wbGV0aW9uUXVlc3Rpb24iPgoQQ29tcGxldGVSZXNwb25zZRIqCgZhbnN3ZXIYASABKAsyGi5udW1lbi52MS5Db21wbGV0aW9uQW5zd2VyIkwKGkhvc3RTZXJ2aWNlQ29tcGxldGVSZXF1ZXN0Ei4KCHF1ZXN0aW9uGAEgASgLMhwubnVtZW4udjEuQ29tcGxldGlvblF1ZXN0aW9uIkkKG0hvc3RTZXJ2aWNlQ29tcGxldGVSZXNwb25zZRIqCgZhbnN3ZXIYASABKAsyGi5udW1lbi52MS5Db21wbGV0aW9uQW5zd2VyIn4KEkNvbXBsZXRpb25RdWVzdGlvbhItCghtZXNzYWdlcxgBIAMoCzIbLm51bWVuLnYxLkNvbXBsZXRpb25NZXNzYWdlEg8KB3B1cnBvc2UYAiABKAkSKAoFaGludHMYAyABKAsyGS5udW1lbi52MS5Db21wbGV0aW9uSGludHMiSQoRQ29tcGxldGlvbk1lc3NhZ2USJgoEcm9sZRgBIAEoDjIYLm51bWVuLnYxLkNvbXBsZXRpb25Sb2xlEgwKBHRleHQYAiABKAkimAEKD0NvbXBsZXRpb25IaW50cxIYChBxdWFsaXR5X3ByaW9yaXR5GAEgASgBEhYKDnNwZWVkX3ByaW9yaXR5GAIgASgBEhUKDWNvc3RfcHJpb3JpdHkYAyABKAESEgoKbWF4X3Rva2VucxgEIAEoBRIYCgt0ZW1wZXJhdHVyZRgFIAEoAUgAiAEBQg4KDF90ZW1wZXJhdHVyZSIvChBDb21wbGV0aW9uQW5zd2VyEgwKBHRleHQYASABKAkSDQoFZXJyb3IYAiABKAkqhgEKDkNvbXBsZXRpb25Sb2xlEh8KG0NPTVBMRVRJT05fUk9MRV9VTlNQRUNJRklFRBAAEhoKFkNPTVBMRVRJT05fUk9MRV9TWVNURU0QARIYChRDT01QTEVUSU9OX1JPTEVfVVNFUhACEh0KGUNPTVBMRVRJT05fUk9MRV9BU1NJU1RBTlQQAzJWChFDb21wbGV0aW9uU2VydmljZRJBCghDb21wbGV0ZRIZLm51bWVuLnYxLkNvbXBsZXRlUmVxdWVzdBoaLm51bWVuLnYxLkNvbXBsZXRlUmVzcG9uc2UyZgoLSG9zdFNlcnZpY2USVwoIQ29tcGxldGUSJC5udW1lbi52MS5Ib3N0U2VydmljZUNvbXBsZXRlUmVxdWVzdBolLm51bWVuLnYxLkhvc3RTZXJ2aWNlQ29tcGxldGVSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChludW1lbi92MS9jb21wbGV0aW9uLnByb3RvEghudW1lbi52MSJBCg9Db21wbGV0ZVJlcXVlc3QSLgoIcXVlc3Rpb24YASABKAsyHC5udW1lbi52MS5Db21wbGV0aW9uUXVlc3Rpb24iPgoQQ29tcGxldGVSZXNwb25zZRIqCgZhbnN3ZXIYASABKAsyGi5udW1lbi52MS5Db21wbGV0aW9uQW5zd2VyIkwKGkhvc3RTZXJ2aWNlQ29tcGxldGVSZXF1ZXN0Ei4KCHF1ZXN0aW9uGAEgASgLMhwubnVtZW4udjEuQ29tcGxldGlvblF1ZXN0aW9uIkkKG0hvc3RTZXJ2aWNlQ29tcGxldGVSZXNwb25zZRIqCgZhbnN3ZXIYASABKAsyGi5udW1lbi52MS5Db21wbGV0aW9uQW5zd2VyIn4KEkNvbXBsZXRpb25RdWVzdGlvbhItCghtZXNzYWdlcxgBIAMoCzIbLm51bWVuLnYxLkNvbXBsZXRpb25NZXNzYWdlEg8KB3B1cnBvc2UYAiABKAkSKAoFaGludHMYAyABKAsyGS5udW1lbi52MS5Db21wbGV0aW9uSGludHMiLwoRQ29tcGxldGlvbk1lc3NhZ2USDAoEcm9sZRgBIAEoCRIMCgR0ZXh0GAIgASgJIpgBCg9Db21wbGV0aW9uSGludHMSGAoQcXVhbGl0eV9wcmlvcml0eRgBIAEoARIWCg5zcGVlZF9wcmlvcml0eRgCIAEoARIVCg1jb3N0X3ByaW9yaXR5GAMgASgBEhIKCm1heF90b2tlbnMYBCABKAUSGAoLdGVtcGVyYXR1cmUYBSABKAFIAIgBAUIOCgxfdGVtcGVyYXR1cmUiLwoQQ29tcGxldGlvbkFuc3dlchIMCgR0ZXh0GAEgASgJEg0KBWVycm9yGAIgASgJMlYKEUNvbXBsZXRpb25TZXJ2aWNlEkEKCENvbXBsZXRlEhkubnVtZW4udjEuQ29tcGxldGVSZXF1ZXN0GhoubnVtZW4udjEuQ29tcGxldGVSZXNwb25zZTJmCgtIb3N0U2VydmljZRJXCghDb21wbGV0ZRIkLm51bWVuLnYxLkhvc3RTZXJ2aWNlQ29tcGxldGVSZXF1ZXN0GiUubnVtZW4udjEuSG9zdFNlcnZpY2VDb21wbGV0ZVJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * @generated from message numen.v1.CompleteRequest
@@ -127,11 +127,11 @@ export const CompletionQuestionSchema: GenMessage<CompletionQuestion> = /*@__PUR
  */
 export type CompletionMessage = Message<"numen.v1.CompletionMessage"> & {
   /**
-   * Who wrote the text.
+   * Who wrote the text: "system", "user" or "assistant". Empty is read as "user".
    *
-   * @generated from field: numen.v1.CompletionRole role = 1;
+   * @generated from field: string role = 1;
    */
-  role: CompletionRole;
+  role: string;
 
   /**
    * @generated from field: string text = 2;
@@ -222,40 +222,6 @@ export type CompletionAnswer = Message<"numen.v1.CompletionAnswer"> & {
  */
 export const CompletionAnswerSchema: GenMessage<CompletionAnswer> = /*@__PURE__*/
   messageDesc(file_numen_v1_completion, 7);
-
-/**
- * CompletionRole is who a message comes from. The zero value is unset and is
- * read as USER.
- *
- * @generated from enum numen.v1.CompletionRole
- */
-export enum CompletionRole {
-  /**
-   * @generated from enum value: COMPLETION_ROLE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * @generated from enum value: COMPLETION_ROLE_SYSTEM = 1;
-   */
-  SYSTEM = 1,
-
-  /**
-   * @generated from enum value: COMPLETION_ROLE_USER = 2;
-   */
-  USER = 2,
-
-  /**
-   * @generated from enum value: COMPLETION_ROLE_ASSISTANT = 3;
-   */
-  ASSISTANT = 3,
-}
-
-/**
- * Describes the enum numen.v1.CompletionRole.
- */
-export const CompletionRoleSchema: GenEnum<CompletionRole> = /*@__PURE__*/
-  enumDesc(file_numen_v1_completion, 0);
 
 /**
  * CompletionService is what an agent plugin answers: one completion for the

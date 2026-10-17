@@ -52,18 +52,9 @@ message CompletionQuestion {
 }
 
 message CompletionMessage {
-  // Who wrote the text.
-  CompletionRole role = 1;
+  // Who wrote the text: "system", "user" or "assistant". Empty is read as "user".
+  string role = 1;
   string text = 2;
-}
-
-// CompletionRole is who a message comes from. The zero value is unset and is
-// read as USER.
-enum CompletionRole {
-  COMPLETION_ROLE_UNSPECIFIED = 0;
-  COMPLETION_ROLE_SYSTEM = 1;
-  COMPLETION_ROLE_USER = 2;
-  COMPLETION_ROLE_ASSISTANT = 3;
 }
 
 // CompletionHints are priorities in the range 0 to 1 and are requests, not

@@ -27,60 +27,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// CompletionRole is who a message comes from. The zero value is unset and is
-// read as USER.
-type CompletionRole int32
-
-const (
-	CompletionRole_COMPLETION_ROLE_UNSPECIFIED CompletionRole = 0
-	CompletionRole_COMPLETION_ROLE_SYSTEM      CompletionRole = 1
-	CompletionRole_COMPLETION_ROLE_USER        CompletionRole = 2
-	CompletionRole_COMPLETION_ROLE_ASSISTANT   CompletionRole = 3
-)
-
-// Enum value maps for CompletionRole.
-var (
-	CompletionRole_name = map[int32]string{
-		0: "COMPLETION_ROLE_UNSPECIFIED",
-		1: "COMPLETION_ROLE_SYSTEM",
-		2: "COMPLETION_ROLE_USER",
-		3: "COMPLETION_ROLE_ASSISTANT",
-	}
-	CompletionRole_value = map[string]int32{
-		"COMPLETION_ROLE_UNSPECIFIED": 0,
-		"COMPLETION_ROLE_SYSTEM":      1,
-		"COMPLETION_ROLE_USER":        2,
-		"COMPLETION_ROLE_ASSISTANT":   3,
-	}
-)
-
-func (x CompletionRole) Enum() *CompletionRole {
-	p := new(CompletionRole)
-	*p = x
-	return p
-}
-
-func (x CompletionRole) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (CompletionRole) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_completion_proto_enumTypes[0].Descriptor()
-}
-
-func (CompletionRole) Type() protoreflect.EnumType {
-	return &file_numen_v1_completion_proto_enumTypes[0]
-}
-
-func (x CompletionRole) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use CompletionRole.Descriptor instead.
-func (CompletionRole) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_completion_proto_rawDescGZIP(), []int{0}
-}
-
 type CompleteRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Question      *CompletionQuestion    `protobuf:"bytes,1,opt,name=question,proto3" json:"question,omitempty"`
@@ -324,9 +270,9 @@ func (x *CompletionQuestion) GetHints() *CompletionHints {
 
 type CompletionMessage struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Who wrote the text.
-	Role          CompletionRole `protobuf:"varint,1,opt,name=role,proto3,enum=numen.v1.CompletionRole" json:"role,omitempty"`
-	Text          string         `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
+	// Who wrote the text: "system", "user" or "assistant". Empty is read as "user".
+	Role          string `protobuf:"bytes,1,opt,name=role,proto3" json:"role,omitempty"`
+	Text          string `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -361,11 +307,11 @@ func (*CompletionMessage) Descriptor() ([]byte, []int) {
 	return file_numen_v1_completion_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *CompletionMessage) GetRole() CompletionRole {
+func (x *CompletionMessage) GetRole() string {
 	if x != nil {
 		return x.Role
 	}
-	return CompletionRole_COMPLETION_ROLE_UNSPECIFIED
+	return ""
 }
 
 func (x *CompletionMessage) GetText() string {
@@ -529,9 +475,9 @@ const file_numen_v1_completion_proto_rawDesc = "" +
 	"\x12CompletionQuestion\x127\n" +
 	"\bmessages\x18\x01 \x03(\v2\x1b.numen.v1.CompletionMessageR\bmessages\x12\x18\n" +
 	"\apurpose\x18\x02 \x01(\tR\apurpose\x12/\n" +
-	"\x05hints\x18\x03 \x01(\v2\x19.numen.v1.CompletionHintsR\x05hints\"U\n" +
-	"\x11CompletionMessage\x12,\n" +
-	"\x04role\x18\x01 \x01(\x0e2\x18.numen.v1.CompletionRoleR\x04role\x12\x12\n" +
+	"\x05hints\x18\x03 \x01(\v2\x19.numen.v1.CompletionHintsR\x05hints\";\n" +
+	"\x11CompletionMessage\x12\x12\n" +
+	"\x04role\x18\x01 \x01(\tR\x04role\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\"\xde\x01\n" +
 	"\x0fCompletionHints\x12)\n" +
 	"\x10quality_priority\x18\x01 \x01(\x01R\x0fqualityPriority\x12%\n" +
@@ -543,12 +489,7 @@ const file_numen_v1_completion_proto_rawDesc = "" +
 	"\f_temperature\"<\n" +
 	"\x10CompletionAnswer\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error*\x86\x01\n" +
-	"\x0eCompletionRole\x12\x1f\n" +
-	"\x1bCOMPLETION_ROLE_UNSPECIFIED\x10\x00\x12\x1a\n" +
-	"\x16COMPLETION_ROLE_SYSTEM\x10\x01\x12\x18\n" +
-	"\x14COMPLETION_ROLE_USER\x10\x02\x12\x1d\n" +
-	"\x19COMPLETION_ROLE_ASSISTANT\x10\x032V\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error2V\n" +
 	"\x11CompletionService\x12A\n" +
 	"\bComplete\x12\x19.numen.v1.CompleteRequest\x1a\x1a.numen.v1.CompleteResponse2f\n" +
 	"\vHostService\x12W\n" +
@@ -566,36 +507,33 @@ func file_numen_v1_completion_proto_rawDescGZIP() []byte {
 	return file_numen_v1_completion_proto_rawDescData
 }
 
-var file_numen_v1_completion_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_completion_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_numen_v1_completion_proto_goTypes = []any{
-	(CompletionRole)(0),                 // 0: numen.v1.CompletionRole
-	(*CompleteRequest)(nil),             // 1: numen.v1.CompleteRequest
-	(*CompleteResponse)(nil),            // 2: numen.v1.CompleteResponse
-	(*HostServiceCompleteRequest)(nil),  // 3: numen.v1.HostServiceCompleteRequest
-	(*HostServiceCompleteResponse)(nil), // 4: numen.v1.HostServiceCompleteResponse
-	(*CompletionQuestion)(nil),          // 5: numen.v1.CompletionQuestion
-	(*CompletionMessage)(nil),           // 6: numen.v1.CompletionMessage
-	(*CompletionHints)(nil),             // 7: numen.v1.CompletionHints
-	(*CompletionAnswer)(nil),            // 8: numen.v1.CompletionAnswer
+	(*CompleteRequest)(nil),             // 0: numen.v1.CompleteRequest
+	(*CompleteResponse)(nil),            // 1: numen.v1.CompleteResponse
+	(*HostServiceCompleteRequest)(nil),  // 2: numen.v1.HostServiceCompleteRequest
+	(*HostServiceCompleteResponse)(nil), // 3: numen.v1.HostServiceCompleteResponse
+	(*CompletionQuestion)(nil),          // 4: numen.v1.CompletionQuestion
+	(*CompletionMessage)(nil),           // 5: numen.v1.CompletionMessage
+	(*CompletionHints)(nil),             // 6: numen.v1.CompletionHints
+	(*CompletionAnswer)(nil),            // 7: numen.v1.CompletionAnswer
 }
 var file_numen_v1_completion_proto_depIdxs = []int32{
-	5, // 0: numen.v1.CompleteRequest.question:type_name -> numen.v1.CompletionQuestion
-	8, // 1: numen.v1.CompleteResponse.answer:type_name -> numen.v1.CompletionAnswer
-	5, // 2: numen.v1.HostServiceCompleteRequest.question:type_name -> numen.v1.CompletionQuestion
-	8, // 3: numen.v1.HostServiceCompleteResponse.answer:type_name -> numen.v1.CompletionAnswer
-	6, // 4: numen.v1.CompletionQuestion.messages:type_name -> numen.v1.CompletionMessage
-	7, // 5: numen.v1.CompletionQuestion.hints:type_name -> numen.v1.CompletionHints
-	0, // 6: numen.v1.CompletionMessage.role:type_name -> numen.v1.CompletionRole
-	1, // 7: numen.v1.CompletionService.Complete:input_type -> numen.v1.CompleteRequest
-	3, // 8: numen.v1.HostService.Complete:input_type -> numen.v1.HostServiceCompleteRequest
-	2, // 9: numen.v1.CompletionService.Complete:output_type -> numen.v1.CompleteResponse
-	4, // 10: numen.v1.HostService.Complete:output_type -> numen.v1.HostServiceCompleteResponse
-	9, // [9:11] is the sub-list for method output_type
-	7, // [7:9] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	4, // 0: numen.v1.CompleteRequest.question:type_name -> numen.v1.CompletionQuestion
+	7, // 1: numen.v1.CompleteResponse.answer:type_name -> numen.v1.CompletionAnswer
+	4, // 2: numen.v1.HostServiceCompleteRequest.question:type_name -> numen.v1.CompletionQuestion
+	7, // 3: numen.v1.HostServiceCompleteResponse.answer:type_name -> numen.v1.CompletionAnswer
+	5, // 4: numen.v1.CompletionQuestion.messages:type_name -> numen.v1.CompletionMessage
+	6, // 5: numen.v1.CompletionQuestion.hints:type_name -> numen.v1.CompletionHints
+	0, // 6: numen.v1.CompletionService.Complete:input_type -> numen.v1.CompleteRequest
+	2, // 7: numen.v1.HostService.Complete:input_type -> numen.v1.HostServiceCompleteRequest
+	1, // 8: numen.v1.CompletionService.Complete:output_type -> numen.v1.CompleteResponse
+	3, // 9: numen.v1.HostService.Complete:output_type -> numen.v1.HostServiceCompleteResponse
+	8, // [8:10] is the sub-list for method output_type
+	6, // [6:8] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_completion_proto_init() }
@@ -609,14 +547,13 @@ func file_numen_v1_completion_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_completion_proto_rawDesc), len(file_numen_v1_completion_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      0,
 			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   2,
 		},
 		GoTypes:           file_numen_v1_completion_proto_goTypes,
 		DependencyIndexes: file_numen_v1_completion_proto_depIdxs,
-		EnumInfos:         file_numen_v1_completion_proto_enumTypes,
 		MessageInfos:      file_numen_v1_completion_proto_msgTypes,
 	}.Build()
 	File_numen_v1_completion_proto = out.File

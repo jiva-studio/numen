@@ -42,7 +42,7 @@ func newQuestion() *numenv1.CompletionQuestion {
 	return &numenv1.CompletionQuestion{
 		Purpose: "proofreading",
 		Messages: []*numenv1.CompletionMessage{
-			{Role: numenv1.CompletionRole_COMPLETION_ROLE_USER, Text: "fix this"},
+			{Role: "user", Text: "fix this"},
 		},
 		Hints: &numenv1.CompletionHints{QualityPriority: 0.9, MaxTokens: 64, Temperature: &temperature},
 	}
