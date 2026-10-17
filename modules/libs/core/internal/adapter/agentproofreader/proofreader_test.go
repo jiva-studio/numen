@@ -159,7 +159,10 @@ func TestAProgramThatFailedEndsTheRun(t *testing.T) {
 
 // A run the person stopped ends when they stop it, and what it was answered before is not an answer.
 func TestARunTheContextEndedEndsWithIt(t *testing.T) {
+	started := make(chan struct{})
+	var once sync.Once
 	program := &answering{reply: func(ctx context.Context, _ port.Question) (string, error) {
+		once.Do(func() { close(started) })
 		<-ctx.Done()
 		return "0|late", ctx.Err()
 	}}
@@ -167,7 +170,7 @@ func TestARunTheContextEndedEndsWithIt(t *testing.T) {
 
 	ctx, stop := context.WithCancel(t.Context())
 	go func() {
-		time.Sleep(50 * time.Millisecond)
+		<-started
 		stop()
 	}()
 	out, err := by.Proofread(ctx, []domain.ProofreadBatch{aBatch})
@@ -220,7 +223,6 @@ func (c *counting) Answer(ctx context.Context, _ port.Question) (string, error) 
 	case <-ctx.Done():
 	case <-time.After(5 * time.Second):
 	}
-	time.Sleep(5 * time.Millisecond)
 
 	c.mu.Lock()
 	c.now--

@@ -90,6 +90,10 @@ func (p *Proofreader) Proofread(ctx context.Context, batches []domain.ProofreadB
 		if err != nil {
 			break
 		}
+		if ctx.Err() != nil {
+			turn()
+			break
+		}
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -113,7 +117,10 @@ func (p *Proofreader) Proofread(ctx context.Context, batches []domain.ProofreadB
 	if failed != nil {
 		return nil, failed
 	}
-	return out, ctx.Err()
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 // ask puts one batch to the program and answers with what it wrote.

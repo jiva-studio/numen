@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -194,12 +195,18 @@ func TestTheFolderTheRunWasStartedInGoesWithIt(t *testing.T) {
 // The program starts programs of its own: one of them holding the output after the child is gone is
 // what a wait would sit on.
 func TestARunTheContextKilledEndsWithIt(t *testing.T) {
-	script := writeScript(t, "dawdling", "cat > /dev/null\nprintf '0|the quick brown fox'\nsleep 60 &\nwait\n")
+	fifo := filepath.Join(t.TempDir(), "up")
+	if err := exec.Command("mkfifo", fifo).Run(); err != nil {
+		t.Skipf("no named pipe to wait on: %v", err)
+	}
+	// The script writes to the pipe once it has written its answer, and is held there until it is read.
+	script := writeScript(t, "dawdling",
+		"cat > /dev/null\nprintf '0|the quick brown fox'\necho up > "+fifo+"\nsleep 60 &\nwait\n")
 	client := startAgent(t, &agentServer{})
 
 	ctx, stop := context.WithCancel(t.Context())
 	go func() {
-		time.Sleep(150 * time.Millisecond)
+		_, _ = os.ReadFile(fifo)
 		stop()
 	}()
 
