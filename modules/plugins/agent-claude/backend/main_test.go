@@ -181,6 +181,7 @@ func TestAskAgentWithMockScript(t *testing.T) {
 	}
 
 	var steps []string
+	var toolPaths []string
 	for stream.Receive() {
 		msg := stream.Msg()
 		switch s := msg.GetStep().(type) {
@@ -188,6 +189,7 @@ func TestAskAgentWithMockScript(t *testing.T) {
 			steps = append(steps, "model_started")
 		case *numenv1.AskAgentResponse_ToolCall:
 			steps = append(steps, "tool_call:"+s.ToolCall.GetTool())
+			toolPaths = append(toolPaths, s.ToolCall.GetPath())
 		case *numenv1.AskAgentResponse_ToolFinished:
 			steps = append(steps, "tool_finished")
 		case *numenv1.AskAgentResponse_Said:
@@ -216,5 +218,30 @@ func TestAskAgentWithMockScript(t *testing.T) {
 		if steps[i] != exp {
 			t.Errorf("step %d: got %s, want %s", i, steps[i], exp)
 		}
+	}
+
+	if len(toolPaths) != 2 || toolPaths[1] != "notes/math.md" {
+		t.Errorf("expected final tool path 'notes/math.md', got %v", toolPaths)
+	}
+}
+
+func TestExtractCallDetails(t *testing.T) {
+	about, path, span := extractCallDetails(`{"query":"algebra","path":"notes/math.md","start":10,"length":5}`)
+	if path != "notes/math.md" {
+		t.Errorf("expected path notes/math.md, got %q", path)
+	}
+	if about != "algebra" {
+		t.Errorf("expected about algebra, got %q", about)
+	}
+	if span == nil || span.From != 10 || span.To != 15 {
+		t.Errorf("unexpected span: %+v", span)
+	}
+
+	aboutFile, pathFile, _ := extractCallDetails(`{"file":"notes/file.md"}`)
+	if pathFile != "notes/file.md" {
+		t.Errorf("expected path notes/file.md, got %q", pathFile)
+	}
+	if aboutFile != "notes/file.md" {
+		t.Errorf("expected about notes/file.md, got %q", aboutFile)
 	}
 }

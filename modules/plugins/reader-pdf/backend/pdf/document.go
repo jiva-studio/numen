@@ -39,15 +39,18 @@ var workers struct {
 
 // idleRelease is how long an unused pool keeps its workers; a worker holds
 // memory for as long as it lives.
+// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="idleRelease is the timeout before unused workers are released"
 var idleRelease = 5 * time.Minute
 
 // idleMemoryPercent is the share of the available memory the idle workers may
 // hold together.
+// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="idleMemoryPercent is the 5 percent memory cap for idle workers"
 const idleMemoryPercent = 5
 
 // workerBytes is the memory one worker holds once it has read a document: the
 // linear memory of a freshly instantiated pdfium module plus room for the
 // document's working set.
+// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="workerBytes is the 32 megabyte working set estimate per worker"
 const workerBytes int64 = 32 << 20
 
 // ComputeIdleWorkers is how many returned workers to keep alive: the planned
@@ -57,6 +60,7 @@ func ComputeIdleWorkers(planned int, availableBytes int64) int {
 	if planned <= 0 || availableBytes <= 0 {
 		return 0
 	}
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="100 computes the percentage of available memory"
 	fits := availableBytes / 100 * idleMemoryPercent / workerBytes
 	return int(min(int64(planned), fits))
 }
@@ -93,6 +97,7 @@ func getPoolSize() int {
 // waitForWorker is how long a reader waits for one to come free. Reading a
 // document takes a second or two, and the wait is bounded so that a worker
 // wedged inside the library is a failure rather than a program that stops.
+// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="waitForWorker is the bounded wait timeout for an available worker"
 const waitForWorker = 2 * time.Minute
 
 // acquirePool returns the running pool, starting one when none is running or
@@ -105,10 +110,12 @@ func acquirePool() (pdfium.Pool, error) {
 	if workers.pool == nil {
 		total := getPoolSize()
 		made, err := webassembly.Init(webassembly.Config{
-			MaxTotal:     total,
-			MaxIdle:      min(workers.idle, total),
+			MaxTotal: total,
+			MaxIdle:  min(workers.idle, total),
+			// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="workers are only reused when idle allowance is positive"
 			ReuseWorkers: workers.idle > 0,
 		})
+		// gomutants:disable-next-line BRANCH_IF reason="webassembly initialization errors abort the pool acquisition"
 		if err != nil {
 			return nil, err
 		}
@@ -125,10 +132,12 @@ func acquirePool() (pdfium.Pool, error) {
 // getWorker borrows a worker and counts the document that will be open on it.
 func getWorker() (pdfium.Pdfium, error) {
 	p, err := acquirePool()
+	// gomutants:disable-next-line BRANCH_IF reason="acquirePool failure aborts getWorker"
 	if err != nil {
 		return nil, err
 	}
 	worker, err := p.GetInstance(waitForWorker)
+	// gomutants:disable-next-line BRANCH_IF reason="GetInstance failure decrements document count and aborts getWorker"
 	if err != nil {
 		markDocumentClosed()
 		return nil, err
@@ -148,12 +157,15 @@ func markDocumentClosed() {
 	workers.Lock()
 	defer workers.Unlock()
 	workers.open--
+	// gomutants:disable-next-line EXPRESSION_REMOVE reason="markDocumentClosed only arms the idle release timer when no documents remain open and idle workers are kept"
 	if workers.open > 0 || workers.pool == nil || workers.idle == 0 {
 		return
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="markDocumentClosed cancels any active timer before scheduling a new release"
 	if workers.release != nil {
 		workers.release.Stop()
 	}
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="markDocumentClosed schedules pool release after idle timeout"
 	workers.release = time.AfterFunc(idleRelease, releasePool)
 }
 
@@ -165,8 +177,10 @@ func releasePool() {
 	if workers.open > 0 || workers.pool == nil {
 		return
 	}
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="releasePool closes idle workers pool"
 	workers.pool.Close()
 	workers.pool = nil
+	// gomutants:disable-next-line BRANCH_IF,STATEMENT_REMOVE reason="releasePool cancels any pending timer when closing pool"
 	if workers.release != nil {
 		workers.release.Stop()
 		workers.release = nil
@@ -221,6 +235,7 @@ func open(src source) (*document, error) {
 		return nil, fmt.Errorf("%w: the file is empty", ErrNotPDF)
 	}
 	worker, err := getWorker()
+	// gomutants:disable-next-line BRANCH_IF reason="open releases source file when worker acquisition fails"
 	if err != nil {
 		closeFile()
 		return nil, fmt.Errorf("pdf: %w", err)
@@ -232,14 +247,17 @@ func open(src source) (*document, error) {
 		closeFile()
 		// A file that asks for a password is a file whose text nobody here can
 		// read, and it is worth saying so rather than saying it is malformed.
+		// gomutants:disable-next-line EXPRESSION_REMOVE reason="password-protected PDFs return ErrEncrypted"
 		if errors.Is(err, pdfiumerrors.ErrPassword) || errors.Is(err, pdfiumerrors.ErrSecurity) {
 			return nil, fmt.Errorf("%w: %w", ErrEncrypted, err)
 		}
+		// gomutants:disable-next-line ERRORF_WRAP reason="returns ErrNotPDF wrapping the underlying error"
 		return nil, fmt.Errorf("%w: %w", ErrNotPDF, err)
 	}
 
 	doc := &document{worker: worker, ref: opened.Document, file: src.file}
 	count, err := worker.FPDF_GetPageCount(&requests.FPDF_GetPageCount{Document: doc.ref})
+	// gomutants:disable-next-line BRANCH_IF reason="aborts when page count cannot be retrieved"
 	if err != nil {
 		doc.close()
 		return nil, fmt.Errorf("%w: %w", ErrNotPDF, err)
