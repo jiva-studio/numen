@@ -91,15 +91,11 @@ interface DeactivateDeps {
   readonly host: PluginHost
   readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
   readonly manifests: Map<string, PluginManifest>
-  readonly failures: { value: ReadonlyMap<string, string> }
   readonly reportError: (pluginId: string, error: unknown) => void
 }
 
 async function deactivateEntry(deps: DeactivateDeps, pluginId: string): Promise<boolean> {
   const entry = deps.activePlugins.value.get(pluginId)
-  const failures = new Map(deps.failures.value)
-  failures.delete(pluginId)
-  deps.failures.value = failures
   if (!entry) {
     removePluginStyles(pluginId)
     deps.manifests.delete(pluginId)
@@ -211,7 +207,6 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
     host,
     activePlugins,
     manifests,
-    failures,
     reportError: defaults.reportError,
   }
 

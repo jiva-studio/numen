@@ -533,3 +533,29 @@ describe('createPluginLoader failures, order and toggles', () => {
     expect(loader.getPluginFailure('lost')).toContain('404')
   })
 })
+
+describe('createPluginLoader failure state', () => {
+  it('keeps the failure of a plugin that never activated when it is deactivated', async () => {
+    const host = {
+      createContext: vi.fn((pluginId: string) => ({ pluginId }) as unknown as PluginContext),
+      disposePlugin: vi.fn(),
+      disposeAll: vi.fn(),
+    } as unknown as PluginHost
+    const loader = createPluginLoader({
+      host,
+      onError: vi.fn(),
+      loaders: {
+        bad: async () => ({
+          activate: () => {
+            throw new Error('no start')
+          },
+        }),
+      },
+    })
+    await loader.activatePlugin('bad')
+
+    await loader.deactivatePlugin('bad')
+
+    expect(loader.getPluginFailure('bad')).toBe('no start')
+  })
+})
