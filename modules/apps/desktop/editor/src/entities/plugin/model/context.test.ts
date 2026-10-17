@@ -135,10 +135,10 @@ describe('PluginContext', () => {
     expect(ctx.subscriptions).toHaveLength(7)
 
     ctx.emitVaultChange({ vaultPath: '/path' })
-    expect(host.emitVaultChange).toHaveBeenCalledWith({ vaultPath: '/path' })
+    expect(host.emitVaultChange).toHaveBeenCalledWith('test.plugin', { vaultPath: '/path' })
 
     ctx.emitFileSelect({ path: '/file.md' })
-    expect(host.emitFileSelect).toHaveBeenCalledWith({ path: '/file.md' })
+    expect(host.emitFileSelect).toHaveBeenCalledWith('test.plugin', { path: '/file.md' })
 
     const opened = await ctx.openTab?.('url', 'https://example.com')
     expect(opened).toBe('opened-tab-id')
@@ -197,6 +197,6 @@ describe('PluginContext', () => {
     })
 
     expect(() => ctxWrite.emitVaultChange({ vaultPath: '/test' })).not.toThrow()
-    expect(host.emitVaultChange).toHaveBeenCalledWith({ vaultPath: '/test' })
+    expect(host.emitVaultChange).toHaveBeenCalledWith('writer.plugin', { vaultPath: '/test' })
   })
 })

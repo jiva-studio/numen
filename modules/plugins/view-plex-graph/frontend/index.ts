@@ -1,9 +1,4 @@
-import {
-  definePlugin,
-  type FileSelectEvent,
-  type PluginContext,
-  type VaultChangeEvent,
-} from '@numen/plugin-sdk'
+import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import PlexGraphView from './PlexGraphView.vue'
 
 export { PlexGraphView, PlexGraphView as PlexTab }
@@ -18,14 +13,6 @@ export function activate(context: PluginContext): void {
     kind: 'plex-graph',
     component: PlexGraphView,
     title: 'Knowledge Graph',
-  })
-
-  context.onVaultChange((_event: VaultChangeEvent) => {
-    // Vault change handling
-  })
-
-  context.onFileSelect((_event: FileSelectEvent) => {
-    // File selection handling
   })
 }
 
