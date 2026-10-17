@@ -1,6 +1,11 @@
 package onnxruntime
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"runtime"
+	"testing"
+)
 
 func TestEveryPublishedReleaseIsPinned(t *testing.T) {
 	if len(releases) == 0 {
@@ -54,7 +59,24 @@ func TestEachPlatformNamesItsLibrary(t *testing.T) {
 }
 
 func TestAnExplicitMachineListIsTheOnlyPlaceSearched(t *testing.T) {
+	fakeNix := t.TempDir()
+	libDir := filepath.Join(fakeNix, "pkg-onnxruntime-1", "lib")
+	if err := os.MkdirAll(libDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	libPath := filepath.Join(libDir, getLibraryName(runtime.GOOS))
+	if err := os.WriteFile(libPath, []byte("fake"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	old := nixStorePattern
+	nixStorePattern = filepath.Join(fakeNix, "*-onnxruntime-*", "lib")
+	t.Cleanup(func() { nixStorePattern = old })
+
 	if at := findOnMachine(t.TempDir(), "", "", []string{}); at != "" {
-		t.Errorf("findOnMachine() = %q in a machine with no folders", at)
+		t.Errorf("findOnMachine() = %q with explicit machine folders, wanted empty", at)
+	}
+	if at := findOnMachine(t.TempDir(), "", "", nil); at != libPath {
+		t.Errorf("findOnMachine() = %q without explicit machine folders, want %q", at, libPath)
 	}
 }

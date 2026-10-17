@@ -11,6 +11,9 @@ import (
 // is used as given.
 var libraryEnvs = []string{"NUMEN_ONNX_RUNTIME_LIB", "NUMEN_ONNX_RUNTIME", "NUMEN_OCR_RUNTIME"}
 
+// nixStorePattern names where Nix keeps packages.
+var nixStorePattern = filepath.Join("/nix/store", "*-onnxruntime-*", "lib")
+
 // getLibraryName returns what the library is called on an operating system.
 func getLibraryName(goos string) string {
 	switch goos {
@@ -109,7 +112,7 @@ func findOnMachine(pluginDir, home, librarySum string, machine []string) string 
 	if !isDefault {
 		return ""
 	}
-	if found := findMatching(filepath.Join("/nix/store", "*-onnxruntime-*", "lib", name+"*")); len(found) > 0 {
+	if found := findMatching(filepath.Join(nixStorePattern, name+"*")); len(found) > 0 {
 		return found[0]
 	}
 	return ""
