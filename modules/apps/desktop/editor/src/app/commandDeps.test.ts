@@ -18,22 +18,22 @@ describe('createCommandDeps', () => {
   }
 
   it('chooses an indexing model when found in models', async () => {
-    const written: any[] = []
+    const written: unknown[] = []
     const deps = createCommandDeps({
-      core: {} as any,
-      held: { openTabOfKind: () => {}, requestClose: () => {} } as any,
-      making: {} as any,
-      made: {} as any,
+      core: {} as never,
+      held: { openTabOfKind: () => {}, requestClose: () => {} } as never,
+      making: {} as never,
+      made: {} as never,
       setVaultName: () => {},
       reload: () => {},
       loadArtifactStates: async () => {},
-      reached: {} as any,
+      reached: {} as never,
       openPreset: async () => {},
       dressed: { chooseItem: async () => {} },
       oneName: { choose: async () => {} },
       nesting: { choose: async () => {}, chooseCount: async () => {} },
       rest: {
-        writeSettings: async (w) => void written.push(...w),
+        writeSettings: async (w: unknown[]) => void written.push(...w),
         getModelsAt: () => [model],
       },
       recorded: {},
@@ -42,31 +42,31 @@ describe('createCommandDeps', () => {
       plexes: () => ({ travel: async () => {}, leavePath: async () => {} }),
       agents: () => ({ askQuestion: async () => {} }),
       getOpeningNote: () => '',
-      runs: {} as any,
+      runs: {} as never,
       writeMessage: () => {},
-    })
+    } as unknown as Parameters<typeof createCommandDeps>[0])
 
     await deps.settings.chooseIndexingModel('e5-small-int8')
     expect(written).toStrictEqual(model.writes)
   })
 
   it('writes a plugin setting when chosen', async () => {
-    const written: any[] = []
+    const written: unknown[] = []
     const deps = createCommandDeps({
-      core: {} as any,
-      held: { openTabOfKind: () => {}, requestClose: () => {} } as any,
-      making: {} as any,
-      made: {} as any,
+      core: {} as never,
+      held: { openTabOfKind: () => {}, requestClose: () => {} } as never,
+      making: {} as never,
+      made: {} as never,
       setVaultName: () => {},
       reload: () => {},
       loadArtifactStates: async () => {},
-      reached: {} as any,
+      reached: {} as never,
       openPreset: async () => {},
       dressed: { chooseItem: async () => {} },
       oneName: { choose: async () => {} },
       nesting: { choose: async () => {}, chooseCount: async () => {} },
       rest: {
-        writeSettings: async (w) => void written.push(...w),
+        writeSettings: async (w: unknown[]) => void written.push(...w),
       },
       recorded: {},
       pointed: {},
@@ -74,9 +74,9 @@ describe('createCommandDeps', () => {
       plexes: () => ({ travel: async () => {}, leavePath: async () => {} }),
       agents: () => ({ askQuestion: async () => {} }),
       getOpeningNote: () => '',
-      runs: {} as any,
+      runs: {} as never,
       writeMessage: () => {},
-    })
+    } as unknown as Parameters<typeof createCommandDeps>[0])
 
     await deps.settings.choosePluginSetting?.('transcription', 'autoRun', true)
     expect(written).toStrictEqual([
@@ -85,22 +85,22 @@ describe('createCommandDeps', () => {
   })
 
   it('chooses an indexing model when not found in models', async () => {
-    const written: any[] = []
+    const written: unknown[] = []
     const deps = createCommandDeps({
-      core: {} as any,
-      held: { openTabOfKind: () => {}, requestClose: () => {} } as any,
-      making: {} as any,
-      made: {} as any,
+      core: {} as never,
+      held: { openTabOfKind: () => {}, requestClose: () => {} } as never,
+      making: {} as never,
+      made: {} as never,
       setVaultName: () => {},
       reload: () => {},
       loadArtifactStates: async () => {},
-      reached: {} as any,
+      reached: {} as never,
       openPreset: async () => {},
       dressed: { chooseItem: async () => {} },
       oneName: { choose: async () => {} },
       nesting: { choose: async () => {}, chooseCount: async () => {} },
       rest: {
-        writeSettings: async (w) => void written.push(...w),
+        writeSettings: async (w: unknown[]) => void written.push(...w),
         getModelsAt: () => [],
       },
       recorded: {},
@@ -109,31 +109,31 @@ describe('createCommandDeps', () => {
       plexes: () => ({ travel: async () => {}, leavePath: async () => {} }),
       agents: () => ({ askQuestion: async () => {} }),
       getOpeningNote: () => '',
-      runs: {} as any,
+      runs: {} as never,
       writeMessage: () => {},
-    })
+    } as unknown as Parameters<typeof createCommandDeps>[0])
 
     await deps.settings.chooseIndexingModel('custom-model')
     expect(written).toStrictEqual([{ at: ['indexing', 'model', 'name'], value: '"custom-model"' }])
   })
 
   it('handles choosing performance profile', async () => {
-    const written: any[] = []
+    const written: unknown[] = []
     const deps = createCommandDeps({
-      core: {} as any,
-      held: {} as any,
-      making: {} as any,
-      made: {} as any,
+      core: {} as never,
+      held: {} as never,
+      making: {} as never,
+      made: {} as never,
       setVaultName: () => {},
       reload: () => {},
       loadArtifactStates: async () => {},
-      reached: {} as any,
+      reached: {} as never,
       openPreset: async () => {},
       dressed: { chooseItem: async () => {} },
       oneName: { choose: async () => {} },
       nesting: { choose: async () => {}, chooseCount: async () => {} },
       rest: {
-        writeSettings: async (w) => void written.push(...w),
+        writeSettings: async (w: unknown[]) => void written.push(...w),
       },
       recorded: {},
       pointed: {},
@@ -141,9 +141,9 @@ describe('createCommandDeps', () => {
       plexes: () => ({ travel: async () => {}, leavePath: async () => {} }),
       agents: () => ({ askQuestion: async () => {} }),
       getOpeningNote: () => '',
-      runs: {} as any,
+      runs: {} as never,
       writeMessage: () => {},
-    })
+    } as unknown as Parameters<typeof createCommandDeps>[0])
 
     await deps.settings.choosePerformance('maximum')
     expect(written).toStrictEqual([{ at: ['performance', 'profile'], value: '"maximum"' }])
@@ -425,24 +425,24 @@ describe('the commands reach the window', () => {
 
 describe('useSettings step groups', () => {
   it('returns step groups for indexingModel and performanceProfile', () => {
-    const core: any = {
+    const core = {
       fileKinds: async () => new Map(),
       fileChanges: () => () => {},
       fileList: async () => [],
       read: async () => '',
       write: async () => {},
       appState: () => {},
-    }
-    const log: any = {
+    } as never
+    const log = {
       getWriter: () => () => {},
-    }
-    const windowTabs: any = {
+    } as never
+    const windowTabs = {
       handle: {
         front: () => null,
         open: () => {},
         close: () => {},
       },
-    }
+    } as never
 
     const settings = useSettings({
       core,

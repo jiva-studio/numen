@@ -3,13 +3,15 @@ import { ref, shallowRef } from 'vue'
 import { useDocumentViewport as useDocumentViewportOriginal } from './useDocumentViewport'
 import type { Documents, Page } from '../types'
 
+type ViewportOptions = Parameters<typeof useDocumentViewportOriginal>[2]
+
 const useDocumentViewport = (
   documents: Documents,
   path: string,
-  pages: any,
-  pageNumber: any,
-  fingerprint: any,
-  isOpen: any,
+  pages: ViewportOptions['pages'],
+  pageNumber: ViewportOptions['pageNumber'],
+  fingerprint: ViewportOptions['fingerprint'],
+  isOpen: ViewportOptions['isOpen'],
 ) => useDocumentViewportOriginal(documents, path, { pages, pageNumber, fingerprint, isOpen })
 
 describe('useDocumentViewport', () => {

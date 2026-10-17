@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { createAgentKind, type AgentKindDeps } from './agent'
 
-type Options = Record<string, (...args: any[]) => unknown>
+type Options = Record<string, (...args: unknown[]) => unknown>
 
 const h = vi.hoisted(() => ({
   open: null as unknown as () => unknown,

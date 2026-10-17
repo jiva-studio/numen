@@ -79,11 +79,11 @@ rule() {
 # each case, because a rule nothing has been seen to refuse is an assumption.
 self_test() {
 	unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
-	local failed=0
+	local failed=0 reached=0
 	# The trap outlives the call, so the folder it names is not a local, and it
 	# hands back the status it was reached with rather than the removal's.
 	room=$(mktemp -d)
-	trap 'reached=$?; rm -rf "$room"; exit $reached' EXIT
+	trap 'reached=$?; rm -rf "$room"; exit "$reached"' EXIT
 
 	# expect runs one fabricated branch: a name, the exit status wanted, a word
 	# the report has to carry, and the commands that build the branch.

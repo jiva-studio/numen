@@ -3,7 +3,7 @@ import { createMediaKinds } from './media'
 
 describe('createMediaKinds', () => {
   it('returns empty object when media kinds are provided via plugins', () => {
-    const kinds = createMediaKinds({} as any)
+    const kinds = createMediaKinds({} as never)
     expect(kinds).toStrictEqual({})
   })
 })

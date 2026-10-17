@@ -18,7 +18,7 @@ interface Entry {
 const create = (entries: Entry[], front: { id: string; kind: string } | null = null) => {
   const writeOpenTabs = vi.fn(async (_tabs: unknown) => {})
   const tabs = ref(entries.map(({ id, title }) => ({ id, title })))
-  const windowTabs: any = {
+  const windowTabs = {
     handle: { front: () => front },
     tabs,
     getTab: (id: string) => {
@@ -29,7 +29,7 @@ const create = (entries: Entry[], front: { id: string; kind: string } | null = n
         kind: { kind: one.kind ?? 'note', getOpenTab: () => one.openTab },
       }
     },
-  }
+  } as unknown as Parameters<typeof useOpenTabs>[0]['windowTabs']
   return { ...useOpenTabs({ core: { writeOpenTabs }, windowTabs }), writeOpenTabs, tabs }
 }
 
@@ -75,10 +75,10 @@ describe('the open tabs', () => {
   })
 
   it('carries on when the core cannot take the list', () => {
-    const rejecting: any = {
+    const rejecting = {
       core: { writeOpenTabs: () => Promise.reject(new Error('down')) },
       windowTabs: { handle: { front: () => null }, tabs: ref([]), getTab: () => undefined },
-    }
+    } as unknown as Parameters<typeof useOpenTabs>[0]
 
     expect(() => useOpenTabs(rejecting)).not.toThrow()
   })

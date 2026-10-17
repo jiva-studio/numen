@@ -1172,11 +1172,11 @@ describe('the open files a command reaches', () => {
 describe('indexingModel command', () => {
   it('changes the indexing model', async () => {
     const done: string[] = []
-    const deps: any = {
+    const deps = {
       goes: { getOpeningNote: () => '' },
       settings: { chooseIndexingModel: async (c: string) => void done.push(`indexingModel ${c}`) },
       writeMessage: () => {},
-    }
+    } as unknown as Parameters<typeof runInvocation>[1]
     await runInvocation(
       {
         id: 'indexingModel',

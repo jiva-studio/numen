@@ -22,14 +22,22 @@ import {
   type BufferDeck,
 } from './deck'
 
+type AddCardOptions = Parameters<typeof addCardInternal>[2]
+
 const addCard = (
   deck: BufferDeck,
   title: string,
   stencilPath: string,
-  values: any,
+  values: AddCardOptions['values'],
   section: string | null = null,
-  generateCardId?: any,
-) => addCardInternal(deck, title, { stencilPath, values, section, generateCardId })
+  generateCardId?: AddCardOptions['generateCardId'],
+) =>
+  addCardInternal(deck, title, {
+    stencilPath,
+    values,
+    section,
+    ...(generateCardId ? { generateCardId } : {}),
+  })
 
 const replaceCardValue = (deck: BufferDeck, id: string, field: string, nth: number, text: string) =>
   replaceCardValueInternal(deck, id, { field, nth, text })
