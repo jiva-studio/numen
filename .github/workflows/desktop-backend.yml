@@ -109,7 +109,8 @@ jobs:
   test:
     name: Tests
     needs: [changes]
-    if: needs.changes.outputs.code == 'true'
+    # Heavy: runs in the merge queue and on main, and reports as skipped on a pull request.
+    if: needs.changes.outputs.code == 'true' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
