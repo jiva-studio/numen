@@ -17,7 +17,7 @@ interface MockPlexState {
   activate: (id: string) => void
 }
 
-function createPlexLinkedFixture(neighbourhoodPath: string, neighbourhoodTitle: string) {
+const createPlexLinkedFixture = (neighbourhoodPath: string, neighbourhoodTitle: string) => {
   const tabLinks = useTabLinks()
   const held = useWindowTabs()
 
