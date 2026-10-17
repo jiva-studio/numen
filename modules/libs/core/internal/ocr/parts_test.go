@@ -4,11 +4,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 )
 
 func TestPartsComeBackAsTheyWereWritten(t *testing.T) {
-	parts := []ocr.Part{
+	parts := []domain.OCRPart{
 		{Start: 0, Length: 19, Depth: 0},
 		{Start: 421, Length: 33, Depth: 1},
 		{Start: 4096, Length: 1, Depth: 2},
@@ -26,7 +27,7 @@ func TestPartsComeBackAsTheyWereWritten(t *testing.T) {
 func TestATornTailGivesBackTheWholeParts(t *testing.T) {
 	// A run stopped part way through writing leaves a record half written.
 	// What was written whole is still a part.
-	parts := []ocr.Part{
+	parts := []domain.OCRPart{
 		{Start: 0, Length: 19, Depth: 0},
 		{Start: 421, Length: 33, Depth: 1},
 	}

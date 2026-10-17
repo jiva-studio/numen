@@ -8,7 +8,6 @@ import (
 	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -257,7 +256,7 @@ func (u Proofread) writeCorrections(
 	put, uncorrected := u.getCorrections(asked, replies)
 	res.UncorrectedPages += uncorrected
 	if len(put) > 0 {
-		if err := p.store.AppendArtifact(ctx, p.corrections, correction.Pack(put)); err != nil {
+		if err := p.store.AppendArtifact(ctx, p.corrections, domain.PackCorrections(put)); err != nil {
 			return err
 		}
 		res.Fixed += len(put)
@@ -307,7 +306,7 @@ func (u Proofread) lines(
 func (u Proofread) getCorrections(
 	asked []proofread.Batch,
 	replies map[int]string,
-) (put []correction.Line, uncorrected int) {
+) (put []domain.CorrectionLine, uncorrected int) {
 	for _, page := range asked {
 		reply, answered := replies[page.Number]
 		if !answered {
@@ -319,7 +318,7 @@ func (u Proofread) getCorrections(
 			continue
 		}
 		for _, line := range lines {
-			put = append(put, correction.Line{Number: line.Number, Text: line.Text})
+			put = append(put, domain.CorrectionLine{Number: line.Number, Text: line.Text})
 		}
 	}
 	return put, uncorrected
@@ -458,8 +457,8 @@ func dropCorrections(
 	if err != nil {
 		return err
 	}
-	held := correction.Unpack(raw)
-	kept := make([]correction.Line, 0, len(held))
+	held := domain.UnpackCorrections(raw)
+	kept := make([]domain.CorrectionLine, 0, len(held))
 	for _, line := range held {
 		if line.Number < beyond {
 			kept = append(kept, line)
@@ -471,7 +470,7 @@ func dropCorrections(
 	// Written back whatever was dropped. An append that did not land whole leaves
 	// bytes that are not a record, and every record appended after them is read
 	// at a shifted offset.
-	return store.WriteArtifact(ctx, corrections, correction.Pack(kept))
+	return store.WriteArtifact(ctx, corrections, domain.PackCorrections(kept))
 }
 
 // opening is the number of the first line no count claims.

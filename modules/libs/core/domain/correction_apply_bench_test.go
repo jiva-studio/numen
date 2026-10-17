@@ -1,4 +1,4 @@
-package correction_test
+package domain_test
 
 import (
 	"fmt"
@@ -6,27 +6,25 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 )
 
 // benchRecognition is a recognition of n printed lines, with the corrections for
 // every step-th line, a third of them lengthened and a third shortened.
-func benchRecognition(n, step int) (string, []ocr.PageStart, []domain.HighlightBox, []ocr.Part, []correction.Line) {
+func benchRecognition(n, step int) (string, []domain.OCRPageStart, []domain.HighlightBox, []domain.OCRPart, []domain.CorrectionLine) {
 	lines := make([]string, n)
 	for i := range lines {
 		lines[i] = strings.Repeat(fmt.Sprintf("word%d ", i), 12)
 	}
-	var marks []ocr.PageStart
-	var parts []ocr.Part
+	var marks []domain.OCRPageStart
+	var parts []domain.OCRPart
 	boxes := make([]domain.HighlightBox, 0, n)
 	at := 0
 	for i, line := range lines {
 		if i%perPage == 0 {
-			marks = append(marks, ocr.PageStart{Offset: at})
+			marks = append(marks, domain.OCRPageStart{Offset: at})
 		}
 		if i%10 == 0 {
-			parts = append(parts, ocr.Part{Start: at, Length: len(line) * 4, Depth: i / 10 % 3})
+			parts = append(parts, domain.OCRPart{Start: at, Length: len(line) * 4, Depth: i / 10 % 3})
 		}
 		boxes = append(boxes, domain.HighlightBox{
 			Page:     i / perPage,
@@ -34,7 +32,7 @@ func benchRecognition(n, step int) (string, []ocr.PageStart, []domain.HighlightB
 		})
 		at += len(line) + 1
 	}
-	var put []correction.Line
+	var put []domain.CorrectionLine
 	for i := 0; i < n; i += step {
 		text := lines[i]
 		switch (i / step) % 3 {
@@ -43,10 +41,10 @@ func benchRecognition(n, step int) (string, []ocr.PageStart, []domain.HighlightB
 		case 1:
 			text = text[:len(text)/2]
 		}
-		put = append(put, correction.Line{Number: i, Text: text})
+		put = append(put, domain.CorrectionLine{Number: i, Text: text})
 	}
 	if len(put) > 1 {
-		put = append(put, correction.Line{Number: put[0].Number, Text: "again"})
+		put = append(put, domain.CorrectionLine{Number: put[0].Number, Text: "again"})
 	}
 	return strings.Join(lines, "\n"), marks, boxes, parts, put
 }
@@ -68,7 +66,7 @@ func BenchmarkBoxes(b *testing.B) {
 		b.Run(c.name, func(b *testing.B) {
 			b.ReportAllocs()
 			for b.Loop() {
-				correction.Boxes(boxes, put)
+				domain.GetCorrectedBoxes(boxes, put)
 			}
 		})
 	}
@@ -80,7 +78,7 @@ func BenchmarkProse(b *testing.B) {
 		b.Run(c.name, func(b *testing.B) {
 			b.ReportAllocs()
 			for b.Loop() {
-				correction.Prose(prose, marks, boxes, parts, put)
+				domain.GetCorrectedProse(prose, marks, boxes, parts, put)
 			}
 		})
 	}

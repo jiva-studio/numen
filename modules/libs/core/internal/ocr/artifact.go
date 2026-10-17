@@ -26,11 +26,6 @@ const (
 	pageStart = "\x0c"
 )
 
-// A PageStart is a page of the artifact, at the offset its prose begins.
-type PageStart struct {
-	Offset int
-}
-
 // Write is the artifact for a document that has been read, the boxes its prose
 // was read from, and the parts it divides into.
 //
@@ -40,10 +35,10 @@ type PageStart struct {
 // A box and a part are both placed in the prose, which is what Read gives back.
 // The mark and the newline closing it are bookkeeping and are counted in none of
 // them.
-func Write(pages []Page) ([]byte, []domain.HighlightBox, []Part) {
+func Write(pages []Page) ([]byte, []domain.HighlightBox, []domain.OCRPart) {
 	var out strings.Builder
 	var boxes []domain.HighlightBox
-	var parts []Part
+	var parts []domain.OCRPart
 	prose := 0
 	for _, page := range pages {
 		out.WriteString(pageStart)
@@ -56,7 +51,7 @@ func Write(pages []Page) ([]byte, []domain.HighlightBox, []Part) {
 			}
 			boxes = append(boxes, getBoxesWithin(page, block, prose)...)
 			if block.IsHeading && block.Text != "" {
-				parts = append(parts, Part{Start: prose, Length: len(block.Text), Depth: block.Depth})
+				parts = append(parts, domain.OCRPart{Start: prose, Length: len(block.Text), Depth: block.Depth})
 			}
 			out.WriteString(block.Text)
 			prose += len(block.Text)
@@ -106,14 +101,14 @@ const Note = "\x00"
 // Anything before the first mark is prose belonging to no page, which is what a
 // file written by something else looks like. It is kept, because dropping text
 // silently is worse than naming its page wrongly.
-func Read(raw []byte) (string, []PageStart) {
+func Read(raw []byte) (string, []domain.OCRPageStart) {
 	text := withoutNotes(string(raw))
 	if !strings.ContainsRune(text, pageMark) {
 		return text, nil
 	}
 
 	var out strings.Builder
-	var marks []PageStart
+	var marks []domain.OCRPageStart
 	rest := text
 	for {
 		before, after, found := strings.Cut(rest, pageStart)
@@ -128,7 +123,7 @@ func Read(raw []byte) (string, []PageStart) {
 			break
 		}
 		prose = strings.TrimPrefix(prose, "\n")
-		marks = append(marks, PageStart{Offset: out.Len()})
+		marks = append(marks, domain.OCRPageStart{Offset: out.Len()})
 		rest = prose
 	}
 	return out.String(), marks
