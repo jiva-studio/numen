@@ -267,7 +267,7 @@ func resolvePluginAssetTarget(pluginDir, filePath string) (string, error) {
 	if !strings.HasPrefix(realTarget, realDir+string(filepath.Separator)) && realTarget != realDir {
 		return "", os.ErrPermission
 	}
-	return realTarget, nil
+	return filepath.Rel(realDir, realTarget)
 }
 
 func setPluginAssetContentType(w http.ResponseWriter, path string) {
@@ -310,7 +310,7 @@ func (s *Services) servePluginAsset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cleanTarget, err := resolvePluginAssetTarget(pluginDir, parts[1])
+	assetPath, err := resolvePluginAssetTarget(pluginDir, parts[1])
 	if err != nil {
 		switch {
 		case errors.Is(err, os.ErrPermission):
@@ -323,25 +323,28 @@ func (s *Services) servePluginAsset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, info, err := openPluginAsset(pluginDir, parts[1])
+	file, info, err := openPluginAsset(r.Context(), pluginDir, assetPath)
 	if err != nil {
 		http.Error(w, "plugin asset not found", http.StatusNotFound)
 		return
 	}
 	defer file.Close()
 
-	setPluginAssetContentType(w, cleanTarget)
+	setPluginAssetContentType(w, assetPath)
 	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
 }
 
 // openPluginAsset opens a regular file below pluginDir; the open cannot leave pluginDir.
-func openPluginAsset(pluginDir, name string) (*os.File, os.FileInfo, error) {
+func openPluginAsset(ctx context.Context, pluginDir, name string) (*os.File, os.FileInfo, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, nil, err
+	}
 	root, err := os.OpenRoot(pluginDir)
 	if err != nil {
 		return nil, nil, err
 	}
 	defer root.Close()
-	file, err := root.Open(filepath.Clean(name))
+	file, err := root.Open(name)
 	if err != nil {
 		return nil, nil, err
 	}
