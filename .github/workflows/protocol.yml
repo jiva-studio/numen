@@ -2,14 +2,8 @@ name: Protocol
 
 on:
   pull_request:
-    paths:
-      - "modules/libs/protocol/**"
-      - "!modules/libs/protocol/**/*.md"
-      - "!docs/**"
-      - ".github/workflows/protocol.yml"
-      # The rules the linter is held to, and the ones written here in Go.
-      - "modules/.golangci.yml"
-      - "**/gorules/**"
+  merge_group:
+    types: [checks_requested]
   push:
     branches: [main]
     paths:

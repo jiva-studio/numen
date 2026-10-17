@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "ACP External coding agents runner and discovery (Claude, Antigravity, Codex, Cursor)",
-  "capabilities": ["agent", "ai.agent.provider"],
+  "capabilities": ["agent", "ai.agent.provider", "ai.completion.provider"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onCommand:askAgent", "onView:agent"],
   "permissions": ["network:outbound", "vault:read", "vault:write"],

@@ -26,6 +26,9 @@ service HostService {
 
 message CompleteRequest {
   CompletionQuestion question = 1;
+  // The model the host routed the purpose to. Empty leaves the choice to the
+  // agent.
+  string model = 2;
 }
 
 message CompleteResponse {
