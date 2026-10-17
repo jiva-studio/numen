@@ -140,6 +140,20 @@ func (b *AgentBridge) GetPrograms(ctx context.Context, commands map[string][]str
 	return programs, nil
 }
 
+// Answer puts one question to the program the plugin runs and answers with what it wrote.
+func (b *AgentBridge) Answer(ctx context.Context, question port.Question) (string, error) {
+	resp, err := b.client.AnswerAgent(ctx, connect.NewRequest(&v1.AnswerAgentRequest{
+		Prompt:       question.Prompt,
+		Instructions: question.Instructions,
+		Model:        question.Model,
+		Command:      question.Command,
+	}))
+	if err != nil {
+		return "", fmt.Errorf("rpc answer agent: %w", err)
+	}
+	return resp.Msg.GetText(), nil
+}
+
 // RegisterTool registers a custom agent tool with the running agent plugin.
 func (b *AgentBridge) RegisterTool(ctx context.Context, name, description, schema string) error {
 	req := connect.NewRequest(&v1.RegisterToolRequest{

@@ -53,6 +53,10 @@ func (f *fakeProvider) EndConversation(_ context.Context, conversation string) e
 	return nil
 }
 
+func (f *fakeProvider) Answer(context.Context, port.Question) (string, error) {
+	return "", errors.New("nothing here answers")
+}
+
 func (f *fakeProvider) GetPrograms(context.Context, map[string][]string) ([]port.AgentProgram, error) {
 	return f.programs, f.listErr
 }
@@ -95,8 +99,9 @@ func makeRouter(t *testing.T, provider port.AgentProvider, agent settings.Agent,
 	t.Helper()
 
 	out := &bytes.Buffer{}
-	opts := Options{
-		Config: makeInstallation(t), Root: "/vault", Out: out, Provider: provider, Preview: preview,
+	opts := Options{Config: makeInstallation(t), Root: "/vault", Out: out, Preview: preview}
+	if provider != nil {
+		opts.Config.Agents = provider
 	}
 	opts.Config.Agent = agent
 	router := NewRouter(opts, "http://127.0.0.1:7717/mcp", "secret", vocabulary)

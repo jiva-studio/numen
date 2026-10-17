@@ -157,10 +157,10 @@ func TestWindowWithoutDiscoveryWritesNoFile(t *testing.T) {
 // there.
 func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
 	cfg := makeInstallation(t)
+	cfg.Agents = &fakeProvider{}
 
 	served, err := Serve(t.Context(), Options{
 		Config: cfg, Core: vault(t), Token: "secret", Root: t.TempDir(), Out: io.Discard,
-		Provider: &fakeProvider{},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -207,11 +207,12 @@ func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
 func TestThePanelsChildIsAllowedTheToolsOfItsSurfaceByName(t *testing.T) {
 	cfg := makeInstallation(t)
 	provider := &fakeProvider{}
+	cfg.Agents = provider
 
 	dir := t.TempDir()
 	core := vault(t)
 	served, err := Serve(t.Context(), Options{
-		Config: cfg, Core: core, Token: "secret", Root: dir, Out: io.Discard, Provider: provider,
+		Config: cfg, Core: core, Token: "secret", Root: dir, Out: io.Discard,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -262,8 +263,9 @@ func TestTheAgentIsTheRouterWhereTheSettingsNameOne(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			cfg := makeInstallation(t)
 			cfg.Agent = agent
+			cfg.Agents = &fakeProvider{}
 			served, err := Serve(t.Context(), Options{
-				Config: cfg, Core: vault(t), Token: "secret", Out: io.Discard, Provider: &fakeProvider{},
+				Config: cfg, Core: vault(t), Token: "secret", Out: io.Discard,
 			})
 			if err != nil {
 				t.Fatal(err)

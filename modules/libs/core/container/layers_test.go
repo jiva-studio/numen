@@ -1221,7 +1221,7 @@ func getAdaptersIn(dir, at string) ([]string, error) {
 // public are the adapters an application names for itself: the four it serves
 // something through, and the three it composes or configures.
 var public = []string{
-	"agent", "cli", "index", "mcp", "settings",
+	"cli", "index", "mcp", "settings",
 	"window/editor", "window/flashcards",
 }
 
@@ -1250,7 +1250,7 @@ func TestTheCoresPublicAdaptersAreTheseAndNoOthers(t *testing.T) {
 // held are the adapters the compiler keeps to this module. Naming them is what
 // makes a new one arrive as a decision.
 var held = []string{
-	"appstate", "download", "filesystem", "plugin",
+	"agentproofreader", "appstate", "download", "filesystem", "plugin",
 	"theme", "trash",
 }
 

@@ -38,6 +38,10 @@ service AgentService {
   // GetAgentPrograms lists the programs this provider runs, whether each is installed on this
   // machine, and the models each offers.
   rpc GetAgentPrograms(GetAgentProgramsRequest) returns (GetAgentProgramsResponse);
+
+  // AnswerAgent puts one question to a program that has no tools, no vault and no standing
+  // instructions, and answers with what it wrote.
+  rpc AnswerAgent(AnswerAgentRequest) returns (AnswerAgentResponse);
 }
 
 message GetAgentStateRequest {}
@@ -90,6 +94,23 @@ message AskAgentRequest {
   // program no tools.
   string tools_url = 15;
   string tools_token = 16;
+}
+
+message AnswerAgentRequest {
+  // The question, as it is put to the program.
+  string prompt = 1;
+  // What the program is told about the answer it gives.
+  string instructions = 2;
+  // Which model answers. Empty leaves the choice to the program.
+  string model = 3;
+  // The command line that starts the program, as the installation set it. Empty starts the program
+  // where the provider finds it.
+  repeated string command = 4;
+}
+
+message AnswerAgentResponse {
+  // What the program wrote, without the space around it.
+  string text = 1;
 }
 
 message GetAgentProgramsRequest {

@@ -19,9 +19,12 @@ const agentProvider = "ai.agent.provider"
 // programsLimit is how long the providers have to list the programs they run.
 const programsLimit = 8 * time.Second
 
-// AgentProvider runs tasks on the programs the plugins with the agent provider capability run. It
-// is nil where there is no plugin host, or the host is in safe mode.
+// AgentProvider runs tasks on the programs the plugins with the agent provider capability run, and
+// answers questions put to them. It is nil where there is no plugin host, or the host is in safe mode.
 func (c Config) AgentProvider() port.AgentProvider {
+	if c.Agents != nil {
+		return c.Agents
+	}
 	if c.PluginHost == nil || c.SafeMode {
 		return nil
 	}
@@ -170,6 +173,29 @@ func (h *hostAgentProvider) StartRun(ctx context.Context, task port.Task) (port.
 		h.mu.Unlock()
 	}
 	return run, nil
+}
+
+// Answer puts the question to the plugin that runs the program it names, or the default program
+// where it names none.
+func (h *hostAgentProvider) Answer(ctx context.Context, question port.Question) (string, error) {
+	if question.Program == "" {
+		programs, listErr := h.GetPrograms(ctx, nil)
+		chosen, err := settings.ChooseProgram(programs)
+		if err != nil {
+			return "", errors.Join(err, listErr)
+		}
+		question.Program = chosen
+	}
+	id, err := h.getProvider(ctx, question.Program)
+	if err != nil {
+		return "", err
+	}
+	bridge, err := plugin.OpenAgentBridgeForPlugin(ctx, h.host, id)
+	if err != nil {
+		return "", err
+	}
+	defer bridge.Close()
+	return bridge.Answer(ctx, question)
 }
 
 // EndConversation says a conversation is over to every plugin it was asked in. A conversation that

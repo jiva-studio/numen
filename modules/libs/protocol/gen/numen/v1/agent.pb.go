@@ -297,6 +297,124 @@ func (x *AskAgentRequest) GetToolsToken() string {
 	return ""
 }
 
+type AnswerAgentRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The question, as it is put to the program.
+	Prompt string `protobuf:"bytes,1,opt,name=prompt,proto3" json:"prompt,omitempty"`
+	// What the program is told about the answer it gives.
+	Instructions string `protobuf:"bytes,2,opt,name=instructions,proto3" json:"instructions,omitempty"`
+	// Which model answers. Empty leaves the choice to the program.
+	Model string `protobuf:"bytes,3,opt,name=model,proto3" json:"model,omitempty"`
+	// The command line that starts the program, as the installation set it. Empty starts the program
+	// where the provider finds it.
+	Command       []string `protobuf:"bytes,4,rep,name=command,proto3" json:"command,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AnswerAgentRequest) Reset() {
+	*x = AnswerAgentRequest{}
+	mi := &file_numen_v1_agent_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnswerAgentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnswerAgentRequest) ProtoMessage() {}
+
+func (x *AnswerAgentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_agent_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AnswerAgentRequest.ProtoReflect.Descriptor instead.
+func (*AnswerAgentRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *AnswerAgentRequest) GetPrompt() string {
+	if x != nil {
+		return x.Prompt
+	}
+	return ""
+}
+
+func (x *AnswerAgentRequest) GetInstructions() string {
+	if x != nil {
+		return x.Instructions
+	}
+	return ""
+}
+
+func (x *AnswerAgentRequest) GetModel() string {
+	if x != nil {
+		return x.Model
+	}
+	return ""
+}
+
+func (x *AnswerAgentRequest) GetCommand() []string {
+	if x != nil {
+		return x.Command
+	}
+	return nil
+}
+
+type AnswerAgentResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// What the program wrote, without the space around it.
+	Text          string `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AnswerAgentResponse) Reset() {
+	*x = AnswerAgentResponse{}
+	mi := &file_numen_v1_agent_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnswerAgentResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnswerAgentResponse) ProtoMessage() {}
+
+func (x *AnswerAgentResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_agent_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AnswerAgentResponse.ProtoReflect.Descriptor instead.
+func (*AnswerAgentResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *AnswerAgentResponse) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
 type GetAgentProgramsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The command lines the installation set for programs, so that a model list is asked of the
@@ -308,7 +426,7 @@ type GetAgentProgramsRequest struct {
 
 func (x *GetAgentProgramsRequest) Reset() {
 	*x = GetAgentProgramsRequest{}
-	mi := &file_numen_v1_agent_proto_msgTypes[3]
+	mi := &file_numen_v1_agent_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -320,7 +438,7 @@ func (x *GetAgentProgramsRequest) String() string {
 func (*GetAgentProgramsRequest) ProtoMessage() {}
 
 func (x *GetAgentProgramsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[3]
+	mi := &file_numen_v1_agent_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -333,7 +451,7 @@ func (x *GetAgentProgramsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAgentProgramsRequest.ProtoReflect.Descriptor instead.
 func (*GetAgentProgramsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetAgentProgramsRequest) GetCommands() []*AgentProgramCommand {
@@ -355,7 +473,7 @@ type AgentProgramCommand struct {
 
 func (x *AgentProgramCommand) Reset() {
 	*x = AgentProgramCommand{}
-	mi := &file_numen_v1_agent_proto_msgTypes[4]
+	mi := &file_numen_v1_agent_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -367,7 +485,7 @@ func (x *AgentProgramCommand) String() string {
 func (*AgentProgramCommand) ProtoMessage() {}
 
 func (x *AgentProgramCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[4]
+	mi := &file_numen_v1_agent_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -380,7 +498,7 @@ func (x *AgentProgramCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentProgramCommand.ProtoReflect.Descriptor instead.
 func (*AgentProgramCommand) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *AgentProgramCommand) GetProgram() string {
@@ -406,7 +524,7 @@ type GetAgentProgramsResponse struct {
 
 func (x *GetAgentProgramsResponse) Reset() {
 	*x = GetAgentProgramsResponse{}
-	mi := &file_numen_v1_agent_proto_msgTypes[5]
+	mi := &file_numen_v1_agent_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -418,7 +536,7 @@ func (x *GetAgentProgramsResponse) String() string {
 func (*GetAgentProgramsResponse) ProtoMessage() {}
 
 func (x *GetAgentProgramsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[5]
+	mi := &file_numen_v1_agent_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -431,7 +549,7 @@ func (x *GetAgentProgramsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAgentProgramsResponse.ProtoReflect.Descriptor instead.
 func (*GetAgentProgramsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetAgentProgramsResponse) GetPrograms() []*AgentProgram {
@@ -460,7 +578,7 @@ type AgentProgram struct {
 
 func (x *AgentProgram) Reset() {
 	*x = AgentProgram{}
-	mi := &file_numen_v1_agent_proto_msgTypes[6]
+	mi := &file_numen_v1_agent_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -472,7 +590,7 @@ func (x *AgentProgram) String() string {
 func (*AgentProgram) ProtoMessage() {}
 
 func (x *AgentProgram) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[6]
+	mi := &file_numen_v1_agent_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -485,7 +603,7 @@ func (x *AgentProgram) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentProgram.ProtoReflect.Descriptor instead.
 func (*AgentProgram) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *AgentProgram) GetName() string {
@@ -536,7 +654,7 @@ type AgentModel struct {
 
 func (x *AgentModel) Reset() {
 	*x = AgentModel{}
-	mi := &file_numen_v1_agent_proto_msgTypes[7]
+	mi := &file_numen_v1_agent_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -548,7 +666,7 @@ func (x *AgentModel) String() string {
 func (*AgentModel) ProtoMessage() {}
 
 func (x *AgentModel) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[7]
+	mi := &file_numen_v1_agent_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -561,7 +679,7 @@ func (x *AgentModel) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentModel.ProtoReflect.Descriptor instead.
 func (*AgentModel) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *AgentModel) GetName() string {
@@ -610,7 +728,7 @@ type ToolDeclaration struct {
 
 func (x *ToolDeclaration) Reset() {
 	*x = ToolDeclaration{}
-	mi := &file_numen_v1_agent_proto_msgTypes[8]
+	mi := &file_numen_v1_agent_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -622,7 +740,7 @@ func (x *ToolDeclaration) String() string {
 func (*ToolDeclaration) ProtoMessage() {}
 
 func (x *ToolDeclaration) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[8]
+	mi := &file_numen_v1_agent_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -635,7 +753,7 @@ func (x *ToolDeclaration) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolDeclaration.ProtoReflect.Descriptor instead.
 func (*ToolDeclaration) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ToolDeclaration) GetName() string {
@@ -698,7 +816,7 @@ type FinishConversationRequest struct {
 
 func (x *FinishConversationRequest) Reset() {
 	*x = FinishConversationRequest{}
-	mi := &file_numen_v1_agent_proto_msgTypes[9]
+	mi := &file_numen_v1_agent_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -710,7 +828,7 @@ func (x *FinishConversationRequest) String() string {
 func (*FinishConversationRequest) ProtoMessage() {}
 
 func (x *FinishConversationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[9]
+	mi := &file_numen_v1_agent_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -723,7 +841,7 @@ func (x *FinishConversationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FinishConversationRequest.ProtoReflect.Descriptor instead.
 func (*FinishConversationRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *FinishConversationRequest) GetConversation() string {
@@ -741,7 +859,7 @@ type FinishConversationResponse struct {
 
 func (x *FinishConversationResponse) Reset() {
 	*x = FinishConversationResponse{}
-	mi := &file_numen_v1_agent_proto_msgTypes[10]
+	mi := &file_numen_v1_agent_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -753,7 +871,7 @@ func (x *FinishConversationResponse) String() string {
 func (*FinishConversationResponse) ProtoMessage() {}
 
 func (x *FinishConversationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[10]
+	mi := &file_numen_v1_agent_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -766,7 +884,7 @@ func (x *FinishConversationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FinishConversationResponse.ProtoReflect.Descriptor instead.
 func (*FinishConversationResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{10}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{12}
 }
 
 // AskAgentResponse is one step of the work: one thing the agent said, did, or
@@ -788,7 +906,7 @@ type AskAgentResponse struct {
 
 func (x *AskAgentResponse) Reset() {
 	*x = AskAgentResponse{}
-	mi := &file_numen_v1_agent_proto_msgTypes[11]
+	mi := &file_numen_v1_agent_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -800,7 +918,7 @@ func (x *AskAgentResponse) String() string {
 func (*AskAgentResponse) ProtoMessage() {}
 
 func (x *AskAgentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[11]
+	mi := &file_numen_v1_agent_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -813,7 +931,7 @@ func (x *AskAgentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AskAgentResponse.ProtoReflect.Descriptor instead.
 func (*AskAgentResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{11}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *AskAgentResponse) GetStep() isAskAgentResponse_Step {
@@ -936,7 +1054,7 @@ type ToolFinished struct {
 
 func (x *ToolFinished) Reset() {
 	*x = ToolFinished{}
-	mi := &file_numen_v1_agent_proto_msgTypes[12]
+	mi := &file_numen_v1_agent_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -948,7 +1066,7 @@ func (x *ToolFinished) String() string {
 func (*ToolFinished) ProtoMessage() {}
 
 func (x *ToolFinished) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[12]
+	mi := &file_numen_v1_agent_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -961,7 +1079,7 @@ func (x *ToolFinished) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolFinished.ProtoReflect.Descriptor instead.
 func (*ToolFinished) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{12}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{14}
 }
 
 type ModelStarted struct {
@@ -972,7 +1090,7 @@ type ModelStarted struct {
 
 func (x *ModelStarted) Reset() {
 	*x = ModelStarted{}
-	mi := &file_numen_v1_agent_proto_msgTypes[13]
+	mi := &file_numen_v1_agent_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -984,7 +1102,7 @@ func (x *ModelStarted) String() string {
 func (*ModelStarted) ProtoMessage() {}
 
 func (x *ModelStarted) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[13]
+	mi := &file_numen_v1_agent_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -997,7 +1115,7 @@ func (x *ModelStarted) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ModelStarted.ProtoReflect.Descriptor instead.
 func (*ModelStarted) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{13}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{15}
 }
 
 // ToolCall is a tool in the agent's hands.
@@ -1032,7 +1150,7 @@ type ToolCall struct {
 
 func (x *ToolCall) Reset() {
 	*x = ToolCall{}
-	mi := &file_numen_v1_agent_proto_msgTypes[14]
+	mi := &file_numen_v1_agent_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1044,7 +1162,7 @@ func (x *ToolCall) String() string {
 func (*ToolCall) ProtoMessage() {}
 
 func (x *ToolCall) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[14]
+	mi := &file_numen_v1_agent_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1057,7 +1175,7 @@ func (x *ToolCall) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolCall.ProtoReflect.Descriptor instead.
 func (*ToolCall) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{14}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ToolCall) GetTool() string {
@@ -1126,7 +1244,7 @@ type EditProgress struct {
 
 func (x *EditProgress) Reset() {
 	*x = EditProgress{}
-	mi := &file_numen_v1_agent_proto_msgTypes[15]
+	mi := &file_numen_v1_agent_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1138,7 +1256,7 @@ func (x *EditProgress) String() string {
 func (*EditProgress) ProtoMessage() {}
 
 func (x *EditProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[15]
+	mi := &file_numen_v1_agent_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1151,7 +1269,7 @@ func (x *EditProgress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EditProgress.ProtoReflect.Descriptor instead.
 func (*EditProgress) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{15}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *EditProgress) GetCall() string {
@@ -1194,7 +1312,7 @@ type AgentToolDefinition struct {
 
 func (x *AgentToolDefinition) Reset() {
 	*x = AgentToolDefinition{}
-	mi := &file_numen_v1_agent_proto_msgTypes[16]
+	mi := &file_numen_v1_agent_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1206,7 +1324,7 @@ func (x *AgentToolDefinition) String() string {
 func (*AgentToolDefinition) ProtoMessage() {}
 
 func (x *AgentToolDefinition) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[16]
+	mi := &file_numen_v1_agent_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1219,7 +1337,7 @@ func (x *AgentToolDefinition) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentToolDefinition.ProtoReflect.Descriptor instead.
 func (*AgentToolDefinition) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{16}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *AgentToolDefinition) GetName() string {
@@ -1252,7 +1370,7 @@ type RegisterToolRequest struct {
 
 func (x *RegisterToolRequest) Reset() {
 	*x = RegisterToolRequest{}
-	mi := &file_numen_v1_agent_proto_msgTypes[17]
+	mi := &file_numen_v1_agent_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1264,7 +1382,7 @@ func (x *RegisterToolRequest) String() string {
 func (*RegisterToolRequest) ProtoMessage() {}
 
 func (x *RegisterToolRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[17]
+	mi := &file_numen_v1_agent_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1277,7 +1395,7 @@ func (x *RegisterToolRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterToolRequest.ProtoReflect.Descriptor instead.
 func (*RegisterToolRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{17}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *RegisterToolRequest) GetTool() *AgentToolDefinition {
@@ -1296,7 +1414,7 @@ type RegisterToolResponse struct {
 
 func (x *RegisterToolResponse) Reset() {
 	*x = RegisterToolResponse{}
-	mi := &file_numen_v1_agent_proto_msgTypes[18]
+	mi := &file_numen_v1_agent_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1308,7 +1426,7 @@ func (x *RegisterToolResponse) String() string {
 func (*RegisterToolResponse) ProtoMessage() {}
 
 func (x *RegisterToolResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[18]
+	mi := &file_numen_v1_agent_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1321,7 +1439,7 @@ func (x *RegisterToolResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterToolResponse.ProtoReflect.Descriptor instead.
 func (*RegisterToolResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{18}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *RegisterToolResponse) GetSuccess() bool {
@@ -1340,7 +1458,7 @@ type ExtendSystemPromptRequest struct {
 
 func (x *ExtendSystemPromptRequest) Reset() {
 	*x = ExtendSystemPromptRequest{}
-	mi := &file_numen_v1_agent_proto_msgTypes[19]
+	mi := &file_numen_v1_agent_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1352,7 +1470,7 @@ func (x *ExtendSystemPromptRequest) String() string {
 func (*ExtendSystemPromptRequest) ProtoMessage() {}
 
 func (x *ExtendSystemPromptRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[19]
+	mi := &file_numen_v1_agent_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1365,7 +1483,7 @@ func (x *ExtendSystemPromptRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExtendSystemPromptRequest.ProtoReflect.Descriptor instead.
 func (*ExtendSystemPromptRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{19}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ExtendSystemPromptRequest) GetExtension() string {
@@ -1385,7 +1503,7 @@ type ExtendSystemPromptResponse struct {
 
 func (x *ExtendSystemPromptResponse) Reset() {
 	*x = ExtendSystemPromptResponse{}
-	mi := &file_numen_v1_agent_proto_msgTypes[20]
+	mi := &file_numen_v1_agent_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1397,7 +1515,7 @@ func (x *ExtendSystemPromptResponse) String() string {
 func (*ExtendSystemPromptResponse) ProtoMessage() {}
 
 func (x *ExtendSystemPromptResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[20]
+	mi := &file_numen_v1_agent_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1410,7 +1528,7 @@ func (x *ExtendSystemPromptResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExtendSystemPromptResponse.ProtoReflect.Descriptor instead.
 func (*ExtendSystemPromptResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{20}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ExtendSystemPromptResponse) GetSuccess() bool {
@@ -1435,7 +1553,7 @@ type GetAgentToolsRequest struct {
 
 func (x *GetAgentToolsRequest) Reset() {
 	*x = GetAgentToolsRequest{}
-	mi := &file_numen_v1_agent_proto_msgTypes[21]
+	mi := &file_numen_v1_agent_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1447,7 +1565,7 @@ func (x *GetAgentToolsRequest) String() string {
 func (*GetAgentToolsRequest) ProtoMessage() {}
 
 func (x *GetAgentToolsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[21]
+	mi := &file_numen_v1_agent_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1460,7 +1578,7 @@ func (x *GetAgentToolsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAgentToolsRequest.ProtoReflect.Descriptor instead.
 func (*GetAgentToolsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{21}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{23}
 }
 
 type GetAgentToolsResponse struct {
@@ -1473,7 +1591,7 @@ type GetAgentToolsResponse struct {
 
 func (x *GetAgentToolsResponse) Reset() {
 	*x = GetAgentToolsResponse{}
-	mi := &file_numen_v1_agent_proto_msgTypes[22]
+	mi := &file_numen_v1_agent_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1485,7 +1603,7 @@ func (x *GetAgentToolsResponse) String() string {
 func (*GetAgentToolsResponse) ProtoMessage() {}
 
 func (x *GetAgentToolsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[22]
+	mi := &file_numen_v1_agent_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1498,7 +1616,7 @@ func (x *GetAgentToolsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAgentToolsResponse.ProtoReflect.Descriptor instead.
 func (*GetAgentToolsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{22}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *GetAgentToolsResponse) GetTools() []*AgentToolDefinition {
@@ -1541,7 +1659,14 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\x16reads_hooks_and_skills\x18\x0e \x01(\bR\x13readsHooksAndSkills\x12\x1b\n" +
 	"\ttools_url\x18\x0f \x01(\tR\btoolsUrl\x12\x1f\n" +
 	"\vtools_token\x18\x10 \x01(\tR\n" +
-	"toolsToken\"T\n" +
+	"toolsToken\"\x80\x01\n" +
+	"\x12AnswerAgentRequest\x12\x16\n" +
+	"\x06prompt\x18\x01 \x01(\tR\x06prompt\x12\"\n" +
+	"\finstructions\x18\x02 \x01(\tR\finstructions\x12\x14\n" +
+	"\x05model\x18\x03 \x01(\tR\x05model\x12\x18\n" +
+	"\acommand\x18\x04 \x03(\tR\acommand\")\n" +
+	"\x13AnswerAgentResponse\x12\x12\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text\"T\n" +
 	"\x17GetAgentProgramsRequest\x129\n" +
 	"\bcommands\x18\x01 \x03(\v2\x1d.numen.v1.AgentProgramCommandR\bcommands\"I\n" +
 	"\x13AgentProgramCommand\x12\x18\n" +
@@ -1613,7 +1738,7 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\x14GetAgentToolsRequest\"\x84\x01\n" +
 	"\x15GetAgentToolsResponse\x123\n" +
 	"\x05tools\x18\x01 \x03(\v2\x1d.numen.v1.AgentToolDefinitionR\x05tools\x126\n" +
-	"\x17system_prompt_extension\x18\x02 \x01(\tR\x15systemPromptExtension2\xe3\x04\n" +
+	"\x17system_prompt_extension\x18\x02 \x01(\tR\x15systemPromptExtension2\xaf\x05\n" +
 	"\fAgentService\x12C\n" +
 	"\bAskAgent\x12\x19.numen.v1.AskAgentRequest\x1a\x1a.numen.v1.AskAgentResponse0\x01\x12_\n" +
 	"\x12FinishConversation\x12#.numen.v1.FinishConversationRequest\x1a$.numen.v1.FinishConversationResponse\x12P\n" +
@@ -1621,7 +1746,8 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\fRegisterTool\x12\x1d.numen.v1.RegisterToolRequest\x1a\x1e.numen.v1.RegisterToolResponse\x12_\n" +
 	"\x12ExtendSystemPrompt\x12#.numen.v1.ExtendSystemPromptRequest\x1a$.numen.v1.ExtendSystemPromptResponse\x12P\n" +
 	"\rGetAgentTools\x12\x1e.numen.v1.GetAgentToolsRequest\x1a\x1f.numen.v1.GetAgentToolsResponse\x12Y\n" +
-	"\x10GetAgentPrograms\x12!.numen.v1.GetAgentProgramsRequest\x1a\".numen.v1.GetAgentProgramsResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x10GetAgentPrograms\x12!.numen.v1.GetAgentProgramsRequest\x1a\".numen.v1.GetAgentProgramsResponse\x12J\n" +
+	"\vAnswerAgent\x12\x1c.numen.v1.AnswerAgentRequest\x1a\x1d.numen.v1.AnswerAgentResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_agent_proto_rawDescOnce sync.Once
@@ -1635,61 +1761,65 @@ func file_numen_v1_agent_proto_rawDescGZIP() []byte {
 	return file_numen_v1_agent_proto_rawDescData
 }
 
-var file_numen_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_numen_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_numen_v1_agent_proto_goTypes = []any{
 	(*GetAgentStateRequest)(nil),       // 0: numen.v1.GetAgentStateRequest
 	(*GetAgentStateResponse)(nil),      // 1: numen.v1.GetAgentStateResponse
 	(*AskAgentRequest)(nil),            // 2: numen.v1.AskAgentRequest
-	(*GetAgentProgramsRequest)(nil),    // 3: numen.v1.GetAgentProgramsRequest
-	(*AgentProgramCommand)(nil),        // 4: numen.v1.AgentProgramCommand
-	(*GetAgentProgramsResponse)(nil),   // 5: numen.v1.GetAgentProgramsResponse
-	(*AgentProgram)(nil),               // 6: numen.v1.AgentProgram
-	(*AgentModel)(nil),                 // 7: numen.v1.AgentModel
-	(*ToolDeclaration)(nil),            // 8: numen.v1.ToolDeclaration
-	(*FinishConversationRequest)(nil),  // 9: numen.v1.FinishConversationRequest
-	(*FinishConversationResponse)(nil), // 10: numen.v1.FinishConversationResponse
-	(*AskAgentResponse)(nil),           // 11: numen.v1.AskAgentResponse
-	(*ToolFinished)(nil),               // 12: numen.v1.ToolFinished
-	(*ModelStarted)(nil),               // 13: numen.v1.ModelStarted
-	(*ToolCall)(nil),                   // 14: numen.v1.ToolCall
-	(*EditProgress)(nil),               // 15: numen.v1.EditProgress
-	(*AgentToolDefinition)(nil),        // 16: numen.v1.AgentToolDefinition
-	(*RegisterToolRequest)(nil),        // 17: numen.v1.RegisterToolRequest
-	(*RegisterToolResponse)(nil),       // 18: numen.v1.RegisterToolResponse
-	(*ExtendSystemPromptRequest)(nil),  // 19: numen.v1.ExtendSystemPromptRequest
-	(*ExtendSystemPromptResponse)(nil), // 20: numen.v1.ExtendSystemPromptResponse
-	(*GetAgentToolsRequest)(nil),       // 21: numen.v1.GetAgentToolsRequest
-	(*GetAgentToolsResponse)(nil),      // 22: numen.v1.GetAgentToolsResponse
-	(*Span)(nil),                       // 23: numen.v1.Span
+	(*AnswerAgentRequest)(nil),         // 3: numen.v1.AnswerAgentRequest
+	(*AnswerAgentResponse)(nil),        // 4: numen.v1.AnswerAgentResponse
+	(*GetAgentProgramsRequest)(nil),    // 5: numen.v1.GetAgentProgramsRequest
+	(*AgentProgramCommand)(nil),        // 6: numen.v1.AgentProgramCommand
+	(*GetAgentProgramsResponse)(nil),   // 7: numen.v1.GetAgentProgramsResponse
+	(*AgentProgram)(nil),               // 8: numen.v1.AgentProgram
+	(*AgentModel)(nil),                 // 9: numen.v1.AgentModel
+	(*ToolDeclaration)(nil),            // 10: numen.v1.ToolDeclaration
+	(*FinishConversationRequest)(nil),  // 11: numen.v1.FinishConversationRequest
+	(*FinishConversationResponse)(nil), // 12: numen.v1.FinishConversationResponse
+	(*AskAgentResponse)(nil),           // 13: numen.v1.AskAgentResponse
+	(*ToolFinished)(nil),               // 14: numen.v1.ToolFinished
+	(*ModelStarted)(nil),               // 15: numen.v1.ModelStarted
+	(*ToolCall)(nil),                   // 16: numen.v1.ToolCall
+	(*EditProgress)(nil),               // 17: numen.v1.EditProgress
+	(*AgentToolDefinition)(nil),        // 18: numen.v1.AgentToolDefinition
+	(*RegisterToolRequest)(nil),        // 19: numen.v1.RegisterToolRequest
+	(*RegisterToolResponse)(nil),       // 20: numen.v1.RegisterToolResponse
+	(*ExtendSystemPromptRequest)(nil),  // 21: numen.v1.ExtendSystemPromptRequest
+	(*ExtendSystemPromptResponse)(nil), // 22: numen.v1.ExtendSystemPromptResponse
+	(*GetAgentToolsRequest)(nil),       // 23: numen.v1.GetAgentToolsRequest
+	(*GetAgentToolsResponse)(nil),      // 24: numen.v1.GetAgentToolsResponse
+	(*Span)(nil),                       // 25: numen.v1.Span
 }
 var file_numen_v1_agent_proto_depIdxs = []int32{
-	8,  // 0: numen.v1.AskAgentRequest.tool_declarations:type_name -> numen.v1.ToolDeclaration
-	4,  // 1: numen.v1.GetAgentProgramsRequest.commands:type_name -> numen.v1.AgentProgramCommand
-	6,  // 2: numen.v1.GetAgentProgramsResponse.programs:type_name -> numen.v1.AgentProgram
-	7,  // 3: numen.v1.AgentProgram.models:type_name -> numen.v1.AgentModel
-	14, // 4: numen.v1.AskAgentResponse.tool_call:type_name -> numen.v1.ToolCall
-	12, // 5: numen.v1.AskAgentResponse.tool_finished:type_name -> numen.v1.ToolFinished
-	13, // 6: numen.v1.AskAgentResponse.model_started:type_name -> numen.v1.ModelStarted
-	15, // 7: numen.v1.AskAgentResponse.edit_progress:type_name -> numen.v1.EditProgress
-	23, // 8: numen.v1.ToolCall.span:type_name -> numen.v1.Span
-	16, // 9: numen.v1.RegisterToolRequest.tool:type_name -> numen.v1.AgentToolDefinition
-	16, // 10: numen.v1.GetAgentToolsResponse.tools:type_name -> numen.v1.AgentToolDefinition
+	10, // 0: numen.v1.AskAgentRequest.tool_declarations:type_name -> numen.v1.ToolDeclaration
+	6,  // 1: numen.v1.GetAgentProgramsRequest.commands:type_name -> numen.v1.AgentProgramCommand
+	8,  // 2: numen.v1.GetAgentProgramsResponse.programs:type_name -> numen.v1.AgentProgram
+	9,  // 3: numen.v1.AgentProgram.models:type_name -> numen.v1.AgentModel
+	16, // 4: numen.v1.AskAgentResponse.tool_call:type_name -> numen.v1.ToolCall
+	14, // 5: numen.v1.AskAgentResponse.tool_finished:type_name -> numen.v1.ToolFinished
+	15, // 6: numen.v1.AskAgentResponse.model_started:type_name -> numen.v1.ModelStarted
+	17, // 7: numen.v1.AskAgentResponse.edit_progress:type_name -> numen.v1.EditProgress
+	25, // 8: numen.v1.ToolCall.span:type_name -> numen.v1.Span
+	18, // 9: numen.v1.RegisterToolRequest.tool:type_name -> numen.v1.AgentToolDefinition
+	18, // 10: numen.v1.GetAgentToolsResponse.tools:type_name -> numen.v1.AgentToolDefinition
 	2,  // 11: numen.v1.AgentService.AskAgent:input_type -> numen.v1.AskAgentRequest
-	9,  // 12: numen.v1.AgentService.FinishConversation:input_type -> numen.v1.FinishConversationRequest
+	11, // 12: numen.v1.AgentService.FinishConversation:input_type -> numen.v1.FinishConversationRequest
 	0,  // 13: numen.v1.AgentService.GetAgentState:input_type -> numen.v1.GetAgentStateRequest
-	17, // 14: numen.v1.AgentService.RegisterTool:input_type -> numen.v1.RegisterToolRequest
-	19, // 15: numen.v1.AgentService.ExtendSystemPrompt:input_type -> numen.v1.ExtendSystemPromptRequest
-	21, // 16: numen.v1.AgentService.GetAgentTools:input_type -> numen.v1.GetAgentToolsRequest
-	3,  // 17: numen.v1.AgentService.GetAgentPrograms:input_type -> numen.v1.GetAgentProgramsRequest
-	11, // 18: numen.v1.AgentService.AskAgent:output_type -> numen.v1.AskAgentResponse
-	10, // 19: numen.v1.AgentService.FinishConversation:output_type -> numen.v1.FinishConversationResponse
-	1,  // 20: numen.v1.AgentService.GetAgentState:output_type -> numen.v1.GetAgentStateResponse
-	18, // 21: numen.v1.AgentService.RegisterTool:output_type -> numen.v1.RegisterToolResponse
-	20, // 22: numen.v1.AgentService.ExtendSystemPrompt:output_type -> numen.v1.ExtendSystemPromptResponse
-	22, // 23: numen.v1.AgentService.GetAgentTools:output_type -> numen.v1.GetAgentToolsResponse
-	5,  // 24: numen.v1.AgentService.GetAgentPrograms:output_type -> numen.v1.GetAgentProgramsResponse
-	18, // [18:25] is the sub-list for method output_type
-	11, // [11:18] is the sub-list for method input_type
+	19, // 14: numen.v1.AgentService.RegisterTool:input_type -> numen.v1.RegisterToolRequest
+	21, // 15: numen.v1.AgentService.ExtendSystemPrompt:input_type -> numen.v1.ExtendSystemPromptRequest
+	23, // 16: numen.v1.AgentService.GetAgentTools:input_type -> numen.v1.GetAgentToolsRequest
+	5,  // 17: numen.v1.AgentService.GetAgentPrograms:input_type -> numen.v1.GetAgentProgramsRequest
+	3,  // 18: numen.v1.AgentService.AnswerAgent:input_type -> numen.v1.AnswerAgentRequest
+	13, // 19: numen.v1.AgentService.AskAgent:output_type -> numen.v1.AskAgentResponse
+	12, // 20: numen.v1.AgentService.FinishConversation:output_type -> numen.v1.FinishConversationResponse
+	1,  // 21: numen.v1.AgentService.GetAgentState:output_type -> numen.v1.GetAgentStateResponse
+	20, // 22: numen.v1.AgentService.RegisterTool:output_type -> numen.v1.RegisterToolResponse
+	22, // 23: numen.v1.AgentService.ExtendSystemPrompt:output_type -> numen.v1.ExtendSystemPromptResponse
+	24, // 24: numen.v1.AgentService.GetAgentTools:output_type -> numen.v1.GetAgentToolsResponse
+	7,  // 25: numen.v1.AgentService.GetAgentPrograms:output_type -> numen.v1.GetAgentProgramsResponse
+	4,  // 26: numen.v1.AgentService.AnswerAgent:output_type -> numen.v1.AnswerAgentResponse
+	19, // [19:27] is the sub-list for method output_type
+	11, // [11:19] is the sub-list for method input_type
 	11, // [11:11] is the sub-list for extension type_name
 	11, // [11:11] is the sub-list for extension extendee
 	0,  // [0:11] is the sub-list for field type_name
@@ -1701,7 +1831,7 @@ func file_numen_v1_agent_proto_init() {
 		return
 	}
 	file_numen_v1_shared_proto_init()
-	file_numen_v1_agent_proto_msgTypes[11].OneofWrappers = []any{
+	file_numen_v1_agent_proto_msgTypes[13].OneofWrappers = []any{
 		(*AskAgentResponse_Said)(nil),
 		(*AskAgentResponse_ToolCall)(nil),
 		(*AskAgentResponse_Stopped)(nil),
@@ -1715,7 +1845,7 @@ func file_numen_v1_agent_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_agent_proto_rawDesc), len(file_numen_v1_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   23,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

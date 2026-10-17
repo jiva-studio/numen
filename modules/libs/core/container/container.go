@@ -101,10 +101,9 @@ type Config struct {
 	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.
 	PluginHost port.PluginManager
 
-	// AgentProofreader opens a profile that reaches the command line a person
-	// already has. The platform supplies it, since core starts no process; an
-	// installation that supplies none names no such profile.
-	AgentProofreader func(ProofreaderSpec) (port.Proofreader, error)
+	// Agents runs the tasks and answers the questions put to the agent programs. Where it is nil, the
+	// plugins that provide agents do.
+	Agents port.AgentProvider
 
 	// Agent is which agent answers in the panel. It arrives the way Embedding
 	// does.

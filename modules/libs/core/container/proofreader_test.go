@@ -11,7 +11,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
+	"sync"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -19,8 +21,10 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/agentproofreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
@@ -183,19 +187,60 @@ func TestTheProofreadingPluginWiredViaHostAnswersProofreader(t *testing.T) {
 	}
 }
 
-// A profile reaching the command line is opened by the platform, which is told
-// what to start and what the run is proofreading.
-func TestAnAgentProfileIsOpenedByThePlatform(t *testing.T) {
+// fakeAgents is the plugins that run agent programs: it lists the programs it is given and
+// writes down every question put to them.
+type fakeAgents struct {
+	programs []port.AgentProgram
+	answer   string
+
+	mu     sync.Mutex
+	asked  []port.Question
+	listed int
+}
+
+func (f *fakeAgents) StartRun(context.Context, port.Task) (port.Run, error) {
+	return nil, errors.New("nothing here runs a task")
+}
+
+func (f *fakeAgents) EndConversation(context.Context, string) error { return nil }
+
+func (f *fakeAgents) GetPrograms(context.Context, map[string][]string) ([]port.AgentProgram, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.listed++
+	return f.programs, nil
+}
+
+func (f *fakeAgents) Answer(_ context.Context, question port.Question) (string, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.asked = append(f.asked, question)
+	return f.answer, nil
+}
+
+func (f *fakeAgents) getAsked() []port.Question {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return slices.Clone(f.asked)
+}
+
+func (f *fakeAgents) getListed() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.listed
+}
+
+// A profile reaching the program a person has installed asks the program the settings name, told the
+// model and the command line of the profile and what the run is proofreading.
+func TestAnAgentProfileAsksTheProgramTheSettingsName(t *testing.T) {
 	profile := container.AgentDefaults()
 	profile.Model = "haiku"
 	profile.Command = []string{"/somewhere/claude"}
 
-	var asked container.ProofreaderSpec
+	agents := &fakeAgents{answer: "0|fixed"}
 	held := makeConfig("agent", profile)
-	held.AgentProofreader = func(said container.ProofreaderSpec) (port.Proofreader, error) {
-		asked = said
-		return spelling{}, nil
-	}
+	held.Agents = agents
+	held.Agent = settings.Agent{Use: settings.UseProgram("claude")}
 
 	proofreader, why := held.Proofreader("agent", proofread.SpeechInstruction)
 	if why != nil {
@@ -204,32 +249,69 @@ func TestAnAgentProfileIsOpenedByThePlatform(t *testing.T) {
 	if proofreader == nil {
 		t.Fatal("no proofreader")
 	}
-	if asked.Model != "haiku" || len(asked.Command) != 1 || asked.Command[0] != "/somewhere/claude" {
-		t.Errorf("got %+v", asked)
+	out, err := proofreader.Proofread(t.Context(), []domain.ProofreadBatch{{Number: 3, Prompt: "a line"}})
+	if err != nil || out[3] != "0|fixed" {
+		t.Fatalf("got %v, %v", out, err)
 	}
-	if asked.Instruction != proofread.SpeechInstruction {
-		t.Errorf("the instruction is %q", asked.Instruction)
+
+	asked := agents.getAsked()
+	if len(asked) != 1 {
+		t.Fatalf("the program was asked %d times", len(asked))
+	}
+	if got := asked[0]; got.Program != "claude" || got.Model != "haiku" || got.Prompt != "a line" ||
+		got.Instructions != proofread.SpeechInstruction || !slices.Equal(got.Command, []string{"/somewhere/claude"}) {
+		t.Errorf("got %+v", got)
+	}
+	if agents.getListed() != 0 {
+		t.Error("the programs were listed where the settings name one")
 	}
 }
 
-// An installation that starts no process names no profile that needs one.
-func TestAnAgentProfileWithoutAPlatformIsRefused(t *testing.T) {
+// Where the settings leave the choice open, the question names no program, and the plugins choose.
+func TestAnAgentProfileLeavesTheProgramToThePluginsWhereTheSettingsNameNone(t *testing.T) {
 	profile := container.AgentDefaults()
 	profile.Model = "haiku"
 
-	_, why := makeConfig("agent", profile).Proofreader("agent", proofread.ScanInstruction)
-	if why == nil {
-		t.Fatal("no reason")
+	agents := &fakeAgents{}
+	held := makeConfig("agent", profile)
+	held.Agents = agents
+
+	proofreader, why := held.Proofreader("agent", proofread.ScanInstruction)
+	if why != nil {
+		t.Fatal(why)
+	}
+	if _, err := proofreader.Proofread(t.Context(), []domain.ProofreadBatch{{Number: 1, Prompt: "x"}}); err != nil {
+		t.Fatal(err)
+	}
+	if asked := agents.getAsked(); len(asked) != 1 || asked[0].Program != "" {
+		t.Errorf("asked %+v", asked)
+	}
+	if agents.getListed() != 0 {
+		t.Error("the programs were listed to open a profile")
 	}
 }
 
-// spelling is a proofreader that is never asked anything.
-type spelling struct{}
+// An installation that names no agent, or has no plugin to run one, names no profile that needs one.
+func TestAnAgentProfileNoProgramCanAnswerIsRefused(t *testing.T) {
+	profile := container.AgentDefaults()
+	profile.Model = "haiku"
 
-func (spelling) GetName() string { return "a test" }
+	namedNone := makeConfig("agent", profile)
+	namedNone.Agents = &fakeAgents{}
+	namedNone.Agent = settings.Agent{Use: settings.UseProgram("")}
 
-func (spelling) Proofread(_ context.Context, _ []domain.ProofreadBatch) (map[int]string, error) {
-	return nil, errors.New("nothing here asks")
+	for name, held := range map[string]container.Config{
+		"no plugins":             makeConfig("agent", profile),
+		"the settings name none": namedNone,
+	} {
+		proofreader, why := held.Proofreader("agent", proofread.ScanInstruction)
+		if why == nil {
+			t.Errorf("%s: no reason", name)
+		}
+		if proofreader != nil {
+			t.Errorf("%s: got a proofreader: %v", name, proofreader.GetName())
+		}
+	}
 }
 
 // A profile reached through neither a service nor the command line is said to
@@ -239,9 +321,7 @@ func TestAProfileReachedThroughNeitherIsRefused(t *testing.T) {
 	for _, use := range []string{"", "telepathy"} {
 		profile := container.Profile{Use: use, Name: "some-model", Model: "haiku"}
 		held := makeConfig("mine", profile)
-		held.AgentProofreader = func(container.ProofreaderSpec) (port.Proofreader, error) {
-			return spelling{}, nil
-		}
+		held.Agents = &fakeAgents{}
 
 		proofreader, why := held.Proofreader("mine", proofread.ScanInstruction)
 		if why == nil {
@@ -258,25 +338,26 @@ func TestAProfileReachedThroughNeitherIsRefused(t *testing.T) {
 	}
 }
 
-// How much of a person's own model a run may take is the profile's to say, and
-// it reaches the platform that starts the command line.
-func TestHowManyRunsStandAtOnceReachesThePlatform(t *testing.T) {
+// How much of a person's own model a run may take is the profile's to say, and it reaches the
+// proofreader that asks the program.
+func TestHowManyQuestionsStandAtOnceReachesTheProofreader(t *testing.T) {
 	profile := container.AgentDefaults()
 	profile.Model = "haiku"
 	profile.InFlight = 3
 
-	var asked container.ProofreaderSpec
 	held := makeConfig("agent", profile)
-	held.AgentProofreader = func(said container.ProofreaderSpec) (port.Proofreader, error) {
-		asked = said
-		return spelling{}, nil
-	}
+	held.Agents = &fakeAgents{programs: []port.AgentProgram{{Name: "claude"}}}
 
-	if _, why := held.Proofreader("agent", proofread.SpeechInstruction); why != nil {
+	proofreader, why := held.Proofreader("agent", proofread.SpeechInstruction)
+	if why != nil {
 		t.Fatal(why)
 	}
-	if asked.InFlight != 3 {
-		t.Errorf("the platform was told %d runs may stand at once", asked.InFlight)
+	asking, ok := proofreader.(*agentproofreader.Proofreader)
+	if !ok {
+		t.Fatalf("got %T", proofreader)
+	}
+	if asking.InFlight != 3 {
+		t.Errorf("the proofreader was told %d questions may stand at once", asking.InFlight)
 	}
 }
 
@@ -340,21 +421,18 @@ func TestTheReasonForAMissingProfileSaysItIsMissing(t *testing.T) {
 	}
 }
 
-// A command line profile naming no model is refused before the platform is
-// asked to start anything.
+// A profile reaching the program that names no model is refused before the program is asked
+// anything.
 func TestAnAgentProfileWithoutAModelIsNotStarted(t *testing.T) {
-	started := false
+	agents := &fakeAgents{}
 	held := makeConfig("agent", container.AgentDefaults())
-	held.AgentProofreader = func(container.ProofreaderSpec) (port.Proofreader, error) {
-		started = true
-		return spelling{}, nil
-	}
+	held.Agents = agents
 
 	_, why := held.Proofreader("agent", proofread.ScanInstruction)
 	if why == nil || !strings.Contains(why.Error(), "names no model") {
 		t.Errorf("the reason is %v", why)
 	}
-	if started {
-		t.Error("the platform was asked to start a profile naming no model")
+	if agents.getListed() != 0 || len(agents.getAsked()) != 0 {
+		t.Error("the program was asked for a profile naming no model")
 	}
 }

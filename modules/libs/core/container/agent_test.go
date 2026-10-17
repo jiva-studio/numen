@@ -37,6 +37,7 @@ type providerServer struct {
 	asked    []*v1.AskAgentRequest
 	finished []string
 	commands []*v1.AgentProgramCommand
+	answers  []*v1.AnswerAgentRequest
 }
 
 func (s *providerServer) AskAgent(
@@ -58,6 +59,22 @@ func (s *providerServer) FinishConversation(
 	s.finished = append(s.finished, req.Msg.GetConversation())
 	s.mu.Unlock()
 	return connect.NewResponse(&v1.FinishConversationResponse{}), nil
+}
+
+func (s *providerServer) AnswerAgent(
+	_ context.Context, req *connect.Request[v1.AnswerAgentRequest],
+) (*connect.Response[v1.AnswerAgentResponse], error) {
+	s.mu.Lock()
+	s.answers = append(s.answers, req.Msg)
+	s.mu.Unlock()
+	return connect.NewResponse(&v1.AnswerAgentResponse{Text: "answer: " + req.Msg.GetPrompt()}), nil
+}
+
+// getAnswers are the questions the plugin was put.
+func (s *providerServer) getAnswers() []*v1.AnswerAgentRequest {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return slices.Clone(s.answers)
 }
 
 // getAsked are the tasks the plugin was given.
@@ -393,5 +410,59 @@ func TestAPluginThatCannotListItsProgramsIsToldToTheErrorHandler(t *testing.T) {
 	}
 	if !slices.Equal(names, []string{"alpha", ""}) {
 		t.Errorf("the programs offered are %q", names)
+	}
+}
+
+// A question goes to the plugin that runs the program it names, with everything it was given.
+func TestAQuestionGoesToThePluginThatRunsItsProgram(t *testing.T) {
+	host, one, two := twoProviders(t)
+	provider := (container.Config{PluginHost: host}).AgentProvider()
+
+	text, err := provider.Answer(t.Context(), port.Question{
+		Program: "beta", Prompt: "p", Instructions: "i", Model: "m", Command: []string{"/bin/beta", "--x"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if text != "answer: p" {
+		t.Errorf("the answer is %q", text)
+	}
+
+	if len(one.getAnswers()) != 0 || len(two.getAnswers()) != 1 {
+		t.Fatalf("the first plugin was put %d questions and the second %d", len(one.getAnswers()), len(two.getAnswers()))
+	}
+	if got := two.getAnswers()[0]; got.GetPrompt() != "p" || got.GetInstructions() != "i" || got.GetModel() != "m" ||
+		!slices.Equal(got.GetCommand(), []string{"/bin/beta", "--x"}) {
+		t.Errorf("the plugin was put %v", got)
+	}
+}
+
+// A question naming no program goes to the default program of the plugins.
+func TestAQuestionNamingNoProgramGoesToTheDefaultProgram(t *testing.T) {
+	host, one, two := twoProviders(t)
+	provider := (container.Config{PluginHost: host}).AgentProvider()
+
+	if _, err := provider.Answer(t.Context(), port.Question{Prompt: "p", Instructions: "i"}); err != nil {
+		t.Fatal(err)
+	}
+	if len(one.getAnswers()) != 1 || len(two.getAnswers()) != 0 {
+		t.Errorf("the first plugin was put %d questions and the second %d", len(one.getAnswers()), len(two.getAnswers()))
+	}
+}
+
+// A question no plugin can take is refused.
+func TestAQuestionNoPluginCanTakeIsRefused(t *testing.T) {
+	host, one, two := twoProviders(t)
+	provider := (container.Config{PluginHost: host}).AgentProvider()
+	if _, err := provider.Answer(t.Context(), port.Question{Program: "gamma", Prompt: "p"}); err == nil {
+		t.Error("a question for a program nobody runs was taken")
+	}
+	if len(one.getAnswers())+len(two.getAnswers()) != 0 {
+		t.Error("a plugin was put a question nobody runs")
+	}
+
+	none := hostWith(t, map[string][]string{"md.test.chatty": {"agent"}}, nil)
+	if _, err := (container.Config{PluginHost: none}).AgentProvider().Answer(t.Context(), port.Question{Prompt: "p"}); err == nil {
+		t.Error("a question was taken where no plugin lists a program")
 	}
 }

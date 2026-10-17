@@ -1,6 +1,19 @@
 package settings
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"errors"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+var (
+	// ErrNoAgent is what a task or a question is told where the settings name no program.
+	ErrNoAgent = errors.New("no agent is named in the settings")
+	// ErrNoProgram is what a task or a question is told where the settings leave the choice to the
+	// default and the plugins list no program.
+	ErrNoProgram = errors.New("no plugin lists an agent program")
+)
 
 // DefaultAgentSteps is how many times a program may go to the model on one task where the settings
 // say nothing about it.
@@ -67,6 +80,34 @@ func (a Agent) GetProgram(name string) AgentProgram {
 		return program
 	}
 	return AgentProgram{MaxSteps: DefaultAgentSteps}
+}
+
+// GetAnswering is the program that answers: the one the settings name, else the default of the
+// programs the providers list. The providers are asked only where the settings leave the choice to
+// the default.
+func (a Agent) GetAnswering(listed func() ([]port.AgentProgram, error)) (string, error) {
+	if !a.IsNamed() {
+		return "", ErrNoAgent
+	}
+	if use := a.GetUse(); use != "" {
+		return use, nil
+	}
+	programs, listErr := listed()
+	name, err := ChooseProgram(programs)
+	if err != nil {
+		return "", errors.Join(err, listErr)
+	}
+	return name, nil
+}
+
+// ChooseProgram is the program an installation that names none answers with: the one the providers
+// mark as the default, else the first they list.
+func ChooseProgram(programs []port.AgentProgram) (string, error) {
+	chosen, found := port.GetDefaultProgram(programs)
+	if !found {
+		return "", ErrNoProgram
+	}
+	return chosen.Name, nil
 }
 
 // GetCommands are the command lines the settings give, by program.

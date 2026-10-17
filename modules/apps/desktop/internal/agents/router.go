@@ -18,9 +18,6 @@ import (
 // errNoProvider is what a task is told where no plugin runs agent programs.
 var errNoProvider = errors.New("no plugin provides agents")
 
-// errNoProgram is what a task is told where the settings name no program and the plugins list none.
-var errNoProgram = errors.New("no plugin lists an agent program")
-
 // Router sends each task to the program it names, or to the configured one, with the tools, the
 // folder, the step limit and the command line the settings give. The router is not changed after
 // it is built.
@@ -49,7 +46,7 @@ func NewRouter(opts Options, url, secret string, vocabulary map[string]mcp.Tool)
 	slices.Sort(names)
 
 	return &Router{
-		provider:     getProvider(opts),
+		provider:     opts.Config.AgentProvider(),
 		settings:     opts.Config.Agent,
 		tools:        names,
 		declarations: getToolDeclarations(names, vocabulary),
@@ -58,15 +55,6 @@ func NewRouter(opts Options, url, secret string, vocabulary map[string]mcp.Tool)
 		preview:      opts.Preview,
 		out:          opts.Out,
 	}
-}
-
-// getProvider is the provider the options give, else the one the plugins make. Nil where there is
-// none.
-func getProvider(opts Options) port.AgentProvider {
-	if opts.Provider != nil {
-		return opts.Provider
-	}
-	return opts.Config.AgentProvider()
 }
 
 // getToolDeclarations is how the agent speaks about the tools the vault serves.
@@ -144,19 +132,9 @@ func (r *Router) getProgram(ctx context.Context, asked string) (string, error) {
 	if asked != "" {
 		return asked, nil
 	}
-	if !r.settings.IsNamed() {
-		return "", errors.New("no agent is named in the settings")
-	}
-	if use := r.settings.GetUse(); use != "" {
-		return use, nil
-	}
-
-	programs, listErr := r.provider.GetPrograms(ctx, r.settings.GetCommands())
-	chosen, found := port.GetDefaultProgram(programs)
-	if !found {
-		return "", errors.Join(errNoProgram, listErr)
-	}
-	return chosen.Name, nil
+	return r.settings.GetAnswering(func() ([]port.AgentProgram, error) {
+		return r.provider.GetPrograms(ctx, r.settings.GetCommands())
+	})
 }
 
 // EndConversation ends the conversation on the program it was asked of.

@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/agent.proto.
  */
 export const file_numen_v1_agent: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiFgoUR2V0QWdlbnRTdGF0ZVJlcXVlc3QiLAoVR2V0QWdlbnRTdGF0ZVJlc3BvbnNlEhMKC3VucmVhY2hhYmxlGAEgASgJItUCCg9Bc2tBZ2VudFJlcXVlc3QSDgoGcHJvbXB0GAEgASgJEg0KBWZvY3VzGAIgASgJEhQKDGNvbnZlcnNhdGlvbhgDIAEoCRIMCgRtYXJrGAQgASgJEgwKBGZhY2UYBSABKAkSDQoFYWdlbnQYBiABKAkSDQoFbW9kZWwYByABKAkSFAoMaW5zdHJ1Y3Rpb25zGAggASgJEg0KBXRvb2xzGAkgAygJEhEKCW1heF9zdGVwcxgKIAEoBRI0ChF0b29sX2RlY2xhcmF0aW9ucxgLIAMoCzIZLm51bWVuLnYxLlRvb2xEZWNsYXJhdGlvbhIMCgRyb290GAwgASgJEg8KB2NvbW1hbmQYDSADKAkSHgoWcmVhZHNfaG9va3NfYW5kX3NraWxscxgOIAEoCBIRCgl0b29sc191cmwYDyABKAkSEwoLdG9vbHNfdG9rZW4YECABKAkiSgoXR2V0QWdlbnRQcm9ncmFtc1JlcXVlc3QSLwoIY29tbWFuZHMYASADKAsyHS5udW1lbi52MS5BZ2VudFByb2dyYW1Db21tYW5kIjcKE0FnZW50UHJvZ3JhbUNvbW1hbmQSDwoHcHJvZ3JhbRgBIAEoCRIPCgdjb21tYW5kGAIgAygJIkQKGEdldEFnZW50UHJvZ3JhbXNSZXNwb25zZRIoCghwcm9ncmFtcxgBIAMoCzIWLm51bWVuLnYxLkFnZW50UHJvZ3JhbSJ7CgxBZ2VudFByb2dyYW0SDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIUCgxpc19pbnN0YWxsZWQYAyABKAgSEgoKaXNfZGVmYXVsdBgEIAEoCBIkCgZtb2RlbHMYBSADKAsyFC5udW1lbi52MS5BZ2VudE1vZGVsIj0KCkFnZW50TW9kZWwSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRISCgppc19kZWZhdWx0GAMgASgIInkKD1Rvb2xEZWNsYXJhdGlvbhIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEgwKBGtpbmQYAyABKAkSDQoFYWJvdXQYBCABKAkSDwoHZWxlbWVudBgFIAEoCRINCgVtYXRjaBgGIAEoCRIMCgR0ZXh0GAcgASgJIjEKGUZpbmlzaENvbnZlcnNhdGlvblJlcXVlc3QSFAoMY29udmVyc2F0aW9uGAEgASgJIhwKGkZpbmlzaENvbnZlcnNhdGlvblJlc3BvbnNlIvkBChBBc2tBZ2VudFJlc3BvbnNlEg4KBHNhaWQYASABKAlIABInCgl0b29sX2NhbGwYAiABKAsyEi5udW1lbi52MS5Ub29sQ2FsbEgAEhEKB3N0b3BwZWQYAyABKAlIABIvCg10b29sX2ZpbmlzaGVkGAQgASgLMhYubnVtZW4udjEuVG9vbEZpbmlzaGVkSAASLwoNbW9kZWxfc3RhcnRlZBgFIAEoCzIWLm51bWVuLnYxLk1vZGVsU3RhcnRlZEgAEi8KDWVkaXRfcHJvZ3Jlc3MYBiABKAsyFi5udW1lbi52MS5FZGl0UHJvZ3Jlc3NIAEIGCgRzdGVwIg4KDFRvb2xGaW5pc2hlZCIOCgxNb2RlbFN0YXJ0ZWQigAEKCFRvb2xDYWxsEgwKBHRvb2wYASABKAkSDQoFYWJvdXQYAiABKAkSDwoHd3JpdHRlbhgDIAEoBRIMCgRwYXRoGAQgASgJEhwKBHNwYW4YBSABKAsyDi5udW1lbi52MS5TcGFuEgwKBGNhbGwYBiABKAkSDAoEa2luZBgHIAEoCSJHCgxFZGl0UHJvZ3Jlc3MSDAoEY2FsbBgBIAEoCRIMCgRwYXRoGAIgASgJEg0KBW1hdGNoGAMgASgJEgwKBHRleHQYBCABKAkiWAoTQWdlbnRUb29sRGVmaW5pdGlvbhIMCgRuYW1lGAEgASgJEhMKC2Rlc2NyaXB0aW9uGAIgASgJEh4KFnBhcmFtZXRlcnNfanNvbl9zY2hlbWEYAyABKAkiQgoTUmVnaXN0ZXJUb29sUmVxdWVzdBIrCgR0b29sGAEgASgLMh0ubnVtZW4udjEuQWdlbnRUb29sRGVmaW5pdGlvbiInChRSZWdpc3RlclRvb2xSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIIi4KGUV4dGVuZFN5c3RlbVByb21wdFJlcXVlc3QSEQoJZXh0ZW5zaW9uGAEgASgJIkIKGkV4dGVuZFN5c3RlbVByb21wdFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSEwoLZnVsbF9wcm9tcHQYAiABKAkiFgoUR2V0QWdlbnRUb29sc1JlcXVlc3QiZgoVR2V0QWdlbnRUb29sc1Jlc3BvbnNlEiwKBXRvb2xzGAEgAygLMh0ubnVtZW4udjEuQWdlbnRUb29sRGVmaW5pdGlvbhIfChdzeXN0ZW1fcHJvbXB0X2V4dGVuc2lvbhgCIAEoCTLjBAoMQWdlbnRTZXJ2aWNlEkMKCEFza0FnZW50EhkubnVtZW4udjEuQXNrQWdlbnRSZXF1ZXN0GhoubnVtZW4udjEuQXNrQWdlbnRSZXNwb25zZTABEl8KEkZpbmlzaENvbnZlcnNhdGlvbhIjLm51bWVuLnYxLkZpbmlzaENvbnZlcnNhdGlvblJlcXVlc3QaJC5udW1lbi52MS5GaW5pc2hDb252ZXJzYXRpb25SZXNwb25zZRJQCg1HZXRBZ2VudFN0YXRlEh4ubnVtZW4udjEuR2V0QWdlbnRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRBZ2VudFN0YXRlUmVzcG9uc2USTQoMUmVnaXN0ZXJUb29sEh0ubnVtZW4udjEuUmVnaXN0ZXJUb29sUmVxdWVzdBoeLm51bWVuLnYxLlJlZ2lzdGVyVG9vbFJlc3BvbnNlEl8KEkV4dGVuZFN5c3RlbVByb21wdBIjLm51bWVuLnYxLkV4dGVuZFN5c3RlbVByb21wdFJlcXVlc3QaJC5udW1lbi52MS5FeHRlbmRTeXN0ZW1Qcm9tcHRSZXNwb25zZRJQCg1HZXRBZ2VudFRvb2xzEh4ubnVtZW4udjEuR2V0QWdlbnRUb29sc1JlcXVlc3QaHy5udW1lbi52MS5HZXRBZ2VudFRvb2xzUmVzcG9uc2USWQoQR2V0QWdlbnRQcm9ncmFtcxIhLm51bWVuLnYxLkdldEFnZW50UHJvZ3JhbXNSZXF1ZXN0GiIubnVtZW4udjEuR2V0QWdlbnRQcm9ncmFtc1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiFgoUR2V0QWdlbnRTdGF0ZVJlcXVlc3QiLAoVR2V0QWdlbnRTdGF0ZVJlc3BvbnNlEhMKC3VucmVhY2hhYmxlGAEgASgJItUCCg9Bc2tBZ2VudFJlcXVlc3QSDgoGcHJvbXB0GAEgASgJEg0KBWZvY3VzGAIgASgJEhQKDGNvbnZlcnNhdGlvbhgDIAEoCRIMCgRtYXJrGAQgASgJEgwKBGZhY2UYBSABKAkSDQoFYWdlbnQYBiABKAkSDQoFbW9kZWwYByABKAkSFAoMaW5zdHJ1Y3Rpb25zGAggASgJEg0KBXRvb2xzGAkgAygJEhEKCW1heF9zdGVwcxgKIAEoBRI0ChF0b29sX2RlY2xhcmF0aW9ucxgLIAMoCzIZLm51bWVuLnYxLlRvb2xEZWNsYXJhdGlvbhIMCgRyb290GAwgASgJEg8KB2NvbW1hbmQYDSADKAkSHgoWcmVhZHNfaG9va3NfYW5kX3NraWxscxgOIAEoCBIRCgl0b29sc191cmwYDyABKAkSEwoLdG9vbHNfdG9rZW4YECABKAkiWgoSQW5zd2VyQWdlbnRSZXF1ZXN0Eg4KBnByb21wdBgBIAEoCRIUCgxpbnN0cnVjdGlvbnMYAiABKAkSDQoFbW9kZWwYAyABKAkSDwoHY29tbWFuZBgEIAMoCSIjChNBbnN3ZXJBZ2VudFJlc3BvbnNlEgwKBHRleHQYASABKAkiSgoXR2V0QWdlbnRQcm9ncmFtc1JlcXVlc3QSLwoIY29tbWFuZHMYASADKAsyHS5udW1lbi52MS5BZ2VudFByb2dyYW1Db21tYW5kIjcKE0FnZW50UHJvZ3JhbUNvbW1hbmQSDwoHcHJvZ3JhbRgBIAEoCRIPCgdjb21tYW5kGAIgAygJIkQKGEdldEFnZW50UHJvZ3JhbXNSZXNwb25zZRIoCghwcm9ncmFtcxgBIAMoCzIWLm51bWVuLnYxLkFnZW50UHJvZ3JhbSJ7CgxBZ2VudFByb2dyYW0SDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIUCgxpc19pbnN0YWxsZWQYAyABKAgSEgoKaXNfZGVmYXVsdBgEIAEoCBIkCgZtb2RlbHMYBSADKAsyFC5udW1lbi52MS5BZ2VudE1vZGVsIj0KCkFnZW50TW9kZWwSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRISCgppc19kZWZhdWx0GAMgASgIInkKD1Rvb2xEZWNsYXJhdGlvbhIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEgwKBGtpbmQYAyABKAkSDQoFYWJvdXQYBCABKAkSDwoHZWxlbWVudBgFIAEoCRINCgVtYXRjaBgGIAEoCRIMCgR0ZXh0GAcgASgJIjEKGUZpbmlzaENvbnZlcnNhdGlvblJlcXVlc3QSFAoMY29udmVyc2F0aW9uGAEgASgJIhwKGkZpbmlzaENvbnZlcnNhdGlvblJlc3BvbnNlIvkBChBBc2tBZ2VudFJlc3BvbnNlEg4KBHNhaWQYASABKAlIABInCgl0b29sX2NhbGwYAiABKAsyEi5udW1lbi52MS5Ub29sQ2FsbEgAEhEKB3N0b3BwZWQYAyABKAlIABIvCg10b29sX2ZpbmlzaGVkGAQgASgLMhYubnVtZW4udjEuVG9vbEZpbmlzaGVkSAASLwoNbW9kZWxfc3RhcnRlZBgFIAEoCzIWLm51bWVuLnYxLk1vZGVsU3RhcnRlZEgAEi8KDWVkaXRfcHJvZ3Jlc3MYBiABKAsyFi5udW1lbi52MS5FZGl0UHJvZ3Jlc3NIAEIGCgRzdGVwIg4KDFRvb2xGaW5pc2hlZCIOCgxNb2RlbFN0YXJ0ZWQigAEKCFRvb2xDYWxsEgwKBHRvb2wYASABKAkSDQoFYWJvdXQYAiABKAkSDwoHd3JpdHRlbhgDIAEoBRIMCgRwYXRoGAQgASgJEhwKBHNwYW4YBSABKAsyDi5udW1lbi52MS5TcGFuEgwKBGNhbGwYBiABKAkSDAoEa2luZBgHIAEoCSJHCgxFZGl0UHJvZ3Jlc3MSDAoEY2FsbBgBIAEoCRIMCgRwYXRoGAIgASgJEg0KBW1hdGNoGAMgASgJEgwKBHRleHQYBCABKAkiWAoTQWdlbnRUb29sRGVmaW5pdGlvbhIMCgRuYW1lGAEgASgJEhMKC2Rlc2NyaXB0aW9uGAIgASgJEh4KFnBhcmFtZXRlcnNfanNvbl9zY2hlbWEYAyABKAkiQgoTUmVnaXN0ZXJUb29sUmVxdWVzdBIrCgR0b29sGAEgASgLMh0ubnVtZW4udjEuQWdlbnRUb29sRGVmaW5pdGlvbiInChRSZWdpc3RlclRvb2xSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIIi4KGUV4dGVuZFN5c3RlbVByb21wdFJlcXVlc3QSEQoJZXh0ZW5zaW9uGAEgASgJIkIKGkV4dGVuZFN5c3RlbVByb21wdFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSEwoLZnVsbF9wcm9tcHQYAiABKAkiFgoUR2V0QWdlbnRUb29sc1JlcXVlc3QiZgoVR2V0QWdlbnRUb29sc1Jlc3BvbnNlEiwKBXRvb2xzGAEgAygLMh0ubnVtZW4udjEuQWdlbnRUb29sRGVmaW5pdGlvbhIfChdzeXN0ZW1fcHJvbXB0X2V4dGVuc2lvbhgCIAEoCTKvBQoMQWdlbnRTZXJ2aWNlEkMKCEFza0FnZW50EhkubnVtZW4udjEuQXNrQWdlbnRSZXF1ZXN0GhoubnVtZW4udjEuQXNrQWdlbnRSZXNwb25zZTABEl8KEkZpbmlzaENvbnZlcnNhdGlvbhIjLm51bWVuLnYxLkZpbmlzaENvbnZlcnNhdGlvblJlcXVlc3QaJC5udW1lbi52MS5GaW5pc2hDb252ZXJzYXRpb25SZXNwb25zZRJQCg1HZXRBZ2VudFN0YXRlEh4ubnVtZW4udjEuR2V0QWdlbnRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRBZ2VudFN0YXRlUmVzcG9uc2USTQoMUmVnaXN0ZXJUb29sEh0ubnVtZW4udjEuUmVnaXN0ZXJUb29sUmVxdWVzdBoeLm51bWVuLnYxLlJlZ2lzdGVyVG9vbFJlc3BvbnNlEl8KEkV4dGVuZFN5c3RlbVByb21wdBIjLm51bWVuLnYxLkV4dGVuZFN5c3RlbVByb21wdFJlcXVlc3QaJC5udW1lbi52MS5FeHRlbmRTeXN0ZW1Qcm9tcHRSZXNwb25zZRJQCg1HZXRBZ2VudFRvb2xzEh4ubnVtZW4udjEuR2V0QWdlbnRUb29sc1JlcXVlc3QaHy5udW1lbi52MS5HZXRBZ2VudFRvb2xzUmVzcG9uc2USWQoQR2V0QWdlbnRQcm9ncmFtcxIhLm51bWVuLnYxLkdldEFnZW50UHJvZ3JhbXNSZXF1ZXN0GiIubnVtZW4udjEuR2V0QWdlbnRQcm9ncmFtc1Jlc3BvbnNlEkoKC0Fuc3dlckFnZW50EhwubnVtZW4udjEuQW5zd2VyQWdlbnRSZXF1ZXN0Gh0ubnVtZW4udjEuQW5zd2VyQWdlbnRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetAgentStateRequest
@@ -184,6 +184,66 @@ export const AskAgentRequestSchema: GenMessage<AskAgentRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_agent, 2);
 
 /**
+ * @generated from message numen.v1.AnswerAgentRequest
+ */
+export type AnswerAgentRequest = Message<"numen.v1.AnswerAgentRequest"> & {
+  /**
+   * The question, as it is put to the program.
+   *
+   * @generated from field: string prompt = 1;
+   */
+  prompt: string;
+
+  /**
+   * What the program is told about the answer it gives.
+   *
+   * @generated from field: string instructions = 2;
+   */
+  instructions: string;
+
+  /**
+   * Which model answers. Empty leaves the choice to the program.
+   *
+   * @generated from field: string model = 3;
+   */
+  model: string;
+
+  /**
+   * The command line that starts the program, as the installation set it. Empty starts the program
+   * where the provider finds it.
+   *
+   * @generated from field: repeated string command = 4;
+   */
+  command: string[];
+};
+
+/**
+ * Describes the message numen.v1.AnswerAgentRequest.
+ * Use `create(AnswerAgentRequestSchema)` to create a new message.
+ */
+export const AnswerAgentRequestSchema: GenMessage<AnswerAgentRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 3);
+
+/**
+ * @generated from message numen.v1.AnswerAgentResponse
+ */
+export type AnswerAgentResponse = Message<"numen.v1.AnswerAgentResponse"> & {
+  /**
+   * What the program wrote, without the space around it.
+   *
+   * @generated from field: string text = 1;
+   */
+  text: string;
+};
+
+/**
+ * Describes the message numen.v1.AnswerAgentResponse.
+ * Use `create(AnswerAgentResponseSchema)` to create a new message.
+ */
+export const AnswerAgentResponseSchema: GenMessage<AnswerAgentResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 4);
+
+/**
  * @generated from message numen.v1.GetAgentProgramsRequest
  */
 export type GetAgentProgramsRequest = Message<"numen.v1.GetAgentProgramsRequest"> & {
@@ -201,7 +261,7 @@ export type GetAgentProgramsRequest = Message<"numen.v1.GetAgentProgramsRequest"
  * Use `create(GetAgentProgramsRequestSchema)` to create a new message.
  */
 export const GetAgentProgramsRequestSchema: GenMessage<GetAgentProgramsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 3);
+  messageDesc(file_numen_v1_agent, 5);
 
 /**
  * AgentProgramCommand is the command line the installation set for one program.
@@ -227,7 +287,7 @@ export type AgentProgramCommand = Message<"numen.v1.AgentProgramCommand"> & {
  * Use `create(AgentProgramCommandSchema)` to create a new message.
  */
 export const AgentProgramCommandSchema: GenMessage<AgentProgramCommand> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 4);
+  messageDesc(file_numen_v1_agent, 6);
 
 /**
  * @generated from message numen.v1.GetAgentProgramsResponse
@@ -244,7 +304,7 @@ export type GetAgentProgramsResponse = Message<"numen.v1.GetAgentProgramsRespons
  * Use `create(GetAgentProgramsResponseSchema)` to create a new message.
  */
 export const GetAgentProgramsResponseSchema: GenMessage<GetAgentProgramsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 5);
+  messageDesc(file_numen_v1_agent, 7);
 
 /**
  * AgentProgram is one program a provider runs.
@@ -293,7 +353,7 @@ export type AgentProgram = Message<"numen.v1.AgentProgram"> & {
  * Use `create(AgentProgramSchema)` to create a new message.
  */
 export const AgentProgramSchema: GenMessage<AgentProgram> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 6);
+  messageDesc(file_numen_v1_agent, 8);
 
 /**
  * AgentModel is one model a program offers.
@@ -324,7 +384,7 @@ export type AgentModel = Message<"numen.v1.AgentModel"> & {
  * Use `create(AgentModelSchema)` to create a new message.
  */
 export const AgentModelSchema: GenMessage<AgentModel> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 7);
+  messageDesc(file_numen_v1_agent, 9);
 
 /**
  * ToolDeclaration is how one vault tool is spoken about to a person and how a call of it is read
@@ -389,7 +449,7 @@ export type ToolDeclaration = Message<"numen.v1.ToolDeclaration"> & {
  * Use `create(ToolDeclarationSchema)` to create a new message.
  */
 export const ToolDeclarationSchema: GenMessage<ToolDeclaration> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 8);
+  messageDesc(file_numen_v1_agent, 10);
 
 /**
  * @generated from message numen.v1.FinishConversationRequest
@@ -409,7 +469,7 @@ export type FinishConversationRequest = Message<"numen.v1.FinishConversationRequ
  * Use `create(FinishConversationRequestSchema)` to create a new message.
  */
 export const FinishConversationRequestSchema: GenMessage<FinishConversationRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 9);
+  messageDesc(file_numen_v1_agent, 11);
 
 /**
  * @generated from message numen.v1.FinishConversationResponse
@@ -422,7 +482,7 @@ export type FinishConversationResponse = Message<"numen.v1.FinishConversationRes
  * Use `create(FinishConversationResponseSchema)` to create a new message.
  */
 export const FinishConversationResponseSchema: GenMessage<FinishConversationResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 10);
+  messageDesc(file_numen_v1_agent, 12);
 
 /**
  * AskAgentResponse is one step of the work: one thing the agent said, did, or
@@ -494,7 +554,7 @@ export type AskAgentResponse = Message<"numen.v1.AskAgentResponse"> & {
  * Use `create(AskAgentResponseSchema)` to create a new message.
  */
 export const AskAgentResponseSchema: GenMessage<AskAgentResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 11);
+  messageDesc(file_numen_v1_agent, 13);
 
 /**
  * ToolFinished and ModelStarted carry no fields.
@@ -509,7 +569,7 @@ export type ToolFinished = Message<"numen.v1.ToolFinished"> & {
  * Use `create(ToolFinishedSchema)` to create a new message.
  */
 export const ToolFinishedSchema: GenMessage<ToolFinished> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 12);
+  messageDesc(file_numen_v1_agent, 14);
 
 /**
  * @generated from message numen.v1.ModelStarted
@@ -522,7 +582,7 @@ export type ModelStarted = Message<"numen.v1.ModelStarted"> & {
  * Use `create(ModelStartedSchema)` to create a new message.
  */
 export const ModelStartedSchema: GenMessage<ModelStarted> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 13);
+  messageDesc(file_numen_v1_agent, 15);
 
 /**
  * ToolCall is a tool in the agent's hands.
@@ -594,7 +654,7 @@ export type ToolCall = Message<"numen.v1.ToolCall"> & {
  * Use `create(ToolCallSchema)` to create a new message.
  */
 export const ToolCallSchema: GenMessage<ToolCall> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 14);
+  messageDesc(file_numen_v1_agent, 16);
 
 /**
  * EditProgress is a change to a note while the call writing it is still arriving.
@@ -636,7 +696,7 @@ export type EditProgress = Message<"numen.v1.EditProgress"> & {
  * Use `create(EditProgressSchema)` to create a new message.
  */
 export const EditProgressSchema: GenMessage<EditProgress> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 15);
+  messageDesc(file_numen_v1_agent, 17);
 
 /**
  * AgentToolDefinition describes a tool registered with or provided by the agent service.
@@ -665,7 +725,7 @@ export type AgentToolDefinition = Message<"numen.v1.AgentToolDefinition"> & {
  * Use `create(AgentToolDefinitionSchema)` to create a new message.
  */
 export const AgentToolDefinitionSchema: GenMessage<AgentToolDefinition> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 16);
+  messageDesc(file_numen_v1_agent, 18);
 
 /**
  * @generated from message numen.v1.RegisterToolRequest
@@ -682,7 +742,7 @@ export type RegisterToolRequest = Message<"numen.v1.RegisterToolRequest"> & {
  * Use `create(RegisterToolRequestSchema)` to create a new message.
  */
 export const RegisterToolRequestSchema: GenMessage<RegisterToolRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 17);
+  messageDesc(file_numen_v1_agent, 19);
 
 /**
  * @generated from message numen.v1.RegisterToolResponse
@@ -699,7 +759,7 @@ export type RegisterToolResponse = Message<"numen.v1.RegisterToolResponse"> & {
  * Use `create(RegisterToolResponseSchema)` to create a new message.
  */
 export const RegisterToolResponseSchema: GenMessage<RegisterToolResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 18);
+  messageDesc(file_numen_v1_agent, 20);
 
 /**
  * @generated from message numen.v1.ExtendSystemPromptRequest
@@ -716,7 +776,7 @@ export type ExtendSystemPromptRequest = Message<"numen.v1.ExtendSystemPromptRequ
  * Use `create(ExtendSystemPromptRequestSchema)` to create a new message.
  */
 export const ExtendSystemPromptRequestSchema: GenMessage<ExtendSystemPromptRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 19);
+  messageDesc(file_numen_v1_agent, 21);
 
 /**
  * @generated from message numen.v1.ExtendSystemPromptResponse
@@ -738,7 +798,7 @@ export type ExtendSystemPromptResponse = Message<"numen.v1.ExtendSystemPromptRes
  * Use `create(ExtendSystemPromptResponseSchema)` to create a new message.
  */
 export const ExtendSystemPromptResponseSchema: GenMessage<ExtendSystemPromptResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 20);
+  messageDesc(file_numen_v1_agent, 22);
 
 /**
  * @generated from message numen.v1.GetAgentToolsRequest
@@ -751,7 +811,7 @@ export type GetAgentToolsRequest = Message<"numen.v1.GetAgentToolsRequest"> & {
  * Use `create(GetAgentToolsRequestSchema)` to create a new message.
  */
 export const GetAgentToolsRequestSchema: GenMessage<GetAgentToolsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 21);
+  messageDesc(file_numen_v1_agent, 23);
 
 /**
  * @generated from message numen.v1.GetAgentToolsResponse
@@ -773,7 +833,7 @@ export type GetAgentToolsResponse = Message<"numen.v1.GetAgentToolsResponse"> & 
  * Use `create(GetAgentToolsResponseSchema)` to create a new message.
  */
 export const GetAgentToolsResponseSchema: GenMessage<GetAgentToolsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 22);
+  messageDesc(file_numen_v1_agent, 24);
 
 /**
  * AgentService gives a task to the agent working this vault.
@@ -855,6 +915,17 @@ export const AgentService: GenService<{
     methodKind: "unary";
     input: typeof GetAgentProgramsRequestSchema;
     output: typeof GetAgentProgramsResponseSchema;
+  },
+  /**
+   * AnswerAgent puts one question to a program that has no tools, no vault and no standing
+   * instructions, and answers with what it wrote.
+   *
+   * @generated from rpc numen.v1.AgentService.AnswerAgent
+   */
+  answerAgent: {
+    methodKind: "unary";
+    input: typeof AnswerAgentRequestSchema;
+    output: typeof AnswerAgentResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_agent, 0);

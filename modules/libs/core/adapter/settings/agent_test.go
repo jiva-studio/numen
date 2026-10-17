@@ -2,10 +2,12 @@ package settings_test
 
 import (
 	"encoding/json"
+	"errors"
 	"slices"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // read is the section as the file gives it over the defaults.
@@ -179,4 +181,52 @@ func jsonEqual(a, b map[string]any) bool {
 	left, errLeft := json.Marshal(a)
 	right, errRight := json.Marshal(b)
 	return errLeft == nil && errRight == nil && string(left) == string(right)
+}
+
+// The program that answers is the one the settings name, and the providers are asked only where they
+// leave the choice to the default.
+func TestTheProgramThatAnswersIsTheOneTheSettingsNameElseTheDefault(t *testing.T) {
+	asked := 0
+	listed := func() ([]port.AgentProgram, error) {
+		asked++
+		return []port.AgentProgram{{Name: "first"}, {Name: "marked", IsDefault: true}}, nil
+	}
+
+	for name, said := range map[string]struct {
+		file  string
+		want  string
+		asked int
+		err   error
+	}{
+		"named":               {`{"use": "codex"}`, "codex", 0, nil},
+		"left to the default": {`{}`, "marked", 1, nil},
+		"named none":          {`{"use": ""}`, "", 0, settings.ErrNoAgent},
+	} {
+		t.Run(name, func(t *testing.T) {
+			asked = 0
+			got, err := read(t, said.file).GetAnswering(listed)
+			if got != said.want || !errors.Is(err, said.err) || asked != said.asked {
+				t.Errorf("got %q, %v after asking %d times", got, err, asked)
+			}
+		})
+	}
+
+	none := func() ([]port.AgentProgram, error) { return nil, nil }
+	if _, err := read(t, `{}`).GetAnswering(none); !errors.Is(err, settings.ErrNoProgram) {
+		t.Errorf("with no program listed: %v", err)
+	}
+}
+
+// The program an installation that names none answers with is the one the providers mark, else the
+// first, and none where they list none.
+func TestTheDefaultProgramIsTheOneMarkedElseTheFirst(t *testing.T) {
+	if got, err := settings.ChooseProgram([]port.AgentProgram{{Name: "first"}, {Name: "marked", IsDefault: true}}); got != "marked" || err != nil {
+		t.Errorf("got %q, %v", got, err)
+	}
+	if got, err := settings.ChooseProgram([]port.AgentProgram{{Name: "first"}, {Name: "second"}}); got != "first" || err != nil {
+		t.Errorf("got %q, %v", got, err)
+	}
+	if _, err := settings.ChooseProgram(nil); !errors.Is(err, settings.ErrNoProgram) {
+		t.Errorf("with no program listed: %v", err)
+	}
 }

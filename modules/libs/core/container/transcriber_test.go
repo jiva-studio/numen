@@ -1,20 +1,43 @@
 package container
 
 import (
-	"errors"
+	"context"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
+
+// questions is the plugins that run agent programs, answering nothing and writing down every
+// question put to them.
+type questions struct {
+	port.AgentProvider
+
+	mu    sync.Mutex
+	asked []port.Question
+}
+
+func (q *questions) Answer(_ context.Context, question port.Question) (string, error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.asked = append(q.asked, question)
+	return "", nil
+}
+
+func (q *questions) getLast() port.Question {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	return q.asked[len(q.asked)-1]
+}
 
 // A transcript is put right at the profile the settings name for speech, and
 // what puts it right is told it is proofreading speech. The profile named for a
-// scanned reading is another setting and is not read here.
+// scanned reading is another setting and is read for a scan.
 func TestATranscriptIsPutRightWithTheProfileNamedForSpeech(t *testing.T) {
 	cfg := Config{ServiceDir: ".numen"}
 	cfg.Proofreading = DefaultProofreading()
@@ -24,22 +47,29 @@ func TestATranscriptIsPutRightWithTheProfileNamedForSpeech(t *testing.T) {
 	}
 	cfg.TranscriptProofreading = Proofread{Profile: "speech"}
 	cfg.ScanProofreading = Proofread{Profile: "scans", IsAutomatic: true}
+	asked := &questions{}
+	cfg.Agents = asked
+	cfg.Agent = settings.Agent{Use: settings.UseProgram("claude")}
 
-	var opened ProofreaderSpec
-	cfg.AgentProofreader = func(said ProofreaderSpec) (port.Proofreader, error) {
-		opened = said
-		return nil, errors.New("nothing on this machine puts a transcript right")
-	}
-
-	held := cfg.OpenTranscriptionWorker(t.Context(), nil, run.NewTasks(), nil)
-	_, _ = held.Proofread(t.Context(), domain.Vault{ID: "v", Path: t.TempDir()}, "talks/one.mp3")
-	held.Wait()
-
-	if opened.Model != "one model" {
-		t.Errorf("a transcript was put right at the profile using %q", opened.Model)
-	}
-	if opened.Instruction != proofread.SpeechInstruction {
-		t.Error("what puts a transcript right was not told it is proofreading speech")
+	for _, one := range []struct {
+		what        string
+		by          func(string) (port.Proofreader, error)
+		instruction string
+		model       string
+	}{
+		{"speech", cfg.GetSpeechProofreading().By, proofread.SpeechInstruction, "one model"},
+		{"a scan", cfg.GetScanProofreading().By, proofread.ScanInstruction, "another model"},
+	} {
+		proofreader, err := one.by(one.instruction)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := proofreader.Proofread(t.Context(), []domain.ProofreadBatch{{Number: 1, Prompt: "a line"}}); err != nil {
+			t.Fatal(err)
+		}
+		if got := asked.getLast(); got.Model != one.model || got.Instructions != one.instruction {
+			t.Errorf("%s was put right at %q told %q", one.what, got.Model, got.Instructions)
+		}
 	}
 }
 

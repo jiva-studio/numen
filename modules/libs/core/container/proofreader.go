@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/agentproofreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
@@ -14,15 +16,6 @@ import (
 var (
 	errProofreadingUnavailable = errors.New("proofreading plugin is unavailable or not installed")
 )
-
-// ProofreaderSpec is what the platform is told to start: the command line,
-// the model it answers with, and what it is being asked to put right.
-type ProofreaderSpec struct {
-	Command     []string
-	Model       string
-	Instruction string
-	InFlight    int
-}
 
 // getProfile is the place a recognition is put right at, by the name a consumer
 // names it under.
@@ -83,16 +76,27 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 		}
 		return nil, errProofreadingUnavailable
 	}
-	if c.AgentProofreader == nil {
-		return nil, fmt.Errorf(
-			"proofreading profile %q reaches a command line this application does not start", name)
+	return c.openAgentProofreader(name, profile, instruction)
+}
+
+// openAgentProofreader opens a profile that reaches the program a person already has installed,
+// through the program the settings name for the agent, or the default one where they name none.
+func (c Config) openAgentProofreader(name string, profile Profile, instruction string) (port.Proofreader, error) {
+	provider := c.AgentProvider()
+	if provider == nil {
+		return nil, fmt.Errorf("proofreading profile %q reaches an agent program, and no agent plugin is available", name)
 	}
-	return c.AgentProofreader(ProofreaderSpec{
+	if !c.Agent.IsNamed() {
+		return nil, fmt.Errorf("proofreading profile %q: %w", name, settings.ErrNoAgent)
+	}
+	return &agentproofreader.Proofreader{
+		Answerer:    provider,
+		Program:     c.Agent.GetUse(),
 		Command:     profile.Command,
 		Model:       profile.Model,
 		Instruction: instruction,
 		InFlight:    profile.InFlight,
-	})
+	}, nil
 }
 
 // GetScanProofreading is what a document's reading is put right with: the

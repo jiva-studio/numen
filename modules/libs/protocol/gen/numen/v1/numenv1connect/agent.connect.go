@@ -58,6 +58,9 @@ const (
 	// AgentServiceGetAgentProgramsProcedure is the fully-qualified name of the AgentService's
 	// GetAgentPrograms RPC.
 	AgentServiceGetAgentProgramsProcedure = "/numen.v1.AgentService/GetAgentPrograms"
+	// AgentServiceAnswerAgentProcedure is the fully-qualified name of the AgentService's AnswerAgent
+	// RPC.
+	AgentServiceAnswerAgentProcedure = "/numen.v1.AgentService/AnswerAgent"
 )
 
 // AgentServiceClient is a client for the numen.v1.AgentService service.
@@ -81,6 +84,9 @@ type AgentServiceClient interface {
 	// GetAgentPrograms lists the programs this provider runs, whether each is installed on this
 	// machine, and the models each offers.
 	GetAgentPrograms(context.Context, *connect.Request[v1.GetAgentProgramsRequest]) (*connect.Response[v1.GetAgentProgramsResponse], error)
+	// AnswerAgent puts one question to a program that has no tools, no vault and no standing
+	// instructions, and answers with what it wrote.
+	AnswerAgent(context.Context, *connect.Request[v1.AnswerAgentRequest]) (*connect.Response[v1.AnswerAgentResponse], error)
 }
 
 // NewAgentServiceClient constructs a client for the numen.v1.AgentService service. By default, it
@@ -136,6 +142,12 @@ func NewAgentServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(agentServiceMethods.ByName("GetAgentPrograms")),
 			connect.WithClientOptions(opts...),
 		),
+		answerAgent: connect.NewClient[v1.AnswerAgentRequest, v1.AnswerAgentResponse](
+			httpClient,
+			baseURL+AgentServiceAnswerAgentProcedure,
+			connect.WithSchema(agentServiceMethods.ByName("AnswerAgent")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -148,6 +160,7 @@ type agentServiceClient struct {
 	extendSystemPrompt *connect.Client[v1.ExtendSystemPromptRequest, v1.ExtendSystemPromptResponse]
 	getAgentTools      *connect.Client[v1.GetAgentToolsRequest, v1.GetAgentToolsResponse]
 	getAgentPrograms   *connect.Client[v1.GetAgentProgramsRequest, v1.GetAgentProgramsResponse]
+	answerAgent        *connect.Client[v1.AnswerAgentRequest, v1.AnswerAgentResponse]
 }
 
 // AskAgent calls numen.v1.AgentService.AskAgent.
@@ -185,6 +198,11 @@ func (c *agentServiceClient) GetAgentPrograms(ctx context.Context, req *connect.
 	return c.getAgentPrograms.CallUnary(ctx, req)
 }
 
+// AnswerAgent calls numen.v1.AgentService.AnswerAgent.
+func (c *agentServiceClient) AnswerAgent(ctx context.Context, req *connect.Request[v1.AnswerAgentRequest]) (*connect.Response[v1.AnswerAgentResponse], error) {
+	return c.answerAgent.CallUnary(ctx, req)
+}
+
 // AgentServiceHandler is an implementation of the numen.v1.AgentService service.
 type AgentServiceHandler interface {
 	// AskAgent hands over a task and reports what the agent does, in the order it
@@ -206,6 +224,9 @@ type AgentServiceHandler interface {
 	// GetAgentPrograms lists the programs this provider runs, whether each is installed on this
 	// machine, and the models each offers.
 	GetAgentPrograms(context.Context, *connect.Request[v1.GetAgentProgramsRequest]) (*connect.Response[v1.GetAgentProgramsResponse], error)
+	// AnswerAgent puts one question to a program that has no tools, no vault and no standing
+	// instructions, and answers with what it wrote.
+	AnswerAgent(context.Context, *connect.Request[v1.AnswerAgentRequest]) (*connect.Response[v1.AnswerAgentResponse], error)
 }
 
 // NewAgentServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -257,6 +278,12 @@ func NewAgentServiceHandler(svc AgentServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(agentServiceMethods.ByName("GetAgentPrograms")),
 		connect.WithHandlerOptions(opts...),
 	)
+	agentServiceAnswerAgentHandler := connect.NewUnaryHandler(
+		AgentServiceAnswerAgentProcedure,
+		svc.AnswerAgent,
+		connect.WithSchema(agentServiceMethods.ByName("AnswerAgent")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.AgentService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AgentServiceAskAgentProcedure:
@@ -273,6 +300,8 @@ func NewAgentServiceHandler(svc AgentServiceHandler, opts ...connect.HandlerOpti
 			agentServiceGetAgentToolsHandler.ServeHTTP(w, r)
 		case AgentServiceGetAgentProgramsProcedure:
 			agentServiceGetAgentProgramsHandler.ServeHTTP(w, r)
+		case AgentServiceAnswerAgentProcedure:
+			agentServiceAnswerAgentHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -308,4 +337,8 @@ func (UnimplementedAgentServiceHandler) GetAgentTools(context.Context, *connect.
 
 func (UnimplementedAgentServiceHandler) GetAgentPrograms(context.Context, *connect.Request[v1.GetAgentProgramsRequest]) (*connect.Response[v1.GetAgentProgramsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AgentService.GetAgentPrograms is not implemented"))
+}
+
+func (UnimplementedAgentServiceHandler) AnswerAgent(context.Context, *connect.Request[v1.AnswerAgentRequest]) (*connect.Response[v1.AnswerAgentResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AgentService.AnswerAgent is not implemented"))
 }

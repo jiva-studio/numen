@@ -161,9 +161,32 @@ func GetDefaultProgram(programs []AgentProgram) (AgentProgram, bool) {
 	return programs[0], true
 }
 
-// AgentProvider runs tasks on the programs that plugins provide, and says which programs those are.
+// Question is one question put to a program that has no tools, no vault and no standing
+// instructions.
+type Question struct {
+	// Program is the program that answers, by the name it is listed under.
+	Program string
+	// Prompt is the question.
+	Prompt string
+	// Instructions say what the program does with the question.
+	Instructions string
+	// Model is which model answers. Empty leaves the choice to the program.
+	Model string
+	// Command is the command line that starts the program. Empty starts the program where the
+	// provider finds it.
+	Command []string
+}
+
+// Answerer answers a question with the text the program wrote.
+type Answerer interface {
+	Answer(ctx context.Context, question Question) (string, error)
+}
+
+// AgentProvider runs tasks on the programs that plugins provide, answers questions put to them, and
+// says which programs those are.
 type AgentProvider interface {
 	Agent
+	Answerer
 	// GetPrograms lists the programs the providers run, with the models each offers. Commands are the
 	// command lines the installation set, by program. A provider that cannot be reached lists none,
 	// and the error says so beside the programs of the others.

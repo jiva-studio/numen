@@ -100,7 +100,7 @@ linters:
           files:
             - "**/adapter/index/**"
             - "**/adapter/settings/**"
-            - "**/adapter/agent/**"
+            - "**/internal/adapter/agentproofreader/**"
             - "**/internal/adapter/appstate/**"
             - "**/internal/adapter/download/**"
             - "**/internal/adapter/embed/**"
