@@ -330,7 +330,7 @@ func (s *Services) servePluginAsset(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	setPluginAssetContentType(w, assetPath)
+	setPluginAssetContentType(w, parts[1])
 	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
 }
 
