@@ -61,8 +61,6 @@ var (
 	manifestVersionPattern = regexp.MustCompile(`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`)
 )
 
-var validRuntimes = []string{RuntimeONNX}
-
 var validSettingTypes = []string{"boolean", "string", "number", "enum", "select", "range"}
 
 // PluginLifecycle defines when the host evicts an idle plugin from memory.
@@ -285,8 +283,8 @@ func (m PluginManifest) listRuntimeIssues() []error {
 	seen := make(map[string]bool, len(m.Runtimes))
 	for _, name := range m.Runtimes {
 		switch {
-		case !slices.Contains(validRuntimes, name):
-			issues = append(issues, fmt.Errorf("%w: %q, expected one of %s", ErrInvalidRuntime, name, strings.Join(validRuntimes, ", ")))
+		case name != RuntimeONNX:
+			issues = append(issues, fmt.Errorf("%w: %q, expected %q", ErrInvalidRuntime, name, RuntimeONNX))
 		case seen[name]:
 			issues = append(issues, fmt.Errorf("%w: %s is declared twice", ErrInvalidRuntime, name))
 		}

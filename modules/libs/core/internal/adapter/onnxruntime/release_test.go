@@ -69,14 +69,16 @@ func TestAnExplicitMachineListIsTheOnlyPlaceSearched(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	old := nixStorePattern
-	nixStorePattern = filepath.Join(fakeNix, "*-onnxruntime-*", "lib")
-	t.Cleanup(func() { nixStorePattern = old })
-
-	if at := findOnMachine(t.TempDir(), "", "", []string{}); at != "" {
-		t.Errorf("findOnMachine() = %q with explicit machine folders, wanted empty", at)
+	testPattern := filepath.Join(fakeNix, "*-onnxruntime-*", "lib")
+	if at := findOnMachineInStore(t.TempDir(), "", "", []string{}, testPattern); at != "" {
+		t.Errorf("findOnMachineInStore() = %q with explicit empty machine folders, wanted empty", at)
 	}
-	if at := findOnMachine(t.TempDir(), "", "", nil); at != libPath {
-		t.Errorf("findOnMachine() = %q without explicit machine folders, want %q", at, libPath)
+	emptyMachine := []string{t.TempDir()}
+	if at := findOnMachineInStore(t.TempDir(), "", "", emptyMachine, testPattern); at != "" {
+		t.Errorf("findOnMachineInStore() = %q with explicit machine folders, wanted empty", at)
+	}
+	fakeMachine := []string{t.TempDir()}
+	if at := findOnMachineInStore(t.TempDir(), "", "", fakeMachine, testPattern); at != "" {
+		t.Errorf("findOnMachineInStore() = %q with fake machine folders, wanted empty", at)
 	}
 }
