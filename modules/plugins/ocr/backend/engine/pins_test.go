@@ -39,17 +39,68 @@ func TestAModelAPersonNamedIsNotPinned(t *testing.T) {
 }
 
 func TestIsFetchedFindsAPinnedModelUnderItsSum(t *testing.T) {
+	pinTestModel(t, "weights")
 	dir := t.TempDir()
-	cfg := Defaults()
-	cfg.Dir = dir
-	if IsFetched(cfg, cfg.Recognise) {
+	cfg := Config{Dir: dir}
+	held := RecogniserModel{Name: pinnedTestAddress}
+	if IsFetched(cfg, held) {
 		t.Fatal("an empty folder holds the model")
 	}
-	at := filepath.Join(dir, models.GetCacheName(recogDefault, getPinnedSum(recogDefault)))
-	if err := os.WriteFile(at, []byte("x"), 0o644); err != nil {
+	at := filepath.Join(dir, models.GetCacheName(pinnedTestAddress, getPinnedSum(pinnedTestAddress)))
+	if err := os.WriteFile(at, []byte("weights"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if !IsFetched(cfg, cfg.Recognise) {
+	if !IsFetched(cfg, held) {
 		t.Fatal("the pinned model in the folder is not found")
+	}
+}
+
+func TestIsFetchedRefusesAPinnedModelWithAnotherSum(t *testing.T) {
+	pinTestModel(t, "weights")
+	dir := t.TempDir()
+	at := filepath.Join(dir, models.GetCacheName(pinnedTestAddress, getPinnedSum(pinnedTestAddress)))
+	if err := os.WriteFile(at, []byte("corrupt"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if IsFetched(Config{Dir: dir}, RecogniserModel{Name: pinnedTestAddress}) {
+		t.Fatal("a file with another sum counts as fetched")
+	}
+}
+
+func TestIsFetchedFindsAModelBesideTheApplicationOnlyWithThePinnedSum(t *testing.T) {
+	pinTestModel(t, "weights")
+	dir := t.TempDir()
+	cfg := Config{Dir: dir}
+	held := RecogniserModel{Name: pinnedTestAddress}
+	if err := os.WriteFile(filepath.Join(dir, "model.onnx"), []byte("other"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if IsFetched(cfg, held) {
+		t.Fatal("a file with another sum counts as fetched")
+	}
+	if err := os.WriteFile(filepath.Join(dir, "model.onnx"), []byte("weights"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if !IsFetched(cfg, held) {
+		t.Fatal("the pinned file is not found")
+	}
+}
+
+func TestIsFetchedOfAPathOrAnUnnamedModel(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "rec.onnx")
+	if IsFetched(Config{}, RecogniserModel{Path: file}) {
+		t.Fatal("a missing path counts as fetched")
+	}
+	if err := os.WriteFile(file, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if !IsFetched(Config{}, RecogniserModel{Path: file}) {
+		t.Fatal("a present path does not count")
+	}
+	if IsFetched(Config{}, RecogniserModel{}) {
+		t.Fatal("an unnamed model counts as fetched")
+	}
+	if IsFetched(Config{Dir: t.TempDir()}, RecogniserModel{Name: "rec-model-not-here.onnx"}) {
+		t.Fatal("a name that is no address and no file counts as fetched")
 	}
 }

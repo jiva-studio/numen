@@ -3,12 +3,14 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // The environment variables a person sets to move, cap or switch off the
@@ -25,20 +27,20 @@ const (
 // DefaultQuota is the size of the models folder when EnvQuota names none.
 const DefaultQuota int64 = 32 << 30
 
-// homeDir is the models folder under the platform's cache directory.
+// homeDir is the models folder under the application data directory.
 const homeDir = "numen/models"
 
 // GetHome returns the one folder the plugins share their models in: EnvDir, or
-// numen/models under the platform's cache directory.
+// numen/models under the application data directory.
 func GetHome() (string, error) {
 	if dir := os.Getenv(EnvDir); dir != "" {
 		return dir, nil
 	}
-	cache, err := os.UserCacheDir()
+	base, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(cache, filepath.FromSlash(homeDir)), nil
+	return filepath.Join(base, filepath.FromSlash(homeDir)), nil
 }
 
 // IsOffline reports whether EnvOffline forbids fetching.
@@ -58,26 +60,74 @@ func GetQuota() int64 {
 	return DefaultQuota
 }
 
-// GetUsage returns the bytes the files under dir hold. A folder that does not
-// exist holds none.
-func GetUsage(dir string) int64 {
+// reserveSuffix names the file beside a download that says how many bytes the
+// download will hold, and staleReservation is how long a reservation that is
+// not touched keeps counting.
+const (
+	reserveSuffix    = ".reserve"
+	staleReservation = 10 * time.Minute
+)
+
+// GetUsage returns the bytes the files under dir hold, and the bytes the
+// downloads in progress under it have reserved and not yet written. A folder
+// that does not exist holds none.
+func GetUsage(dir string) (int64, error) {
 	var sum int64
-	_ = filepath.WalkDir(dir, func(_ string, entry fs.DirEntry, err error) error {
-		if err != nil || entry.IsDir() {
+	err := filepath.WalkDir(dir, func(name string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				return nil
+			}
+			return err
+		}
+		if entry.IsDir() {
 			return nil
 		}
-		if info, err := entry.Info(); err == nil {
-			sum += info.Size()
+		info, err := entry.Info()
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				return nil
+			}
+			return err
+		}
+		sum += info.Size()
+		if strings.HasSuffix(name, reserveSuffix) {
+			sum += getUnwritten(name, info)
 		}
 		return nil
 	})
-	return sum
+	return sum, err
+}
+
+// getUnwritten returns the bytes a live reservation has promised and its
+// download has not yet written.
+func getUnwritten(reservation string, info fs.FileInfo) int64 {
+	if time.Since(info.ModTime()) > staleReservation {
+		return 0
+	}
+	raw, err := os.ReadFile(reservation)
+	if err != nil {
+		return 0
+	}
+	promised, err := strconv.ParseInt(strings.TrimSpace(string(raw)), 10, 64)
+	if err != nil {
+		return 0
+	}
+	var written int64
+	if part, err := os.Stat(strings.TrimSuffix(reservation, reserveSuffix)); err == nil {
+		written = part.Size()
+	}
+	return max(promised-written, 0)
 }
 
 // CheckQuota returns an error when need more bytes would take dir past the quota.
 func CheckQuota(dir string, need int64) error {
 	limit := GetQuota()
-	if used := GetUsage(dir); used+need > limit {
+	used, err := GetUsage(dir)
+	if err != nil {
+		return fmt.Errorf("counting the bytes under %s: %w", dir, err)
+	}
+	if used+need > limit {
 		return fmt.Errorf("%s holds %d bytes, and %d more would pass the %d the %s allows", dir, used, need, limit, EnvQuota)
 	}
 	return nil

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -52,18 +53,27 @@ func IsAddress(name string) bool {
 }
 
 // GetCacheName returns the file name an address is kept under. A pinned
-// address is kept under its sum, so a file that is present has the sum it was
-// pinned to; any other is kept under a digest of the address.
+// address is kept under its sum; any other is kept under a digest of the address.
 func GetCacheName(address, sum string) string {
-	base := path.Base(address)
-	if base == "" || base == "." || base == "/" {
-		base = "model.onnx"
-	}
+	base := getBaseName(address)
 	if sum != "" {
 		return sum[:min(len(sum), 12)] + "-" + base
 	}
 	digest := sha256.Sum256([]byte(address))
 	return hex.EncodeToString(digest[:6]) + "-" + base
+}
+
+// getBaseName returns the last element of the address path, without its query.
+func getBaseName(address string) string {
+	name := address
+	if u, err := url.Parse(address); err == nil {
+		name = u.Path
+	}
+	base := path.Base(name)
+	if base == "" || base == "." || base == "/" {
+		return "model.onnx"
+	}
+	return base
 }
 
 // VerifyFile returns an error when the file at name does not hold the sha256 sum.
@@ -101,32 +111,45 @@ type Request struct {
 
 func (r Request) reportProgress(done, total int64) {
 	if r.Progress != nil {
-		r.Progress(path.Base(r.Address), done, total)
+		r.Progress(getBaseName(r.Address), done, total)
 	}
 }
 
 // Fetch returns the file Request names, downloading it into Dir when it is not
-// there and downloads are allowed. A download is written beside its place,
-// checked against the sum and the quota, and only then put in its place.
+// there, or is there with another sum, and downloads are allowed. A download is
+// written beside its place, checked against the sum and the quota, and only
+// then put in its place.
 func Fetch(ctx context.Context, r Request) (string, error) {
 	at := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
+	var corrupt error
 	if _, err := os.Stat(at); err == nil {
-		if r.Sum != "" {
-			if err := VerifyFile(at, r.Sum); err != nil {
-				return "", err
-			}
+		if r.Sum == "" {
+			return at, nil
 		}
-		return at, nil
+		if corrupt = VerifyFile(at, r.Sum); corrupt == nil {
+			return at, nil
+		}
 	}
 	if !r.ShouldDownload {
+		if corrupt != nil {
+			return "", corrupt
+		}
 		return "", fmt.Errorf("%s is not on this machine: set %s.dir to where it is, or %s.download to fetch it",
 			r.Address, r.Section, r.Section)
 	}
 	if IsOffline() {
+		if corrupt != nil {
+			return "", corrupt
+		}
 		return "", fmt.Errorf("%s is not on this machine, and %s forbids fetching it", r.Address, EnvOffline)
 	}
 	if err := os.MkdirAll(r.Dir, 0o755); err != nil {
 		return "", err
+	}
+	if corrupt != nil {
+		if err := os.Remove(at); err != nil {
+			return "", err
+		}
 	}
 	return at, download(ctx, r, at)
 }
@@ -157,19 +180,22 @@ func download(ctx context.Context, r Request, at string) error {
 	if answer.StatusCode != http.StatusOK {
 		return fmt.Errorf("fetching %s: %s", r.Address, answer.Status)
 	}
-	if answer.ContentLength > 0 {
-		if err := CheckQuota(getQuotaRoot(r), answer.ContentLength); err != nil {
-			return fmt.Errorf("fetching %s: %w", r.Address, err)
-		}
-	}
-	waited.Reset(getDownloadTimeout(answer.ContentLength))
 
 	file, err := os.CreateTemp(r.Dir, filepath.Base(at)+".part-*")
 	if err != nil {
 		return err
 	}
 	part := file.Name()
-	if err := write(file, answer.Body, r, answer.ContentLength); err != nil {
+	claim, err := reserveQuota(ctx, getQuotaRoot(r), part, answer.ContentLength)
+	if err != nil {
+		file.Close()
+		os.Remove(part)
+		return fmt.Errorf("fetching %s: %w", r.Address, err)
+	}
+	defer claim.release()
+	waited.Reset(getDownloadTimeout(answer.ContentLength))
+
+	if err := write(file, answer.Body, r, claim, answer.ContentLength); err != nil {
 		os.Remove(part)
 		return fmt.Errorf("fetching %s: %w", r.Address, err)
 	}
@@ -181,17 +207,19 @@ func download(ctx context.Context, r Request, at string) error {
 }
 
 // write copies body into file and closes it. It returns an error when the copy
-// passes the quota, or holds other than the sum.
-func write(file *os.File, body io.Reader, r Request, total int64) error {
-	room := max(GetQuota()-GetUsage(getQuotaRoot(r)), 0)
+// passes the room the claim holds, or holds other than the sum.
+func write(file *os.File, body io.Reader, r Request, claim *reservation, total int64) error {
 	hash := sha256.New()
 	counted := &progressWriter{
-		to:         io.MultiWriter(file, hash),
-		total:      total,
-		onProgress: r.reportProgress,
+		to:    io.MultiWriter(file, hash),
+		total: total,
+		onProgress: func(done, total int64) {
+			claim.touch()
+			r.reportProgress(done, total)
+		},
 	}
-	copied, err := io.Copy(counted, io.LimitReader(body, room+1))
-	if err == nil && copied > room {
+	copied, err := io.Copy(counted, io.LimitReader(body, claim.room+1))
+	if err == nil && copied > claim.room {
 		err = errors.New("the download passes the quota " + EnvQuota)
 	}
 	if err == nil && r.Sum != "" {

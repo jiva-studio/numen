@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -298,5 +299,77 @@ func TestFetchKeepsNoTemporaryFileAfterSuccess(t *testing.T) {
 	entries, _ := os.ReadDir(r.Dir)
 	if len(entries) != 1 || strings.Contains(entries[0].Name(), ".part") {
 		t.Fatalf("the folder holds %v", entries)
+	}
+}
+
+func TestFetchReplacesAPresentPinnedFileWithAnotherSumWhenDownloadsAreAllowed(t *testing.T) {
+	srv := serve(t, "weights")
+	r := request(t, srv.URL+"/model.onnx", sumOf("weights"))
+	if err := os.MkdirAll(r.Dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	at := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
+	if err := os.WriteFile(at, []byte("corrupt"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := Fetch(context.Background(), r)
+	if err != nil || got != at {
+		t.Fatalf("Fetch() = %q, %v", got, err)
+	}
+	if body, _ := os.ReadFile(at); string(body) != "weights" {
+		t.Fatalf("file holds %q", body)
+	}
+}
+
+func TestFetchRefusesAPresentPinnedFileWithAnotherSumWhileOffline(t *testing.T) {
+	r := request(t, "https://example.invalid/model.onnx", sumOf("weights"))
+	if err := os.MkdirAll(r.Dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	at := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
+	if err := os.WriteFile(at, []byte("corrupt"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(EnvOffline, "1")
+	if _, err := Fetch(context.Background(), r); err == nil || !strings.Contains(err.Error(), "pinned") {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+}
+
+func TestFetchNamesTheFileWithoutTheQueryOfItsAddress(t *testing.T) {
+	srv := serve(t, "weights")
+	r := request(t, srv.URL+"/model.onnx?download=true", "")
+	at, err := Fetch(context.Background(), r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasSuffix(at, "-model.onnx") {
+		t.Fatalf("Fetch() = %q", at)
+	}
+}
+
+func TestFetchReportsAFolderItCannotCreate(t *testing.T) {
+	blocker := filepath.Join(t.TempDir(), "file")
+	if err := os.WriteFile(blocker, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	r := request(t, "https://example.invalid/model.onnx", "")
+	r.Dir = filepath.Join(blocker, "models")
+	if _, err := Fetch(context.Background(), r); err == nil {
+		t.Fatal("a download was made under a file")
+	}
+}
+
+func TestGetQuotaRootFallsBackToTheRequestFolder(t *testing.T) {
+	t.Setenv(EnvDir, "")
+	t.Setenv("XDG_CONFIG_HOME", "")
+	t.Setenv("HOME", "")
+	t.Setenv("AppData", "")
+	if runtime.GOOS != "linux" {
+		t.Skip("only linux reads no home folder from an empty environment")
+	}
+	if got := getQuotaRoot(Request{Dir: "/srv/here"}); got != "/srv/here" {
+		t.Fatalf("getQuotaRoot() = %q", got)
 	}
 }
