@@ -323,26 +323,38 @@ func (s *Services) servePluginAsset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	root, err := os.OpenRoot(pluginDir)
-	if err != nil {
-		http.Error(w, "plugin asset not found", http.StatusNotFound)
-		return
-	}
-	defer root.Close()
-	file, err := root.Open(filepath.Clean(parts[1]))
+	file, info, err := openPluginAsset(pluginDir, parts[1])
 	if err != nil {
 		http.Error(w, "plugin asset not found", http.StatusNotFound)
 		return
 	}
 	defer file.Close()
-	info, err := file.Stat()
-	if err != nil || info.IsDir() {
-		http.Error(w, "plugin asset not found", http.StatusNotFound)
-		return
-	}
 
 	setPluginAssetContentType(w, cleanTarget)
 	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
+}
+
+// openPluginAsset opens a regular file below pluginDir; the open cannot leave pluginDir.
+func openPluginAsset(pluginDir, name string) (*os.File, os.FileInfo, error) {
+	root, err := os.OpenRoot(pluginDir)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer root.Close()
+	file, err := root.Open(filepath.Clean(name))
+	if err != nil {
+		return nil, nil, err
+	}
+	info, err := file.Stat()
+	if err != nil {
+		_ = file.Close()
+		return nil, nil, err
+	}
+	if info.IsDir() {
+		_ = file.Close()
+		return nil, nil, os.ErrNotExist
+	}
+	return file, info, nil
 }
 
 // newQuestionCounter takes every question a client asks and gives it back when it is
