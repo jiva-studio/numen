@@ -162,6 +162,7 @@ func TestARunThatStoppedIsTakenUpWhereItStopped(t *testing.T) {
 	u, v, _, shelf, model, hash := listener(t, "one", "two", "three", "four")
 
 	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
 	model.stop = func(heard int) {
 		if heard == 2 {
 			stop()

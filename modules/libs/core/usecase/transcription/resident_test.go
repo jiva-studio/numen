@@ -158,6 +158,7 @@ func TestAFailureMidRoundReleasesTheModels(t *testing.T) {
 func TestCancellationReleasesTheModels(t *testing.T) {
 	listening, models, known, v := newResidentWorker(t, true, "a.mp3", "b.mp3")
 	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
 	open := listening.with.Runtime.Open
 	listening.with.Runtime.Open = func(c context.Context, tell func(string, int64, int64)) (port.Transcriber, func() error, error) {
 		cancel()
