@@ -1,153 +1,26 @@
 /**
  * Tab kinds created dynamically for plugins and readers.
  */
-import {
-  computed,
-  defineAsyncComponent,
-  defineComponent,
-  h,
-  onErrorCaptured,
-  onMounted,
-  ref,
-  Teleport,
-  type Component,
-  type Ref,
-  type VNodeChild,
-} from 'vue'
+import { computed, defineComponent, onErrorCaptured, onMounted, ref, type Component } from 'vue'
 import type { ReaderRegistration, TabKindRegistration } from '@numen/plugin-sdk'
 import type { AnyTabKind } from '@/entities/tab/@x/plugin'
-import { attachPluginShadow, getPluginStyle, PANE_HOST_STYLE, PANE_LAYOUT_STYLE } from './styles'
+import {
+  attachPluginShadow,
+  extractFilename,
+  extractTitleValue,
+  renderFallback,
+  renderPaneContent,
+  renderWrapper,
+  resolvePluginComponent,
+  stripMarkdownExtension,
+} from './styles'
 import type { PluginHostDeps } from './types'
-
-type AsyncComponentRegistration = {
-  type: 'async'
-  loader: () => Promise<Component>
-}
-
-function isAsyncComponent(
-  comp: unknown,
-): comp is (() => Promise<Component>) | AsyncComponentRegistration {
-  if (typeof comp === 'object' && comp !== null && (comp as { type?: unknown }).type === 'async') {
-    return typeof (comp as { loader?: unknown }).loader === 'function'
-  }
-  if (typeof comp !== 'function') return false
-  return !(
-    'setup' in comp ||
-    'render' in comp ||
-    'props' in comp ||
-    '__name' in comp ||
-    (comp as { length?: number }).length! > 0
-  )
-}
-
-function resolvePluginComponent(rawComponent: unknown): Component | null {
-  if (!rawComponent) return null
-  const comp =
-    typeof rawComponent === 'object' && 'default' in rawComponent
-      ? (rawComponent as { default: unknown }).default
-      : rawComponent
-  if (!comp) return null
-  if (isAsyncComponent(comp)) {
-    const loader = typeof comp === 'function' ? comp : comp.loader
-    return defineAsyncComponent(loader)
-  }
-  return comp as Component
-}
-
-function extractTitleValue(title: unknown): string {
-  if (typeof title === 'string') return title
-  if (typeof title === 'object' && title !== null && 'value' in title) {
-    return String((title as { value: unknown }).value)
-  }
-  return ''
-}
-
-function extractFilename(path: string | undefined): string {
-  if (!path) return ''
-  return path.split('/').pop() ?? path
-}
-
-function stripMarkdownExtension(filename: string): string {
-  return filename.replace(/\.md$/, '')
-}
-
-function extractStatePath(state: unknown): string {
-  if (typeof state !== 'object' || state === null) return ''
-  const s = state as Record<string, unknown>
-  const val = s.path ?? s.file ?? s.at
-  return typeof val === 'string' ? val : ''
-}
 
 function getReaderTargetSource(path: string | undefined): 'recording' | 'book' | 'other' {
   if (!path) return 'other'
   if (/\.(mp3|m4a|wav|ogg|aac|flac)$/i.test(path)) return 'recording'
   if (/\.(epub)$/i.test(path)) return 'book'
   return 'other'
-}
-
-function renderFallback(pluginId: string, error: Error) {
-  return h('div', { class: 'plugin-error-fallback p-4 text-red-500' }, [
-    h('h3', { class: 'font-bold' }, `Plugin "${pluginId}" crashed`),
-    h('pre', { class: 'text-xs mt-2' }, error.message),
-  ])
-}
-
-interface PaneContentDeps {
-  readonly pluginId: string
-  readonly component: Component | null
-  readonly state: unknown
-  readonly shadowRoot: ShadowRoot | null
-  readonly containerClass: string
-}
-
-function renderPaneContent(deps: PaneContentDeps) {
-  if (!deps.component) return null
-  const stateObj =
-    typeof deps.state === 'object' && deps.state !== null
-      ? (deps.state as Record<string, unknown>)
-      : {}
-  const path = extractStatePath(deps.state)
-  const child = h(deps.component, {
-    ...stateObj,
-    ...(path ? { path, filePath: path, file: path } : {}),
-    state: deps.state,
-  })
-  const styleUrl = getPluginStyle(deps.pluginId)
-  const styleNode = styleUrl
-    ? h('link', { rel: 'stylesheet', href: styleUrl, 'data-plugin-id': deps.pluginId })
-    : null
-  const layoutStyleNode = h('style', PANE_LAYOUT_STYLE)
-  const inner = h(
-    'div',
-    {
-      class: `${deps.containerClass} h-full w-full min-h-0 min-w-0 flex flex-col flex-1`,
-      style: PANE_HOST_STYLE,
-    },
-    [child],
-  )
-
-  if (deps.shadowRoot) {
-    return h(Teleport, { to: deps.shadowRoot }, [layoutStyleNode, styleNode, inner])
-  }
-  return [layoutStyleNode, styleNode, inner]
-}
-
-function renderWrapper(opts: {
-  wrapperClass: string
-  pluginId: string
-  hostEl: Ref<HTMLElement | null>
-  content: VNodeChild
-}) {
-  return h(
-    'div',
-    {
-      class: `${opts.wrapperClass} h-full w-full min-h-0 min-w-0 flex flex-col flex-1`,
-      'data-plugin-id': opts.pluginId,
-      ref: opts.hostEl,
-      style: PANE_HOST_STYLE,
-    },
-    [opts.content],
-  )
 }
 
 export function createPluginPaneWrapper(
