@@ -452,7 +452,10 @@ type AgentProgram struct {
 	// Set on the program an installation nobody has configured answers with.
 	IsDefault bool `protobuf:"varint,4,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty"`
 	// The models the program says it offers. Empty where it says none.
-	Models        []*AgentModel `protobuf:"bytes,5,rep,name=models,proto3" json:"models,omitempty"`
+	Models []*AgentModel `protobuf:"bytes,5,rep,name=models,proto3" json:"models,omitempty"`
+	// Whether the program runs only the vault tools a task names, and no tool of its own that reaches
+	// this machine.
+	LimitsTools   bool `protobuf:"varint,6,opt,name=limits_tools,json=limitsTools,proto3" json:"limits_tools,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -520,6 +523,13 @@ func (x *AgentProgram) GetModels() []*AgentModel {
 		return x.Models
 	}
 	return nil
+}
+
+func (x *AgentProgram) GetLimitsTools() bool {
+	if x != nil {
+		return x.LimitsTools
+	}
+	return false
 }
 
 // AgentModel is one model a program offers.
@@ -1550,14 +1560,15 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\aprogram\x18\x01 \x01(\tR\aprogram\x12\x18\n" +
 	"\acommand\x18\x02 \x03(\tR\acommand\"N\n" +
 	"\x18GetAgentProgramsResponse\x122\n" +
-	"\bprograms\x18\x01 \x03(\v2\x16.numen.v1.AgentProgramR\bprograms\"\xa8\x01\n" +
+	"\bprograms\x18\x01 \x03(\v2\x16.numen.v1.AgentProgramR\bprograms\"\xcb\x01\n" +
 	"\fAgentProgram\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12!\n" +
 	"\fis_installed\x18\x03 \x01(\bR\visInstalled\x12\x1d\n" +
 	"\n" +
 	"is_default\x18\x04 \x01(\bR\tisDefault\x12,\n" +
-	"\x06models\x18\x05 \x03(\v2\x14.numen.v1.AgentModelR\x06models\"U\n" +
+	"\x06models\x18\x05 \x03(\v2\x14.numen.v1.AgentModelR\x06models\x12!\n" +
+	"\flimits_tools\x18\x06 \x01(\bR\vlimitsTools\"U\n" +
 	"\n" +
 	"AgentModel\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +

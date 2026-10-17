@@ -112,7 +112,7 @@ func (s *agentServer) GetAgentPrograms(
 		commands[one.GetProgram()] = one.GetCommand()
 	}
 
-	codex := &numenv1.AgentProgram{Name: "codex", Title: "OpenAI Codex", IsInstalled: IsCodexInstalled()}
+	codex := &numenv1.AgentProgram{Name: "codex", Title: "OpenAI Codex", IsInstalled: IsCodexInstalled() || len(commands["codex"]) > 0}
 	if codex.GetIsInstalled() {
 		for _, one := range s.codexModels.get(ctx, commands["codex"]) {
 			codex.Models = append(codex.Models, &numenv1.AgentModel{
@@ -120,7 +120,7 @@ func (s *agentServer) GetAgentPrograms(
 			})
 		}
 	}
-	antigravity := &numenv1.AgentProgram{Name: "antigravity", Title: "Antigravity", IsInstalled: IsAntigravityInstalled()}
+	antigravity := &numenv1.AgentProgram{Name: "antigravity", Title: "Antigravity", IsInstalled: IsAntigravityInstalled() || len(commands["antigravity"]) > 0}
 	return connect.NewResponse(&numenv1.GetAgentProgramsResponse{
 		Programs: []*numenv1.AgentProgram{antigravity, codex},
 	}), nil

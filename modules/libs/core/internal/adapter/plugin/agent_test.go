@@ -412,7 +412,7 @@ func (s *programsServer) GetAgentPrograms(
 ) (*connect.Response[v1.GetAgentProgramsResponse], error) {
 	s.asked = req.Msg.GetCommands()
 	return connect.NewResponse(&v1.GetAgentProgramsResponse{Programs: []*v1.AgentProgram{{
-		Name: "one", Title: "One", IsInstalled: true, IsDefault: true,
+		Name: "one", Title: "One", IsInstalled: true, IsDefault: true, LimitsTools: true,
 		Models: []*v1.AgentModel{{Name: "m1", Title: "M one", IsDefault: true}, {Name: "m2"}},
 	}}}), nil
 }
@@ -429,7 +429,7 @@ func TestTheBridgeListsTheProgramsAPluginRuns(t *testing.T) {
 	}
 
 	want := []port.AgentProgram{{
-		Provider: "md.numen.agent", Name: "one", Title: "One", IsInstalled: true, IsDefault: true,
+		Provider: "md.numen.agent", Name: "one", Title: "One", IsInstalled: true, IsDefault: true, LimitsTools: true,
 		Models: []port.AgentModel{{Name: "m1", Title: "M one", IsDefault: true}, {Name: "m2"}},
 	}}
 	if !reflect.DeepEqual(got, want) {

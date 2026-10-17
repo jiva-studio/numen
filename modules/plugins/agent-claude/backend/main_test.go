@@ -242,7 +242,7 @@ func TestTheProgramListNamesClaudeWithItsModels(t *testing.T) {
 	}
 	program := programs[0]
 	if program.GetName() != "claude" || program.GetTitle() != "Claude Code" ||
-		!program.GetIsInstalled() || !program.GetIsDefault() {
+		!program.GetIsInstalled() || !program.GetIsDefault() || !program.GetLimitsTools() {
 		t.Errorf("the program is %v", program)
 	}
 	var names []string

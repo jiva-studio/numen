@@ -52,6 +52,8 @@ type Options struct {
 	Preview EditPreview
 	// Provider runs the tasks, in place of the one the plugins make.
 	Provider port.AgentProvider
+	// LimitedToolsOnly refuses the programs that run tools of their own.
+	LimitedToolsOnly bool
 	// Out is where what happened is said.
 	Out io.Writer
 }

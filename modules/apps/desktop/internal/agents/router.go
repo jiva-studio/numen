@@ -35,6 +35,7 @@ type Router struct {
 	root         string
 	preview      EditPreview
 	out          io.Writer
+	limitedOnly  bool
 
 	mu       sync.RWMutex
 	isClosed bool
@@ -57,6 +58,7 @@ func NewRouter(opts Options, url, secret string, vocabulary map[string]mcp.Tool)
 		root:         opts.Root,
 		preview:      opts.Preview,
 		out:          opts.Out,
+		limitedOnly:  opts.LimitedToolsOnly,
 	}
 }
 
@@ -112,6 +114,11 @@ func (r *Router) StartRun(ctx context.Context, task port.Task) (port.Run, error)
 	if err != nil {
 		return nil, err
 	}
+	if r.limitedOnly {
+		if err := r.checkLimited(ctx, use); err != nil {
+			return nil, err
+		}
+	}
 	section := r.settings.GetProgram(use)
 
 	task.Agent = use
@@ -136,6 +143,17 @@ func (r *Router) StartRun(ctx context.Context, task port.Task) (port.Run, error)
 		return nil, err
 	}
 	return newDraftingRun(ctx, run, r.preview), nil
+}
+
+// checkLimited refuses a program that runs tools of its own.
+func (r *Router) checkLimited(ctx context.Context, use string) error {
+	programs, listErr := r.provider.GetPrograms(ctx, r.settings.GetCommands())
+	for _, one := range programs {
+		if one.Name == use && one.LimitsTools {
+			return nil
+		}
+	}
+	return errors.Join(fmt.Errorf("the program %q runs tools of its own, which this window does not allow", use), listErr)
 }
 
 // getProgram is the program a task goes to: the one it names, else the one the settings name, else

@@ -120,6 +120,9 @@ message AgentProgram {
   bool is_default = 4;
   // The models the program says it offers. Empty where it says none.
   repeated AgentModel models = 5;
+  // Whether the program runs only the vault tools a task names, and no tool of its own that reaches
+  // this machine.
+  bool limits_tools = 6;
 }
 
 // AgentModel is one model a program offers.

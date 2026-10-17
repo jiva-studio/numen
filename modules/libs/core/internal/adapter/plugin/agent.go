@@ -140,6 +140,7 @@ func (b *AgentBridge) GetPrograms(ctx context.Context, commands map[string][]str
 			Title:       one.GetTitle(),
 			IsInstalled: one.GetIsInstalled(),
 			IsDefault:   one.GetIsDefault(),
+			LimitsTools: one.GetLimitsTools(),
 			Models:      models,
 		})
 	}

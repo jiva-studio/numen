@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"slices"
 	"strings"
 	"sync"
@@ -443,4 +444,29 @@ func TestARefusalSaysWhyThePluginsCouldNotBeAsked(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "cannot be started") {
 		t.Errorf("the refusal is %v", err)
 	}
+}
+
+// A window that allows only programs limited to its tools refuses the others, and runs the rest.
+func TestAWindowOfLimitedToolsRefusesAProgramWithToolsOfItsOwn(t *testing.T) {
+	provider := &fakeProvider{programs: []port.AgentProgram{
+		{Name: "bounded", LimitsTools: true}, {Name: "free"},
+	}}
+	opts := Options{Config: makeInstallation(t), Root: "/vault", Out: io.Discard, LimitedToolsOnly: true}
+	opts.Config.Agents = provider
+	router := NewRouter(opts, "http://127.0.0.1:7717/mcp", "secret", vocabulary)
+
+	if _, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: "free"}); err == nil {
+		t.Error("a program with tools of its own was run")
+	}
+	if _, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: "unlisted"}); err == nil {
+		t.Error("a program nobody lists was run")
+	}
+	if got := len(provider.getTasks()); got != 0 {
+		t.Fatalf("%d tasks reached the plugins", got)
+	}
+	run, err := router.StartRun(t.Context(), port.Task{Question: "q", Agent: "bounded"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	drain(run)
 }

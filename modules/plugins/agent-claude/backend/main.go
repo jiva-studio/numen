@@ -216,6 +216,7 @@ func (s *agentServer) GetAgentPrograms(
 		Title:       programTitle,
 		IsInstalled: command != "",
 		IsDefault:   true,
+		LimitsTools: true,
 	}
 	for _, one := range s.catalogue.get(ctx) {
 		program.Models = append(program.Models, &numenv1.AgentModel{Name: one.Name, Title: one.Title})

@@ -144,20 +144,26 @@ type AgentProgram struct {
 	IsDefault bool
 	// Models are the models the program says it offers, none where it says none.
 	Models []AgentModel
+	// LimitsTools is set where the program runs only the vault tools a task names.
+	LimitsTools bool
 }
 
-// GetDefaultProgram is the program an installation that names none answers with: the one marked so,
-// else the first.
+// GetDefaultProgram is the program an installation that names none answers with: the installed one
+// marked so, else the first installed, else the one marked so, else the first.
 func GetDefaultProgram(programs []AgentProgram) (AgentProgram, bool) {
-	for _, one := range programs {
-		if one.IsDefault {
-			return one, true
+	for _, installedOnly := range []bool{true, false} {
+		for _, one := range programs {
+			if one.IsDefault && (one.IsInstalled || !installedOnly) {
+				return one, true
+			}
+		}
+		for _, one := range programs {
+			if one.IsInstalled || !installedOnly {
+				return one, true
+			}
 		}
 	}
-	if len(programs) == 0 {
-		return AgentProgram{}, false
-	}
-	return programs[0], true
+	return AgentProgram{}, false
 }
 
 // AgentProvider runs tasks on the programs that plugins provide, and says which programs those are.

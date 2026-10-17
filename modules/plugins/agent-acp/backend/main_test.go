@@ -260,3 +260,34 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 		t.Errorf("started in %q, want %q", got, root)
 	}
 }
+
+// A command line the installation set counts as the program being installed, and its models are
+// asked of that command.
+func TestAProgramIsInstalledUnderTheCommandLineTheInstallationSet(t *testing.T) {
+	t.Setenv("PATH", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
+	appServer := writeScript(t, "codex",
+		`echo '{"id":1,"result":{}}'`+"\n"+
+			`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+
+			"while read -r _; do :; done\n")
+	client := startAgent(t)
+
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{
+		Commands: []*numenv1.AgentProgramCommand{{Program: "codex", Command: []string{appServer}}},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range got.Msg.GetPrograms() {
+		switch one.GetName() {
+		case "codex":
+			if !one.GetIsInstalled() || len(one.GetModels()) != 1 {
+				t.Errorf("codex is %v", one)
+			}
+		default:
+			if one.GetIsInstalled() {
+				t.Errorf("%v", one)
+			}
+		}
+	}
+}
