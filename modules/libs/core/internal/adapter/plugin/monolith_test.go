@@ -4,6 +4,9 @@ package plugin_test
 
 import (
 	"context"
+	"errors"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -123,6 +126,8 @@ func (s *mockProofreadingServer) GetProofreaderInfo(
 func TestMonolithInProcessDispatch(t *testing.T) {
 	plugin.ClearMonolithHandlers()
 	defer plugin.ClearMonolithHandlers()
+	t.Setenv(plugin.EnvONNXRuntimeLib, "")
+	t.Setenv(plugin.EnvONNXProvider, "")
 
 	plugin.RegisterDocumentServiceHandler(&mockDocumentServer{})
 	plugin.RegisterRecognitionServiceHandler(&mockRecognitionServer{})
@@ -134,6 +139,7 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 	plugin.RegisterProofreadingServiceHandler(&mockProofreadingServer{})
 
 	host := plugin.NewHost("desktop.editor")
+	host.SetRuntimeProvisioner(fixedProvisioner{library: "/models/libonnxruntime.so", provider: "cpu"})
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -262,5 +268,59 @@ func TestMonolithInProcessDispatch(t *testing.T) {
 	// 9. Teardown
 	if err := host.TeardownAll(ctx, 100*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}
+
+type fixedProvisioner struct {
+	library, provider string
+	err               error
+}
+
+func (f fixedProvisioner) Provision(context.Context) (string, string, error) {
+	return f.library, f.provider, f.err
+}
+
+// An in-process plugin that declares the runtime finds the same variables a
+// launched process is given, in the process that is its own.
+func TestMonolithInProcessPluginIsGivenTheRuntime(t *testing.T) {
+	plugin.ClearMonolithHandlers()
+	defer plugin.ClearMonolithHandlers()
+	t.Setenv(plugin.EnvONNXRuntimeLib, "")
+	t.Setenv(plugin.EnvONNXProvider, "")
+
+	host := plugin.NewHost("desktop.editor")
+	host.SetRuntimeProvisioner(fixedProvisioner{library: "/models/libonnxruntime.so", provider: "cuda"})
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err != nil {
+		t.Fatalf("EnsureActive(ocr) failed: %v", err)
+	}
+	if got := os.Getenv(plugin.EnvONNXRuntimeLib); got != "/models/libonnxruntime.so" {
+		t.Errorf("%s = %q", plugin.EnvONNXRuntimeLib, got)
+	}
+	if got := os.Getenv(plugin.EnvONNXProvider); got != "cuda" {
+		t.Errorf("%s = %q", plugin.EnvONNXProvider, got)
+	}
+}
+
+// An in-process plugin whose runtime cannot be provisioned is not activated.
+func TestMonolithInProcessPluginIsNotActivatedWithoutItsRuntime(t *testing.T) {
+	plugin.ClearMonolithHandlers()
+	defer plugin.ClearMonolithHandlers()
+	t.Setenv(plugin.EnvONNXRuntimeLib, "")
+
+	failure := errors.New("the archive is not the pinned one")
+	host := plugin.NewHost("desktop.editor")
+	host.SetRuntimeProvisioner(fixedProvisioner{err: failure})
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+	_, err := host.EnsureActive(t.Context(), "md.numen.transcription")
+	if !errors.Is(err, failure) || !strings.Contains(err.Error(), "md.numen.transcription") {
+		t.Fatalf("EnsureActive() = %v, want the failure with the plugin named", err)
+	}
+	if got := os.Getenv(plugin.EnvONNXRuntimeLib); got != "" {
+		t.Errorf("%s = %q after a failed provisioning", plugin.EnvONNXRuntimeLib, got)
 	}
 }
