@@ -12,22 +12,26 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-func newRunningHost(t *testing.T) (*Host, []*os.Process) {
+// newRunningHost returns a host with the plugin running and the channel its supervisor closes when the process is reaped.
+func newRunningHost(t *testing.T) (*Host, <-chan struct{}) {
 	t.Helper()
 	host := newDiscoveredHost(t)
 	var started atomic.Int32
-	procs := make([]*os.Process, 0, 4)
-	host.SetLauncher(startSleepLauncher(t, &started, &procs))
+	host.SetLauncher(startSleepLauncher(t, &started, nil))
 	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 	host.Release("md.numen.ocr")
-	return host, procs
+	return host, getExitSignal(host.supervisors["md.numen.ocr"])
 }
 
-func waitForProcessExit(t *testing.T, p *os.Process) {
+func waitForProcessExit(t *testing.T, exited <-chan struct{}) {
 	t.Helper()
-	waitUntil(t, "the process to exit", func() bool { return isProcessGone(p) })
+	select {
+	case <-exited:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for the process to exit")
+	}
 }
 
 func TestAShutDownHostDoesNotStartPluginsAgain(t *testing.T) {
@@ -75,20 +79,20 @@ func TestClosingTheEventBusWaitsForDispatchesInFlight(t *testing.T) {
 }
 
 func TestADisabledPluginIsStopped(t *testing.T) {
-	host, procs := newRunningHost(t)
+	host, exited := newRunningHost(t)
 
 	if err := host.SetPluginEnabled("md.numen.ocr", false); err != nil {
 		t.Fatalf("SetPluginEnabled failed: %v", err)
 	}
 
-	waitForProcessExit(t, procs[0])
+	waitForProcessExit(t, exited)
 	if state := host.supervisors["md.numen.ocr"].GetState(); state != StateDormant {
 		t.Fatalf("expected StateDormant, got %v", state)
 	}
 }
 
 func TestDisablingThroughTheSettingStopsThePluginAndIsOneSourceOfTruth(t *testing.T) {
-	host, procs := newRunningHost(t)
+	host, exited := newRunningHost(t)
 
 	if err := host.SetPluginSetting(t.Context(), "md.numen.ocr", "enabled", false); err != nil {
 		t.Fatalf("SetPluginSetting failed: %v", err)
@@ -97,7 +101,7 @@ func TestDisablingThroughTheSettingStopsThePluginAndIsOneSourceOfTruth(t *testin
 	if host.IsPluginEnabled("md.numen.ocr") {
 		t.Fatal("the plugin is still enabled after its enabled setting was cleared")
 	}
-	waitForProcessExit(t, procs[0])
+	waitForProcessExit(t, exited)
 	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err == nil {
 		t.Fatal("a disabled plugin was activated")
 	}
@@ -123,11 +127,11 @@ func TestSettingsLoadedAsDisabledDisableThePlugin(t *testing.T) {
 }
 
 func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
-	host, procs := newRunningHost(t)
+	host, exited := newRunningHost(t)
 
 	host.SetSafeMode(true)
 
-	waitForProcessExit(t, procs[0])
+	waitForProcessExit(t, exited)
 	if state := host.supervisors["md.numen.ocr"].GetState(); state != StateDormant {
 		t.Fatalf("expected StateDormant, got %v", state)
 	}
