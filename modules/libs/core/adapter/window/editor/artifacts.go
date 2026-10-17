@@ -114,7 +114,11 @@ func (f *artifactFiles) getArtifactFile(
 		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(getReachCode(err), err)
 	}
 	at := f.getArtifactAddress(ctx, showing, ref)
-	if !slices.Contains(getArtifactKinds(ref.Kind, f.getProducer(at)), of) {
+	producer, err := f.getProducer(ctx, at)
+	if err != nil {
+		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(connect.CodeUnavailable, err)
+	}
+	if !slices.Contains(getArtifactKinds(ref.Kind, producer), of) {
 		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(
 			connect.CodeInvalidArgument, errNotCarried)
 	}
@@ -123,12 +127,17 @@ func (f *artifactFiles) getArtifactFile(
 
 // getProducer is what fetching an address would keep its text under, and nothing
 // where this build reaches no address at all. What is at an address is the
-// fetcher's to say, so nothing here reads the address itself.
-func (f *artifactFiles) getProducer(at domain.URL) string {
+// fetcher's to say, so nothing here reads the address itself. A fetcher that
+// does not answer is an error.
+func (f *artifactFiles) getProducer(ctx context.Context, at domain.URL) (string, error) {
 	if f.imports == nil || f.imports.By == nil || at == "" {
-		return ""
+		return "", nil
 	}
-	return f.imports.By.GetDownloadModel(at).Producer
+	by, err := f.imports.By.GetDownloadModel(ctx, at)
+	if err != nil {
+		return "", err
+	}
+	return by.Producer, nil
 }
 
 // getArtifactID is the name one artifact stands under in the store, and whether the
@@ -167,7 +176,11 @@ func (f *artifactFiles) getArtifactAddress(ctx context.Context, v domain.Vault, 
 func (h *artifactHandler) getLinkedArtifact(
 	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.URL,
 ) (*v1.Artifact, error) {
-	of := getTextKind(h.files.getProducer(at))
+	producer, err := h.files.getProducer(ctx, at)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeUnavailable, err)
+	}
+	of := getTextKind(producer)
 	if at == "" {
 		return newArtifact(of, source.RunNone, 0), nil
 	}
@@ -278,8 +291,12 @@ func (h *artifactHandler) ListArtifacts(
 		return nil, connect.NewError(getReachCode(err), err)
 	}
 	at := h.files.getArtifactAddress(ctx, showing, ref)
+	producer, err := h.files.getProducer(ctx, at)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeUnavailable, err)
+	}
 	out := &v1.ListArtifactsResponse{}
-	for _, of := range getArtifactKinds(ref.Kind, h.files.getProducer(at)) {
+	for _, of := range getArtifactKinds(ref.Kind, producer) {
 		one, err := h.artifact(ctx, showing, ref, at, of)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
@@ -310,12 +327,16 @@ func (h *artifactHandler) CreateArtifact(
 	// What a url carries is what fetches it, so a build that reaches no address
 	// says it cannot rather than that the file carries nothing.
 	at := h.files.getArtifactAddress(ctx, showing, ref)
-	if ref.Kind == domain.KindURL && h.files.getProducer(at) == "" {
+	producer, err := h.files.getProducer(ctx, at)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeUnavailable, err)
+	}
+	if ref.Kind == domain.KindURL && producer == "" {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDownloader)
 	}
 	// The kind of the file decides what is made from it, so an artifact the file
 	// does not carry is a client asking for a run over the wrong thing.
-	if !slices.Contains(getArtifactKinds(ref.Kind, h.files.getProducer(at)), of) {
+	if !slices.Contains(getArtifactKinds(ref.Kind, producer), of) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNotCarried)
 	}
 
