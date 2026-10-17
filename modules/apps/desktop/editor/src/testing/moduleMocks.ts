@@ -8,7 +8,7 @@
 import { vi } from 'vitest'
 import { asValue } from '@numen/wire'
 import type { Cards } from '@/entities/deck'
-import type { Documents } from '@/pages/document-viewer/types'
+import type { Documents } from '@plugins/reader-pdf/frontend'
 import { requests } from './requests'
 import { held, maker, said } from './answers'
 
@@ -20,10 +20,10 @@ const documentsSaid: { documents: Documents } = {
   },
 }
 
-vi.mock('@/pages/document-viewer/api/wire', () => documentsSaid)
+vi.mock('@plugins/reader-pdf/frontend/api/wire', () => documentsSaid)
 
-vi.mock('@/pages/document-viewer', async (original) => ({
-  ...(await original<typeof import('@/pages/document-viewer')>()),
+vi.mock('@plugins/reader-pdf/frontend', async (original) => ({
+  ...(await original<typeof import('@plugins/reader-pdf/frontend')>()),
   ...documentsSaid,
 }))
 

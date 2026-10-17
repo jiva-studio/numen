@@ -1,23 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
-import plugin from './index'
-import { isPdfPluginActive, setPdfPluginActive } from '@/pages/document-viewer/model/pluginState'
+import plugin, { DocumentTab } from './index'
 
 describe('reader-pdf plugin frontend', () => {
   it('activates and updates plugin active state', async () => {
     const ctx = createMockPluginContext({ pluginId: 'md.numen.pdf' })
     await plugin.activate(ctx)
 
-    expect(isPdfPluginActive.value).toBe(true)
+    const readers = ctx.getRegisteredReaders()
+    expect(readers).toHaveLength(1)
+
+    const reader = readers[0]
+    expect(reader?.id).toBe('reader-pdf')
+    expect(reader?.fileExtensions).toEqual(['.pdf'])
+    expect(reader?.component).toBe(DocumentTab)
   })
 
-  it('updates plugin active state on deactivation', async () => {
-    setPdfPluginActive(true)
+  it('runs deactivation cleanly', async () => {
     if (plugin.deactivate) {
       await plugin.deactivate()
-      expect(isPdfPluginActive.value).toBe(false)
     }
-    // Restore
-    setPdfPluginActive(true)
   })
 })

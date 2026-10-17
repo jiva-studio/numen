@@ -10,14 +10,13 @@ export interface PluginLoaderDeps {
   readonly baseUrl?: string
   readonly fetch?: typeof fetch
   readonly dynamicImport?: (url: string) => Promise<unknown>
+  readonly loaders?: Record<string, () => Promise<unknown>>
 }
 
 interface ActivePluginEntry {
   readonly pluginId: string
   readonly lifecycle?: PluginLifecycle
 }
-
-import * as flashcardsStudio from '@plugins/flashcards-studio/frontend'
 
 const IN_TREE_MANIFESTS: Record<string, PluginManifest> = {
   'md.numen.pdf': {
@@ -78,7 +77,7 @@ const IN_TREE_LOADERS: Record<string, () => Promise<unknown>> = {
   'md.numen.view-plex-graph': () => import('@plugins/view-plex-graph/frontend'),
   'md.numen.media-player': () => import('@plugins/media-player/frontend'),
   'md.numen.downloader': () => import('@plugins/downloader/frontend'),
-  'md.numen.flashcards-studio': async () => flashcardsStudio,
+  'md.numen.flashcards-studio': () => import('@plugins/flashcards-studio/frontend'),
 }
 
 function injectPluginStyles(baseUrl: string, pluginId: string, stylesPath: string): void {
@@ -304,19 +303,23 @@ function resolveDefaultDeps(deps: PluginLoaderDeps) {
   }
 }
 
+function checkPluginEnabled(host: PluginHost, id: string): boolean {
+  const val = host.getSetting?.(id, 'enabled')
+  return typeof val === 'boolean' ? val : true
+}
+
 export function createPluginLoader(deps: PluginLoaderDeps) {
   const { host } = deps
   const defaults = resolveDefaultDeps(deps)
   const activePlugins = shallowRef<ReadonlyMap<string, ActivePluginEntry>>(new Map())
-  const moduleLoaders = new Map<string, () => Promise<unknown>>(Object.entries(IN_TREE_LOADERS))
+  const moduleLoaders = new Map<string, () => Promise<unknown>>(
+    Object.entries(deps.loaders ?? IN_TREE_LOADERS),
+  )
   const settingSubscriptions = new Map<string, Disposable>()
   const manifests = new Map<string, PluginManifest>()
   let hasStarted = false
 
-  const isPluginEnabled = (id: string): boolean => {
-    const val = host.getSetting?.(id, 'enabled')
-    return typeof val === 'boolean' ? val : true
-  }
+  const isPluginEnabled = (id: string): boolean => checkPluginEnabled(host, id)
 
   const activatePlugin = (id: string, module?: unknown) =>
     activateEntry(

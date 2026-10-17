@@ -1,7 +1,15 @@
 /**
  * Tab kinds created dynamically for plugins and readers.
  */
-import { computed, defineComponent, onErrorCaptured, onMounted, ref, type Component } from 'vue'
+import {
+  computed,
+  defineComponent,
+  onErrorCaptured,
+  onMounted,
+  reactive,
+  ref,
+  type Component,
+} from 'vue'
 import type { ReaderRegistration, TabKindRegistration } from '@numen/plugin-sdk'
 import type { AnyTabKind } from '@/entities/tab/@x/plugin'
 import {
@@ -113,12 +121,22 @@ export function createReaderTabKind(
     kind: kindId,
     open: (at: string) => {
       const filename = extractFilename(at)
-      return {
+      return reactive({
         path: at,
         file: at,
         pluginId,
         title: filename,
-      }
+        spans: [] as readonly unknown[],
+      })
+    },
+    onShow: (state: unknown) => {
+      const s = state as { measure?: () => void; focusTab?: () => void } | undefined
+      s?.measure?.()
+      s?.focusTab?.()
+    },
+    onKeyPress: (state: unknown, event: KeyboardEvent) => {
+      const s = state as { handleKeyPress?: (e: KeyboardEvent) => boolean } | undefined
+      return s?.handleKeyPress?.(event) ?? false
     },
     getTitle: (state: unknown) => {
       const s = state as { title?: unknown; path?: string } | undefined

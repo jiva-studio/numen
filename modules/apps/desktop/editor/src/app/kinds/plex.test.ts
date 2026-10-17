@@ -5,16 +5,19 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
-import type { PlexTabDeps, PlexTabState } from '@/pages/plex-graph/types'
+import type { PlexTabDeps, PlexTabState } from '@plugins/view-plex-graph/frontend'
 import { createPlexKind, type PlexKindDeps } from './plex'
 
 const built = vi.hoisted(() => ({ deps: null as unknown }))
 
-vi.mock('@/pages/plex-graph', () => ({
+vi.mock('./plexKind', () => ({
   createPlexKind: (_handle: unknown, _createView: unknown, deps: unknown) => {
     built.deps = deps
     return {}
   },
+}))
+
+vi.mock('@plugins/view-plex-graph/frontend', () => ({
   usePlexView: () => ({}),
 }))
 

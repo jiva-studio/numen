@@ -6,15 +6,15 @@ import { computed, ref, useTemplateRef } from 'vue'
 import { Menu, optionsForType, Plex, useTypeSize, Waiting } from '@numen/ui'
 import type { MenuTrigger, PlexRelation, PlexDestination } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
-import PlexQuickLinkPopover from '@/pages/plex-graph/ui/PlexQuickLinkPopover.vue'
-import PlexLinkInspectorPopover from '@/pages/plex-graph/ui/PlexLinkInspectorPopover.vue'
-import { ITEMS, NONE } from '@/pages/plex-graph/lib/menu'
-import { findIcon } from '@/shared/icons'
-import { getNoteIcon } from '@/entities/note'
-import type { DirectionalLinkItem, PlexTabState } from '@/pages/plex-graph/types'
+import PlexQuickLinkPopover from './ui/PlexQuickLinkPopover.vue'
+import PlexLinkInspectorPopover from './ui/PlexLinkInspectorPopover.vue'
+import { ITEMS, NONE } from './lib/menu'
+import { findIcon, getNoteIcon } from './lib/icons'
+import type { DirectionalLinkItem, PlexTabState } from './types'
 import { WORDS as words } from './words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
+defineOptions({ name: 'PlexTab' })
 const props = defineProps<{ state: PlexTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -39,6 +39,8 @@ const type = useTypeSize()
 const options = computed(() => ({
   ...optionsForType(type.value),
   maxHeadings: maxHeadings.value,
+  // Cast icon function to match PlexOptions if needed
+  icon: getNodeIcon as unknown as (node: string) => LucideIcon | null,
 }))
 
 /** What the menu offers: on a node, or off every node. */

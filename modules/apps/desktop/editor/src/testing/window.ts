@@ -69,9 +69,7 @@ async function mountWindow() {
   windows.push(window)
   await settle()
   await settle()
-  await settle()
-  await settle()
-  await settle()
+  await new Promise((done) => setTimeout(done, 50))
   return window
 }
 

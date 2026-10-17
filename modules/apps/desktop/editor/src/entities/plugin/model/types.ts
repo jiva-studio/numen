@@ -45,6 +45,7 @@ export interface PluginHostDeps {
   readonly openTab: (kind: string, at?: string) => Promise<string>
   readonly openTabBeside?: (kind: string, at?: string) => Promise<string>
   readonly closeTab?: (id: string) => void
+  readonly getTabState?: (id: string) => unknown
   readonly getSetting?: (pluginId: string, key: string) => unknown
   readonly onSettingChange?: (
     pluginId: string,
@@ -54,6 +55,7 @@ export interface PluginHostDeps {
   readonly closeTabsForPlugin?: (pluginId: string) => void
   readonly tabActionHandlers?: Record<string, TabActionHandler>
   readonly onTabAction?: (action: string, at: string, ...args: unknown[]) => unknown
+
   readonly onCustomCardAdded?: (
     at: string,
     values: readonly { field: string; text: string }[],

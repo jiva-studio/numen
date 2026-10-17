@@ -22,9 +22,6 @@ vi.mock('./kinds/agent', () => ({
     return h.agents
   },
 }))
-vi.mock('./kinds/readers', () => ({
-  createReaderKinds: () => ({ read: { kind: 'read' } }),
-}))
 vi.mock('./kinds/media', () => ({
   createMediaKinds: () => ({}),
 }))
@@ -84,7 +81,6 @@ describe('the window kinds', () => {
       'settings',
       'plex',
       'agent',
-      'read',
       'files',
     ])
   })

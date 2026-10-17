@@ -3,16 +3,25 @@
  */
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import DocumentTab from './DocumentTab.vue'
-import { setPdfPluginActive } from '@/pages/document-viewer/model/pluginState'
 
 export { DocumentTab }
+export * from './types'
+export * from './words'
+export { documents } from './api/wire'
+export { useDocumentReader } from './model/useDocumentReader'
+export { useDocumentTab } from './model/useDocumentTab'
 
-export function activate(_context?: PluginContext): void {
-  setPdfPluginActive(true)
+export function activate(context: PluginContext): void {
+  context.registerReader({
+    id: 'reader-pdf',
+    fileExtensions: ['.pdf'],
+    component: DocumentTab,
+    title: 'PDF Reader',
+  })
 }
 
 export function deactivate(): void {
-  setPdfPluginActive(false)
+  // Cleanup if needed
 }
 
 export default definePlugin({

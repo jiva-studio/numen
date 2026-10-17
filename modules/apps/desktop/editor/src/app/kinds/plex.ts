@@ -1,10 +1,11 @@
 /** The plex tab kind of a window. */
 import { computed, type ShallowRef } from 'vue'
-import { createPlexKind as buildPlexKind, usePlexView, type PlexTabState } from '@/pages/plex-graph'
+import { usePlexView, type PlexTabState } from '@plugins/view-plex-graph/frontend'
 import { CREATABLE } from '@/entities/note'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { searchCore } from '../vault/search'
 import type { WindowKindsDeps } from './deps'
+import { createPlexKind as buildPlexKind } from './plexKind'
 
 export interface PlexKindDeps extends Pick<
   WindowKindsDeps,

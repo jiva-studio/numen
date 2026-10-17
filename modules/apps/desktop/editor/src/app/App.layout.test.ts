@@ -9,9 +9,9 @@ import { describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
 import { Plex, Tree, WelcomePage, WorkspaceLayout } from '@numen/ui'
 import { AgentTab } from '@/pages/agent-chat'
-import { DocumentTab } from '@/pages/document-viewer'
+import { DocumentTab } from '@plugins/reader-pdf/frontend'
 import { FilesTab } from '@/pages/file-manager'
-import { PlexTab } from '@/pages/plex-graph'
+import { PlexTab } from '@plugins/view-plex-graph/frontend'
 import { getPanes } from '@numen/ui'
 import {
   requests,

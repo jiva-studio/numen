@@ -77,6 +77,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   const { getSetting, onSettingChange } = createPluginSettingsAccessor(settingsHolder)
 
   const closeTabsForPlugin = (pluginId: string) => {
+    if (!pluginId) return
     for (const tab of held.tabs.value) {
       const windowTab = held.getTab(tab.id)
       if ((windowTab?.state as { pluginId?: string } | undefined)?.pluginId === pluginId) {
@@ -93,6 +94,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     openTab: held.openTabOfKind,
     openTabBeside: held.openTabBesideOfKind,
     closeTab: held.finishClose,
+    getTabState: (id: string) => held.getTab(id)?.state,
     getSetting,
     onSettingChange,
     closeTabsForPlugin,

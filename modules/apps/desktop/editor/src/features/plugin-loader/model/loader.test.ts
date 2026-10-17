@@ -81,9 +81,16 @@ describe('createPluginLoader', () => {
     }
   }
 
+  function createTestLoader(
+    host: PluginHost,
+    extra: Partial<Omit<Parameters<typeof createPluginLoader>[0], 'host'>> = {},
+  ) {
+    return createPluginLoader({ host, loaders: {}, ...extra })
+  }
+
   it('activates and deactivates plugins with lifecycle hooks', async () => {
     const host = createMockHost()
-    const loader = createPluginLoader({ host })
+    const loader = createTestLoader(host)
 
     let activated = false
     let deactivated = false
@@ -117,7 +124,7 @@ describe('createPluginLoader', () => {
 
   it('handles start and close cycles', async () => {
     const host = createMockHost()
-    const loader = createPluginLoader({ host })
+    const loader = createTestLoader(host)
 
     let activatedCount = 0
     loader.registerPluginModule('p1', async () => ({
@@ -138,7 +145,7 @@ describe('createPluginLoader', () => {
   it('does not activate disabled plugins on start', async () => {
     const host = createMockHost()
     host.settings.set('disabled.plugin.enabled', false)
-    const loader = createPluginLoader({ host })
+    const loader = createTestLoader(host)
 
     let activated = false
     loader.registerPluginModule('disabled.plugin', async () => ({
@@ -154,7 +161,7 @@ describe('createPluginLoader', () => {
 
   it('deactivates and reactivates plugins when enabled setting is toggled', async () => {
     const host = createMockHost()
-    const loader = createPluginLoader({ host })
+    const loader = createTestLoader(host)
 
     let activated = false
     let deactivated = false
@@ -222,8 +229,7 @@ describe('createPluginLoader', () => {
       }
     })
 
-    const loader = createPluginLoader({
-      host,
+    const loader = createTestLoader(host, {
       fetch: mockFetch as unknown as typeof fetch,
       dynamicImport: mockDynamicImport,
     })
@@ -256,8 +262,7 @@ describe('createPluginLoader', () => {
       throw new Error('Network failure or invalid bundle')
     })
 
-    const loader = createPluginLoader({
-      host,
+    const loader = createTestLoader(host, {
       dynamicImport: mockDynamicImport,
     })
 
@@ -275,8 +280,7 @@ describe('createPluginLoader', () => {
       },
     }))
 
-    const loader = createPluginLoader({
-      host,
+    const loader = createTestLoader(host, {
       dynamicImport: mockDynamicImport,
     })
 

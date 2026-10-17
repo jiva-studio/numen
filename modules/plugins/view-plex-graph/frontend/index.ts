@@ -5,15 +5,15 @@ import {
   type VaultChangeEvent,
 } from '@numen/plugin-sdk'
 import PlexGraphView from './PlexGraphView.vue'
-import { setPlexPluginActive } from '@/pages/plex-graph/model/pluginState'
 
 export { PlexGraphView, PlexGraphView as PlexTab }
+export { usePlexTab } from './model/usePlexTab'
+export { usePlexView } from './model/usePlexView'
+export { ITEMS, NONE, OFFERED, NEW_NOTE } from './lib/menu'
 export * from './types'
 export * from './words'
 
 export function activate(context: PluginContext): void {
-  setPlexPluginActive(true)
-
   context.registerTabKind({
     kind: 'plex-graph',
     component: PlexGraphView,
@@ -30,7 +30,7 @@ export function activate(context: PluginContext): void {
 }
 
 export function deactivate(): void {
-  setPlexPluginActive(false)
+  // Cleanup if needed
 }
 
 export default definePlugin({
