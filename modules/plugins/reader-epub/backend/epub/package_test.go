@@ -435,3 +435,9 @@ func TestHowTheLayoutValuesAreRead(t *testing.T) {
 		}
 	})
 }
+
+func TestResolveEmptyHref(t *testing.T) {
+	if got := epub.Resolve("OEBPS", ""); got != "" {
+		t.Errorf("resolve(\"OEBPS\", \"\") = %q, want \"\"", got)
+	}
+}
