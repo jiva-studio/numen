@@ -49,8 +49,28 @@ permissions:
   contents: read
 
 jobs:
+  # Whether the change is more than documentation. The checks below always start
+  # and report under their own names; a job skipped on this result reports as
+  # skipped, which a required check accepts.
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.detect.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - id: detect
+        uses: ./.github/actions/detect-code
+
   lint:
     name: Lint
+    needs: [changes]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
@@ -103,6 +123,8 @@ jobs:
 
   test:
     name: Tests
+    needs: [changes]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
@@ -183,6 +205,8 @@ jobs:
   # a machine it is not being built on.
   cli:
     name: CLI
+    needs: [changes]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:
