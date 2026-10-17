@@ -28,6 +28,104 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type DetachTabRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The tab to open in a new window.
+	TabId string `protobuf:"bytes,1,opt,name=tab_id,json=tabId,proto3" json:"tab_id,omitempty"`
+	// The position on screen to open the new window at.
+	X             int32 `protobuf:"varint,2,opt,name=x,proto3" json:"x,omitempty"`
+	Y             int32 `protobuf:"varint,3,opt,name=y,proto3" json:"y,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DetachTabRequest) Reset() {
+	*x = DetachTabRequest{}
+	mi := &file_numen_v1_workspace_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DetachTabRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DetachTabRequest) ProtoMessage() {}
+
+func (x *DetachTabRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_workspace_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DetachTabRequest.ProtoReflect.Descriptor instead.
+func (*DetachTabRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *DetachTabRequest) GetTabId() string {
+	if x != nil {
+		return x.TabId
+	}
+	return ""
+}
+
+func (x *DetachTabRequest) GetX() int32 {
+	if x != nil {
+		return x.X
+	}
+	return 0
+}
+
+func (x *DetachTabRequest) GetY() int32 {
+	if x != nil {
+		return x.Y
+	}
+	return 0
+}
+
+type DetachTabResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DetachTabResponse) Reset() {
+	*x = DetachTabResponse{}
+	mi := &file_numen_v1_workspace_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DetachTabResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DetachTabResponse) ProtoMessage() {}
+
+func (x *DetachTabResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_workspace_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DetachTabResponse.ProtoReflect.Descriptor instead.
+func (*DetachTabResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{1}
+}
+
 type WatchFocusRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -36,7 +134,7 @@ type WatchFocusRequest struct {
 
 func (x *WatchFocusRequest) Reset() {
 	*x = WatchFocusRequest{}
-	mi := &file_numen_v1_workspace_proto_msgTypes[0]
+	mi := &file_numen_v1_workspace_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -48,7 +146,7 @@ func (x *WatchFocusRequest) String() string {
 func (*WatchFocusRequest) ProtoMessage() {}
 
 func (x *WatchFocusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_workspace_proto_msgTypes[0]
+	mi := &file_numen_v1_workspace_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -61,7 +159,7 @@ func (x *WatchFocusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchFocusRequest.ProtoReflect.Descriptor instead.
 func (*WatchFocusRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{0}
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{2}
 }
 
 type WatchFocusResponse struct {
@@ -79,7 +177,7 @@ type WatchFocusResponse struct {
 
 func (x *WatchFocusResponse) Reset() {
 	*x = WatchFocusResponse{}
-	mi := &file_numen_v1_workspace_proto_msgTypes[1]
+	mi := &file_numen_v1_workspace_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -91,7 +189,7 @@ func (x *WatchFocusResponse) String() string {
 func (*WatchFocusResponse) ProtoMessage() {}
 
 func (x *WatchFocusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_workspace_proto_msgTypes[1]
+	mi := &file_numen_v1_workspace_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -104,7 +202,7 @@ func (x *WatchFocusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchFocusResponse.ProtoReflect.Descriptor instead.
 func (*WatchFocusResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{1}
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *WatchFocusResponse) GetPath() string {
@@ -134,7 +232,7 @@ type WriteOpenTabsRequest struct {
 
 func (x *WriteOpenTabsRequest) Reset() {
 	*x = WriteOpenTabsRequest{}
-	mi := &file_numen_v1_workspace_proto_msgTypes[2]
+	mi := &file_numen_v1_workspace_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -146,7 +244,7 @@ func (x *WriteOpenTabsRequest) String() string {
 func (*WriteOpenTabsRequest) ProtoMessage() {}
 
 func (x *WriteOpenTabsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_workspace_proto_msgTypes[2]
+	mi := &file_numen_v1_workspace_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -159,7 +257,7 @@ func (x *WriteOpenTabsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteOpenTabsRequest.ProtoReflect.Descriptor instead.
 func (*WriteOpenTabsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{2}
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *WriteOpenTabsRequest) GetTabs() []*Tab {
@@ -184,7 +282,7 @@ type WriteOpenTabsResponse struct {
 
 func (x *WriteOpenTabsResponse) Reset() {
 	*x = WriteOpenTabsResponse{}
-	mi := &file_numen_v1_workspace_proto_msgTypes[3]
+	mi := &file_numen_v1_workspace_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -196,7 +294,7 @@ func (x *WriteOpenTabsResponse) String() string {
 func (*WriteOpenTabsResponse) ProtoMessage() {}
 
 func (x *WriteOpenTabsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_workspace_proto_msgTypes[3]
+	mi := &file_numen_v1_workspace_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -209,7 +307,7 @@ func (x *WriteOpenTabsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteOpenTabsResponse.ProtoReflect.Descriptor instead.
 func (*WriteOpenTabsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{5}
 }
 
 // A Tab is one tab of the window: what kind it is, and what it holds.
@@ -240,7 +338,7 @@ type Tab struct {
 
 func (x *Tab) Reset() {
 	*x = Tab{}
-	mi := &file_numen_v1_workspace_proto_msgTypes[4]
+	mi := &file_numen_v1_workspace_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -252,7 +350,7 @@ func (x *Tab) String() string {
 func (*Tab) ProtoMessage() {}
 
 func (x *Tab) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_workspace_proto_msgTypes[4]
+	mi := &file_numen_v1_workspace_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -265,7 +363,7 @@ func (x *Tab) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Tab.ProtoReflect.Descriptor instead.
 func (*Tab) Descriptor() ([]byte, []int) {
-	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Tab) GetId() string {
@@ -330,7 +428,7 @@ type DocumentProgress struct {
 
 func (x *DocumentProgress) Reset() {
 	*x = DocumentProgress{}
-	mi := &file_numen_v1_workspace_proto_msgTypes[5]
+	mi := &file_numen_v1_workspace_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -342,7 +440,7 @@ func (x *DocumentProgress) String() string {
 func (*DocumentProgress) ProtoMessage() {}
 
 func (x *DocumentProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_workspace_proto_msgTypes[5]
+	mi := &file_numen_v1_workspace_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -355,7 +453,7 @@ func (x *DocumentProgress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DocumentProgress.ProtoReflect.Descriptor instead.
 func (*DocumentProgress) Descriptor() ([]byte, []int) {
-	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *DocumentProgress) GetPage() int32 {
@@ -390,7 +488,7 @@ type BookProgress struct {
 
 func (x *BookProgress) Reset() {
 	*x = BookProgress{}
-	mi := &file_numen_v1_workspace_proto_msgTypes[6]
+	mi := &file_numen_v1_workspace_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -402,7 +500,7 @@ func (x *BookProgress) String() string {
 func (*BookProgress) ProtoMessage() {}
 
 func (x *BookProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_workspace_proto_msgTypes[6]
+	mi := &file_numen_v1_workspace_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -415,7 +513,7 @@ func (x *BookProgress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BookProgress.ProtoReflect.Descriptor instead.
 func (*BookProgress) Descriptor() ([]byte, []int) {
-	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *BookProgress) GetOffset() int32 {
@@ -454,7 +552,7 @@ type RecordingProgress struct {
 
 func (x *RecordingProgress) Reset() {
 	*x = RecordingProgress{}
-	mi := &file_numen_v1_workspace_proto_msgTypes[7]
+	mi := &file_numen_v1_workspace_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -466,7 +564,7 @@ func (x *RecordingProgress) String() string {
 func (*RecordingProgress) ProtoMessage() {}
 
 func (x *RecordingProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_workspace_proto_msgTypes[7]
+	mi := &file_numen_v1_workspace_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -479,7 +577,7 @@ func (x *RecordingProgress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordingProgress.ProtoReflect.Descriptor instead.
 func (*RecordingProgress) Descriptor() ([]byte, []int) {
-	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *RecordingProgress) GetTranscribedDurationMs() int32 {
@@ -500,7 +598,12 @@ var File_numen_v1_workspace_proto protoreflect.FileDescriptor
 
 const file_numen_v1_workspace_proto_rawDesc = "" +
 	"\n" +
-	"\x18numen/v1/workspace.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x13\n" +
+	"\x18numen/v1/workspace.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"E\n" +
+	"\x10DetachTabRequest\x12\x15\n" +
+	"\x06tab_id\x18\x01 \x01(\tR\x05tabId\x12\f\n" +
+	"\x01x\x18\x02 \x01(\x05R\x01x\x12\f\n" +
+	"\x01y\x18\x03 \x01(\x05R\x01y\"\x13\n" +
+	"\x11DetachTabResponse\"\x13\n" +
 	"\x11WatchFocusRequest\"N\n" +
 	"\x12WatchFocusResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12$\n" +
@@ -529,11 +632,12 @@ const file_numen_v1_workspace_proto_rawDesc = "" +
 	"\x11RecordingProgress\x126\n" +
 	"\x17transcribed_duration_ms\x18\x01 \x01(\x05R\x15transcribedDurationMs\x12\x1f\n" +
 	"\vduration_ms\x18\x02 \x01(\x05R\n" +
-	"durationMs2\xaf\x01\n" +
+	"durationMs2\xf5\x01\n" +
 	"\x10WorkspaceService\x12I\n" +
 	"\n" +
 	"WatchFocus\x12\x1b.numen.v1.WatchFocusRequest\x1a\x1c.numen.v1.WatchFocusResponse0\x01\x12P\n" +
-	"\rWriteOpenTabs\x12\x1e.numen.v1.WriteOpenTabsRequest\x1a\x1f.numen.v1.WriteOpenTabsResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\rWriteOpenTabs\x12\x1e.numen.v1.WriteOpenTabsRequest\x1a\x1f.numen.v1.WriteOpenTabsResponse\x12D\n" +
+	"\tDetachTab\x12\x1a.numen.v1.DetachTabRequest\x1a\x1b.numen.v1.DetachTabResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_workspace_proto_rawDescOnce sync.Once
@@ -547,33 +651,37 @@ func file_numen_v1_workspace_proto_rawDescGZIP() []byte {
 	return file_numen_v1_workspace_proto_rawDescData
 }
 
-var file_numen_v1_workspace_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_numen_v1_workspace_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_numen_v1_workspace_proto_goTypes = []any{
-	(*WatchFocusRequest)(nil),     // 0: numen.v1.WatchFocusRequest
-	(*WatchFocusResponse)(nil),    // 1: numen.v1.WatchFocusResponse
-	(*WriteOpenTabsRequest)(nil),  // 2: numen.v1.WriteOpenTabsRequest
-	(*WriteOpenTabsResponse)(nil), // 3: numen.v1.WriteOpenTabsResponse
-	(*Tab)(nil),                   // 4: numen.v1.Tab
-	(*DocumentProgress)(nil),      // 5: numen.v1.DocumentProgress
-	(*BookProgress)(nil),          // 6: numen.v1.BookProgress
-	(*RecordingProgress)(nil),     // 7: numen.v1.RecordingProgress
-	(*Span)(nil),                  // 8: numen.v1.Span
+	(*DetachTabRequest)(nil),      // 0: numen.v1.DetachTabRequest
+	(*DetachTabResponse)(nil),     // 1: numen.v1.DetachTabResponse
+	(*WatchFocusRequest)(nil),     // 2: numen.v1.WatchFocusRequest
+	(*WatchFocusResponse)(nil),    // 3: numen.v1.WatchFocusResponse
+	(*WriteOpenTabsRequest)(nil),  // 4: numen.v1.WriteOpenTabsRequest
+	(*WriteOpenTabsResponse)(nil), // 5: numen.v1.WriteOpenTabsResponse
+	(*Tab)(nil),                   // 6: numen.v1.Tab
+	(*DocumentProgress)(nil),      // 7: numen.v1.DocumentProgress
+	(*BookProgress)(nil),          // 8: numen.v1.BookProgress
+	(*RecordingProgress)(nil),     // 9: numen.v1.RecordingProgress
+	(*Span)(nil),                  // 10: numen.v1.Span
 }
 var file_numen_v1_workspace_proto_depIdxs = []int32{
-	8, // 0: numen.v1.WatchFocusResponse.spans:type_name -> numen.v1.Span
-	4, // 1: numen.v1.WriteOpenTabsRequest.tabs:type_name -> numen.v1.Tab
-	5, // 2: numen.v1.Tab.document:type_name -> numen.v1.DocumentProgress
-	7, // 3: numen.v1.Tab.recording:type_name -> numen.v1.RecordingProgress
-	6, // 4: numen.v1.Tab.book:type_name -> numen.v1.BookProgress
-	0, // 5: numen.v1.WorkspaceService.WatchFocus:input_type -> numen.v1.WatchFocusRequest
-	2, // 6: numen.v1.WorkspaceService.WriteOpenTabs:input_type -> numen.v1.WriteOpenTabsRequest
-	1, // 7: numen.v1.WorkspaceService.WatchFocus:output_type -> numen.v1.WatchFocusResponse
-	3, // 8: numen.v1.WorkspaceService.WriteOpenTabs:output_type -> numen.v1.WriteOpenTabsResponse
-	7, // [7:9] is the sub-list for method output_type
-	5, // [5:7] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	10, // 0: numen.v1.WatchFocusResponse.spans:type_name -> numen.v1.Span
+	6,  // 1: numen.v1.WriteOpenTabsRequest.tabs:type_name -> numen.v1.Tab
+	7,  // 2: numen.v1.Tab.document:type_name -> numen.v1.DocumentProgress
+	9,  // 3: numen.v1.Tab.recording:type_name -> numen.v1.RecordingProgress
+	8,  // 4: numen.v1.Tab.book:type_name -> numen.v1.BookProgress
+	2,  // 5: numen.v1.WorkspaceService.WatchFocus:input_type -> numen.v1.WatchFocusRequest
+	4,  // 6: numen.v1.WorkspaceService.WriteOpenTabs:input_type -> numen.v1.WriteOpenTabsRequest
+	0,  // 7: numen.v1.WorkspaceService.DetachTab:input_type -> numen.v1.DetachTabRequest
+	3,  // 8: numen.v1.WorkspaceService.WatchFocus:output_type -> numen.v1.WatchFocusResponse
+	5,  // 9: numen.v1.WorkspaceService.WriteOpenTabs:output_type -> numen.v1.WriteOpenTabsResponse
+	1,  // 10: numen.v1.WorkspaceService.DetachTab:output_type -> numen.v1.DetachTabResponse
+	8,  // [8:11] is the sub-list for method output_type
+	5,  // [5:8] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_workspace_proto_init() }
@@ -588,7 +696,7 @@ func file_numen_v1_workspace_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_workspace_proto_rawDesc), len(file_numen_v1_workspace_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

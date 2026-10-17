@@ -314,3 +314,96 @@ func TestQuestionRestoresWindowAndBlocksQuit(t *testing.T) {
 		t.Errorf("the window a question was asked in was %v", was)
 	}
 }
+
+// TestWindowTracker tracks window counts and identifies the last remaining window.
+func TestWindowTracker(t *testing.T) {
+	tracker := newWindowTracker()
+	if !tracker.isLast() {
+		t.Error("an empty tracker should report isLast")
+	}
+	if tracker.countWindows() != 0 {
+		t.Errorf("expected 0 windows, got %d", tracker.countWindows())
+	}
+
+	tracker.addWindow()
+	if !tracker.isLast() {
+		t.Error("a single window should report isLast")
+	}
+	if tracker.countWindows() != 1 {
+		t.Errorf("expected 1 window, got %d", tracker.countWindows())
+	}
+
+	tracker.addWindow()
+	if tracker.isLast() {
+		t.Error("two windows should not report isLast")
+	}
+	if tracker.countWindows() != 2 {
+		t.Errorf("expected 2 windows, got %d", tracker.countWindows())
+	}
+
+	if tracker.removeWindow() {
+		t.Error("removing one of two windows should not report 0 left")
+	}
+	if !tracker.isLast() {
+		t.Error("one remaining window should report isLast")
+	}
+	if !tracker.removeWindow() {
+		t.Error("removing last window should report 0 left")
+	}
+
+	tracker.addWindow()
+	tracker.addWindow()
+	if !tracker.closeSecondaryWindow() {
+		t.Error("closeSecondaryWindow should succeed when more than one window remains")
+	}
+	if tracker.countWindows() != 1 {
+		t.Errorf("expected 1 window, got %d", tracker.countWindows())
+	}
+	if tracker.closeSecondaryWindow() {
+		t.Error("closeSecondaryWindow should report false for the last window")
+	}
+	if tracker.countWindows() != 1 {
+		t.Errorf("expected window count to remain 1, got %d", tracker.countWindows())
+	}
+}
+
+// TestHandleWindowClosingSecondaryWindowClosesWithoutFlushing. Closing a secondary
+// window leaves the vault untouched, while closing the last window flushes it.
+func TestHandleWindowClosingSecondaryWindowClosesWithoutFlushing(t *testing.T) {
+	tracker := newWindowTracker()
+	tracker.addWindow()
+	tracker.addWindow()
+
+	settler := newSettler(true)
+	g := &vaultFlush{flush: settler.settle}
+	seen := makeScreen()
+
+	closed := handleWindowClosing(t.Context(), tracker, g, seen.sight(), func(context.Context) bool {
+		t.Error("secondary window close should not wait for flush answers")
+		return false
+	}, func() {
+		t.Error("secondary window close should not retry")
+	})
+
+	if !closed {
+		t.Fatal("secondary window closing should succeed immediately")
+	}
+	if settler.getSettledCount() != 0 {
+		t.Errorf("vault should not have flushed on secondary window close, got %d flushes", settler.getSettledCount())
+	}
+	if !tracker.isLast() {
+		t.Error("tracker should now report last window remaining")
+	}
+
+	// Now close the last remaining window
+	lastClosed := handleWindowClosing(t.Context(), tracker, g, seen.sight(), func(context.Context) bool {
+		return false
+	}, func() {})
+
+	if !lastClosed {
+		t.Fatal("last window closing should succeed when vault flushes")
+	}
+	if settler.getSettledCount() != 1 {
+		t.Errorf("vault should have flushed once on last window close, got %d flushes", settler.getSettledCount())
+	}
+}

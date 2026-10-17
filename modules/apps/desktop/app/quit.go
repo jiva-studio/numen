@@ -42,6 +42,72 @@ func closeWindow(
 	return false
 }
 
+// windowTracker tracks active open windows and answers whether a closing window is the last.
+type windowTracker struct {
+	mu    sync.Mutex
+	count int
+}
+
+func newWindowTracker() *windowTracker {
+	return &windowTracker{}
+}
+
+func (t *windowTracker) addWindow() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.count++
+}
+
+func (t *windowTracker) removeWindow() bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.count > 0 {
+		t.count--
+	}
+	return t.count == 0
+}
+
+func (t *windowTracker) isLast() bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.count <= 1
+}
+
+func (t *windowTracker) countWindows() int {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.count
+}
+
+// closeSecondaryWindow decrements the window count if there is more than one window.
+// It reports true if this was a secondary window (count > 1) and count was decremented,
+// or false if this is the final window and closing must flush the vault.
+func (t *windowTracker) closeSecondaryWindow() bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.count > 1 {
+		t.count--
+		return true
+	}
+	return false
+}
+
+// handleWindowClosing handles a window close event. The last window flushes the vault
+// before quitting; secondary windows simply close.
+func handleWindowClosing(
+	ctx context.Context,
+	tracker *windowTracker,
+	g *vaultFlush,
+	s visibility,
+	answered func(context.Context) bool,
+	retry func(),
+) bool {
+	if tracker.closeSecondaryWindow() {
+		return true
+	}
+	return closeWindow(ctx, g, s, answered, retry)
+}
+
 // requestQuit is a quit that did not come through the window, and answers with
 // whether the application may go.
 //

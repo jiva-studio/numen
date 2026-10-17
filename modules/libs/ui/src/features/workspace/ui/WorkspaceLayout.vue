@@ -55,6 +55,8 @@ const emit = defineEmits<{
    * told here that it can measure itself.
    */
   (event: 'show', tab: TabId): void
+  /** A tab dragged out of the workspace into empty space or a new window. */
+  (event: 'tear-off', tab: TabId, at: { x: number; y: number }): void
 }>()
 
 const slots = defineSlots<{
@@ -88,6 +90,7 @@ const { hasMoved, overlay, label, position, dropTarget, press } = useTabDrag({
   getEdge: () => props.edge,
   getThreshold: () => props.threshold,
   getClock: () => props.clock,
+  onTearOff: (tab, at) => emit('tear-off', tab, at),
 })
 
 /* -------------------------------- Handlers -------------------------------- */

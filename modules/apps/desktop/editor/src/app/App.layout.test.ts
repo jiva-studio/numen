@@ -334,4 +334,29 @@ describe('tab linking context menu', () => {
 
     expect(window.findComponent({ name: 'TabLinkMenu' }).exists()).toBe(false)
   })
+
+  it('detaches and releases tab when tear-off is emitted', async () => {
+    const window = await mountWindow()
+    const layout = window.findComponent(WorkspaceLayout)
+
+    const plexTabId = getTabs(window).find((t) => t.id.startsWith('plex:'))?.id ?? 'plex:main'
+    layout.vm.$emit('tear-off', plexTabId, { x: 300, y: 400 })
+    await settle()
+
+    const remaining = getTabs(window).map((t) => t.id)
+    expect(remaining).not.toContain(plexTabId)
+  })
+
+  it('keeps tab open when tear-off fails', async () => {
+    said.detachError = 'detach rejected'
+    const window = await mountWindow()
+    const layout = window.findComponent(WorkspaceLayout)
+
+    const plexTabId = getTabs(window).find((t) => t.id.startsWith('plex:'))?.id ?? 'plex:main'
+    layout.vm.$emit('tear-off', plexTabId, { x: 300, y: 400 })
+    await settle()
+
+    const remaining = getTabs(window).map((t) => t.id)
+    expect(remaining).toContain(plexTabId)
+  })
 })

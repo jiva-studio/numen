@@ -88,6 +88,9 @@ vi.mock('@/app/vault', () => ({
     },
     watchQuit: held,
     reportFlush: async () => {},
+    detachTab: async () => {
+      if (said.detachError) throw new Error(said.detachError)
+    },
     names: async () => said.names,
     search: async () => said.passages,
     fileKinds: async (paths: readonly string[]) =>

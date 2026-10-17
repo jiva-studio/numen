@@ -2,6 +2,7 @@ package editor
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"connectrpc.com/connect"
@@ -58,6 +59,19 @@ func (h *workspaceHandler) WriteOpenTabs(
 		h.state.NotifyOpenTabs(open)
 	}
 	return connect.NewResponse(&v1.WriteOpenTabsResponse{}), nil
+}
+
+// DetachTab asks that a tab be opened in a new window.
+func (h *workspaceHandler) DetachTab(
+	ctx context.Context, r *connect.Request[v1.DetachTabRequest],
+) (*connect.Response[v1.DetachTabResponse], error) {
+	if h.state.DetachTab == nil {
+		return nil, connect.NewError(connect.CodeUnavailable, errors.New("tab tear-off not supported"))
+	}
+	if err := h.state.DetachTab(ctx, r.Msg.GetTabId(), int(r.Msg.GetX()), int(r.Msg.GetY())); err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&v1.DetachTabResponse{}), nil
 }
 
 // GetOpenTabs is what the person has open, as the window last said. A window

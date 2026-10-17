@@ -13,6 +13,7 @@ import type { FieldRenameResult } from '@/entities/deck'
 export const said = {
   isReady: true,
   error: '',
+  detachError: '',
   opening: 'Root.md' as string | null,
   names: [] as {
     path: string
@@ -228,6 +229,7 @@ export const forgetAnswers = () => {
   said.embedded = 0
   said.listable = true
   said.writeError = ''
+  said.detachError = ''
   said.applied = 'preset:numen'
   said.mode = 'system'
   said.sizes = { interfaceScale: 1, textScale: 1 }

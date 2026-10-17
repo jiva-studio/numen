@@ -76,6 +76,7 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     saveSettingsFile: async () => ({ isChanged: false }),
     watchQuit: async function* () {},
     reportFlush: async () => {},
+    detachTab: async () => {},
     ...over,
   }
 }

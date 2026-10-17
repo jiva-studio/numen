@@ -84,6 +84,9 @@ type State struct {
 	// nobody.
 	NotifyOpenTabs func(domain.OpenTabs)
 
+	// DetachTab opens a tab in its own window at the given screen coordinates.
+	DetachTab func(context.Context, string, int, int) error
+
 	// Writing is the writes taken and not yet finished.
 	Writing inflight
 

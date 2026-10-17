@@ -462,3 +462,29 @@ describe('a preset opened', () => {
     expect(h.f.writer).not.toHaveBeenCalled()
   })
 })
+
+describe('the layout started with an initial tab', () => {
+  it('opens tab of kind with at payload from URL search params', async () => {
+    h.f.held.openTabOfKind.mockResolvedValue('note:hello.md')
+    const originalLocation = globalThis.location
+    try {
+      // @ts-expect-error mocking location for test
+      delete globalThis.location
+      globalThis.location = new URL(
+        'http://localhost/?window=secondary&tab=note:hello.md',
+      ) as unknown as Location
+      useWindow()
+
+      await h.args.bootstrap.startLayout()
+
+      expect(h.f.held.openTabOfKind).toHaveBeenCalledWith('note', 'hello.md')
+      expect(h.f.held.layout.value).toEqual({
+        root: { kind: 'pane', id: 'main', tabs: ['note:hello.md'], active: 'note:hello.md' },
+        axis: 'horizontal',
+        focus: 'main',
+      })
+    } finally {
+      globalThis.location = originalLocation
+    }
+  })
+})

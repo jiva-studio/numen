@@ -188,3 +188,19 @@ describe('the strip under a keyboard', () => {
     expect(held.emitted('activate')?.[0]?.[0]).toBe('chat')
   })
 })
+
+describe('a tab dragged out of the workspace', () => {
+  it('emits tear-off when released outside any drop target', async () => {
+    const held = mountWorkspace()
+    const tab = held.find('[data-workspace-tab="plex"]')
+    tab.element.dispatchEvent(
+      new PointerEvent('pointerdown', { button: 0, clientX: 200, clientY: 200, bubbles: true }),
+    )
+    window.dispatchEvent(
+      new PointerEvent('pointermove', { clientX: 10, clientY: 10, bubbles: true }),
+    )
+    window.dispatchEvent(new PointerEvent('pointerup', { clientX: 10, clientY: 10, bubbles: true }))
+
+    expect(held.emitted('tear-off')).toStrictEqual([['plex', { x: 10, y: 10 }]])
+  })
+})

@@ -31,6 +31,7 @@ export type SessionCore = Pick<
   | 'watchTasks'
   | 'watchQuit'
   | 'reportFlush'
+  | 'detachTab'
 >
 
 export const sessionCore: SessionCore = {
@@ -79,5 +80,8 @@ export const sessionCore: SessionCore = {
       token,
       result: flushResults[owed ?? 'nothing'],
     })
+  },
+  detachTab: async (tabId, at) => {
+    await workspace.detachTab({ tabId, x: at.x, y: at.y })
   },
 }
