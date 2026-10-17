@@ -367,7 +367,7 @@ func (p *streamParser) reportEdit() {
 	if !strings.Contains(args, `"`+words.text+`"`) {
 		return
 	}
-	path, match := getPartialJSONField(args, words.about), getPartialJSONField(args, words.match)
+	path, match := getPartialJSONField(args, "path"), getPartialJSONField(args, words.match)
 	if path == "" || match == "" {
 		return
 	}

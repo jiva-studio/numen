@@ -251,3 +251,19 @@ func TestPartialJSONFieldIsReadAtEveryTruncation(t *testing.T) {
 		t.Error("a missing field was read")
 	}
 }
+
+func TestAChangeIsLocatedByThePathArgumentAlone(t *testing.T) {
+	var got []*numenv1.AskAgentResponse
+	p := &streamParser{
+		send:  func(r *numenv1.AskAgentResponse) error { got = append(got, r); return nil },
+		words: map[string]toolWords{"note_edit": {about: "title", match: "stood", text: "becomes"}},
+		now:   func() time.Time { return time.Unix(100, 0) },
+	}
+	p.tool, p.callID = "mcp__numen__note_edit", "c"
+	p.arguments.WriteString(`{"title":"T","stood":"x","becomes":"y`)
+	p.reportEdit()
+
+	if len(editProgress(got)) != 0 {
+		t.Fatalf("a title was reported as a path: %+v", editProgress(got))
+	}
+}
