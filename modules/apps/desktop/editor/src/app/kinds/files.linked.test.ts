@@ -69,11 +69,12 @@ describe('createFilesKind with linked tabs', () => {
     held.handle.show(filesTabId)
 
     const filesState = held.getTabStateIn<{ list: { getEntryAt: (p: string) => unknown }; activate: (p: string) => void }>(filesTabId, 'files')
-    vi.spyOn(filesState!.list, 'getEntryAt').mockImplementation(
+    if (!filesState) throw new Error('filesState expected')
+    vi.spyOn(filesState.list, 'getEntryAt').mockImplementation(
       ((p: string) => entriesMap.get(p) as unknown) as never,
     )
 
-    filesState!.activate('folder/target.md')
+    filesState.activate('folder/target.md')
 
     expect(loadInTabMock).toHaveBeenCalledWith(
       noteTabId.replace(/^note:/, ''),

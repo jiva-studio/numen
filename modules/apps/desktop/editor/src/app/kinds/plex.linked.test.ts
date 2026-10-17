@@ -88,12 +88,14 @@ describe('createPlexKind with linked tabs', () => {
     held.handle.show(plexTabId)
 
     const plexState = held.getTabStateIn<MockPlexState>(plexTabId, 'plex')
-    await plexState!.view.go('Start.md')
+    if (!plexState) throw new Error('plexState expected')
+    await plexState.view.go('Start.md')
 
-    const targetNode = plexState!.picture.value.nodes.find((n: MockPlexNode) => n.title === 'Target Title')
+    const targetNode = plexState.picture.value.nodes.find((n: MockPlexNode) => n.title === 'Target Title')
     expect(targetNode).toBeDefined()
+    if (!targetNode) throw new Error('targetNode expected')
 
-    plexState!.openNode(targetNode!.id)
+    plexState.openNode(targetNode.id)
     expect(loadInTabMock).toHaveBeenCalledWith(
       noteTabId.replace(/^note:/, ''),
       'Target.md',
@@ -176,12 +178,14 @@ describe('createPlexKind with linked tabs', () => {
     held.handle.show(plexTabId)
 
     const plexState = held.getTabStateIn<MockPlexState>(plexTabId, 'plex')
-    await plexState!.view.go('Start.md')
+    if (!plexState) throw new Error('plexState expected')
+    await plexState.view.go('Start.md')
 
-    const targetNode = plexState!.picture.value.nodes.find((n: MockPlexNode) => n.title === 'Selected Title')
+    const targetNode = plexState.picture.value.nodes.find((n: MockPlexNode) => n.title === 'Selected Title')
     expect(targetNode).toBeDefined()
+    if (!targetNode) throw new Error('targetNode expected')
 
-    plexState!.activate(targetNode!.id)
+    plexState.activate(targetNode.id)
     expect(revealPathMock).toHaveBeenCalledWith('Selected.md')
   })
 })
