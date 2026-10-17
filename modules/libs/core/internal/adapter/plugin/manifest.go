@@ -16,6 +16,9 @@ const (
 
 	// PermissionNetworkOutbound allows outbound network requests.
 	PermissionNetworkOutbound = port.PermissionNetworkOutbound
+
+	// PermissionAIComplete allows asking the host for a model completion.
+	PermissionAIComplete = port.PermissionAIComplete
 )
 
 // Lifecycle defines how the host activates and evicts a plugin from memory.
