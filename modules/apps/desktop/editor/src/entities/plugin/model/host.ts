@@ -142,14 +142,18 @@ function registerReaderEntry(
     )
   }
   let isDisposed = false
-  const cleanup = () => {
-    if (isDisposed) return
-    isDisposed = true
-    for (const fn of cleanups) fn()
-    readers.delete(registration.id)
+  const entry: RegisteredReader = {
+    pluginId,
+    reg: registration,
+    cleanup: () => {
+      if (isDisposed) return
+      isDisposed = true
+      for (const fn of cleanups) fn()
+      if (readers.get(registration.id) === entry) readers.delete(registration.id)
+    },
   }
-  readers.set(registration.id, { pluginId, reg: registration, cleanup })
-  return { dispose: cleanup }
+  readers.set(registration.id, entry)
+  return { dispose: entry.cleanup }
 }
 
 function extractWhere(options?: unknown): unknown {
@@ -189,14 +193,18 @@ function registerTabKindEntry(
     if (typeof unreg === 'function') cleanups.push(unreg)
   }
   let isDisposed = false
-  const cleanup = () => {
-    if (isDisposed) return
-    isDisposed = true
-    for (const fn of cleanups) fn()
-    tabKinds.delete(registration.kind)
+  const entry: RegisteredTabKind = {
+    pluginId,
+    reg: registration,
+    cleanup: () => {
+      if (isDisposed) return
+      isDisposed = true
+      for (const fn of cleanups) fn()
+      if (tabKinds.get(registration.kind) === entry) tabKinds.delete(registration.kind)
+    },
   }
-  tabKinds.set(registration.kind, { pluginId, reg: registration, cleanup })
-  return { dispose: cleanup }
+  tabKinds.set(registration.kind, entry)
+  return { dispose: entry.cleanup }
 }
 
 type EventBridge = Pick<
@@ -229,11 +237,11 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
         getContext: () => registry.contexts.get(pluginId),
       }),
     registerCommand: (pluginId, registration) => {
-      const next = new Map(registry.commands.value)
-      next.set(registration.id, { pluginId, reg: registration })
-      registry.commands.value = next
+      const entry = { pluginId, reg: registration }
+      registry.commands.value = new Map(registry.commands.value).set(registration.id, entry)
       return {
         dispose: () => {
+          if (registry.commands.value.get(registration.id) !== entry) return
           const updated = new Map(registry.commands.value)
           updated.delete(registration.id)
           registry.commands.value = updated
@@ -241,10 +249,13 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
       }
     },
     registerAgentProvider: (pluginId, registration) => {
-      registry.agentProviders.set(registration.id, { pluginId, reg: registration })
+      const entry = { pluginId, reg: registration }
+      registry.agentProviders.set(registration.id, entry)
       return {
         dispose: () => {
-          registry.agentProviders.delete(registration.id)
+          if (registry.agentProviders.get(registration.id) === entry) {
+            registry.agentProviders.delete(registration.id)
+          }
         },
       }
     },
