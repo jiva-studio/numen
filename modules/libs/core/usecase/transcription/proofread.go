@@ -277,46 +277,62 @@ func (p *transcriptProofreadJob) hasLinesFrom(number int) bool {
 // the first line no run has asked about to the end.
 func (u Proofread) askWindows(ctx context.Context, p *transcriptProofreadJob, res *ProofreadResult) error {
 	size := run.GetSize(u.BatchSize, DefaultBatchSize)
-	overlap := run.GetSize(u.Overlap, DefaultOverlap)
-	limit := run.GetSize(u.InFlight, DefaultInFlight) * size
-	from := p.from
+	window := domain.SpeechWindow{
+		Size:    size,
+		Overlap: run.GetSize(u.Overlap, DefaultOverlap),
+		From:    p.from,
+		Limit:   run.GetSize(u.InFlight, DefaultInFlight) * size,
+	}
 	for {
 		if err := ctx.Err(); err != nil {
 			// What came back is on disk already, and the next run begins at the
 			// line this one stopped on.
 			return err
 		}
-		got, err := u.by.ProofreadSpeech(ctx, p.lines, domain.SpeechWindow{
-			Size: size, Overlap: overlap, From: from, Limit: limit,
-		})
+		got, err := u.askWindow(ctx, p, window, res)
 		if err != nil {
-			return fmt.Errorf("proofread %s: %w", p.path, err)
-		}
-		if !got.IsDone && got.Next <= from {
-			return fmt.Errorf("proofread %s: %w", p.path, errNoProgress)
-		}
-		end := len(p.cues)
-		if !got.IsDone {
-			end = got.Next
-		}
-		wrote, err := p.applyCorrections(got.Corrections)
-		if err != nil {
-			return fmt.Errorf("proofread %s: %w", p.path, err)
-		}
-		res.UncorrectedBatches += got.Uncorrected
-		p.markAskedLines(end)
-		res.Fixed, res.Left = len(p.fixed), countUnchanged(p.asked, p.fixed)
-		res.Read = res.Resumed + len(p.asked)
-
-		if err := u.saveWindow(ctx, p, wrote, end); err != nil {
 			return err
 		}
-		run.Report(u.OnProgress, *res)
 		if got.IsDone {
 			return nil
 		}
-		from = got.Next
+		window.From = got.Next
 	}
+}
+
+// askWindow asks about one window, puts what came back into the cues, and saves
+// it. A proofreader that continues from where it began is refused.
+func (u Proofread) askWindow(
+	ctx context.Context,
+	p *transcriptProofreadJob,
+	window domain.SpeechWindow,
+	res *ProofreadResult,
+) (domain.SpeechProofreading, error) {
+	got, err := u.by.ProofreadSpeech(ctx, p.lines, window)
+	if err != nil {
+		return got, fmt.Errorf("proofread %s: %w", p.path, err)
+	}
+	if !got.IsDone && got.Next <= window.From {
+		return got, fmt.Errorf("proofread %s: %w", p.path, errNoProgress)
+	}
+	end := len(p.cues)
+	if !got.IsDone {
+		end = got.Next
+	}
+	wrote, err := p.applyCorrections(got.Corrections)
+	if err != nil {
+		return got, fmt.Errorf("proofread %s: %w", p.path, err)
+	}
+	res.UncorrectedBatches += got.Uncorrected
+	p.markAskedLines(end)
+	res.Fixed, res.Left = len(p.fixed), countUnchanged(p.asked, p.fixed)
+	res.Read = res.Resumed + len(p.asked)
+
+	if err := u.saveWindow(ctx, p, wrote, end); err != nil {
+		return got, err
+	}
+	run.Report(u.OnProgress, *res)
+	return got, nil
 }
 
 // saveWindow writes the words, cuts the source, and writes the count after
