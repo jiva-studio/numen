@@ -331,13 +331,25 @@ func openPluginAsset(ctx context.Context, pluginDir, name string) (*os.File, os.
 	return file, info, nil
 }
 
-// classifyPluginAssetError names the reason root.Open failed on a name that exists as a link.
+// classifyPluginAssetError names the reason root.Open failed. A link on the path whose
+// target the root refuses to resolve leads out of the plugin directory.
 func classifyPluginAssetError(root *os.Root, name string, openErr error) error {
 	if errors.Is(openErr, os.ErrNotExist) || errors.Is(openErr, os.ErrPermission) {
 		return openErr
 	}
-	if linkInfo, err := root.Lstat(name); err == nil && linkInfo.Mode()&os.ModeSymlink != 0 {
-		return errPluginAssetEscapes
+	parts := strings.Split(filepath.ToSlash(name), "/")
+	for i := range parts {
+		prefix := strings.Join(parts[:i+1], "/")
+		linkInfo, err := root.Lstat(prefix)
+		if err != nil {
+			return openErr
+		}
+		if linkInfo.Mode()&os.ModeSymlink == 0 {
+			continue
+		}
+		if _, err := root.Stat(prefix); err != nil && !errors.Is(err, os.ErrNotExist) && !errors.Is(err, os.ErrPermission) {
+			return errPluginAssetEscapes
+		}
 	}
 	return openErr
 }
