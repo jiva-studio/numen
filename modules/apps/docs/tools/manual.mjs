@@ -562,7 +562,7 @@ const flags = async () => {
   const declared = [...main.matchAll(/\bflag\.(?:String|Bool|Float64|Int|Int64|Duration|Uint)(?:Var)?\(/g)]
   const found = [
     ...main.matchAll(
-      /flag\.(?:String|Bool|Float64|Int)Var\(\s*&[^,]+,\s*"([^"]+)",\s*([^,]+),\s*"([^"]*)"\s*\)/g,
+      /flag\.(?:String|Bool|Float64|Int)Var\(\s*&[^,\s]+,\s*"([^"]+)",\s*([^,\s][^,]*),\s*"([^"]*)"\s*\)/g,
     ),
   ]
   if (declared.length === 0) die('no flags are declared in cmd/numen/main.go')
