@@ -2,23 +2,8 @@ name: Desktop Backend
 
 on:
   pull_request:
-    paths:
-      - "modules/apps/desktop/**"
-      - "!modules/apps/desktop/editor/**"
-      - "!modules/apps/desktop/flashcards/**"
-      - "!modules/apps/desktop/**/*.md"
-      - "modules/libs/core/**"
-      - "!modules/libs/core/**/*.md"
-      - "modules/libs/protocol/**"
-      - "!modules/libs/protocol/**/*.md"
-      - "modules/plugins/**"
-      - "!modules/plugins/**/*.md"
-      - "!docs/**"
-      - ".github/workflows/desktop-backend.yml"
-      # The rules the linter is held to, and the ones written here in Go.
-      - "modules/.golangci.yml"
-      - "modules/plugins/.golangci.yml"
-      - "**/gorules/**"
+  merge_group:
+    types: [checks_requested]
   push:
     branches: [main]
     paths:
