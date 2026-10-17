@@ -623,7 +623,7 @@ func TestPartsAheadOfTheCountAreDropped(t *testing.T) {
 	if _, err := u.Execute(ctx, v, documentPath); !errors.Is(err, context.Canceled) {
 		t.Fatalf("stopping gave %v", err)
 	}
-	stray := ocr.Pack([]ocr.Part{{Start: 9000, Length: 7, Depth: 1}})
+	stray := ocr.Pack([]domain.OCRPart{{Start: 9000, Length: 7, Depth: 1}})
 	if err := shelf.AppendArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactParts, "ocr", documentHash()), stray); err != nil {
 		t.Fatal(err)
 	}

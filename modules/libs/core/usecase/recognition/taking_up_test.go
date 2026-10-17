@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
@@ -79,11 +78,11 @@ func newHaltedWorker(
 
 	// The shelf as a run that ended among the batches left it: the corrections
 	// it wrote, and the count standing after them.
-	put := make([]correction.Line, 0, through)
+	put := make([]domain.CorrectionLine, 0, through)
 	for at := range through {
-		put = append(put, correction.Line{Number: at, Text: correctLine(lines[at])})
+		put = append(put, domain.CorrectionLine{Number: at, Text: correctLine(lines[at])})
 	}
-	if err := store.AppendArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, "ocr", hash), correction.Pack(put)); err != nil {
+	if err := store.AppendArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, "ocr", hash), domain.PackCorrections(put)); err != nil {
 		t.Fatal(err)
 	}
 	stood, err := json.Marshal(checkpoint{By: by.GetName(), Pages: through})
@@ -130,7 +129,7 @@ func corrections(t *testing.T, store port.DerivedStore, name domain.ArtifactName
 		t.Fatal(err)
 	}
 	out := []int{}
-	for _, line := range correction.Unpack(raw) {
+	for _, line := range domain.UnpackCorrections(raw) {
 		out = append(out, line.Number)
 	}
 	return out
