@@ -53,7 +53,7 @@ rule() {
 
 	# The ten files the collapse took away are not read again; the one it left
 	# is compared against what it produced rather than against the base.
-	if [[ "$(git rev-parse "$at:$folder")" == "$collapsed" ]]; then
+	if [[ "$(git rev-parse "$at:$folder")" = "$collapsed" ]]; then
 		if [[ ! -f "$folder/$kept" ]] ||
 			[[ "$(git hash-object --path "$folder/$kept" "$folder/$kept")" != "$produced" ]]; then
 			echo "M	$folder/$kept" >&2
