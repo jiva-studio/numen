@@ -247,25 +247,23 @@ func TestANewNoteInANewFolderIsReported(t *testing.T) {
 // walk does, so dropping a book into a folder is the whole gesture.
 func TestABookAppearingIsReported(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
+	if err := os.MkdirAll(filepath.Join(root, "library"), 0o755); err != nil {
+		t.Fatal(err)
+	}
 	changes, _, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// The book is built whole outside the vault and moved in, so it arrives
-	// complete in one event.
+	// The folder is part of the watch before the book arrives, and the book is
+	// built whole outside the vault and moved in, so it arrives in one event.
 	staged := t.TempDir()
 	testsupport.WriteBook(t, staged, "Dropped.epub")
-	if err := os.MkdirAll(filepath.Join(root, "library"), 0o755); err != nil {
-		t.Fatal(err)
-	}
 	if err := os.Rename(filepath.Join(staged, "Dropped.epub"), filepath.Join(root, "library", "Dropped.epub")); err != nil {
 		t.Fatal(err)
 	}
 
-	// A new folder and the file inside it arrive as their own events, and which
-	// batch carries the book depends on which of them the walk of the folder
-	// caught. Batches are read until the one naming the book, within one deadline.
+	// Batches are read until the one naming the book, within one deadline.
 	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
 	defer cancel()
 	for {
