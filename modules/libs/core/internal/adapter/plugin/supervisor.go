@@ -244,7 +244,7 @@ func (s *Supervisor) Attach(p *os.Process, now time.Time) error {
 		if s.process == p {
 			s.process = nil
 			s.inProcess = false
-	s.teardownBegun = false
+			s.teardownBegun = false
 			s.state = StateDormant
 			s.activeRefCount = 0
 			onExit := s.onExit
@@ -454,7 +454,7 @@ func (s *Supervisor) markDormant(proc *os.Process) {
 		s.state = StateDormant
 		s.process = nil
 		s.inProcess = false
-	s.teardownBegun = false
+		s.teardownBegun = false
 		s.activeRefCount = 0
 		s.activationErr = nil
 		if s.activatingCh != nil {
