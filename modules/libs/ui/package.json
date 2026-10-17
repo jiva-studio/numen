@@ -29,7 +29,8 @@
     "test:stories": "vitest run --project stories",
     "test:watch": "vitest --project unit",
     "typecheck": "vue-tsc --build --force",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "knip": "npx knip"
   },
   "peerDependencies": {
     "vue": "^3.5.0"

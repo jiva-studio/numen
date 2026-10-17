@@ -1,0 +1,24 @@
+{
+  "$schema": "https://unpkg.com/knip@5/overview/configuration-schema.json",
+  "entry": [
+    "src/index.ts!",
+    "src/**/*.stories.ts",
+    "src/**/*.test.ts",
+    ".storybook/**/*.{ts,js}"
+  ],
+  "project": [
+    "src/**/*.{ts,vue}",
+    ".storybook/**/*.{ts,js}"
+  ],
+  "ignoreDependencies": [
+    "tailwindcss",
+    "@tailwindcss/typography"
+  ],
+  "rules": {
+    "files": "error",
+    "dependencies": "error",
+    "unlisted": "error",
+    "exports": "warn",
+    "types": "warn"
+  }
+}
