@@ -38,6 +38,10 @@ type PluginStatus struct {
 	ID       string `json:"id"`
 	Enabled  bool   `json:"enabled"`
 	IsActive bool   `json:"isActive"`
+	// Failed reports that the plugin failed to activate repeatedly and is not started again.
+	Failed bool `json:"failed"`
+	// FailureReason is the last activation error of a failed plugin.
+	FailureReason string `json:"failureReason,omitempty"`
 }
 
 // Host manages the discovery, lifecycle, activation, and communication endpoints of plugins.
@@ -62,6 +66,8 @@ type Host struct {
 	stdinsMu       sync.Mutex
 	stdins         map[stdinKey]io.Closer
 	processLimits  ProcessLimits
+	activation     ActivationPolicy
+	onPluginFailed func(pluginID string, cause error)
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
@@ -84,6 +90,8 @@ func NewHost(target string, dirs ...string) *Host {
 		enabled:        make(map[string]bool),
 		stdins:         make(map[stdinKey]io.Closer),
 		processLimits:  DefaultProcessLimits(),
+		activation:     DefaultActivationPolicy(),
+		onPluginFailed: nil,
 	}
 	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
@@ -102,6 +110,20 @@ func (h *Host) SetProcessLimits(limits ProcessLimits) {
 			sup.SetMemoryLimit(limits.MemoryLimitBytes)
 		}
 	}
+}
+
+// SetActivationPolicy sets the activation deadline and the restart backoff of plugins.
+func (h *Host) SetActivationPolicy(policy ActivationPolicy) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.activation = policy
+}
+
+// SetOnPluginFailed registers a callback invoked once when a plugin has failed to activate repeatedly.
+func (h *Host) SetOnPluginFailed(fn func(pluginID string, cause error)) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.onPluginFailed = fn
 }
 
 // SetLauncher overrides the process launcher for testing.
@@ -384,11 +406,25 @@ func (h *Host) acquireRunningLocked(pluginID string, sup *Supervisor) (Endpoint,
 	return endpoint, true
 }
 
-func (h *Host) failActivation(sup *Supervisor, err error) {
+// failActivation returns a plugin whose activation failed to Dormant and counts the failure in the same step,
+// so no other caller can start it again before the backoff applies.
+func (h *Host) failActivation(ctx context.Context, pluginID string, sup *Supervisor, cause error) {
 	h.mu.Lock()
-	defer h.mu.Unlock()
-	if sup.GetState() == StateActivating {
-		sup.SetDormant(err)
+	if sup.GetState() != StateActivating {
+		h.mu.Unlock()
+		return
+	}
+	sup.SetDormant(cause)
+	notify := h.onPluginFailed
+	failedNow := false
+	if ctx.Err() == nil {
+		wasFailed, _ := sup.GetActivationFailure()
+		failedNow = sup.RecordActivationFailure(time.Now(), h.activation, cause) && !wasFailed
+	}
+	h.mu.Unlock()
+
+	if failedNow && notify != nil {
+		notify(pluginID, cause)
 	}
 }
 
@@ -438,18 +474,36 @@ func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, err
 			continue
 		}
 
-		sup.SetActivating()
+		if err := h.beginActivationLocked(pluginID, sup); err != nil {
+			h.mu.Unlock()
+			return emptyEndpoint(), err
+		}
 		h.mu.Unlock()
 
-		endpoint, err := h.activatePlugin(ctx, p, sup)
-		if err != nil {
-			h.failActivation(sup, err)
-			return endpoint, err
-		}
-
-		_ = h.NotifyPluginConfig(ctx, p.Manifest.ID)
-		return endpoint, nil
+		return h.runActivation(ctx, p, sup)
 	}
+}
+
+// beginActivationLocked moves a dormant plugin to Activating unless it is backing off or has failed.
+func (h *Host) beginActivationLocked(pluginID string, sup *Supervisor) error {
+	if err := sup.CheckActivationAllowed(time.Now()); err != nil {
+		return fmt.Errorf("activate plugin %s: %w", pluginID, err)
+	}
+	sup.SetActivating()
+	return nil
+}
+
+func (h *Host) runActivation(ctx context.Context, p DiscoveredPlugin, sup *Supervisor) (Endpoint, error) {
+	endpoint, err := h.activatePlugin(ctx, p, sup)
+	if err != nil {
+		h.failActivation(ctx, p.Manifest.ID, sup, err)
+		return endpoint, err
+	}
+	sup.RecordActivationSuccess()
+
+	// The plugin also receives its settings on the next change, so a failed push leaves it running.
+	_ = h.NotifyPluginConfig(ctx, p.Manifest.ID)
+	return endpoint, nil
 }
 
 func (h *Host) cleanupAbortedProcess(proc *os.Process, stdout io.Closer, pluginID string) {
@@ -470,13 +524,23 @@ func (h *Host) closeStdin(pluginID string, pid int) {
 	}
 }
 
+// waitForReady reads the handshake of a started process within the activation deadline.
+func (h *Host) waitForReady(ctx context.Context, stdout io.Reader) (int, error) {
+	h.mu.RLock()
+	timeout := h.activation.Timeout
+	h.mu.RUnlock()
+	if timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+	return WaitForHandshake(ctx, stdout)
+}
+
 //nolint:contextcheck // background supervisor outlives request
 func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *Supervisor) (Endpoint, error) {
 	token, err := GenerateAuthToken()
 	if err != nil {
-		h.mu.Lock()
-		sup.SetDormant(err)
-		h.mu.Unlock()
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("generate token: %w", err)
 	}
 
@@ -489,18 +553,12 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 
 	proc, stdout, err := launcher(ctx, p, 0, token)
 	if err != nil {
-		h.mu.Lock()
-		sup.SetDormant(err)
-		h.mu.Unlock()
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("launch plugin %s: %w", p.Manifest.ID, err)
 	}
 
-	actualPort, err := WaitForHandshake(ctx, stdout)
+	actualPort, err := h.waitForReady(ctx, stdout)
 	if err != nil {
 		h.cleanupAbortedProcess(proc, stdout, p.Manifest.ID)
-		h.mu.Lock()
-		sup.SetDormant(err)
-		h.mu.Unlock()
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("handshake plugin %s: %w", p.Manifest.ID, err)
 	}
 
@@ -514,11 +572,10 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 	if sup.GetState() != StateActivating {
 		h.mu.Unlock()
 		h.cleanupAbortedProcess(proc, stdout, p.Manifest.ID)
-		return Endpoint{Host: "", Port: 0, Token: ""}, errors.New("plugin activation aborted")
+		return Endpoint{Host: "", Port: 0, Token: ""}, errActivationAborted
 	}
 
 	if err := sup.Attach(proc, now); err != nil {
-		sup.SetDormant(err)
 		h.mu.Unlock()
 		h.cleanupAbortedProcess(proc, stdout, p.Manifest.ID)
 		return Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("attach plugin %s: %w", p.Manifest.ID, err)
@@ -876,7 +933,12 @@ func (h *Host) SetPluginEnabled(pluginID string, enabled bool) {
 	}
 	h.settings[pluginID]["enabled"] = enabled
 	persist := h.persistHandler
+	sup := h.supervisors[pluginID]
 	h.mu.Unlock()
+
+	if enabled && sup != nil {
+		sup.ResetActivationFailures()
+	}
 
 	if persist != nil {
 		_ = persist(pluginID, "enabled", enabled)
@@ -892,11 +954,24 @@ func (h *Host) GetPluginStatus(pluginID string) (PluginStatus, bool) {
 	if !ok {
 		return PluginStatus{}, false
 	}
-	return PluginStatus{
-		ID:       p.Manifest.ID,
-		Enabled:  h.isPluginEnabledLocked(p.Manifest.ID),
-		IsActive: h.isPluginActiveLocked(p.Manifest.ID),
-	}, true
+	return h.getPluginStatusLocked(p.Manifest.ID), true
+}
+
+func (h *Host) getPluginStatusLocked(pluginID string) PluginStatus {
+	status := PluginStatus{
+		ID:            pluginID,
+		Enabled:       h.isPluginEnabledLocked(pluginID),
+		IsActive:      h.isPluginActiveLocked(pluginID),
+		Failed:        false,
+		FailureReason: "",
+	}
+	if sup, ok := h.supervisors[pluginID]; ok {
+		if failed, cause := sup.GetActivationFailure(); failed {
+			status.Failed = true
+			status.FailureReason = cause.Error()
+		}
+	}
+	return status
 }
 
 // GetPluginStatuses returns statuses for all registered plugins.
@@ -906,11 +981,7 @@ func (h *Host) GetPluginStatuses() []PluginStatus {
 
 	statuses := make([]PluginStatus, 0, len(h.plugins))
 	for _, p := range h.plugins {
-		statuses = append(statuses, PluginStatus{
-			ID:       p.Manifest.ID,
-			Enabled:  h.isPluginEnabledLocked(p.Manifest.ID),
-			IsActive: h.isPluginActiveLocked(p.Manifest.ID),
-		})
+		statuses = append(statuses, h.getPluginStatusLocked(p.Manifest.ID))
 	}
 	return statuses
 }
