@@ -164,65 +164,29 @@ type Transcription struct {
 type ProofreadingConfig struct {
 	// MaxEditDistance is how far a correction may stand from the line as read
 	// and still be a correction: the Levenshtein distance between their letters,
-	// as a share of the longer of the two.
+	// as a share of the longer of the two. Zero leaves the limit to the
+	// proofreader.
 	MaxEditDistance float64 `json:"max_edit_distance"`
 
 	// Profiles are the places a text is put right at, by the name a consumer asks for one under.
 	Profiles map[string]Profile `json:"profiles"`
 }
 
-// What a profile is reached through.
+// Default proofreading sizes.
 const (
-	UseService            = "service"
-	UseAgent              = "agent"
-	ProofreadingKeyEnvVar = "NUMEN_PROOFREADING_KEY"
+	DefaultBatchSize = 40
+	DefaultInFlight  = 4
 )
 
-// Default proofreading limits.
-const (
-	DefaultMaxEditDistance = 0.30
-	DefaultBatchSize       = 40
-	DefaultInFlight        = 4
-	DefaultAgentInFlight   = 2
-	DefaultAgentBatchSize  = 60
-	DefaultAttempts        = 4
-	DefaultDelayMS         = 500
-	DefaultMaxDelayMS      = 30_000
-)
-
-// Profile is one proofreading profile.
+// Profile is one proofreading profile: how a text is cut into requests. Which
+// model answers them is decided by the route of the proofreading purpose.
 type Profile struct {
-	// Use is `service` or `agent`.
-	Use string `json:"use"`
-
-	// BaseURL points at anything speaking the /v1/chat/completions request shape.
-	BaseURL string `json:"base_url,omitempty"`
-	// BatchURL is a queue the batches are left in and collected from later.
-	BatchURL string `json:"batch_url,omitempty"`
-	// Name is which model corrects a text at a service.
-	Name string `json:"name,omitempty"`
-	// KeyEnv names the environment variable holding the key.
-	KeyEnv string `json:"key_env,omitempty"`
-
-	// Model is which model corrects a text at the command line.
-	Model string `json:"model,omitempty"`
-	// Command starts the command line.
-	Command []string `json:"command,omitempty"`
-
 	// BatchSize is how many lines one request carries.
 	BatchSize int `json:"batch_size"`
 	// Overlap is how many lines neighbouring batches share.
 	Overlap int `json:"overlap"`
-	// InFlight is how many batches are being asked about at any moment.
+	// InFlight is how many requests one call answers.
 	InFlight int `json:"in_flight,omitempty"`
-	// Attempts is how many times one request is sent before reporting error.
-	Attempts int `json:"attempts,omitempty"`
-	// DelayMS is the ceiling in milliseconds of the wait after a request first fails.
-	DelayMS int `json:"delay_ms,omitempty"`
-	// MaxDelayMS bounds every wait.
-	MaxDelayMS int `json:"max_delay_ms,omitempty"`
-
-	key string
 }
 
 // Proofread names the profile a text is put right at.
@@ -234,90 +198,18 @@ type Proofread struct {
 	IsAutomatic bool `json:"automatically"`
 }
 
-// DefaultProofreading returns the default proofreading configuration.
-func DefaultProofreading() ProofreadingConfig {
-	return ProofreadingConfig{MaxEditDistance: DefaultMaxEditDistance}
-}
-
-// ServiceDefaults returns default profile settings for a remote service.
-func ServiceDefaults() Profile {
-	return Profile{
-		Use:        UseService,
-		BaseURL:    "https://openrouter.ai/api/v1",
-		BatchURL:   "https://openrouter.ai/api/beta/batches",
-		KeyEnv:     ProofreadingKeyEnvVar,
-		BatchSize:  DefaultBatchSize,
-		Attempts:   DefaultAttempts,
-		DelayMS:    DefaultDelayMS,
-		MaxDelayMS: DefaultMaxDelayMS,
-	}
-}
-
-// AgentDefaults returns default profile settings for command-line agent.
-func AgentDefaults() Profile {
-	return Profile{
-		Use:       UseAgent,
-		BatchSize: DefaultAgentBatchSize,
-	}
-}
-
-// Distance is how far a correction may stand from the line as read.
-func (c ProofreadingConfig) Distance() float64 {
-	if c.MaxEditDistance <= 0 {
-		return DefaultMaxEditDistance
-	}
-	return c.MaxEditDistance
-}
-
 // HasProfiles says whether this installation has any profile configured.
 func (c ProofreadingConfig) HasProfiles() bool {
 	return len(c.Profiles) > 0
 }
 
-// HasModel says whether this profile carries a model to correct a text with.
-func (p Profile) HasModel() bool {
-	switch p.Use {
-	case UseService:
-		return p.Name != ""
-	case UseAgent:
-		return p.Model != ""
-	}
-	return false
-}
-
-// Key is the service key: from the file if it names one, otherwise from environment.
-func (p Profile) Key() string {
-	if p.key != "" {
-		return p.key
-	}
-	name := p.KeyEnv
-	if name == "" {
-		name = ProofreadingKeyEnvVar
-	}
-	return os.Getenv(name)
-}
-
-// String reports the profile with the key redacted.
-func (p Profile) String() string {
-	if p.Use == UseAgent {
-		return "the command line, model " + p.Model
-	}
-	held := "absent"
-	if p.Key() != "" {
-		held = "present"
-	}
-	return "service " + p.Name + " at " + p.BaseURL + ", key " + held
-}
-
-// GetInFlight is how many batches this profile asks about at once.
+// GetInFlight is how many requests this profile has answered at once.
 func (p Profile) GetInFlight(planned int) int {
 	switch {
 	case p.InFlight > 0:
 		return p.InFlight
 	case planned > 0:
 		return planned
-	case p.Use == UseAgent:
-		return DefaultAgentInFlight
 	}
 	return DefaultInFlight
 }
@@ -333,78 +225,36 @@ func (c *ProofreadingConfig) UnmarshalJSON(raw []byte) error {
 	if err := json.Unmarshal(raw, &f); err != nil {
 		return err
 	}
-	*c = DefaultProofreading()
+	*c = ProofreadingConfig{}
 	assign(&c.MaxEditDistance, f.MaxEditDistance)
 	c.Profiles = f.Profiles
 	return nil
 }
 
 type profileFile struct {
-	Use        *string   `json:"use"`
-	BaseURL    *string   `json:"base_url,omitempty"`
-	BatchURL   *string   `json:"batch_url,omitempty"`
-	Name       *string   `json:"name,omitempty"`
-	KeyEnv     *string   `json:"key_env,omitempty"`
-	Key        *string   `json:"key,omitempty"`
-	Model      *string   `json:"model,omitempty"`
-	Command    *[]string `json:"command,omitempty"`
-	BatchSize  *int      `json:"batch_size"`
-	Overlap    *int      `json:"overlap"`
-	InFlight   *int      `json:"in_flight,omitempty"`
-	Attempts   *int      `json:"attempts,omitempty"`
-	DelayMS    *int      `json:"delay_ms,omitempty"`
-	MaxDelayMS *int      `json:"max_delay_ms,omitempty"`
+	BatchSize *int `json:"batch_size"`
+	Overlap   *int `json:"overlap"`
+	InFlight  *int `json:"in_flight,omitempty"`
 }
 
-// UnmarshalJSON starts from the defaults of the kind the profile says it is.
+// UnmarshalJSON starts from the default batch size.
 func (p *Profile) UnmarshalJSON(raw []byte) error {
 	var f profileFile
 	if err := json.Unmarshal(raw, &f); err != nil {
 		return err
 	}
-
-	var use string
-	assign(&use, f.Use)
-	switch use {
-	case UseService:
-		*p = ServiceDefaults()
-	case UseAgent:
-		*p = AgentDefaults()
-	default:
-		*p = Profile{Use: use}
-	}
-
-	assign(&p.BaseURL, f.BaseURL)
-	assign(&p.BatchURL, f.BatchURL)
-	assign(&p.Name, f.Name)
-	assign(&p.KeyEnv, f.KeyEnv)
-	assign(&p.key, f.Key)
-	assign(&p.Model, f.Model)
-	assign(&p.Command, f.Command)
+	*p = Profile{BatchSize: DefaultBatchSize}
 	assign(&p.BatchSize, f.BatchSize)
 	assign(&p.Overlap, f.Overlap)
 	assign(&p.InFlight, f.InFlight)
-	assign(&p.Attempts, f.Attempts)
-	assign(&p.DelayMS, f.DelayMS)
-	assign(&p.MaxDelayMS, f.MaxDelayMS)
 	return nil
 }
 
-// MarshalJSON writes profile fields and never the secret key.
+// MarshalJSON writes the profile fields.
 func (p Profile) MarshalJSON() ([]byte, error) {
-	f := profileFile{Use: &p.Use, BatchSize: &p.BatchSize, Overlap: &p.Overlap}
+	f := profileFile{BatchSize: &p.BatchSize, Overlap: &p.Overlap}
 	if p.InFlight > 0 {
 		f.InFlight = &p.InFlight
-	}
-	switch p.Use {
-	case UseService:
-		f.BaseURL, f.BatchURL, f.Name, f.KeyEnv = &p.BaseURL, &p.BatchURL, &p.Name, &p.KeyEnv
-		f.Attempts, f.DelayMS, f.MaxDelayMS = &p.Attempts, &p.DelayMS, &p.MaxDelayMS
-	case UseAgent:
-		f.Model = &p.Model
-		if len(p.Command) > 0 {
-			f.Command = &p.Command
-		}
 	}
 	return json.Marshal(f)
 }
@@ -527,7 +377,7 @@ func DefaultIndexing() Indexing {
 				IsAutomatic: false,
 			},
 		},
-		Proofreading: DefaultProofreading(),
+		Proofreading: ProofreadingConfig{},
 		Transcription: Transcription{
 			TranscriptionConfig: TranscriptionConfig{
 				Runtime:        "",
@@ -583,7 +433,8 @@ func (i Indexing) GetTranscribeLimit() int64 {
 
 // Where an embedding vector is made.
 const (
-	UseLocal = "local"
+	UseLocal   = "local"
+	UseService = "service"
 )
 
 // How a model's per-token output becomes one vector.

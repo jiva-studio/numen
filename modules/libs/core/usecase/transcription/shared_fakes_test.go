@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"io/fs"
 	"slices"
@@ -15,37 +14,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
-
-// puts is a proofreader answering with what it was told to say about a batch,
-// and keeping the lines it was asked about.
-type puts struct {
-	says map[int]string
-
-	mu    sync.Mutex
-	asked []int
-}
-
-func (p *puts) GetName() string { return "a proofreader" }
-
-func (p *puts) Proofread(_ context.Context, batches []domain.ProofreadBatch) (map[int]string, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	out := map[int]string{}
-	for _, batch := range batches {
-		p.asked = append(p.asked, batch.Number)
-		if said, held := p.says[batch.Number]; held {
-			out[batch.Number] = said
-		}
-	}
-	return out, nil
-}
-
-// lines is what this proofreader was asked about.
-func (p *puts) lines() []int {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return slices.Clone(p.asked)
-}
 
 // A shelf is what a recognition is written to, in memory.
 type shelf struct {
@@ -189,17 +157,34 @@ func (s *shelf) names() []domain.ArtifactName {
 	return out
 }
 
-// A corrector answers about a page with whatever it was told to say about it,
-// and keeps the pages of every request it was given.
+// noScan is the half of a proofreader that puts printed pages right, which a
+// transcript never asks.
+type noScan struct{}
+
+func (noScan) ProofreadScan(context.Context, []domain.ProofreadPage, float64) (domain.ScanProofreading, error) {
+	return domain.ScanProofreading{}, errors.New("a transcript has no pages")
+}
+
+// A corrector answers about the lines of a window with the corrections it was
+// told to make, the way a proofreader reaching the end of each window does, and
+// keeps what every call asked.
 type corrector struct {
-	name  string
-	says  map[int]string
-	asked [][]int
-	// about is what each batch it was given said the text holds.
-	about []string
-	fail  error
-	// stop is called with the number of requests made so far.
+	noScan
+
+	name string
+	// says are the corrections by the number of the line they begin at.
+	says map[int]domain.ProofreadCorrection
+	// uncorrected is what each call says about the requests it could not use.
+	uncorrected int
+	fail        error
+	// stop is called with the number of calls made so far.
 	stop func(int)
+
+	// windows are the windows of every call, given the lines of every call, and
+	// asked the numbers of the lines each call answered.
+	windows []domain.SpeechWindow
+	given   [][]domain.ProofreadLine
+	asked   [][]int
 }
 
 func (c *corrector) GetName() string {
@@ -209,33 +194,76 @@ func (c *corrector) GetName() string {
 	return c.name
 }
 
-func (c *corrector) Proofread(ctx context.Context, pages []domain.ProofreadBatch) (map[int]string, error) {
-	var at []int
-	for _, page := range pages {
-		at = append(at, page.Number)
-		c.about = append(c.about, page.Prompt)
-	}
-	c.asked = append(c.asked, at)
+func (c *corrector) ProofreadSpeech(
+	ctx context.Context, lines []domain.ProofreadLine, window domain.SpeechWindow,
+) (domain.SpeechProofreading, error) {
+	c.windows = append(c.windows, window)
+	c.given = append(c.given, lines)
 	if c.stop != nil {
-		c.stop(len(c.asked))
+		c.stop(len(c.windows))
 	}
 	if err := ctx.Err(); err != nil {
-		return nil, err
+		return domain.SpeechProofreading{}, err
 	}
 	if c.fail != nil {
-		return nil, c.fail
+		return domain.SpeechProofreading{}, c.fail
 	}
-	out := map[int]string{}
-	for _, page := range pages {
-		if said, has := c.says[page.Number]; has {
-			out[page.Number] = said
+
+	at := 0
+	for at < len(lines) && lines[at].Number < window.From {
+		at++
+	}
+	end := len(lines)
+	if window.Limit > 0 {
+		end = min(end, at+window.Limit)
+	}
+	out := domain.SpeechProofreading{Uncorrected: c.uncorrected}
+	var answered []int
+	for _, line := range lines[at:end] {
+		answered = append(answered, line.Number)
+		if one, has := c.says[line.Number]; has {
+			out.Corrections = append(out.Corrections, one)
 		}
 	}
+	c.asked = append(c.asked, answered)
+	if end == len(lines) {
+		out.IsDone = true
+		if end > 0 {
+			out.Next = lines[end-1].Number + 1
+		}
+		return out, nil
+	}
+	out.Next = lines[end].Number
 	return out, nil
 }
 
-// corrects is a reply putting one line right.
-func corrects(at int, text string) string { return fmt.Sprintf("%d|%s", at, text) }
+// lines are the numbers of the lines every call answered, in order.
+func (c *corrector) lines() []int {
+	var out []int
+	for _, one := range c.asked {
+		out = append(out, one...)
+	}
+	return out
+}
+
+// fixes is a correction putting one line right.
+func fixes(at int, text string) domain.ProofreadCorrection {
+	return domain.ProofreadCorrection{Number: at, Last: at, Text: text}
+}
+
+// joins is a correction putting a run of lines together as one.
+func joins(at, through int, text string) domain.ProofreadCorrection {
+	return domain.ProofreadCorrection{Number: at, Last: through, Text: text}
+}
+
+// says is the corrections as a corrector is told them.
+func says(corrections ...domain.ProofreadCorrection) map[int]domain.ProofreadCorrection {
+	out := map[int]domain.ProofreadCorrection{}
+	for _, one := range corrections {
+		out[one.Number] = one
+	}
+	return out
+}
 
 func readShelf(t *testing.T, shelved *shelf, name domain.ArtifactName) []byte {
 	t.Helper()

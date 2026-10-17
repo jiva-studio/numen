@@ -3,7 +3,6 @@ package recognition
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"image"
 	"slices"
 	"strings"
@@ -57,8 +56,7 @@ func newHaltedWorker(
 	w.Worker.with.Readers = vaults{v.ID: shelved}
 	w.Worker.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true, Batch: 1,
-		By:    func(string) (port.Proofreader, error) { return by, nil },
-		Queue: func(string) (port.ProofreadQueue, error) { return nil, nil },
+		By: func() (port.Proofreader, error) { return by, nil },
 	}
 
 	hash := text.Fingerprint(raw)
@@ -117,9 +115,9 @@ func (b books) GetRecognisedSources(
 // correctLine is a line as a proofreader puts it right.
 func correctLine(line string) string { return strings.Replace(line, "words", "WORDS", 1) }
 
-// newReply is a reply putting one line right.
-func newReply(at int, line string) string {
-	return fmt.Sprintf("%d|%s", at, correctLine(line))
+// newReply is the correction putting one line right.
+func newReply(at int, line string) domain.ProofreadCorrection {
+	return corrects(at, correctLine(line))
 }
 
 // corrections is the lines the shelf holds a correction for.
@@ -140,7 +138,7 @@ func corrections(t *testing.T, store port.DerivedStore, name domain.ArtifactName
 // and the pages after it are asked about when the application opens.
 func TestARecognitionLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testing.T) {
 	lines := []string{"the words one", "the words two", "the words three"}
-	by := &puts{says: map[int]string{
+	by := &puts{says: map[int]domain.ProofreadCorrection{
 		1: newReply(1, lines[1]),
 		2: newReply(2, lines[2]),
 	}}
@@ -178,38 +176,6 @@ func TestARecognitionAlreadyPutRightIsAskedAboutNothing(t *testing.T) {
 	}
 }
 
-// A proofreader with a queue leaves a batch behind it, and the run that comes
-// back for it is the one that collects it.
-func TestARecognitionWithABatchOutIsLeftToTheCollection(t *testing.T) {
-	lines := []string{"the words one", "the words two"}
-	by := &puts{says: map[int]string{1: newReply(1, lines[1])}}
-	w, v, _, _ := newHaltedWorker(t, by, 1, lines...)
-	w.Worker.with.Proofreading.Queue = func(string) (port.ProofreadQueue, error) { return leaves{}, nil }
-
-	w.TakeUp(t.Context(), books{}, v)
-	w.Wait()
-
-	if got := by.lines(); len(got) != 0 {
-		t.Errorf("the proofreader was asked about lines %v", got)
-	}
-}
-
-// leaves is a proofreader that takes the pages away and answers about them
-// later.
-type leaves struct{}
-
-func (leaves) GetName() string { return "a queue" }
-
-func (leaves) Proofread(context.Context, []domain.ProofreadBatch) (map[int]string, error) {
-	return nil, nil
-}
-
-func (leaves) Submit(context.Context, []domain.ProofreadBatch) (string, error) { return "a batch", nil }
-
-func (leaves) GetReplies(context.Context, string) (map[int]string, bool, error) {
-	return nil, false, nil
-}
-
 // One run to a recognition. A run that finds it held leaves the list to the run that
 // holds it.
 func TestARecognitionAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
@@ -241,7 +207,7 @@ func TestARecognitionAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 // the source file from disk.
 func TestTakingUpProofreadingDoesNotReadTheSourceFileWhenHashIsKnown(t *testing.T) {
 	lines := []string{"the words one", "the words two", "the words three"}
-	by := &puts{says: map[int]string{
+	by := &puts{says: map[int]domain.ProofreadCorrection{
 		1: newReply(1, lines[1]),
 		2: newReply(2, lines[2]),
 	}}

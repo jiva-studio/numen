@@ -67,7 +67,6 @@ func (c Config) OpenRecognitionWorker(
 			Prepared: c.isRecognitionPrepared,
 		},
 		Proofreading: c.getProofreading(c.ScanProofreading),
-		Wait:         c.GetWait(),
 	})
 }
 

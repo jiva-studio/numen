@@ -29,7 +29,7 @@ func getTask(held *Worker, path string) (doing, failed string) {
 
 // openNoProofreader is a profile that cannot be opened, as a person naming one no
 // settings name is told.
-func openNoProofreader(string) (port.Proofreader, error) {
+func openNoProofreader() (port.Proofreader, error) {
 	return nil, errors.New(`no proofreading profile named "nowhere"`)
 }
 
@@ -89,8 +89,8 @@ func cues(words []string) []domain.TranscriptCue {
 // with its transcript on the shelf and a proofreading of it standing at through
 // lines.
 //
-// One line to a batch and one batch to a request, so the number a reply is
-// about is the number of the line it puts right.
+// One line to a request and one request to a call, so a call answers about one
+// line.
 func newStoppedWorker(
 	t *testing.T,
 	by port.Proofreader,
@@ -101,7 +101,7 @@ func newStoppedWorker(
 	held, v := newTranscriptionWorker(t, &deaf{}, recording)
 	held.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true, Batch: 1, InFlight: 1,
-		By: func(string) (port.Proofreader, error) { return by, nil },
+		By: func() (port.Proofreader, error) { return by, nil },
 	}
 
 	reader, err := held.with.Readers.Open(v)
@@ -163,10 +163,7 @@ func readLines(t *testing.T, store port.DerivedStore, name domain.ArtifactName) 
 // A proofreading that ended among the batches stands at the line it reached,
 // and the lines after it are asked about when the application opens.
 func TestATranscriptLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testing.T) {
-	by := &puts{says: map[int]string{
-		1: "1|SECOND THING",
-		2: "2|THIRD THING",
-	}}
+	by := &corrector{says: says(fixes(1, "SECOND THING"), fixes(2, "THIRD THING"))}
 	held, v, store, hash := newStoppedWorker(t, by, 1, "first thing", "second thing", "third thing")
 
 	held.TakeUp(t.Context(), recognised{recording}, v)
@@ -187,7 +184,7 @@ func TestATranscriptLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testin
 // A transcript put right to its last line is asked about nothing and shown
 // nowhere, however often the application opens.
 func TestATranscriptAlreadyPutRightIsAskedAboutNothing(t *testing.T) {
-	by := &puts{}
+	by := &corrector{}
 	held, v, _, _ := newStoppedWorker(t, by, 3, "first thing", "second thing", "third thing")
 
 	held.TakeUp(t.Context(), recognised{recording}, v)
@@ -204,7 +201,7 @@ func TestATranscriptAlreadyPutRightIsAskedAboutNothing(t *testing.T) {
 // An installation that did not ask for its transcripts to be put right takes up
 // nothing.
 func TestNoTranscriptIsTakenUpWhereItWasNotAskedFor(t *testing.T) {
-	by := &puts{says: map[int]string{1: "1|SECOND THING"}}
+	by := &corrector{says: says(fixes(1, "SECOND THING"))}
 	held, v, _, _ := newStoppedWorker(t, by, 1, "first thing", "second thing")
 	held.with.Proofreading.IsAutomatic = false
 
@@ -219,7 +216,7 @@ func TestNoTranscriptIsTakenUpWhereItWasNotAskedFor(t *testing.T) {
 // One run to a transcript. A run that finds it held leaves the list to the run
 // that holds it.
 func TestATranscriptAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
-	by := &puts{}
+	by := &corrector{}
 	held, v, store, hash := newStoppedWorker(t, by, 1, "first thing", "second thing")
 	release, err := store.ClaimArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactPartial, domain.ASR, hash))
 	if err != nil {
@@ -247,14 +244,20 @@ type refuses struct{ why error }
 
 func (r *refuses) GetName() string { return "a proofreader that will not answer" }
 
-func (r *refuses) Proofread(context.Context, []domain.ProofreadBatch) (map[int]string, error) {
-	return nil, r.why
+func (r *refuses) ProofreadScan(context.Context, []domain.ProofreadPage, float64) (domain.ScanProofreading, error) {
+	return domain.ScanProofreading{}, r.why
+}
+
+func (r *refuses) ProofreadSpeech(
+	context.Context, []domain.ProofreadLine, domain.SpeechWindow,
+) (domain.SpeechProofreading, error) {
+	return domain.SpeechProofreading{}, r.why
 }
 
 // A transcript this proofreader has been over every line of is asked about
 // nothing, and whoever asked is told that rather than nothing at all.
 func TestATranscriptAlreadyPutRightSaysThatNothingWasLeft(t *testing.T) {
-	by := &puts{}
+	by := &corrector{}
 	held, v, _, _ := newStoppedWorker(t, by, 2, "first thing", "second thing")
 
 	res, err := held.Proofread(t.Context(), v, recording)
@@ -300,20 +303,26 @@ type waits struct {
 
 func (w *waits) GetName() string { return "a proofreader that waits" }
 
-func (w *waits) Proofread(context.Context, []domain.ProofreadBatch) (map[int]string, error) {
+func (w *waits) ProofreadScan(context.Context, []domain.ProofreadPage, float64) (domain.ScanProofreading, error) {
+	return domain.ScanProofreading{}, nil
+}
+
+func (w *waits) ProofreadSpeech(
+	context.Context, []domain.ProofreadLine, domain.SpeechWindow,
+) (domain.SpeechProofreading, error) {
 	w.once.Do(func() { close(w.asked) })
 	<-w.on
-	return map[int]string{}, nil
+	return domain.SpeechProofreading{IsDone: true}, nil
 }
 
 // A run a person asked for stands in the list from the moment they asked, and
 // not from the moment it has something to count. Opening the proofreader is the
 // first thing it does, and the list already says so there.
 func TestAProofreadingAskedForStandsInTheListBeforeItOpensTheProofreader(t *testing.T) {
-	by := &puts{}
+	by := &corrector{}
 	held, v, _, _ := newStoppedWorker(t, by, 0, "first thing", "second thing")
 	reached, stand := make(chan struct{}), make(chan struct{})
-	held.with.Proofreading.By = func(string) (port.Proofreader, error) {
+	held.with.Proofreading.By = func() (port.Proofreader, error) {
 		close(reached)
 		<-stand
 		return by, nil
@@ -332,7 +341,7 @@ func TestAProofreadingAskedForStandsInTheListBeforeItOpensTheProofreader(t *test
 
 // A run that ends leaves nothing behind in the list.
 func TestAProofreadingThatEndsLeavesTheListEmpty(t *testing.T) {
-	by := &puts{says: map[int]string{0: "0|FIRST THING"}}
+	by := &corrector{says: says(fixes(0, "FIRST THING"))}
 	held, v, _, _ := newStoppedWorker(t, by, 0, "first thing")
 
 	_, _ = held.Proofread(t.Context(), v, recording)

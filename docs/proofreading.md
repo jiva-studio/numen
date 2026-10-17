@@ -103,22 +103,21 @@ Both instructions carry the same rules about the answer: a line is answered for 
 
 A printed line holds its words: on a page they stay where they were printed. Speech runs on past the stretch it was cut into, so a transcript is also answered for in runs, written as the first line of the run and the last: `12-14|the whole sentence, put right`. The lines of a run become one cue, spanning the moments they were spoken between. A line where one sentence ends and the next begins stands in the run of both, and that run is answered with every sentence it covers.
 
+## Who does it
+
+The proofreading plugin does it, and the core does not. The core collects the numbered lines of a recognition or a transcript, sends them to the plugin with the kind of text and the sizes of the window, and applies the corrections that come back. The plugin builds the batches, holds the two instructions, applies the gates to each reply, gathers the replies of overlapping batches, and answers with corrections per line.
+
+The plugin names a purpose and no model: it asks the host for a completion with the purpose `proofreading`, and the route of that purpose under `ai.routes` says which agent plugin answers, with which model, and how many questions at once. A purpose with no route, or an agent that cannot be reached, fails the call as unavailable, and nothing is corrected. The plugin invents no text and holds no key.
+
 ## Profiles
 
-A profile is a way of reaching a proofreader, under a name. `indexing.proofreading.profiles` is a map of name to profile, and each consumer names the profile it uses.
-
-A profile is flat: `use`, the keys of the service and the keys of the command line, and the two sizes all sit at the profile's own level. `use` says which of them apply, and a key it does not apply to is ignored.
-
-`use` is one of two:
-
-- **`service`** — anything speaking the `/v1/chat/completions` request shape, named by `base_url`, with `name` for the model and `key` or `key_env` for the key. OpenRouter where the file names nothing. `batch_url` is the queue batches are left in and collected later, at half the price. A batch outlives the run that left it, so one left before the application closed is collected when it opens. Empty asks a batch at a time and waits.
-- **`agent`** — the `claude` command line the person already has installed, run as a plain one-shot process. No MCP servers, no tools: it is given text and answers with text, and it cannot write anything. `model` says which of its models answers, and `command` names the command line to run where it is not `claude` from the path. There is no queue, so a batch is asked and waited for.
+A profile is the sizes a text is cut into requests at, under a name. `indexing.proofreading.profiles` is a map of name to profile, and each consumer names the profile it uses.
 
 A profile carries `batch_size` — how many lines one request carries — and `overlap` — how many lines neighbouring batches share. Overlap is what keeps a phrase torn at a batch boundary whole for at least one of the batches that see it. A line two batches both answered about is taken from the later of the two, which is the batch that saw more of what follows the line.
 
-It also carries `in_flight`: how many batches are being asked about at any moment. What a batch costs is what the model writes back rather than what it took to ask, so a run is as long as its batches are asked one after another. At the command line this is a person's own model, and it is left most of itself while they are using it.
+It also carries `in_flight`: how many batches one call answers. A transcript is answered a call at a time, each call a window of that many batches, and a run is as long as its windows are asked one after another. How many questions reach the model at once is the concurrency of the route.
 
-`indexing.proofreading.max_edit_distance` stands above the profiles. It is the Levenshtein distance between two lines' letters as a share of the longer of them, and a correction standing further than that from the line as read is dropped. It is one threshold for the installation: how far a correction may move a line's letters says nothing about what the correction was asked for through. It is 0.30 because the measured distribution has a hole there — over 931 corrections of one book, every correction standing further apart than 0.30 was damage, and every one below it was a correction. It is a setting because the next book is not that book; the figures are in [Performance](performance.md).
+`indexing.proofreading.max_edit_distance` stands above the profiles. It is the Levenshtein distance between two lines' letters as a share of the longer of them, and a correction standing further than that from the line as read is dropped. It is one threshold for the installation: how far a correction may move a line's letters says nothing about what the correction was asked for through. The plugin's own limit is 0.30 where the file names nothing, because the measured distribution has a hole there — over 931 corrections of one book, every correction standing further apart than 0.30 was damage, and every one below it was a correction. It is a setting because the next book is not that book; the figures are in [Performance](performance.md).
 
 Every key is in [Settings](settings.md).
 
@@ -129,8 +128,8 @@ Each consumer names its profile and says whether it runs on its own:
 ```json
 {
   "indexing": {
-    "recognition":   { "proofread": { "with": "openrouter", "automatically": true } },
-    "transcription": { "proofread": { "with": "agent",      "automatically": true } }
+    "recognition":   { "proofread": { "with": "scans",      "automatically": true } },
+    "transcription": { "proofread": { "with": "speech",     "automatically": true } }
   }
 }
 ```
@@ -145,9 +144,9 @@ A `with` naming a profile the map does not carry is an error at startup. An inst
 
 A run claims the text for as long as the proofreading takes, and a second run against the same text reports that somebody else has it.
 
-After each batch a run writes the corrections, cuts the source again, and writes the count last. The count is what makes the batch before it count, so a batch no count claims is one the next run asks about again, and a run trims the corrections back to the count before it starts. A run stopped part way is taken up where it stopped. A text whose record names another proofreader is taken up from the beginning, with what that proofreader wrote taken away.
+After each call a run writes the corrections, cuts the source again, and writes the count last. The count is what makes the batch before it count, so a batch no count claims is one the next run asks about again, and a run trims the corrections back to the count before it starts. A run stopped part way is taken up where it stopped. A text whose record names another proofreader is taken up from the beginning, with what that proofreader wrote taken away.
 
-What takes a run up is a vault opening. Where `automatically` is on, every recognition and every transcript standing short of its end is asked about again, and one no proofreader has been over is put right whole. Where the profile has a queue, the batch out is collected instead, and one run collects one batch and leaves the next.
+What takes a run up is a vault opening. Where `automatically` is on, every recognition and every transcript standing short of its end is asked about again, and one no proofreader has been over is put right whole.
 
 One model proofreads, and no chain of them. A chunk whose text did not change keeps the vector already made for it.
 
@@ -169,4 +168,4 @@ A **follow** toggle says whether the view moves with the recording. On, the line
 
 ## Settings
 
-Every key named above lives in [Settings](settings.md): `indexing.proofreading.max_edit_distance`, and under `indexing.proofreading.profiles.<name>`, `use`, `batch_size`, `overlap`, `in_flight`, `attempts`, `delay_ms`, `max_delay_ms`, `base_url`, `batch_url`, `name`, `key`, `key_env`, `command` and `model`, with `indexing.recognition.proofread` and `indexing.transcription.proofread` naming one of those profiles under `with` and saying `automatically`.
+Every key named above lives in [Settings](settings.md): `indexing.proofreading.max_edit_distance`, and under `indexing.proofreading.profiles.<name>`, `batch_size`, `overlap` and `in_flight`, with `indexing.recognition.proofread` and `indexing.transcription.proofread` naming one of those profiles under `with` and saying `automatically`.

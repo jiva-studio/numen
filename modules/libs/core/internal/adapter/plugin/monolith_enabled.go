@@ -481,7 +481,7 @@ var builtInMonolithPlugins = map[string]DiscoveredPlugin{
 			Version:      "1.0.0",
 			Capabilities: []string{"proofreading"},
 			Targets:      []string{"desktop.editor"},
-			Permissions:  []string{PermissionVaultRead},
+			Permissions:  []string{PermissionAIComplete},
 			Backend: Backend{
 				Type:        "process",
 				ServiceName: "numen.v1.ProofreadingService",

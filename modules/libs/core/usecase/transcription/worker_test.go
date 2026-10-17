@@ -484,10 +484,10 @@ func TestTakingUpTranscriptProofreadingDoesNotReadTheSourceFileWhenHashIsKnown(t
 		t.Fatal(err)
 	}
 
-	corr := &corrector{says: map[int]string{0: "0|FIRST THING"}}
+	corr := &corrector{says: says(fixes(0, "FIRST THING"))}
 	held.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true, Batch: 1,
-		By: func(string) (port.Proofreader, error) { return corr, nil },
+		By: func() (port.Proofreader, error) { return corr, nil },
 	}
 	held.with.Readers = brokenReaders{}
 
@@ -495,7 +495,7 @@ func TestTakingUpTranscriptProofreadingDoesNotReadTheSourceFileWhenHashIsKnown(t
 	held.TakeUp(t.Context(), known, v)
 	held.Wait()
 
-	if len(corr.asked) != 1 {
-		t.Errorf("expected proofreader to be asked, got %v", corr.asked)
+	if len(corr.windows) != 1 {
+		t.Errorf("expected proofreader to be asked, got %v", corr.windows)
 	}
 }

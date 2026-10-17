@@ -6,35 +6,24 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// Proofreader is asked about the lines of a run of batches and says what it
-// would put right. The core asks for one and does not know whether a model on
-// this machine or a service answered.
+// Proofreader puts numbered lines of text right. The core asks for one and does
+// not know which plugin answers, which model it asks, or how it cuts the text
+// into requests.
 //
 // An installation that configured none has no proofreader, and a recognition is
-// used exactly as it was read.
+// used exactly as it was read. A proofreader with nothing routed to answer for
+// it fails with ErrUnavailable.
 type Proofreader interface {
 	// GetName is what made a correction, recorded beside it.
 	GetName() string
 
-	// Proofread hands over the batches and answers with what came back about
-	// each, by the batch it is about. Whether a reply is an answer is decided
-	// above this; a batch nothing came back about is a batch left as it was
-	// read.
-	Proofread(ctx context.Context, batches []domain.ProofreadBatch) (map[int]string, error)
-}
+	// ProofreadScan puts right the lines of printed pages. A correction stands
+	// no further than maxEditDistance from its line, as a share of the longer
+	// of the two; zero leaves the limit to the proofreader.
+	ProofreadScan(ctx context.Context, pages []domain.ProofreadPage, maxEditDistance float64) (domain.ScanProofreading, error)
 
-// A ProofreadQueue is a proofreader that takes a run of batches away and
-// answers about them later. The answer outlives the run that asked for it, so a
-// batch left before the application closed is collected when it opens.
-type ProofreadQueue interface {
-	Proofreader
-
-	// Submit hands the batches over and answers with the name what comes back is
-	// collected under.
-	Submit(ctx context.Context, batches []domain.ProofreadBatch) (string, error)
-
-	// GetReplies is what came back about the batches left under a name, and
-	// whether it is there yet. A name the service will never answer about is an
-	// error.
-	GetReplies(ctx context.Context, name string) (replies map[int]string, ready bool, err error)
+	// ProofreadSpeech puts right the lines of a transcript that fall in the
+	// window. The lines are the whole transcript, so a proofreader knows what
+	// the recording holds.
+	ProofreadSpeech(ctx context.Context, lines []domain.ProofreadLine, window domain.SpeechWindow) (domain.SpeechProofreading, error)
 }

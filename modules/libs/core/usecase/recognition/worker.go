@@ -4,11 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
@@ -57,9 +55,6 @@ type Config struct {
 
 	// Proofreading is what a recognition is put right with.
 	Proofreading run.ProofreadingConfig
-
-	// Wait holds the collection of batches between its rounds.
-	Wait port.Wait
 }
 
 // Worker recognises scanned documents behind whoever asked.
@@ -299,40 +294,12 @@ func (r *Worker) reportTask(at run.Task) { r.line.Report(at, true) }
 
 func (r *Worker) finishTask(id string) { r.line.Finish(id) }
 
-// CollectBatches asks after the batches left with a proofreader, until the
-// context is done, behind the caller. A batch outlives the run that left it, so
-// one left before the application closed is collected when it opens.
-//
-// Nothing here is done unless a person configured a proofreader with a queue.
-//
-// The count is taken here and not in the goroutine it counts, so a wait that
-// begins the instant this returns covers the rounds behind it.
-func (r *Worker) CollectBatches(
-	ctx context.Context,
-	known port.SourceQueries,
-	every time.Duration,
-	vaults ...domain.Vault,
-) {
-	queue, err := r.with.Proofreading.Queue(proofread.ScanInstruction)
-	if err != nil || queue == nil {
-		return
-	}
-	r.line.Go(func() {
-		r.line.RepeatRounds(ctx, r.with.Wait, every, func() {
-			for _, v := range vaults {
-				r.collect(ctx, known, queue, queue, v)
-			}
-		})
-	})
-}
-
 // TakeUp puts right the recognitions of these vaults that stand short of
 // their last page, once, behind the caller.
 //
 // A proofreading stands at the page it reached, so a run that ended among the
 // batches is taken up at that page. A recognition no proofreader has been over
-// stands at its first page and is put right whole. A proofreader with a queue
-// leaves a batch behind it and is taken up by CollectBatches.
+// stands at its first page and is put right whole.
 func (r *Worker) TakeUp(
 	ctx context.Context,
 	known port.SourceQueries,
@@ -343,16 +310,12 @@ func (r *Worker) TakeUp(
 		return
 	}
 	r.line.Go(func() {
-		queue, err := proofreading.Queue(proofread.ScanInstruction)
-		if err != nil || queue != nil {
-			return
-		}
-		by, err := proofreading.By(proofread.ScanInstruction)
+		by, err := run.OpenProofreader(proofreading.By)
 		if err != nil || by == nil {
 			return
 		}
 		for _, v := range vaults {
-			r.collect(ctx, known, by, nil, v)
+			r.collect(ctx, known, by, v)
 		}
 	})
 }
@@ -363,7 +326,6 @@ func (r *Worker) collect(
 	ctx context.Context,
 	known port.SourceQueries,
 	by port.Proofreader,
-	queue port.ProofreadQueue,
 	v domain.Vault,
 ) {
 	recognised, err := known.GetRecognisedSources(ctx, v.ID, domain.KindBook)
@@ -385,7 +347,6 @@ func (r *Worker) collect(
 			continue
 		}
 		right.Hash = one.Hash
-		right.Queue = queue
 		right.Pages = proofreading.Batch
 		right.MaxEditDistance = proofreading.MaxEditDistance
 		right.Cut = r.Cut

@@ -152,11 +152,6 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 		return nil
 	}
 
-	// A batch left with a proofreader outlives the run that left it, so one
-	// left before the application closed is collected when it opens. Every
-	// vault this installation holds is asked after.
-	recognising.CollectBatches(watching, sources, collectedEvery, known...)
-
 	// A proofreading stands at the page it reached, so one that ended among the
 	// batches is taken up when the application opens.
 	recognising.TakeUp(watching, sources, known...)
@@ -242,10 +237,6 @@ func (o *Installation) resetStatus() {
 		o.State.reportTask(run.Task{ID: makingVectors, Title: "Indexing", Error: o.embedderError.Error()})
 	}
 }
-
-// collectedEvery is how often the batches left with a proofreader are asked
-// after. A batch is answered in hours.
-const collectedEvery = 5 * time.Minute
 
 // heardEvery is how often the vault is asked which recordings owe their text. A
 // recording is dropped into a folder by hand, and one arriving a minute after a

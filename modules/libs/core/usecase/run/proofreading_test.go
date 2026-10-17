@@ -7,15 +7,20 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
 type answering struct{}
 
 func (answering) GetName() string { return "answering" }
 
-func (answering) Proofread(context.Context, []domain.ProofreadBatch) (map[int]string, error) {
-	return nil, nil
+func (answering) ProofreadScan(context.Context, []domain.ProofreadPage, float64) (domain.ScanProofreading, error) {
+	return domain.ScanProofreading{}, nil
+}
+
+func (answering) ProofreadSpeech(
+	context.Context, []domain.ProofreadLine, domain.SpeechWindow,
+) (domain.SpeechProofreading, error) {
+	return domain.SpeechProofreading{}, nil
 }
 
 type readers struct{}
@@ -49,7 +54,15 @@ func TestAProofreadingNeedsAVaultAStoreAndAProofreader(t *testing.T) {
 
 // Nothing is opened where an installation placed nothing to open.
 func TestNothingIsOpenedWhereNothingWasPlaced(t *testing.T) {
-	if by, err := OpenProofreader(nil, proofread.ScanInstruction); by != nil || err != nil {
+	if by, err := OpenProofreader(nil); by != nil || err != nil {
+		t.Errorf("got %v, %v", by, err)
+	}
+}
+
+// What the installation opens is what answers.
+func TestWhatTheInstallationOpensAnswers(t *testing.T) {
+	by, err := OpenProofreader(func() (port.Proofreader, error) { return answering{}, nil })
+	if err != nil || by == nil {
 		t.Errorf("got %v, %v", by, err)
 	}
 }
