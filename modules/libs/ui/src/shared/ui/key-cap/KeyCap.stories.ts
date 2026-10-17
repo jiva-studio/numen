@@ -58,7 +58,7 @@ export const EveryIcon: Story = {
 
     const weights: number[] = []
     for (const cap of caps) {
-      const set = parseFloat(getComputedStyle(cap).fontSize)
+      const set = Number.parseFloat(getComputedStyle(cap).fontSize)
       const box = cap.getBoundingClientRect()
       const middle = box.top + box.height / 2
 

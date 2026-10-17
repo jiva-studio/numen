@@ -399,7 +399,7 @@ export const TheRingStandsOnTheKnob: Story = {
     // The knob wears the ring: it is stroked in another colour and heavier.
     const held = getComputedStyle(knob)
     expect(held.stroke).not.toBe(before.stroke)
-    expect(parseFloat(held.strokeWidth)).toBeGreaterThan(parseFloat(before.width))
+    expect(Number.parseFloat(held.strokeWidth)).toBeGreaterThan(Number.parseFloat(before.width))
 
     // The picture itself wears none.
     expect(getComputedStyle(picture).outlineStyle).toBe('none')

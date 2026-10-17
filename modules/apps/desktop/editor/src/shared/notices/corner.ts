@@ -111,7 +111,7 @@ export const getCornerNotices = (
   context: CornerContext,
 ): readonly Notice[] => {
   const { state, vault, words } = context
-  const isWorking: readonly Notice[] = dropDuplicateErrors(tasks).map(createNotice)
+  const isWorking: readonly Notice[] = dropDuplicateErrors(tasks).map((task) => createNotice(task))
 
   const so: Notice[] = [
     ...createStateNotices('unwatched', state.unwatched && words.unwatched, {

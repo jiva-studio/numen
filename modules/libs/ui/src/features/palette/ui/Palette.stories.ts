@@ -787,7 +787,7 @@ export const TooLong: Story = {
 
     const panel = document.body.querySelector<HTMLElement>('[data-palette="panel"]')!
     const over = document.body.querySelector<HTMLElement>('[data-palette="ground"]')!
-    const clear = parseFloat(getComputedStyle(over).paddingInlineStart)
+    const clear = Number.parseFloat(getComputedStyle(over).paddingInlineStart)
     const drawn = panel.getBoundingClientRect()
     const room = over.getBoundingClientRect()
 

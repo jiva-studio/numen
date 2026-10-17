@@ -115,7 +115,7 @@ export const getShapeKey = (settings: Settings): string => {
     learned: settings.learned,
     interval: `${settings.interval}`,
     load: Object.keys(settings.load)
-      .sort()
+      .sort((a, b) => a.localeCompare(b))
       .map((day) => `${day}=${settings.load[day]}`)
       .join(','),
     hasEvenLoad: `${settings.hasEvenLoad}`,

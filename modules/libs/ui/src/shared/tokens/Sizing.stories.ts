@@ -142,7 +142,7 @@ const measureToken = (token: Token): number => {
 }
 
 /** The root's own font size, which is what the interface multiplier sets. */
-const root = () => parseFloat(getComputedStyle(document.documentElement).fontSize)
+const root = () => Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
 
 /** Both multipliers as the page is wearing them. An empty string is neither. */
 const getScales = () => ({
