@@ -79,10 +79,12 @@ export interface PluginContextHost {
   ): Disposable
   onVaultChange(
     pluginId: string,
-    handler: (event: VaultChangeEvent) => void | Promise<void>): Disposable
+    handler: (event: VaultChangeEvent) => void | Promise<void>,
+  ): Disposable
   onFileSelect(
     pluginId: string,
-    handler: (event: FileSelectEvent) => void | Promise<void>): Disposable
+    handler: (event: FileSelectEvent) => void | Promise<void>,
+  ): Disposable
   emitVaultChange(pluginId: string, event: VaultChangeEvent): void
   emitFileSelect(pluginId: string, event: FileSelectEvent): void
   openTab?(kind: string, at?: string): Promise<string>
