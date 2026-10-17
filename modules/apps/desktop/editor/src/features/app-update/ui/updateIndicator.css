@@ -26,13 +26,6 @@
   background: var(--numen-raised);
 }
 
-.update-indicator__dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
 .update-popover {
   position: absolute;
   bottom: calc(100% + 4px);
@@ -126,6 +119,7 @@
   cursor: pointer;
   border: none;
   font-family: inherit;
+  text-decoration: none;
 }
 
 .update-popover__btn--primary {

@@ -18,8 +18,15 @@ const props = withDefaults(
 )
 
 /* --------------------------------- State ---------------------------------- */
-const { hasUpdate, isDismissed, updateInfo, dismissUpdate, openDownload, openReleaseNotes } =
-  useAppUpdate(props.options)
+const {
+  hasUpdate,
+  isDismissed,
+  updateInfo,
+  platform,
+  dismissUpdate,
+  openDownload,
+  openReleaseNotes,
+} = useAppUpdate(props.options)
 
 const isOpen = ref(false)
 const rootRef = useTemplateRef<HTMLElement>('rootRef')
@@ -49,13 +56,17 @@ function onClose() {
   isOpen.value = false
 }
 
-function onDownload() {
-  openDownload()
+function onDownload(press?: MouseEvent) {
+  if (!press?.defaultPrevented) {
+    openDownload()
+  }
   onClose()
 }
 
-function onReleaseNotes() {
-  openReleaseNotes()
+function onReleaseNotes(press?: MouseEvent) {
+  if (!press?.defaultPrevented) {
+    openReleaseNotes()
+  }
   onClose()
 }
 
@@ -90,14 +101,13 @@ function onKeyDown(event: KeyboardEvent) {
       aria-label="Application update available"
       @click="onToggle"
     >
-      <span class="update-indicator__dot" />
-      <span class="update-indicator__label">v{{ updateInfo.latestVersion }} available</span>
+      <span class="update-indicator__label">v{{ updateInfo.latestVersion }}</span>
     </button>
 
     <UpdatePopover
       v-if="isOpen"
       :update-info="updateInfo"
-      :platform="options.platform"
+      :platform="platform"
       @close="onClose"
       @download="onDownload"
       @release-notes="onReleaseNotes"

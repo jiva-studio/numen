@@ -90,7 +90,7 @@ describe('useAppUpdate', () => {
       latestVersion: '2026.10.1',
       latestBuild: 950,
       releasedAt: '2026-10-15T12:00:00Z',
-      notesUrl: 'https://dl.numen.md/releases/2026.10.1/notes.md',
+      notesUrl: 'https://github.com/jiva-studio/numen/releases/tag/v2026.10.1',
       platformFile: sampleManifest.files![0],
       downloadUrl: 'https://dl.numen.md/numen-macos.dmg',
     })
@@ -99,7 +99,9 @@ describe('useAppUpdate', () => {
     expect(openUrl).toHaveBeenCalledWith('https://dl.numen.md/numen-macos.dmg')
 
     updateState.openReleaseNotes()
-    expect(openUrl).toHaveBeenCalledWith('https://dl.numen.md/releases/2026.10.1/notes.md')
+    expect(openUrl).toHaveBeenCalledWith(
+      'https://github.com/jiva-studio/numen/releases/tag/v2026.10.1',
+    )
 
     updateState.dismissUpdate()
     expect(updateState.isDismissed.value).toBe(true)
@@ -177,6 +179,52 @@ describe('useAppUpdate', () => {
 
     expect(updateState.hasUpdate.value).toBe(false)
     expect(updateState.isChecking.value).toBe(false)
+  })
+
+  it('detects available update for unversioned dev build', async () => {
+    const fetchFn = createMockFetch(sampleManifest)
+
+    let updateState!: ReturnType<typeof useAppUpdate>
+    const TestComponent = defineComponent({
+      setup() {
+        updateState = useAppUpdate({
+          currentVersion: '0.0.0-dev',
+          currentBuild: 0,
+          platform: 'darwin',
+          fetchFn,
+          checkIntervalMs: 0,
+        })
+        return () => h('div')
+      },
+    })
+
+    mount(TestComponent)
+    await new Promise((done) => setTimeout(done, 10))
+
+    expect(updateState.hasUpdate.value).toBe(true)
+    expect(updateState.updateInfo.value?.latestVersion).toBe('2026.10.1')
+  })
+
+  it('reports no update when current version matches remote version', async () => {
+    const fetchFn = createMockFetch(sampleManifest)
+
+    let updateState!: ReturnType<typeof useAppUpdate>
+    const TestComponent = defineComponent({
+      setup() {
+        updateState = useAppUpdate({
+          currentVersion: '2026.10.1',
+          currentBuild: 0,
+          fetchFn,
+          checkIntervalMs: 0,
+        })
+        return () => h('div')
+      },
+    })
+
+    mount(TestComponent)
+    await new Promise((done) => setTimeout(done, 10))
+
+    expect(updateState.hasUpdate.value).toBe(false)
   })
 
   it('clears interval timer on unmount', () => {

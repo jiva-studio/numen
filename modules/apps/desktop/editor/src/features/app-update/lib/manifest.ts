@@ -4,7 +4,7 @@
 import type { ReleaseFile, ReleaseManifest, UpdateInfo } from '../model/types'
 import { findPlatformFile, isNewerRelease, parseBuildNumber, type ClientPlatform } from './release'
 
-export const DEFAULT_ENDPOINT = 'https://dl.numen.md/latest/latest.json'
+export const DEFAULT_ENDPOINT = '/api/app-update/latest.json'
 export const DEFAULT_INTERVAL_MS = 4 * 60 * 60 * 1000 // 4 hours
 export const DEFAULT_DOWNLOAD_URL = 'https://numen.md/#get'
 
@@ -33,13 +33,19 @@ export function evaluateManifest(
   manifest: ReleaseManifest,
   context: ClientContext,
 ): UpdateInfo | null {
+  if (context.currentVersion && context.currentVersion === manifest.version) {
+    return null
+  }
+
   const remoteBuild = parseBuildNumber(manifest.build)
   if (!isNewerRelease(context.currentBuild, remoteBuild)) {
     return null
   }
 
+  const githubReleaseUrl = `https://github.com/jiva-studio/numen/releases/tag/v${manifest.version}`
   const platformFile: ReleaseFile | undefined = findPlatformFile(manifest.files, context.platform)
-  const downloadUrl = platformFile?.url ?? DEFAULT_DOWNLOAD_URL
+  const downloadUrl =
+    context.platform === 'linux' ? DEFAULT_DOWNLOAD_URL : (platformFile?.url ?? DEFAULT_DOWNLOAD_URL)
 
   return {
     currentVersion: context.currentVersion,
@@ -47,7 +53,7 @@ export function evaluateManifest(
     latestVersion: manifest.version,
     latestBuild: remoteBuild,
     releasedAt: manifest.released,
-    notesUrl: manifest.notes,
+    notesUrl: githubReleaseUrl,
     platformFile,
     downloadUrl,
   }

@@ -213,6 +213,7 @@ jobs:
       - name: Build frontend interfaces
         env:
           VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
+          VITE_NUMEN_BUILD: ${{ needs.naming.outputs.build }}
         run: |
           make install INSTALL="npm ci"
           make interface
@@ -617,6 +618,7 @@ jobs:
       - name: Build frontend interfaces
         env:
           VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
+          VITE_NUMEN_BUILD: ${{ needs.naming.outputs.build }}
         run: |
           make install INSTALL="npm ci"
           make interface
@@ -730,6 +732,7 @@ jobs:
       - name: Build frontend interfaces
         env:
           VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
+          VITE_NUMEN_BUILD: ${{ needs.naming.outputs.build }}
         run: |
           make install INSTALL="npm ci"
           make interface

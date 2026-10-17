@@ -23,7 +23,7 @@ func (s Sources) Policy() string {
 		"; media-src " + listSources(s.Media) +
 		"; frame-src " + listSources(s.Frames) +
 		"; style-src 'self' 'unsafe-inline'; " +
-		"font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; " +
+		"font-src 'self'; connect-src " + listSources(s.Connect) + "; object-src 'none'; base-uri 'none'; " +
 		"form-action 'none'; frame-ancestors 'none'"
 }
 
@@ -42,6 +42,9 @@ type Sources struct {
 	// played from. Every host here runs its own scripts inside its own frame
 	// and reaches its own machines, and the window is what names them.
 	Frames []string
+	// Connect fills connect-src, which is where fetch, WebSocket, and
+	// EventSource may connect besides what the window serves itself.
+	Connect []string
 }
 
 // listSources is a window's own handler and whatever else is allowed beside it.
