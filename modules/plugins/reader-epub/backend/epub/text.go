@@ -242,8 +242,7 @@ func (t *tokenizer) handleText() {
 
 func (t *tokenizer) shouldSkipStartTag(tt html.TokenType, a atom.Atom) bool {
 	if t.skipAtom != 0 {
-		// gomutants:disable-next-line EXPRESSION_REMOVE reason="blocks already holds atom.Body"
-		if a == atom.Body || blocks[a] {
+		if blocks[a] {
 			t.skipAtom = 0
 		} else {
 			return true
@@ -323,7 +322,6 @@ func (t *tokenizer) findStackFrame(a atom.Atom) int {
 			return i
 		}
 	}
-	// gomutants:disable-next-line INTEGER_INCREMENT reason="the return value is only tested for greater than or equal to zero"
 	return -1
 }
 

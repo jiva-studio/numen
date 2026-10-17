@@ -62,6 +62,8 @@ func TestMarkupBecomesText(t *testing.T) {
 			`<html><head><meta charset="utf-8"/><p>Words</p></html>`, "Words\n"},
 		{"what a head holds after its title is not text",
 			`<html><head><title>T</title><noscript>Hidden</noscript></head><body><p>Seen</p></body></html>`, "Seen\n"},
+		{"an unmatched end tag does not close enclosing frames",
+			`<div><p>One</p></span><p>Two</p></div>`, "One\nTwo\n"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			book, drawn := readOne(t, c.markup)
