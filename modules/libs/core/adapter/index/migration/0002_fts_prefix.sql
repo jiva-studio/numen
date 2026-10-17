@@ -30,4 +30,4 @@ CREATE VIRTUAL TABLE headings_fts USING fts5 (
 );
 INSERT INTO headings_fts (rowid, text) SELECT id, text FROM headings;
 
-UPDATE sources SET modified_at = 0;
+UPDATE sources SET modified_at = 0 WHERE 1 = 1;
