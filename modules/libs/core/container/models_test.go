@@ -10,9 +10,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// listed are the programs two plugins list: one installed with models of its own, one installed
+// listedPrograms are the programs two plugins list: one installed with models of its own, one installed
 // that lists none, and one that is not installed.
-func listed() []port.AgentProgram {
+func listedPrograms() []port.AgentProgram {
 	return []port.AgentProgram{
 		{
 			Provider: "p.one", Name: "alpha", Title: "Alpha", IsInstalled: true, IsDefault: true,
@@ -57,7 +57,7 @@ func TestEverySectionKeyIsTheOneTheDocumentSpells(t *testing.T) {
 // A model is nothing to the window unless it says where it is read from and
 // what choosing it writes.
 func TestEveryModelSaysWhereItIsReadAndWhatItWrites(t *testing.T) {
-	for _, one := range getAgentModels(DefaultSettings().Agent, listed()) {
+	for _, one := range getAgentModels(DefaultSettings().Agent, listedPrograms()) {
 		if len(one.Path) == 0 {
 			t.Errorf("%q is read from nowhere", one.Title)
 		}
@@ -78,7 +78,7 @@ func TestEveryModelSaysWhereItIsReadAndWhatItWrites(t *testing.T) {
 // One setting, one model an installation nobody has configured runs on.
 func TestOneModelToASettingIsTheDefault(t *testing.T) {
 	for name, programs := range map[string][]port.AgentProgram{
-		"programs that mark one": listed(),
+		"programs that mark one": listedPrograms(),
 		"programs that mark none": {
 			{Name: "alpha", Title: "Alpha", IsInstalled: true, Models: []port.AgentModel{{Name: "m"}}},
 			{Name: "beta", Title: "Beta", IsInstalled: true},
@@ -110,7 +110,7 @@ func TestOneModelToASettingIsTheDefault(t *testing.T) {
 // program that is not installed not fetched, and the choice of none last.
 func TestTheProgramsTheSettingCanNameAreTheOnesThePluginsList(t *testing.T) {
 	var uses []port.Model
-	for _, one := range getAgentModels(DefaultSettings().Agent, listed()) {
+	for _, one := range getAgentModels(DefaultSettings().Agent, listedPrograms()) {
 		if formatPath(one.Path) == formatPath(agentUseAt) {
 			uses = append(uses, one)
 		}
@@ -149,7 +149,7 @@ func TestWithNoProgramsNothingAnswersByDefault(t *testing.T) {
 // The models of a program are those it lists, the one it marks or else the first the default, each
 // writing where the program's section keeps its model.
 func TestAProgramOffersTheModelsItListsAndTheFirstByDefault(t *testing.T) {
-	held := modelsAt(t, DefaultSettings(), listed(), agentModelAt)
+	held := modelsAt(t, DefaultSettings(), listedPrograms(), agentModelAt)
 	if len(held) != 2 || held[0].Name != "big" || held[1].Name != "small" {
 		t.Fatalf("the program offers %+v", held)
 	}
@@ -184,13 +184,13 @@ func TestTheModelAProgramMarksIsTheDefault(t *testing.T) {
 func TestTheModelTheSettingsNameIsKept(t *testing.T) {
 	named := DefaultSettings()
 	named.Agent.Programs = map[string]settings.AgentProgram{"alpha": {Model: "small"}}
-	held := modelsAt(t, named, listed(), agentModelAt)
+	held := modelsAt(t, named, listedPrograms(), agentModelAt)
 	if held[0].IsDefault || !held[1].IsDefault {
 		t.Errorf("the model in force is %+v", held)
 	}
 
 	named.Agent.Programs = map[string]settings.AgentProgram{"alpha": {Model: "custom-1"}}
-	held = modelsAt(t, named, listed(), agentModelAt)
+	held = modelsAt(t, named, listedPrograms(), agentModelAt)
 	last := held[len(held)-1]
 	if len(held) != 3 || last.Name != "custom-1" || last.Group != groupConfigured || last.IsDefault {
 		t.Errorf("the models are %+v", held)
@@ -203,14 +203,14 @@ func TestTheModelTheSettingsNameIsKept(t *testing.T) {
 // A program that lists no models offers the model that answers by default, alone, until a person
 // names one.
 func TestAProgramThatListsNoModelsOffersTheDefaultAlone(t *testing.T) {
-	held := modelsAt(t, DefaultSettings(), listed(), []string{agentAt, "beta", "model"})
+	held := modelsAt(t, DefaultSettings(), listedPrograms(), []string{agentAt, "beta", "model"})
 	if len(held) != 1 || held[0].Name != "" || !held[0].IsDefault {
 		t.Errorf("the program opens on %+v", held)
 	}
 
 	named := DefaultSettings()
 	named.Agent.Programs = map[string]settings.AgentProgram{"beta": {Model: "mine"}}
-	held = modelsAt(t, named, listed(), []string{agentAt, "beta", "model"})
+	held = modelsAt(t, named, listedPrograms(), []string{agentAt, "beta", "model"})
 	if len(held) != 1 || held[0].Name != "mine" || held[0].Title != "mine" || !held[0].IsDefault {
 		t.Errorf("the program opens on %+v", held)
 	}
@@ -219,7 +219,7 @@ func TestAProgramThatListsNoModelsOffersTheDefaultAlone(t *testing.T) {
 // A program that is not installed offers no models unless the settings name it.
 func TestAProgramNotInstalledOffersModelsOnlyWhereTheSettingsNameIt(t *testing.T) {
 	at := formatPath([]string{agentAt, "gamma", "model"})
-	for _, one := range getAgentModels(DefaultSettings().Agent, listed()) {
+	for _, one := range getAgentModels(DefaultSettings().Agent, listedPrograms()) {
 		if formatPath(one.Path) == at {
 			t.Errorf("a program that is not installed offers %+v", one)
 		}
@@ -227,7 +227,7 @@ func TestAProgramNotInstalledOffersModelsOnlyWhereTheSettingsNameIt(t *testing.T
 
 	named := DefaultSettings()
 	named.Agent.Use = settings.UseProgram("gamma")
-	held := modelsAt(t, named, listed(), []string{agentAt, "gamma", "model"})
+	held := modelsAt(t, named, listedPrograms(), []string{agentAt, "gamma", "model"})
 	if len(held) != 1 || held[0].Name != "g1" {
 		t.Errorf("the named program offers %+v", held)
 	}
