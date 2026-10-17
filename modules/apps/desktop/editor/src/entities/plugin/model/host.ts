@@ -264,12 +264,7 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
         ),
       }
     },
-    onVaultChange: (pluginId, handler) =>
-      addListener(registry.vaultListeners, { pluginId, handler }),
-    onFileSelect: (pluginId, handler) =>
-      addListener(registry.fileListeners, { pluginId, handler }),
-    emitVaultChange: (_pluginId, event) => notifyListeners(registry.vaultListeners, event, deps),
-    emitFileSelect: (_pluginId, event) => notifyListeners(registry.fileListeners, event, deps),
+    ...createEventBridge(deps, registry),
     openTab: (kind: string, at?: string) => deps.openTab(kind, at),
     closeTab: (id: string) => deps.closeTab?.(id),
   }
