@@ -32,6 +32,7 @@ type TranscriberBridge struct {
 	host     TranscriberPluginHost
 	pluginID string
 	client   numenv1connect.TranscriptionServiceClient
+	lease    *pluginLease
 }
 
 // OpenTranscriberBridge activates or connects to the transcription plugin and returns a port.Transcriber.
@@ -41,19 +42,16 @@ func OpenTranscriberBridge(ctx context.Context, host TranscriberPluginHost) (*Tr
 		return nil, errNoTranscriptionPlugin
 	}
 
-	endpoint, err := host.EnsureActive(ctx, plugin.Manifest.ID)
+	client, lease, err := openPlugin(ctx, host, plugin.Manifest.ID, numenv1connect.NewTranscriptionServiceClient)
 	if err != nil {
-		return nil, fmt.Errorf("ensure active %s: %w", plugin.Manifest.ID, err)
+		return nil, err
 	}
-
-	httpClient := EndpointClient(endpoint)
-	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
-	client := numenv1connect.NewTranscriptionServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 
 	return &TranscriberBridge{
 		host:     host,
 		pluginID: plugin.Manifest.ID,
 		client:   client,
+		lease:    lease,
 	}, nil
 }
 
@@ -179,8 +177,7 @@ func (b *TranscriberBridge) Transcribe(ctx context.Context, audio port.Audio) (s
 
 // Close releases the active reference count for the transcription plugin in the host supervisor.
 func (b *TranscriberBridge) Close() error {
-	b.host.Release(b.pluginID)
-	return nil
+	return b.lease.Close()
 }
 
 type pluginRecording struct {

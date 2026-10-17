@@ -29,6 +29,7 @@ type EmbedderBridge struct {
 	host        port.PluginActivator
 	pluginID    string
 	client      numenv1connect.EmbeddingServiceClient
+	lease       *pluginLease
 	concurrency int
 }
 
@@ -39,14 +40,10 @@ func OpenEmbedderBridge(ctx context.Context, host EmbedderPluginHost) (*Embedder
 		return nil, errNoEmbedderPlugin
 	}
 
-	endpoint, err := host.EnsureActive(ctx, plugin.Manifest.ID)
+	client, lease, err := openPlugin(ctx, host, plugin.Manifest.ID, numenv1connect.NewEmbeddingServiceClient)
 	if err != nil {
-		return nil, fmt.Errorf("ensure active %s: %w", plugin.Manifest.ID, err)
+		return nil, err
 	}
-
-	httpClient := EndpointClient(endpoint)
-	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
-	client := numenv1connect.NewEmbeddingServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 
 	concurrency := 1
 	modelReq := connect.NewRequest(&v1.GetEmbeddingModelRequest{})
@@ -58,6 +55,7 @@ func OpenEmbedderBridge(ctx context.Context, host EmbedderPluginHost) (*Embedder
 		host:        host,
 		pluginID:    plugin.Manifest.ID,
 		client:      client,
+		lease:       lease,
 		concurrency: concurrency,
 	}, nil
 }
@@ -119,6 +117,5 @@ func (b *EmbedderBridge) Concurrency() int {
 
 // Close releases the active reference count for the embedding plugin in the host supervisor.
 func (b *EmbedderBridge) Close() error {
-	b.host.Release(b.pluginID)
-	return nil
+	return b.lease.Close()
 }

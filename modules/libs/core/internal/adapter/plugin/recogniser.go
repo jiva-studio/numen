@@ -33,6 +33,7 @@ type RecogniserBridge struct {
 	host     RecogniserPluginHost
 	pluginID string
 	client   numenv1connect.RecognitionServiceClient
+	lease    *pluginLease
 }
 
 // OpenRecogniserBridge activates or connects to the OCR plugin and returns a port.Recogniser.
@@ -42,19 +43,16 @@ func OpenRecogniserBridge(ctx context.Context, host RecogniserPluginHost) (*Reco
 		return nil, errNoRecogniserPlugin
 	}
 
-	endpoint, err := host.EnsureActive(ctx, plugin.Manifest.ID)
+	client, lease, err := openPlugin(ctx, host, plugin.Manifest.ID, numenv1connect.NewRecognitionServiceClient)
 	if err != nil {
-		return nil, fmt.Errorf("ensure active %s: %w", plugin.Manifest.ID, err)
+		return nil, err
 	}
-
-	httpClient := EndpointClient(endpoint)
-	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
-	client := numenv1connect.NewRecognitionServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 
 	return &RecogniserBridge{
 		host:     host,
 		pluginID: plugin.Manifest.ID,
 		client:   client,
+		lease:    lease,
 	}, nil
 }
 
@@ -107,8 +105,7 @@ func (b *RecogniserBridge) Recognise(ctx context.Context, page image.Image) ([]d
 
 // Close releases the active reference count for the OCR plugin in the host supervisor.
 func (b *RecogniserBridge) Close() error {
-	b.host.Release(b.pluginID)
-	return nil
+	return b.lease.Close()
 }
 
 func convertBlocks(protoBlocks []*v1.OcrBlock) []domain.OCRBlock {
