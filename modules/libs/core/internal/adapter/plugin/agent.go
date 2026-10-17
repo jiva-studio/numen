@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 
@@ -15,40 +14,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-var (
-	// ErrNoAgentPlugin is returned when no plugin provides agent capability.
-	ErrNoAgentPlugin = errors.New("no active agent plugin found")
-)
-
-// AgentPluginHost provides plugin resolution and activation for AI agents.
-type AgentPluginHost interface {
-	port.PluginResolver
-	port.PluginActivator
-}
-
 // AgentBridge connects port.Agent calls to an out-of-process agent plugin via Connect-RPC.
 type AgentBridge struct {
 	host     port.PluginActivator
 	pluginID string
 	client   numenv1connect.AgentServiceClient
-}
-
-// OpenAgentBridge activates or connects to the agent plugin and returns an AgentBridge.
-func OpenAgentBridge(ctx context.Context, host AgentPluginHost) (*AgentBridge, error) {
-	if p, ok := host.GetPlugin("md.numen.agent-acp"); ok {
-		return OpenAgentBridgeForPlugin(ctx, host, p.Manifest.ID)
-	}
-	if p, ok := host.GetPlugin("agent-acp"); ok {
-		return OpenAgentBridgeForPlugin(ctx, host, p.Manifest.ID)
-	}
-	p, ok := host.FindPluginByCapability("agent")
-	if !ok {
-		p, ok = host.FindPluginByCapability("ai.agent.provider")
-		if !ok {
-			return nil, ErrNoAgentPlugin
-		}
-	}
-	return OpenAgentBridgeForPlugin(ctx, host, p.Manifest.ID)
 }
 
 // OpenAgentBridgeForPlugin activates or connects to a specific agent plugin and returns an AgentBridge.
@@ -69,18 +39,41 @@ func OpenAgentBridgeForPlugin(ctx context.Context, host port.PluginActivator, pl
 	}, nil
 }
 
+// newAskRequest is the task in the schema's words.
+func newAskRequest(task port.Task) *v1.AskAgentRequest {
+	declarations := make([]*v1.ToolDeclaration, 0, len(task.ToolDeclarations))
+	for _, one := range task.ToolDeclarations {
+		declarations = append(declarations, &v1.ToolDeclaration{
+			Name:    one.Name,
+			Title:   one.Title,
+			Kind:    getKindWord(one.Kind),
+			About:   one.About,
+			Element: one.Element,
+			Match:   one.Match,
+			Text:    one.Text,
+		})
+	}
+	return &v1.AskAgentRequest{
+		Prompt:              task.Question,
+		Focus:               task.Focus,
+		Conversation:        task.Conversation,
+		Agent:               task.Agent,
+		Model:               task.Model,
+		Instructions:        task.Instructions,
+		Tools:               task.Tools,
+		MaxSteps:            int32(task.MaxSteps),
+		ToolDeclarations:    declarations,
+		Root:                task.Root,
+		Command:             task.Command,
+		ReadsHooksAndSkills: task.ShouldReadHooksAndSkills,
+		ToolsUrl:            task.Endpoint.URL,
+		ToolsToken:          task.Endpoint.Token,
+	}
+}
+
 // StartRun starts execution of the given task through the agent plugin.
 func (b *AgentBridge) StartRun(ctx context.Context, task port.Task) (port.Run, error) {
-	req := connect.NewRequest(&v1.AskAgentRequest{
-		Prompt:       task.Question,
-		Focus:        task.Focus,
-		Conversation: task.Conversation,
-		Agent:        task.Agent,
-		Model:        task.Model,
-		Instructions: task.Instructions,
-		Tools:        task.Tools,
-		MaxSteps:     int32(task.MaxSteps),
-	})
+	req := connect.NewRequest(newAskRequest(task))
 
 	runCtx, cancel := context.WithCancel(ctx)
 	stream, err := b.client.AskAgent(runCtx, req)
@@ -112,6 +105,38 @@ func (b *AgentBridge) EndConversation(ctx context.Context, conversation string) 
 		return fmt.Errorf("rpc finish conversation: %w", err)
 	}
 	return nil
+}
+
+// GetPrograms lists the programs the plugin runs, with the models each offers. Commands are the
+// command lines the installation set, by program.
+func (b *AgentBridge) GetPrograms(ctx context.Context, commands map[string][]string) ([]port.AgentProgram, error) {
+	asked := make([]*v1.AgentProgramCommand, 0, len(commands))
+	for program, command := range commands {
+		asked = append(asked, &v1.AgentProgramCommand{Program: program, Command: command})
+	}
+	resp, err := b.client.GetAgentPrograms(ctx, connect.NewRequest(&v1.GetAgentProgramsRequest{Commands: asked}))
+	if err != nil {
+		return nil, fmt.Errorf("rpc get agent programs: %w", err)
+	}
+
+	programs := make([]port.AgentProgram, 0, len(resp.Msg.GetPrograms()))
+	for _, one := range resp.Msg.GetPrograms() {
+		models := make([]port.AgentModel, 0, len(one.GetModels()))
+		for _, model := range one.GetModels() {
+			models = append(models, port.AgentModel{
+				Name: model.GetName(), Title: model.GetTitle(), IsDefault: model.GetIsDefault(),
+			})
+		}
+		programs = append(programs, port.AgentProgram{
+			Provider:    b.pluginID,
+			Name:        one.GetName(),
+			Title:       one.GetTitle(),
+			IsInstalled: one.GetIsInstalled(),
+			IsDefault:   one.GetIsDefault(),
+			Models:      models,
+		})
+	}
+	return programs, nil
 }
 
 // RegisterTool registers a custom agent tool with the running agent plugin.
@@ -204,23 +229,28 @@ func (r *pluginRun) readSteps() {
 	}
 }
 
+// stepKindWords are what a call does to the vault, in the words the plugins report it in.
+var stepKindWords = map[domain.StepKind]string{
+	domain.StepRead:   "read",
+	domain.StepEdit:   "edit",
+	domain.StepRemove: "remove",
+	domain.StepMove:   "move",
+	domain.StepSearch: "search",
+}
+
+// getKindWord is the word a plugin is told what a call does by. A kind that says nothing about the
+// vault is told as no word.
+func getKindWord(kind domain.StepKind) string { return stepKindWords[kind] }
+
 // getStepKind is what a call does to the vault, by the word the plugin reports it in. A word the
 // core does not know is a call of unknown effect.
 func getStepKind(kind string) domain.StepKind {
-	switch kind {
-	case "read":
-		return domain.StepRead
-	case "edit":
-		return domain.StepEdit
-	case "remove":
-		return domain.StepRemove
-	case "move":
-		return domain.StepMove
-	case "search":
-		return domain.StepSearch
-	default:
-		return domain.StepToolCall
+	for effect, word := range stepKindWords {
+		if word == kind {
+			return effect
+		}
 	}
+	return domain.StepToolCall
 }
 
 func convertResponseStep(msg *v1.AskAgentResponse) port.Step {
@@ -257,6 +287,15 @@ func convertResponseStep(msg *v1.AskAgentResponse) port.Step {
 	case *v1.AskAgentResponse_ModelStarted:
 		return port.Step{
 			Kind: domain.StepModelStart,
+		}
+	case *v1.AskAgentResponse_EditProgress:
+		progress := s.EditProgress
+		return port.Step{
+			Kind:  domain.StepDraft,
+			Call:  progress.GetCall(),
+			Place: domain.Place{Path: progress.GetPath()},
+			Match: progress.GetMatch(),
+			Text:  progress.GetText(),
 		}
 	case *v1.AskAgentResponse_Stopped:
 		return port.Step{

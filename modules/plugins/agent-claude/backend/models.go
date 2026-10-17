@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 )
 
 const (
@@ -15,11 +16,49 @@ const (
 	anthropicHost    = "https://api.anthropic.com"
 )
 
+// AgentModel is one model the endpoint lists.
 type AgentModel struct {
 	Name  string `json:"name"`
 	Title string `json:"title"`
 }
 
+// modelCatalogue keeps the models the endpoint listed, for as long as the key and the endpoint it
+// was asked with stay the same. A failure is kept as none.
+type modelCatalogue struct {
+	mu     sync.Mutex
+	key    string
+	base   string
+	kept   []AgentModel
+	isKept bool
+}
+
+// set changes the key and the endpoint the models are asked with, and drops what was kept.
+func (c *modelCatalogue) set(key, base string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.key, c.base = key, base
+	c.kept, c.isKept = nil, false
+}
+
+// get are the models the endpoint lists: the ones kept, or those it lists now.
+func (c *modelCatalogue) get(ctx context.Context) []AgentModel {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.isKept {
+		return c.kept
+	}
+	models, err := fetchAnthropicModels(ctx, c.key, c.base)
+	if err != nil {
+		if ctx.Err() != nil {
+			return nil
+		}
+		models = nil
+	}
+	c.kept, c.isKept = models, true
+	return c.kept
+}
+
+// fetchAnthropicModels asks the endpoint for its models, and answers none where there is no key.
 func fetchAnthropicModels(ctx context.Context, key, base string) ([]AgentModel, error) {
 	if key == "" {
 		key = os.Getenv(anthropicKeyVar)

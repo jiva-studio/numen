@@ -34,6 +34,10 @@ service AgentService {
 
   // GetAgentTools lists the registered tools and prompt extension.
   rpc GetAgentTools(GetAgentToolsRequest) returns (GetAgentToolsResponse);
+
+  // GetAgentPrograms lists the programs this provider runs, whether each is installed on this
+  // machine, and the models each offers.
+  rpc GetAgentPrograms(GetAgentProgramsRequest) returns (GetAgentProgramsResponse);
 }
 
 message GetAgentStateRequest {}
@@ -76,6 +80,55 @@ message AskAgentRequest {
   repeated ToolDeclaration tool_declarations = 11;
   // The folder the agent is started in. Empty starts it where the plugin runs.
   string root = 12;
+  // The command line that starts the program, as the installation set it. Empty starts the
+  // program where the provider finds it.
+  repeated string command = 13;
+  // Whether the program may read the hooks, skills and standing instructions this machine holds
+  // for it. What a vault carries is refused either way.
+  bool reads_hooks_and_skills = 14;
+  // Where the program reaches the vault's tools, and what it presents there. Empty gives the
+  // program no tools.
+  string tools_url = 15;
+  string tools_token = 16;
+}
+
+message GetAgentProgramsRequest {
+  // The command lines the installation set for programs, so that a model list is asked of the
+  // program the person runs.
+  repeated AgentProgramCommand commands = 1;
+}
+
+// AgentProgramCommand is the command line the installation set for one program.
+message AgentProgramCommand {
+  // The program, by the name it is listed under.
+  string program = 1;
+  repeated string command = 2;
+}
+
+message GetAgentProgramsResponse {
+  repeated AgentProgram programs = 1;
+}
+
+// AgentProgram is one program a provider runs.
+message AgentProgram {
+  // The name a task asks for the program by, and the settings keep its section under.
+  string name = 1;
+  // What the program is called when shown to a person.
+  string title = 2;
+  // Whether the program is installed on this machine.
+  bool is_installed = 3;
+  // Set on the program an installation nobody has configured answers with.
+  bool is_default = 4;
+  // The models the program says it offers. Empty where it says none.
+  repeated AgentModel models = 5;
+}
+
+// AgentModel is one model a program offers.
+message AgentModel {
+  string name = 1;
+  string title = 2;
+  // Set where the program names the model it answers with unasked.
+  bool is_default = 3;
 }
 
 // ToolDeclaration is how one vault tool is spoken about to a person and how a call of it is read

@@ -2,50 +2,41 @@ package main
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agentrun"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
+
+// programName is what a task asks for the program by, and what the settings keep its section under.
+const programName = "claude"
+
+// programTitle is what the program is called when shown to a person.
+const programTitle = "Claude Code"
 
 type agentServer struct {
 	numenv1connect.UnimplementedAgentServiceHandler
 	mu           sync.RWMutex
 	systemPrompt string
 	tools        []*numenv1.AgentToolDefinition
-	modelName    string
-	models       []AgentModel
-	command      []string
-	mayReadHooks bool
-	sessions     map[string]string
-	activeRuns   map[string]context.CancelFunc
+	registry     agentrun.Registry
+	catalogue    modelCatalogue
 }
 
-func (s *agentServer) applyConfig(ctx context.Context, values map[string]string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if m, ok := values["model"]; ok && m != "" {
-		s.modelName = m
-	}
-	if v, ok := values["readsHooksAndSkills"]; ok {
-		s.mayReadHooks = v == "true"
-	}
-	apiKey := values["apiKey"]
-	baseURL := values["baseUrl"]
-	if apiKey != "" || os.Getenv(anthropicKeyVar) != "" {
-		if models, err := fetchAnthropicModels(ctx, apiKey, baseURL); err == nil && len(models) > 0 {
-			s.models = models
-		}
-	}
+// applyConfig keeps the key and the endpoint the models are asked with, and drops the models
+// asked with the ones before.
+func (s *agentServer) applyConfig(values map[string]string) {
+	s.catalogue.set(values["apiKey"], values["baseUrl"])
 }
 
 func (s *agentServer) AskAgent(
@@ -53,44 +44,26 @@ func (s *agentServer) AskAgent(
 	req *connect.Request[numenv1.AskAgentRequest],
 	stream *connect.ServerStream[numenv1.AskAgentResponse],
 ) error {
+	msg := req.Msg
 	s.mu.RLock()
 	systemPrompt := s.systemPrompt
-	model := req.Msg.GetModel()
-	if model == "" {
-		model = s.modelName
-	}
-	customCmd := s.command
-	mayReadHooks := s.mayReadHooks
-	conversation := req.Msg.GetConversation()
-	session := s.sessions[conversation]
-	var toolNames []string
-	if len(req.Msg.GetTools()) > 0 {
-		toolNames = req.Msg.GetTools()
-	} else {
+	toolNames := msg.GetTools()
+	if len(toolNames) == 0 {
 		for _, t := range s.tools {
 			toolNames = append(toolNames, t.GetName())
 		}
 	}
 	s.mu.RUnlock()
 
-	instructions := req.Msg.GetInstructions()
+	instructions := msg.GetInstructions()
 	if systemPrompt != "" {
 		if instructions != "" {
-			instructions = instructions + "\n" + systemPrompt
-		} else {
-			instructions = systemPrompt
+			instructions += "\n"
 		}
+		instructions += systemPrompt
 	}
 
-	cmdName := ""
-	var cmdArgs []string
-	if len(customCmd) > 0 {
-		cmdName = customCmd[0]
-		cmdArgs = customCmd[1:]
-	} else {
-		cmdName = findClaude()
-	}
-
+	cmdName, cmdArgs := getCommand(msg.GetCommand())
 	if cmdName == "" {
 		_ = stream.Send(&numenv1.AskAgentResponse{
 			Step: &numenv1.AskAgentResponse_Said{
@@ -104,8 +77,7 @@ func (s *agentServer) AskAgent(
 		})
 	}
 
-	toolsURL, toolsToken := getToolsEndpoint()
-	configFile, err := writeMcpConfig(toolsURL, toolsToken)
+	configFile, err := writeMcpConfig(msg.GetToolsUrl(), msg.GetToolsToken())
 	if err != nil {
 		return connect.NewError(connect.CodeInternal, fmt.Errorf("write mcp config: %w", err))
 	}
@@ -113,32 +85,33 @@ func (s *agentServer) AskAgent(
 		defer os.Remove(configFile)
 	}
 
-	turns := int(req.Msg.GetMaxSteps())
-	claudeArgs := buildClaudeArguments(instructions, model, configFile, session, turns, toolNames, mayReadHooks)
-	fullArgs := append(cmdArgs, claudeArgs...)
+	conversation := msg.GetConversation()
+	claudeArgs := buildClaudeArguments(claudeArguments{
+		instructions:  instructions,
+		model:         msg.GetModel(),
+		configuration: configFile,
+		session:       s.registry.GetSession(conversation),
+		turns:         int(msg.GetMaxSteps()),
+		tools:         toolNames,
+		mayReadHooks:  msg.GetReadsHooksAndSkills(),
+	})
 
 	runCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	if conversation != "" {
-		s.mu.Lock()
-		if s.activeRuns == nil {
-			s.activeRuns = make(map[string]context.CancelFunc)
-		}
-		s.activeRuns[conversation] = cancel
-		s.mu.Unlock()
-
-		defer func() {
-			s.mu.Lock()
-			delete(s.activeRuns, conversation)
-			s.mu.Unlock()
-		}()
+	work := agentrun.NewWork(conversation, 0, cancel)
+	if !s.registry.Add(work) {
+		return connect.NewError(connect.CodeUnavailable, errors.New("this agent is closing"))
 	}
+	work.Begin()
+	defer s.registry.Remove(work)
+	defer work.End()
 
-	cmd := exec.CommandContext(runCtx, cmdName, fullArgs...)
-	cmd.Dir = req.Msg.GetRoot()
+	cmd := exec.CommandContext(runCtx, cmdName, slices.Concat(cmdArgs, claudeArgs)...)
+	cmd.Dir = msg.GetRoot()
 	cmd.Env = buildEnvironment(os.Environ())
-	cmd.Stdin = strings.NewReader(req.Msg.GetPrompt())
+	cmd.Stdin = strings.NewReader(msg.GetPrompt())
+	agentrun.Supervise(cmd)
 
 	out, err := cmd.StdoutPipe()
 	if err != nil {
@@ -152,18 +125,8 @@ func (s *agentServer) AskAgent(
 		return connect.NewError(connect.CodeInternal, fmt.Errorf("start claude: %w", err))
 	}
 
-	recordSession := func(sess string) {
-		if conversation != "" {
-			s.mu.Lock()
-			if s.sessions == nil {
-				s.sessions = make(map[string]string)
-			}
-			s.sessions[conversation] = sess
-			s.mu.Unlock()
-		}
-	}
-
-	failedReason := parseStream(runCtx, out, stream.Send, getToolWords(req.Msg.GetToolDeclarations()), recordSession)
+	recordSession := func(session string) { s.registry.SetSession(conversation, session) }
+	failedReason := parseStream(runCtx, out, stream.Send, getToolWords(msg.GetToolDeclarations()), recordSession)
 
 	waitErr := cmd.Wait()
 	if runCtx.Err() != nil {
@@ -184,20 +147,22 @@ func (s *agentServer) AskAgent(
 	})
 }
 
+// getCommand is the program to start and what stands before its own arguments: the command line
+// the installation set, else the program where it is found. Empty is a program nowhere to be found.
+func getCommand(command []string) (string, []string) {
+	if len(command) > 0 {
+		return command[0], command[1:]
+	}
+	return findClaude(), nil
+}
+
 func (s *agentServer) FinishConversation(
-	_ context.Context,
+	ctx context.Context,
 	req *connect.Request[numenv1.FinishConversationRequest],
 ) (*connect.Response[numenv1.FinishConversationResponse], error) {
-	conv := req.Msg.GetConversation()
-	s.mu.Lock()
-	if cancel, ok := s.activeRuns[conv]; ok {
-		cancel()
-		delete(s.activeRuns, conv)
+	if err := s.registry.EndConversation(ctx, req.Msg.GetConversation()); err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	if s.sessions != nil {
-		delete(s.sessions, conv)
-	}
-	s.mu.Unlock()
 	return connect.NewResponse(&numenv1.FinishConversationResponse{}), nil
 }
 
@@ -205,17 +170,29 @@ func (s *agentServer) GetAgentState(
 	_ context.Context,
 	_ *connect.Request[numenv1.GetAgentStateRequest],
 ) (*connect.Response[numenv1.GetAgentStateResponse], error) {
-	s.mu.RLock()
-	customCmd := s.command
-	s.mu.RUnlock()
-
 	var unreachable string
-	if len(customCmd) == 0 && findClaude() == "" {
+	if findClaude() == "" {
 		unreachable = "Claude Code CLI not found"
 	}
+	return connect.NewResponse(&numenv1.GetAgentStateResponse{Unreachable: unreachable}), nil
+}
 
-	return connect.NewResponse(&numenv1.GetAgentStateResponse{
-		Unreachable: unreachable,
+// GetAgentPrograms lists Claude Code, whether it is installed, and the models the endpoint lists.
+func (s *agentServer) GetAgentPrograms(
+	ctx context.Context,
+	_ *connect.Request[numenv1.GetAgentProgramsRequest],
+) (*connect.Response[numenv1.GetAgentProgramsResponse], error) {
+	program := &numenv1.AgentProgram{
+		Name:        programName,
+		Title:       programTitle,
+		IsInstalled: findClaude() != "",
+		IsDefault:   true,
+	}
+	for _, one := range s.catalogue.get(ctx) {
+		program.Models = append(program.Models, &numenv1.AgentModel{Name: one.Name, Title: one.Title})
+	}
+	return connect.NewResponse(&numenv1.GetAgentProgramsResponse{
+		Programs: []*numenv1.AgentProgram{program},
 	}), nil
 }
 
@@ -278,45 +255,19 @@ func getToolWords(declarations []*numenv1.ToolDeclaration) map[string]toolWords 
 	return words
 }
 
-func getToolsEndpoint() (string, string) {
-	if u := os.Getenv("NUMEN_TOOLS_URL"); u != "" {
-		return u, os.Getenv("NUMEN_TOOLS_TOKEN")
-	}
-	if u := os.Getenv("NUMEN_MCP_URL"); u != "" {
-		return u, os.Getenv("NUMEN_MCP_TOKEN")
-	}
-
-	configDir, err := os.UserConfigDir()
-	if err == nil {
-		path := filepath.Join(configDir, "numen", "agents.json")
-		if data, err := os.ReadFile(path); err == nil {
-			var disc struct {
-				URL   string `json:"url"`
-				Token string `json:"token"`
-			}
-			if err := json.Unmarshal(data, &disc); err == nil {
-				return disc.URL, disc.Token
-			}
-		}
-	}
-	return "", ""
-}
-
 func main() {
-	agentSvc := &agentServer{
-		modelName:  os.Getenv("NUMEN_CLAUDE_MODEL"),
-		sessions:   make(map[string]string),
-		activeRuns: make(map[string]context.CancelFunc),
-	}
+	agentSvc := &agentServer{}
 
-	srv := server.New(server.WithConfigure(func(ctx context.Context, values map[string]string) error {
-		agentSvc.applyConfig(ctx, values)
+	srv := server.New(server.WithConfigure(func(_ context.Context, values map[string]string) error {
+		agentSvc.applyConfig(values)
 		return nil
 	}))
 
 	srv.Register(numenv1connect.NewAgentServiceHandler(agentSvc, srv.HandlerOptions()...))
 
-	if err := srv.Serve(); err != nil {
+	err := srv.Serve()
+	_ = agentSvc.registry.Close()
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
 		os.Exit(1)
 	}

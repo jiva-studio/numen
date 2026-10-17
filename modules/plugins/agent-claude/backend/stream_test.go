@@ -202,21 +202,21 @@ func TestAFailedCommandIsToldByTheLastLineItWrote(t *testing.T) {
 }
 
 func TestTheAgentReadsNothingThisMachineHoldsForItByDefault(t *testing.T) {
-	args := buildClaudeArguments("", "", "cfg.json", "", 0, nil, false)
+	args := buildClaudeArguments(claudeArguments{configuration: "cfg.json"})
 	assertPair(t, args, "--setting-sources", "")
-	args = buildClaudeArguments("", "", "cfg.json", "", 0, nil, true)
+	args = buildClaudeArguments(claudeArguments{configuration: "cfg.json", mayReadHooks: true})
 	assertPair(t, args, "--setting-sources", "user")
 }
 
 func TestTheAllowanceNamesTheSearchAndTheTasksTools(t *testing.T) {
-	args := buildClaudeArguments("", "", "cfg.json", "", 0, []string{"note_read", "note_edit"}, false)
+	args := buildClaudeArguments(claudeArguments{configuration: "cfg.json", tools: []string{"note_read", "note_edit"}})
 	assertPair(t, args, "--allowedTools", "WebSearch,mcp__numen__note_edit,mcp__numen__note_read")
 	assertPair(t, args, "--tools", "WebSearch")
 }
 
 func TestTheDefaultNumberOfTurnsIsOneHundred(t *testing.T) {
-	assertPair(t, buildClaudeArguments("", "", "", "", 0, nil, false), "--max-turns", "100")
-	assertPair(t, buildClaudeArguments("", "", "", "", 7, nil, false), "--max-turns", "7")
+	assertPair(t, buildClaudeArguments(claudeArguments{}), "--max-turns", "100")
+	assertPair(t, buildClaudeArguments(claudeArguments{turns: 7}), "--max-turns", "7")
 }
 
 func assertPair(t *testing.T, args []string, flag, want string) {

@@ -10,19 +10,6 @@ func TestReadConfigurations(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 
-	// Claude config
-	claudeData := `{"model": "claude-3-7-sonnet-latest"}`
-	if err := os.WriteFile(filepath.Join(home, ".claude.json"), []byte(claudeData), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	claudeCfg, err := ReadClaudeConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if claudeCfg.Model != "claude-3-7-sonnet-latest" {
-		t.Errorf("expected model claude-3-7-sonnet-latest, got %s", claudeCfg.Model)
-	}
-
 	// Codex toml config
 	codexDir := filepath.Join(home, ".codex")
 	if err := os.MkdirAll(codexDir, 0o700); err != nil {

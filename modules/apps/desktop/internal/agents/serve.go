@@ -8,7 +8,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -50,9 +49,9 @@ type Options struct {
 	// Root is the folder the agent is started in.
 	Root string
 	// Preview is how a change the agent is making is drawn before it lands.
-	Preview claudecode.EditPreview
-	// ClaudeAgent overrides the claude provider agent when specified.
-	ClaudeAgent port.Agent
+	Preview EditPreview
+	// Provider runs the tasks, in place of the one the plugins make.
+	Provider port.AgentProvider
 	// Out is where what happened is said.
 	Out io.Writer
 }
@@ -119,7 +118,7 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 	served := &Server{
 		URL: endpoint.URL,
 	}
-	if opts.Config.Agent.Use != "" {
+	if opts.Config.Agent.IsNamed() {
 		served.Agent = router
 	}
 

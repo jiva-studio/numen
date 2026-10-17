@@ -46,6 +46,46 @@ type Task struct {
 	// MaxSteps is how many steps the agent may take before it is stopped. Zero leaves the limit
 	// to the agent.
 	MaxSteps int
+	// Root is the folder the agent works in. Empty leaves it where the agent runs.
+	Root string
+	// Command is the command line that starts the program the task names, as the installation set it.
+	// Empty starts the program where the provider finds it.
+	Command []string
+	// ShouldReadHooksAndSkills lets the program read the hooks, skills and standing instructions this
+	// machine holds for it. What a vault carries is refused either way.
+	ShouldReadHooksAndSkills bool
+	// Endpoint is where the agent reaches the vault's tools. Empty gives it none.
+	Endpoint ToolEndpoint
+	// ToolDeclarations say how each tool of Tools is spoken about and read while a call of it is being
+	// written.
+	ToolDeclarations []ToolDeclaration
+}
+
+// ToolEndpoint is where an agent reaches the vault's tools, and what it presents there.
+type ToolEndpoint struct {
+	URL   string
+	Token string
+}
+
+// ToolDeclaration is how one tool of the vault is spoken about to a person and how a call of it is
+// read while it is being written.
+type ToolDeclaration struct {
+	// Name is the tool, by the name the vault serves it under.
+	Name string
+	// Title is what the tool is called when shown to a person.
+	Title string
+	// Kind is what a call of the tool does to the vault. A tool that declares nothing about it is
+	// domain.StepToolCall.
+	Kind domain.StepKind
+	// About names the argument that says what a call is about.
+	About string
+	// Element names the field of one element that says which element it is, for a call that takes a
+	// collection.
+	Element string
+	// Match and Text name the arguments carrying the text a call replaces and the text that takes its
+	// place. Both are empty for a call that replaces no text.
+	Match string
+	Text  string
 }
 
 // Run is one task being worked. Task is the request; this is its execution.
@@ -77,6 +117,55 @@ type Step struct {
 	// carrying the text of a note is written for minutes, and this is the only
 	// thing that moves while it is.
 	Count int
+	// Match is the text a change replaces, for a step that draws one.
+	Match string
 	// Detail is why the work stopped, empty when the agent was done.
 	Detail string
+}
+
+// AgentModel is one model a program offers.
+type AgentModel struct {
+	Name  string
+	Title string
+	// IsDefault is set where the program names the model it answers with unasked.
+	IsDefault bool
+}
+
+// AgentProgram is one program a provider runs.
+type AgentProgram struct {
+	// Provider is the plugin that runs it, by its identifier.
+	Provider string
+	// Name is what a task asks for the program by, and what the settings keep its section under.
+	Name string
+	// Title is what the program is called when shown to a person.
+	Title string
+	// IsInstalled is set where the program is on this machine.
+	IsInstalled bool
+	// IsDefault is set on the program an installation nobody has configured answers with.
+	IsDefault bool
+	// Models are the models the program says it offers, none where it says none.
+	Models []AgentModel
+}
+
+// GetDefaultProgram is the program an installation that names none answers with: the one marked so,
+// else the first.
+func GetDefaultProgram(programs []AgentProgram) (AgentProgram, bool) {
+	for _, one := range programs {
+		if one.IsDefault {
+			return one, true
+		}
+	}
+	if len(programs) == 0 {
+		return AgentProgram{}, false
+	}
+	return programs[0], true
+}
+
+// AgentProvider runs tasks on the programs that plugins provide, and says which programs those are.
+type AgentProvider interface {
+	Agent
+	// GetPrograms lists the programs the providers run, with the models each offers. Commands are the
+	// command lines the installation set, by program. A provider that cannot be reached lists none,
+	// and the error says so beside the programs of the others.
+	GetPrograms(ctx context.Context, commands map[string][]string) ([]AgentProgram, error)
 }

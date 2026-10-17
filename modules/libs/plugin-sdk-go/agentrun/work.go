@@ -1,0 +1,59 @@
+package agentrun
+
+import (
+	"sync"
+
+	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+)
+
+// Work is one task being worked: the responses it reports, the reader producing them, and what
+// stops it.
+type Work struct {
+	// Output is where the reader writes the responses. The reader closes it when it is done.
+	Output chan *numenv1.AskAgentResponse
+
+	conversation string
+	stop         func()
+	reader       sync.WaitGroup
+	once         sync.Once
+	stopped      chan struct{}
+}
+
+// NewWork makes the work of a task asked in a conversation, empty for none. Stop ends the child
+// the reader reads.
+func NewWork(conversation string, buffer int, stop func()) *Work {
+	return &Work{
+		Output:       make(chan *numenv1.AskAgentResponse, buffer),
+		conversation: conversation,
+		stop:         stop,
+		stopped:      make(chan struct{}),
+	}
+}
+
+// Begin counts a reader that must finish before the work is over.
+func (w *Work) Begin() { w.reader.Add(1) }
+
+// End says the reader has finished.
+func (w *Work) End() { w.reader.Done() }
+
+// Stopped is closed once the work is asked to stop.
+func (w *Work) Stopped() <-chan struct{} { return w.stopped }
+
+// Stop ends the child and everything it started, then waits for the reader to finish.
+func (w *Work) Stop() error {
+	stopAll([]*Work{w})
+	return nil
+}
+
+// stopAll cancels each work and waits for its reader to finish.
+func stopAll(works []*Work) {
+	for _, w := range works {
+		w.once.Do(func() {
+			close(w.stopped)
+			w.stop()
+		})
+	}
+	for _, w := range works {
+		w.reader.Wait()
+	}
+}

@@ -11,6 +11,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"slices"
+	"strings"
+	"sync"
 )
 
 // AgentModel represents an AI model available from an external agent CLI.
@@ -49,6 +51,34 @@ func readCodexCache() []AgentModel {
 		}
 		models = append(models, AgentModel{Name: m.Slug, Title: m.DisplayName})
 	}
+	return models
+}
+
+// codexModelCache keeps what Codex listed, for as long as the command line asked stays the same. A
+// failure is kept as none, and a request that ended before Codex answered keeps nothing.
+type codexModelCache struct {
+	mu     sync.Mutex
+	key    string
+	models []AgentModel
+	isKept bool
+}
+
+// get are the models Codex lists: the ones kept, or those it lists now.
+func (c *codexModelCache) get(ctx context.Context, command []string) []AgentModel {
+	key := strings.Join(command, " ")
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.isKept && c.key == key {
+		return c.models
+	}
+	models, err := GetCodexModels(ctx, command)
+	if err != nil {
+		if ctx.Err() != nil {
+			return nil
+		}
+		models = nil
+	}
+	c.key, c.models, c.isKept = key, models, true
 	return models
 }
 

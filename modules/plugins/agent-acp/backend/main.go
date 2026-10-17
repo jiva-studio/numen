@@ -2,14 +2,13 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"sync"
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agentrun"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
@@ -18,6 +17,7 @@ import (
 type agentServer struct {
 	numenv1connect.UnimplementedAgentServiceHandler
 	runner       *AgentRunner
+	codexModels  codexModelCache
 	mu           sync.RWMutex
 	systemPrompt string
 	tools        []*numenv1.AgentToolDefinition
@@ -44,15 +44,15 @@ func (s *agentServer) AskAgent(
 		}
 	}
 
-	endpoint := resolveMCPEndpoint()
-
 	params := RunParams{
 		Program:      agentName,
+		Command:      req.Msg.GetCommand(),
 		Model:        req.Msg.GetModel(),
 		Prompt:       req.Msg.GetPrompt(),
 		Conversation: req.Msg.GetConversation(),
-		Tools:        endpoint,
+		Tools:        Endpoint{URL: req.Msg.GetToolsUrl(), Token: req.Msg.GetToolsToken()},
 		MaxSteps:     int(req.Msg.GetMaxSteps()),
+		Root:         req.Msg.GetRoot(),
 	}
 
 	work, err := s.runner.StartRun(ctx, params)
@@ -95,10 +95,35 @@ func (s *agentServer) GetAgentState(
 	installed := GetInstalledAgents()
 	if len(installed) == 0 {
 		return connect.NewResponse(&numenv1.GetAgentStateResponse{
-			Unreachable: "No external coding agents (Claude, Antigravity, Codex, Cursor) found on this machine",
+			Unreachable: "No external coding agents (Antigravity, Codex, Cursor) found on this machine",
 		}), nil
 	}
 	return connect.NewResponse(&numenv1.GetAgentStateResponse{}), nil
+}
+
+// GetAgentPrograms lists Antigravity and OpenAI Codex, whether each is installed, and the models
+// Codex lists. Antigravity lists none.
+func (s *agentServer) GetAgentPrograms(
+	ctx context.Context,
+	req *connect.Request[numenv1.GetAgentProgramsRequest],
+) (*connect.Response[numenv1.GetAgentProgramsResponse], error) {
+	commands := make(map[string][]string, len(req.Msg.GetCommands()))
+	for _, one := range req.Msg.GetCommands() {
+		commands[one.GetProgram()] = one.GetCommand()
+	}
+
+	codex := &numenv1.AgentProgram{Name: "codex", Title: "OpenAI Codex", IsInstalled: IsCodexInstalled()}
+	if codex.GetIsInstalled() {
+		for _, one := range s.codexModels.get(ctx, commands["codex"]) {
+			codex.Models = append(codex.Models, &numenv1.AgentModel{
+				Name: one.Name, Title: one.Title, IsDefault: one.IsDefault,
+			})
+		}
+	}
+	antigravity := &numenv1.AgentProgram{Name: "antigravity", Title: "Antigravity", IsInstalled: IsAntigravityInstalled()}
+	return connect.NewResponse(&numenv1.GetAgentProgramsResponse{
+		Programs: []*numenv1.AgentProgram{antigravity, codex},
+	}), nil
 }
 
 func (s *agentServer) RegisterTool(
@@ -143,29 +168,6 @@ func (s *agentServer) GetAgentTools(
 	}), nil
 }
 
-func resolveMCPEndpoint() Endpoint {
-	url := os.Getenv("NUMEN_MCP_URL")
-	token := os.Getenv("NUMEN_TOKEN")
-	if url != "" {
-		return Endpoint{URL: url, Token: token}
-	}
-
-	home, err := os.UserHomeDir()
-	if err == nil {
-		discPath := filepath.Join(home, ".config", "numen", "agents.json")
-		if data, err := os.ReadFile(discPath); err == nil {
-			var disc struct {
-				URL   string `json:"url"`
-				Token string `json:"token"`
-			}
-			if err := json.Unmarshal(data, &disc); err == nil && disc.URL != "" {
-				return Endpoint{URL: disc.URL, Token: disc.Token}
-			}
-		}
-	}
-	return Endpoint{}
-}
-
 func main() {
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
@@ -176,11 +178,11 @@ func main() {
 func run() error {
 	s := server.New()
 
-	reg := NewRegistry()
+	var reg agentrun.Registry
 	defer reg.Close()
 
 	agentSvc := &agentServer{
-		runner: &AgentRunner{Registry: reg},
+		runner: &AgentRunner{Registry: &reg},
 	}
 
 	s.Register(numenv1connect.NewAgentServiceHandler(agentSvc, s.HandlerOptions()...))

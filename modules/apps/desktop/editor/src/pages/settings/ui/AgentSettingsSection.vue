@@ -21,11 +21,16 @@ const fields = createSettingFields(() => props.state.installation)
 const WHOLE = Number.MAX_SAFE_INTEGER
 const STEPS = { least: 1, most: WHOLE }
 
-const rawAgent = computed(() => props.state.installation.getSetting(paths.agent))
-const hasAgent = computed(() => rawAgent.value !== '')
-const activeProgram = computed(() =>
-  typeof rawAgent.value === 'string' && rawAgent.value !== '' ? rawAgent.value : 'claude',
-)
+/** How many steps a program takes where the file says nothing. */
+const DEFAULT_STEPS = 100
+
+/** The program that answers: the one the file names, else the one an installation nobody configured runs on. */
+const activeProgram = computed(() => {
+  const named = props.state.installation.getSetting(paths.agent)
+  if (typeof named === 'string') return named
+  return fields.getModels(paths.agent).find((one) => one.isDefault)?.name ?? ''
+})
+const hasAgent = computed(() => activeProgram.value !== '')
 
 const agentModelPath = computed(() => ['agent', activeProgram.value, 'model'] as const)
 const agentStepsPath = computed(() => ['agent', activeProgram.value, 'max_steps'] as const)
@@ -91,7 +96,7 @@ function onAgentHooksChange(value: boolean) {
       :detail="words.agentUseDetail"
     >
       <Select
-        :model-value="fields.getString(paths.agent)"
+        :model-value="activeProgram"
         :choices="getChoices(paths.agent)"
         :name="words.agentUse"
         :aria-labelledby="labelledBy"
@@ -125,7 +130,7 @@ function onAgentHooksChange(value: boolean) {
       :detail="words.agentStepsDetail"
     >
       <NumberField
-        :model-value="fields.getNumber(agentStepsPath)"
+        :model-value="fields.getNumber(agentStepsPath, DEFAULT_STEPS)"
         :min="STEPS.least"
         :max="STEPS.most"
         :step="1"

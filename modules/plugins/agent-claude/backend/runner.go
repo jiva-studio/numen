@@ -114,14 +114,25 @@ func writeMcpConfig(url, token string) (string, error) {
 	return file.Name(), nil
 }
 
-func buildClaudeArguments(
-	instructions, model, configuration, session string,
-	turns int,
-	tools []string,
-	mayReadHooks bool,
-) []string {
+// claudeArguments is what a run of the program is started from.
+type claudeArguments struct {
+	instructions  string
+	model         string
+	configuration string
+	session       string
+	turns         int
+	tools         []string
+	mayReadHooks  bool
+}
+
+// defaultTurns is how many times the program may go round on one task where the task names no limit.
+const defaultTurns = 100
+
+// buildClaudeArguments returns what the program is started with.
+func buildClaudeArguments(in claudeArguments) []string {
+	turns := in.turns
 	if turns <= 0 {
-		turns = 100
+		turns = defaultTurns
 	}
 
 	args := []string{
@@ -129,19 +140,20 @@ func buildClaudeArguments(
 		"--output-format", "stream-json",
 		"--verbose",
 		"--include-partial-messages",
+		"--strict-mcp-config",
 		"--permission-mode", "dontAsk",
 		"--max-turns", fmt.Sprint(turns),
 	}
 
-	if configuration != "" {
-		args = append(args, "--strict-mcp-config", "--mcp-config", configuration)
+	if in.configuration != "" {
+		args = append(args, "--mcp-config", in.configuration)
 	}
 
 	args = append(args, "--tools", "WebSearch")
 
 	var allowed []string
 	allowed = append(allowed, "WebSearch")
-	for _, t := range tools {
+	for _, t := range in.tools {
 		name := t
 		if !strings.HasPrefix(name, "mcp__numen__") {
 			name = "mcp__numen__" + name
@@ -154,19 +166,19 @@ func buildClaudeArguments(
 	// A vault's own hooks and settings are never read. The person's own are read only when the
 	// setting allows it.
 	sources := ""
-	if mayReadHooks {
+	if in.mayReadHooks {
 		sources = "user"
 	}
 	args = append(args, "--setting-sources", sources)
 
-	if instructions != "" {
-		args = append(args, "--append-system-prompt", instructions)
+	if in.instructions != "" {
+		args = append(args, "--append-system-prompt", in.instructions)
 	}
-	if model != "" {
-		args = append(args, "--model", model)
+	if in.model != "" {
+		args = append(args, "--model", in.model)
 	}
-	if session != "" {
-		args = append(args, "--resume", session)
+	if in.session != "" {
+		args = append(args, "--resume", in.session)
 	}
 	return args
 }

@@ -9,13 +9,11 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -110,7 +108,7 @@ func TestATokenCreatedForAWindowIsKeptNowhere(t *testing.T) {
 // told to reach.
 func TestAnEphemeralPortIsNamedByWhatItBoundTo(t *testing.T) {
 	cfg := makeInstallation(t)
-	cfg.Agent = agent.Config{ShouldServeTools: true}
+	cfg.Agent = settings.Agent{Use: settings.UseProgram(""), ShouldServeTools: true}
 
 	served, err := Serve(t.Context(), Options{
 		Config: cfg, Core: vault(t), Token: "secret", Out: io.Discard,
@@ -134,7 +132,7 @@ func TestAnEphemeralPortIsNamedByWhatItBoundTo(t *testing.T) {
 // at whichever started last.
 func TestWindowWithoutDiscoveryWritesNoFile(t *testing.T) {
 	cfg := makeInstallation(t)
-	cfg.Agent = agent.Config{ShouldServeTools: true}
+	cfg.Agent = settings.Agent{Use: settings.UseProgram(""), ShouldServeTools: true}
 	state := filepath.Dir(cfg.RegistryPath)
 
 	served, err := Serve(t.Context(), Options{
@@ -159,11 +157,10 @@ func TestWindowWithoutDiscoveryWritesNoFile(t *testing.T) {
 // there.
 func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
 	cfg := makeInstallation(t)
-	cfg.Agent = agent.Defaults()
-	cfg.Agent.Claude.Command = []string{"/bin/sh", "-c", "exit 0"}
 
 	served, err := Serve(t.Context(), Options{
 		Config: cfg, Core: vault(t), Token: "secret", Root: t.TempDir(), Out: io.Discard,
+		Provider: &fakeProvider{},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -204,26 +201,17 @@ func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
 	}
 }
 
-// The panel's child is told which tools it may call, one by one. The endpoint
-// in front of it serves the whole surface for an agent a person configured
-// themselves, and a name absent from the allowance is refused under the mode
-// this runs in.
+// The panel's child is told which tools it may call, one by one, and where to reach them. The
+// endpoint in front of it serves the whole surface for an agent a person configured themselves,
+// and a name absent from the allowance is refused under the mode this runs in.
 func TestThePanelsChildIsAllowedTheToolsOfItsSurfaceByName(t *testing.T) {
 	cfg := makeInstallation(t)
-	cfg.Agent = agent.Defaults()
+	provider := &fakeProvider{}
 
 	dir := t.TempDir()
-	script := filepath.Join(dir, "claude")
-	written := filepath.Join(dir, "argv")
-	body := "#!/bin/sh\nfor a in \"$@\"; do printf '%s\\n' \"$a\"; done > " + written + "\n"
-	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	cfg.Agent.Claude.Command = []string{script}
-
 	core := vault(t)
 	served, err := Serve(t.Context(), Options{
-		Config: cfg, Core: core, Token: "secret", Root: dir, Out: io.Discard,
+		Config: cfg, Core: core, Token: "secret", Root: dir, Out: io.Discard, Provider: provider,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -233,22 +221,14 @@ func TestThePanelsChildIsAllowedTheToolsOfItsSurfaceByName(t *testing.T) {
 		t.Fatal("the settings name an agent and none was started")
 	}
 
-	work, err := served.Agent.StartRun(t.Context(), port.Task{Question: "what is here?"})
+	work, err := served.Agent.StartRun(t.Context(), port.Task{Question: "what is here?", Agent: "claude"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for range work.GetSteps() {
 	}
-	raw, err := os.ReadFile(written)
-	if err != nil {
-		t.Fatal(err)
-	}
-	argv := strings.Split(strings.TrimRight(string(raw), "\n"), "\n")
+	given := provider.getTasks()[0]
 
-	allowed := strings.Split(getFlagValue(t, argv, "--allowedTools"), ",")
-	if slices.Contains(allowed, claudecode.ToolName("*")) {
-		t.Fatalf("the allowance is %q", allowed)
-	}
 	words, err := mcp.Vocabulary(t.Context(), core)
 	if err != nil {
 		t.Fatal(err)
@@ -256,28 +236,42 @@ func TestThePanelsChildIsAllowedTheToolsOfItsSurfaceByName(t *testing.T) {
 	if len(words) == 0 {
 		t.Fatal("the surface serves no tool, and an allowance naming none would pass")
 	}
+	var surfaced []string
 	for name := range words {
-		if !slices.Contains(allowed, claudecode.ToolName(name)) {
-			t.Errorf("%s is served and is not in the allowance %q", name, allowed)
-		}
+		surfaced = append(surfaced, name)
 	}
-	// The search stands beside them, and nothing else the command line brings.
-	if !slices.Contains(allowed, "WebSearch") {
-		t.Errorf("the allowance is %q", allowed)
+	slices.Sort(surfaced)
+	if !slices.Equal(given.Tools, surfaced) {
+		t.Errorf("the allowance is %q, and the surface serves %q", given.Tools, surfaced)
 	}
-	if len(allowed) != len(words)+1 {
-		t.Errorf("the allowance is %q, and the surface serves %d tools", allowed, len(words))
+	if len(given.ToolDeclarations) != len(words) {
+		t.Errorf("%d tools are declared, and the surface serves %d", len(given.ToolDeclarations), len(words))
+	}
+	if given.Endpoint.URL != served.URL || given.Endpoint.Token != "secret" || given.Root != dir {
+		t.Errorf("the child is given %q at %+v", given.Root, given.Endpoint)
 	}
 }
 
-// getFlagValue is what one flag on a command line was given.
-func getFlagValue(t *testing.T, argv []string, flag string) string {
-	t.Helper()
-	for i := len(argv) - 2; i >= 0; i-- {
-		if argv[i] == flag {
-			return argv[i+1]
-		}
+// The agent is the router where the settings name one, and nothing where they name none.
+func TestTheAgentIsTheRouterWhereTheSettingsNameOne(t *testing.T) {
+	for name, agent := range map[string]settings.Agent{
+		"left to the default": {},
+		"named":               {Use: settings.UseProgram("claude")},
+		"named none":          {Use: settings.UseProgram(""), ShouldServeTools: true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			cfg := makeInstallation(t)
+			cfg.Agent = agent
+			served, err := Serve(t.Context(), Options{
+				Config: cfg, Core: vault(t), Token: "secret", Out: io.Discard, Provider: &fakeProvider{},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { _ = served.Close() })
+			if got, want := served.Agent != nil, agent.IsNamed(); got != want {
+				t.Errorf("an agent is started: %v, and the settings name one: %v", got, want)
+			}
+		})
 	}
-	t.Fatalf("nothing names %s: %q", flag, argv)
-	return ""
 }

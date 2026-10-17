@@ -55,6 +55,9 @@ const (
 	// AgentServiceGetAgentToolsProcedure is the fully-qualified name of the AgentService's
 	// GetAgentTools RPC.
 	AgentServiceGetAgentToolsProcedure = "/numen.v1.AgentService/GetAgentTools"
+	// AgentServiceGetAgentProgramsProcedure is the fully-qualified name of the AgentService's
+	// GetAgentPrograms RPC.
+	AgentServiceGetAgentProgramsProcedure = "/numen.v1.AgentService/GetAgentPrograms"
 )
 
 // AgentServiceClient is a client for the numen.v1.AgentService service.
@@ -75,6 +78,9 @@ type AgentServiceClient interface {
 	ExtendSystemPrompt(context.Context, *connect.Request[v1.ExtendSystemPromptRequest]) (*connect.Response[v1.ExtendSystemPromptResponse], error)
 	// GetAgentTools lists the registered tools and prompt extension.
 	GetAgentTools(context.Context, *connect.Request[v1.GetAgentToolsRequest]) (*connect.Response[v1.GetAgentToolsResponse], error)
+	// GetAgentPrograms lists the programs this provider runs, whether each is installed on this
+	// machine, and the models each offers.
+	GetAgentPrograms(context.Context, *connect.Request[v1.GetAgentProgramsRequest]) (*connect.Response[v1.GetAgentProgramsResponse], error)
 }
 
 // NewAgentServiceClient constructs a client for the numen.v1.AgentService service. By default, it
@@ -124,6 +130,12 @@ func NewAgentServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(agentServiceMethods.ByName("GetAgentTools")),
 			connect.WithClientOptions(opts...),
 		),
+		getAgentPrograms: connect.NewClient[v1.GetAgentProgramsRequest, v1.GetAgentProgramsResponse](
+			httpClient,
+			baseURL+AgentServiceGetAgentProgramsProcedure,
+			connect.WithSchema(agentServiceMethods.ByName("GetAgentPrograms")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -135,6 +147,7 @@ type agentServiceClient struct {
 	registerTool       *connect.Client[v1.RegisterToolRequest, v1.RegisterToolResponse]
 	extendSystemPrompt *connect.Client[v1.ExtendSystemPromptRequest, v1.ExtendSystemPromptResponse]
 	getAgentTools      *connect.Client[v1.GetAgentToolsRequest, v1.GetAgentToolsResponse]
+	getAgentPrograms   *connect.Client[v1.GetAgentProgramsRequest, v1.GetAgentProgramsResponse]
 }
 
 // AskAgent calls numen.v1.AgentService.AskAgent.
@@ -167,6 +180,11 @@ func (c *agentServiceClient) GetAgentTools(ctx context.Context, req *connect.Req
 	return c.getAgentTools.CallUnary(ctx, req)
 }
 
+// GetAgentPrograms calls numen.v1.AgentService.GetAgentPrograms.
+func (c *agentServiceClient) GetAgentPrograms(ctx context.Context, req *connect.Request[v1.GetAgentProgramsRequest]) (*connect.Response[v1.GetAgentProgramsResponse], error) {
+	return c.getAgentPrograms.CallUnary(ctx, req)
+}
+
 // AgentServiceHandler is an implementation of the numen.v1.AgentService service.
 type AgentServiceHandler interface {
 	// AskAgent hands over a task and reports what the agent does, in the order it
@@ -185,6 +203,9 @@ type AgentServiceHandler interface {
 	ExtendSystemPrompt(context.Context, *connect.Request[v1.ExtendSystemPromptRequest]) (*connect.Response[v1.ExtendSystemPromptResponse], error)
 	// GetAgentTools lists the registered tools and prompt extension.
 	GetAgentTools(context.Context, *connect.Request[v1.GetAgentToolsRequest]) (*connect.Response[v1.GetAgentToolsResponse], error)
+	// GetAgentPrograms lists the programs this provider runs, whether each is installed on this
+	// machine, and the models each offers.
+	GetAgentPrograms(context.Context, *connect.Request[v1.GetAgentProgramsRequest]) (*connect.Response[v1.GetAgentProgramsResponse], error)
 }
 
 // NewAgentServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -230,6 +251,12 @@ func NewAgentServiceHandler(svc AgentServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(agentServiceMethods.ByName("GetAgentTools")),
 		connect.WithHandlerOptions(opts...),
 	)
+	agentServiceGetAgentProgramsHandler := connect.NewUnaryHandler(
+		AgentServiceGetAgentProgramsProcedure,
+		svc.GetAgentPrograms,
+		connect.WithSchema(agentServiceMethods.ByName("GetAgentPrograms")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.AgentService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AgentServiceAskAgentProcedure:
@@ -244,6 +271,8 @@ func NewAgentServiceHandler(svc AgentServiceHandler, opts ...connect.HandlerOpti
 			agentServiceExtendSystemPromptHandler.ServeHTTP(w, r)
 		case AgentServiceGetAgentToolsProcedure:
 			agentServiceGetAgentToolsHandler.ServeHTTP(w, r)
+		case AgentServiceGetAgentProgramsProcedure:
+			agentServiceGetAgentProgramsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -275,4 +304,8 @@ func (UnimplementedAgentServiceHandler) ExtendSystemPrompt(context.Context, *con
 
 func (UnimplementedAgentServiceHandler) GetAgentTools(context.Context, *connect.Request[v1.GetAgentToolsRequest]) (*connect.Response[v1.GetAgentToolsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AgentService.GetAgentTools is not implemented"))
+}
+
+func (UnimplementedAgentServiceHandler) GetAgentPrograms(context.Context, *connect.Request[v1.GetAgentProgramsRequest]) (*connect.Response[v1.GetAgentProgramsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AgentService.GetAgentPrograms is not implemented"))
 }

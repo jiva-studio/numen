@@ -116,23 +116,8 @@ Which agent answers in the panel, and what it may reach.
 
 | | | |
 | --- | --- | --- |
-| `use` | text | names the agent. Empty answers with none, and the panel says so. |
+| `use` | text | names the program that answers. Absent, the program the providers mark as the default answers. |
 | `serve_tools` | yes or no | puts the tools on a port, which is how an agent a person runs themselves reaches this vault. |
-| `claude` |  | code, reached by starting it and reading what it prints. |
-| `claude.command` | a list of words | starts it: the command line's path, and anything it is started through. |
-| `claude.model` | text | which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. |
-| `claude.max_steps` | a number | how many times it may go to the model before it is stopped. |
-| `claude.reads_hooks_and_skills` | yes or no | lets it read what is configured for it on this machine: hooks, skills, standing instructions in CLAUDE. |
-| `antigravity` |  | google `antigravity`, reached over ACP protocol. |
-| `antigravity.command` | a list of words |  |
-| `antigravity.model` | text |  |
-| `antigravity.max_steps` | a number |  |
-| `antigravity.reads_hooks_and_skills` | yes or no |  |
-| `codex` |  | openAI `codex`, reached over ACP protocol. |
-| `codex.command` | a list of words |  |
-| `codex.model` | text |  |
-| `codex.max_steps` | a number |  |
-| `codex.reads_hooks_and_skills` | yes or no |  |
 
 ### `importing`
 

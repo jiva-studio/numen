@@ -10,7 +10,6 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
@@ -73,7 +72,7 @@ func serveAgents(
 	off bool,
 	out io.Writer,
 ) func() error {
-	if off || cfg.Agent.Use != agent.UseClaude {
+	if off || !cfg.Agent.IsNamed() {
 		api.Unreachable.Store(errNoAgentNamed)
 		return func() error { return nil }
 	}
