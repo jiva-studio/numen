@@ -64,19 +64,19 @@ export function createPluginContext(
       add(host.onSettingChange<T>(pluginId, key, h)),
     onVaultChange: (h: (e: VaultChangeEvent) => void | Promise<void>) => {
       requirePerm('vault:read', 'onVaultChange')
-      return add(host.onVaultChange ? host.onVaultChange(h) : { dispose: () => {} })
+      return add(host.onVaultChange(pluginId, h))
     },
     onFileSelect: (h: (e: FileSelectEvent) => void | Promise<void>) => {
       requirePerm('vault:read', 'onFileSelect')
-      return add(host.onFileSelect ? host.onFileSelect(h) : { dispose: () => {} })
+      return add(host.onFileSelect(pluginId, h))
     },
     emitVaultChange: (e: VaultChangeEvent) => {
       requirePerm('vault:write', 'emitVaultChange')
-      host.emitVaultChange?.(e)
+      host.emitVaultChange(pluginId, e)
     },
     emitFileSelect: (e: FileSelectEvent) => {
       requirePerm('vault:read', 'emitFileSelect')
-      host.emitFileSelect?.(e)
+      host.emitFileSelect(pluginId, e)
     },
     openTab: (kind: string, at?: string) => host.openTab?.(kind, at),
     closeTab: (id: string) => {

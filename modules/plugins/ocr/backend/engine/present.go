@@ -4,10 +4,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 	"github.com/jiva-studio/numen/modules/plugins/ocr/backend/onnxruntime"
 )
 
-// IsFetched says whether one recogniser model file is on this machine.
+// IsFetched says whether one recogniser model file is on this machine, by the
+// same rule model() finds it.
 func IsFetched(cfg Config, held RecogniserModel) bool {
 	if held.Path != "" {
 		return isPresent(held.Path)
@@ -15,19 +17,22 @@ func IsFetched(cfg Config, held RecogniserModel) bool {
 	if held.Name == "" {
 		return false
 	}
-	for _, at := range onnxruntime.GetPaths(cfg.Dir, filepath.Base(held.Name)) {
-		if isPresent(at) {
-			return true
-		}
+	if _, ok := findLocal(cfg, held.Name); ok {
+		return true
 	}
-	if !onnxruntime.IsAddress(held.Name) {
+	if !models.IsAddress(held.Name) {
 		return false
 	}
 	dir, err := onnxruntime.CacheDir(cfg.settings())
 	if err != nil {
 		return false
 	}
-	return isPresent(filepath.Join(dir, onnxruntime.GetCacheName(held.Name)))
+	sum := getPinnedSum(held.Name)
+	at := filepath.Join(dir, models.GetCacheName(held.Name, sum))
+	if !isPresent(at) {
+		return false
+	}
+	return sum == "" || models.VerifyFile(at, sum) == nil
 }
 
 func isPresent(at string) bool {

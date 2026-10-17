@@ -110,11 +110,11 @@ func Defaults() Config {
 	return Config{
 		Model: ParakeetModel{
 			Name: "parakeet-tdt-0.6b-v3-int8",
-			Repo: "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/resolve/main/",
+			Repo: parakeetDefault,
 		},
 		Segmenter: SegmenterModel{
 			Name: "silero-vad",
-			Repo: "https://huggingface.co/onnx-community/silero-vad/resolve/main/onnx/model.onnx",
+			Repo: segmenterDefault,
 		},
 
 		// What a transcription needs is fetched when it is wanted.

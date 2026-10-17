@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/gomlx/go-huggingface/hub"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 )
 
 // FetchProgress reports progress while downloading models.
@@ -55,8 +57,21 @@ func locateInDir(dir, file string) (Paths, error) {
 }
 
 func downloadModel(ctx context.Context, cfg LocalModel, file string, progress FetchProgress) (Paths, error) {
-	repo := hub.New(cfg.Name).WithProgressBar(false)
-	folder, sizes, err := listRepoFiles(repo)
+	home, err := models.GetHome()
+	if err != nil {
+		return Paths{}, fmt.Errorf("models folder: %w", err)
+	}
+	repo := hub.New(cfg.Name).WithProgressBar(false).WithCacheDir(filepath.Join(home, "huggingface"))
+	if cfg.Revision != "" {
+		repo = repo.WithRevision(cfg.Revision)
+	}
+	if p, ok, err := locateCached(repo, cfg, file); err != nil || ok {
+		return p, err
+	}
+	if models.IsOffline() {
+		return Paths{}, fmt.Errorf("%s is not on this machine, and %s forbids fetching it", cfg.Name, models.EnvOffline)
+	}
+	folder, sizes, tokenizerSize, err := listRepoFiles(repo)
 	if err != nil {
 		return Paths{}, fmt.Errorf("listing %s: %w", cfg.Name, err)
 	}
@@ -69,17 +84,33 @@ func downloadModel(ctx context.Context, cfg LocalModel, file string, progress Fe
 	for _, name := range files {
 		total += sizes[name]
 	}
-	if dir, err := repo.CacheDir(); err == nil {
-		defer reportProgress(dir, files, sizes, total, progress)()
+	sizes[TokenizerFile] = tokenizerSize
+	total += tokenizerSize
+	counted := append(slices.Clone(files), TokenizerFile)
+	dir, dirErr := repo.CacheDir()
+	need := total
+	if dirErr == nil {
+		need = max(total-sumBytes(dir, counted, sizes), 0)
+	}
+	claim, err := models.Reserve(ctx, home, need, "")
+	if err != nil {
+		return Paths{}, fmt.Errorf("fetching %s: %w", cfg.Name, err)
+	}
+	defer claim.Release()
+	if dirErr == nil {
+		defer reportProgress(dir, counted, sizes, total, progress)()
 	}
 
-	p, err := fetchModelFiles(ctx, repo, files, file)
+	p, err := fetchModelFiles(ctx, repo, files, file, cfg.Sums)
 	if err != nil {
 		return Paths{}, err
 	}
 	if repo.HasFile(TokenizerFile) {
 		if p.Tokenizer, err = repo.DownloadFileCtx(ctx, TokenizerFile); err != nil {
 			return Paths{}, fmt.Errorf("fetching %s: %w", TokenizerFile, err)
+		}
+		if err := checkPinned(cfg.Sums, TokenizerFile, p.Tokenizer); err != nil {
+			return Paths{}, err
 		}
 	}
 	if p.Tokenizer == "" {
@@ -88,12 +119,15 @@ func downloadModel(ctx context.Context, cfg LocalModel, file string, progress Fe
 	return p, nil
 }
 
-func fetchModelFiles(ctx context.Context, repo *hub.Repo, files []string, file string) (Paths, error) {
+func fetchModelFiles(ctx context.Context, repo *hub.Repo, files []string, file string, sums map[string]string) (Paths, error) {
 	p := Paths{}
 	for _, name := range files {
 		at, err := repo.DownloadFileCtx(ctx, ModelFolder+"/"+name)
 		if err != nil {
 			return Paths{}, fmt.Errorf("fetching %s/%s: %w", ModelFolder, name, err)
+		}
+		if err := checkPinned(sums, ModelFolder+"/"+name, at); err != nil {
+			return Paths{}, err
 		}
 		if name == file {
 			p.Model = at
@@ -105,12 +139,17 @@ func fetchModelFiles(ctx context.Context, repo *hub.Repo, files []string, file s
 	return p, nil
 }
 
-func listRepoFiles(repo *hub.Repo) ([]string, map[string]int64, error) {
+// listRepoFiles returns the files of the model folder with their sizes, and the size of the tokenizer beside it.
+func listRepoFiles(repo *hub.Repo) ([]string, map[string]int64, int64, error) {
 	var out []string
+	var tokenizer int64
 	sizes := map[string]int64{}
 	for info, err := range repo.IterFileInfos() {
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, 0, err
+		}
+		if info.Name == TokenizerFile {
+			tokenizer = info.Size
 		}
 		rest, inside := strings.CutPrefix(info.Name, ModelFolder+"/")
 		if !inside || rest == "" {
@@ -119,7 +158,7 @@ func listRepoFiles(repo *hub.Repo) ([]string, map[string]int64, error) {
 		out = append(out, rest)
 		sizes[rest] = info.Size
 	}
-	return out, sizes, nil
+	return out, sizes, tokenizer, nil
 }
 
 func reportProgress(dir string, files []string, sizes map[string]int64, total int64, progress FetchProgress) func() {
@@ -189,11 +228,57 @@ func selectModelFiles(folder []string, named string) []string {
 	return out
 }
 
-func isFileOfAnyModel(name string, models []string) bool {
-	for _, model := range models {
+func isFileOfAnyModel(name string, siblings []string) bool {
+	for _, model := range siblings {
 		if strings.HasPrefix(name, model) {
 			return true
 		}
 	}
 	return false
+}
+
+// checkPinned returns an error when the file at path holds other than the sum
+// pinned for name. A name with no pin is not checked.
+func checkPinned(sums map[string]string, name, path string) error {
+	sum, ok := sums[name]
+	if !ok {
+		return nil
+	}
+	if err := models.VerifyFile(path, sum); err != nil {
+		return fmt.Errorf("%s: %w", name, err)
+	}
+	return nil
+}
+
+// locateCached returns the files of a pinned snapshot that the cache already
+// holds, each checked against its pinned sum. A model with no revision is never
+// found here.
+func locateCached(repo *hub.Repo, cfg LocalModel, file string) (Paths, bool, error) {
+	if cfg.Revision == "" {
+		return Paths{}, false, nil
+	}
+	cache, err := repo.CacheDir()
+	if err != nil {
+		return Paths{}, false, fmt.Errorf("cache folder of %s: %w", cfg.Name, err)
+	}
+	snapshot := filepath.Join(cache, "snapshots", cfg.Revision)
+	p := Paths{
+		Model:     filepath.Join(snapshot, ModelFolder, file),
+		Tokenizer: filepath.Join(snapshot, TokenizerFile),
+	}
+	if !hasFile(p.Model) || !hasFile(p.Tokenizer) {
+		return Paths{}, false, nil
+	}
+	if err := checkPinned(cfg.Sums, ModelFolder+"/"+file, p.Model); err != nil {
+		return Paths{}, false, err
+	}
+	if err := checkPinned(cfg.Sums, TokenizerFile, p.Tokenizer); err != nil {
+		return Paths{}, false, err
+	}
+	return p, true, nil
+}
+
+func hasFile(name string) bool {
+	info, err := os.Stat(name)
+	return err == nil && !info.IsDir()
 }

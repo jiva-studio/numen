@@ -8,35 +8,19 @@ import type {
   Disposable,
   PluginContext,
   PluginManifest,
+  FileSelectEvent,
   ReaderRegistration,
   TabKindRegistration,
+  VaultChangeEvent,
 } from '@numen/plugin-sdk'
 import { createPluginContext } from './context'
+import { addListener, notifyListeners, runCommand, type PluginListener } from './events'
+import { extractPaletteCommands } from './palette'
+import { matchesShortcut } from './shortcuts'
 import { createPluginPaneWrapper, createReaderTabKind, createCustomTabKind } from './customTabKind'
-import type { PluginContextHost, PluginHostDeps, PluginPaletteCommand } from './types'
+import type { PluginContextHost, PluginHostDeps } from './types'
 
 export { createPluginPaneWrapper }
-
-function matchesShortcut(event: KeyboardEvent, shortcut?: string): boolean {
-  if (!shortcut) return false
-  const parts = shortcut
-    .toLowerCase()
-    .split('+')
-    .map((part) => part.trim())
-  const key = parts[parts.length - 1]
-  const hasMod =
-    parts.includes('ctrl') ||
-    parts.includes('control') ||
-    parts.includes('mod') ||
-    parts.includes('cmd')
-  const hasAlt = parts.includes('alt') || parts.includes('option')
-  const hasShift = parts.includes('shift')
-
-  if (hasMod !== (event.ctrlKey || event.metaKey)) return false
-  if (hasAlt !== event.altKey) return false
-  if (hasShift !== event.shiftKey) return false
-  return event.key.toLowerCase() === key
-}
 
 interface RegisteredReader {
   pluginId: string
@@ -61,6 +45,8 @@ interface RegisteredAgentProvider {
 }
 
 interface HostRegistry {
+  readonly vaultListeners: Set<PluginListener<VaultChangeEvent>>
+  readonly fileListeners: Set<PluginListener<FileSelectEvent>>
   readonly readers: Map<string, RegisteredReader>
   readonly tabKinds: Map<string, RegisteredTabKind>
   readonly commands: { value: ReadonlyMap<string, RegisteredCommand> }
@@ -72,6 +58,7 @@ interface HostRegistry {
 interface PluginItemRegistration<T> {
   readonly pluginId: string
   readonly registration: T
+  readonly getContext?: () => PluginContext | undefined
 }
 
 function clearSubscriptions(ctx?: PluginContext): void {
@@ -116,11 +103,11 @@ function disposePluginEntry(pluginId: string, registry: HostRegistry, deps?: Plu
 function resolveCommand(
   commands: ReadonlyMap<string, RegisteredCommand>,
   id: string,
-): CommandRegistration | undefined {
-  const direct = commands.get(id)?.reg
+): RegisteredCommand | undefined {
+  const direct = commands.get(id)
   if (direct) return direct
   if (id.startsWith('plugin:')) {
-    return commands.get(id.slice('plugin:'.length))?.reg
+    return commands.get(id.slice('plugin:'.length))
   }
   return undefined
 }
@@ -130,11 +117,13 @@ function registerReaderEntry(
   readers: Map<string, RegisteredReader>,
   item: PluginItemRegistration<ReaderRegistration>,
 ): Disposable {
-  const { pluginId, registration } = item
+  const { pluginId, registration, getContext } = item
   const kindId = registration.id.startsWith('reader:')
     ? registration.id
     : `reader:${registration.id}`
-  const cleanups: (() => void)[] = [deps.registerKind(createReaderTabKind(pluginId, registration))]
+  const cleanups: (() => void)[] = [
+    deps.registerKind(createReaderTabKind(pluginId, registration, getContext)),
+  ]
   for (const ext of registration.fileExtensions) {
     cleanups.push(
       deps.registerExtensionReader(ext, (path, spans) => {
@@ -178,12 +167,12 @@ function registerTabKindEntry(
   tabKinds: Map<string, RegisteredTabKind>,
   item: PluginItemRegistration<TabKindRegistration>,
 ): Disposable {
-  const { pluginId, registration } = item
+  const { pluginId, registration, getContext } = item
   if (BUILTIN_TAB_KINDS.has(registration.kind)) {
     return { dispose: () => {} }
   }
   const cleanups: (() => void)[] = [
-    deps.registerKind(createCustomTabKind(pluginId, registration, deps)),
+    deps.registerKind(createCustomTabKind(pluginId, registration, { ...deps, getContext })),
   ]
   if (deps.registerEditor) {
     const unreg = deps.registerEditor(
@@ -210,12 +199,35 @@ function registerTabKindEntry(
   return { dispose: cleanup }
 }
 
+type EventBridge = Pick<
+  PluginContextHost,
+  'onVaultChange' | 'onFileSelect' | 'emitVaultChange' | 'emitFileSelect'
+>
+
+function createEventBridge(deps: PluginHostDeps, registry: HostRegistry): EventBridge {
+  return {
+    onVaultChange: (pluginId, handler) =>
+      addListener(registry.vaultListeners, { pluginId, handler }),
+    onFileSelect: (pluginId, handler) => addListener(registry.fileListeners, { pluginId, handler }),
+    emitVaultChange: (_pluginId, event) => notifyListeners(registry.vaultListeners, event, deps),
+    emitFileSelect: (_pluginId, event) => notifyListeners(registry.fileListeners, event, deps),
+  }
+}
+
 function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): PluginContextHost {
   return {
     registerReader: (pluginId, registration) =>
-      registerReaderEntry(deps, registry.readers, { pluginId, registration }),
+      registerReaderEntry(deps, registry.readers, {
+        pluginId,
+        registration,
+        getContext: () => registry.contexts.get(pluginId),
+      }),
     registerTabKind: (pluginId, registration) =>
-      registerTabKindEntry(deps, registry.tabKinds, { pluginId, registration }),
+      registerTabKindEntry(deps, registry.tabKinds, {
+        pluginId,
+        registration,
+        getContext: () => registry.contexts.get(pluginId),
+      }),
     registerCommand: (pluginId, registration) => {
       const next = new Map(registry.commands.value)
       next.set(registration.id, { pluginId, reg: registration })
@@ -252,25 +264,10 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
         ),
       }
     },
+    ...createEventBridge(deps, registry),
     openTab: (kind: string, at?: string) => deps.openTab(kind, at),
     closeTab: (id: string) => deps.closeTab?.(id),
   }
-}
-
-function extractPaletteCommands(
-  commands: ReadonlyMap<string, { reg: CommandRegistration }>,
-): PluginPaletteCommand[] {
-  const list: PluginPaletteCommand[] = []
-  for (const { reg } of commands.values()) {
-    if (reg.canShowInPalette === false) continue
-    list.push({
-      id: `plugin:${reg.id}`,
-      title: reg.title,
-      ...(reg.shortcut ? { shortcut: reg.shortcut } : {}),
-      isOffered: () => true,
-    })
-  }
-  return list
 }
 
 function disposeAllEntries(registry: HostRegistry, deps: PluginHostDeps) {
@@ -292,6 +289,8 @@ export function createPluginHost(deps: PluginHostDeps) {
     agentProviders: new Map(),
     contexts: new Map(),
     manifests: new Map(),
+    vaultListeners: new Set(),
+    fileListeners: new Set(),
   }
 
   const contextHost = createHostContextBridge(deps, registry)
@@ -319,15 +318,15 @@ export function createPluginHost(deps: PluginHostDeps) {
     getPaletteCommands: () => extractPaletteCommands(registry.commands.value),
     hasCommand: (id: string): boolean => resolveCommand(registry.commands.value, id) !== undefined,
     executeCommand: async (id: string): Promise<boolean> => {
-      const reg = resolveCommand(registry.commands.value, id)
-      if (!reg) return false
-      await reg.handler()
+      const entry = resolveCommand(registry.commands.value, id)
+      if (!entry) return false
+      await runCommand(deps, entry.pluginId, entry.reg)
       return true
     },
     handleShortcut: (event: KeyboardEvent): boolean => {
-      for (const { reg } of registry.commands.value.values()) {
+      for (const { pluginId, reg } of registry.commands.value.values()) {
         if (matchesShortcut(event, reg.shortcut)) {
-          void reg.handler()
+          void runCommand(deps, pluginId, reg)
           return true
         }
       }

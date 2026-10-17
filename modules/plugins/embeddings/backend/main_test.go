@@ -99,3 +99,27 @@ func TestLifecycleConfigure(t *testing.T) {
 		t.Errorf("expected model text-embedding-3-small, got %s", emb.modelInfo.Name)
 	}
 }
+
+func TestEmbeddingServerCustomRepositoryIsNotPinned(t *testing.T) {
+	t.Setenv("NUMEN_EMBEDDING_REPO", "owner/repo")
+	srv := newEmbeddingServer()
+	if srv.localModel.Name != "owner/repo" || srv.localModel.Revision != "" || srv.localModel.Sums != nil {
+		t.Errorf("localModel = %+v", srv.localModel)
+	}
+}
+
+func TestEmbeddingServerCustomModelIsNotPinned(t *testing.T) {
+	t.Setenv("NUMEN_EMBEDDING_MODEL", "owner/model")
+	srv := newEmbeddingServer()
+	if srv.localModel.Name != "owner/model" || srv.localModel.Sums != nil {
+		t.Errorf("localModel = %+v", srv.localModel)
+	}
+}
+
+func TestEmbeddingServerDefaultModelIsPinned(t *testing.T) {
+	t.Setenv("NUMEN_EMBEDDING_MODEL", "bge-m3-int8")
+	srv := newEmbeddingServer()
+	if srv.localModel.Name != "Xenova/bge-m3" || srv.localModel.Sums == nil {
+		t.Errorf("localModel = %+v", srv.localModel)
+	}
+}
