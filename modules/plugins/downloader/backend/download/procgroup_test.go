@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -133,5 +134,27 @@ func TestARunThatEndsByItselfAnswersAsBefore(t *testing.T) {
 	_, err = run(t.Context(), program{command: []string{bad}}, nil)
 	if err == nil || !strings.Contains(err.Error(), "no good") {
 		t.Errorf("a run that failed answered %v", err)
+	}
+}
+
+// A process group gives the command a wait delay of stopGrace.
+func TestSetProcessGroupSetsWaitDelay(t *testing.T) {
+	cmd := exec.Command("true")
+	setProcessGroup(cmd)
+	if cmd.WaitDelay != 5*time.Second {
+		t.Errorf("WaitDelay is %v, want %v", cmd.WaitDelay, 5*time.Second)
+	}
+}
+
+// Cancelling a process that has already finished reports that it is done.
+func TestCancellingAlreadyFinishedProcessReportsDone(t *testing.T) {
+	cmd := exec.CommandContext(t.Context(), "true")
+	setProcessGroup(cmd)
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+	err := cmd.Cancel()
+	if !errors.Is(err, os.ErrProcessDone) {
+		t.Errorf("cancelling finished process answered %v, want %v", err, os.ErrProcessDone)
 	}
 }
