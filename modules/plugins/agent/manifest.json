@@ -2,13 +2,13 @@
   "id": "md.numen.agent",
   "name": "Autonomous Agent & Chat Provider",
   "version": "1.0.0",
+  "protocol": 1,
   "description": "Autonomous agent tools and LLM chat provider service",
   "capabilities": ["agent"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onCommand:askAgent", "onChatOpen"],
   "permissions": ["vault:read", "vault:write"],
   "lifecycle": {
-    "mode": "on-demand",
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false
   },
