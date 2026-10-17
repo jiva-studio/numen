@@ -6,50 +6,17 @@ import (
 	"fmt"
 	"image/jpeg"
 	"os"
-	"path/filepath"
 	"runtime"
-	"strings"
 	"sync"
 
 	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/modules/plugins/reader-pdf/backend/pdf"
 )
 
 var initOnce sync.Once
-
-// ValidateVaultPath ensures a document path is within the allowed vault scope or temp document directory.
-func ValidateVaultPath(path string) (string, error) {
-	if path == "" {
-		return "", fmt.Errorf("path required")
-	}
-	cleanPath := filepath.Clean(path)
-	if strings.Contains(cleanPath, "..") {
-		return "", fmt.Errorf("path traversal outside allowed scope")
-	}
-
-	tempDir := filepath.Clean(os.TempDir())
-	if filepath.Dir(cleanPath) == tempDir && strings.HasPrefix(filepath.Base(cleanPath), "numen-doc-") {
-		return cleanPath, nil
-	}
-
-	vaultRoot := os.Getenv("NUMEN_VAULT_PATH")
-	if vaultRoot != "" {
-		cleanVault := filepath.Clean(vaultRoot)
-		if !filepath.IsAbs(cleanPath) {
-			cleanPath = filepath.Join(cleanVault, cleanPath)
-		}
-		prefix := cleanVault
-		if !strings.HasSuffix(prefix, string(filepath.Separator)) {
-			prefix += string(filepath.Separator)
-		}
-		if cleanPath != cleanVault && !strings.HasPrefix(cleanPath, prefix) {
-			return "", fmt.Errorf("path outside allowed vault root")
-		}
-	}
-	return cleanPath, nil
-}
 
 // DocumentServer implements numenv1connect.DocumentServiceHandler.
 type DocumentServer struct {
@@ -75,7 +42,7 @@ func (s *DocumentServer) GetDocument(
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
-	cleanPath, err := ValidateVaultPath(path)
+	cleanPath, err := vault.ValidatePath(path, vault.IsTempDocument)
 	if err != nil {
 		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", err))
 	}
@@ -119,7 +86,7 @@ func (s *DocumentServer) RenderPage(
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
-	cleanPath, err := ValidateVaultPath(path)
+	cleanPath, err := vault.ValidatePath(path, vault.IsTempDocument)
 	if err != nil {
 		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", err))
 	}
@@ -171,7 +138,7 @@ func (s *DocumentServer) ExtractText(
 		if path == "" {
 			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path or data required"))
 		}
-		cleanPath, err := ValidateVaultPath(path)
+		cleanPath, err := vault.ValidatePath(path, vault.IsTempDocument)
 		if err != nil {
 			return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", err))
 		}
@@ -207,7 +174,7 @@ func (s *DocumentServer) GetHighlights(
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
-	cleanPath, err := ValidateVaultPath(path)
+	cleanPath, err := vault.ValidatePath(path, vault.IsTempDocument)
 	if err != nil {
 		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", err))
 	}

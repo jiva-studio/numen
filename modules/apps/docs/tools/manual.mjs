@@ -408,6 +408,7 @@ const PACKAGES = {
   transcription: 'internal/adapter/transcription',
   proofreading: 'internal/adapter/proofreading',
   agent: 'adapter/agent',
+  completion: 'usecase/completion',
 }
 
 const held = new Map()
