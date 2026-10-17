@@ -128,6 +128,7 @@ export interface PluginManifest {
   targets?: string[]
   activationEvents?: string[]
   permissions?: string[]
+  runtimes?: string[]
   lifecycle?: {
     idleTimeoutSeconds?: number
     keepAliveWhileVisible?: boolean

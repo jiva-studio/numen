@@ -249,6 +249,8 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 		{"frontend without entrypoint", `{"id":"a.b","name":"A","version":"1.0.0","frontend":{"styles":"s.css"}}`, port.ErrInvalidFrontend},
 		{"setting without title", `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, port.ErrEmptySettingTitle},
 		{"unknown permission", `{"id":"a.b","name":"A","version":"1.0.0","permissions":["shell"]}`, port.ErrInvalidPermission},
+		{"unknown runtime", `{"id":"a.b","name":"A","version":"1.0.0","runtimes":["tensorrt"]}`, port.ErrInvalidRuntime},
+		{"runtime declared twice", `{"id":"a.b","name":"A","version":"1.0.0","runtimes":["onnxruntime","onnxruntime"]}`, port.ErrInvalidRuntime},
 	}
 
 	for _, tc := range cases {
@@ -307,6 +309,16 @@ func TestManifestNetworkAlias(t *testing.T) {
 	}
 	if err := m.ValidatePermissions(); err != nil {
 		t.Errorf("alias must validate: %v", err)
+	}
+}
+
+func TestManifestAcceptsTheONNXRuntime(t *testing.T) {
+	m, err := ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","runtimes":["onnxruntime"]}`))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !slices.Equal(m.Runtimes, []string{port.RuntimeONNX}) {
+		t.Errorf("runtimes = %v, want [%s]", m.Runtimes, port.RuntimeONNX)
 	}
 }
 

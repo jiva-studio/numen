@@ -118,18 +118,28 @@ func sanitizeEnvironment(environ []string, pluginVars []string) []string {
 	return append(env, pluginVars...)
 }
 
+const (
+	// EnvONNXRuntimeLib is the absolute path of the ONNX Runtime library the host provisioned.
+	EnvONNXRuntimeLib = "NUMEN_ONNX_RUNTIME_LIB"
+
+	// EnvONNXProvider is the execution provider a plugin opens its sessions on.
+	EnvONNXProvider = "NUMEN_ONNX_PROVIDER"
+)
+
 // launchEnvironment is what the host tells a plugin process about its launch.
 // A secret is never part of it: a key reaches a plugin through Configure.
 type launchEnvironment struct {
-	vaultPath  string
-	port       int
-	hostPort   int
-	token      string
-	configJSON string
+	vaultPath   string
+	port        int
+	hostPort    int
+	token       string
+	configJSON  string
+	runtimeVars []string
 }
 
 // getPluginVars is the environment variables the host sets for a plugin
-// process. The host port is set only when the host endpoint is serving.
+// process. The host port is set only when the host endpoint is serving, and the
+// runtime variables only for a plugin that declares a runtime.
 func getPluginVars(pluginID string, launch launchEnvironment) []string {
 	vars := []string{
 		"NUMEN_VAULT_PATH=" + launch.vaultPath,
@@ -143,5 +153,5 @@ func getPluginVars(pluginID string, launch launchEnvironment) []string {
 	if launch.hostPort > 0 {
 		vars = append(vars, "NUMEN_HOST_PORT="+strconv.Itoa(launch.hostPort))
 	}
-	return vars
+	return append(vars, launch.runtimeVars...)
 }

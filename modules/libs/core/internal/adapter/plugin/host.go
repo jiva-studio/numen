@@ -81,6 +81,7 @@ type Host struct {
 	completer      port.Completer
 	hostEndpoint   *HostEndpoint
 	hostAddress    string
+	onnxRuntime    RuntimeProvisioner
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
@@ -113,6 +114,7 @@ func NewHost(target string, dirs ...string) *Host {
 		completer:      nil,
 		hostEndpoint:   nil,
 		hostAddress:    hostEndpointAddress,
+		onnxRuntime:    nil,
 	}
 	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
@@ -731,7 +733,7 @@ func (h *Host) defaultLauncher(
 	configureSysProcAttr(cmd)
 	cmd.Dir = workDir
 
-	pluginVars, err := h.getLaunchVars(ctx, p.Manifest.ID, port, token)
+	pluginVars, err := h.getLaunchVars(ctx, p.Manifest.ID, p.Manifest.Runtimes, port, token)
 	if err != nil {
 		return nil, nil, err
 	}

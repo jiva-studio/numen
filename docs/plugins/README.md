@@ -102,6 +102,7 @@ The manifest declares identity, activation rules, required permissions, and serv
   - `onCommand:<id>` (e.g. `onCommand:ocr.scan`)
   - `*` (always activated on startup)
 - **`permissions`**: Whitelisted resource access: `vault:read`, `vault:write`, `network:outbound` (`network` is accepted as an alias) and `ai:complete` (ask the host for a model completion). Any other value is rejected. Permissions are checked by the host when a plugin calls it; the host does not sandbox the plugin process, so a plugin runs with the user rights of the host.
+- **`runtimes`**: Libraries the host provisions for the plugin. The only value is `onnxruntime`; any other value, or one declared twice, is rejected. A plugin that declares it is launched with `NUMEN_ONNX_RUNTIME_LIB` (the absolute path of the library) and `NUMEN_ONNX_PROVIDER` (`cpu`, `cuda` or `coreml`) in its environment, and opens its sessions on them. If the host cannot provision the library the plugin is not launched, and the activation fails with the reason.
 - **`lifecycle`**:
   - `idleTimeoutSeconds`: Seconds of inactivity before process eviction; it cannot be negative.
   - `keepAliveWhileVisible`: Keep alive while a tab displaying the plugin is open.
@@ -258,3 +259,7 @@ The host serves a loopback endpoint and sets `NUMEN_HOST_PORT` in the environmen
 ## Models
 
 A plugin that runs a model keeps it in the models folder every plugin shares: `NUMEN_MODELS_DIR`, or `numen/models` under the application data directory. A plugin that downloads a model declares `network:outbound`, fetches it at a pinned revision, and checks the sha256 of the bytes against the sum pinned in its code before the file is put in place. `NUMEN_OFFLINE=1` forbids every download and `NUMEN_MODELS_QUOTA` caps the bytes the folder holds (32 GiB by default). The helpers are the `models` package of `plugin-sdk-go`.
+
+## The ONNX Runtime
+
+The host provisions the ONNX Runtime library once per run and a plugin never fetches it. The library is downloaded at a release pinned by sha256 for each operating system and architecture, over https, into `onnxruntime/` under the models folder, unpacked, and checked again against the sha256 of the library. `NUMEN_OFFLINE=1` forbids the download; a library already in the folder is still used. The execution provider is `NUMEN_ONNX_PROVIDER` in the environment of the host: `cpu` (the default), `cuda` on Linux and Windows, or `coreml` on Apple silicon. A provider the machine lacks is an error, and so is a failed download: the plugin is not launched. The model runs in the plugin process, so the memory limit and idle eviction of the manifest apply to it.

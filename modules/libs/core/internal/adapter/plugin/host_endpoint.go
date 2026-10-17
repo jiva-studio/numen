@@ -206,8 +206,13 @@ func (h *Host) closeHostEndpoint(ctx context.Context) error {
 // getLaunchVars is the environment variables the host sets for a plugin process
 // about to start. The host endpoint is started for it if a completer is set. An
 // endpoint that cannot start is reported and leaves the plugin without
-// NUMEN_HOST_PORT; the plugins that never call the host launch all the same.
-func (h *Host) getLaunchVars(ctx context.Context, pluginID string, processPort int, token string) ([]string, error) {
+// NUMEN_HOST_PORT; the plugins that never call the host launch all the same. A
+// runtime the plugin declares and the host cannot provision stops the launch.
+func (h *Host) getLaunchVars(ctx context.Context, pluginID string, runtimes []string, processPort int, token string) ([]string, error) {
+	runtimeVars, err := h.getRuntimeVars(ctx, runtimes)
+	if err != nil {
+		return nil, fmt.Errorf("launch plugin %s: %w", pluginID, err)
+	}
 	hostPort, err := h.openHostEndpoint(ctx)
 	if err != nil {
 		h.reportError(fmt.Errorf("open host endpoint for plugin %s: %w", pluginID, err))
@@ -221,6 +226,7 @@ func (h *Host) getLaunchVars(ctx context.Context, pluginID string, processPort i
 	}
 	return getPluginVars(pluginID, launchEnvironment{
 		vaultPath: h.vaultPath, port: processPort, hostPort: hostPort, token: token, configJSON: configJSON,
+		runtimeVars: runtimeVars,
 	}), nil
 }
 

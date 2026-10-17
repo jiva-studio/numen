@@ -7,12 +7,16 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"strings"
 	"sync"
 	"time"
 
 	"connectrpc.com/connect"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 var (
@@ -278,6 +282,9 @@ func (h *Host) activatePlugin(ctx context.Context, p DiscoveredPlugin, sup *Supe
 		return h.startPluginProcess(ctx, p, sup)
 	}
 
+	if err := h.exportRuntimeVars(ctx, p.Manifest.Runtimes); err != nil {
+		return emptyEndpoint(), fmt.Errorf("launch plugin %s: %w", p.Manifest.ID, err)
+	}
 	handler := h.getMonolithHandler(p.Manifest.ID)
 	transport := NewInProcessTransport(handler)
 
@@ -299,6 +306,22 @@ func (h *Host) activatePlugin(ctx context.Context, p DiscoveredPlugin, sup *Supe
 	h.mu.Unlock()
 
 	return endpoint, nil
+}
+
+// exportRuntimeVars provisions the runtimes an in-process plugin declares and
+// sets their variables in this process, which is the plugin's own.
+func (h *Host) exportRuntimeVars(ctx context.Context, runtimes []string) error {
+	vars, err := h.getRuntimeVars(ctx, runtimes)
+	if err != nil {
+		return err
+	}
+	for _, entry := range vars {
+		name, value, _ := strings.Cut(entry, "=")
+		if err := os.Setenv(name, value); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (h *Host) getMonolithHandler(pluginID string) http.Handler {
@@ -366,6 +389,7 @@ var builtInMonolithPlugins = map[string]DiscoveredPlugin{
 			Capabilities: []string{"recognition"},
 			Targets:      []string{"desktop.editor"},
 			Permissions:  []string{PermissionVaultRead},
+			Runtimes:     []string{port.RuntimeONNX},
 			Backend: Backend{
 				Type:        "process",
 				ServiceName: "numen.v1.RecognitionService",
@@ -396,6 +420,7 @@ var builtInMonolithPlugins = map[string]DiscoveredPlugin{
 			Capabilities: []string{"transcription"},
 			Targets:      []string{"desktop.editor"},
 			Permissions:  []string{PermissionVaultRead},
+			Runtimes:     []string{port.RuntimeONNX},
 			Backend: Backend{
 				Type:        "process",
 				ServiceName: "numen.v1.TranscriptionService",
@@ -411,6 +436,7 @@ var builtInMonolithPlugins = map[string]DiscoveredPlugin{
 			Capabilities: []string{"embedding"},
 			Targets:      []string{"desktop.editor"},
 			Permissions:  []string{PermissionVaultRead},
+			Runtimes:     []string{port.RuntimeONNX},
 			Backend: Backend{
 				Type:        "process",
 				ServiceName: "numen.v1.EmbeddingService",

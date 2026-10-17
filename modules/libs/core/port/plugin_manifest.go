@@ -27,6 +27,9 @@ const (
 	// PermissionNetworkAlias is the accepted short spelling of PermissionNetworkOutbound.
 	PermissionNetworkAlias = "network"
 
+	// RuntimeONNX names the ONNX Runtime library, which the host provisions for a plugin that declares it.
+	RuntimeONNX = "onnxruntime"
+
 	// PluginProtocolVersion is the newest plugin protocol this host speaks.
 	PluginProtocolVersion = 1
 )
@@ -43,6 +46,7 @@ var (
 	ErrInvalidBackend      = errors.New("invalid backend")
 	ErrInvalidFrontend     = errors.New("invalid frontend")
 	ErrInvalidPermission   = errors.New("invalid permission")
+	ErrInvalidRuntime      = errors.New("invalid runtime")
 	ErrEmptySettingKey     = errors.New("setting key cannot be empty")
 	ErrDuplicateSettingKey = errors.New("duplicate setting key")
 	ErrInvalidSettingType  = errors.New("invalid setting type")
@@ -54,6 +58,8 @@ var (
 	manifestIDPattern      = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
 	manifestVersionPattern = regexp.MustCompile(`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`)
 )
+
+var validRuntimes = []string{RuntimeONNX}
 
 var validSettingTypes = []string{"boolean", "string", "number", "enum", "select", "range"}
 
@@ -165,6 +171,7 @@ type PluginManifest struct {
 	FileExtensions   []string                `json:"fileExtensions,omitempty"`
 	ActivationEvents []string                `json:"activationEvents"`
 	Permissions      []string                `json:"permissions"`
+	Runtimes         []string                `json:"runtimes,omitempty"`
 	Lifecycle        PluginLifecycle         `json:"lifecycle"`
 	Backend          PluginBackend           `json:"backend,omitzero"`
 	Frontend         PluginFrontend          `json:"frontend,omitzero"`
@@ -201,6 +208,7 @@ func (m PluginManifest) ListIssues() []error {
 	}
 	issues = append(issues, m.listEntrypointIssues()...)
 	issues = append(issues, m.listPermissionIssues()...)
+	issues = append(issues, m.listRuntimeIssues()...)
 	return append(issues, listManifestSettingIssues(m.Settings)...)
 }
 
@@ -261,6 +269,21 @@ func (m PluginManifest) listPermissionIssues() []error {
 		default:
 			issues = append(issues, fmt.Errorf("%w: %s", ErrInvalidPermission, p))
 		}
+	}
+	return issues
+}
+
+func (m PluginManifest) listRuntimeIssues() []error {
+	var issues []error
+	seen := make(map[string]bool, len(m.Runtimes))
+	for _, name := range m.Runtimes {
+		switch {
+		case !slices.Contains(validRuntimes, name):
+			issues = append(issues, fmt.Errorf("%w: %q, expected one of %s", ErrInvalidRuntime, name, strings.Join(validRuntimes, ", ")))
+		case seen[name]:
+			issues = append(issues, fmt.Errorf("%w: %s is declared twice", ErrInvalidRuntime, name))
+		}
+		seen[name] = true
 	}
 	return issues
 }
