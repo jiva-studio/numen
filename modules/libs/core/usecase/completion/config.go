@@ -11,8 +11,8 @@ const DefaultConcurrency = 1
 // Config is the section of the settings file that says where each purpose is
 // answered.
 type Config struct {
-	// Routes are, by purpose and by default for the rest, the agent, the model
-	// and the number of questions answered at once.
+	// Routes are the agent, model and concurrency of each purpose, and of default
+	// for the rest.
 	Routes map[string]Route `json:"routes,omitempty"`
 }
 
