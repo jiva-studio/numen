@@ -1,0 +1,243 @@
+package plugin
+
+import (
+	"context"
+	"errors"
+	"io"
+	"os"
+	"sync/atomic"
+	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// newRunningHost returns a host with the plugin running and the channel its supervisor closes when the process is reaped.
+func newRunningHost(t *testing.T) (*Host, <-chan struct{}) {
+	t.Helper()
+	host := newDiscoveredHost(t)
+	var started atomic.Int32
+	host.SetLauncher(startSleepLauncher(t, &started, nil))
+	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err != nil {
+		t.Fatalf("EnsureActive failed: %v", err)
+	}
+	host.Release("md.numen.ocr")
+	return host, getExitSignal(host.supervisors["md.numen.ocr"])
+}
+
+func waitForProcessExit(t *testing.T, exited <-chan struct{}) {
+	t.Helper()
+	select {
+	case <-exited:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for the process to exit")
+	}
+}
+
+func TestAShutDownHostDoesNotStartPluginsAgain(t *testing.T) {
+	host := newDiscoveredHost(t)
+	var started atomic.Int32
+	host.SetLauncher(startSleepLauncher(t, &started, nil))
+
+	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
+	}
+
+	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); !errors.Is(err, errHostClosed) {
+		t.Fatalf("expected errHostClosed, got %v", err)
+	}
+	if started.Load() != 0 {
+		t.Fatalf("a plugin was launched after shutdown")
+	}
+}
+
+func TestClosingTheEventBusWaitsForDispatchesInFlight(t *testing.T) {
+	bus := NewEventBus(nil, time.Millisecond, 10*time.Millisecond)
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	bus.Subscribe("onSlow", func(_ context.Context, _ string) error {
+		close(entered)
+		<-release
+		return nil
+	})
+
+	bus.Publish("onSlow")
+	<-entered
+
+	closed := make(chan error, 1)
+	go func() { closed <- bus.Close(t.Context()) }()
+
+	select {
+	case err := <-closed:
+		t.Fatalf("Close returned while a dispatch was in flight: %v", err)
+	case <-time.After(50 * time.Millisecond):
+	}
+	close(release)
+	if err := <-closed; err != nil {
+		t.Fatalf("Close failed: %v", err)
+	}
+}
+
+func TestADisabledPluginIsStopped(t *testing.T) {
+	host, exited := newRunningHost(t)
+
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.ocr", false); err != nil {
+		t.Fatalf("SetPluginEnabled failed: %v", err)
+	}
+
+	waitForProcessExit(t, exited)
+	if state := host.supervisors["md.numen.ocr"].GetState(); state != StateDormant {
+		t.Fatalf("expected StateDormant, got %v", state)
+	}
+}
+
+func TestDisablingThroughTheSettingStopsThePluginAndIsOneSourceOfTruth(t *testing.T) {
+	host, exited := newRunningHost(t)
+
+	if err := host.SetPluginSetting(t.Context(), "md.numen.ocr", "enabled", false); err != nil {
+		t.Fatalf("SetPluginSetting failed: %v", err)
+	}
+
+	if host.IsPluginEnabled("md.numen.ocr") {
+		t.Fatal("the plugin is still enabled after its enabled setting was cleared")
+	}
+	waitForProcessExit(t, exited)
+	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err == nil {
+		t.Fatal("a disabled plugin was activated")
+	}
+
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.ocr", true); err != nil {
+		t.Fatalf("SetPluginEnabled failed: %v", err)
+	}
+	if got := host.GetPluginSettings("md.numen.ocr")["enabled"]; got != true {
+		t.Fatalf("expected the enabled setting to follow SetPluginEnabled, got %v", got)
+	}
+}
+
+func TestSettingsLoadedAsDisabledDisableThePlugin(t *testing.T) {
+	host := newDiscoveredHost(t)
+	host.SetSettings(map[string]map[string]any{"md.numen.ocr": {"enabled": false}})
+
+	if host.IsPluginEnabled("md.numen.ocr") {
+		t.Fatal("expected the plugin to be disabled by its stored setting")
+	}
+	if _, ok := host.GetPlugin("md.numen.ocr"); ok {
+		t.Fatal("GetPlugin resolved a disabled plugin")
+	}
+}
+
+func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
+	host, exited := newRunningHost(t)
+
+	host.SetSafeMode(true)
+
+	waitForProcessExit(t, exited)
+	if state := host.supervisors["md.numen.ocr"].GetState(); state != StateDormant {
+		t.Fatalf("expected StateDormant, got %v", state)
+	}
+}
+
+func TestFindPluginByFileExtensionHonoursEnabledAndSafeMode(t *testing.T) {
+	host := NewHost("desktop.editor")
+	manifest := port.PluginManifest{ID: "md.numen.epub", FileExtensions: []string{".epub"}}
+	host.plugins["md.numen.epub"] = DiscoveredPlugin{Manifest: manifest}
+
+	if _, ok := host.FindPluginByFileExtension(".epub"); !ok {
+		t.Fatal("expected an enabled plugin to be found")
+	}
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.epub", false); err != nil {
+		t.Fatalf("SetPluginEnabled failed: %v", err)
+	}
+	if _, ok := host.FindPluginByFileExtension(".epub"); ok {
+		t.Fatal("a disabled plugin was found by extension")
+	}
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.epub", true); err != nil {
+		t.Fatalf("SetPluginEnabled failed: %v", err)
+	}
+	host.SetSafeMode(true)
+	if _, ok := host.FindPluginByFileExtension(".epub"); ok {
+		t.Fatal("a plugin was found by extension in safe mode")
+	}
+}
+
+func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
+	host := NewHost("desktop.editor")
+	for _, id := range []string{"a.failing", "b.working"} {
+		host.plugins[id] = DiscoveredPlugin{Manifest: port.PluginManifest{ID: id, ActivationEvents: []string{"onOpen"}}}
+	}
+	var started atomic.Int32
+	working := startSleepLauncher(t, &started, nil)
+	host.SetLauncher(func(ctx context.Context, p DiscoveredPlugin, portNumber int, token string) (*os.Process, io.ReadCloser, error) {
+		if p.Manifest.ID == "a.failing" {
+			return nil, nil, errors.New("exec format error")
+		}
+		return working(ctx, p, portNumber, token)
+	})
+
+	activated, err := host.TriggerEvent(t.Context(), "onOpen")
+
+	if err == nil {
+		t.Fatal("expected the failing plugin to be reported")
+	}
+	if len(activated) != 1 || activated[0] != "b.working" {
+		t.Fatalf("expected the working plugin to be activated, got %v", activated)
+	}
+	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}
+
+func TestADisableThatCannotBePersistedLeavesThePluginRunning(t *testing.T) {
+	host := newDiscoveredHost(t)
+	var started atomic.Int32
+	host.SetLauncher(startSleepLauncher(t, &started, nil))
+	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err != nil {
+		t.Fatalf("EnsureActive failed: %v", err)
+	}
+	host.Release("md.numen.ocr")
+	host.SetPersistHandler(func(string, string, any) error { return errors.New("disk full") })
+
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.ocr", false); err == nil {
+		t.Fatal("expected the persist error to be returned")
+	}
+
+	if !host.IsPluginEnabled("md.numen.ocr") {
+		t.Fatal("the plugin is disabled in memory although the choice was not stored")
+	}
+	if state := host.supervisors["md.numen.ocr"].GetState(); state != StateIdle {
+		t.Fatalf("expected the plugin to keep running, got state %v", state)
+	}
+	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}
+
+func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
+	host := NewHost("desktop.editor")
+	var reported []error
+	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
+	cmd := newIdleCommand()
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start process: %v", err)
+	}
+	t.Cleanup(func() { killProcess(t, cmd.Process) })
+	sup := NewSupervisor()
+	if err := sup.Attach(cmd.Process, time.Now()); err != nil {
+		t.Fatalf("attach: %v", err)
+	}
+	sup.mu.Lock()
+	sup.state = StateDeactivating
+	sup.teardownBegun = true
+	sup.mu.Unlock()
+	canceled, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	evicted := host.evictTargets(canceled, []pluginTeardownTarget{{id: "p", pid: cmd.Process.Pid, sup: sup, endpoint: emptyEndpoint()}}, time.Millisecond)
+
+	if len(evicted) != 0 {
+		t.Fatalf("a failed eviction was counted: %v", evicted)
+	}
+	if len(reported) != 1 {
+		t.Fatalf("expected one reported error, got %v", reported)
+	}
+}

@@ -25,6 +25,7 @@ type agentServer struct {
 	modelName    string
 	models       []AgentModel
 	command      []string
+	mayReadHooks bool
 	sessions     map[string]string
 	activeRuns   map[string]context.CancelFunc
 }
@@ -34,6 +35,9 @@ func (s *agentServer) applyConfig(ctx context.Context, values map[string]string)
 	defer s.mu.Unlock()
 	if m, ok := values["model"]; ok && m != "" {
 		s.modelName = m
+	}
+	if v, ok := values["readsHooksAndSkills"]; ok {
+		s.mayReadHooks = v == "true"
 	}
 	apiKey := values["apiKey"]
 	baseURL := values["baseUrl"]
@@ -56,6 +60,7 @@ func (s *agentServer) AskAgent(
 		model = s.modelName
 	}
 	customCmd := s.command
+	mayReadHooks := s.mayReadHooks
 	conversation := req.Msg.GetConversation()
 	session := s.sessions[conversation]
 	var toolNames []string
@@ -109,7 +114,7 @@ func (s *agentServer) AskAgent(
 	}
 
 	turns := int(req.Msg.GetMaxSteps())
-	claudeArgs := buildClaudeArguments(instructions, model, configFile, session, turns, toolNames)
+	claudeArgs := buildClaudeArguments(instructions, model, configFile, session, turns, toolNames, mayReadHooks)
 	fullArgs := append(cmdArgs, claudeArgs...)
 
 	runCtx, cancel := context.WithCancel(ctx)
@@ -131,6 +136,7 @@ func (s *agentServer) AskAgent(
 	}
 
 	cmd := exec.CommandContext(runCtx, cmdName, fullArgs...)
+	cmd.Dir = req.Msg.GetRoot()
 	cmd.Env = buildEnvironment(os.Environ())
 	cmd.Stdin = strings.NewReader(req.Msg.GetPrompt())
 
@@ -157,7 +163,7 @@ func (s *agentServer) AskAgent(
 		}
 	}
 
-	failedReason := parseStream(runCtx, out, stream, recordSession)
+	failedReason := parseStream(runCtx, out, stream.Send, getToolWords(req.Msg.GetToolDeclarations()), recordSession)
 
 	waitErr := cmd.Wait()
 	if runCtx.Err() != nil {
@@ -168,11 +174,7 @@ func (s *agentServer) AskAgent(
 	if failedReason != "" {
 		stoppedReason = failedReason
 	} else if waitErr != nil {
-		if stderrStr := strings.TrimSpace(stderrBuf.String()); stderrStr != "" {
-			stoppedReason = stderrStr
-		} else {
-			stoppedReason = waitErr.Error()
-		}
+		stoppedReason = getFailureMessage(waitErr, stderrBuf.String())
 	}
 
 	return stream.Send(&numenv1.AskAgentResponse{
@@ -258,6 +260,22 @@ func (s *agentServer) GetAgentTools(
 		Tools:                 toolsCopy,
 		SystemPromptExtension: s.systemPrompt,
 	}), nil
+}
+
+// getToolWords indexes the declarations of the vault's tools by tool name.
+func getToolWords(declarations []*numenv1.ToolDeclaration) map[string]toolWords {
+	words := make(map[string]toolWords, len(declarations))
+	for _, d := range declarations {
+		words[d.GetName()] = toolWords{
+			title:   d.GetTitle(),
+			kind:    d.GetKind(),
+			about:   d.GetAbout(),
+			element: d.GetElement(),
+			match:   d.GetMatch(),
+			text:    d.GetText(),
+		}
+	}
+	return words
 }
 
 func getToolsEndpoint() (string, string) {
