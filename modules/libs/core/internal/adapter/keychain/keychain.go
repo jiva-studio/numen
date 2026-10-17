@@ -26,7 +26,7 @@ func (Store) GetKey(ctx context.Context, name string) (string, error) {
 	if err := check(ctx, name); err != nil {
 		return "", err
 	}
-	key, err := keyring.Get(service, name)
+	key, err := await(ctx, func() (string, error) { return keyring.Get(service, name) })
 	if err != nil {
 		return "", readError(name, err)
 	}
@@ -38,7 +38,8 @@ func (Store) SetKey(ctx context.Context, name, key string) error {
 	if err := check(ctx, name); err != nil {
 		return err
 	}
-	return readError(name, keyring.Set(service, name, key))
+	_, err := await(ctx, func() (struct{}, error) { return struct{}{}, keyring.Set(service, name, key) })
+	return readError(name, err)
 }
 
 // DeleteKey removes the key stored under the name.
@@ -46,7 +47,30 @@ func (Store) DeleteKey(ctx context.Context, name string) error {
 	if err := check(ctx, name); err != nil {
 		return err
 	}
-	return readError(name, keyring.Delete(service, name))
+	_, err := await(ctx, func() (struct{}, error) { return struct{}{}, keyring.Delete(service, name) })
+	return readError(name, err)
+}
+
+// await returns when the call does or the context ends. A call the context ends
+// on is left to finish by itself: the keychain offers no way to stop it, and a
+// write may still land.
+func await[T any](ctx context.Context, call func() (T, error)) (T, error) {
+	type outcome struct {
+		value T
+		err   error
+	}
+	done := make(chan outcome, 1)
+	go func() {
+		value, err := call()
+		done <- outcome{value, err}
+	}()
+	select {
+	case result := <-done:
+		return result.value, result.err
+	case <-ctx.Done():
+		var none T
+		return none, ctx.Err()
+	}
 }
 
 func check(ctx context.Context, name string) error {
@@ -66,6 +90,8 @@ func readError(name string, err error) error {
 	switch {
 	case err == nil:
 		return nil
+	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
+		return err
 	case errors.Is(err, keyring.ErrNotFound):
 		return fmt.Errorf("%w: %q", port.ErrNoKey, name)
 	default:

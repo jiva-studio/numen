@@ -104,3 +104,23 @@ func TestAKeyNeedsANameAndALiveContext(t *testing.T) {
 		t.Errorf("a cancelled set stored a key: %v", err)
 	}
 }
+
+// A call the context ends on returns at once with the context's error, though
+// the keychain has not answered.
+func TestACancelledContextEndsAStalledCall(t *testing.T) {
+	release := make(chan struct{})
+	t.Cleanup(func() { close(release) })
+	ctx, cancel := context.WithCancel(t.Context())
+	returned := make(chan error, 1)
+	go func() {
+		_, err := await(ctx, func() (string, error) {
+			<-release
+			return "", nil
+		})
+		returned <- err
+	}()
+	cancel()
+	if err := <-returned; !errors.Is(err, context.Canceled) {
+		t.Errorf("error = %v, want context.Canceled", err)
+	}
+}
