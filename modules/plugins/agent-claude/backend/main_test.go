@@ -108,7 +108,7 @@ func TestTheModelsAreKeptUntilTheKeyChanges(t *testing.T) {
 	defer mockServer.Close()
 
 	var catalogue modelCatalogue
-	catalogue.set("k", mockServer.URL)
+	catalogue.update(map[string]string{"apiKey": "k", "baseUrl": mockServer.URL})
 	for range 2 {
 		if got := catalogue.get(t.Context()); len(got) != 1 || got[0].Name != "opus" {
 			t.Fatalf("the models are %+v", got)
@@ -118,7 +118,7 @@ func TestTheModelsAreKeptUntilTheKeyChanges(t *testing.T) {
 		t.Errorf("the endpoint was asked %d times, want 1", asked)
 	}
 
-	catalogue.set("other", mockServer.URL)
+	catalogue.update(map[string]string{"apiKey": "other", "baseUrl": mockServer.URL})
 	catalogue.get(t.Context())
 	if asked != 2 {
 		t.Errorf("a new key asked the endpoint %d times in all, want 2", asked)
@@ -133,7 +133,7 @@ func TestAnEndedRequestKeepsNoModels(t *testing.T) {
 	defer mockServer.Close()
 
 	var catalogue modelCatalogue
-	catalogue.set("k", mockServer.URL)
+	catalogue.update(map[string]string{"apiKey": "k", "baseUrl": mockServer.URL})
 	ended, cancel := context.WithCancel(t.Context())
 	cancel()
 	if got := catalogue.get(ended); got != nil {

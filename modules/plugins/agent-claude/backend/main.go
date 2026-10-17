@@ -13,6 +13,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agentrun"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/completion"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
@@ -30,17 +31,24 @@ const programTitle = "Claude Code"
 
 type agentServer struct {
 	numenv1connect.UnimplementedAgentServiceHandler
-	mu           sync.RWMutex
-	systemPrompt string
-	tools        []*numenv1.AgentToolDefinition
-	registry     agentrun.Registry
-	catalogue    modelCatalogue
+	numenv1connect.UnimplementedCompletionServiceHandler
+	mu              sync.RWMutex
+	systemPrompt    string
+	tools           []*numenv1.AgentToolDefinition
+	registry        agentrun.Registry
+	catalogue       modelCatalogue
+	completionModel string
 }
 
-// applyConfig keeps the key and the endpoint the models are asked with, and drops the models
-// asked with the ones before.
+// applyConfig keeps the key and the endpoint the models are asked with, dropping the models asked
+// with the ones before, and the model that answers a completion.
 func (s *agentServer) applyConfig(values map[string]string) {
-	s.catalogue.set(values["apiKey"], values["baseUrl"])
+	if model, ok := values["model"]; ok && model != "" {
+		s.mu.Lock()
+		s.completionModel = model
+		s.mu.Unlock()
+	}
+	s.catalogue.update(values)
 }
 
 func (s *agentServer) AskAgent(
@@ -158,7 +166,7 @@ func (s *agentServer) AskAgent(
 	if failedReason != "" {
 		stoppedReason = failedReason
 	} else if waitErr != nil {
-		stoppedReason = getFailureMessage(waitErr, stderrBuf.String())
+		stoppedReason = completion.FailureMessage(waitErr, stderrBuf.String())
 	}
 
 	return stream.Send(&numenv1.AskAgentResponse{
@@ -294,6 +302,7 @@ func main() {
 	}))
 
 	srv.Register(numenv1connect.NewAgentServiceHandler(agentSvc, srv.HandlerOptions()...))
+	srv.Register(numenv1connect.NewCompletionServiceHandler(agentSvc, srv.HandlerOptions()...))
 
 	err := srv.Serve()
 	_ = agentSvc.registry.Close()

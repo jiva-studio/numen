@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "Claude Code CLI agent runner and provider service",
-  "capabilities": ["agent", "ai.agent.provider"],
+  "capabilities": ["agent", "ai.agent.provider", "ai.completion.provider"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onCommand:askClaude", "onView:agent"],
   "permissions": ["network:outbound", "vault:read", "vault:write"],

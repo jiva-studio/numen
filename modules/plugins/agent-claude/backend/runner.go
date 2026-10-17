@@ -182,13 +182,3 @@ func buildClaudeArguments(in claudeArguments) []string {
 	}
 	return args
 }
-
-// getFailureMessage is what to tell the person when the command stopped with an error: the last
-// line of its error output, or the error itself when it wrote none.
-func getFailureMessage(err error, said string) string {
-	if trimmed := strings.TrimSpace(said); trimmed != "" {
-		lines := strings.Split(trimmed, "\n")
-		return strings.TrimSpace(lines[len(lines)-1])
-	}
-	return err.Error()
-}

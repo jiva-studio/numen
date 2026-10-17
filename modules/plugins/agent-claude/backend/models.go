@@ -32,12 +32,25 @@ type modelCatalogue struct {
 	isKept bool
 }
 
-// set changes the key and the endpoint the models are asked with, and drops what was kept.
-func (c *modelCatalogue) set(key, base string) {
+// update changes the key and the endpoint the models are asked with, for each the values give, and
+// drops what was kept.
+func (c *modelCatalogue) update(values map[string]string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.key, c.base = key, base
+	if key, ok := values["apiKey"]; ok {
+		c.key = key
+	}
+	if base, ok := values["baseUrl"]; ok {
+		c.base = base
+	}
 	c.kept, c.isKept = nil, false
+}
+
+// credentials are the key and the endpoint the models are asked with.
+func (c *modelCatalogue) credentials() (key, base string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.key, c.base
 }
 
 // get are the models the endpoint lists: the ones kept, or those it lists now.

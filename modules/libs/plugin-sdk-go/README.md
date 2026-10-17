@@ -11,6 +11,7 @@ Backend server lifecycle SDK for native Numen plugins.
 - Process supervision hooks (stdin EOF detection, OS signals).
 - `agentrun`: the registry of the runs an agent plugin has started and the session each conversation is on, and the supervision that ends a child and everything it started.
 - `ai.Complete(ctx, question)` asks the host for a model completion by purpose (needs the `ai:complete` permission); the host endpoint comes from `NUMEN_HOST_PORT` and the token from `NUMEN_PLUGIN_TOKEN`.
+- `completion.Answer(ctx, question, run)` is the body of `CompletionService.Complete` for an agent plugin: it reads the question, answers the model's text, answers `UNAVAILABLE` (reason in the log) when `run` fails or sends no text, and returns a cancelled call as cancelled. `completion.RunCommand` runs a CLI with the prompt on stdin.
 
 ## Models
 

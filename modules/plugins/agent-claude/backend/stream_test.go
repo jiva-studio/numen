@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -189,15 +188,6 @@ func TestTheFirstReasonHolds(t *testing.T) {
 		`{"type":"result","is_error":true,"subtype":"error_overloaded"}`)
 	if reason != "the rate limit was reached" {
 		t.Fatalf("got %q", reason)
-	}
-}
-
-func TestAFailedCommandIsToldByTheLastLineItWrote(t *testing.T) {
-	if got := getFailureMessage(errors.New("exit 1"), "warming up\n\nboom: no key\n"); got != "boom: no key" {
-		t.Errorf("got %q", got)
-	}
-	if got := getFailureMessage(errors.New("exit 1"), "  \n"); got != "exit 1" {
-		t.Errorf("got %q", got)
 	}
 }
 
