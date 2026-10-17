@@ -111,6 +111,7 @@ linters:
             - "**/internal/adapter/download/**"
             - "**/internal/adapter/embed/**"
             - "**/internal/adapter/filesystem/**"
+            - "**/internal/adapter/keychain/**"
             - "**/internal/adapter/proofreading/**"
             - "**/internal/adapter/recognition/**"
             - "**/internal/adapter/transcription/**"

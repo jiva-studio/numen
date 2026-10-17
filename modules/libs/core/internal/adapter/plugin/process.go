@@ -145,3 +145,8 @@ func getPluginVars(pluginID string, launch launchEnvironment) []string {
 	}
 	return vars
 }
+
+// getPluginArgs is the command line the host starts a plugin process with.
+func getPluginArgs(port int, token string) []string {
+	return []string{"--port=" + strconv.Itoa(port), "--token=" + token}
+}

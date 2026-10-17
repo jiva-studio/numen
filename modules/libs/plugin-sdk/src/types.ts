@@ -128,6 +128,8 @@ export interface PluginManifest {
   targets?: string[]
   activationEvents?: string[]
   permissions?: string[]
+  /** The names of the secrets the plugin asks the host to keep and hand it in Configure. */
+  secrets?: string[]
   lifecycle?: {
     idleTimeoutSeconds?: number
     keepAliveWhileVisible?: boolean

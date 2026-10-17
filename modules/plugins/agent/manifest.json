@@ -8,6 +8,7 @@
   "targets": ["desktop.editor"],
   "activationEvents": ["onCommand:askAgent", "onChatOpen"],
   "permissions": ["vault:read", "vault:write"],
+  "secrets": ["apiKey"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false
