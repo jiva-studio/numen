@@ -144,10 +144,10 @@ const INSTALLATION: Installation = {
   chooseHeadings: () => {},
   dayStartTime: ref('04:00'),
   latestDayStartTime: ref('12:00'),
-  chooseDayStartTime: (time) => void DONE.push(`day `),
+  chooseDayStartTime: (time) => void DONE.push(`day ${time}`),
   getSetting: () => undefined,
   getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),
-  write: (edits) => void DONE.push(`write `),
+  write: (edits) => void DONE.push(`write ${edits.length}`),
   file: ref('/numen.json'),
   openFile: () => void DONE.push('open'),
 }
