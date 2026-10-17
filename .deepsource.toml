@@ -3,17 +3,25 @@ version = 1
 test_patterns = [
   "**/*_test.go",
   "**/*.test.ts",
-  "**/*.spec.ts"
+  "**/*.spec.ts",
+  "**/*.stories.ts",
+  "**/fixtures/**",
+  "**/testsupport/**",
+  "modules/tests/**"
 ]
 
 exclude_patterns = [
-  "modules/libs/protocol/gen/**",
   "**/gen/**",
   "**/*.pb.go",
   "**/*.connect.go",
+  "**/*_pb.ts",
+  "**/*_connect.ts",
+  "**/testdata/**",
   "**/dist/**",
   "**/build/**",
+  "**/vendor/**",
   "**/node_modules/**",
+  "**/*.min.js",
   "**/*.wasm"
 ]
 
@@ -22,3 +30,8 @@ name = "go"
 
 [[analyzers]]
 name = "javascript"
+
+  [analyzers.meta]
+  module_system = "es-modules"
+  environment = ["browser", "nodejs", "vitest"]
+  dialect = "typescript"
