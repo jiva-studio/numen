@@ -804,7 +804,7 @@ export const TitledLines: Story = {
     await expect(getComputedStyle(halo!).fill).toBe('none')
     await expect(getComputedStyle(letters!).stroke).toBe('none')
     await expect(halo!.getComputedTextLength()).toBe(letters!.getComputedTextLength())
-    const haloAtRest = parseFloat(getComputedStyle(halo!).strokeWidth)
+    const haloAtRest = Number.parseFloat(getComputedStyle(halo!).strokeWidth)
 
     // The hand on that line lifts it, and the lifted title is painted the same
     // way on a heavier halo.
@@ -821,7 +821,7 @@ export const TitledLines: Story = {
     await expect(lifted).toHaveLength(2)
     await expect(getComputedStyle(lifted[0]!).fill).toBe('none')
     await expect(getComputedStyle(lifted[1]!).stroke).toBe('none')
-    await expect(parseFloat(getComputedStyle(lifted[0]!).strokeWidth)).toBeGreaterThan(haloAtRest)
+    await expect(Number.parseFloat(getComputedStyle(lifted[0]!).strokeWidth)).toBeGreaterThan(haloAtRest)
     await expect(lifted[0]!.getComputedTextLength()).toBe(lifted[1]!.getComputedTextLength())
     await userEvent.unhover(band!)
 

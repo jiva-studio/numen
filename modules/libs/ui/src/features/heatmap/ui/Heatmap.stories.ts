@@ -231,7 +231,7 @@ export const ADayReviewed: Story = {
     // 8rem is the least the panel is drawn at and not the most, so the panel
     // takes the width of its longest line and the share stands on one line.
     const box = came.getBoundingClientRect()
-    await expect(box.height).toBeLessThan(2 * parseFloat(getComputedStyle(came).lineHeight))
+    await expect(box.height).toBeLessThan(2 * Number.parseFloat(getComputedStyle(came).lineHeight))
     await expect(Math.round(box.width)).toBe(Math.round(said.getBoundingClientRect().width))
   },
 }

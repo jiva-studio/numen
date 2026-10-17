@@ -802,7 +802,7 @@ const isPast = (later: HTMLElement, earlier: HTMLElement): boolean =>
   later.getBoundingClientRect().left >= earlier.getBoundingClientRect().right - 1
 
 /** The map with the room, and the agent along the trailing edge. */
-export const Map: Story = {
+export const PlexMap: Story = {
   render: () =>
     screen({
       workspace: () => ({
