@@ -37,12 +37,18 @@ func createPictureEpub(t *testing.T) []byte {
 	write("EPUB/package.opf", []byte(`<?xml version="1.0"?>
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="id" version="3.0">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Pictured</dc:title><dc:identifier id="id">x</dc:identifier></metadata>
-  <manifest><item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/></manifest>
-  <spine><itemref idref="c1"/></spine>
+  <manifest>
+    <item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/>
+    <item id="c2" href="c2.xhtml" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine><itemref idref="c1"/><itemref idref="c2"/></spine>
 </package>`))
 	write("EPUB/c1.xhtml", []byte(`<?xml version="1.0"?>
 <html xmlns="http://www.w3.org/1999/xhtml"><head><title>One</title></head>
 <body><h1>First part</h1><p>Hello reader epub</p></body></html>`))
+	write("EPUB/c2.xhtml", []byte(`<?xml version="1.0"?>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Two</title></head>
+<body><h1>Second part</h1><p>Goodbye reader epub</p></body></html>`))
 	write("EPUB/cover.png", pngBytes)
 	if err := zw.Close(); err != nil {
 		t.Fatal(err)
