@@ -1334,3 +1334,59 @@ func TestClosingTheStdinOfAnEvictedProcessLeavesTheNextProcessStdinOpen(t *testi
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }
+
+func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+	var started atomic.Int32
+	host.SetLauncher(startSleepLauncher(t, &started, nil))
+	first, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+	if err != nil {
+		t.Fatalf("EnsureActive failed: %v", err)
+	}
+	host.Release("md.numen.ocr")
+	host.mu.Lock()
+	sup := host.supervisors["md.numen.ocr"]
+	delete(host.endpoints, "md.numen.ocr")
+	host.mu.Unlock()
+	if !sup.BeginDeactivation(0, time.Now()) {
+		t.Fatal("expected the idle plugin to begin deactivating")
+	}
+
+	type result struct {
+		endpoint Endpoint
+		err      error
+	}
+	answered := make(chan result, 1)
+	go func() {
+		endpoint, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+		answered <- result{endpoint: endpoint, err: err}
+	}()
+
+	select {
+	case got := <-answered:
+		t.Fatalf("EnsureActive answered while the plugin was deactivating: %+v", got)
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	if err := sup.Teardown(t.Context(), 50*time.Millisecond, nil); err != nil {
+		t.Fatalf("Teardown failed: %v", err)
+	}
+	got := <-answered
+	if got.err != nil {
+		t.Fatalf("EnsureActive failed: %v", got.err)
+	}
+	if isEmptyEndpoint(got.endpoint) || got.endpoint.Token == first.Token {
+		t.Fatalf("expected a fresh endpoint from a new process, got %+v", got.endpoint)
+	}
+	if started.Load() != 2 {
+		t.Fatalf("expected the plugin to be launched twice, got %d", started.Load())
+	}
+	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}
