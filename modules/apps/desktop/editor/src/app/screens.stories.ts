@@ -136,20 +136,30 @@ const INSTALLATION: Installation = {
     interfaceScale: { least: 0.8, most: 2 },
     textScale: { least: 0.8, most: 1.75 },
   }),
-  choose: () => {},
+  choose: () => {
+    DONE.push('choose')
+  },
   isSyncing: ref(true),
   isNesting: ref(true),
   headings: ref(6),
   headingsBounds: ref({ least: 1, most: 12 }),
-  chooseHeadings: () => {},
+  chooseHeadings: () => {
+    DONE.push('headings')
+  },
   dayStartTime: ref('04:00'),
   latestDayStartTime: ref('12:00'),
-  chooseDayStartTime: (time) => void DONE.push(`day ${time}`),
+  chooseDayStartTime: (time) => {
+    DONE.push(`day ${time}`)
+  },
   getSetting: () => undefined,
   getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),
-  write: (edits) => void DONE.push(`write ${edits.length}`),
+  write: (edits) => {
+    DONE.push(`write ${edits.length}`)
+  },
   file: ref('/numen.json'),
-  openFile: () => void DONE.push('open'),
+  openFile: () => {
+    DONE.push('open')
+  },
 }
 
 /** Everything in numen.json a person can change, in the groups the file keeps. */
