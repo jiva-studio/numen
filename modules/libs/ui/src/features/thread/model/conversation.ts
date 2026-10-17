@@ -104,16 +104,7 @@ export function useConversation(options: ConversationOptions): Conversation {
 
   const finish = () => {
     stop()
-    let pending: Promise<unknown> | void
-    try {
-      pending = agent.finish(conversation)
-    } catch {
-      // The tab closes whether the agent heard or not.
-      return
-    }
-    if (pending && typeof pending.catch === 'function') {
-      void pending.catch(() => {})
-    }
+    void closeAgentConversation(agent, conversation)
   }
 
   return {
@@ -123,6 +114,14 @@ export function useConversation(options: ConversationOptions): Conversation {
     getSourceLocation: (turn: string) => locations.get(turn) ?? null,
     stop,
     finish,
+  }
+}
+
+async function closeAgentConversation(agent: AgentPort, conversation: string): Promise<void> {
+  try {
+    await agent.finish(conversation)
+  } catch {
+    // The tab closes whether the agent heard or not.
   }
 }
 

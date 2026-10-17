@@ -821,7 +821,9 @@ export const TitledLines: Story = {
     await expect(lifted).toHaveLength(2)
     await expect(getComputedStyle(lifted[0]!).fill).toBe('none')
     await expect(getComputedStyle(lifted[1]!).stroke).toBe('none')
-    await expect(Number.parseFloat(getComputedStyle(lifted[0]!).strokeWidth)).toBeGreaterThan(haloAtRest)
+    await expect(Number.parseFloat(getComputedStyle(lifted[0]!).strokeWidth)).toBeGreaterThan(
+      haloAtRest,
+    )
     await expect(lifted[0]!.getComputedTextLength()).toBe(lifted[1]!.getComputedTextLength())
     await userEvent.unhover(band!)
 
