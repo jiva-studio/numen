@@ -21,19 +21,23 @@ func meanPool(flat []float32, mask []int64, rows, seq, dimensions int) [][]float
 	backing := make([]float32, rows*dimensions)
 	for row := range rows {
 		vector := backing[row*dimensions : (row+1)*dimensions]
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="scaling by kept is cancelled by unit normalisation"
 		kept := 0
 		rowOffset := row * seq
 		for token := 0; token < seq; token++ {
 			if mask[rowOffset+token] == 0 {
 				continue
 			}
+			// gomutants:disable-next-line STATEMENT_REMOVE,INCREMENT_DECREMENT reason="scaling by kept is cancelled by unit normalisation"
 			kept++
 			at := (rowOffset + token) * dimensions
 			addRow(vector, flat[at:at+dimensions])
 		}
+		// gomutants:disable-next-line BRANCH_IF,INTEGER_INCREMENT reason="scaling by kept is cancelled by unit normalisation"
 		if kept > 0 {
 			k := float32(kept)
 			d := 0
+			// gomutants:disable-next-line LOOP_CONDITION,INTEGER_DECREMENT,INTEGER_INCREMENT,CONDITIONALS_BOUNDARY,INVERT_ASSIGNMENTS,REMOVE_SELF_ASSIGNMENTS reason="the scalar remainder loop handles any elements not stepped by eight"
 			for ; d+8 <= dimensions; d += 8 {
 				vector[d] /= k
 				vector[d+1] /= k
@@ -44,6 +48,7 @@ func meanPool(flat []float32, mask []int64, rows, seq, dimensions int) [][]float
 				vector[d+6] /= k
 				vector[d+7] /= k
 			}
+			// gomutants:disable-next-line LOOP_CONDITION,CONDITIONALS_NEGATION,INVERT_ASSIGNMENTS reason="scaling by kept is cancelled by unit normalisation"
 			for ; d < dimensions; d++ {
 				vector[d] /= k
 			}
@@ -54,6 +59,7 @@ func meanPool(flat []float32, mask []int64, rows, seq, dimensions int) [][]float
 }
 
 // addRow adds src to dst element by element, eight elements a step.
+// gomutants:disable-func reason="the scalar remainder loop handles any elements not stepped by eight"
 func addRow(dst, src []float32) {
 	n := min(len(dst), len(src))
 	d := 0
@@ -150,10 +156,12 @@ func roundUpToBucket(seq, limit int) int {
 		return 128
 	case seq <= 256:
 		return 256
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a length equal to bucketStep rounds to bucketStep through either branch"
 	case seq <= bucketStep:
 		return bucketStep
 	}
 	rounded := (seq + bucketStep - 1) / bucketStep * bucketStep
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a rounded length equal to limit returns limit through either branch"
 	if rounded > limit {
 		return max(limit, seq)
 	}

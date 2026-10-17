@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"sync/atomic"
 	"testing"
 )
@@ -20,22 +21,70 @@ func TestSessionPool(t *testing.T) {
 	if err != nil {
 		t.Fatalf("acquire s1 failed: %v", err)
 	}
+	if s1 != 10 && s1 != 20 {
+		t.Errorf("expected session 10 or 20, got %d", s1)
+	}
 	s2, err := pool.acquire(ctx)
 	if err != nil {
 		t.Fatalf("acquire s2 failed: %v", err)
+	}
+	if s2 != 10 && s2 != 20 {
+		t.Errorf("expected session 10 or 20, got %d", s2)
 	}
 
 	pool.release(s1)
 	pool.release(s2)
 
+	if len(pool.idle) != 2 {
+		t.Fatalf("expected 2 idle sessions before close, got %d", len(pool.idle))
+	}
+
 	pool.close()
+
+	if len(pool.idle) != 0 {
+		t.Errorf("expected idle channel drained on close, got %d", len(pool.idle))
+	}
 
 	if destroyed.Load() != 2 {
 		t.Fatalf("expected 2 sessions destroyed, got %d", destroyed.Load())
 	}
 
 	_, err = pool.acquire(ctx)
-	if err != errClosed {
+	if !errors.Is(err, errClosed) {
 		t.Fatalf("expected errClosed, got %v", err)
 	}
+}
+
+func TestSessionPoolLanesFloor(t *testing.T) {
+	sessions := []int{42}
+	pool := newSessionPool(sessions, 0, func(int) {})
+	if pool.lanes != 1 {
+		t.Errorf("expected lanes clamped to 1, got %d", pool.lanes)
+	}
+	s, err := pool.acquire(context.Background())
+	if err != nil || s != 42 {
+		t.Errorf("acquire failed: %v, session: %d", err, s)
+	}
+	pool.release(s)
+	pool.close()
+}
+
+func TestSessionPoolContextCancellation(t *testing.T) {
+	sessions := []int{1}
+	pool := newSessionPool(sessions, 1, func(int) {})
+
+	s, err := pool.acquire(context.Background())
+	if err != nil {
+		t.Fatalf("acquire failed: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err = pool.acquire(ctx)
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("expected context.Canceled, got %v", err)
+	}
+
+	pool.release(s)
+	pool.close()
 }
