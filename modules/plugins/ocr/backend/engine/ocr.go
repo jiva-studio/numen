@@ -53,6 +53,7 @@ func Distinct(regions []Region, most float64) []Region {
 		switch {
 		case a.Score > b.Score:
 			return -1
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY,CONDITIONALS_NEGATION reason="slices.SortStableFunc tests only for negative comparison results; returning 1 or 0 produces the same order"
 		case b.Score > a.Score:
 			return 1
 		}
@@ -101,7 +102,9 @@ func isInside(a, b image.Rectangle) bool {
 // each run of it was read.
 func Assemble(lines []Line) (string, []Box) {
 	size := len(lines)
+	// gomutants:disable-next-line RANGE_BREAK reason="size is a capacity hint for make; the assembled text and spans are identical at any capacity"
 	for _, one := range lines {
+		// gomutants:disable-next-line REMOVE_SELF_ASSIGNMENTS reason="size is a capacity hint for make; the assembled text and spans are identical at any capacity"
 		size += len(one.Text)
 	}
 	out := make([]byte, 0, size)
@@ -191,10 +194,13 @@ func measureVerticalOverlap(line []Line, box Line) float64 {
 
 func writeLine(line []Line) (string, []Box) {
 	size := len(line)
+	// gomutants:disable-next-line RANGE_BREAK reason="size is a capacity hint for Grow; the assembled text is identical at any capacity"
 	for _, one := range line {
+		// gomutants:disable-next-line REMOVE_SELF_ASSIGNMENTS reason="size is a capacity hint for Grow; the assembled text is identical at any capacity"
 		size += len(one.Text)
 	}
 	var out strings.Builder
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="Grow sets capacity only; strings.Builder grows dynamically when omitted"
 	out.Grow(size)
 	kept := make([]Box, 0, len(line))
 	for _, one := range line {
