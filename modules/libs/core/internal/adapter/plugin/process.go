@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -115,4 +116,32 @@ func sanitizeEnvironment(environ []string, pluginVars []string) []string {
 		}
 	}
 	return append(env, pluginVars...)
+}
+
+// launchEnvironment is what the host tells a plugin process about its launch.
+// A secret is never part of it: a key reaches a plugin through Configure.
+type launchEnvironment struct {
+	vaultPath  string
+	port       int
+	hostPort   int
+	token      string
+	configJSON string
+}
+
+// getPluginVars is the environment variables the host sets for a plugin
+// process. The host port is set only when the host endpoint is serving.
+func getPluginVars(pluginID string, launch launchEnvironment) []string {
+	vars := []string{
+		"NUMEN_VAULT_PATH=" + launch.vaultPath,
+		"NUMEN_PLUGIN_PORT=" + strconv.Itoa(launch.port),
+		// This builds the launch environment of a plugin process; no credential is written here.
+		// skipcq: SCT-A000
+		"NUMEN_PLUGIN_TOKEN=" + launch.token,
+		"NUMEN_PLUGIN_ID=" + pluginID,
+		"NUMEN_PLUGIN_CONFIG=" + launch.configJSON,
+	}
+	if launch.hostPort > 0 {
+		vars = append(vars, "NUMEN_HOST_PORT="+strconv.Itoa(launch.hostPort))
+	}
+	return vars
 }
