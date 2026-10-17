@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/completion"
 )
 
 // Where the section each adapter is configured by stands in the settings file.
@@ -59,6 +60,9 @@ type Settings struct {
 
 	// Plugins is the configuration for modular plugins, keyed by plugin ID.
 	Plugins map[string]map[string]any `json:"plugins,omitempty"`
+
+	// AI is where the questions plugins ask of a model are answered.
+	AI completion.Config `json:"ai"`
 
 	// Notices is what reading the file leaves a person something to do about: a
 	// number written where a setting does not go that far. Each is one line of
@@ -179,6 +183,7 @@ func (c Config) SetSettings(said Settings) Config {
 				},
 			})
 		})
+		c.setCompleter()
 	}
 	return c
 }
