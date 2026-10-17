@@ -8,9 +8,6 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// IsJoined says whether the line is a correction putting more than one line together.
-func (l Line) IsJoined() bool { return l.Last > l.Number }
-
 // MaxEditDistance is how far a correction may stand from the line as read.
 const MaxEditDistance = 0.30
 
@@ -159,52 +156,6 @@ func canKeepCorrection(was, text string, at, through int, maxDistance float64) b
 		return false
 	}
 	return true
-}
-
-// GetGatheredLines is what a run of batches put right, keyed by the line, and the
-// batches whose reply ran on past the last line they carry, in the order they
-// were asked. It is given the batches as they were asked and the replies keyed
-// by the number each batch is known by.
-//
-// Where two batches answer about one line, the correction is the one from the
-// batch in which the line stands further from the end; where they stand equally
-// far, it is the one from the later batch. A reply the gates refuse puts
-// nothing right, and a line no accepted reply covers is not in the result.
-func GetGatheredLines(asked []Batch, replies map[int]string, maxDistance float64) (map[int]Line, []int) {
-	put := make(map[int]Line)
-	best := make(map[int]int)
-	var past []int
-	for _, batch := range asked {
-		reply, answered := replies[batch.Number]
-		if !answered {
-			continue
-		}
-		lines, ran, ok := GetFixedLines(batch, reply, maxDistance)
-		if !ok {
-			continue
-		}
-		if ran {
-			past = append(past, batch.Number)
-		}
-		after := countRemainingLines(batch.Lines)
-		for _, line := range lines {
-			if stood, seen := best[line.Number]; seen && after[line.Number] < stood {
-				continue
-			}
-			put[line.Number] = line
-			best[line.Number] = after[line.Number]
-		}
-	}
-	return put, past
-}
-
-// countRemainingLines maps each line number to the count of lines following it in the batch.
-func countRemainingLines(lines []Line) map[int]int {
-	remaining := make(map[int]int, len(lines))
-	for i, line := range lines {
-		remaining[line.Number] = len(lines) - 1 - i
-	}
-	return remaining
 }
 
 // readRow is the line a reply row is about, what that line now says, and
