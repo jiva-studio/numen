@@ -31,6 +31,7 @@ type DownloaderBridge struct {
 	host     DownloaderPluginHost
 	pluginID string
 	client   numenv1connect.DownloadServiceClient
+	lease    *pluginLease
 }
 
 // OpenDownloaderBridge activates or connects to the downloader plugin and returns a port.Downloader.
@@ -43,19 +44,16 @@ func OpenDownloaderBridge(ctx context.Context, host DownloaderPluginHost) (*Down
 		return nil, errNoDownloaderPlugin
 	}
 
-	endpoint, err := host.EnsureActive(ctx, plugin.Manifest.ID)
+	client, lease, err := openPlugin(ctx, host, plugin.Manifest.ID, numenv1connect.NewDownloadServiceClient)
 	if err != nil {
-		return nil, fmt.Errorf("ensure active %s: %w", plugin.Manifest.ID, err)
+		return nil, err
 	}
-
-	httpClient := EndpointClient(endpoint)
-	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
-	client := numenv1connect.NewDownloadServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 
 	return &DownloaderBridge{
 		host:     host,
 		pluginID: plugin.Manifest.ID,
 		client:   client,
+		lease:    lease,
 	}, nil
 }
 
@@ -72,24 +70,21 @@ func (b *DownloaderBridge) CanHandle(ctx context.Context, at domain.URL) (bool, 
 }
 
 // GetDownloadModel returns the tool identity and version for a given address.
-func (b *DownloaderBridge) GetDownloadModel(at domain.URL) port.DownloadModel {
-	ctx := context.Background()
+func (b *DownloaderBridge) GetDownloadModel(ctx context.Context, at domain.URL) (port.DownloadModel, error) {
+	ctx, cancel := context.WithTimeout(ctx, modelInfoTimeout)
+	defer cancel()
 	req := connect.NewRequest(&v1.GetDownloadModelRequest{
 		Url: string(at),
 	})
 	resp, err := b.client.GetDownloadModel(ctx, req)
 	if err != nil {
-		return port.DownloadModel{
-			Tool:     "unknown",
-			Version:  "unknown",
-			Producer: "plugin-error",
-		}
+		return port.DownloadModel{}, fmt.Errorf("rpc get download model: %w", err)
 	}
 	return port.DownloadModel{
 		Tool:     resp.Msg.GetTool(),
 		Version:  resp.Msg.GetVersion(),
 		Producer: resp.Msg.GetProducer(),
-	}
+	}, nil
 }
 
 // GetMetadata returns media duration, language, and available caption tracks.
@@ -213,6 +208,5 @@ func consumeMediaStream(stream *connect.ServerStreamForClient[v1.DownloadMediaRe
 
 // Close releases the active reference count for the downloader plugin in the host supervisor.
 func (b *DownloaderBridge) Close() error {
-	b.host.Release(b.pluginID)
-	return nil
+	return b.lease.Close()
 }
