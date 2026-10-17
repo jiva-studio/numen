@@ -14,15 +14,22 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
+)
+
+const (
+	defaultBaseURL = "https://openrouter.ai/api/v1"
+	defaultModel   = "openai/gpt-4o-mini"
+	chatTimeout    = 60 * time.Second
 )
 
 type ToolExecutor func(ctx context.Context, name string, args string) (string, error)
 
 type agentServer struct {
 	numenv1connect.UnimplementedAgentServiceHandler
+	numenv1connect.UnimplementedCompletionServiceHandler
 	mu           sync.RWMutex
 	systemPrompt string
 	tools        []*numenv1.AgentToolDefinition
@@ -63,6 +70,12 @@ func (s *agentServer) updateConfig(values map[string]string) {
 	}
 	if model, ok := values["model"]; ok && model != "" {
 		s.modelName = model
+	}
+	if key, ok := values["apiKey"]; ok {
+		s.apiKey = key
+	}
+	if base, ok := values["baseUrl"]; ok {
+		s.baseURL = base
 	}
 }
 
@@ -107,6 +120,7 @@ func (s *agentServer) AskAgent(
 	copy(toolsList, s.tools)
 	serverBaseURL := s.baseURL
 	serverKey := s.apiKey
+	serverModel := s.modelName
 	client := s.httpClient
 	s.mu.RUnlock()
 
@@ -122,25 +136,9 @@ func (s *agentServer) AskAgent(
 		key = os.Getenv("OPENAI_API_KEY")
 	}
 
-	baseURL := serverBaseURL
-	if baseURL == "" {
-		baseURL = os.Getenv("NUMEN_AGENT_URL")
-	}
-	if baseURL == "" {
-		baseURL = "https://openrouter.ai/api/v1"
-	}
-
-	model := req.Msg.GetModel()
-	if model == "" {
-		model = s.modelName
-	}
-	if model == "" {
-		model = "openai/gpt-4o-mini"
-	}
-
-	if client == nil {
-		client = &http.Client{Timeout: 60 * time.Second}
-	}
+	baseURL := getBaseURL(serverBaseURL)
+	model := getModel(req.Msg.GetModel(), serverModel)
+	client = getHTTPClient(client)
 
 	if key != "" {
 		maxTurns := 10
@@ -379,16 +377,37 @@ func (s *agentServer) defaultExecuteTool(ctx context.Context, name, args string)
 		}
 	}
 
-	out := map[string]string{
-		"status": "ok",
-		"tool":   name,
-		"output": fmt.Sprintf("executed with args: %s", args),
+	return "", fmt.Errorf("tool %q cannot run: it has no executor and no search service", name)
+}
+
+// getBaseURL is the endpoint of the chat API: the one configured, the one in NUMEN_AGENT_URL or the default.
+func getBaseURL(configured string) string {
+	if configured != "" {
+		return configured
 	}
-	bytes, err := json.Marshal(out)
-	if err != nil {
-		return "", fmt.Errorf("marshal tool result: %w", err)
+	if fromEnv := os.Getenv("NUMEN_AGENT_URL"); fromEnv != "" {
+		return fromEnv
 	}
-	return string(bytes), nil
+	return defaultBaseURL
+}
+
+// getModel is the model of the request, else the one configured, else the default.
+func getModel(requested, configured string) string {
+	if requested != "" {
+		return requested
+	}
+	if configured != "" {
+		return configured
+	}
+	return defaultModel
+}
+
+// getHTTPClient is the client given, or one with the default timeout.
+func getHTTPClient(client *http.Client) *http.Client {
+	if client != nil {
+		return client
+	}
+	return &http.Client{Timeout: chatTimeout}
 }
 
 func formatTools(allTools []*numenv1.AgentToolDefinition, requestedTools []string) []toolDefinition {
@@ -560,10 +579,10 @@ func main() {
 
 	s := server.New(server.WithUpdateConfig(agentSvc.updateConfig))
 	s.Register(numenv1connect.NewAgentServiceHandler(agentSvc, s.HandlerOptions()...))
+	s.Register(numenv1connect.NewCompletionServiceHandler(agentSvc, s.HandlerOptions()...))
 
 	if err := s.Serve(); err != nil {
 		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
 		os.Exit(1)
 	}
 }
-
