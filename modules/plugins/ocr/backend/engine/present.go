@@ -17,7 +17,7 @@ func IsFetched(cfg Config, held RecogniserModel) bool {
 	if held.Name == "" {
 		return false
 	}
-	if _, ok := findLocal(cfg, held.Name); ok {
+	if _, ok := models.FindLocal(cfg.source(), pinnedSums, held.Name); ok {
 		return true
 	}
 	if !models.IsAddress(held.Name) {
@@ -27,7 +27,7 @@ func IsFetched(cfg Config, held RecogniserModel) bool {
 	if err != nil {
 		return false
 	}
-	sum := getPinnedSum(held.Name)
+	sum := pinnedSums.GetSum(held.Name)
 	at := filepath.Join(dir, models.GetCacheName(held.Name, sum))
 	if !isPresent(at) {
 		return false

@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -11,6 +13,15 @@ import (
 
 var sha256Hex = regexp.MustCompile(`^[0-9a-f]{64}$`)
 
+const pinnedTestAddress = "https://example.invalid/pinned-test/model.onnx"
+
+func pinTestModel(t *testing.T, body string) {
+	t.Helper()
+	digest := sha256.Sum256([]byte(body))
+	pinnedSums[pinnedTestAddress] = hex.EncodeToString(digest[:])
+	t.Cleanup(func() { delete(pinnedSums, pinnedTestAddress) })
+}
+
 func TestEveryDefaultModelIsPinned(t *testing.T) {
 	cfg := Defaults()
 	for name, address := range map[string]string{
@@ -18,7 +29,7 @@ func TestEveryDefaultModelIsPinned(t *testing.T) {
 		"detector":   cfg.Detect.Name,
 		"recogniser": cfg.Recognise.Name,
 	} {
-		if !sha256Hex.MatchString(getPinnedSum(address)) {
+		if !sha256Hex.MatchString(pinnedSums.GetSum(address)) {
 			t.Errorf("the %s model %s has no sha256 pinned", name, address)
 		}
 	}
@@ -33,7 +44,7 @@ func TestADefaultModelAddressNamesARevision(t *testing.T) {
 }
 
 func TestAModelAPersonNamedIsNotPinned(t *testing.T) {
-	if got := getPinnedSum("https://example.org/model.onnx"); got != "" {
+	if got := pinnedSums.GetSum("https://example.org/model.onnx"); got != "" {
 		t.Errorf("pinned sum %q for an address nobody pinned", got)
 	}
 }
@@ -46,7 +57,7 @@ func TestIsFetchedFindsAPinnedModelUnderItsSum(t *testing.T) {
 	if IsFetched(cfg, held) {
 		t.Fatal("an empty folder holds the model")
 	}
-	at := filepath.Join(dir, models.GetCacheName(pinnedTestAddress, getPinnedSum(pinnedTestAddress)))
+	at := filepath.Join(dir, models.GetCacheName(pinnedTestAddress, pinnedSums.GetSum(pinnedTestAddress)))
 	if err := os.WriteFile(at, []byte("weights"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +69,7 @@ func TestIsFetchedFindsAPinnedModelUnderItsSum(t *testing.T) {
 func TestIsFetchedRefusesAPinnedModelWithAnotherSum(t *testing.T) {
 	pinTestModel(t, "weights")
 	dir := t.TempDir()
-	at := filepath.Join(dir, models.GetCacheName(pinnedTestAddress, getPinnedSum(pinnedTestAddress)))
+	at := filepath.Join(dir, models.GetCacheName(pinnedTestAddress, pinnedSums.GetSum(pinnedTestAddress)))
 	if err := os.WriteFile(at, []byte("corrupt"), 0o644); err != nil {
 		t.Fatal(err)
 	}
