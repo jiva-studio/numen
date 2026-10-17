@@ -315,5 +315,87 @@ interface LoaderState {
   readonly moduleLoaders: Map<string, () => Promise<unknown>>
 }
 
-XXMARK
+interface Activation {
+  readonly activatePlugin: (id: string, module?: unknown) => Promise<boolean>
+  readonly deactivatePlugin: (id: string) => Promise<boolean>
+}
+
+function createRuntime(deps: PluginLoaderDeps, state: LoaderState, activation: Activation) {
+  const { host } = deps
+  const { activatePlugin, deactivatePlugin } = activation
+  const { activePlugins, moduleLoaders } = state
+  const trackedIds = new Set<string>()
+  const settingSubscriptions = new Map<string, Disposable>()
+  let hasStarted = false
+
+  const isEnabled = (id: string): boolean => isPluginEnabledValue(host.getSetting?.(id, 'enabled'))
+  const listen = (id: string) =>
+    listenToPluginState(
+      {
+        host,
+        subscriptions: settingSubscriptions,
+        activate: activatePlugin,
+        deactivate: deactivatePlugin,
+      },
+      id,
+    )
+
+  return {
+    registerPluginModule: (id: string, loader: () => Promise<unknown>) => {
+      moduleLoaders.set(id, loader)
+      if (hasStarted) {
+        listen(id)
+        if (isEnabled(id)) void activatePlugin(id)
+      }
+    },
+    trackPlugins: async (ids: readonly string[]): Promise<void> => {
+      for (const id of ids) {
+        if (trackedIds.has(id)) continue
+        trackedIds.add(id)
+        if (!hasStarted) continue
+        listen(id)
+        if (isEnabled(id)) await activatePlugin(id)
+      }
+    },
+    start: async (): Promise<void> => {
+      hasStarted = true
+      const pluginIds = [...new Set([...moduleLoaders.keys(), ...trackedIds])]
+      await startLoader({ pluginIds, listen, isEnabled }, activatePlugin)
+    },
+    close: async (): Promise<void> => {
+      hasStarted = false
+      await closeLoader(
+        { host, subscriptions: settingSubscriptions },
+        [...activePlugins.value.keys()],
+        deactivatePlugin,
+      )
+    },
+  }
+}
+
+export function createPluginLoader(deps: PluginLoaderDeps) {
+  const { host } = deps
+  const state: LoaderState = {
+    activePlugins: shallowRef(new Map()),
+    failures: shallowRef(new Map()),
+    manifests: new Map(),
+    moduleLoaders: new Map(Object.entries(deps.loaders ?? {})),
+  }
+  const { activePlugins, failures, manifests } = state
+  const activation = createActivation(deps, state)
+
+  return {
+    ...createRuntime(deps, state, activation),
+    ...activation,
+    registerPluginManifest: (id: string, manifest: PluginManifest) => {
+      manifests.set(id, manifest)
+      host.registerManifest?.(id, manifest)
+    },
+    isPluginActive: (id: string) => activePlugins.value.has(id),
+    getActivePluginIds: () => [...activePlugins.value.keys()],
+    getPluginFailure: (id: string): string | undefined => failures.value.get(id),
+    getFailedPlugins: (): { id: string; error: string }[] =>
+      [...failures.value].map(([id, error]) => ({ id, error })),
+  }
+}
 export type PluginLoader = ReturnType<typeof createPluginLoader>
