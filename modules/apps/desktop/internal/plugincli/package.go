@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // Package bundles a plugin directory into a distributable zip archive.
@@ -31,7 +33,7 @@ func Package(targetPath, outArchive string, stdout io.Writer) (string, error) {
 		return "", fmt.Errorf("read manifest: %w", err)
 	}
 
-	var m manifestJSON
+	var m port.PluginManifest
 	if err := json.Unmarshal(manifestData, &m); err != nil {
 		return "", fmt.Errorf("decode manifest: %w", err)
 	}

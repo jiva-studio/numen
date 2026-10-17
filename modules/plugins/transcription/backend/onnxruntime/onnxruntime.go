@@ -143,6 +143,13 @@ func Register(also func(at string)) {
 	runtimeState.also = append(runtimeState.also, also)
 }
 
+// HasRegistration says whether any library has registered an initialisation hook.
+func HasRegistration() bool {
+	runtimeState.mu.Lock()
+	defer runtimeState.mu.Unlock()
+	return len(runtimeState.also) > 0
+}
+
 // isLoaded says whether this process has its runtime. It is read without the lock,
 // so it is answered while another caller is opening one.
 var isLoaded atomic.Bool

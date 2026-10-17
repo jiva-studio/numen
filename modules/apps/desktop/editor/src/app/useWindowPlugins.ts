@@ -1,6 +1,7 @@
 import { watch } from 'vue'
 import { createPluginHost } from '@/entities/plugin'
 import { createPluginLoader, type PluginLoader } from '@/features/plugin-loader'
+import { pluginCatalog } from './pluginCatalog'
 import { cards } from '@/entities/deck'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { useTabLinks } from '@/features/tab-linking'
@@ -108,7 +109,11 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     ...(deps.readNote !== undefined ? { readNote: deps.readNote } : {}),
     ...(deps.writeNote !== undefined ? { writeNote: deps.writeNote } : {}),
   })
-  const pluginLoader = createPluginLoader({ host: pluginHost })
+  const pluginLoader = createPluginLoader({
+    host: pluginHost,
+    loaders: pluginCatalog.loaders,
+    manifests: pluginCatalog.manifests,
+  })
 
   return { pluginHost, pluginLoader }
 }

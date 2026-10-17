@@ -196,5 +196,50 @@ func TestProofreadTextAnswersEveryKindTheSchemaNames(t *testing.T) {
 		if connect.CodeOf(err) == connect.CodeInvalidArgument {
 			t.Errorf("%s was refused as unknown", kind)
 		}
+func TestGetProofreaderInfoDefault(t *testing.T) {
+	proof := &proofreadingServer{}
+	info, err := proof.GetProofreaderInfo(context.Background(), connect.NewRequest(&numenv1.GetProofreaderInfoRequest{}))
+	if err != nil {
+		t.Fatalf("GetProofreaderInfo failed: %v", err)
+	}
+	if got, want := info.Msg.GetName(), "llm-proofreader"; got != want {
+		t.Errorf("name = %q, want %q", got, want)
+	}
+}
+
+func TestUpdateConfig(t *testing.T) {
+	proof := &proofreadingServer{modelName: "initial-model"}
+
+	proof.updateConfig(map[string]string{"other": "ignored"})
+	if got, want := proof.modelName, "initial-model"; got != want {
+		t.Errorf("modelName = %q, want %q", got, want)
+	}
+
+	proof.updateConfig(map[string]string{"model": ""})
+	if got, want := proof.modelName, "initial-model"; got != want {
+		t.Errorf("modelName = %q, want %q", got, want)
+	}
+
+	proof.updateConfig(map[string]string{"model": "updated-model"})
+	if got, want := proof.modelName, "updated-model"; got != want {
+		t.Errorf("modelName = %q, want %q", got, want)
+	}
+}
+
+func TestGetProofreaderInfoReleasesLock(t *testing.T) {
+	proof := &proofreadingServer{modelName: "test-model"}
+	_, err := proof.GetProofreaderInfo(context.Background(), connect.NewRequest(&numenv1.GetProofreaderInfoRequest{}))
+	if err != nil {
+		t.Fatalf("GetProofreaderInfo failed: %v", err)
+	}
+
+	if !proof.mu.TryLock() {
+		t.Fatal("expected write lock to succeed; read lock was not released")
+	}
+	proof.mu.Unlock()
+
+	proof.updateConfig(map[string]string{"model": "new-model"})
+	if got, want := proof.modelName, "new-model"; got != want {
+		t.Errorf("modelName = %q, want %q", got, want)
 	}
 }
