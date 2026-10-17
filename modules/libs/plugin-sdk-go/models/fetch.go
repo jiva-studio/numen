@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
@@ -147,7 +148,7 @@ func Fetch(ctx context.Context, r Request) (string, error) {
 		return "", err
 	}
 	if corrupt != nil {
-		if err := os.Remove(at); err != nil {
+		if err := os.Remove(at); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return "", err
 		}
 	}
@@ -186,13 +187,13 @@ func download(ctx context.Context, r Request, at string) error {
 		return err
 	}
 	part := file.Name()
-	claim, err := reserveQuota(ctx, getQuotaRoot(r), part, answer.ContentLength)
+	claim, err := Reserve(ctx, getQuotaRoot(r), answer.ContentLength, part)
 	if err != nil {
 		file.Close()
 		os.Remove(part)
 		return fmt.Errorf("fetching %s: %w", r.Address, err)
 	}
-	defer claim.release()
+	defer claim.Release()
 	waited.Reset(getDownloadTimeout(answer.ContentLength))
 
 	if err := write(file, answer.Body, r, claim, answer.ContentLength); err != nil {
@@ -208,18 +209,15 @@ func download(ctx context.Context, r Request, at string) error {
 
 // write copies body into file and closes it. It returns an error when the copy
 // passes the room the claim holds, or holds other than the sum.
-func write(file *os.File, body io.Reader, r Request, claim *reservation, total int64) error {
+func write(file *os.File, body io.Reader, r Request, claim *Reservation, total int64) error {
 	hash := sha256.New()
 	counted := &progressWriter{
-		to:    io.MultiWriter(file, hash),
-		total: total,
-		onProgress: func(done, total int64) {
-			claim.touch()
-			r.reportProgress(done, total)
-		},
+		to:         io.MultiWriter(file, hash),
+		total:      total,
+		onProgress: r.reportProgress,
 	}
-	copied, err := io.Copy(counted, io.LimitReader(body, claim.room+1))
-	if err == nil && copied > claim.room {
+	copied, err := io.Copy(counted, io.LimitReader(body, claim.Room+1))
+	if err == nil && copied > claim.Room {
 		err = errors.New("the download passes the quota " + EnvQuota)
 	}
 	if err == nil && r.Sum != "" {
@@ -255,11 +253,17 @@ func (c *progressWriter) Write(raw []byte) (int, error) {
 	return n, err
 }
 
-// getQuotaRoot returns the folder the quota counts: the shared models folder,
-// or the request's own folder where there is none.
+// getQuotaRoot returns the folder the quota counts: the shared models folder
+// when the request keeps its files in it, and the request's own folder
+// otherwise.
 func getQuotaRoot(r Request) string {
-	if home, err := GetHome(); err == nil {
-		return home
+	home, err := GetHome()
+	if err != nil {
+		return r.Dir
 	}
-	return r.Dir
+	relative, err := filepath.Rel(home, r.Dir)
+	if err != nil || filepath.IsAbs(relative) || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+		return r.Dir
+	}
+	return home
 }

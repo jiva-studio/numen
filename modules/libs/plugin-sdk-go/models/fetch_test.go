@@ -361,6 +361,26 @@ func TestFetchReportsAFolderItCannotCreate(t *testing.T) {
 	}
 }
 
+func TestGetQuotaRootIsTheSharedFolderForAFolderInsideIt(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv(EnvDir, home)
+	for _, dir := range []string{home, filepath.Join(home, "huggingface")} {
+		if got := getQuotaRoot(Request{Dir: dir}); got != home {
+			t.Errorf("getQuotaRoot(%q) = %q, want %q", dir, got, home)
+		}
+	}
+}
+
+func TestGetQuotaRootIsTheOwnFolderForAFolderOutsideTheSharedOne(t *testing.T) {
+	home := filepath.Join(t.TempDir(), "home")
+	t.Setenv(EnvDir, home)
+	for _, dir := range []string{t.TempDir(), filepath.Dir(home), home + "-other"} {
+		if got := getQuotaRoot(Request{Dir: dir}); got != dir {
+			t.Errorf("getQuotaRoot(%q) = %q", dir, got)
+		}
+	}
+}
+
 func TestGetQuotaRootFallsBackToTheRequestFolder(t *testing.T) {
 	t.Setenv(EnvDir, "")
 	t.Setenv("XDG_CONFIG_HOME", "")

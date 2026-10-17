@@ -100,7 +100,8 @@ func GetUsage(dir string) (int64, error) {
 }
 
 // getUnwritten returns the bytes a live reservation has promised and its
-// download has not yet written.
+// download has not yet written. The reservation file holds the bytes promised,
+// and on a second line the file the download writes.
 func getUnwritten(reservation string, info fs.FileInfo) int64 {
 	if time.Since(info.ModTime()) > staleReservation {
 		return 0
@@ -109,13 +110,16 @@ func getUnwritten(reservation string, info fs.FileInfo) int64 {
 	if err != nil {
 		return 0
 	}
-	promised, err := strconv.ParseInt(strings.TrimSpace(string(raw)), 10, 64)
+	first, part, _ := strings.Cut(string(raw), "\n")
+	promised, err := strconv.ParseInt(strings.TrimSpace(first), 10, 64)
 	if err != nil {
 		return 0
 	}
 	var written int64
-	if part, err := os.Stat(strings.TrimSuffix(reservation, reserveSuffix)); err == nil {
-		written = part.Size()
+	if part != "" {
+		if held, err := os.Stat(part); err == nil {
+			written = held.Size()
+		}
 	}
 	return max(promised-written, 0)
 }

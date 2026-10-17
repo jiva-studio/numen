@@ -13,18 +13,18 @@ func TestReserveQuotaRefusesWhatTheOtherReservationsLeaveNoRoomFor(t *testing.T)
 	root := t.TempDir()
 	t.Setenv(EnvQuota, "100")
 
-	first, err := reserveQuota(context.Background(), root, filepath.Join(root, "a.part-1"), 60)
+	first, err := Reserve(context.Background(), root, 60, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if first.room != 60 {
-		t.Fatalf("room = %d, want 60", first.room)
+	if first.Room != 60 {
+		t.Fatalf("room = %d, want 60", first.Room)
 	}
-	if _, err := reserveQuota(context.Background(), root, filepath.Join(root, "b.part-1"), 60); err == nil || !strings.Contains(err.Error(), EnvQuota) {
+	if _, err := Reserve(context.Background(), root, 60, ""); err == nil || !strings.Contains(err.Error(), EnvQuota) {
 		t.Fatalf("second reservation error = %v", err)
 	}
-	first.release()
-	if _, err := reserveQuota(context.Background(), root, filepath.Join(root, "b.part-1"), 60); err != nil {
+	first.Release()
+	if _, err := Reserve(context.Background(), root, 60, ""); err != nil {
 		t.Fatalf("after release: %v", err)
 	}
 }
@@ -35,12 +35,12 @@ func TestReserveQuotaOfAnUnknownSizeClaimsWhatIsLeft(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "held"), make([]byte, 40), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	claim, err := reserveQuota(context.Background(), root, filepath.Join(root, "a.part-1"), -1)
+	claim, err := Reserve(context.Background(), root, -1, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if claim.room != 60 {
-		t.Fatalf("room = %d, want 60", claim.room)
+	if claim.Room != 60 {
+		t.Fatalf("room = %d, want 60", claim.Room)
 	}
 }
 
@@ -49,28 +49,8 @@ func TestReserveQuotaReportsAFolderItCannotCreate(t *testing.T) {
 	if err := os.WriteFile(blocker, nil, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := reserveQuota(context.Background(), filepath.Join(blocker, "models"), "x.part-1", 1); err == nil {
+	if _, err := Reserve(context.Background(), filepath.Join(blocker, "models"), 1, ""); err == nil {
 		t.Fatal("a reservation was made under a file")
-	}
-}
-
-func TestReservationTouchKeepsItAlive(t *testing.T) {
-	root := t.TempDir()
-	claim, err := reserveQuota(context.Background(), root, filepath.Join(root, "a.part-1"), 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	old := time.Now().Add(-time.Hour)
-	if err := os.Chtimes(claim.file, old, old); err != nil {
-		t.Fatal(err)
-	}
-	claim.touch()
-	info, err := os.Stat(claim.file)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if time.Since(info.ModTime()) > time.Minute {
-		t.Fatalf("modified %v ago", time.Since(info.ModTime()))
 	}
 }
 
@@ -117,5 +97,69 @@ func TestLockQuotaReportsAFolderItCannotCreate(t *testing.T) {
 	}
 	if _, err := lockQuota(context.Background(), filepath.Join(blocker, "models")); err == nil {
 		t.Fatal("a lock was taken under a file")
+	}
+}
+
+func TestReservationKeepsItselfAlive(t *testing.T) {
+	previous := touchInterval
+	touchInterval = 10 * time.Millisecond
+	t.Cleanup(func() { touchInterval = previous })
+	root := t.TempDir()
+	claim, err := Reserve(context.Background(), root, 10, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer claim.Release()
+	old := time.Now().Add(-time.Hour)
+	if err := os.Chtimes(claim.file, old, old); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		info, err := os.Stat(claim.file)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if time.Since(info.ModTime()) < time.Minute {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("the reservation was not touched")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+func TestReservationReleaseIsIdempotentAndRemovesTheFile(t *testing.T) {
+	root := t.TempDir()
+	claim, err := Reserve(context.Background(), root, 10, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	claim.Release()
+	claim.Release()
+	if _, err := os.Stat(claim.file); !os.IsNotExist(err) {
+		t.Fatalf("the reservation file remains: %v", err)
+	}
+}
+
+func TestReservationDoesNotCountTheBytesOfItsPartTwice(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv(EnvQuota, "100")
+	part := filepath.Join(root, "m.part-1")
+	if err := os.WriteFile(part, make([]byte, 40), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	claim, err := Reserve(context.Background(), root, 50, part)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer claim.Release()
+	used, err := GetUsage(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := int64(40 + len("50\n"+part) + 10); used != want {
+		t.Fatalf("GetUsage() = %d, want %d", used, want)
 	}
 }

@@ -71,7 +71,7 @@ func downloadModel(ctx context.Context, cfg LocalModel, file string, progress Fe
 	if models.IsOffline() {
 		return Paths{}, fmt.Errorf("%s is not on this machine, and %s forbids fetching it", cfg.Name, models.EnvOffline)
 	}
-	folder, sizes, err := listRepoFiles(repo)
+	folder, sizes, tokenizerSize, err := listRepoFiles(repo)
 	if err != nil {
 		return Paths{}, fmt.Errorf("listing %s: %w", cfg.Name, err)
 	}
@@ -84,16 +84,21 @@ func downloadModel(ctx context.Context, cfg LocalModel, file string, progress Fe
 	for _, name := range files {
 		total += sizes[name]
 	}
+	sizes[TokenizerFile] = tokenizerSize
+	total += tokenizerSize
+	counted := append(slices.Clone(files), TokenizerFile)
 	dir, dirErr := repo.CacheDir()
 	need := total
 	if dirErr == nil {
-		need = max(total-sumBytes(dir, files, sizes), 0)
+		need = max(total-sumBytes(dir, counted, sizes), 0)
 	}
-	if err := models.CheckQuota(home, need); err != nil {
+	claim, err := models.Reserve(ctx, home, need, "")
+	if err != nil {
 		return Paths{}, fmt.Errorf("fetching %s: %w", cfg.Name, err)
 	}
+	defer claim.Release()
 	if dirErr == nil {
-		defer reportProgress(dir, files, sizes, total, progress)()
+		defer reportProgress(dir, counted, sizes, total, progress)()
 	}
 
 	p, err := fetchModelFiles(ctx, repo, files, file, cfg.Sums)
@@ -134,12 +139,17 @@ func fetchModelFiles(ctx context.Context, repo *hub.Repo, files []string, file s
 	return p, nil
 }
 
-func listRepoFiles(repo *hub.Repo) ([]string, map[string]int64, error) {
+// listRepoFiles returns the files of the model folder with their sizes, and the size of the tokenizer beside it.
+func listRepoFiles(repo *hub.Repo) ([]string, map[string]int64, int64, error) {
 	var out []string
+	var tokenizer int64
 	sizes := map[string]int64{}
 	for info, err := range repo.IterFileInfos() {
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, 0, err
+		}
+		if info.Name == TokenizerFile {
+			tokenizer = info.Size
 		}
 		rest, inside := strings.CutPrefix(info.Name, ModelFolder+"/")
 		if !inside || rest == "" {
@@ -148,7 +158,7 @@ func listRepoFiles(repo *hub.Repo) ([]string, map[string]int64, error) {
 		out = append(out, rest)
 		sizes[rest] = info.Size
 	}
-	return out, sizes, nil
+	return out, sizes, tokenizer, nil
 }
 
 func reportProgress(dir string, files []string, sizes map[string]int64, total int64, progress FetchProgress) func() {

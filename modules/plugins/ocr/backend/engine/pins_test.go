@@ -25,7 +25,7 @@ func TestEveryDefaultModelIsPinned(t *testing.T) {
 }
 
 func TestADefaultModelAddressNamesARevision(t *testing.T) {
-	for _, address := range []string{layoutDefault, detectDefault} {
+	for _, address := range []string{layoutDefault, detectDefault, recogDefault} {
 		if !regexp.MustCompile(`/resolve/[0-9a-f]{40}/`).MatchString(address) {
 			t.Errorf("%s is not at a commit", address)
 		}
