@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"testing"
 	"time"
@@ -269,6 +270,19 @@ func TestCloseReturnsOnlyOnceTheSweepHasEmptiedTheFolder(t *testing.T) {
 	}
 	cache.limit = 0
 	cache.every = 1
+	// The sweep starts deleting only once Close has begun, so Close returns
+	// before the folder is empty unless it waits for the sweep.
+	cache.beforeSweep = func() {
+		for {
+			cache.mu.Lock()
+			isShut := cache.isShut
+			cache.mu.Unlock()
+			if isShut {
+				return
+			}
+			runtime.Gosched()
+		}
+	}
 
 	cache.Put(newDrawingID(0), []byte("page"))
 	cache.Close()
