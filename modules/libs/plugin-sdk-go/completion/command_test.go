@@ -72,3 +72,13 @@ func TestClaudeArgumentsGiveNoToolsAndOneTurn(t *testing.T) {
 		t.Errorf("got %q", bare)
 	}
 }
+
+func TestRunCommandStopsACommandThatWritesTooMuch(t *testing.T) {
+	for _, stream := range []string{"", ">&2"} {
+		script := writeScript(t, "yes | head -c 5000000 "+stream)
+		_, err := RunCommand(context.Background(), script, nil, os.Environ(), "")
+		if !errors.Is(err, ErrOutputTooLarge) {
+			t.Errorf("stream %q: got %v", stream, err)
+		}
+	}
+}
