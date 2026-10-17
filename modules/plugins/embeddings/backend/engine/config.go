@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 	"github.com/jiva-studio/numen/modules/plugins/embeddings/backend/onnxruntime"
 )
 
@@ -65,13 +66,14 @@ func CheckIdentity(identity ModelInfo, repository string) error {
 	return nil
 }
 
-// GetProvider resolves the onnxruntime Provider.
+// GetProvider resolves the onnxruntime Provider. A model that names none runs
+// on the provider the host chose, which is auto when it chose none.
 func (m LocalModel) GetProvider() onnxruntime.Provider {
-	// gomutants:disable-next-line BRANCH_IF reason="ParseProvider maps the empty string to ProviderAuto on the slow path"
-	if m.Provider == "" {
-		return onnxruntime.ProviderAuto
+	name := m.Provider
+	if name == "" {
+		name = onnx.GetProvider()
 	}
-	p, err := onnxruntime.ParseProvider(m.Provider)
+	p, err := onnxruntime.ParseProvider(name)
 	if err != nil {
 		return onnxruntime.ProviderAuto
 	}

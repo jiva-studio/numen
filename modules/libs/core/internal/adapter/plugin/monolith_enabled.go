@@ -282,7 +282,7 @@ func (h *Host) activatePlugin(ctx context.Context, p DiscoveredPlugin, sup *Supe
 		return h.startPluginProcess(ctx, p, sup)
 	}
 
-	if err := h.exportRuntimeVars(ctx, p.Manifest.Runtimes); err != nil {
+	if err := h.exportRuntimeVars(ctx, p.Manifest.Runtimes, p.Dir); err != nil {
 		return emptyEndpoint(), fmt.Errorf("launch plugin %s: %w", p.Manifest.ID, err)
 	}
 	handler := h.getMonolithHandler(p.Manifest.ID)
@@ -310,8 +310,8 @@ func (h *Host) activatePlugin(ctx context.Context, p DiscoveredPlugin, sup *Supe
 
 // exportRuntimeVars provisions the runtimes an in-process plugin declares and
 // sets their variables in this process, which is the plugin's own.
-func (h *Host) exportRuntimeVars(ctx context.Context, runtimes []string) error {
-	vars, err := h.getRuntimeVars(ctx, runtimes)
+func (h *Host) exportRuntimeVars(ctx context.Context, runtimes []string, pluginDir string) error {
+	vars, err := h.getRuntimeVars(ctx, runtimes, pluginDir)
 	if err != nil {
 		return err
 	}

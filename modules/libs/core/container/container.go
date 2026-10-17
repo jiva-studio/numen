@@ -137,7 +137,7 @@ type Config struct {
 
 // NewPluginHost creates and initializes a plugin host for the specified target and search directories.
 // The host provisions the ONNX Runtime for the plugins that declare it, on the
-// provider NUMEN_ONNX_PROVIDER names (cpu or coreml; cpu when unset).
+// provider NUMEN_ONNX_PROVIDER names (auto when unset).
 func NewPluginHost(target string, dirs ...string) *plugin.Host {
 	host := plugin.NewHost(target, dirs...)
 	host.SetRuntimeProvisioner(onnxruntime.New(onnxruntime.FromEnvironment()))

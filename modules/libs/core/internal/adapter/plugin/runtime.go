@@ -12,10 +12,10 @@ import (
 var ErrRuntimeUnavailable = errors.New("runtime unavailable")
 
 // RuntimeProvisioner makes the ONNX Runtime library ready on this machine. It
-// returns the absolute path of the library and the name of the execution
+// returns the path of the library and the name of the execution
 // provider the plugins open their sessions on.
 type RuntimeProvisioner interface {
-	Provision(ctx context.Context) (library, provider string, err error)
+	Provision(ctx context.Context, pluginDir string) (library, provider string, err error)
 }
 
 // SetRuntimeProvisioner sets what provisions the ONNX Runtime for the plugins that declare it.
@@ -28,7 +28,7 @@ func (h *Host) SetRuntimeProvisioner(provisioner RuntimeProvisioner) {
 // getRuntimeVars provisions the runtimes a plugin declares and returns the
 // environment variables that name them. A runtime that cannot be provisioned is
 // an error: the plugin is not launched without it.
-func (h *Host) getRuntimeVars(ctx context.Context, runtimes []string) ([]string, error) {
+func (h *Host) getRuntimeVars(ctx context.Context, runtimes []string, pluginDir string) ([]string, error) {
 	var vars []string
 	for _, name := range runtimes {
 		if name != port.RuntimeONNX {
@@ -40,7 +40,7 @@ func (h *Host) getRuntimeVars(ctx context.Context, runtimes []string) ([]string,
 		if provisioner == nil {
 			return nil, fmt.Errorf("%w: nothing provisions %s", ErrRuntimeUnavailable, name)
 		}
-		library, provider, err := provisioner.Provision(ctx)
+		library, provider, err := provisioner.Provision(ctx, pluginDir)
 		if err != nil {
 			return nil, fmt.Errorf("provision %s: %w", name, err)
 		}

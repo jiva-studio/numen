@@ -733,7 +733,7 @@ func (h *Host) defaultLauncher(
 	configureSysProcAttr(cmd)
 	cmd.Dir = workDir
 
-	pluginVars, err := h.getLaunchVars(ctx, p.Manifest.ID, p.Manifest.Runtimes, port, token)
+	pluginVars, err := h.getLaunchVars(ctx, p.Manifest.ID, p.Dir, p.Manifest.Runtimes, port, token)
 	if err != nil {
 		return nil, nil, err
 	}

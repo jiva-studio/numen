@@ -6,9 +6,12 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
-func TestOpenRefusesWhenTheHostGaveNoLibrary(t *testing.T) {
+func TestOpenRefusesWhenNoLibraryIsNamed(t *testing.T) {
+	t.Setenv(onnx.EnvLibrary, "")
 	if _, _, err := Open(context.Background(), Settings{}); err == nil || !strings.Contains(err.Error(), "the host names the library") {
 		t.Fatalf("Open() = %v, want the host named", err)
 	}
@@ -21,7 +24,19 @@ func TestOpenRefusesALibraryThatIsNotThere(t *testing.T) {
 	}
 }
 
+func TestTheLibraryTheHostGaveIsOpenedWhenNoSettingNamesOne(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "libhost.so")
+	t.Setenv(onnx.EnvLibrary, missing)
+	if _, _, err := Open(context.Background(), Settings{}); err == nil || !strings.Contains(err.Error(), missing) {
+		t.Fatalf("Open() = %v, want the host's %s tried", err, missing)
+	}
+	if got := (Settings{Runtime: "mine.so"}).library(); got != "mine.so" {
+		t.Errorf("library() = %q, want the setting to win", got)
+	}
+}
+
 func TestALibraryIsAvailableWhereTheFileIs(t *testing.T) {
+	t.Setenv(onnx.EnvLibrary, "")
 	if IsAvailable(Settings{}) {
 		t.Error("no library is available when none is named")
 	}
@@ -34,5 +49,9 @@ func TestALibraryIsAvailableWhereTheFileIs(t *testing.T) {
 	}
 	if !IsAvailable(Settings{Runtime: at}) {
 		t.Error("a file that is there is not available")
+	}
+	t.Setenv(onnx.EnvLibrary, at)
+	if !IsAvailable(Settings{}) {
+		t.Error("the file the host named is not available")
 	}
 }

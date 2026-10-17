@@ -208,8 +208,8 @@ func (h *Host) closeHostEndpoint(ctx context.Context) error {
 // endpoint that cannot start is reported and leaves the plugin without
 // NUMEN_HOST_PORT; the plugins that never call the host launch all the same. A
 // runtime the plugin declares and the host cannot provision stops the launch.
-func (h *Host) getLaunchVars(ctx context.Context, pluginID string, runtimes []string, processPort int, token string) ([]string, error) {
-	runtimeVars, err := h.getRuntimeVars(ctx, runtimes)
+func (h *Host) getLaunchVars(ctx context.Context, pluginID, pluginDir string, runtimes []string, processPort int, token string) ([]string, error) {
+	runtimeVars, err := h.getRuntimeVars(ctx, runtimes, pluginDir)
 	if err != nil {
 		return nil, fmt.Errorf("launch plugin %s: %w", pluginID, err)
 	}

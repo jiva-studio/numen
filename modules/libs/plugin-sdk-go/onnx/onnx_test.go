@@ -13,10 +13,10 @@ func TestGetLibraryAndGetProviderAreWhatTheHostSet(t *testing.T) {
 	}
 }
 
-func TestNothingIsSetForAPluginTheHostGaveNoRuntime(t *testing.T) {
+func TestAPluginTheHostGaveNoRuntimeHasNoLibraryAndTheAutoProvider(t *testing.T) {
 	t.Setenv(EnvLibrary, "")
 	t.Setenv(EnvProvider, "")
-	if GetLibrary() != "" || GetProvider() != "" {
+	if GetLibrary() != "" || GetProvider() != DefaultProvider {
 		t.Errorf("GetLibrary() = %q, GetProvider() = %q", GetLibrary(), GetProvider())
 	}
 }

@@ -15,7 +15,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
@@ -71,11 +70,8 @@ func newEmbeddingServer() *embeddingServer {
 	if pooling := os.Getenv("NUMEN_EMBEDDING_POOLING"); pooling != "" {
 		info.Pooling = pooling
 	}
-	if runtimeLib := onnx.GetLibrary(); runtimeLib != "" {
+	if runtimeLib := os.Getenv("NUMEN_ONNX_RUNTIME"); runtimeLib != "" {
 		local.Runtime = runtimeLib
-	}
-	if provider := onnx.GetProvider(); provider != "" {
-		local.Provider = provider
 	}
 	if threads := os.Getenv("NUMEN_ONNX_THREADS"); threads != "" {
 		if th, err := strconv.Atoi(threads); err == nil && th > 0 {

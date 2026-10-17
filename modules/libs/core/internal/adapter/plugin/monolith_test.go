@@ -276,7 +276,7 @@ type fixedProvisioner struct {
 	err               error
 }
 
-func (f fixedProvisioner) Provision(context.Context) (string, string, error) {
+func (f fixedProvisioner) Provision(_ context.Context, _ string) (string, string, error) {
 	return f.library, f.provider, f.err
 }
 

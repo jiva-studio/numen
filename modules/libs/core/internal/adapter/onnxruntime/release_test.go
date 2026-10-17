@@ -20,31 +20,35 @@ func TestNoReleaseIsPublishedForAPlatformThatHasNone(t *testing.T) {
 }
 
 func TestParseProvider(t *testing.T) {
-	for name, want := range map[string]Provider{"": ProviderCPU, "cpu": ProviderCPU, "coreml": ProviderCoreML} {
+	names := map[string]Provider{
+		"": ProviderAuto, "auto": ProviderAuto, "cpu": ProviderCPU, "coreml": ProviderCoreML, "core-ml": ProviderCoreML,
+		"cuda": ProviderCUDA, "directml": ProviderDirectML, "dml": ProviderDirectML, "rocm": ProviderROCm,
+	}
+	for name, want := range names {
 		if got, err := ParseProvider(name); err != nil || got != want {
 			t.Errorf("ParseProvider(%q) = %q, %v, want %q", name, got, err, want)
 		}
 	}
-	for _, name := range []string{"directml", "cuda"} {
-		if _, err := ParseProvider(name); err == nil {
-			t.Errorf("ParseProvider() accepted %s", name)
+	if _, err := ParseProvider("tensorrt"); err == nil {
+		t.Error("ParseProvider() accepted tensorrt")
+	}
+}
+
+func TestOnlyTheGPUProvidersNeedAGPUBuild(t *testing.T) {
+	for provider, want := range map[Provider]bool{
+		ProviderAuto: false, ProviderCPU: false, ProviderCoreML: false,
+		ProviderCUDA: true, ProviderDirectML: true, ProviderROCm: true,
+	} {
+		if got := provider.isGPU(); got != want {
+			t.Errorf("%s.isGPU() = %v, want %v", provider, got, want)
 		}
 	}
 }
 
-func TestAProviderRunsWhereItsHardwareIs(t *testing.T) {
-	for _, one := range []struct {
-		provider     Provider
-		goos, goarch string
-		ok           bool
-	}{
-		{ProviderCPU, "plan9", "mips", true},
-		{ProviderCoreML, "darwin", "arm64", true},
-		{ProviderCoreML, "darwin", "amd64", false},
-		{ProviderCoreML, "linux", "arm64", false},
-	} {
-		if err := one.provider.check(one.goos, one.goarch); (err == nil) != one.ok {
-			t.Errorf("%s on %s/%s = %v, want ok %v", one.provider, one.goos, one.goarch, err, one.ok)
+func TestEachPlatformNamesItsLibrary(t *testing.T) {
+	for goos, want := range map[string]string{"linux": "libonnxruntime.so", "darwin": "libonnxruntime.dylib", "windows": "onnxruntime.dll"} {
+		if got := getLibraryName(goos); got != want {
+			t.Errorf("getLibraryName(%q) = %q, want %q", goos, got, want)
 		}
 	}
 }

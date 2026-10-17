@@ -10,11 +10,22 @@ import (
 	"sync/atomic"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
-// Settings are what the runtime is found by.
+// Settings are what the runtime is found by: the library a setting names, or else
+// the one the host gave this process.
 type Settings struct {
 	Runtime string
+}
+
+// library returns the path of the library to open.
+func (s Settings) library() string {
+	if s.Runtime != "" {
+		return s.Runtime
+	}
+	return onnx.GetLibrary()
 }
 
 // Open is the ONNX Runtime this machine runs, opened. One engine serves every
@@ -62,13 +73,13 @@ func Open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
 
 // open loads the library the settings name. Nothing here is held under the lock.
 func open(_ context.Context, s Settings) (*ort.Engine, string, error) {
-	if s.Runtime != "" {
+	if s.library() != "" {
 		preloadCppRuntime()
-		engine, err := ort.NewEngine(s.Runtime)
+		engine, err := ort.NewEngine(s.library())
 		if err != nil {
-			return nil, "", fmt.Errorf("the onnx runtime %s: %w", s.Runtime, err)
+			return nil, "", fmt.Errorf("the onnx runtime %s: %w", s.library(), err)
 		}
-		return engine, s.Runtime, nil
+		return engine, s.library(), nil
 	}
 	return nil, "", fmt.Errorf("no onnx runtime: the host names the library of a plugin that declares one")
 }
@@ -119,8 +130,8 @@ func IsAvailable(s Settings) bool {
 	if isLoaded.Load() {
 		return true
 	}
-	if s.Runtime != "" {
-		_, err := os.Stat(s.Runtime)
+	if s.library() != "" {
+		_, err := os.Stat(s.library())
 		return err == nil
 	}
 	return false
