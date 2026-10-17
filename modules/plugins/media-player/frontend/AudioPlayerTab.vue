@@ -13,6 +13,28 @@ export interface CueItem {
   readonly to: number
 }
 
+export interface ExternalPlayerState {
+  url?: string | { value?: string }
+  mediaUrl?: string | { value?: string }
+  isPlaying?: boolean | { value?: boolean }
+  now?: number | { value?: number }
+  runs?: number | { value?: number }
+  duration?: number | { value?: number }
+  cues?: readonly CueItem[] | { value?: readonly CueItem[] }
+  transcript?: { value?: { cues?: readonly CueItem[] } }
+  prose?: { value?: string }
+  transcribable?: boolean | { value?: boolean }
+  deletable?: boolean | { value?: boolean }
+  play?(): void
+  pause?(): void
+  go?(ms: number): void
+  seek?(ms: number): void
+  setPlaybackRate?(rate: number): void
+  transcribe?(): void
+  proofread?(): void
+  deleteTranscript?(): void
+}
+
 const props = withDefaults(
   defineProps<{
     /** Path to audio file. */
@@ -20,7 +42,7 @@ const props = withDefaults(
     file?: string
     title?: string
     /** Optional external state from desktop shell or tests. */
-    state?: Record<string, any>
+    state?: ExternalPlayerState
   }>(),
   {
     path: '',

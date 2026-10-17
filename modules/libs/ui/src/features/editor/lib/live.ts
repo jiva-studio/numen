@@ -155,7 +155,7 @@ export const live = ViewPlugin.fromClass(
       const afresh =
         update.docChanged ||
         update.selectionSet ||
-        syntaxTree(update.startState) != syntaxTree(update.state)
+        syntaxTree(update.startState) !== syntaxTree(update.state)
 
       // The lines on screen, against the wider span the marks in hand were
       // drawn for. A viewport still inside them is already drawn.
