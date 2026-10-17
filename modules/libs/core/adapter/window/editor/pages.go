@@ -244,6 +244,9 @@ func (s *Services) serveUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func resolvePluginAssetTarget(pluginDir, filePath string) (string, error) {
+	if !filepath.IsLocal(filePath) {
+		return "", os.ErrPermission
+	}
 	cleanDir, err := filepath.Abs(filepath.Clean(pluginDir))
 	if err != nil {
 		return "", err
@@ -288,7 +291,7 @@ func (s *Services) servePluginAsset(w http.ResponseWriter, r *http.Request) {
 	}
 	trimmed := strings.TrimPrefix(r.URL.Path, pluginAssetsRoute)
 	parts := strings.SplitN(trimmed, "/", 2)
-	if len(parts) < 2 || parts[0] == "" || parts[1] == "" {
+	if len(parts) < 2 || parts[0] == "" || parts[1] == "" || !filepath.IsLocal(parts[1]) {
 		http.Error(w, "invalid plugin asset path", http.StatusBadRequest)
 		return
 	}
