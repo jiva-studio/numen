@@ -203,6 +203,25 @@ func (r *pluginRun) readSteps() {
 	}
 }
 
+// getStepKind is what a call does to the vault, by the word the plugin reports it in. A word the
+// core does not know is a call of unknown effect.
+func getStepKind(kind string) domain.StepKind {
+	switch kind {
+	case "read":
+		return domain.StepRead
+	case "edit":
+		return domain.StepEdit
+	case "remove":
+		return domain.StepRemove
+	case "move":
+		return domain.StepMove
+	case "search":
+		return domain.StepSearch
+	default:
+		return domain.StepToolCall
+	}
+}
+
 func convertResponseStep(msg *v1.AskAgentResponse) port.Step {
 	switch s := msg.GetStep().(type) {
 	case *v1.AskAgentResponse_Said:
@@ -220,7 +239,8 @@ func convertResponseStep(msg *v1.AskAgentResponse) port.Step {
 			}}
 		}
 		return port.Step{
-			Kind:  domain.StepToolCall,
+			Kind:  getStepKind(tc.GetKind()),
+			Call:  tc.GetCall(),
 			Tool:  tc.GetTool(),
 			About: tc.GetAbout(),
 			Count: int(tc.GetWritten()),
