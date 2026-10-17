@@ -196,6 +196,9 @@ func TestProofreadTextAnswersEveryKindTheSchemaNames(t *testing.T) {
 		if connect.CodeOf(err) == connect.CodeInvalidArgument {
 			t.Errorf("%s was refused as unknown", kind)
 		}
+	}
+}
+
 func TestGetProofreaderInfoDefault(t *testing.T) {
 	proof := &proofreadingServer{}
 	info, err := proof.GetProofreaderInfo(context.Background(), connect.NewRequest(&numenv1.GetProofreaderInfoRequest{}))
