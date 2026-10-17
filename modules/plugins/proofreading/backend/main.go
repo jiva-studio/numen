@@ -55,23 +55,6 @@ func (s *proofreadingServer) GetProofreaderInfo(
 	return connect.NewResponse(&numenv1.GetProofreaderInfoResponse{Name: proofreaderName}), nil
 }
 
-// Proofread answers each batch with the model's reply to its prompt.
-func (s *proofreadingServer) Proofread(
-	ctx context.Context,
-	req *connect.Request[numenv1.ProofreadRequest],
-) (*connect.Response[numenv1.ProofreadResponse], error) {
-	batches := req.Msg.GetBatches()
-	replies := make(map[int32]string, len(batches))
-	for _, batch := range batches {
-		reply, err := s.ask(ctx, req.Msg.GetInstruction(), batch.GetPrompt())
-		if err != nil {
-			return nil, readModelError(ctx, fmt.Errorf("batch %d: %w", batch.GetNumber(), err))
-		}
-		replies[batch.GetNumber()] = reply
-	}
-	return connect.NewResponse(&numenv1.ProofreadResponse{Replies: replies}), nil
-}
-
 // ProofreadText proofreads the lines of a request according to its kind.
 func (s *proofreadingServer) ProofreadText(
 	ctx context.Context,

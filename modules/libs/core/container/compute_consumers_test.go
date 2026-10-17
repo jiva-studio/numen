@@ -13,18 +13,15 @@ func makePlan(workers, llm int) settings.ResolvedCompute {
 }
 
 func makeProofreading(inFlight int) ProofreadingConfig {
-	service := ServiceDefaults()
-	service.Name, service.InFlight = "some-model", inFlight
-	agent := AgentDefaults()
-	agent.Model, agent.InFlight = "haiku", inFlight
-	cfg := DefaultProofreading()
-	cfg.Profiles = map[string]Profile{"service": service, "agent": agent}
-	return cfg
+	return ProofreadingConfig{Profiles: map[string]Profile{
+		"careful": {InFlight: inFlight},
+		"quick":   {InFlight: inFlight},
+	}}
 }
 
 func TestAProofreadingProfileNamingANumberAtOnceKeepsItWhateverThePlanSays(t *testing.T) {
 	cfg := Config{Proofreading: makeProofreading(3), ResolvedCompute: makePlan(8, 6)}
-	for _, name := range []string{"service", "agent"} {
+	for _, name := range []string{"careful", "quick"} {
 		profile, err := cfg.getProfile(name)
 		if err != nil {
 			t.Fatal(err)
@@ -37,7 +34,7 @@ func TestAProofreadingProfileNamingANumberAtOnceKeepsItWhateverThePlanSays(t *te
 
 func TestAProofreadingProfileNamingNoNumberAtOnceTakesTheLlmConcurrencyOfThePlan(t *testing.T) {
 	cfg := Config{Proofreading: makeProofreading(0), ResolvedCompute: makePlan(8, 6)}
-	for _, name := range []string{"service", "agent"} {
+	for _, name := range []string{"careful", "quick"} {
 		profile, err := cfg.getProfile(name)
 		if err != nil {
 			t.Fatal(err)
@@ -49,8 +46,8 @@ func TestAProofreadingProfileNamingNoNumberAtOnceTakesTheLlmConcurrencyOfThePlan
 	scan := Config{
 		Proofreading:           cfg.Proofreading,
 		ResolvedCompute:        cfg.ResolvedCompute,
-		ScanProofreading:       Proofread{Profile: "service"},
-		TranscriptProofreading: Proofread{Profile: "agent"},
+		ScanProofreading:       Proofread{Profile: "careful"},
+		TranscriptProofreading: Proofread{Profile: "quick"},
 	}
 	if got := scan.GetScanProofreading().InFlight; got != 6 {
 		t.Errorf("a scan is proofread %d batches at once, want the 6 planned", got)
@@ -60,19 +57,14 @@ func TestAProofreadingProfileNamingNoNumberAtOnceTakesTheLlmConcurrencyOfThePlan
 	}
 }
 
-func TestAProofreadingProfileWithoutAPlanTakesTheDefaultOfItsKind(t *testing.T) {
+func TestAProofreadingProfileWithoutAPlanTakesTheDefault(t *testing.T) {
 	cfg := Config{Proofreading: makeProofreading(0)}
-	service, err := cfg.getProfile("service")
+	profile, err := cfg.getProfile("careful")
 	if err != nil {
 		t.Fatal(err)
 	}
-	agent, err := cfg.getProfile("agent")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if service.InFlight != DefaultInFlight || agent.InFlight != DefaultAgentInFlight {
-		t.Errorf("a service asks about %d and the command line %d batches at once, want %d and %d",
-			service.InFlight, agent.InFlight, DefaultInFlight, DefaultAgentInFlight)
+	if profile.InFlight != DefaultInFlight {
+		t.Errorf("a profile asks about %d requests at once, want %d", profile.InFlight, DefaultInFlight)
 	}
 }
 

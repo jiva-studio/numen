@@ -4,25 +4,39 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"strings"
+	"fmt"
+	"slices"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
-// hearing is a Proofread over one vault holding one recording whose
-// transcript is written down already, and the hash that transcript is kept
-// under.
+// scripted is a proofreader answering every call with the same reply.
+type scripted struct {
+	noScan
+	reply domain.SpeechProofreading
+}
+
+func (s scripted) GetName() string { return "a proofreader" }
+
+func (s scripted) ProofreadSpeech(
+	context.Context, []domain.ProofreadLine, domain.SpeechWindow,
+) (domain.SpeechProofreading, error) {
+	return s.reply, nil
+}
+
+// newProofreadTranscript is a Proofread over one vault holding one recording
+// whose transcript is written down already, and the hash that transcript is
+// kept under.
 //
-// One line to a batch and one batch to a request, so the number a reply is
-// about is the number of the line it puts right.
+// One line to a request and one request to a call, so a call answers about one
+// line.
 func newProofreadTranscript(
-	t *testing.T, says map[int]string, words ...string,
+	t *testing.T, told map[int]domain.ProofreadCorrection, words ...string,
 ) (Proofread, domain.Vault, *shelf, *corrector, string) {
 	t.Helper()
 	raw := newRecording(words)
@@ -34,13 +48,13 @@ func newProofreadTranscript(
 	if err := kept.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash), transcript.Marshal(newCues(words))); err != nil {
 		t.Fatal(err)
 	}
-	by := &corrector{says: says}
+	by := &corrector{says: told}
 	return newTranscriptProofreading(t, vaults{first.ID: shelved}, shelves{kept}, by),
 		first, kept, by, hash
 }
 
-// newTranscriptProofreading is one built the only way there is, with the
-// batching the tests here read a line at a time by.
+// newTranscriptProofreading is one built the only way there is, asking about a
+// line at a time.
 func newTranscriptProofreading(
 	t *testing.T, readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
 ) Proofread {
@@ -102,7 +116,7 @@ func TestNoTranscriptProofreadingIsMadeWithNothingToProofreadWith(t *testing.T) 
 
 func TestATranscriptIsPutRightAndEveryTimingStands(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing"}
-	u, v, shelved, _, hash := newProofreadTranscript(t, map[int]string{1: corrects(1, "second thing")}, words...)
+	u, v, shelved, _, hash := newProofreadTranscript(t, says(fixes(1, "second thing")), words...)
 
 	res, err := u.Execute(t.Context(), v, recordingPath)
 	if err != nil {
@@ -139,7 +153,7 @@ func TestATranscriptIsPutRightAndEveryTimingStands(t *testing.T) {
 
 func TestWhatTheModelHeardIsNotWrittenOver(t *testing.T) {
 	words := []string{"first thing", "secnd thing"}
-	u, v, shelved, _, hash := newProofreadTranscript(t, map[int]string{1: corrects(1, "second thing")}, words...)
+	u, v, shelved, _, hash := newProofreadTranscript(t, says(fixes(1, "second thing")), words...)
 	was := string(readShelf(t, shelved, domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash)))
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
@@ -150,17 +164,17 @@ func TestWhatTheModelHeardIsNotWrittenOver(t *testing.T) {
 	}
 }
 
-func TestAReplyThatIsNoAnswerLeavesItsLinesAsHeard(t *testing.T) {
+func TestACallThatIsNoAnswerLeavesItsLinesAsHeard(t *testing.T) {
 	words := []string{"first thing", "secnd thing"}
-	u, v, shelved, _, hash := newProofreadTranscript(t, map[int]string{
-		1: proofread.Opens + "1" + proofread.Closes + "second thing",
-	}, words...)
+	u, v, shelved, by, hash := newProofreadTranscript(t, nil, words...)
+	by.uncorrected = 1
 
 	res, err := u.Execute(t.Context(), v, recordingPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.UncorrectedBatches != 1 || res.Fixed != 0 || res.Left != 2 {
+	// Two calls, one line to each.
+	if res.UncorrectedBatches != 2 || res.Fixed != 0 || res.Left != 2 {
 		t.Errorf("got %+v", res)
 	}
 	if _, err := shelved.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash)); err == nil {
@@ -170,15 +184,15 @@ func TestAReplyThatIsNoAnswerLeavesItsLinesAsHeard(t *testing.T) {
 
 func TestATranscriptIsTakenUpWhereTheRunBeforeStopped(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing", "forth thing"}
-	u, v, shelved, by, hash := newProofreadTranscript(t, map[int]string{
-		0: corrects(0, "the first thing"),
-		1: corrects(1, "second thing"),
-	}, words...)
+	u, v, shelved, by, hash := newProofreadTranscript(t, says(
+		fixes(0, "the first thing"),
+		fixes(1, "second thing"),
+	), words...)
 
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
-	by.stop = func(requests int) {
-		if requests == 3 {
+	by.stop = func(calls int) {
+		if calls == 3 {
 			stop()
 		}
 	}
@@ -186,7 +200,7 @@ func TestATranscriptIsTakenUpWhereTheRunBeforeStopped(t *testing.T) {
 		t.Fatalf("stopped with %v", err)
 	}
 
-	said := &corrector{says: map[int]string{3: corrects(3, "fourth thing")}}
+	said := &corrector{says: says(fixes(3, "fourth thing"))}
 	again := newTranscriptProofreading(t, u.readers, u.derived, said)
 	res, err := again.Execute(t.Context(), v, recordingPath)
 	if err != nil {
@@ -195,11 +209,12 @@ func TestATranscriptIsTakenUpWhereTheRunBeforeStopped(t *testing.T) {
 	if res.Resumed != 2 {
 		t.Errorf("took up %d lines of the transcript", res.Resumed)
 	}
-	for _, asked := range said.asked {
-		for _, batch := range asked {
-			if batch < 2 {
-				t.Errorf("asked about line %d again", batch)
-			}
+	if from := said.windows[0].From; from != 2 {
+		t.Errorf("began at line %d", from)
+	}
+	for _, line := range said.lines() {
+		if line < 2 {
+			t.Errorf("asked about line %d again", line)
 		}
 	}
 
@@ -214,7 +229,7 @@ func TestATranscriptIsTakenUpWhereTheRunBeforeStopped(t *testing.T) {
 	}
 }
 
-// A batch reaches back over the lines it shares with the one before it, and a
+// A call reaches back over the lines it shares with the one before it, and a
 // run taking up in it reads those lines again. What it says it has read never
 // passes what the transcript holds.
 func TestAResumedRunReadsNoMoreLinesThanTheTranscriptHas(t *testing.T) {
@@ -285,7 +300,7 @@ func TestATranscriptSomebodyElseWroteIsLeftAsTheyLeftIt(t *testing.T) {
 		{"another proofreader wrote it", own, putting{By: "somebody else", At: getSpan(1).To}},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			u, v, shelved, by, hash := newProofreadTranscript(t, map[int]string{1: corrects(1, "second thing")}, words...)
+			u, v, shelved, by, hash := newProofreadTranscript(t, says(fixes(1, "second thing")), words...)
 			if err := shelved.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash), one.said); err != nil {
 				t.Fatal(err)
 			}
@@ -332,7 +347,7 @@ func TestATranscriptThatIsNotThereIsNothingToPutRight(t *testing.T) {
 }
 
 func TestASourceIsCutAgainAsItsLinesArePutRight(t *testing.T) {
-	u, v, _, _, _ := newProofreadTranscript(t, map[int]string{0: corrects(0, "the first thing")}, "first thing", "secnd thing")
+	u, v, _, _, _ := newProofreadTranscript(t, says(fixes(0, "the first thing")), "first thing", "secnd thing")
 	cuts := 0
 	u.Cut = func(context.Context, domain.Vault, string) error {
 		cuts++
@@ -342,34 +357,106 @@ func TestASourceIsCutAgainAsItsLinesArePutRight(t *testing.T) {
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
 	}
-	// Two lines, one to a request.
+	// Two lines, one to a call.
 	if cuts != 2 {
 		t.Errorf("cut %d times", cuts)
 	}
 }
 
-// Every batch of a transcript carries what the whole recording holds: how its
-// speech opens, and the words that recur through it.
-func TestEveryBatchCarriesWhatTheRecordingHolds(t *testing.T) {
-	words := []string{
-		"The assembly at Mithila heard Ganaka.",
-		"The teacher listened. Then Ganaka spoke of Mithila",
-		"as a city nobody had named before him.",
-	}
+// Every call is given the whole transcript's spoken lines, numbered by their
+// cue, and the sizes of the installation.
+func TestEveryCallIsGivenTheWholeTranscriptAndTheSizesToCutItBy(t *testing.T) {
+	words := []string{"first thing", "secnd thing", "third thing", "forth thing"}
 	u, v, _, by, _ := newProofreadTranscript(t, nil, words...)
+	u.BatchSize, u.Overlap, u.InFlight = 2, 1, 1
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
 	}
-	if len(by.about) != len(words) {
-		t.Fatalf("it was asked about %d batches", len(by.about))
+
+	want := []domain.ProofreadLine{
+		{Number: 0, Text: "first thing"}, {Number: 1, Text: "secnd thing"},
+		{Number: 2, Text: "third thing"}, {Number: 3, Text: "forth thing"},
 	}
-	for _, about := range by.about {
-		for _, want := range []string{"The speech opens: The assembly at Mithila", "Mithila, Ganaka"} {
-			if !strings.Contains(about, want) {
-				t.Errorf("a batch says the recording holds %q, and it does not carry %q", about, want)
+	if len(by.given) != 2 {
+		t.Fatalf("it was called %d times", len(by.given))
+	}
+	for at, given := range by.given {
+		if !slices.Equal(given, want) {
+			t.Errorf("call %d was given %+v", at, given)
+		}
+	}
+	wantWindows := []domain.SpeechWindow{
+		{Size: 2, Overlap: 1, From: 0, Limit: 2},
+		{Size: 2, Overlap: 1, From: 2, Limit: 2},
+	}
+	if !slices.Equal(by.windows, wantWindows) {
+		t.Errorf("windows %+v, want %+v", by.windows, wantWindows)
+	}
+}
+
+// Where nothing says otherwise a transcript is cut by the defaults.
+func TestATranscriptIsCutByTheDefaultsWhereNothingSaysOtherwise(t *testing.T) {
+	u, v, _, by, _ := newProofreadTranscript(t, nil, "first thing")
+	u.BatchSize, u.Overlap, u.InFlight = 0, 0, 0
+
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	want := domain.SpeechWindow{
+		Size: DefaultBatchSize, Overlap: DefaultOverlap, Limit: DefaultInFlight * DefaultBatchSize,
+	}
+	if len(by.windows) != 1 || by.windows[0] != want {
+		t.Errorf("windows %+v, want %+v", by.windows, want)
+	}
+}
+
+// A proofreader that stopped short of the end is called again from the line it
+// says to continue from, and is given the same lines.
+func TestAWindowShortOfTheEndIsFollowedByTheNext(t *testing.T) {
+	words := []string{"first thing", "secnd thing", "third thing", "forth thing"}
+	u, v, shelved, by, hash := newProofreadTranscript(t, says(fixes(1, "second thing"), fixes(3, "fourth thing")), words...)
+	u.BatchSize, u.Overlap, u.InFlight = 2, 0, 1
+
+	res, err := u.Execute(t.Context(), v, recordingPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(by.windows) != 2 || by.windows[0].From != 0 || by.windows[1].From != 2 {
+		t.Fatalf("windows %+v", by.windows)
+	}
+	if !slices.Equal(by.given[0], by.given[1]) {
+		t.Errorf("the calls were given %+v and %+v", by.given[0], by.given[1])
+	}
+	if res.Fixed != 2 || res.Read != 4 || res.Left != 2 {
+		t.Errorf("got %+v", res)
+	}
+	cues := readCues(t, shelved, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash))
+	if cues[1].Text != "second thing" || cues[3].Text != "fourth thing" {
+		t.Errorf("the transcript says %+v", cues)
+	}
+}
+
+// The checkpoint stands at the end of the last line before the one to continue
+// from, so a run taking up asks about that line first.
+func TestTheCheckpointStandsWhereTheNextWindowBegins(t *testing.T) {
+	words := []string{"first thing", "secnd thing", "third thing"}
+	u, v, shelved, by, hash := newProofreadTranscript(t, nil, words...)
+	by.stop = func(calls int) {
+		if calls == 2 {
+			var stood putting
+			raw := readShelf(t, shelved, domain.NewArtifactName(domain.ArtifactProofread, domain.ASR, hash))
+			if err := json.Unmarshal(raw, &stood); err != nil {
+				t.Error(err)
+			}
+			if stood.At != getSpan(0).To {
+				t.Errorf("the checkpoint stands at %d, want %d", stood.At, getSpan(0).To)
 			}
 		}
+	}
+
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -377,60 +464,100 @@ func TestEveryBatchCarriesWhatTheRecordingHolds(t *testing.T) {
 // told about it.
 func TestATranscriptAtItsLastLineReportsNoProgress(t *testing.T) {
 	words := []string{"first thing", "secnd thing"}
-	u, v, _, _, _ := newProofreadTranscript(t, map[int]string{1: corrects(1, "second thing")}, words...)
+	u, v, _, _, _ := newProofreadTranscript(t, says(fixes(1, "second thing")), words...)
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
 	}
 
 	told := 0
-	again := newTranscriptProofreading(t, u.readers, u.derived, &corrector{})
+	said := &corrector{}
+	again := newTranscriptProofreading(t, u.readers, u.derived, said)
 	again.OnProgress = func(ProofreadResult) { told++ }
 	res, err := again.Execute(t.Context(), v, recordingPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Read != res.Lines {
+	if res.Read != res.Lines || !res.IsAlready {
 		t.Fatalf("got %+v", res)
 	}
-	if told != 0 {
-		t.Errorf("a transcript with nothing left to put right was told about %d times", told)
+	if told != 0 || len(said.windows) != 0 {
+		t.Errorf("a transcript with nothing left to put right was told about %d times and asked %d", told, len(said.windows))
 	}
 }
 
-// The batchesAcrossCuts are asked about after the whole transcript is, and a run taking up
-// among them is work a person is told about.
-func TestARunTakingUpAmongTheSeamsIsToldAbout(t *testing.T) {
-	words := []string{"first thing", "secnd thing", "third thing", "forth thing"}
-	u, v, shelved, _, hash := newProofreadTranscript(t, nil, words...)
-	u.BatchSize, u.Overlap, u.InFlight = 2, 1, 1
-	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
-		t.Fatal(err)
+// A proofreader that cannot be reached ends the run, and nothing it did not
+// answer is written.
+func TestAProofreaderWithNothingRoutedEndsTheRunAndWritesNothing(t *testing.T) {
+	u, v, shelved, by, hash := newProofreadTranscript(t, nil, "first thing", "secnd thing")
+	by.fail = fmt.Errorf("%w: no route for the purpose", port.ErrUnavailable)
+
+	_, err := u.Execute(t.Context(), v, recordingPath)
+
+	if !errors.Is(err, port.ErrUnavailable) {
+		t.Fatalf("got %v", err)
+	}
+	if _, err := shelved.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash)); err == nil {
+		t.Error("corrections were written for a proofreading nothing answered")
+	}
+}
+
+// A proofreader that says to continue from the line it began at would be asked
+// the same thing for ever.
+func TestAProofreaderThatMakesNoProgressEndsTheRun(t *testing.T) {
+	u, v, _, _, _ := newProofreadTranscript(t, nil, "first thing", "secnd thing")
+	u.by = scripted{reply: domain.SpeechProofreading{Next: 0}}
+
+	if _, err := u.Execute(t.Context(), v, recordingPath); !errors.Is(err, errNoProgress) {
+		t.Errorf("got %v", err)
+	}
+}
+
+// A correction of a line the transcript does not have is no correction.
+func TestACorrectionOfALineTheTranscriptDoesNotHaveEndsTheRun(t *testing.T) {
+	for name, corrections := range map[string][]domain.ProofreadCorrection{
+		"past the end":     {fixes(9, "invented")},
+		"a run past it":    {joins(0, 9, "invented")},
+		"before the start": {fixes(-1, "invented")},
+	} {
+		t.Run(name, func(t *testing.T) {
+			u, v, shelved, _, hash := newProofreadTranscript(t, nil, "first thing", "secnd thing")
+			u.by = scripted{reply: domain.SpeechProofreading{Corrections: corrections, IsDone: true, Next: 2}}
+
+			if _, err := u.Execute(t.Context(), v, recordingPath); !errors.Is(err, errCorrectionOutside) {
+				t.Fatalf("got %v", err)
+			}
+			if _, err := shelved.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash)); err == nil {
+				t.Error("a correction of nothing was written")
+			}
+		})
+	}
+}
+
+// The end of the context stops the run between two windows.
+func TestTheEndOfTheContextStopsTheRunBetweenWindows(t *testing.T) {
+	u, v, _, by, _ := newProofreadTranscript(t, nil, "first thing", "secnd thing", "third thing")
+	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
+	u.OnProgress = func(res ProofreadResult) {
+		if res.Read > res.Resumed {
+			stop()
+		}
 	}
 
-	// The shelf as a run that ended between the two passes left it: every line
-	// asked about, and no batch over a cut.
-	stood, err := json.Marshal(putting{By: u.GetProofreaderName(), At: getSpan(len(words) - 1).To})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := shelved.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactProofread, domain.ASR, hash), stood); err != nil {
-		t.Fatal(err)
-	}
+	_, err := u.Execute(ctx, v, recordingPath)
 
-	told := 0
-	u.OnProgress = func(ProofreadResult) { told++ }
-	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
-		t.Fatal(err)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("got %v", err)
 	}
-	if told == 0 {
-		t.Error("a run over the batchesAcrossCuts was told about no times")
+	if len(by.windows) != 1 {
+		t.Errorf("it was called %d times", len(by.windows))
 	}
 }
 
 // A transcript proofreading given a known hash skips reading the source file from disk.
 func TestATranscriptProofreadingGivenAKnownHashDoesNotReadTheSourceFile(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing"}
-	u, v, _, _, hash := newProofreadTranscript(t, map[int]string{1: corrects(1, "second thing")}, words...)
+	u, v, _, _, hash := newProofreadTranscript(t, says(fixes(1, "second thing")), words...)
 	u.readers = brokenReaders{}
 	u.Hash = hash
 

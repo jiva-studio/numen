@@ -154,7 +154,7 @@ The **core budget** is the number of hardware threads CPU-bound work may occupy 
 | Local embedding, forward passes at once | workers, lowered to what a quarter of the available memory holds, unless the model names `sessions`; one on an accelerator | one up to 2 CPUs, two up to 4, three beyond |
 | Search question and indexing sharing one local model | indexing holds one pass fewer than the model runs at once, at least one; a question is never held | not applicable |
 | OCR | OCR threads and sessions | unresolved counts, then named defaults |
-| Proofreading, batches in flight | LLM concurrency, unless the profile names `in_flight` | 4 at a service, 2 at the command line |
+| Proofreading, batches one call answers | LLM concurrency, unless the profile names `in_flight` | 4 |
 | Embedding service, requests in flight | LLM concurrency | 4 |
 | Search, sources extracted at once | workers | 4 |
 | Cards, decks parsed and curve places worked out at once | workers | one per CPU |
@@ -455,29 +455,16 @@ Every recording handed over ends in an answer, and only one of them is "later". 
 
 An installation naming no profile proofreads nothing, and nothing asks for a key or a network.
 
+A profile says how a text is cut into requests. Which model answers them is not a profile's to say: the proofreading plugin asks the host with the purpose `proofreading`, and the route of that purpose under [`ai.routes`](#where-a-plugins-questions-to-a-model-are-answered) names the agent plugin, the model and the number of questions answered at once. Without a route, proofreading fails with "unavailable" and nothing is corrected.
+
 ```json
 {
   "indexing": {
     "proofreading": {
       "max_edit_distance": 0.30,
       "profiles": {
-        "openrouter": {
-          "use": "service",
-          "base_url": "https://openrouter.ai/api/v1",
-          "batch_url": "https://openrouter.ai/api/beta/batches",
-          "name": "anthropic/claude-haiku-4.5",
-          "key_env": "NUMEN_PROOFREADING_KEY",
-          "batch_size": 40,
-          "overlap": 0,
-          "in_flight": 4
-        },
-        "agent": {
-          "use": "agent",
-          "model": "haiku",
-          "batch_size": 60,
-          "overlap": 2,
-          "in_flight": 3
-        }
+        "scans": { "batch_size": 40, "overlap": 0 },
+        "speech": { "batch_size": 60, "overlap": 2, "in_flight": 3 }
       }
     }
   }
@@ -486,73 +473,48 @@ An installation naming no profile proofreads nothing, and nothing asks for a key
 
 | | |
 | --- | --- |
-| `max_edit_distance` | how far a correction may move a line's letters and still be a correction: the Levenshtein distance between what is left after spaces, punctuation, symbols, diacritics and case come off, as a share of the longer of the two. 0.30. A correction standing further apart is dropped and that line is left as it was. It stands above the profiles because it is one threshold for the installation: how far a correction may move says nothing about what it was asked for through. |
+| `max_edit_distance` | how far a correction may move a line's letters and still be a correction: the Levenshtein distance between what is left after spaces, punctuation, symbols, diacritics and case come off, as a share of the longer of the two. Left out, the proofreading plugin's own limit, 0.30. A correction standing further apart is dropped and that line is left as it was. It stands above the profiles because it is one threshold for the installation: how far a correction may move says nothing about what it was asked for through. |
 | `profiles` | a map of name to profile. The name is what a consumer says under `proofread.with`, and it is the person's own word. |
 
-A profile is flat: every key sits at the profile's own level, and `use` says which of them apply. A key `use` does not apply to is ignored, so a profile keeps the keys of the one it is not reached through and the other is a word away.
+A profile is flat: every key sits at the profile's own level.
 
 | | |
 | --- | --- |
-| `use` | `service` or `agent`. |
-| `batch_size` | how many lines one request carries. 40 at a service, 60 at the command line, where starting it costs the same whatever it is asked. |
+| `batch_size` | how many lines one request carries. 40. |
 | `overlap` | how many lines neighbouring batches share, so a phrase torn at a batch boundary is still seen whole by one of them. A line two batches both answered about is taken from the later of the two, which is the batch that saw more of what follows it. |
-| `in_flight` | how many batches are being asked about at any moment. Left out, it is the performance profile's LLM concurrency; with no performance profile, 4 at a service and 2 at the command line, which is the person's own model and is left most of itself while they are using it. A batch costs what the model writes back rather than what it took to ask, so this is what a run's length answers to. |
-| `attempts` | `service`: how many times one request is sent before its error is reported. A 429, 408, 5xx or timeout is sent again; any other failure is reported at once. |
-| `delay_ms` | `service`: the ceiling, in milliseconds, of the wait after a request first fails. It doubles with each failure, and the wait is drawn at random below it. A `Retry-After` from the service sets the wait instead. |
-| `max_delay_ms` | `service`: the longest any wait is, including one the service asks for. |
-| `base_url` | `service`: anything speaking the `/v1/chat/completions` request shape. |
-| `batch_url` | `service`: the queue batches are left in and collected later, at half the price. Empty asks a batch at a time and waits. A batch outlives the run that left it, so one left before the application closed is collected when it opens. |
-| `name` | `service`: which model answers. The name of the model that corrected a line stands beside what it corrected. |
-| `key_env` | `service`: the environment variable holding the key. |
-| `key` | `service`: the key, where a person writes it into the file. It is never written back: rewriting this file is not how a key is set. |
-| `command` | `agent`: what starts the command line, and anything it is started through. Empty runs `claude` from the path. Worth naming for a machine that keeps it elsewhere, or carries several. |
-| `model` | `agent`: which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. Empty takes whatever that installation answers with. |
+| `in_flight` | how many batches one call answers. Left out, it is the performance profile's LLM concurrency; with no performance profile, 4. How many questions reach the model at once is the concurrency of the route. |
 
-An `agent` profile is the command line the person already has installed, run as a plain one-shot process: no MCP servers, no tools, nothing it can write. It is given the batch and answers with text. There is no queue, so a batch is asked and waited for, and `batch_url` is one of the keys such a profile ignores.
+A profile of an older file that names `use`, `name`, `base_url`, `batch_url`, `key`, `key_env`, `model`, `command`, `attempts`, `delay_ms` or `max_delay_ms` is read for its sizes alone. The command line a person has installed is one agent plugin behind a route, and a key belongs to the agent that holds it.
 
 `max_edit_distance` is 0.30 because the measured distribution has a hole there. Over 931 corrections of one book, every correction standing further apart than 0.30 was damage — text dragged in from the next line, or one corrected word in place of a whole line — and every one below it was a correction. It is a setting because the next book is not that book; the figures are in [Performance](performance.md).
 
-`pages_at_once` is gone. `batch_size` is what one request carries, counted in lines rather than pages, so a transcript with no pages in it is asked about the same way. `letters_apart` is gone. `max_edit_distance` is the same threshold under the name of the quantity it holds, the Levenshtein distance between two lines' letters as a share of the longer of them, and it has moved out of the service and above the profiles, where it is one threshold for the installation.
-
 ## Worked example, proofreading
 
-Scans through OpenRouter, transcripts through the `claude` command line on this machine. Both run on their own: a book read is a book proofread, and a recording transcribed is a recording proofread, with nobody asked.
-
-The key is in the environment, under the name `key_env` gives. Nothing in this file carries it.
+Scans and transcripts through the `claude` command line on this machine, two questions at once. Both run on their own: a book read is a book proofread, and a recording transcribed is a recording proofread, with nobody asked.
 
 ```json
 {
+  "ai": {
+    "routes": {
+      "proofreading": { "agent": "md.numen.agent-claude", "model": "haiku", "concurrency": 2 }
+    }
+  },
   "indexing": {
     "proofreading": {
       "max_edit_distance": 0.30,
       "profiles": {
-        "openrouter": {
-          "use": "service",
-          "base_url": "https://openrouter.ai/api/v1",
-          "batch_url": "https://openrouter.ai/api/beta/batches",
-          "name": "anthropic/claude-haiku-4.5",
-          "key_env": "NUMEN_PROOFREADING_KEY",
-          "batch_size": 40,
-          "overlap": 0,
-          "in_flight": 4
-        },
-        "agent": {
-          "use": "agent",
-          "model": "haiku",
-          "batch_size": 60,
-          "overlap": 2,
-          "in_flight": 3
-        }
+        "scans": { "batch_size": 40, "overlap": 0 },
+        "speech": { "batch_size": 60, "overlap": 2, "in_flight": 3 }
       }
     },
 
-    "recognition":   { "proofread": { "with": "openrouter", "automatically": true } },
-    "transcription": { "proofread": { "with": "agent",      "automatically": true } }
+    "recognition":   { "proofread": { "with": "scans",  "automatically": true } },
+    "transcription": { "proofread": { "with": "speech", "automatically": true } }
   }
 }
 ```
 
-A scan goes forty printed lines to a request, on a queue at half the price that survives a restart. A page ends where a page ends, so nothing carries over and `overlap` is 0. Speech goes sixty cues to a request, answered by a subscription already paid for, three batches at a time and no key at all; a sentence runs across the cue a batch ends on, so two cues are shared with the batch on either side.
+A scan goes forty printed lines to a request. A page ends where a page ends, so nothing carries over and `overlap` is 0. Speech goes sixty cues to a request, three requests to a call; a sentence runs across the cue a batch ends on, so two cues are shared with the batch on either side.
 
 A `with` naming a profile `profiles` does not carry is an error at startup. An installation that meant to proofread and misspelled the name is told so, and does not run quietly proofreading nothing.
 

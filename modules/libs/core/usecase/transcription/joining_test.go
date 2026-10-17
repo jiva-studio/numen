@@ -4,24 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// newJoinReply is a reply putting a run of lines together as one. A run stands
-// within one batch, so a transcript put right this way is asked in whole
-// batches.
-func newJoinReply(at, through int, said string) string {
-	return fmt.Sprintf("%d-%d|%s", at, through, said)
-}
-
-// newWholeRun is a run over a transcript asked about in one batch.
-func newWholeRun(t *testing.T, says map[int]string, words ...string) (Proofread, domain.Vault, *shelf, string) {
+// newWholeRun is a run over a transcript asked about in one window.
+func newWholeRun(
+	t *testing.T, told map[int]domain.ProofreadCorrection, words ...string,
+) (Proofread, domain.Vault, *shelf, string) {
 	t.Helper()
-	u, v, kept, _, hash := newProofreadTranscript(t, says, words...)
+	u, v, kept, _, hash := newProofreadTranscript(t, told, words...)
 	u.BatchSize = len(words)
 	return u, v, kept, hash
 }
@@ -31,7 +24,7 @@ func newWholeRun(t *testing.T, says map[int]string, words ...string) (Proofread,
 func TestASentenceBrokenAcrossSpansBecomesOneLine(t *testing.T) {
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure."}
 	u, v, shelved, hash := newWholeRun(t,
-		map[int]string{0: newJoinReply(0, 1, "Krishna is Radha, Krishna is connected with Radhika.")},
+		says(joins(0, 1, "Krishna is Radha, Krishna is connected with Radhika.")),
 		words...)
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
@@ -59,7 +52,7 @@ func TestASentenceBrokenAcrossSpansBecomesOneLine(t *testing.T) {
 func TestJoiningLeavesWhatWasHeardWhereItIs(t *testing.T) {
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila."}
 	u, v, shelved, hash := newWholeRun(t,
-		map[int]string{0: newJoinReply(0, 1, "Krishna is Radha, Krishna is connected with Radhika.")},
+		says(joins(0, 1, "Krishna is Radha, Krishna is connected with Radhika.")),
 		words...)
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
@@ -72,14 +65,16 @@ func TestJoiningLeavesWhatWasHeardWhereItIs(t *testing.T) {
 	}
 }
 
-// newOverlappingRun is a run over four spans cut into two batches sharing three
-// lines, with as many batches to a request as asked for.
-func newOverlappingRun(t *testing.T, batches int, says map[int]string) (Proofread, domain.Vault, *shelf, string) {
+// newOverlappingRun is a run over four spans, with as many lines to a call as
+// asked for.
+func newOverlappingRun(
+	t *testing.T, lines int, told map[int]domain.ProofreadCorrection,
+) (Proofread, domain.Vault, *shelf, string) {
 	t.Helper()
 	u, v, kept, _, hash := newProofreadTranscript(t,
-		says,
+		told,
 		"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all.")
-	u.BatchSize, u.Overlap, u.InFlight = 3, 2, batches
+	u.BatchSize, u.Overlap, u.InFlight = lines, 0, 1
 	return u, v, kept, hash
 }
 
@@ -89,18 +84,17 @@ const (
 	onItsOwn    = "connected with Radhika."
 )
 
-// A batch answering for a line another batch put into a run is answered too
-// late: the words no longer stand on their own, and the answer is dropped.
+// A correction of a line another correction put into a run is answered too
+// late: the words no longer stand on their own, and the correction is dropped.
 //
-// It holds whether the two batches are asked about in one request or in two,
-// and it does not turn on the order the corrections come back in.
+// It holds whether the two corrections arrive in one call or in two.
 func TestALineAlreadyPutIntoARunIsLeftInIt(t *testing.T) {
-	for _, batches := range []int{1, 2} {
-		t.Run(fmt.Sprintf("%d to a request", batches), func(t *testing.T) {
-			u, v, shelved, hash := newOverlappingRun(t, batches, map[int]string{
-				0: newJoinReply(0, 1, putTogether),
-				1: corrects(1, onItsOwn),
-			})
+	for _, lines := range []int{1, 4} {
+		t.Run(fmt.Sprintf("%d lines to a call", lines), func(t *testing.T) {
+			u, v, shelved, hash := newOverlappingRun(t, lines, says(
+				joins(0, 1, putTogether),
+				fixes(1, onItsOwn),
+			))
 
 			if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 				t.Fatal(err)
@@ -120,13 +114,13 @@ func TestALineAlreadyPutIntoARunIsLeftInIt(t *testing.T) {
 	}
 }
 
-// Two batches answering for runs over the same lines: the run standing first
-// puts them together, and the one reaching into it is dropped.
+// Two corrections of runs over the same lines: the run standing first puts them
+// together, and the one reaching into it is dropped.
 func TestARunOverLinesAlreadyPutTogetherIsDropped(t *testing.T) {
-	u, v, shelved, hash := newOverlappingRun(t, 1, map[int]string{
-		0: newJoinReply(0, 1, putTogether),
-		1: newJoinReply(1, 2, "Connected with Radhika. Sure."),
-	})
+	u, v, shelved, hash := newOverlappingRun(t, 4, says(
+		joins(0, 1, putTogether),
+		joins(1, 2, "Connected with Radhika. Sure."),
+	))
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
@@ -151,13 +145,13 @@ func TestARunOverLinesAlreadyPutTogetherIsDropped(t *testing.T) {
 // the lines are known by are not the same ones the run before it saw.
 func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all."}
-	u, v, shelved, by, hash := newProofreadTranscript(t, map[int]string{0: newJoinReply(0, 1, putTogether)}, words...)
+	u, v, shelved, by, hash := newProofreadTranscript(t, says(joins(0, 1, putTogether)), words...)
 	u.BatchSize, u.Overlap, u.InFlight = 2, 0, 1
 
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
-	by.stop = func(requests int) {
-		if requests == 2 {
+	by.stop = func(calls int) {
+		if calls == 2 {
 			stop()
 		}
 	}
@@ -165,7 +159,7 @@ func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 		t.Fatalf("stopped with %v", err)
 	}
 
-	again := newTranscriptProofreading(t, u.readers, u.derived, &corrector{says: map[int]string{}})
+	again := newTranscriptProofreading(t, u.readers, u.derived, &corrector{})
 	again.BatchSize, again.Overlap, again.InFlight = 2, 0, 1
 	res, err := again.Execute(t.Context(), v, recordingPath)
 	if err != nil {
@@ -180,202 +174,5 @@ func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 	cues := readCues(t, shelved, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash))
 	if len(cues) != 3 || cues[0].Text != putTogether {
 		t.Errorf("the transcript says %+v", cues)
-	}
-}
-
-// The spans of speech one recording was heard as. The third, fourth and
-// fifth of them are one sentence.
-var speech = []string{
-	"Welcome, everyone.",
-	"Today we will read",
-	"a verse that the teacher",
-	"explained at some length",
-	"in the morning class.",
-	"The point of it",
-	"is very simple.",
-	"Let us begin.",
-}
-
-// What those three spans say, as one line.
-const crossed = "A verse that the teacher explained at some length in the morning class."
-
-// newCrossingRun is a run over those spans, cut into batches of four sharing
-// one line, one batch to a request. The batches are numbered 0 to 2 and the
-// batchesAcrossCuts over the two cuts between them 3 and 4.
-func newCrossingRun(t *testing.T, says map[int]string) (Proofread, domain.Vault, *shelf, *corrector, string) {
-	t.Helper()
-	u, v, kept, by, hash := newProofreadTranscript(t, says, speech...)
-	u.BatchSize, u.Overlap, u.InFlight = 4, 1, 1
-	return u, v, kept, by, hash
-}
-
-// A sentence beginning further before a cut than the shared lines reach, and
-// ending after it, is in no batch of the first pass. The batch over that cut
-// holds it whole, and it is put back together there.
-func TestASentenceCrossingACutIsPutBackTogether(t *testing.T) {
-	u, v, shelved, by, hash := newCrossingRun(t, map[int]string{
-		0: newJoinReply(2, 4, crossed),
-		3: newJoinReply(2, 4, crossed),
-	})
-
-	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
-		t.Fatal(err)
-	}
-	// The batch the sentence begins in reaches only to the cut, and the run
-	// naming the whole sentence there is dropped.
-	if len(by.asked) < 4 {
-		t.Fatalf("it asked %v", by.asked)
-	}
-
-	cues := readCues(t, shelved, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash))
-	if len(cues) != 6 {
-		t.Fatalf("the transcript says %+v", cues)
-	}
-	if cues[2].Text != crossed {
-		t.Errorf("the sentence says %q", cues[2].Text)
-	}
-	if cues[2].From != getSpan(2).From || cues[2].To != getSpan(4).To {
-		t.Errorf("the sentence runs %d-%d", cues[2].From, cues[2].To)
-	}
-	if cues[3].Text != speech[5] {
-		t.Errorf("the line after it says %q", cues[3].Text)
-	}
-}
-
-// Where no reply ran on past the end of its batch, no sentence crossed a cut,
-// and the transcript costs what its own batches cost.
-func TestATranscriptNothingRanPastAsksAboutItsBatchesOnly(t *testing.T) {
-	u, v, _, by, _ := newCrossingRun(t, map[int]string{
-		0: corrects(0, "Welcome, everybody."),
-		1: newJoinReply(3, 4, "Today we will read a verse that the teacher"),
-	})
-
-	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(by.asked, [][]int{{0}, {1}, {2}}) {
-		t.Errorf("it asked %v, want the three batches of the transcript", by.asked)
-	}
-
-	// The transcript is answered whole, batchesAcrossCuts and all, and a run over it again
-	// asks nothing.
-	said := &corrector{}
-	again := newTranscriptProofreading(t, u.readers, u.derived, said)
-	again.BatchSize, again.Overlap, again.InFlight = u.BatchSize, u.Overlap, u.InFlight
-	if _, err := again.Execute(t.Context(), v, recordingPath); err != nil {
-		t.Fatal(err)
-	}
-	if len(said.asked) != 0 {
-		t.Errorf("it asked %v again", said.asked)
-	}
-}
-
-// One batch answered for a sentence running on past its end. The batch over that
-// cut is asked about, and the other cut costs nothing.
-func TestOnlyTheCutASentenceRanPastIsAskedAbout(t *testing.T) {
-	u, v, _, by, _ := newCrossingRun(t, map[int]string{0: newJoinReply(2, 4, crossed)})
-
-	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(by.asked, [][]int{{0}, {1}, {2}, {3}}) {
-		t.Errorf("it asked %v, want the three batches and the batch over the first cut", by.asked)
-	}
-}
-
-// A transcript of one batch has no cut, and nothing is asked about twice.
-func TestATranscriptOfOneBatchAsksNothingMore(t *testing.T) {
-	u, v, _, by, _ := newCrossingRun(t, nil)
-	u.BatchSize = len(speech)
-
-	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(by.asked, [][]int{{0}}) {
-		t.Errorf("it asked %v, want the one batch", by.asked)
-	}
-}
-
-// A run stopped in the pass over the cuts takes up at the cut it stopped on. What the
-// pass before it asked about is not asked about again.
-func TestARunStoppedInTheSeamPassTakesUpWhereItStopped(t *testing.T) {
-	u, v, shelved, by, hash := newCrossingRun(t, map[int]string{
-		0: newJoinReply(2, 4, crossed),
-		1: newJoinReply(5, 7, "The point of it is very simple. Let us begin."),
-		2: corrects(7, "Let us begin!"),
-	})
-
-	ctx, stop := context.WithCancel(t.Context())
-	defer stop()
-	by.stop = func(requests int) {
-		if requests == 5 {
-			stop()
-		}
-	}
-	if _, err := u.Execute(ctx, v, recordingPath); !errors.Is(err, context.Canceled) {
-		t.Fatalf("stopped with %v", err)
-	}
-
-	said := &corrector{says: map[int]string{4: newJoinReply(5, 6, "The point of it is very simple.")}}
-	again := newTranscriptProofreading(t, u.readers, u.derived, said)
-	again.BatchSize, again.Overlap, again.InFlight = u.BatchSize, u.Overlap, u.InFlight
-	if _, err := again.Execute(t.Context(), v, recordingPath); err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(said.asked, [][]int{{4}}) {
-		t.Errorf("it asked %v, want the cut it stopped on", said.asked)
-	}
-
-	cues := readCues(t, shelved, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash))
-	if len(cues) != 7 {
-		t.Fatalf("the transcript says %+v", cues)
-	}
-	if cues[6].Text != "Let us begin!" {
-		t.Errorf("what the pass before put right says %q", cues[6].Text)
-	}
-	if cues[5].Text != "The point of it is very simple." || cues[5].To != getSpan(6).To {
-		t.Errorf("the sentence says %q and runs to %d", cues[5].Text, cues[5].To)
-	}
-}
-
-// A line the first pass put into a run stands in it. A batch over a cut answering for that
-// line again is answered too late.
-func TestALineTheFirstPassJoinedIsNotJoinedAgain(t *testing.T) {
-	u, v, shelved, _, hash := newCrossingRun(t, map[int]string{
-		0: newJoinReply(1, 2, "Today we will read a verse that the teacher") + "\n" +
-			newJoinReply(3, 5, "Explained at some length in the morning class."),
-		3: newJoinReply(2, 3, "A verse that the teacher explained at some length"),
-	})
-
-	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
-		t.Fatal(err)
-	}
-
-	cues := readCues(t, shelved, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash))
-	if len(cues) != 7 {
-		t.Fatalf("the transcript says %+v", cues)
-	}
-	if cues[1].Text != "Today we will read a verse that the teacher" || cues[1].To != getSpan(2).To {
-		t.Errorf("the run says %q and runs to %d", cues[1].Text, cues[1].To)
-	}
-	if cues[2].Text != speech[3] {
-		t.Errorf("the line after the run says %q", cues[2].Text)
-	}
-}
-
-// A batch over a cut carries what the recording holds, as a batch of the first pass does.
-func TestASeamCarriesWhatTheRecordingHolds(t *testing.T) {
-	u, v, _, by, _ := newCrossingRun(t, map[int]string{0: newJoinReply(2, 4, crossed)})
-
-	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
-		t.Fatal(err)
-	}
-	if len(by.about) < 4 {
-		t.Fatalf("it was asked about %d batches", len(by.about))
-	}
-	for at, about := range by.about {
-		if !strings.Contains(about, "The speech opens: Welcome, everyone. Today we will read") {
-			t.Errorf("batch %d says the recording holds %q", at, about)
-		}
 	}
 }

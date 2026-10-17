@@ -27,33 +27,31 @@ Almost nothing: every number was measured, and the defaults are where the measur
 
 ## Correcting what OCR read
 
-The text OCR read off the pages can be corrected afterwards by a model that speaks the ordinary chat request, or by the `claude` command line you already have installed. **Nothing does this by default**: name no profile under `indexing.proofreading` and the text is used exactly as it was read, with no key and no network.
+The text OCR read off the pages can be corrected afterwards by a model, through the proofreading plugin. **Nothing does this by default**: name no profile under `indexing.proofreading` and the text is used exactly as it was read, with no key and no network.
 
 ```json
 {
+  "ai": {
+    "routes": {
+      "proofreading": { "agent": "md.numen.agent-claude", "model": "haiku" }
+    }
+  },
   "indexing": {
     "proofreading": {
       "max_edit_distance": 0.30,
       "profiles": {
-        "openrouter": {
-          "use": "service",
-          "base_url": "https://openrouter.ai/api/v1",
-          "batch_url": "https://openrouter.ai/api/beta/batches",
-          "name": "anthropic/claude-haiku-4.5",
-          "key_env": "NUMEN_PROOFREADING_KEY",
-          "batch_size": 40
-        }
+        "careful": { "batch_size": 40 }
       }
     },
-    "recognition": { "proofread": { "with": "openrouter", "automatically": true } }
+    "recognition": { "proofread": { "with": "careful", "automatically": true } }
   }
 }
 ```
 
-A profile is a way of reaching a proofreader, under a name you choose, and `recognition.proofread.with` names the one that corrects a recognition. `automatically` off leaves it to the hand: you ask for it on the book in front of you.
+A profile is the size a text is cut into requests at, under a name you choose, and `recognition.proofread.with` names the one that corrects a recognition. `automatically` off leaves it to the hand: you ask for it on the book in front of you.
 
-`batch_url` leaves the batches in a queue and collects them later at half the price. A batch outlives the run that left it, so one left before you closed the application is collected the next time you open it. Leave it empty and a batch is asked for at a time, and waited for.
+The model that answers is the one the route of the `proofreading` purpose names under `ai.routes`: the agent, the model, and how many questions it answers at once. The `claude` command line you already have installed is one agent behind a route; a key belongs to the agent that holds it. With no route, proofreading says that nothing is available and the text stays as it was read.
 
-`max_edit_distance` is the safety catch: how far a correction may move a line's letters and still count as a correction, taken as the Levenshtein distance between them as a share of the longer of the two. Over 931 corrections of one book, every correction further apart than 0.30 was damage — text dragged in from the next line, or one corrected word standing in for a whole line — and everything below it was a genuine fix. A correction further apart than this is dropped, and that line is left as it was read. It stands above the profiles because it is one threshold for the whole installation.
+`max_edit_distance` is the safety catch: how far a correction may move a line's letters and still count as a correction, taken as the Levenshtein distance between them as a share of the longer of the two. Over 931 corrections of one book, every correction further apart than 0.30 was damage — text dragged in from the next line, or one corrected word standing in for a whole line — and everything below it was a genuine fix. A correction further apart than this is dropped, and that line is left as it was read. It stands above the profiles because it is one threshold for the whole installation, and it is 0.30 where you name nothing.
 
 The complete list is on [every setting](/reference/).

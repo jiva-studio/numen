@@ -148,14 +148,14 @@ func TestADoubleCloseGivesTheReferenceBackOnce(t *testing.T) {
 	}
 }
 
-func TestEveryProofreadGivesItsReferenceBack(t *testing.T) {
+func TestEveryProofreadingGivesItsReferenceBack(t *testing.T) {
 	host := newLeaseHost(t)
 	bridge, err := OpenProofreaderBridge(host)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for range 3 {
-		_, _ = bridge.Proofread(t.Context(), []domain.ProofreadBatch{{Number: 1, Prompt: "p"}})
+		_, _ = bridge.ProofreadScan(t.Context(), []domain.ProofreadPage{{Number: 1}}, 0)
 	}
 	_ = bridge.Close()
 	if host.acquired.Load() != 3 || host.released.Load() != 3 {

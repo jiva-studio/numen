@@ -714,24 +714,12 @@ func TestAnUntouchedInstallationProofreadsNothing(t *testing.T) {
 	}
 }
 
-// A profile named without a model is a profile naming nothing.
-func TestAProofreadingProfileWithoutAModelNamesNothing(t *testing.T) {
-	cfg, err := openAt(write(t,
-		`{"indexing":{"proofreading":{"profiles":{"openrouter":{"use":"service"}}}}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cfg.Indexing.Proofreading.Profiles["openrouter"].HasModel() {
-		t.Error("proofreads with a model nobody named")
-	}
-}
-
-// A profile is flat: every key stands at its own level, and `use` says which of
-// them apply.
-func TestEachKindOfProofreadingProfileIsRead(t *testing.T) {
+// A profile is flat: the sizes of a request stand at its own level, and a size
+// it leaves out is the default.
+func TestAProofreadingProfileIsRead(t *testing.T) {
 	cfg, err := openAt(write(t, `{"indexing":{"proofreading":{"profiles":{
-		"openrouter": {"use":"service","name":"google/gemini-2.5-flash","batch_size":25},
-		"agent":      {"use":"agent","model":"haiku","batch_size":20,"overlap":2}
+		"careful": {"batch_size":25,"overlap":3,"in_flight":2},
+		"quick":   {}
 	}}}}`))
 	if err != nil {
 		t.Fatal(err)
@@ -741,56 +729,62 @@ func TestEachKindOfProofreadingProfileIsRead(t *testing.T) {
 		t.Fatalf("got %+v", read)
 	}
 
-	service := read.Profiles["openrouter"]
-	if !service.HasModel() || service.Name != "google/gemini-2.5-flash" || service.BatchSize != 25 {
-		t.Errorf("the service profile is %+v", service)
+	if got := read.Profiles["careful"]; got != (container.Profile{BatchSize: 25, Overlap: 3, InFlight: 2}) {
+		t.Errorf("the careful profile is %+v", got)
 	}
-	if service.BaseURL != container.ServiceDefaults().BaseURL {
-		t.Errorf("base URL is %q", service.BaseURL)
-	}
-
-	agent := read.Profiles["agent"]
-	if !agent.HasModel() || agent.Model != "haiku" || agent.BatchSize != 20 || agent.Overlap != 2 {
-		t.Errorf("the agent profile is %+v", agent)
+	if got := read.Profiles["quick"]; got != (container.Profile{BatchSize: container.DefaultBatchSize}) {
+		t.Errorf("the quick profile is %+v", got)
 	}
 }
 
-// A profile may name the command line it is reached through, for an
-// installation whose own is not `claude` from the path.
-func TestAnAgentProfileMayNameItsCommand(t *testing.T) {
+// A file written when a profile named a service or a command line is still read:
+// its sizes stand, and the keys of the service and the command line are not
+// carried on, since the route of the proofreading purpose says what answers.
+func TestAProfileOfAnOlderFileKeepsItsSizesAlone(t *testing.T) {
 	cfg, err := openAt(write(t, `{"indexing":{"proofreading":{"profiles":{
-		"agent": {"use":"agent","model":"haiku","command":["/opt/claude","--quiet"]}
+		"openrouter": {"use":"service","name":"a-model","key":"sk-proof","batch_size":25},
+		"agent":      {"use":"agent","model":"haiku","command":["/opt/claude"],"batch_size":20,"overlap":2}
 	}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	held := cfg.Indexing.Proofreading.Profiles["agent"].Command
-	if len(held) != 2 || held[0] != "/opt/claude" || held[1] != "--quiet" {
-		t.Errorf("got %q", held)
+	profiles := cfg.Indexing.Proofreading.Profiles
+	if got := profiles["openrouter"]; got != (container.Profile{BatchSize: 25}) {
+		t.Errorf("the service profile is %+v", got)
+	}
+	if got := profiles["agent"]; got != (container.Profile{BatchSize: 20, Overlap: 2}) {
+		t.Errorf("the agent profile is %+v", got)
+	}
+
+	raw, err := json.Marshal(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(raw), "sk-proof") || strings.Contains(string(raw), "a-model") {
+		t.Errorf("the keys of an older profile are in %s", raw)
 	}
 }
 
 // How far a correction may stand from the line as read stands over the
 // profiles: it is a property of the text, and one threshold holds for the
-// installation.
+// installation. A file saying nothing leaves it to the proofreader.
 func TestTheEditDistanceIsReadFromAboveTheProfiles(t *testing.T) {
 	cfg, err := openAt(write(t, `{"indexing":{"proofreading":{
 		"max_edit_distance": 0.5,
-		"profiles":{"openrouter":{"use":"service","name":"a-model"}}
+		"profiles":{"careful":{}}
 	}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Indexing.Proofreading.Distance(); got != 0.5 {
+	if got := cfg.Indexing.Proofreading.MaxEditDistance; got != 0.5 {
 		t.Errorf("a correction may stand %v from the line", got)
 	}
 
-	silent, err := openAt(write(t,
-		`{"indexing":{"proofreading":{"profiles":{"openrouter":{"use":"service","name":"a-model"}}}}}`))
+	silent, err := openAt(write(t, `{"indexing":{"proofreading":{"profiles":{"careful":{}}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := silent.Indexing.Proofreading.Distance(); got != container.DefaultMaxEditDistance {
+	if got := silent.Indexing.Proofreading.MaxEditDistance; got != 0 {
 		t.Errorf("a file saying nothing gives %v", got)
 	}
 }
@@ -810,29 +804,6 @@ func TestEachKindOfTextNamesTheProfileThatPutsItRight(t *testing.T) {
 	}
 	if got := cfg.Indexing.Transcription.Proofread; got.Profile != "agent" || got.IsAutomatic {
 		t.Errorf("a transcript is put right by %+v", got)
-	}
-}
-
-func TestTheProofreadersKeyStaysOutOfWhatIsWrittenBack(t *testing.T) {
-	cfg, err := openAt(write(t, `{"indexing":{"proofreading":{"profiles":{
-		"openrouter": {"use":"service","name":"a-model","key":"sk-proof"}
-	}}}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	held := cfg.Indexing.Proofreading.Profiles["openrouter"]
-	if got := held.Key(); got != "sk-proof" {
-		t.Errorf("got %q", got)
-	}
-	raw, err := json.Marshal(cfg)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if strings.Contains(string(raw), "sk-proof") {
-		t.Errorf("the key is in %s", raw)
-	}
-	if strings.Contains(held.String(), "sk-proof") {
-		t.Errorf("the key is in %s", held)
 	}
 }
 

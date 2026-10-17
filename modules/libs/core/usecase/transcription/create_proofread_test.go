@@ -7,18 +7,18 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
-// replying is a proofreader that is asked nothing: what a run is built with,
-// and the instruction it was opened under.
-type replying struct{ told string }
+// replying is a proofreader that is asked nothing: what a run is built with.
+type replying struct{ noScan }
 
 func (r *replying) GetName() string { return "replying" }
 
-func (r *replying) Proofread(context.Context, []domain.ProofreadBatch) (map[int]string, error) {
-	return nil, nil
+func (r *replying) ProofreadSpeech(
+	context.Context, []domain.ProofreadLine, domain.SpeechWindow,
+) (domain.SpeechProofreading, error) {
+	return domain.SpeechProofreading{}, nil
 }
 
 // somewhereToProofread is a vault to read out of and a store to keep the
@@ -28,14 +28,14 @@ func somewhereToProofread() (port.VaultReaders, port.DerivedStores) {
 	return vaults{}, shelves{newShelf()}
 }
 
-// A transcript is put right in batches that hold lines over from the one
-// before, several of them standing out at once.
+// A transcript is put right in requests that hold lines over from the one
+// before, several of them answered in one call.
 func TestATranscriptIsBuiltAtTheSizesTheInstallationProofreadsAt(t *testing.T) {
 	t.Parallel()
 	by := &replying{}
 	config := run.ProofreadingConfig{
 		IsNamed:  true,
-		By:       func(told string) (port.Proofreader, error) { by.told = told; return by, nil },
+		By:       func() (port.Proofreader, error) { return by, nil },
 		Batch:    12,
 		Overlap:  3,
 		InFlight: 5,
@@ -47,14 +47,11 @@ func TestATranscriptIsBuiltAtTheSizesTheInstallationProofreadsAt(t *testing.T) {
 		t.Fatalf("held %v, %v", held, err)
 	}
 	if right.BatchSize != 12 || right.Overlap != 3 || right.InFlight != 5 {
-		t.Errorf("batches of %d holding %d over, %d at once",
+		t.Errorf("requests of %d holding %d over, %d to a call",
 			right.BatchSize, right.Overlap, right.InFlight)
 	}
 	if right.by != port.Proofreader(by) {
 		t.Error("a transcript is put right by something the installation did not place")
-	}
-	if by.told != proofread.SpeechInstruction {
-		t.Error("a transcript is not proofread as speech")
 	}
 }
 
@@ -65,7 +62,7 @@ func TestNamingNoProofreaderHoldsNoneAndIsNoFailure(t *testing.T) {
 	readers, derived := somewhereToProofread()
 	for _, said := range []run.ProofreadingConfig{
 		{},
-		{By: func(string) (port.Proofreader, error) { return nil, nil }},
+		{By: func() (port.Proofreader, error) { return nil, nil }},
 	} {
 		right, held, err := CreateProofread(said, readers, derived)
 		if err != nil || held || right.by != nil {
@@ -80,7 +77,7 @@ func TestAProofreaderThatCannotBeOpenedIsAnError(t *testing.T) {
 	keyless := errors.New("no key is configured")
 	said := run.ProofreadingConfig{
 		IsNamed: true,
-		By:      func(string) (port.Proofreader, error) { return nil, keyless },
+		By:      func() (port.Proofreader, error) { return nil, keyless },
 	}
 	readers, derived := somewhereToProofread()
 

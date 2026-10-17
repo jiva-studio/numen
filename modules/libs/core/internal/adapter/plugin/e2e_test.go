@@ -5,6 +5,7 @@ package plugin_test
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"image"
 	"os"
 	"path/filepath"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 func TestRealPluginProcessE2E(t *testing.T) {
@@ -92,18 +94,17 @@ func TestRealProofreadingPluginProcessE2E(t *testing.T) {
 		_ = host.TeardownAll(ctx, 1*time.Second)
 	}()
 
-	batches := []domain.ProofreadBatch{
-		{Number: 1, Prompt: "This is test sentence."},
+	// The host has no model routed for proofreading, so the plugin has nothing to
+	// ask and invents no text.
+	pages := []domain.ProofreadPage{
+		{Number: 1, Lines: []domain.ProofreadLine{{Number: 0, Text: "This is test sentence."}}},
 	}
-	replies, err := bridge.Proofread(ctx, batches)
-	if err != nil {
-		t.Fatalf("Proofread with real plugin failed: %v", err)
+	res, err := bridge.ProofreadScan(ctx, pages, 0)
+	if !errors.Is(err, port.ErrUnavailable) {
+		t.Fatalf("ProofreadScan with real plugin: got %v, want %v", err, port.ErrUnavailable)
 	}
-	if len(replies) == 0 {
-		t.Fatal("expected at least 1 reply from real proofreading plugin")
-	}
-	if replies[1] == "" {
-		t.Fatal("expected non-empty reply for batch 1")
+	if len(res.Corrections) != 0 {
+		t.Fatalf("expected no corrections, got %v", res.Corrections)
 	}
 }
 

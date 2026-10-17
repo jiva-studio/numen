@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
@@ -27,11 +26,6 @@ type Proofread struct {
 	derived port.DerivedStores
 	by      port.Proofreader
 
-	// Queue is where the pages are left for the proofreader to answer about
-	// later. Where there is one, a run leaves a batch and comes back for it,
-	// and nothing waits.
-	Queue port.ProofreadQueue
-
 	// Area is the store the recognition is kept in. Empty means the default.
 	Area string
 
@@ -43,7 +37,7 @@ type Proofread struct {
 	Pages int
 
 	// MaxEditDistance is how far a correction may stand from the line as read
-	// and still be a correction. Zero takes what was measured.
+	// and still be a correction. Zero leaves the limit to the proofreader.
 	MaxEditDistance float64
 
 	// Cut is optional. It makes a source's chunks, and is called as corrections
@@ -70,7 +64,7 @@ func NewProofread(
 }
 
 // CreateProofread is what puts a document's recognition right, at the sizes
-// this installation proofreads at and against the profile it names for a scan.
+// this installation proofreads at and with the proofreader it names for a scan.
 //
 // held is false with no error where the installation named no profile, and the
 // reading is then used exactly as it was read. A profile that is named and
@@ -81,7 +75,7 @@ func NewProofread(
 func CreateProofread(
 	c run.ProofreadingConfig, readers port.VaultReaders, derived port.DerivedStores,
 ) (right Proofread, held bool, err error) {
-	by, err := run.OpenProofreader(c.By, proofread.ScanInstruction)
+	by, err := run.OpenProofreader(c.By)
 	if err != nil {
 		return Proofread{}, false, fmt.Errorf("nothing to proofread with: %w", err)
 	}
@@ -89,20 +83,10 @@ func CreateProofread(
 		return Proofread{}, false, nil
 	}
 
-	// A proofreader with a queue is left the pages and answers later, and the
-	// batch is collected by whatever comes back for it.
-	var queue port.ProofreadQueue
-	if c.Queue != nil {
-		if queue, err = c.Queue(proofread.ScanInstruction); err != nil {
-			return Proofread{}, false, fmt.Errorf("nothing to leave the pages with: %w", err)
-		}
-	}
-
 	right, err = NewProofread(readers, derived, by)
 	if err != nil {
 		return Proofread{}, false, err
 	}
-	right.Queue = queue
 	right.Pages = c.Batch
 	right.MaxEditDistance = c.MaxEditDistance
 	return right, true, nil
@@ -120,7 +104,6 @@ type ProofreadResult struct {
 	Fixed            int    // lines put right
 	UncorrectedPages int    // pages replied to without a correction, left as they were read
 	IsNone           bool   // there is no recognition to proofread, and nothing was done
-	IsWaiting        bool   // a batch is out and what comes back is not there yet
 	IsBusy           bool   // somebody else is proofreading this recognition
 }
 
@@ -131,11 +114,6 @@ const DefaultPages = 40
 type checkpoint struct {
 	By    string `json:"by"`
 	Pages int    `json:"pages"`
-	// Batch is the name what was left for the proofreader is collected under,
-	// and Left is how many pages beyond the count it covers. A recognition with no
-	// batch out names neither.
-	Batch string `json:"batch,omitempty"`
-	Left  int    `json:"left,omitempty"`
 }
 
 // Execute proofreads one document's recognition.
@@ -195,11 +173,7 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 	job := proofreadRecognitionJob{
 		v: v, store: store, path: path, pages: pages, corrections: corrections, progressName: progressName,
 	}
-	if u.Queue != nil {
-		err = u.await(ctx, job, stood, &res)
-	} else {
-		err = u.askPages(ctx, job, done, &res)
-	}
+	err = u.askPages(ctx, job, done, &res)
 	return res, err
 }
 
@@ -209,7 +183,7 @@ type proofreadRecognitionJob struct {
 	v            domain.Vault
 	store        port.DerivedStore
 	path         string
-	pages        []proofread.Batch
+	pages        []domain.ProofreadPage
 	corrections  domain.ArtifactName
 	progressName domain.ArtifactName
 }
@@ -232,11 +206,11 @@ func (u Proofread) askPages(
 		end := min(at+batch, len(p.pages))
 		asked := p.pages[at:end]
 
-		replies, err := u.by.Proofread(ctx, ask(asked))
+		answer, err := u.by.ProofreadScan(ctx, asked, u.MaxEditDistance)
 		if err != nil {
 			return fmt.Errorf("proofread %s: %w", p.path, err)
 		}
-		if err := u.writeCorrections(ctx, p, asked, replies, end, res); err != nil {
+		if err := u.writeCorrections(ctx, p, answer, end, res); err != nil {
 			return err
 		}
 	}
@@ -249,13 +223,12 @@ func (u Proofread) askPages(
 func (u Proofread) writeCorrections(
 	ctx context.Context,
 	p proofreadRecognitionJob,
-	asked []proofread.Batch,
-	replies map[int]string,
+	answer domain.ScanProofreading,
 	end int,
 	res *ProofreadResult,
 ) error {
-	put, uncorrected := u.getCorrections(asked, replies)
-	res.UncorrectedPages += uncorrected
+	put := getCorrectionLines(answer.Corrections)
+	res.UncorrectedPages += answer.Uncorrected
 	if len(put) > 0 {
 		if err := p.store.AppendArtifact(ctx, p.corrections, correction.Pack(put)); err != nil {
 			return err
@@ -280,7 +253,7 @@ func (u Proofread) lines(
 	ctx context.Context,
 	store port.DerivedStore,
 	area, hash string,
-) ([]proofread.Batch, error) {
+) ([]domain.ProofreadPage, error) {
 	artifact, err := store.ReadArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, area, hash))
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
@@ -296,33 +269,17 @@ func (u Proofread) lines(
 		return nil, err
 	}
 	prose, _ := ocr.Read(artifact)
-	return proofread.GetScanBatches(prose, highlight.Unpack(boxes)), nil
+	return getProofreadPages(prose, highlight.Unpack(boxes)), nil
 }
 
-// getCorrections is what a run of pages had put right, and how many of them
-// answered with something that was no answer.
-//
-// A page nothing came back about and a page whose reply the gates refused are
-// the same outcome: the page is left as it was read.
-func (u Proofread) getCorrections(
-	asked []proofread.Batch,
-	replies map[int]string,
-) (put []domain.CorrectionLine, uncorrected int) {
-	for _, page := range asked {
-		reply, answered := replies[page.Number]
-		if !answered {
-			continue
-		}
-		lines, _, ok := proofread.GetFixedLines(page, reply, run.GetSize(u.MaxEditDistance, proofread.MaxEditDistance))
-		if !ok {
-			uncorrected++
-			continue
-		}
-		for _, line := range lines {
-			put = append(put, domain.CorrectionLine{Number: line.Number, Text: line.Text})
-		}
+// getCorrectionLines is the corrections a proofreader made, as lines of the
+// recognition.
+func getCorrectionLines(made []domain.ProofreadCorrection) []domain.CorrectionLine {
+	out := make([]domain.CorrectionLine, len(made))
+	for i, one := range made {
+		out[i] = domain.CorrectionLine{Number: one.Number, Text: one.Text}
 	}
-	return put, uncorrected
+	return out
 }
 
 // readCheckpoint is how many pages a run before this one asked about, with the
@@ -353,90 +310,6 @@ func (u Proofread) readCheckpoint(
 	return stood, nil
 }
 
-// await collects what the proofreader has answered about, and leaves the pages
-// after it. One run collects one batch and leaves one, so a book is put right
-// over as many runs as it has batches.
-func (u Proofread) await(
-	ctx context.Context,
-	p proofreadRecognitionJob,
-	stood checkpoint,
-	res *ProofreadResult,
-) error {
-	if stood.Batch != "" {
-		next, ready, err := u.fetchBatch(ctx, p, stood, res)
-		if err != nil {
-			return err
-		}
-		if !ready {
-			res.IsWaiting = true
-			return nil
-		}
-		stood = next
-	}
-	if stood.Pages >= len(p.pages) {
-		return nil
-	}
-	return u.submitBatch(ctx, p, stood.Pages, res)
-}
-
-// fetchBatch collects the batch left for the proofreader and lands its
-// corrections. It returns the checkpoint the recognition now stands at, and whether
-// the batch was ready.
-func (u Proofread) fetchBatch(
-	ctx context.Context,
-	p proofreadRecognitionJob,
-	stood checkpoint,
-	res *ProofreadResult,
-) (checkpoint, bool, error) {
-	replies, ready, err := u.Queue.GetReplies(ctx, stood.Batch)
-	if err != nil {
-		// The batch is forgotten, and the pages it covered are left again by the
-		// next run.
-		stood.Batch, stood.Left = "", 0
-		if put := u.writeCheckpoint(ctx, p.store, p.progressName, stood); put != nil {
-			return stood, false, put
-		}
-		return stood, false, fmt.Errorf("collect the proofreading of %s: %w", p.path, err)
-	}
-	if !ready {
-		return stood, false, nil
-	}
-	end := min(stood.Pages+stood.Left, len(p.pages))
-	if err := u.writeCorrections(ctx, p, p.pages[stood.Pages:end], replies, end, res); err != nil {
-		return stood, false, err
-	}
-	return checkpoint{Pages: end}, true, nil
-}
-
-// submitBatch leaves the batch of pages from at for the proofreader, and writes
-// down the name it is collected under.
-func (u Proofread) submitBatch(
-	ctx context.Context,
-	p proofreadRecognitionJob,
-	at int,
-	res *ProofreadResult,
-) error {
-	end := min(at+run.GetSize(u.Pages, DefaultPages), len(p.pages))
-	name, err := u.Queue.Submit(ctx, ask(p.pages[at:end]))
-	if err != nil {
-		return fmt.Errorf("leave the pages of %s: %w", p.path, err)
-	}
-	res.IsWaiting = true
-	return u.writeCheckpoint(ctx, p.store, p.progressName, checkpoint{Pages: at, Batch: name, Left: end - at})
-}
-
-// ask is the batches with their prompt built for the proofreader.
-func ask(pages []proofread.Batch) []domain.ProofreadBatch {
-	out := make([]domain.ProofreadBatch, len(pages))
-	for i, page := range pages {
-		out[i] = domain.ProofreadBatch{
-			Number: page.Number,
-			Prompt: proofread.Ask(page),
-		}
-	}
-	return out
-}
-
 // dropCorrections drops the corrections of pages no count claims. A line is
 // numbered by where its run stands in the recognition, so the pages beyond the
 // count are the lines from the first of them onwards.
@@ -444,7 +317,7 @@ func dropCorrections(
 	ctx context.Context,
 	store port.DerivedStore,
 	corrections domain.ArtifactName,
-	pages []proofread.Batch,
+	pages []domain.ProofreadPage,
 	done int,
 ) error {
 	beyond, ok := opening(pages, done)
@@ -475,7 +348,7 @@ func dropCorrections(
 }
 
 // opening is the number of the first line no count claims.
-func opening(pages []proofread.Batch, done int) (int, bool) {
+func opening(pages []domain.ProofreadPage, done int) (int, bool) {
 	for _, page := range pages[min(done, len(pages)):] {
 		if len(page.Lines) > 0 {
 			return page.Lines[0].Number, true
