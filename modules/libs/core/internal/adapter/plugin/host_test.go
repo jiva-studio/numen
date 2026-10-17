@@ -1245,7 +1245,7 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 			case <-stop:
 				return
 			default:
-				host.EvictIdle(context.Background(), 0, 20*time.Millisecond)
+				host.EvictIdle(t.Context(), 0, 20*time.Millisecond)
 			}
 		}
 	}()
