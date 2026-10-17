@@ -2,8 +2,6 @@ package engine
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -47,7 +45,7 @@ func locateModels(ctx context.Context, cfg Config) (onnxRuntime, paths, error) {
 
 	found := paths{from: "settings"}
 	for _, one := range getWantedFiles(cfg, &found) {
-		if *one.dst, err = model(ctx, cfg, one.path, one.name, one.kind); err != nil {
+		if *one.dst, err = models.Locate(ctx, cfg.source(), pinnedSums, one.path, one.name, one.kind); err != nil {
 			return onnxRuntime{}, paths{}, err
 		}
 	}
@@ -83,38 +81,6 @@ func getWantedFiles(cfg Config, into *paths) []wantedFile {
 	}
 }
 
-// model is where one model's file is.
-//
-// A path written down is used as given, and its absence is an error. A name is
-// looked for beside the application and then fetched.
-func model(ctx context.Context, cfg Config, path, name, kind string) (string, error) {
-	if path != "" {
-		if _, err := os.Stat(path); err != nil {
-			return "", fmt.Errorf("the %s: %w", kind, err)
-		}
-		return path, nil
-	}
-	if name == "" {
-		return "", fmt.Errorf("no %s: name one, or say where it is", kind)
-	}
-	sum := getPinnedSum(name)
-	for _, at := range onnxruntime.GetPaths(cfg.Dir, filepath.Base(name)) {
-		if _, err := os.Stat(at); err != nil {
-			continue
-		}
-		if sum == "" || models.VerifyFile(at, sum) == nil {
-			return at, nil
-		}
-	}
-	if !models.IsAddress(name) {
-		return "", fmt.Errorf("the %s %q is not beside the application, and is not somewhere to fetch it from", kind, name)
-	}
-	found, err := onnxruntime.Fetch(ctx, cfg.settings(), name, sum)
-	if err != nil {
-		return "", fmt.Errorf("the %s: %w", kind, err)
-	}
-	return found, nil
-}
 
 // getModelName is what a model is called, for the record kept beside what it produced.
 // A name in the settings stands, and a model without one is called after the
@@ -124,4 +90,13 @@ func getModelName(name, at string) string {
 		return name
 	}
 	return strings.TrimSuffix(path.Base(filepath.ToSlash(at)), filepath.Ext(at))
+}
+
+func (c Config) source() models.Source {
+	return models.Source{
+		GetPaths: func(file string) []string { return onnxruntime.GetPaths(c.Dir, file) },
+		Fetch: func(ctx context.Context, address, sum string) (string, error) {
+			return onnxruntime.Fetch(ctx, c.settings(), address, sum)
+		},
+	}
 }
