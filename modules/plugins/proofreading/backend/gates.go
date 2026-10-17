@@ -50,11 +50,7 @@ func buildFixedLines(batch Batch, reply string, maxDistance float64, read map[in
 	var out []Line
 	past := false
 	answered := make(map[int]bool, len(batch.Lines))
-	for _, row := range strings.Split(stripFence(reply), "\n") {
-		row = strings.TrimSpace(row)
-		if row == "" {
-			continue
-		}
+	for _, row := range splitRows(reply) {
 		line, keep, reaches, valid := processRow(row, batch, read, answered, maxDistance)
 		if !valid {
 			return nil, false, false

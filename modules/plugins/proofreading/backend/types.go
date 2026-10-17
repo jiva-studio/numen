@@ -18,6 +18,10 @@ type Batch struct {
 
 	// IsJoinable is whether a reply may answer for a run of lines as one.
 	IsJoinable bool
+
+	// Context is what the whole text holds, said in its own words. It stands
+	// before the lines in the prompt and is answered for by nothing.
+	Context string
 }
 
 // Last is the number of the final line the batch carries, and -1 for none.

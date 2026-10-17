@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -92,10 +93,7 @@ func (s *proofreadingServer) Proofread(
 		}), nil
 	}
 
-	key := os.Getenv("NUMEN_PROOFREADING_KEY")
-	if key == "" {
-		key = os.Getenv("OPENAI_API_KEY")
-	}
+	key := getAPIKey()
 
 	s.mu.RLock()
 	baseURL, model := s.baseURL, s.modelName
@@ -193,4 +191,90 @@ func main() {
 		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+// getAPIKey is the key the model is called with.
+func getAPIKey() string {
+	if key := os.Getenv("NUMEN_PROOFREADING_KEY"); key != "" {
+		return key
+	}
+	return os.Getenv("OPENAI_API_KEY")
+}
+
+func (s *proofreadingServer) ProofreadText(
+	ctx context.Context,
+	req *connect.Request[numenv1.ProofreadTextRequest],
+) (*connect.Response[numenv1.ProofreadTextResponse], error) {
+	kind := req.Msg.GetKind()
+	if kind != numenv1.ProofreadKind_PROOFREAD_KIND_SCAN && kind != numenv1.ProofreadKind_PROOFREAD_KIND_SPEECH {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("unknown kind %s", kind))
+	}
+	key := getAPIKey()
+	if key == "" {
+		return nil, connect.NewError(connect.CodeFailedPrecondition,
+			errors.New("no API key: set NUMEN_PROOFREADING_KEY or OPENAI_API_KEY"))
+	}
+
+	s.mu.RLock()
+	baseURL, model := s.baseURL, s.modelName
+	opts := textOptions{
+		strict:         s.strict,
+		maxSuggestions: s.maxSuggestions,
+		maxDistance:    req.Msg.GetMaxEditDistance(),
+	}
+	s.mu.RUnlock()
+	if baseURL == "" {
+		baseURL = defaultBaseURL
+	}
+	client := &http.Client{Timeout: 60 * time.Second}
+	ask := func(ctx context.Context, instruction, prompt string) (string, error) {
+		return callLLM(ctx, client, baseURL, key, model, instruction, prompt)
+	}
+
+	var (
+		result textResult
+		err    error
+	)
+	groups := readGroups(req.Msg.GetGroups())
+	if kind == numenv1.ProofreadKind_PROOFREAD_KIND_SCAN {
+		result, err = proofreadScan(ctx, ask, groups, opts)
+	} else {
+		var lines []Line
+		for _, group := range groups {
+			lines = append(lines, group.Lines...)
+		}
+		result, err = proofreadSpeech(ctx, ask, lines,
+			int(req.Msg.GetSize()), int(req.Msg.GetOverlap()), int(req.Msg.GetFromLine()), int(req.Msg.GetLineLimit()), opts)
+	}
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	corrections := make([]*numenv1.ProofreadCorrection, len(result.corrections))
+	for i, line := range result.corrections {
+		corrections[i] = &numenv1.ProofreadCorrection{
+			Number: int32(line.Number),
+			Last:   int32(line.Last),
+			Text:   line.Text,
+		}
+	}
+	return connect.NewResponse(&numenv1.ProofreadTextResponse{
+		Corrections: corrections,
+		Uncorrected: int32(result.uncorrected),
+		NextLine:    int32(result.next),
+		IsDone:      result.isDone,
+	}), nil
+}
+
+// readGroups returns the batches a request carries.
+func readGroups(groups []*numenv1.ProofreadGroup) []Batch {
+	out := make([]Batch, len(groups))
+	for i, group := range groups {
+		lines := make([]Line, len(group.GetLines()))
+		for j, line := range group.GetLines() {
+			lines[j] = Line{Number: int(line.GetNumber()), Text: line.GetText()}
+		}
+		out[i] = Batch{Number: int(group.GetNumber()), Lines: lines}
+	}
+	return out
 }
