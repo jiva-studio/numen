@@ -178,11 +178,7 @@ func (s *Supervisor) SetPermissions(permissions []string) {
 	defer s.mu.Unlock()
 	norm := make([]string, len(permissions))
 	for i, p := range permissions {
-		if p == "network" {
-			norm[i] = PermissionNetworkOutbound
-		} else {
-			norm[i] = p
-		}
+		norm[i] = port.NormalizePermission(p)
 	}
 	s.permissions = norm
 }
@@ -191,10 +187,7 @@ func (s *Supervisor) SetPermissions(permissions []string) {
 func (s *Supervisor) HasPermission(permission string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if permission == "network" {
-		permission = PermissionNetworkOutbound
-	}
-	return slices.Contains(s.permissions, permission)
+	return slices.Contains(s.permissions, port.NormalizePermission(permission))
 }
 
 // CheckPermission returns an error if the supervised plugin lacks the requested permission.

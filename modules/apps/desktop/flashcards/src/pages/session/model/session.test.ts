@@ -197,19 +197,35 @@ describe('a session', () => {
   })
 
   it('keeps the answer it wrote when taking it back was refused', async () => {
-    const { one } = createSession()
+    let refuses = false
+    const cards: SessionClient = {
+      async startSession() {
+        return opening('one', 'two')
+      },
+      async answerCard() {
+        return { answer: '011' }
+      },
+      async takeBackAnswer() {
+        if (refuses) throw new Error('gone')
+        return {}
+      },
+    }
+    const errors: unknown[] = []
+    const one = useReviewSession({ cards, reportError: (why) => errors.push(why) })
     await one.start('01VAULT', '')
     one.show()
     await one.answer('good')
+    expect(one.answers.value).toHaveLength(1)
+    expect(one.at.value).toBe(1)
 
-    const { one: other } = createSession({ refuses: new Error('gone') })
-    await other.start('01VAULT', '')
-    other.show()
-    await other.answer('good')
+    refuses = true
+    await one.takeBack()
 
     // The vault holds the answer; the window may not pretend otherwise.
-    expect(other.answers.value).toHaveLength(0)
+    expect(errors).toHaveLength(1)
     expect(one.answers.value).toHaveLength(1)
+    expect(one.at.value).toBe(1)
+    expect(one.shown.value).toBe(false)
   })
 
   it('is over when the last card has been answered', async () => {
@@ -244,7 +260,7 @@ describe('a session', () => {
     const asks: { said: unknown }[] = []
     const cards: SessionClient = {
       async startSession() {
-        return opening('one')
+        return opening('one', 'two')
       },
       async answerCard(one) {
         asks.push({ said: one })
@@ -256,12 +272,25 @@ describe('a session', () => {
     }
     const one = useReviewSession({ cards, reportError: () => {}, now: () => clock })
 
+    clock += 1000
     await one.start('01VAULT', '')
     clock += 4200
     one.show()
     await one.answer('good')
 
     expect(asks[0]?.said).toMatchObject({ tookMs: 4200n })
+
+    clock += 3000
+    one.show()
+    await one.answer('good')
+
+    expect(asks[1]?.said).toMatchObject({ tookMs: 3000n })
+
+    await one.takeBack()
+    clock += 1500
+    await one.answer('good')
+
+    expect(asks[2]?.said).toMatchObject({ tookMs: 1500n })
   })
 })
 

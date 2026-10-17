@@ -2,13 +2,13 @@
   "id": "md.numen.downloader",
   "name": "Media Downloader",
   "version": "1.0.0",
+  "protocol": 1,
   "description": "Media and web page downloader with transcript extraction via yt-dlp",
   "capabilities": ["media.download", "downloader"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onCommand:downloadMedia", "onCommand:downloader.open"],
   "permissions": ["network:outbound", "vault:write"],
   "lifecycle": {
-    "mode": "on-demand",
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false
   },
