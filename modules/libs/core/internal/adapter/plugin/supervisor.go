@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"slices"
 	"sync"
@@ -38,6 +39,11 @@ type Supervisor struct {
 	state          ProcessState
 	process        *os.Process
 	inProcess      bool
+	teardownBegun  bool
+	failures       int
+	failure        error
+	failed         bool
+	retryAt        time.Time
 	lastActiveTime time.Time
 	activeRefCount int
 	permissions    []string
@@ -64,6 +70,11 @@ func NewSupervisor() *Supervisor {
 		state:             StateDormant,
 		process:           nil,
 		inProcess:         false,
+		teardownBegun:     false,
+		failures:          0,
+		failure:           nil,
+		failed:            false,
+		retryAt:           time.Time{},
 		lastActiveTime:    time.Time{},
 		activeRefCount:    0,
 		permissions:       nil,
@@ -152,6 +163,7 @@ func (s *Supervisor) SetDormant(err error) {
 	s.state = StateDormant
 	s.process = nil
 	s.inProcess = false
+	s.teardownBegun = false
 	s.activeRefCount = 0
 	s.activationErr = err
 	if s.activatingCh != nil {
@@ -166,11 +178,7 @@ func (s *Supervisor) SetPermissions(permissions []string) {
 	defer s.mu.Unlock()
 	norm := make([]string, len(permissions))
 	for i, p := range permissions {
-		if p == "network" {
-			norm[i] = PermissionNetworkOutbound
-		} else {
-			norm[i] = p
-		}
+		norm[i] = port.NormalizePermission(p)
 	}
 	s.permissions = norm
 }
@@ -179,10 +187,7 @@ func (s *Supervisor) SetPermissions(permissions []string) {
 func (s *Supervisor) HasPermission(permission string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if permission == "network" {
-		permission = PermissionNetworkOutbound
-	}
-	return slices.Contains(s.permissions, permission)
+	return slices.Contains(s.permissions, port.NormalizePermission(permission))
 }
 
 // CheckPermission returns an error if the supervised plugin lacks the requested permission.
@@ -209,6 +214,7 @@ func (s *Supervisor) Attach(p *os.Process, now time.Time) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.process = p
+	s.teardownBegun = false
 	s.state = StateActive
 	s.lastActiveTime = now
 	s.activationErr = nil
@@ -231,6 +237,7 @@ func (s *Supervisor) Attach(p *os.Process, now time.Time) error {
 		if s.process == p {
 			s.process = nil
 			s.inProcess = false
+			s.teardownBegun = false
 			s.state = StateDormant
 			s.activeRefCount = 0
 			onExit := s.onExit
@@ -306,6 +313,41 @@ func (s *Supervisor) IsIdle(threshold time.Duration, now time.Time) bool {
 	return now.Sub(s.lastActiveTime) >= threshold
 }
 
+// BeginDeactivation moves a plugin that has been idle for the threshold to StateDeactivating and reports whether it did.
+func (s *Supervisor) BeginDeactivation(threshold time.Duration, now time.Time) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.state != StateIdle || s.activeRefCount > 0 || now.Sub(s.lastActiveTime) < threshold {
+		return false
+	}
+	s.state = StateDeactivating
+	return true
+}
+
+// GetProcessID returns the pid of the attached process, or zero when none is attached.
+func (s *Supervisor) GetProcessID() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.process == nil {
+		return 0
+	}
+	return s.process.Pid
+}
+
+// WaitWhileDeactivating blocks until the supervisor leaves StateDeactivating or ctx ends.
+func (s *Supervisor) WaitWhileDeactivating(ctx context.Context) error {
+	ticker := time.NewTicker(5 * time.Millisecond)
+	defer ticker.Stop()
+	for s.GetState() == StateDeactivating {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("wait for deactivation: %w", ctx.Err())
+		case <-ticker.C:
+		}
+	}
+	return nil
+}
+
 // Teardown executes two-phase shutdown: graceful RPC call followed by hard kill fallback.
 func (s *Supervisor) Teardown(
 	ctx context.Context,
@@ -318,12 +360,13 @@ func (s *Supervisor) Teardown(
 		s.mu.Unlock()
 		return s.teardownNilProcess(ctx, rpcShutdown)
 	}
-	if s.state == StateDeactivating {
+	if s.state == StateDeactivating && s.teardownBegun {
 		exitCh := s.exitCh
 		s.mu.Unlock()
 		return s.waitDeactivating(ctx, exitCh)
 	}
 	s.state = StateDeactivating
+	s.teardownBegun = true
 	if s.activatingCh != nil {
 		close(s.activatingCh)
 		s.activatingCh = nil
@@ -354,6 +397,7 @@ func (s *Supervisor) teardownNilProcess(ctx context.Context, rpcShutdown func(ct
 	}
 	s.state = StateDormant
 	s.inProcess = false
+	s.teardownBegun = false
 	s.activeRefCount = 0
 	if s.activatingCh != nil {
 		close(s.activatingCh)
@@ -403,6 +447,7 @@ func (s *Supervisor) markDormant(proc *os.Process) {
 		s.state = StateDormant
 		s.process = nil
 		s.inProcess = false
+		s.teardownBegun = false
 		s.activeRefCount = 0
 		s.activationErr = nil
 		if s.activatingCh != nil {
