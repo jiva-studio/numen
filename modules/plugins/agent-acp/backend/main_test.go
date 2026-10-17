@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -156,8 +157,7 @@ func TestTheProgramListNamesAntigravityAndCodexWithTheModelsCodexLists(t *testin
 }
 
 // A program that is not installed is listed so, and Codex is not started for its models.
-func TestAProgramThatIsNotInstalledListsNoModels(t *testing.T) {
-	t.Setenv("PATH", t.TempDir())
+	withoutAgentsAnywhere(t)
 	t.Setenv("HOME", t.TempDir())
 	client := startAgent(t)
 
@@ -270,8 +270,7 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 // A command line the installation set counts as the program being installed, and its models are
 // asked of that command.
 func TestAProgramIsInstalledUnderTheCommandLineTheInstallationSet(t *testing.T) {
-	t.Setenv("PATH", t.TempDir())
-	t.Setenv("HOME", t.TempDir())
+	withoutAgentsAnywhere(t)
 	appServer := writeScript(t, "codex",
 		`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+
@@ -298,12 +297,14 @@ func TestAProgramIsInstalledUnderTheCommandLineTheInstallationSet(t *testing.T) 
 	}
 }
 
-// A listing that failed is asked for again, and what Codex lists then is kept.
+// A listing that failed is left alone for a while and then asked for again, and what Codex lists then is
+// kept.
 func TestAFailedCodexListingIsAskedForAgain(t *testing.T) {
 	needsShell(t)
 	t.Setenv("HOME", t.TempDir())
 	failing := writeScript(t, "codex", "exit 1\n")
-	var cache codexModelCache
+	now := time.Unix(1000, 0)
+	cache := codexModelCache{now: func() time.Time { return now }}
 
 	if got := cache.get(t.Context(), []string{failing}); got != nil {
 		t.Fatalf("a failed listing gave %+v", got)
@@ -315,6 +316,10 @@ func TestAFailedCodexListingIsAskedForAgain(t *testing.T) {
 		"while read -r _; do :; done\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
+	if got := cache.get(t.Context(), []string{failing}); got != nil {
+		t.Fatalf("a command line that just failed was asked again: %+v", got)
+	}
+	now = now.Add(codexFailureBackoff)
 	if got := cache.get(t.Context(), []string{failing}); len(got) != 1 || got[0].Name != "gpt-x" {
 		t.Errorf("the next listing gave %+v", got)
 	}
@@ -326,4 +331,16 @@ func needsShell(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("the fixtures are shell scripts")
 	}
+}
+
+// withoutAgentsAnywhere makes this machine hold none of the programs, wherever they are searched for.
+func withoutAgentsAnywhere(t *testing.T) {
+	t.Helper()
+	t.Setenv("PATH", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
+	was := [][]string{antigravitySearchPlaces, codexSearchPlaces, cursorSearchPlaces}
+	antigravitySearchPlaces, codexSearchPlaces, cursorSearchPlaces = nil, nil, nil
+	t.Cleanup(func() {
+		antigravitySearchPlaces, codexSearchPlaces, cursorSearchPlaces = was[0], was[1], was[2]
+	})
 }

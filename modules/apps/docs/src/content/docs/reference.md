@@ -7,7 +7,7 @@ Every key `numen.json` can hold. The pages under Settings say which of these are
 
 Each heading below is a section of the file, and the keys under it are written the way they are written inside that section — `model.name` under `indexing.embedding` is `indexing.embedding.model.name` if you write it out in full.
 
-A key you leave out keeps its default, so a file naming one setting is a complete file. A key numen does not know is carried through untouched. A row with no kind beside it is a group holding the keys under it.
+A key you leave out keeps its default, so a file naming one setting is a complete file. A key numen does not know is carried through untouched. Under `agent`, each program an agent plugin lists has a section named after it, `agent.<program>`, holding `command`, `model` and `max_steps`; any other key there is an option the program defines, such as `reads_hooks_and_skills` for Claude Code (see [the agent page](/agent/)). A row with no kind beside it is a group holding the keys under it.
 
 Two things are not settings and are not in here: which files count as notes, and what a vault's own folder is called. Both are asked for on the command line, by [`numen-cli`](/cli/#where-it-puts-things).
 
@@ -166,4 +166,12 @@ The workload and resource calibration profile.
 | `custom.ocr_threads` | a number |  |
 | `custom.ocr_sessions` | a number |  |
 | `custom.llm_concurrency` | a number |  |
+
+### `ai`
+
+Where the questions plugins ask of a model are answered.
+
+| | | |
+| --- | --- | --- |
+| `routes` |  | the routes by purpose, and by DefaultRoute for the rest. |
 <!-- END AUTOGEN -->
