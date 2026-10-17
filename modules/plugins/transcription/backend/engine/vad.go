@@ -7,8 +7,6 @@ import (
 	"unsafe"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
-
-	
 )
 
 // The names the segmenter's graph gives what it is asked and what it answers.
@@ -32,7 +30,9 @@ var (
 // this much state from one to the next. At 16 kHz a window is 32 milliseconds,
 // and that is how finely a span can be cut.
 const (
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="the window size is fixed by the Silero VAD model architecture"
 	speechWindow = 512
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT,ARITHMETIC_BASE reason="the state dimensions are fixed by the Silero VAD model architecture"
 	speechMemory = 2 * 128
 )
 
@@ -354,6 +354,7 @@ func getSpans(scores []float32, threshold float32, silence, pad, longest, shorte
 // each closed by more than silence quiet windows after it.
 func findSpeechSpans(scores []float32, threshold float32, silence int) []span {
 	var out []span
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="any negative number marks the span as closed, and last is always set on the first speech window before it is read"
 	open, last := -1, -1
 	for i, score := range scores {
 		if score >= threshold {

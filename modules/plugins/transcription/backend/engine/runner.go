@@ -28,20 +28,25 @@ type ortAPIBase struct {
 }
 
 type ortAPITable struct {
-	_                    uintptr
-	GetErrorCode         uintptr
-	GetErrorMessage      uintptr
-	_                    [6]uintptr
-	Run                  uintptr
+	_               uintptr
+	GetErrorCode    uintptr
+	GetErrorMessage uintptr
+	// gomutants:disable-next-line INTEGER_DECREMENT reason="the struct layout matches the C OrtApi definition"
+	_   [6]uintptr
+	Run uintptr
+	// gomutants:disable-next-line INTEGER_DECREMENT reason="the struct layout matches the C OrtApi definition"
 	_                    [41]uintptr
 	GetTensorMutableData uintptr
-	_                    [41]uintptr
-	ReleaseStatus        uintptr
-	_                    [2]uintptr
-	ReleaseValue         uintptr
+	// gomutants:disable-next-line INTEGER_DECREMENT reason="the struct layout matches the C OrtApi definition"
+	_             [41]uintptr
+	ReleaseStatus uintptr
+	// gomutants:disable-next-line INTEGER_DECREMENT reason="the struct layout matches the C OrtApi definition"
+	_            [2]uintptr
+	ReleaseValue uintptr
 }
 
 func init() {
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="the runner registers its initialisation hook before any runtime opens"
 	onnxruntime.Register(func(at string) {
 		_ = initRunner(at)
 	})

@@ -99,3 +99,40 @@ func TestJoiningStopsAtTheLongest(t *testing.T) {
 		t.Errorf("joined into %v", got)
 	}
 }
+
+// Empty input returns no spans.
+func TestJoinShortSpansEmpty(t *testing.T) {
+	if got := joinShortSpans(nil, 10, 100); len(got) != 0 {
+		t.Errorf("got %v, want empty", got)
+	}
+}
+
+// Short spans with non-zero offsets are joined up to longest.
+func TestJoinShortSpansNonZeroOffset(t *testing.T) {
+	got := joinShortSpans([]span{
+		{From: 20, To: 23},
+		{From: 25, To: 28},
+	}, 10, 20)
+	want := []span{{From: 20, To: 28}}
+	if len(got) != 1 || got[0] != want[0] {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+// A span exactly equal to the shortest bound is preserved.
+func TestASpanExactlyShortestIsKept(t *testing.T) {
+	scores := buildScores(10, 2, 3, 4)
+	got := getSpans(scores, 0.5, 2, 0, 100, 3)
+	if len(got) != 1 || got[0].From != 2 || got[0].To != 5 {
+		t.Errorf("span of exact shortest length came out as %v", got)
+	}
+}
+
+// A recording of silence produces no speech spans.
+func TestSilenceProducesNoSpans(t *testing.T) {
+	scores := buildScores(10)
+	got := getSpans(scores, 0.5, 2, 0, 100, 1)
+	if len(got) != 0 {
+		t.Errorf("silence produced spans %v", got)
+	}
+}
