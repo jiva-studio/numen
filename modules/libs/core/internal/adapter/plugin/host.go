@@ -1255,8 +1255,8 @@ func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
 	h.mu.RUnlock()
 
 	secrets, secretsErr := readPluginSecrets(ctx, store, pluginID, secretNames)
-	for _, name := range secretNames {
-		values[name] = secrets[name]
+	for name, key := range secrets {
+		values[name] = key
 	}
 
 	httpClient := EndpointClient(endpoint)

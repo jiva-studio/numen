@@ -68,8 +68,9 @@ func getSecretName(pluginID, name string) string {
 }
 
 // readPluginSecrets reads the keys of the secrets a plugin declares. A secret
-// without a key is left out, which tells the plugin it has none; a store that
-// cannot be read is an error, and the secrets it did give are returned beside it.
+// without a key is empty, which clears the key the plugin holds; one the store
+// fails to read is left out, so the plugin keeps what it has, and the failure is
+// returned beside the secrets that were read.
 func readPluginSecrets(
 	ctx context.Context, store port.KeyStore, pluginID string, names []string,
 ) (map[string]string, error) {
@@ -87,7 +88,8 @@ func readPluginSecrets(
 		case err == nil:
 			secrets[name] = key
 		case errors.Is(err, port.ErrNoKey):
-			// The plugin is told it has none by the name being absent.
+			// An empty value clears the key the plugin holds.
+			secrets[name] = ""
 		default:
 			failures = append(failures, fmt.Errorf("read secret %s of plugin %s: %w", name, pluginID, err))
 		}

@@ -245,6 +245,9 @@ func TestAKeyStoreThatCannotBeReadFailsLoudly(t *testing.T) {
 	if probe.last(t).GetValues()["model"] != "sonnet" {
 		t.Error("the other settings were not passed on")
 	}
+	if _, sent := probe.last(t).GetValues()["apiKey"]; sent {
+		t.Error("a key that could not be read was sent, which would clear the one the plugin holds")
+	}
 }
 
 // A host with no key store fails the same way for a plugin that declares a secret.

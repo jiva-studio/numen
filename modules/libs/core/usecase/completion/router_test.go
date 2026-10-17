@@ -287,9 +287,16 @@ func TestAChangedLimitAppliesToTheNextQuestions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	config = completion.Config{Routes: map[string]completion.Route{"default": {Concurrency: 3}}}
-
 	var wg sync.WaitGroup
+	// One question holds the only place under the limit of one.
+	wg.Go(func() {
+		if _, err := router.Complete(t.Context(), port.Question{}); err != nil {
+			t.Error(err)
+		}
+	})
+	<-block.started
+
+	config = completion.Config{Routes: map[string]completion.Route{"default": {Concurrency: 3}}}
 	for range 3 {
 		wg.Go(func() {
 			if _, err := router.Complete(t.Context(), port.Question{}); err != nil {
