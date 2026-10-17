@@ -113,7 +113,7 @@ func emptyDiscoveredPlugin() DiscoveredPlugin {
 			Targets:          nil,
 			ActivationEvents: nil,
 			Permissions:      nil,
-			Lifecycle:        Lifecycle{Mode: "", IdleTimeoutSeconds: 0, KeepAliveWhileVisible: false},
+			Lifecycle:        Lifecycle{IdleTimeoutSeconds: 0, KeepAliveWhileVisible: false},
 			Backend:          Backend{Type: "", Entrypoint: "", ServiceName: ""},
 			Frontend:         Frontend{Entrypoint: "", Styles: ""},
 			Settings:         nil,

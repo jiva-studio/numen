@@ -2,6 +2,7 @@
   "id": "md.numen.media-player",
   "name": "Audio Player & Recorder",
   "version": "1.0.0",
+  "protocol": 1,
   "description": "Audio player with waveform visualization and microphone recording",
   "capabilities": ["audio", "recording"],
   "targets": ["desktop.editor"],
