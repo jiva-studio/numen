@@ -303,6 +303,11 @@ function resolveDefaultDeps(deps: PluginLoaderDeps) {
   }
 }
 
+function checkPluginEnabled(host: PluginHost, id: string): boolean {
+  const val = host.getSetting?.(id, 'enabled')
+  return typeof val === 'boolean' ? val : true
+}
+
 export function createPluginLoader(deps: PluginLoaderDeps) {
   const { host } = deps
   const defaults = resolveDefaultDeps(deps)
@@ -314,10 +319,7 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
   const manifests = new Map<string, PluginManifest>()
   let hasStarted = false
 
-  const isPluginEnabled = (id: string): boolean => {
-    const val = host.getSetting?.(id, 'enabled')
-    return typeof val === 'boolean' ? val : true
-  }
+  const isPluginEnabled = (id: string): boolean => checkPluginEnabled(host, id)
 
   const activatePlugin = (id: string, module?: unknown) =>
     activateEntry(
