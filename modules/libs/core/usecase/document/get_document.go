@@ -6,16 +6,13 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/plugins/reader-epub/backend/epub"
 )
 
-// Document is what GetDocument and GetBook read: which bytes they came from, and
-// either the size of each page, wide and high in the page's own units, or the
-// book.
+// Document is what GetDocument reads: which bytes it came from, and the size of
+// each page, wide and high in the page's own units.
 type Document struct {
 	Fingerprint Fingerprint
 	Pages       [][2]float64
-	Book        *epub.Book
 }
 
 // GetDocument finds how many pages a document has and how big each of them is.

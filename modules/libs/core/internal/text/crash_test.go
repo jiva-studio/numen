@@ -24,6 +24,10 @@ func (wild) GetHighlights(context.Context, []byte, []int, []int) ([]domain.Highl
 	panic("page 3 of 2")
 }
 
+func (wild) ReadBook(context.Context, []byte) (domain.BookText, error) {
+	panic("page 3 of 2")
+}
+
 func (wild) Draw(context.Context, io.ReadSeekCloser) (port.OpenDocument, error) {
 	panic("page 3 of 2")
 }
@@ -51,5 +55,13 @@ func TestABookTheLibraryDiesOnIsOneUnreadableFile(t *testing.T) {
 		t.Fatalf("the next file was not read: %v", err)
 	case read.Text != "orbits":
 		t.Errorf("the next file says %q", read.Text)
+	}
+}
+
+func TestABookTheReaderDiesOnIsOneUnreadableFile(t *testing.T) {
+	crafted := domain.Fingerprint{Path: "books/atlas.epub", Kind: domain.KindBook}
+	doc, err := text.Read(t.Context(), wild{}, crafted, []byte("PK"))
+	if doc != nil || !errors.Is(err, text.ErrUnreadable) {
+		t.Fatalf("reading it answered %+v, %v, want nothing and %v", doc, err, text.ErrUnreadable)
 	}
 }

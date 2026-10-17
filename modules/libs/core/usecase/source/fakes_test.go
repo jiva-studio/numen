@@ -1,7 +1,6 @@
 package source
 
 import (
-	"archive/zip"
 	"bytes"
 	"cmp"
 	"context"
@@ -565,131 +564,42 @@ func (v vaults) Open(vault domain.Vault) (port.VaultReader, error) {
 	return reader, nil
 }
 
-// bookOf is the bytes of an EPUB whose spine is the parts given, each under a
+// bookOf is the bytes of a book whose spine is the parts given, each under a
 // heading of its own, so that the book names its places.
 func bookOf(t testing.TB, title string, parts ...string) []byte {
 	t.Helper()
-
-	var buf bytes.Buffer
-	archive := zip.NewWriter(&buf)
-	add := func(name, body string) {
-		file, err := archive.Create(name)
-		if err != nil {
-			t.Fatalf("write the fixture: %v", err)
-		}
-		if _, err := file.Write([]byte(body)); err != nil {
-			t.Fatalf("write the fixture: %v", err)
-		}
-	}
-
-	add("mimetype", "application/epub+zip")
-	add("META-INF/container.xml", `<?xml version="1.0"?>
-<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
-  <rootfiles>
-    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
-  </rootfiles>
-</container>`)
-
-	var manifest, spine strings.Builder
-	for i, part := range parts {
-		name := fmt.Sprintf("part%d.xhtml", i+1)
-		fmt.Fprintf(&manifest, `<item id="p%d" href="%s" media-type="application/xhtml+xml"/>`, i+1, name)
-		fmt.Fprintf(&spine, `<itemref idref="p%d"/>`, i+1)
-		add("OEBPS/"+name, fmt.Sprintf(
-			`<?xml version="1.0"?><html xmlns="http://www.w3.org/1999/xhtml"><head><title>%[1]s</title></head>`+
-				`<body><h1>Part %[2]d</h1><p>%[3]s</p></body></html>`, title, i+1, part))
-	}
-	add("OEBPS/content.opf", fmt.Sprintf(`<?xml version="1.0"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title>%[1]s</dc:title>
-    <dc:identifier id="id">%[1]s</dc:identifier>
-  </metadata>
-  <manifest>%[2]s</manifest>
-  <spine>%[3]s</spine>
-</package>`, title, manifest.String(), spine.String()))
-
-	if err := archive.Close(); err != nil {
-		t.Fatalf("write the fixture: %v", err)
-	}
-	return buf.Bytes()
+	return []byte(bookMark + title + bookSeparator + strings.Join(parts, bookSeparator))
 }
 
-// words is n words of one vocabulary. A vault's books are written in its own, so
-// a chunk says which vault it came from.
-func words(vocabulary []string, n int) string {
-	out := make([]string, 0, n)
-	for i := range n {
-		out = append(out, vocabulary[i%len(vocabulary)])
-	}
-	return strings.Join(out, " ")
-}
+// The bytes a book is written as in these tests: the mark, the title, and the
+// parts, each after a separator.
+const (
+	bookMark      = "%BOOK\n"
+	bookSeparator = "\x1f"
+)
 
-func (s *store) GetSourceText(_ context.Context, vaultID domain.VaultID, path string) (port.SourceText, bool, error) {
-	src, held := s.sources[vaultID][path]
-	if !held {
-		return port.SourceText{}, false, nil
+// ReadBook reads the bytes bookOf gives: each part is a heading and its words,
+// and the book names each heading.
+func (documents) ReadBook(_ context.Context, raw []byte) (domain.BookText, error) {
+	if !bytes.HasPrefix(raw, []byte(bookMark)) {
+		return domain.BookText{}, port.ErrNotADocument
 	}
-	// The row says what the file was when it was read, as the query does.
-	return port.SourceText{
-		Fingerprint: domain.Fingerprint{
-			Path: path, Size: src.Fingerprint.Size, ModTime: src.Fingerprint.ModTime,
-		},
-		Producer: src.Producer,
-		Hash:     src.Hash,
-	}, true, nil
-}
-
-func (s *store) GetRecognisedSources(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]port.SourceText, error) {
-	var out []port.SourceText
-	for path, src := range s.sources[vaultID] {
-		if src.Fingerprint.Kind == kind && src.Producer != "" {
-			out = append(out, port.SourceText{
-				Fingerprint: domain.Fingerprint{Path: path},
-				Producer:    src.Producer,
-				Hash:        src.Hash,
-			})
-		}
+	fields := strings.Split(strings.TrimPrefix(string(raw), bookMark), bookSeparator)
+	var out domain.BookText
+	var text strings.Builder
+	for i, part := range fields[1:] {
+		title := fmt.Sprintf("Part %d", i+1)
+		out.Parts = append(out.Parts, domain.PartStart{Title: title, Offset: text.Len()})
+		text.WriteString(title + "\n" + part + "\n")
 	}
-	slices.SortFunc(out, func(a, b port.SourceText) int { return cmp.Compare(a.Path, b.Path) })
+	out.Text = text.String()
 	return out, nil
 }
 
-// writing is the vault a copy kept beside the note is written into. Only what a
-// copy asks of a writer is answered: everything else a use case might write is
-// another scenario's.
-type writing struct {
-	port.VaultWriter
-	to *library
-}
-
-func (w writing) Import(_ context.Context, path string, from io.Reader) error {
-	if _, held := w.to.files[path]; held {
-		return port.ErrOccupied
-	}
-	raw, err := io.ReadAll(from)
-	if err != nil {
-		return err
-	}
-	w.to.hold(path, domain.KindRecording, raw, 1)
-	return nil
-}
-
-// writers opens the writer of each vault a test set up.
-type writers map[domain.VaultID]*library
-
-func (w writers) Open(vault domain.Vault) (port.VaultWriter, error) {
-	held, ok := w[vault.ID]
-	if !ok {
-		return nil, fmt.Errorf("no vault %s", vault.ID)
-	}
-	return writing{to: held}, nil
-}
-
-func (w writers) Lock(context.Context, domain.Vault) (func(), error) {
-	return func() {}, nil
-}
-
-func (l *library) OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error) {
-	return l.Open(ctx, path)
+// newExtract is the cut of a library whose books and documents are read by the
+// stand-in.
+func newExtract(readers port.VaultReaders, sources port.SourceRepository, queries port.SourceQueries) Extract {
+	extract := NewExtract(readers, sources, queries)
+	extract.Documents = documents{}
+	return extract
 }

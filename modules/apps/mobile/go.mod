@@ -19,7 +19,6 @@ require (
 	github.com/go-shiori/go-readability v0.0.0-20251205110129-5db1dc9836f0 // indirect
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/jiva-studio/numen/modules/plugins/reader-epub v0.0.0-00010101000000-000000000000 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
@@ -45,4 +44,3 @@ replace github.com/jiva-studio/numen/modules/libs/core => ../../libs/core
 
 replace github.com/jiva-studio/numen/modules/libs/protocol => ../../libs/protocol
 
-replace github.com/jiva-studio/numen/modules/plugins/reader-epub => ../../plugins/reader-epub
