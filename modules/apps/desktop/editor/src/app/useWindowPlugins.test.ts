@@ -3,15 +3,15 @@ import { useWindowTabs } from '@/entities/tab'
 import type { AnyTabKind } from '@/entities/tab'
 import { createPluginSupport } from './useWindowPlugins'
 
-function createSupport() {
+const createSupport = () => {
   const held = useWindowTabs()
   const removeClosedTab = vi.fn()
   const support = createPluginSupport({
     held,
     tabLinks: { removeClosedTab } as never,
     tabOpeners: {
-      registerExtensionReader: vi.fn(() => () => {}),
-      registerEditor: vi.fn(() => () => {}),
+      registerExtensionReader: vi.fn(() => () => undefined),
+      registerEditor: vi.fn(() => () => undefined),
     } as never,
     settingsHolder: {},
   })

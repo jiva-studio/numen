@@ -296,14 +296,14 @@ function resolveTargetTitle(title?: string, defaultName?: string, fallback = '')
 
 function resolveCustomTabTarget(state: unknown, registration: TabKindRegistration) {
   const s = state as { path?: string; at?: string; title?: string } | undefined
-  const p = s?.path ?? s?.at
-  const defaultName = stripMarkdownExtension(extractFilename(p))
+  const stateFile = s?.path ?? s?.at
+  const defaultName = stripMarkdownExtension(extractFilename(stateFile))
   const title = resolveTargetTitle(s?.title, defaultName, registration.title || registration.kind)
   const source =
     (registration.source as 'note' | 'book' | 'recording' | 'url' | 'other' | undefined) ?? 'note'
 
   return {
-    ...(p ? { file: p, path: p } : {}),
+    ...(stateFile ? { file: stateFile, path: stateFile } : {}),
     title,
     source,
   }
@@ -324,8 +324,8 @@ export function createCustomTabKind(
       const s = state as { title?: unknown; at?: string; path?: string } | undefined
       const titleVal = extractTitleValue(s?.title)
       if (titleVal) return titleVal
-      const p = s?.path ?? s?.at
-      const defaultName = stripMarkdownExtension(extractFilename(p))
+      const stateFile = s?.path ?? s?.at
+      const defaultName = stripMarkdownExtension(extractFilename(stateFile))
       if (defaultName) return defaultName
       return registration.title || registration.kind
     },

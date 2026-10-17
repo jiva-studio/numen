@@ -27,7 +27,7 @@ const UnavailablePane = defineComponent({
  * what the tab stood on, so a saved session lists the tab as it was and the plugin takes it
  * back once it is available.
  */
-export function createUnavailableKind(kind: string): AnyTabKind {
+export const createUnavailableKind = (kind: string): AnyTabKind => {
   return {
     kind,
     open: (at: string): UnavailableState => ({ kind, at }),
