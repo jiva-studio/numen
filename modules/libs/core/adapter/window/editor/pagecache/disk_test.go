@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"testing"
 	"time"
@@ -261,7 +262,7 @@ func TestNoDiskWhereItsFolderCannotBeMade(t *testing.T) {
 // Closing waits for a sweep that still has files to delete.
 func TestCloseReturnsOnlyOnceTheSweepHasEmptiedTheFolder(t *testing.T) {
 	cache := NewDiskIn(t.TempDir())
-	for at := range 4000 {
+	for at := range 200 {
 		name := filepath.Join(cache.GetDir(), fmt.Sprintf("old-%d.jpg", at))
 		if err := os.WriteFile(name, []byte("0123456789"), 0o644); err != nil {
 			t.Fatal(err)
@@ -269,9 +270,40 @@ func TestCloseReturnsOnlyOnceTheSweepHasEmptiedTheFolder(t *testing.T) {
 	}
 	cache.limit = 0
 	cache.every = 1
+	// The sweep is held until the test releases it, so Close has a sweep to wait
+	// for.
+	held, release := make(chan struct{}), make(chan struct{})
+	cache.beforeSweep = func() {
+		close(held)
+		<-release
+	}
 
 	cache.Put(newDrawingID(0), []byte("page"))
-	cache.Close()
+	<-held
+	closed := make(chan struct{})
+	go func() {
+		cache.Close()
+		close(closed)
+	}()
+	for {
+		cache.mu.Lock()
+		isShut := cache.isShut
+		cache.mu.Unlock()
+		if isShut {
+			break
+		}
+		runtime.Gosched()
+	}
+	for range 10000 {
+		select {
+		case <-closed:
+			t.Fatal("Close returned while a sweep was still running")
+		default:
+			runtime.Gosched()
+		}
+	}
+	close(release)
+	<-closed
 
 	if n := countDrawings(t, cache); n != 0 {
 		t.Errorf("%d files remain after Close", n)

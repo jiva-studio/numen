@@ -478,12 +478,8 @@ func (v vaults) Open(vault domain.Vault) (port.VaultReader, error) {
 
 // embedder is a model that answers the same vector for the same text, so that
 // what it was asked is visible in what it returned.
-//
-// `refuse` is the call at which it fails, standing for a network that went away
-// part way through a run.
 type embedder struct {
-	dims   int
-	refuse int
+	dims int
 
 	mu    sync.Mutex
 	calls int
@@ -496,14 +492,33 @@ func (e *embedder) GetModel() port.EmbeddingModel {
 
 func (*embedder) Close() error { return nil }
 
+// interruptedStore cancels the run after its Nth write and refuses every write
+// after that, so exactly N groups of vectors are stored.
+type interruptedStore struct {
+	*store
+	cancel context.CancelFunc
+	after  int
+	saved  int
+}
+
+func (s *interruptedStore) SaveVectors(ctx context.Context, vectors []port.Vector) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if err := s.store.SaveVectors(ctx, vectors); err != nil {
+		return err
+	}
+	s.saved++
+	if s.saved == s.after {
+		s.cancel()
+	}
+	return nil
+}
+
 func (e *embedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	e.mu.Lock()
 	e.calls++
-	refused := e.refuse > 0 && e.calls == e.refuse
 	e.mu.Unlock()
-	if refused {
-		return nil, fmt.Errorf("the model is not there")
-	}
 	out := make([][]float32, 0, len(texts))
 	for _, text := range texts {
 		e.mu.Lock()

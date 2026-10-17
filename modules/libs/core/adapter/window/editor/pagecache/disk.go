@@ -43,6 +43,9 @@ type Disk struct {
 	// isShut is the window gone. A sweep started after it would be one nobody is
 	// left to wait for.
 	isShut bool
+
+	// beforeSweep, when set, runs at the start of every sweep.
+	beforeSweep func()
 }
 
 const (
@@ -148,6 +151,9 @@ func (s *Disk) Put(key document.PageKey, body []byte) {
 	if due {
 		go func() {
 			defer s.going.Done()
+			if s.beforeSweep != nil {
+				s.beforeSweep()
+			}
 			s.trim()
 		}()
 	}

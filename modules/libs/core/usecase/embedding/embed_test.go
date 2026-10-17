@@ -1,6 +1,7 @@
 package embedding
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -41,16 +42,18 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 		t.Fatalf("%d chunks owe a vector, which one question answers with: the run would never resume", len(small))
 	}
 
-	stopped := &embedder{dims: dimensions, refuse: 3}
-	embed := newEmbed(vaults{first.ID: shelf}, index, index)
-	embed.Embedder = stopped
+	stopCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	stopped := &interruptedStore{store: index, cancel: cancel, after: 2}
+	embed := newEmbed(vaults{first.ID: shelf}, index, stopped)
+	embed.Embedder = &embedder{dims: dimensions}
 	embed.BatchCharacters = 4000
-	if _, err := embed.Execute(ctx, first); err == nil {
-		t.Fatal("a model that is not there did not stop the run")
+	if _, err := embed.Execute(stopCtx, first); err == nil {
+		t.Fatal("a cancelled context did not stop the run")
 	}
 
 	part := len(index.vectors)
-	if part == 0 || part == len(small) {
+	if stopped.saved != stopped.after || part == 0 || part == len(small) {
 		t.Fatalf("the interrupted run embedded %d of %d chunks, want some of them", part, len(small))
 	}
 	// A chunk is written before its vector, so every vector the interrupted run
@@ -61,7 +64,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 		}
 	}
 
-	embed.Embedder = &embedder{dims: dimensions}
+	embed.vectors = index
 	res, err := embed.Execute(ctx, first)
 	if err != nil {
 		t.Fatal(err)
