@@ -143,12 +143,13 @@ export function createWikilinkSource(options: WikilinkCompletionOptions) {
 
     const line = context.state.doc.lineAt(context.pos)
     const lineBefore = line.text.slice(0, context.pos - line.from)
-    const match = /\[\[([^\]\n]*)$/.exec(lineBefore)
-    if (!match) return null
+    const lastBracket = lineBefore.lastIndexOf('[[')
+    if (lastBracket === -1) return null
 
-    // Stryker disable next-line StringLiteral: the pattern has one group that always takes part in the match.
-    const rawQuery = match[1] ?? ''
-    const bracketStart = line.from + match.index
+    const rawQuery = lineBefore.slice(lastBracket + 2)
+    if (rawQuery.includes(']')) return null
+
+    const bracketStart = line.from + lastBracket
     const lineAfter = line.text.slice(context.pos - line.from)
     const hasClosingBrackets = lineAfter.startsWith(']]')
     const replace: WikilinkReplace = {
