@@ -84,6 +84,9 @@ func TestAFallbackThreadCountStaysWithinTheCoresThereAre(t *testing.T) {
 }
 
 func TestOneThreadAndOneJobAreCountsToo(t *testing.T) {
+	previous := runtime.GOMAXPROCS(4)
+	t.Cleanup(func() { runtime.GOMAXPROCS(previous) })
+
 	cfg := Defaults()
 	cfg.Compute = Compute{Threads: 6, Jobs: 3}
 	cfg.Recognise.Threads, cfg.Recognise.Jobs = 1, 1
