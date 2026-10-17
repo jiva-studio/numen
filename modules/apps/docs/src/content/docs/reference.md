@@ -173,5 +173,5 @@ Where the questions plugins ask of a model are answered.
 
 | | | |
 | --- | --- | --- |
-| `routes` |  | the routes by purpose, and by DefaultRoute for the rest. |
+| `routes` |  | are, by purpose and by default for the rest, the agent, the model and the number of questions answered at once. |
 <!-- END AUTOGEN -->
