@@ -270,22 +270,40 @@ func TestCloseReturnsOnlyOnceTheSweepHasEmptiedTheFolder(t *testing.T) {
 	}
 	cache.limit = 0
 	cache.every = 1
-	// The sweep starts deleting only once Close has begun, so Close returns
-	// before the folder is empty unless it waits for the sweep.
+	// The sweep is held until the test releases it, so Close has a sweep to wait
+	// for.
+	held, release := make(chan struct{}), make(chan struct{})
 	cache.beforeSweep = func() {
-		for {
-			cache.mu.Lock()
-			isShut := cache.isShut
-			cache.mu.Unlock()
-			if isShut {
-				return
-			}
-			runtime.Gosched()
-		}
+		close(held)
+		<-release
 	}
 
 	cache.Put(newDrawingID(0), []byte("page"))
-	cache.Close()
+	<-held
+	closed := make(chan struct{})
+	go func() {
+		cache.Close()
+		close(closed)
+	}()
+	for {
+		cache.mu.Lock()
+		isShut := cache.isShut
+		cache.mu.Unlock()
+		if isShut {
+			break
+		}
+		runtime.Gosched()
+	}
+	for range 10000 {
+		select {
+		case <-closed:
+			t.Fatal("Close returned while a sweep was still running")
+		default:
+			runtime.Gosched()
+		}
+	}
+	close(release)
+	<-closed
 
 	if n := countDrawings(t, cache); n != 0 {
 		t.Errorf("%d files remain after Close", n)
