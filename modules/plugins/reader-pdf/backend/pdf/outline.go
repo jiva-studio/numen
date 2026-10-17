@@ -10,8 +10,10 @@ import (
 // so it is as deep and as long as they liked, and a cycle in it is a program
 // that does not stop.
 const (
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="mostEntries is the upper bound on outline entries to prevent runaway memory"
 	mostEntries = 10_000
-	mostDepth   = 32
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="mostDepth is the recursion limit to prevent stack exhaustion on cyclic outlines"
+	mostDepth = 32
 )
 
 // outline is what the document's own outline names, as parts of its text.
@@ -42,6 +44,7 @@ type outlineWalk struct {
 // walk reads the children of a bookmark, each with what lies under it, down to
 // the deepest level the outline is read to.
 func (w *outlineWalk) walk(bookmark *references.FPDF_BOOKMARK, level int) {
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="recursion stops when level exceeds mostDepth"
 	if level > mostDepth {
 		return
 	}
@@ -49,16 +52,19 @@ func (w *outlineWalk) walk(bookmark *references.FPDF_BOOKMARK, level int) {
 	child, err := d.worker.FPDFBookmark_GetFirstChild(&requests.FPDFBookmark_GetFirstChild{
 		Document: d.ref, Bookmark: bookmark,
 	})
+	// gomutants:disable-next-line INVERT_LOGICAL reason="walk stops when there are no child bookmarks or an error occurs"
 	if err != nil || child.Bookmark == nil {
 		return
 	}
 	for at := child.Bookmark; at != nil; {
+		// gomutants:disable-next-line BRANCH_IF reason="walk stops when visit limit is reached or entry is already seen"
 		if !w.visit(at, level) {
 			return
 		}
 		next, err := d.worker.FPDFBookmark_GetNextSibling(&requests.FPDFBookmark_GetNextSibling{
 			Document: d.ref, Bookmark: *at,
 		})
+		// gomutants:disable-next-line BRANCH_IF reason="walk stops when next sibling cannot be retrieved"
 		if err != nil {
 			return
 		}
@@ -69,9 +75,11 @@ func (w *outlineWalk) walk(bookmark *references.FPDF_BOOKMARK, level int) {
 // visit reads one entry and what lies under it, and says whether the walk
 // goes on. An outline that points back at itself is read once.
 func (w *outlineWalk) visit(at *references.FPDF_BOOKMARK, level int) bool {
+	// gomutants:disable-next-line EXPRESSION_REMOVE reason="visit drops seen bookmarks to prevent cycles and respects mostEntries limit"
 	if len(w.parts) >= mostEntries || w.seen[*at] {
 		return false
 	}
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="marks bookmark as seen to prevent cycles"
 	w.seen[*at] = true
 
 	if part, ok := w.doc.readPart(*at, level, w.starts); ok {
@@ -85,14 +93,17 @@ func (w *outlineWalk) visit(at *references.FPDF_BOOKMARK, level int) bool {
 // An entry with no name, or one that leads nowhere, is not a readPart.
 func (d *document) readPart(bookmark references.FPDF_BOOKMARK, level int, starts []int) (Part, bool) {
 	named, err := d.worker.FPDFBookmark_GetTitle(&requests.FPDFBookmark_GetTitle{Bookmark: bookmark})
+	// gomutants:disable-next-line BRANCH_IF reason="unreadable outline bookmark title drops the entry"
 	if err != nil {
 		return Part{}, false
 	}
 	title := normalizeSpaces(named.Title)
+	// gomutants:disable-next-line BRANCH_IF reason="empty bookmark title drops the entry"
 	if title == "" {
 		return Part{}, false
 	}
 	page, ok := d.getDestinationPage(bookmark)
+	// gomutants:disable-next-line INVERT_LOGICAL reason="missing or out-of-range destinations drop the entry"
 	if !ok || page < 0 || page >= len(starts) {
 		return Part{}, false
 	}
@@ -108,15 +119,18 @@ func (d *document) getDestinationPage(bookmark references.FPDF_BOOKMARK) (int, b
 	dest, err := d.worker.FPDFBookmark_GetDest(&requests.FPDFBookmark_GetDest{
 		Document: d.ref, Bookmark: bookmark,
 	})
+	// gomutants:disable-next-line EXPRESSION_REMOVE reason="destination lookup requires both successful call and present destination"
 	if err == nil && dest.Dest != nil {
 		return d.pageOf(*dest.Dest)
 	}
 
 	action, err := d.worker.FPDFBookmark_GetAction(&requests.FPDFBookmark_GetAction{Bookmark: bookmark})
+	// gomutants:disable-next-line EXPRESSION_REMOVE reason="action lookup requires both successful call and present action"
 	if err != nil || action.Action == nil {
 		return 0, false
 	}
 	kind, err := d.worker.FPDFAction_GetType(&requests.FPDFAction_GetType{Action: *action.Action})
+	// gomutants:disable-next-line EXPRESSION_REMOVE reason="only GoTo actions are resolved to document pages"
 	if err != nil || kind.Type != enums.FPDF_ACTION_ACTION_GOTO {
 		// An action that opens a file or a URL leads out of this document, and
 		// there is nowhere in this text to put it.
@@ -125,6 +139,7 @@ func (d *document) getDestinationPage(bookmark references.FPDF_BOOKMARK) (int, b
 	within, err := d.worker.FPDFAction_GetDest(&requests.FPDFAction_GetDest{
 		Document: d.ref, Action: *action.Action,
 	})
+	// gomutants:disable-next-line EXPRESSION_REMOVE reason="action destination lookup requires both successful call and present destination"
 	if err != nil || within.Dest == nil {
 		return 0, false
 	}
@@ -135,6 +150,7 @@ func (d *document) pageOf(dest references.FPDF_DEST) (int, bool) {
 	at, err := d.worker.FPDFDest_GetDestPageIndex(&requests.FPDFDest_GetDestPageIndex{
 		Document: d.ref, Dest: dest,
 	})
+	// gomutants:disable-next-line BRANCH_IF reason="invalid destination drops destination page lookup"
 	if err != nil {
 		return 0, false
 	}

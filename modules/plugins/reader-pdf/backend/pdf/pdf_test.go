@@ -3,6 +3,7 @@ package pdf_test
 import (
 	"bytes"
 	"errors"
+	"image"
 	"os"
 	"strings"
 	"testing"
@@ -320,6 +321,20 @@ func TestAPageSaysHowBigItIs(t *testing.T) {
 				if err != nil {
 					t.Fatalf("page %d: %v", page, err)
 				}
+				rgba, ok := drawn.(*image.RGBA)
+				if !ok {
+					t.Fatalf("page %d: expected *image.RGBA, got %T", page, drawn)
+				}
+				hasPixels := false
+				for _, b := range rgba.Pix {
+					if b != 0 {
+						hasPixels = true
+						break
+					}
+				}
+				if !hasPixels {
+					t.Errorf("page %d: expected non-zero pixel data", page)
+				}
 				if got := float64(drawn.Bounds().Dx()); got < wide-1 || got > wide+1 {
 					t.Errorf("page %d says it is %g across and is drawn %g", page, wide, got)
 				}
@@ -327,10 +342,33 @@ func TestAPageSaysHowBigItIs(t *testing.T) {
 					t.Errorf("page %d says it is %g high and is drawn %g", page, high, got)
 				}
 			}
+			if _, _, err := held.GetPageSize(-1); err == nil {
+				t.Error("a negative page index was measured")
+			}
 			if _, _, err := held.GetPageSize(held.GetPageCount()); err == nil {
 				t.Error("a page the document does not have was measured")
 			}
+			if _, err := held.RenderPage(-1, 72); err == nil {
+				t.Error("a negative page index was rendered")
+			}
+			if _, err := held.RenderPage(held.GetPageCount(), 72); err == nil {
+				t.Error("a page the document does not have was rendered")
+			}
+			drawnDefault, err := held.RenderPage(0, 0)
+			if err != nil {
+				t.Fatalf("render with 0 DPI failed: %v", err)
+			}
+			if drawnDefault.Bounds().Dx() <= 100 {
+				t.Errorf("expected 300 DPI image to have width > 100, got %d", drawnDefault.Bounds().Dx())
+			}
 		})
+	}
+}
+
+func TestOpenReaderInvalid(t *testing.T) {
+	_, err := pdf.OpenReader(readerOf(fixture(t, prose)))
+	if err == nil {
+		t.Error("OpenReader succeeded on invalid bytes")
 	}
 }
 

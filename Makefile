@@ -159,6 +159,10 @@ lib_ui_lint: ## lint UI components
 	cd $(UI) && npm run lint
 	cd $(UI) && npm run typecheck
 
+.PHONY: lib_ui_knip
+lib_ui_knip: ## check dead code and unused dependencies with knip
+	cd $(UI) && npm run knip
+
 # --------------------------------- Lib: Wire ----------------------------------
 .PHONY: lib_wire_typecheck
 lib_wire_typecheck: ## typecheck wire package

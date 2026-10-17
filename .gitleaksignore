@@ -1,0 +1,13 @@
+# Gitleaks ignore list for false positives in test fixtures and model hash tables.
+
+# Model hash pins (modules/plugins/transcription/backend/engine/pins.go)
+f557b477d6b31d019b6622c680afb9b207b4b16e:modules/plugins/transcription/backend/engine/pins.go:generic-api-key:14
+
+# Test mock tokens in plugin process tests
+8962c8e60eed9485c0e966c523d31825dfe864ab:modules/libs/core/internal/adapter/plugin/process_test.go:generic-api-key:67
+d0b8d52e62499653f674cc2d5a30d7278b0fca1e:modules/libs/core/internal/adapter/plugin/process_test.go:generic-api-key:67
+
+# Test mock tokens in claude-code environment and glimpse tests
+e17145d5fe8c01d8834fda4d40edd82a772f4d9c:modules/apps/desktop/internal/adapter/claudecode/environment_test.go:generic-api-key:19
+a092f992cf6f592b5b91dcfbc4c11114c8524a7d:modules/apps/desktop/internal/adapter/claudecode/environment_test.go:generic-api-key:19
+a490a4c39487817292a0aecbff667bfc40a9e76c:modules/apps/desktop/internal/adapter/agent/claudecode/glimpse_test.go:generic-api-key:79

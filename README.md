@@ -20,6 +20,8 @@
 [![End-to-End](https://img.shields.io/github/actions/workflow/status/jiva-studio/numen/desktop-e2e.yml?branch=main&label=End-to-End)](https://github.com/jiva-studio/numen/actions/workflows/desktop-e2e.yml)
 [![Scorecard](https://img.shields.io/ossf-scorecard/github.com/jiva-studio/numen?label=Scorecard)](https://securityscorecards.dev/viewer/?uri=github.com/jiva-studio/numen)
 [![CodeQL](https://github.com/jiva-studio/numen/actions/workflows/codeql.yml/badge.svg)](https://github.com/jiva-studio/numen/actions/workflows/codeql.yml)
+[![SonarCloud Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=jiva-studio_numen&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=jiva-studio_numen)
+[![DeepSource](https://app.deepsource.com/gh/jiva-studio/numen.svg/?label=active+issues&show_trend=true)](https://app.deepsource.com/gh/jiva-studio/numen/)
 
 **[Download](#download)** · [Website](https://numen.md) · [User Manual](https://docs.numen.md) · [Forum](https://forum.numen.md)
 
