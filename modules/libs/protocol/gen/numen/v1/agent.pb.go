@@ -136,7 +136,11 @@ type AskAgentRequest struct {
 	// Vault tools the agent may call.
 	Tools []string `protobuf:"bytes,9,rep,name=tools,proto3" json:"tools,omitempty"`
 	// Maximum steps the agent may take.
-	MaxSteps      int32 `protobuf:"varint,10,opt,name=max_steps,json=maxSteps,proto3" json:"max_steps,omitempty"`
+	MaxSteps int32 `protobuf:"varint,10,opt,name=max_steps,json=maxSteps,proto3" json:"max_steps,omitempty"`
+	// How each vault tool in tools is spoken about and read while a call of it is being written.
+	ToolDeclarations []*ToolDeclaration `protobuf:"bytes,11,rep,name=tool_declarations,json=toolDeclarations,proto3" json:"tool_declarations,omitempty"`
+	// The folder the agent is started in. Empty starts it where the plugin runs.
+	Root          string `protobuf:"bytes,12,opt,name=root,proto3" json:"root,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -241,6 +245,122 @@ func (x *AskAgentRequest) GetMaxSteps() int32 {
 	return 0
 }
 
+func (x *AskAgentRequest) GetToolDeclarations() []*ToolDeclaration {
+	if x != nil {
+		return x.ToolDeclarations
+	}
+	return nil
+}
+
+func (x *AskAgentRequest) GetRoot() string {
+	if x != nil {
+		return x.Root
+	}
+	return ""
+}
+
+// ToolDeclaration is how one vault tool is spoken about to a person and how a call of it is read
+// while it is being written.
+type ToolDeclaration struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The tool, by the name the vault serves it under.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// What the tool is called when shown to a person.
+	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	// What a call of the tool does to the vault: read, edit, remove, move or search. Empty is a call
+	// of unknown effect.
+	Kind string `protobuf:"bytes,3,opt,name=kind,proto3" json:"kind,omitempty"`
+	// The argument that says what a call is about.
+	About string `protobuf:"bytes,4,opt,name=about,proto3" json:"about,omitempty"`
+	// The field of one element that says which element it is, for a call that takes a collection.
+	Element string `protobuf:"bytes,5,opt,name=element,proto3" json:"element,omitempty"`
+	// The argument carrying the text a call replaces. Empty for a call that replaces no text.
+	Match string `protobuf:"bytes,6,opt,name=match,proto3" json:"match,omitempty"`
+	// The argument carrying the text that takes the place of the match. Empty for a call that replaces no text.
+	Text          string `protobuf:"bytes,7,opt,name=text,proto3" json:"text,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ToolDeclaration) Reset() {
+	*x = ToolDeclaration{}
+	mi := &file_numen_v1_agent_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ToolDeclaration) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ToolDeclaration) ProtoMessage() {}
+
+func (x *ToolDeclaration) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_agent_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ToolDeclaration.ProtoReflect.Descriptor instead.
+func (*ToolDeclaration) Descriptor() ([]byte, []int) {
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ToolDeclaration) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ToolDeclaration) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *ToolDeclaration) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *ToolDeclaration) GetAbout() string {
+	if x != nil {
+		return x.About
+	}
+	return ""
+}
+
+func (x *ToolDeclaration) GetElement() string {
+	if x != nil {
+		return x.Element
+	}
+	return ""
+}
+
+func (x *ToolDeclaration) GetMatch() string {
+	if x != nil {
+		return x.Match
+	}
+	return ""
+}
+
+func (x *ToolDeclaration) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
 type FinishConversationRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Which thread of talk is over, by the name its questions carried. Empty is
@@ -252,7 +372,7 @@ type FinishConversationRequest struct {
 
 func (x *FinishConversationRequest) Reset() {
 	*x = FinishConversationRequest{}
-	mi := &file_numen_v1_agent_proto_msgTypes[3]
+	mi := &file_numen_v1_agent_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -264,7 +384,7 @@ func (x *FinishConversationRequest) String() string {
 func (*FinishConversationRequest) ProtoMessage() {}
 
 func (x *FinishConversationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[3]
+	mi := &file_numen_v1_agent_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -277,7 +397,7 @@ func (x *FinishConversationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FinishConversationRequest.ProtoReflect.Descriptor instead.
 func (*FinishConversationRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *FinishConversationRequest) GetConversation() string {
@@ -295,7 +415,7 @@ type FinishConversationResponse struct {
 
 func (x *FinishConversationResponse) Reset() {
 	*x = FinishConversationResponse{}
-	mi := &file_numen_v1_agent_proto_msgTypes[4]
+	mi := &file_numen_v1_agent_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -307,7 +427,7 @@ func (x *FinishConversationResponse) String() string {
 func (*FinishConversationResponse) ProtoMessage() {}
 
 func (x *FinishConversationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[4]
+	mi := &file_numen_v1_agent_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -320,7 +440,7 @@ func (x *FinishConversationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FinishConversationResponse.ProtoReflect.Descriptor instead.
 func (*FinishConversationResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{5}
 }
 
 // AskAgentResponse is one step of the work: one thing the agent said, did, or
@@ -334,6 +454,7 @@ type AskAgentResponse struct {
 	//	*AskAgentResponse_Stopped
 	//	*AskAgentResponse_ToolFinished
 	//	*AskAgentResponse_ModelStarted
+	//	*AskAgentResponse_EditProgress
 	Step          isAskAgentResponse_Step `protobuf_oneof:"step"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -341,7 +462,7 @@ type AskAgentResponse struct {
 
 func (x *AskAgentResponse) Reset() {
 	*x = AskAgentResponse{}
-	mi := &file_numen_v1_agent_proto_msgTypes[5]
+	mi := &file_numen_v1_agent_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -353,7 +474,7 @@ func (x *AskAgentResponse) String() string {
 func (*AskAgentResponse) ProtoMessage() {}
 
 func (x *AskAgentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[5]
+	mi := &file_numen_v1_agent_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -366,7 +487,7 @@ func (x *AskAgentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AskAgentResponse.ProtoReflect.Descriptor instead.
 func (*AskAgentResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *AskAgentResponse) GetStep() isAskAgentResponse_Step {
@@ -421,6 +542,15 @@ func (x *AskAgentResponse) GetModelStarted() *ModelStarted {
 	return nil
 }
 
+func (x *AskAgentResponse) GetEditProgress() *EditProgress {
+	if x != nil {
+		if x, ok := x.Step.(*AskAgentResponse_EditProgress); ok {
+			return x.EditProgress
+		}
+	}
+	return nil
+}
+
 type isAskAgentResponse_Step interface {
 	isAskAgentResponse_Step()
 }
@@ -453,6 +583,12 @@ type AskAgentResponse_ModelStarted struct {
 	ModelStarted *ModelStarted `protobuf:"bytes,5,opt,name=model_started,json=modelStarted,proto3,oneof"`
 }
 
+type AskAgentResponse_EditProgress struct {
+	// A change to a note is being written: the text it replaces and the text that takes its place,
+	// as far as they have arrived.
+	EditProgress *EditProgress `protobuf:"bytes,6,opt,name=edit_progress,json=editProgress,proto3,oneof"`
+}
+
 func (*AskAgentResponse_Said) isAskAgentResponse_Step() {}
 
 func (*AskAgentResponse_ToolCall) isAskAgentResponse_Step() {}
@@ -463,6 +599,8 @@ func (*AskAgentResponse_ToolFinished) isAskAgentResponse_Step() {}
 
 func (*AskAgentResponse_ModelStarted) isAskAgentResponse_Step() {}
 
+func (*AskAgentResponse_EditProgress) isAskAgentResponse_Step() {}
+
 // ToolFinished and ModelStarted carry no fields.
 type ToolFinished struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -472,7 +610,7 @@ type ToolFinished struct {
 
 func (x *ToolFinished) Reset() {
 	*x = ToolFinished{}
-	mi := &file_numen_v1_agent_proto_msgTypes[6]
+	mi := &file_numen_v1_agent_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -484,7 +622,7 @@ func (x *ToolFinished) String() string {
 func (*ToolFinished) ProtoMessage() {}
 
 func (x *ToolFinished) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[6]
+	mi := &file_numen_v1_agent_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -497,7 +635,7 @@ func (x *ToolFinished) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolFinished.ProtoReflect.Descriptor instead.
 func (*ToolFinished) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{7}
 }
 
 type ModelStarted struct {
@@ -508,7 +646,7 @@ type ModelStarted struct {
 
 func (x *ModelStarted) Reset() {
 	*x = ModelStarted{}
-	mi := &file_numen_v1_agent_proto_msgTypes[7]
+	mi := &file_numen_v1_agent_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -520,7 +658,7 @@ func (x *ModelStarted) String() string {
 func (*ModelStarted) ProtoMessage() {}
 
 func (x *ModelStarted) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[7]
+	mi := &file_numen_v1_agent_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -533,7 +671,7 @@ func (x *ModelStarted) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ModelStarted.ProtoReflect.Descriptor instead.
 func (*ModelStarted) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{8}
 }
 
 // ToolCall is a tool in the agent's hands.
@@ -556,14 +694,19 @@ type ToolCall struct {
 	Path string `protobuf:"bytes,4,opt,name=path,proto3" json:"path,omitempty"`
 	// The run of that source's text the call names, counted in bytes. An empty
 	// span is a call that named the source and no place inside it.
-	Span          *Span `protobuf:"bytes,5,opt,name=span,proto3" json:"span,omitempty"`
+	Span *Span `protobuf:"bytes,5,opt,name=span,proto3" json:"span,omitempty"`
+	// What the agent named this call. Every report of one call carries the same name.
+	Call string `protobuf:"bytes,6,opt,name=call,proto3" json:"call,omitempty"`
+	// What a call of this tool does to the vault: read, edit, remove, move or search. Empty is a call
+	// of unknown effect.
+	Kind          string `protobuf:"bytes,7,opt,name=kind,proto3" json:"kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ToolCall) Reset() {
 	*x = ToolCall{}
-	mi := &file_numen_v1_agent_proto_msgTypes[8]
+	mi := &file_numen_v1_agent_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -575,7 +718,7 @@ func (x *ToolCall) String() string {
 func (*ToolCall) ProtoMessage() {}
 
 func (x *ToolCall) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[8]
+	mi := &file_numen_v1_agent_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -588,7 +731,7 @@ func (x *ToolCall) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolCall.ProtoReflect.Descriptor instead.
 func (*ToolCall) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ToolCall) GetTool() string {
@@ -626,6 +769,93 @@ func (x *ToolCall) GetSpan() *Span {
 	return nil
 }
 
+func (x *ToolCall) GetCall() string {
+	if x != nil {
+		return x.Call
+	}
+	return ""
+}
+
+func (x *ToolCall) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+// EditProgress is a change to a note while the call writing it is still arriving.
+type EditProgress struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// What the agent named the call making the change.
+	Call string `protobuf:"bytes,1,opt,name=call,proto3" json:"call,omitempty"`
+	// The note the change goes into, by the path the vault files it under.
+	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	// The text the change replaces.
+	Match string `protobuf:"bytes,3,opt,name=match,proto3" json:"match,omitempty"`
+	// The text that takes its place, as far as it has arrived.
+	Text          string `protobuf:"bytes,4,opt,name=text,proto3" json:"text,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EditProgress) Reset() {
+	*x = EditProgress{}
+	mi := &file_numen_v1_agent_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EditProgress) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EditProgress) ProtoMessage() {}
+
+func (x *EditProgress) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_agent_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EditProgress.ProtoReflect.Descriptor instead.
+func (*EditProgress) Descriptor() ([]byte, []int) {
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *EditProgress) GetCall() string {
+	if x != nil {
+		return x.Call
+	}
+	return ""
+}
+
+func (x *EditProgress) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *EditProgress) GetMatch() string {
+	if x != nil {
+		return x.Match
+	}
+	return ""
+}
+
+func (x *EditProgress) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
 // AgentToolDefinition describes a tool registered with or provided by the agent service.
 type AgentToolDefinition struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
@@ -638,7 +868,7 @@ type AgentToolDefinition struct {
 
 func (x *AgentToolDefinition) Reset() {
 	*x = AgentToolDefinition{}
-	mi := &file_numen_v1_agent_proto_msgTypes[9]
+	mi := &file_numen_v1_agent_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -650,7 +880,7 @@ func (x *AgentToolDefinition) String() string {
 func (*AgentToolDefinition) ProtoMessage() {}
 
 func (x *AgentToolDefinition) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[9]
+	mi := &file_numen_v1_agent_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -663,7 +893,7 @@ func (x *AgentToolDefinition) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentToolDefinition.ProtoReflect.Descriptor instead.
 func (*AgentToolDefinition) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *AgentToolDefinition) GetName() string {
@@ -696,7 +926,7 @@ type RegisterToolRequest struct {
 
 func (x *RegisterToolRequest) Reset() {
 	*x = RegisterToolRequest{}
-	mi := &file_numen_v1_agent_proto_msgTypes[10]
+	mi := &file_numen_v1_agent_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -708,7 +938,7 @@ func (x *RegisterToolRequest) String() string {
 func (*RegisterToolRequest) ProtoMessage() {}
 
 func (x *RegisterToolRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[10]
+	mi := &file_numen_v1_agent_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -721,7 +951,7 @@ func (x *RegisterToolRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterToolRequest.ProtoReflect.Descriptor instead.
 func (*RegisterToolRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{10}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *RegisterToolRequest) GetTool() *AgentToolDefinition {
@@ -740,7 +970,7 @@ type RegisterToolResponse struct {
 
 func (x *RegisterToolResponse) Reset() {
 	*x = RegisterToolResponse{}
-	mi := &file_numen_v1_agent_proto_msgTypes[11]
+	mi := &file_numen_v1_agent_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -752,7 +982,7 @@ func (x *RegisterToolResponse) String() string {
 func (*RegisterToolResponse) ProtoMessage() {}
 
 func (x *RegisterToolResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[11]
+	mi := &file_numen_v1_agent_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -765,7 +995,7 @@ func (x *RegisterToolResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterToolResponse.ProtoReflect.Descriptor instead.
 func (*RegisterToolResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{11}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *RegisterToolResponse) GetSuccess() bool {
@@ -784,7 +1014,7 @@ type ExtendSystemPromptRequest struct {
 
 func (x *ExtendSystemPromptRequest) Reset() {
 	*x = ExtendSystemPromptRequest{}
-	mi := &file_numen_v1_agent_proto_msgTypes[12]
+	mi := &file_numen_v1_agent_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -796,7 +1026,7 @@ func (x *ExtendSystemPromptRequest) String() string {
 func (*ExtendSystemPromptRequest) ProtoMessage() {}
 
 func (x *ExtendSystemPromptRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[12]
+	mi := &file_numen_v1_agent_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -809,7 +1039,7 @@ func (x *ExtendSystemPromptRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExtendSystemPromptRequest.ProtoReflect.Descriptor instead.
 func (*ExtendSystemPromptRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{12}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ExtendSystemPromptRequest) GetExtension() string {
@@ -829,7 +1059,7 @@ type ExtendSystemPromptResponse struct {
 
 func (x *ExtendSystemPromptResponse) Reset() {
 	*x = ExtendSystemPromptResponse{}
-	mi := &file_numen_v1_agent_proto_msgTypes[13]
+	mi := &file_numen_v1_agent_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -841,7 +1071,7 @@ func (x *ExtendSystemPromptResponse) String() string {
 func (*ExtendSystemPromptResponse) ProtoMessage() {}
 
 func (x *ExtendSystemPromptResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[13]
+	mi := &file_numen_v1_agent_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -854,7 +1084,7 @@ func (x *ExtendSystemPromptResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExtendSystemPromptResponse.ProtoReflect.Descriptor instead.
 func (*ExtendSystemPromptResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{13}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ExtendSystemPromptResponse) GetSuccess() bool {
@@ -879,7 +1109,7 @@ type GetAgentToolsRequest struct {
 
 func (x *GetAgentToolsRequest) Reset() {
 	*x = GetAgentToolsRequest{}
-	mi := &file_numen_v1_agent_proto_msgTypes[14]
+	mi := &file_numen_v1_agent_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -891,7 +1121,7 @@ func (x *GetAgentToolsRequest) String() string {
 func (*GetAgentToolsRequest) ProtoMessage() {}
 
 func (x *GetAgentToolsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[14]
+	mi := &file_numen_v1_agent_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -904,7 +1134,7 @@ func (x *GetAgentToolsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAgentToolsRequest.ProtoReflect.Descriptor instead.
 func (*GetAgentToolsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{14}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{16}
 }
 
 type GetAgentToolsResponse struct {
@@ -917,7 +1147,7 @@ type GetAgentToolsResponse struct {
 
 func (x *GetAgentToolsResponse) Reset() {
 	*x = GetAgentToolsResponse{}
-	mi := &file_numen_v1_agent_proto_msgTypes[15]
+	mi := &file_numen_v1_agent_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -929,7 +1159,7 @@ func (x *GetAgentToolsResponse) String() string {
 func (*GetAgentToolsResponse) ProtoMessage() {}
 
 func (x *GetAgentToolsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[15]
+	mi := &file_numen_v1_agent_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -942,7 +1172,7 @@ func (x *GetAgentToolsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAgentToolsResponse.ProtoReflect.Descriptor instead.
 func (*GetAgentToolsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{15}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetAgentToolsResponse) GetTools() []*AgentToolDefinition {
@@ -966,7 +1196,7 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\x14numen/v1/agent.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x16\n" +
 	"\x14GetAgentStateRequest\"9\n" +
 	"\x15GetAgentStateResponse\x12 \n" +
-	"\vunreachable\x18\x01 \x01(\tR\vunreachable\"\x8e\x02\n" +
+	"\vunreachable\x18\x01 \x01(\tR\vunreachable\"\xea\x02\n" +
 	"\x0fAskAgentRequest\x12\x16\n" +
 	"\x06prompt\x18\x01 \x01(\tR\x06prompt\x12\x14\n" +
 	"\x05focus\x18\x02 \x01(\tR\x05focus\x12\"\n" +
@@ -978,25 +1208,43 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\finstructions\x18\b \x01(\tR\finstructions\x12\x14\n" +
 	"\x05tools\x18\t \x03(\tR\x05tools\x12\x1b\n" +
 	"\tmax_steps\x18\n" +
-	" \x01(\x05R\bmaxSteps\"?\n" +
+	" \x01(\x05R\bmaxSteps\x12F\n" +
+	"\x11tool_declarations\x18\v \x03(\v2\x19.numen.v1.ToolDeclarationR\x10toolDeclarations\x12\x12\n" +
+	"\x04root\x18\f \x01(\tR\x04root\"\xa9\x01\n" +
+	"\x0fToolDeclaration\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
+	"\x04kind\x18\x03 \x01(\tR\x04kind\x12\x14\n" +
+	"\x05about\x18\x04 \x01(\tR\x05about\x12\x18\n" +
+	"\aelement\x18\x05 \x01(\tR\aelement\x12\x14\n" +
+	"\x05match\x18\x06 \x01(\tR\x05match\x12\x12\n" +
+	"\x04text\x18\a \x01(\tR\x04text\"?\n" +
 	"\x19FinishConversationRequest\x12\"\n" +
 	"\fconversation\x18\x01 \x01(\tR\fconversation\"\x1c\n" +
-	"\x1aFinishConversationResponse\"\xfd\x01\n" +
+	"\x1aFinishConversationResponse\"\xbc\x02\n" +
 	"\x10AskAgentResponse\x12\x14\n" +
 	"\x04said\x18\x01 \x01(\tH\x00R\x04said\x121\n" +
 	"\ttool_call\x18\x02 \x01(\v2\x12.numen.v1.ToolCallH\x00R\btoolCall\x12\x1a\n" +
 	"\astopped\x18\x03 \x01(\tH\x00R\astopped\x12=\n" +
 	"\rtool_finished\x18\x04 \x01(\v2\x16.numen.v1.ToolFinishedH\x00R\ftoolFinished\x12=\n" +
-	"\rmodel_started\x18\x05 \x01(\v2\x16.numen.v1.ModelStartedH\x00R\fmodelStartedB\x06\n" +
+	"\rmodel_started\x18\x05 \x01(\v2\x16.numen.v1.ModelStartedH\x00R\fmodelStarted\x12=\n" +
+	"\redit_progress\x18\x06 \x01(\v2\x16.numen.v1.EditProgressH\x00R\feditProgressB\x06\n" +
 	"\x04step\"\x0e\n" +
 	"\fToolFinished\"\x0e\n" +
-	"\fModelStarted\"\x86\x01\n" +
+	"\fModelStarted\"\xae\x01\n" +
 	"\bToolCall\x12\x12\n" +
 	"\x04tool\x18\x01 \x01(\tR\x04tool\x12\x14\n" +
 	"\x05about\x18\x02 \x01(\tR\x05about\x12\x18\n" +
 	"\awritten\x18\x03 \x01(\x05R\awritten\x12\x12\n" +
 	"\x04path\x18\x04 \x01(\tR\x04path\x12\"\n" +
-	"\x04span\x18\x05 \x01(\v2\x0e.numen.v1.SpanR\x04span\"\x81\x01\n" +
+	"\x04span\x18\x05 \x01(\v2\x0e.numen.v1.SpanR\x04span\x12\x12\n" +
+	"\x04call\x18\x06 \x01(\tR\x04call\x12\x12\n" +
+	"\x04kind\x18\a \x01(\tR\x04kind\"`\n" +
+	"\fEditProgress\x12\x12\n" +
+	"\x04call\x18\x01 \x01(\tR\x04call\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
+	"\x05match\x18\x03 \x01(\tR\x05match\x12\x12\n" +
+	"\x04text\x18\x04 \x01(\tR\x04text\"\x81\x01\n" +
 	"\x13AgentToolDefinition\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x124\n" +
@@ -1035,50 +1283,54 @@ func file_numen_v1_agent_proto_rawDescGZIP() []byte {
 	return file_numen_v1_agent_proto_rawDescData
 }
 
-var file_numen_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_numen_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_numen_v1_agent_proto_goTypes = []any{
 	(*GetAgentStateRequest)(nil),       // 0: numen.v1.GetAgentStateRequest
 	(*GetAgentStateResponse)(nil),      // 1: numen.v1.GetAgentStateResponse
 	(*AskAgentRequest)(nil),            // 2: numen.v1.AskAgentRequest
-	(*FinishConversationRequest)(nil),  // 3: numen.v1.FinishConversationRequest
-	(*FinishConversationResponse)(nil), // 4: numen.v1.FinishConversationResponse
-	(*AskAgentResponse)(nil),           // 5: numen.v1.AskAgentResponse
-	(*ToolFinished)(nil),               // 6: numen.v1.ToolFinished
-	(*ModelStarted)(nil),               // 7: numen.v1.ModelStarted
-	(*ToolCall)(nil),                   // 8: numen.v1.ToolCall
-	(*AgentToolDefinition)(nil),        // 9: numen.v1.AgentToolDefinition
-	(*RegisterToolRequest)(nil),        // 10: numen.v1.RegisterToolRequest
-	(*RegisterToolResponse)(nil),       // 11: numen.v1.RegisterToolResponse
-	(*ExtendSystemPromptRequest)(nil),  // 12: numen.v1.ExtendSystemPromptRequest
-	(*ExtendSystemPromptResponse)(nil), // 13: numen.v1.ExtendSystemPromptResponse
-	(*GetAgentToolsRequest)(nil),       // 14: numen.v1.GetAgentToolsRequest
-	(*GetAgentToolsResponse)(nil),      // 15: numen.v1.GetAgentToolsResponse
-	(*Span)(nil),                       // 16: numen.v1.Span
+	(*ToolDeclaration)(nil),            // 3: numen.v1.ToolDeclaration
+	(*FinishConversationRequest)(nil),  // 4: numen.v1.FinishConversationRequest
+	(*FinishConversationResponse)(nil), // 5: numen.v1.FinishConversationResponse
+	(*AskAgentResponse)(nil),           // 6: numen.v1.AskAgentResponse
+	(*ToolFinished)(nil),               // 7: numen.v1.ToolFinished
+	(*ModelStarted)(nil),               // 8: numen.v1.ModelStarted
+	(*ToolCall)(nil),                   // 9: numen.v1.ToolCall
+	(*EditProgress)(nil),               // 10: numen.v1.EditProgress
+	(*AgentToolDefinition)(nil),        // 11: numen.v1.AgentToolDefinition
+	(*RegisterToolRequest)(nil),        // 12: numen.v1.RegisterToolRequest
+	(*RegisterToolResponse)(nil),       // 13: numen.v1.RegisterToolResponse
+	(*ExtendSystemPromptRequest)(nil),  // 14: numen.v1.ExtendSystemPromptRequest
+	(*ExtendSystemPromptResponse)(nil), // 15: numen.v1.ExtendSystemPromptResponse
+	(*GetAgentToolsRequest)(nil),       // 16: numen.v1.GetAgentToolsRequest
+	(*GetAgentToolsResponse)(nil),      // 17: numen.v1.GetAgentToolsResponse
+	(*Span)(nil),                       // 18: numen.v1.Span
 }
 var file_numen_v1_agent_proto_depIdxs = []int32{
-	8,  // 0: numen.v1.AskAgentResponse.tool_call:type_name -> numen.v1.ToolCall
-	6,  // 1: numen.v1.AskAgentResponse.tool_finished:type_name -> numen.v1.ToolFinished
-	7,  // 2: numen.v1.AskAgentResponse.model_started:type_name -> numen.v1.ModelStarted
-	16, // 3: numen.v1.ToolCall.span:type_name -> numen.v1.Span
-	9,  // 4: numen.v1.RegisterToolRequest.tool:type_name -> numen.v1.AgentToolDefinition
-	9,  // 5: numen.v1.GetAgentToolsResponse.tools:type_name -> numen.v1.AgentToolDefinition
-	2,  // 6: numen.v1.AgentService.AskAgent:input_type -> numen.v1.AskAgentRequest
-	3,  // 7: numen.v1.AgentService.FinishConversation:input_type -> numen.v1.FinishConversationRequest
-	0,  // 8: numen.v1.AgentService.GetAgentState:input_type -> numen.v1.GetAgentStateRequest
-	10, // 9: numen.v1.AgentService.RegisterTool:input_type -> numen.v1.RegisterToolRequest
-	12, // 10: numen.v1.AgentService.ExtendSystemPrompt:input_type -> numen.v1.ExtendSystemPromptRequest
-	14, // 11: numen.v1.AgentService.GetAgentTools:input_type -> numen.v1.GetAgentToolsRequest
-	5,  // 12: numen.v1.AgentService.AskAgent:output_type -> numen.v1.AskAgentResponse
-	4,  // 13: numen.v1.AgentService.FinishConversation:output_type -> numen.v1.FinishConversationResponse
-	1,  // 14: numen.v1.AgentService.GetAgentState:output_type -> numen.v1.GetAgentStateResponse
-	11, // 15: numen.v1.AgentService.RegisterTool:output_type -> numen.v1.RegisterToolResponse
-	13, // 16: numen.v1.AgentService.ExtendSystemPrompt:output_type -> numen.v1.ExtendSystemPromptResponse
-	15, // 17: numen.v1.AgentService.GetAgentTools:output_type -> numen.v1.GetAgentToolsResponse
-	12, // [12:18] is the sub-list for method output_type
-	6,  // [6:12] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	3,  // 0: numen.v1.AskAgentRequest.tool_declarations:type_name -> numen.v1.ToolDeclaration
+	9,  // 1: numen.v1.AskAgentResponse.tool_call:type_name -> numen.v1.ToolCall
+	7,  // 2: numen.v1.AskAgentResponse.tool_finished:type_name -> numen.v1.ToolFinished
+	8,  // 3: numen.v1.AskAgentResponse.model_started:type_name -> numen.v1.ModelStarted
+	10, // 4: numen.v1.AskAgentResponse.edit_progress:type_name -> numen.v1.EditProgress
+	18, // 5: numen.v1.ToolCall.span:type_name -> numen.v1.Span
+	11, // 6: numen.v1.RegisterToolRequest.tool:type_name -> numen.v1.AgentToolDefinition
+	11, // 7: numen.v1.GetAgentToolsResponse.tools:type_name -> numen.v1.AgentToolDefinition
+	2,  // 8: numen.v1.AgentService.AskAgent:input_type -> numen.v1.AskAgentRequest
+	4,  // 9: numen.v1.AgentService.FinishConversation:input_type -> numen.v1.FinishConversationRequest
+	0,  // 10: numen.v1.AgentService.GetAgentState:input_type -> numen.v1.GetAgentStateRequest
+	12, // 11: numen.v1.AgentService.RegisterTool:input_type -> numen.v1.RegisterToolRequest
+	14, // 12: numen.v1.AgentService.ExtendSystemPrompt:input_type -> numen.v1.ExtendSystemPromptRequest
+	16, // 13: numen.v1.AgentService.GetAgentTools:input_type -> numen.v1.GetAgentToolsRequest
+	6,  // 14: numen.v1.AgentService.AskAgent:output_type -> numen.v1.AskAgentResponse
+	5,  // 15: numen.v1.AgentService.FinishConversation:output_type -> numen.v1.FinishConversationResponse
+	1,  // 16: numen.v1.AgentService.GetAgentState:output_type -> numen.v1.GetAgentStateResponse
+	13, // 17: numen.v1.AgentService.RegisterTool:output_type -> numen.v1.RegisterToolResponse
+	15, // 18: numen.v1.AgentService.ExtendSystemPrompt:output_type -> numen.v1.ExtendSystemPromptResponse
+	17, // 19: numen.v1.AgentService.GetAgentTools:output_type -> numen.v1.GetAgentToolsResponse
+	14, // [14:20] is the sub-list for method output_type
+	8,  // [8:14] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_agent_proto_init() }
@@ -1087,12 +1339,13 @@ func file_numen_v1_agent_proto_init() {
 		return
 	}
 	file_numen_v1_shared_proto_init()
-	file_numen_v1_agent_proto_msgTypes[5].OneofWrappers = []any{
+	file_numen_v1_agent_proto_msgTypes[6].OneofWrappers = []any{
 		(*AskAgentResponse_Said)(nil),
 		(*AskAgentResponse_ToolCall)(nil),
 		(*AskAgentResponse_Stopped)(nil),
 		(*AskAgentResponse_ToolFinished)(nil),
 		(*AskAgentResponse_ModelStarted)(nil),
+		(*AskAgentResponse_EditProgress)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1100,7 +1353,7 @@ func file_numen_v1_agent_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_agent_proto_rawDesc), len(file_numen_v1_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   16,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
