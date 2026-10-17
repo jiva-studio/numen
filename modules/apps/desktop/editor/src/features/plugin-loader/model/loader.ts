@@ -252,28 +252,20 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
   const { host } = deps
   const defaults = resolveDefaultDeps(deps)
   const activePlugins = shallowRef<ReadonlyMap<string, ActivePluginEntry>>(new Map())
-  const moduleLoaders = new Map<string, () => Promise<unknown>>(
-    Object.entries(deps.loaders ?? {}),
-  )
+  const moduleLoaders = new Map(Object.entries(deps.loaders ?? {}))
   const settingSubscriptions = new Map<string, Disposable>()
   const manifests = new Map<string, PluginManifest>()
   let hasStarted = false
 
-  const isPluginEnabled = (id: string): boolean => checkPluginEnabled(host, id)
-
-  const activatePlugin = (id: string, module?: unknown) =>
-    activateEntry(
-      {
-        host,
-        loaders: moduleLoaders,
-        catalogManifests: deps.manifests ?? {},
-        activePlugins,
-        manifests,
-        ...defaults,
-      },
-      id,
-      module,
-    )
+  const activateContext = {
+    host,
+    loaders: moduleLoaders,
+    catalogManifests: deps.manifests ?? {},
+    activePlugins,
+    manifests,
+    ...defaults,
+  }
+  const activatePlugin = (id: string, module?: unknown) => activateEntry(activateContext, id, module)
 
   const deactivatePlugin = (id: string) => deactivateEntry({ host, activePlugins, manifests }, id)
 
@@ -293,7 +285,7 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
       moduleLoaders.set(id, loader)
       if (hasStarted) {
         listen(id)
-        if (isPluginEnabled(id)) void activatePlugin(id)
+        if (checkPluginEnabled(host, id)) void activatePlugin(id)
       }
     },
     registerPluginManifest: (id: string, manifest: PluginManifest) => {
@@ -306,7 +298,7 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
     getActivePluginIds: () => [...activePlugins.value.keys()],
     start: async (): Promise<void> => {
       hasStarted = true
-      await startLoader({ moduleLoaders, listen, isEnabled: isPluginEnabled }, activatePlugin)
+      await startLoader({ moduleLoaders, listen, isEnabled: (id) => checkPluginEnabled(host, id) }, activatePlugin)
     },
     close: async (): Promise<void> => {
       hasStarted = false
