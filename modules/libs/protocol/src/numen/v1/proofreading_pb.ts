@@ -2,15 +2,15 @@
 // @generated from file numen/v1/proofreading.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/proofreading.proto.
  */
 export const file_numen_v1_proofreading: GenFile = /*@__PURE__*/
-  fileDesc("ChtudW1lbi92MS9wcm9vZnJlYWRpbmcucHJvdG8SCG51bWVuLnYxIhsKGUdldFByb29mcmVhZGVySW5mb1JlcXVlc3QiKgoaR2V0UHJvb2ZyZWFkZXJJbmZvUmVzcG9uc2USDAoEbmFtZRgBIAEoCSIwCg5Qcm9vZnJlYWRCYXRjaBIOCgZudW1iZXIYASABKAUSDgoGcHJvbXB0GAIgASgJIlIKEFByb29mcmVhZFJlcXVlc3QSKQoHYmF0Y2hlcxgBIAMoCzIYLm51bWVuLnYxLlByb29mcmVhZEJhdGNoEhMKC2luc3RydWN0aW9uGAIgASgJIn4KEVByb29mcmVhZFJlc3BvbnNlEjkKB3JlcGxpZXMYASADKAsyKC5udW1lbi52MS5Qcm9vZnJlYWRSZXNwb25zZS5SZXBsaWVzRW50cnkaLgoMUmVwbGllc0VudHJ5EgsKA2tleRgBIAEoBRINCgV2YWx1ZRgCIAEoCToCOAEyvAEKE1Byb29mcmVhZGluZ1NlcnZpY2USXwoSR2V0UHJvb2ZyZWFkZXJJbmZvEiMubnVtZW4udjEuR2V0UHJvb2ZyZWFkZXJJbmZvUmVxdWVzdBokLm51bWVuLnYxLkdldFByb29mcmVhZGVySW5mb1Jlc3BvbnNlEkQKCVByb29mcmVhZBIaLm51bWVuLnYxLlByb29mcmVhZFJlcXVlc3QaGy5udW1lbi52MS5Qcm9vZnJlYWRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChtudW1lbi92MS9wcm9vZnJlYWRpbmcucHJvdG8SCG51bWVuLnYxIhsKGUdldFByb29mcmVhZGVySW5mb1JlcXVlc3QiKgoaR2V0UHJvb2ZyZWFkZXJJbmZvUmVzcG9uc2USDAoEbmFtZRgBIAEoCSIwCg5Qcm9vZnJlYWRCYXRjaBIOCgZudW1iZXIYASABKAUSDgoGcHJvbXB0GAIgASgJIlIKEFByb29mcmVhZFJlcXVlc3QSKQoHYmF0Y2hlcxgBIAMoCzIYLm51bWVuLnYxLlByb29mcmVhZEJhdGNoEhMKC2luc3RydWN0aW9uGAIgASgJIn4KEVByb29mcmVhZFJlc3BvbnNlEjkKB3JlcGxpZXMYASADKAsyKC5udW1lbi52MS5Qcm9vZnJlYWRSZXNwb25zZS5SZXBsaWVzRW50cnkaLgoMUmVwbGllc0VudHJ5EgsKA2tleRgBIAEoBRINCgV2YWx1ZRgCIAEoCToCOAEiLQoNUHJvb2ZyZWFkTGluZRIOCgZudW1iZXIYASABKAUSDAoEdGV4dBgCIAEoCSJICg5Qcm9vZnJlYWRHcm91cBIOCgZudW1iZXIYASABKAUSJgoFbGluZXMYAiADKAsyFy5udW1lbi52MS5Qcm9vZnJlYWRMaW5lIsgBChRQcm9vZnJlYWRUZXh0UmVxdWVzdBIlCgRraW5kGAEgASgOMhcubnVtZW4udjEuUHJvb2ZyZWFkS2luZBIoCgZncm91cHMYAiADKAsyGC5udW1lbi52MS5Qcm9vZnJlYWRHcm91cBIMCgRzaXplGAMgASgFEg8KB292ZXJsYXAYBCABKAUSEQoJZnJvbV9saW5lGAUgASgFEhIKCmxpbmVfbGltaXQYBiABKAUSGQoRbWF4X2VkaXRfZGlzdGFuY2UYByABKAEiQQoTUHJvb2ZyZWFkQ29ycmVjdGlvbhIOCgZudW1iZXIYASABKAUSDAoEbGFzdBgCIAEoBRIMCgR0ZXh0GAMgASgJIoQBChVQcm9vZnJlYWRUZXh0UmVzcG9uc2USMgoLY29ycmVjdGlvbnMYASADKAsyHS5udW1lbi52MS5Qcm9vZnJlYWRDb3JyZWN0aW9uEhMKC3VuY29ycmVjdGVkGAIgASgFEhEKCW5leHRfbGluZRgDIAEoBRIPCgdpc19kb25lGAQgASgIKmMKDVByb29mcmVhZEtpbmQSHgoaUFJPT0ZSRUFEX0tJTkRfVU5TUEVDSUZJRUQQABIXChNQUk9PRlJFQURfS0lORF9TQ0FOEAESGQoVUFJPT0ZSRUFEX0tJTkRfU1BFRUNIEAIyjgIKE1Byb29mcmVhZGluZ1NlcnZpY2USXwoSR2V0UHJvb2ZyZWFkZXJJbmZvEiMubnVtZW4udjEuR2V0UHJvb2ZyZWFkZXJJbmZvUmVxdWVzdBokLm51bWVuLnYxLkdldFByb29mcmVhZGVySW5mb1Jlc3BvbnNlEkQKCVByb29mcmVhZBIaLm51bWVuLnYxLlByb29mcmVhZFJlcXVlc3QaGy5udW1lbi52MS5Qcm9vZnJlYWRSZXNwb25zZRJQCg1Qcm9vZnJlYWRUZXh0Eh4ubnVtZW4udjEuUHJvb2ZyZWFkVGV4dFJlcXVlc3QaHy5udW1lbi52MS5Qcm9vZnJlYWRUZXh0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.GetProofreaderInfoRequest
@@ -106,6 +106,210 @@ export const ProofreadResponseSchema: GenMessage<ProofreadResponse> = /*@__PURE_
   messageDesc(file_numen_v1_proofreading, 4);
 
 /**
+ * ProofreadLine is one numbered run of words.
+ *
+ * @generated from message numen.v1.ProofreadLine
+ */
+export type ProofreadLine = Message<"numen.v1.ProofreadLine"> & {
+  /**
+   * @generated from field: int32 number = 1;
+   */
+  number: number;
+
+  /**
+   * @generated from field: string text = 2;
+   */
+  text: string;
+};
+
+/**
+ * Describes the message numen.v1.ProofreadLine.
+ * Use `create(ProofreadLineSchema)` to create a new message.
+ */
+export const ProofreadLineSchema: GenMessage<ProofreadLine> = /*@__PURE__*/
+  messageDesc(file_numen_v1_proofreading, 5);
+
+/**
+ * ProofreadGroup is lines answered for as a whole. A scan group is one page.
+ * A speech request carries the whole recording as its one group.
+ *
+ * @generated from message numen.v1.ProofreadGroup
+ */
+export type ProofreadGroup = Message<"numen.v1.ProofreadGroup"> & {
+  /**
+   * @generated from field: int32 number = 1;
+   */
+  number: number;
+
+  /**
+   * @generated from field: repeated numen.v1.ProofreadLine lines = 2;
+   */
+  lines: ProofreadLine[];
+};
+
+/**
+ * Describes the message numen.v1.ProofreadGroup.
+ * Use `create(ProofreadGroupSchema)` to create a new message.
+ */
+export const ProofreadGroupSchema: GenMessage<ProofreadGroup> = /*@__PURE__*/
+  messageDesc(file_numen_v1_proofreading, 6);
+
+/**
+ * @generated from message numen.v1.ProofreadTextRequest
+ */
+export type ProofreadTextRequest = Message<"numen.v1.ProofreadTextRequest"> & {
+  /**
+   * @generated from field: numen.v1.ProofreadKind kind = 1;
+   */
+  kind: ProofreadKind;
+
+  /**
+   * @generated from field: repeated numen.v1.ProofreadGroup groups = 2;
+   */
+  groups: ProofreadGroup[];
+
+  /**
+   * Speech only. size is the lines one model request holds and overlap the
+   * lines it shares with the one before it. The proofreader answers the lines
+   * from from_line on, at most line_limit of them, and says where to continue.
+   *
+   * @generated from field: int32 size = 3;
+   */
+  size: number;
+
+  /**
+   * @generated from field: int32 overlap = 4;
+   */
+  overlap: number;
+
+  /**
+   * @generated from field: int32 from_line = 5;
+   */
+  fromLine: number;
+
+  /**
+   * @generated from field: int32 line_limit = 6;
+   */
+  lineLimit: number;
+
+  /**
+   * How far a one-line correction may stand from the line as read. Zero takes
+   * the proofreader's own limit.
+   *
+   * @generated from field: double max_edit_distance = 7;
+   */
+  maxEditDistance: number;
+};
+
+/**
+ * Describes the message numen.v1.ProofreadTextRequest.
+ * Use `create(ProofreadTextRequestSchema)` to create a new message.
+ */
+export const ProofreadTextRequestSchema: GenMessage<ProofreadTextRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_proofreading, 7);
+
+/**
+ * ProofreadCorrection puts line number right. A correction of several lines
+ * puts them together as one, and last is the final line of the run; otherwise
+ * last is zero or equal to number.
+ *
+ * @generated from message numen.v1.ProofreadCorrection
+ */
+export type ProofreadCorrection = Message<"numen.v1.ProofreadCorrection"> & {
+  /**
+   * @generated from field: int32 number = 1;
+   */
+  number: number;
+
+  /**
+   * @generated from field: int32 last = 2;
+   */
+  last: number;
+
+  /**
+   * @generated from field: string text = 3;
+   */
+  text: string;
+};
+
+/**
+ * Describes the message numen.v1.ProofreadCorrection.
+ * Use `create(ProofreadCorrectionSchema)` to create a new message.
+ */
+export const ProofreadCorrectionSchema: GenMessage<ProofreadCorrection> = /*@__PURE__*/
+  messageDesc(file_numen_v1_proofreading, 8);
+
+/**
+ * @generated from message numen.v1.ProofreadTextResponse
+ */
+export type ProofreadTextResponse = Message<"numen.v1.ProofreadTextResponse"> & {
+  /**
+   * @generated from field: repeated numen.v1.ProofreadCorrection corrections = 1;
+   */
+  corrections: ProofreadCorrection[];
+
+  /**
+   * How many groups the model answered with something that is no correction.
+   *
+   * @generated from field: int32 uncorrected = 2;
+   */
+  uncorrected: number;
+
+  /**
+   * Speech only: the line to continue from, and whether nothing is left after
+   * the lines answered.
+   *
+   * @generated from field: int32 next_line = 3;
+   */
+  nextLine: number;
+
+  /**
+   * @generated from field: bool is_done = 4;
+   */
+  isDone: boolean;
+};
+
+/**
+ * Describes the message numen.v1.ProofreadTextResponse.
+ * Use `create(ProofreadTextResponseSchema)` to create a new message.
+ */
+export const ProofreadTextResponseSchema: GenMessage<ProofreadTextResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_proofreading, 9);
+
+/**
+ * ProofreadKind is what is being proofread. The proofreader chooses its own
+ * instructions, batching and reply rules from it.
+ *
+ * @generated from enum numen.v1.ProofreadKind
+ */
+export enum ProofreadKind {
+  /**
+   * @generated from enum value: PROOFREAD_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * Text a machine read off the pages of a printed book.
+   *
+   * @generated from enum value: PROOFREAD_KIND_SCAN = 1;
+   */
+  SCAN = 1,
+
+  /**
+   * Text a machine heard in a recording.
+   *
+   * @generated from enum value: PROOFREAD_KIND_SPEECH = 2;
+   */
+  SPEECH = 2,
+}
+
+/**
+ * Describes the enum numen.v1.ProofreadKind.
+ */
+export const ProofreadKindSchema: GenEnum<ProofreadKind> = /*@__PURE__*/
+  enumDesc(file_numen_v1_proofreading, 0);
+
+/**
  * ProofreadingService coordinates LLM-based proofreading of text batches.
  *
  * @generated from service numen.v1.ProofreadingService
@@ -130,6 +334,17 @@ export const ProofreadingService: GenService<{
     methodKind: "unary";
     input: typeof ProofreadRequestSchema;
     output: typeof ProofreadResponseSchema;
+  },
+  /**
+   * ProofreadText proofreads numbered lines of one kind of text and returns the
+   * corrections the proofreader stands behind.
+   *
+   * @generated from rpc numen.v1.ProofreadingService.ProofreadText
+   */
+  proofreadText: {
+    methodKind: "unary";
+    input: typeof ProofreadTextRequestSchema;
+    output: typeof ProofreadTextResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_proofreading, 0);

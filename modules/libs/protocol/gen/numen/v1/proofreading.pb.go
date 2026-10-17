@@ -21,6 +21,59 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ProofreadKind is what is being proofread. The proofreader chooses its own
+// instructions, batching and reply rules from it.
+type ProofreadKind int32
+
+const (
+	ProofreadKind_PROOFREAD_KIND_UNSPECIFIED ProofreadKind = 0
+	// Text a machine read off the pages of a printed book.
+	ProofreadKind_PROOFREAD_KIND_SCAN ProofreadKind = 1
+	// Text a machine heard in a recording.
+	ProofreadKind_PROOFREAD_KIND_SPEECH ProofreadKind = 2
+)
+
+// Enum value maps for ProofreadKind.
+var (
+	ProofreadKind_name = map[int32]string{
+		0: "PROOFREAD_KIND_UNSPECIFIED",
+		1: "PROOFREAD_KIND_SCAN",
+		2: "PROOFREAD_KIND_SPEECH",
+	}
+	ProofreadKind_value = map[string]int32{
+		"PROOFREAD_KIND_UNSPECIFIED": 0,
+		"PROOFREAD_KIND_SCAN":        1,
+		"PROOFREAD_KIND_SPEECH":      2,
+	}
+)
+
+func (x ProofreadKind) Enum() *ProofreadKind {
+	p := new(ProofreadKind)
+	*p = x
+	return p
+}
+
+func (x ProofreadKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ProofreadKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_proofreading_proto_enumTypes[0].Descriptor()
+}
+
+func (ProofreadKind) Type() protoreflect.EnumType {
+	return &file_numen_v1_proofreading_proto_enumTypes[0]
+}
+
+func (x ProofreadKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ProofreadKind.Descriptor instead.
+func (ProofreadKind) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{0}
+}
+
 type GetProofreaderInfoRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -250,6 +303,344 @@ func (x *ProofreadResponse) GetReplies() map[int32]string {
 	return nil
 }
 
+// ProofreadLine is one numbered run of words.
+type ProofreadLine struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Number        int32                  `protobuf:"varint,1,opt,name=number,proto3" json:"number,omitempty"`
+	Text          string                 `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProofreadLine) Reset() {
+	*x = ProofreadLine{}
+	mi := &file_numen_v1_proofreading_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProofreadLine) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProofreadLine) ProtoMessage() {}
+
+func (x *ProofreadLine) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_proofreading_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProofreadLine.ProtoReflect.Descriptor instead.
+func (*ProofreadLine) Descriptor() ([]byte, []int) {
+	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ProofreadLine) GetNumber() int32 {
+	if x != nil {
+		return x.Number
+	}
+	return 0
+}
+
+func (x *ProofreadLine) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+// ProofreadGroup is lines answered for as a whole. A scan group is one page.
+// A speech request carries the whole recording as its one group.
+type ProofreadGroup struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Number        int32                  `protobuf:"varint,1,opt,name=number,proto3" json:"number,omitempty"`
+	Lines         []*ProofreadLine       `protobuf:"bytes,2,rep,name=lines,proto3" json:"lines,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProofreadGroup) Reset() {
+	*x = ProofreadGroup{}
+	mi := &file_numen_v1_proofreading_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProofreadGroup) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProofreadGroup) ProtoMessage() {}
+
+func (x *ProofreadGroup) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_proofreading_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProofreadGroup.ProtoReflect.Descriptor instead.
+func (*ProofreadGroup) Descriptor() ([]byte, []int) {
+	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ProofreadGroup) GetNumber() int32 {
+	if x != nil {
+		return x.Number
+	}
+	return 0
+}
+
+func (x *ProofreadGroup) GetLines() []*ProofreadLine {
+	if x != nil {
+		return x.Lines
+	}
+	return nil
+}
+
+type ProofreadTextRequest struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Kind   ProofreadKind          `protobuf:"varint,1,opt,name=kind,proto3,enum=numen.v1.ProofreadKind" json:"kind,omitempty"`
+	Groups []*ProofreadGroup      `protobuf:"bytes,2,rep,name=groups,proto3" json:"groups,omitempty"`
+	// Speech only. size is the lines one model request holds and overlap the
+	// lines it shares with the one before it. The proofreader answers the lines
+	// from from_line on, at most line_limit of them, and says where to continue.
+	Size      int32 `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
+	Overlap   int32 `protobuf:"varint,4,opt,name=overlap,proto3" json:"overlap,omitempty"`
+	FromLine  int32 `protobuf:"varint,5,opt,name=from_line,json=fromLine,proto3" json:"from_line,omitempty"`
+	LineLimit int32 `protobuf:"varint,6,opt,name=line_limit,json=lineLimit,proto3" json:"line_limit,omitempty"`
+	// How far a one-line correction may stand from the line as read. Zero takes
+	// the proofreader's own limit.
+	MaxEditDistance float64 `protobuf:"fixed64,7,opt,name=max_edit_distance,json=maxEditDistance,proto3" json:"max_edit_distance,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ProofreadTextRequest) Reset() {
+	*x = ProofreadTextRequest{}
+	mi := &file_numen_v1_proofreading_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProofreadTextRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProofreadTextRequest) ProtoMessage() {}
+
+func (x *ProofreadTextRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_proofreading_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProofreadTextRequest.ProtoReflect.Descriptor instead.
+func (*ProofreadTextRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ProofreadTextRequest) GetKind() ProofreadKind {
+	if x != nil {
+		return x.Kind
+	}
+	return ProofreadKind_PROOFREAD_KIND_UNSPECIFIED
+}
+
+func (x *ProofreadTextRequest) GetGroups() []*ProofreadGroup {
+	if x != nil {
+		return x.Groups
+	}
+	return nil
+}
+
+func (x *ProofreadTextRequest) GetSize() int32 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *ProofreadTextRequest) GetOverlap() int32 {
+	if x != nil {
+		return x.Overlap
+	}
+	return 0
+}
+
+func (x *ProofreadTextRequest) GetFromLine() int32 {
+	if x != nil {
+		return x.FromLine
+	}
+	return 0
+}
+
+func (x *ProofreadTextRequest) GetLineLimit() int32 {
+	if x != nil {
+		return x.LineLimit
+	}
+	return 0
+}
+
+func (x *ProofreadTextRequest) GetMaxEditDistance() float64 {
+	if x != nil {
+		return x.MaxEditDistance
+	}
+	return 0
+}
+
+// ProofreadCorrection puts line number right. A correction of several lines
+// puts them together as one, and last is the final line of the run; otherwise
+// last is zero or equal to number.
+type ProofreadCorrection struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Number        int32                  `protobuf:"varint,1,opt,name=number,proto3" json:"number,omitempty"`
+	Last          int32                  `protobuf:"varint,2,opt,name=last,proto3" json:"last,omitempty"`
+	Text          string                 `protobuf:"bytes,3,opt,name=text,proto3" json:"text,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProofreadCorrection) Reset() {
+	*x = ProofreadCorrection{}
+	mi := &file_numen_v1_proofreading_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProofreadCorrection) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProofreadCorrection) ProtoMessage() {}
+
+func (x *ProofreadCorrection) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_proofreading_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProofreadCorrection.ProtoReflect.Descriptor instead.
+func (*ProofreadCorrection) Descriptor() ([]byte, []int) {
+	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ProofreadCorrection) GetNumber() int32 {
+	if x != nil {
+		return x.Number
+	}
+	return 0
+}
+
+func (x *ProofreadCorrection) GetLast() int32 {
+	if x != nil {
+		return x.Last
+	}
+	return 0
+}
+
+func (x *ProofreadCorrection) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+type ProofreadTextResponse struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Corrections []*ProofreadCorrection `protobuf:"bytes,1,rep,name=corrections,proto3" json:"corrections,omitempty"`
+	// How many groups the model answered with something that is no correction.
+	Uncorrected int32 `protobuf:"varint,2,opt,name=uncorrected,proto3" json:"uncorrected,omitempty"`
+	// Speech only: the line to continue from, and whether nothing is left after
+	// the lines answered.
+	NextLine      int32 `protobuf:"varint,3,opt,name=next_line,json=nextLine,proto3" json:"next_line,omitempty"`
+	IsDone        bool  `protobuf:"varint,4,opt,name=is_done,json=isDone,proto3" json:"is_done,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProofreadTextResponse) Reset() {
+	*x = ProofreadTextResponse{}
+	mi := &file_numen_v1_proofreading_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProofreadTextResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProofreadTextResponse) ProtoMessage() {}
+
+func (x *ProofreadTextResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_proofreading_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProofreadTextResponse.ProtoReflect.Descriptor instead.
+func (*ProofreadTextResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ProofreadTextResponse) GetCorrections() []*ProofreadCorrection {
+	if x != nil {
+		return x.Corrections
+	}
+	return nil
+}
+
+func (x *ProofreadTextResponse) GetUncorrected() int32 {
+	if x != nil {
+		return x.Uncorrected
+	}
+	return 0
+}
+
+func (x *ProofreadTextResponse) GetNextLine() int32 {
+	if x != nil {
+		return x.NextLine
+	}
+	return 0
+}
+
+func (x *ProofreadTextResponse) GetIsDone() bool {
+	if x != nil {
+		return x.IsDone
+	}
+	return false
+}
+
 var File_numen_v1_proofreading_proto protoreflect.FileDescriptor
 
 const file_numen_v1_proofreading_proto_rawDesc = "" +
@@ -268,10 +659,39 @@ const file_numen_v1_proofreading_proto_rawDesc = "" +
 	"\areplies\x18\x01 \x03(\v2(.numen.v1.ProofreadResponse.RepliesEntryR\areplies\x1a:\n" +
 	"\fRepliesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x05R\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x012\xbc\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\";\n" +
+	"\rProofreadLine\x12\x16\n" +
+	"\x06number\x18\x01 \x01(\x05R\x06number\x12\x12\n" +
+	"\x04text\x18\x02 \x01(\tR\x04text\"W\n" +
+	"\x0eProofreadGroup\x12\x16\n" +
+	"\x06number\x18\x01 \x01(\x05R\x06number\x12-\n" +
+	"\x05lines\x18\x02 \x03(\v2\x17.numen.v1.ProofreadLineR\x05lines\"\x8b\x02\n" +
+	"\x14ProofreadTextRequest\x12+\n" +
+	"\x04kind\x18\x01 \x01(\x0e2\x17.numen.v1.ProofreadKindR\x04kind\x120\n" +
+	"\x06groups\x18\x02 \x03(\v2\x18.numen.v1.ProofreadGroupR\x06groups\x12\x12\n" +
+	"\x04size\x18\x03 \x01(\x05R\x04size\x12\x18\n" +
+	"\aoverlap\x18\x04 \x01(\x05R\aoverlap\x12\x1b\n" +
+	"\tfrom_line\x18\x05 \x01(\x05R\bfromLine\x12\x1d\n" +
+	"\n" +
+	"line_limit\x18\x06 \x01(\x05R\tlineLimit\x12*\n" +
+	"\x11max_edit_distance\x18\a \x01(\x01R\x0fmaxEditDistance\"U\n" +
+	"\x13ProofreadCorrection\x12\x16\n" +
+	"\x06number\x18\x01 \x01(\x05R\x06number\x12\x12\n" +
+	"\x04last\x18\x02 \x01(\x05R\x04last\x12\x12\n" +
+	"\x04text\x18\x03 \x01(\tR\x04text\"\xb0\x01\n" +
+	"\x15ProofreadTextResponse\x12?\n" +
+	"\vcorrections\x18\x01 \x03(\v2\x1d.numen.v1.ProofreadCorrectionR\vcorrections\x12 \n" +
+	"\vuncorrected\x18\x02 \x01(\x05R\vuncorrected\x12\x1b\n" +
+	"\tnext_line\x18\x03 \x01(\x05R\bnextLine\x12\x17\n" +
+	"\ais_done\x18\x04 \x01(\bR\x06isDone*c\n" +
+	"\rProofreadKind\x12\x1e\n" +
+	"\x1aPROOFREAD_KIND_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13PROOFREAD_KIND_SCAN\x10\x01\x12\x19\n" +
+	"\x15PROOFREAD_KIND_SPEECH\x10\x022\x8e\x02\n" +
 	"\x13ProofreadingService\x12_\n" +
 	"\x12GetProofreaderInfo\x12#.numen.v1.GetProofreaderInfoRequest\x1a$.numen.v1.GetProofreaderInfoResponse\x12D\n" +
-	"\tProofread\x12\x1a.numen.v1.ProofreadRequest\x1a\x1b.numen.v1.ProofreadResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\tProofread\x12\x1a.numen.v1.ProofreadRequest\x1a\x1b.numen.v1.ProofreadResponse\x12P\n" +
+	"\rProofreadText\x12\x1e.numen.v1.ProofreadTextRequest\x1a\x1f.numen.v1.ProofreadTextResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_proofreading_proto_rawDescOnce sync.Once
@@ -285,27 +705,40 @@ func file_numen_v1_proofreading_proto_rawDescGZIP() []byte {
 	return file_numen_v1_proofreading_proto_rawDescData
 }
 
-var file_numen_v1_proofreading_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_numen_v1_proofreading_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_numen_v1_proofreading_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_numen_v1_proofreading_proto_goTypes = []any{
-	(*GetProofreaderInfoRequest)(nil),  // 0: numen.v1.GetProofreaderInfoRequest
-	(*GetProofreaderInfoResponse)(nil), // 1: numen.v1.GetProofreaderInfoResponse
-	(*ProofreadBatch)(nil),             // 2: numen.v1.ProofreadBatch
-	(*ProofreadRequest)(nil),           // 3: numen.v1.ProofreadRequest
-	(*ProofreadResponse)(nil),          // 4: numen.v1.ProofreadResponse
-	nil,                                // 5: numen.v1.ProofreadResponse.RepliesEntry
+	(ProofreadKind)(0),                 // 0: numen.v1.ProofreadKind
+	(*GetProofreaderInfoRequest)(nil),  // 1: numen.v1.GetProofreaderInfoRequest
+	(*GetProofreaderInfoResponse)(nil), // 2: numen.v1.GetProofreaderInfoResponse
+	(*ProofreadBatch)(nil),             // 3: numen.v1.ProofreadBatch
+	(*ProofreadRequest)(nil),           // 4: numen.v1.ProofreadRequest
+	(*ProofreadResponse)(nil),          // 5: numen.v1.ProofreadResponse
+	(*ProofreadLine)(nil),              // 6: numen.v1.ProofreadLine
+	(*ProofreadGroup)(nil),             // 7: numen.v1.ProofreadGroup
+	(*ProofreadTextRequest)(nil),       // 8: numen.v1.ProofreadTextRequest
+	(*ProofreadCorrection)(nil),        // 9: numen.v1.ProofreadCorrection
+	(*ProofreadTextResponse)(nil),      // 10: numen.v1.ProofreadTextResponse
+	nil,                                // 11: numen.v1.ProofreadResponse.RepliesEntry
 }
 var file_numen_v1_proofreading_proto_depIdxs = []int32{
-	2, // 0: numen.v1.ProofreadRequest.batches:type_name -> numen.v1.ProofreadBatch
-	5, // 1: numen.v1.ProofreadResponse.replies:type_name -> numen.v1.ProofreadResponse.RepliesEntry
-	0, // 2: numen.v1.ProofreadingService.GetProofreaderInfo:input_type -> numen.v1.GetProofreaderInfoRequest
-	3, // 3: numen.v1.ProofreadingService.Proofread:input_type -> numen.v1.ProofreadRequest
-	1, // 4: numen.v1.ProofreadingService.GetProofreaderInfo:output_type -> numen.v1.GetProofreaderInfoResponse
-	4, // 5: numen.v1.ProofreadingService.Proofread:output_type -> numen.v1.ProofreadResponse
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	3,  // 0: numen.v1.ProofreadRequest.batches:type_name -> numen.v1.ProofreadBatch
+	11, // 1: numen.v1.ProofreadResponse.replies:type_name -> numen.v1.ProofreadResponse.RepliesEntry
+	6,  // 2: numen.v1.ProofreadGroup.lines:type_name -> numen.v1.ProofreadLine
+	0,  // 3: numen.v1.ProofreadTextRequest.kind:type_name -> numen.v1.ProofreadKind
+	7,  // 4: numen.v1.ProofreadTextRequest.groups:type_name -> numen.v1.ProofreadGroup
+	9,  // 5: numen.v1.ProofreadTextResponse.corrections:type_name -> numen.v1.ProofreadCorrection
+	1,  // 6: numen.v1.ProofreadingService.GetProofreaderInfo:input_type -> numen.v1.GetProofreaderInfoRequest
+	4,  // 7: numen.v1.ProofreadingService.Proofread:input_type -> numen.v1.ProofreadRequest
+	8,  // 8: numen.v1.ProofreadingService.ProofreadText:input_type -> numen.v1.ProofreadTextRequest
+	2,  // 9: numen.v1.ProofreadingService.GetProofreaderInfo:output_type -> numen.v1.GetProofreaderInfoResponse
+	5,  // 10: numen.v1.ProofreadingService.Proofread:output_type -> numen.v1.ProofreadResponse
+	10, // 11: numen.v1.ProofreadingService.ProofreadText:output_type -> numen.v1.ProofreadTextResponse
+	9,  // [9:12] is the sub-list for method output_type
+	6,  // [6:9] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_proofreading_proto_init() }
@@ -318,13 +751,14 @@ func file_numen_v1_proofreading_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_proofreading_proto_rawDesc), len(file_numen_v1_proofreading_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   6,
+			NumEnums:      1,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_numen_v1_proofreading_proto_goTypes,
 		DependencyIndexes: file_numen_v1_proofreading_proto_depIdxs,
+		EnumInfos:         file_numen_v1_proofreading_proto_enumTypes,
 		MessageInfos:      file_numen_v1_proofreading_proto_msgTypes,
 	}.Build()
 	File_numen_v1_proofreading_proto = out.File

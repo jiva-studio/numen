@@ -11,6 +11,10 @@ service ProofreadingService {
 
   // Proofread submits text batches to be proofread and returns corrections.
   rpc Proofread(ProofreadRequest) returns (ProofreadResponse);
+
+  // ProofreadText proofreads numbered lines of one kind of text and returns the
+  // corrections the proofreader stands behind.
+  rpc ProofreadText(ProofreadTextRequest) returns (ProofreadTextResponse);
 }
 
 message GetProofreaderInfoRequest {}
@@ -32,4 +36,65 @@ message ProofreadRequest {
 message ProofreadResponse {
   // Map of batch number to proofread reply.
   map<int32, string> replies = 1;
+}
+
+// ProofreadKind is what is being proofread. The proofreader chooses its own
+// instructions, batching and reply rules from it.
+enum ProofreadKind {
+  PROOFREAD_KIND_UNSPECIFIED = 0;
+  // Text a machine read off the pages of a printed book.
+  PROOFREAD_KIND_SCAN = 1;
+  // Text a machine heard in a recording.
+  PROOFREAD_KIND_SPEECH = 2;
+}
+
+// ProofreadLine is one numbered run of words.
+message ProofreadLine {
+  int32 number = 1;
+  string text = 2;
+}
+
+// ProofreadGroup is lines answered for as a whole. A scan group is one page.
+// A speech request carries the whole recording as its one group.
+message ProofreadGroup {
+  int32 number = 1;
+  repeated ProofreadLine lines = 2;
+}
+
+message ProofreadTextRequest {
+  ProofreadKind kind = 1;
+  repeated ProofreadGroup groups = 2;
+
+  // Speech only. size is the lines one model request holds and overlap the
+  // lines it shares with the one before it. The proofreader answers the lines
+  // from from_line on, at most line_limit of them, and says where to continue.
+  int32 size = 3;
+  int32 overlap = 4;
+  int32 from_line = 5;
+  int32 line_limit = 6;
+
+  // How far a one-line correction may stand from the line as read. Zero takes
+  // the proofreader's own limit.
+  double max_edit_distance = 7;
+}
+
+// ProofreadCorrection puts line number right. A correction of several lines
+// puts them together as one, and last is the final line of the run; otherwise
+// last is zero or equal to number.
+message ProofreadCorrection {
+  int32 number = 1;
+  int32 last = 2;
+  string text = 3;
+}
+
+message ProofreadTextResponse {
+  repeated ProofreadCorrection corrections = 1;
+
+  // How many groups the model answered with something that is no correction.
+  int32 uncorrected = 2;
+
+  // Speech only: the line to continue from, and whether nothing is left after
+  // the lines answered.
+  int32 next_line = 3;
+  bool is_done = 4;
 }
