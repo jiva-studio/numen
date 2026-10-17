@@ -2,18 +2,8 @@ name: Core
 
 on:
   pull_request:
-    paths:
-      - "modules/libs/core/**"
-      - "!modules/libs/core/**/*.md"
-      - "modules/libs/protocol/**"
-      - "!modules/libs/protocol/**/*.md"
-      - "tests/**"
-      - "!tests/**/*.md"
-      - "!docs/**"
-      - ".github/workflows/core.yml"
-      # The rules the linter is held to, and the ones written here in Go.
-      - "modules/.golangci.yml"
-      - "**/gorules/**"
+  merge_group:
+    types: [checks_requested]
   push:
     branches: [main]
     paths:
@@ -72,8 +62,8 @@ jobs:
           EVENT: ${{ github.event_name }}
           ASKED_WINDOWS: ${{ inputs.windows }}
           ASKED_MACOS: ${{ inputs.macos }}
-          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
-          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}
         run: |
           set -euo pipefail
 
@@ -208,9 +198,9 @@ jobs:
       # Git holds the hashes, so nothing here is written down twice: a file the
       # base already carries has to still be what it was there.
       - name: Verify migrations are forward-only
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
         env:
-          BASE: ${{ github.event.pull_request.base.sha }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: modules/libs/core/adapter/index/migration-forward-only.sh "$BASE"
 
   go:
