@@ -33,6 +33,8 @@ export interface PluginPaletteCommand {
   isOffered(): boolean
 }
 
+export type TabActionHandler = (at: string, ...args: unknown[]) => unknown
+
 export interface PluginHostDeps {
   readonly registerKind: (kind: AnyTabKind) => () => void
   readonly registerExtensionReader: (extension: string, read: SourceReader) => () => void
@@ -50,10 +52,14 @@ export interface PluginHostDeps {
     handler: (value: unknown) => void | Promise<void>,
   ) => () => void
   readonly closeTabsForPlugin?: (pluginId: string) => void
-  readonly onCustomCardAdded?: (at: string, values: readonly { field: string; text: string }[]) => void
-  readonly readNote?: (
-    (path: string) => Promise<{ body?: string; error?: string } | string | undefined>
-  ) | undefined
+  readonly tabActionHandlers?: Record<string, TabActionHandler>
+  readonly onTabAction?: (action: string, at: string, ...args: unknown[]) => unknown
+  readonly onCustomCardAdded?: (
+    at: string,
+    values: readonly { field: string; text: string }[],
+  ) => void
+  readonly readNote?:
+    ((path: string) => Promise<{ body?: string; error?: string } | string | undefined>) | undefined
   readonly writeNote?: ((path: string, body: string) => Promise<void>) | undefined
 }
 

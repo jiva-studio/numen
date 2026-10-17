@@ -11,6 +11,8 @@ export function activate(context: PluginContext): void {
     fileExtensions: ['.mp3', '.m4a', '.wav', '.ogg', '.aac', '.flac'],
     component: AudioPlayerTab,
     title: 'Audio Player',
+    source: 'recording',
+    capabilities: ['recording', 'media', 'audio'],
   })
 
   // Register microphone recording tab

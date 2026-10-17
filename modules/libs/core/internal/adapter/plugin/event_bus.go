@@ -2,16 +2,28 @@ package plugin
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // EventHandler handles a dispatched event string.
 type EventHandler func(ctx context.Context, event string) error
 
+// KeyExtractor maps an event to a debounce group key.
+type KeyExtractor func(event string) string
+
+// DebounceRule defines custom key extraction for an event.
+type DebounceRule func(event string) (key string, matches bool)
+
+// ErrorHandler receives asynchronous dispatch errors.
+type ErrorHandler func(err error)
+
 type eventState struct {
-	timer     *time.Timer
+	cancel    func() bool
 	firstSeen time.Time
 	lastSeen  time.Time
 	event     string
@@ -21,6 +33,9 @@ type subscriber struct {
 	id      uint64
 	handler EventHandler
 }
+
+// EventBusOption configures an EventBus instance.
+type EventBusOption func(*EventBus)
 
 // EventBus debounces and throttles events sent to plugins to protect the UI main thread.
 type EventBus struct {
@@ -32,17 +47,57 @@ type EventBus struct {
 	subscribers      map[string][]subscriber
 	nextSubID        uint64
 	isClosed         bool
+	clock            port.Clock
+	delay            port.Delay
+	keyExtractor     KeyExtractor
+	debounceRules    []DebounceRule
+	errorHandler     ErrorHandler
+}
+
+// WithClock sets the clock port used for time measurements.
+func WithClock(clock port.Clock) EventBusOption {
+	return func(b *EventBus) {
+		b.clock = clock
+	}
+}
+
+// WithDelay sets the delay port used for scheduling timers.
+func WithDelay(delay port.Delay) EventBusOption {
+	return func(b *EventBus) {
+		b.delay = delay
+	}
+}
+
+// WithKeyExtractor sets the key extractor used for debounce grouping.
+func WithKeyExtractor(extractor KeyExtractor) EventBusOption {
+	return func(b *EventBus) {
+		b.keyExtractor = extractor
+	}
+}
+
+// WithDebounceRule adds a debounce rule for key extraction.
+func WithDebounceRule(rule DebounceRule) EventBusOption {
+	return func(b *EventBus) {
+		b.debounceRules = append(b.debounceRules, rule)
+	}
+}
+
+// WithErrorHandler sets the error handler for asynchronous event dispatch failures.
+func WithErrorHandler(handler ErrorHandler) EventBusOption {
+	return func(b *EventBus) {
+		b.errorHandler = handler
+	}
 }
 
 // NewEventBus creates a debouncing and throttling event bus.
-func NewEventBus(host *Host, debounceDelay, throttleInterval time.Duration) *EventBus {
+func NewEventBus(host *Host, debounceDelay, throttleInterval time.Duration, opts ...EventBusOption) *EventBus {
 	if debounceDelay <= 0 {
 		debounceDelay = 50 * time.Millisecond
 	}
 	if throttleInterval <= 0 {
 		throttleInterval = 250 * time.Millisecond
 	}
-	return &EventBus{
+	bus := &EventBus{
 		mu:               sync.Mutex{},
 		host:             host,
 		debounceDelay:    debounceDelay,
@@ -51,7 +106,86 @@ func NewEventBus(host *Host, debounceDelay, throttleInterval time.Duration) *Eve
 		subscribers:      make(map[string][]subscriber),
 		nextSubID:        0,
 		isClosed:         false,
+		clock:            nil,
+		delay:            nil,
+		keyExtractor:     nil,
+		debounceRules:    nil,
+		errorHandler:     nil,
 	}
+	for _, opt := range opts {
+		opt(bus)
+	}
+	return bus
+}
+
+// SetClock sets the clock port used for time measurements.
+func (b *EventBus) SetClock(clock port.Clock) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.clock = clock
+}
+
+// SetDelay sets the delay port used for scheduling timers.
+func (b *EventBus) SetDelay(delay port.Delay) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.delay = delay
+}
+
+// SetKeyExtractor sets the key extractor used for debounce grouping.
+func (b *EventBus) SetKeyExtractor(extractor KeyExtractor) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.keyExtractor = extractor
+}
+
+// AddDebounceRule registers an additional debounce rule.
+func (b *EventBus) AddDebounceRule(rule DebounceRule) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.debounceRules = append(b.debounceRules, rule)
+}
+
+// SetErrorHandler sets the callback for asynchronous errors.
+func (b *EventBus) SetErrorHandler(handler ErrorHandler) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.errorHandler = handler
+}
+
+func (b *EventBus) getNow() time.Time {
+	if b.clock != nil {
+		return b.clock()
+	}
+	return time.Now()
+}
+
+func (b *EventBus) scheduleDelay(d time.Duration, f func()) func() bool {
+	if b.delay != nil {
+		return b.delay(d, f)
+	}
+	t := time.AfterFunc(d, f)
+	return t.Stop
+}
+
+// DefaultKeyExtractor groups typing events and leaves other events distinct.
+func DefaultKeyExtractor(event string) string {
+	if strings.HasPrefix(event, "onTyping") {
+		return "onTyping"
+	}
+	return event
+}
+
+func (b *EventBus) resolveKey(event string) string {
+	for _, rule := range b.debounceRules {
+		if key, matches := rule(event); matches {
+			return key
+		}
+	}
+	if b.keyExtractor != nil {
+		return b.keyExtractor(event)
+	}
+	return DefaultKeyExtractor(event)
 }
 
 // Publish enqueues an event for debounced and throttled delivery without blocking the caller.
@@ -63,19 +197,19 @@ func (b *EventBus) Publish(event string) {
 		return
 	}
 
-	key := eventKey(event)
-	now := time.Now()
+	key := b.resolveKey(event)
+	now := b.getNow()
 
 	state, exists := b.pending[key]
 	if !exists {
 		state = &eventState{
-			timer:     nil,
+			cancel:    nil,
 			firstSeen: now,
 			lastSeen:  now,
 			event:     event,
 		}
-		state.timer = time.AfterFunc(b.debounceDelay, func() {
-			b.flushKey(context.Background(), key)
+		state.cancel = b.scheduleDelay(b.debounceDelay, func() {
+			b.dispatchAsyncKey(key)
 		})
 		b.pending[key] = state
 		return
@@ -86,10 +220,11 @@ func (b *EventBus) Publish(event string) {
 
 	elapsed := now.Sub(state.firstSeen)
 	if elapsed >= b.throttleInterval {
-		if state.timer != nil {
-			state.timer.Stop()
+		if state.cancel != nil {
+			state.cancel()
+			state.cancel = nil
 		}
-		go b.flushKey(context.Background(), key)
+		go b.dispatchAsyncKey(key)
 		return
 	}
 
@@ -99,11 +234,11 @@ func (b *EventBus) Publish(event string) {
 		nextDelay = remainingThrottle
 	}
 
-	if state.timer != nil {
-		state.timer.Stop()
+	if state.cancel != nil {
+		state.cancel()
 	}
-	state.timer = time.AfterFunc(nextDelay, func() {
-		b.flushKey(context.Background(), key)
+	state.cancel = b.scheduleDelay(nextDelay, func() {
+		b.dispatchAsyncKey(key)
 	})
 }
 
@@ -137,7 +272,7 @@ func (b *EventBus) Subscribe(prefix string, handler EventHandler) func() {
 }
 
 // Flush dispatches all currently queued pending events immediately.
-func (b *EventBus) Flush(ctx context.Context) {
+func (b *EventBus) Flush(ctx context.Context) error {
 	b.mu.Lock()
 	keys := make([]string, 0, len(b.pending))
 	for k := range b.pending {
@@ -145,33 +280,54 @@ func (b *EventBus) Flush(ctx context.Context) {
 	}
 	b.mu.Unlock()
 
+	var errs []error
 	for _, k := range keys {
-		b.flushKey(ctx, k)
+		if err := b.flushKey(ctx, k); err != nil {
+			errs = append(errs, err)
+		}
 	}
+	return errors.Join(errs...)
 }
 
 // Close stops all pending timers and flushes queued events.
-func (b *EventBus) Close(ctx context.Context) {
+func (b *EventBus) Close(ctx context.Context) error {
 	b.mu.Lock()
 	if b.isClosed {
 		b.mu.Unlock()
-		return
+		return nil
 	}
 	b.isClosed = true
 	b.mu.Unlock()
 
-	b.Flush(ctx)
+	return b.Flush(ctx)
 }
 
-func (b *EventBus) flushKey(ctx context.Context, key string) {
+func (b *EventBus) dispatchAsyncKey(key string) {
+	if err := b.flushKey(context.Background(), key); err != nil {
+		b.reportError(err)
+	}
+}
+
+func (b *EventBus) reportError(err error) {
+	b.mu.Lock()
+	handler := b.errorHandler
+	b.mu.Unlock()
+
+	if handler != nil {
+		handler(err)
+	}
+}
+
+func (b *EventBus) flushKey(ctx context.Context, key string) error {
 	b.mu.Lock()
 	state, exists := b.pending[key]
 	if !exists {
 		b.mu.Unlock()
-		return
+		return nil
 	}
-	if state.timer != nil {
-		state.timer.Stop()
+	if state.cancel != nil {
+		state.cancel()
+		state.cancel = nil
 	}
 	event := state.event
 	delete(b.pending, key)
@@ -180,13 +336,19 @@ func (b *EventBus) flushKey(ctx context.Context, key string) {
 	host := b.host
 	b.mu.Unlock()
 
+	var errs []error
 	for _, h := range handlers {
-		_ = h(ctx, event)
+		if err := h(ctx, event); err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	if host != nil {
-		_, _ = host.TriggerEvent(ctx, event)
+		if _, err := host.TriggerEvent(ctx, event); err != nil {
+			errs = append(errs, err)
+		}
 	}
+	return errors.Join(errs...)
 }
 
 func (b *EventBus) findMatchingHandlers(event string) []EventHandler {
@@ -199,11 +361,4 @@ func (b *EventBus) findMatchingHandlers(event string) []EventHandler {
 		}
 	}
 	return result
-}
-
-func eventKey(event string) string {
-	if strings.HasPrefix(event, "onTyping") {
-		return "onTyping"
-	}
-	return event
 }

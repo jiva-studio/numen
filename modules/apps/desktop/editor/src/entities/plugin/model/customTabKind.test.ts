@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createCustomTabKind, createPluginPaneWrapper, createReaderTabKind } from './customTabKind'
@@ -181,3 +181,152 @@ describe('createCustomTabKind', () => {
   })
 })
 
+describe('createReaderTabKind (source resolution)', () => {
+  it('identifies source via registration source property', () => {
+    const kind = createReaderTabKind('audio-plugin', {
+      id: 'custom-audio',
+      fileExtensions: ['.custom'],
+      component: null,
+      source: 'recording',
+    })
+
+    const target = kind.getTarget?.({ path: 'track.custom' })
+    expect(target).toEqual({
+      file: 'track.custom',
+      path: 'track.custom',
+      title: '',
+      source: 'recording',
+    })
+  })
+
+  it('identifies source via capability flags', () => {
+    const kind = createReaderTabKind('media-plugin', {
+      id: 'media-stream',
+      fileExtensions: ['.stream'],
+      component: null,
+      capabilities: ['audio', 'media'],
+    })
+
+    const target = kind.getTarget?.({ path: 'live.stream' })
+    expect(target).toEqual({
+      file: 'live.stream',
+      path: 'live.stream',
+      title: '',
+      source: 'recording',
+    })
+  })
+
+  it('identifies source via metadata', () => {
+    const kind = createReaderTabKind('doc-plugin', {
+      id: 'doc-reader',
+      fileExtensions: ['.doc'],
+      component: null,
+      metadata: { source: 'book' },
+    })
+
+    const target = kind.getTarget?.({ path: 'novel.doc' })
+    expect(target).toEqual({ file: 'novel.doc', path: 'novel.doc', title: '', source: 'book' })
+  })
+
+  it('falls back to file extension when no media flags or metadata are present', () => {
+    const kind = createReaderTabKind('generic-plugin', {
+      id: 'generic-reader',
+      fileExtensions: ['.mp3'],
+      component: null,
+    })
+
+    const target = kind.getTarget?.({ path: 'sound.mp3' })
+    expect(target).toEqual({ file: 'sound.mp3', path: 'sound.mp3', title: '', source: 'recording' })
+  })
+})
+
+describe('createCustomTabKind (actions)', () => {
+  it('binds extensible action handlers from registration and host deps', () => {
+    const customAction = vi.fn()
+    const hostAction = vi.fn()
+
+    const kind = createCustomTabKind(
+      'cards-plugin',
+      {
+        kind: 'deck',
+        component: null,
+        actions: {
+          exportDeck: customAction,
+        },
+      },
+      {
+        registerKind: vi.fn(() => () => {}),
+        registerExtensionReader: vi.fn(() => () => {}),
+        openTab: vi.fn(async () => 'tab-1'),
+        tabActionHandlers: {
+          syncDeck: hostAction,
+        },
+      },
+    )
+
+    const state = kind.open('decks/test.md') as Record<string, unknown>
+    expect(typeof state.exportDeck).toBe('function')
+    expect(typeof state.syncDeck).toBe('function')
+
+    ;(state.exportDeck as (arg: string) => void)('json')
+    expect(customAction).toHaveBeenCalledWith('decks/test.md', 'json')
+
+    ;(state.syncDeck as (force: boolean) => void)(true)
+    expect(hostAction).toHaveBeenCalledWith('decks/test.md', true)
+  })
+
+  it('supports backwards-compatible fallback for onCustomCardAdded', () => {
+    const legacyAddCard = vi.fn()
+
+    const kind = createCustomTabKind(
+      'cards-plugin',
+      {
+        kind: 'deck',
+        component: null,
+      },
+      {
+        registerKind: vi.fn(() => () => {}),
+        registerExtensionReader: vi.fn(() => () => {}),
+        openTab: vi.fn(async () => 'tab-1'),
+        onCustomCardAdded: legacyAddCard,
+      },
+    )
+
+    const state = kind.open('decks/legacy.md') as {
+      addCard: (stencil: string, values: readonly { field: string; text: string }[]) => void
+    }
+    expect(typeof state.addCard).toBe('function')
+
+    state.addCard('stencil-1', [{ field: 'Front', text: 'Q' }])
+    expect(legacyAddCard).toHaveBeenCalledWith('decks/legacy.md', [{ field: 'Front', text: 'Q' }])
+  })
+
+  it('prevents action names from overwriting tab-state fields', () => {
+    const collidingAction = vi.fn()
+
+    const kind = createCustomTabKind(
+      'cards-plugin',
+      {
+        kind: 'deck',
+        component: null,
+        actions: {
+          path: collidingAction,
+          title: collidingAction,
+        },
+      },
+      {
+        registerKind: vi.fn(() => () => {}),
+        registerExtensionReader: vi.fn(() => () => {}),
+        openTab: vi.fn(async () => 'tab-1'),
+        tabActionHandlers: {
+          file: collidingAction,
+        },
+      },
+    )
+
+    const state = kind.open('decks/secure.md') as Record<string, unknown>
+    expect(state.path).toBe('decks/secure.md')
+    expect(state.file).toBeUndefined()
+    expect(typeof state.path).toBe('string')
+  })
+})

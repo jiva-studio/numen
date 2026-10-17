@@ -17,14 +17,18 @@ export interface PluginSupportDeps {
   readonly writeNote?: (path: string, body: string) => Promise<void>
 }
 
-function createPluginSettingsAccessor(settingsHolder: { current?: ReturnType<typeof useSettings> }) {
+function createPluginSettingsAccessor(settingsHolder: {
+  current?: ReturnType<typeof useSettings>
+}) {
   const getSetting = (pluginId: string, key: string): unknown => {
     const rest = settingsHolder.current?.rest
     if (!rest) return undefined
     const value = rest.getSetting?.(['plugins', pluginId, key])
     if (value !== undefined) return value
     if (key === 'enabled') {
-      const info = rest.plugins?.value?.find((p: { id: string; isActive?: boolean }) => p.id === pluginId)
+      const info = rest.plugins?.value?.find(
+        (p: { id: string; isActive?: boolean }) => p.id === pluginId,
+      )
       return info?.isActive ?? true
     }
     return undefined
@@ -58,6 +62,16 @@ function writeCustomCard(at: string, values: readonly { field: string; text: str
   )
 }
 
+function extractCardValues(args: unknown[]): readonly { field: string; text: string }[] {
+  if (Array.isArray(args[1])) {
+    return args[1] as readonly { field: string; text: string }[]
+  }
+  if (Array.isArray(args[0])) {
+    return args[0] as readonly { field: string; text: string }[]
+  }
+  return []
+}
+
 export function createPluginSupport(deps: PluginSupportDeps) {
   const { held, tabLinks, tabOpeners, settingsHolder } = deps
   const { getSetting, onSettingChange } = createPluginSettingsAccessor(settingsHolder)
@@ -82,6 +96,12 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     getSetting,
     onSettingChange,
     closeTabsForPlugin,
+    tabActionHandlers: {
+      addCard: (at: string, ...args: unknown[]) => {
+        if (!Array.isArray(args[1]) && !Array.isArray(args[0])) return
+        writeCustomCard(at, extractCardValues(args))
+      },
+    },
     onCustomCardAdded: writeCustomCard,
     ...(deps.readNote !== undefined ? { readNote: deps.readNote } : {}),
     ...(deps.writeNote !== undefined ? { writeNote: deps.writeNote } : {}),
@@ -100,7 +120,8 @@ export function watchPluginSettings(
     (plugins) => {
       void (async () => {
         for (const plugin of plugins) {
-          const isExplicitlyDisabled = settings.rest.getSetting(['plugins', plugin.id, 'enabled']) === false
+          const isExplicitlyDisabled =
+            settings.rest.getSetting(['plugins', plugin.id, 'enabled']) === false
           if (isExplicitlyDisabled && pluginLoader.isPluginActive(plugin.id)) {
             await pluginLoader.deactivatePlugin(plugin.id)
           } else if (!isExplicitlyDisabled && !pluginLoader.isPluginActive(plugin.id)) {

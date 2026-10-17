@@ -732,8 +732,11 @@ func (h *Host) stopEvictLoop() {
 func (h *Host) TeardownAll(ctx context.Context, gracePeriod time.Duration) error {
 	h.stopEvictLoop()
 
+	var firstErr error
 	if h.bus != nil {
-		h.bus.Close(ctx)
+		if err := h.bus.Close(ctx); err != nil {
+			firstErr = err
+		}
 	}
 
 	h.mu.Lock()
@@ -750,7 +753,6 @@ func (h *Host) TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 	}
 	h.mu.Unlock()
 
-	var firstErr error
 	for _, target := range targets {
 		rpcShutdown := h.createRPCShutdown(target.endpoint, gracePeriod)
 		if err := target.sup.Teardown(ctx, gracePeriod, rpcShutdown); err != nil && firstErr == nil {
