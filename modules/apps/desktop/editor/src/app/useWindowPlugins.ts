@@ -19,6 +19,7 @@ export interface PluginSupportDeps {
   readonly readNote?: (
     path: string,
   ) => Promise<{ body?: string; error?: string } | string | undefined>
+  readonly reportError?: (pluginId: string, error: unknown) => void
   readonly writeNote?: (path: string, body: string) => Promise<void>
 }
 
@@ -93,6 +94,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   }
 
   const pluginHost = createPluginHost({
+    ...(deps.reportError !== undefined ? { onError: deps.reportError } : {}),
     registerKind: held.registerKind,
     registerExtensionReader: tabOpeners.registerExtensionReader,
     registerEditor: tabOpeners.registerEditor,
@@ -115,6 +117,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   })
   const pluginLoader = createPluginLoader({
     host: pluginHost,
+    ...(deps.reportError !== undefined ? { onError: deps.reportError } : {}),
     loaders: pluginCatalog.loaders,
     manifests: pluginCatalog.manifests,
   })

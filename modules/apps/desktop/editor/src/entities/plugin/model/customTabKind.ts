@@ -311,8 +311,7 @@ function resolveCustomTabTarget(state: unknown, registration: TabKindRegistratio
 export function createCustomTabKind(
   pluginId: string,
   registration: TabKindRegistration,
-  deps?: PluginHostDeps,
-  getContext?: () => PluginContext | undefined,
+  deps?: PluginHostDeps & { readonly getContext?: () => PluginContext | undefined },
 ): AnyTabKind {
   return {
     kind: registration.kind,
@@ -326,7 +325,7 @@ export function createCustomTabKind(
       if (defaultName) return defaultName
       return registration.title || registration.kind
     },
-    pane: createPluginPaneWrapper(pluginId, registration.component, getContext),
+    pane: createPluginPaneWrapper(pluginId, registration.component, deps?.getContext),
     identity: (at: string) => at || registration.kind,
     onShow: (state: unknown) => {
       const s = state as { measure?: () => void; editor?: { measure?: () => void } } | undefined

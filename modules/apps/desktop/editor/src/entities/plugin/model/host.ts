@@ -14,31 +14,13 @@ import type {
   VaultChangeEvent,
 } from '@numen/plugin-sdk'
 import { createPluginContext } from './context'
+import { addListener, notifyListeners, runCommand, type PluginListener } from './events'
+import { extractPaletteCommands } from './palette'
+import { matchesShortcut } from './shortcuts'
 import { createPluginPaneWrapper, createReaderTabKind, createCustomTabKind } from './customTabKind'
-import type { PluginContextHost, PluginHostDeps, PluginPaletteCommand } from './types'
+import type { PluginContextHost, PluginHostDeps } from './types'
 
 export { createPluginPaneWrapper }
-
-function matchesShortcut(event: KeyboardEvent, shortcut?: string): boolean {
-  if (!shortcut) return false
-  const parts = shortcut
-    .toLowerCase()
-    .split('+')
-    .map((part) => part.trim())
-  const key = parts[parts.length - 1]
-  const hasMod =
-    parts.includes('ctrl') ||
-    parts.includes('control') ||
-    parts.includes('mod') ||
-    parts.includes('cmd')
-  const hasAlt = parts.includes('alt') || parts.includes('option')
-  const hasShift = parts.includes('shift')
-
-  if (hasMod !== (event.ctrlKey || event.metaKey)) return false
-  if (hasAlt !== event.altKey) return false
-  if (hasShift !== event.shiftKey) return false
-  return event.key.toLowerCase() === key
-}
 
 interface RegisteredReader {
   pluginId: string
@@ -60,11 +42,6 @@ interface RegisteredCommand {
 interface RegisteredAgentProvider {
   pluginId: string
   reg: AgentProviderRegistration
-}
-
-interface PluginListener<E> {
-  readonly pluginId: string
-  readonly handler: (event: E) => void | Promise<void>
 }
 
 interface HostRegistry {
@@ -123,18 +100,6 @@ function disposePluginEntry(pluginId: string, registry: HostRegistry, deps?: Plu
   registry.commands.value = nextCommands
 }
 
-async function runCommand(
-  deps: PluginHostDeps,
-  pluginId: string,
-  reg: CommandRegistration,
-): Promise<void> {
-  try {
-    await reg.handler()
-  } catch (error) {
-    reportError(deps, pluginId, error)
-  }
-}
-
 function resolveCommand(
   commands: ReadonlyMap<string, RegisteredCommand>,
   id: string,
@@ -156,7 +121,9 @@ function registerReaderEntry(
   const kindId = registration.id.startsWith('reader:')
     ? registration.id
     : `reader:${registration.id}`
-  const cleanups: (() => void)[] = [deps.registerKind(createReaderTabKind(pluginId, registration))]
+  const cleanups: (() => void)[] = [
+    deps.registerKind(createReaderTabKind(pluginId, registration, getContext)),
+  ]
   for (const ext of registration.fileExtensions) {
     cleanups.push(
       deps.registerExtensionReader(ext, (path, spans) => {
@@ -205,7 +172,7 @@ function registerTabKindEntry(
     return { dispose: () => {} }
   }
   const cleanups: (() => void)[] = [
-    deps.registerKind(createCustomTabKind(pluginId, registration, deps, getContext)),
+    deps.registerKind(createCustomTabKind(pluginId, registration, { ...deps, getContext })),
   ]
   if (deps.registerEditor) {
     const unreg = deps.registerEditor(
@@ -230,31 +197,6 @@ function registerTabKindEntry(
   }
   tabKinds.set(registration.kind, { pluginId, reg: registration, cleanup })
   return { dispose: cleanup }
-}
-
-function addListener<E>(
-  listeners: Set<PluginListener<E>>,
-  listener: PluginListener<E>,
-): Disposable {
-  listeners.add(listener)
-  return { dispose: () => void listeners.delete(listener) }
-}
-
-function reportError(deps: PluginHostDeps, pluginId: string, error: unknown): void {
-  if (deps.onError) deps.onError(pluginId, error)
-  else console.error(`plugin "${pluginId}" failed`, error)
-}
-
-function notifyListeners<E>(
-  listeners: ReadonlySet<PluginListener<E>>,
-  event: E,
-  deps: PluginHostDeps,
-): void {
-  for (const { pluginId, handler } of [...listeners]) {
-    void Promise.resolve()
-      .then(() => handler(event))
-      .catch((error: unknown) => reportError(deps, pluginId, error))
-  }
 }
 
 function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): PluginContextHost {
@@ -316,22 +258,6 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
     openTab: (kind: string, at?: string) => deps.openTab(kind, at),
     closeTab: (id: string) => deps.closeTab?.(id),
   }
-}
-
-function extractPaletteCommands(
-  commands: ReadonlyMap<string, { reg: CommandRegistration }>,
-): PluginPaletteCommand[] {
-  const list: PluginPaletteCommand[] = []
-  for (const { reg } of commands.values()) {
-    if (reg.canShowInPalette === false) continue
-    list.push({
-      id: `plugin:${reg.id}`,
-      title: reg.title,
-      ...(reg.shortcut ? { shortcut: reg.shortcut } : {}),
-      isOffered: () => true,
-    })
-  }
-  return list
 }
 
 function disposeAllEntries(registry: HostRegistry, deps: PluginHostDeps) {
