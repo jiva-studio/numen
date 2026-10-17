@@ -60,7 +60,7 @@ type Host struct {
 	isEvictStopped bool
 	enabled        map[string]bool
 	stdinsMu       sync.Mutex
-	stdins         map[string]io.Closer
+	stdins         map[stdinKey]io.Closer
 	processLimits  ProcessLimits
 }
 
@@ -82,7 +82,7 @@ func NewHost(target string, dirs ...string) *Host {
 		evictTicker:    time.NewTicker(30 * time.Second),
 		evictDone:      make(chan struct{}),
 		enabled:        make(map[string]bool),
-		stdins:         make(map[string]io.Closer),
+		stdins:         make(map[stdinKey]io.Closer),
 		processLimits:  DefaultProcessLimits(),
 	}
 	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
@@ -400,6 +400,9 @@ func (h *Host) settlePluginInState(
 	state ProcessState,
 ) (Endpoint, bool, error) {
 	switch state {
+	case StateDeactivating:
+		err := sup.WaitWhileDeactivating(ctx)
+		return emptyEndpoint(), err != nil, err
 	case StateActivating:
 		endpoint, ready, err := h.awaitActivation(ctx, pluginID, sup)
 		return endpoint, ready || err != nil, err
@@ -453,12 +456,18 @@ func (h *Host) cleanupAbortedProcess(proc *os.Process, stdout io.Closer, pluginI
 	_ = proc.Kill()
 	_, _ = proc.Wait()
 	_ = stdout.Close()
+	h.closeStdin(pluginID, proc.Pid)
+}
+
+// closeStdin closes and forgets the stdin pipe of one process generation of a plugin.
+func (h *Host) closeStdin(pluginID string, pid int) {
+	key := stdinKey{pluginID: pluginID, pid: pid}
 	h.stdinsMu.Lock()
-	if c, ok := h.stdins[pluginID]; ok {
+	defer h.stdinsMu.Unlock()
+	if c, ok := h.stdins[key]; ok {
 		_ = c.Close()
-		delete(h.stdins, pluginID)
+		delete(h.stdins, key)
 	}
-	h.stdinsMu.Unlock()
 }
 
 //nolint:contextcheck // background supervisor outlives request
@@ -517,12 +526,7 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 	sup.SetOnExit(func() {
 		h.dropEndpointOfStoppedPlugin(p.Manifest.ID, sup)
 
-		h.stdinsMu.Lock()
-		if c, ok := h.stdins[p.Manifest.ID]; ok {
-			_ = c.Close()
-			delete(h.stdins, p.Manifest.ID)
-		}
-		h.stdinsMu.Unlock()
+		h.closeStdin(p.Manifest.ID, proc.Pid)
 	})
 	sup.Acquire(now)
 
@@ -615,9 +619,9 @@ func (h *Host) defaultLauncher(
 
 	h.stdinsMu.Lock()
 	if h.stdins == nil {
-		h.stdins = make(map[string]io.Closer)
+		h.stdins = make(map[stdinKey]io.Closer)
 	}
-	h.stdins[p.Manifest.ID] = stdin
+	h.stdins[stdinKey{pluginID: p.Manifest.ID, pid: cmd.Process.Pid}] = stdin
 	h.stdinsMu.Unlock()
 
 	return cmd.Process, stdout, nil
@@ -643,8 +647,14 @@ func (h *Host) Release(pluginID string) {
 	}
 }
 
+type stdinKey struct {
+	pluginID string
+	pid      int
+}
+
 type pluginTeardownTarget struct {
 	id       string
+	pid      int
 	sup      *Supervisor
 	endpoint Endpoint
 }
@@ -661,9 +671,11 @@ func (h *Host) EvictIdle(ctx context.Context, defaultThreshold, gracePeriod time
 			threshold = time.Duration(p.Manifest.Lifecycle.IdleTimeoutSeconds) * time.Second
 		}
 
-		if sup.IsIdle(threshold, now) {
+		pid := sup.GetProcessID()
+		if sup.BeginDeactivation(threshold, now) {
 			targets = append(targets, pluginTeardownTarget{
 				id:       id,
+				pid:      pid,
 				sup:      sup,
 				endpoint: h.endpoints[id],
 			})
@@ -676,12 +688,7 @@ func (h *Host) EvictIdle(ctx context.Context, defaultThreshold, gracePeriod time
 	for _, target := range targets {
 		rpcShutdown := h.createRPCShutdown(target.endpoint, gracePeriod)
 		_ = target.sup.Teardown(ctx, gracePeriod, rpcShutdown)
-		h.stdinsMu.Lock()
-		if c, ok := h.stdins[target.id]; ok {
-			_ = c.Close()
-			delete(h.stdins, target.id)
-		}
-		h.stdinsMu.Unlock()
+		h.closeStdin(target.id, target.pid)
 		evicted = append(evicted, target.id)
 	}
 	return evicted
@@ -696,6 +703,7 @@ func (h *Host) EvictMemoryExceeded(ctx context.Context, gracePeriod time.Duratio
 		if sup.IsMemoryExceeded() {
 			targets = append(targets, pluginTeardownTarget{
 				id:       id,
+				pid:      sup.GetProcessID(),
 				sup:      sup,
 				endpoint: h.endpoints[id],
 			})
@@ -708,12 +716,7 @@ func (h *Host) EvictMemoryExceeded(ctx context.Context, gracePeriod time.Duratio
 	for _, target := range targets {
 		rpcShutdown := h.createRPCShutdown(target.endpoint, gracePeriod)
 		_ = target.sup.Teardown(ctx, gracePeriod, rpcShutdown)
-		h.stdinsMu.Lock()
-		if c, ok := h.stdins[target.id]; ok {
-			_ = c.Close()
-			delete(h.stdins, target.id)
-		}
-		h.stdinsMu.Unlock()
+		h.closeStdin(target.id, target.pid)
 		evicted = append(evicted, target.id)
 	}
 	return evicted
@@ -782,9 +785,9 @@ func (h *Host) TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 		}
 	}
 	h.stdinsMu.Lock()
-	for id, c := range h.stdins {
+	for key, c := range h.stdins {
 		_ = c.Close()
-		delete(h.stdins, id)
+		delete(h.stdins, key)
 	}
 	h.stdinsMu.Unlock()
 	return firstErr
