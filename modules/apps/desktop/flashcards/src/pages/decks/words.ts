@@ -54,9 +54,7 @@ export const getStoppedWords = (
   today: string,
 ): string =>
   formatStopReasonMessage(why, {
-    // Stryker disable next-line ConditionalExpression,EqualityOperator: formatStopReasonMessage reads day only when why is PAST_DAY
     day: why === StopReason.PAST_DAY && settings?.byDate ? getDayWords(settings.byDate) : undefined,
-    // Stryker disable next-line ConditionalExpression: formatStopReasonMessage reads weekday only when why is NO_LOAD
     weekday: why === StopReason.NO_LOAD ? getWeekdayWords(today) : undefined,
   })
 

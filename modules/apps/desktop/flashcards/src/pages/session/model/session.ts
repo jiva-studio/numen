@@ -230,7 +230,6 @@ function useSessionOpener(deps: {
       reportError: deps.reportError,
       id,
       deck,
-      // Stryker disable next-line ConditionalExpression: exactOptionalPropertyTypes requires omission when undefined
       ...(preset !== undefined ? { preset } : {}),
     })
     if (!opened) return null

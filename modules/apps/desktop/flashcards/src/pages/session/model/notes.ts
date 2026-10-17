@@ -56,6 +56,7 @@ function useDeckNotes(
     clearNotes()
     pendingDeck = deck
     isWorking.value = true
+    let failed = false
     try {
       const around = await getDeckNeighbourhood(vault, deck)
       if (pendingDeck !== deck) return
@@ -64,11 +65,13 @@ function useDeckNotes(
       activeDeck = deck
     } catch {
       if (pendingDeck !== deck) return
-      // Stryker disable next-line CallExpression: state was already cleared before fetch started
-      clearNotes()
+      failed = true
       showNotice(words.unreached)
     } finally {
-      if (pendingDeck === deck) isWorking.value = false
+      if (pendingDeck === deck) {
+        if (failed) clearNotes()
+        isWorking.value = false
+      }
     }
   }
 
