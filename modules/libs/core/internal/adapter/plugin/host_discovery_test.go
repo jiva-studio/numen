@@ -40,7 +40,7 @@ func TestABrokenManifestIsSkippedAndShownAsFailed(t *testing.T) {
 			failed = append(failed, status)
 		}
 	}
-	if len(failed) != 1 || failed[0].ID != broken || failed[0].FailureReason == "" {
+	if len(failed) != 1 || failed[0].Dir != broken || failed[0].ID != "" || failed[0].FailureReason == "" {
 		t.Fatalf("expected the broken plugin to be shown as failed, got %+v", failed)
 	}
 }

@@ -36,7 +36,9 @@ type PersistHandler = port.PluginPersistHandler
 
 // PluginStatus describes the enablement and runtime status of a plugin.
 type PluginStatus struct {
-	ID       string `json:"id"`
+	ID string `json:"id"`
+	// Dir is the directory of a plugin that failed discovery; such an entry has no ID.
+	Dir      string `json:"dir,omitempty"`
 	Enabled  bool   `json:"enabled"`
 	IsActive bool   `json:"isActive"`
 	// Failed reports that the plugin failed to activate repeatedly and is not started again.
@@ -1012,6 +1014,7 @@ func (h *Host) getPluginStatusLocked(pluginID string) PluginStatus {
 		IsActive:      h.isPluginActiveLocked(pluginID),
 		Failed:        false,
 		FailureReason: "",
+		Dir:           "",
 	}
 	if sup, ok := h.supervisors[pluginID]; ok {
 		if failed, cause := sup.GetActivationFailure(); failed {
@@ -1033,7 +1036,8 @@ func (h *Host) GetPluginStatuses() []PluginStatus {
 	}
 	for _, problem := range h.problems {
 		statuses = append(statuses, PluginStatus{
-			ID:            problem.Dir,
+			ID:            "",
+			Dir:           problem.Dir,
 			Enabled:       false,
 			IsActive:      false,
 			Failed:        true,
