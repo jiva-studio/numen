@@ -504,6 +504,7 @@ func (h *Host) runActivation(ctx context.Context, p DiscoveredPlugin, sup *Super
 	}
 	sup.RecordActivationSuccess()
 
+	// The plugin also receives its settings on the next change, so a failed push leaves it running.
 	_ = h.NotifyPluginConfig(ctx, p.Manifest.ID)
 	return endpoint, nil
 }
