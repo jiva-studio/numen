@@ -188,5 +188,5 @@ Where the questions plugins ask of a model are answered.
 
 | | | |
 | --- | --- | --- |
-| `routes` |  | the routes by purpose, and by DefaultRoute for the rest. |
+| `routes` |  | where each purpose is answered, and default for the rest. |
 <!-- END AUTOGEN -->
