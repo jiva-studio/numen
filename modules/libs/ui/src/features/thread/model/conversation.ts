@@ -104,7 +104,16 @@ export function useConversation(options: ConversationOptions): Conversation {
 
   const finish = () => {
     stop()
-    Promise.resolve().then(() => agent.finish(conversation)).catch(() => {})
+    let pending: Promise<unknown> | void
+    try {
+      pending = agent.finish(conversation)
+    } catch {
+      // The tab closes whether the agent heard or not.
+      return
+    }
+    if (pending && typeof pending.catch === 'function') {
+      void pending.catch(() => {})
+    }
   }
 
   return {
