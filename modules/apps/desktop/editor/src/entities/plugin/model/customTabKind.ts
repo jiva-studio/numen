@@ -1,77 +1,20 @@
 /**
  * Tab kinds created dynamically for plugins and readers.
  */
-import {
-  computed,
-  defineAsyncComponent,
-  defineComponent,
-  h,
-  onErrorCaptured,
-  ref,
-  type Component,
-} from 'vue'
+import { computed, defineComponent, onErrorCaptured, onMounted, ref, type Component } from 'vue'
 import type { ReaderRegistration, TabKindRegistration } from '@numen/plugin-sdk'
 import type { AnyTabKind } from '@/entities/tab/@x/plugin'
+import {
+  attachPluginShadow,
+  extractFilename,
+  extractTitleValue,
+  renderFallback,
+  renderPaneContent,
+  renderWrapper,
+  resolvePluginComponent,
+  stripMarkdownExtension,
+} from './styles'
 import type { PluginHostDeps } from './types'
-
-type AsyncComponentRegistration = {
-  type: 'async'
-  loader: () => Promise<Component>
-}
-
-function isAsyncComponent(
-  comp: unknown,
-): comp is (() => Promise<Component>) | AsyncComponentRegistration {
-  if (typeof comp === 'object' && comp !== null && (comp as { type?: unknown }).type === 'async') {
-    return typeof (comp as { loader?: unknown }).loader === 'function'
-  }
-  if (typeof comp !== 'function') return false
-  return !(
-    'setup' in comp ||
-    'render' in comp ||
-    'props' in comp ||
-    '__name' in comp ||
-    (comp as { length?: number }).length! > 0
-  )
-}
-
-function resolvePluginComponent(rawComponent: unknown): Component | null {
-  if (!rawComponent) return null
-  const comp =
-    typeof rawComponent === 'object' && 'default' in rawComponent
-      ? (rawComponent as { default: unknown }).default
-      : rawComponent
-  if (!comp) return null
-  if (isAsyncComponent(comp)) {
-    const loader = typeof comp === 'function' ? comp : comp.loader
-    return defineAsyncComponent(loader)
-  }
-  return comp as Component
-}
-
-function extractTitleValue(title: unknown): string {
-  if (typeof title === 'string') return title
-  if (typeof title === 'object' && title !== null && 'value' in title) {
-    return String((title as { value: unknown }).value)
-  }
-  return ''
-}
-
-function extractFilename(path: string | undefined): string {
-  if (!path) return ''
-  return path.split('/').pop() ?? path
-}
-
-function stripMarkdownExtension(filename: string): string {
-  return filename.replace(/\.md$/, '')
-}
-
-function extractStatePath(state: unknown): string {
-  if (typeof state !== 'object' || state === null) return ''
-  const s = state as Record<string, unknown>
-  const val = s.path ?? s.file ?? s.at
-  return typeof val === 'string' ? val : ''
-}
 
 function getReaderTargetSource(path: string | undefined): 'recording' | 'book' | 'other' {
   if (!path) return 'other'
@@ -87,39 +30,43 @@ export function createPluginPaneWrapper(
   const pluginId = typeof pluginIdOrComponent === 'string' ? pluginIdOrComponent : 'plugin'
   const rawComponent = maybeComponent !== undefined ? maybeComponent : pluginIdOrComponent
   const component = resolvePluginComponent(rawComponent)
+  const sanitizedId = pluginId.replace(/[^a-zA-Z0-9_-]/g, '-')
+  const classes = {
+    wrapper: `plugin-pane-wrapper plugin-pane-${sanitizedId}`,
+    container: `plugin-view-container plugin-view-${sanitizedId}`,
+  }
 
   return defineComponent({
     name: `PluginPaneWrapper[${pluginId}]`,
-    props: {
-      state: {
-        type: null,
-        required: true,
-      },
-    },
+    props: { state: { type: null, required: true } },
     setup(props) {
       const error = ref<Error | null>(null)
+      const hostEl = ref<HTMLElement | null>(null)
+      const shadowRoot = ref<ShadowRoot | null>(null)
+      const isReady = ref(false)
+
       onErrorCaptured((err) => {
         error.value = err instanceof Error ? err : new Error(String(err))
         return false
       })
+
+      onMounted(() => {
+        shadowRoot.value = attachPluginShadow(hostEl.value)
+        isReady.value = true
+      })
+
       return () => {
-        if (error.value) {
-          return h('div', { class: 'plugin-error-fallback p-4 text-red-500' }, [
-            h('h3', { class: 'font-bold' }, `Plugin "${pluginId}" crashed`),
-            h('pre', { class: 'text-xs mt-2' }, error.value.message),
-          ])
-        }
-        if (!component) return null
-        const stateObj =
-          typeof props.state === 'object' && props.state !== null
-            ? (props.state as Record<string, unknown>)
-            : {}
-        const path = extractStatePath(props.state)
-        return h(component as Component, {
-          ...stateObj,
-          ...(path ? { path, filePath: path, file: path } : {}),
-          state: props.state,
-        })
+        if (error.value) return renderFallback(pluginId, error.value)
+        const content = isReady.value
+          ? renderPaneContent({
+              pluginId,
+              component,
+              state: props.state,
+              shadowRoot: shadowRoot.value,
+              containerClass: classes.container,
+            })
+          : null
+        return renderWrapper({ wrapperClass: classes.wrapper, pluginId, hostEl, content })
       }
     },
   })

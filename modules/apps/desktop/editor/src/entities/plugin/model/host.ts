@@ -7,22 +7,22 @@ import type {
   CommandRegistration,
   Disposable,
   PluginContext,
+  PluginManifest,
   ReaderRegistration,
   TabKindRegistration,
 } from '@numen/plugin-sdk'
 import { createPluginContext } from './context'
-import {
-  createPluginPaneWrapper,
-  createReaderTabKind,
-  createCustomTabKind,
-} from './customTabKind'
+import { createPluginPaneWrapper, createReaderTabKind, createCustomTabKind } from './customTabKind'
 import type { PluginContextHost, PluginHostDeps, PluginPaletteCommand } from './types'
 
 export { createPluginPaneWrapper }
 
 function matchesShortcut(event: KeyboardEvent, shortcut?: string): boolean {
   if (!shortcut) return false
-  const parts = shortcut.toLowerCase().split('+').map((part) => part.trim())
+  const parts = shortcut
+    .toLowerCase()
+    .split('+')
+    .map((part) => part.trim())
   const key = parts[parts.length - 1]
   const hasMod =
     parts.includes('ctrl') ||
@@ -66,6 +66,7 @@ interface HostRegistry {
   readonly commands: { value: ReadonlyMap<string, RegisteredCommand> }
   readonly agentProviders: Map<string, RegisteredAgentProvider>
   readonly contexts: Map<string, PluginContext>
+  readonly manifests: Map<string, PluginManifest>
 }
 
 interface PluginItemRegistration<T> {
@@ -100,6 +101,7 @@ function disposePluginEntry(pluginId: string, registry: HostRegistry, deps?: Plu
   deps?.closeTabsForPlugin?.(pluginId)
   clearSubscriptions(registry.contexts.get(pluginId))
   registry.contexts.delete(pluginId)
+  registry.manifests.delete(pluginId)
   cleanupMapItems(registry.readers, pluginId)
   cleanupMapItems(registry.tabKinds, pluginId)
   cleanupProviderItems(registry.agentProviders, pluginId)
@@ -129,7 +131,9 @@ function registerReaderEntry(
   item: PluginItemRegistration<ReaderRegistration>,
 ): Disposable {
   const { pluginId, registration } = item
-  const kindId = registration.id.startsWith('reader:') ? registration.id : `reader:${registration.id}`
+  const kindId = registration.id.startsWith('reader:')
+    ? registration.id
+    : `reader:${registration.id}`
   const cleanups: (() => void)[] = [deps.registerKind(createReaderTabKind(pluginId, registration))]
   for (const ext of registration.fileExtensions) {
     cleanups.push(deps.registerExtensionReader(ext, (path) => void deps.openTab(kindId, path)))
@@ -164,7 +168,9 @@ function registerTabKindEntry(
   if (BUILTIN_TAB_KINDS.has(registration.kind)) {
     return { dispose: () => {} }
   }
-  const cleanups: (() => void)[] = [deps.registerKind(createCustomTabKind(pluginId, registration, deps))]
+  const cleanups: (() => void)[] = [
+    deps.registerKind(createCustomTabKind(pluginId, registration, deps)),
+  ]
   if (deps.registerEditor) {
     const unreg = deps.registerEditor(
       registration.kind,
@@ -210,7 +216,11 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
     },
     registerAgentProvider: (pluginId, registration) => {
       registry.agentProviders.set(registration.id, { pluginId, reg: registration })
-      return { dispose: () => { registry.agentProviders.delete(registration.id) } }
+      return {
+        dispose: () => {
+          registry.agentProviders.delete(registration.id)
+        },
+      }
     },
     getSetting: <T = unknown>(pluginId: string, key: string) =>
       deps.getSetting ? (deps.getSetting(pluginId, key) as T | undefined) : undefined,
@@ -220,7 +230,13 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
       handler: (value: T) => void | Promise<void>,
     ) => {
       if (!deps.onSettingChange) return { dispose: () => {} }
-      return { dispose: deps.onSettingChange(pluginId, key, handler as (v: unknown) => void | Promise<void>) }
+      return {
+        dispose: deps.onSettingChange(
+          pluginId,
+          key,
+          handler as (v: unknown) => void | Promise<void>,
+        ),
+      }
     },
     openTab: (kind: string, at?: string) => deps.openTab(kind, at),
     closeTab: (id: string) => deps.closeTab?.(id),
@@ -261,6 +277,7 @@ export function createPluginHost(deps: PluginHostDeps) {
     commands: shallowRef(new Map()),
     agentProviders: new Map(),
     contexts: new Map(),
+    manifests: new Map(),
   }
 
   const contextHost = createHostContextBridge(deps, registry)
@@ -268,13 +285,22 @@ export function createPluginHost(deps: PluginHostDeps) {
 
   return {
     contextHost,
-    createContext: (pluginId: string): PluginContext => {
+    createContext: (pluginId: string, manifest?: PluginManifest): PluginContext => {
       let ctx = registry.contexts.get(pluginId)
       if (!ctx) {
-        ctx = createPluginContext(pluginId, contextHost)
+        const effectiveManifest = manifest ?? registry.manifests.get(pluginId)
+        ctx = createPluginContext(pluginId, contextHost, effectiveManifest)
         registry.contexts.set(pluginId, ctx)
       }
       return ctx
+    },
+    registerManifest: (pluginId: string, manifest: PluginManifest): void => {
+      if (registry.contexts.has(pluginId)) {
+        throw new Error(
+          `Cannot replace the manifest for plugin "${pluginId}" while its context is cached`,
+        )
+      }
+      registry.manifests.set(pluginId, manifest)
     },
     getPaletteCommands: () => extractPaletteCommands(registry.commands.value),
     hasCommand: (id: string): boolean => resolveCommand(registry.commands.value, id) !== undefined,

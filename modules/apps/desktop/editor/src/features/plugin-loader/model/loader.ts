@@ -3,7 +3,7 @@
  */
 import { shallowRef } from 'vue'
 import type { Disposable, PluginLifecycle, PluginManifest } from '@numen/plugin-sdk'
-import type { PluginHost } from '@/entities/plugin'
+import { registerPluginStyle, unregisterPluginStyle, type PluginHost } from '@/entities/plugin'
 
 export interface PluginLoaderDeps {
   readonly host: PluginHost
@@ -19,6 +19,57 @@ interface ActivePluginEntry {
 
 import * as flashcardsStudio from '@plugins/flashcards-studio/frontend'
 
+const IN_TREE_MANIFESTS: Record<string, PluginManifest> = {
+  'md.numen.pdf': {
+    id: 'md.numen.pdf',
+    name: 'PDF Reader',
+    version: '1.0.0',
+    permissions: ['vault:read'],
+  },
+  'md.numen.epub': {
+    id: 'md.numen.epub',
+    name: 'EPUB Book Reader',
+    version: '1.0.0',
+    permissions: ['vault:read'],
+  },
+  'md.numen.editor-markdown': {
+    id: 'md.numen.editor-markdown',
+    name: 'Markdown Editor',
+    version: '1.0.0',
+    permissions: ['vault:read', 'vault:write'],
+  },
+  'md.numen.view-file-tree': {
+    id: 'md.numen.view-file-tree',
+    name: 'File Tree Explorer',
+    version: '1.0.0',
+    permissions: ['vault:read'],
+  },
+  'md.numen.view-plex-graph': {
+    id: 'md.numen.view-plex-graph',
+    name: 'Plex Graph',
+    version: '1.0.0',
+    permissions: ['vault:read'],
+  },
+  'md.numen.media-player': {
+    id: 'md.numen.media-player',
+    name: 'Media Player',
+    version: '1.0.0',
+    permissions: ['vault:read'],
+  },
+  'md.numen.downloader': {
+    id: 'md.numen.downloader',
+    name: 'Downloader',
+    version: '1.0.0',
+    permissions: ['vault:write'],
+  },
+  'md.numen.flashcards-studio': {
+    id: 'md.numen.flashcards-studio',
+    name: 'Flashcards Studio',
+    version: '1.0.0',
+    permissions: ['vault:read', 'vault:write'],
+  },
+}
+
 const IN_TREE_LOADERS: Record<string, () => Promise<unknown>> = {
   'md.numen.pdf': () => import('@plugins/reader-pdf/frontend'),
   'md.numen.epub': () => import('@plugins/reader-epub/frontend'),
@@ -31,26 +82,13 @@ const IN_TREE_LOADERS: Record<string, () => Promise<unknown>> = {
 }
 
 function injectPluginStyles(baseUrl: string, pluginId: string, stylesPath: string): void {
-  if (typeof document === 'undefined') return
-  const linkId = `plugin-styles-${pluginId}`
-  if (document.getElementById(linkId) || document.querySelector(`link[data-plugin-id="${pluginId}"]`)) {
-    return
-  }
-  const link = document.createElement('link')
-  link.id = linkId
-  link.rel = 'stylesheet'
   const normalizedPath = stylesPath.startsWith('/') ? stylesPath.slice(1) : stylesPath
-  link.href = `${baseUrl}/${pluginId}/${normalizedPath}`
-  link.setAttribute('data-plugin-id', pluginId)
-  document.head.appendChild(link)
+  const fullUrl = `${baseUrl}/${pluginId}/${normalizedPath}`
+  registerPluginStyle(pluginId, fullUrl)
 }
 
 function removePluginStyles(pluginId: string): void {
-  if (typeof document === 'undefined') return
-  const links = document.querySelectorAll(`link[data-plugin-id="${pluginId}"], link#plugin-styles-${pluginId}`)
-  for (const link of links) {
-    link.remove()
-  }
+  unregisterPluginStyle(pluginId)
 }
 
 function extractLifecycleFunction(
@@ -87,18 +125,17 @@ interface LoadModuleOptions {
   readonly baseUrl: string
   readonly fetchFn: typeof fetch
   readonly importFn: (url: string) => Promise<unknown>
+  readonly manifests: Map<string, PluginManifest>
 }
 
-async function loadDynamicModule(
-  pluginId: string,
-  options: LoadModuleOptions,
-): Promise<unknown> {
-  const { baseUrl, fetchFn, importFn } = options
+async function loadDynamicModule(pluginId: string, options: LoadModuleOptions): Promise<unknown> {
+  const { baseUrl, fetchFn, importFn, manifests } = options
   let entrypoint = 'dist/index.js'
   try {
     const res = await fetchFn(`${baseUrl}/${pluginId}/manifest.json`)
     if (res.ok) {
       const manifest = (await res.json()) as PluginManifest
+      manifests.set(pluginId, manifest)
       if (manifest?.frontend?.styles) {
         injectPluginStyles(baseUrl, pluginId, manifest.frontend.styles)
       }
@@ -151,9 +188,10 @@ async function activateEntry(
     const resolved = await resolveModule(pluginId, pluginModule, ctx)
     if (!resolved) return false
 
+    const manifest = ctx.manifests.get(pluginId) ?? IN_TREE_MANIFESTS[pluginId]
     const { activate, deactivate } = getLifecycleHooks(resolved)
     if (activate) {
-      await activate(host.createContext(pluginId))
+      await activate(host.createContext(pluginId, manifest))
     }
 
     const lifecycle: PluginLifecycle = {
@@ -172,15 +210,18 @@ async function activateEntry(
   }
 }
 
-async function deactivateEntry(
-  host: PluginHost,
-  activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> },
-  pluginId: string,
-): Promise<boolean> {
-  const entry = activePlugins.value.get(pluginId)
+interface DeactivateDeps {
+  readonly host: PluginHost
+  readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
+  readonly manifests: Map<string, PluginManifest>
+}
+
+async function deactivateEntry(deps: DeactivateDeps, pluginId: string): Promise<boolean> {
+  const entry = deps.activePlugins.value.get(pluginId)
   if (!entry) {
     removePluginStyles(pluginId)
-    host.disposePlugin(pluginId)
+    deps.manifests.delete(pluginId)
+    deps.host.disposePlugin(pluginId)
     return false
   }
   try {
@@ -189,12 +230,29 @@ async function deactivateEntry(
     }
   } finally {
     removePluginStyles(pluginId)
-    host.disposePlugin(pluginId)
-    const next = new Map(activePlugins.value)
+    deps.manifests.delete(pluginId)
+    deps.host.disposePlugin(pluginId)
+    const next = new Map(deps.activePlugins.value)
     next.delete(pluginId)
-    activePlugins.value = next
+    deps.activePlugins.value = next
   }
   return true
+}
+
+interface ListenerDeps {
+  readonly host: PluginHost
+  readonly subscriptions: Map<string, Disposable>
+  readonly activate: (id: string) => Promise<boolean>
+  readonly deactivate: (id: string) => Promise<boolean>
+}
+
+function listenToPluginState(deps: ListenerDeps, pluginId: string) {
+  if (deps.subscriptions.has(pluginId) || !deps.host.onSettingChange) return
+  const sub = deps.host.onSettingChange<boolean>(pluginId, 'enabled', async (enabled) => {
+    if (enabled === false) await deps.deactivate(pluginId)
+    else await deps.activate(pluginId)
+  })
+  deps.subscriptions.set(pluginId, sub)
 }
 
 interface StartLoaderDeps {
@@ -203,10 +261,7 @@ interface StartLoaderDeps {
   readonly isEnabled: (id: string) => boolean
 }
 
-async function startLoader(
-  deps: StartLoaderDeps,
-  activate: (id: string) => Promise<boolean>,
-) {
+async function startLoader(deps: StartLoaderDeps, activate: (id: string) => Promise<boolean>) {
   const activations: Promise<void>[] = []
   for (const pluginId of deps.moduleLoaders.keys()) {
     deps.listen(pluginId)
@@ -239,59 +294,69 @@ async function closeLoader(
   deps.host.disposeAll()
 }
 
+function resolveDefaultDeps(deps: PluginLoaderDeps) {
+  return {
+    baseUrl: deps.baseUrl ?? '/api/plugins',
+    fetchFn:
+      deps.fetch ??
+      ((input: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(input, init)),
+    importFn: deps.dynamicImport ?? ((url: string) => import(/* @vite-ignore */ url)),
+  }
+}
+
 export function createPluginLoader(deps: PluginLoaderDeps) {
   const { host } = deps
-  const baseUrl = deps.baseUrl ?? '/api/plugins'
-  const fetchFn = deps.fetch ?? ((input: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(input, init))
-  const importFn = deps.dynamicImport ?? ((url: string) => import(/* @vite-ignore */ url))
+  const defaults = resolveDefaultDeps(deps)
   const activePlugins = shallowRef<ReadonlyMap<string, ActivePluginEntry>>(new Map())
   const moduleLoaders = new Map<string, () => Promise<unknown>>(Object.entries(IN_TREE_LOADERS))
   const settingSubscriptions = new Map<string, Disposable>()
+  const manifests = new Map<string, PluginManifest>()
   let hasStarted = false
 
-  const isPluginEnabled = (pluginId: string): boolean => {
-    const val = host.getSetting?.(pluginId, 'enabled')
-    if (typeof val === 'boolean') return val
-    return true
+  const isPluginEnabled = (id: string): boolean => {
+    const val = host.getSetting?.(id, 'enabled')
+    return typeof val === 'boolean' ? val : true
   }
 
-  const activatePlugin = (pluginId: string, pluginModule?: unknown) =>
+  const activatePlugin = (id: string, module?: unknown) =>
     activateEntry(
-      { host, loaders: moduleLoaders, activePlugins, baseUrl, fetchFn, importFn },
-      pluginId,
-      pluginModule,
+      { host, loaders: moduleLoaders, activePlugins, manifests, ...defaults },
+      id,
+      module,
     )
 
-  const deactivatePlugin = (pluginId: string) =>
-    deactivateEntry(host, activePlugins, pluginId)
+  const deactivatePlugin = (id: string) => deactivateEntry({ host, activePlugins, manifests }, id)
 
-  function listenToPluginState(pluginId: string) {
-    if (settingSubscriptions.has(pluginId) || !host.onSettingChange) return
-    const sub = host.onSettingChange<boolean>(pluginId, 'enabled', async (enabled) => {
-      if (enabled === false) await deactivatePlugin(pluginId)
-      else await activatePlugin(pluginId)
-    })
-    settingSubscriptions.set(pluginId, sub)
-  }
+  const listen = (id: string) =>
+    listenToPluginState(
+      {
+        host,
+        subscriptions: settingSubscriptions,
+        activate: activatePlugin,
+        deactivate: deactivatePlugin,
+      },
+      id,
+    )
 
   return {
-    registerPluginModule: (pluginId: string, loader: () => Promise<unknown>) => {
-      moduleLoaders.set(pluginId, loader)
+    registerPluginModule: (id: string, loader: () => Promise<unknown>) => {
+      moduleLoaders.set(id, loader)
       if (hasStarted) {
-        listenToPluginState(pluginId)
-        if (isPluginEnabled(pluginId)) void activatePlugin(pluginId)
+        listen(id)
+        if (isPluginEnabled(id)) void activatePlugin(id)
       }
+    },
+    registerPluginManifest: (id: string, manifest: PluginManifest) => {
+      manifests.set(id, manifest)
+      host.registerManifest?.(id, manifest)
     },
     activatePlugin,
     deactivatePlugin,
-    isPluginActive: (pluginId: string) => activePlugins.value.has(pluginId),
+    isPluginActive: (id: string) => activePlugins.value.has(id),
     getActivePluginIds: () => [...activePlugins.value.keys()],
     start: async (): Promise<void> => {
       hasStarted = true
-      await startLoader(
-        { moduleLoaders, listen: listenToPluginState, isEnabled: isPluginEnabled },
-        activatePlugin,
-      )
+      await startLoader({ moduleLoaders, listen, isEnabled: isPluginEnabled }, activatePlugin)
     },
     close: async (): Promise<void> => {
       hasStarted = false
@@ -305,4 +370,3 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
 }
 
 export type PluginLoader = ReturnType<typeof createPluginLoader>
-

@@ -30,11 +30,13 @@ describe('createPluginPaneWrapper', () => {
         state: { path: 'notes/meeting.md' },
       },
     })
+    await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('.inner-component').exists()).toBe(true)
-    expect(wrapper.find('.prop-path').text()).toBe('notes/meeting.md')
-    expect(wrapper.find('.prop-filepath').text()).toBe('notes/meeting.md')
-    expect(wrapper.find('.prop-file').text()).toBe('notes/meeting.md')
+    const root = wrapper.element.shadowRoot ?? wrapper.element
+    expect(root.querySelector('.inner-component')).not.toBeNull()
+    expect(root.querySelector('.prop-path')?.textContent).toBe('notes/meeting.md')
+    expect(root.querySelector('.prop-filepath')?.textContent).toBe('notes/meeting.md')
+    expect(root.querySelector('.prop-file')?.textContent).toBe('notes/meeting.md')
   })
 
   it('handles async component loaders', async () => {
@@ -53,10 +55,11 @@ describe('createPluginPaneWrapper', () => {
       },
     })
 
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    await new Promise((resolve) => setTimeout(resolve, 50))
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.text()).toContain('async ready')
+    const root = wrapper.element.shadowRoot ?? wrapper.element
+    expect(root.textContent).toContain('async ready')
   })
 })
 

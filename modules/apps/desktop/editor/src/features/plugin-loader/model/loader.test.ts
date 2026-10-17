@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { PluginContext, PluginLifecycle } from '@numen/plugin-sdk'
-import type { PluginHost } from '@/entities/plugin'
+import { getPluginStyle, type PluginHost } from '@/entities/plugin'
 import { createPluginLoader } from './loader'
 
 describe('createPluginLoader', () => {
@@ -12,23 +12,25 @@ describe('createPluginLoader', () => {
     const settings = new Map<string, unknown>()
     const settingListeners = new Map<string, Set<(val: unknown) => void>>()
 
-    const getSetting: PluginHost['getSetting'] = vi.fn(
-      (pluginId: string, key: string) => settings.get(`${pluginId}.${key}`),
+    const getSetting: PluginHost['getSetting'] = vi.fn((pluginId: string, key: string) =>
+      settings.get(`${pluginId}.${key}`),
     ) as unknown as PluginHost['getSetting']
-    const onSettingChange = vi.fn((pluginId: string, key: string, handler: (val: unknown) => void) => {
-      const compositeKey = `${pluginId}.${key}`
-      let set = settingListeners.get(compositeKey)
-      if (!set) {
-        set = new Set()
-        settingListeners.set(compositeKey, set)
-      }
-      set.add(handler)
-      return {
-        dispose: () => {
-          set?.delete(handler)
-        },
-      }
-    })
+    const onSettingChange = vi.fn(
+      (pluginId: string, key: string, handler: (val: unknown) => void) => {
+        const compositeKey = `${pluginId}.${key}`
+        let set = settingListeners.get(compositeKey)
+        if (!set) {
+          set = new Set()
+          settingListeners.set(compositeKey, set)
+        }
+        set.add(handler)
+        return {
+          dispose: () => {
+            set?.delete(handler)
+          },
+        }
+      },
+    )
 
     const triggerSettingChange = async (pluginId: string, key: string, value: unknown) => {
       settings.set(`${pluginId}.${key}`, value)
@@ -40,7 +42,8 @@ describe('createPluginLoader', () => {
 
     return {
       contextHost: {} as unknown as PluginHost['contextHost'],
-      createContext: vi.fn((pluginId: string) => {
+      registerManifest: vi.fn(),
+      createContext: vi.fn((pluginId: string, _manifest?: unknown) => {
         const ctx: PluginContext = {
           pluginId,
           subscriptions: [],
@@ -48,8 +51,8 @@ describe('createPluginLoader', () => {
           registerTabKind: vi.fn(() => ({ dispose: vi.fn() })),
           registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
           registerAgentProvider: vi.fn(() => ({ dispose: vi.fn() })),
-          getSetting: vi.fn(
-            (key: string) => getSetting(pluginId, key),
+          getSetting: vi.fn((key: string) =>
+            getSetting(pluginId, key),
           ) as unknown as PluginContext['getSetting'],
           onSettingChange: vi.fn((key: string, handler: (val: unknown) => void) =>
             onSettingChange(pluginId, key, handler),
@@ -231,16 +234,20 @@ describe('createPluginLoader', () => {
     expect(manifestFetchedUrl).toBe('/api/plugins/dynamic.sample/manifest.json')
     expect(dynamicImportCalledWith).toBe('/api/plugins/dynamic.sample/dist/bundle.js')
 
-    const link = document.querySelector('link[data-plugin-id="dynamic.sample"]')
-    expect(link).not.toBeNull()
-    expect(link?.getAttribute('href')).toBe('/api/plugins/dynamic.sample/dist/bundle.css')
+    expect(document.head.querySelector('link[data-plugin-id="dynamic.sample"]')).toBeNull()
+    expect(document.querySelector('link[data-plugin-id="dynamic.sample"]')).toBeNull()
+    expect(getPluginStyle('dynamic.sample')).toBe('/api/plugins/dynamic.sample/dist/bundle.css')
+    expect(host.createContext).toHaveBeenCalledWith(
+      'dynamic.sample',
+      expect.objectContaining({ id: 'dynamic.sample' }),
+    )
 
     const deactivateSuccess = await loader.deactivatePlugin('dynamic.sample')
     expect(deactivateSuccess).toBe(true)
     expect(deactivated).toBe(true)
 
-    const linkAfter = document.querySelector('link[data-plugin-id="dynamic.sample"]')
-    expect(linkAfter).toBeNull()
+    expect(getPluginStyle('dynamic.sample')).toBeUndefined()
+    expect(document.head.querySelector('link[data-plugin-id="dynamic.sample"]')).toBeNull()
   })
 
   it('handles dynamic load failures gracefully without throwing', async () => {

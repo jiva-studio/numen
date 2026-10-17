@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { defineComponent } from 'vue'
+import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createPluginHost, createPluginPaneWrapper } from './host'
+import { registerPluginStyle } from './styles'
 import type { PluginHostDeps } from './types'
 
 describe('createPluginHost', () => {
@@ -151,8 +152,33 @@ describe('createPluginHost', () => {
 
     const handler = vi.fn()
     const sub = host.onSettingChange('test.plugin', 'fontSize', handler)
-    expect(deps.onSettingChange).toHaveBeenCalledWith('test.plugin', 'fontSize', expect.any(Function))
+    expect(deps.onSettingChange).toHaveBeenCalledWith(
+      'test.plugin',
+      'fontSize',
+      expect.any(Function),
+    )
     expect(sub).toHaveProperty('dispose')
+  })
+
+  it('rejects manifest registration when context already exists', () => {
+    const { deps } = createMockDeps()
+    const host = createPluginHost(deps)
+    const initialManifest = {
+      id: 'test.plugin',
+      name: 'Original',
+      version: '1.0.0',
+      permissions: [],
+    }
+    host.createContext('test.plugin', initialManifest)
+
+    expect(() => {
+      host.registerManifest('test.plugin', {
+        id: 'test.plugin',
+        name: 'Tampered',
+        version: '2.0.0',
+        permissions: ['vault:read'],
+      })
+    }).toThrow('Cannot replace the manifest for plugin "test.plugin" while its context is cached')
   })
 
   it('isolates crashing plugin components with error boundary fallback', async () => {
@@ -174,5 +200,37 @@ describe('createPluginHost', () => {
     expect(wrapper.find('.plugin-error-fallback').exists()).toBe(true)
     expect(wrapper.text()).toContain('Plugin "crashing.plugin" crashed')
     expect(wrapper.text()).toContain('Simulated plugin component render crash')
+  })
+
+  it('encapsulates plugin view and stylesheet within Shadow DOM container', async () => {
+    const SampleComponent = defineComponent({
+      name: 'SampleComponent',
+      setup() {
+        return () => h('div', { class: 'sample-content' }, 'Plugin Content')
+      },
+    })
+
+    registerPluginStyle('sample.plugin', '/api/plugins/sample.plugin/styles.css')
+    const Wrapper = createPluginPaneWrapper('sample.plugin', SampleComponent)
+    const wrapper = mount(Wrapper, {
+      props: { state: {} },
+      attachTo: document.body,
+    })
+    await wrapper.vm.$nextTick()
+
+    const hostDiv = wrapper.element as HTMLElement
+    expect(hostDiv.classList.contains('plugin-pane-wrapper')).toBe(true)
+    expect(hostDiv.getAttribute('data-plugin-id')).toBe('sample.plugin')
+    expect(hostDiv.shadowRoot).not.toBeNull()
+
+    const shadow = hostDiv.shadowRoot!
+    const link = shadow.querySelector('link[rel="stylesheet"]')
+    expect(link).not.toBeNull()
+    expect(link?.getAttribute('href')).toBe('/api/plugins/sample.plugin/styles.css')
+    expect(shadow.querySelector('.sample-content')?.textContent).toBe('Plugin Content')
+
+    expect(document.head.querySelector('link[data-plugin-id="sample.plugin"]')).toBeNull()
+
+    wrapper.unmount()
   })
 })
