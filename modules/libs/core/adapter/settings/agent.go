@@ -88,28 +88,30 @@ func (a *Agent) UnmarshalJSON(raw []byte) error {
 		return err
 	}
 	for key, section := range sections {
-		switch key {
-		case "use":
-			var use *string
-			if err := json.Unmarshal(section, &use); err != nil {
-				return err
-			}
-			a.Use = use
-		case "serve_tools":
-			if err := json.Unmarshal(section, &a.ShouldServeTools); err != nil {
-				return err
-			}
-		default:
-			program := a.GetProgram(key)
-			if err := json.Unmarshal(section, &program); err != nil {
-				return err
-			}
-			if a.Programs == nil {
-				a.Programs = make(map[string]AgentProgram)
-			}
-			a.Programs[key] = program
+		if err := a.readSection(key, section); err != nil {
+			return err
 		}
 	}
+	return nil
+}
+
+// readSection reads one key of the section: one of its two, else a program.
+func (a *Agent) readSection(key string, section json.RawMessage) error {
+	switch key {
+	case "use":
+		return json.Unmarshal(section, &a.Use)
+	case "serve_tools":
+		return json.Unmarshal(section, &a.ShouldServeTools)
+	}
+
+	program := a.GetProgram(key)
+	if err := json.Unmarshal(section, &program); err != nil {
+		return err
+	}
+	if a.Programs == nil {
+		a.Programs = make(map[string]AgentProgram)
+	}
+	a.Programs[key] = program
 	return nil
 }
 
