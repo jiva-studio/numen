@@ -155,6 +155,7 @@ func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 	u.BatchSize, u.Overlap, u.InFlight = 2, 0, 1
 
 	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
 	by.stop = func(requests int) {
 		if requests == 2 {
 			stop()
@@ -305,6 +306,7 @@ func TestARunStoppedInTheSeamPassTakesUpWhereItStopped(t *testing.T) {
 	})
 
 	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
 	by.stop = func(requests int) {
 		if requests == 5 {
 			stop()

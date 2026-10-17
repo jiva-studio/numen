@@ -12,7 +12,7 @@ const props = withDefaults(
     at?: string
     path?: string
     title?: string
-    state?: Record<string, any>
+    state?: Record<string, unknown>
   }>(),
   {
     at: '',
