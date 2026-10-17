@@ -274,16 +274,18 @@ func extractCallDetails(args string) (string, string, *numenv1.Span) {
 		startVal, hasStart := parsed["start"]
 		lenVal, hasLen := parsed["length"]
 		if hasStart && hasLen {
-			var from, length int64
+			var from, length float64
 			if s, ok := startVal.(float64); ok {
-				from = int64(s)
+				from = s
 			}
 			if l, ok := lenVal.(float64); ok {
-				length = int64(l)
+				length = l
 			}
-			span = &numenv1.Span{
-				From: int32(from),
-				To:   int32(from + length),
+			if from >= 0 && length >= 0 && from <= math.MaxInt32-length {
+				span = &numenv1.Span{
+					From: int32(from),
+					To:   int32(from + length),
+				}
 			}
 		}
 		return about, path, span
