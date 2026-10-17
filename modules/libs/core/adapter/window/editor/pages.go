@@ -243,33 +243,6 @@ func (s *Services) serveUpdate(w http.ResponseWriter, r *http.Request) {
 	_, _ = io.Copy(w, resp.Body)
 }
 
-func resolvePluginAssetTarget(pluginDir, filePath string) (string, error) {
-	if !filepath.IsLocal(filePath) {
-		return "", os.ErrPermission
-	}
-	cleanDir, err := filepath.Abs(filepath.Clean(pluginDir))
-	if err != nil {
-		return "", err
-	}
-	cleanTarget := filepath.Join(cleanDir, filepath.Clean(filePath))
-	if !strings.HasPrefix(cleanTarget, cleanDir+string(filepath.Separator)) && cleanTarget != cleanDir {
-		return "", os.ErrPermission
-	}
-
-	realDir, err := filepath.EvalSymlinks(cleanDir)
-	if err != nil {
-		return "", err
-	}
-	realTarget, err := filepath.EvalSymlinks(cleanTarget)
-	if err != nil {
-		return "", err
-	}
-	if !strings.HasPrefix(realTarget, realDir+string(filepath.Separator)) && realTarget != realDir {
-		return "", os.ErrPermission
-	}
-	return filepath.Rel(realDir, realTarget)
-}
-
 func setPluginAssetContentType(w http.ResponseWriter, path string) {
 	switch filepath.Ext(path) {
 	case ".js", ".mjs":
@@ -310,22 +283,16 @@ func (s *Services) servePluginAsset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	assetPath, err := resolvePluginAssetTarget(pluginDir, parts[1])
+	file, info, err := openPluginAsset(r.Context(), pluginDir, parts[1])
 	if err != nil {
 		switch {
-		case errors.Is(err, os.ErrPermission):
-			http.Error(w, "forbidden: path escapes plugin directory", http.StatusForbidden)
 		case errors.Is(err, os.ErrNotExist):
 			http.Error(w, "plugin asset not found", http.StatusNotFound)
+		case errors.Is(err, os.ErrPermission), errors.Is(err, errPluginAssetEscapes):
+			http.Error(w, "forbidden: path escapes plugin directory", http.StatusForbidden)
 		default:
-			http.Error(w, "cannot resolve asset path", http.StatusBadRequest)
+			http.Error(w, "cannot read plugin asset", http.StatusInternalServerError)
 		}
-		return
-	}
-
-	file, info, err := openPluginAsset(r.Context(), pluginDir, assetPath)
-	if err != nil {
-		http.Error(w, "plugin asset not found", http.StatusNotFound)
 		return
 	}
 	defer file.Close()
@@ -334,7 +301,11 @@ func (s *Services) servePluginAsset(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
 }
 
-// openPluginAsset opens a regular file below pluginDir; the open cannot leave pluginDir.
+// errPluginAssetEscapes marks a link that leads out of the plugin directory.
+var errPluginAssetEscapes = errors.New("plugin asset path escapes the plugin directory")
+
+// openPluginAsset opens a regular file below pluginDir. The directory is opened once and
+// the name is resolved inside it, so no link can lead out of it.
 func openPluginAsset(ctx context.Context, pluginDir, name string) (*os.File, os.FileInfo, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, nil, err
@@ -346,7 +317,7 @@ func openPluginAsset(ctx context.Context, pluginDir, name string) (*os.File, os.
 	defer root.Close()
 	file, err := root.Open(name)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, classifyPluginAssetError(root, name, err)
 	}
 	info, err := file.Stat()
 	if err != nil {
@@ -358,6 +329,17 @@ func openPluginAsset(ctx context.Context, pluginDir, name string) (*os.File, os.
 		return nil, nil, os.ErrNotExist
 	}
 	return file, info, nil
+}
+
+// classifyPluginAssetError names the reason root.Open failed on a name that exists as a link.
+func classifyPluginAssetError(root *os.Root, name string, openErr error) error {
+	if errors.Is(openErr, os.ErrNotExist) || errors.Is(openErr, os.ErrPermission) {
+		return openErr
+	}
+	if linkInfo, err := root.Lstat(name); err == nil && linkInfo.Mode()&os.ModeSymlink != 0 {
+		return errPluginAssetEscapes
+	}
+	return openErr
 }
 
 // newQuestionCounter takes every question a client asks and gives it back when it is
