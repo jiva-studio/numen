@@ -49,7 +49,6 @@ func locateModels(ctx context.Context, cfg Config) (onnxRuntime, paths, error) {
 	return opened, found, nil
 }
 
-
 func name(path string) string {
 	return strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 }
