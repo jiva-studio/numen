@@ -143,7 +143,7 @@ describe('why a preset schedules nothing, in words', () => {
   it('names the day a goal aimed at, where the settings carry one', () => {
     const by = settings({ goal: 'date', byDate: '2026-08-31' })
 
-    expect(getStoppedWords(StopReason.PAST_DAY, by, on)).toMatch(/has passed$/)
+    expect(getStoppedWords(StopReason.PAST_DAY, by, on)).toMatch(/August.*has passed$/)
     // A preset counted with no settings on hand still says what stopped it.
     expect(getStoppedWords(StopReason.PAST_DAY, null, on)).toBe('the day has passed')
   })

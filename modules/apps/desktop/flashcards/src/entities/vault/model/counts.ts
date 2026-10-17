@@ -159,7 +159,9 @@ export function useReviewCounter(deps: CountsDeps) {
 
   let underway: Promise<void> | null = null
   let taking: AbortController | null = null
+  // Stryker disable next-line BooleanLiteral: overwritten in ask before any read
   let sampled = false
+  // Stryker disable next-line BooleanLiteral: overwritten in countUntilQuiet before any read
   let again = false
 
   const count = (): Promise<void> => {

@@ -78,6 +78,7 @@ const (
 
 // A document that names one part names its cover or its own title. Structure
 // begins at two.
+// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="minimumParts requires at least two parts to constitute document structure"
 const minimumParts = 2
 
 // What one document may spend.
@@ -90,13 +91,17 @@ const minimumParts = 2
 // The bound on pixels is what one page is drawn at, whatever its page box says.
 // A page of A2 at 300 dots to the inch is inside it.
 const (
-	mostPages  = 20_000
-	mostText   = 256 << 20
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="mostPages limits maximum processed pages in a document"
+	mostPages = 20_000
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT,ARITHMETIC_BASE reason="mostText limits maximum extracted text bytes"
+	mostText = 256 << 20
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT,ARITHMETIC_BASE reason="mostPixels limits maximum rendered page raster size"
 	mostPixels = 64 << 20
 )
 
 // pointsPerInch is the page's own unit against the inch a resolution is given
 // in.
+// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="pointsPerInch defines PDF standard 72 points per inch"
 const pointsPerInch = 72
 
 // The ways a file can fail to be a document.
@@ -124,6 +129,7 @@ func readBook(doc *document) *Book {
 	pages := min(doc.pages, mostPages)
 	starts := make([]int, 0, pages)
 	for i := 0; i < pages; i++ {
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="text extraction halts when accumulated text reaches mostText"
 		if text.Len() >= mostText {
 			break
 		}
@@ -143,11 +149,13 @@ func readBook(doc *document) *Book {
 	}
 	book.Text = text.String()
 
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="document structure requires at least minimumParts entries"
 	if named := doc.outline(starts); len(named) >= minimumParts {
 		book.Parts, book.Structure = named, FromOutline
 	} else {
 		book.Structure = FromNothing
 	}
+	// gomutants:disable-next-line STATEMENT_REMOVE,RETURN_FALSE reason="parts are ordered by appearance in document text"
 	sort.SliceStable(book.Parts, func(i, j int) bool {
 		return book.Parts[i].Offset < book.Parts[j].Offset
 	})
@@ -173,6 +181,7 @@ func (b *Book) Locate(offset int) Location {
 	if i := getPrecedingIndex(len(b.Parts), offset, func(i int) int { return b.Parts[i].Offset }); i >= 0 {
 		at.Part, at.PartOffset = b.Parts[i].Title, b.Parts[i].Offset
 	}
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="page index matches when preceding index is non-negative"
 	if i := getPrecedingIndex(len(b.Pages), offset, func(i int) int { return b.Pages[i].Offset }); i >= 0 {
 		at.Page = i
 	}

@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"context"
+	"errors"
 	"testing"
 )
 
@@ -57,10 +59,11 @@ func TestDecodeSaysWhatTheJoinerNames(t *testing.T) {
 // of them ends.
 func TestDecodeLeavesAFrameTheJoinerCoversWithNothing(t *testing.T) {
 	const blank, steps = 3, 3
+	visited := 0
 	said, err := transducer{
 		frames:    4,
 		blank:     blank,
-		encoder:   func(int, []float32) []float32 { return nil },
+		encoder:   func(int, []float32) []float32 { visited++; return nil },
 		predictor: func(int) ([]float32, error) { return nil, nil },
 		joint: func([]float32, []float32) ([]float32, error) {
 			return answer(blank, blank, 0, steps), nil
@@ -71,6 +74,9 @@ func TestDecodeLeavesAFrameTheJoinerCoversWithNothing(t *testing.T) {
 	}
 	if len(said) != 0 {
 		t.Errorf("frames carrying nothing said %v", said)
+	}
+	if visited != 4 {
+		t.Errorf("visited %d frames, want 4", visited)
 	}
 }
 
@@ -88,6 +94,198 @@ func TestDecodeRefusesAJoinerThatIsTooNarrow(t *testing.T) {
 	}.decode(t.Context())
 	if err == nil {
 		t.Error("a joiner too narrow for the tokens was read")
+	}
+}
+
+// A joiner answering with exactly blank+1 scores has no step scores and is refused.
+func TestDecodeRefusesJoinerWithNoStepScores(t *testing.T) {
+	const blank = 3
+	_, err := transducer{
+		frames:    1,
+		blank:     blank,
+		encoder:   func(int, []float32) []float32 { return nil },
+		predictor: func(int) ([]float32, error) { return []float32{0}, nil },
+		joint: func([]float32, []float32) ([]float32, error) {
+			return make([]float32, blank+1), nil
+		},
+	}.decode(t.Context())
+	if err == nil {
+		t.Error("expected error for missing step scores, got nil")
+	}
+}
+
+// An error from the context, the predictor, or the joiner stops decoding and is returned.
+func TestDecodeErrors(t *testing.T) {
+	errBoom := errors.New("boom")
+	const blank, steps = 3, 3
+
+	t.Run("initial predictor error", func(t *testing.T) {
+		_, err := transducer{
+			blank: blank,
+			predictor: func(int) ([]float32, error) {
+				return nil, errBoom
+			},
+		}.decode(t.Context())
+		if !errors.Is(err, errBoom) {
+			t.Fatalf("got %v, want %v", err, errBoom)
+		}
+	})
+
+	t.Run("canceled context", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(t.Context())
+		cancel()
+		_, err := transducer{
+			frames:    2,
+			blank:     blank,
+			encoded:   1,
+			encoder:   func(int, []float32) []float32 { return nil },
+			predictor: func(int) ([]float32, error) { return []float32{0}, nil },
+			joint: func(_, _ []float32) ([]float32, error) {
+				return answer(blank, 1, 1, steps), nil
+			},
+		}.decode(ctx)
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("got %v, want %v", err, context.Canceled)
+		}
+	})
+
+	t.Run("predictor error during decoding", func(t *testing.T) {
+		_, err := transducer{
+			frames:  2,
+			blank:   blank,
+			encoded: 1,
+			encoder: func(int, []float32) []float32 { return nil },
+			predictor: func(token int) ([]float32, error) {
+				if token == 1 {
+					return nil, errBoom
+				}
+				return []float32{0}, nil
+			},
+			joint: func(_, _ []float32) ([]float32, error) {
+				return answer(blank, 1, 1, steps), nil
+			},
+		}.decode(t.Context())
+		if !errors.Is(err, errBoom) {
+			t.Fatalf("got %v, want %v", err, errBoom)
+		}
+	})
+
+	t.Run("joiner error", func(t *testing.T) {
+		_, err := transducer{
+			frames:    2,
+			blank:     blank,
+			encoded:   1,
+			encoder:   func(int, []float32) []float32 { return nil },
+			predictor: func(int) ([]float32, error) { return []float32{0}, nil },
+			joint: func(_, _ []float32) ([]float32, error) {
+				return nil, errBoom
+			},
+		}.decode(t.Context())
+		if !errors.Is(err, errBoom) {
+			t.Fatalf("got %v, want %v", err, errBoom)
+		}
+	})
+}
+
+// A frame that gives a duration of zero moves on once mostPerFrame tokens have been said.
+func TestDecodeAdvancesAfterMostPerFrame(t *testing.T) {
+	const blank, steps = 3, 3
+	callsPerFrame := make(map[int]int)
+
+	said, err := transducer{
+		frames:  3,
+		blank:   blank,
+		encoded: 1,
+		encoder: func(at int, dst []float32) []float32 {
+			dst[0] = float32(at)
+			return dst
+		},
+		predictor: func(int) ([]float32, error) { return []float32{0}, nil },
+		joint: func(frame, _ []float32) ([]float32, error) {
+			at := int(frame[0])
+			callsPerFrame[at]++
+			if at < 2 {
+				return answer(blank, 1, 0, steps), nil
+			}
+			return answer(blank, blank, 1, steps), nil
+		},
+	}.decode(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wantTokens := 2 * mostPerFrame
+	if len(said) != wantTokens {
+		t.Fatalf("got %d tokens, want %d", len(said), wantTokens)
+	}
+	if callsPerFrame[0] != mostPerFrame {
+		t.Errorf("frame 0 was called %d times, want %d", callsPerFrame[0], mostPerFrame)
+	}
+	if callsPerFrame[1] != mostPerFrame {
+		t.Errorf("frame 1 was called %d times, want %d", callsPerFrame[1], mostPerFrame)
+	}
+	if callsPerFrame[2] != 1 {
+		t.Errorf("frame 2 was called %d times, want 1", callsPerFrame[2])
+	}
+}
+
+// A blank token with a step greater than one advances by that step.
+func TestDecodeBlankWithStepAdvancesByStep(t *testing.T) {
+	const blank, steps = 3, 3
+	visited := []int{}
+
+	_, err := transducer{
+		frames:  4,
+		blank:   blank,
+		encoded: 1,
+		encoder: func(at int, dst []float32) []float32 {
+			visited = append(visited, at)
+			return dst
+		},
+		predictor: func(int) ([]float32, error) { return []float32{0}, nil },
+		joint: func(_, _ []float32) ([]float32, error) {
+			return answer(blank, blank, 2, steps), nil
+		},
+	}.decode(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(visited) != 2 || visited[0] != 0 || visited[1] != 2 {
+		t.Errorf("visited %v, want [0 2]", visited)
+	}
+}
+
+// Token scores and step scores are read from their respective halves of the scores slice.
+func TestChooseSeparatesTokenAndStepScores(t *testing.T) {
+	d := transducer{
+		blank: 1,
+		joint: func(_, _ []float32) ([]float32, error) {
+			return []float32{0, 0, 10, 0}, nil
+		},
+	}
+	ch, err := d.choose(nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ch.token != 0 {
+		t.Errorf("ch.token = %d, want 0", ch.token)
+	}
+	if ch.step != 0 {
+		t.Errorf("ch.step = %d, want 0", ch.step)
+	}
+}
+
+// The largest score is chosen, and ties are broken by first position.
+func TestFindLargest(t *testing.T) {
+	if got := findLargest([]float32{1, 1, 0}); got != 0 {
+		t.Errorf("findLargest tie got %d, want 0", got)
+	}
+	if got := findLargest([]float32{10, 5, 2}); got != 0 {
+		t.Errorf("findLargest index 0 got %d, want 0", got)
+	}
+	if got := findLargest([]float32{3}); got != 0 {
+		t.Errorf("findLargest single got %d, want 0", got)
 	}
 }
 

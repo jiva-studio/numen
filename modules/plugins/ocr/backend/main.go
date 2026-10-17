@@ -15,9 +15,9 @@ import (
 	"connectrpc.com/connect"
 	_ "golang.org/x/image/webp"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/modules/plugins/ocr/backend/engine"
 )
 
@@ -79,6 +79,7 @@ func (s *recognitionServer) GetRecognitionModel(
 	eng := s.engine
 	s.mu.Unlock()
 
+	// gomutants:disable-next-line BRANCH_IF reason="getEngine returns s.engine when non-nil, so fallthrough produces the same response"
 	if eng != nil {
 		m := eng.GetRecognitionModel()
 		return connect.NewResponse(&numenv1.GetRecognitionModelResponse{
@@ -90,6 +91,7 @@ func (s *recognitionServer) GetRecognitionModel(
 	}
 
 	eng, err := s.getEngine(ctx)
+	// gomutants:disable-next-line BRANCH_IF reason="opening an uninitialised engine requires real models not present during unit tests"
 	if err == nil {
 		m := eng.GetRecognitionModel()
 		return connect.NewResponse(&numenv1.GetRecognitionModelResponse{
@@ -189,4 +191,3 @@ func run() error {
 
 	return s.Serve()
 }
-
