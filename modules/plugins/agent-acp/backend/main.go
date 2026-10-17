@@ -10,6 +10,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/completion"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
@@ -17,7 +18,9 @@ import (
 
 type agentServer struct {
 	numenv1connect.UnimplementedAgentServiceHandler
+	numenv1connect.UnimplementedCompletionServiceHandler
 	runner       *AgentRunner
+	command      []string
 	mu           sync.RWMutex
 	systemPrompt string
 	tools        []*numenv1.AgentToolDefinition
@@ -184,6 +187,7 @@ func run() error {
 	}
 
 	s.Register(numenv1connect.NewAgentServiceHandler(agentSvc, s.HandlerOptions()...))
+	s.Register(numenv1connect.NewCompletionServiceHandler(agentSvc, s.HandlerOptions()...))
 
 	return s.Serve()
 }

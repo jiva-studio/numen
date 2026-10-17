@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "Autonomous agent tools and LLM chat provider service",
-  "capabilities": ["agent"],
+  "capabilities": ["agent", "ai.completion.provider"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onCommand:askAgent", "onChatOpen"],
   "permissions": ["vault:read", "vault:write"],

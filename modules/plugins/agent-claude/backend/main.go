@@ -12,6 +12,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/completion"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
@@ -19,11 +20,14 @@ import (
 
 type agentServer struct {
 	numenv1connect.UnimplementedAgentServiceHandler
+	numenv1connect.UnimplementedCompletionServiceHandler
 	mu           sync.RWMutex
 	systemPrompt string
 	tools        []*numenv1.AgentToolDefinition
 	modelName    string
 	models       []AgentModel
+	apiKey       string
+	baseURL      string
 	command      []string
 	mayReadHooks bool
 	sessions     map[string]string
@@ -39,8 +43,13 @@ func (s *agentServer) applyConfig(ctx context.Context, values map[string]string)
 	if v, ok := values["readsHooksAndSkills"]; ok {
 		s.mayReadHooks = v == "true"
 	}
-	apiKey := values["apiKey"]
-	baseURL := values["baseUrl"]
+	if v, ok := values["apiKey"]; ok {
+		s.apiKey = v
+	}
+	if v, ok := values["baseUrl"]; ok {
+		s.baseURL = v
+	}
+	apiKey, baseURL := s.apiKey, s.baseURL
 	if apiKey != "" || os.Getenv(anthropicKeyVar) != "" {
 		if models, err := fetchAnthropicModels(ctx, apiKey, baseURL); err == nil && len(models) > 0 {
 			s.models = models
@@ -174,7 +183,7 @@ func (s *agentServer) AskAgent(
 	if failedReason != "" {
 		stoppedReason = failedReason
 	} else if waitErr != nil {
-		stoppedReason = getFailureMessage(waitErr, stderrBuf.String())
+		stoppedReason = completion.FailureMessage(waitErr, stderrBuf.String())
 	}
 
 	return stream.Send(&numenv1.AskAgentResponse{
@@ -315,6 +324,7 @@ func main() {
 	}))
 
 	srv.Register(numenv1connect.NewAgentServiceHandler(agentSvc, srv.HandlerOptions()...))
+	srv.Register(numenv1connect.NewCompletionServiceHandler(agentSvc, srv.HandlerOptions()...))
 
 	if err := srv.Serve(); err != nil {
 		fmt.Fprintf(os.Stderr, "server error: %v\n", err)

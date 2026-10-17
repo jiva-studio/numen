@@ -95,7 +95,7 @@ The manifest declares identity, activation rules, required permissions, and serv
 - **`name`**: User-facing display title.
 - **`version`**: Semantic versioning string (`X.Y.Z`, optional pre-release and build parts).
 - **`protocol`**: The plugin protocol version the plugin was written against. The host speaks protocol 1 and rejects a manifest that names a newer one. Absent means 1.
-- **`capabilities`**: Core capabilities provided (`document`, `compute`, `agent`, `recognition`, `transcription`, `proofreading`).
+- **`capabilities`**: Core capabilities provided (`document`, `compute`, `agent`, `recognition`, `transcription`, `proofreading`, and the markers `ai.agent.provider` and `ai.completion.provider`, which name an agent plugin that serves tasks and one that answers `CompletionService.Complete`).
 - **`targets`**: Allowed client environments (`desktop.editor`, `desktop.flashcards`).
 - **`activationEvents`**: Triggers for host activation:
   - `onFile:<glob>` (e.g. `onFile:*.pdf`, `onFile:*.epub`)
