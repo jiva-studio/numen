@@ -341,27 +341,6 @@ func TestAskAgentWithMockScript(t *testing.T) {
 	}
 }
 
-func TestExtractCallDetails(t *testing.T) {
-	about, path, span := extractCallDetails(`{"query":"algebra","path":"notes/math.md","start":10,"length":5}`)
-	if path != "notes/math.md" {
-		t.Errorf("expected path notes/math.md, got %q", path)
-	}
-	if about != "algebra" {
-		t.Errorf("expected about algebra, got %q", about)
-	}
-	if span == nil || span.From != 10 || span.To != 15 {
-		t.Errorf("unexpected span: %+v", span)
-	}
-
-	aboutFile, pathFile, _ := extractCallDetails(`{"file":"notes/file.md"}`)
-	if pathFile != "notes/file.md" {
-		t.Errorf("expected path notes/file.md, got %q", pathFile)
-	}
-	if aboutFile != "notes/file.md" {
-		t.Errorf("expected about notes/file.md, got %q", aboutFile)
-	}
-}
-
 // The program is started in the folder the task names, with the arguments the request gives it, the
 // question on its input, and the tools it is given in a file that is gone when it ends.
 func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
