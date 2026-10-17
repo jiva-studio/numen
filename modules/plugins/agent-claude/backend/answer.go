@@ -64,7 +64,6 @@ func (s *agentServer) AnswerAgent(
 	if !s.registry.Add(work) {
 		return nil, connect.NewError(connect.CodeUnavailable, errors.New("this agent is closing"))
 	}
-	work.Begin()
 	defer s.registry.Remove(work)
 	defer work.End()
 
