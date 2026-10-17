@@ -2,13 +2,13 @@
   "id": "md.numen.agent-acp",
   "name": "ACP External Agents",
   "version": "1.0.0",
+  "protocol": 1,
   "description": "ACP External coding agents runner and discovery (Claude, Antigravity, Codex, Cursor)",
   "capabilities": ["agent", "ai.agent.provider"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onCommand:askAgent", "onView:agent"],
   "permissions": ["network:outbound", "vault:read", "vault:write"],
   "lifecycle": {
-    "mode": "on-demand",
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false
   },

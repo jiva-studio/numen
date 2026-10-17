@@ -10,6 +10,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -21,13 +22,15 @@ var (
 type BookPluginHost interface {
 	port.PluginResolver
 	port.PluginActivator
+	port.PluginAuthorizer
 }
 
 // BookBridge connects BookService calls to an out-of-process book reader plugin via Connect-RPC.
 type BookBridge struct {
-	host     port.PluginActivator
+	host     BookPluginHost
 	pluginID string
 	client   numenv1connect.BookServiceClient
+	lease    *pluginLease
 }
 
 // OpenBookBridge activates or connects to the book plugin and returns a BookBridge.
@@ -40,19 +43,16 @@ func OpenBookBridge(ctx context.Context, host BookPluginHost) (*BookBridge, erro
 		}
 	}
 
-	endpoint, err := host.EnsureActive(ctx, p.Manifest.ID)
+	client, lease, err := openPlugin(ctx, host, p.Manifest.ID, numenv1connect.NewBookServiceClient)
 	if err != nil {
-		return nil, fmt.Errorf("ensure active %s: %w", p.Manifest.ID, err)
+		return nil, err
 	}
-
-	httpClient := EndpointClient(endpoint)
-	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
-	client := numenv1connect.NewBookServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 
 	return &BookBridge{
 		host:     host,
 		pluginID: p.Manifest.ID,
 		client:   client,
+		lease:    lease,
 	}, nil
 }
 
@@ -74,6 +74,60 @@ func (b *BookBridge) ReadBookMarkup(
 
 // Close releases the active reference count for the book plugin in the host supervisor.
 func (b *BookBridge) Close() error {
-	b.host.Release(b.pluginID)
-	return nil
+	return b.lease.Close()
+}
+
+// ReadBook asks the plugin for the text of the book in the bytes given. Bytes
+// that are no book are refused with port.ErrNotADocument, and a locked book with
+// port.ErrEncrypted.
+func (b *BookBridge) ReadBook(ctx context.Context, raw []byte) (domain.BookText, error) {
+	if err := b.host.CheckPluginPermission(b.pluginID, PermissionVaultRead); err != nil {
+		return domain.BookText{}, err
+	}
+	resp, err := b.client.ExtractBookText(ctx, connect.NewRequest(&v1.ExtractBookTextRequest{Data: raw}))
+	if err != nil {
+		return domain.BookText{}, getBookError(err)
+	}
+	out := domain.BookText{Text: resp.Msg.GetText()}
+	for _, part := range resp.Msg.GetParts() {
+		out.Parts = append(out.Parts, domain.PartStart{Title: part.GetTitle(), Offset: int(part.GetOffset())})
+	}
+	for _, page := range resp.Msg.GetPrintedPages() {
+		out.Pages = append(out.Pages, domain.BookPage{Label: page.GetLabel(), Offset: int(page.GetOffset())})
+	}
+	return out, nil
+}
+
+// getBookError is the error a refusal of the plugin is answered with: the ports'
+// own for a book that cannot be read, an entry it lacks and a file that changed.
+func getBookError(err error) error {
+	switch connect.CodeOf(err) {
+	case connect.CodeInvalidArgument:
+		return fmt.Errorf("%w: %v", port.ErrNotADocument, err)
+	case connect.CodeFailedPrecondition:
+		return fmt.Errorf("%w: %v", port.ErrEncrypted, err)
+	case connect.CodeNotFound:
+		return fmt.Errorf("%w: %v", port.ErrNoBookEntry, err)
+	case connect.CodeAborted:
+		return fmt.Errorf("%w: %v", port.ErrBookChanged, err)
+	default:
+		return fmt.Errorf("rpc book: %w", err)
+	}
+}
+
+// ReadEntry asks the plugin for one entry of the archive of the book at a path,
+// while the file is the bytes the baseline names.
+func (b *BookBridge) ReadEntry(ctx context.Context, baseline *v1.Fingerprint, entry string) ([]byte, error) {
+	if err := b.host.CheckPluginPermission(b.pluginID, PermissionVaultRead); err != nil {
+		return nil, err
+	}
+	resp, err := b.client.ReadBookEntry(ctx, connect.NewRequest(&v1.ReadBookEntryRequest{
+		Path:     baseline.GetPath(),
+		Entry:    entry,
+		Baseline: baseline,
+	}))
+	if err != nil {
+		return nil, getBookError(err)
+	}
+	return resp.Msg.GetBody(), nil
 }

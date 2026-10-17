@@ -53,6 +53,7 @@ export interface PluginHostDeps {
     handler: (value: unknown) => void | Promise<void>,
   ) => () => void
   readonly closeTabsForPlugin?: (pluginId: string) => void
+  readonly onError?: (pluginId: string, error: unknown) => void
   readonly tabActionHandlers?: Record<string, TabActionHandler>
   readonly onTabAction?: (action: string, at: string, ...args: unknown[]) => unknown
 
@@ -76,10 +77,16 @@ export interface PluginContextHost {
     key: string,
     handler: (value: T) => void | Promise<void>,
   ): Disposable
-  onVaultChange?(handler: (event: VaultChangeEvent) => void | Promise<void>): Disposable
-  onFileSelect?(handler: (event: FileSelectEvent) => void | Promise<void>): Disposable
-  emitVaultChange?(event: VaultChangeEvent): void
-  emitFileSelect?(event: FileSelectEvent): void
+  onVaultChange(
+    pluginId: string,
+    handler: (event: VaultChangeEvent) => void | Promise<void>,
+  ): Disposable
+  onFileSelect(
+    pluginId: string,
+    handler: (event: FileSelectEvent) => void | Promise<void>,
+  ): Disposable
+  emitVaultChange(pluginId: string, event: VaultChangeEvent): void
+  emitFileSelect(pluginId: string, event: FileSelectEvent): void
   openTab?(kind: string, at?: string): Promise<string>
   closeTab?(id: string): void
 }

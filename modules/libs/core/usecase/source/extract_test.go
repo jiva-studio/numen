@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
-	"github.com/jiva-studio/numen/modules/plugins/reader-epub/backend/epub"
 )
 
 const bookPath = "library/book.epub"
@@ -32,7 +31,7 @@ func TestABookIsCutIntoChunksRecordedWithTheRecipeThatCutThem(t *testing.T) {
 			raw := bookOf(t, "A Book", words(sanskrit, 400), words(sanskrit, 400))
 			shelf.hold(bookPath, domain.KindBook, raw, 1)
 
-			extract := NewExtract(vaults{first.ID: shelf}, index, index)
+			extract := newExtract(vaults{first.ID: shelf}, index, index)
 			extract.Sizes = c.sizes
 			res, err := extract.Execute(ctx, first)
 			if err != nil {
@@ -62,7 +61,7 @@ func TestABookIsCutIntoChunksRecordedWithTheRecipeThatCutThem(t *testing.T) {
 
 			// A chunk keeps a place in the extracted text and not the text
 			// itself, so what it says has to be what stands at that place.
-			book, err := epub.Read(raw)
+			book, err := documents{}.ReadBook(ctx, raw)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -104,7 +103,7 @@ func TestABookThatWillNotParseDoesNotStopTheOthers(t *testing.T) {
 	shelf.hold("library/z.epub", domain.KindBook, bookOf(t, "Z", words(sanskrit, 200)), 1)
 	shelf.hold("notes/one.md", domain.KindNote, []byte("# One\n\nA note.\n"), 1)
 
-	res, err := NewExtract(vaults{first.ID: shelf}, index, index).Execute(ctx, first)
+	res, err := newExtract(vaults{first.ID: shelf}, index, index).Execute(ctx, first)
 	if err != nil {
 		t.Fatalf("one book that will not parse ended the run: %v", err)
 	}
@@ -142,7 +141,7 @@ func TestWhatHasNotChangedIsNotOpenedAgain(t *testing.T) {
 	index, shelf := newStore(), newLibrary()
 	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 300)), 1)
 
-	extract := NewExtract(vaults{first.ID: shelf}, index, index)
+	extract := newExtract(vaults{first.ID: shelf}, index, index)
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	}
@@ -204,7 +203,7 @@ func TestTheRecipeFollowsTheCutSizesAndStalenessFollowsTheRecipe(t *testing.T) {
 	index, shelf := newStore(), newLibrary()
 	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 300)), 1)
 
-	extract := NewExtract(vaults{first.ID: shelf}, index, index)
+	extract := newExtract(vaults{first.ID: shelf}, index, index)
 	extract.Sizes = one
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
@@ -251,7 +250,7 @@ func TestExtractionStaysInsideItsVault(t *testing.T) {
 	shelves[second.ID].hold("library/latin.epub", domain.KindBook,
 		bookOf(t, "Latin", words(latin, 300), words(latin, 300)), 1)
 
-	extract := NewExtract(shelves, index, index)
+	extract := newExtract(shelves, index, index)
 	for _, v := range []domain.Vault{first, second} {
 		if _, err := extract.Execute(ctx, v); err != nil {
 			t.Fatal(err)
@@ -305,7 +304,7 @@ func TestABookTheVaultNoLongerHoldsIsTakenOut(t *testing.T) {
 	shelf.hold("library/kept.epub", domain.KindBook, bookOf(t, "Kept", words(sanskrit, 200)), 1)
 	shelf.hold("library/gone.epub", domain.KindBook, bookOf(t, "Gone", words(latin, 200)), 1)
 
-	extract := NewExtract(vaults{first.ID: shelf}, index, index)
+	extract := newExtract(vaults{first.ID: shelf}, index, index)
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	}
@@ -362,7 +361,7 @@ func TestRebuildingTheIndexReadsEveryFile(t *testing.T) {
 
 	shelf.hold("library/A.epub", domain.KindBook, before, 1)
 
-	extract := NewExtract(vaults{first.ID: shelf}, index, index)
+	extract := newExtract(vaults{first.ID: shelf}, index, index)
 	if res, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	} else if res.Extracted != 1 {
@@ -404,7 +403,7 @@ func TestASourceCutFromAPartialReadsBackFromThePartial(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	extract := NewExtract(vaults{first.ID: shelf}, index, index)
+	extract := newExtract(vaults{first.ID: shelf}, index, index)
 	extract.Derived = made
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
@@ -454,7 +453,7 @@ func TestABookTakenOutTakesTheFilesOfItsRecognition(t *testing.T) {
 		}
 	}
 
-	extract := NewExtract(vaults{first.ID: shelf}, index, index)
+	extract := newExtract(vaults{first.ID: shelf}, index, index)
 	extract.Derived = made
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
@@ -499,7 +498,7 @@ func TestARenamedBookKeepsItsRecognition(t *testing.T) {
 		}
 	}
 
-	extract := NewExtract(vaults{first.ID: shelf}, index, index)
+	extract := newExtract(vaults{first.ID: shelf}, index, index)
 	extract.Derived = made
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
@@ -539,7 +538,7 @@ func TestOneOfTwoCopiesTakenOutLeavesTheOtherRecognition(t *testing.T) {
 		}
 	}
 
-	extract := NewExtract(vaults{first.ID: shelf}, index, index)
+	extract := newExtract(vaults{first.ID: shelf}, index, index)
 	extract.Derived = made
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
@@ -577,7 +576,7 @@ func TestARecordingNobodyHasHeardIsASourceWithNoChunks(t *testing.T) {
 	index, shelf := newStore(), newLibrary()
 	shelf.hold(talkPath, domain.KindRecording, []byte("ID3 and then the samples"), 1)
 
-	extract := NewExtract(vaults{first.ID: shelf}, index, index)
+	extract := newExtract(vaults{first.ID: shelf}, index, index)
 	res, err := extract.Execute(ctx, first)
 	if err != nil {
 		t.Fatal(err)
@@ -605,7 +604,7 @@ func TestARecordingIsCutFromWhatWasHeardInIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	extract := NewExtract(vaults{first.ID: shelf}, index, index)
+	extract := newExtract(vaults{first.ID: shelf}, index, index)
 	extract.Derived = made
 	res, err := extract.Execute(ctx, first)
 	if err != nil {
@@ -649,7 +648,7 @@ func TestARecordingTakenOutTakesTheFilesOfItsTranscription(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	extract := NewExtract(vaults{first.ID: shelf}, index, index)
+	extract := newExtract(vaults{first.ID: shelf}, index, index)
 	extract.Derived = made
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
@@ -678,7 +677,7 @@ func TestABookIsCutTheWayItAlwaysWas(t *testing.T) {
 	shelf.hold(bookPath, domain.KindBook, raw, 1)
 	shelf.hold(talkPath, domain.KindRecording, []byte("ID3 and then the samples"), 1)
 
-	extract := NewExtract(vaults{first.ID: shelf}, index, index)
+	extract := newExtract(vaults{first.ID: shelf}, index, index)
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	}

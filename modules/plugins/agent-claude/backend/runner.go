@@ -118,6 +118,7 @@ func buildClaudeArguments(
 	instructions, model, configuration, session string,
 	turns int,
 	tools []string,
+	mayReadHooks bool,
 ) []string {
 	if turns <= 0 {
 		turns = 100
@@ -150,6 +151,14 @@ func buildClaudeArguments(
 	slices.Sort(allowed)
 	args = append(args, "--allowedTools", strings.Join(allowed, ","))
 
+	// A vault's own hooks and settings are never read. The person's own are read only when the
+	// setting allows it.
+	sources := ""
+	if mayReadHooks {
+		sources = "user"
+	}
+	args = append(args, "--setting-sources", sources)
+
 	if instructions != "" {
 		args = append(args, "--append-system-prompt", instructions)
 	}
@@ -160,4 +169,14 @@ func buildClaudeArguments(
 		args = append(args, "--resume", session)
 	}
 	return args
+}
+
+// getFailureMessage is what to tell the person when the command stopped with an error: the last
+// line of its error output, or the error itself when it wrote none.
+func getFailureMessage(err error, said string) string {
+	if trimmed := strings.TrimSpace(said); trimmed != "" {
+		lines := strings.Split(trimmed, "\n")
+		return strings.TrimSpace(lines[len(lines)-1])
+	}
+	return err.Error()
 }

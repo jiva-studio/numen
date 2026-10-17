@@ -156,6 +156,11 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     tabLinks,
     tabOpeners,
     settingsHolder,
+    reportError: (pluginId, error) =>
+      log.getWriter(`plugin:${pluginId}`)(
+        `Plugin ${pluginId} failed: ${error instanceof Error ? error.message : String(error)}`,
+        'error',
+      ),
     readNote: async (path: string) => {
       const res = await core.read(path)
       if (res.ok) {

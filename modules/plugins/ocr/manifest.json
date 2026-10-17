@@ -2,13 +2,13 @@
   "id": "md.numen.ocr",
   "name": "Document OCR",
   "version": "1.0.0",
+  "protocol": 1,
   "description": "Optical character recognition using PaddleOCR and ONNX Runtime",
   "capabilities": ["recognition"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onFile:*.pdf", "onCommand:ocr.recognize"],
   "permissions": ["vault:read", "network:outbound"],
   "lifecycle": {
-    "mode": "on-demand",
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false,
     "memoryLimitBytes": 2147483648

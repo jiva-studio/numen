@@ -2,6 +2,7 @@
   "id": "md.numen.transcription",
   "name": "Audio/Video Transcription",
   "version": "1.0.0",
+  "protocol": 1,
   "description": "Speech-to-text audio and video transcription using native plugin backend",
   "capabilities": ["transcription"],
   "targets": ["desktop.editor"],
@@ -14,7 +15,6 @@
   ],
   "permissions": ["vault:read", "network:outbound"],
   "lifecycle": {
-    "mode": "on-demand",
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false
   },

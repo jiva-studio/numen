@@ -2,13 +2,13 @@
   "id": "md.numen.embeddings",
   "name": "Vector Embeddings",
   "version": "1.0.0",
+  "protocol": 1,
   "description": "Vector embeddings engine for semantic search",
   "capabilities": ["embedding"],
   "targets": ["desktop.editor"],
   "activationEvents": ["*"],
   "permissions": ["vault:read", "network:outbound"],
   "lifecycle": {
-    "mode": "daemon",
     "idleTimeoutSeconds": 0,
     "keepAliveWhileVisible": true,
     "memoryLimitBytes": 2147483648

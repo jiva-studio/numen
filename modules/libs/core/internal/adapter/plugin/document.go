@@ -9,6 +9,7 @@ import (
 	_ "image/jpeg" // register JPEG decoder for page images
 	_ "image/png"  // register PNG decoder for page images
 	"io"
+	"math"
 	"os"
 	"strings"
 	"sync"
@@ -31,6 +32,7 @@ var (
 type DocumentPluginHost interface {
 	port.PluginResolver
 	port.PluginActivator
+	port.PluginAcquirer
 	port.PluginAuthorizer
 	port.PluginPathValidator
 }
@@ -40,6 +42,7 @@ type DocumentBridge struct {
 	host     DocumentPluginHost
 	pluginID string
 	client   numenv1connect.DocumentServiceClient
+	lease    *pluginLease
 }
 
 // OpenDocumentBridge activates or connects to the document plugin and returns a DocumentBridge.
@@ -49,26 +52,22 @@ func OpenDocumentBridge(ctx context.Context, host DocumentPluginHost) (*Document
 		return nil, ErrNoDocumentPlugin
 	}
 
-	endpoint, err := host.EnsureActive(ctx, p.Manifest.ID)
+	client, lease, err := openPlugin(ctx, host, p.Manifest.ID, numenv1connect.NewDocumentServiceClient)
 	if err != nil {
-		return nil, fmt.Errorf("ensure active %s: %w", p.Manifest.ID, err)
+		return nil, err
 	}
-
-	httpClient := EndpointClient(endpoint)
-	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
-	client := numenv1connect.NewDocumentServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 
 	return &DocumentBridge{
 		host:     host,
 		pluginID: p.Manifest.ID,
 		client:   client,
+		lease:    lease,
 	}, nil
 }
 
 // Close releases the active reference count for the document plugin in the host supervisor.
 func (b *DocumentBridge) Close() error {
-	b.host.Release(b.pluginID)
-	return nil
+	return b.lease.Close()
 }
 
 // Read implements port.TextExtractor.
@@ -250,6 +249,7 @@ func (b *DocumentBridge) OpenDocument(ctx context.Context, file io.ReadSeekClose
 		return nil, fmt.Errorf("rpc get document: %w", err)
 	}
 
+	b.host.Acquire(b.pluginID)
 	return &remoteDocument{
 		host:     b.host,
 		pluginID: b.pluginID,
@@ -283,6 +283,9 @@ func (d *remoteDocument) GetPageSize(index int) (wide, high float64, err error) 
 }
 
 func (d *remoteDocument) RenderPage(index, dpi int) (image.Image, error) {
+	if index < 0 || index > math.MaxInt32 || dpi < 0 || dpi > math.MaxInt32 {
+		return nil, errors.New("page index or dpi out of range")
+	}
 	ctx := context.Background()
 	req := connect.NewRequest(&v1.RenderPageRequest{
 		Path: d.path,

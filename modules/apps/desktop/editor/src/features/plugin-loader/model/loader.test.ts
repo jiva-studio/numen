@@ -81,6 +81,9 @@ describe('createPluginLoader', () => {
     }
   }
 
+  const frontendManifestFetch = (async () =>
+    ({ ok: true, json: async () => ({ id: 'x', frontend: {} }) }) as Response) as unknown as typeof fetch
+
   function createTestLoader(
     host: PluginHost,
     extra: Partial<Omit<Parameters<typeof createPluginLoader>[0], 'host'>> = {},
@@ -238,7 +241,7 @@ describe('createPluginLoader', () => {
     expect(success).toBe(true)
     expect(activated).toBe(true)
     expect(manifestFetchedUrl).toBe('/api/plugins/dynamic.sample/manifest.json')
-    expect(dynamicImportCalledWith).toBe('/api/plugins/dynamic.sample/dist/bundle.js')
+    expect(dynamicImportCalledWith).toBe('/api/plugins/dynamic.sample/dist/bundle.js?activation=1')
 
     expect(document.head.querySelector('link[data-plugin-id="dynamic.sample"]')).toBeNull()
     expect(document.querySelector('link[data-plugin-id="dynamic.sample"]')).toBeNull()
@@ -263,6 +266,7 @@ describe('createPluginLoader', () => {
     })
 
     const loader = createTestLoader(host, {
+      fetch: frontendManifestFetch,
       dynamicImport: mockDynamicImport,
     })
 
@@ -281,6 +285,7 @@ describe('createPluginLoader', () => {
     }))
 
     const loader = createTestLoader(host, {
+      fetch: frontendManifestFetch,
       dynamicImport: mockDynamicImport,
     })
 
@@ -288,5 +293,269 @@ describe('createPluginLoader', () => {
     expect(success).toBe(false)
     expect(loader.isPluginActive('throwing.plugin')).toBe(false)
     expect(host.disposePlugin).toHaveBeenCalledWith('throwing.plugin')
+  })
+})
+
+describe('createPluginLoader catalog manifests', () => {
+  it('hands the catalog manifest to the context of a plugin, on every activation', async () => {
+    const createContext = vi.fn((pluginId: string) => ({ pluginId }) as unknown as PluginContext)
+    const host = { createContext, disposePlugin: vi.fn(), disposeAll: vi.fn() } as unknown as PluginHost
+    const manifest = { id: 'cat.plugin', name: 'Cat', version: '1', permissions: ['vault:read'] }
+    const loader = createPluginLoader({
+      host,
+      loaders: { 'cat.plugin': async () => ({ activate: () => {} }) },
+      manifests: { 'cat.plugin': manifest as never },
+    })
+    await loader.activatePlugin('cat.plugin')
+    await loader.deactivatePlugin('cat.plugin')
+    await loader.activatePlugin('cat.plugin')
+    expect(createContext).toHaveBeenNthCalledWith(1, 'cat.plugin', manifest)
+    expect(createContext).toHaveBeenNthCalledWith(2, 'cat.plugin', manifest)
+  })
+})
+
+describe('createPluginLoader failures, order and toggles', () => {
+  function createHost(settings: Record<string, unknown> = {}) {
+    const listeners = new Map<string, (value: unknown) => void | Promise<void>>()
+    const host = {
+      createContext: vi.fn((pluginId: string) => ({ pluginId }) as unknown as PluginContext),
+      disposePlugin: vi.fn(),
+      disposeAll: vi.fn(),
+      getSetting: vi.fn((id: string, key: string) => settings[`${id}.${key}`]),
+      onSettingChange: vi.fn(
+        (id: string, _key: string, handler: (value: unknown) => void | Promise<void>) => {
+          listeners.set(id, handler)
+          return { dispose: () => void listeners.delete(id) }
+        },
+      ),
+    } as unknown as PluginHost
+    return { host, listeners }
+  }
+
+  it('shows a plugin whose activate throws as failed with its message and reports it', async () => {
+    const { host } = createHost()
+    const onError = vi.fn()
+    const fault = new Error('activate exploded')
+    const loader = createPluginLoader({
+      host,
+      onError,
+      loaders: {
+        bad: async () => ({
+          activate: () => {
+            throw fault
+          },
+        }),
+      },
+    })
+
+    await loader.start()
+
+    expect(loader.isPluginActive('bad')).toBe(false)
+    expect(loader.getPluginFailure('bad')).toBe('activate exploded')
+    expect(loader.getFailedPlugins()).toStrictEqual([{ id: 'bad', error: 'activate exploded' }])
+    expect(onError).toHaveBeenCalledWith('bad', fault)
+  })
+
+  it('clears the failure when the plugin activates later', async () => {
+    const { host } = createHost()
+    let shouldFail = true
+    const loader = createPluginLoader({
+      host,
+      onError: vi.fn(),
+      loaders: {
+        flaky: async () => ({
+          activate: () => {
+            if (shouldFail) throw new Error('first try')
+          },
+        }),
+      },
+    })
+    await loader.activatePlugin('flaky')
+    shouldFail = false
+    await loader.activatePlugin('flaky')
+
+    expect(loader.getPluginFailure('flaky')).toBeUndefined()
+    expect(loader.isPluginActive('flaky')).toBe(true)
+  })
+
+  it('does not call a failed plugin active when its module cannot be loaded', async () => {
+    const { host } = createHost()
+    const loader = createPluginLoader({
+      host,
+      onError: vi.fn(),
+      loaders: {
+        gone: async () => {
+          throw new Error('chunk missing')
+        },
+      },
+    })
+    await loader.activatePlugin('gone')
+    expect(loader.getPluginFailure('gone')).toBe('chunk missing')
+  })
+
+  it('activates in the order of the loaders, one after the other', async () => {
+    const { host } = createHost()
+    const log: string[] = []
+    const make = (id: string) => async () => ({
+      activate: async () => {
+        log.push(`${id}:start`)
+        await Promise.resolve()
+        log.push(`${id}:end`)
+      },
+    })
+    const loader = createPluginLoader({ host, loaders: { a: make('a'), b: make('b') } })
+
+    await loader.start()
+
+    expect(log).toStrictEqual(['a:start', 'a:end', 'b:start', 'b:end'])
+  })
+
+  it('activates once when two activations are requested at the same time', async () => {
+    const { host } = createHost()
+    const activate = vi.fn(async () => {
+      await Promise.resolve()
+    })
+    const loader = createPluginLoader({ host, loaders: { p: async () => ({ activate }) } })
+
+    await Promise.all([loader.activatePlugin('p'), loader.activatePlugin('p')])
+
+    expect(activate).toHaveBeenCalledTimes(1)
+  })
+
+  it('runs a deactivation requested during an activation after it', async () => {
+    const { host } = createHost()
+    const log: string[] = []
+    const loader = createPluginLoader({
+      host,
+      loaders: {
+        p: async () => ({
+          activate: async () => {
+            await Promise.resolve()
+            log.push('activate')
+          },
+          deactivate: () => {
+            log.push('deactivate')
+          },
+        }),
+      },
+    })
+
+    await Promise.all([loader.activatePlugin('p'), loader.deactivatePlugin('p')])
+
+    expect(log).toStrictEqual(['activate', 'deactivate'])
+    expect(loader.isPluginActive('p')).toBe(false)
+  })
+
+  it('treats a plugin with no enabled setting as enabled', async () => {
+    const { host } = createHost()
+    const activate = vi.fn()
+    const loader = createPluginLoader({ host, loaders: { p: async () => ({ activate }) } })
+    await loader.start()
+    expect(activate).toHaveBeenCalledTimes(1)
+  })
+
+  it('follows the enabled setting through one subscription per plugin', async () => {
+    const { host, listeners } = createHost()
+    const loader = createPluginLoader({ host, loaders: { p: async () => ({ activate: () => {} }) } })
+    await loader.start()
+    await loader.trackPlugins(['p'])
+
+    expect(host.onSettingChange).toHaveBeenCalledTimes(1)
+    await listeners.get('p')?.(false)
+    expect(loader.isPluginActive('p')).toBe(false)
+    await listeners.get('p')?.(true)
+    expect(loader.isPluginActive('p')).toBe(true)
+  })
+
+  it('tracks a plugin that is only known by id and loads it from its manifest', async () => {
+    const { host } = createHost()
+    const imports: string[] = []
+    const loader = createPluginLoader({
+      host,
+      fetch: (async () =>
+        ({ ok: true, json: async () => ({ id: 'dyn', frontend: {} }) }) as Response) as unknown as typeof fetch,
+      dynamicImport: async (url) => {
+        imports.push(url)
+        return { activate: () => {} }
+      },
+    })
+    await loader.start()
+    await loader.trackPlugins(['dyn'])
+
+    expect(loader.isPluginActive('dyn')).toBe(true)
+    expect(host.onSettingChange).toHaveBeenCalledTimes(1)
+  })
+
+  it('imports a dynamic plugin from a new url at each activation', async () => {
+    const { host } = createHost()
+    const imports: string[] = []
+    const loader = createPluginLoader({
+      host,
+      fetch: (async () =>
+        ({ ok: true, json: async () => ({ id: 'dyn', frontend: {} }) }) as Response) as unknown as typeof fetch,
+      dynamicImport: async (url) => {
+        imports.push(url)
+        return { activate: () => {} }
+      },
+    })
+    await loader.activatePlugin('dyn')
+    await loader.deactivatePlugin('dyn')
+    await loader.activatePlugin('dyn')
+
+    expect(imports).toStrictEqual([
+      '/api/plugins/dyn/dist/index.js?activation=1',
+      '/api/plugins/dyn/dist/index.js?activation=2',
+    ])
+  })
+
+  it('neither imports nor fails a plugin whose manifest has no frontend', async () => {
+    const { host } = createHost()
+    const dynamicImport = vi.fn()
+    const loader = createPluginLoader({
+      host,
+      fetch: (async () =>
+        ({ ok: true, json: async () => ({ id: 'ocr' }) }) as Response) as unknown as typeof fetch,
+      dynamicImport,
+    })
+    await expect(loader.activatePlugin('ocr')).resolves.toBe(false)
+    expect(dynamicImport).not.toHaveBeenCalled()
+    expect(loader.getPluginFailure('ocr')).toBeUndefined()
+  })
+
+  it('fails a dynamic plugin whose manifest.json cannot be fetched', async () => {
+    const { host } = createHost()
+    const loader = createPluginLoader({
+      host,
+      onError: vi.fn(),
+      fetch: (async () => ({ ok: false, status: 404 }) as Response) as unknown as typeof fetch,
+    })
+    await loader.activatePlugin('lost')
+    expect(loader.getPluginFailure('lost')).toContain('404')
+  })
+})
+
+describe('createPluginLoader failure state', () => {
+  it('keeps the failure of a plugin that never activated when it is deactivated', async () => {
+    const host = {
+      createContext: vi.fn((pluginId: string) => ({ pluginId }) as unknown as PluginContext),
+      disposePlugin: vi.fn(),
+      disposeAll: vi.fn(),
+    } as unknown as PluginHost
+    const loader = createPluginLoader({
+      host,
+      onError: vi.fn(),
+      loaders: {
+        bad: async () => ({
+          activate: () => {
+            throw new Error('no start')
+          },
+        }),
+      },
+    })
+    await loader.activatePlugin('bad')
+
+    await loader.deactivatePlugin('bad')
+
+    expect(loader.getPluginFailure('bad')).toBe('no start')
   })
 })

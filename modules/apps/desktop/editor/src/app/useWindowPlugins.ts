@@ -1,6 +1,11 @@
 import { watch } from 'vue'
 import { createPluginHost } from '@/entities/plugin'
-import { createPluginLoader, type PluginLoader } from '@/features/plugin-loader'
+import {
+  DEFAULT_PLUGIN_ENABLED,
+  createPluginLoader,
+  type PluginLoader,
+} from '@/features/plugin-loader'
+import { pluginCatalog } from './pluginCatalog'
 import { cards } from '@/entities/deck'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { useTabLinks } from '@/features/tab-linking'
@@ -14,6 +19,7 @@ export interface PluginSupportDeps {
   readonly readNote?: (
     path: string,
   ) => Promise<{ body?: string; error?: string } | string | undefined>
+  readonly reportError?: (pluginId: string, error: unknown) => void
   readonly writeNote?: (path: string, body: string) => Promise<void>
 }
 
@@ -25,13 +31,7 @@ function createPluginSettingsAccessor(settingsHolder: {
     if (!rest) return undefined
     const value = rest.getSetting?.(['plugins', pluginId, key])
     if (value !== undefined) return value
-    if (key === 'enabled') {
-      const info = rest.plugins?.value?.find(
-        (p: { id: string; isActive?: boolean }) => p.id === pluginId,
-      )
-      return info?.isActive ?? true
-    }
-    return undefined
+    return key === 'enabled' ? DEFAULT_PLUGIN_ENABLED : undefined
   }
 
   const onSettingChange = (
@@ -88,6 +88,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   }
 
   const pluginHost = createPluginHost({
+    ...(deps.reportError !== undefined ? { onError: deps.reportError } : {}),
     registerKind: held.registerKind,
     registerExtensionReader: tabOpeners.registerExtensionReader,
     registerEditor: tabOpeners.registerEditor,
@@ -108,7 +109,12 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     ...(deps.readNote !== undefined ? { readNote: deps.readNote } : {}),
     ...(deps.writeNote !== undefined ? { writeNote: deps.writeNote } : {}),
   })
-  const pluginLoader = createPluginLoader({ host: pluginHost })
+  const pluginLoader = createPluginLoader({
+    host: pluginHost,
+    ...(deps.reportError !== undefined ? { onError: deps.reportError } : {}),
+    loaders: pluginCatalog.loaders,
+    manifests: pluginCatalog.manifests,
+  })
 
   return { pluginHost, pluginLoader }
 }
@@ -120,17 +126,7 @@ export function watchPluginSettings(
   watch(
     () => settings.rest?.plugins?.value ?? [],
     (plugins) => {
-      void (async () => {
-        for (const plugin of plugins) {
-          const isExplicitlyDisabled =
-            settings.rest.getSetting(['plugins', plugin.id, 'enabled']) === false
-          if (isExplicitlyDisabled && pluginLoader.isPluginActive(plugin.id)) {
-            await pluginLoader.deactivatePlugin(plugin.id)
-          } else if (!isExplicitlyDisabled && !pluginLoader.isPluginActive(plugin.id)) {
-            await pluginLoader.activatePlugin(plugin.id)
-          }
-        }
-      })()
+      void pluginLoader.trackPlugins(plugins.map((plugin) => plugin.id))
     },
   )
 }

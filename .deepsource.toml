@@ -1,0 +1,24 @@
+version = 1
+
+test_patterns = [
+  "**/*_test.go",
+  "**/*.test.ts",
+  "**/*.spec.ts"
+]
+
+exclude_patterns = [
+  "modules/libs/protocol/gen/**",
+  "**/gen/**",
+  "**/*.pb.go",
+  "**/*.connect.go",
+  "**/dist/**",
+  "**/build/**",
+  "**/node_modules/**",
+  "**/*.wasm"
+]
+
+[[analyzers]]
+name = "go"
+
+[[analyzers]]
+name = "javascript"

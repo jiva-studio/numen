@@ -1,9 +1,15 @@
 /**
  * Dynamic frontend plugin loader for desktop editor.
  */
-import { shallowRef } from 'vue'
+import { shallowRef, type ShallowRef } from 'vue'
 import type { Disposable, PluginLifecycle, PluginManifest } from '@numen/plugin-sdk'
-import { registerPluginStyle, unregisterPluginStyle, type PluginHost } from '@/entities/plugin'
+import type { PluginHost } from '@/entities/plugin'
+import {
+  getLifecycleHooks,
+  removePluginStyles,
+  resolveModule,
+  type ResolveModuleContext,
+} from './module'
 
 export interface PluginLoaderDeps {
   readonly host: PluginHost
@@ -11,6 +17,15 @@ export interface PluginLoaderDeps {
   readonly fetch?: typeof fetch
   readonly dynamicImport?: (url: string) => Promise<unknown>
   readonly loaders?: Record<string, () => Promise<unknown>>
+  readonly manifests?: Record<string, PluginManifest>
+  readonly onError?: (pluginId: string, error: unknown) => void
+}
+
+export const DEFAULT_PLUGIN_ENABLED = true
+
+/** A plugin is enabled unless its setting says false. */
+export function isPluginEnabledValue(value: unknown): boolean {
+  return typeof value === 'boolean' ? value : DEFAULT_PLUGIN_ENABLED
 }
 
 interface ActivePluginEntry {
@@ -18,162 +33,22 @@ interface ActivePluginEntry {
   readonly lifecycle?: PluginLifecycle
 }
 
-const IN_TREE_MANIFESTS: Record<string, PluginManifest> = {
-  'md.numen.pdf': {
-    id: 'md.numen.pdf',
-    name: 'PDF Reader',
-    version: '1.0.0',
-    permissions: ['vault:read'],
-  },
-  'md.numen.epub': {
-    id: 'md.numen.epub',
-    name: 'EPUB Book Reader',
-    version: '1.0.0',
-    permissions: ['vault:read'],
-  },
-  'md.numen.editor-markdown': {
-    id: 'md.numen.editor-markdown',
-    name: 'Markdown Editor',
-    version: '1.0.0',
-    permissions: ['vault:read', 'vault:write'],
-  },
-  'md.numen.view-file-tree': {
-    id: 'md.numen.view-file-tree',
-    name: 'File Tree Explorer',
-    version: '1.0.0',
-    permissions: ['vault:read'],
-  },
-  'md.numen.view-plex-graph': {
-    id: 'md.numen.view-plex-graph',
-    name: 'Plex Graph',
-    version: '1.0.0',
-    permissions: ['vault:read'],
-  },
-  'md.numen.media-player': {
-    id: 'md.numen.media-player',
-    name: 'Media Player',
-    version: '1.0.0',
-    permissions: ['vault:read'],
-  },
-  'md.numen.downloader': {
-    id: 'md.numen.downloader',
-    name: 'Downloader',
-    version: '1.0.0',
-    permissions: ['vault:write'],
-  },
-  'md.numen.flashcards-studio': {
-    id: 'md.numen.flashcards-studio',
-    name: 'Flashcards Studio',
-    version: '1.0.0',
-    permissions: ['vault:read', 'vault:write'],
-  },
-}
-
-const IN_TREE_LOADERS: Record<string, () => Promise<unknown>> = {
-  'md.numen.pdf': () => import('@plugins/reader-pdf/frontend'),
-  'md.numen.epub': () => import('@plugins/reader-epub/frontend'),
-  'md.numen.editor-markdown': () => import('@plugins/editor-markdown/frontend'),
-  'md.numen.view-file-tree': () => import('@plugins/view-file-tree/frontend'),
-  'md.numen.view-plex-graph': () => import('@plugins/view-plex-graph/frontend'),
-  'md.numen.media-player': () => import('@plugins/media-player/frontend'),
-  'md.numen.downloader': () => import('@plugins/downloader/frontend'),
-  'md.numen.flashcards-studio': () => import('@plugins/flashcards-studio/frontend'),
-}
-
-function injectPluginStyles(baseUrl: string, pluginId: string, stylesPath: string): void {
-  const normalizedPath = stylesPath.startsWith('/') ? stylesPath.slice(1) : stylesPath
-  const fullUrl = `${baseUrl}/${pluginId}/${normalizedPath}`
-  registerPluginStyle(pluginId, fullUrl)
-}
-
-function removePluginStyles(pluginId: string): void {
-  unregisterPluginStyle(pluginId)
-}
-
-function extractLifecycleFunction(
-  target: Record<string, unknown>,
-  fallback: Record<string, unknown>,
-  key: string,
-): ((...args: unknown[]) => unknown) | undefined {
-  if (typeof target[key] === 'function') {
-    return target[key] as (...args: unknown[]) => unknown
-  }
-  if (typeof fallback[key] === 'function') {
-    return fallback[key] as (...args: unknown[]) => unknown
-  }
-  return undefined
-}
-
-function getLifecycleHooks(resolved: unknown): {
-  activate?: PluginLifecycle['activate'] | undefined
-  deactivate?: PluginLifecycle['deactivate'] | undefined
-} {
-  if (typeof resolved !== 'object' || resolved === null) return {}
-  const mod = resolved as Record<string, unknown>
-  const target = (
-    typeof mod.default === 'object' && mod.default !== null ? mod.default : mod
-  ) as Record<string, unknown>
-  const activate = extractLifecycleFunction(target, mod, 'activate') as
-    PluginLifecycle['activate'] | undefined
-  const deactivate = extractLifecycleFunction(target, mod, 'deactivate') as
-    PluginLifecycle['deactivate'] | undefined
-  return { activate, deactivate }
-}
-
-interface LoadModuleOptions {
-  readonly baseUrl: string
-  readonly fetchFn: typeof fetch
-  readonly importFn: (url: string) => Promise<unknown>
-  readonly manifests: Map<string, PluginManifest>
-}
-
-async function loadDynamicModule(pluginId: string, options: LoadModuleOptions): Promise<unknown> {
-  const { baseUrl, fetchFn, importFn, manifests } = options
-  let entrypoint = 'dist/index.js'
-  try {
-    const res = await fetchFn(`${baseUrl}/${pluginId}/manifest.json`)
-    if (res.ok) {
-      const manifest = (await res.json()) as PluginManifest
-      manifests.set(pluginId, manifest)
-      if (manifest?.frontend?.styles) {
-        injectPluginStyles(baseUrl, pluginId, manifest.frontend.styles)
-      }
-      if (manifest?.frontend?.entrypoint) {
-        entrypoint = manifest.frontend.entrypoint
-      }
-    }
-  } catch {
-    // Proceed with default entrypoint
-  }
-
-  const normalizedEntrypoint = entrypoint.startsWith('/') ? entrypoint.slice(1) : entrypoint
-  const moduleUrl = `${baseUrl}/${pluginId}/${normalizedEntrypoint}`
-  return importFn(moduleUrl)
-}
-
-interface ResolveModuleContext extends LoadModuleOptions {
-  readonly loaders: Map<string, () => Promise<unknown>>
-}
-
-async function resolveModule(
-  pluginId: string,
-  candidate: unknown,
-  ctx: ResolveModuleContext,
-): Promise<unknown> {
-  if (candidate !== undefined) {
-    if (typeof candidate === 'function' && !('activate' in candidate)) {
-      return (candidate as () => Promise<unknown>)()
-    }
-    return candidate
-  }
-  const loader = ctx.loaders.get(pluginId)
-  if (loader) return loader()
-  return loadDynamicModule(pluginId, ctx)
-}
-
 interface ActivateContext extends ResolveModuleContext {
   readonly host: PluginHost
   readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
+  readonly failures: { value: ReadonlyMap<string, string> }
+  readonly reportError: (pluginId: string, error: unknown) => void
+}
+
+function getFailureMessage(error: unknown): string {
+  return error instanceof Error ? error.message : `the plugin threw a ${typeof error}, not an Error`
+}
+
+function setFailure(ctx: ActivateContext, pluginId: string, error: string | undefined): void {
+  const next = new Map(ctx.failures.value)
+  if (error === undefined) next.delete(pluginId)
+  else next.set(pluginId, error)
+  ctx.failures.value = next
 }
 
 async function activateEntry(
@@ -187,7 +62,7 @@ async function activateEntry(
     const resolved = await resolveModule(pluginId, pluginModule, ctx)
     if (!resolved) return false
 
-    const manifest = ctx.manifests.get(pluginId) ?? IN_TREE_MANIFESTS[pluginId]
+    const manifest = ctx.manifests.get(pluginId) ?? ctx.catalogManifests[pluginId]
     const { activate, deactivate } = getLifecycleHooks(resolved)
     if (activate) {
       await activate(host.createContext(pluginId, manifest))
@@ -201,10 +76,13 @@ async function activateEntry(
     const next = new Map(activePlugins.value)
     next.set(pluginId, { pluginId, lifecycle })
     activePlugins.value = next
+    setFailure(ctx, pluginId, undefined)
     return true
-  } catch {
+  } catch (error) {
     removePluginStyles(pluginId)
     host.disposePlugin(pluginId)
+    setFailure(ctx, pluginId, getFailureMessage(error))
+    ctx.reportError(pluginId, error)
     return false
   }
 }
@@ -213,6 +91,7 @@ interface DeactivateDeps {
   readonly host: PluginHost
   readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
   readonly manifests: Map<string, PluginManifest>
+  readonly reportError: (pluginId: string, error: unknown) => void
 }
 
 async function deactivateEntry(deps: DeactivateDeps, pluginId: string): Promise<boolean> {
@@ -227,6 +106,8 @@ async function deactivateEntry(deps: DeactivateDeps, pluginId: string): Promise<
     if (entry.lifecycle?.deactivate) {
       await entry.lifecycle.deactivate()
     }
+  } catch (error) {
+    deps.reportError(pluginId, error)
   } finally {
     removePluginStyles(pluginId)
     deps.manifests.delete(pluginId)
@@ -248,31 +129,23 @@ interface ListenerDeps {
 function listenToPluginState(deps: ListenerDeps, pluginId: string) {
   if (deps.subscriptions.has(pluginId) || !deps.host.onSettingChange) return
   const sub = deps.host.onSettingChange<boolean>(pluginId, 'enabled', async (enabled) => {
-    if (enabled === false) await deps.deactivate(pluginId)
-    else await deps.activate(pluginId)
+    if (isPluginEnabledValue(enabled)) await deps.activate(pluginId)
+    else await deps.deactivate(pluginId)
   })
   deps.subscriptions.set(pluginId, sub)
 }
 
 interface StartLoaderDeps {
-  readonly moduleLoaders: Map<string, () => Promise<unknown>>
+  readonly pluginIds: readonly string[]
   readonly listen: (id: string) => void
   readonly isEnabled: (id: string) => boolean
 }
 
 async function startLoader(deps: StartLoaderDeps, activate: (id: string) => Promise<boolean>) {
-  const activations: Promise<void>[] = []
-  for (const pluginId of deps.moduleLoaders.keys()) {
+  for (const pluginId of deps.pluginIds) {
     deps.listen(pluginId)
-    if (deps.isEnabled(pluginId)) {
-      activations.push(
-        activate(pluginId)
-          .then(() => {})
-          .catch(() => {}),
-      )
-    }
+    if (deps.isEnabled(pluginId)) await activate(pluginId)
   }
-  await Promise.all(activations)
 }
 
 interface CloseLoaderDeps {
@@ -300,36 +173,71 @@ function resolveDefaultDeps(deps: PluginLoaderDeps) {
       deps.fetch ??
       ((input: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(input, init)),
     importFn: deps.dynamicImport ?? ((url: string) => import(/* @vite-ignore */ url)),
+    reportError: deps.onError ?? (() => {}),
   }
 }
 
-function checkPluginEnabled(host: PluginHost, id: string): boolean {
-  const val = host.getSetting?.(id, 'enabled')
-  return typeof val === 'boolean' ? val : true
-}
-
-export function createPluginLoader(deps: PluginLoaderDeps) {
+function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
   const { host } = deps
   const defaults = resolveDefaultDeps(deps)
-  const activePlugins = shallowRef<ReadonlyMap<string, ActivePluginEntry>>(new Map())
-  const moduleLoaders = new Map<string, () => Promise<unknown>>(
-    Object.entries(deps.loaders ?? IN_TREE_LOADERS),
-  )
+  const { activePlugins, failures, manifests, moduleLoaders } = state
+  const queues = new Map<string, Promise<unknown>>()
+  let importToken = 0
+
+  const enqueue = <T>(id: string, task: () => Promise<T>): Promise<T> => {
+    const run = (queues.get(id) ?? Promise.resolve()).then(task)
+    queues.set(
+      id,
+      run.catch(() => undefined),
+    )
+    return run
+  }
+
+  const activateContext: ActivateContext = {
+    host,
+    loaders: moduleLoaders,
+    catalogManifests: deps.manifests ?? {},
+    activePlugins,
+    failures,
+    manifests,
+    getImportToken: () => ++importToken,
+    ...defaults,
+  }
+  const deactivateContext: DeactivateDeps = {
+    host,
+    activePlugins,
+    manifests,
+    reportError: defaults.reportError,
+  }
+
+  return {
+    activatePlugin: (id: string, module?: unknown) =>
+      enqueue(id, () => activateEntry(activateContext, id, module)),
+    deactivatePlugin: (id: string) => enqueue(id, () => deactivateEntry(deactivateContext, id)),
+  }
+}
+
+interface LoaderState {
+  readonly activePlugins: ShallowRef<ReadonlyMap<string, ActivePluginEntry>>
+  readonly failures: ShallowRef<ReadonlyMap<string, string>>
+  readonly manifests: Map<string, PluginManifest>
+  readonly moduleLoaders: Map<string, () => Promise<unknown>>
+}
+
+interface Activation {
+  readonly activatePlugin: (id: string, module?: unknown) => Promise<boolean>
+  readonly deactivatePlugin: (id: string) => Promise<boolean>
+}
+
+function createRuntime(deps: PluginLoaderDeps, state: LoaderState, activation: Activation) {
+  const { host } = deps
+  const { activatePlugin, deactivatePlugin } = activation
+  const { activePlugins, moduleLoaders } = state
+  const trackedIds = new Set<string>()
   const settingSubscriptions = new Map<string, Disposable>()
-  const manifests = new Map<string, PluginManifest>()
   let hasStarted = false
 
-  const isPluginEnabled = (id: string): boolean => checkPluginEnabled(host, id)
-
-  const activatePlugin = (id: string, module?: unknown) =>
-    activateEntry(
-      { host, loaders: moduleLoaders, activePlugins, manifests, ...defaults },
-      id,
-      module,
-    )
-
-  const deactivatePlugin = (id: string) => deactivateEntry({ host, activePlugins, manifests }, id)
-
+  const isEnabled = (id: string): boolean => isPluginEnabledValue(host.getSetting?.(id, 'enabled'))
   const listen = (id: string) =>
     listenToPluginState(
       {
@@ -346,20 +254,22 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
       moduleLoaders.set(id, loader)
       if (hasStarted) {
         listen(id)
-        if (isPluginEnabled(id)) void activatePlugin(id)
+        if (isEnabled(id)) void activatePlugin(id)
       }
     },
-    registerPluginManifest: (id: string, manifest: PluginManifest) => {
-      manifests.set(id, manifest)
-      host.registerManifest?.(id, manifest)
+    trackPlugins: async (ids: readonly string[]): Promise<void> => {
+      for (const id of ids) {
+        if (trackedIds.has(id)) continue
+        trackedIds.add(id)
+        if (!hasStarted) continue
+        listen(id)
+        if (isEnabled(id)) await activatePlugin(id)
+      }
     },
-    activatePlugin,
-    deactivatePlugin,
-    isPluginActive: (id: string) => activePlugins.value.has(id),
-    getActivePluginIds: () => [...activePlugins.value.keys()],
     start: async (): Promise<void> => {
       hasStarted = true
-      await startLoader({ moduleLoaders, listen, isEnabled: isPluginEnabled }, activatePlugin)
+      const pluginIds = [...new Set([...moduleLoaders.keys(), ...trackedIds])]
+      await startLoader({ pluginIds, listen, isEnabled }, activatePlugin)
     },
     close: async (): Promise<void> => {
       hasStarted = false
@@ -372,4 +282,29 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
   }
 }
 
+export function createPluginLoader(deps: PluginLoaderDeps) {
+  const { host } = deps
+  const state: LoaderState = {
+    activePlugins: shallowRef(new Map()),
+    failures: shallowRef(new Map()),
+    manifests: new Map(),
+    moduleLoaders: new Map(Object.entries(deps.loaders ?? {})),
+  }
+  const { activePlugins, failures, manifests } = state
+  const activation = createActivation(deps, state)
+
+  return {
+    ...createRuntime(deps, state, activation),
+    ...activation,
+    registerPluginManifest: (id: string, manifest: PluginManifest) => {
+      manifests.set(id, manifest)
+      host.registerManifest?.(id, manifest)
+    },
+    isPluginActive: (id: string) => activePlugins.value.has(id),
+    getActivePluginIds: () => [...activePlugins.value.keys()],
+    getPluginFailure: (id: string): string | undefined => failures.value.get(id),
+    getFailedPlugins: (): { id: string; error: string }[] =>
+      [...failures.value].map(([id, error]) => ({ id, error })),
+  }
+}
 export type PluginLoader = ReturnType<typeof createPluginLoader>
