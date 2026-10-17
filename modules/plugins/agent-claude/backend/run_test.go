@@ -288,3 +288,30 @@ func waitFor(t *testing.T, condition func() bool) {
 	}
 	t.Fatal("the condition never held")
 }
+
+// The stream opens, and the person is told the wait has begun, before the program has written
+// anything.
+func TestTheStreamOpensBeforeTheProgramSaysAnything(t *testing.T) {
+	script := writeScript(t, "silent", "sleep 30\n")
+	client := startAgent(t, &agentServer{})
+
+	began := time.Now()
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Prompt: "q", Command: []string{script}, Conversation: "c-1",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !stream.Receive() || stream.Msg().GetModelStarted() == nil {
+		t.Fatalf("the first thing said is %v, %v", stream.Msg(), stream.Err())
+	}
+	if took := time.Since(began); took > 10*time.Second {
+		t.Errorf("the stream took %v to open", took)
+	}
+
+	if _, err := client.FinishConversation(t.Context(), connect.NewRequest(
+		&numenv1.FinishConversationRequest{Conversation: "c-1"})); err != nil {
+		t.Fatal(err)
+	}
+	_, _ = readSteps(stream)
+}

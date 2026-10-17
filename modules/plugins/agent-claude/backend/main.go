@@ -106,6 +106,13 @@ func (s *agentServer) AskAgent(
 	defer s.registry.Remove(work)
 	defer work.End()
 
+	// The wait for the model begins with the program, and the stream opens on saying so.
+	if err := stream.Send(&numenv1.AskAgentResponse{
+		Step: &numenv1.AskAgentResponse_ModelStarted{ModelStarted: &numenv1.ModelStarted{}},
+	}); err != nil {
+		return err
+	}
+
 	cmd := exec.CommandContext(runCtx, cmdName, slices.Concat(cmdArgs, claudeArgs)...)
 	cmd.Dir = msg.GetRoot()
 	cmd.Env = buildEnvironment(os.Environ())

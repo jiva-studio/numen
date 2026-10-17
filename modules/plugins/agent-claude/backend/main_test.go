@@ -306,6 +306,7 @@ func TestAskAgentWithMockScript(t *testing.T) {
 
 	expected := []string{
 		"model_started",
+		"model_started",
 		"tool_call:note_search",
 		"tool_call:note_search",
 		"tool_finished",
