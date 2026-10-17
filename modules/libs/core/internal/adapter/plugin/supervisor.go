@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"slices"
 	"sync"
@@ -37,6 +38,8 @@ type Supervisor struct {
 	mu             sync.Mutex
 	state          ProcessState
 	process        *os.Process
+	inProcess      bool
+	teardownBegun  bool
 	lastActiveTime time.Time
 	activeRefCount int
 	permissions    []string
@@ -62,6 +65,8 @@ func NewSupervisor() *Supervisor {
 		mu:                sync.Mutex{},
 		state:             StateDormant,
 		process:           nil,
+		inProcess:         false,
+		teardownBegun:     false,
 		lastActiveTime:    time.Time{},
 		activeRefCount:    0,
 		permissions:       nil,
@@ -149,6 +154,8 @@ func (s *Supervisor) SetDormant(err error) {
 	s.stopMemoryMonitorLocked()
 	s.state = StateDormant
 	s.process = nil
+	s.inProcess = false
+	s.teardownBegun = false
 	s.activeRefCount = 0
 	s.activationErr = err
 	if s.activatingCh != nil {
@@ -163,11 +170,7 @@ func (s *Supervisor) SetPermissions(permissions []string) {
 	defer s.mu.Unlock()
 	norm := make([]string, len(permissions))
 	for i, p := range permissions {
-		if p == "network" {
-			norm[i] = PermissionNetworkOutbound
-		} else {
-			norm[i] = p
-		}
+		norm[i] = port.NormalizePermission(p)
 	}
 	s.permissions = norm
 }
@@ -176,10 +179,7 @@ func (s *Supervisor) SetPermissions(permissions []string) {
 func (s *Supervisor) HasPermission(permission string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if permission == "network" {
-		permission = PermissionNetworkOutbound
-	}
-	return slices.Contains(s.permissions, permission)
+	return slices.Contains(s.permissions, port.NormalizePermission(permission))
 }
 
 // CheckPermission returns an error if the supervised plugin lacks the requested permission.
@@ -206,6 +206,7 @@ func (s *Supervisor) Attach(p *os.Process, now time.Time) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.process = p
+	s.teardownBegun = false
 	s.state = StateActive
 	s.lastActiveTime = now
 	s.activationErr = nil
@@ -227,6 +228,8 @@ func (s *Supervisor) Attach(p *os.Process, now time.Time) error {
 		s.stopMemoryMonitorLocked()
 		if s.process == p {
 			s.process = nil
+			s.inProcess = false
+			s.teardownBegun = false
 			s.state = StateDormant
 			s.activeRefCount = 0
 			onExit := s.onExit
@@ -241,19 +244,48 @@ func (s *Supervisor) Attach(p *os.Process, now time.Time) error {
 	return nil
 }
 
-// Acquire increments the active consumer count, preventing idle eviction.
-func (s *Supervisor) Acquire(now time.Time) {
+// ActivateInProcess marks a plugin served inside the host as running and held by one consumer.
+func (s *Supervisor) ActivateInProcess(now time.Time) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.inProcess = true
+	s.state = StateActive
+	s.activeRefCount = 1
+	s.lastActiveTime = now
+	s.activationErr = nil
+	if s.activatingCh != nil {
+		close(s.activatingCh)
+		s.activatingCh = nil
+	}
+}
+
+func (s *Supervisor) isRunningLocked() bool {
+	if s.state != StateActive && s.state != StateIdle {
+		return false
+	}
+	return s.process != nil || s.inProcess
+}
+
+// Acquire increments the active consumer count and reports whether a running plugin was held.
+func (s *Supervisor) Acquire(now time.Time) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !s.isRunningLocked() {
+		return false
+	}
 	s.activeRefCount++
 	s.lastActiveTime = now
 	s.state = StateActive
+	return true
 }
 
-// Release decrements active consumers and marks the plugin idle when count reaches zero.
+// Release decrements active consumers and marks a running plugin idle when the count reaches zero.
 func (s *Supervisor) Release(now time.Time) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if !s.isRunningLocked() {
+		return
+	}
 	if s.activeRefCount > 0 {
 		s.activeRefCount--
 	}
@@ -273,6 +305,41 @@ func (s *Supervisor) IsIdle(threshold time.Duration, now time.Time) bool {
 	return now.Sub(s.lastActiveTime) >= threshold
 }
 
+// BeginDeactivation moves a plugin that has been idle for the threshold to StateDeactivating and reports whether it did.
+func (s *Supervisor) BeginDeactivation(threshold time.Duration, now time.Time) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.state != StateIdle || s.activeRefCount > 0 || now.Sub(s.lastActiveTime) < threshold {
+		return false
+	}
+	s.state = StateDeactivating
+	return true
+}
+
+// GetProcessID returns the pid of the attached process, or zero when none is attached.
+func (s *Supervisor) GetProcessID() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.process == nil {
+		return 0
+	}
+	return s.process.Pid
+}
+
+// WaitWhileDeactivating blocks until the supervisor leaves StateDeactivating or ctx ends.
+func (s *Supervisor) WaitWhileDeactivating(ctx context.Context) error {
+	ticker := time.NewTicker(5 * time.Millisecond)
+	defer ticker.Stop()
+	for s.GetState() == StateDeactivating {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("wait for deactivation: %w", ctx.Err())
+		case <-ticker.C:
+		}
+	}
+	return nil
+}
+
 // Teardown executes two-phase shutdown: graceful RPC call followed by hard kill fallback.
 func (s *Supervisor) Teardown(
 	ctx context.Context,
@@ -285,12 +352,13 @@ func (s *Supervisor) Teardown(
 		s.mu.Unlock()
 		return s.teardownNilProcess(ctx, rpcShutdown)
 	}
-	if s.state == StateDeactivating {
+	if s.state == StateDeactivating && s.teardownBegun {
 		exitCh := s.exitCh
 		s.mu.Unlock()
 		return s.waitDeactivating(ctx, exitCh)
 	}
 	s.state = StateDeactivating
+	s.teardownBegun = true
 	if s.activatingCh != nil {
 		close(s.activatingCh)
 		s.activatingCh = nil
@@ -320,6 +388,8 @@ func (s *Supervisor) teardownNilProcess(ctx context.Context, rpcShutdown func(ct
 		return errProcessNotRunning
 	}
 	s.state = StateDormant
+	s.inProcess = false
+	s.teardownBegun = false
 	s.activeRefCount = 0
 	if s.activatingCh != nil {
 		close(s.activatingCh)
@@ -368,6 +438,8 @@ func (s *Supervisor) markDormant(proc *os.Process) {
 		s.stopMemoryMonitorLocked()
 		s.state = StateDormant
 		s.process = nil
+		s.inProcess = false
+		s.teardownBegun = false
 		s.activeRefCount = 0
 		s.activationErr = nil
 		if s.activatingCh != nil {

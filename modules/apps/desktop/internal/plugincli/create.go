@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"unicode"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // CreateOptions declares the configuration for plugin scaffolding.
@@ -16,47 +18,6 @@ type CreateOptions struct {
 	Type      string
 	Template  string
 	OutputDir string
-}
-
-type manifestJSON struct {
-	ID               string            `json:"id"`
-	Name             string            `json:"name"`
-	Version          string            `json:"version"`
-	Description      string            `json:"description"`
-	Capabilities     []string          `json:"capabilities"`
-	Targets          []string          `json:"targets"`
-	ActivationEvents []string          `json:"activationEvents"`
-	Permissions      []string          `json:"permissions"`
-	Lifecycle        lifecycleJSON     `json:"lifecycle"`
-	Backend          *backendJSON      `json:"backend,omitempty"`
-	Frontend         *frontendJSON     `json:"frontend,omitempty"`
-	Settings         []settingDeclJSON `json:"settings"`
-}
-
-type lifecycleJSON struct {
-	Mode                  string `json:"mode"`
-	IdleTimeoutSeconds    int    `json:"idleTimeoutSeconds"`
-	KeepAliveWhileVisible bool   `json:"keepAliveWhileVisible"`
-	MemoryLimitBytes      uint64 `json:"memoryLimitBytes,omitempty"`
-}
-
-type backendJSON struct {
-	Type        string `json:"type"`
-	Entrypoint  string `json:"entrypoint"`
-	ServiceName string `json:"serviceName,omitempty"`
-}
-
-type frontendJSON struct {
-	Entrypoint string `json:"entrypoint"`
-	Styles     string `json:"styles,omitempty"`
-}
-
-type settingDeclJSON struct {
-	Key         string `json:"key"`
-	Type        string `json:"type"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Default     any    `json:"default"`
 }
 
 // Create generates a complete plugin scaffold on disk.
@@ -143,23 +104,21 @@ func writeManifest(targetDir, id, title, shortName, template string, hasBackend,
 	capabilities, events := getCapabilitiesAndEvents(template, shortName, hasBackend, hasFrontend)
 	keepAlive := template == "reader"
 
-	manifest := manifestJSON{
+	manifest := port.PluginManifest{
 		ID:               id,
 		Name:             title,
 		Version:          "0.1.0",
+		Protocol:         port.PluginProtocolVersion,
 		Description:      fmt.Sprintf("%s plugin for Numen", title),
 		Capabilities:     capabilities,
 		Targets:          []string{"desktop.editor"},
 		ActivationEvents: events,
 		Permissions:      []string{"vault:read"},
-		Lifecycle: lifecycleJSON{
-			Mode:                  "on-demand",
+		Lifecycle: port.PluginLifecycle{
 			IdleTimeoutSeconds:    180,
 			KeepAliveWhileVisible: keepAlive,
 		},
-		Backend:  nil,
-		Frontend: nil,
-		Settings: []settingDeclJSON{
+		Settings: []port.PluginManifestSetting{
 			{
 				Key:         "enabled",
 				Type:        "boolean",
@@ -171,7 +130,7 @@ func writeManifest(targetDir, id, title, shortName, template string, hasBackend,
 	}
 
 	if hasBackend {
-		manifest.Backend = &backendJSON{
+		manifest.Backend = port.PluginBackend{
 			Type:        "process",
 			Entrypoint:  "bin/" + shortName,
 			ServiceName: fmt.Sprintf("numen.v1.%sService", title),
@@ -179,7 +138,7 @@ func writeManifest(targetDir, id, title, shortName, template string, hasBackend,
 	}
 
 	if hasFrontend {
-		manifest.Frontend = &frontendJSON{
+		manifest.Frontend = port.PluginFrontend{
 			Entrypoint: "dist/index.js",
 			Styles:     "dist/styles.css",
 		}
