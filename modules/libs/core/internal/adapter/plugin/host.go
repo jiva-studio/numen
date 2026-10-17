@@ -712,14 +712,8 @@ func (h *Host) defaultLauncher(
 
 	h.mu.RLock()
 	vaultPath := h.vaultPath
-	configJSON, _ := h.getPluginConfigJSONLocked(p.Manifest.ID)
 	limits := h.processLimits
 	h.mu.RUnlock()
-
-	hostPort, err := h.openHostEndpoint()
-	if err != nil {
-		return nil, nil, err
-	}
 
 	if p.Manifest.Lifecycle.MemoryLimitBytes > 0 {
 		limits.MemoryLimitBytes = p.Manifest.Lifecycle.MemoryLimitBytes
@@ -735,9 +729,10 @@ func (h *Host) defaultLauncher(
 	configureSysProcAttr(cmd)
 	cmd.Dir = workDir
 
-	pluginVars := getPluginVars(p.Manifest.ID, launchEnvironment{
-		vaultPath: vaultPath, port: port, hostPort: hostPort, token: token, configJSON: configJSON,
-	})
+	pluginVars, err := h.getLaunchVars(ctx, p.Manifest.ID, port, token)
+	if err != nil {
+		return nil, nil, err
+	}
 	cmd.Env = sanitizeEnvironment(os.Environ(), pluginVars)
 
 	stdin, err := cmd.StdinPipe()

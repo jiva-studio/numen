@@ -48,8 +48,8 @@ type HostEndpoint struct {
 }
 
 // OpenHostEndpoint starts serving the host service on a free loopback port.
-func OpenHostEndpoint(callers HostCallers) (*HostEndpoint, error) {
-	listener, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", hostEndpointAddress)
+func OpenHostEndpoint(ctx context.Context, callers HostCallers) (*HostEndpoint, error) {
+	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", hostEndpointAddress)
 	if err != nil {
 		return nil, fmt.Errorf("listen for plugins: %w", err)
 	}
@@ -168,7 +168,7 @@ func (h *Host) GetCompleter() port.Completer {
 
 // openHostEndpoint returns the port the host endpoint listens on, starting it
 // on the first call after a completer is set. It returns zero while none is set.
-func (h *Host) openHostEndpoint() (int, error) {
+func (h *Host) openHostEndpoint(ctx context.Context) (int, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if h.hostEndpoint != nil {
@@ -177,7 +177,7 @@ func (h *Host) openHostEndpoint() (int, error) {
 	if h.completer == nil || h.isClosed {
 		return 0, nil
 	}
-	endpoint, err := OpenHostEndpoint(h)
+	endpoint, err := OpenHostEndpoint(ctx, h)
 	if err != nil {
 		return 0, err
 	}
@@ -195,4 +195,22 @@ func (h *Host) closeHostEndpoint(ctx context.Context) error {
 		return nil
 	}
 	return endpoint.Close(ctx)
+}
+
+// getLaunchVars is the environment variables the host sets for a plugin process
+// about to start. The host endpoint is started for it if a completer is set.
+func (h *Host) getLaunchVars(ctx context.Context, pluginID string, processPort int, token string) ([]string, error) {
+	hostPort, err := h.openHostEndpoint(ctx)
+	if err != nil {
+		return nil, err
+	}
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	configJSON, err := h.getPluginConfigJSONLocked(pluginID)
+	if err != nil {
+		return nil, err
+	}
+	return getPluginVars(pluginID, launchEnvironment{
+		vaultPath: h.vaultPath, port: processPort, hostPort: hostPort, token: token, configJSON: configJSON,
+	}), nil
 }

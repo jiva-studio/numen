@@ -251,7 +251,7 @@ func TestAPluginCancellingEndsTheQuestion(t *testing.T) {
 // The endpoint listens on the loopback interface and answers for a token.
 func TestTheHostEndpointListensOnLoopbackAndServes(t *testing.T) {
 	held := newCallers(completerFunc(func(context.Context, port.Question) (string, error) { return "ok", nil }))
-	endpoint, err := OpenHostEndpoint(held)
+	endpoint, err := OpenHostEndpoint(t.Context(), held)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -325,23 +325,23 @@ func TestTheHostNamesAPluginByItsToken(t *testing.T) {
 // stops when the host does.
 func TestTheHostServesItsEndpointOnceItHasACompleter(t *testing.T) {
 	host := NewHost("desktop.editor")
-	if got, err := host.openHostEndpoint(); err != nil || got != 0 {
+	if got, err := host.openHostEndpoint(t.Context()); err != nil || got != 0 {
 		t.Fatalf("without a completer: port %d, %v", got, err)
 	}
 
 	host.SetCompleter(completerFunc(func(context.Context, port.Question) (string, error) { return "", nil }))
-	first, err := host.openHostEndpoint()
+	first, err := host.openHostEndpoint(t.Context())
 	if err != nil || first <= 0 {
 		t.Fatalf("with a completer: port %d, %v", first, err)
 	}
-	if again, _ := host.openHostEndpoint(); again != first {
+	if again, _ := host.openHostEndpoint(t.Context()); again != first {
 		t.Errorf("a second call opened port %d, want %d", again, first)
 	}
 
 	if err := host.TeardownAll(t.Context(), time.Millisecond); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := host.openHostEndpoint(); got != 0 {
+	if got, _ := host.openHostEndpoint(t.Context()); got != 0 {
 		t.Errorf("a closed host opened port %d", got)
 	}
 }
