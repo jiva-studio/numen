@@ -23,6 +23,7 @@ message GetProofreaderInfoResponse {
 // ProofreadKind is what is being proofread. The proofreader chooses its own
 // instructions, batching and reply rules from it.
 enum ProofreadKind {
+  // No kind is named. A request of this kind is refused.
   PROOFREAD_KIND_UNSPECIFIED = 0;
   // Text a machine read off the pages of a printed book.
   PROOFREAD_KIND_SCAN = 1;
@@ -55,8 +56,9 @@ message ProofreadTextRequest {
   int32 from_line = 5;
   int32 line_limit = 6;
 
-  // How far a one-line correction may stand from the line as read. Zero takes
-  // the proofreader's own limit.
+  // Scan only: how far a one-line correction may stand from the line as read.
+  // Zero takes the proofreader's own limit. Speech corrections stand at any
+  // distance.
   double max_edit_distance = 7;
 }
 

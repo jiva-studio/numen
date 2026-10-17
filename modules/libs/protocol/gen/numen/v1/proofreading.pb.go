@@ -26,6 +26,7 @@ const (
 type ProofreadKind int32
 
 const (
+	// No kind is named. A request of this kind is refused.
 	ProofreadKind_PROOFREAD_KIND_UNSPECIFIED ProofreadKind = 0
 	// Text a machine read off the pages of a printed book.
 	ProofreadKind_PROOFREAD_KIND_SCAN ProofreadKind = 1
@@ -272,8 +273,9 @@ type ProofreadTextRequest struct {
 	Overlap   int32 `protobuf:"varint,4,opt,name=overlap,proto3" json:"overlap,omitempty"`
 	FromLine  int32 `protobuf:"varint,5,opt,name=from_line,json=fromLine,proto3" json:"from_line,omitempty"`
 	LineLimit int32 `protobuf:"varint,6,opt,name=line_limit,json=lineLimit,proto3" json:"line_limit,omitempty"`
-	// How far a one-line correction may stand from the line as read. Zero takes
-	// the proofreader's own limit.
+	// Scan only: how far a one-line correction may stand from the line as read.
+	// Zero takes the proofreader's own limit. Speech corrections stand at any
+	// distance.
 	MaxEditDistance float64 `protobuf:"fixed64,7,opt,name=max_edit_distance,json=maxEditDistance,proto3" json:"max_edit_distance,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
