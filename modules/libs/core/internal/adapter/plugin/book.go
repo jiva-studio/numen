@@ -3,7 +3,6 @@ package plugin
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"connectrpc.com/connect"
 
@@ -28,6 +27,7 @@ type BookBridge struct {
 	host     port.PluginActivator
 	pluginID string
 	client   numenv1connect.BookServiceClient
+	lease    *pluginLease
 }
 
 // OpenBookBridge activates or connects to the book plugin and returns a BookBridge.
@@ -40,19 +40,16 @@ func OpenBookBridge(ctx context.Context, host BookPluginHost) (*BookBridge, erro
 		}
 	}
 
-	endpoint, err := host.EnsureActive(ctx, p.Manifest.ID)
+	client, lease, err := openPlugin(ctx, host, p.Manifest.ID, numenv1connect.NewBookServiceClient)
 	if err != nil {
-		return nil, fmt.Errorf("ensure active %s: %w", p.Manifest.ID, err)
+		return nil, err
 	}
-
-	httpClient := EndpointClient(endpoint)
-	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
-	client := numenv1connect.NewBookServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 
 	return &BookBridge{
 		host:     host,
 		pluginID: p.Manifest.ID,
 		client:   client,
+		lease:    lease,
 	}, nil
 }
 
@@ -74,6 +71,5 @@ func (b *BookBridge) ReadBookMarkup(
 
 // Close releases the active reference count for the book plugin in the host supervisor.
 func (b *BookBridge) Close() error {
-	b.host.Release(b.pluginID)
-	return nil
+	return b.lease.Close()
 }

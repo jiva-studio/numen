@@ -55,12 +55,8 @@ func (h hostAgentPort) StartRun(ctx context.Context, task port.Task) (port.Run, 
 	if err != nil {
 		return nil, err
 	}
-	run, err := bridge.StartRun(ctx, task)
-	if err != nil {
-		_ = bridge.Close()
-		return nil, err
-	}
-	return run, nil
+	defer bridge.Close()
+	return bridge.StartRun(ctx, task)
 }
 
 func (h hostAgentPort) EndConversation(ctx context.Context, conversation string) error {
