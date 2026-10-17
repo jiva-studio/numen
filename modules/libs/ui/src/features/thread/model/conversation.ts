@@ -104,7 +104,7 @@ export function useConversation(options: ConversationOptions): Conversation {
 
   const finish = () => {
     stop()
-    new Promise((resolve) => resolve(agent.finish(conversation))).catch(() => {})
+    Promise.resolve().then(() => agent.finish(conversation)).catch(() => {})
   }
 
   return {
