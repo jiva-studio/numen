@@ -33,10 +33,7 @@ function createPlexTabDefinition(
         onSelectPath: (path, title) =>
           current.state && deps.onSelectPath?.(path, title, current.state),
       }
-      const tabState = {
-        ...usePlexTab(createView(), wrappedDeps),
-        pluginId: 'md.numen.view-plex-graph',
-      }
+      const tabState = usePlexTab(createView(), wrappedDeps)
       current.state = tabState
       const from = at || getCurrentPath() || deps.openingPath.value
       if (from) void tabState.view.go(from)
