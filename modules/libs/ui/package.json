@@ -29,7 +29,8 @@
     "test:stories": "vitest run --project stories",
     "test:watch": "vitest --project unit",
     "typecheck": "vue-tsc --build --force",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "knip": "knip"
   },
   "peerDependencies": {
     "vue": "^3.5.0"
@@ -52,6 +53,7 @@
     "eslint-plugin-vue": "^10.10.0",
     "globals": "^17.12.0",
     "jsdom": "^30.1.2",
+    "knip": "^6.41.0",
     "playwright": "^1.62.1",
     "storybook": "^10.0.0",
     "tailwindcss": "^4.3.3",
