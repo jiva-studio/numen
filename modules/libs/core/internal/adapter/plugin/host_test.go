@@ -781,7 +781,7 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 
 	closer := &testCloser{}
 	host.stdinsMu.Lock()
-	host.stdins["md.numen.ocr"] = closer
+	host.stdins[stdinKey{pluginID: "md.numen.ocr", pid: cmd.Process.Pid}] = closer
 	host.stdinsMu.Unlock()
 
 	host.mu.Lock()
@@ -807,7 +807,7 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	}
 
 	host.stdinsMu.Lock()
-	_, stdinExists := host.stdins["md.numen.ocr"]
+	_, stdinExists := host.stdins[stdinKey{pluginID: "md.numen.ocr", pid: cmd.Process.Pid}]
 	host.stdinsMu.Unlock()
 	if stdinExists {
 		t.Error("expected stdin pipe to be deleted from host.stdins")
@@ -869,7 +869,7 @@ func TestHostEvictMemoryExceeded(t *testing.T) {
 
 	closer := &testCloser{}
 	host.stdinsMu.Lock()
-	host.stdins["md.numen.ocr"] = closer
+	host.stdins[stdinKey{pluginID: "md.numen.ocr", pid: cmd.Process.Pid}] = closer
 	host.stdinsMu.Unlock()
 
 	sup := host.supervisors["md.numen.ocr"]
@@ -954,7 +954,7 @@ func TestHostTeardownAllSendsRPCShutdownAndClosesStdin(t *testing.T) {
 
 	closer := &testCloser{}
 	host.stdinsMu.Lock()
-	host.stdins["md.numen.ocr"] = closer
+	host.stdins[stdinKey{pluginID: "md.numen.ocr", pid: cmd.Process.Pid}] = closer
 	host.stdinsMu.Unlock()
 
 	if err := host.TeardownAll(ctx, 500*time.Millisecond); err != nil {
@@ -1051,4 +1051,342 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 
 	close(releaseShutdown)
 	<-done
+}
+
+func killProcess(t *testing.T, p *os.Process) {
+	t.Helper()
+	if err := p.Kill(); err != nil && !errors.Is(err, os.ErrProcessDone) {
+		t.Errorf("kill process: %v", err)
+	}
+}
+
+func waitUntil(t *testing.T, what string, condition func() bool) {
+	t.Helper()
+	ticker := time.NewTicker(5 * time.Millisecond)
+	defer ticker.Stop()
+	timeout := time.NewTimer(5 * time.Second)
+	defer timeout.Stop()
+	for !condition() {
+		select {
+		case <-timeout.C:
+			t.Fatalf("timed out waiting for %s", what)
+		case <-ticker.C:
+		}
+	}
+}
+
+const helperProcessEnv = "NUMEN_TEST_HELPER_PROCESS"
+
+// newIdleCommand returns a command that runs a child process doing nothing until it is killed.
+func newIdleCommand() *exec.Cmd {
+	cmd := exec.Command(os.Args[0], "-test.run=^TestHelperProcessIdles$")
+	cmd.Env = append(os.Environ(), helperProcessEnv+"=idle")
+	return cmd
+}
+
+// TestHelperProcessIdles is the body of the child process the launcher starts; it does nothing in a normal run.
+func TestHelperProcessIdles(t *testing.T) {
+	if os.Getenv(helperProcessEnv) != "idle" {
+		return
+	}
+	time.Sleep(time.Minute)
+}
+
+// getExitSignal returns the channel the supervisor closes once it has reaped its current process.
+func getExitSignal(sup *Supervisor) <-chan struct{} {
+	sup.mu.Lock()
+	defer sup.mu.Unlock()
+	return sup.exitCh
+}
+
+func startSleepLauncher(t *testing.T, started *atomic.Int32, procs *[]*os.Process) Launcher {
+	t.Helper()
+	var mu sync.Mutex
+	return func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		cmd := newIdleCommand()
+		if err := cmd.Start(); err != nil {
+			return nil, nil, err
+		}
+		t.Cleanup(func() { killProcess(t, cmd.Process) })
+		mu.Lock()
+		if procs != nil {
+			*procs = append(*procs, cmd.Process)
+		}
+		mu.Unlock()
+		started.Add(1)
+		return cmd.Process, io.NopCloser(strings.NewReader("NUMEN_READY port=54321\n")), nil
+	}
+}
+
+func TestACrashedPluginIsStartedAgainAfterAConsumerReleasesIt(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+	var started atomic.Int32
+	var procs []*os.Process
+	host.SetLauncher(startSleepLauncher(t, &started, &procs))
+
+	first, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+	if err != nil {
+		t.Fatalf("EnsureActive failed: %v", err)
+	}
+
+	host.mu.RLock()
+	sup := host.supervisors["md.numen.ocr"]
+	host.mu.RUnlock()
+	killProcess(t, procs[0])
+	waitUntil(t, "the crashed plugin to become dormant", func() bool {
+		host.mu.RLock()
+		defer host.mu.RUnlock()
+		_, hasEndpoint := host.endpoints["md.numen.ocr"]
+		return sup.GetState() == StateDormant && !hasEndpoint
+	})
+
+	host.Release("md.numen.ocr")
+	if sup.GetState() != StateDormant {
+		t.Fatalf("Release moved a crashed plugin to %v", sup.GetState())
+	}
+
+	second, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+	if err != nil {
+		t.Fatalf("EnsureActive after crash failed: %v", err)
+	}
+	if second.Port == 0 || second.Token == "" || second.Token == first.Token {
+		t.Fatalf("expected a fresh running endpoint, got %+v", second)
+	}
+	if started.Load() != 2 {
+		t.Fatalf("expected the plugin to be launched twice, got %d", started.Load())
+	}
+	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}
+
+func TestAcquireAndReleaseDoNothingWithoutARunningProcess(t *testing.T) {
+	sup := NewSupervisor()
+	if sup.Acquire(time.Now()) {
+		t.Fatal("Acquire held a dormant supervisor")
+	}
+	sup.Release(time.Now())
+	if sup.GetState() != StateDormant {
+		t.Fatalf("Release moved a dormant supervisor to %v", sup.GetState())
+	}
+	sup.SetActivating()
+	if sup.Acquire(time.Now()) {
+		t.Fatal("Acquire held an activating supervisor")
+	}
+	sup.Release(time.Now())
+	if sup.GetState() != StateActivating {
+		t.Fatalf("Release moved an activating supervisor to %v", sup.GetState())
+	}
+}
+
+func TestEnsureActiveRetiresARunningProcessWhoseEndpointIsMissing(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+	var started atomic.Int32
+	var procs []*os.Process
+	host.SetLauncher(startSleepLauncher(t, &started, &procs))
+
+	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err != nil {
+		t.Fatalf("EnsureActive failed: %v", err)
+	}
+	host.mu.Lock()
+	delete(host.endpoints, "md.numen.ocr")
+	sup := host.supervisors["md.numen.ocr"]
+	host.mu.Unlock()
+	firstExit := getExitSignal(sup)
+
+	endpoint, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+	if err != nil {
+		t.Fatalf("EnsureActive failed: %v", err)
+	}
+	if isEmptyEndpoint(endpoint) {
+		t.Fatal("EnsureActive returned an empty endpoint")
+	}
+	if started.Load() != 2 {
+		t.Fatalf("expected a replacement launch, got %d launches", started.Load())
+	}
+	select {
+	case <-firstExit:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the unreachable process was not stopped")
+	}
+	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}
+
+func TestTheExitOfAnOldProcessKeepsTheEndpointOfItsReplacement(t *testing.T) {
+	host := NewHost("desktop.editor")
+	sup := NewSupervisor()
+	replacement := Endpoint{Host: "127.0.0.1", Port: 4321, Token: "new"}
+
+	host.mu.Lock()
+	host.endpoints["p"] = replacement
+	host.mu.Unlock()
+	sup.SetActivating()
+	sup.ActivateInProcess(time.Now())
+	host.dropEndpointOfStoppedPlugin("p", sup)
+	host.mu.RLock()
+	kept := host.endpoints["p"]
+	host.mu.RUnlock()
+	if kept != replacement {
+		t.Fatalf("the endpoint of a running replacement was dropped: %+v", kept)
+	}
+
+	sup.SetDormant(nil)
+	host.dropEndpointOfStoppedPlugin("p", sup)
+	host.mu.RLock()
+	_, stillThere := host.endpoints["p"]
+	host.mu.RUnlock()
+	if stillThere {
+		t.Fatal("the endpoint of a stopped plugin was kept")
+	}
+}
+
+func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+	var started atomic.Int32
+	host.SetLauncher(startSleepLauncher(t, &started, nil))
+	host.mu.Lock()
+	p := host.plugins["md.numen.ocr"]
+	p.Manifest.Lifecycle.IdleTimeoutSeconds = 0
+	host.plugins["md.numen.ocr"] = p
+	host.mu.Unlock()
+
+	var evictions atomic.Int32
+	stop := make(chan struct{})
+	var evictor sync.WaitGroup
+	evictor.Add(1)
+	go func() {
+		defer evictor.Done()
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+				evictions.Add(int32(len(host.EvictIdle(t.Context(), 0, 20*time.Millisecond))))
+			}
+		}
+	}()
+	var stopOnce sync.Once
+	stopEvictor := func() {
+		stopOnce.Do(func() { close(stop) })
+		evictor.Wait()
+	}
+	t.Cleanup(stopEvictor)
+
+	for i := 0; i < 60 || (evictions.Load() == 0 && i < 5000); i++ {
+		endpoint, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+		if err != nil {
+			t.Fatalf("round %d: EnsureActive failed: %v", i, err)
+		}
+		if isEmptyEndpoint(endpoint) {
+			t.Fatalf("round %d: EnsureActive returned an empty endpoint", i)
+		}
+		host.mu.RLock()
+		sup := host.supervisors["md.numen.ocr"]
+		host.mu.RUnlock()
+		if state := sup.GetState(); state != StateActive {
+			t.Fatalf("round %d: a held plugin is in state %v", i, state)
+		}
+		host.Release("md.numen.ocr")
+	}
+	stopEvictor()
+	if evictions.Load() == 0 {
+		t.Fatal("the evictor never stopped an idle plugin, so the race was not exercised")
+	}
+	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}
+
+func TestClosingTheStdinOfAnEvictedProcessLeavesTheNextProcessStdinOpen(t *testing.T) {
+	host := NewHost("desktop.editor")
+	oldPipe, newPipe := &testCloser{}, &testCloser{}
+	host.stdinsMu.Lock()
+	host.stdins[stdinKey{pluginID: "p", pid: 1}] = oldPipe
+	host.stdins[stdinKey{pluginID: "p", pid: 2}] = newPipe
+	host.stdinsMu.Unlock()
+
+	host.closeStdin("p", 1)
+
+	if !oldPipe.isClosed() {
+		t.Fatal("expected the evicted process stdin to be closed")
+	}
+	if newPipe.isClosed() {
+		t.Fatal("closed the stdin of a newer process")
+	}
+	if err := host.TeardownAll(t.Context(), 10*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}
+
+func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+	var started atomic.Int32
+	host.SetLauncher(startSleepLauncher(t, &started, nil))
+	first, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+	if err != nil {
+		t.Fatalf("EnsureActive failed: %v", err)
+	}
+	host.Release("md.numen.ocr")
+	host.mu.Lock()
+	sup := host.supervisors["md.numen.ocr"]
+	delete(host.endpoints, "md.numen.ocr")
+	host.mu.Unlock()
+	if !sup.BeginDeactivation(0, time.Now()) {
+		t.Fatal("expected the idle plugin to begin deactivating")
+	}
+
+	type result struct {
+		endpoint Endpoint
+		err      error
+	}
+	answered := make(chan result, 1)
+	go func() {
+		endpoint, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+		answered <- result{endpoint: endpoint, err: err}
+	}()
+
+	select {
+	case got := <-answered:
+		t.Fatalf("EnsureActive answered while the plugin was deactivating: %+v", got)
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	if err := sup.Teardown(t.Context(), 50*time.Millisecond, nil); err != nil {
+		t.Fatalf("Teardown failed: %v", err)
+	}
+	got := <-answered
+	if got.err != nil {
+		t.Fatalf("EnsureActive failed: %v", got.err)
+	}
+	if isEmptyEndpoint(got.endpoint) || got.endpoint.Token == first.Token {
+		t.Fatalf("expected a fresh endpoint from a new process, got %+v", got.endpoint)
+	}
+	if started.Load() != 2 {
+		t.Fatalf("expected the plugin to be launched twice, got %d", started.Load())
+	}
+	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
+	}
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 
 	"connectrpc.com/connect"
 
@@ -31,8 +30,6 @@ type ProofreaderBridge struct {
 	host     ProofreaderPluginHost
 	pluginID string
 	name     string
-	mu       sync.Mutex
-	acquired bool
 }
 
 // OpenProofreaderBridge activates or connects to the proofreading plugin and returns a port.Proofreader.
@@ -46,7 +43,6 @@ func OpenProofreaderBridge(host ProofreaderPluginHost) (*ProofreaderBridge, erro
 		host:     host,
 		pluginID: plugin.Manifest.ID,
 		name:     plugin.Manifest.Name,
-		acquired: false,
 	}, nil
 }
 
@@ -67,15 +63,11 @@ func (b *ProofreaderBridge) Proofread(ctx context.Context, batches []domain.Proo
 		}
 	}
 
-	endpoint, err := b.host.EnsureActive(ctx, b.pluginID)
+	client, lease, err := openPlugin(ctx, b.host, b.pluginID, numenv1connect.NewProofreadingServiceClient)
 	if err != nil {
-		return nil, fmt.Errorf("ensure active %s: %w", b.pluginID, err)
+		return nil, err
 	}
-	defer b.host.Release(b.pluginID)
-
-	httpClient := EndpointClient(endpoint)
-	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
-	client := numenv1connect.NewProofreadingServiceClient(httpClient, endpoint.BaseURL(), interceptor)
+	defer lease.Close()
 
 	reqBatches := make([]*v1.ProofreadBatch, len(batches))
 	for i, batch := range batches {
@@ -101,13 +93,7 @@ func (b *ProofreaderBridge) Proofread(ctx context.Context, batches []domain.Proo
 	return replies, nil
 }
 
-// Close releases the active reference count for the proofreading plugin in the host supervisor.
+// Close releases nothing: a proofread holds its reference on the plugin for the length of the call.
 func (b *ProofreaderBridge) Close() error {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	if b.acquired && b.host != nil {
-		b.host.Release(b.pluginID)
-		b.acquired = false
-	}
 	return nil
 }

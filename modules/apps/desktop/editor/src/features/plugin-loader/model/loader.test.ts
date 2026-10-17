@@ -290,3 +290,21 @@ describe('createPluginLoader', () => {
     expect(host.disposePlugin).toHaveBeenCalledWith('throwing.plugin')
   })
 })
+
+describe('createPluginLoader catalog manifests', () => {
+  it('hands the catalog manifest to the context of a plugin, on every activation', async () => {
+    const createContext = vi.fn((pluginId: string) => ({ pluginId }) as unknown as PluginContext)
+    const host = { createContext, disposePlugin: vi.fn(), disposeAll: vi.fn() } as unknown as PluginHost
+    const manifest = { id: 'cat.plugin', name: 'Cat', version: '1', permissions: ['vault:read'] }
+    const loader = createPluginLoader({
+      host,
+      loaders: { 'cat.plugin': async () => ({ activate: () => {} }) },
+      manifests: { 'cat.plugin': manifest as never },
+    })
+    await loader.activatePlugin('cat.plugin')
+    await loader.deactivatePlugin('cat.plugin')
+    await loader.activatePlugin('cat.plugin')
+    expect(createContext).toHaveBeenNthCalledWith(1, 'cat.plugin', manifest)
+    expect(createContext).toHaveBeenNthCalledWith(2, 'cat.plugin', manifest)
+  })
+})

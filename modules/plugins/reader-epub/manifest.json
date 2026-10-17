@@ -2,6 +2,7 @@
   "id": "md.numen.epub",
   "name": "EPUB Book Reader",
   "version": "1.0.0",
+  "protocol": 1,
   "description": "EPUB reflowable book reader and metadata parser",
   "capabilities": ["book"],
   "targets": ["desktop.editor"],
@@ -9,7 +10,6 @@
   "activationEvents": ["onFile:*.epub"],
   "permissions": ["vault:read"],
   "lifecycle": {
-    "mode": "on-demand",
     "idleTimeoutSeconds": 300,
     "keepAliveWhileVisible": true
   },

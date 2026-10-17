@@ -24,13 +24,15 @@ var (
 type AgentPluginHost interface {
 	port.PluginResolver
 	port.PluginActivator
+	port.PluginAcquirer
 }
 
 // AgentBridge connects port.Agent calls to an out-of-process agent plugin via Connect-RPC.
 type AgentBridge struct {
-	host     port.PluginActivator
+	host     AgentPluginHost
 	pluginID string
 	client   numenv1connect.AgentServiceClient
+	lease    *pluginLease
 }
 
 // OpenAgentBridge activates or connects to the agent plugin and returns an AgentBridge.
@@ -52,24 +54,21 @@ func OpenAgentBridge(ctx context.Context, host AgentPluginHost) (*AgentBridge, e
 }
 
 // OpenAgentBridgeForPlugin activates or connects to a specific agent plugin and returns an AgentBridge.
-func OpenAgentBridgeForPlugin(ctx context.Context, host port.PluginActivator, pluginID string) (*AgentBridge, error) {
-	endpoint, err := host.EnsureActive(ctx, pluginID)
+func OpenAgentBridgeForPlugin(ctx context.Context, host AgentPluginHost, pluginID string) (*AgentBridge, error) {
+	client, lease, err := openPlugin(ctx, host, pluginID, numenv1connect.NewAgentServiceClient)
 	if err != nil {
-		return nil, fmt.Errorf("ensure active %s: %w", pluginID, err)
+		return nil, err
 	}
-
-	httpClient := EndpointClient(endpoint)
-	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
-	client := numenv1connect.NewAgentServiceClient(httpClient, endpoint.BaseURL(), interceptor)
 
 	return &AgentBridge{
 		host:     host,
 		pluginID: pluginID,
 		client:   client,
+		lease:    lease,
 	}, nil
 }
 
-// StartRun starts execution of the given task through the agent plugin.
+// StartRun starts execution of the given task through the agent plugin. The run holds its own reference on the plugin until it stops.
 func (b *AgentBridge) StartRun(ctx context.Context, task port.Task) (port.Run, error) {
 	req := connect.NewRequest(&v1.AskAgentRequest{
 		Prompt:       task.Question,
@@ -89,13 +88,14 @@ func (b *AgentBridge) StartRun(ctx context.Context, task port.Task) (port.Run, e
 		return nil, fmt.Errorf("rpc ask agent: %w", err)
 	}
 
+	b.host.Acquire(b.pluginID)
 	run := &pluginRun{
 		ctx:    runCtx,
 		stream: stream,
 		cancel: cancel,
 		steps:  make(chan port.Step, 16),
 		onClose: func() {
-			_ = b.Close()
+			b.host.Release(b.pluginID)
 		},
 	}
 	go run.readSteps()
@@ -152,10 +152,9 @@ func (b *AgentBridge) GetAgentTools(ctx context.Context) ([]*v1.AgentToolDefinit
 	return resp.Msg.GetTools(), resp.Msg.GetSystemPromptExtension(), nil
 }
 
-// Close releases the active reference count for the agent plugin in the host supervisor.
+// Close releases the reference the bridge holds on the agent plugin, once. A run started through the bridge holds its own.
 func (b *AgentBridge) Close() error {
-	b.host.Release(b.pluginID)
-	return nil
+	return b.lease.Close()
 }
 
 type pluginRun struct {

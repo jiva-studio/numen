@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"image"
 	"image/color"
 	"image/draw"
@@ -12,8 +13,8 @@ import (
 	"connectrpc.com/connect"
 	read "github.com/getcharzp/go-ocr"
 
-	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
+	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/plugins/ocr/backend/engine"
 )
 
@@ -74,6 +75,30 @@ func TestLifecycleConfigure(t *testing.T) {
 	if recog.cfg.Recognise.DPI != 450 {
 		t.Errorf("expected DPI 450, got %d", recog.cfg.Recognise.DPI)
 	}
+
+	for _, invalid := range []string{"-100", "0", "not-a-number"} {
+		reqInvalid := connect.NewRequest(&numenv1.ConfigureRequest{
+			PluginId: "md.numen.ocr",
+			Values:   map[string]string{"dpi": invalid},
+		})
+		if _, err := life.Configure(context.Background(), reqInvalid); err != nil {
+			t.Fatalf("configure invalid failed: %v", err)
+		}
+		if recog.cfg.Recognise.DPI != 450 {
+			t.Errorf("DPI should remain 450 on invalid value %q, got %d", invalid, recog.cfg.Recognise.DPI)
+		}
+	}
+
+	reqOne := connect.NewRequest(&numenv1.ConfigureRequest{
+		PluginId: "md.numen.ocr",
+		Values:   map[string]string{"dpi": "1"},
+	})
+	if _, err := life.Configure(context.Background(), reqOne); err != nil {
+		t.Fatalf("configure dpi 1 failed: %v", err)
+	}
+	if recog.cfg.Recognise.DPI != 1 {
+		t.Errorf("expected DPI 1, got %d", recog.cfg.Recognise.DPI)
+	}
 }
 
 func TestGetRecognitionModelDefault(t *testing.T) {
@@ -88,6 +113,12 @@ func TestGetRecognitionModelDefault(t *testing.T) {
 	}
 	if resp.Msg.GetLayout() == "" || resp.Msg.GetRecogniser() == "" {
 		t.Errorf("model layout/recogniser should not be empty: %+v", resp.Msg)
+	}
+	if resp.Msg.GetDpi() != 300 {
+		t.Errorf("dpi = %d, want 300", resp.Msg.GetDpi())
+	}
+	if resp.Msg.GetFrom() != "defaults" {
+		t.Errorf("from = %q, want %q", resp.Msg.GetFrom(), "defaults")
 	}
 }
 
@@ -120,6 +151,9 @@ func TestRecognisePageInvalidImageData(t *testing.T) {
 	}
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Errorf("code = %v, want %v", connect.CodeOf(err), connect.CodeInvalidArgument)
+	}
+	if !errors.Is(err, image.ErrFormat) {
+		t.Errorf("expected wrapped image.ErrFormat, got %v", err)
 	}
 }
 
@@ -201,5 +235,45 @@ func TestRecognisePageWithEngine(t *testing.T) {
 	if box.GetMinX() <= 0 || box.GetMinY() <= 0 {
 		t.Errorf("box coordinates = (%d, %d, %d, %d), expected positive coordinates",
 			box.GetMinX(), box.GetMinY(), box.GetMaxX(), box.GetMaxY())
+	}
+}
+
+func TestRecognisePageOpenEngineError(t *testing.T) {
+	server := newRecognitionServer(nil, engine.Config{})
+	pngBytes := createTestPNG(t, 10, 10)
+	req := connect.NewRequest(&numenv1.RecognisePageRequest{ImageData: pngBytes})
+	_, err := server.RecognisePage(context.Background(), req)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if connect.CodeOf(err) != connect.CodeInternal {
+		t.Errorf("code = %v, want %v", connect.CodeOf(err), connect.CodeInternal)
+	}
+	if errors.Unwrap(errors.Unwrap(err)) == nil {
+		t.Errorf("expected wrapped inner error, got %v", err)
+	}
+}
+
+func TestRecognisePageRecogniseError(t *testing.T) {
+	broken := errors.New("recognition failed")
+	testEng := engine.NewTestRecogniser(
+		func(image.Image) ([]engine.Region, error) {
+			return nil, broken
+		},
+		func(image.Image) ([]read.RecResult, error) { return nil, nil },
+		engine.Model{},
+	)
+	server := newRecognitionServer(testEng, engine.Defaults())
+	pngBytes := createTestPNG(t, 10, 10)
+	req := connect.NewRequest(&numenv1.RecognisePageRequest{ImageData: pngBytes})
+	_, err := server.RecognisePage(context.Background(), req)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if connect.CodeOf(err) != connect.CodeInternal {
+		t.Errorf("code = %v, want %v", connect.CodeOf(err), connect.CodeInternal)
+	}
+	if !errors.Is(err, broken) {
+		t.Errorf("expected wrapped error %v, got %v", broken, err)
 	}
 }

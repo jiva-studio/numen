@@ -30,7 +30,7 @@ func TestThePoolStartsWithOneWorkerPerCPUWhenNoneIsSet(t *testing.T) {
 
 func TestThePoolStartsWithAtLeastTheMinimumWhenFewerAreSet(t *testing.T) {
 	withWorkers(t, 1)
-	if got := GetWorkers(); got != minWorkers {
-		t.Errorf("the pool starts with %d workers, want %d", got, minWorkers)
+	if got := GetWorkers(); got != 2 {
+		t.Errorf("the pool starts with %d workers, want 2", got)
 	}
 }

@@ -150,10 +150,12 @@ func roundUpToBucket(seq, limit int) int {
 		return 128
 	case seq <= 256:
 		return 256
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a length equal to bucketStep rounds to bucketStep through either branch"
 	case seq <= bucketStep:
 		return bucketStep
 	}
 	rounded := (seq + bucketStep - 1) / bucketStep * bucketStep
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a rounded length equal to limit returns limit through either branch"
 	if rounded > limit {
 		return max(limit, seq)
 	}
