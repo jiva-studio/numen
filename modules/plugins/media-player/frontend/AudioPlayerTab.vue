@@ -63,9 +63,9 @@ const AVAILABLE_RATES = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0] as const
 
 const audioSource = computed(() => {
   const url = readState<string>(props.state?.url)
-  if (url) return url
+  if (typeof url === 'string' && url) return url
   const mediaUrl = readState<string>(props.state?.mediaUrl)
-  if (mediaUrl) return mediaUrl
+  if (typeof mediaUrl === 'string' && mediaUrl) return mediaUrl
   return props.path || props.file || ''
 })
 
