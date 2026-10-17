@@ -222,21 +222,6 @@ function createEventBridge(deps: PluginHostDeps, registry: HostRegistry): EventB
   }
 }
 
-type EventBridge = Pick<
-  PluginContextHost,
-  'onVaultChange' | 'onFileSelect' | 'emitVaultChange' | 'emitFileSelect'
->
-
-function createEventBridge(deps: PluginHostDeps, registry: HostRegistry): EventBridge {
-  return {
-    onVaultChange: (pluginId, handler) =>
-      addListener(registry.vaultListeners, { pluginId, handler }),
-    onFileSelect: (pluginId, handler) => addListener(registry.fileListeners, { pluginId, handler }),
-    emitVaultChange: (_pluginId, event) => notifyListeners(registry.vaultListeners, event, deps),
-    emitFileSelect: (_pluginId, event) => notifyListeners(registry.fileListeners, event, deps),
-  }
-}
-
 function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): PluginContextHost {
   return {
     registerReader: (pluginId, registration) =>
