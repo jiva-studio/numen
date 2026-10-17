@@ -7,6 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	read "github.com/getcharzp/go-ocr"
@@ -378,5 +379,254 @@ func TestAPageOfPartsThatSayNothingIsBlank(t *testing.T) {
 	blocks, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
 	if err != nil || len(blocks) != 0 {
 		t.Errorf("answered with %+v, %v", blocks, err)
+	}
+}
+
+func TestRunBoundedLimitOneCapsWorkersAtOne(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		var active atomic.Int32
+		var maxActive atomic.Int32
+		secondEntered := make(chan struct{})
+		done := make(chan struct{})
+
+		runBounded(t.Context(), 10, 1, func(int) {
+			cur := active.Add(1)
+			for {
+				old := maxActive.Load()
+				if cur <= old || maxActive.CompareAndSwap(old, cur) {
+					break
+				}
+			}
+			if cur > 1 {
+				select {
+				case secondEntered <- struct{}{}:
+				default:
+				}
+			} else {
+				select {
+				case <-secondEntered:
+				case <-time.After(10 * time.Millisecond):
+				case <-done:
+				}
+			}
+			active.Add(-1)
+		})
+		close(done)
+		if got := maxActive.Load(); got != 1 {
+			t.Errorf("concurrent workers = %d, want 1", got)
+		}
+	})
+}
+
+func TestDistinctSelectsHigherScoringRegionOnOverlap(t *testing.T) {
+	high := Region{Label: "high", Score: 0.9, Rect: image.Rect(0, 0, 100, 100), Order: 0}
+	low := Region{Label: "low", Score: 0.5, Rect: image.Rect(10, 10, 90, 90), Order: 1}
+
+	result := Distinct([]Region{low, high}, 0.5)
+	if len(result) != 1 || result[0].Label != "high" {
+		t.Fatalf("Distinct kept %+v, want only high-scoring region", result)
+	}
+}
+
+func TestDistinctPreservesInputOrderForEqualScores(t *testing.T) {
+	first := Region{Label: "first", Score: 0.8, Rect: image.Rect(0, 0, 100, 100), Order: 0}
+	second := Region{Label: "second", Score: 0.8, Rect: image.Rect(10, 10, 90, 90), Order: 1}
+
+	result1 := Distinct([]Region{first, second}, 0.5)
+	if len(result1) != 1 || result1[0].Label != "first" {
+		t.Fatalf("Distinct kept %+v, want first", result1)
+	}
+
+	result2 := Distinct([]Region{second, first}, 0.5)
+	if len(result2) != 1 || result2[0].Label != "second" {
+		t.Fatalf("Distinct kept %+v, want second", result2)
+	}
+}
+
+func TestDistinctPreservesDisjointRegionsInOriginalOrder(t *testing.T) {
+	first := Region{Label: "first", Score: 0.9, Rect: image.Rect(0, 0, 50, 50), Order: 1}
+	second := Region{Label: "second", Score: 0.5, Rect: image.Rect(60, 60, 100, 100), Order: 2}
+
+	result := Distinct([]Region{second, first}, 0.5)
+	if len(result) != 2 || result[0].Label != "first" || result[1].Label != "second" {
+		t.Fatalf("Distinct kept %+v, want [first, second] sorted by order", result)
+	}
+}
+
+func TestAssembleMultipleLinesAndHyphenation(t *testing.T) {
+	lines := []Line{
+		{Text: "anti-", Box: image.Rect(50, 10, 100, 30)},
+		{Text: "the", Box: image.Rect(0, 10, 45, 30)},
+		{Text: "gravity.", Box: image.Rect(0, 40, 60, 60)},
+	}
+
+	text, boxes := Assemble(lines)
+	wantText := "the antigravity."
+	if text != wantText {
+		t.Errorf("Assemble text = %q, want %q", text, wantText)
+	}
+	if len(boxes) != 3 {
+		t.Fatalf("got %d boxes, want 3", len(boxes))
+	}
+	if got, want := text[boxes[0].Span.From:boxes[0].Span.To], "the"; got != want {
+		t.Errorf("box 0 span text = %q, want %q", got, want)
+	}
+	if got, want := text[boxes[1].Span.From:boxes[1].Span.To], "anti"; got != want {
+		t.Errorf("box 1 span text = %q, want %q", got, want)
+	}
+	if got, want := text[boxes[2].Span.From:boxes[2].Span.To], "gravity."; got != want {
+		t.Errorf("box 2 span text = %q, want %q", got, want)
+	}
+	if boxes[2].Span.From < boxes[1].Span.To {
+		t.Errorf("box 2 span from %d < box 1 span to %d", boxes[2].Span.From, boxes[1].Span.To)
+	}
+}
+
+func TestAssembleSortsLinesVertically(t *testing.T) {
+	lines := []Line{
+		{Text: "second", Box: image.Rect(0, 50, 100, 70)},
+		{Text: "first", Box: image.Rect(0, 10, 100, 30)},
+	}
+	text, _ := Assemble(lines)
+	if text != "first second" {
+		t.Errorf("text = %q, want %q", text, "first second")
+	}
+}
+
+func TestAssembleSingleCharacterWords(t *testing.T) {
+	lines := []Line{
+		{Text: "a", Box: image.Rect(0, 10, 10, 30)},
+		{Text: "b", Box: image.Rect(20, 10, 30, 30)},
+		{Text: "c", Box: image.Rect(0, 50, 10, 70)},
+	}
+	text, boxes := Assemble(lines)
+	if text != "a b c" {
+		t.Errorf("text = %q, want %q", text, "a b c")
+	}
+	if len(boxes) != 3 {
+		t.Fatalf("got %d boxes, want 3", len(boxes))
+	}
+	if boxes[0].Span != (ByteSpan{From: 0, To: 1}) ||
+		boxes[1].Span != (ByteSpan{From: 2, To: 3}) ||
+		boxes[2].Span != (ByteSpan{From: 4, To: 5}) {
+		t.Errorf("spans = %+v", boxes)
+	}
+}
+
+func TestAssembleIgnoresEmptyAndWhitespaceLines(t *testing.T) {
+	lines := []Line{
+		{Text: "first", Box: image.Rect(0, 10, 50, 30)},
+		{Text: "   ", Box: image.Rect(0, 35, 50, 45)},
+		{Text: "second", Box: image.Rect(0, 50, 50, 70)},
+	}
+	text, boxes := Assemble(lines)
+	if text != "first second" {
+		t.Errorf("text = %q, want %q", text, "first second")
+	}
+	if len(boxes) != 2 {
+		t.Fatalf("got %d boxes, want 2", len(boxes))
+	}
+}
+
+func TestAssembleNoHyphenAcrossLines(t *testing.T) {
+	lines := []Line{
+		{Text: "hello", Box: image.Rect(0, 10, 50, 30)},
+		{Text: "world", Box: image.Rect(0, 40, 50, 60)},
+	}
+	text, _ := Assemble(lines)
+	if text != "hello world" {
+		t.Errorf("text = %q, want %q", text, "hello world")
+	}
+}
+
+func TestGroupEmptyAndSingleLine(t *testing.T) {
+	countEmpty := 0
+	for range group(nil) {
+		countEmpty++
+	}
+	if countEmpty != 0 {
+		t.Errorf("group(nil) yielded %d lines, want 0", countEmpty)
+	}
+
+	var singleGroups [][]Line
+	for l := range group([]Line{{Text: "one", Box: image.Rect(0, 0, 10, 10)}}) {
+		singleGroups = append(singleGroups, l)
+	}
+	if len(singleGroups) != 1 || len(singleGroups[0]) != 1 {
+		t.Errorf("group(single) yielded %v, want 1 group with 1 line", singleGroups)
+	}
+}
+
+func TestGroupVerticalOverlapThreshold(t *testing.T) {
+	lines := []Line{
+		{Text: "l1a", Box: image.Rect(0, 10, 50, 30)},
+		{Text: "l1b", Box: image.Rect(60, 15, 110, 35)},
+		{Text: "l2", Box: image.Rect(0, 40, 50, 60)},
+	}
+	var groups [][]Line
+	for g := range group(lines) {
+		groups = append(groups, g)
+	}
+	if len(groups) != 2 {
+		t.Fatalf("group count = %d, want 2", len(groups))
+	}
+	if len(groups[0]) != 2 || len(groups[1]) != 1 {
+		t.Errorf("groups = %+v", groups)
+	}
+}
+
+func TestGroupZeroHeightBoxDoesNotYieldEmptySlice(t *testing.T) {
+	lines := []Line{
+		{Text: "flat", Box: image.Rect(0, 10, 50, 10)},
+		{Text: "normal", Box: image.Rect(0, 20, 50, 40)},
+	}
+	for g := range group(lines) {
+		if len(g) == 0 {
+			t.Fatal("group yielded an empty line slice")
+		}
+	}
+}
+
+func TestGroupExactFiftyPercentOverlapKeepsSameLine(t *testing.T) {
+	lines := []Line{
+		{Text: "a", Box: image.Rect(0, 10, 50, 30)},
+		{Text: "b", Box: image.Rect(60, 20, 110, 40)},
+	}
+	var groups [][]Line
+	for g := range group(lines) {
+		groups = append(groups, g)
+	}
+	if len(groups) != 1 || len(groups[0]) != 2 {
+		t.Fatalf("group count = %d, want 1 group with 2 boxes", len(groups))
+	}
+}
+
+func TestGroupEarlyTerminationStopsYielding(t *testing.T) {
+	lines := []Line{
+		{Text: "l1", Box: image.Rect(0, 10, 50, 30)},
+		{Text: "l2", Box: image.Rect(0, 40, 50, 60)},
+		{Text: "l3", Box: image.Rect(0, 70, 50, 90)},
+	}
+	count := 0
+	for range group(lines) {
+		count++
+		break
+	}
+	if count != 1 {
+		t.Errorf("yielded %d times after break, want 1", count)
+	}
+}
+
+func TestAssembleWhitespaceBoxWithinSameLineIsDropped(t *testing.T) {
+	lines := []Line{
+		{Text: "hello", Box: image.Rect(0, 10, 50, 30)},
+		{Text: "   ", Box: image.Rect(60, 10, 100, 30)},
+	}
+	text, boxes := Assemble(lines)
+	if text != "hello" {
+		t.Errorf("text = %q, want %q", text, "hello")
+	}
+	if len(boxes) != 1 {
+		t.Fatalf("got %d boxes, want 1", len(boxes))
 	}
 }

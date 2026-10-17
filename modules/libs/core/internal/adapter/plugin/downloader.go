@@ -72,24 +72,21 @@ func (b *DownloaderBridge) CanHandle(ctx context.Context, at domain.URL) (bool, 
 }
 
 // GetDownloadModel returns the tool identity and version for a given address.
-func (b *DownloaderBridge) GetDownloadModel(at domain.URL) port.DownloadModel {
-	ctx := context.Background()
+func (b *DownloaderBridge) GetDownloadModel(ctx context.Context, at domain.URL) (port.DownloadModel, error) {
+	ctx, cancel := context.WithTimeout(ctx, modelInfoTimeout)
+	defer cancel()
 	req := connect.NewRequest(&v1.GetDownloadModelRequest{
 		Url: string(at),
 	})
 	resp, err := b.client.GetDownloadModel(ctx, req)
 	if err != nil {
-		return port.DownloadModel{
-			Tool:     "unknown",
-			Version:  "unknown",
-			Producer: "plugin-error",
-		}
+		return port.DownloadModel{}, fmt.Errorf("rpc get download model: %w", err)
 	}
 	return port.DownloadModel{
 		Tool:     resp.Msg.GetTool(),
 		Version:  resp.Msg.GetVersion(),
 		Producer: resp.Msg.GetProducer(),
-	}
+	}, nil
 }
 
 // GetMetadata returns media duration, language, and available caption tracks.

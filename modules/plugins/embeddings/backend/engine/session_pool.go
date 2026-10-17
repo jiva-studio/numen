@@ -43,18 +43,22 @@ func (p *sessionPool[S]) acquire(ctx context.Context) (S, error) {
 	}
 	select {
 	case <-p.done:
+		// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
 		return zero, errClosed
 	default:
 	}
 	select {
 	case <-p.done:
+		// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
 		return zero, errClosed
 	case <-cancelled:
+		// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
 		return zero, ctx.Err()
 	case s := <-p.idle:
 		select {
 		case <-p.done:
 			p.idle <- s
+			// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
 			return zero, errClosed
 		default:
 			return s, nil

@@ -1,7 +1,10 @@
 package engine
 
 import (
+	"runtime"
 	"testing"
+
+	"github.com/jiva-studio/numen/modules/plugins/embeddings/backend/onnxruntime"
 )
 
 func TestDefaultBGEM3Config(t *testing.T) {
@@ -18,11 +21,17 @@ func TestDefaultBGEM3Config(t *testing.T) {
 	if info.Pooling != PoolHead {
 		t.Errorf("expected head pooling, got %s", info.Pooling)
 	}
+	if info.Concurrency != 4 {
+		t.Errorf("expected 4 concurrency, got %d", info.Concurrency)
+	}
 	if local.Name != "Xenova/bge-m3" {
 		t.Errorf("expected Xenova/bge-m3, got %s", local.Name)
 	}
 	if local.File != "model_int8.onnx" {
 		t.Errorf("expected model_int8.onnx, got %s", local.File)
+	}
+	if local.BatchTexts != 32 {
+		t.Errorf("expected 32 batch texts, got %d", local.BatchTexts)
 	}
 	if !local.ShouldDownload {
 		t.Errorf("expected download enabled by default")
@@ -32,19 +41,131 @@ func TestDefaultBGEM3Config(t *testing.T) {
 	}
 }
 
-func TestCheckIdentityInvalid(t *testing.T) {
-	invalidDim := ModelInfo{Dimensions: 0, MaxTokens: 100, Pooling: PoolMean}
-	if err := CheckIdentity(invalidDim, "repo"); err == nil {
-		t.Error("expected error for 0 dimensions")
+func TestCheckIdentity(t *testing.T) {
+	for _, tc := range []ModelInfo{
+		{Dimensions: 1, MaxTokens: 1, Pooling: ""},
+		{Dimensions: 1024, MaxTokens: 512, Pooling: PoolMean},
+		{Dimensions: 1024, MaxTokens: 512, Pooling: PoolHead},
+	} {
+		if err := CheckIdentity(tc, "repo"); err != nil {
+			t.Errorf("expected valid identity for %+v, got %v", tc, err)
+		}
 	}
 
-	invalidTokens := ModelInfo{Dimensions: 1024, MaxTokens: -1, Pooling: PoolMean}
-	if err := CheckIdentity(invalidTokens, "repo"); err == nil {
-		t.Error("expected error for negative tokens")
+	for _, tc := range []ModelInfo{
+		{Dimensions: 0, MaxTokens: 100, Pooling: PoolMean},
+		{Dimensions: -1, MaxTokens: 100, Pooling: PoolMean},
+	} {
+		if err := CheckIdentity(tc, "repo"); err == nil {
+			t.Errorf("expected error for non-positive dimensions: %+v", tc)
+		}
+	}
+
+	for _, tc := range []ModelInfo{
+		{Dimensions: 1024, MaxTokens: 0, Pooling: PoolMean},
+		{Dimensions: 1024, MaxTokens: -1, Pooling: PoolMean},
+	} {
+		if err := CheckIdentity(tc, "repo"); err == nil {
+			t.Errorf("expected error for non-positive max tokens: %+v", tc)
+		}
 	}
 
 	invalidPooling := ModelInfo{Dimensions: 1024, MaxTokens: 512, Pooling: "invalid"}
 	if err := CheckIdentity(invalidPooling, "repo"); err == nil {
 		t.Error("expected error for invalid pooling")
+	}
+}
+
+func TestLocalModelGetPasses(t *testing.T) {
+	prev := runtime.GOMAXPROCS(0)
+	defer runtime.GOMAXPROCS(prev)
+
+	// Set GOMAXPROCS to 5 so CPU fallback produces 3, distinguishing from returns of 1
+	runtime.GOMAXPROCS(5)
+
+	if passes := (LocalModel{Sessions: 3}).GetPasses(onnxruntime.ProviderCPU); passes != 3 {
+		t.Errorf("expected 3 passes for Sessions=3, got %d", passes)
+	}
+	if passes := (LocalModel{Sessions: 1}).GetPasses(onnxruntime.ProviderCPU); passes != 1 {
+		t.Errorf("expected 1 pass for Sessions=1, got %d", passes)
+	}
+
+	if passes := (LocalModel{}).GetPasses(onnxruntime.ProviderCoreML); passes != 1 {
+		t.Errorf("expected 1 pass for CoreML, got %d", passes)
+	}
+	if passes := (LocalModel{}).GetPasses(onnxruntime.ProviderCUDA); passes != 1 {
+		t.Errorf("expected 1 pass for CUDA, got %d", passes)
+	}
+
+	if passes := (LocalModel{PassBudget: 5}).GetPasses(onnxruntime.ProviderCPU); passes != 5 {
+		t.Errorf("expected 5 passes for PassBudget=5, got %d", passes)
+	}
+	if passes := (LocalModel{PassBudget: 1}).GetPasses(onnxruntime.ProviderCPU); passes != 1 {
+		t.Errorf("expected 1 pass for PassBudget=1, got %d", passes)
+	}
+
+	// Verify querying GOMAXPROCS does not mutate it (calling twice gives consistent result)
+	runtime.GOMAXPROCS(4)
+	if p1 := (LocalModel{}).GetPasses(onnxruntime.ProviderCPU); p1 != 2 {
+		t.Errorf("expected 2 passes for 4 cpus, got %d", p1)
+	}
+	if p2 := (LocalModel{}).GetPasses(onnxruntime.ProviderCPU); p2 != 2 {
+		t.Errorf("expected 2 passes on repeated call, got %d", p2)
+	}
+
+	for _, tc := range []struct {
+		cpus int
+		want int
+	}{
+		{cpus: 1, want: 1},
+		{cpus: 2, want: 1},
+		{cpus: 3, want: 2},
+		{cpus: 4, want: 2},
+		{cpus: 5, want: 3},
+	} {
+		runtime.GOMAXPROCS(tc.cpus)
+		if got := (LocalModel{}).GetPasses(onnxruntime.ProviderCPU); got != tc.want {
+			t.Errorf("GetPasses with GOMAXPROCS=%d: got %d, want %d", tc.cpus, got, tc.want)
+		}
+	}
+}
+
+func TestLocalModelGetProvider(t *testing.T) {
+	if p := (LocalModel{}).GetProvider(); p != onnxruntime.ProviderAuto {
+		t.Errorf("expected default ProviderAuto, got %v", p)
+	}
+	if p := (LocalModel{Provider: "invalid"}).GetProvider(); p != onnxruntime.ProviderAuto {
+		t.Errorf("expected ProviderAuto for invalid provider, got %v", p)
+	}
+	if p := (LocalModel{Provider: "cpu"}).GetProvider(); p != onnxruntime.ProviderCPU {
+		t.Errorf("expected ProviderCPU, got %v", p)
+	}
+}
+
+func TestLocalModelGetThreads(t *testing.T) {
+	prev := runtime.GOMAXPROCS(0)
+	defer runtime.GOMAXPROCS(prev)
+	runtime.GOMAXPROCS(2)
+
+	if th := (LocalModel{Threads: 4}).GetThreads(); th != 4 {
+		t.Errorf("expected 4 threads, got %d", th)
+	}
+	if th := (LocalModel{Threads: 1}).GetThreads(); th != 1 {
+		t.Errorf("expected 1 thread, got %d", th)
+	}
+	if th := (LocalModel{}).GetThreads(); th != onnxruntime.DefaultThreads() {
+		t.Errorf("expected default threads, got %d", th)
+	}
+}
+
+func TestLocalModelGetAddress(t *testing.T) {
+	m1 := LocalModel{Name: "Xenova/bge-m3"}
+	if addr := m1.GetAddress(); addr != "local:Xenova/bge-m3/model.onnx" {
+		t.Errorf("expected local:Xenova/bge-m3/model.onnx, got %s", addr)
+	}
+
+	m2 := LocalModel{Name: "model", Dir: "custom/path", File: "weights.onnx"}
+	if addr := m2.GetAddress(); addr != "local:custom/path/weights.onnx" {
+		t.Errorf("expected local:custom/path/weights.onnx, got %s", addr)
 	}
 }
