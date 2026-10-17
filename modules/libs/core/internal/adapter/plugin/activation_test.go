@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 	"os"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -155,5 +157,39 @@ func TestACanceledCallerDoesNotCountAsAFailedActivation(t *testing.T) {
 	}
 	if err := host.supervisors["md.numen.ocr"].CheckActivationAllowed(time.Now()); err != nil {
 		t.Fatalf("a canceled caller put the plugin into backoff: %v", err)
+	}
+}
+
+func TestConcurrentCallersDoNotRestartAFailedActivationWithinItsBackoff(t *testing.T) {
+	host := newDiscoveredHost(t)
+	policy := DefaultActivationPolicy()
+	policy.BackoffBase = time.Hour
+	policy.BackoffMax = time.Hour
+	host.SetActivationPolicy(policy)
+
+	var launches atomic.Int32
+	release := make(chan struct{})
+	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		launches.Add(1)
+		<-release
+		return nil, nil, errors.New("exec format error")
+	})
+
+	var callers sync.WaitGroup
+	for range 8 {
+		callers.Add(1)
+		go func() {
+			defer callers.Done()
+			if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err == nil {
+				t.Error("expected the activation to fail")
+			}
+		}()
+	}
+	waitUntil(t, "the first launch", func() bool { return launches.Load() >= 1 })
+	close(release)
+	callers.Wait()
+
+	if got := launches.Load(); got != 1 {
+		t.Fatalf("expected one launch within the backoff, got %d", got)
 	}
 }
