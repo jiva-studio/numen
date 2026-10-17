@@ -407,7 +407,6 @@ const PACKAGES = {
   recognition: 'internal/adapter/recognition',
   transcription: 'internal/adapter/transcription',
   proofreading: 'internal/adapter/proofreading',
-  agent: 'adapter/agent',
 }
 
 const held = new Map()

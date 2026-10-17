@@ -181,7 +181,7 @@ func mustRouter(t *testing.T, provider port.AgentProvider, agent settings.Agent)
 func TestTheTaskIsGivenWhatTheSettingsAndTheVaultHold(t *testing.T) {
 	provider := &fakeProvider{}
 	agent := settings.Agent{Programs: map[string]settings.AgentProgram{
-		"claude": {Command: []string{"/bin/claude", "--x"}, Model: "opus", MaxSteps: 7, ShouldReadHooksAndSkills: true},
+		"claude": {Command: []string{"/bin/claude", "--x"}, Model: "opus", MaxSteps: 7, Options: map[string]string{"reads_hooks_and_skills": "true"}},
 	}}
 	router, _ := makeRouter(t, provider, agent, EditPreview{})
 
@@ -200,7 +200,7 @@ func TestTheTaskIsGivenWhatTheSettingsAndTheVaultHold(t *testing.T) {
 
 	tasks := provider.getTasks()
 	first, second := tasks[0], tasks[1]
-	if first.Model != "opus" || first.MaxSteps != 7 || !first.ShouldReadHooksAndSkills ||
+	if first.Model != "opus" || first.MaxSteps != 7 || first.Options["reads_hooks_and_skills"] != "true" ||
 		!slices.Equal(first.Command, []string{"/bin/claude", "--x"}) {
 		t.Errorf("the settings gave %+v", first)
 	}

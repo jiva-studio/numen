@@ -51,9 +51,8 @@ type Task struct {
 	// Command is the command line that starts the program the task names, as the installation set it.
 	// Empty starts the program where the provider finds it.
 	Command []string
-	// ShouldReadHooksAndSkills lets the program read the hooks, skills and standing instructions this
-	// machine holds for it. What a vault carries is refused either way.
-	ShouldReadHooksAndSkills bool
+	// Options are the settings only the program knows, by key, each as the JSON the installation holds.
+	Options map[string]string
 	// Endpoint is where the agent reaches the vault's tools. Empty gives it none.
 	Endpoint ToolEndpoint
 	// ToolDeclarations say how each tool of Tools is spoken about and read while a call of it is being

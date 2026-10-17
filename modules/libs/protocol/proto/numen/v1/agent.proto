@@ -83,9 +83,8 @@ message AskAgentRequest {
   // The command line that starts the program, as the installation set it. Empty starts the
   // program where the provider finds it.
   repeated string command = 13;
-  // Whether the program may read the hooks, skills and standing instructions this machine holds
-  // for it. What a vault carries is refused either way.
-  bool reads_hooks_and_skills = 14;
+  // The settings only the program knows, by key, each as JSON.
+  map<string, string> options = 14;
   // Where the program reaches the vault's tools, and what it presents there. Empty gives the
   // program no tools.
   string tools_url = 15;

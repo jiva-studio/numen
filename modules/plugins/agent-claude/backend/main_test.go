@@ -355,15 +355,15 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 	client := startAgent(t, &agentServer{})
 
 	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
-		Prompt:              "the question",
-		Command:             []string{script, "--first"},
-		Root:                root,
-		Model:               "opus",
-		MaxSteps:            7,
-		Tools:               []string{"note_read"},
-		ReadsHooksAndSkills: true,
-		ToolsUrl:            "http://127.0.0.1:1/mcp",
-		ToolsToken:          "secret",
+		Prompt:     "the question",
+		Command:    []string{script, "--first"},
+		Root:       root,
+		Model:      "opus",
+		MaxSteps:   7,
+		Tools:      []string{"note_read"},
+		Options:    map[string]string{"reads_hooks_and_skills": "true"},
+		ToolsUrl:   "http://127.0.0.1:1/mcp",
+		ToolsToken: "secret",
 	}))
 	if err != nil {
 		t.Fatal(err)

@@ -1,10 +1,9 @@
-package container
+package settings
 
 import (
 	"encoding/json"
 	"slices"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -14,19 +13,16 @@ const (
 	groupConfigured = "Named in the settings"
 )
 
-// useAt is where the program that answers stands in the settings file.
-var useAt = []string{agentAt, "use"}
-
-// getModelAt is where the model a program answers with stands in the settings file.
-func getModelAt(program string) []string { return []string{agentAt, program, "model"} }
-
-// getAgentModels are the rows of the agent section: the programs the setting can name, and the
-// models of each installed program and of the one the settings name.
-func getAgentModels(held settings.Agent, programs []port.AgentProgram) []port.Model {
-	models := getProgramModels(programs)
+// AgentModels are the rows the agent section offers a person: the programs the setting can name, and
+// the models of each installed program and of the one the settings name. The section stands in the
+// file under the key given.
+func AgentModels(at string, held Agent, programs []port.AgentProgram) []port.Model {
+	useAt := []string{at, "use"}
+	models := getProgramModels(useAt, programs)
 	for _, one := range programs {
 		if one.IsInstalled || one.Name == held.GetUse() {
-			models = append(models, getModelsOfProgram(one, held.GetProgram(one.Name).Model)...)
+			modelAt := []string{at, one.Name, "model"}
+			models = append(models, getModelsOfProgram(modelAt, one, held.GetProgram(one.Name).Model)...)
 		}
 	}
 	return models
@@ -34,7 +30,7 @@ func getAgentModels(held settings.Agent, programs []port.AgentProgram) []port.Mo
 
 // getProgramModels are the programs the agent setting can name, the default one marked, and the
 // choice of none.
-func getProgramModels(programs []port.AgentProgram) []port.Model {
+func getProgramModels(useAt []string, programs []port.AgentProgram) []port.Model {
 	byDefault, hasDefault := port.GetDefaultProgram(programs)
 
 	models := make([]port.Model, 0, len(programs)+1)
@@ -63,8 +59,7 @@ func getProgramModels(programs []port.AgentProgram) []port.Model {
 
 // getModelsOfProgram are the rows of one program: what it reported, or the model the settings name
 // alone where it reported none.
-func getModelsOfProgram(program port.AgentProgram, set string) []port.Model {
-	at := getModelAt(program.Name)
+func getModelsOfProgram(at []string, program port.AgentProgram, set string) []port.Model {
 	var models []port.Model
 	switch {
 	case len(program.Models) == 0 && set != "":

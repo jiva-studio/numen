@@ -42,7 +42,7 @@ type standing struct {
 // clear any floor the desktop's own files fill.
 var named = []string{
 	"desktop/cmd/numen/main.go",
-	"desktop/internal/adapter/claudecode/claudecode.go",
+	"desktop/internal/adapter/claudecode/proofread.go",
 	"mobile/bind/mobile.go",
 }
 

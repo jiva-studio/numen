@@ -125,7 +125,7 @@ func (r *Router) StartRun(ctx context.Context, task port.Task) (port.Run, error)
 		task.Model = section.Model
 	}
 	task.Command = section.Command
-	task.ShouldReadHooksAndSkills = section.ShouldReadHooksAndSkills
+	task.Options = section.Options
 	task.Root = r.root
 	task.Endpoint = r.endpoint
 	task.ToolDeclarations = r.declarations

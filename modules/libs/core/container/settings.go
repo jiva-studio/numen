@@ -200,6 +200,6 @@ func (c Config) Plugins() func() []port.PluginInfo {
 func (c Config) Models() func() []port.Model {
 	return func() []port.Model {
 		held := c.getSettingsOrDefaults()
-		return getAgentModels(held.Agent, c.getAgentPrograms(held.Agent))
+		return settings.AgentModels(agentAt, held.Agent, c.getAgentPrograms(held.Agent))
 	}
 }

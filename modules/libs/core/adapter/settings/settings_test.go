@@ -669,7 +669,7 @@ func TestAnUntouchedInstallationCarriesAStepCount(t *testing.T) {
 	if got := cfg.Agent.GetProgram("claude"); got.MaxSteps <= 0 {
 		t.Errorf("max steps is %d", got.MaxSteps)
 	}
-	if cfg.Agent.GetProgram("claude").ShouldReadHooksAndSkills {
+	if cfg.Agent.GetProgram("claude").Options["reads_hooks_and_skills"] == "true" {
 		t.Error("reads what this machine holds for it")
 	}
 }
@@ -693,7 +693,7 @@ func TestOneAgentFieldKeepsTheRest(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := cfg.Agent.GetProgram("claude")
-	if !got.ShouldReadHooksAndSkills {
+	if got.Options["reads_hooks_and_skills"] != "true" {
 		t.Error("what the file said was not read")
 	}
 	if got.MaxSteps != settings.DefaultAgentSteps {

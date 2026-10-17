@@ -471,8 +471,8 @@ func TestTheRequestCarriesWhatTheTaskGivesTheAgent(t *testing.T) {
 	got := newAskRequest(port.Task{
 		Question: "q", Focus: "f", Conversation: "c", Agent: "one", Model: "m", Instructions: "i",
 		Tools: []string{"note_edit"}, MaxSteps: 7, Root: "/vault", Command: []string{"/bin/one"},
-		ShouldReadHooksAndSkills: true,
-		Endpoint:                 port.ToolEndpoint{URL: "http://127.0.0.1:1/mcp", Token: "t"},
+		Options:  map[string]string{"k": "true"},
+		Endpoint: port.ToolEndpoint{URL: "http://127.0.0.1:1/mcp", Token: "t"},
 		ToolDeclarations: []port.ToolDeclaration{
 			{Name: "note_edit", Title: "Edit a note", Kind: domain.StepEdit, About: "path", Match: "stood", Text: "becomes"},
 			{Name: "note_read", Kind: domain.StepToolCall, Element: "path"},
@@ -485,7 +485,7 @@ func TestTheRequestCarriesWhatTheTaskGivesTheAgent(t *testing.T) {
 		t.Errorf("the question is %v", got)
 	}
 	if got.GetRoot() != "/vault" || !slices.Equal(got.GetCommand(), []string{"/bin/one"}) ||
-		!got.GetReadsHooksAndSkills() || got.GetToolsUrl() != "http://127.0.0.1:1/mcp" || got.GetToolsToken() != "t" {
+		got.GetOptions()["k"] != "true" || got.GetToolsUrl() != "http://127.0.0.1:1/mcp" || got.GetToolsToken() != "t" {
 		t.Errorf("what the agent is given is %v", got)
 	}
 	declared := got.GetToolDeclarations()

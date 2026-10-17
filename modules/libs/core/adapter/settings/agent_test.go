@@ -100,18 +100,18 @@ func TestASectionOfTheWrongTypeIsRefused(t *testing.T) {
 // program is called.
 func TestTheFieldsASectionNamesAreTaken(t *testing.T) {
 	held := read(t, `{
-		"claude": {"command": ["c", "--x"], "model": "opus", "max_steps": 7, "reads_hooks_and_skills": true},
-		"anything": {"command": ["x", "y"], "model": "gpt", "max_steps": 9, "reads_hooks_and_skills": true}
+		"claude": {"command": ["c", "--x"], "model": "opus", "max_steps": 7, "reads_hooks_and_skills": true, "extra": [1,2]},
+		"anything": {"command": ["x", "y"], "model": "gpt", "max_steps": 9, "reads_hooks_and_skills": true, "extra": [1,2]}
 	}`)
 
 	want := map[string]settings.AgentProgram{
-		"claude":   {Command: []string{"c", "--x"}, Model: "opus", MaxSteps: 7, ShouldReadHooksAndSkills: true},
-		"anything": {Command: []string{"x", "y"}, Model: "gpt", MaxSteps: 9, ShouldReadHooksAndSkills: true},
+		"claude":   {Command: []string{"c", "--x"}, Model: "opus", MaxSteps: 7, Options: map[string]string{"reads_hooks_and_skills": "true", "extra": "[1,2]"}},
+		"anything": {Command: []string{"x", "y"}, Model: "gpt", MaxSteps: 9, Options: map[string]string{"reads_hooks_and_skills": "true", "extra": "[1,2]"}},
 	}
 	for name, program := range want {
 		got := held.GetProgram(name)
 		if !slices.Equal(got.Command, program.Command) || got.Model != program.Model ||
-			got.MaxSteps != program.MaxSteps || got.ShouldReadHooksAndSkills != program.ShouldReadHooksAndSkills {
+			got.MaxSteps != program.MaxSteps || !maps.Equal(got.Options, program.Options) {
 			t.Errorf("%s: %+v", name, got)
 		}
 	}

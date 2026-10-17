@@ -36,9 +36,9 @@ type AgentProgram struct {
 	// MaxSteps is how many times it may go to the model before it is stopped.
 	MaxSteps int `json:"max_steps"`
 
-	// ShouldReadHooksAndSkills lets it read what is configured for it on this machine: hooks,
-	// skills, standing instructions, plugins.
-	ShouldReadHooksAndSkills bool `json:"reads_hooks_and_skills"`
+	// Options are the settings only the program knows, by key, each as the JSON the file holds. The
+	// plugin that lists the program says what they mean.
+	Options map[string]string `json:"-"`
 }
 
 // UseProgram is the program an installation names, as the settings hold it.
@@ -127,26 +127,49 @@ func (a Agent) MarshalJSON() ([]byte, error) {
 	return json.Marshal(written)
 }
 
-// UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
+// UnmarshalJSON keeps whatever the defaults set for the fields the file omits. A key the section does
+// not know is an option of the program.
 func (p *AgentProgram) UnmarshalJSON(raw []byte) error {
-	var f struct {
-		Command             *[]string `json:"command"`
-		Model               *string   `json:"model"`
-		MaxSteps            *int      `json:"max_steps"`
-		ReadsHooksAndSkills *bool     `json:"reads_hooks_and_skills"`
-	}
-	if err := json.Unmarshal(raw, &f); err != nil {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
 		return err
 	}
-	assign(&p.Command, f.Command)
-	assign(&p.Model, f.Model)
-	assign(&p.MaxSteps, f.MaxSteps)
-	assign(&p.ShouldReadHooksAndSkills, f.ReadsHooksAndSkills)
+	for key, value := range fields {
+		if string(value) == "null" {
+			continue
+		}
+		if err := p.readField(key, value); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func assign[T any](dst, src *T) {
-	if src != nil {
-		*dst = *src
+// readField reads one key of the section of a program.
+func (p *AgentProgram) readField(key string, value json.RawMessage) error {
+	switch key {
+	case "command":
+		return json.Unmarshal(value, &p.Command)
+	case "model":
+		return json.Unmarshal(value, &p.Model)
+	case "max_steps":
+		return json.Unmarshal(value, &p.MaxSteps)
 	}
+	if p.Options == nil {
+		p.Options = make(map[string]string)
+	}
+	p.Options[key] = string(value)
+	return nil
+}
+
+// MarshalJSON writes the section of a program with its options beside its own keys.
+func (p AgentProgram) MarshalJSON() ([]byte, error) {
+	written := make(map[string]any, len(p.Options)+3)
+	for key, value := range p.Options {
+		written[key] = json.RawMessage(value)
+	}
+	written["command"] = p.Command
+	written["model"] = p.Model
+	written["max_steps"] = p.MaxSteps
+	return json.Marshal(written)
 }

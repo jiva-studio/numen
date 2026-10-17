@@ -144,9 +144,8 @@ type AskAgentRequest struct {
 	// The command line that starts the program, as the installation set it. Empty starts the
 	// program where the provider finds it.
 	Command []string `protobuf:"bytes,13,rep,name=command,proto3" json:"command,omitempty"`
-	// Whether the program may read the hooks, skills and standing instructions this machine holds
-	// for it. What a vault carries is refused either way.
-	ReadsHooksAndSkills bool `protobuf:"varint,14,opt,name=reads_hooks_and_skills,json=readsHooksAndSkills,proto3" json:"reads_hooks_and_skills,omitempty"`
+	// The settings only the program knows, by key, each as JSON.
+	Options map[string]string `protobuf:"bytes,14,rep,name=options,proto3" json:"options,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Where the program reaches the vault's tools, and what it presents there. Empty gives the
 	// program no tools.
 	ToolsUrl      string `protobuf:"bytes,15,opt,name=tools_url,json=toolsUrl,proto3" json:"tools_url,omitempty"`
@@ -276,11 +275,11 @@ func (x *AskAgentRequest) GetCommand() []string {
 	return nil
 }
 
-func (x *AskAgentRequest) GetReadsHooksAndSkills() bool {
+func (x *AskAgentRequest) GetOptions() map[string]string {
 	if x != nil {
-		return x.ReadsHooksAndSkills
+		return x.Options
 	}
-	return false
+	return nil
 }
 
 func (x *AskAgentRequest) GetToolsUrl() string {
@@ -1522,7 +1521,7 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\x14numen/v1/agent.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x16\n" +
 	"\x14GetAgentStateRequest\"9\n" +
 	"\x15GetAgentStateResponse\x12 \n" +
-	"\vunreachable\x18\x01 \x01(\tR\vunreachable\"\xf7\x03\n" +
+	"\vunreachable\x18\x01 \x01(\tR\vunreachable\"\xc0\x04\n" +
 	"\x0fAskAgentRequest\x12\x16\n" +
 	"\x06prompt\x18\x01 \x01(\tR\x06prompt\x12\x14\n" +
 	"\x05focus\x18\x02 \x01(\tR\x05focus\x12\"\n" +
@@ -1537,11 +1536,14 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	" \x01(\x05R\bmaxSteps\x12F\n" +
 	"\x11tool_declarations\x18\v \x03(\v2\x19.numen.v1.ToolDeclarationR\x10toolDeclarations\x12\x12\n" +
 	"\x04root\x18\f \x01(\tR\x04root\x12\x18\n" +
-	"\acommand\x18\r \x03(\tR\acommand\x123\n" +
-	"\x16reads_hooks_and_skills\x18\x0e \x01(\bR\x13readsHooksAndSkills\x12\x1b\n" +
+	"\acommand\x18\r \x03(\tR\acommand\x12@\n" +
+	"\aoptions\x18\x0e \x03(\v2&.numen.v1.AskAgentRequest.OptionsEntryR\aoptions\x12\x1b\n" +
 	"\ttools_url\x18\x0f \x01(\tR\btoolsUrl\x12\x1f\n" +
 	"\vtools_token\x18\x10 \x01(\tR\n" +
-	"toolsToken\"T\n" +
+	"toolsToken\x1a:\n" +
+	"\fOptionsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"T\n" +
 	"\x17GetAgentProgramsRequest\x129\n" +
 	"\bcommands\x18\x01 \x03(\v2\x1d.numen.v1.AgentProgramCommandR\bcommands\"I\n" +
 	"\x13AgentProgramCommand\x12\x18\n" +
@@ -1635,7 +1637,7 @@ func file_numen_v1_agent_proto_rawDescGZIP() []byte {
 	return file_numen_v1_agent_proto_rawDescData
 }
 
-var file_numen_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_numen_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_numen_v1_agent_proto_goTypes = []any{
 	(*GetAgentStateRequest)(nil),       // 0: numen.v1.GetAgentStateRequest
 	(*GetAgentStateResponse)(nil),      // 1: numen.v1.GetAgentStateResponse
@@ -1660,39 +1662,41 @@ var file_numen_v1_agent_proto_goTypes = []any{
 	(*ExtendSystemPromptResponse)(nil), // 20: numen.v1.ExtendSystemPromptResponse
 	(*GetAgentToolsRequest)(nil),       // 21: numen.v1.GetAgentToolsRequest
 	(*GetAgentToolsResponse)(nil),      // 22: numen.v1.GetAgentToolsResponse
-	(*Span)(nil),                       // 23: numen.v1.Span
+	nil,                                // 23: numen.v1.AskAgentRequest.OptionsEntry
+	(*Span)(nil),                       // 24: numen.v1.Span
 }
 var file_numen_v1_agent_proto_depIdxs = []int32{
 	8,  // 0: numen.v1.AskAgentRequest.tool_declarations:type_name -> numen.v1.ToolDeclaration
-	4,  // 1: numen.v1.GetAgentProgramsRequest.commands:type_name -> numen.v1.AgentProgramCommand
-	6,  // 2: numen.v1.GetAgentProgramsResponse.programs:type_name -> numen.v1.AgentProgram
-	7,  // 3: numen.v1.AgentProgram.models:type_name -> numen.v1.AgentModel
-	14, // 4: numen.v1.AskAgentResponse.tool_call:type_name -> numen.v1.ToolCall
-	12, // 5: numen.v1.AskAgentResponse.tool_finished:type_name -> numen.v1.ToolFinished
-	13, // 6: numen.v1.AskAgentResponse.model_started:type_name -> numen.v1.ModelStarted
-	15, // 7: numen.v1.AskAgentResponse.edit_progress:type_name -> numen.v1.EditProgress
-	23, // 8: numen.v1.ToolCall.span:type_name -> numen.v1.Span
-	16, // 9: numen.v1.RegisterToolRequest.tool:type_name -> numen.v1.AgentToolDefinition
-	16, // 10: numen.v1.GetAgentToolsResponse.tools:type_name -> numen.v1.AgentToolDefinition
-	2,  // 11: numen.v1.AgentService.AskAgent:input_type -> numen.v1.AskAgentRequest
-	9,  // 12: numen.v1.AgentService.FinishConversation:input_type -> numen.v1.FinishConversationRequest
-	0,  // 13: numen.v1.AgentService.GetAgentState:input_type -> numen.v1.GetAgentStateRequest
-	17, // 14: numen.v1.AgentService.RegisterTool:input_type -> numen.v1.RegisterToolRequest
-	19, // 15: numen.v1.AgentService.ExtendSystemPrompt:input_type -> numen.v1.ExtendSystemPromptRequest
-	21, // 16: numen.v1.AgentService.GetAgentTools:input_type -> numen.v1.GetAgentToolsRequest
-	3,  // 17: numen.v1.AgentService.GetAgentPrograms:input_type -> numen.v1.GetAgentProgramsRequest
-	11, // 18: numen.v1.AgentService.AskAgent:output_type -> numen.v1.AskAgentResponse
-	10, // 19: numen.v1.AgentService.FinishConversation:output_type -> numen.v1.FinishConversationResponse
-	1,  // 20: numen.v1.AgentService.GetAgentState:output_type -> numen.v1.GetAgentStateResponse
-	18, // 21: numen.v1.AgentService.RegisterTool:output_type -> numen.v1.RegisterToolResponse
-	20, // 22: numen.v1.AgentService.ExtendSystemPrompt:output_type -> numen.v1.ExtendSystemPromptResponse
-	22, // 23: numen.v1.AgentService.GetAgentTools:output_type -> numen.v1.GetAgentToolsResponse
-	5,  // 24: numen.v1.AgentService.GetAgentPrograms:output_type -> numen.v1.GetAgentProgramsResponse
-	18, // [18:25] is the sub-list for method output_type
-	11, // [11:18] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	23, // 1: numen.v1.AskAgentRequest.options:type_name -> numen.v1.AskAgentRequest.OptionsEntry
+	4,  // 2: numen.v1.GetAgentProgramsRequest.commands:type_name -> numen.v1.AgentProgramCommand
+	6,  // 3: numen.v1.GetAgentProgramsResponse.programs:type_name -> numen.v1.AgentProgram
+	7,  // 4: numen.v1.AgentProgram.models:type_name -> numen.v1.AgentModel
+	14, // 5: numen.v1.AskAgentResponse.tool_call:type_name -> numen.v1.ToolCall
+	12, // 6: numen.v1.AskAgentResponse.tool_finished:type_name -> numen.v1.ToolFinished
+	13, // 7: numen.v1.AskAgentResponse.model_started:type_name -> numen.v1.ModelStarted
+	15, // 8: numen.v1.AskAgentResponse.edit_progress:type_name -> numen.v1.EditProgress
+	24, // 9: numen.v1.ToolCall.span:type_name -> numen.v1.Span
+	16, // 10: numen.v1.RegisterToolRequest.tool:type_name -> numen.v1.AgentToolDefinition
+	16, // 11: numen.v1.GetAgentToolsResponse.tools:type_name -> numen.v1.AgentToolDefinition
+	2,  // 12: numen.v1.AgentService.AskAgent:input_type -> numen.v1.AskAgentRequest
+	9,  // 13: numen.v1.AgentService.FinishConversation:input_type -> numen.v1.FinishConversationRequest
+	0,  // 14: numen.v1.AgentService.GetAgentState:input_type -> numen.v1.GetAgentStateRequest
+	17, // 15: numen.v1.AgentService.RegisterTool:input_type -> numen.v1.RegisterToolRequest
+	19, // 16: numen.v1.AgentService.ExtendSystemPrompt:input_type -> numen.v1.ExtendSystemPromptRequest
+	21, // 17: numen.v1.AgentService.GetAgentTools:input_type -> numen.v1.GetAgentToolsRequest
+	3,  // 18: numen.v1.AgentService.GetAgentPrograms:input_type -> numen.v1.GetAgentProgramsRequest
+	11, // 19: numen.v1.AgentService.AskAgent:output_type -> numen.v1.AskAgentResponse
+	10, // 20: numen.v1.AgentService.FinishConversation:output_type -> numen.v1.FinishConversationResponse
+	1,  // 21: numen.v1.AgentService.GetAgentState:output_type -> numen.v1.GetAgentStateResponse
+	18, // 22: numen.v1.AgentService.RegisterTool:output_type -> numen.v1.RegisterToolResponse
+	20, // 23: numen.v1.AgentService.ExtendSystemPrompt:output_type -> numen.v1.ExtendSystemPromptResponse
+	22, // 24: numen.v1.AgentService.GetAgentTools:output_type -> numen.v1.GetAgentToolsResponse
+	5,  // 25: numen.v1.AgentService.GetAgentPrograms:output_type -> numen.v1.GetAgentProgramsResponse
+	19, // [19:26] is the sub-list for method output_type
+	12, // [12:19] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_agent_proto_init() }
@@ -1715,7 +1719,7 @@ func file_numen_v1_agent_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_agent_proto_rawDesc), len(file_numen_v1_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   23,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

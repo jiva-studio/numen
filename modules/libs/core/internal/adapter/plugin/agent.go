@@ -60,20 +60,20 @@ func newAskRequest(task port.Task) *v1.AskAgentRequest {
 		})
 	}
 	return &v1.AskAgentRequest{
-		Prompt:              task.Question,
-		Focus:               task.Focus,
-		Conversation:        task.Conversation,
-		Agent:               task.Agent,
-		Model:               task.Model,
-		Instructions:        task.Instructions,
-		Tools:               task.Tools,
-		MaxSteps:            int32(min(max(task.MaxSteps, 0), math.MaxInt32)),
-		ToolDeclarations:    declarations,
-		Root:                task.Root,
-		Command:             task.Command,
-		ReadsHooksAndSkills: task.ShouldReadHooksAndSkills,
-		ToolsUrl:            task.Endpoint.URL,
-		ToolsToken:          task.Endpoint.Token,
+		Prompt:           task.Question,
+		Focus:            task.Focus,
+		Conversation:     task.Conversation,
+		Agent:            task.Agent,
+		Model:            task.Model,
+		Instructions:     task.Instructions,
+		Tools:            task.Tools,
+		MaxSteps:         int32(min(max(task.MaxSteps, 0), math.MaxInt32)),
+		ToolDeclarations: declarations,
+		Root:             task.Root,
+		Command:          task.Command,
+		Options:          task.Options,
+		ToolsUrl:         task.Endpoint.URL,
+		ToolsToken:       task.Endpoint.Token,
 	}
 }
 

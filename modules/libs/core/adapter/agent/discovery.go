@@ -1,3 +1,4 @@
+// Package agent finds the programs a person already has installed on this machine.
 package agent
 
 import (
