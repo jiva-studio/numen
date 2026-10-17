@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"strings"
 	"testing"
 
@@ -475,17 +476,25 @@ func TestOnlyTheCorrectionsOfPagesTheCountClaimsAreKept(t *testing.T) {
 }
 
 func TestProofreadRecognitionRejectsInvalidCorrectionBatches(t *testing.T) {
-	put1, v1, _, _ := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{
+	put1, v1, shelved1, _ := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{
 		0: {Number: 0, Last: 1, Text: "joined"},
 	})
-	if _, err := put1.Execute(t.Context(), v1, documentPath); err == nil {
-		t.Error("Execute() accepted joined correction for scan")
+	if _, err := put1.Execute(t.Context(), v1, documentPath); !errors.Is(err, ErrJoinedCorrectionNotAllowed) {
+		t.Errorf("Execute() error = %v, want %v", err, ErrJoinedCorrectionNotAllowed)
+	}
+	names1 := textNames(t, shelved1)
+	if _, err := shelved1.ReadArtifact(t.Context(), names1.corrections); !errors.Is(err, fs.ErrNotExist) {
+		t.Error("corrections artifact written for rejected joined batch")
 	}
 
-	put2, v2, _, _ := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{
+	put2, v2, shelved2, _ := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{
 		0: {Number: 9999, Text: "unasked"},
 	})
-	if _, err := put2.Execute(t.Context(), v2, documentPath); err == nil {
-		t.Error("Execute() accepted correction with unasked line number")
+	if _, err := put2.Execute(t.Context(), v2, documentPath); !errors.Is(err, ErrUnaskedCorrectionLine) {
+		t.Errorf("Execute() error = %v, want %v", err, ErrUnaskedCorrectionLine)
+	}
+	names2 := textNames(t, shelved2)
+	if _, err := shelved2.ReadArtifact(t.Context(), names2.corrections); !errors.Is(err, fs.ErrNotExist) {
+		t.Error("corrections artifact written for rejected unasked batch")
 	}
 }

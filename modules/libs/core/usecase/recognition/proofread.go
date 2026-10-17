@@ -15,6 +15,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
+// ErrJoinedCorrectionNotAllowed marks a correction that joins lines, which a scan does not admit.
+var ErrJoinedCorrectionNotAllowed = errors.New("scan correction cannot join lines")
+
+// ErrUnaskedCorrectionLine marks a correction whose line number was not asked about.
+var ErrUnaskedCorrectionLine = errors.New("scan correction line was not asked")
+
 // Proofread puts a document's recognition right, where a person configured
 // something to proofread it with.
 //
@@ -288,10 +294,10 @@ func getCorrectionLines(asked []domain.ProofreadPage, made []domain.ProofreadCor
 	out := make([]domain.CorrectionLine, len(made))
 	for i, one := range made {
 		if one.IsJoined() {
-			return nil, fmt.Errorf("scan correction %d-%d cannot join lines", one.Number, one.Last)
+			return nil, fmt.Errorf("%w: scan correction %d-%d cannot join lines", ErrJoinedCorrectionNotAllowed, one.Number, one.Last)
 		}
 		if !valid[one.Number] {
-			return nil, fmt.Errorf("scan correction line %d was not asked", one.Number)
+			return nil, fmt.Errorf("%w: scan correction line %d was not asked", ErrUnaskedCorrectionLine, one.Number)
 		}
 		out[i] = domain.CorrectionLine{Number: one.Number, Text: one.Text}
 	}
