@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -179,15 +180,22 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 	host.discoverMu.Lock()
 
 	answered := make(chan error, 1)
+	calling := make(chan struct{})
 	go func() {
+		close(calling)
 		_, err := host.EnsureActive(t.Context(), "md.numen.ocr")
 		answered <- err
 	}()
+	<-calling
+	runtime.Gosched()
 
+	if host.discoverMu.TryRLock() {
+		t.Fatal("the discovery lock is not held")
+	}
 	select {
 	case err := <-answered:
 		t.Fatalf("EnsureActive answered while a discovery was in progress: %v", err)
-	case <-time.After(50 * time.Millisecond):
+	default:
 	}
 	host.discoverMu.Unlock()
 	if err := <-answered; err != nil {

@@ -76,6 +76,7 @@ type Host struct {
 	errorHandler   ErrorHandler
 	onDisk         map[string]bool
 	discoverMu     sync.RWMutex
+	failedPlugins  []pluginFailure
 	problems       []DiscoveryProblem
 }
 
@@ -104,6 +105,7 @@ func NewHost(target string, dirs ...string) *Host {
 		errorHandler:   nil,
 		onDisk:         make(map[string]bool),
 		discoverMu:     sync.RWMutex{},
+		failedPlugins:  nil,
 		problems:       nil,
 	}
 	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
@@ -470,16 +472,35 @@ func (h *Host) failActivation(ctx context.Context, pluginID string, sup *Supervi
 		return
 	}
 	sup.SetDormant(cause)
-	notify := h.onPluginFailed
 	failedNow := false
 	if ctx.Err() == nil {
 		wasFailed, _ := sup.GetActivationFailure()
 		failedNow = sup.RecordActivationFailure(time.Now(), h.activation, cause) && !wasFailed
 	}
+	if failedNow {
+		h.failedPlugins = append(h.failedPlugins, pluginFailure{pluginID: pluginID, cause: cause})
+	}
+	h.mu.Unlock()
+}
+
+type pluginFailure struct {
+	pluginID string
+	cause    error
+}
+
+// deliverPluginFailures hands the plugins that just failed for good to the failure callback, outside every lock.
+func (h *Host) deliverPluginFailures() {
+	h.mu.Lock()
+	failures := h.failedPlugins
+	h.failedPlugins = nil
+	notify := h.onPluginFailed
 	h.mu.Unlock()
 
-	if failedNow && notify != nil {
-		notify(pluginID, cause)
+	if notify == nil {
+		return
+	}
+	for _, failure := range failures {
+		notify(failure.pluginID, failure.cause)
 	}
 }
 
@@ -507,6 +528,13 @@ func (h *Host) settlePluginInState(
 
 // EnsureActive ensures the plugin process is running and returns its endpoint.
 func (h *Host) EnsureActive(ctx context.Context, pluginID string) (Endpoint, error) {
+	endpoint, err := h.ensureActiveDuringDiscovery(ctx, pluginID)
+	h.deliverPluginFailures()
+	return endpoint, err
+}
+
+// ensureActiveDuringDiscovery activates a plugin while holding off a discovery that could retire it.
+func (h *Host) ensureActiveDuringDiscovery(ctx context.Context, pluginID string) (Endpoint, error) {
 	h.discoverMu.RLock()
 	defer h.discoverMu.RUnlock()
 
