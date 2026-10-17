@@ -133,7 +133,7 @@ func TestNoPluginNamesAnotherModuleOfTheRepository(t *testing.T) {
 // requires, and the local directories it substitutes for a module.
 type goMod struct {
 	requires []string
-	// replaced maps a module path to the local directory it is built from.
+	// replaced maps a module path to the module path or local directory it is built from.
 	replaced map[string]string
 }
 
@@ -145,7 +145,7 @@ func parseGoMod(text string) goMod {
 	for _, line := range strings.Split(text, "\n") {
 		line, _, _ = strings.Cut(line, "//")
 		line = strings.TrimSpace(line)
-		fields := strings.Fields(line)
+		fields := unquoteAll(strings.Fields(line))
 		switch {
 		case len(fields) == 0:
 		case line == ")":
@@ -161,6 +161,16 @@ func parseGoMod(text string) goMod {
 	return mod
 }
 
+// unquoteAll removes the quotes Go allows around a path in a go.mod.
+func unquoteAll(fields []string) []string {
+	for i, field := range fields {
+		if unquoted, err := strconv.Unquote(field); err == nil {
+			fields[i] = unquoted
+		}
+	}
+	return fields
+}
+
 // read records one directive of the given kind.
 func (mod *goMod) read(kind string, fields []string) {
 	switch kind {
@@ -170,7 +180,7 @@ func (mod *goMod) read(kind string, fields []string) {
 		}
 	case "replace":
 		for i, field := range fields {
-			if field == "=>" && i+1 < len(fields) && strings.HasPrefix(fields[i+1], ".") {
+			if field == "=>" && i+1 < len(fields) {
 				mod.replaced[fields[0]] = fields[i+1]
 			}
 		}
@@ -190,7 +200,9 @@ func getGoModRefusals(plugin string, mod goMod) []string {
 	for from, to := range mod.replaced {
 		if why := getPluginRefusal(plugin, from); why != "" {
 			refusals = append(refusals, "replaces "+from+" with "+to+": "+why)
-		} else if !strings.HasPrefix(from, numenModules) {
+		} else if why := getPluginRefusal(plugin, to); why != "" {
+			refusals = append(refusals, "replaces "+from+" with "+to+": "+why)
+		} else if strings.HasPrefix(to, ".") && !strings.HasPrefix(from, numenModules) {
 			refusals = append(refusals, "replaces "+from+" with "+to+": third-party code is built from its own module")
 		}
 	}
@@ -206,6 +218,8 @@ func TestWhatThePluginGoModRulesRefuse(t *testing.T) {
 		{"a block opener with a comment", "require ( // deps\n\t" + numenModules + "plugins/ocr v0.0.0\n)", 1},
 		{"a single-line requirement", "require " + numenModules + "plugins/ocr v0.0.0", 1},
 		{"a third-party module built from core", "require example.com/x v1.0.0\nreplace example.com/x => ../../libs/core", 1},
+		{"a quoted requirement", "require \"" + numenModules + "libs/core\" v0.0.0", 1},
+		{"a module-path replacement by core", "require example.com/x v1.0.0\nreplace example.com/x v1.0.0 => " + numenModules + "libs/core v0.0.0", 1},
 		{"the contract", "require (\n\t" + numenModules + "libs/protocol v0.0.0\n\texample.com/x v1.0.0\n)\nreplace " + numenModules + "libs/protocol => ../../libs/protocol", 0},
 	} {
 		if got := len(getGoModRefusals("agent", parseGoMod(one.text))); got != one.refused {
