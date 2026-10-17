@@ -384,6 +384,9 @@ func TestAPageOfPartsThatSayNothingIsBlank(t *testing.T) {
 func TestRunBoundedLimitOneCapsWorkersAtOne(t *testing.T) {
 	var active atomic.Int32
 	var maxActive atomic.Int32
+	secondEntered := make(chan struct{})
+	done := make(chan struct{})
+
 	runBounded(t.Context(), 10, 1, func(int) {
 		cur := active.Add(1)
 		for {
@@ -392,9 +395,21 @@ func TestRunBoundedLimitOneCapsWorkersAtOne(t *testing.T) {
 				break
 			}
 		}
-		time.Sleep(5 * time.Millisecond)
+		if cur > 1 {
+			select {
+			case secondEntered <- struct{}{}:
+			default:
+			}
+		} else {
+			select {
+			case <-secondEntered:
+			case <-time.After(10 * time.Millisecond):
+			case <-done:
+			}
+		}
 		active.Add(-1)
 	})
+	close(done)
 	if got := maxActive.Load(); got != 1 {
 		t.Errorf("concurrent workers = %d, want 1", got)
 	}
