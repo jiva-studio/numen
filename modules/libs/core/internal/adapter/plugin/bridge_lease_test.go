@@ -95,6 +95,7 @@ func newLeaseHost(t *testing.T) *leaseHost {
 	t.Helper()
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewAgentServiceHandler(&mockAgentServer{}))
+	mux.Handle(numenv1connect.NewCompletionServiceHandler(numenv1connect.UnimplementedCompletionServiceHandler{}))
 	mux.Handle(numenv1connect.NewDocumentServiceHandler(stubDocumentServer{}))
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(stubEmbeddingServer{}))
 	mux.Handle(numenv1connect.NewRecognitionServiceHandler(stubRecognitionServer{}))
@@ -119,6 +120,9 @@ func TestADoubleCloseGivesTheReferenceBackOnce(t *testing.T) {
 			return OpenAgentBridgeForPlugin(ctx, h, "md.numen.stub")
 		}},
 		{"proofreader", func(_ context.Context, h *leaseHost) (io.Closer, error) { return OpenProofreaderBridge(h) }},
+		{"completion", func(ctx context.Context, h *leaseHost) (io.Closer, error) {
+			return OpenCompletionBridge(ctx, h, "md.numen.stub")
+		}},
 	}
 	for _, tc := range bridges {
 		t.Run(tc.name, func(t *testing.T) {

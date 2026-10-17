@@ -21,3 +21,8 @@ The `models` package is the one place plugins keep and fetch models.
 - `Fetch` downloads over https into that folder, checks the bytes against the pinned sha256 while they arrive, and puts the file in place only when they match. A file with no pin is fetched as named.
 - `NUMEN_OFFLINE=1` forbids every fetch, and `NUMEN_MODELS_QUOTA` caps the bytes the folder holds (32 GiB by default).
 - A plugin that downloads declares `network:outbound` in its manifest.
+
+## Pins and vault paths
+
+- `models.Pins` maps a model address to its pinned sha256. `models.Locate` returns where a model file is: a path as written, a file in the places a `models.Source` names (a pinned file only when it holds its sum), or a fetch.
+- `vault.ValidatePath` returns the clean path of a file inside the vault named by `NUMEN_VAULT_PATH`, and refuses an empty path, a traversal and a path outside the vault. `vault.IsTempDocument` lets a document the host put in the temp folder through.
