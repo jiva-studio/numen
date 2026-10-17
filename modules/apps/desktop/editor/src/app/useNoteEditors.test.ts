@@ -84,7 +84,7 @@ const store = (title: string | undefined) => ({
 beforeEach(() => {
   h.calls = {
     raised: [],
-    openNotes: [null, { onReplaced: () => {} }],
+    openNotes: [null, { onReplaced: vi.fn() }],
     writer: [null, null],
     decks: [],
     stencils: [null, null, { writeMessage: null }],

@@ -17,60 +17,70 @@ interface MockPlexState {
   activate: (id: string) => void
 }
 
+function createPlexLinkedFixture(neighbourhoodPath: string, neighbourhoodTitle: string) {
+  const tabLinks = useTabLinks()
+  const held = useWindowTabs()
+
+  const loadInTabMock = vi.fn()
+  const openFileMock = vi.fn()
+  const revealPathMock = vi.fn()
+
+  const editingMock = {
+    making: {},
+    noted: {
+      loadInTab: loadInTabMock,
+    },
+  } as never
+
+  const tabOpenersMock = {
+    openFile: openFileMock,
+  } as never
+
+  const windowMock = {
+    failure: ref(false),
+    opening: ref(''),
+    readInitialNote: vi.fn(async () => ''),
+  } as never
+
+  const settingsMock = {
+    nesting: {
+      isNesting: ref(false),
+      headings: ref(0),
+    },
+  } as never
+
+  const tabSync = useTabSync({ held, tabLinks, editing: editingMock })
+
+  const plexKind = createPlexKind({
+    core: {
+      neighbourhood: async (path: string) => ({
+        focus: { path, title: 'Focus' },
+        related: [{ path: neighbourhoodPath, title: neighbourhoodTitle, kind: 'link' }],
+      }),
+    } as never,
+    tabOpeners: tabOpenersMock,
+    held,
+    editing: editingMock,
+    settings: settingsMock,
+    window: windowMock,
+    getTarget: () => ({}) as never,
+    runCommand: vi.fn(),
+    dragged: shallowRef([]),
+    writeMessage: vi.fn(),
+    askAgent: vi.fn(),
+    tabLinks,
+    tabSync,
+  })
+
+  return { tabLinks, held, loadInTabMock, revealPathMock, plexKind }
+}
+
 describe('createPlexKind with linked tabs', () => {
   it('loads note in linked tab when plex node is opened', async () => {
-    const tabLinks = useTabLinks()
-    const held = useWindowTabs()
-
-    const loadInTabMock = vi.fn()
-    const openFileMock = vi.fn()
-
-    const editingMock = {
-      making: {},
-      noted: {
-        loadInTab: loadInTabMock,
-      },
-    } as never
-
-    const tabOpenersMock = {
-      openFile: openFileMock,
-    } as never
-
-    const windowMock = {
-      failure: ref(false),
-      opening: ref(''),
-      readInitialNote: async () => '',
-    } as never
-
-    const settingsMock = {
-      nesting: {
-        isNesting: ref(false),
-        headings: ref(0),
-      },
-    } as never
-
-    const tabSync = useTabSync({ held, tabLinks, editing: editingMock })
-
-    const plexKind = createPlexKind({
-      core: {
-        neighbourhood: async (path: string) => ({
-          focus: { path, title: 'Focus Title' },
-          related: [{ path: 'Target.md', title: 'Target Title', kind: 'link' }],
-        }),
-      } as never,
-      tabOpeners: tabOpenersMock,
-      held,
-      editing: editingMock,
-      settings: settingsMock,
-      window: windowMock,
-      getTarget: () => ({}) as never,
-      runCommand: () => {},
-      dragged: shallowRef([]),
-      writeMessage: () => {},
-      askAgent: () => {},
-      tabLinks,
-      tabSync,
-    })
+    const { tabLinks, held, loadInTabMock, plexKind } = createPlexLinkedFixture(
+      'Target.md',
+      'Target Title',
+    )
 
     const noteKind = {
       kind: 'note',
@@ -104,57 +114,10 @@ describe('createPlexKind with linked tabs', () => {
   })
 
   it('reveals file in linked files tab when plex node is activated', async () => {
-    const tabLinks = useTabLinks()
-    const held = useWindowTabs()
-
-    const revealPathMock = vi.fn()
-
-    const editingMock = {
-      making: {},
-      noted: {
-        loadInTab: vi.fn(),
-      },
-    } as never
-
-    const tabOpenersMock = {
-      openFile: vi.fn(),
-    } as never
-
-    const windowMock = {
-      failure: ref(false),
-      opening: ref(''),
-      readInitialNote: async () => '',
-    } as never
-
-    const settingsMock = {
-      nesting: {
-        isNesting: ref(false),
-        headings: ref(0),
-      },
-    } as never
-
-    const tabSync = useTabSync({ held, tabLinks, editing: editingMock })
-
-    const plexKind = createPlexKind({
-      core: {
-        neighbourhood: async (path: string) => ({
-          focus: { path, title: 'Focus' },
-          related: [{ path: 'Selected.md', title: 'Selected Title', kind: 'link' }],
-        }),
-      } as never,
-      tabOpeners: tabOpenersMock,
-      held,
-      editing: editingMock,
-      settings: settingsMock,
-      window: windowMock,
-      getTarget: () => ({}) as never,
-      runCommand: () => {},
-      dragged: shallowRef([]),
-      writeMessage: () => {},
-      askAgent: () => {},
-      tabLinks,
-      tabSync,
-    })
+    const { tabLinks, held, revealPathMock, plexKind } = createPlexLinkedFixture(
+      'Selected.md',
+      'Selected Title',
+    )
 
     const filesStateMock = {
       list: {

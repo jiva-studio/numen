@@ -33,14 +33,14 @@ const createOptions = (over: Partial<CommandDepsOptions> = {}) => {
     } as never,
     setVaultName: record('setVaultName'),
     reload: record('reload'),
-    loadArtifactStates: async () => {},
+    loadArtifactStates: vi.fn(),
     reached: {} as never,
     openPreset: async (path) => {
       record('openPreset')(path)
     },
-    dressed: { chooseItem: async () => {} },
-    oneName: { choose: async () => {} },
-    nesting: { choose: async () => {}, chooseCount: async () => {} },
+    dressed: { chooseItem: vi.fn() },
+    oneName: { choose: vi.fn() },
+    nesting: { choose: vi.fn(), chooseCount: vi.fn() },
     rest: {
       writeSettings: async (written) => {
         record('writeSettings')(written)
@@ -49,7 +49,7 @@ const createOptions = (over: Partial<CommandDepsOptions> = {}) => {
     recorded: {},
     pointed: {},
     files: () => ({ revealPath: record('revealPath') }),
-    plexes: () => ({ travel: async () => {}, leavePath: async () => {} }),
+    plexes: () => ({ travel: vi.fn(), leavePath: vi.fn() }),
     agents: () => ({
       askQuestion: (text: string) => {
         record('askQuestion')(text)
@@ -57,7 +57,7 @@ const createOptions = (over: Partial<CommandDepsOptions> = {}) => {
     }),
     getOpeningNote: () => '',
     runs: {} as never,
-    writeMessage: () => {},
+    writeMessage: vi.fn(),
     ...over,
   }
   return { deps: createCommandDeps(options), calls, options }
