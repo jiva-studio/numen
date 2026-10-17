@@ -21,8 +21,9 @@ import (
 
 const (
 	secretPluginID = "md.numen.agent"
-	keychainValue  = "value-held-by-the-keychain"
-	settingsValue  = "value-typed-into-the-settings"
+	declared       = "apiKey"
+	fromKeychain   = "value-held-by-the-keychain"
+	fromSettings   = "value-typed-into-the-settings"
 )
 
 // keys is a key store held in memory.
@@ -153,22 +154,22 @@ func assertNoKey(t *testing.T, where, text string, keys ...string) {
 
 // The key arrives as the value of its secret in Configure, and nowhere else in the call.
 func TestTheKeyReachesThePluginOnlyAsTheValueOfItsSecret(t *testing.T) {
-	store := newKeys(map[string]string{secretPluginID + "/apiKey": keychainValue})
+	store := newKeys(map[string]string{secretPluginID + "/apiKey": fromKeychain})
 	host, probe := newSecretHost(t, store)
 
 	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
 	}
 	call := probe.last(t)
-	if call.GetValues()["apiKey"] != keychainValue {
+	if call.GetValues()["apiKey"] != fromKeychain {
 		t.Errorf("values = %v, want the stored key under apiKey", call.GetValues())
 	}
-	assertNoKey(t, "the configuration json", call.GetConfigurationJson(), keychainValue)
+	assertNoKey(t, "the configuration json", call.GetConfigurationJson(), fromKeychain)
 	for name, value := range call.GetValues() {
 		if name == "apiKey" {
 			continue
 		}
-		assertNoKey(t, "value "+name, value, keychainValue)
+		assertNoKey(t, "value "+name, value, fromKeychain)
 	}
 	if call.GetValues()["model"] != "sonnet" {
 		t.Errorf("values = %v, want the model setting", call.GetValues())
@@ -190,15 +191,15 @@ func TestASecretWithoutAKeyIsHandedOverEmpty(t *testing.T) {
 // reaches the plugin by none of the ways the host speaks to it.
 func TestAKeyTypedIntoTheSettingsIsNotPassedOn(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{}))
-	host.SetSettings(map[string]map[string]any{secretPluginID: {"apiKey": settingsValue, "model": "opus"}})
+	host.SetSettings(map[string]map[string]any{secretPluginID: {declared: fromSettings, "model": "opus"}})
 
 	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
 	}
 	call := probe.last(t)
-	assertNoKey(t, "the configuration json", call.GetConfigurationJson(), settingsValue)
+	assertNoKey(t, "the configuration json", call.GetConfigurationJson(), fromSettings)
 	for name, value := range call.GetValues() {
-		assertNoKey(t, "value "+name, value, settingsValue)
+		assertNoKey(t, "value "+name, value, fromSettings)
 	}
 	if call.GetValues()["apiKey"] != "" {
 		t.Errorf("apiKey = %q, want none", call.GetValues()["apiKey"])
@@ -211,7 +212,7 @@ func TestAKeyTypedIntoTheSettingsIsNotPassedOn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertNoKey(t, "NUMEN_PLUGIN_CONFIG", cfg, settingsValue, keychainValue)
+	assertNoKey(t, "NUMEN_PLUGIN_CONFIG", cfg, fromSettings, fromKeychain)
 	if _, found := host.GetPluginSettings(secretPluginID)["apiKey"]; found {
 		t.Error("the settings the window reads hold a secret")
 	}
@@ -220,9 +221,9 @@ func TestAKeyTypedIntoTheSettingsIsNotPassedOn(t *testing.T) {
 // What the host puts in a plugin process's environment and on its command line
 // holds no key, whether the key is in the store or was typed into the settings.
 func TestNoKeyIsInTheEnvironmentOrOnTheCommandLine(t *testing.T) {
-	store := newKeys(map[string]string{secretPluginID + "/apiKey": keychainValue})
+	store := newKeys(map[string]string{secretPluginID + "/apiKey": fromKeychain})
 	host, _ := newSecretHost(t, store)
-	host.SetSettings(map[string]map[string]any{secretPluginID: {"apiKey": settingsValue}})
+	host.SetSettings(map[string]map[string]any{secretPluginID: {declared: fromSettings}})
 
 	configJSON, err := host.GetPluginConfigJSON(secretPluginID)
 	if err != nil {
@@ -234,7 +235,7 @@ func TestNoKeyIsInTheEnvironmentOrOnTheCommandLine(t *testing.T) {
 	})
 	args := getPluginArgs(4000, launchName)
 	for _, entry := range append(vars, args...) {
-		assertNoKey(t, "launch entry "+entry, entry, keychainValue, settingsValue)
+		assertNoKey(t, "launch entry "+entry, entry, fromKeychain, fromSettings)
 	}
 	if len(vars) == 0 || len(args) == 0 {
 		t.Fatal("nothing was read")
@@ -280,13 +281,13 @@ func TestAKeySetThroughTheHostReachesTheRunningPlugin(t *testing.T) {
 	store := newKeys(map[string]string{})
 	host, probe := newSecretHost(t, store)
 
-	if err := host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", keychainValue); err != nil {
+	if err := host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", fromKeychain); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := store.hold(secretPluginID + "/apiKey"); got != keychainValue {
+	if got, _ := store.hold(secretPluginID + "/apiKey"); got != fromKeychain {
 		t.Errorf("stored %q", got)
 	}
-	if probe.last(t).GetValues()["apiKey"] != keychainValue {
+	if probe.last(t).GetValues()["apiKey"] != fromKeychain {
 		t.Errorf("the plugin was handed %v", probe.last(t).GetValues())
 	}
 
@@ -326,7 +327,7 @@ func TestAKeyTheStoreCannotKeepIsAnError(t *testing.T) {
 	store.failed = port.ErrNoKeyStore
 	host, probe := newSecretHost(t, store)
 
-	if err := host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", keychainValue); !errors.Is(err, port.ErrNoKeyStore) {
+	if err := host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", fromKeychain); !errors.Is(err, port.ErrNoKeyStore) {
 		t.Errorf("error = %v, want port.ErrNoKeyStore", err)
 	}
 	if len(probe.calls) != 0 {
@@ -340,7 +341,7 @@ func TestAKeyTheStoreCannotKeepIsAnError(t *testing.T) {
 func TestAPluginThatCannotBeConfiguredHasNotBeenHandedItsKey(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{}))
 	probe.unimplemented = true
-	if err := host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", keychainValue); err == nil {
+	if err := host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", fromKeychain); err == nil {
 		t.Error("a key the plugin never received was reported as delivered")
 	}
 
@@ -361,7 +362,7 @@ func TestChangesOfASecretAreAppliedOneAtATime(t *testing.T) {
 	host, probe := newSecretHost(t, store)
 
 	setDone := make(chan error, 1)
-	go func() { setDone <- host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", keychainValue) }()
+	go func() { setDone <- host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", fromKeychain) }()
 	<-store.entered
 
 	deleteDone := make(chan error, 1)
@@ -396,7 +397,7 @@ func TestAConfigureWaitsForASecretChangeInFlight(t *testing.T) {
 	host, probe := newSecretHost(t, store)
 
 	setDone := make(chan error, 1)
-	go func() { setDone <- host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", keychainValue) }()
+	go func() { setDone <- host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", fromKeychain) }()
 	<-store.entered
 
 	notified := make(chan error, 1)
@@ -414,7 +415,7 @@ func TestAConfigureWaitsForASecretChangeInFlight(t *testing.T) {
 	if err := <-notified; err != nil {
 		t.Fatal(err)
 	}
-	if probe.last(t).GetValues()["apiKey"] != keychainValue {
+	if probe.last(t).GetValues()["apiKey"] != fromKeychain {
 		t.Errorf("the plugin ended holding %v", probe.last(t).GetValues())
 	}
 }
