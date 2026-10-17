@@ -40,6 +40,10 @@ type Supervisor struct {
 	process        *os.Process
 	inProcess      bool
 	teardownBegun  bool
+	failures       int
+	failure        error
+	failed         bool
+	retryAt        time.Time
 	lastActiveTime time.Time
 	activeRefCount int
 	permissions    []string
@@ -67,6 +71,10 @@ func NewSupervisor() *Supervisor {
 		process:           nil,
 		inProcess:         false,
 		teardownBegun:     false,
+		failures:          0,
+		failure:           nil,
+		failed:            false,
+		retryAt:           time.Time{},
 		lastActiveTime:    time.Time{},
 		activeRefCount:    0,
 		permissions:       nil,
