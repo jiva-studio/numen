@@ -480,7 +480,7 @@ A profile is flat: every key sits at the profile's own level.
 
 | | |
 | --- | --- |
-| `batch_size` | how many lines one request carries. 40. |
+| `batch_size` | how many lines one speech request carries, or how many pages one scan call carries. 40. |
 | `overlap` | how many lines neighbouring batches share, so a phrase torn at a batch boundary is still seen whole by one of them. A line two batches both answered about is taken from the later of the two, which is the batch that saw more of what follows it. |
 | `in_flight` | how many batches one call answers. Left out, it is the performance profile's LLM concurrency; with no performance profile, 4. How many questions reach the model at once is the concurrency of the route. |
 
@@ -514,7 +514,7 @@ Scans and transcripts through the `claude` command line on this machine, two que
 }
 ```
 
-A scan goes forty printed lines to a request. A page ends where a page ends, so nothing carries over and `overlap` is 0. Speech goes sixty cues to a request, three requests to a call; a sentence runs across the cue a batch ends on, so two cues are shared with the batch on either side.
+A scan goes forty pages to a call. A page ends where a page ends, so nothing carries over and `overlap` is 0. Speech goes sixty cues to a request, three requests to a call; a sentence runs across the cue a batch ends on, so two cues are shared with the batch on either side.
 
 A `with` naming a profile `profiles` does not carry is an error at startup. An installation that meant to proofread and misspelled the name is told so, and does not run quietly proofreading nothing.
 

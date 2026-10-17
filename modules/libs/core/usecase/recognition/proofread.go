@@ -210,7 +210,7 @@ func (u Proofread) askPages(
 		if err != nil {
 			return fmt.Errorf("proofread %s: %w", p.path, err)
 		}
-		if err := u.writeCorrections(ctx, p, answer, end, res); err != nil {
+		if err := u.writeCorrections(ctx, p, asked, answer, end, res); err != nil {
 			return err
 		}
 	}
@@ -223,11 +223,15 @@ func (u Proofread) askPages(
 func (u Proofread) writeCorrections(
 	ctx context.Context,
 	p proofreadRecognitionJob,
+	asked []domain.ProofreadPage,
 	answer domain.ScanProofreading,
 	end int,
 	res *ProofreadResult,
 ) error {
-	put := getCorrectionLines(answer.Corrections)
+	put, err := getCorrectionLines(asked, answer.Corrections)
+	if err != nil {
+		return fmt.Errorf("proofread %s: %w", p.path, err)
+	}
 	res.UncorrectedPages += answer.Uncorrected
 	if len(put) > 0 {
 		if err := p.store.AppendArtifact(ctx, p.corrections, correction.Pack(put)); err != nil {
@@ -272,14 +276,26 @@ func (u Proofread) lines(
 	return getProofreadPages(prose, highlight.Unpack(boxes)), nil
 }
 
-// getCorrectionLines is the corrections a proofreader made, as lines of the
-// recognition.
-func getCorrectionLines(made []domain.ProofreadCorrection) []domain.CorrectionLine {
+// getCorrectionLines returns the corrections as lines of the recognition, rejecting
+// any correction whose line number was not asked about or that joins lines.
+func getCorrectionLines(asked []domain.ProofreadPage, made []domain.ProofreadCorrection) ([]domain.CorrectionLine, error) {
+	valid := make(map[int]bool)
+	for _, page := range asked {
+		for _, line := range page.Lines {
+			valid[line.Number] = true
+		}
+	}
 	out := make([]domain.CorrectionLine, len(made))
 	for i, one := range made {
+		if one.IsJoined() {
+			return nil, fmt.Errorf("scan correction %d-%d cannot join lines", one.Number, one.Last)
+		}
+		if !valid[one.Number] {
+			return nil, fmt.Errorf("scan correction line %d was not asked", one.Number)
+		}
 		out[i] = domain.CorrectionLine{Number: one.Number, Text: one.Text}
 	}
-	return out
+	return out, nil
 }
 
 // readCheckpoint is how many pages a run before this one asked about, with the

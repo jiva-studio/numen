@@ -473,3 +473,19 @@ func TestOnlyTheCorrectionsOfPagesTheCountClaimsAreKept(t *testing.T) {
 		t.Errorf("kept %+v, want the correction of the first page alone", kept)
 	}
 }
+
+func TestProofreadRecognitionRejectsInvalidCorrectionBatches(t *testing.T) {
+	put1, v1, _, _ := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{
+		0: {Number: 0, Last: 1, Text: "joined"},
+	})
+	if _, err := put1.Execute(t.Context(), v1, documentPath); err == nil {
+		t.Error("Execute() accepted joined correction for scan")
+	}
+
+	put2, v2, _, _ := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{
+		0: {Number: 9999, Text: "unasked"},
+	})
+	if _, err := put2.Execute(t.Context(), v2, documentPath); err == nil {
+		t.Error("Execute() accepted correction with unasked line number")
+	}
+}
