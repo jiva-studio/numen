@@ -197,6 +197,9 @@ func (s *BookServer) ReadBookEntry(
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
+	if req.Msg.GetEntry() == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("entry required"))
+	}
 	cleanPath, err := ValidateVaultPath(path)
 	if err != nil {
 		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))

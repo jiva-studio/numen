@@ -185,3 +185,11 @@ func TestReadBookEntryRefusesNoPath(t *testing.T) {
 		t.Fatalf("code = %v (%v), want invalid argument", connect.CodeOf(err), err)
 	}
 }
+
+func TestReadBookEntryRefusesNoEntry(t *testing.T) {
+	_, name, _, _ := writeBook(t)
+	_, err := readEntry(name, "", nil)
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Fatalf("code = %v (%v), want invalid argument", connect.CodeOf(err), err)
+	}
+}

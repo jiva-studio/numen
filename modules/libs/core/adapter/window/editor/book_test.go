@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -75,9 +76,14 @@ func (c *fakeBookClient) ReadEntry(_ context.Context, baseline *v1.Fingerprint, 
 }
 
 func (c *fakeBookClient) countAsked() int {
+	return len(c.getAsked())
+}
+
+// getAsked is a copy of the fingerprints the plugin was asked at.
+func (c *fakeBookClient) getAsked() []*v1.Fingerprint {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return len(c.asked)
+	return slices.Clone(c.asked)
 }
 
 // readFrom is a window looking at one book of its vault, which the plugin it is
@@ -218,9 +224,9 @@ func TestAPictureTheBookCarries(t *testing.T) {
 	if out.Body.String() != plate {
 		t.Errorf("the picture is %d bytes", out.Body.Len())
 	}
-	if len(client.asked) != 1 || client.asked[0].GetPath() != reflowed ||
-		client.asked[0].GetSize() != mark.Size || client.asked[0].GetMtime() != mark.Mtime {
-		t.Errorf("the plugin was asked at %v, want the bytes the address names", client.asked)
+	if asked := client.getAsked(); len(asked) != 1 || asked[0].GetPath() != reflowed ||
+		asked[0].GetSize() != mark.Size || asked[0].GetMtime() != mark.Mtime {
+		t.Errorf("the plugin was asked at %v, want the bytes the address names", asked)
 	}
 	if *closed != 1 {
 		t.Errorf("the plugin was let go %d times, want once", *closed)

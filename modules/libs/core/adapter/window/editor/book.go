@@ -3,6 +3,7 @@ package editor
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -125,7 +126,7 @@ func (h *bookHandler) Entry(w http.ResponseWriter, r *http.Request, path, entry 
 func (h *bookHandler) ReadEntry(ctx context.Context, mark document.Fingerprint, entry string) ([]byte, error) {
 	client, closeClient, err := h.getClient(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("open the book plugin: %w", err)
 	}
 	if client == nil {
 		return nil, errNoDocuments

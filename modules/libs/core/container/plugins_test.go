@@ -17,9 +17,6 @@ import (
 // plugin, and a module under it is one too.
 const pluginsPrefix = "github.com/jiva-studio/numen/modules/plugins/"
 
-// pluginsDir is where the plugins sit in the tree, from the root of the modules.
-const pluginsDir = "plugins"
-
 // compositionRoots are the modules that name plugins: the monolithic build of the
 // desktop binds them in. Every other module meets a plugin only through the
 // plugin contract.
@@ -31,12 +28,9 @@ func isPlugin(importPath string) bool {
 }
 
 // mayNamePlugins says whether the module at a directory, slashed and relative to
-// the root of the modules, may require plugins: a plugin may require its own
-// module, and a composition root may require any.
+// the root of the modules, may require plugins: a composition root may, and a
+// plugin names no other, so its own module directive is the one line it carries.
 func mayNamePlugins(dir string) bool {
-	if dir == pluginsDir || strings.HasPrefix(dir, pluginsDir+"/") {
-		return true
-	}
 	for _, root := range compositionRoots {
 		if dir == root {
 			return true
@@ -90,7 +84,7 @@ func TestWhatThePluginBoundaryRefuses(t *testing.T) {
 		{"apps/desktop", false},
 		{"apps/mobile", false},
 		{"apps/desktop-monolith", true},
-		{"plugins/reader-epub", true},
+		{"plugins/reader-epub", false},
 		{"pluginsx", false},
 	} {
 		if got := mayNamePlugins(one.dir); got != one.may {
@@ -105,6 +99,10 @@ func TestWhatThePluginBoundaryRefuses(t *testing.T) {
 			t.Errorf("%s of a plugin is not found", name)
 		}
 	}
+	cross := "module " + pluginsPrefix + "reader-epub\n\nrequire " + pluginsPrefix + "reader-pdf v0.0.0\n"
+	if len(getPluginRequirements(cross)) == 0 {
+		t.Error("a requirement of one plugin by another is not found")
+	}
 	clean := "module " + pluginsPrefix + "reader-epub\n\nrequire example.com/y v1.0.0\n// " + pluginsPrefix + "x\n"
 	if got := getPluginRequirements(clean); len(got) != 0 {
 		t.Errorf("a go.mod naming no plugin is found to name %v", got)
@@ -115,7 +113,7 @@ func TestWhatThePluginBoundaryRefuses(t *testing.T) {
 // each package of it is compiled from.
 func listPackages(t *testing.T, dir, goos, goarch string, tags ...string) []listed {
 	t.Helper()
-	args := []string{"list", "-e", "-json"}
+	args := []string{"list", "-json"}
 	if len(tags) > 0 {
 		args = append(args, "-tags", strings.Join(tags, ","))
 	}
@@ -194,7 +192,7 @@ func TestNothingTheCoreOrTheDesktopIsCompiledFromIsAPlugin(t *testing.T) {
 	}
 }
 
-// No module requires a plugin but a composition root, and a plugin its own: a
+// No module requires a plugin but a composition root: a
 // requirement is how a build comes to be compiled from one.
 func TestNoModuleButACompositionRootRequiresAPlugin(t *testing.T) {
 	root := filepath.Join("..", "..", "..")

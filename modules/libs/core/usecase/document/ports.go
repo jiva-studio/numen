@@ -29,7 +29,7 @@ type Documents interface {
 type Books interface {
 	// ReadEntry answers the bytes of one entry of the archive of the book at a
 	// fingerprint. It refuses an entry the archive lacks with ErrNoEntry, and a
-	// file that is other bytes now with ErrChanged.
+	// file that is other bytes now with port.ErrBookChanged.
 	ReadEntry(ctx context.Context, mark Fingerprint, entry string) ([]byte, error)
 }
 
