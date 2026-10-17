@@ -12,6 +12,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
@@ -287,7 +288,7 @@ func run() error {
 	}
 	if runtimeFlag != "" {
 		cfg.Runtime = runtimeFlag
-	} else if envRuntime := os.Getenv("NUMEN_ONNX_RUNTIME"); envRuntime != "" {
+	} else if envRuntime := onnx.GetLibrary(); envRuntime != "" {
 		cfg.Runtime = envRuntime
 	}
 

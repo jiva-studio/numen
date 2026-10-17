@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
-	"github.com/jiva-studio/numen/modules/plugins/ocr/backend/onnxruntime"
 )
 
 // IsFetched says whether one recogniser model file is on this machine, by the
@@ -23,7 +22,7 @@ func IsFetched(cfg Config, held RecogniserModel) bool {
 	if !models.IsAddress(held.Name) {
 		return false
 	}
-	dir, err := onnxruntime.CacheDir(cfg.settings())
+	dir, err := cfg.folder().GetDir()
 	if err != nil {
 		return false
 	}

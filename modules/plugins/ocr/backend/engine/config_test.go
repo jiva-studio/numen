@@ -221,11 +221,14 @@ func TestTheModelsAreFoundWhereTheConfigurationSays(t *testing.T) {
 		ShouldDownload: true,
 		Progress:       func(what string, _, _ int64) { told = what },
 	}
-	got := cfg.settings()
-	if got.Section != "indexing.recognition" || got.Runtime != "lib.so" || got.Dir != "models" || !got.ShouldDownload {
+	if got := cfg.settings(); got.Runtime != "lib.so" {
 		t.Errorf("got %+v", got)
 	}
-	got.Fetching("a model", 1, 2)
+	got := cfg.folder()
+	if got.Section != "indexing.recognition" || got.Dir != "models" || !got.ShouldDownload {
+		t.Errorf("got %+v", got)
+	}
+	got.Progress("a model", 1, 2)
 	if told != "a model" {
 		t.Error("a download does not reach whoever is listening")
 	}

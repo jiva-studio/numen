@@ -18,6 +18,8 @@ The `models` package is the one place plugins keep and fetch models.
 
 - `GetHome` is the folder every plugin shares: `NUMEN_MODELS_DIR`, or `numen/models` under the application data directory.
 - `Fetch` downloads over https into that folder, checks the bytes against the pinned sha256 while they arrive, and puts the file in place only when they match. A file with no pin is fetched as named.
+- `Folder` carries the settings block, folder, download switch and progress listener of a plugin; it fetches through them, lists where a model file may be beside the application, and gives the `Source` that `Locate` takes.
+- The `onnx` package reads what the host sets for a plugin that declares `runtimes: ["onnxruntime"]`: `NUMEN_ONNX_RUNTIME_LIB`, the library to open sessions on, and `NUMEN_ONNX_PROVIDER`, the execution provider.
 - `NUMEN_OFFLINE=1` forbids every fetch, and `NUMEN_MODELS_QUOTA` caps the bytes the folder holds (32 GiB by default).
 - A plugin that downloads declares `network:outbound` in its manifest.
 

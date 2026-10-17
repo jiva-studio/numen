@@ -10,6 +10,7 @@ import (
 	read "github.com/getcharzp/go-ocr"
 	"github.com/getcharzp/go-ocr/paddle"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 	"github.com/jiva-studio/numen/modules/plugins/ocr/backend/onnxruntime"
 )
 
@@ -41,7 +42,8 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		return nil, err
 	}
 	options, _, err := onnxruntime.NewSessionOptions(opened.engine, onnxruntime.SessionSettings{
-		Threads: cfg.threads(),
+		Provider: onnxruntime.Provider(onnx.GetProvider()),
+		Threads:  cfg.threads(),
 	})
 	if err != nil {
 		return nil, err

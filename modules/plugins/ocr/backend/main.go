@@ -16,6 +16,7 @@ import (
 	_ "golang.org/x/image/webp"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
@@ -180,7 +181,7 @@ func run() error {
 	} else if modelsDir := os.Getenv(models.EnvDir); modelsDir != "" {
 		cfg.Dir = modelsDir
 	}
-	if rt := os.Getenv("NUMEN_OCR_RUNTIME"); rt != "" {
+	if rt := onnx.GetLibrary(); rt != "" {
 		cfg.Runtime = rt
 	}
 

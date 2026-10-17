@@ -1,87 +1,10 @@
 package onnxruntime
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
-
-	ort "github.com/getcharzp/onnxruntime_purego"
 )
-
-// getLibraryCandidates is every ONNX Runtime this machine holds without fetching one:
-// beside the application, where a fetched one was unpacked, wherever this
-// platform keeps its packages, and by the name the loader searches for on its
-// own.
-//
-// A library in the fetch directory is offered only where it carries the sum
-// pinned for this platform.
-func getLibraryCandidates(s Settings) []string {
-	dir, err := CacheDir(s)
-	if err != nil {
-		dir = ""
-	}
-	var out []string
-	for _, at := range GetPaths(s.Dir, runtimeNames...) {
-		if isUsableLibrary(dir, at) {
-			out = append(out, at)
-		}
-	}
-	if dir != "" {
-		for _, name := range runtimeNames {
-			at := filepath.Join(dir, name)
-			if isUsableLibrary(dir, at) {
-				out = append(out, at)
-			}
-		}
-	}
-	out = append(out, findInstalled(runtimeName(), "*-onnxruntime-*")...)
-	return append(out, runtimeName())
-}
-
-// isUsableLibrary says whether one file is a library this machine may open. A
-// library in the fetch directory carries the sum pinned for this platform, and
-// one from anywhere else is the machine's own.
-func isUsableLibrary(dir, at string) bool {
-	if _, err := os.Stat(at); err != nil {
-		return false
-	}
-	if dir == "" || filepath.Dir(at) != filepath.Clean(dir) {
-		return true
-	}
-	found, ok := releases[runtime.GOOS+"/"+runtime.GOARCH]
-	return ok && verify(at, found.library) == nil
-}
-
-// loadFirstLibrary is the first library that loads, the one that did, and why each of the
-// others would not. A file that is there is not a library that loads.
-func loadFirstLibrary(candidates []string) (*ort.Engine, string, []string) {
-	var refused []string
-	for _, at := range candidates {
-		engine, err := ort.NewEngine(at)
-		if err == nil {
-			return engine, at, nil
-		}
-		refused = append(refused, fmt.Sprintf("%s: %v", at, err))
-	}
-	return nil, "", refused
-}
-
-// GetPaths is where a file may be: in the folder the settings name, and in the
-// folder the application was installed into.
-func GetPaths(dir string, names ...string) []string {
-	var out []string
-	for _, name := range names {
-		if dir != "" {
-			out = append(out, filepath.Join(dir, name))
-		}
-		if self, err := os.Executable(); err == nil {
-			out = append(out, filepath.Join(filepath.Dir(self), name))
-			out = append(out, filepath.Join(filepath.Dir(self), "models", name))
-		}
-	}
-	return out
-}
 
 // getLibraryDirectories are where this machine keeps shared libraries.
 func getLibraryDirectories() []string {

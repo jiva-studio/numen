@@ -8,6 +8,7 @@
   "targets": ["desktop.editor"],
   "activationEvents": ["*"],
   "permissions": ["vault:read", "network:outbound"],
+  "runtimes": ["onnxruntime"],
   "lifecycle": {
     "idleTimeoutSeconds": 0,
     "keepAliveWhileVisible": true,
