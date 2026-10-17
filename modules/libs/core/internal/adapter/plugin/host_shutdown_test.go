@@ -81,7 +81,7 @@ func TestClosingTheEventBusWaitsForDispatchesInFlight(t *testing.T) {
 func TestADisabledPluginIsStopped(t *testing.T) {
 	host, exited := newRunningHost(t)
 
-	if err := host.SetPluginEnabled("md.numen.ocr", false); err != nil {
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.ocr", false); err != nil {
 		t.Fatalf("SetPluginEnabled failed: %v", err)
 	}
 
@@ -106,7 +106,7 @@ func TestDisablingThroughTheSettingStopsThePluginAndIsOneSourceOfTruth(t *testin
 		t.Fatal("a disabled plugin was activated")
 	}
 
-	if err := host.SetPluginEnabled("md.numen.ocr", true); err != nil {
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.ocr", true); err != nil {
 		t.Fatalf("SetPluginEnabled failed: %v", err)
 	}
 	if got := host.GetPluginSettings("md.numen.ocr")["enabled"]; got != true {
@@ -145,13 +145,13 @@ func TestFindPluginByFileExtensionHonoursEnabledAndSafeMode(t *testing.T) {
 	if _, ok := host.FindPluginByFileExtension(".epub"); !ok {
 		t.Fatal("expected an enabled plugin to be found")
 	}
-	if err := host.SetPluginEnabled("md.numen.epub", false); err != nil {
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.epub", false); err != nil {
 		t.Fatalf("SetPluginEnabled failed: %v", err)
 	}
 	if _, ok := host.FindPluginByFileExtension(".epub"); ok {
 		t.Fatal("a disabled plugin was found by extension")
 	}
-	if err := host.SetPluginEnabled("md.numen.epub", true); err != nil {
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.epub", true); err != nil {
 		t.Fatalf("SetPluginEnabled failed: %v", err)
 	}
 	host.SetSafeMode(true)
@@ -184,5 +184,60 @@ func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
 	}
 	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}
+
+func TestADisableThatCannotBePersistedLeavesThePluginRunning(t *testing.T) {
+	host := newDiscoveredHost(t)
+	var started atomic.Int32
+	host.SetLauncher(startSleepLauncher(t, &started, nil))
+	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err != nil {
+		t.Fatalf("EnsureActive failed: %v", err)
+	}
+	host.Release("md.numen.ocr")
+	host.SetPersistHandler(func(string, string, any) error { return errors.New("disk full") })
+
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.ocr", false); err == nil {
+		t.Fatal("expected the persist error to be returned")
+	}
+
+	if !host.IsPluginEnabled("md.numen.ocr") {
+		t.Fatal("the plugin is disabled in memory although the choice was not stored")
+	}
+	if state := host.supervisors["md.numen.ocr"].GetState(); state != StateIdle {
+		t.Fatalf("expected the plugin to keep running, got state %v", state)
+	}
+	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}
+
+func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
+	host := NewHost("desktop.editor")
+	var reported []error
+	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
+	cmd := newIdleCommand()
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start process: %v", err)
+	}
+	t.Cleanup(func() { killProcess(t, cmd.Process) })
+	sup := NewSupervisor()
+	if err := sup.Attach(cmd.Process, time.Now()); err != nil {
+		t.Fatalf("attach: %v", err)
+	}
+	sup.mu.Lock()
+	sup.state = StateDeactivating
+	sup.teardownBegun = true
+	sup.mu.Unlock()
+	canceled, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	evicted := host.evictTargets(canceled, []pluginTeardownTarget{{id: "p", pid: cmd.Process.Pid, sup: sup, endpoint: emptyEndpoint()}}, time.Millisecond)
+
+	if len(evicted) != 0 {
+		t.Fatalf("a failed eviction was counted: %v", evicted)
+	}
+	if len(reported) != 1 {
+		t.Fatalf("expected one reported error, got %v", reported)
 	}
 }

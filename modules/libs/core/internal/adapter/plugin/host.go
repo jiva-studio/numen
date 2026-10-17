@@ -801,12 +801,7 @@ func (h *Host) EvictIdle(ctx context.Context, defaultThreshold, gracePeriod time
 	}
 	h.mu.Unlock()
 
-	evicted := make([]string, 0, len(targets))
-	for _, target := range targets {
-		_ = h.teardownTarget(ctx, target, gracePeriod)
-		evicted = append(evicted, target.id)
-	}
-	return evicted
+	return h.evictTargets(ctx, targets, gracePeriod)
 }
 
 // EvictMemoryExceeded stops plugins whose resident memory exceeds their configured limit.
@@ -827,9 +822,17 @@ func (h *Host) EvictMemoryExceeded(ctx context.Context, gracePeriod time.Duratio
 	}
 	h.mu.Unlock()
 
+	return h.evictTargets(ctx, targets, gracePeriod)
+}
+
+// evictTargets stops the targets and returns the ids that stopped; a failed stop is reported to the error handler.
+func (h *Host) evictTargets(ctx context.Context, targets []pluginTeardownTarget, gracePeriod time.Duration) []string {
 	evicted := make([]string, 0, len(targets))
 	for _, target := range targets {
-		_ = h.teardownTarget(ctx, target, gracePeriod)
+		if err := h.teardownTarget(ctx, target, gracePeriod); err != nil && !errors.Is(err, errProcessNotRunning) {
+			h.reportError(fmt.Errorf("evict plugin %s: %w", target.id, err))
+			continue
+		}
 		evicted = append(evicted, target.id)
 	}
 	return evicted
@@ -973,8 +976,8 @@ func (h *Host) isPluginEnabledLocked(pluginID string) bool {
 }
 
 // SetPluginEnabled sets whether the plugin is enabled, persists the choice and stops the plugin when it is disabled.
-func (h *Host) SetPluginEnabled(pluginID string, enabled bool) error {
-	return h.SetPluginSetting(context.Background(), pluginID, settingEnabled, enabled)
+func (h *Host) SetPluginEnabled(ctx context.Context, pluginID string, enabled bool) error {
+	return h.SetPluginSetting(ctx, pluginID, settingEnabled, enabled)
 }
 
 // applyEnabledChange stops a plugin that was disabled and clears the failures of one that was enabled.
@@ -1094,29 +1097,17 @@ func (h *Host) getPluginConfigJSONLocked(pluginID string) (string, error) {
 	return string(data), nil
 }
 
-// SetPluginSetting writes one setting value to memory, persists it, and notifies the plugin.
+// SetPluginSetting persists one setting, then writes it to memory and notifies the plugin.
 func (h *Host) SetPluginSetting(ctx context.Context, pluginID, key string, value any) error {
-	h.mu.Lock()
-	if _, ok := h.settings[pluginID]; !ok {
-		h.settings[pluginID] = make(map[string]any)
-	}
-	h.settings[pluginID][key] = value
+	h.mu.RLock()
 	persist := h.persistHandler
-	h.mu.Unlock()
-
-	var stopErr error
-	if key == settingEnabled {
-		stopErr = h.applyEnabledChange(ctx, pluginID, value)
-	}
+	h.mu.RUnlock()
 	if persist != nil {
 		if err := persist(pluginID, key, value); err != nil {
-			return errors.Join(fmt.Errorf("persist plugin setting: %w", err), stopErr)
+			return fmt.Errorf("persist plugin setting: %w", err)
 		}
 	}
-	if stopErr != nil {
-		return stopErr
-	}
-	return h.NotifyPluginConfig(ctx, pluginID)
+	return h.UpdatePluginSetting(ctx, pluginID, key, value)
 }
 
 // UpdatePluginSetting updates the setting in memory and notifies the plugin without re-persisting.
