@@ -193,8 +193,9 @@ export type ProofreadTextRequest = Message<"numen.v1.ProofreadTextRequest"> & {
   lineLimit: number;
 
   /**
-   * How far a one-line correction may stand from the line as read. Zero takes
-   * the proofreader's own limit.
+   * Scan only: how far a one-line correction may stand from the line as read.
+   * Zero takes the proofreader's own limit. Speech corrections stand at any
+   * distance.
    *
    * @generated from field: double max_edit_distance = 7;
    */
@@ -284,6 +285,8 @@ export const ProofreadTextResponseSchema: GenMessage<ProofreadTextResponse> = /*
  */
 export enum ProofreadKind {
   /**
+   * No kind is named. A request of this kind is refused.
+   *
    * @generated from enum value: PROOFREAD_KIND_UNSPECIFIED = 0;
    */
   UNSPECIFIED = 0,
