@@ -442,3 +442,19 @@ describe('an extension reader registered twice', () => {
     expect(opened).toStrictEqual([])
   })
 })
+
+describe('the same extension reader registered twice', () => {
+  it('stays registered when the disposer of the first registration runs late', async () => {
+    const one = vault({ 'a.xyz': OTHER })
+    const tabOpeners = fileOpeners(one.core)
+    const opened: string[] = []
+    const read = () => opened.push('read')
+    const disposeFirst = tabOpeners.registerExtensionReader('xyz', read)
+    tabOpeners.registerExtensionReader('xyz', read)
+
+    disposeFirst()
+    await tabOpeners.openFile('a.xyz')
+
+    expect(opened).toStrictEqual(['read'])
+  })
+})
