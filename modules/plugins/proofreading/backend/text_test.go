@@ -119,7 +119,7 @@ func TestSpeechIsAskedUnderTheSpeechInstructionWithWhatTheRecordingHolds(t *test
 
 func TestSpeechIsAnsweredAWindowAtATimeAndSaysWhereToContinue(t *testing.T) {
 	m := says("")
-	got, err := proofreadSpeech(t.Context(), m.ask, speech(20), 4, 1, 0, 8, 0)
+	got, err := proofreadSpeech(t.Context(), m.ask, speech(20), 4, 1, 0, 8)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,18 +134,18 @@ func TestSpeechIsAnsweredAWindowAtATimeAndSaysWhereToContinue(t *testing.T) {
 		t.Errorf("asked %d times", len(m.prompts))
 	}
 
-	got, err = proofreadSpeech(t.Context(), m.ask, speech(20), 4, 1, got.next, 8, 0)
+	got, err = proofreadSpeech(t.Context(), m.ask, speech(20), 4, 1, got.next, 8)
 	if err != nil || got.next != 14 {
 		t.Errorf("second window: %+v, %v", got, err)
 	}
-	got, err = proofreadSpeech(t.Context(), m.ask, speech(20), 4, 1, 14, 8, 0)
+	got, err = proofreadSpeech(t.Context(), m.ask, speech(20), 4, 1, 14, 8)
 	if err != nil || !got.isDone || got.next != 20 {
 		t.Errorf("last window: %+v, %v", got, err)
 	}
 }
 
 func TestSpeechPastTheEndIsDone(t *testing.T) {
-	got, err := proofreadSpeech(t.Context(), says("").ask, speech(3), 4, 1, 9, 8, 0)
+	got, err := proofreadSpeech(t.Context(), says("").ask, speech(3), 4, 1, 9, 8)
 	if err != nil || !got.isDone || got.next != 9 {
 		t.Errorf("result %+v, %v", got, err)
 	}
@@ -177,7 +177,7 @@ func TestARunReachingPastTheWindowIsAskedAgainFromWhereItBegins(t *testing.T) {
 		}
 		return ""
 	}}
-	got, err := proofreadSpeech(t.Context(), m.ask, speech(20), 4, 1, 0, 8, 0)
+	got, err := proofreadSpeech(t.Context(), m.ask, speech(20), 4, 1, 0, 8)
 	if err != nil {
 		t.Fatal(err)
 	}
