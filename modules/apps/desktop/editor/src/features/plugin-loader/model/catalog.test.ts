@@ -26,6 +26,18 @@ describe('buildPluginCatalog', () => {
     expect(catalog.loaders).toStrictEqual({})
   })
 
+  it('throws when two manifests declare one id', () => {
+    expect(() =>
+      buildPluginCatalog(
+        {
+          [`${root}/a/manifest.json`]: { id: 'md.numen.x' },
+          [`${root}/b/manifest.json`]: { id: 'md.numen.x' },
+        },
+        {},
+      ),
+    ).toThrow('md.numen.x')
+  })
+
   it('throws for a frontend whose plugin has no manifest', () => {
     expect(() =>
       buildPluginCatalog({}, { [`${root}/orphan/frontend/index.ts`]: async () => ({}) }),

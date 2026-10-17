@@ -17,18 +17,24 @@ function getDirectory(path: string, pattern: RegExp): string | undefined {
 /**
  * Builds the plugin catalog from the files found under `plugins/`: the manifests keyed by
  * their `id`, and one module loader per plugin that has a frontend directory.
- * A frontend without a manifest is a fault and throws.
+ * A frontend without a manifest, and two manifests of one id, are faults and throw.
  */
 export function buildPluginCatalog(
   manifestFiles: Record<string, unknown>,
   frontendFiles: Record<string, PluginModuleLoader>,
 ): PluginCatalog {
   const idByDirectory = new Map<string, string>()
+  const directoryById = new Map<string, string>()
   const manifests: Record<string, PluginManifest> = {}
   for (const [path, file] of Object.entries(manifestFiles)) {
     const directory = getDirectory(path, MANIFEST_PATH)
     const manifest = file as PluginManifest
     if (directory === undefined || typeof manifest?.id !== 'string') continue
+    const owner = directoryById.get(manifest.id)
+    if (owner !== undefined) {
+      throw new Error(`plugins "${owner}" and "${directory}" declare the same id "${manifest.id}"`)
+    }
+    directoryById.set(manifest.id, directory)
     idByDirectory.set(directory, manifest.id)
     manifests[manifest.id] = manifest
   }
