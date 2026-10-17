@@ -122,7 +122,7 @@ func (h *hostAgentProvider) setProviders(programs []port.AgentProgram) {
 
 // getProvider is the plugin that runs the program, asking the providers what they run where it is
 // not known yet.
-func (h *hostAgentProvider) getProvider(ctx context.Context, program string) (string, error) {
+func (h *hostAgentProvider) getProvider(ctx context.Context, program string, command []string) (string, error) {
 	if program == "" {
 		return "", errors.New("no agent program is named")
 	}
@@ -133,7 +133,11 @@ func (h *hostAgentProvider) getProvider(ctx context.Context, program string) (st
 		return id, nil
 	}
 
-	_, listErr := h.GetPrograms(ctx, nil)
+	var commands map[string][]string
+	if len(command) > 0 {
+		commands = map[string][]string{program: command}
+	}
+	_, listErr := h.GetPrograms(ctx, commands)
 	h.mu.Lock()
 	id, known = h.providers[program]
 	h.mu.Unlock()
@@ -145,7 +149,7 @@ func (h *hostAgentProvider) getProvider(ctx context.Context, program string) (st
 
 // StartRun starts the task on the plugin that runs the program it names.
 func (h *hostAgentProvider) StartRun(ctx context.Context, task port.Task) (port.Run, error) {
-	id, err := h.getProvider(ctx, task.Agent)
+	id, err := h.getProvider(ctx, task.Agent, task.Command)
 	if err != nil {
 		return nil, err
 	}
@@ -176,13 +180,24 @@ func (h *hostAgentProvider) StartRun(ctx context.Context, task port.Task) (port.
 // was asked nowhere is over already.
 func (h *hostAgentProvider) EndConversation(ctx context.Context, conversation string) error {
 	h.mu.Lock()
-	ids := h.conversations[conversation]
-	delete(h.conversations, conversation)
+	ids := slices.Clone(h.conversations[conversation])
 	h.mu.Unlock()
 
-	failed := make([]error, 0, len(ids))
+	var failed []error
+	var kept []string
 	for _, id := range ids {
-		failed = append(failed, h.endConversationOn(ctx, id, conversation))
+		if err := h.endConversationOn(ctx, id, conversation); err != nil {
+			failed = append(failed, err)
+			kept = append(kept, id)
+		}
+	}
+
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if len(kept) == 0 {
+		delete(h.conversations, conversation)
+	} else {
+		h.conversations[conversation] = kept
 	}
 	return errors.Join(failed...)
 }

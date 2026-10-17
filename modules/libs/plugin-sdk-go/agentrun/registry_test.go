@@ -3,6 +3,7 @@ package agentrun_test
 import (
 	"context"
 	"os/exec"
+	"runtime"
 	"testing"
 	"time"
 
@@ -14,7 +15,11 @@ func start(t *testing.T, registry *agentrun.Registry, conversation string) (*age
 	t.Helper()
 
 	running, cancel := context.WithCancel(t.Context())
-	cmd := exec.CommandContext(running, "sh", "-c", "sleep 60")
+	command, args := "sh", []string{"-c", "sleep 60"}
+	if runtime.GOOS == "windows" {
+		command, args = "cmd", []string{"/c", "ping -n 60 127.0.0.1"}
+	}
+	cmd := exec.CommandContext(running, command, args...)
 	agentrun.Supervise(cmd)
 
 	w := agentrun.NewWork(conversation, 1, cancel)

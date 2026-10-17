@@ -81,9 +81,6 @@ func (s *agentServer) AskAgent(
 	if err != nil {
 		return connect.NewError(connect.CodeInternal, fmt.Errorf("write mcp config: %w", err))
 	}
-	if configFile != "" {
-		defer os.Remove(configFile)
-	}
 
 	conversation := msg.GetConversation()
 	claudeArgs := buildClaudeArguments(claudeArguments{
@@ -101,10 +98,12 @@ func (s *agentServer) AskAgent(
 
 	work := agentrun.NewWork(conversation, 0, cancel)
 	if !s.registry.Add(work) {
+		removeFile(configFile)
 		return connect.NewError(connect.CodeUnavailable, errors.New("this agent is closing"))
 	}
 	defer s.registry.Remove(work)
 	defer work.End()
+	defer removeFile(configFile)
 
 	// The wait for the model begins with the program, and the stream opens on saying so.
 	if err := stream.Send(&numenv1.AskAgentResponse{
@@ -296,5 +295,12 @@ func main() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
 		os.Exit(1)
+	}
+}
+
+// removeFile removes the file, if there is one.
+func removeFile(path string) {
+	if path != "" {
+		_ = os.Remove(path)
 	}
 }

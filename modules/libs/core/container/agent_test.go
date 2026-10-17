@@ -32,6 +32,8 @@ import (
 type providerServer struct {
 	numenv1connect.UnimplementedAgentServiceHandler
 	programs []*v1.AgentProgram
+	// onlyWith, when set, is the program the plugin lists only under a command line set for it.
+	onlyWith string
 
 	mu       sync.Mutex
 	asked    []*v1.AskAgentRequest
@@ -87,6 +89,15 @@ func (s *providerServer) GetAgentPrograms(
 	s.mu.Lock()
 	s.commands = req.Msg.GetCommands()
 	s.mu.Unlock()
+	if s.onlyWith != "" {
+		listed := false
+		for _, one := range req.Msg.GetCommands() {
+			listed = listed || one.GetProgram() == s.onlyWith
+		}
+		if !listed {
+			return connect.NewResponse(&v1.GetAgentProgramsResponse{}), nil
+		}
+	}
 	return connect.NewResponse(&v1.GetAgentProgramsResponse{Programs: s.programs}), nil
 }
 
@@ -393,5 +404,27 @@ func TestAPluginThatCannotListItsProgramsIsToldToTheErrorHandler(t *testing.T) {
 	}
 	if !slices.Equal(names, []string{"alpha", ""}) {
 		t.Errorf("the programs offered are %q", names)
+	}
+}
+
+// A program the plugin lists only under the command line the installation set is found, and run,
+// under that command line.
+func TestAProgramAvailableOnlyThroughItsCommandIsFound(t *testing.T) {
+	served := &providerServer{
+		programs: []*v1.AgentProgram{{Name: "gamma", Title: "Gamma", IsInstalled: true}},
+		onlyWith: "gamma",
+	}
+	host := hostWith(t, map[string][]string{providerOne: {"ai.agent.provider"}},
+		map[string]*providerServer{providerOne: served})
+	provider := (container.Config{PluginHost: host}).AgentProvider()
+
+	if _, err := provider.StartRun(t.Context(), port.Task{Question: "q", Agent: "gamma"}); err == nil {
+		t.Fatal("a program nothing lists was run")
+	}
+	run, err := provider.StartRun(t.Context(), port.Task{Question: "q", Agent: "gamma", Command: []string{"/opt/gamma"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for range run.GetSteps() {
 	}
 }
