@@ -1233,6 +1233,12 @@ func (h *Host) TogglePluginSetting(ctx context.Context, pluginID, key string) (b
 
 // NotifyPluginConfig sends the resolved configuration to a running plugin process.
 func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
+	defer h.lockSecrets(pluginID)()
+	return h.notifyPluginConfigLocked(ctx, pluginID)
+}
+
+// notifyPluginConfigLocked is NotifyPluginConfig for a caller holding lockSecrets(pluginID).
+func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) error {
 	h.mu.RLock()
 	endpoint, hasEndpoint := h.endpoints[pluginID]
 	sup, hasSup := h.supervisors[pluginID]

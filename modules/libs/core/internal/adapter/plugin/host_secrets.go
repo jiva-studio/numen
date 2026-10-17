@@ -48,7 +48,7 @@ func (h *Host) SetPluginSecret(ctx context.Context, pluginID, name, key string) 
 	if err := store.SetKey(ctx, getSecretName(pluginID, name), key); err != nil {
 		return fmt.Errorf("store secret %s of plugin %s: %w", name, pluginID, err)
 	}
-	return h.NotifyPluginConfig(ctx, pluginID)
+	return h.notifyPluginConfigLocked(ctx, pluginID)
 }
 
 // DeletePluginSecret removes the key of a secret the plugin declares and hands
@@ -62,7 +62,7 @@ func (h *Host) DeletePluginSecret(ctx context.Context, pluginID, name string) er
 	if err := store.DeleteKey(ctx, getSecretName(pluginID, name)); err != nil {
 		return fmt.Errorf("delete secret %s of plugin %s: %w", name, pluginID, err)
 	}
-	return h.NotifyPluginConfig(ctx, pluginID)
+	return h.notifyPluginConfigLocked(ctx, pluginID)
 }
 
 // getSecretStore returns the key store once the plugin is known to declare the

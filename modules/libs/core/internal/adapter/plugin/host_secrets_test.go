@@ -386,3 +386,35 @@ func TestChangesOfASecretAreAppliedOneAtATime(t *testing.T) {
 		t.Errorf("the plugin holds %v after the delete", probe.last(t).GetValues())
 	}
 }
+
+// A Configure from elsewhere waits for the change of a secret in flight, so it
+// cannot send the plugin the key the store held before the change.
+func TestAConfigureWaitsForASecretChangeInFlight(t *testing.T) {
+	store := newKeys(map[string]string{})
+	store.entered = make(chan struct{}, 1)
+	store.gate = make(chan struct{})
+	host, probe := newSecretHost(t, store)
+
+	setDone := make(chan error, 1)
+	go func() { setDone <- host.SetPluginSecret(t.Context(), secretPluginID, "apiKey", keychainValue) }()
+	<-store.entered
+
+	notified := make(chan error, 1)
+	go func() { notified <- host.NotifyPluginConfig(t.Context(), secretPluginID) }()
+	select {
+	case err := <-notified:
+		t.Fatalf("a Configure ran during a secret change: %v", err)
+	case <-time.After(100 * time.Millisecond):
+	}
+
+	close(store.gate)
+	if err := <-setDone; err != nil {
+		t.Fatal(err)
+	}
+	if err := <-notified; err != nil {
+		t.Fatal(err)
+	}
+	if probe.last(t).GetValues()["apiKey"] != keychainValue {
+		t.Errorf("the plugin ended holding %v", probe.last(t).GetValues())
+	}
+}
