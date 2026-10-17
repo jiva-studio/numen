@@ -1,7 +1,7 @@
 /**
  * Dynamic frontend plugin loader for desktop editor.
  */
-import { shallowRef } from 'vue'
+import { shallowRef, type ShallowRef } from 'vue'
 import type { Disposable, PluginLifecycle, PluginManifest } from '@numen/plugin-sdk'
 import { registerPluginStyle, unregisterPluginStyle, type PluginHost } from '@/entities/plugin'
 
@@ -267,23 +267,12 @@ function resolveDefaultDeps(deps: PluginLoaderDeps) {
   }
 }
 
-export function createPluginLoader(deps: PluginLoaderDeps) {
+function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
   const { host } = deps
   const defaults = resolveDefaultDeps(deps)
-  const activePlugins = shallowRef<ReadonlyMap<string, ActivePluginEntry>>(new Map())
-  const failures = shallowRef<ReadonlyMap<string, string>>(new Map())
-  const moduleLoaders = new Map<string, () => Promise<unknown>>(
-    Object.entries(deps.loaders ?? {}),
-  )
-  const trackedIds = new Set<string>()
-  const settingSubscriptions = new Map<string, Disposable>()
-  const manifests = new Map<string, PluginManifest>()
+  const { activePlugins, failures, manifests, moduleLoaders } = state
   const queues = new Map<string, Promise<unknown>>()
   let importToken = 0
-  let hasStarted = false
-
-  const isPluginEnabled = (id: string): boolean =>
-    isPluginEnabledValue(host.getSetting?.(id, 'enabled'))
 
   const enqueue = <T>(id: string, task: () => Promise<T>): Promise<T> => {
     const run = (queues.get(id) ?? Promise.resolve()).then(task)
@@ -294,32 +283,53 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
     return run
   }
 
-  const activatePlugin = (id: string, module?: unknown) =>
-    enqueue(id, () =>
-      activateEntry(
-        {
-          host,
-          loaders: moduleLoaders,
-          catalogManifests: deps.manifests ?? {},
-          activePlugins,
-          failures,
-          manifests,
-          getImportToken: () => ++importToken,
-          ...defaults,
-        },
-        id,
-        module,
-      ),
-    )
+  const activateContext: ActivateContext = {
+    host,
+    loaders: moduleLoaders,
+    catalogManifests: deps.manifests ?? {},
+    activePlugins,
+    failures,
+    manifests,
+    getImportToken: () => ++importToken,
+    ...defaults,
+  }
+  const deactivateContext: DeactivateDeps = {
+    host,
+    activePlugins,
+    manifests,
+    failures,
+    reportError: defaults.reportError,
+  }
 
-  const deactivatePlugin = (id: string) =>
-    enqueue(id, () =>
-      deactivateEntry(
-        { host, activePlugins, manifests, failures, reportError: defaults.reportError },
-        id,
-      ),
-    )
+  return {
+    activatePlugin: (id: string, module?: unknown) =>
+      enqueue(id, () => activateEntry(activateContext, id, module)),
+    deactivatePlugin: (id: string) => enqueue(id, () => deactivateEntry(deactivateContext, id)),
+  }
+}
 
+interface LoaderState {
+  readonly activePlugins: ShallowRef<ReadonlyMap<string, ActivePluginEntry>>
+  readonly failures: ShallowRef<ReadonlyMap<string, string>>
+  readonly manifests: Map<string, PluginManifest>
+  readonly moduleLoaders: Map<string, () => Promise<unknown>>
+}
+
+export function createPluginLoader(deps: PluginLoaderDeps) {
+  const { host } = deps
+  const state: LoaderState = {
+    activePlugins: shallowRef(new Map()),
+    failures: shallowRef(new Map()),
+    manifests: new Map(),
+    moduleLoaders: new Map(Object.entries(deps.loaders ?? {})),
+  }
+  const { activePlugins, failures, manifests, moduleLoaders } = state
+  const { activatePlugin, deactivatePlugin } = createActivation(deps, state)
+  const trackedIds = new Set<string>()
+  const settingSubscriptions = new Map<string, Disposable>()
+  let hasStarted = false
+
+  const isEnabled = (id: string): boolean => isPluginEnabledValue(host.getSetting?.(id, 'enabled'))
   const listen = (id: string) =>
     listenToPluginState(
       {
@@ -331,14 +341,12 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
       id,
     )
 
-  const getPluginIds = (): string[] => [...new Set([...moduleLoaders.keys(), ...trackedIds])]
-
   return {
     registerPluginModule: (id: string, loader: () => Promise<unknown>) => {
       moduleLoaders.set(id, loader)
       if (hasStarted) {
         listen(id)
-        if (isPluginEnabled(id)) void activatePlugin(id)
+        if (isEnabled(id)) void activatePlugin(id)
       }
     },
     registerPluginManifest: (id: string, manifest: PluginManifest) => {
@@ -351,7 +359,7 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
         trackedIds.add(id)
         if (!hasStarted) continue
         listen(id)
-        if (isPluginEnabled(id)) await activatePlugin(id)
+        if (isEnabled(id)) await activatePlugin(id)
       }
     },
     activatePlugin,
@@ -363,10 +371,8 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
       [...failures.value].map(([id, error]) => ({ id, error })),
     start: async (): Promise<void> => {
       hasStarted = true
-      await startLoader(
-        { pluginIds: getPluginIds(), listen, isEnabled: isPluginEnabled },
-        activatePlugin,
-      )
+      const pluginIds = [...new Set([...moduleLoaders.keys(), ...trackedIds])]
+      await startLoader({ pluginIds, listen, isEnabled }, activatePlugin)
     },
     close: async (): Promise<void> => {
       hasStarted = false
