@@ -11,73 +11,12 @@ export interface PluginLoaderDeps {
   readonly fetch?: typeof fetch
   readonly dynamicImport?: (url: string) => Promise<unknown>
   readonly loaders?: Record<string, () => Promise<unknown>>
+  readonly manifests?: Record<string, PluginManifest>
 }
 
 interface ActivePluginEntry {
   readonly pluginId: string
   readonly lifecycle?: PluginLifecycle
-}
-
-const IN_TREE_MANIFESTS: Record<string, PluginManifest> = {
-  'md.numen.pdf': {
-    id: 'md.numen.pdf',
-    name: 'PDF Reader',
-    version: '1.0.0',
-    permissions: ['vault:read'],
-  },
-  'md.numen.epub': {
-    id: 'md.numen.epub',
-    name: 'EPUB Book Reader',
-    version: '1.0.0',
-    permissions: ['vault:read'],
-  },
-  'md.numen.editor-markdown': {
-    id: 'md.numen.editor-markdown',
-    name: 'Markdown Editor',
-    version: '1.0.0',
-    permissions: ['vault:read', 'vault:write'],
-  },
-  'md.numen.view-file-tree': {
-    id: 'md.numen.view-file-tree',
-    name: 'File Tree Explorer',
-    version: '1.0.0',
-    permissions: ['vault:read'],
-  },
-  'md.numen.view-plex-graph': {
-    id: 'md.numen.view-plex-graph',
-    name: 'Plex Graph',
-    version: '1.0.0',
-    permissions: ['vault:read'],
-  },
-  'md.numen.media-player': {
-    id: 'md.numen.media-player',
-    name: 'Media Player',
-    version: '1.0.0',
-    permissions: ['vault:read'],
-  },
-  'md.numen.downloader': {
-    id: 'md.numen.downloader',
-    name: 'Downloader',
-    version: '1.0.0',
-    permissions: ['vault:write'],
-  },
-  'md.numen.flashcards-studio': {
-    id: 'md.numen.flashcards-studio',
-    name: 'Flashcards Studio',
-    version: '1.0.0',
-    permissions: ['vault:read', 'vault:write'],
-  },
-}
-
-const IN_TREE_LOADERS: Record<string, () => Promise<unknown>> = {
-  'md.numen.pdf': () => import('@plugins/reader-pdf/frontend'),
-  'md.numen.epub': () => import('@plugins/reader-epub/frontend'),
-  'md.numen.editor-markdown': () => import('@plugins/editor-markdown/frontend'),
-  'md.numen.view-file-tree': () => import('@plugins/view-file-tree/frontend'),
-  'md.numen.view-plex-graph': () => import('@plugins/view-plex-graph/frontend'),
-  'md.numen.media-player': () => import('@plugins/media-player/frontend'),
-  'md.numen.downloader': () => import('@plugins/downloader/frontend'),
-  'md.numen.flashcards-studio': () => import('@plugins/flashcards-studio/frontend'),
 }
 
 function injectPluginStyles(baseUrl: string, pluginId: string, stylesPath: string): void {
@@ -153,6 +92,7 @@ async function loadDynamicModule(pluginId: string, options: LoadModuleOptions): 
 
 interface ResolveModuleContext extends LoadModuleOptions {
   readonly loaders: Map<string, () => Promise<unknown>>
+  readonly catalogManifests: Readonly<Record<string, PluginManifest>>
 }
 
 async function resolveModule(
@@ -187,7 +127,7 @@ async function activateEntry(
     const resolved = await resolveModule(pluginId, pluginModule, ctx)
     if (!resolved) return false
 
-    const manifest = ctx.manifests.get(pluginId) ?? IN_TREE_MANIFESTS[pluginId]
+    const manifest = ctx.manifests.get(pluginId) ?? ctx.catalogManifests[pluginId]
     const { activate, deactivate } = getLifecycleHooks(resolved)
     if (activate) {
       await activate(host.createContext(pluginId, manifest))
@@ -313,7 +253,7 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
   const defaults = resolveDefaultDeps(deps)
   const activePlugins = shallowRef<ReadonlyMap<string, ActivePluginEntry>>(new Map())
   const moduleLoaders = new Map<string, () => Promise<unknown>>(
-    Object.entries(deps.loaders ?? IN_TREE_LOADERS),
+    Object.entries(deps.loaders ?? {}),
   )
   const settingSubscriptions = new Map<string, Disposable>()
   const manifests = new Map<string, PluginManifest>()
@@ -323,7 +263,14 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
 
   const activatePlugin = (id: string, module?: unknown) =>
     activateEntry(
-      { host, loaders: moduleLoaders, activePlugins, manifests, ...defaults },
+      {
+        host,
+        loaders: moduleLoaders,
+        catalogManifests: deps.manifests ?? {},
+        activePlugins,
+        manifests,
+        ...defaults,
+      },
       id,
       module,
     )
