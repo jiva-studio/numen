@@ -8,6 +8,22 @@ import (
 	"strings"
 )
 
+var claudeSearchPlaces = []string{
+	"~/.local/bin/claude",
+	"~/.claude/local/claude",
+	"~/Applications/Claude Code URL Handler.app/Contents/MacOS/claude",
+	"/Applications/Claude Code URL Handler.app/Contents/MacOS/claude",
+	"~/.bun/bin/claude",
+	"~/.volta/bin/claude",
+	"~/.npm-global/bin/claude",
+	"~/.nvm/versions/node/*/bin/claude",
+	"~/.nix-profile/bin/claude",
+	"/opt/homebrew/bin/claude",
+	"/usr/local/bin/claude",
+	"/run/current-system/sw/bin/claude",
+	"/nix/var/nix/profiles/default/bin/claude",
+}
+
 var antigravitySearchPlaces = []string{
 	"~/.local/bin/agy",
 	"~/.local/bin/antigravity",
@@ -47,6 +63,12 @@ var cursorSearchPlaces = []string{
 	"~/.cursor/bin/cursor",
 	"/usr/bin/cursor",
 }
+
+// IsClaudeInstalled checks whether Claude Code CLI is available on this machine; it answers completions.
+func IsClaudeInstalled() bool { return locate([]string{"claude"}, claudeSearchPlaces) != "" }
+
+// FindClaude returns the path of the Claude Code CLI, or the bare name where not found.
+func FindClaude() string { return findCommand("claude", []string{"claude"}, claudeSearchPlaces) }
 
 // IsAntigravityInstalled checks whether Antigravity CLI is available on this machine.
 func IsAntigravityInstalled() bool {

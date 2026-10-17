@@ -338,9 +338,9 @@ func withoutAgentsAnywhere(t *testing.T) {
 	t.Helper()
 	t.Setenv("PATH", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	was := [][]string{antigravitySearchPlaces, codexSearchPlaces, cursorSearchPlaces}
-	antigravitySearchPlaces, codexSearchPlaces, cursorSearchPlaces = nil, nil, nil
+	was := [][]string{antigravitySearchPlaces, codexSearchPlaces, cursorSearchPlaces, claudeSearchPlaces}
+	antigravitySearchPlaces, codexSearchPlaces, cursorSearchPlaces, claudeSearchPlaces = nil, nil, nil, nil
 	t.Cleanup(func() {
-		antigravitySearchPlaces, codexSearchPlaces, cursorSearchPlaces = was[0], was[1], was[2]
+		antigravitySearchPlaces, codexSearchPlaces, cursorSearchPlaces, claudeSearchPlaces = was[0], was[1], was[2], was[3]
 	})
 }
