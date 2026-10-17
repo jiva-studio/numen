@@ -544,6 +544,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	made := newWatched(cfg, db, readers, watcher)
 	worker := newIndexWorker(made, api.state, nil, quietPeriod, out)
 	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
 	_, wait := startIndexing(ctx, v, made, api.state, true, worker, worker.NewSession(), out)
 	t.Cleanup(func() {
 		stop()
