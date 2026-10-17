@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -47,6 +48,7 @@ type EventBus struct {
 	subscribers      map[string][]subscriber
 	nextSubID        uint64
 	isClosed         bool
+	inFlight         sync.WaitGroup
 	clock            port.Clock
 	delay            port.Delay
 	keyExtractor     KeyExtractor
@@ -106,6 +108,7 @@ func NewEventBus(host *Host, debounceDelay, throttleInterval time.Duration, opts
 		subscribers:      make(map[string][]subscriber),
 		nextSubID:        0,
 		isClosed:         false,
+		inFlight:         sync.WaitGroup{},
 		clock:            nil,
 		delay:            nil,
 		keyExtractor:     nil,
@@ -299,10 +302,37 @@ func (b *EventBus) Close(ctx context.Context) error {
 	b.isClosed = true
 	b.mu.Unlock()
 
-	return b.Flush(ctx)
+	flushErr := b.Flush(ctx)
+
+	drained := make(chan struct{})
+	go func() {
+		b.inFlight.Wait()
+		close(drained)
+	}()
+	select {
+	case <-drained:
+		return flushErr
+	case <-ctx.Done():
+		return errors.Join(flushErr, fmt.Errorf("wait for event dispatch: %w", ctx.Err()))
+	}
+}
+
+// beginDispatch registers an asynchronous dispatch and reports false once the bus is closed.
+func (b *EventBus) beginDispatch() bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.isClosed {
+		return false
+	}
+	b.inFlight.Add(1)
+	return true
 }
 
 func (b *EventBus) dispatchAsyncKey(key string) {
+	if !b.beginDispatch() {
+		return
+	}
+	defer b.inFlight.Done()
 	if err := b.flushKey(context.Background(), key); err != nil {
 		b.reportError(err)
 	}

@@ -2,13 +2,13 @@
   "id": "md.numen.proofreading",
   "name": "LLM Proofreading",
   "version": "1.0.0",
+  "protocol": 1,
   "description": "Proofreading and correction engine using large language models",
   "capabilities": ["proofreading"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onCommand:proofread"],
   "permissions": ["vault:read"],
   "lifecycle": {
-    "mode": "on-demand",
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false
   },
@@ -18,21 +18,6 @@
     "serviceName": "numen.v1.ProofreadingService"
   },
   "settings": [
-    {
-      "key": "strictMode",
-      "type": "boolean",
-      "title": "Strict Proofreading",
-      "description": "Enforce strict grammatical and punctuation rules",
-      "default": false,
-      "palette": true
-    },
-    {
-      "key": "maxSuggestions",
-      "type": "number",
-      "title": "Max Suggestions",
-      "description": "Maximum number of corrections suggested per passage",
-      "default": 5
-    },
     {
       "key": "model",
       "type": "string",

@@ -350,3 +350,23 @@ func TestAgentBridge_UnreadChannelDoesNotDeadlock(t *testing.T) {
 		t.Fatal("deadlock in run.Stop() with unread steps channel")
 	}
 }
+
+func TestConvertResponseStepCarriesTheCallNameAndEffect(t *testing.T) {
+	effects := map[string]domain.StepKind{
+		"read":   domain.StepRead,
+		"edit":   domain.StepEdit,
+		"remove": domain.StepRemove,
+		"move":   domain.StepMove,
+		"search": domain.StepSearch,
+		"":       domain.StepToolCall,
+		"other":  domain.StepToolCall,
+	}
+	for word, want := range effects {
+		step := convertResponseStep(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_ToolCall{
+			ToolCall: &v1.ToolCall{Tool: "Edit a note", Call: "toolu_01", Kind: word},
+		}})
+		if step.Kind != want || step.Call != "toolu_01" || step.Tool != "Edit a note" {
+			t.Errorf("kind %q: got %+v", word, step)
+		}
+	}
+}
