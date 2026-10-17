@@ -2,11 +2,16 @@ package plugin
 
 import (
 	"context"
+	"path/filepath"
 	"reflect"
 )
 
 // Discover scans the configured directories and brings the registered plugins in line with what is on disk.
+// A plugin whose directory could not be read stays registered.
 func (h *Host) Discover() error {
+	h.discoverMu.Lock()
+	defer h.discoverMu.Unlock()
+
 	all, problems := DiscoverPlugins(h.dirs)
 	discovered := FilterPluginsByTarget(all, h.target)
 
@@ -48,13 +53,24 @@ func (h *Host) registerDiscoveredLocked(discovered []DiscoveredPlugin) []string 
 		h.registerSupervisorLocked(p)
 	}
 	for id := range h.onDisk {
-		if !present[id] {
+		if !present[id] && !h.isCoveredByProblemLocked(id) {
 			delete(h.plugins, id)
 			delete(h.onDisk, id)
 			stale = append(stale, id)
 		}
 	}
 	return stale
+}
+
+// isCoveredByProblemLocked reports whether a failed scan hides the directory of a registered plugin.
+func (h *Host) isCoveredByProblemLocked(pluginID string) bool {
+	dir := h.plugins[pluginID].Dir
+	for _, problem := range h.problems {
+		if problem.Dir == dir || problem.Dir == filepath.Dir(dir) {
+			return true
+		}
+	}
+	return false
 }
 
 func (h *Host) registerSupervisorLocked(p DiscoveredPlugin) {

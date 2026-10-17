@@ -73,6 +73,7 @@ type Host struct {
 	onPluginFailed func(pluginID string, cause error)
 	errorHandler   ErrorHandler
 	onDisk         map[string]bool
+	discoverMu     sync.Mutex
 	problems       []DiscoveryProblem
 }
 
@@ -100,6 +101,7 @@ func NewHost(target string, dirs ...string) *Host {
 		onPluginFailed: nil,
 		errorHandler:   nil,
 		onDisk:         make(map[string]bool),
+		discoverMu:     sync.Mutex{},
 		problems:       nil,
 	}
 	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
