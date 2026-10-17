@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 // libraryEnvs name the library a person points the host at. The first set one
@@ -114,4 +115,9 @@ func findOnMachine(pluginDir, home, librarySum string, machine []string) string 
 func isFile(at string) bool {
 	info, err := os.Stat(at)
 	return err == nil && info.Mode().IsRegular()
+}
+
+// normalize lower-cases a name and trims the space around it.
+func normalize(name string) string {
+	return strings.ToLower(strings.TrimSpace(name))
 }

@@ -1,50 +1,35 @@
 package onnxruntime
 
-import (
-	"fmt"
-	"strings"
-)
+import "fmt"
 
 // Provider is the execution provider a plugin opens its sessions on. The plugin
-// applies it; the host passes the name on and refuses a GPU provider for the
+// enables it; the host passes the name on and refuses a GPU provider for the
 // pinned CPU archive.
 type Provider string
 
+// The providers, and the spellings that name them. Auto lets the plugin pick the
+// best accelerator it can enable and fall back to the CPU.
 const (
-	// ProviderAuto lets the plugin pick the best accelerator it can enable and fall back to the CPU.
-	ProviderAuto Provider = "auto"
-
-	// ProviderCPU runs inference on the CPU.
-	ProviderCPU Provider = "cpu"
-
-	// ProviderCoreML runs inference on the Apple Neural Engine and GPU.
-	ProviderCoreML Provider = "coreml"
-
-	// ProviderCUDA runs inference on NVIDIA GPUs.
-	ProviderCUDA Provider = "cuda"
-
-	// ProviderDirectML runs inference on DirectX 12 GPUs on Windows.
+	ProviderAuto     Provider = "auto"
+	ProviderCPU      Provider = "cpu"
+	ProviderCoreML   Provider = "coreml"
+	ProviderCUDA     Provider = "cuda"
 	ProviderDirectML Provider = "directml"
-
-	// ProviderROCm runs inference on AMD GPUs on Linux.
-	ProviderROCm Provider = "rocm"
+	ProviderROCm     Provider = "rocm"
 )
 
-// ParseProvider converts a name into a Provider. The empty name is auto.
+// providerNames maps each accepted spelling to its provider. The empty name is auto.
+var providerNames = map[string]Provider{
+	"": ProviderAuto, "auto": ProviderAuto, "cpu": ProviderCPU,
+	"coreml": ProviderCoreML, "core-ml": ProviderCoreML, "cuda": ProviderCUDA,
+	"directml": ProviderDirectML, "direct-ml": ProviderDirectML, "dml": ProviderDirectML,
+	"rocm": ProviderROCm,
+}
+
+// ParseProvider converts a name into a Provider, ignoring case and surrounding space.
 func ParseProvider(name string) (Provider, error) {
-	switch strings.ToLower(strings.TrimSpace(name)) {
-	case "", "auto":
-		return ProviderAuto, nil
-	case "cpu":
-		return ProviderCPU, nil
-	case "coreml", "core-ml":
-		return ProviderCoreML, nil
-	case "cuda":
-		return ProviderCUDA, nil
-	case "directml", "direct-ml", "dml":
-		return ProviderDirectML, nil
-	case "rocm":
-		return ProviderROCm, nil
+	if provider, ok := providerNames[normalize(name)]; ok {
+		return provider, nil
 	}
 	return "", fmt.Errorf("unknown execution provider %q, expected one of: auto, cpu, coreml, cuda, directml, rocm", name)
 }

@@ -233,3 +233,13 @@ func TestTheModelsAreFoundWhereTheConfigurationSays(t *testing.T) {
 		t.Error("a download does not reach whoever is listening")
 	}
 }
+
+func TestTheRuntimeIsTheSettingOrElseTheOneTheHostGave(t *testing.T) {
+	t.Setenv("NUMEN_ONNX_RUNTIME_LIB", "/host/libonnxruntime.so")
+	if got := (Config{}).settings().Runtime; got != "/host/libonnxruntime.so" {
+		t.Errorf("runtime = %q, want the host's", got)
+	}
+	if got := (Config{Runtime: "mine.so"}).settings().Runtime; got != "mine.so" {
+		t.Errorf("runtime = %q, want the setting", got)
+	}
+}

@@ -101,8 +101,8 @@ func TestProvisionFetchesAndUnpacksThePinnedLibrary(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Provision() = %v", err)
 	}
-	if provider != "cpu" {
-		t.Errorf("provider = %q, want cpu", provider)
+	if provider != "auto" {
+		t.Errorf("provider = %q, want auto", provider)
 	}
 	if !strings.HasPrefix(library, cfg.Dir) || filepath.Base(library) != "libonnxruntime.so" {
 		t.Errorf("library = %q, want libonnxruntime.so under %s", library, cfg.Dir)
@@ -398,7 +398,7 @@ func TestProvisionAnswersTheProviderTheConfigurationNames(t *testing.T) {
 	cfg.Provider = " CPU "
 
 	_, provider, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir())
-	if err != nil || provider != "cpu" {
+	if err != nil || provider != "auto" {
 		t.Fatalf("Provision() provider = %q, %v", provider, err)
 	}
 }

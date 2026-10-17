@@ -12,6 +12,7 @@ import (
 	"github.com/gomlx/go-huggingface/tokenizers/api"
 	"github.com/gomlx/go-huggingface/tokenizers/hftokenizer"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 	"github.com/jiva-studio/numen/modules/plugins/embeddings/backend/onnxruntime"
 )
 
@@ -58,7 +59,7 @@ func Open(ctx context.Context, identity ModelInfo, cfg LocalModel, progress Fetc
 		return nil, err
 	}
 
-	engine, _, err := onnxruntime.Open(ctx, onnxruntime.Settings{Runtime: cfg.Runtime})
+	engine, _, err := onnxruntime.Open(ctx, onnxruntime.Settings{Runtime: cmp.Or(cfg.Runtime, onnx.GetLibrary())})
 	if err != nil {
 		return nil, err
 	}
