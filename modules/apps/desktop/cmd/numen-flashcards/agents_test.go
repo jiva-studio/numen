@@ -18,7 +18,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -109,7 +109,7 @@ func hasWrittenSecrets(t *testing.T, cfg container.Config) (token bool, announce
 // An installation that names no agent lets nothing be asked, and says so.
 func TestAnInstallationNamingNoAgentAsksNothingAboutACard(t *testing.T) {
 	cfg, db, opening, api, _ := makeWindow(t)
-	cfg.Agent = agent.Config{}
+	cfg.Agent = settings.Agent{Use: settings.UseProgram("")}
 
 	notes, cards := makeNotesAndCards(cfg, db, opening)
 	away := serveAgents(t.Context(), cfg, db, notes, cards, api, false, io.Discard)
@@ -126,7 +126,7 @@ func TestAnInstallationNamingNoAgentAsksNothingAboutACard(t *testing.T) {
 // The flag shuts it for one launch, whatever the settings name.
 func TestTheFlagShutsTheAgentForOneLaunch(t *testing.T) {
 	cfg, db, opening, api, _ := makeWindow(t)
-	cfg.Agent = agent.Defaults()
+	cfg.Agent = settings.Agent{}
 
 	notes, cards := makeNotesAndCards(cfg, db, opening)
 	away := serveAgents(t.Context(), cfg, db, notes, cards, api, true, io.Discard)
@@ -148,7 +148,7 @@ func TestTheFlagShutsTheAgentForOneLaunch(t *testing.T) {
 // would point that agent at whichever window started last.
 func TestTheReviewerWritesDownNoAddressAndNoToken(t *testing.T) {
 	cfg, db, opening, api, vaults := makeWindow(t)
-	cfg.Agent = agent.Defaults()
+	cfg.Agent = settings.Agent{}
 
 	notes, cards := makeNotesAndCards(cfg, db, opening)
 	away := serveAgents(t.Context(), cfg, db, notes, cards, api, false, io.Discard)
@@ -169,7 +169,7 @@ func TestTheReviewerWritesDownNoAddressAndNoToken(t *testing.T) {
 // vault starts it again there; one on the same vault leaves it where it is.
 func TestTheAgentFollowsTheVaultTheSessionIsOn(t *testing.T) {
 	cfg, db, opening, api, vaults := makeWindow(t)
-	cfg.Agent = agent.Defaults()
+	cfg.Agent = settings.Agent{}
 
 	notes, cards := makeNotesAndCards(cfg, db, opening)
 	away := serveAgents(t.Context(), cfg, db, notes, cards, api, false, io.Discard)
@@ -200,7 +200,7 @@ func TestTheAgentFollowsTheVaultTheSessionIsOn(t *testing.T) {
 // it could not.
 func TestAReachableAgentClearsWhyItWasUnreachable(t *testing.T) {
 	cfg, db, opening, api, _ := makeWindow(t)
-	cfg.Agent = agent.Defaults()
+	cfg.Agent = settings.Agent{}
 	api.Unreachable.Store("an earlier reason")
 
 	notes, cards := makeNotesAndCards(cfg, db, opening)
@@ -216,7 +216,7 @@ func TestAReachableAgentClearsWhyItWasUnreachable(t *testing.T) {
 // has nobody to ask.
 func TestTakingTheAgentsAwayStopsTheEndpoint(t *testing.T) {
 	cfg, db, opening, api, vaults := makeWindow(t)
-	cfg.Agent = agent.Defaults()
+	cfg.Agent = settings.Agent{}
 
 	notes, cards := makeNotesAndCards(cfg, db, opening)
 	away := serveAgents(t.Context(), cfg, db, notes, cards, api, false, io.Discard)

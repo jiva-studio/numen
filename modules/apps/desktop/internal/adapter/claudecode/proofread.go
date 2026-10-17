@@ -1,3 +1,5 @@
+// Package claudecode puts a recognition right through the command line a person already has
+// installed, one batch to a process.
 package claudecode
 
 import (
@@ -169,4 +171,11 @@ func (p *Proofreader) buildArguments() []string {
 	args = append(args, "--disallowed-tools")
 	args = append(args, disallowed...)
 	return append(args, "--append-system-prompt", p.Instruction)
+}
+
+// getLastLine is the part of the error output worth showing: what a command line says last is what
+// went wrong.
+func getLastLine(said string) string {
+	lines := strings.Split(strings.TrimSpace(said), "\n")
+	return strings.TrimSpace(lines[len(lines)-1])
 }

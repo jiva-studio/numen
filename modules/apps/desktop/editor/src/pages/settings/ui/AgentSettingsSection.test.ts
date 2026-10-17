@@ -49,11 +49,27 @@ const ANTIGRAVITY_MODELS: readonly Model[] = [
   },
 ]
 
-const createSection = (file: Record<string, unknown> = {}) => {
+const USE_MODELS = (defaultName: string): readonly Model[] =>
+  [
+    { name: 'claude', title: 'Claude Code' },
+    { name: 'antigravity', title: 'Antigravity' },
+    { name: '', title: 'Nothing answers' },
+  ].map(({ name, title }) => ({
+    namedAt: ['agent', 'use'],
+    name,
+    title,
+    group: '',
+    isDefault: name === defaultName,
+    writes: [{ at: ['agent', 'use'], value: JSON.stringify(name) }],
+    presence: 'present',
+  }))
+
+const createSection = (file: Record<string, unknown> = {}, defaultUse = 'claude') => {
   const written: SettingEdit[] = []
   const installation: Installation = {
     getSetting: (path) => at(file, path),
     getModels: (path) => {
+      if (path.join('.') === 'agent.use') return USE_MODELS(defaultUse)
       if (path.join('.') === 'agent.claude.model') return CLAUDE_MODELS
       if (path.join('.') === 'agent.antigravity.model') return ANTIGRAVITY_MODELS
       return []
@@ -104,6 +120,20 @@ describe('AgentSettingsSection', () => {
     const modelRow = rows.find((r) => r.props('at') === 'agent-model')
     expect(modelRow).toBeDefined()
     expect(modelRow?.exists()).toBe(true)
+  })
+
+  it('follows the default program when the file names none', () => {
+    const { wrapper } = createSection({}, 'antigravity')
+    const rows = wrapper.findAllComponents({ name: 'SettingRow' })
+    expect(rows.find((r) => r.props('at') === 'agent-model')).toBeDefined()
+    expect(rows.find((r) => r.props('at') === 'agent-hooks')).toBeDefined()
+  })
+
+  it('hides the rows of a program when the default is that nothing answers', () => {
+    const { wrapper } = createSection({}, '')
+    const rows = wrapper.findAllComponents({ name: 'SettingRow' })
+    expect(rows.find((r) => r.props('at') === 'agent-model')).toBeUndefined()
+    expect(rows.find((r) => r.props('at') === 'agent-steps')).toBeUndefined()
   })
 
   it('hides model and step rows when no agent is active', () => {

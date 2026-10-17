@@ -22,6 +22,10 @@ const (
 	StepToolDone
 	// StepModelStart says a request to the model has begun.
 	StepModelStart
+	// StepDraft carries a change to a note while the call writing it is still arriving: the note, the
+	// text the change replaces and the text that takes its place so far. It is drawn and never shown as a
+	// step.
+	StepDraft
 	// StepStop is the last step of any work.
 	StepStop
 )

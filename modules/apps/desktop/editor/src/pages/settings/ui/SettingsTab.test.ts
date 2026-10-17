@@ -23,6 +23,15 @@ const OWN = 'https://models.example/held/v3/rec/eslav_rec_mobile.onnx'
 /** The models the vault offers, which is what the settings are grounded in. */
 const MODELS: readonly Model[] = [
   {
+    namedAt: ['agent', 'use'],
+    name: 'claude',
+    title: 'Claude Code',
+    group: '',
+    isDefault: true,
+    writes: [{ at: ['agent', 'use'], value: '"claude"' }],
+    presence: 'present',
+  },
+  {
     namedAt: ['agent', 'claude', 'model'],
     name: '',
     title: 'Whatever this machine answers with',

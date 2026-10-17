@@ -24,6 +24,7 @@ func askCompletion(text string) *connect.Request[numenv1.CompleteRequest] {
 
 func writeFakeAgent(t *testing.T, body string) string {
 	t.Helper()
+	needsShell(t)
 	path := filepath.Join(t.TempDir(), "agent")
 	if err := os.WriteFile(path, []byte("#!/bin/sh\n"+body+"\n"), 0o755); err != nil {
 		t.Fatal(err)
@@ -55,8 +56,7 @@ func TestCompleteAnswersWithNoToolsAndNoMcpServers(t *testing.T) {
 }
 
 func TestCompleteIsUnavailableWhenNoAgentCanAnswer(t *testing.T) {
-	t.Setenv("PATH", t.TempDir())
-	t.Setenv("HOME", t.TempDir())
+	withoutAgentsAnywhere(t)
 	svc := &agentServer{}
 
 	res, err := svc.Complete(context.Background(), askCompletion("why?"))
@@ -90,5 +90,25 @@ func TestCompleteStopsTheAgentWhenCancelled(t *testing.T) {
 	_, err := svc.Complete(ctx, askCompletion("why?"))
 	if connect.CodeOf(err) != connect.CodeCanceled {
 		t.Errorf("got %v", err)
+	}
+}
+
+// Claude Code, found where it is installed, answers when no command line is set.
+func TestCompleteUsesTheInstalledClaudeCodeWhenNoCommandIsSet(t *testing.T) {
+	needsShell(t)
+	withoutAgentsAnywhere(t)
+	bin := t.TempDir()
+	if err := os.WriteFile(filepath.Join(bin, "claude"), []byte("#!/bin/sh\ncat > /dev/null\necho from the cli\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", bin+string(os.PathListSeparator)+"/bin:/usr/bin")
+	svc := &agentServer{}
+
+	res, err := svc.Complete(context.Background(), askCompletion("why?"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Msg.GetAnswer().GetText() != "from the cli" {
+		t.Errorf("got %+v", res.Msg)
 	}
 }

@@ -133,7 +133,7 @@ The chat panel provides a floating selector island above the message composer:
 
 ## Settings
 
-`agent.use` names which agent answers, and empty names none. `agent.serve_tools` puts the tools on a port for an agent a person runs themselves, and is off. `agent.claude.*` is how Claude Code is run: `command` starts it, `model` is which of its models answers, `max_steps` is how many times it may go to the model before it is stopped, and `reads_hooks_and_skills` is what this machine holds for it. A section is kept whether it is the one in use or not. See [Settings](settings.md).
+`agent.use` names which program answers, and empty names none. Left out, the program the plugins mark as the default answers. `agent.serve_tools` puts the tools on a port for an agent a person runs themselves, and is off. Each program a plugin lists has a section under its name, `agent.claude.*` for Claude Code: `command` starts it, `model` is which of its models answers, `max_steps` is how many times it may go to the model before it is stopped, and `reads_hooks_and_skills` is what this machine holds for it. A section is kept whether it is the one in use or not. The programs and their models are listed by the plugins that run them, and the window offers what they list. See [Settings](settings.md).
 
 Where `command` is empty, the path is asked first, then the folders the command line's installers write to.
 

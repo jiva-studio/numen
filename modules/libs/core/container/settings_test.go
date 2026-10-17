@@ -77,8 +77,8 @@ func TestASettingWrittenLeavesTheRestOfTheFileAlone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held.Agent.Claude.Model != "opus" {
-		t.Errorf("the model reads %q", held.Agent.Claude.Model)
+	if held.Agent.GetProgram("claude").Model != "opus" {
+		t.Errorf("the model reads %q", held.Agent.GetProgram("claude").Model)
 	}
 	if held.Appearance.Theme != "mine:sea" {
 		t.Errorf("the theme reads %q", held.Appearance.Theme)
@@ -102,7 +102,7 @@ func TestSettingsWrittenTogetherAllArrive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held.Agent.Use != "claude" || held.Agent.Claude.MaxSteps != 12 {
+	if held.Agent.GetUse() != "claude" || held.Agent.GetProgram("claude").MaxSteps != 12 {
 		t.Errorf("the agent reads %+v", held.Agent)
 	}
 }
@@ -158,7 +158,7 @@ func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 	said := DefaultSettings()
 	said.Indexing.Recognition.Proofread = Proofread{Profile: "for scans", IsAutomatic: true}
 	said.Indexing.Transcription.Proofread = Proofread{Profile: "for speech"}
-	said.Agent.Use = "claude"
+	said.Agent.Use = settings.UseProgram("claude")
 	said.Importing.Captions = []string{"sa", "en"}
 	said.Performance = settings.Performance{Profile: settings.ProfileEco}
 
@@ -170,8 +170,8 @@ func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 	if got.TranscriptProofreading != said.Indexing.Transcription.Proofread {
 		t.Errorf("speech is put right with %+v", got.TranscriptProofreading)
 	}
-	if got.Agent.Use != "claude" {
-		t.Errorf("the agent is %q", got.Agent.Use)
+	if got.Agent.GetUse() != "claude" {
+		t.Errorf("the agent is %q", got.Agent.GetUse())
 	}
 	if !slices.Equal(got.Importing.Captions, []string{"sa", "en"}) {
 		t.Errorf("the captions are %v", got.Importing.Captions)
@@ -221,7 +221,7 @@ func TestSettingsOrDefaultsAnswerWhatIsReadableAndTheDefaultsOtherwise(t *testin
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 
 	cfg, _ := writeSettings(t, `{"agent": {"use": "somebody-else"}}`)
-	if got := cfg.getSettingsOrDefaults().Agent.Use; got != "somebody-else" {
+	if got := cfg.getSettingsOrDefaults().Agent.GetUse(); got != "somebody-else" {
 		t.Errorf("the agent is %q", got)
 	}
 

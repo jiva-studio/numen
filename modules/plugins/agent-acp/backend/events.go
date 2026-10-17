@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agentrun"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
 type eventReader struct {
-	registry     *Registry
-	work         *Work
+	registry     *agentrun.Registry
+	work         *agentrun.Work
 	limit        int
 	done         int
 	conversation string

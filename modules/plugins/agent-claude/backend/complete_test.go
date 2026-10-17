@@ -35,7 +35,9 @@ func TestCompleteAnswersWithTheConfiguredKeyAndNoTools(t *testing.T) {
 	t.Setenv(anthropicKeyVar, "env-key")
 	record := filepath.Join(t.TempDir(), "record")
 	script := writeFakeClaude(t, `{ echo "key=$ANTHROPIC_API_KEY"; echo "args=$*"; cat; } > '`+record+`'; echo "the answer"`)
-	svc := &agentServer{command: []string{script}, apiKey: "host-key", modelName: "m1"}
+	t.Setenv("NUMEN_CLAUDE_COMMAND", script)
+	svc := &agentServer{}
+	svc.applyConfig(map[string]string{"apiKey": "host-key", "model": "m1"})
 
 	res, err := svc.Complete(context.Background(), askCompletion("why?"))
 	if err != nil {
@@ -62,7 +64,8 @@ func TestCompleteIsUnavailableWithoutAKey(t *testing.T) {
 	t.Setenv(anthropicKeyVar, "env-key")
 	ran := filepath.Join(t.TempDir(), "ran")
 	script := writeFakeClaude(t, `touch '`+ran+`'; echo invented`)
-	svc := &agentServer{command: []string{script}}
+	t.Setenv("NUMEN_CLAUDE_COMMAND", script)
+	svc := &agentServer{}
 
 	res, err := svc.Complete(context.Background(), askCompletion("why?"))
 	if err != nil {
@@ -78,7 +81,9 @@ func TestCompleteIsUnavailableWithoutAKey(t *testing.T) {
 
 func TestCompleteStopsTheCommandWhenCancelled(t *testing.T) {
 	script := writeFakeClaude(t, `exec sleep 30`)
-	svc := &agentServer{command: []string{script}, apiKey: "host-key"}
+	t.Setenv("NUMEN_CLAUDE_COMMAND", script)
+	svc := &agentServer{}
+	svc.applyConfig(map[string]string{"apiKey": "host-key"})
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
@@ -90,13 +95,13 @@ func TestCompleteStopsTheCommandWhenCancelled(t *testing.T) {
 
 func TestConfigureKeepsTheKeyTheHostSends(t *testing.T) {
 	svc := &agentServer{}
-	svc.applyConfig(context.Background(), map[string]string{"apiKey": "k1", "baseUrl": "http://127.0.0.1:1"})
-	if svc.apiKey != "k1" || svc.baseURL != "http://127.0.0.1:1" {
-		t.Errorf("got %q %q", svc.apiKey, svc.baseURL)
+	svc.applyConfig(map[string]string{"apiKey": "k1", "baseUrl": "http://127.0.0.1:1"})
+	if key, base := svc.catalogue.credentials(); key != "k1" || base != "http://127.0.0.1:1" {
+		t.Errorf("got %q %q", key, base)
 	}
-	svc.applyConfig(context.Background(), map[string]string{"apiKey": ""})
-	if svc.apiKey != "" {
-		t.Errorf("the key was kept after the host cleared it: %q", svc.apiKey)
+	svc.applyConfig(map[string]string{"apiKey": ""})
+	if key, _ := svc.catalogue.credentials(); key != "" {
+		t.Errorf("the key was kept after the host cleared it: %q", key)
 	}
 }
 

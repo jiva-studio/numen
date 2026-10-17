@@ -7,13 +7,6 @@ import (
 	"strings"
 )
 
-// ClaudeConfig holds configuration values discovered from Claude configuration files.
-type ClaudeConfig struct {
-	Model       string            `json:"model,omitempty"`
-	MCPServers  map[string]any    `json:"mcpServers,omitempty"`
-	Environment map[string]string `json:"env,omitempty"`
-}
-
 // CodexConfig holds configuration values discovered from Codex configuration files.
 type CodexConfig struct {
 	Model      string         `json:"model,omitempty"`
@@ -24,29 +17,6 @@ type CodexConfig struct {
 type AntigravityConfig struct {
 	Model      string         `json:"model,omitempty"`
 	MCPServers map[string]any `json:"mcpServers,omitempty"`
-}
-
-// ReadClaudeConfig reads the Claude CLI configuration from standard locations.
-func ReadClaudeConfig() (*ClaudeConfig, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-	candidates := []string{
-		filepath.Join(home, ".claude.json"),
-		filepath.Join(home, ".claude", "config.json"),
-	}
-	for _, path := range candidates {
-		data, err := os.ReadFile(path)
-		if err != nil {
-			continue
-		}
-		var cfg ClaudeConfig
-		if err := json.Unmarshal(data, &cfg); err == nil {
-			return &cfg, nil
-		}
-	}
-	return &ClaudeConfig{}, nil
 }
 
 // ReadCodexConfig reads the OpenAI Codex configuration from standard locations.

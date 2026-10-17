@@ -1,22 +1,28 @@
-package runner_test
+package agentrun_test
 
 import (
 	"context"
 	"os/exec"
+	"runtime"
 	"testing"
+	"time"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/runner"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agentrun"
 )
 
 // start runs a child that waits until it is killed, and the reader that waits for it.
-func start(t *testing.T, registry *runner.Registry, conversation string) (*runner.Work, <-chan struct{}) {
+func start(t *testing.T, registry *agentrun.Registry, conversation string) (*agentrun.Work, <-chan struct{}) {
 	t.Helper()
 
 	running, cancel := context.WithCancel(t.Context())
-	cmd := exec.CommandContext(running, "sh", "-c", "sleep 60")
-	runner.Supervise(cmd)
+	command, args := "sh", []string{"-c", "sleep 60"}
+	if runtime.GOOS == "windows" {
+		command, args = "cmd", []string{"/c", "ping -n 60 127.0.0.1"}
+	}
+	cmd := exec.CommandContext(running, command, args...)
+	agentrun.Supervise(cmd)
 
-	w := runner.NewWork(conversation, 1, cancel)
+	w := agentrun.NewWork(conversation, 1, cancel)
 	if !registry.Add(w) {
 		t.Fatal("the registry refused work while open")
 	}
@@ -24,7 +30,6 @@ func start(t *testing.T, registry *runner.Registry, conversation string) (*runne
 		t.Fatal(err)
 	}
 	over := make(chan struct{})
-	w.Begin()
 	go func() {
 		defer w.End()
 		defer registry.Remove(w)
@@ -48,7 +53,7 @@ func isOver(over <-chan struct{}) bool {
 
 // Close returns only once every child is over, and refuses work after it.
 func TestCloseStopsEveryChildAndRefusesMore(t *testing.T) {
-	var registry runner.Registry
+	var registry agentrun.Registry
 	_, first := start(t, &registry, "one")
 	_, second := start(t, &registry, "")
 
@@ -58,14 +63,14 @@ func TestCloseStopsEveryChildAndRefusesMore(t *testing.T) {
 	if !isOver(first) || !isOver(second) {
 		t.Errorf("a child outlived Close: first over %v, second over %v", isOver(first), isOver(second))
 	}
-	if registry.Add(runner.NewWork("", 1, func() {})) {
+	if registry.Add(agentrun.NewWork("", 1, func() {})) {
 		t.Error("the registry took work after Close")
 	}
 }
 
 // Ending a conversation stops what is answered in it and nothing else, and lets go of its session.
 func TestEndConversationStopsOnlyThatConversation(t *testing.T) {
-	var registry runner.Registry
+	var registry agentrun.Registry
 	_, one := start(t, &registry, "one")
 	_, two := start(t, &registry, "two")
 	registry.SetSession("one", "s-one")
@@ -90,7 +95,7 @@ func TestEndConversationStopsOnlyThatConversation(t *testing.T) {
 
 // A task that named no conversation keeps no session, and ending none is not an error.
 func TestNoConversationKeepsNoSession(t *testing.T) {
-	var registry runner.Registry
+	var registry agentrun.Registry
 	registry.SetSession("", "s-lost")
 	if got := registry.GetSession(""); got != "" {
 		t.Errorf("session is %q, want none", got)
@@ -102,7 +107,7 @@ func TestNoConversationKeepsNoSession(t *testing.T) {
 
 // Stop on one work ends its child and is safe to repeat.
 func TestStopEndsTheChildOnce(t *testing.T) {
-	var registry runner.Registry
+	var registry agentrun.Registry
 	w, over := start(t, &registry, "")
 
 	if err := w.Stop(); err != nil {
@@ -113,5 +118,36 @@ func TestStopEndsTheChildOnce(t *testing.T) {
 	}
 	if err := w.Stop(); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// A work the registry has taken in is waited for by Close until its reader says it is done, even
+// where the reader has not started.
+func TestCloseWaitsForTheReaderOfWhatWasAdded(t *testing.T) {
+	var registry agentrun.Registry
+	w := agentrun.NewWork("", 1, func() {})
+	if !registry.Add(w) {
+		t.Fatal("the registry refused work while open")
+	}
+
+	closed := make(chan struct{})
+	go func() {
+		_ = registry.Close()
+		close(closed)
+	}()
+
+	// Close stops the work before it waits for the reader, and cannot return before the reader ends.
+	<-w.Stopped()
+	select {
+	case <-closed:
+		t.Fatal("Close returned while the reader of the work was still to finish")
+	default:
+	}
+
+	w.End()
+	select {
+	case <-closed:
+	case <-time.After(10 * time.Second):
+		t.Fatal("Close did not return once the reader finished")
 	}
 }

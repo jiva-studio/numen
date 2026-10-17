@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
@@ -22,7 +22,7 @@ import (
 // list.
 func TestAnInstallationNamingNoAgentOpensNoPort(t *testing.T) {
 	opened, cfg := windowOn(t)
-	cfg.Agent = agent.Config{}
+	cfg.Agent = settings.Agent{Use: settings.UseProgram("")}
 	addr := free(t)
 
 	shut, err := serveAgents(t.Context(), cfg, opened, agentOptions{addr: addr}, io.Discard)
@@ -50,7 +50,7 @@ func TestAnInstallationNamingNoAgentOpensNoPort(t *testing.T) {
 // out.
 func TestTheAgentTheSettingsNameIsServedAndTakenAway(t *testing.T) {
 	opened, cfg := windowOn(t)
-	cfg.Agent = agent.Defaults()
+	cfg.Agent = settings.Agent{}
 	addr := free(t)
 
 	shut, err := serveAgents(t.Context(), cfg, opened, agentOptions{addr: addr}, io.Discard)
@@ -93,7 +93,7 @@ func TestTheAgentTheSettingsNameIsServedAndTakenAway(t *testing.T) {
 // endpoint on its own, and the panel is told there is no agent to ask.
 func TestTheToolsAreServedToAnAgentAPersonRunsThemselves(t *testing.T) {
 	opened, cfg := windowOn(t)
-	cfg.Agent = agent.Config{ShouldServeTools: true}
+	cfg.Agent = settings.Agent{Use: settings.UseProgram(""), ShouldServeTools: true}
 	addr := free(t)
 
 	shut, err := serveAgents(t.Context(), cfg, opened, agentOptions{addr: addr}, io.Discard)

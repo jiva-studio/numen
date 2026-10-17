@@ -16,7 +16,6 @@ on:
       - "modules/libs/core/internal/adapter/recognition/config.go"
       - "modules/libs/core/internal/adapter/transcription/config.go"
       - "modules/libs/core/internal/adapter/proofreading/config.go"
-      - "modules/libs/core/adapter/agent/config.go"
       - ".github/workflows/docs.yml"
   push:
     branches: [main]
@@ -34,7 +33,6 @@ on:
       - "modules/libs/core/internal/adapter/recognition/config.go"
       - "modules/libs/core/internal/adapter/transcription/config.go"
       - "modules/libs/core/internal/adapter/proofreading/config.go"
-      - "modules/libs/core/adapter/agent/config.go"
       - ".github/workflows/docs.yml"
 
 # Two deploys share one storage zone, and the second takes down what the first

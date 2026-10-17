@@ -8,7 +8,6 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
@@ -91,8 +90,8 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Insta
 
 // makeEditPreview is how a change the agent is making reaches the window before it
 // lands. Where a stretch stands is the vault's to say.
-func makeEditPreview(opened *editor.Installation) claudecode.EditPreview {
-	return claudecode.EditPreview{
+func makeEditPreview(opened *editor.Installation) agents.EditPreview {
+	return agents.EditPreview{
 		Emit: func(ctx context.Context, said domain.Edit) {
 			_ = opened.State.GetWindow().ShowEdit(ctx, said)
 		},

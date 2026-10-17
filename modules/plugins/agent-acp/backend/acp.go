@@ -11,12 +11,13 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agentrun"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
 // AgentRunner executes external coding agents and emits AskAgentResponse events.
 type AgentRunner struct {
-	Registry *Registry
+	Registry *agentrun.Registry
 }
 
 // RunParams specifies execution options for an agent invocation.
@@ -32,7 +33,7 @@ type RunParams struct {
 }
 
 // StartRun starts the agent process and returns the Work handle.
-func (r *AgentRunner) StartRun(ctx context.Context, params RunParams) (*Work, error) {
+func (r *AgentRunner) StartRun(ctx context.Context, params RunParams) (*agentrun.Work, error) {
 	if params.Program == "" {
 		params.Program = "antigravity"
 	}
@@ -42,7 +43,6 @@ func (r *AgentRunner) StartRun(ctx context.Context, params RunParams) (*Work, er
 
 	isAntigravity := params.Program == "antigravity" || strings.HasSuffix(binName, "agy") || strings.HasSuffix(binName, "antigravity")
 	isCodex := params.Program == "codex" || strings.HasSuffix(binName, "codex")
-	isClaude := params.Program == "claude" || strings.HasSuffix(binName, "claude")
 
 	var cmd *exec.Cmd
 	var cleanupTempHome func()
@@ -52,8 +52,6 @@ func (r *AgentRunner) StartRun(ctx context.Context, params RunParams) (*Work, er
 		cmd, cleanupTempHome = makeAntigravityCommand(running, binName, baseArgs, params, r.Registry)
 	case isCodex:
 		cmd = makeCodexCommand(running, binName, baseArgs, params)
-	case isClaude:
-		cmd = makeClaudeCommand(running, binName, baseArgs, params)
 	default:
 		cmd = exec.CommandContext(running, binName, baseArgs...)
 	}
@@ -69,7 +67,7 @@ func (r *AgentRunner) StartRun(ctx context.Context, params RunParams) (*Work, er
 		return nil, err
 	}
 
-	w := NewWork(params.Conversation, 64, stop)
+	w := agentrun.NewWork(params.Conversation, 64, stop)
 	if !r.Registry.Add(w) {
 		_ = stdout.Close()
 		if cleanupTempHome != nil {
@@ -80,6 +78,7 @@ func (r *AgentRunner) StartRun(ctx context.Context, params RunParams) (*Work, er
 	}
 
 	if err := cmd.Start(); err != nil {
+		w.End()
 		r.Registry.Remove(w)
 		_ = stdout.Close()
 		if cleanupTempHome != nil {
@@ -89,7 +88,6 @@ func (r *AgentRunner) StartRun(ctx context.Context, params RunParams) (*Work, er
 		return nil, fmt.Errorf("start %s: %w", binName, err)
 	}
 
-	w.Begin()
 	go readAgentOutput(w, r.Registry, cmd, stdout, cleanupTempHome, params.MaxSteps, params.Conversation)
 
 	return w, nil
@@ -102,8 +100,6 @@ func resolveCommand(params RunParams) (string, []string) {
 	switch params.Program {
 	case "codex":
 		return FindCodex(), nil
-	case "claude":
-		return FindClaude(), nil
 	case "cursor":
 		return FindCursor(), nil
 	default:
@@ -121,11 +117,11 @@ func configureCommand(cmd *exec.Cmd, params RunParams) {
 	if params.Tools.Token != "" {
 		cmd.Env = append(cmd.Env, "NUMEN_TOKEN="+params.Tools.Token)
 	}
-	Supervise(cmd)
+	agentrun.Supervise(cmd)
 }
 
 func makeAntigravityCommand(
-	running context.Context, binName string, baseArgs []string, params RunParams, reg *Registry,
+	running context.Context, binName string, baseArgs []string, params RunParams, reg *agentrun.Registry,
 ) (*exec.Cmd, func()) {
 	args := append([]string{}, baseArgs...)
 	args = append(args,
@@ -172,24 +168,9 @@ func makeCodexCommand(
 	return exec.CommandContext(running, binName, args...)
 }
 
-func makeClaudeCommand(
-	running context.Context, binName string, baseArgs []string, params RunParams,
-) *exec.Cmd {
-	args := append([]string{}, baseArgs...)
-	args = append(args,
-		"-p", params.Prompt,
-		"--output-format", "stream-json",
-		"--dangerously-skip-permissions",
-	)
-	if params.Model != "" && params.Model != "default" {
-		args = append(args, "--model", params.Model)
-	}
-	return exec.CommandContext(running, binName, args...)
-}
-
 func readAgentOutput(
-	w *Work,
-	reg *Registry,
+	w *agentrun.Work,
+	reg *agentrun.Registry,
 	cmd *exec.Cmd,
 	stdout io.ReadCloser,
 	cleanup func(),
