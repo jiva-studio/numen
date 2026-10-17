@@ -162,3 +162,10 @@ func TestProofreaderBridgeNoPlugin(t *testing.T) {
 		t.Fatal("expected error when no plugin registered, got nil")
 	}
 }
+
+func (s *mockProofreadingServer) ProofreadText(
+	_ context.Context,
+	_ *connect.Request[v1.ProofreadTextRequest],
+) (*connect.Response[v1.ProofreadTextResponse], error) {
+	return connect.NewResponse(&v1.ProofreadTextResponse{IsDone: true}), nil
+}
