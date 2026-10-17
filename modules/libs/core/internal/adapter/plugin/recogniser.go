@@ -34,6 +34,7 @@ type RecogniserBridge struct {
 	pluginID string
 	client   numenv1connect.RecognitionServiceClient
 	lease    *pluginLease
+	model    port.RecognitionModel
 }
 
 // OpenRecogniserBridge activates or connects to the OCR plugin and returns a port.Recogniser.
@@ -48,34 +49,33 @@ func OpenRecogniserBridge(ctx context.Context, host RecogniserPluginHost) (*Reco
 		return nil, err
 	}
 
-	return &RecogniserBridge{
-		host:     host,
-		pluginID: plugin.Manifest.ID,
-		client:   client,
-		lease:    lease,
-	}, nil
-}
-
-// GetRecognitionModel queries the OCR plugin for its model specification.
-func (b *RecogniserBridge) GetRecognitionModel() port.RecognitionModel {
-	ctx := context.Background()
-	req := connect.NewRequest(&v1.GetRecognitionModelRequest{})
-	resp, err := b.client.GetRecognitionModel(ctx, req)
+	modelCtx, cancel := context.WithTimeout(ctx, modelInfoTimeout)
+	defer cancel()
+	resp, err := client.GetRecognitionModel(modelCtx, connect.NewRequest(&v1.GetRecognitionModelRequest{}))
 	if err != nil {
-		return port.RecognitionModel{
-			Layout:     "unknown",
-			Recogniser: "unknown",
-			DPI:        300,
-			From:       "plugin-error",
-		}
+		_ = lease.Close()
+		return nil, fmt.Errorf("get recognition model %s: %w", plugin.Manifest.ID, err)
 	}
 
-	return port.RecognitionModel{
+	model := port.RecognitionModel{
 		Layout:     resp.Msg.GetLayout(),
 		Recogniser: resp.Msg.GetRecogniser(),
 		DPI:        int(resp.Msg.GetDpi()),
 		From:       resp.Msg.GetFrom(),
 	}
+
+	return &RecogniserBridge{
+		host:     host,
+		pluginID: plugin.Manifest.ID,
+		client:   client,
+		lease:    lease,
+		model:    model,
+	}, nil
+}
+
+// GetRecognitionModel returns the model the OCR plugin answered with when the bridge was opened.
+func (b *RecogniserBridge) GetRecognitionModel() port.RecognitionModel {
+	return b.model
 }
 
 // Recognise sends page image bytes to the OCR plugin process and decodes returned blocks.
