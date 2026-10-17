@@ -52,3 +52,9 @@ func TestEachPlatformNamesItsLibrary(t *testing.T) {
 		}
 	}
 }
+
+func TestAnExplicitMachineListIsTheOnlyPlaceSearched(t *testing.T) {
+	if at := findOnMachine(t.TempDir(), "", "", []string{}); at != "" {
+		t.Errorf("findOnMachine() = %q in a machine with no folders", at)
+	}
+}

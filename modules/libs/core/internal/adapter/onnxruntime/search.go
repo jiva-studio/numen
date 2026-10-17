@@ -97,6 +97,7 @@ func findOnMachine(pluginDir, home, librarySum string, machine []string) string 
 	if at := filepath.Join(home, name); home != "" && isFile(at) && verifyFile(at, librarySum) == nil {
 		return at
 	}
+	isDefault := machine == nil
 	if machine == nil {
 		machine = getMachineDirs()
 	}
@@ -105,7 +106,10 @@ func findOnMachine(pluginDir, home, librarySum string, machine []string) string 
 			return found[0]
 		}
 	}
-	if found := findMatching(filepath.Join("/nix/store", "*-onnxruntime-*", "lib", name+"*")); machine == nil && len(found) > 0 {
+	if !isDefault {
+		return ""
+	}
+	if found := findMatching(filepath.Join("/nix/store", "*-onnxruntime-*", "lib", name+"*")); len(found) > 0 {
 		return found[0]
 	}
 	return ""
