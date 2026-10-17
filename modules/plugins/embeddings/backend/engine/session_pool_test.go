@@ -21,15 +21,12 @@ func TestSessionPool(t *testing.T) {
 	if err != nil {
 		t.Fatalf("acquire s1 failed: %v", err)
 	}
-	if s1 != 10 && s1 != 20 {
-		t.Errorf("expected session 10 or 20, got %d", s1)
-	}
 	s2, err := pool.acquire(ctx)
 	if err != nil {
 		t.Fatalf("acquire s2 failed: %v", err)
 	}
-	if s2 != 10 && s2 != 20 {
-		t.Errorf("expected session 10 or 20, got %d", s2)
+	if !((s1 == 10 && s2 == 20) || (s1 == 20 && s2 == 10)) {
+		t.Errorf("expected sessions 10 and 20, got %d and %d", s1, s2)
 	}
 
 	pool.release(s1)
