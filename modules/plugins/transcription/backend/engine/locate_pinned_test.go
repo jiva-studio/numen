@@ -64,4 +64,3 @@ func TestAModelNobodyPinnedBesideTheApplicationIsUsedAsFound(t *testing.T) {
 		t.Fatalf("model() = %q, %v", got, err)
 	}
 }
-
