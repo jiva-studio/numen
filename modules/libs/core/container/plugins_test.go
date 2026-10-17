@@ -1,7 +1,6 @@
 package container
 
 import (
-	"bufio"
 	"go/parser"
 	"go/token"
 	"io/fs"
@@ -85,12 +84,14 @@ func TestNoPluginNamesAnotherModuleOfTheRepository(t *testing.T) {
 			continue
 		}
 		plugins++
-		for _, dep := range readRequires(t, filepath.Join(dir, "go.mod")) {
-			if why := getPluginRefusal(plugin, dep); why != "" {
-				t.Errorf("%s requires %s: %s", plugin, dep, why)
-			}
+		text, err := os.ReadFile(filepath.Join(dir, "go.mod"))
+		if err != nil {
+			t.Fatal(err)
 		}
-		err := filepath.WalkDir(dir, func(path string, e fs.DirEntry, err error) error {
+		for _, why := range getGoModRefusals(plugin, parseGoMod(string(text))) {
+			t.Errorf("%s %s", plugin, why)
+		}
+		err = filepath.WalkDir(dir, func(path string, e fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -128,32 +129,87 @@ func TestNoPluginNamesAnotherModuleOfTheRepository(t *testing.T) {
 	}
 }
 
-// readRequires returns the module paths a go.mod requires.
-func readRequires(t *testing.T, path string) []string {
-	t.Helper()
-	f, err := os.Open(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer f.Close()
-	var deps []string
-	inBlock := false
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
+// goMod is what a go.mod says about the modules it names: the ones it
+// requires, and the local directories it substitutes for a module.
+type goMod struct {
+	requires []string
+	// replaced maps a module path to the local directory it is built from.
+	replaced map[string]string
+}
+
+// parseGoMod reads the require and replace directives of a go.mod, in single
+// lines and in blocks, with trailing comments removed.
+func parseGoMod(text string) goMod {
+	mod := goMod{replaced: map[string]string{}}
+	block := ""
+	for _, line := range strings.Split(text, "\n") {
+		line, _, _ = strings.Cut(line, "//")
+		line = strings.TrimSpace(line)
+		fields := strings.Fields(line)
 		switch {
-		case line == "require (":
-			inBlock = true
+		case len(fields) == 0:
 		case line == ")":
-			inBlock = false
-		case strings.HasPrefix(line, "require "):
-			deps = append(deps, strings.Fields(strings.TrimPrefix(line, "require "))[0])
-		case inBlock && line != "" && !strings.HasPrefix(line, "//"):
-			deps = append(deps, strings.Fields(line)[0])
+			block = ""
+		case len(fields) == 2 && fields[1] == "(":
+			block = fields[0]
+		case block != "":
+			mod.read(block, fields)
+		default:
+			mod.read(fields[0], fields[1:])
 		}
 	}
-	if err := scanner.Err(); err != nil {
-		t.Fatal(err)
+	return mod
+}
+
+// read records one directive of the given kind.
+func (mod *goMod) read(kind string, fields []string) {
+	switch kind {
+	case "require":
+		if len(fields) > 0 {
+			mod.requires = append(mod.requires, fields[0])
+		}
+	case "replace":
+		for i, field := range fields {
+			if field == "=>" && i+1 < len(fields) && strings.HasPrefix(fields[i+1], ".") {
+				mod.replaced[fields[0]] = fields[i+1]
+			}
+		}
 	}
-	return deps
+}
+
+// getGoModRefusals says why a plugin's go.mod may not stand: it requires a
+// module of the repository the plugin may not name, or builds any module from
+// a local directory other than the one the repository's own module is at.
+func getGoModRefusals(plugin string, mod goMod) []string {
+	var refusals []string
+	for _, dep := range mod.requires {
+		if why := getPluginRefusal(plugin, dep); why != "" {
+			refusals = append(refusals, "requires "+dep+": "+why)
+		}
+	}
+	for from, to := range mod.replaced {
+		if why := getPluginRefusal(plugin, from); why != "" {
+			refusals = append(refusals, "replaces "+from+" with "+to+": "+why)
+		} else if !strings.HasPrefix(from, numenModules) {
+			refusals = append(refusals, "replaces "+from+" with "+to+": third-party code is built from its own module")
+		}
+	}
+	return refusals
+}
+
+func TestWhatThePluginGoModRulesRefuse(t *testing.T) {
+	for _, one := range []struct {
+		name, text string
+		refused    int
+	}{
+		{"a core requirement in a block", "require (\n\t" + numenModules + "libs/core v0.0.0\n)", 1},
+		{"a block opener with a comment", "require ( // deps\n\t" + numenModules + "plugins/ocr v0.0.0\n)", 1},
+		{"a single-line requirement", "require " + numenModules + "plugins/ocr v0.0.0", 1},
+		{"a third-party module built from core", "require example.com/x v1.0.0\nreplace example.com/x => ../../libs/core", 1},
+		{"the contract", "require (\n\t" + numenModules + "libs/protocol v0.0.0\n\texample.com/x v1.0.0\n)\nreplace " + numenModules + "libs/protocol => ../../libs/protocol", 0},
+	} {
+		if got := len(getGoModRefusals("agent", parseGoMod(one.text))); got != one.refused {
+			t.Errorf("%s: %d refusals, want %d", one.name, got, one.refused)
+		}
+	}
 }
