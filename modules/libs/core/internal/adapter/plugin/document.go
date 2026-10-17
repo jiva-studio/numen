@@ -9,6 +9,7 @@ import (
 	_ "image/jpeg" // register JPEG decoder for page images
 	_ "image/png"  // register PNG decoder for page images
 	"io"
+	"math"
 	"os"
 	"strings"
 	"sync"
@@ -283,6 +284,9 @@ func (d *remoteDocument) GetPageSize(index int) (wide, high float64, err error) 
 }
 
 func (d *remoteDocument) RenderPage(index, dpi int) (image.Image, error) {
+	if index < 0 || index > math.MaxInt32 || dpi < 0 || dpi > math.MaxInt32 {
+		return nil, errors.New("page index or dpi out of range")
+	}
 	ctx := context.Background()
 	req := connect.NewRequest(&v1.RenderPageRequest{
 		Path: d.path,

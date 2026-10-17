@@ -434,7 +434,10 @@ func runOnFile(path string, work func(path string) error) error {
 }
 
 func splice(raw []byte, from, to int, with []byte) []byte {
-	patched := make([]byte, 0, len(raw)-(to-from)+len(with))
+	if from < 0 || to < from || to > len(raw) {
+		return raw
+	}
+	patched := make([]byte, 0, len(raw[:from])+len(with)+len(raw[to:]))
 	patched = append(patched, raw[:from]...)
 	patched = append(patched, with...)
 	return append(patched, raw[to:]...)

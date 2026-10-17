@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"math"
 	"strconv"
 	"strings"
 
@@ -309,11 +310,13 @@ func extractCallDetails(args string) (string, string, *numenv1.Span) {
 	startStr := getPartialJSONField(args, "start")
 	lenStr := getPartialJSONField(args, "length")
 	if startStr != "" && lenStr != "" {
-		if s, err := strconv.Atoi(startStr); err == nil {
-			if l, err := strconv.Atoi(lenStr); err == nil {
-				span = &numenv1.Span{
-					From: int32(s),
-					To:   int32(s + l),
+		if s, err := strconv.ParseInt(startStr, 10, 32); err == nil {
+			if l, err := strconv.ParseInt(lenStr, 10, 32); err == nil {
+				if s >= 0 && l >= 0 && s <= math.MaxInt32-l {
+					span = &numenv1.Span{
+						From: int32(s),
+						To:   int32(s + l),
+					}
 				}
 			}
 		}

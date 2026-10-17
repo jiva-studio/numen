@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -356,7 +357,7 @@ func parsePageQuery(where string, query url.Values) (at, width int, named docume
 		return 0, 0, document.Fingerprint{}, fmt.Errorf("%q is not a place in a document", where)
 	}
 	at, err = strconv.Atoi(asked)
-	if err != nil || at < 0 {
+	if err != nil || at < 0 || at > math.MaxInt32 {
 		return 0, 0, document.Fingerprint{}, fmt.Errorf("%q is not a page", asked)
 	}
 	width, err = strconv.Atoi(query.Get("wide"))
