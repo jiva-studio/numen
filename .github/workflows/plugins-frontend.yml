@@ -1,0 +1,100 @@
+name: Plugins Frontend
+
+on:
+  pull_request:
+    paths:
+      - "modules/plugins/*/frontend/**"
+      - "modules/plugins/*/package.json"
+      - "modules/plugins/*/vite.config.ts"
+      - "modules/plugins/*/vitest.config.ts"
+      - "modules/plugins/vitest.config.ts"
+      - "modules/plugins/.storybook/**"
+      - "modules/libs/ui/**"
+      - "modules/libs/plugin-sdk/**"
+      - "modules/libs/wire/**"
+      - "modules/libs/protocol/**"
+      - "modules/package-lock.json"
+      - "!**/*.md"
+      - "!docs/**"
+      - "Makefile"
+      - ".github/workflows/plugins-frontend.yml"
+  push:
+    branches: [main]
+    paths:
+      - "modules/plugins/*/frontend/**"
+      - "modules/plugins/*/package.json"
+      - "modules/plugins/*/vite.config.ts"
+      - "modules/plugins/*/vitest.config.ts"
+      - "modules/plugins/vitest.config.ts"
+      - "modules/plugins/.storybook/**"
+      - "modules/libs/ui/**"
+      - "modules/libs/plugin-sdk/**"
+      - "modules/libs/wire/**"
+      - "modules/libs/protocol/**"
+      - "modules/package-lock.json"
+      - "!**/*.md"
+      - "!docs/**"
+      - "Makefile"
+      - ".github/workflows/plugins-frontend.yml"
+
+# One run at a time per branch, and the newest is the one that matters.
+concurrency:
+  group: plugins-frontend-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # Every plugin's own suite, under its own configuration. A plugin reaches the
+  # components through their build, as it does in the window.
+  tests:
+    name: Plugin Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-node-modules
+
+      - name: Build the components
+        run: npm run build --prefix modules/libs/ui
+
+      - name: Run plugin tests
+        run: make plugins_frontend_test
+
+  # The stories of every plugin, drawn in both engines the window is drawn in.
+  stories:
+    name: Plugin Stories
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-node-modules
+
+      - uses: ./.github/actions/setup-playwright
+
+      - name: Build the components
+        run: npm run build --prefix modules/libs/ui
+
+      - name: Run plugin stories
+        run: make plugins_stories
