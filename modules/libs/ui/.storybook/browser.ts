@@ -5,7 +5,7 @@
  * is drawn in the same engines with the same commands.
  */
 import { accessSync, constants } from 'node:fs'
-import { join } from 'node:path'
+import { delimiter, join } from 'node:path'
 import type { BrowserCommand } from 'vitest/node'
 import { playwright } from '@vitest/browser-playwright'
 
@@ -48,7 +48,7 @@ const isExecutable = (path: string): boolean => {
 /** The first of names that is an executable in a directory on PATH, in PATH order. */
 const findExecutable = (names: readonly string[]): string | undefined =>
   (process.env['PATH'] ?? '')
-    .split(':')
+    .split(delimiter)
     .filter(Boolean)
     .flatMap((directory) => names.map((name) => join(directory, name)))
     .find(isExecutable)
