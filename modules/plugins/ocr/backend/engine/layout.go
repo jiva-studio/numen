@@ -9,7 +9,7 @@ import (
 	ort "github.com/getcharzp/onnxruntime_purego"
 	"golang.org/x/image/draw"
 
-	"github.com/jiva-studio/numen/modules/plugins/ocr/backend/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
 const layoutSide = 800
@@ -40,7 +40,7 @@ func OpenLayout(engine *ort.Engine, path string, options *ort.SessionOptions, la
 	if len(labels) == 0 {
 		return nil, fmt.Errorf("the layout model's regions have no names")
 	}
-	session, err := onnxruntime.NewSession(engine, path, options)
+	session, err := onnx.NewSession(engine, path, options)
 	if err != nil {
 		return nil, fmt.Errorf("layout model %s: %w", path, err)
 	}

@@ -1,6 +1,7 @@
 // Package onnx is the ONNX Runtime support plugins share: the library and the
 // execution provider the host chose, the provider settings, and the one runtime
-// a process opens. It links no binding; a plugin passes its own engine in.
+// a process opens through the onnxruntime_purego binding, with the sessions
+// opened on it.
 package onnx
 
 import (

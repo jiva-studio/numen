@@ -4,7 +4,7 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/jiva-studio/numen/modules/plugins/transcription/backend/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
 // A status of zero reports no error.
@@ -34,7 +34,7 @@ func TestOrtAPITableLayout(t *testing.T) {
 }
 
 func TestRunnerRegistersHook(t *testing.T) {
-	if !onnxruntime.HasRegistration() {
+	if !onnx.HasRegistration() {
 		t.Fatal("expected onnxruntime hook to be registered by init")
 	}
 }

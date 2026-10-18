@@ -1,4 +1,4 @@
-package onnxruntime
+package onnx
 
 import (
 	"fmt"

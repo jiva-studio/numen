@@ -1,18 +1,14 @@
-// Package onnxruntime is the ONNX Runtime this process runs on: the library the
-// host gave it, and the engine every model here reads through.
-package onnxruntime
+package onnx
 
 import (
 	"context"
 	"fmt"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
-
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
 // runtimeState is the runtime this process runs, opened once for its life.
-var runtimeState onnx.Runtime[*ort.Engine]
+var runtimeState Runtime[*ort.Engine]
 
 // Open returns the engine of the library at, opened on the first call. One
 // engine serves every caller here, and every library registered makes its own

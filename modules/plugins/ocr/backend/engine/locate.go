@@ -8,7 +8,7 @@ import (
 	ort "github.com/getcharzp/onnxruntime_purego"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
-	"github.com/jiva-studio/numen/modules/plugins/ocr/backend/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
 type onnxRuntime struct {
@@ -26,7 +26,7 @@ type paths struct {
 func locateModels(ctx context.Context, cfg Config) (onnxRuntime, paths, error) {
 	var opened onnxRuntime
 	var err error
-	if opened.engine, opened.at, err = onnxruntime.Open(ctx, cfg.getRuntimeLibrary()); err != nil {
+	if opened.engine, opened.at, err = onnx.Open(ctx, cfg.getRuntimeLibrary()); err != nil {
 		return onnxRuntime{}, paths{}, err
 	}
 

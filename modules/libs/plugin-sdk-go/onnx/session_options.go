@@ -1,4 +1,4 @@
-package onnxruntime
+package onnx
 
 import (
 	"fmt"
@@ -7,8 +7,6 @@ import (
 
 	"github.com/ebitengine/purego"
 	ort "github.com/getcharzp/onnxruntime_purego"
-
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
 func init() {
@@ -101,7 +99,7 @@ func setGraphOptimizationLevel(opts *ort.SessionOptions, level uint32) error {
 
 // NewSessionOptions creates and configures session options according to the
 // requested provider, applying hardware acceleration with fallback to CPU.
-func NewSessionOptions(engine *ort.Engine, s onnx.SessionSettings) (*ort.SessionOptions, onnx.Provider, error) {
+func NewSessionOptions(engine *ort.Engine, s SessionSettings) (*ort.SessionOptions, Provider, error) {
 	opts, err := engine.NewSessionOptions()
 	if err != nil {
 		return nil, "", err
@@ -109,7 +107,7 @@ func NewSessionOptions(engine *ort.Engine, s onnx.SessionSettings) (*ort.Session
 
 	threads := s.Threads
 	if threads <= 0 {
-		threads = onnx.GetDefaultThreads()
+		threads = GetDefaultThreads()
 	}
 	if err := opts.SetIntraOpNumThreads(int32(threads)); err != nil {
 		opts.Destroy()
@@ -131,18 +129,18 @@ func NewSessionOptions(engine *ort.Engine, s onnx.SessionSettings) (*ort.Session
 		return nil, "", err
 	}
 
-	if _, err := onnx.ParseComputeUnits(string(s.ComputeUnits)); err != nil {
+	if _, err := ParseComputeUnits(string(s.ComputeUnits)); err != nil {
 		opts.Destroy()
 		return nil, "", err
 	}
 
 	used, err := applyProvider(opts, s.Provider, s.ComputeUnits)
 	if err != nil {
-		if s.Provider != onnx.ProviderAuto && s.Provider != "" {
+		if s.Provider != ProviderAuto && s.Provider != "" {
 			opts.Destroy()
 			return nil, "", fmt.Errorf("failed to enable execution provider %s: %w", s.Provider, err)
 		}
-		used = onnx.ProviderCPU
+		used = ProviderCPU
 	}
 
 	return opts, used, nil

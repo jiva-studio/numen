@@ -1,6 +1,6 @@
 //go:build darwin
 
-package onnxruntime
+package onnx
 
 import (
 	"fmt"
@@ -10,8 +10,6 @@ import (
 
 	"github.com/ebitengine/purego"
 	ort "github.com/getcharzp/onnxruntime_purego"
-
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
 const (
@@ -19,32 +17,32 @@ const (
 	coreMLFlagCreateMLProgram  uint32 = 0x010
 )
 
-func applyProvider(opts *ort.SessionOptions, requested onnx.Provider, units onnx.ComputeUnits) (onnx.Provider, error) {
+func applyProvider(opts *ort.SessionOptions, requested Provider, units ComputeUnits) (Provider, error) {
 	switch requested {
-	case onnx.ProviderCPU:
-		return onnx.ProviderCPU, nil
-	case onnx.ProviderCoreML, onnx.ProviderAuto:
+	case ProviderCPU:
+		return ProviderCPU, nil
+	case ProviderCoreML, ProviderAuto:
 		if runtime.GOARCH == "arm64" {
 			if err := enableCoreML(opts, units); err == nil {
-				return onnx.ProviderCoreML, nil
-			} else if requested == onnx.ProviderCoreML {
-				return onnx.ProviderCPU, err
+				return ProviderCoreML, nil
+			} else if requested == ProviderCoreML {
+				return ProviderCPU, err
 			}
 		}
-		return onnx.ProviderCPU, nil
-	case onnx.ProviderCUDA:
+		return ProviderCPU, nil
+	case ProviderCUDA:
 		if err := opts.EnableCUDA(); err != nil {
-			return onnx.ProviderCPU, err
+			return ProviderCPU, err
 		}
-		return onnx.ProviderCUDA, nil
-	case onnx.ProviderDirectML:
-		return onnx.ProviderCPU, fmt.Errorf("directml execution provider is only available on windows")
+		return ProviderCUDA, nil
+	case ProviderDirectML:
+		return ProviderCPU, fmt.Errorf("directml execution provider is only available on windows")
 	default:
-		return onnx.ProviderCPU, nil
+		return ProviderCPU, nil
 	}
 }
 
-func enableCoreML(opts *ort.SessionOptions, units onnx.ComputeUnits) error {
+func enableCoreML(opts *ort.SessionOptions, units ComputeUnits) error {
 	engine, at := runtimeState.GetLoaded()
 
 	if engine == nil || at == "" {
@@ -64,7 +62,7 @@ func enableCoreML(opts *ort.SessionOptions, units onnx.ComputeUnits) error {
 	if appendCoreMLCached(handle, optHandle, units) {
 		return nil
 	}
-	if units != onnx.ComputeUnitsDefault && units != onnx.ComputeUnitsAll {
+	if units != ComputeUnitsDefault && units != ComputeUnitsAll {
 		return fmt.Errorf("compute units %s need the keyed coreml entry point", units)
 	}
 
@@ -90,8 +88,8 @@ type ortAPIProviderTable struct {
 // appendCoreMLCached appends CoreML with compiled models kept in the cache
 // directory. It reports false when anything it needs is missing, and leaves the
 // options untouched.
-func appendCoreMLCached(handle, optHandle uintptr, units onnx.ComputeUnits) bool {
-	dir, err := onnx.GetCoreMLCacheDir()
+func appendCoreMLCached(handle, optHandle uintptr, units ComputeUnits) bool {
+	dir, err := GetCoreMLCacheDir()
 	if err != nil {
 		return false
 	}
@@ -119,7 +117,7 @@ func appendCoreMLCached(handle, optHandle uintptr, units onnx.ComputeUnits) bool
 	if err != nil {
 		return false
 	}
-	pairs := onnx.GetCoreMLOptions(dir, units)
+	pairs := GetCoreMLOptions(dir, units)
 	keys := make([]*byte, len(pairs))
 	values := make([]*byte, len(pairs))
 	for i, pair := range pairs {

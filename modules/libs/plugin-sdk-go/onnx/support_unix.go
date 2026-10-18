@@ -1,12 +1,8 @@
 //go:build darwin || freebsd || linux || netbsd
 
-package onnxruntime
+package onnx
 
-import (
-	"github.com/ebitengine/purego"
-
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
-)
+import "github.com/ebitengine/purego"
 
 // preloadCppRuntime loads what the runtime is linked against and the loader cannot find.
 //
@@ -14,7 +10,7 @@ import (
 // system to hold it. Loading it here first, into the global namespace, is what
 // resolves that name on a machine that keeps the file somewhere else.
 func preloadCppRuntime() {
-	for _, at := range onnx.FindInstalled("libstdc++.so", "*-gcc-*-lib") {
+	for _, at := range FindInstalled("libstdc++.so", "*-gcc-*-lib") {
 		if _, err := purego.Dlopen(at, purego.RTLD_NOW|purego.RTLD_GLOBAL); err == nil {
 			return
 		}

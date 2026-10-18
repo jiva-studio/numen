@@ -1,9 +1,7 @@
-package onnxruntime
+package onnx
 
 import (
 	ort "github.com/getcharzp/onnxruntime_purego"
-
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
 // NewSession reads a model. A model that fails to load while compiled models are
@@ -13,7 +11,7 @@ func NewSession(engine *ort.Engine, path string, opts *ort.SessionOptions) (*ort
 	if err == nil {
 		return session, nil
 	}
-	if !onnx.DeleteCoreMLCache() {
+	if !DeleteCoreMLCache() {
 		return nil, err
 	}
 	return engine.NewSession(path, opts)
