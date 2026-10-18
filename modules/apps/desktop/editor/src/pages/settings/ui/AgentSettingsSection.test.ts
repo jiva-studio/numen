@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
 
@@ -94,8 +94,8 @@ const createSection = (file: Record<string, unknown> = {}, defaultUse = 'claude'
     chooseHeadings: () => {},
     dayStartTime: ref('04:00'),
     latestDayStartTime: ref('12:00'),
-    writeSecret: () => {},
-    deleteSecret: () => {},
+    writeSecret: vi.fn(),
+    deleteSecret: vi.fn(),
     chooseDayStartTime: () => {},
     file: ref('/test/settings.json'),
     openFile: () => {},

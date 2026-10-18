@@ -269,11 +269,11 @@ describe('the settings file written whole', () => {
 describe('the key of a secret', () => {
   it('is handed to the vault with the plugin and the name it is kept under', async () => {
     asked.writePluginSecret.mockResolvedValue({})
-    await core.writePluginSecret('sample.plugin', 'apiKey', 'sk-made-up')
+    await core.writePluginSecret('sample.plugin', 'apiKey', 'made-up-key')
     expect(asked.writePluginSecret).toHaveBeenLastCalledWith({
       pluginId: 'sample.plugin',
       name: 'apiKey',
-      key: 'sk-made-up',
+      key: 'made-up-key',
     })
   })
 

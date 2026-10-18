@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
 
@@ -6,6 +6,13 @@ import type { PluginInfo, SettingEdit } from '@/entities/settings'
 import { getSettingAt as at } from '@/entities/settings'
 import AiSettingsSection from './AiSettingsSection.vue'
 import type { Installation, SettingsTabState } from '../types'
+
+/** The entry at a place of a list, which the test needs there. */
+const pick = <T>(list: readonly T[], at: number): T => {
+  const found = list[at]
+  if (found === undefined) throw new Error(`nothing at ${at}`)
+  return found
+}
 
 const createPlugin = (id: string, name: string, over: Partial<PluginInfo> = {}): PluginInfo => ({
   id,
@@ -44,12 +51,18 @@ const createSection = (
   const installation: Installation = {
     getSetting: (path) => at(file, path),
     getModels: () => [],
-    write: (said) => void written.push(...said),
-    writeSecret: (pluginId, name, key) => void secrets.push(`write ${pluginId} ${name} ${key}`),
-    deleteSecret: (pluginId, name) => void secrets.push(`delete ${pluginId} ${name}`),
+    write: (said) => {
+      written.push(...said)
+    },
+    writeSecret: (pluginId, name, key) => {
+      secrets.push(`write ${pluginId} ${name} ${key}`)
+    },
+    deleteSecret: (pluginId, name) => {
+      secrets.push(`delete ${pluginId} ${name}`)
+    },
     plugins: ref(plugins),
     file: ref('/numen.json'),
-    openFile: () => {},
+    openFile: vi.fn(),
     themes: ref([]),
     applied: ref('preset:numen'),
     mode: ref('system'),
@@ -59,15 +72,15 @@ const createSection = (
       interfaceScale: { least: 0.8, most: 2 },
       textScale: { least: 0.8, most: 1.75 },
     }),
-    choose: () => {},
+    choose: vi.fn(),
     isSyncing: ref(true),
     isNesting: ref(true),
     headings: ref(6),
     headingsBounds: ref({ least: 2, most: 9 }),
-    chooseHeadings: () => {},
+    chooseHeadings: vi.fn(),
     dayStartTime: ref('04:00'),
     latestDayStartTime: ref('12:00'),
-    chooseDayStartTime: () => {},
+    chooseDayStartTime: vi.fn(),
   }
   const state: SettingsTabState = { installation }
   const wrapper = mount(AiSettingsSection, { props: { state } })
@@ -75,7 +88,7 @@ const createSection = (
 }
 
 const getChoices = (wrapper: ReturnType<typeof createSection>['wrapper'], at: number) =>
-  wrapper.findAllComponents({ name: 'Select' })[at]!.props('choices') as readonly {
+  pick(wrapper.findAllComponents({ name: 'Select' }), at).props('choices') as readonly {
     id: string
     text: string
   }[]
@@ -99,7 +112,10 @@ describe('the default agent', () => {
     const { wrapper, written } = createSection({
       ai: { default: { agent: 'test.agent-b', model: 'b-fast' } },
     })
-    wrapper.findAllComponents({ name: 'Select' })[0]!.vm.$emit('update:modelValue', 'test.agent-a')
+    pick(wrapper.findAllComponents({ name: 'Select' }), 0).vm.$emit(
+      'update:modelValue',
+      'test.agent-a',
+    )
     expect(written).toStrictEqual([
       { at: ['ai', 'default', 'agent'], value: '"test.agent-a"' },
       { at: ['ai', 'default', 'model'], value: '""' },
@@ -108,7 +124,7 @@ describe('the default agent', () => {
 
   it('writes the model chosen beside the agent', () => {
     const { wrapper, written } = createSection({ ai: { default: { agent: 'test.agent-b' } } })
-    wrapper.findAllComponents({ name: 'Select' })[1]!.vm.$emit('update:modelValue', 'b-fast')
+    pick(wrapper.findAllComponents({ name: 'Select' }), 1).vm.$emit('update:modelValue', 'b-fast')
     expect(written).toStrictEqual([
       { at: ['ai', 'default', 'agent'], value: '"test.agent-b"' },
       { at: ['ai', 'default', 'model'], value: '"b-fast"' },
@@ -122,8 +138,8 @@ describe('the consent', () => {
     const asking = wrapper.find('[role="alert"]')
     expect(asking.text()).toContain('Asking Plugin asks to use a model.')
 
-    await asking.findAll('button')[0]!.trigger('click')
-    await asking.findAll('button')[1]!.trigger('click')
+    await pick(asking.findAll('button'), 0).trigger('click')
+    await pick(asking.findAll('button'), 1).trigger('click')
     expect(written).toStrictEqual([
       { at: ['plugins', 'test.asking', 'aiConsent'], value: 'true' },
       { at: ['plugins', 'test.asking', 'aiConsent'], value: 'false' },
@@ -135,7 +151,7 @@ describe('the consent', () => {
     const switches = wrapper.findAllComponents({ name: 'Switch' })
     expect(switches.map((one) => one.props('modelValue'))).toStrictEqual([false, true])
 
-    switches[1]!.vm.$emit('update:modelValue', false)
+    pick(switches, 1).vm.$emit('update:modelValue', false)
     expect(written).toStrictEqual([
       { at: ['plugins', 'test.allowed', 'aiConsent'], value: 'false' },
     ])
@@ -161,10 +177,10 @@ describe('the keys', () => {
 
   it('are stored as typed, and the field is emptied', async () => {
     const { wrapper, secrets } = createSection()
-    const input = wrapper.findAll('input[type="password"]')[1]!
-    await input.setValue('  sk-made-up  ')
+    const input = pick(wrapper.findAll('input[type="password"]'), 1)
+    await input.setValue('  made-up-key  ')
     await input.trigger('keydown.enter')
-    expect(secrets).toStrictEqual(['write test.agent-a apiKey sk-made-up'])
+    expect(secrets).toStrictEqual(['write test.agent-a apiKey made-up-key'])
     expect((input.element as HTMLInputElement).value).toBe('')
   })
 
@@ -184,7 +200,7 @@ describe('the keys', () => {
 describe('a key field', () => {
   it('is named by its label', () => {
     const { wrapper } = createSection()
-    const field = wrapper.findAll('input[type="password"]')[0]!.element as HTMLInputElement
+    const field = pick(wrapper.findAll('input[type="password"]'), 0).element as HTMLInputElement
     expect([...(field.labels ?? [])].map((label) => label.textContent)).toStrictEqual([
       'Agent B: apiKey',
     ])

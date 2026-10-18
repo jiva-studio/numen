@@ -7,7 +7,7 @@
  *
  * Every value here is invented.
  */
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { computed, nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 
@@ -117,8 +117,8 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
     chooseHeadings: (count) => void done.push(`headings ${count}`),
     dayStartTime: ref('04:00'),
     latestDayStartTime: ref('12:00'),
-    writeSecret: () => {},
-    deleteSecret: () => {},
+    writeSecret: vi.fn(),
+    deleteSecret: vi.fn(),
     chooseDayStartTime: (hour) => void done.push(`day starts ${hour}`),
   }
   const tab = mount(SettingsTab, {

@@ -208,8 +208,8 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     getModels: (at: readonly string[]) => rest.getModelsAt(at),
     write: (written: readonly SettingEdit[]) => void rest.writeSettings(written),
     writeSecret: (pluginId: string, name: string, key: string) =>
-      void secrets.writeSecret(pluginId, name, key),
-    deleteSecret: (pluginId: string, name: string) => void secrets.deleteSecret(pluginId, name),
+      secrets.writeSecret(pluginId, name, key),
+    deleteSecret: (pluginId: string, name: string) => secrets.deleteSecret(pluginId, name),
     plugins: rest.plugins,
     file: rest.path,
     openFile: () => file.openSettingsFile(),

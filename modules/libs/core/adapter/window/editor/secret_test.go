@@ -26,9 +26,9 @@ func TestAKeyIsHandedOnAndARefusalIsSaid(t *testing.T) {
 		deleteSecret: setting.NewDeleteSecret(func(context.Context, string, string) error { return errNoKeychain }),
 	}
 	_, err := handler.WritePluginSecret(t.Context(), connect.NewRequest(&v1.WritePluginSecretRequest{
-		PluginId: "md.numen.sample", Name: "apiKey", Key: "sk-made-up",
+		PluginId: "md.numen.sample", Name: "apiKey", Key: "made-up-key",
 	}))
-	if err != nil || got != [3]string{"md.numen.sample", "apiKey", "sk-made-up"} {
+	if err != nil || got != [3]string{"md.numen.sample", "apiKey", "made-up-key"} {
 		t.Fatalf("handed on %v, %v", got, err)
 	}
 	_, err = handler.DeletePluginSecret(t.Context(), connect.NewRequest(&v1.DeletePluginSecretRequest{

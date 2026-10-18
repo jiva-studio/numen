@@ -6,7 +6,7 @@
  * page at the width of a narrow window, and that a key typed is never drawn.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { ref } from 'vue'
 import AiSettingsSection from './AiSettingsSection.vue'
 import PluginSettingsSection from './PluginSettingsSection.vue'
@@ -64,12 +64,12 @@ const FILE = {
 const installation: Installation = {
   getSetting: (at) => getSettingAt(FILE, at),
   getModels: () => [],
-  write: () => {},
-  writeSecret: () => {},
-  deleteSecret: () => {},
+  write: fn(),
+  writeSecret: fn(),
+  deleteSecret: fn(),
   plugins: ref(PLUGINS),
   file: ref('/numen.json'),
-  openFile: () => {},
+  openFile: fn(),
   themes: ref([]),
   applied: ref('preset:numen'),
   mode: ref('system'),
@@ -79,15 +79,15 @@ const installation: Installation = {
     interfaceScale: { least: 0.8, most: 2 },
     textScale: { least: 0.8, most: 1.75 },
   }),
-  choose: () => {},
+  choose: fn(),
   isSyncing: ref(true),
   isNesting: ref(true),
   headings: ref(6),
   headingsBounds: ref({ least: 1, most: 12 }),
-  chooseHeadings: () => {},
+  chooseHeadings: fn(),
   dayStartTime: ref('04:00'),
   latestDayStartTime: ref('12:00'),
-  chooseDayStartTime: () => {},
+  chooseDayStartTime: fn(),
 }
 
 /** The AI section and a plugin's own settings, at the width a story gives. */
@@ -144,7 +144,9 @@ export const APluginAskingIsPutToThePerson: Story = {
     const asking = canvas.getByRole('alert')
     await expect(asking).toHaveTextContent('Sample Asking Plugin asks to use a model.')
 
-    const page = canvasElement.firstElementChild!.getBoundingClientRect()
+    const frame = canvasElement.querySelector('.numen')
+    if (!frame) throw new Error('the page is not drawn')
+    const page = frame.getBoundingClientRect()
     const allow = within(asking).getByRole('button', { name: 'Allow' }).getBoundingClientRect()
     const refuse = within(asking).getByRole('button', { name: 'Refuse' }).getBoundingClientRect()
     await expect(allow.right).toBeLessThanOrEqual(page.right)
@@ -160,8 +162,8 @@ export const AKeyIsNeverDrawn: Story = {
     await expect(field).toHaveAttribute('type', 'password')
     await expect(field).toHaveValue('')
 
-    await userEvent.type(field, 'sk-made-up')
-    await expect(canvas.queryByText('sk-made-up')).toBeNull()
+    await userEvent.type(field, 'made-up-key')
+    await expect(canvas.queryByText('made-up-key')).toBeNull()
   },
 }
 

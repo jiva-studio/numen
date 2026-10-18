@@ -86,7 +86,11 @@ export const settingsCore: SettingsPort = {
         capabilities: p.capabilities ?? [],
         secrets: p.secrets ?? [],
         storedSecrets: p.storedSecrets ?? [],
-        models: (p.models ?? []).map((m) => ({ name: m.name, title: m.title, isDefault: m.isDefault })),
+        models: (p.models ?? []).map((m) => ({
+          name: m.name,
+          title: m.title,
+          isDefault: m.isDefault,
+        })),
         consent: consented[p.completionConsent],
         settings: (p.settings ?? []).map((s) => {
           let defaultValue: unknown = undefined

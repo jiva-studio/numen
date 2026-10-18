@@ -148,8 +148,12 @@ const INSTALLATION: Installation = {
   },
   dayStartTime: ref('04:00'),
   latestDayStartTime: ref('12:00'),
-  writeSecret: () => {},
-  deleteSecret: () => {},
+  writeSecret: () => {
+    DONE.push('key')
+  },
+  deleteSecret: () => {
+    DONE.push('key gone')
+  },
   chooseDayStartTime: (time) => {
     DONE.push(`day ${time}`)
   },

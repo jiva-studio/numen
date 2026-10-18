@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
 
@@ -6,6 +6,13 @@ import type { PluginInfo, SettingEdit } from '@/entities/settings'
 import { getSettingAt as at } from '@/entities/settings'
 import PluginSettingsSection from './PluginSettingsSection.vue'
 import type { Installation, SettingsTabState } from '../types'
+
+/** The entry at a place of a list, which the test needs there. */
+const pick = <T>(list: readonly T[], at: number): T => {
+  const found = list[at]
+  if (found === undefined) throw new Error(`nothing at ${at}`)
+  return found
+}
 
 const SAMPLE_PLUGIN: PluginInfo = {
   id: 'test.transcription',
@@ -84,8 +91,8 @@ const createSection = (
     chooseHeadings: () => {},
     dayStartTime: ref('04:00'),
     latestDayStartTime: ref('12:00'),
-    writeSecret: () => {},
-    deleteSecret: () => {},
+    writeSecret: vi.fn(),
+    deleteSecret: vi.fn(),
     chooseDayStartTime: () => {},
   }
   const state: SettingsTabState = { installation }
@@ -192,7 +199,7 @@ describe('a setting of type agent', () => {
     const { wrapper } = createSection({}, [ASKING, AGENT])
     const selects = wrapper.findAllComponents({ name: 'Select' })
     expect(selects).toHaveLength(1)
-    expect(selects[0]!.props('choices')).toStrictEqual([
+    expect(pick(selects, 0).props('choices')).toStrictEqual([
       { id: '', text: 'Default (Test Agent)' },
       { id: 'test.agent', text: 'Test Agent' },
     ])
@@ -206,9 +213,9 @@ describe('a setting of type agent', () => {
     )
     const selects = wrapper.findAllComponents({ name: 'Select' })
     expect(selects).toHaveLength(2)
-    expect(selects[0]!.props('modelValue')).toBe('test.agent')
-    expect(selects[1]!.props('modelValue')).toBe('quick')
-    expect(selects[1]!.props('choices')).toStrictEqual([
+    expect(pick(selects, 0).props('modelValue')).toBe('test.agent')
+    expect(pick(selects, 1).props('modelValue')).toBe('quick')
+    expect(pick(selects, 1).props('choices')).toStrictEqual([
       { id: '', text: 'Agent default' },
       { id: 'quick', text: 'Quick' },
     ])
@@ -230,7 +237,7 @@ describe('a setting of type agent', () => {
       { plugins: { 'test.asking': { agent: { agent: 'test.gone' } } } },
       [ASKING, AGENT],
     )
-    const choices = wrapper.findAllComponents({ name: 'Select' })[0]!.props('choices')
+    const choices = pick(wrapper.findAllComponents({ name: 'Select' }), 0).props('choices')
     expect(choices.at(-1)).toMatchObject({
       id: 'test.gone',
       detail: expect.stringContaining('not installed'),

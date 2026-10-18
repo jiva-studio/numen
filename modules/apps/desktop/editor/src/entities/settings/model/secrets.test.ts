@@ -23,8 +23,8 @@ const createStore = (refuses: string | null = null) => {
 describe('a key of a secret', () => {
   it('is handed to the vault and the settings are read again', async () => {
     const { asked, refresh, kept } = createStore()
-    await kept.writeSecret('md.numen.sample', 'apiKey', 'sk-made-up')
-    expect(asked).toStrictEqual(['write md.numen.sample apiKey sk-made-up'])
+    await kept.writeSecret('md.numen.sample', 'apiKey', 'made-up-key')
+    expect(asked).toStrictEqual(['write md.numen.sample apiKey made-up-key'])
     expect(refresh).toHaveBeenCalledOnce()
   })
 
@@ -44,7 +44,7 @@ describe('a key of a secret', () => {
 
   it('refused is said, and the settings are read again', async () => {
     const { said, refresh, kept } = createStore('no keychain on this machine')
-    await kept.writeSecret('md.numen.sample', 'apiKey', 'sk-made-up')
+    await kept.writeSecret('md.numen.sample', 'apiKey', 'made-up-key')
     expect(said).toHaveBeenLastCalledWith(expect.stringContaining('The key was not kept.'), 'error')
     expect(refresh).toHaveBeenCalledOnce()
   })
