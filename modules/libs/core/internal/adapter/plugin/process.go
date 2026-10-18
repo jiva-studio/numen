@@ -4,8 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"runtime"
+	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 var (
@@ -87,15 +91,7 @@ func isPathWithin(base, child string) bool {
 
 func isWhitelistedEnv(key string) bool {
 	upper := strings.ToUpper(strings.TrimSpace(key))
-	if upper == "" {
-		return false
-	}
-	if strings.Contains(upper, "KEY") ||
-		strings.Contains(upper, "TOKEN") ||
-		strings.Contains(upper, "SECRET") ||
-		strings.Contains(upper, "PASSWORD") ||
-		strings.Contains(upper, "CREDENTIAL") ||
-		strings.Contains(upper, "AUTH") {
+	if upper == "" || isSecretEnv(upper) {
 		return false
 	}
 	switch upper {
@@ -107,11 +103,54 @@ func isWhitelistedEnv(key string) bool {
 	return strings.HasPrefix(upper, "LC_")
 }
 
-func sanitizeEnvironment(environ []string, pluginVars []string) []string {
+// isSecretEnv reports whether an upper-case variable name looks like it holds a secret.
+func isSecretEnv(upper string) bool {
+	for _, word := range []string{"KEY", "TOKEN", "SECRET", "PASSWORD", "CREDENTIAL", "AUTH"} {
+		if strings.Contains(upper, word) {
+			return true
+		}
+	}
+	return false
+}
+
+// onnxRuntimeEnv are the variables of the host a plugin that declares the ONNX
+// Runtime is also launched with: where the loader finds shared libraries, where
+// the accelerator toolkits are installed and which devices the plugin may use.
+var onnxRuntimeEnv = []string{
+	"LD_LIBRARY_PATH",
+	"CUDA_VISIBLE_DEVICES", "CUDA_PATH", "CUDA_HOME",
+	"NVIDIA_VISIBLE_DEVICES", "NVIDIA_DRIVER_CAPABILITIES",
+	"ROCR_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES",
+}
+
+// onnxRuntimeEnvPrefix names the versioned toolkit folders the CUDA installer sets on windows.
+const onnxRuntimeEnvPrefix = "CUDA_PATH_V"
+
+// darwinRuntimeEnv are the further loader variables passed on darwin.
+var darwinRuntimeEnv = []string{"DYLD_LIBRARY_PATH", "DYLD_FALLBACK_LIBRARY_PATH"}
+
+// isRuntimeEnv reports whether a variable is one a plugin that declares the ONNX
+// Runtime is launched with on goos.
+func isRuntimeEnv(goos, key string) bool {
+	upper := strings.ToUpper(strings.TrimSpace(key))
+	if upper == "" || isSecretEnv(upper) {
+		return false
+	}
+	if slices.Contains(onnxRuntimeEnv, upper) || strings.HasPrefix(upper, onnxRuntimeEnvPrefix) {
+		return true
+	}
+	return goos == "darwin" && slices.Contains(darwinRuntimeEnv, upper)
+}
+
+// sanitizeEnvironment returns the host variables a plugin process is launched
+// with, followed by pluginVars. A plugin that declares the ONNX Runtime among
+// runtimes also gets the variables isRuntimeEnv names.
+func sanitizeEnvironment(environ []string, pluginVars []string, runtimes []string) []string {
+	hasONNX := slices.Contains(runtimes, port.RuntimeONNX)
 	var env []string
 	for _, entry := range environ {
 		key, _, found := strings.Cut(entry, "=")
-		if found && isWhitelistedEnv(key) {
+		if found && (isWhitelistedEnv(key) || hasONNX && isRuntimeEnv(runtime.GOOS, key)) {
 			env = append(env, entry)
 		}
 	}

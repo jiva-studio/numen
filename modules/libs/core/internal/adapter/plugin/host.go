@@ -754,7 +754,7 @@ func (h *Host) defaultLauncher(
 	if err != nil {
 		return nil, nil, err
 	}
-	cmd.Env = sanitizeEnvironment(os.Environ(), pluginVars)
+	cmd.Env = sanitizeEnvironment(os.Environ(), pluginVars, p.Manifest.Runtimes)
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {

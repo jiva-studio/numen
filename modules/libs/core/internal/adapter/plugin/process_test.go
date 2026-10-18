@@ -80,7 +80,7 @@ func TestSanitizeEnvironment(t *testing.T) {
 		"NUMEN_PLUGIN_ID=test.plugin",
 	}
 
-	cleaned := sanitizeEnvironment(inputEnv, pluginVars)
+	cleaned := sanitizeEnvironment(inputEnv, pluginVars, nil)
 
 	seen := make(map[string]string)
 	for _, entry := range cleaned {
@@ -300,5 +300,96 @@ func TestHostProcessLimitsConfig(t *testing.T) {
 
 	if limits != customLimits {
 		t.Fatalf("got %v, want %v", limits, customLimits)
+	}
+}
+
+// gpuEnvironment is a host environment holding the loader and accelerator
+// variables, a secret and the host's own NUMEN variables.
+var gpuEnvironment = []string{
+	"PATH=/usr/bin",
+	"LD_LIBRARY_PATH=/opt/cuda/lib64",
+	"CUDA_VISIBLE_DEVICES=0",
+	"CUDA_PATH=/opt/cuda",
+	"CUDA_PATH_V12_4=/opt/cuda-12.4",
+	"CUDA_HOME=/opt/cuda",
+	"NVIDIA_VISIBLE_DEVICES=all",
+	"NVIDIA_DRIVER_CAPABILITIES=compute,utility",
+	"ROCR_VISIBLE_DEVICES=1",
+	"HIP_VISIBLE_DEVICES=1",
+	"CUDA_API_KEY=1",
+	"NUMEN_ONNX_PROVIDER=cuda",
+	"NUMEN_ONNX_RUNTIME_LIB=/opt/onnx/libonnxruntime.so",
+	"OPENAI_API_KEY=1",
+}
+
+// runtimeVarNames are the variables gpuEnvironment holds for an ONNX Runtime plugin.
+var runtimeVarNames = []string{
+	"LD_LIBRARY_PATH", "CUDA_VISIBLE_DEVICES", "CUDA_PATH", "CUDA_PATH_V12_4", "CUDA_HOME",
+	"NVIDIA_VISIBLE_DEVICES", "NVIDIA_DRIVER_CAPABILITIES", "ROCR_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES",
+}
+
+// readEnvironment returns the launch environment as a map.
+func readEnvironment(env []string) map[string]string {
+	seen := make(map[string]string, len(env))
+	for _, entry := range env {
+		if k, v, ok := stringsCut(entry, "="); ok {
+			seen[k] = v
+		}
+	}
+	return seen
+}
+
+func TestAnONNXRuntimePluginIsLaunchedWithTheLoaderAndAcceleratorVariables(t *testing.T) {
+	pluginVars := []string{"NUMEN_ONNX_RUNTIME_LIB=/models/libonnxruntime.so", "NUMEN_ONNX_PROVIDER=auto"}
+	seen := readEnvironment(sanitizeEnvironment(gpuEnvironment, pluginVars, []string{"onnxruntime"}))
+
+	for _, name := range runtimeVarNames {
+		if _, ok := seen[name]; !ok {
+			t.Errorf("%s is missing from the launch environment", name)
+		}
+	}
+	if seen["CUDA_VISIBLE_DEVICES"] != "0" || seen["LD_LIBRARY_PATH"] != "/opt/cuda/lib64" {
+		t.Errorf("the variables changed on the way: %v", seen)
+	}
+	if seen["NUMEN_ONNX_RUNTIME_LIB"] != "/models/libonnxruntime.so" || seen["NUMEN_ONNX_PROVIDER"] != "auto" {
+		t.Errorf("the host's own NUMEN variables reached the plugin: %v", seen)
+	}
+	for _, secret := range []string{"CUDA_API_KEY", "OPENAI_API_KEY"} {
+		if _, ok := seen[secret]; ok {
+			t.Errorf("%s reached an ONNX Runtime plugin", secret)
+		}
+	}
+}
+
+func TestAPluginWithoutTheRuntimeIsNotLaunchedWithTheAcceleratorVariables(t *testing.T) {
+	for _, runtimes := range [][]string{nil, {}} {
+		seen := readEnvironment(sanitizeEnvironment(gpuEnvironment, nil, runtimes))
+		for _, name := range append(runtimeVarNames, "NUMEN_ONNX_PROVIDER", "NUMEN_ONNX_RUNTIME_LIB", "OPENAI_API_KEY") {
+			if _, ok := seen[name]; ok {
+				t.Errorf("%s reached a plugin that declares no runtime", name)
+			}
+		}
+		if seen["PATH"] != "/usr/bin" {
+			t.Errorf("PATH = %q, want /usr/bin", seen["PATH"])
+		}
+	}
+}
+
+func TestTheDyldVariablesPassOnlyOnDarwin(t *testing.T) {
+	for _, name := range []string{"DYLD_LIBRARY_PATH", "DYLD_FALLBACK_LIBRARY_PATH", "dyld_library_path"} {
+		if !isRuntimeEnv("darwin", name) {
+			t.Errorf("isRuntimeEnv(darwin, %s) = false", name)
+		}
+		if isRuntimeEnv("linux", name) {
+			t.Errorf("isRuntimeEnv(linux, %s) = true", name)
+		}
+	}
+}
+
+func TestNoSecretPassesAsARuntimeVariable(t *testing.T) {
+	for _, name := range []string{"", "CUDA_PATH_V12_TOKEN", "CUDA_PATH_VKEY", "NUMEN_ONNX_PROVIDER", "HOME_SECRET", "NVIDIA_API_KEY"} {
+		if isRuntimeEnv("linux", name) || isRuntimeEnv("darwin", name) {
+			t.Errorf("isRuntimeEnv(%q) = true", name)
+		}
 	}
 }

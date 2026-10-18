@@ -43,9 +43,10 @@ type Config struct {
 	Progress func(what string, done, total int64) `json:"-"`
 }
 
-// settings are what the runtime is found by.
+// settings are what the runtime is found by: the runtime setting, the library in
+// the models folder the settings name, and the one the host provisioned.
 func (c Config) settings() onnxruntime.Settings {
-	return onnxruntime.Settings{Runtime: cmp.Or(c.Runtime, onnx.GetLibrary())}
+	return onnxruntime.Settings{Runtime: cmp.Or(c.Runtime, onnx.FindLibrary(c.Dir), onnx.GetLibrary())}
 }
 
 // getSessionProvider returns the execution provider the sessions open on: the
