@@ -71,7 +71,7 @@ func (s *agentServer) updateConfig(values map[string]string) {
 	if model, ok := values["model"]; ok && model != "" {
 		s.modelName = model
 	}
-	if key, ok := values["apiKey"]; ok {
+	if key, ok := server.ReadSecret(values, server.SecretAPIKey); ok {
 		s.apiKey = key
 	}
 	if base, ok := values["baseUrl"]; ok {
@@ -119,21 +119,13 @@ func (s *agentServer) AskAgent(
 	toolsList := make([]*numenv1.AgentToolDefinition, len(s.tools))
 	copy(toolsList, s.tools)
 	serverBaseURL := s.baseURL
-	serverKey := s.apiKey
+	key := s.apiKey
 	serverModel := s.modelName
 	client := s.httpClient
 	s.mu.RUnlock()
 
 	if req.Msg.GetInstructions() != "" {
 		systemPrompt = req.Msg.GetInstructions() + "\n" + systemPrompt
-	}
-
-	key := serverKey
-	if key == "" {
-		key = os.Getenv("NUMEN_AGENT_KEY")
-	}
-	if key == "" {
-		key = os.Getenv("OPENAI_API_KEY")
 	}
 
 	baseURL := getBaseURL(serverBaseURL)

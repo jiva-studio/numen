@@ -8,6 +8,7 @@ Backend server lifecycle SDK for native Numen plugins.
 - Host handshake signaling via `NUMEN_READY port=<port>`.
 - Connect-RPC Bearer token authentication interceptor for unary and streaming RPCs.
 - Graceful lifecycle management (`Ping`, `Configure`, `Shutdown`) without unowned goroutines or sleep synchronization.
+- `Configure` is how a plugin receives its settings and its secrets. `ReadSecret(values, name)` returns the key the host handed over for a secret the manifest declares and whether the call carries it; an empty key means the host holds none. `SecretAPIKey` is the name of the `apiKey` secret.
 - Process supervision hooks (stdin EOF detection, OS signals).
 - `agentrun`: the registry of the runs an agent plugin has started and the session each conversation is on, and the supervision that ends a child and everything it started.
 - `ai.Complete(ctx, question)` asks the host for a model completion by purpose (needs the `ai:complete` permission); the host endpoint comes from `NUMEN_HOST_PORT` and the token from `NUMEN_PLUGIN_TOKEN`.

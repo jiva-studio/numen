@@ -6,6 +6,8 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -212,33 +214,42 @@ func TestAKeyTypedIntoTheSettingsIsNotPassedOn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertNoKey(t, "NUMEN_PLUGIN_CONFIG", cfg, fromSettings, fromKeychain)
+	assertNoKey(t, "the configuration json", cfg, fromSettings, fromKeychain)
 	if _, found := host.GetPluginSettings(secretPluginID)["apiKey"]; found {
 		t.Error("the settings the window reads hold a secret")
 	}
 }
 
-// What the host puts in a plugin process's environment and on its command line
-// holds no key, whether the key is in the store or was typed into the settings.
+// The environment a plugin process is launched with and its command line hold
+// no key and no setting: neither the key in the store, nor one typed into the
+// settings, nor one in the environment of the host.
 func TestNoKeyIsInTheEnvironmentOrOnTheCommandLine(t *testing.T) {
+	const fromHostEnv = "value-in-the-host-environment"
+	for _, name := range []string{
+		"OPENAI_API_KEY", "ANTHROPIC_API_KEY", "NUMEN_AGENT_KEY", "NUMEN_EMBEDDING_KEY", "NUMEN_PROOFREADING_KEY",
+	} {
+		t.Setenv(name, fromHostEnv)
+	}
+	const fromSetting = "value-of-a-setting"
 	store := newKeys(map[string]string{secretPluginID + "/apiKey": fromKeychain})
 	host, _ := newSecretHost(t, store)
-	host.SetSettings(map[string]map[string]any{secretPluginID: {declared: fromSettings}})
+	host.SetSettings(map[string]map[string]any{secretPluginID: {declared: fromSettings, "model": fromSetting}})
 
-	configJSON, err := host.GetPluginConfigJSON(secretPluginID)
+	const launchName = "launch-name"
+	vars, err := host.getLaunchVars(t.Context(), secretPluginID, t.TempDir(), nil, 4000, launchName)
 	if err != nil {
 		t.Fatal(err)
 	}
-	const launchName = "launch-name"
-	vars := getPluginVars(secretPluginID, launchEnvironment{
-		vaultPath: "/vault", port: 4000, hostPort: 4001, token: launchName, configJSON: configJSON,
-	})
+	env := sanitizeEnvironment(os.Environ(), vars)
 	args := getPluginArgs(4000, launchName)
-	for _, entry := range append(vars, args...) {
-		assertNoKey(t, "launch entry "+entry, entry, fromKeychain, fromSettings)
+	for _, entry := range append(env, args...) {
+		assertNoKey(t, "launch entry "+entry, entry, fromKeychain, fromSettings, fromHostEnv, fromSetting)
+		if strings.HasPrefix(entry, "NUMEN_PLUGIN_CONFIG=") {
+			t.Errorf("the settings are in the environment: %q", entry)
+		}
 	}
-	if len(vars) == 0 || len(args) == 0 {
-		t.Fatal("nothing was read")
+	if !slices.Contains(env, "NUMEN_PLUGIN_TOKEN="+launchName) {
+		t.Fatalf("environment = %v, want the launch token in it", env)
 	}
 }
 

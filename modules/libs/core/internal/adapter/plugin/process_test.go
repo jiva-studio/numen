@@ -78,7 +78,6 @@ func TestSanitizeEnvironment(t *testing.T) {
 		"NUMEN_PLUGIN_PORT=8080",
 		"NUMEN_PLUGIN_TOKEN=plugin-token-xyz",
 		"NUMEN_PLUGIN_ID=test.plugin",
-		"NUMEN_PLUGIN_CONFIG={}",
 	}
 
 	cleaned := sanitizeEnvironment(inputEnv, pluginVars)

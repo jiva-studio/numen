@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 )
 
 const (
@@ -41,7 +43,7 @@ type modelCatalogue struct {
 func (c *modelCatalogue) update(values map[string]string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if key, ok := values["apiKey"]; ok {
+	if key, ok := server.ReadSecret(values, server.SecretAPIKey); ok {
 		c.key = key
 	}
 	if base, ok := values["baseUrl"]; ok {
@@ -89,9 +91,6 @@ func (c *modelCatalogue) get(ctx context.Context) []AgentModel {
 
 // fetchAnthropicModels asks the endpoint for its models, and answers none where there is no key.
 func fetchAnthropicModels(ctx context.Context, key, base string) ([]AgentModel, error) {
-	if key == "" {
-		key = os.Getenv(anthropicKeyVar)
-	}
 	if key == "" {
 		return nil, nil
 	}

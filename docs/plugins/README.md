@@ -108,8 +108,8 @@ The manifest declares identity, activation rules, required permissions, and serv
   - `keepAliveWhileVisible`: Keep alive while a tab displaying the plugin is open.
 - **`backend`**: `type` is `process` (the only backend type) and `entrypoint` is required.
 - **`frontend`**: `entrypoint` is required, `styles` is optional.
-- **`settings`**: Declarative settings schema automatically rendered in host settings and stored by the core.
-- **`secrets`**: The names of the secrets, such as an API key, the plugin asks the host to keep (letters, digits, `_` and `-`; a name is not also a setting). The host keeps them in the system keychain, never in the settings file, and hands each to the plugin as a `Configure` value under its name (empty while there is no key); a secret is never in the environment, on the command line or in `NUMEN_PLUGIN_CONFIG`.
+- **`settings`**: Declarative settings schema automatically rendered in host settings and stored by the core. The host hands the settings to the plugin in `Configure`, once it is running and again on every change; they are not in its environment.
+- **`secrets`**: The names of the secrets, such as an API key, the plugin asks the host to keep (letters, digits, `_` and `-`; a name is not also a setting). The host keeps them in the system keychain, never in the settings file, and hands each to the plugin as a `Configure` value under its name (empty while there is no key); a secret is never in the environment or on the command line. A plugin reads it from those values only, with `server.ReadSecret` of `plugin-sdk-go` (`server.SecretAPIKey` names the `apiKey` secret), and reads no key from its environment.
 
 ---
 
