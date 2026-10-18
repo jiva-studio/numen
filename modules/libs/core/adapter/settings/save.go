@@ -443,7 +443,7 @@ func splice(raw []byte, from, to int, with []byte) []byte {
 
 // writeFileAtomically writes the file beside itself and renames it over the top, so a
 // machine that dies mid-write leaves the settings whole. Where a file carries a
-// mode it is the person's alone: they type their service keys into this file.
+// mode it is the person's alone.
 //
 // The path is the one runOnFile hands its work: the file itself, with every link
 // on the way to it already followed.

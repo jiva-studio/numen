@@ -578,34 +578,40 @@ func TestAnInstallationMayNameNoModelAtAll(t *testing.T) {
 	}
 }
 
-func TestTheKeyComesFromTheFileOrTheEnvironment(t *testing.T) {
-	t.Setenv(container.KeyEnvVar, "from-the-environment")
+// An older file naming key_env loads, and no variable of the environment, the
+// one it names or any other, becomes a key of the settings.
+func TestNoEnvironmentVariableGivesTheServiceAKey(t *testing.T) {
+	variables := map[string]string{
+		"NUMEN_EMBEDDING_KEY":    "sk-env-numen-embedding",
+		"NUMEN_PROOFREADING_KEY": "sk-env-numen-proofreading",
+		"OPENAI_API_KEY":         "sk-env-openai",
+		"OPENROUTER_API_KEY":     "sk-env-openrouter",
+		"MY_OWN_KEY":             "sk-env-my-own",
+	}
+	for name, value := range variables {
+		t.Setenv(name, value)
+	}
 
-	cfg, err := openAt(write(t, `{"indexing":{"embedding":{"indexing":{"service":{"key":"from-the-file"}}}}}`))
+	cfg, err := openAt(write(t, `{"indexing":{"embedding":{
+		"indexing":{"use":"service","service":{"name":"a-model","key_env":"MY_OWN_KEY"}},
+		"query":{"use":"service","service":{"name":"a-model","key_env":"OPENROUTER_API_KEY"}}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := getServiceModel(cfg.Indexing.Embedding.Indexing).Key(); got != "from-the-file" {
-		t.Errorf("got %q", got)
+	if got := getServiceModel(cfg.Indexing.Embedding.Indexing).Name; got != "a-model" {
+		t.Errorf("the service is %q", got)
 	}
-
-	cfg, err = openAt(write(t, `{"indexing":{"embedding":{"indexing":{"service":{}}}}}`))
+	raw, err := json.Marshal(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := getServiceModel(cfg.Indexing.Embedding.Indexing).Key(); got != "from-the-environment" {
-		t.Errorf("got %q", got)
+	if strings.Contains(string(raw), "key_env") {
+		t.Errorf("the settings name a variable: %s", raw)
 	}
-}
-
-func TestAnInstallationMayNameItsOwnEnvironmentVariable(t *testing.T) {
-	t.Setenv("OPENROUTER_API_KEY", "from-openrouter")
-	cfg, err := openAt(write(t, `{"indexing":{"embedding":{"indexing":{"service":{"key_env":"OPENROUTER_API_KEY"}}}}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := getServiceModel(cfg.Indexing.Embedding.Indexing).Key(); got != "from-openrouter" {
-		t.Errorf("got %q", got)
+	for name, value := range variables {
+		if strings.Contains(string(raw), value) {
+			t.Errorf("the key in %s is in %s", name, raw)
+		}
 	}
 }
 

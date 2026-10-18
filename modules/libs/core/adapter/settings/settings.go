@@ -218,8 +218,7 @@ func warn(into Document, said string, about ...any) {
 }
 
 // write puts the settings where they are read from, beside the file and
-// renamed over the top. The key is not among what is written: rewriting the
-// file is not how one is set.
+// renamed over the top.
 func write(path string, held Document) error {
 	raw, err := json.MarshalIndent(held, "", "  ")
 	if err != nil {

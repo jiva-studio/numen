@@ -3,7 +3,6 @@ package container
 import (
 	"encoding/json"
 	"math"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -449,10 +448,6 @@ const (
 	EnginePureGo  = "go"
 )
 
-// KeyEnvVar is where the service key is read from when the configuration does
-// not carry one.
-const KeyEnvVar = "NUMEN_EMBEDDING_KEY"
-
 // The files a model is made of.
 const (
 	ModelFile     = "model.onnx"
@@ -520,7 +515,6 @@ func DefaultEmbedding() EmbeddingConfig {
 			BaseURL:         "",
 			Name:            "",
 			BatchCharacters: 32000,
-			KeyEnv:          KeyEnvVar,
 		},
 	}
 	indexing := here
@@ -696,31 +690,16 @@ type ServiceModel struct {
 	BaseURL         string `json:"base_url"`
 	Name            string `json:"name"`
 	BatchCharacters int    `json:"batch_characters"`
-	KeyEnv          string `json:"key_env"`
-	key             string
 }
 
 func (s ServiceModel) GetAddress() string {
 	return UseService + ":" + strings.TrimSuffix(s.BaseURL, "/") + "/" + s.Name
 }
 
-func (s ServiceModel) Key() string {
-	if s.key != "" {
-		return s.key
-	}
-	name := s.KeyEnv
-	if name == "" {
-		name = KeyEnvVar
-	}
-	return os.Getenv(name)
-}
-
 type serviceModelFile struct {
 	BaseURL         *string `json:"base_url"`
 	Name            *string `json:"name"`
 	BatchCharacters *int    `json:"batch_characters"`
-	KeyEnv          *string `json:"key_env"`
-	Key             *string `json:"key,omitempty"`
 }
 
 func (s *ServiceModel) UnmarshalJSON(raw []byte) error {
@@ -731,8 +710,6 @@ func (s *ServiceModel) UnmarshalJSON(raw []byte) error {
 	assign(&s.BaseURL, f.BaseURL)
 	assign(&s.Name, f.Name)
 	assign(&s.BatchCharacters, f.BatchCharacters)
-	assign(&s.KeyEnv, f.KeyEnv)
-	assign(&s.key, f.Key)
 	return nil
 }
 
@@ -741,6 +718,5 @@ func (s ServiceModel) MarshalJSON() ([]byte, error) {
 		BaseURL:         &s.BaseURL,
 		Name:            &s.Name,
 		BatchCharacters: &s.BatchCharacters,
-		KeyEnv:          &s.KeyEnv,
 	})
 }

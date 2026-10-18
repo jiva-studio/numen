@@ -224,36 +224,6 @@ func TestAFileOnOneLineStaysOnOneLine(t *testing.T) {
 	}
 }
 
-// The one thing a patch is for. A round trip through Config would come back
-// without the key, because the key is never something this application writes.
-func TestAKeyAPersonTypedIsStillThereAfterAThemeIsSaved(t *testing.T) {
-	path := write(t, `{
-  "indexing": {
-    "embedding": {
-      "indexing": {"use": "service", "service": {"key": "sk-the-persons-own"}}
-    }
-  }
-}`)
-	if err := settings.Save(path, newDocument(), theme("mine:dracula")); err != nil {
-		t.Fatal(err)
-	}
-
-	cfg, err := openAt(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	service, ok := cfg.Indexing.Embedding.Indexing.Service()
-	if !ok {
-		t.Fatal("the vault is no longer indexed by a service")
-	}
-	if got := service.Key(); got != "sk-the-persons-own" {
-		t.Errorf("the key is now %q", got)
-	}
-	if cfg.Appearance.Theme != "mine:dracula" {
-		t.Errorf("wears %q", cfg.Appearance.Theme)
-	}
-}
-
 func TestAFieldThisBuildKnowsNothingAboutComesThroughAsItWas(t *testing.T) {
 	path := write(t, `{"v":1,"appearance":{"zoom":1.5,"tint":"warm"},"tomorrow":{"of":["a","later","build"]}}`)
 	if err := settings.Save(path, newDocument(), theme("preset:nord")); err != nil {

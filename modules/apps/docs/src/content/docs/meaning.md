@@ -31,8 +31,7 @@ Anything speaking the usual embeddings request will do:
         "use": "service",
         "service": {
           "base_url": "https://api.openai.com/v1",
-          "name": "text-embedding-3-small",
-          "key_env": "OPENAI_API_KEY"
+          "name": "text-embedding-3-small"
         }
       }
     }
@@ -40,8 +39,8 @@ Anything speaking the usual embeddings request will do:
 }
 ```
 
-The key is read from the environment variable you name. numen never writes a key back into the
-file.
+The service's key goes into the settings of the Vector Embeddings plugin, in the app, and numen
+keeps it in your system's keychain. The settings file holds no key.
 
 ## Two places, because the costs are opposite
 
@@ -66,8 +65,7 @@ in both at startup:
         "use": "service",
         "service": {
           "base_url": "https://openrouter.ai/api/v1",
-          "name": "baai/bge-m3",
-          "key_env": "OPENROUTER_API_KEY"
+          "name": "baai/bge-m3"
         }
       },
       "query": { "use": "local", "local": { "name": "BAAI/bge-m3", "download": true } }
