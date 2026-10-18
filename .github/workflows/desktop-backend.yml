@@ -15,6 +15,8 @@ on:
       - "!modules/libs/core/**/*.md"
       - "modules/libs/protocol/**"
       - "!modules/libs/protocol/**/*.md"
+      - "modules/apps/desktop-monolith/**"
+      - "modules/libs/plugin-sdk-go/**"
       - "modules/plugins/**"
       - "!modules/plugins/**/*.md"
       - "!docs/**"
@@ -212,3 +214,44 @@ jobs:
           for target in darwin/arm64 windows/amd64 linux/arm64; do
             GOOS=${target%/*} GOARCH=${target#*/} CGO_ENABLED=0 go build -o /dev/null ./cmd/numen-cli
           done
+      # The tool that strips machine paths from the build profile is a module
+      # of its own under the desktop one.
+      - name: Build the profile normaliser
+        working-directory: modules/apps/desktop/build/pgonorm
+        run: |
+          go vet ./...
+          go build -o /dev/null .
+
+  # The composition root that runs the plugins in-process is a module of its
+  # own, and this is the job that compiles it.
+  monolith:
+    name: Monolith
+    needs: [changes]
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: modules/apps/desktop-monolith
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/apps/desktop-monolith/go.mod
+          cache-dependency-path: modules/apps/desktop-monolith/go.sum
+
+      # It links the window, and the window links against the system's own
+      # browser.
+      - uses: ./.github/actions/setup-webkit
+
+      - name: Run go vet
+        run: go vet -tags plugins_monolith ./...
+
+      - name: Build the monolith
+        run: go build -tags plugins_monolith -o /dev/null .
+
+      - name: Run Go tests
+        run: go test -tags plugins_monolith ./...
