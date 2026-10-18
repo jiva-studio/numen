@@ -9,42 +9,41 @@ import (
 
 	"github.com/ebitengine/purego"
 	ort "github.com/getcharzp/onnxruntime_purego"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
-func applyProvider(opts *ort.SessionOptions, requested Provider, _ ComputeUnits) (Provider, error) {
+func applyProvider(opts *ort.SessionOptions, requested onnx.Provider, _ onnx.ComputeUnits) (onnx.Provider, error) {
 	switch requested {
-	case ProviderCPU:
-		return ProviderCPU, nil
-	case ProviderCUDA:
+	case onnx.ProviderCPU:
+		return onnx.ProviderCPU, nil
+	case onnx.ProviderCUDA:
 		if err := opts.EnableCUDA(); err != nil {
-			return ProviderCPU, err
+			return onnx.ProviderCPU, err
 		}
-		return ProviderCUDA, nil
-	case ProviderDirectML:
+		return onnx.ProviderCUDA, nil
+	case onnx.ProviderDirectML:
 		if err := enableDirectML(opts); err != nil {
-			return ProviderCPU, err
+			return onnx.ProviderCPU, err
 		}
-		return ProviderDirectML, nil
-	case ProviderCoreML:
-		return ProviderCPU, fmt.Errorf("coreml execution provider is only available on darwin/arm64")
-	case ProviderAuto:
+		return onnx.ProviderDirectML, nil
+	case onnx.ProviderCoreML:
+		return onnx.ProviderCPU, fmt.Errorf("coreml execution provider is only available on darwin/arm64")
+	case onnx.ProviderAuto:
 		if err := opts.EnableCUDA(); err == nil {
-			return ProviderCUDA, nil
+			return onnx.ProviderCUDA, nil
 		}
 		if err := enableDirectML(opts); err == nil {
-			return ProviderDirectML, nil
+			return onnx.ProviderDirectML, nil
 		}
-		return ProviderCPU, nil
+		return onnx.ProviderCPU, nil
 	default:
-		return ProviderCPU, nil
+		return onnx.ProviderCPU, nil
 	}
 }
 
 func enableDirectML(opts *ort.SessionOptions) error {
-	runtimeState.mu.Lock()
-	engine := runtimeState.engine
-	at := runtimeState.at
-	runtimeState.mu.Unlock()
+	engine, at := runtimeState.GetLoaded()
 
 	if engine == nil || at == "" {
 		return fmt.Errorf("onnx runtime not loaded")

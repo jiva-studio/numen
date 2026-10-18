@@ -1,28 +1,26 @@
 package engine
 
 import (
-	"cmp"
-
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
-	"github.com/jiva-studio/numen/modules/plugins/ocr/backend/onnxruntime"
 )
 
 // Config holds settings for recognising scanned pages.
 type Config struct {
-	Runtime        string          `json:"runtime"`
-	Dir            string          `json:"dir"`
-	ShouldDownload bool            `json:"download"`
-	Layout         LayoutModel     `json:"layout"`
-	Detect         DetectModel     `json:"detect"`
-	Recognise      RecogniserModel `json:"recognise"`
-	Regions        RegionKinds     `json:"regions"`
-	Compute        Compute         `json:"-"`
+	Runtime        string                               `json:"runtime"`
+	Dir            string                               `json:"dir"`
+	ShouldDownload bool                                 `json:"download"`
+	Layout         LayoutModel                          `json:"layout"`
+	Detect         DetectModel                          `json:"detect"`
+	Recognise      RecogniserModel                      `json:"recognise"`
+	Regions        RegionKinds                          `json:"regions"`
+	Compute        Compute                              `json:"-"`
 	Progress       func(what string, done, total int64) `json:"-"`
 }
 
-func (c Config) settings() onnxruntime.Settings {
-	return onnxruntime.Settings{Runtime: cmp.Or(c.Runtime, onnx.GetLibrary())}
+// getRuntimeLibrary returns the library the runtime is opened from.
+func (c Config) getRuntimeLibrary() string {
+	return onnx.ResolveLibrary(c.Runtime)
 }
 
 // folder is where the models are kept and whether they may be fetched.
@@ -204,5 +202,5 @@ func (c Config) threads() int {
 	case c.Compute.Threads > 0:
 		return c.Compute.Threads
 	}
-	return min(fallbackThreads, onnxruntime.DefaultThreads())
+	return min(fallbackThreads, onnx.GetDefaultThreads())
 }

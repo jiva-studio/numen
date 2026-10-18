@@ -41,8 +41,8 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 	if err != nil {
 		return nil, err
 	}
-	options, _, err := onnxruntime.NewSessionOptions(opened.engine, onnxruntime.SessionSettings{
-		Provider: onnxruntime.Provider(onnx.GetProvider()),
+	options, _, err := onnxruntime.NewSessionOptions(opened.engine, onnx.SessionSettings{
+		Provider: onnx.GetProvider(),
 		Threads:  cfg.threads(),
 	})
 	if err != nil {

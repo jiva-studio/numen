@@ -20,3 +20,13 @@ func TestAPluginTheHostGaveNoRuntimeHasNoLibraryAndTheAutoProvider(t *testing.T)
 		t.Errorf("GetLibrary() = %q, GetProvider() = %q", GetLibrary(), GetProvider())
 	}
 }
+
+func TestResolveLibraryIsTheSettingOrElseTheOneTheHostGave(t *testing.T) {
+	t.Setenv(EnvLibrary, "/host/libonnxruntime.so")
+	if got := ResolveLibrary(""); got != "/host/libonnxruntime.so" {
+		t.Errorf("ResolveLibrary() = %q, want the host's", got)
+	}
+	if got := ResolveLibrary("mine.so"); got != "mine.so" {
+		t.Errorf("ResolveLibrary(mine.so) = %q, want the setting", got)
+	}
+}

@@ -21,7 +21,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 	"github.com/jiva-studio/numen/modules/plugins/transcription/backend/onnxruntime"
-	
 )
 
 // The names the graphs give what they are asked and what they answer.
@@ -131,8 +130,8 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 
 // openSession compiles the model at path with the given intra-op thread count.
 func openSession(engine *ort.Engine, path string, threads int) (*ort.Session, error) {
-	options, _, err := onnxruntime.NewSessionOptions(engine, onnxruntime.SessionSettings{
-		Provider: onnxruntime.Provider(onnx.GetProvider()),
+	options, _, err := onnxruntime.NewSessionOptions(engine, onnx.SessionSettings{
+		Provider: onnx.GetProvider(),
 		Threads:  threads,
 	})
 	if err != nil {

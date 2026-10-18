@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/plugins/ocr/backend/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
 func TestUnsetThreadsAndJobsTakeTheResolvedProfile(t *testing.T) {
@@ -34,7 +34,7 @@ func TestExplicitThreadsAndJobsWinOverTheResolvedProfile(t *testing.T) {
 
 func TestAnUnresolvedProfileTakesTheFallbackCounts(t *testing.T) {
 	cfg := Defaults()
-	if got, want := cfg.threads(), min(fallbackThreads, onnxruntime.DefaultThreads()); got != want {
+	if got, want := cfg.threads(), min(fallbackThreads, onnx.GetDefaultThreads()); got != want {
 		t.Errorf("the recogniser takes %d threads, want %d", got, want)
 	}
 	if got := cfg.jobs(); got != fallbackJobs {
@@ -221,8 +221,8 @@ func TestTheModelsAreFoundWhereTheConfigurationSays(t *testing.T) {
 		ShouldDownload: true,
 		Progress:       func(what string, _, _ int64) { told = what },
 	}
-	if got := cfg.settings(); got.Runtime != "lib.so" {
-		t.Errorf("got %+v", got)
+	if got := cfg.getRuntimeLibrary(); got != "lib.so" {
+		t.Errorf("runtime = %q, want lib.so", got)
 	}
 	got := cfg.folder()
 	if got.Section != "indexing.recognition" || got.Dir != "models" || !got.ShouldDownload {
@@ -231,15 +231,5 @@ func TestTheModelsAreFoundWhereTheConfigurationSays(t *testing.T) {
 	got.Progress("a model", 1, 2)
 	if told != "a model" {
 		t.Error("a download does not reach whoever is listening")
-	}
-}
-
-func TestTheRuntimeIsTheSettingOrElseTheOneTheHostGave(t *testing.T) {
-	t.Setenv("NUMEN_ONNX_RUNTIME_LIB", "/host/libonnxruntime.so")
-	if got := (Config{}).settings().Runtime; got != "/host/libonnxruntime.so" {
-		t.Errorf("runtime = %q, want the host's", got)
-	}
-	if got := (Config{Runtime: "mine.so"}).settings().Runtime; got != "mine.so" {
-		t.Errorf("runtime = %q, want the setting", got)
 	}
 }

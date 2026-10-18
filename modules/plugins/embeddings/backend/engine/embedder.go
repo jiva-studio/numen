@@ -59,11 +59,11 @@ func Open(ctx context.Context, identity ModelInfo, cfg LocalModel, progress Fetc
 		return nil, err
 	}
 
-	engine, _, err := onnxruntime.Open(ctx, onnxruntime.Settings{Runtime: cmp.Or(cfg.Runtime, onnx.GetLibrary())})
+	engine, _, err := onnxruntime.Open(ctx, onnx.ResolveLibrary(cfg.Runtime))
 	if err != nil {
 		return nil, err
 	}
-	options, provider, err := onnxruntime.NewSessionOptions(engine, onnxruntime.SessionSettings{
+	options, provider, err := onnxruntime.NewSessionOptions(engine, onnx.SessionSettings{
 		Provider: cfg.GetProvider(),
 		Threads:  cfg.GetThreads(),
 	})

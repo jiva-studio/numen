@@ -39,7 +39,7 @@ type paths struct {
 func locateModels(ctx context.Context, cfg Config) (onnxRuntime, paths, error) {
 	var opened onnxRuntime
 	var err error
-	if opened.engine, opened.at, err = onnxruntime.Open(ctx, cfg.settings()); err != nil {
+	if opened.engine, opened.at, err = onnxruntime.Open(ctx, cfg.getRuntimeLibrary()); err != nil {
 		return onnxRuntime{}, paths{}, err
 	}
 

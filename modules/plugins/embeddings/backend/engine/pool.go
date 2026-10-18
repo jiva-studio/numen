@@ -3,7 +3,7 @@ package engine
 import (
 	"sync"
 
-	"github.com/jiva-studio/numen/modules/plugins/embeddings/backend/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
 // referenceLength is the token length at which a full configured batch is one pass.
@@ -170,8 +170,8 @@ func resize(s []int64, size int) []int64 {
 }
 
 // getWindow is the most tokens a text keeps for a session on provider.
-func getWindow(provider onnxruntime.Provider, maxTokens int) int {
-	if provider == onnxruntime.ProviderCoreML {
+func getWindow(provider onnx.Provider, maxTokens int) int {
+	if provider == onnx.ProviderCoreML {
 		return min(maxTokens, referenceLength)
 	}
 	return maxTokens

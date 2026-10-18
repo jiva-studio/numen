@@ -23,7 +23,7 @@ func IsPrepared() bool { return prepared.Load() }
 // Prepare makes the runtime a page is read through.
 func Prepare(ctx context.Context, cfg Config) error {
 	cfg.ShouldDownload = false
-	if _, _, err := onnxruntime.Open(ctx, cfg.settings()); err != nil {
+	if _, _, err := onnxruntime.Open(ctx, cfg.getRuntimeLibrary()); err != nil {
 		return err
 	}
 	prepared.Store(true)
