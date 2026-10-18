@@ -181,13 +181,9 @@ require (
 	connectrpc.com/connect v1.21.0
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go v0.0.0
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
-	golang.org/x/net v0.58.0
 )
 
-require (
-	golang.org/x/text v0.41.0 // indirect
-	google.golang.org/protobuf v1.36.12 // indirect
-)
+require google.golang.org/protobuf v1.36.12 // indirect
 
 replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go => ../../libs/plugin-sdk-go
 replace github.com/jiva-studio/numen/modules/libs/protocol => ../../libs/protocol
@@ -201,10 +197,6 @@ replace github.com/jiva-studio/numen/modules/libs/protocol => ../../libs/protoco
 connectrpc.com/connect v1.21.0/go.mod h1:A2ygJrukXwWy32vkCAAHNVguZrqZ+jeZ9rGRnGR4dN4=
 github.com/google/go-cmp v0.7.0 h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=
 github.com/google/go-cmp v0.7.0/go.mod h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU=
-golang.org/x/net v0.58.0 h1:ynWG7rqYi4ccpTEuPZ2QGWHktVEM9DMCj9yzDE0Q7To=
-golang.org/x/net v0.58.0/go.mod h1:YwCddHnFlT7eLQqVprV19OnhLGtc5xOKgE0RyqgfWAU=
-golang.org/x/text v0.41.0 h1:vz/seA0lnX87Othu2f/0L24RcgrXD9/YFTSuGjj3rH8=
-golang.org/x/text v0.41.0/go.mod h1:jvf1O8ajNzZqhSrQBPbutR/EB83Cc0CFrezNQIwbb5M=
 google.golang.org/protobuf v1.36.12 h1:pJOKDDOyeXErUroCihFAd5LQuwXBSpVnKGrj5o/fwxc=
 google.golang.org/protobuf v1.36.12/go.mod h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j23XfzDpco=
 `
