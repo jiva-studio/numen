@@ -35,7 +35,11 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const editorRef = ref<{ focus?: () => boolean; measure?: () => void; reveal?: (line: number) => boolean } | null>(null)
+const editorRef = ref<{
+  focus?: () => boolean
+  measure?: () => void
+  reveal?: (line: number) => boolean
+} | null>(null)
 
 const activePath = computed(() => {
   return (

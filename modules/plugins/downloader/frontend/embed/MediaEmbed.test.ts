@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
-import Embed from './Embed.vue'
+import MediaEmbed from './MediaEmbed.vue'
 import { WORDS as words } from '../words'
 
 // The player is framed from the socket this run opened, which is the address a
@@ -20,7 +20,7 @@ describe('an address something plays', () => {
   // and this frames what it was given. A window that composed one of its own
   // would be a second place the answer is decided.
   it('is played in a frame, at the address it was given', () => {
-    const drawn = mount(Embed, { props: { embed: EMBED, copy: '', words } })
+    const drawn = mount(MediaEmbed, { props: { embed: EMBED, copy: '', words } })
     const frame = drawn.get('iframe')
 
     expect(frame.attributes('src')).toBe(EMBED)
@@ -32,7 +32,7 @@ describe('an address something plays', () => {
   // about who is framing it plays nothing. What this window frames is its own
   // socket, so there is nothing here to keep from anybody.
   it('is sandboxed, and tells the page it holds nothing about referrers', () => {
-    const drawn = mount(Embed, { props: { embed: EMBED, copy: '', words } })
+    const drawn = mount(MediaEmbed, { props: { embed: EMBED, copy: '', words } })
     const frame = drawn.get('iframe')
 
     expect(frame.attributes('sandbox')).toBe('allow-scripts allow-same-origin allow-popups')
@@ -42,7 +42,7 @@ describe('an address something plays', () => {
 
 describe('an address nothing plays', () => {
   it('is nothing at all: the tab says where it points', () => {
-    const drawn = mount(Embed, { props: { embed: '', copy: '', words } })
+    const drawn = mount(MediaEmbed, { props: { embed: '', copy: '', words } })
 
     expect(drawn.find('iframe').exists()).toBe(false)
     expect(drawn.find('video').exists()).toBe(false)
@@ -51,7 +51,7 @@ describe('an address nothing plays', () => {
 
 describe('a moment chosen in the transcript', () => {
   it('is where the frame is told to play from, and nobody else is told', () => {
-    const drawn = mount(Embed, {
+    const drawn = mount(MediaEmbed, {
       props: { embed: EMBED, copy: '', words },
       attachTo: document.body,
     })
@@ -77,7 +77,7 @@ describe('a moment chosen in the transcript', () => {
   })
 
   it('does nothing where the address given is not one a frame can be told to post to', () => {
-    const drawn = mount(Embed, {
+    const drawn = mount(MediaEmbed, {
       props: { embed: 'not-a-url', copy: '', words },
       attachTo: document.body,
     })
@@ -87,7 +87,7 @@ describe('a moment chosen in the transcript', () => {
 
   it('is where the copy is played from, where a copy stands', () => {
     const COPY = 'http://127.0.0.1:9/token/vault/notes%2Ftalk.md?size=12&mtime=0'
-    const drawn = mount(Embed, {
+    const drawn = mount(MediaEmbed, {
       props: { embed: EMBED, copy: COPY, words },
       attachTo: document.body,
     })
@@ -104,7 +104,7 @@ describe('a copy of the video on this disk', () => {
   const COPY = 'http://127.0.0.1:9/token/vault/notes%2Ftalk.md?size=12&mtime=0'
 
   it('is played in place of the frame, and nothing of the site is loaded', () => {
-    const drawn = mount(Embed, { props: { embed: EMBED, copy: COPY, words } })
+    const drawn = mount(MediaEmbed, { props: { embed: EMBED, copy: COPY, words } })
 
     expect(drawn.find('iframe').exists()).toBe(false)
     expect(drawn.get('video').attributes('src')).toBe(COPY)
@@ -114,14 +114,14 @@ describe('a copy of the video on this disk', () => {
 describe('the height a person drew the player', () => {
   it('is where the player opens, where the store holds one', () => {
     const store = { read: () => 300, write: () => {} }
-    const drawn = mount(Embed, { props: { embed: EMBED, copy: '', words, store } })
+    const drawn = mount(MediaEmbed, { props: { embed: EMBED, copy: '', words, store } })
 
     expect(drawn.get('iframe').attributes('style')).toContain('300px')
   })
 
   it('leaves the player at sixteen by nine where the store holds none', () => {
     const store = { read: () => null, write: () => {} }
-    const drawn = mount(Embed, { props: { embed: EMBED, copy: '', words, store } })
+    const drawn = mount(MediaEmbed, { props: { embed: EMBED, copy: '', words, store } })
 
     expect(drawn.get('iframe').attributes('style')).toBeUndefined()
   })

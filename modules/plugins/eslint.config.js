@@ -22,7 +22,15 @@ function createRestrictions(escapes) {
     {
       patterns: [
         {
-          group: ['@/**', '@/pages/**', '@/shared/**', '@/entities/**', '@/features/**', '@/widgets/**', '@/app/**'],
+          group: [
+            '@/**',
+            '@/pages/**',
+            '@/shared/**',
+            '@/entities/**',
+            '@/features/**',
+            '@/widgets/**',
+            '@/app/**',
+          ],
           message: hostMessage,
         },
         {
@@ -30,7 +38,10 @@ function createRestrictions(escapes) {
           message: 'a plugin names no other plugin; share through @numen/plugin-sdk',
         },
         {
-          group: ['@numen/*', ...contract.flatMap((name) => [`!@numen/${name}`, `!@numen/${name}/**`])],
+          group: [
+            '@numen/*',
+            ...contract.flatMap((name) => [`!@numen/${name}`, `!@numen/${name}/**`]),
+          ],
           message: `a plugin names only ${contract.map((name) => '@numen/' + name).join(', ')} and its own directory`,
         },
         ...(escapes === undefined

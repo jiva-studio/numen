@@ -7,7 +7,13 @@
   "capabilities": ["audio", "recording"],
   "targets": ["desktop.editor"],
   "fileExtensions": [".mp3", ".m4a", ".wav", ".ogg", ".aac", ".flac"],
-  "activationEvents": ["onFile:*.mp3", "onFile:*.m4a", "onFile:*.wav", "onFile:*.flac", "onCommand:media.record"],
+  "activationEvents": [
+    "onFile:*.mp3",
+    "onFile:*.m4a",
+    "onFile:*.wav",
+    "onFile:*.flac",
+    "onCommand:media.record"
+  ],
   "frontend": {
     "entrypoint": "dist/index.js",
     "styles": "dist/styles.css"
