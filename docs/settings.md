@@ -644,4 +644,4 @@ An installation naming no agent and asking for no tools opens no port and writes
 
 The file is read at every question, so a route written while the application runs applies to the next one.
 
-No key is written in this file. An agent plugin that needs one declares it under `secrets` in its manifest; the host keeps it in the system keychain and hands it to the plugin in `Configure`, so it is in neither the plugin's environment nor its command line. A machine without a keychain fails with an error saying so and keeps the key nowhere else.
+No key is written in this file. An agent plugin that needs one declares it under `secrets` in its manifest; the host keeps it in the system keychain and hands it to the plugin in `Configure`, so it is in neither the plugin's environment nor its command line. Under `plugins.<id>.storedSecrets` the host records only the names of the secrets that have a key, and reads the keychain for those alone. Storing a key on a machine without a keychain fails with an error saying so and keeps the key nowhere else; the plugin is then configured without it.

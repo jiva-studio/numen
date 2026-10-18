@@ -82,6 +82,9 @@ type Host struct {
 	secretLocksMu  sync.Mutex
 	secretLocks    map[string]*sync.Mutex
 	keyStore       port.KeyStore
+	// noKeyStoreOnce reports once that a recorded secret cannot be read on a
+	// machine without a key store.
+	noKeyStoreOnce sync.Once
 	hostEndpoint   *HostEndpoint
 	hostAddress    string
 	onnxRuntime    RuntimeProvisioner
@@ -1119,6 +1122,7 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 			result[k] = v
 		}
 	}
+	delete(result, port.SettingStoredSecrets)
 	if p, ok := h.plugins[pluginID]; ok {
 		for _, name := range p.Manifest.Secrets {
 			delete(result, name)
@@ -1144,7 +1148,11 @@ func (h *Host) getPluginConfigJSONLocked(pluginID string) (string, error) {
 }
 
 // SetPluginSetting persists one setting, then writes it to memory and notifies the plugin.
+// The record of the stored secrets is the host's own and is refused.
 func (h *Host) SetPluginSetting(ctx context.Context, pluginID, key string, value any) error {
+	if key == port.SettingStoredSecrets {
+		return fmt.Errorf("plugin %s: %w: %s", pluginID, port.ErrReservedSettingKey, key)
+	}
 	h.mu.RLock()
 	persist := h.persistHandler
 	h.mu.RUnlock()
@@ -1157,7 +1165,12 @@ func (h *Host) SetPluginSetting(ctx context.Context, pluginID, key string, value
 }
 
 // UpdatePluginSetting updates the setting in memory and notifies the plugin without re-persisting.
+// The record of the stored secrets is written by the host alone, so a write of it
+// here changes nothing.
 func (h *Host) UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error {
+	if key == port.SettingStoredSecrets {
+		return nil
+	}
 	h.mu.Lock()
 	if _, ok := h.settings[pluginID]; !ok {
 		h.settings[pluginID] = make(map[string]any)
@@ -1260,10 +1273,12 @@ func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) er
 	rawSettings := h.getPluginSettingsLocked(pluginID)
 	values := formatPluginSettings(rawSettings)
 	secretNames := slices.Clone(h.plugins[pluginID].Manifest.Secrets)
+	stored := h.getStoredSecretsLocked(pluginID)
 	store := h.keyStore
 	h.mu.RUnlock()
 
-	secrets, secretsErr := readPluginSecrets(ctx, store, pluginID, secretNames)
+	secrets, failures := readPluginSecrets(ctx, store, pluginID, secretNames, stored)
+	secretsErr := h.getSecretsError(failures)
 	for name, key := range secrets {
 		values[name] = key
 	}

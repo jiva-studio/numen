@@ -53,7 +53,13 @@ var (
 	ErrEnumMissingOptions  = errors.New("enum setting must define options")
 	ErrRangeInvalidBounds  = errors.New("range min cannot exceed max")
 	ErrInvalidSecret       = errors.New("invalid secret")
+	ErrReservedSettingKey  = errors.New("the setting key is kept by the host")
 )
+
+// SettingStoredSecrets is the setting under which the host records, for a plugin,
+// the names of its secrets that have a key in the key store. It holds names and
+// never a key, and neither a setting nor a secret of a manifest takes the name.
+const SettingStoredSecrets = "storedSecrets"
 
 var (
 	manifestIDPattern      = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
@@ -300,6 +306,8 @@ func (m PluginManifest) listSecretIssues() []error {
 		switch {
 		case !manifestSecretPattern.MatchString(name):
 			issues = append(issues, fmt.Errorf("%w: %q is not letters, digits, _ or -", ErrInvalidSecret, name))
+		case name == SettingStoredSecrets:
+			issues = append(issues, fmt.Errorf("%w: secret %q", ErrReservedSettingKey, name))
 		case seen[name]:
 			issues = append(issues, fmt.Errorf("%w: %q is declared twice", ErrInvalidSecret, name))
 		case slices.ContainsFunc(m.Settings, func(s PluginManifestSetting) bool { return s.Key == name }):
@@ -317,6 +325,10 @@ func listManifestSettingIssues(settings []PluginManifestSetting) []error {
 		key := strings.TrimSpace(s.Key)
 		if key == "" {
 			issues = append(issues, ErrEmptySettingKey)
+			continue
+		}
+		if key == SettingStoredSecrets {
+			issues = append(issues, fmt.Errorf("%w: %s", ErrReservedSettingKey, key))
 			continue
 		}
 		if seenKeys[key] {

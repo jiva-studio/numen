@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -71,10 +72,12 @@ func TestTheKeyStoreIsTheOneNamedElseTheSystemKeychain(t *testing.T) {
 }
 
 // A secret written through the container lands in the key store the plugin
-// host reads its plugins' secrets from, under the plugin and the name.
+// host reads its plugins' secrets from, under the plugin and the name, and the
+// settings file records the name of the secret and never its key.
 func TestASecretWrittenThroughTheContainerReachesTheKeyStore(t *testing.T) {
 	jar := keyJar{}
-	cfg := Config{KeyStore: jar, PluginHost: NewPluginHost("desktop.editor", writeSecretPlugin(t))}
+	settingsPath := filepath.Join(t.TempDir(), "numen.json")
+	cfg := Config{KeyStore: jar, SettingsPath: settingsPath, PluginHost: NewPluginHost("desktop.editor", writeSecretPlugin(t))}
 	cfg = cfg.SetSettings(DefaultSettings())
 
 	if err := cfg.GetPluginSecretWriter()(t.Context(), "md.numen.agent", "apiKey", "value-1"); err != nil {
@@ -82,6 +85,13 @@ func TestASecretWrittenThroughTheContainerReachesTheKeyStore(t *testing.T) {
 	}
 	if jar["md.numen.agent/apiKey"] != "value-1" {
 		t.Errorf("the store holds %v", jar)
+	}
+	written, err := os.ReadFile(settingsPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(written), `"storedSecrets"`) || strings.Contains(string(written), "value-1") {
+		t.Errorf("the settings file holds:\n%s", written)
 	}
 	if err := cfg.GetPluginSecretDeleter()(t.Context(), "md.numen.agent", "apiKey"); err != nil {
 		t.Fatal(err)
@@ -94,7 +104,7 @@ func TestASecretWrittenThroughTheContainerReachesTheKeyStore(t *testing.T) {
 // A secret the plugin does not declare is refused.
 func TestASecretNoPluginDeclaresIsRefused(t *testing.T) {
 	jar := keyJar{}
-	cfg := Config{KeyStore: jar, PluginHost: NewPluginHost("desktop.editor", writeSecretPlugin(t))}
+	cfg := Config{KeyStore: jar, SettingsPath: filepath.Join(t.TempDir(), "numen.json"), PluginHost: NewPluginHost("desktop.editor", writeSecretPlugin(t))}
 	cfg = cfg.SetSettings(DefaultSettings())
 	if err := cfg.GetPluginSecretWriter()(t.Context(), "md.numen.agent", "other", "value"); err == nil {
 		t.Error("an undeclared secret was stored")
