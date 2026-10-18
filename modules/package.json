@@ -14,10 +14,10 @@
     "format:check": "prettier --check \"{libs,apps}/**/*.{ts,vue,json,css}\""
   },
   "devDependencies": {
-    "@vitest/browser-playwright": "^5.0.3",
+    "@vitest/browser-playwright": "^5.0.4",
     "@vitest/coverage-v8": "^5.0.3",
     "eslint-config-prettier": "^10.1.8",
-    "prettier": "^3.9.6",
+    "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "vitest": "^5.0.3"
   },
