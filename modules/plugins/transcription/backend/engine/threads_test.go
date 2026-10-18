@@ -3,12 +3,12 @@ package engine
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/plugins/transcription/backend/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
 func TestOnlyTheEncoderTakesMoreThanOneThread(t *testing.T) {
 	got := Defaults().sessionThreads()
-	want := sessionThreads{encoder: onnxruntime.DefaultThreads(), decoder: 1, joiner: 1, segmenter: 1}
+	want := sessionThreads{encoder: onnx.GetDefaultThreads(), decoder: 1, joiner: 1, segmenter: 1}
 	if got != want {
 		t.Errorf("the sessions take %+v threads, want %+v", got, want)
 	}

@@ -19,8 +19,7 @@ import (
 
 	ort "github.com/getcharzp/onnxruntime_purego"
 
-	"github.com/jiva-studio/numen/modules/plugins/transcription/backend/onnxruntime"
-	
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
 // The names the graphs give what they are asked and what they answer.
@@ -130,7 +129,7 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 
 // openSession compiles the model at path with the given intra-op thread count.
 func openSession(engine *ort.Engine, path string, threads int) (*ort.Session, error) {
-	options, _, err := onnxruntime.NewSessionOptions(engine, onnxruntime.SessionSettings{
+	options, _, err := onnx.NewSessionOptions(engine, onnx.SessionSettings{
 		Provider: getSessionProvider(),
 		Threads:  threads,
 	})
@@ -138,7 +137,7 @@ func openSession(engine *ort.Engine, path string, threads int) (*ort.Session, er
 		return nil, err
 	}
 	defer options.Destroy()
-	return onnxruntime.NewSession(engine, path, options)
+	return onnx.NewSession(engine, path, options)
 }
 
 // GetTranscriptionModel is what every recording this transcriber hears was heard by.

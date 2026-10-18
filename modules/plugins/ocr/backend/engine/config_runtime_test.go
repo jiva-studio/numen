@@ -19,7 +19,7 @@ func TestTheRuntimeInTheModelsFolderComesBeforeTheOneTheHostGave(t *testing.T) {
 		Config
 		want string
 	}{{Config{Dir: dir}, at}, {Config{Dir: dir, Runtime: "mine.so"}, "mine.so"}, {Config{Dir: t.TempDir()}, "/host/libonnxruntime.so"}} {
-		if got := cfg.settings().Runtime; got != cfg.want {
+		if got := cfg.getRuntimeLibrary(); got != cfg.want {
 			t.Errorf("%+v: runtime = %q, want %q", cfg.Config, got, cfg.want)
 		}
 	}

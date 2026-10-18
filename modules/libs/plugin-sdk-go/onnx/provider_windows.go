@@ -1,6 +1,6 @@
 //go:build windows
 
-package onnxruntime
+package onnx
 
 import (
 	"fmt"
@@ -41,10 +41,7 @@ func applyProvider(opts *ort.SessionOptions, requested Provider, _ ComputeUnits)
 }
 
 func enableDirectML(opts *ort.SessionOptions) error {
-	runtimeState.mu.Lock()
-	engine := runtimeState.engine
-	at := runtimeState.at
-	runtimeState.mu.Unlock()
+	engine, at := runtimeState.GetLoaded()
 
 	if engine == nil || at == "" {
 		return fmt.Errorf("onnx runtime not loaded")

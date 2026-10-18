@@ -13,7 +13,6 @@ import (
 	"github.com/gomlx/go-huggingface/tokenizers/hftokenizer"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
-	"github.com/jiva-studio/numen/modules/plugins/embeddings/backend/onnxruntime"
 )
 
 // The inputs a sentence encoder exported to ONNX asks for.
@@ -59,11 +58,11 @@ func Open(ctx context.Context, identity ModelInfo, cfg LocalModel, progress Fetc
 		return nil, err
 	}
 
-	engine, _, err := onnxruntime.Open(ctx, onnxruntime.Settings{Runtime: cmp.Or(cfg.Runtime, onnx.GetLibrary())})
+	engine, _, err := onnx.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, ""))
 	if err != nil {
 		return nil, err
 	}
-	options, provider, err := onnxruntime.NewSessionOptions(engine, onnxruntime.SessionSettings{
+	options, provider, err := onnx.NewSessionOptions(engine, onnx.SessionSettings{
 		Provider: cfg.GetProvider(),
 		Threads:  cfg.GetThreads(),
 	})
@@ -82,7 +81,7 @@ func Open(ctx context.Context, identity ModelInfo, cfg LocalModel, progress Fetc
 		}
 	}
 
-	session, err := onnxruntime.NewSession(engine, paths.Model, options)
+	session, err := onnx.NewSession(engine, paths.Model, options)
 	if err != nil {
 		return nil, fmt.Errorf("reading %s: %w", paths.Model, err)
 	}

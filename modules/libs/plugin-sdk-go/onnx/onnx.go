@@ -1,8 +1,11 @@
-// Package onnx is what the host tells a plugin that declares the onnxruntime
-// runtime: the library it provisioned and the execution provider it chose.
+// Package onnx is the ONNX Runtime support plugins share: the library and the
+// execution provider the host chose, the provider settings, and the one runtime
+// a process opens through the onnxruntime_purego binding, with the sessions
+// opened on it.
 package onnx
 
 import (
+	"cmp"
 	"os"
 	"strings"
 )
@@ -18,7 +21,7 @@ const (
 
 // DefaultProvider is the provider of a plugin the host gave none: it picks the
 // best accelerator it can enable and falls back to the CPU.
-const DefaultProvider = "auto"
+const DefaultProvider = ProviderAuto
 
 // GetLibrary returns the path of the library the host provisioned. It is empty
 // for a plugin that does not declare the runtime.
@@ -26,18 +29,25 @@ func GetLibrary() string {
 	return os.Getenv(EnvLibrary)
 }
 
+// ResolveLibrary returns the library a plugin opens: the one its own setting
+// names, else the one in the models folder its settings name, else the one the
+// host provisioned.
+func ResolveLibrary(configured, dir string) string {
+	return cmp.Or(configured, FindLibrary(dir), GetLibrary())
+}
+
 // GetProvider returns the execution provider the host chose, or DefaultProvider.
-func GetProvider() string {
+func GetProvider() Provider {
 	if name := os.Getenv(EnvProvider); name != "" {
-		return name
+		return Provider(name)
 	}
 	return DefaultProvider
 }
 
 // GetProviderOr returns the execution provider the host chose, or fallback when
 // it chose auto or none.
-func GetProviderOr(fallback string) string {
-	if name := GetProvider(); !strings.EqualFold(strings.TrimSpace(name), DefaultProvider) {
+func GetProviderOr(fallback Provider) Provider {
+	if name := GetProvider(); !strings.EqualFold(strings.TrimSpace(string(name)), string(DefaultProvider)) {
 		return name
 	}
 	return fallback

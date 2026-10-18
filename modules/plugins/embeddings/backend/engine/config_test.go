@@ -4,7 +4,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/plugins/embeddings/backend/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
 func TestDefaultBGEM3Config(t *testing.T) {
@@ -83,33 +83,33 @@ func TestLocalModelGetPasses(t *testing.T) {
 	// Set GOMAXPROCS to 5 so CPU fallback produces 3, distinguishing from returns of 1
 	runtime.GOMAXPROCS(5)
 
-	if passes := (LocalModel{Sessions: 3}).GetPasses(onnxruntime.ProviderCPU); passes != 3 {
+	if passes := (LocalModel{Sessions: 3}).GetPasses(onnx.ProviderCPU); passes != 3 {
 		t.Errorf("expected 3 passes for Sessions=3, got %d", passes)
 	}
-	if passes := (LocalModel{Sessions: 1}).GetPasses(onnxruntime.ProviderCPU); passes != 1 {
+	if passes := (LocalModel{Sessions: 1}).GetPasses(onnx.ProviderCPU); passes != 1 {
 		t.Errorf("expected 1 pass for Sessions=1, got %d", passes)
 	}
 
-	if passes := (LocalModel{}).GetPasses(onnxruntime.ProviderCoreML); passes != 1 {
+	if passes := (LocalModel{}).GetPasses(onnx.ProviderCoreML); passes != 1 {
 		t.Errorf("expected 1 pass for CoreML, got %d", passes)
 	}
-	if passes := (LocalModel{}).GetPasses(onnxruntime.ProviderCUDA); passes != 1 {
+	if passes := (LocalModel{}).GetPasses(onnx.ProviderCUDA); passes != 1 {
 		t.Errorf("expected 1 pass for CUDA, got %d", passes)
 	}
 
-	if passes := (LocalModel{PassBudget: 5}).GetPasses(onnxruntime.ProviderCPU); passes != 5 {
+	if passes := (LocalModel{PassBudget: 5}).GetPasses(onnx.ProviderCPU); passes != 5 {
 		t.Errorf("expected 5 passes for PassBudget=5, got %d", passes)
 	}
-	if passes := (LocalModel{PassBudget: 1}).GetPasses(onnxruntime.ProviderCPU); passes != 1 {
+	if passes := (LocalModel{PassBudget: 1}).GetPasses(onnx.ProviderCPU); passes != 1 {
 		t.Errorf("expected 1 pass for PassBudget=1, got %d", passes)
 	}
 
 	// Verify querying GOMAXPROCS does not mutate it (calling twice gives consistent result)
 	runtime.GOMAXPROCS(4)
-	if p1 := (LocalModel{}).GetPasses(onnxruntime.ProviderCPU); p1 != 2 {
+	if p1 := (LocalModel{}).GetPasses(onnx.ProviderCPU); p1 != 2 {
 		t.Errorf("expected 2 passes for 4 cpus, got %d", p1)
 	}
-	if p2 := (LocalModel{}).GetPasses(onnxruntime.ProviderCPU); p2 != 2 {
+	if p2 := (LocalModel{}).GetPasses(onnx.ProviderCPU); p2 != 2 {
 		t.Errorf("expected 2 passes on repeated call, got %d", p2)
 	}
 
@@ -124,20 +124,20 @@ func TestLocalModelGetPasses(t *testing.T) {
 		{cpus: 5, want: 3},
 	} {
 		runtime.GOMAXPROCS(tc.cpus)
-		if got := (LocalModel{}).GetPasses(onnxruntime.ProviderCPU); got != tc.want {
+		if got := (LocalModel{}).GetPasses(onnx.ProviderCPU); got != tc.want {
 			t.Errorf("GetPasses with GOMAXPROCS=%d: got %d, want %d", tc.cpus, got, tc.want)
 		}
 	}
 }
 
 func TestLocalModelGetProvider(t *testing.T) {
-	if p := (LocalModel{}).GetProvider(); p != onnxruntime.ProviderAuto {
+	if p := (LocalModel{}).GetProvider(); p != onnx.ProviderAuto {
 		t.Errorf("expected default ProviderAuto, got %v", p)
 	}
-	if p := (LocalModel{Provider: "invalid"}).GetProvider(); p != onnxruntime.ProviderAuto {
+	if p := (LocalModel{Provider: "invalid"}).GetProvider(); p != onnx.ProviderAuto {
 		t.Errorf("expected ProviderAuto for invalid provider, got %v", p)
 	}
-	if p := (LocalModel{Provider: "cpu"}).GetProvider(); p != onnxruntime.ProviderCPU {
+	if p := (LocalModel{Provider: "cpu"}).GetProvider(); p != onnx.ProviderCPU {
 		t.Errorf("expected ProviderCPU, got %v", p)
 	}
 }
@@ -153,7 +153,7 @@ func TestLocalModelGetThreads(t *testing.T) {
 	if th := (LocalModel{Threads: 1}).GetThreads(); th != 1 {
 		t.Errorf("expected 1 thread, got %d", th)
 	}
-	if th := (LocalModel{}).GetThreads(); th != onnxruntime.DefaultThreads() {
+	if th := (LocalModel{}).GetThreads(); th != onnx.GetDefaultThreads() {
 		t.Errorf("expected default threads, got %d", th)
 	}
 }
@@ -195,14 +195,14 @@ func TestWithRepositoryDropsThePins(t *testing.T) {
 
 func TestLocalModelGetProviderFollowsTheHostUnlessTheModelNamesOne(t *testing.T) {
 	t.Setenv("NUMEN_ONNX_PROVIDER", "cpu")
-	if p := (LocalModel{}).GetProvider(); p != onnxruntime.ProviderCPU {
+	if p := (LocalModel{}).GetProvider(); p != onnx.ProviderCPU {
 		t.Errorf("expected the host's ProviderCPU, got %v", p)
 	}
 	t.Setenv("NUMEN_ONNX_PROVIDER", "cuda")
-	if p := (LocalModel{Provider: "cpu"}).GetProvider(); p != onnxruntime.ProviderCPU {
+	if p := (LocalModel{Provider: "cpu"}).GetProvider(); p != onnx.ProviderCPU {
 		t.Errorf("expected the model's ProviderCPU, got %v", p)
 	}
-	if p := (LocalModel{}).GetProvider(); p != onnxruntime.ProviderCUDA {
+	if p := (LocalModel{}).GetProvider(); p != onnx.ProviderCUDA {
 		t.Errorf("expected the host's ProviderCUDA, got %v", p)
 	}
 }

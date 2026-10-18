@@ -1,4 +1,4 @@
-package onnxruntime
+package onnx
 
 import (
 	"fmt"
@@ -77,9 +77,7 @@ func loadConfigEntryTable(at string) (*configEntryTable, error) {
 // getConfigEntryTable returns the config-entry calls of the loaded runtime,
 // resolving them on first use.
 func getConfigEntryTable() (*configEntryTable, error) {
-	runtimeState.mu.Lock()
-	at := runtimeState.at
-	runtimeState.mu.Unlock()
+	_, at := runtimeState.GetLoaded()
 	if at == "" {
 		return nil, fmt.Errorf("onnx runtime not loaded")
 	}

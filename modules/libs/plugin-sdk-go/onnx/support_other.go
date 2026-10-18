@@ -1,6 +1,6 @@
 //go:build !(darwin || freebsd || linux || netbsd)
 
-package onnxruntime
+package onnx
 
 import "syscall"
 

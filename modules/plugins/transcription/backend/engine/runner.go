@@ -7,7 +7,7 @@ import (
 
 	"github.com/ebitengine/purego"
 
-	"github.com/jiva-studio/numen/modules/plugins/transcription/backend/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
 var (
@@ -42,7 +42,7 @@ type ortAPITable struct {
 }
 
 func init() {
-	onnxruntime.Register(func(at string) {
+	onnx.Register(func(at string) {
 		_ = initRunner(at)
 	})
 }
@@ -57,7 +57,7 @@ func initRunner(at string) error {
 		return fmt.Errorf("onnx runtime not loaded")
 	}
 
-	handle, err := onnxruntime.OpenLibrary(at)
+	handle, err := onnx.OpenLibrary(at)
 	if err != nil {
 		return err
 	}

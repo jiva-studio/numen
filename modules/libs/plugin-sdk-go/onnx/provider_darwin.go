@@ -1,6 +1,6 @@
 //go:build darwin
 
-package onnxruntime
+package onnx
 
 import (
 	"fmt"
@@ -43,10 +43,7 @@ func applyProvider(opts *ort.SessionOptions, requested Provider, units ComputeUn
 }
 
 func enableCoreML(opts *ort.SessionOptions, units ComputeUnits) error {
-	runtimeState.mu.Lock()
-	engine := runtimeState.engine
-	at := runtimeState.at
-	runtimeState.mu.Unlock()
+	engine, at := runtimeState.GetLoaded()
 
 	if engine == nil || at == "" {
 		return fmt.Errorf("onnx runtime not loaded")
@@ -120,7 +117,7 @@ func appendCoreMLCached(handle, optHandle uintptr, units ComputeUnits) bool {
 	if err != nil {
 		return false
 	}
-	pairs := getCoreMLOptions(dir, units)
+	pairs := GetCoreMLOptions(dir, units)
 	keys := make([]*byte, len(pairs))
 	values := make([]*byte, len(pairs))
 	for i, pair := range pairs {
@@ -137,16 +134,3 @@ func appendCoreMLCached(handle, optHandle uintptr, units ComputeUnits) bool {
 	runtime.KeepAlive(values)
 	return status == 0
 }
-
-func getCoreMLOptions(cacheDir string, units ComputeUnits) [][2]string {
-	if units == ComputeUnitsDefault {
-		units = ComputeUnitsAll
-	}
-	return [][2]string{
-		{"ModelCacheDirectory", cacheDir},
-		{"EnableOnSubgraphs", "1"},
-		{"CreateMLProgram", "1"},
-		{"MLComputeUnits", string(units)},
-	}
-}
-

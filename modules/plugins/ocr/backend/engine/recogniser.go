@@ -10,7 +10,7 @@ import (
 	read "github.com/getcharzp/go-ocr"
 	"github.com/getcharzp/go-ocr/paddle"
 
-	"github.com/jiva-studio/numen/modules/plugins/ocr/backend/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
 // Model describes active OCR models.
@@ -40,7 +40,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 	if err != nil {
 		return nil, err
 	}
-	options, _, err := onnxruntime.NewSessionOptions(opened.engine, onnxruntime.SessionSettings{
+	options, _, err := onnx.NewSessionOptions(opened.engine, onnx.SessionSettings{
 		Provider: getSessionProvider(),
 		Threads:  cfg.threads(),
 	})

@@ -1,6 +1,6 @@
 //go:build !darwin && !windows
 
-package onnxruntime
+package onnx
 
 import (
 	"fmt"

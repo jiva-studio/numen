@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
-	"github.com/jiva-studio/numen/modules/plugins/transcription/backend/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
 // Ready says whether everything a transcription needs is already on this
@@ -13,7 +13,7 @@ import (
 // transcription is fetching what it needs.
 func Ready(cfg Config) bool {
 	cfg.ShouldDownload = false
-	if !onnxruntime.IsAvailable(cfg.settings()) {
+	if !onnx.IsAvailable(cfg.getRuntimeLibrary()) {
 		return false
 	}
 	var resolved paths
