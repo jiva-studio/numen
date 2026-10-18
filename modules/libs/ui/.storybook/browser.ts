@@ -35,37 +35,42 @@ declare module 'vitest/browser' {
 
 const CANDIDATES = ['google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser']
 
+/** Whether path is a file this process may run. */
+const isExecutable = (path: string): boolean => {
+  try {
+    accessSync(path, constants.X_OK)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** The first of names that is an executable in a directory on PATH, in PATH order. */
+const findExecutable = (names: readonly string[]): string | undefined =>
+  (process.env['PATH'] ?? '')
+    .split(':')
+    .filter(Boolean)
+    .flatMap((directory) => names.map((name) => join(directory, name)))
+    .find(isExecutable)
+
 /**
  * A browser already on the machine; undefined uses Playwright's own.
  *
  * A run under `CI` takes the pinned build unless it was pointed at one, so the
  * version the stories are drawn in is the version the workflow fetched.
  */
-function getSystemChrome(): string | undefined {
+const getSystemChrome = (): string | undefined => {
   const explicit = process.env['CHROME_PATH']
   if (explicit) return explicit
   if (process.env['CI']) return undefined
-
-  for (const directory of (process.env['PATH'] ?? '').split(':')) {
-    if (!directory) continue
-    for (const name of CANDIDATES) {
-      const candidate = join(directory, name)
-      try {
-        accessSync(candidate, constants.X_OK)
-        return candidate
-      } catch {
-        continue
-      }
-    }
-  }
-  return undefined
+  return findExecutable(CANDIDATES)
 }
 
 /**
  * The browser a story project runs in. The window is WebKit on a mac and on
  * Linux, and Chromium on Windows, so every story is rendered in both.
  */
-export function getStoryBrowser() {
+export const getStoryBrowser = () => {
   const chrome = getSystemChrome()
   return {
     enabled: true,
