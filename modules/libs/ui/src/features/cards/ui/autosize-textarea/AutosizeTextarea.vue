@@ -7,11 +7,13 @@
  * Everything a caller hands it lands on the box, but for a class and a style,
  * which stand on the cell.
  */
-import { computed, useAttrs, useTemplateRef } from 'vue'
+import { computed, useAttrs, useId, useTemplateRef } from 'vue'
 
 defineProps<{
   /** What the box holds, as it now reads. */
   text: string
+  /** What a `<label for>` names the box by. Without one the box makes up its own. */
+  id?: string
 }>()
 
 const emit = defineEmits<{
@@ -31,6 +33,8 @@ const handed = computed(() => {
   return rest
 })
 
+const ownId = useId()
+
 const box = useTemplateRef<HTMLTextAreaElement>('box')
 
 defineExpose({
@@ -43,6 +47,7 @@ defineExpose({
   <div class="autosize" :class="attrs.class" :style="attrs.style" :data-autosize="text">
     <textarea
       ref="box"
+      :id="id ?? ownId"
       class="autosize__box"
       rows="1"
       :value="text"

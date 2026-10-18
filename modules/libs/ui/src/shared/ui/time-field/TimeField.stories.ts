@@ -6,7 +6,7 @@
  * no hour at all, and a stretch of the day the hour has to stand inside.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect } from 'storybook/test'
+import { expect, within } from 'storybook/test'
 import { ref } from 'vue'
 import TimeField from './TimeField.vue'
 
@@ -79,3 +79,20 @@ export const NoHourAtAll: Story = {
 
 /** A field nobody may type into. */
 export const Disabled: Story = { args: { disabled: true } }
+
+/** A label written beside the field names it, through the id it is given. */
+export const NamedByItsLabel: Story = {
+  render: (args) => ({
+    components: { TimeField },
+    setup: () => ({ args, hour: ref(args.hour) }),
+    template: `
+      <div :style="{ padding: '2rem', inlineSize: args.width }">
+        <label for="day-begins">A day begins at</label>
+        <TimeField id="day-begins" v-model="hour" />
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByLabelText('A day begins at')).toBe(field(canvasElement))
+  },
+}

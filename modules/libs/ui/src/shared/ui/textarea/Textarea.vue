@@ -5,12 +5,18 @@
  * It is sized by whatever lays it out. Growing with what is typed is the
  * business of the thing around it, which knows how tall it is allowed to get.
  */
-import { useTemplateRef, type HTMLAttributes } from 'vue'
+import { useId, useTemplateRef, type HTMLAttributes } from 'vue'
 import { cn } from '@/shared/lib/classes'
 
-const props = defineProps<{ class?: HTMLAttributes['class'] }>()
+const props = defineProps<{
+  /** What a `<label for>` names the field by. Without one the field makes up its own. */
+  id?: string
+  class?: HTMLAttributes['class']
+}>()
 
 const model = defineModel<string>({ default: '' })
+
+const ownId = useId()
 
 const element = useTemplateRef<HTMLTextAreaElement>('element')
 
@@ -24,6 +30,7 @@ defineExpose({
 <template>
   <textarea
     ref="element"
+    :id="id ?? ownId"
     v-model="model"
     data-slot="textarea"
     :class="

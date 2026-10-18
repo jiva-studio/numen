@@ -2,7 +2,7 @@
 /**
  * Native Plex-style thought creation box and autocomplete dropdown.
  */
-import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, useId, useTemplateRef, watch } from 'vue'
 import { useOutsidePress } from '@numen/ui'
 import type { PlexRelation } from '@numen/ui'
 import { useSearchResults } from '../lib/search'
@@ -24,6 +24,8 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const input = useTemplateRef<HTMLInputElement>('input')
 const popover = useTemplateRef<HTMLDivElement>('popover')
+
+const queryFieldId = useId()
 
 const query = ref('')
 const highlightedIndex = ref(0)
@@ -135,7 +137,9 @@ function submitHighlighted() {
   >
     <!-- Plex Thought Node Box -->
     <div class="plex-quick-link__node">
+      <label :for="queryFieldId" class="sr-only">{{ words.quickLinkLabel }}</label>
       <input
+        :id="queryFieldId"
         ref="input"
         v-model="query"
         type="text"

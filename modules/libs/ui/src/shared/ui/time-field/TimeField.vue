@@ -6,19 +6,21 @@
  * A field standing at an hour of the day hands that hour on. A field standing
  * at half an hour, or at nothing, hands nothing on and is left where it stands.
  */
-import { computed, useTemplateRef, type HTMLAttributes } from 'vue'
+import { computed, useId, useTemplateRef, type HTMLAttributes } from 'vue'
 import { cn } from '@/shared/lib/classes'
 import { isClockTime } from './clock'
 
 const props = withDefaults(
   defineProps<{
+    /** What a `<label for>` names the field by. Left empty, the field makes up its own. */
+    id?: string
     /** How early and how late in the day the hour may stand, written as `04:00`. */
     min?: string
     max?: string
     disabled?: boolean
     class?: HTMLAttributes['class']
   }>(),
-  { min: '', max: '', disabled: false },
+  { id: '', min: '', max: '', disabled: false },
 )
 
 /** The hour in force, written as `04:00`. An empty field holds none. */
@@ -31,6 +33,8 @@ const emit = defineEmits<{
 
 /** What stands in the field, which is an hour of the day or nothing at all. */
 const inForce = computed(() => (isClockTime(model.value) ? model.value : ''))
+
+const ownId = useId()
 
 const element = useTemplateRef<HTMLInputElement>('element')
 
@@ -51,6 +55,7 @@ defineExpose({
 <template>
   <input
     ref="element"
+    :id="id || ownId"
     type="time"
     data-slot="time-field"
     :value="inForce"

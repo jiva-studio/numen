@@ -2,6 +2,7 @@
 /**
  * Single direction and description row in PlexLinkInspectorPopover.
  */
+import { useId } from 'vue'
 import { ArrowLeft, ArrowRight, Trash2 } from '@lucide/vue'
 import type { DirectionalLinkItem } from '../types'
 import { WORDS as words } from '../words'
@@ -13,12 +14,12 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'toggle-direction'): void
+  (event: 'toggle-direction' | 'remove' | 'done' | 'add-reverse'): void
   (event: 'update:label', label: string): void
-  (event: 'remove'): void
-  (event: 'done'): void
-  (event: 'add-reverse'): void
 }>()
+
+/* --------------------------------- State ---------------------------------- */
+const labelFieldId = useId()
 
 /* -------------------------------- Handlers -------------------------------- */
 function onInput(event: Event) {
@@ -58,7 +59,9 @@ function onInputKeyDown(event: KeyboardEvent) {
       <ArrowLeft v-else class="plex-link-row__icon plex-link-popover__icon" />
     </button>
 
+    <label :for="labelFieldId" class="sr-only">{{ words.linkDescription }}</label>
     <input
+      :id="labelFieldId"
       :value="props.row.label"
       type="text"
       class="plex-link-row__input plex-link-popover__input"

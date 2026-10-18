@@ -4,6 +4,7 @@ import { nextTick } from 'vue'
 import { ArrowLeft, ArrowLeftRight, ArrowRight } from '@lucide/vue'
 import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
 import type { LinkInspectorRequest } from '../types'
+import { WORDS as words } from '../words'
 
 describe('PlexLinkInspectorPopover component', () => {
   const defaultRequest: LinkInspectorRequest = {
@@ -80,6 +81,18 @@ describe('PlexLinkInspectorPopover component', () => {
     expect(wrapper.emitted('save')).toBeTruthy()
     const rows = wrapper.emitted('save')?.[0]?.[0] as { label: string }[]
     expect(rows[0]?.label).toBe('Causes')
+    wrapper.unmount()
+  })
+
+  it('names every description field by a label of its own', async () => {
+    const wrapper = mountPopover()
+    await wrapper.get('.plex-link-popover__btn--add').trigger('click')
+
+    const fields = wrapper.findAll('input').map((input) => input.element as HTMLInputElement)
+    expect(
+      fields.map((field) => [...(field.labels ?? [])].map((label) => label.textContent)),
+    ).toEqual([[words.linkDescription], [words.linkDescription]])
+    expect(new Set(fields.map((field) => field.id)).size).toBe(2)
     wrapper.unmount()
   })
 

@@ -3,6 +3,7 @@
  * caller's attributes land on, and what is said when something is typed.
  */
 import { mount } from '@vue/test-utils'
+import { h } from 'vue'
 import { describe, expect, it } from 'vitest'
 import AutosizeTextarea from './AutosizeTextarea.vue'
 
@@ -60,5 +61,31 @@ describe('what a caller hands it', () => {
   it('hands back the box itself, for a caller putting the caret in it', () => {
     const one = mountBox()
     expect(one.vm.box).toBe(box(one).element)
+  })
+})
+
+describe('what the box is called', () => {
+  it('is named by a label pointing at the id it is given', () => {
+    const named = mount(
+      () => [
+        h('label', { for: 'front' }, 'Front'),
+        h(AutosizeTextarea, { text: 'said', id: 'front' }),
+      ],
+      { attachTo: document.body },
+    )
+    const field = named.get<HTMLTextAreaElement>('textarea').element
+
+    expect([...(field.labels ?? [])].map((label) => label.textContent)).toEqual(['Front'])
+    named.unmount()
+  })
+
+  it('makes up an id of its own where it is given none, and no two alike', () => {
+    const pair = mount(() =>
+      h('div', [h(AutosizeTextarea, { text: 'said' }), h(AutosizeTextarea, { text: 'said' })]),
+    )
+    const ids = pair.findAll('textarea').map((field) => field.attributes('id'))
+
+    expect(ids.every(Boolean)).toBe(true)
+    expect(new Set(ids).size).toBe(2)
   })
 })

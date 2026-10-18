@@ -5,6 +5,7 @@
  * it stands and nobody is told.
  */
 import { mount } from '@vue/test-utils'
+import { h } from 'vue'
 import { describe, expect, it } from 'vitest'
 import TimeField from './TimeField.vue'
 
@@ -67,4 +68,28 @@ describe('the ends of the day', () => {
 
 it('is not typed into while nobody may turn it', () => {
   expect(mountField({ disabled: true }).get('input').attributes('disabled')).toBeDefined()
+})
+
+describe('what the field is called', () => {
+  it('is named by a label pointing at the id it is given', () => {
+    const named = mount(
+      () => [
+        h('label', { for: 'day-begins' }, 'A day begins at'),
+        h(TimeField, { id: 'day-begins' }),
+      ],
+      { attachTo: document.body },
+    )
+    const field = named.get<HTMLInputElement>('input').element
+
+    expect([...(field.labels ?? [])].map((label) => label.textContent)).toEqual(['A day begins at'])
+    named.unmount()
+  })
+
+  it('makes up an id of its own where it is given none, and no two alike', () => {
+    const pair = mount(() => h('div', [h(TimeField, {}), h(TimeField, {})]))
+    const ids = pair.findAll('input').map((field) => field.attributes('id'))
+
+    expect(ids.every(Boolean)).toBe(true)
+    expect(new Set(ids).size).toBe(2)
+  })
 })

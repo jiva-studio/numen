@@ -88,6 +88,7 @@ defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
         rows="1"
         class="composer__field resize-none overflow-y-auto rounded-none border-0 bg-transparent p-0 placeholder:text-transparent"
         :placeholder="placeholder"
+        :aria-label="placeholder"
         :disabled="disabled"
         @keydown="onKeydown"
       />

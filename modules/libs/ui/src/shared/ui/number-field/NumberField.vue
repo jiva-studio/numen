@@ -6,12 +6,14 @@
  * What was typed stands as it was typed, and the number is written out only
  * once the field is left. Bounds that move under the number bring it in.
  */
-import { computed, useTemplateRef, type HTMLAttributes } from 'vue'
+import { computed, useId, useTemplateRef, type HTMLAttributes } from 'vue'
 import { cn } from '@/shared/lib/classes'
 import { DEFAULT_BOUNDS, useNumberEntry } from './number'
 
 const props = withDefaults(
   defineProps<{
+    /** What a `<label for>` names the field by. Left empty, the field makes up its own. */
+    id?: string
     /** How far the number may go. */
     min?: number
     max?: number
@@ -27,6 +29,7 @@ const props = withDefaults(
     max: DEFAULT_BOUNDS.max,
     step: DEFAULT_BOUNDS.step,
     disabled: false,
+    id: '',
     placeholder: '',
   },
 )
@@ -46,6 +49,8 @@ const { typed, isInvalid, speechText, setText, commit, applyKey } = useNumberEnt
   () => bounds.value,
   (value) => emit('commit', value),
 )
+
+const ownId = useId()
 
 const element = useTemplateRef<HTMLInputElement>('element')
 
@@ -73,6 +78,7 @@ defineExpose({
 <template>
   <input
     ref="element"
+    :id="id || ownId"
     type="text"
     inputmode="decimal"
     autocomplete="off"

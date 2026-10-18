@@ -120,3 +120,10 @@ describe('what cannot be reached', () => {
     expect(wrapper.get('button').attributes('disabled')).toBeDefined()
   })
 })
+
+describe('what the field is called', () => {
+  it('is named by the words standing in it before anything is written', () => {
+    const wrapper = composer({ placeholder: 'Ask about this note' })
+    expect(wrapper.get('textarea').attributes('aria-label')).toBe('Ask about this note')
+  })
+})

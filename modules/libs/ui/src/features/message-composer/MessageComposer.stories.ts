@@ -5,7 +5,7 @@
  * `working` and `disabled` are controls, not stories.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, fn } from 'storybook/test'
+import { expect, fn, within } from 'storybook/test'
 import { ref } from 'vue'
 import MessageComposer from './MessageComposer.vue'
 import { ARABIC, DEVANAGARI, LINK, LONG, MULTILINE } from '@/shared/fixtures/prose'
@@ -70,6 +70,10 @@ const renderComposers =
 export const Playground: Story = {
   render: renderComposers('', 'What does a plex draw?'),
   play: async ({ canvasElement }) => {
+    // The field is called by the words standing in it.
+    await expect(
+      within(canvasElement).getAllByRole('textbox', { name: 'Write a message' }),
+    ).toHaveLength(2)
     for (const field of canvasElement.querySelectorAll('textarea')) {
       const composer = field.closest('.composer')
       await expect(composer).toBeInTheDocument()
