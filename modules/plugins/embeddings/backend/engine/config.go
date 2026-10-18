@@ -6,7 +6,6 @@ import (
 	"runtime"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
-	"github.com/jiva-studio/numen/modules/plugins/embeddings/backend/onnxruntime"
 )
 
 // Pooling strategies supported by sentence encoders.
@@ -68,14 +67,14 @@ func CheckIdentity(identity ModelInfo, repository string) error {
 
 // GetProvider resolves the onnxruntime Provider. A model that names none runs
 // on the provider the host chose, which is auto when it chose none.
-func (m LocalModel) GetProvider() onnxruntime.Provider {
+func (m LocalModel) GetProvider() onnx.Provider {
 	name := m.Provider
 	if name == "" {
-		name = onnx.GetProvider()
+		name = string(onnx.GetProvider())
 	}
-	p, err := onnxruntime.ParseProvider(name)
+	p, err := onnx.ParseProvider(name)
 	if err != nil {
-		return onnxruntime.ProviderAuto
+		return onnx.ProviderAuto
 	}
 	return p
 }
@@ -85,7 +84,7 @@ func (m LocalModel) GetThreads() int {
 	if m.Threads > 0 {
 		return m.Threads
 	}
-	return onnxruntime.DefaultThreads()
+	return onnx.GetDefaultThreads()
 }
 
 const (
@@ -94,11 +93,11 @@ const (
 )
 
 // GetPasses calculates the concurrency level.
-func (m LocalModel) GetPasses(provider onnxruntime.Provider) int {
+func (m LocalModel) GetPasses(provider onnx.Provider) int {
 	switch {
 	case m.Sessions > 0:
 		return m.Sessions
-	case provider != onnxruntime.ProviderCPU:
+	case provider != onnx.ProviderCPU:
 		return 1
 	case m.PassBudget > 0:
 		return m.PassBudget

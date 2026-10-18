@@ -1,8 +1,6 @@
 package engine
 
-import (
-	"github.com/jiva-studio/numen/modules/plugins/embeddings/backend/onnxruntime"
-)
+import "github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 
 // headWidth is the width of one attention head in sentence encoders.
 const headWidth = 64
@@ -36,7 +34,7 @@ func getPassesWithinMemory(passes int, memory int64, batchTexts, window, hidden 
 }
 
 // resolvePasses determines the number of concurrent passes for a model.
-func resolvePasses(cfg LocalModel, provider onnxruntime.Provider, identity ModelInfo) int {
+func resolvePasses(cfg LocalModel, provider onnx.Provider, identity ModelInfo) int {
 	passes := max(cfg.GetPasses(provider), 1)
 	if cfg.Sessions > 0 {
 		return passes

@@ -6,27 +6,29 @@ import (
 	"fmt"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
-func applyProvider(opts *ort.SessionOptions, requested Provider, _ ComputeUnits) (Provider, error) {
+func applyProvider(opts *ort.SessionOptions, requested onnx.Provider, _ onnx.ComputeUnits) (onnx.Provider, error) {
 	switch requested {
-	case ProviderCPU:
-		return ProviderCPU, nil
-	case ProviderCUDA:
+	case onnx.ProviderCPU:
+		return onnx.ProviderCPU, nil
+	case onnx.ProviderCUDA:
 		if err := opts.EnableCUDA(); err != nil {
-			return ProviderCPU, err
+			return onnx.ProviderCPU, err
 		}
-		return ProviderCUDA, nil
-	case ProviderCoreML:
-		return ProviderCPU, fmt.Errorf("coreml execution provider is only available on darwin/arm64")
-	case ProviderDirectML:
-		return ProviderCPU, fmt.Errorf("directml execution provider is only available on windows")
-	case ProviderAuto:
+		return onnx.ProviderCUDA, nil
+	case onnx.ProviderCoreML:
+		return onnx.ProviderCPU, fmt.Errorf("coreml execution provider is only available on darwin/arm64")
+	case onnx.ProviderDirectML:
+		return onnx.ProviderCPU, fmt.Errorf("directml execution provider is only available on windows")
+	case onnx.ProviderAuto:
 		if err := opts.EnableCUDA(); err == nil {
-			return ProviderCUDA, nil
+			return onnx.ProviderCUDA, nil
 		}
-		return ProviderCPU, nil
+		return onnx.ProviderCPU, nil
 	default:
-		return ProviderCPU, nil
+		return onnx.ProviderCPU, nil
 	}
 }

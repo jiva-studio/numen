@@ -1,13 +1,10 @@
 package engine
 
 import (
-	"cmp"
-
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
-	"github.com/jiva-studio/numen/modules/plugins/transcription/backend/onnxruntime"
 )
 
 // Config is what a person may change about listening to a recording: which
@@ -43,16 +40,17 @@ type Config struct {
 	Progress func(what string, done, total int64) `json:"-"`
 }
 
-// settings are what the runtime is found by: the runtime setting, the library in
-// the models folder the settings name, and the one the host provisioned.
-func (c Config) settings() onnxruntime.Settings {
-	return onnxruntime.Settings{Runtime: cmp.Or(c.Runtime, onnx.FindLibrary(c.Dir), onnx.GetLibrary())}
+// getRuntimeLibrary returns the library the runtime is opened from: the runtime
+// setting, the library in the models folder the settings name, and the one the
+// host provisioned.
+func (c Config) getRuntimeLibrary() string {
+	return onnx.ResolveLibrary(c.Runtime, c.Dir)
 }
 
 // getSessionProvider returns the execution provider the sessions open on: the
 // one the host names, and the CPU when it names auto.
-func getSessionProvider() onnxruntime.Provider {
-	return onnxruntime.Provider(onnx.GetProviderOr(string(onnxruntime.ProviderCPU)))
+func getSessionProvider() onnx.Provider {
+	return onnx.GetProviderOr(onnx.ProviderCPU)
 }
 
 // folder is where the models are kept and whether they may be fetched.
@@ -140,7 +138,7 @@ func Defaults() Config {
 // The defaults for everything a settings file leaves out.
 func (c Config) threads() int {
 	if c.Threads <= 0 {
-		return onnxruntime.DefaultThreads()
+		return onnx.GetDefaultThreads()
 	}
 	return c.Threads
 }
@@ -210,4 +208,3 @@ func (s SegmenterModel) DescribeSegmentSettings() string {
 	return fmt.Sprintf("%.2f/%d/%d/%d/%d/%d",
 		s.getThreshold(), s.getSilenceLength(), s.getPadding(), s.getLongestSegment(), s.getShortestSegment(), s.getShortestPause())
 }
-

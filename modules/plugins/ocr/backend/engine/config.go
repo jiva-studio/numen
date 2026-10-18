@@ -1,36 +1,34 @@
 package engine
 
 import (
-	"cmp"
-
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
-	"github.com/jiva-studio/numen/modules/plugins/ocr/backend/onnxruntime"
 )
 
 // Config holds settings for recognising scanned pages.
 type Config struct {
-	Runtime        string          `json:"runtime"`
-	Dir            string          `json:"dir"`
-	ShouldDownload bool            `json:"download"`
-	Layout         LayoutModel     `json:"layout"`
-	Detect         DetectModel     `json:"detect"`
-	Recognise      RecogniserModel `json:"recognise"`
-	Regions        RegionKinds     `json:"regions"`
-	Compute        Compute         `json:"-"`
+	Runtime        string                               `json:"runtime"`
+	Dir            string                               `json:"dir"`
+	ShouldDownload bool                                 `json:"download"`
+	Layout         LayoutModel                          `json:"layout"`
+	Detect         DetectModel                          `json:"detect"`
+	Recognise      RecogniserModel                      `json:"recognise"`
+	Regions        RegionKinds                          `json:"regions"`
+	Compute        Compute                              `json:"-"`
 	Progress       func(what string, done, total int64) `json:"-"`
 }
 
-// settings are what the runtime is found by: the runtime setting, the library in
-// the models folder the settings name, and the one the host provisioned.
-func (c Config) settings() onnxruntime.Settings {
-	return onnxruntime.Settings{Runtime: cmp.Or(c.Runtime, onnx.FindLibrary(c.Dir), onnx.GetLibrary())}
+// getRuntimeLibrary returns the library the runtime is opened from: the runtime
+// setting, the library in the models folder the settings name, and the one the
+// host provisioned.
+func (c Config) getRuntimeLibrary() string {
+	return onnx.ResolveLibrary(c.Runtime, c.Dir)
 }
 
 // getSessionProvider returns the execution provider the sessions open on: the
 // one the host names, and the CPU when it names auto.
-func getSessionProvider() onnxruntime.Provider {
-	return onnxruntime.Provider(onnx.GetProviderOr(string(onnxruntime.ProviderCPU)))
+func getSessionProvider() onnx.Provider {
+	return onnx.GetProviderOr(onnx.ProviderCPU)
 }
 
 // folder is where the models are kept and whether they may be fetched.
@@ -212,5 +210,5 @@ func (c Config) threads() int {
 	case c.Compute.Threads > 0:
 		return c.Compute.Threads
 	}
-	return min(fallbackThreads, onnxruntime.DefaultThreads())
+	return min(fallbackThreads, onnx.GetDefaultThreads())
 }
