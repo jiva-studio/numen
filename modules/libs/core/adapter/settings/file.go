@@ -27,8 +27,8 @@ func Read(path string) ([]byte, error) {
 // Write replaces the settings file whole, with the bytes as they were typed.
 //
 // Bytes the settings cannot be read out of are refused and the file is left as
-// it was. What is said names where in the file the trouble is; the file holds a
-// person's keys, and nothing standing in it is repeated back.
+// it was. What is said names where in the file the trouble is, and nothing
+// standing in it is repeated back.
 //
 // Seen is the file as the caller last read it. A file standing at anything else
 // is left alone and port.ErrStale comes back: someone turning a setting in

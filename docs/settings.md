@@ -264,9 +264,7 @@ A model is fetched and compiled behind the window, and appears in the list of wh
 { "use": "service", "service": {
   "base_url": "https://api.openai.com/v1",
   "name": "text-embedding-3-small",
-  "batch_characters": 32000,
-  "key_env": "NUMEN_EMBEDDING_KEY",
-  "key": "sk-…"
+  "batch_characters": 32000
 }}
 ```
 
@@ -274,7 +272,7 @@ Anything speaking the `/v1/embeddings` request shape. `base_url` is what points 
 
 `batch_characters` bounds one request by everything in it. A count of texts says nothing about their size: the same number of windows carries several times the tokens in transliterated Sanskrit that it does in English.
 
-The key is read from `key` if the file names one, otherwise from the environment variable `key_env` names. It is never written back: rewriting this file is not how a key is set.
+The service's key is entered in the app, in the settings of the Vector Embeddings plugin, and kept in the system keychain. This file holds no key, and no environment variable is read for one. An older file that names `key` or `key_env` here loads, and both are ignored.
 
 ## Worked examples, embedding
 
@@ -317,8 +315,7 @@ The two names differ because that is what each place calls it — HuggingFace `B
         "use": "service",
         "service": {
           "base_url": "https://openrouter.ai/api/v1",
-          "name": "baai/bge-m3",
-          "key_env": "OPENROUTER_API_KEY"
+          "name": "baai/bge-m3"
         }
       },
       "query": {
