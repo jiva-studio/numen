@@ -14,11 +14,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'toggle-direction'): void
+  (event: 'toggle-direction' | 'remove' | 'done' | 'add-reverse'): void
   (event: 'update:label', label: string): void
-  (event: 'remove'): void
-  (event: 'done'): void
-  (event: 'add-reverse'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */

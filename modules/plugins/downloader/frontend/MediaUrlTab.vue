@@ -25,10 +25,10 @@ const props = defineProps<{
 
 /* --------------------------------- State ---------------------------------- */
 const initialUrl = computed(() => {
-  const s = props.state as
+  const saved = props.state as
     { url?: { value?: string } | string; path?: string; at?: string } | undefined
-  if (typeof s?.url === 'string') return s.url
-  if (typeof s?.url?.value === 'string') return s.url.value
+  if (typeof saved?.url === 'string') return saved.url
+  if (typeof saved?.url?.value === 'string') return saved.url.value
   return props.path || props.at || ''
 })
 

@@ -12,7 +12,7 @@ import { isClockTime } from './clock'
 
 const props = withDefaults(
   defineProps<{
-    /** What a `<label for>` names the field by. Without one the field makes up its own. */
+    /** What a `<label for>` names the field by. Left empty, the field makes up its own. */
     id?: string
     /** How early and how late in the day the hour may stand, written as `04:00`. */
     min?: string
@@ -20,7 +20,7 @@ const props = withDefaults(
     disabled?: boolean
     class?: HTMLAttributes['class']
   }>(),
-  { min: '', max: '', disabled: false },
+  { id: '', min: '', max: '', disabled: false },
 )
 
 /** The hour in force, written as `04:00`. An empty field holds none. */
@@ -55,7 +55,7 @@ defineExpose({
 <template>
   <input
     ref="element"
-    :id="id ?? ownId"
+    :id="id || ownId"
     type="time"
     data-slot="time-field"
     :value="inForce"

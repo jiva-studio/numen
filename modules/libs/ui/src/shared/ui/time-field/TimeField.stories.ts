@@ -93,6 +93,6 @@ export const NamedByItsLabel: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    expect(within(canvasElement).getByLabelText('A day begins at')).toBe(field(canvasElement))
+    await expect(within(canvasElement).getByLabelText('A day begins at')).toBe(field(canvasElement))
   },
 }

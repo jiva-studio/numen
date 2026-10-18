@@ -12,7 +12,7 @@ import { DEFAULT_BOUNDS, useNumberEntry } from './number'
 
 const props = withDefaults(
   defineProps<{
-    /** What a `<label for>` names the field by. Without one the field makes up its own. */
+    /** What a `<label for>` names the field by. Left empty, the field makes up its own. */
     id?: string
     /** How far the number may go. */
     min?: number
@@ -29,6 +29,7 @@ const props = withDefaults(
     max: DEFAULT_BOUNDS.max,
     step: DEFAULT_BOUNDS.step,
     disabled: false,
+    id: '',
     placeholder: '',
   },
 )
@@ -77,7 +78,7 @@ defineExpose({
 <template>
   <input
     ref="element"
-    :id="id ?? ownId"
+    :id="id || ownId"
     type="text"
     inputmode="decimal"
     autocomplete="off"

@@ -259,6 +259,8 @@ export const NamedByItsLabel: Story = {
   }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    expect(canvas.getByRole('spinbutton', { name: 'Minutes a day' })).toBe(field(canvasElement))
+    await expect(canvas.getByRole('spinbutton', { name: 'Minutes a day' })).toBe(
+      field(canvasElement),
+    )
   },
 }
