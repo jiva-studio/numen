@@ -174,7 +174,7 @@ defineExpose({
       ref="area"
       class="reader__viewport h-full overflow-auto overscroll-x-contain"
       :class="isDragging ? 'reader__viewport--held' : 'reader__viewport--takeable'"
-      tabindex="-1"
+      tabindex="0"
       role="region"
       :aria-label="words.pages"
       @scroll.passive="onScroll"

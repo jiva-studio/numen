@@ -218,10 +218,4 @@ describe('where the keyboard stands', () => {
     expect(region.getAttribute('aria-label')).toBe(READER_WORDS.pages)
     held.unmount()
   })
-
-  it('leaves the pages out of the order the tab key walks', () => {
-    const held = mount(Reader, { props: { pages: PAGES } })
-
-    expect((held.get('[role="region"]').element as HTMLElement).tabIndex).toBe(-1)
-  })
 })

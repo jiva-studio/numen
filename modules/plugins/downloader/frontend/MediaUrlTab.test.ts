@@ -45,7 +45,7 @@ describe('MediaUrlTab', () => {
     vi.mocked(downloaderClient.canHandle).mockResolvedValueOnce({ canHandle: true } as never)
     vi.mocked(downloaderClient.getText).mockResolvedValueOnce({
       title: 'Sample Video',
-      cues: [{ startMs: 1000, endMs: 2000, text: 'First line' }],
+      cues: [{ from: 1000, to: 2000, text: 'First line' }],
     } as never)
 
     const wrapper = mount(MediaUrlTab, { props: { state: {} } })
@@ -56,5 +56,6 @@ describe('MediaUrlTab', () => {
     expect(downloaderClient.getText).toHaveBeenCalledWith({ url: 'https://example.com/video' })
     expect(wrapper.text()).toContain('Sample Video')
     expect(wrapper.text()).toContain('First line')
+    expect(wrapper.get('.media-downloader__cue-time').text()).toBe('0:01')
   })
 })
