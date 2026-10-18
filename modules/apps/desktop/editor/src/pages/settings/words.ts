@@ -18,6 +18,7 @@ export const WORDS = {
   indexing: 'Indexing',
   performance: 'Performance',
   agent: 'The agent',
+  ai: 'AI',
   /** The window's own settings. */
   theme: 'Theme',
   themeDetail: 'The stylesheet the window wears.',
@@ -99,6 +100,39 @@ export const WORDS = {
     'Whether this vault’s tools are served over MCP, so another program — an editor, a coding agent — can reach them.',
   agentHooks: 'Read hooks and skills',
   agentHooksDetail: 'Whether it reads the hooks and skills this machine is set up with.',
+  /** Which agent answers the plugins that ask a model, and with which model. */
+  defaultAgent: 'Default agent',
+  defaultAgentDetail:
+    'The agent that answers a plugin whose own setting names none. Left to itself, the installed agent with the lowest id answers.',
+  defaultModel: 'Default model',
+  defaultModelDetail: 'Which of that agent’s models answers.',
+  pluginModel: 'Model',
+  agentByDefault: (name: string) => `Default (${name})`,
+  agentFirst: (name: string) => `First installed (${name})`,
+  agentNone: 'No agent is installed',
+  agentMissing: 'not installed: questions are refused, and no other agent answers',
+  modelByAgent: 'Agent default',
+  /** Whether a plugin may ask a model at all. */
+  consentAllowed: 'May ask a model',
+  consentDetail: {
+    none: '',
+    unanswered: 'Not asked yet. Its first question is refused until you choose.',
+    asked: 'Asked to use a model and was refused until you choose.',
+    allowed: 'Allowed: its questions go to the agent its setting names.',
+    refused: 'Refused: its questions are answered with an error it shows.',
+  },
+  asking: (name: string) => `${name} asks to use a model.`,
+  allow: 'Allow',
+  refuse: 'Refuse',
+  /** The keys of the secrets plugins declare. */
+  keys: 'Keys',
+  keyStored: 'Set',
+  keyMissing: 'Not set',
+  keyDetail: 'Kept in the system keychain, never in the settings file, and never shown again.',
+  keyPlaceholder: 'Paste a key',
+  keySave: 'Save',
+  keyReplace: 'Replace',
+  keyDelete: 'Delete',
   /** What is said on the row an installation nobody has configured runs on. */
   byDefault: 'the default',
   /**

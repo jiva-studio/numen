@@ -40,6 +40,8 @@ const installation = (): Installation =>
     chooseHeadings: vi.fn(),
     dayStartTime: ref('04:00'),
     latestDayStartTime: ref('12:00'),
+    writeSecret: () => {},
+    deleteSecret: () => {},
     chooseDayStartTime: vi.fn(),
     getSetting: () => undefined,
     getModels: () => [],

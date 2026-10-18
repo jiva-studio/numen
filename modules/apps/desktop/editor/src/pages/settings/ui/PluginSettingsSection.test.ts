@@ -13,6 +13,11 @@ const SAMPLE_PLUGIN: PluginInfo = {
   version: '1.0.0',
   description: 'Speech recognition engine',
   isActive: true,
+  capabilities: [],
+  secrets: [],
+  storedSecrets: [],
+  models: [],
+  consent: 'none',
   settings: [
     {
       key: 'autoRun',
@@ -79,6 +84,8 @@ const createSection = (
     chooseHeadings: () => {},
     dayStartTime: ref('04:00'),
     latestDayStartTime: ref('12:00'),
+    writeSecret: () => {},
+    deleteSecret: () => {},
     chooseDayStartTime: () => {},
   }
   const state: SettingsTabState = { installation }
@@ -158,5 +165,75 @@ describe('PluginSettingsSection', () => {
     expect(written).toStrictEqual([
       { at: ['plugins', 'test.transcription', 'promptPrefix'], value: '"Prefix: "' },
     ])
+  })
+})
+
+const AGENT: PluginInfo = {
+  ...SAMPLE_PLUGIN,
+  id: 'test.agent',
+  name: 'Test Agent',
+  settings: [],
+  capabilities: ['ai.completion.provider'],
+  models: [{ name: 'quick', title: 'Quick', isDefault: true }],
+}
+
+const ASKING: PluginInfo = {
+  ...SAMPLE_PLUGIN,
+  id: 'test.asking',
+  name: 'Asking Plugin',
+  consent: 'allowed',
+  settings: [
+    { key: 'agent', type: 'agent', title: 'Agent', description: 'Who answers', default: undefined },
+  ],
+}
+
+describe('a setting of type agent', () => {
+  it('offers the default, said with the agent that answers it, then the installed agents', () => {
+    const { wrapper } = createSection({}, [ASKING, AGENT])
+    const selects = wrapper.findAllComponents({ name: 'Select' })
+    expect(selects).toHaveLength(1)
+    expect(selects[0]!.props('choices')).toStrictEqual([
+      { id: '', text: 'Default (Test Agent)' },
+      { id: 'test.agent', text: 'Test Agent' },
+    ])
+    expect(wrapper.find('.settings__text-input').exists()).toBe(false)
+  })
+
+  it('offers the models of the agent it names, the agent default first', () => {
+    const { wrapper } = createSection(
+      { plugins: { 'test.asking': { agent: { agent: 'test.agent', model: 'quick' } } } },
+      [ASKING, AGENT],
+    )
+    const selects = wrapper.findAllComponents({ name: 'Select' })
+    expect(selects).toHaveLength(2)
+    expect(selects[0]!.props('modelValue')).toBe('test.agent')
+    expect(selects[1]!.props('modelValue')).toBe('quick')
+    expect(selects[1]!.props('choices')).toStrictEqual([
+      { id: '', text: 'Agent default' },
+      { id: 'quick', text: 'Quick' },
+    ])
+  })
+
+  it('is written as the agent and the model, under the plugin', () => {
+    const { wrapper, written } = createSection({}, [ASKING, AGENT])
+    wrapper.findComponent({ name: 'Select' }).vm.$emit('update:modelValue', 'test.agent')
+    expect(written).toStrictEqual([
+      {
+        at: ['plugins', 'test.asking', 'agent'],
+        value: JSON.stringify({ agent: 'test.agent', model: '' }, null, 2),
+      },
+    ])
+  })
+
+  it('keeps an agent that is not installed, said so', () => {
+    const { wrapper } = createSection(
+      { plugins: { 'test.asking': { agent: { agent: 'test.gone' } } } },
+      [ASKING, AGENT],
+    )
+    const choices = wrapper.findAllComponents({ name: 'Select' })[0]!.props('choices')
+    expect(choices.at(-1)).toMatchObject({
+      id: 'test.gone',
+      detail: expect.stringContaining('not installed'),
+    })
   })
 })

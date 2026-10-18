@@ -17,7 +17,7 @@ import (
 // proofreaderName is the name the proofreader goes under.
 const proofreaderName = "llm-proofreader"
 
-// purpose is what every question to the model is for. The host routes by it.
+// purpose is what every question to the model is for. It routes nothing.
 const purpose = "proofreading"
 
 // completer asks the host for the answer to a question.

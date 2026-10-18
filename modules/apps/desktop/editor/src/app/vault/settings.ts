@@ -2,7 +2,7 @@
  * Settings domain methods for the window core.
  */
 import { settingsService } from '@/shared/clients'
-import { fetched } from './words'
+import { consented, fetched } from './words'
 import { isStaleAnswer } from '@/shared/answers'
 import { DEFAULT_HEADINGS } from '@/entities/settings'
 import { DEFAULT_STARTS } from '@/entities/settings'
@@ -83,6 +83,11 @@ export const settingsCore: SettingsPort = {
         version: p.version,
         description: p.description,
         isActive: p.isActive,
+        capabilities: p.capabilities ?? [],
+        secrets: p.secrets ?? [],
+        storedSecrets: p.storedSecrets ?? [],
+        models: (p.models ?? []).map((m) => ({ name: m.name, title: m.title, isDefault: m.isDefault })),
+        consent: consented[p.completionConsent],
         settings: (p.settings ?? []).map((s) => {
           let defaultValue: unknown = undefined
           if (s.defaultJson) {
@@ -134,4 +139,10 @@ export const settingsCore: SettingsPort = {
     } satisfies ReviewSettings
   },
   setReviewSettings: (starts) => writeSettings([{ at: STARTS, value: starts }]),
+  writePluginSecret: async (pluginId, name, key) => {
+    await settingsService.writePluginSecret({ pluginId, name, key })
+  },
+  deletePluginSecret: async (pluginId, name) => {
+    await settingsService.deletePluginSecret({ pluginId, name })
+  },
 }

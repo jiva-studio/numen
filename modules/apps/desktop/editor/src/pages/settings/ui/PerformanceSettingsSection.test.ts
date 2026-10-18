@@ -34,6 +34,8 @@ const createSection = (file: Record<string, unknown> = {}) => {
     chooseHeadings: () => {},
     dayStartTime: ref('04:00'),
     latestDayStartTime: ref('12:00'),
+    writeSecret: () => {},
+    deleteSecret: () => {},
     chooseDayStartTime: () => {},
   }
   const state: SettingsTabState = { installation }

@@ -745,7 +745,7 @@ func TestAProofreadingProfileIsRead(t *testing.T) {
 
 // A file written when a profile named a service or a command line is still read:
 // its sizes stand, and the keys of the service and the command line are not
-// carried on, since the route of the proofreading purpose says what answers.
+// carried on, since the agent setting of the proofreading plugin says what answers.
 func TestAProfileOfAnOlderFileKeepsItsSizesAlone(t *testing.T) {
 	cfg, err := openAt(write(t, `{"indexing":{"proofreading":{"profiles":{
 		"openrouter": {"use":"service","name":"a-model","key":"sk-proof","batch_size":25},

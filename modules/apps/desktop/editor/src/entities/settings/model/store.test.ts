@@ -92,6 +92,11 @@ describe('what stands at a setting', () => {
               version: '1.0.0',
               description: 'A test plugin',
               isActive: true,
+              capabilities: [],
+              secrets: [],
+              storedSecrets: [],
+              models: [],
+              consent: 'none',
               settings: [
                 {
                   key: 'enabled',
@@ -127,6 +132,11 @@ describe('what stands at a setting', () => {
               version: '1.0.0',
               description: 'A test plugin',
               isActive: true,
+              capabilities: [],
+              secrets: [],
+              storedSecrets: [],
+              models: [],
+              consent: 'none',
               settings: [
                 {
                   key: 'enabled',

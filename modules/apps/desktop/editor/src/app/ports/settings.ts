@@ -57,4 +57,11 @@ export interface SettingsPort {
     content: string,
     expectedVersion: string | null,
   ): Promise<{ readonly isChanged: boolean }>
+  /**
+   * The key of a secret a plugin declares, stored in the system keychain and
+   * never in the settings file. A machine without a keychain refuses it.
+   */
+  writePluginSecret(pluginId: string, name: string, key: string): Promise<void>
+  /** The key of a secret a plugin declares, removed. */
+  deletePluginSecret(pluginId: string, name: string): Promise<void>
 }

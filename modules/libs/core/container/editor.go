@@ -106,7 +106,7 @@ func (e EditorAssembly) CloseIndex() error { return e.db.Close() }
 func (e EditorAssembly) OpenGetSettings(day flashcards.Day) *settings.Get {
 	held := e.cfg.NestedHeadingLimitBounds()
 	return settings.NewGet(
-		e.cfg.ReadSettings(), e.cfg.Catalogue(), settings.Bounds{Least: held.Least, Most: held.Most},
+		e.cfg.ReadSettings(), e.cfg.GetCatalogue(), settings.Bounds{Least: held.Least, Most: held.Most},
 		e.cfg.GetLatestDayStart(), day, e.cfg.Clock(),
 	)
 }

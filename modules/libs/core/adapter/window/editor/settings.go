@@ -11,8 +11,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 )
 
-// settingsHandler answers every setting read and written, and the settings file
-// read and replaced whole.
+// settingsHandler answers every setting read and written, the settings file
+// read and replaced whole, and the keys of the secrets plugins declare, stored
+// and removed.
 type settingsHandler struct {
 	get          *settings.Get
 	write        *settings.Write

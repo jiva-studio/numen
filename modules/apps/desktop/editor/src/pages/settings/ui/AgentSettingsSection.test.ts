@@ -94,6 +94,8 @@ const createSection = (file: Record<string, unknown> = {}, defaultUse = 'claude'
     chooseHeadings: () => {},
     dayStartTime: ref('04:00'),
     latestDayStartTime: ref('12:00'),
+    writeSecret: () => {},
+    deleteSecret: () => {},
     chooseDayStartTime: () => {},
     file: ref('/test/settings.json'),
     openFile: () => {},

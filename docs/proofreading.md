@@ -107,7 +107,7 @@ A printed line holds its words: on a page they stay where they were printed. Spe
 
 The proofreading plugin does it, and the core does not. The core collects the numbered lines of a recognition or a transcript, sends them to the plugin with the kind of text and the sizes of the window, and applies the corrections that come back. The plugin builds the batches, holds the two instructions, applies the gates to each reply, gathers the replies of overlapping batches, and answers with corrections per line.
 
-The plugin names a purpose and no model: it asks the host for a completion with the purpose `proofreading`, and the route of that purpose under `ai.routes` says which agent plugin answers, with which model, and how many questions at once. A purpose with no route, or an agent that cannot be reached, fails the call as unavailable, and nothing is corrected. The plugin invents no text and holds no key.
+The plugin names no model: it asks the host for a completion, and the host answers from the plugin's own `agent` setting, else from `ai.default` in [Settings](settings.md), which says which agent plugin answers, with which model, and how many questions at once. An agent that is not installed or cannot be reached, or a plugin the person has not let ask a model, fails the call as unavailable, and nothing is corrected. The plugin invents no text and holds no key.
 
 ## Profiles
 
@@ -115,7 +115,7 @@ A profile is the sizes a text is cut into requests at, under a name. `indexing.p
 
 A profile carries `batch_size` — how many lines one request carries — and `overlap` — how many lines neighbouring batches share. Overlap is what keeps a phrase torn at a batch boundary whole for at least one of the batches that see it. A line two batches both answered about is taken from the later of the two, which is the batch that saw more of what follows the line.
 
-It also carries `in_flight`: how many batches one call answers. A transcript is answered a call at a time, each call a window of that many batches, and a run is as long as its windows are asked one after another. How many questions reach the model at once is the concurrency of the route.
+It also carries `in_flight`: how many batches one call answers. A transcript is answered a call at a time, each call a window of that many batches, and a run is as long as its windows are asked one after another. How many questions reach the model at once is `ai.default.concurrency`.
 
 `indexing.proofreading.max_edit_distance` stands above the profiles. It is the Levenshtein distance between two lines' letters as a share of the longer of them, and a correction standing further than that from the line as read is dropped. It is one threshold for the installation: how far a correction may move a line's letters says nothing about what the correction was asked for through. The plugin's own limit is 0.30 where the file names nothing, because the measured distribution has a hole there — over 931 corrections of one book, every correction standing further apart than 0.30 was damage, and every one below it was a correction. It is a setting because the next book is not that book; the figures are in [Performance](performance.md).
 

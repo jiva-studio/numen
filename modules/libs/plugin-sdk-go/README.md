@@ -25,7 +25,7 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 - `Configure` is how a plugin receives its settings and its secrets. `ReadSecret(values, name)` returns the key the host handed over for a secret the manifest declares and whether the call carries it; an empty key means the host holds none. `SecretAPIKey` is the name of the `apiKey` secret.
 - Process supervision hooks (stdin EOF detection, OS signals).
 - `agentrun`: `Locate` finds an agent program on the path or in the places it is installed to; the registry of the runs an agent plugin has started and the session each conversation is on, and the supervision that ends a child and everything it started.
-- `ai.Complete(ctx, question)` asks the host for a model completion by purpose (needs the `ai:complete` permission); the host endpoint comes from `NUMEN_HOST_PORT` and the token from `NUMEN_PLUGIN_TOKEN`.
+- `ai.Complete(ctx, question)` asks the host for a model completion (needs the `ai:complete` permission); the host answers from the agent the plugin's `agent` setting names, else the default, and returns `ai.ErrNoConsent` until the person lets the plugin ask. The host endpoint comes from `NUMEN_HOST_PORT` and the token from `NUMEN_PLUGIN_TOKEN`.
 - `completion.Answer(ctx, question, run)` is the body of `CompletionService.Complete` for an agent plugin: it reads the question, answers the model's text, answers `UNAVAILABLE` (reason in the log) when `run` fails or sends no text, and returns a cancelled call as cancelled. `completion.RunCommand` runs a CLI with the prompt on stdin.
 
 ## Models

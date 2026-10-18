@@ -117,6 +117,8 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
     chooseHeadings: (count) => void done.push(`headings ${count}`),
     dayStartTime: ref('04:00'),
     latestDayStartTime: ref('12:00'),
+    writeSecret: () => {},
+    deleteSecret: () => {},
     chooseDayStartTime: (hour) => void done.push(`day starts ${hour}`),
   }
   const tab = mount(SettingsTab, {
@@ -176,6 +178,7 @@ describe('the settings tab', () => {
       words.performance,
       words.indexing,
       words.agent,
+      words.ai,
     ])
   })
 

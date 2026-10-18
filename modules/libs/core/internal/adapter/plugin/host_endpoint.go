@@ -108,7 +108,7 @@ func (e *HostEndpoint) Complete(
 		return nil, err
 	}
 	if err := e.callers.CheckCompletionConsent(pluginID); err != nil {
-		return refuseCompletion(v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT), nil
+		return answerFailure(ctx, err)
 	}
 	completer := e.callers.GetCompleter()
 	if completer == nil {
@@ -116,13 +116,7 @@ func (e *HostEndpoint) Complete(
 	}
 	text, err := completer.Complete(ctx, pluginID, readWireQuestion(req.Msg.GetQuestion()))
 	if err != nil {
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			return nil, connect.NewError(connect.CodeCanceled, ctxErr)
-		}
-		if code, isRefusal := writeRefusal(err); isRefusal {
-			return refuseCompletion(code), nil
-		}
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return answerFailure(ctx, err)
 	}
 	return connect.NewResponse(&v1.HostServiceCompleteResponse{
 		Answer: &v1.CompletionAnswer{Text: text},
@@ -141,6 +135,18 @@ func (e *HostEndpoint) authorize(header, permission string) (string, error) {
 		return "", connect.NewError(connect.CodePermissionDenied, fmt.Errorf("plugin %s: %w", pluginID, err))
 	}
 	return pluginID, nil
+}
+
+// answerFailure answers a call that failed: the end of the caller's context is
+// cancelled, a refusal is answered with its code, and anything else is internal.
+func answerFailure(ctx context.Context, err error) (*connect.Response[v1.HostServiceCompleteResponse], error) {
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return nil, connect.NewError(connect.CodeCanceled, ctxErr)
+	}
+	if code, isRefusal := writeRefusal(err); isRefusal {
+		return refuseCompletion(code), nil
+	}
+	return nil, connect.NewError(connect.CodeInternal, err)
 }
 
 func refuseCompletion(code v1.CompletionErrorCode) *connect.Response[v1.HostServiceCompleteResponse] {

@@ -10,6 +10,7 @@ import WindowSettingsSection from './WindowSettingsSection.vue'
 import MediaSettingsSection from './MediaSettingsSection.vue'
 import PerformanceSettingsSection from './PerformanceSettingsSection.vue'
 import AgentSettingsSection from './AgentSettingsSection.vue'
+import AiSettingsSection from './AiSettingsSection.vue'
 import PluginSettingsSection from './PluginSettingsSection.vue'
 import { WORDS as words } from '../words'
 
@@ -39,6 +40,7 @@ function onOpenFile() {
       <MediaSettingsSection :state="props.state" />
       <PerformanceSettingsSection :state="props.state" />
       <AgentSettingsSection :state="props.state" />
+      <AiSettingsSection :state="props.state" />
       <PluginSettingsSection :state="props.state" />
     </div>
   </div>

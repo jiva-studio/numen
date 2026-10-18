@@ -2,6 +2,7 @@
  * Vault domain conversions between schema representations and window models.
  */
 import {
+  CompletionConsent as Consents,
   FlushResult,
   Presence as Presences,
   SearchMode as Modes,
@@ -12,7 +13,7 @@ import type { Vault as VaultMessage } from '@numen/protocol'
 import type { TallyUnit } from '@numen/ui'
 import { asFailure, asValue, getNames } from '@numen/wire'
 import type { SearchMode } from '@/features/command-palette'
-import type { Presence } from '@/entities/settings'
+import type { Consent, Presence } from '@/entities/settings'
 import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'
 
 /**
@@ -92,4 +93,13 @@ export const mapVaultResult = (from: {
 }): VaultResult => {
   const error = getVaultError(from)
   return error ? asFailure(error) : asValue(from.vault ? mapVault(from.vault) : null)
+}
+
+/** Whether the person lets a plugin ask a model, in the words the window uses. */
+export const consented: Record<Consents, Consent> = {
+  [Consents.UNSPECIFIED]: 'none',
+  [Consents.UNANSWERED]: 'unanswered',
+  [Consents.ASKED]: 'asked',
+  [Consents.ALLOWED]: 'allowed',
+  [Consents.REFUSED]: 'refused',
 }

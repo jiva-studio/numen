@@ -21,7 +21,7 @@ export interface SettingOption {
 // SettingDeclaration declares a plugin configuration option.
 export interface SettingDeclaration {
   key: string
-  type: 'string' | 'boolean' | 'number' | 'range' | 'enum' | 'select'
+  type: 'string' | 'boolean' | 'number' | 'range' | 'enum' | 'select' | 'agent'
   title: string
   description?: string
   default: unknown

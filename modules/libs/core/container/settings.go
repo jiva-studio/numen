@@ -189,11 +189,11 @@ func (c Config) SetSettings(said Settings) Config {
 	return c
 }
 
-// Catalogue reads, as the window asks, the models each setting that names one
+// GetCatalogue reads, as the window asks, the models each setting that names one
 // can be set to, and the discovered plugins with their settings schemas, each
 // plugin that answers completions with the models its agent programs list. The
 // programs are listed once for both.
-func (c Config) Catalogue() func() ([]port.Model, []port.PluginInfo) {
+func (c Config) GetCatalogue() func() ([]port.Model, []port.PluginInfo) {
 	return func() ([]port.Model, []port.PluginInfo) {
 		held := c.getSettingsOrDefaults()
 		programs := c.getAgentPrograms(held.Agent)

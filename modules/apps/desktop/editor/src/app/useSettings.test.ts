@@ -47,7 +47,7 @@ describe('the settings as they are put together', () => {
   it('gives each setting a message writer under a name of its own', () => {
     const { writers } = createSettings()
 
-    expect(writers).toStrictEqual(['reviewed', 'nesting', 'worn', 'named', 'configured'])
+    expect(writers).toStrictEqual(['reviewed', 'nesting', 'worn', 'named', 'configured', 'keys'])
   })
 
   it('opens the settings tab as kind of tab', () => {
@@ -255,6 +255,11 @@ describe('the settings tab', () => {
       version: '1.0.0',
       description: 'OCR',
       isActive: false,
+      capabilities: [],
+      secrets: [],
+      storedSecrets: [],
+      models: [],
+      consent: 'none' as const,
       settings: [
         {
           key: 'autoScan',
@@ -296,6 +301,11 @@ describe('the settings tab', () => {
         version: '1.0.0',
         description: 'OCR',
         isActive: true,
+        capabilities: [],
+        secrets: [],
+        storedSecrets: [],
+        models: [],
+        consent: 'none',
         settings: [
           {
             key: 'autoScan',
