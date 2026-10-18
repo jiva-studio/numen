@@ -180,3 +180,13 @@ describe('the keys', () => {
     expect(wrapper.find('section[aria-label="Keys"]').exists()).toBe(false)
   })
 })
+
+describe('a key field', () => {
+  it('is named by its label', () => {
+    const { wrapper } = createSection()
+    const field = wrapper.findAll('input[type="password"]')[0]!.element as HTMLInputElement
+    expect([...(field.labels ?? [])].map((label) => label.textContent)).toStrictEqual([
+      'Agent B: apiKey',
+    ])
+  })
+})

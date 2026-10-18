@@ -207,7 +207,8 @@ func (c Config) getPluginInfos(programs []port.AgentProgram) []port.PluginInfo {
 	if c.PluginHost == nil {
 		return nil
 	}
-	infos := c.PluginHost.GetPluginInfos()
+	var discoverer port.PluginDiscoverer = c.PluginHost
+	infos := discoverer.GetPluginInfos()
 	for at, info := range infos {
 		if slices.Contains(info.Capabilities, plugin.CapabilityAgentProvider) {
 			infos[at].Models = getProviderModels(programs, info.ID)

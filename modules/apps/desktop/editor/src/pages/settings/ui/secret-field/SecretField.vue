@@ -4,7 +4,7 @@
  * one into, and the key removed. A key typed here goes to the vault and is
  * never drawn back.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, useId } from 'vue'
 import { Button } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 
@@ -32,6 +32,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const typed = ref('')
+const fieldId = useId()
 const detail = computed(
   () =>
     `${props.isStored ? props.words.keyStored : props.words.keyMissing}. ${props.words.keyDetail}`,
@@ -53,7 +54,9 @@ function onDelete() {
 <template>
   <SettingRow v-slot="{ labelledBy }" :at="at" :name="name" :detail="detail">
     <span class="settings__secret">
+      <label :for="fieldId" class="sr-only">{{ name }}</label>
       <input
+        :id="fieldId"
         v-model="typed"
         type="password"
         autocomplete="off"
