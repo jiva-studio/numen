@@ -56,7 +56,7 @@ func BenchmarkCurveCards(b *testing.B) {
 	for _, cards := range []int{500, 5000, 20000, 50000} {
 		b.Run(fmt.Sprint(cards), func(b *testing.B) {
 			s := openVault(b, curveWhole(cards))
-			loadAnswers(b, s, cards, 180, max(1, cards*150/50000))
+			loadAnswers(b, s, time.Now(), cards, 180, max(1, cards*150/50000))
 
 			ctx := b.Context()
 			if _, err := s.kept.Execute(ctx, s.vault); err != nil {
@@ -90,7 +90,7 @@ func BenchmarkCurveCards(b *testing.B) {
 func BenchmarkPresetCurve(b *testing.B) {
 	const cards = 50000
 	s := openVault(b, curveLoad(cards))
-	loadAnswers(b, s, cards, 180, 150)
+	loadAnswers(b, s, time.Now(), cards, 180, 150)
 
 	ctx := b.Context()
 	if _, err := s.kept.Execute(ctx, s.vault); err != nil {
