@@ -12,11 +12,17 @@ version: 2
 
 updates:
   # The Go modules: the core, the two applications that carry it, the schema's
-  # generated Go, and the tools the release is built with.
+  # generated Go, the plugin SDK with each of its feature modules, and the tools
+  # the release is built with.
   - package-ecosystem: gomod
     directories:
       - /modules/libs/core
       - /modules/libs/protocol
+      - /modules/libs/plugin-sdk-go
+      - /modules/libs/plugin-sdk-go/agent
+      - /modules/libs/plugin-sdk-go/models
+      - /modules/libs/plugin-sdk-go/onnx
+      - /modules/libs/plugin-sdk-go/vault
       - /modules/apps/desktop
       - /modules/apps/mobile
       - /modules/apps/desktop/build/tools

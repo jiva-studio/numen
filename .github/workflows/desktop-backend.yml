@@ -189,16 +189,14 @@ jobs:
           path: ~/.cache/go-build
           key: go-build-modules/apps/desktop-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('modules/apps/desktop/go.sum') }}
 
-  # The library every native plugin backend is built on, a module of its own.
+  # The library every native plugin backend is built on: a base module and a
+  # feature module in each folder of it that has a go.mod.
   plugin-sdk-go:
     name: Plugin SDK
     needs: [changes]
     if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: modules/libs/plugin-sdk-go
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -207,7 +205,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: modules/libs/plugin-sdk-go/go.mod
-          cache-dependency-path: modules/libs/plugin-sdk-go/go.sum
+          cache-dependency-path: modules/libs/plugin-sdk-go/**/go.sum
 
       # The linter the make target runs, at the version the other modules use.
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
@@ -216,11 +214,9 @@ jobs:
           install-only: true
 
       - name: Run linters
-        working-directory: .
         run: make lib_plugin_sdk_go_lint
 
       - name: Run Go tests
-        working-directory: .
         run: make lib_plugin_sdk_go_test
 
   # The other half of the promise the two binaries make: this one is built for
