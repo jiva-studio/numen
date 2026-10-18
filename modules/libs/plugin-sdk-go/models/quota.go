@@ -22,7 +22,7 @@ const (
 
 // touchInterval is how often a live reservation tells the other processes it is
 // alive.
-var touchInterval = staleReservation / 4
+const touchInterval = staleReservation / 4
 
 // lockQuota takes the lock that serialises the quota decisions of every plugin
 // process sharing root.
@@ -68,6 +68,11 @@ type Reservation struct {
 // The bytes the file at part already holds are not counted twice; part may be
 // empty.
 func Reserve(ctx context.Context, root string, want int64, part string) (*Reservation, error) {
+	return reserve(ctx, root, want, part, touchInterval)
+}
+
+// reserve is Reserve with the interval at which the reservation is touched.
+func reserve(ctx context.Context, root string, want int64, part string, touch time.Duration) (*Reservation, error) {
 	unlock, err := lockQuota(ctx, root)
 	if err != nil {
 		return nil, err
@@ -99,14 +104,14 @@ func Reserve(ctx context.Context, root string, want int64, part string) (*Reserv
 	}
 	claim := &Reservation{Room: want, file: file.Name(), stop: make(chan struct{})}
 	claim.done.Add(1)
-	go claim.keepAlive()
+	go claim.keepAlive(touch)
 	return claim, nil
 }
 
-// keepAlive touches the reservation until Release.
-func (r *Reservation) keepAlive() {
+// keepAlive touches the reservation every interval until Release.
+func (r *Reservation) keepAlive(interval time.Duration) {
 	defer r.done.Done()
-	tick := time.NewTicker(touchInterval)
+	tick := time.NewTicker(interval)
 	defer tick.Stop()
 	for {
 		select {

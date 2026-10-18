@@ -78,14 +78,15 @@ func TestGetUsageCountsWhatALiveReservationHasNotWritten(t *testing.T) {
 	if err := os.WriteFile(part, make([]byte, 30), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(part+reserveSuffix, []byte("100"), 0o644); err != nil {
+	reservation := "100\n" + part
+	if err := os.WriteFile(filepath.Join(dir, "reservation-1"+reserveSuffix), []byte(reservation), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	got, err := GetUsage(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := int64(30 + len("100") + 70); got != want {
+	if want := int64(30 + len(reservation) + 70); got != want {
 		t.Fatalf("GetUsage() = %d, want %d", got, want)
 	}
 }
