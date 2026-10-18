@@ -6,6 +6,8 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -156,6 +158,7 @@ func assertNoKey(t *testing.T, where, text string, keys ...string) {
 func TestTheKeyReachesThePluginOnlyAsTheValueOfItsSecret(t *testing.T) {
 	store := newKeys(map[string]string{secretPluginID + "/apiKey": fromKeychain})
 	host, probe := newSecretHost(t, store)
+	recordStored(host)
 
 	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
@@ -212,46 +215,56 @@ func TestAKeyTypedIntoTheSettingsIsNotPassedOn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertNoKey(t, "NUMEN_PLUGIN_CONFIG", cfg, fromSettings, fromKeychain)
+	assertNoKey(t, "the configuration json", cfg, fromSettings, fromKeychain)
 	if _, found := host.GetPluginSettings(secretPluginID)["apiKey"]; found {
 		t.Error("the settings the window reads hold a secret")
 	}
 }
 
-// What the host puts in a plugin process's environment and on its command line
-// holds no key, whether the key is in the store or was typed into the settings.
+// The environment a plugin process is launched with and its command line hold
+// no key and no setting: neither the key in the store, nor one typed into the
+// settings, nor one in the environment of the host.
 func TestNoKeyIsInTheEnvironmentOrOnTheCommandLine(t *testing.T) {
+	const fromHostEnv = "value-in-the-host-environment"
+	for _, name := range []string{
+		"OPENAI_API_KEY", "ANTHROPIC_API_KEY", "NUMEN_AGENT_KEY", "NUMEN_EMBEDDING_KEY", "NUMEN_PROOFREADING_KEY",
+	} {
+		t.Setenv(name, fromHostEnv)
+	}
+	const fromSetting = "value-of-a-setting"
 	store := newKeys(map[string]string{secretPluginID + "/apiKey": fromKeychain})
 	host, _ := newSecretHost(t, store)
-	host.SetSettings(map[string]map[string]any{secretPluginID: {declared: fromSettings}})
+	host.SetSettings(map[string]map[string]any{secretPluginID: {declared: fromSettings, "model": fromSetting}})
 
-	configJSON, err := host.GetPluginConfigJSON(secretPluginID)
+	const launchName = "launch-name"
+	vars, err := host.getLaunchVars(t.Context(), secretPluginID, t.TempDir(), nil, 4000, launchName)
 	if err != nil {
 		t.Fatal(err)
 	}
-	const launchName = "launch-name"
-	vars := getPluginVars(secretPluginID, launchEnvironment{
-		vaultPath: "/vault", port: 4000, hostPort: 4001, token: launchName, configJSON: configJSON,
-	})
+	env := sanitizeEnvironment(os.Environ(), vars)
 	args := getPluginArgs(4000, launchName)
-	for _, entry := range append(vars, args...) {
-		assertNoKey(t, "launch entry "+entry, entry, fromKeychain, fromSettings)
+	for _, entry := range append(env, args...) {
+		assertNoKey(t, "launch entry "+entry, entry, fromKeychain, fromSettings, fromHostEnv, fromSetting)
+		if strings.HasPrefix(entry, "NUMEN_PLUGIN_CONFIG=") {
+			t.Errorf("the settings are in the environment: %q", entry)
+		}
 	}
-	if len(vars) == 0 || len(args) == 0 {
-		t.Fatal("nothing was read")
+	if !slices.Contains(env, "NUMEN_PLUGIN_TOKEN="+launchName) {
+		t.Fatalf("environment = %v, want the launch token in it", env)
 	}
 }
 
-// A key store that cannot be read is an error naming it, and the plugin is
-// still configured with everything else.
+// A key store that fails to read a secret recorded as stored is an error naming
+// it, and the plugin is still configured with everything else.
 func TestAKeyStoreThatCannotBeReadFailsLoudly(t *testing.T) {
 	store := newKeys(map[string]string{})
-	store.failed = port.ErrNoKeyStore
+	store.failed = errLockedKeychain
 	host, probe := newSecretHost(t, store)
+	recordStored(host)
 
 	err := host.NotifyPluginConfig(t.Context(), secretPluginID)
-	if !errors.Is(err, port.ErrNoKeyStore) {
-		t.Errorf("error = %v, want port.ErrNoKeyStore", err)
+	if !errors.Is(err, errLockedKeychain) {
+		t.Errorf("error = %v, want the error of the store", err)
 	}
 	if probe.last(t).GetValues()["model"] != "sonnet" {
 		t.Error("the other settings were not passed on")
@@ -261,11 +274,12 @@ func TestAKeyStoreThatCannotBeReadFailsLoudly(t *testing.T) {
 	}
 }
 
-// A host with no key store fails the same way for a plugin that declares a secret.
-func TestAHostWithoutAKeyStoreFailsForAPluginThatDeclaresASecret(t *testing.T) {
+// A host with no key store configures a plugin that declares a secret, and
+// fails to store a key for it.
+func TestAHostWithoutAKeyStoreFailsToStoreASecret(t *testing.T) {
 	host, probe := newSecretHost(t, nil)
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); !errors.Is(err, port.ErrNoKeyStore) {
-		t.Errorf("error = %v, want port.ErrNoKeyStore", err)
+	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+		t.Errorf("configure: %v", err)
 	}
 	if probe.last(t).GetValues()["apiKey"] != "" {
 		t.Error("a key came from nowhere")
@@ -417,5 +431,137 @@ func TestAConfigureWaitsForASecretChangeInFlight(t *testing.T) {
 	}
 	if probe.last(t).GetValues()["apiKey"] != fromKeychain {
 		t.Errorf("the plugin ended holding %v", probe.last(t).GetValues())
+	}
+}
+
+var errLockedKeychain = errors.New("the keychain is locked")
+
+// recordStored records the apiKey secret as stored, the way the settings file
+// holds the record.
+func recordStored(host *Host) {
+	host.SetSettings(map[string]map[string]any{secretPluginID: {port.SettingStoredSecrets: []any{declared}}})
+}
+
+// untouchable is a key store that fails the test when it is reached.
+type untouchable struct{ t *testing.T }
+
+func (u untouchable) GetKey(context.Context, string) (string, error) {
+	u.t.Error("the key store was read for a secret nobody stored")
+	return "", port.ErrNoKey
+}
+
+func (u untouchable) SetKey(context.Context, string, string) error {
+	u.t.Error("the key store was written")
+	return nil
+}
+
+func (u untouchable) DeleteKey(context.Context, string) error {
+	u.t.Error("the key store was deleted from")
+	return nil
+}
+
+// A secret nobody stored is handed over empty with no access to the key store,
+// at the start of the plugin and on every change of a setting.
+func TestASecretNobodyStoredLeavesTheKeyStoreAlone(t *testing.T) {
+	host, probe := newSecretHost(t, untouchable{t})
+	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+		t.Fatal(err)
+	}
+	if err := host.UpdatePluginSetting(t.Context(), secretPluginID, "model", "opus"); err != nil {
+		t.Fatal(err)
+	}
+	if got, found := probe.last(t).GetValues()["apiKey"]; !found || got != "" {
+		t.Errorf("apiKey = %q, %v for a key nobody stored", got, found)
+	}
+}
+
+// A machine without a key store configures the plugin without the secret it
+// recorded as stored, reports that once, and fails neither Configure nor a
+// change of a setting.
+func TestAMachineWithoutAKeyStoreDoesNotFailConfigure(t *testing.T) {
+	store := newKeys(map[string]string{})
+	store.failed = port.ErrNoKeyStore
+	host, probe := newSecretHost(t, store)
+	recordStored(host)
+	var reported []error
+	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
+
+	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+		t.Errorf("configure: %v", err)
+	}
+	if err := host.UpdatePluginSetting(t.Context(), secretPluginID, "model", "opus"); err != nil {
+		t.Errorf("a change of a setting: %v", err)
+	}
+	call := probe.last(t)
+	if _, sent := call.GetValues()["apiKey"]; sent {
+		t.Error("a key that could not be read was sent, which would clear the one the plugin holds")
+	}
+	if call.GetValues()["model"] != "opus" {
+		t.Errorf("values = %v, want the setting", call.GetValues())
+	}
+	if len(reported) != 1 || !errors.Is(reported[0], port.ErrNoKeyStore) {
+		t.Errorf("reported %v, want port.ErrNoKeyStore once", reported)
+	}
+}
+
+// Storing a key records the name of its secret among the settings, never the
+// key, and deleting it clears the record; neither the window nor the plugin
+// sees the record.
+func TestAStoredSecretIsRecordedByName(t *testing.T) {
+	store := newKeys(map[string]string{})
+	host, probe := newSecretHost(t, store)
+	persisted := map[string]any{}
+	// The settings file hands every write back to the host, as the container does.
+	host.SetPersistHandler(func(pluginID, key string, value any) error {
+		persisted[pluginID+"/"+key] = value
+		return host.UpdatePluginSetting(t.Context(), pluginID, key, []any{"forged"})
+	})
+	record := secretPluginID + "/" + port.SettingStoredSecrets
+
+	set := make(chan error, 1)
+	go func() { set <- host.SetPluginSecret(t.Context(), secretPluginID, declared, fromKeychain) }()
+	select {
+	case err := <-set:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("storing a key waits on the write of its record")
+	}
+	if got := host.getStoredSecretsLocked(secretPluginID); !slices.Equal(got, []string{declared}) {
+		t.Errorf("the host holds the record %v, want the name of the secret", got)
+	}
+	if err := host.SetPluginSetting(t.Context(), secretPluginID, port.SettingStoredSecrets, []any{declared}); !errors.Is(err, port.ErrReservedSettingKey) {
+		t.Errorf("a window writing the record: error = %v", err)
+	}
+	if got, ok := persisted[record].([]string); !ok || !slices.Equal(got, []string{declared}) {
+		t.Errorf("recorded %#v, want the name of the secret", persisted[record])
+	}
+	if _, seen := host.GetPluginSettings(secretPluginID)[port.SettingStoredSecrets]; seen {
+		t.Error("the window sees the record")
+	}
+	if _, seen := probe.last(t).GetValues()[port.SettingStoredSecrets]; seen {
+		t.Error("the plugin sees the record")
+	}
+
+	if err := host.DeletePluginSecret(t.Context(), secretPluginID, declared); err != nil {
+		t.Fatal(err)
+	}
+	if got, ok := persisted[record].([]string); !ok || len(got) != 0 {
+		t.Errorf("recorded %#v after the delete, want none", persisted[record])
+	}
+	host.SetKeyStore(untouchable{t})
+	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// A record that cannot be persisted fails the store of the key.
+func TestARecordThatCannotBePersistedFailsTheStore(t *testing.T) {
+	host, _ := newSecretHost(t, newKeys(map[string]string{}))
+	errFull := errors.New("the disk is full")
+	host.SetPersistHandler(func(string, string, any) error { return errFull })
+	if err := host.SetPluginSecret(t.Context(), secretPluginID, declared, fromKeychain); !errors.Is(err, errFull) {
+		t.Errorf("error = %v, want the persist error", err)
 	}
 }

@@ -29,6 +29,8 @@ type embeddingServer struct {
 
 	mu       sync.Mutex
 	embedder *engine.Embedder
+	apiKey   string
+	baseURL  string
 }
 
 func (s *embeddingServer) updateConfig(values map[string]string) {
@@ -36,6 +38,12 @@ func (s *embeddingServer) updateConfig(values map[string]string) {
 	defer s.mu.Unlock()
 	if model, ok := values["model"]; ok && model != "" {
 		s.modelInfo.Name = model
+	}
+	if key, ok := server.ReadSecret(values, server.SecretAPIKey); ok {
+		s.apiKey = key
+	}
+	if base, ok := values["baseUrl"]; ok {
+		s.baseURL = base
 	}
 }
 
@@ -138,8 +146,8 @@ func (s *embeddingServer) EmbedText(
 ) (*connect.Response[numenv1.EmbedTextResponse], error) {
 	text := req.Msg.GetText()
 
-	if isServiceConfigured() {
-		vec, err := s.computeServiceVector(ctx, text)
+	if key, baseURL := s.getService(); key != "" && baseURL != "" {
+		vec, err := computeServiceVector(ctx, key, baseURL, s.getModelName(), text)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -177,10 +185,11 @@ func (s *embeddingServer) EmbedBatch(
 		}), nil
 	}
 
-	if isServiceConfigured() {
+	if key, baseURL := s.getService(); key != "" && baseURL != "" {
+		model := s.getModelName()
 		vectors := make([]*numenv1.FloatVector, len(texts))
 		for i, t := range texts {
-			vec, err := s.computeServiceVector(ctx, t)
+			vec, err := computeServiceVector(ctx, key, baseURL, model, t)
 			if err != nil {
 				return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("service text %d: %w", i, err))
 			}
@@ -230,30 +239,32 @@ type openAIEmbeddingResponse struct {
 	} `json:"data"`
 }
 
-func isServiceConfigured() bool {
-	key := os.Getenv("NUMEN_EMBEDDING_KEY")
-	if key == "" {
-		key = os.Getenv("OPENAI_API_KEY")
+// getService returns the key Configure handed over and the endpoint of the
+// remote service: the configured one, else the one in NUMEN_EMBEDDING_URL. The
+// remote service answers only when both are set.
+func (s *embeddingServer) getService() (key, baseURL string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	baseURL = s.baseURL
+	if baseURL == "" {
+		baseURL = os.Getenv("NUMEN_EMBEDDING_URL")
 	}
-	baseURL := os.Getenv("NUMEN_EMBEDDING_URL")
-	return key != "" && baseURL != ""
+	return s.apiKey, baseURL
 }
 
-func (s *embeddingServer) computeServiceVector(ctx context.Context, text string) ([]float32, error) {
-	key := os.Getenv("NUMEN_EMBEDDING_KEY")
-	if key == "" {
-		key = os.Getenv("OPENAI_API_KEY")
-	}
-	baseURL := os.Getenv("NUMEN_EMBEDDING_URL")
-	if key == "" || baseURL == "" {
-		return nil, fmt.Errorf("remote service configuration is missing")
-	}
+// getModelName returns the name of the model the vectors are asked for.
+func (s *embeddingServer) getModelName() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.modelInfo.Name
+}
 
+func computeServiceVector(ctx context.Context, key, baseURL, model, text string) ([]float32, error) {
 	client := &http.Client{Timeout: 30 * time.Second}
 	endpoint := strings.TrimSuffix(baseURL, "/") + "/embeddings"
 	reqBody, err := json.Marshal(openAIEmbeddingRequest{
 		Input: []string{text},
-		Model: s.modelInfo.Name,
+		Model: model,
 	})
 	if err != nil {
 		return nil, err

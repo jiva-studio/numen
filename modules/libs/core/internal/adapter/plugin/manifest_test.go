@@ -360,3 +360,22 @@ func TestAManifestDeclaresItsSecretsByPlainDistinctNames(t *testing.T) {
 		})
 	}
 }
+
+// The name under which the host records the stored secrets is neither a setting
+// nor a secret of a manifest.
+func TestAManifestDoesNotTakeTheNameOfTheStoredSecrets(t *testing.T) {
+	for _, one := range []struct {
+		name  string
+		field string
+	}{
+		{"a setting", `"settings":[{"key":"storedSecrets","type":"string","title":"Stored"}]`},
+		{"a secret", `"secrets":["storedSecrets"]`},
+	} {
+		t.Run(one.name, func(t *testing.T) {
+			_, err := ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0",` + one.field + `}`))
+			if !errors.Is(err, port.ErrReservedSettingKey) {
+				t.Errorf("error = %v, want port.ErrReservedSettingKey", err)
+			}
+		})
+	}
+}

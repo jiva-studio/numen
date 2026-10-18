@@ -127,13 +127,13 @@ const (
 )
 
 // launchEnvironment is what the host tells a plugin process about its launch.
-// A secret is never part of it: a key reaches a plugin through Configure.
+// Neither a secret nor a setting is part of it: both reach a plugin through
+// Configure.
 type launchEnvironment struct {
 	vaultPath   string
 	port        int
 	hostPort    int
 	token       string
-	configJSON  string
 	runtimeVars []string
 }
 
@@ -148,7 +148,6 @@ func getPluginVars(pluginID string, launch launchEnvironment) []string {
 		// skipcq: SCT-A000
 		"NUMEN_PLUGIN_TOKEN=" + launch.token,
 		"NUMEN_PLUGIN_ID=" + pluginID,
-		"NUMEN_PLUGIN_CONFIG=" + launch.configJSON,
 	}
 	if launch.hostPort > 0 {
 		vars = append(vars, "NUMEN_HOST_PORT="+strconv.Itoa(launch.hostPort))

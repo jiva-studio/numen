@@ -220,13 +220,8 @@ func (h *Host) getLaunchVars(ctx context.Context, pluginID, pluginDir string, ru
 	}
 	h.mu.RLock()
 	defer h.mu.RUnlock()
-	configJSON, err := h.getPluginConfigJSONLocked(pluginID)
-	if err != nil {
-		return nil, err
-	}
 	return getPluginVars(pluginID, launchEnvironment{
-		vaultPath: h.vaultPath, port: processPort, hostPort: hostPort, token: token, configJSON: configJSON,
-		runtimeVars: runtimeVars,
+		vaultPath: h.vaultPath, port: processPort, hostPort: hostPort, token: token, runtimeVars: runtimeVars,
 	}), nil
 }
 

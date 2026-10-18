@@ -37,8 +37,8 @@ func (h *Host) lockSecrets(pluginID string) func() {
 	return lock.Unlock
 }
 
-// SetPluginSecret stores the key of a secret the plugin declares and hands the
-// plugin the secrets it holds now.
+// SetPluginSecret stores the key of a secret the plugin declares, records that
+// the secret is stored, and hands the plugin the secrets it holds now.
 func (h *Host) SetPluginSecret(ctx context.Context, pluginID, name, key string) error {
 	defer h.lockSecrets(pluginID)()
 	store, err := h.getSecretStore(pluginID, name)
@@ -48,19 +48,27 @@ func (h *Host) SetPluginSecret(ctx context.Context, pluginID, name, key string) 
 	if err := store.SetKey(ctx, getSecretName(pluginID, name), key); err != nil {
 		return fmt.Errorf("store secret %s of plugin %s: %w", name, pluginID, err)
 	}
+	if err := h.recordStoredSecret(pluginID, name, true); err != nil {
+		return err
+	}
 	return h.notifyPluginConfigLocked(ctx, pluginID)
 }
 
-// DeletePluginSecret removes the key of a secret the plugin declares and hands
-// the plugin the secrets it holds now.
+// DeletePluginSecret removes the key, if any, of a secret the plugin declares,
+// clears the record that it is stored, and hands the plugin the secrets it
+// holds now.
 func (h *Host) DeletePluginSecret(ctx context.Context, pluginID, name string) error {
 	defer h.lockSecrets(pluginID)()
 	store, err := h.getSecretStore(pluginID, name)
 	if err != nil {
 		return err
 	}
-	if err := store.DeleteKey(ctx, getSecretName(pluginID, name)); err != nil {
+	err = store.DeleteKey(ctx, getSecretName(pluginID, name))
+	if err != nil && !errors.Is(err, port.ErrNoKey) {
 		return fmt.Errorf("delete secret %s of plugin %s: %w", name, pluginID, err)
+	}
+	if err = h.recordStoredSecret(pluginID, name, false); err != nil {
+		return err
 	}
 	return h.notifyPluginConfigLocked(ctx, pluginID)
 }
@@ -88,22 +96,80 @@ func getSecretName(pluginID, name string) string {
 	return pluginID + "/" + name
 }
 
-// readPluginSecrets reads the keys of the secrets a plugin declares. A secret
-// without a key is empty, which clears the key the plugin holds; one the store
-// fails to read is left out, so the plugin keeps what it has, and the failure is
-// returned beside the secrets that were read.
+// recordStoredSecret persists and keeps whether the secret of the plugin has a
+// key in the key store.
+func (h *Host) recordStoredSecret(pluginID, name string, isStored bool) error {
+	h.mu.RLock()
+	stored := h.getStoredSecretsLocked(pluginID)
+	persist := h.persistHandler
+	h.mu.RUnlock()
+
+	stored = slices.DeleteFunc(stored, func(held string) bool { return held == name })
+	if isStored {
+		stored = append(stored, name)
+	}
+	slices.Sort(stored)
+	if persist != nil {
+		if err := persist(pluginID, port.SettingStoredSecrets, stored); err != nil {
+			return fmt.Errorf("record secret %s of plugin %s: %w", name, pluginID, err)
+		}
+	}
+
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if _, ok := h.settings[pluginID]; !ok {
+		h.settings[pluginID] = make(map[string]any)
+	}
+	h.settings[pluginID][port.SettingStoredSecrets] = stored
+	return nil
+}
+
+// getStoredSecretsLocked returns the names of the secrets of the plugin that
+// are recorded as stored, among those its manifest declares.
+func (h *Host) getStoredSecretsLocked(pluginID string) []string {
+	var recorded []string
+	switch held := h.settings[pluginID][port.SettingStoredSecrets].(type) {
+	case []string:
+		recorded = held
+	case []any:
+		for _, entry := range held {
+			if name, ok := entry.(string); ok {
+				recorded = append(recorded, name)
+			}
+		}
+	}
+	declared := h.plugins[pluginID].Manifest.Secrets
+	var stored []string
+	for _, name := range recorded {
+		if slices.Contains(declared, name) && !slices.Contains(stored, name) {
+			stored = append(stored, name)
+		}
+	}
+	return stored
+}
+
+// readPluginSecrets reads the keys of the secrets a plugin declares. The store
+// is read only for a secret recorded as stored; any other secret is empty,
+// which clears the key the plugin holds. A secret the store fails to read is
+// left out, so the plugin keeps what it has, and the failure is returned beside
+// the secrets that were read.
 func readPluginSecrets(
-	ctx context.Context, store port.KeyStore, pluginID string, names []string,
-) (map[string]string, error) {
-	if len(names) == 0 {
+	ctx context.Context, store port.KeyStore, pluginID string, declared, stored []string,
+) (map[string]string, []error) {
+	if len(declared) == 0 {
 		return nil, nil
 	}
-	if store == nil {
-		return nil, fmt.Errorf("plugin %s declares secrets: %w", pluginID, port.ErrNoKeyStore)
-	}
-	secrets := make(map[string]string, len(names))
+	secrets := make(map[string]string, len(declared))
 	var failures []error
-	for _, name := range names {
+	for _, name := range declared {
+		if !slices.Contains(stored, name) {
+			secrets[name] = ""
+			continue
+		}
+		if store == nil {
+			failures = append(failures, fmt.Errorf("read secret %s of plugin %s: %w", name, pluginID, port.ErrNoKeyStore))
+			continue
+		}
 		key, err := store.GetKey(ctx, getSecretName(pluginID, name))
 		switch {
 		case err == nil:
@@ -115,5 +181,20 @@ func readPluginSecrets(
 			failures = append(failures, fmt.Errorf("read secret %s of plugin %s: %w", name, pluginID, err))
 		}
 	}
-	return secrets, errors.Join(failures...)
+	return secrets, failures
+}
+
+// getSecretsError returns the failures to read secrets that the caller is told
+// of. A machine without a key store is reported once through the error handler
+// and is not returned.
+func (h *Host) getSecretsError(failures []error) error {
+	var told []error
+	for _, failure := range failures {
+		if errors.Is(failure, port.ErrNoKeyStore) {
+			h.noKeyStoreOnce.Do(func() { h.reportError(failure) })
+			continue
+		}
+		told = append(told, failure)
+	}
+	return errors.Join(told...)
 }
