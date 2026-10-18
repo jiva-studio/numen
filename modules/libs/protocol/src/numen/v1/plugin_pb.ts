@@ -2,15 +2,15 @@
 // @generated from file numen/v1/plugin.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/plugin.proto.
  */
 export const file_numen_v1_plugin: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9wbHVnaW4ucHJvdG8SCG51bWVuLnYxIg0KC1BpbmdSZXF1ZXN0Ih4KDFBpbmdSZXNwb25zZRIOCgZzdGF0dXMYASABKAkiKgoPU2h1dGRvd25SZXF1ZXN0EhcKD3RpbWVvdXRfc2Vjb25kcxgBIAEoBSIjChBTaHV0ZG93blJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiqAEKEENvbmZpZ3VyZVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEhoKEmNvbmZpZ3VyYXRpb25fanNvbhgCIAEoCRI2CgZ2YWx1ZXMYAyADKAsyJi5udW1lbi52MS5Db25maWd1cmVSZXF1ZXN0LlZhbHVlc0VudHJ5Gi0KC1ZhbHVlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiMwoRQ29uZmlndXJlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSLWAQoNUGx1Z2luU2V0dGluZxILCgNrZXkYASABKAkSDAoEdHlwZRgCIAEoCRINCgV0aXRsZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIUCgxkZWZhdWx0X2pzb24YBSABKAkSDwoHcGFsZXR0ZRgGIAEoCBIPCgdvcHRpb25zGAcgAygJEhAKA21pbhgIIAEoAUgAiAEBEhAKA21heBgJIAEoAUgBiAEBEhEKBHN0ZXAYCiABKAFIAogBAUIGCgRfbWluQgYKBF9tYXhCBwoFX3N0ZXAioAEKClBsdWdpbkluZm8SCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIPCgd2ZXJzaW9uGAMgASgJEhMKC2Rlc2NyaXB0aW9uGAQgASgJEhQKDGNhcGFiaWxpdGllcxgFIAMoCRIpCghzZXR0aW5ncxgGIAMoCzIXLm51bWVuLnYxLlBsdWdpblNldHRpbmcSEQoJaXNfYWN0aXZlGAcgASgIIhMKEUdldFBsdWdpbnNSZXF1ZXN0IjsKEkdldFBsdWdpbnNSZXNwb25zZRIlCgdwbHVnaW5zGAEgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbzLYAQoWUGx1Z2luTGlmZWN5Y2xlU2VydmljZRI1CgRQaW5nEhUubnVtZW4udjEuUGluZ1JlcXVlc3QaFi5udW1lbi52MS5QaW5nUmVzcG9uc2USQQoIU2h1dGRvd24SGS5udW1lbi52MS5TaHV0ZG93blJlcXVlc3QaGi5udW1lbi52MS5TaHV0ZG93blJlc3BvbnNlEkQKCUNvbmZpZ3VyZRIaLm51bWVuLnYxLkNvbmZpZ3VyZVJlcXVlc3QaGy5udW1lbi52MS5Db25maWd1cmVSZXNwb25zZTJYCg1QbHVnaW5TZXJ2aWNlEkcKCkdldFBsdWdpbnMSGy5udW1lbi52MS5HZXRQbHVnaW5zUmVxdWVzdBocLm51bWVuLnYxLkdldFBsdWdpbnNSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChVudW1lbi92MS9wbHVnaW4ucHJvdG8SCG51bWVuLnYxIg0KC1BpbmdSZXF1ZXN0Ih4KDFBpbmdSZXNwb25zZRIOCgZzdGF0dXMYASABKAkiKgoPU2h1dGRvd25SZXF1ZXN0EhcKD3RpbWVvdXRfc2Vjb25kcxgBIAEoBSIjChBTaHV0ZG93blJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiqAEKEENvbmZpZ3VyZVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEhoKEmNvbmZpZ3VyYXRpb25fanNvbhgCIAEoCRI2CgZ2YWx1ZXMYAyADKAsyJi5udW1lbi52MS5Db25maWd1cmVSZXF1ZXN0LlZhbHVlc0VudHJ5Gi0KC1ZhbHVlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiMwoRQ29uZmlndXJlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSLWAQoNUGx1Z2luU2V0dGluZxILCgNrZXkYASABKAkSDAoEdHlwZRgCIAEoCRINCgV0aXRsZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIUCgxkZWZhdWx0X2pzb24YBSABKAkSDwoHcGFsZXR0ZRgGIAEoCBIPCgdvcHRpb25zGAcgAygJEhAKA21pbhgIIAEoAUgAiAEBEhAKA21heBgJIAEoAUgBiAEBEhEKBHN0ZXAYCiABKAFIAogBAUIGCgRfbWluQgYKBF9tYXhCBwoFX3N0ZXAivgIKClBsdWdpbkluZm8SCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIPCgd2ZXJzaW9uGAMgASgJEhMKC2Rlc2NyaXB0aW9uGAQgASgJEhQKDGNhcGFiaWxpdGllcxgFIAMoCRIpCghzZXR0aW5ncxgGIAMoCzIXLm51bWVuLnYxLlBsdWdpblNldHRpbmcSEQoJaXNfYWN0aXZlGAcgASgIEhMKC3Blcm1pc3Npb25zGAggAygJEg8KB3NlY3JldHMYCSADKAkSFgoOc3RvcmVkX3NlY3JldHMYCiADKAkSJQoGbW9kZWxzGAsgAygLMhUubnVtZW4udjEuUGx1Z2luTW9kZWwSNwoSY29tcGxldGlvbl9jb25zZW50GAwgASgOMhsubnVtZW4udjEuQ29tcGxldGlvbkNvbnNlbnQiPgoLUGx1Z2luTW9kZWwSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRISCgppc19kZWZhdWx0GAMgASgIIhMKEUdldFBsdWdpbnNSZXF1ZXN0IjsKEkdldFBsdWdpbnNSZXNwb25zZRIlCgdwbHVnaW5zGAEgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbyq4AQoRQ29tcGxldGlvbkNvbnNlbnQSIgoeQ09NUExFVElPTl9DT05TRU5UX1VOU1BFQ0lGSUVEEAASIQodQ09NUExFVElPTl9DT05TRU5UX1VOQU5TV0VSRUQQARIcChhDT01QTEVUSU9OX0NPTlNFTlRfQVNLRUQQAhIeChpDT01QTEVUSU9OX0NPTlNFTlRfQUxMT1dFRBADEh4KGkNPTVBMRVRJT05fQ09OU0VOVF9SRUZVU0VEEAQy2AEKFlBsdWdpbkxpZmVjeWNsZVNlcnZpY2USNQoEUGluZxIVLm51bWVuLnYxLlBpbmdSZXF1ZXN0GhYubnVtZW4udjEuUGluZ1Jlc3BvbnNlEkEKCFNodXRkb3duEhkubnVtZW4udjEuU2h1dGRvd25SZXF1ZXN0GhoubnVtZW4udjEuU2h1dGRvd25SZXNwb25zZRJECglDb25maWd1cmUSGi5udW1lbi52MS5Db25maWd1cmVSZXF1ZXN0GhsubnVtZW4udjEuQ29uZmlndXJlUmVzcG9uc2UyWAoNUGx1Z2luU2VydmljZRJHCgpHZXRQbHVnaW5zEhsubnVtZW4udjEuR2V0UGx1Z2luc1JlcXVlc3QaHC5udW1lbi52MS5HZXRQbHVnaW5zUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.PingRequest
@@ -229,6 +229,42 @@ export type PluginInfo = Message<"numen.v1.PluginInfo"> & {
    * @generated from field: bool is_active = 7;
    */
   isActive: boolean;
+
+  /**
+   * The permissions the manifest declares.
+   *
+   * @generated from field: repeated string permissions = 8;
+   */
+  permissions: string[];
+
+  /**
+   * The names of the secrets the manifest declares.
+   *
+   * @generated from field: repeated string secrets = 9;
+   */
+  secrets: string[];
+
+  /**
+   * The names of the secrets that have a key stored. A key never travels here.
+   *
+   * @generated from field: repeated string stored_secrets = 10;
+   */
+  storedSecrets: string[];
+
+  /**
+   * The models the plugin answers completions with, as the agent programs it
+   * runs list them. Empty where it lists none.
+   *
+   * @generated from field: repeated numen.v1.PluginModel models = 11;
+   */
+  models: PluginModel[];
+
+  /**
+   * Whether the person lets the plugin ask for model completions.
+   *
+   * @generated from field: numen.v1.CompletionConsent completion_consent = 12;
+   */
+  completionConsent: CompletionConsent;
 };
 
 /**
@@ -237,6 +273,41 @@ export type PluginInfo = Message<"numen.v1.PluginInfo"> & {
  */
 export const PluginInfoSchema: GenMessage<PluginInfo> = /*@__PURE__*/
   messageDesc(file_numen_v1_plugin, 7);
+
+/**
+ * PluginModel is one model a plugin that answers completions offers.
+ *
+ * @generated from message numen.v1.PluginModel
+ */
+export type PluginModel = Message<"numen.v1.PluginModel"> & {
+  /**
+   * What a setting names the model by.
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * What the model is called when shown to a person.
+   *
+   * @generated from field: string title = 2;
+   */
+  title: string;
+
+  /**
+   * Set on the model the plugin answers with when it is named none.
+   *
+   * @generated from field: bool is_default = 3;
+   */
+  isDefault: boolean;
+};
+
+/**
+ * Describes the message numen.v1.PluginModel.
+ * Use `create(PluginModelSchema)` to create a new message.
+ */
+export const PluginModelSchema: GenMessage<PluginModel> = /*@__PURE__*/
+  messageDesc(file_numen_v1_plugin, 8);
 
 /**
  * @generated from message numen.v1.GetPluginsRequest
@@ -249,7 +320,7 @@ export type GetPluginsRequest = Message<"numen.v1.GetPluginsRequest"> & {
  * Use `create(GetPluginsRequestSchema)` to create a new message.
  */
 export const GetPluginsRequestSchema: GenMessage<GetPluginsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 8);
+  messageDesc(file_numen_v1_plugin, 9);
 
 /**
  * @generated from message numen.v1.GetPluginsResponse
@@ -266,7 +337,57 @@ export type GetPluginsResponse = Message<"numen.v1.GetPluginsResponse"> & {
  * Use `create(GetPluginsResponseSchema)` to create a new message.
  */
 export const GetPluginsResponseSchema: GenMessage<GetPluginsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 9);
+  messageDesc(file_numen_v1_plugin, 10);
+
+/**
+ * CompletionConsent is whether the person lets a plugin ask for model
+ * completions. The zero value is a plugin that does not hold the ai:complete
+ * permission.
+ *
+ * @generated from enum numen.v1.CompletionConsent
+ */
+export enum CompletionConsent {
+  /**
+   * @generated from enum value: COMPLETION_CONSENT_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * The person has not answered, and the plugin has not asked since the host
+   * started.
+   *
+   * @generated from enum value: COMPLETION_CONSENT_UNANSWERED = 1;
+   */
+  UNANSWERED = 1,
+
+  /**
+   * The plugin has asked since the host started, was refused for it, and the
+   * person has not answered.
+   *
+   * @generated from enum value: COMPLETION_CONSENT_ASKED = 2;
+   */
+  ASKED = 2,
+
+  /**
+   * The person lets the plugin ask.
+   *
+   * @generated from enum value: COMPLETION_CONSENT_ALLOWED = 3;
+   */
+  ALLOWED = 3,
+
+  /**
+   * The person refused it.
+   *
+   * @generated from enum value: COMPLETION_CONSENT_REFUSED = 4;
+   */
+  REFUSED = 4,
+}
+
+/**
+ * Describes the enum numen.v1.CompletionConsent.
+ */
+export const CompletionConsentSchema: GenEnum<CompletionConsent> = /*@__PURE__*/
+  enumDesc(file_numen_v1_plugin, 0);
 
 /**
  * PluginLifecycleService handles lifecycle, ping, and graceful shutdown for all plugins.

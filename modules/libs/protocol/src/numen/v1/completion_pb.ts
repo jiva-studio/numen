@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/completion.proto.
  */
 export const file_numen_v1_completion: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9jb21wbGV0aW9uLnByb3RvEghudW1lbi52MSJQCg9Db21wbGV0ZVJlcXVlc3QSLgoIcXVlc3Rpb24YASABKAsyHC5udW1lbi52MS5Db21wbGV0aW9uUXVlc3Rpb24SDQoFbW9kZWwYAiABKAkibAoQQ29tcGxldGVSZXNwb25zZRIqCgZhbnN3ZXIYASABKAsyGi5udW1lbi52MS5Db21wbGV0aW9uQW5zd2VyEiwKBWVycm9yGAIgASgOMh0ubnVtZW4udjEuQ29tcGxldGlvbkVycm9yQ29kZSJMChpIb3N0U2VydmljZUNvbXBsZXRlUmVxdWVzdBIuCghxdWVzdGlvbhgBIAEoCzIcLm51bWVuLnYxLkNvbXBsZXRpb25RdWVzdGlvbiJ3ChtIb3N0U2VydmljZUNvbXBsZXRlUmVzcG9uc2USKgoGYW5zd2VyGAEgASgLMhoubnVtZW4udjEuQ29tcGxldGlvbkFuc3dlchIsCgVlcnJvchgCIAEoDjIdLm51bWVuLnYxLkNvbXBsZXRpb25FcnJvckNvZGUifgoSQ29tcGxldGlvblF1ZXN0aW9uEi0KCG1lc3NhZ2VzGAEgAygLMhsubnVtZW4udjEuQ29tcGxldGlvbk1lc3NhZ2USDwoHcHVycG9zZRgCIAEoCRIoCgVoaW50cxgDIAEoCzIZLm51bWVuLnYxLkNvbXBsZXRpb25IaW50cyIvChFDb21wbGV0aW9uTWVzc2FnZRIMCgRyb2xlGAEgASgJEgwKBHRleHQYAiABKAkimAEKD0NvbXBsZXRpb25IaW50cxIYChBxdWFsaXR5X3ByaW9yaXR5GAEgASgBEhYKDnNwZWVkX3ByaW9yaXR5GAIgASgBEhUKDWNvc3RfcHJpb3JpdHkYAyABKAESEgoKbWF4X3Rva2VucxgEIAEoBRIYCgt0ZW1wZXJhdHVyZRgFIAEoAUgAiAEBQg4KDF90ZW1wZXJhdHVyZSIgChBDb21wbGV0aW9uQW5zd2VyEgwKBHRleHQYASABKAkqhwEKE0NvbXBsZXRpb25FcnJvckNvZGUSJQohQ09NUExFVElPTl9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIgoeQ09NUExFVElPTl9FUlJPUl9DT0RFX05PX1JPVVRFEAESJQohQ09NUExFVElPTl9FUlJPUl9DT0RFX1VOQVZBSUxBQkxFEAIyVgoRQ29tcGxldGlvblNlcnZpY2USQQoIQ29tcGxldGUSGS5udW1lbi52MS5Db21wbGV0ZVJlcXVlc3QaGi5udW1lbi52MS5Db21wbGV0ZVJlc3BvbnNlMmYKC0hvc3RTZXJ2aWNlElcKCENvbXBsZXRlEiQubnVtZW4udjEuSG9zdFNlcnZpY2VDb21wbGV0ZVJlcXVlc3QaJS5udW1lbi52MS5Ib3N0U2VydmljZUNvbXBsZXRlUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChludW1lbi92MS9jb21wbGV0aW9uLnByb3RvEghudW1lbi52MSJQCg9Db21wbGV0ZVJlcXVlc3QSLgoIcXVlc3Rpb24YASABKAsyHC5udW1lbi52MS5Db21wbGV0aW9uUXVlc3Rpb24SDQoFbW9kZWwYAiABKAkibAoQQ29tcGxldGVSZXNwb25zZRIqCgZhbnN3ZXIYASABKAsyGi5udW1lbi52MS5Db21wbGV0aW9uQW5zd2VyEiwKBWVycm9yGAIgASgOMh0ubnVtZW4udjEuQ29tcGxldGlvbkVycm9yQ29kZSJMChpIb3N0U2VydmljZUNvbXBsZXRlUmVxdWVzdBIuCghxdWVzdGlvbhgBIAEoCzIcLm51bWVuLnYxLkNvbXBsZXRpb25RdWVzdGlvbiJ3ChtIb3N0U2VydmljZUNvbXBsZXRlUmVzcG9uc2USKgoGYW5zd2VyGAEgASgLMhoubnVtZW4udjEuQ29tcGxldGlvbkFuc3dlchIsCgVlcnJvchgCIAEoDjIdLm51bWVuLnYxLkNvbXBsZXRpb25FcnJvckNvZGUifgoSQ29tcGxldGlvblF1ZXN0aW9uEi0KCG1lc3NhZ2VzGAEgAygLMhsubnVtZW4udjEuQ29tcGxldGlvbk1lc3NhZ2USDwoHcHVycG9zZRgCIAEoCRIoCgVoaW50cxgDIAEoCzIZLm51bWVuLnYxLkNvbXBsZXRpb25IaW50cyIvChFDb21wbGV0aW9uTWVzc2FnZRIMCgRyb2xlGAEgASgJEgwKBHRleHQYAiABKAkimAEKD0NvbXBsZXRpb25IaW50cxIYChBxdWFsaXR5X3ByaW9yaXR5GAEgASgBEhYKDnNwZWVkX3ByaW9yaXR5GAIgASgBEhUKDWNvc3RfcHJpb3JpdHkYAyABKAESEgoKbWF4X3Rva2VucxgEIAEoBRIYCgt0ZW1wZXJhdHVyZRgFIAEoAUgAiAEBQg4KDF90ZW1wZXJhdHVyZSIgChBDb21wbGV0aW9uQW5zd2VyEgwKBHRleHQYASABKAkqrQEKE0NvbXBsZXRpb25FcnJvckNvZGUSJQohQ09NUExFVElPTl9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIgoeQ09NUExFVElPTl9FUlJPUl9DT0RFX05PX1JPVVRFEAESJQohQ09NUExFVElPTl9FUlJPUl9DT0RFX1VOQVZBSUxBQkxFEAISJAogQ09NUExFVElPTl9FUlJPUl9DT0RFX05PX0NPTlNFTlQQAzJWChFDb21wbGV0aW9uU2VydmljZRJBCghDb21wbGV0ZRIZLm51bWVuLnYxLkNvbXBsZXRlUmVxdWVzdBoaLm51bWVuLnYxLkNvbXBsZXRlUmVzcG9uc2UyZgoLSG9zdFNlcnZpY2USVwoIQ29tcGxldGUSJC5udW1lbi52MS5Ib3N0U2VydmljZUNvbXBsZXRlUmVxdWVzdBolLm51bWVuLnYxLkhvc3RTZXJ2aWNlQ29tcGxldGVSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * @generated from message numen.v1.CompleteRequest
@@ -28,8 +28,8 @@ export type CompleteRequest = Message<"numen.v1.CompleteRequest"> & {
   question?: CompletionQuestion | undefined;
 
   /**
-   * The model the host routed the purpose to. Empty leaves the choice to the
-   * agent.
+   * The model the host routed the question to. Empty leaves the choice to the
+   * agent; a model the agent does not offer is the agent's error.
    *
    * @generated from field: string model = 2;
    */
@@ -122,8 +122,8 @@ export type CompletionQuestion = Message<"numen.v1.CompletionQuestion"> & {
   messages: CompletionMessage[];
 
   /**
-   * What the answer is for (e.g. "proofreading"). The host routes by it; a
-   * purpose names neither a model, an agent nor a key.
+   * What the answer is for (e.g. "proofreading"). It is handed to the agent and
+   * routes nothing; a purpose names neither a model, an agent nor a key.
    *
    * @generated from field: string purpose = 2;
    */
@@ -250,18 +250,29 @@ export enum CompletionErrorCode {
   UNSPECIFIED = 0,
 
   /**
-   * No agent is routed for the purpose.
+   * No agent answers the question: the agent the settings name is not
+   * installed, is disabled or answers no completions, or no plugin answers
+   * completions at all.
    *
    * @generated from enum value: COMPLETION_ERROR_CODE_NO_ROUTE = 1;
    */
   NO_ROUTE = 1,
 
   /**
-   * The agent routed for the purpose cannot be reached.
+   * The agent the question is routed to cannot be reached.
    *
    * @generated from enum value: COMPLETION_ERROR_CODE_UNAVAILABLE = 2;
    */
   UNAVAILABLE = 2,
+
+  /**
+   * The person has not let the calling plugin ask a model, or has refused it.
+   * The window asks the person, and a plugin shows this as the reason nothing
+   * was answered.
+   *
+   * @generated from enum value: COMPLETION_ERROR_CODE_NO_CONSENT = 3;
+   */
+  NO_CONSENT = 3,
 }
 
 /**
@@ -298,8 +309,10 @@ export const CompletionService: GenService<{
  */
 export const HostService: GenService<{
   /**
-   * Complete answers the question with text from whichever model the host
-   * routes the purpose to.
+   * Complete answers the question with text from the agent and the model the
+   * calling plugin's setting names, else from the default of the settings. The
+   * host knows the caller by its token, and nothing in the request chooses the
+   * agent.
    *
    * @generated from rpc numen.v1.HostService.Complete
    */

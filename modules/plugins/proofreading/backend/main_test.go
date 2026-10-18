@@ -234,6 +234,7 @@ func TestAModelThatCannotBeReachedIsUnavailable(t *testing.T) {
 		"no route":    ai.ErrNoRoute,
 		"unavailable": ai.ErrUnavailable,
 		"no host":     ai.ErrNoHost,
+		"no consent":  ai.ErrNoConsent,
 		"wrapped":     fmt.Errorf("batch 1: %w", ai.ErrNoRoute),
 	}
 	for name, failure := range cases {

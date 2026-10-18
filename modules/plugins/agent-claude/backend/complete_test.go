@@ -112,3 +112,24 @@ func TestCompletionEnvironmentReplacesTheHeldKey(t *testing.T) {
 		t.Errorf("got %v", got)
 	}
 }
+
+func TestCompleteAnswersWithTheModelTheHostNames(t *testing.T) {
+	record := filepath.Join(t.TempDir(), "record")
+	script := writeFakeClaude(t, `{ echo "args=$*"; cat; } > '`+record+`'; echo "the answer"`)
+	t.Setenv("NUMEN_CLAUDE_COMMAND", script)
+	svc := &agentServer{}
+	svc.applyConfig(map[string]string{"apiKey": "host-key", "model": "m1"})
+	request := askCompletion("why?")
+	request.Msg.Model = "m2"
+
+	if _, err := svc.Complete(context.Background(), request); err != nil {
+		t.Fatal(err)
+	}
+	seen, err := os.ReadFile(record)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(seen), "--model m2") || strings.Contains(string(seen), "--model m1") {
+		t.Errorf("command did not see the host's model in:\n%s", seen)
+	}
+}

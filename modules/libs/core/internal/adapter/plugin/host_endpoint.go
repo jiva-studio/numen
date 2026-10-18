@@ -33,10 +33,12 @@ var (
 )
 
 // HostCallers is what the host endpoint asks the host about a call: who made
-// it, what that plugin may do, and who answers a completion.
+// it, what that plugin may do, whether the person lets it ask a model, and who
+// answers a completion.
 type HostCallers interface {
 	GetPluginIDByToken(token string) (string, bool)
 	CheckPluginPermission(pluginID, permission string) error
+	CheckCompletionConsent(pluginID string) error
 	GetCompleter() port.Completer
 }
 
@@ -93,21 +95,26 @@ func (e *HostEndpoint) Close(ctx context.Context) error {
 	return nil
 }
 
-// Complete answers a plugin's question with text from the model the question's
-// purpose is routed to. A caller that holds no valid token is refused as
-// unauthenticated, and one without the ai:complete permission as denied.
+// Complete answers a plugin's question with text from the agent its setting
+// names, else the default. A caller that holds no valid token is refused as
+// unauthenticated, and one without the ai:complete permission as denied. A
+// plugin the person has not let ask a model is answered NO_CONSENT.
 func (e *HostEndpoint) Complete(
 	ctx context.Context,
 	req *connect.Request[v1.HostServiceCompleteRequest],
 ) (*connect.Response[v1.HostServiceCompleteResponse], error) {
-	if err := e.authorize(req.Header().Get("Authorization"), PermissionAIComplete); err != nil {
+	pluginID, err := e.authorize(req.Header().Get("Authorization"), PermissionAIComplete)
+	if err != nil {
 		return nil, err
+	}
+	if err := e.callers.CheckCompletionConsent(pluginID); err != nil {
+		return refuseCompletion(v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT), nil
 	}
 	completer := e.callers.GetCompleter()
 	if completer == nil {
 		return refuseCompletion(v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE), nil
 	}
-	text, err := completer.Complete(ctx, readWireQuestion(req.Msg.GetQuestion()))
+	text, err := completer.Complete(ctx, pluginID, readWireQuestion(req.Msg.GetQuestion()))
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, connect.NewError(connect.CodeCanceled, ctxErr)
@@ -122,18 +129,18 @@ func (e *HostEndpoint) Complete(
 	}), nil
 }
 
-// authorize finds the plugin the Authorization header names and checks it holds
-// the permission.
-func (e *HostEndpoint) authorize(header, permission string) error {
+// authorize returns the id of the plugin the Authorization header names once it
+// is known to hold the permission.
+func (e *HostEndpoint) authorize(header, permission string) (string, error) {
 	token, found := strings.CutPrefix(header, bearerPrefix)
 	pluginID, known := e.callers.GetPluginIDByToken(token)
 	if !found || !known {
-		return connect.NewError(connect.CodeUnauthenticated, errUnknownCaller)
+		return "", connect.NewError(connect.CodeUnauthenticated, errUnknownCaller)
 	}
 	if err := e.callers.CheckPluginPermission(pluginID, permission); err != nil {
-		return connect.NewError(connect.CodePermissionDenied, fmt.Errorf("plugin %s: %w", pluginID, err))
+		return "", connect.NewError(connect.CodePermissionDenied, fmt.Errorf("plugin %s: %w", pluginID, err))
 	}
-	return nil
+	return pluginID, nil
 }
 
 func refuseCompletion(code v1.CompletionErrorCode) *connect.Response[v1.HostServiceCompleteResponse] {

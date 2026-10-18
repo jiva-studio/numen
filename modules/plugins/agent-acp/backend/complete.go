@@ -13,19 +13,19 @@ import (
 
 var errNoCompletionAgent = errors.New("no installed agent can give a single answer without tools")
 
-// Complete answers one question from the installed Claude Code CLI with no tools, no vault and no
-// conversation. The CLI signs in with the person's own account.
+// Complete answers one question from the installed Claude Code CLI, with the model the host names,
+// and with no tools, no vault and no conversation. The CLI signs in with the person's own account.
 func (s *agentServer) Complete(
 	ctx context.Context,
 	req *connect.Request[numenv1.CompleteRequest],
 ) (*connect.Response[numenv1.CompleteResponse], error) {
-	command := s.command
+	command, model := s.command, req.Msg.GetModel()
 	return completion.Answer(ctx, req.Msg.GetQuestion(), func(ctx context.Context, request completion.Request) (string, error) {
 		name, args := getCompletionCommand(command)
 		if name == "" {
 			return "", errNoCompletionAgent
 		}
-		args = append(args, completion.ClaudeArguments(request.System, "")...)
+		args = append(args, completion.ClaudeArguments(request.System, model)...)
 		return completion.RunCommand(ctx, name, args, os.Environ(), request.Prompt)
 	})
 }

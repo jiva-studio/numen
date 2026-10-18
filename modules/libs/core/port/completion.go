@@ -10,16 +10,23 @@ var (
 	// ErrUnavailable means whatever answers cannot be reached right now.
 	ErrUnavailable = errors.New("unavailable")
 
-	// ErrNoRoute means no agent is routed for the purpose of a question. It is an
-	// unavailability: the question has nowhere to go.
-	ErrNoRoute = fmt.Errorf("%w: no route for the purpose", ErrUnavailable)
+	// ErrNoRoute means no agent answers the question: the agent the settings name
+	// is not installed, is disabled or answers no completions, or no plugin
+	// answers completions at all. It is an unavailability: the question has
+	// nowhere to go.
+	ErrNoRoute = fmt.Errorf("%w: no agent answers the question", ErrUnavailable)
+
+	// ErrNoConsent means the person has not let the plugin ask for completions,
+	// or has refused it.
+	ErrNoConsent = errors.New("the person has not let the plugin ask a model")
 )
 
 // Question is what a plugin asks of a model.
 type Question struct {
 	// Messages are the conversation so far, oldest first.
 	Messages []Message
-	// Purpose is what the answer is for. The core routes by it.
+	// Purpose is what the answer is for. It is handed to the agent and routes
+	// nothing.
 	Purpose string
 	// Hints are what the answer should favour.
 	Hints Hints
@@ -45,19 +52,49 @@ type Hints struct {
 	Temperature *float64
 }
 
-// Completer answers a question with text, from whichever model the core routes
-// its purpose to.
+// CompletionChoice is the agent and the model a plugin's completions go to, as
+// the person set them in the plugin's setting of type SettingTypeAgent.
+type CompletionChoice struct {
+	// Agent is the id of the agent plugin. Empty is the default of the settings.
+	Agent string `json:"agent,omitempty"`
+	// Model is the model the agent answers with. Empty is the agent's own.
+	Model string `json:"model,omitempty"`
+}
+
+// ReadCompletionChoice reads the value of a setting of type SettingTypeAgent. A
+// value of any other shape is the empty choice.
+func ReadCompletionChoice(value any) CompletionChoice {
+	held, ok := value.(map[string]any)
+	if !ok {
+		return CompletionChoice{}
+	}
+	agent, _ := held["agent"].(string)
+	model, _ := held["model"].(string)
+	return CompletionChoice{Agent: agent, Model: model}
+}
+
+// Completer answers a question of a plugin with text, from the agent the
+// plugin's setting names, else the default of the settings.
 type Completer interface {
-	// Complete answers the question. A question whose purpose has no route fails
-	// with ErrNoRoute, and an agent that cannot be reached with ErrUnavailable.
-	Complete(ctx context.Context, question Question) (string, error)
+	// Complete answers the question the plugin with the id given asks. A
+	// question no agent answers fails with ErrNoRoute, and an agent that cannot
+	// be reached with ErrUnavailable.
+	Complete(ctx context.Context, pluginID string, question Question) (string, error)
+}
+
+// CompletionChoices reads the choice a plugin's setting holds.
+type CompletionChoices interface {
+	// GetCompletionChoice returns the agent and the model the plugin's setting of
+	// type SettingTypeAgent holds, and the empty choice where it holds none.
+	GetCompletionChoice(pluginID string) CompletionChoice
 }
 
 // CompletionAgents opens the agent a route names.
 type CompletionAgents interface {
 	// OpenCompletionAgent returns the agent named, or, when the name is empty,
-	// the provider with the lowest id. An agent that is not there or cannot be
-	// reached fails with ErrUnavailable.
+	// the provider with the lowest id. An agent that is not there, or answers no
+	// completions, fails with ErrNoRoute, and one that cannot be reached with
+	// ErrUnavailable.
 	OpenCompletionAgent(ctx context.Context, agent string) (CompletionAgent, error)
 }
 

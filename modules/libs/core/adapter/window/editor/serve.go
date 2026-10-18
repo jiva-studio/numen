@@ -410,6 +410,8 @@ func (o *Installation) wireUseCases(ctx context.Context) {
 	services.Settings.write = made.OpenWriteSettings()
 	services.Settings.getFile = made.OpenGetSettingsFile()
 	services.Settings.writeFile = made.OpenWriteSettingsFile()
+	services.Settings.writeSecret = made.OpenWritePluginSecret()
+	services.Settings.deleteSecret = made.OpenDeletePluginSecret()
 
 	held := &o.vaults
 	services.File.move = &held.Move

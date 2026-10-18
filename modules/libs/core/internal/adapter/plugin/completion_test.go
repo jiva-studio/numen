@@ -144,6 +144,7 @@ func TestAnAgentsRefusalIsTheCoresError(t *testing.T) {
 	}{
 		{"no route", v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE, port.ErrNoRoute},
 		{"unavailable", v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE, port.ErrUnavailable},
+		{"no consent", v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT, port.ErrNoConsent},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			host := newCompletionHost(t, &answeringAgent{response: &v1.CompleteResponse{Error: one.code}})
@@ -259,19 +260,19 @@ func TestTheAgentIsFoundByIDOrByCapability(t *testing.T) {
 }
 
 // A plugin that is absent, or is no agent, or whose capability no plugin
-// provides, is unavailable and is not activated.
-func TestAnAbsentAgentIsUnavailable(t *testing.T) {
+// provides, is no route, and nothing is activated.
+func TestAnAbsentAgentIsNoRoute(t *testing.T) {
 	host := newCompletionHost(t, &answeringAgent{response: answerWith("x")})
 	agents := NewCompletionAgents(host)
 
 	for _, id := range []string{"md.numen.missing", "md.numen.other"} {
-		if _, err := agents.OpenCompletionAgent(t.Context(), id); !errors.Is(err, port.ErrUnavailable) {
-			t.Errorf("id %q: error = %v, want port.ErrUnavailable", id, err)
+		if _, err := agents.OpenCompletionAgent(t.Context(), id); !errors.Is(err, port.ErrNoRoute) {
+			t.Errorf("id %q: error = %v, want port.ErrNoRoute", id, err)
 		}
 	}
 	host.byCap = ""
-	if _, err := agents.OpenCompletionAgent(t.Context(), ""); !errors.Is(err, port.ErrUnavailable) {
-		t.Errorf("no provider: error = %v, want port.ErrUnavailable", err)
+	if _, err := agents.OpenCompletionAgent(t.Context(), ""); !errors.Is(err, port.ErrNoRoute) {
+		t.Errorf("no provider: error = %v, want port.ErrNoRoute", err)
 	}
 	if len(host.opened) != 0 {
 		t.Errorf("activated %v", host.opened)

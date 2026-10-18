@@ -8,6 +8,14 @@
   "targets": ["desktop.editor"],
   "activationEvents": ["onCommand:proofread"],
   "permissions": ["ai:complete"],
+  "settings": [
+    {
+      "key": "agent",
+      "type": "agent",
+      "title": "Agent",
+      "description": "The agent and the model that proofread a text"
+    }
+  ],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false

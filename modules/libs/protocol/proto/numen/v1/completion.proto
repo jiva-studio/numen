@@ -19,15 +19,17 @@ service CompletionService {
 // HostService is what the host answers for a plugin that holds the ai:complete
 // permission.
 service HostService {
-  // Complete answers the question with text from whichever model the host
-  // routes the purpose to.
+  // Complete answers the question with text from the agent and the model the
+  // calling plugin's setting names, else from the default of the settings. The
+  // host knows the caller by its token, and nothing in the request chooses the
+  // agent.
   rpc Complete(HostServiceCompleteRequest) returns (HostServiceCompleteResponse);
 }
 
 message CompleteRequest {
   CompletionQuestion question = 1;
-  // The model the host routed the purpose to. Empty leaves the choice to the
-  // agent.
+  // The model the host routed the question to. Empty leaves the choice to the
+  // agent; a model the agent does not offer is the agent's error.
   string model = 2;
 }
 
@@ -51,8 +53,8 @@ message HostServiceCompleteResponse {
 message CompletionQuestion {
   // The conversation so far, oldest first.
   repeated CompletionMessage messages = 1;
-  // What the answer is for (e.g. "proofreading"). The host routes by it; a
-  // purpose names neither a model, an agent nor a key.
+  // What the answer is for (e.g. "proofreading"). It is handed to the agent and
+  // routes nothing; a purpose names neither a model, an agent nor a key.
   string purpose = 2;
   // What the answer should favour. Unset hints leave the choice to the host.
   CompletionHints hints = 3;
@@ -84,11 +86,18 @@ message CompletionHints {
 enum CompletionErrorCode {
   COMPLETION_ERROR_CODE_UNSPECIFIED = 0;
 
-  // No agent is routed for the purpose.
+  // No agent answers the question: the agent the settings name is not
+  // installed, is disabled or answers no completions, or no plugin answers
+  // completions at all.
   COMPLETION_ERROR_CODE_NO_ROUTE = 1;
 
-  // The agent routed for the purpose cannot be reached.
+  // The agent the question is routed to cannot be reached.
   COMPLETION_ERROR_CODE_UNAVAILABLE = 2;
+
+  // The person has not let the calling plugin ask a model, or has refused it.
+  // The window asks the person, and a plugin shows this as the reason nothing
+  // was answered.
+  COMPLETION_ERROR_CODE_NO_CONSENT = 3;
 }
 
 // CompletionAnswer is what a model said.

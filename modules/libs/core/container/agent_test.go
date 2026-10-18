@@ -332,7 +332,7 @@ func TestTheWindowIsOfferedWhatThePluginsList(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	models := (container.Config{PluginHost: host, SettingsPath: settings}).Models()()
+	models, _ := (container.Config{PluginHost: host, SettingsPath: settings}).Catalogue()()
 
 	byPath := map[string][]port.Model{}
 	for _, one := range models {
@@ -391,7 +391,7 @@ func TestAPluginThatCannotListItsProgramsIsToldToTheErrorHandler(t *testing.T) {
 		PluginHost: host, SettingsPath: settingsFile,
 		ErrorHandler: func(err error) { told = append(told, err) },
 	}
-	models := cfg.Models()()
+	models, _ := cfg.Catalogue()()
 
 	if len(told) != 1 || !strings.Contains(told[0].Error(), providerOne) {
 		t.Errorf("the error handler was told %v", told)

@@ -245,7 +245,7 @@ func TestTheModelsAreListedAgainstTheSettingsInForce(t *testing.T) {
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	cfg, _ := writeSettings(t, `{}`)
 
-	models := cfg.Models()()
+	models, _ := cfg.Catalogue()()
 	if len(models) == 0 {
 		t.Fatal("no models are listed")
 	}

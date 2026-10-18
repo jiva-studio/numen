@@ -121,8 +121,10 @@ func (UnimplementedCompletionServiceHandler) Complete(context.Context, *connect.
 
 // HostServiceClient is a client for the numen.v1.HostService service.
 type HostServiceClient interface {
-	// Complete answers the question with text from whichever model the host
-	// routes the purpose to.
+	// Complete answers the question with text from the agent and the model the
+	// calling plugin's setting names, else from the default of the settings. The
+	// host knows the caller by its token, and nothing in the request chooses the
+	// agent.
 	Complete(context.Context, *connect.Request[v1.HostServiceCompleteRequest]) (*connect.Response[v1.HostServiceCompleteResponse], error)
 }
 
@@ -158,8 +160,10 @@ func (c *hostServiceClient) Complete(ctx context.Context, req *connect.Request[v
 
 // HostServiceHandler is an implementation of the numen.v1.HostService service.
 type HostServiceHandler interface {
-	// Complete answers the question with text from whichever model the host
-	// routes the purpose to.
+	// Complete answers the question with text from the agent and the model the
+	// calling plugin's setting names, else from the default of the settings. The
+	// host knows the caller by its token, and nothing in the request chooses the
+	// agent.
 	Complete(context.Context, *connect.Request[v1.HostServiceCompleteRequest]) (*connect.Response[v1.HostServiceCompleteResponse], error)
 }
 

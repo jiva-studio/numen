@@ -6,11 +6,12 @@ import (
 )
 
 // newCompletionRouter answers the questions plugins ask of a model with the
-// routes in the settings file, read at every question, and the agent plugins of
-// the host.
+// agent each plugin's setting names, else the default under ai.default in the
+// settings file, both read at every question, and the agent plugins of the host.
 func (c Config) newCompletionRouter() (*completion.Router, error) {
 	return completion.NewRouter(
 		func() completion.Config { return c.getSettingsOrDefaults().AI },
+		c.PluginHost,
 		plugin.NewCompletionAgents(c.PluginHost),
 	)
 }

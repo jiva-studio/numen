@@ -120,3 +120,27 @@ func TestADefaultToolThatCannotRunIsAnError(t *testing.T) {
 		}
 	}
 }
+
+func TestCompleteAnswersWithTheModelTheHostNames(t *testing.T) {
+	var got chatRequest
+	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&got)
+		content := "the answer"
+		_ = json.NewEncoder(w).Encode(chatResponse{Choices: []struct {
+			Message      chatMessage `json:"message"`
+			FinishReason string      `json:"finish_reason"`
+		}{{Message: chatMessage{Role: "assistant", Content: &content}}}})
+	}))
+	defer chat.Close()
+	svc := &agentServer{}
+	svc.updateConfig(map[string]string{"apiKey": "host-key", "baseUrl": chat.URL, "model": "m1"})
+	request := askCompletion("why?")
+	request.Msg.Model = "m2"
+
+	if _, err := svc.Complete(context.Background(), request); err != nil {
+		t.Fatal(err)
+	}
+	if got.Model != "m2" {
+		t.Errorf("asked model %q, want m2", got.Model)
+	}
+}

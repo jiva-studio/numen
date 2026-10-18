@@ -17,15 +17,19 @@ var (
 	errNoCommand = errors.New("the Claude Code CLI is not installed")
 )
 
-// Complete answers one question from the model with no tools, no vault and no conversation.
+// Complete answers one question from the model the host names, else the configured one, with no
+// tools, no vault and no conversation.
 // The key is the one the host configured.
 func (s *agentServer) Complete(
 	ctx context.Context,
 	req *connect.Request[numenv1.CompleteRequest],
 ) (*connect.Response[numenv1.CompleteResponse], error) {
-	s.mu.RLock()
-	model := s.completionModel
-	s.mu.RUnlock()
+	model := req.Msg.GetModel()
+	if model == "" {
+		s.mu.RLock()
+		model = s.completionModel
+		s.mu.RUnlock()
+	}
 	key, base := s.catalogue.credentials()
 
 	return completion.Answer(ctx, req.Msg.GetQuestion(), func(ctx context.Context, request completion.Request) (string, error) {

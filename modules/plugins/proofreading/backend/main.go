@@ -127,13 +127,13 @@ var (
 )
 
 // readModelError maps a failure to reach the model to the code the caller reads
-// it by: a model nothing is routed to answer for is unavailable, and the end of
-// the caller's context is its own.
+// it by: a model nothing is routed to, or one the person has not let this
+// plugin ask, is unavailable, and the end of the caller's context is its own.
 func readModelError(ctx context.Context, err error) error {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return connect.NewError(connect.CodeCanceled, ctxErr)
 	}
-	if errors.Is(err, ai.ErrNoRoute) || errors.Is(err, ai.ErrUnavailable) || errors.Is(err, ai.ErrNoHost) {
+	if errors.Is(err, ai.ErrNoRoute) || errors.Is(err, ai.ErrUnavailable) || errors.Is(err, ai.ErrNoHost) || errors.Is(err, ai.ErrNoConsent) {
 		return connect.NewError(connect.CodeUnavailable, err)
 	}
 	return connect.NewError(connect.CodeInternal, err)

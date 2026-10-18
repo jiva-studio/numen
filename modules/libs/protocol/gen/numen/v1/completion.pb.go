@@ -33,10 +33,16 @@ type CompletionErrorCode int32
 
 const (
 	CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED CompletionErrorCode = 0
-	// No agent is routed for the purpose.
+	// No agent answers the question: the agent the settings name is not
+	// installed, is disabled or answers no completions, or no plugin answers
+	// completions at all.
 	CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE CompletionErrorCode = 1
-	// The agent routed for the purpose cannot be reached.
+	// The agent the question is routed to cannot be reached.
 	CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE CompletionErrorCode = 2
+	// The person has not let the calling plugin ask a model, or has refused it.
+	// The window asks the person, and a plugin shows this as the reason nothing
+	// was answered.
+	CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT CompletionErrorCode = 3
 )
 
 // Enum value maps for CompletionErrorCode.
@@ -45,11 +51,13 @@ var (
 		0: "COMPLETION_ERROR_CODE_UNSPECIFIED",
 		1: "COMPLETION_ERROR_CODE_NO_ROUTE",
 		2: "COMPLETION_ERROR_CODE_UNAVAILABLE",
+		3: "COMPLETION_ERROR_CODE_NO_CONSENT",
 	}
 	CompletionErrorCode_value = map[string]int32{
 		"COMPLETION_ERROR_CODE_UNSPECIFIED": 0,
 		"COMPLETION_ERROR_CODE_NO_ROUTE":    1,
 		"COMPLETION_ERROR_CODE_UNAVAILABLE": 2,
+		"COMPLETION_ERROR_CODE_NO_CONSENT":  3,
 	}
 )
 
@@ -83,8 +91,8 @@ func (CompletionErrorCode) EnumDescriptor() ([]byte, []int) {
 type CompleteRequest struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Question *CompletionQuestion    `protobuf:"bytes,1,opt,name=question,proto3" json:"question,omitempty"`
-	// The model the host routed the purpose to. Empty leaves the choice to the
-	// agent.
+	// The model the host routed the question to. Empty leaves the choice to the
+	// agent; a model the agent does not offer is the agent's error.
 	Model         string `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -289,8 +297,8 @@ type CompletionQuestion struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The conversation so far, oldest first.
 	Messages []*CompletionMessage `protobuf:"bytes,1,rep,name=messages,proto3" json:"messages,omitempty"`
-	// What the answer is for (e.g. "proofreading"). The host routes by it; a
-	// purpose names neither a model, an agent nor a key.
+	// What the answer is for (e.g. "proofreading"). It is handed to the agent and
+	// routes nothing; a purpose names neither a model, an agent nor a key.
 	Purpose string `protobuf:"bytes,2,opt,name=purpose,proto3" json:"purpose,omitempty"`
 	// What the answer should favour. Unset hints leave the choice to the host.
 	Hints         *CompletionHints `protobuf:"bytes,3,opt,name=hints,proto3" json:"hints,omitempty"`
@@ -562,11 +570,12 @@ const file_numen_v1_completion_proto_rawDesc = "" +
 	"\vtemperature\x18\x05 \x01(\x01H\x00R\vtemperature\x88\x01\x01B\x0e\n" +
 	"\f_temperature\"&\n" +
 	"\x10CompletionAnswer\x12\x12\n" +
-	"\x04text\x18\x01 \x01(\tR\x04text*\x87\x01\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text*\xad\x01\n" +
 	"\x13CompletionErrorCode\x12%\n" +
 	"!COMPLETION_ERROR_CODE_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eCOMPLETION_ERROR_CODE_NO_ROUTE\x10\x01\x12%\n" +
-	"!COMPLETION_ERROR_CODE_UNAVAILABLE\x10\x022V\n" +
+	"!COMPLETION_ERROR_CODE_UNAVAILABLE\x10\x02\x12$\n" +
+	" COMPLETION_ERROR_CODE_NO_CONSENT\x10\x032V\n" +
 	"\x11CompletionService\x12A\n" +
 	"\bComplete\x12\x19.numen.v1.CompleteRequest\x1a\x1a.numen.v1.CompleteResponse2f\n" +
 	"\vHostService\x12W\n" +

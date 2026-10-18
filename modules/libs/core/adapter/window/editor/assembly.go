@@ -72,6 +72,9 @@ type Assembly interface {
 	OpenWriteSettings() *settings.Write
 	OpenGetSettingsFile() *settings.GetFile
 	OpenWriteSettingsFile() *settings.WriteFile
+	// The use cases that store and remove the key of a secret a plugin declares.
+	OpenWritePluginSecret() *settings.WriteSecret
+	OpenDeletePluginSecret() *settings.DeleteSecret
 
 	// IsRebuildingIndex is whether this launch was asked to read every file
 	// into the cache again. It belongs to the vault the window opened on and to

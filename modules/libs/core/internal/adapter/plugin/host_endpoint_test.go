@@ -25,6 +25,7 @@ type callers struct {
 	mu        sync.Mutex
 	plugins   map[string]string
 	allowed   map[string]bool
+	consented map[string]bool
 	completer port.Completer
 	checked   []string
 }
@@ -44,18 +45,36 @@ func (c *callers) CheckPluginPermission(pluginID, permission string) error {
 	return nil
 }
 
+func (c *callers) CheckCompletionConsent(pluginID string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.checked = append(c.checked, pluginID+" consent")
+	if !c.consented[pluginID] {
+		return port.ErrNoConsent
+	}
+	return nil
+}
+
 func (c *callers) GetCompleter() port.Completer { return c.completer }
 
 type completerFunc func(ctx context.Context, question port.Question) (string, error)
 
-func (f completerFunc) Complete(ctx context.Context, question port.Question) (string, error) {
+func (f completerFunc) Complete(ctx context.Context, _ string, question port.Question) (string, error) {
 	return f(ctx, question)
+}
+
+// callerCompleter answers with the id of the plugin it was told asks.
+type callerCompleter struct{}
+
+func (callerCompleter) Complete(_ context.Context, pluginID string, _ port.Question) (string, error) {
+	return pluginID, nil
 }
 
 func newCallers(completer port.Completer) *callers {
 	return &callers{
-		plugins:   map[string]string{"token-a": "md.numen.a", "token-b": "md.numen.b"},
-		allowed:   map[string]bool{"md.numen.a": true},
+		plugins:   map[string]string{"token-a": "md.numen.a", "token-b": "md.numen.b", "token-c": "md.numen.c"},
+		allowed:   map[string]bool{"md.numen.a": true, "md.numen.c": true},
+		consented: map[string]bool{"md.numen.a": true},
 		completer: completer,
 	}
 }
@@ -111,8 +130,8 @@ func TestAPluginWithThePermissionIsAnswered(t *testing.T) {
 		asked.Hints.Temperature == nil || *asked.Hints.Temperature != temperature {
 		t.Errorf("the completer was asked %+v", asked)
 	}
-	if len(held.checked) != 1 || held.checked[0] != "md.numen.a ai:complete" {
-		t.Errorf("checked %v, want md.numen.a ai:complete", held.checked)
+	if len(held.checked) != 2 || held.checked[0] != "md.numen.a ai:complete" || held.checked[1] != "md.numen.a consent" {
+		t.Errorf("checked %v, want md.numen.a ai:complete, then its consent", held.checked)
 	}
 }
 
@@ -163,7 +182,7 @@ func TestAHeaderThatIsNoBearerTokenIsRefused(t *testing.T) {
 	held := newCallers(nil)
 	endpoint := &HostEndpoint{callers: held}
 	for _, header := range []string{"", "token-a", "Basic token-a", "bearer token-a"} {
-		if err := endpoint.authorize(header, PermissionAIComplete); readCode(t, err) != connect.CodeUnauthenticated {
+		if _, err := endpoint.authorize(header, PermissionAIComplete); readCode(t, err) != connect.CodeUnauthenticated {
 			t.Errorf("header %q was accepted", header)
 		}
 	}
@@ -422,4 +441,48 @@ func TestTheHostEndpointListensOnLoopbackOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = endpoint.Close(t.Context())
+}
+
+// A plugin the person has not let ask a model is answered NO_CONSENT, and
+// nothing is asked of a model.
+func TestAPluginWithoutConsentIsAnsweredNoConsent(t *testing.T) {
+	asked := false
+	held := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
+		asked = true
+		return "", nil
+	}))
+	res, err := newHostClient(t, held, "token-c").Complete(t.Context(), newHostQuestion())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Msg.GetError() != v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT || res.Msg.GetAnswer() != nil {
+		t.Errorf("answered %v, want NO_CONSENT", res.Msg)
+	}
+	if asked {
+		t.Error("a model was asked for a plugin without consent")
+	}
+}
+
+// A plugin without the permission is refused before its consent is looked at.
+func TestThePermissionIsCheckedBeforeTheConsent(t *testing.T) {
+	held := newCallers(nil)
+	if _, err := newHostClient(t, held, "token-b").Complete(t.Context(), newHostQuestion()); err == nil {
+		t.Fatal("a plugin without the permission was served")
+	}
+	if slices.Contains(held.checked, "md.numen.b consent") {
+		t.Errorf("checked %v", held.checked)
+	}
+}
+
+// The completer is told the plugin the token names, whatever the question says.
+func TestTheCallerIsTheTokensPlugin(t *testing.T) {
+	request := newHostQuestion()
+	request.Msg.Question.Purpose = "md.numen.c"
+	res, err := newHostClient(t, newCallers(callerCompleter{}), "token-a").Complete(t.Context(), request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := res.Msg.GetAnswer().GetText(); got != "md.numen.a" {
+		t.Errorf("the completer was told the caller is %q, want md.numen.a", got)
+	}
 }

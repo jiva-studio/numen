@@ -112,3 +112,22 @@ func TestCompleteUsesTheInstalledClaudeCodeWhenNoCommandIsSet(t *testing.T) {
 		t.Errorf("got %+v", res.Msg)
 	}
 }
+
+func TestCompleteAnswersWithTheModelTheHostNames(t *testing.T) {
+	record := filepath.Join(t.TempDir(), "record")
+	script := writeFakeAgent(t, `{ echo "args=$*"; cat; } > '`+record+`'; echo "the answer"`)
+	svc := &agentServer{command: []string{script}}
+	request := askCompletion("why?")
+	request.Msg.Model = "m2"
+
+	if _, err := svc.Complete(context.Background(), request); err != nil {
+		t.Fatal(err)
+	}
+	seen, err := os.ReadFile(record)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(seen), "--model m2") {
+		t.Errorf("command did not see the host's model in:\n%s", seen)
+	}
+}

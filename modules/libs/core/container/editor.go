@@ -106,8 +106,8 @@ func (e EditorAssembly) CloseIndex() error { return e.db.Close() }
 func (e EditorAssembly) OpenGetSettings(day flashcards.Day) *settings.Get {
 	held := e.cfg.NestedHeadingLimitBounds()
 	return settings.NewGet(
-		e.cfg.ReadSettings(), e.cfg.Models(), settings.Bounds{Least: held.Least, Most: held.Most},
-		e.cfg.GetLatestDayStart(), day, e.cfg.Clock(), e.cfg.Plugins(),
+		e.cfg.ReadSettings(), e.cfg.Catalogue(), settings.Bounds{Least: held.Least, Most: held.Most},
+		e.cfg.GetLatestDayStart(), day, e.cfg.Clock(),
 	)
 }
 
@@ -121,6 +121,14 @@ func (e EditorAssembly) OpenGetSettingsFile() *settings.GetFile {
 
 func (e EditorAssembly) OpenWriteSettingsFile() *settings.WriteFile {
 	return settings.NewWriteFile(e.cfg.WriteConfiguredFile())
+}
+
+func (e EditorAssembly) OpenWritePluginSecret() *settings.WriteSecret {
+	return settings.NewWriteSecret(e.cfg.GetPluginSecretWriter())
+}
+
+func (e EditorAssembly) OpenDeletePluginSecret() *settings.DeleteSecret {
+	return settings.NewDeleteSecret(e.cfg.GetPluginSecretDeleter())
 }
 
 func (e EditorAssembly) IsRebuildingIndex() bool     { return e.cfg.ShouldRebuildIndex }

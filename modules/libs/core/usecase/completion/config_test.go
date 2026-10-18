@@ -1,53 +1,52 @@
 package completion_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/completion"
 )
 
-// A purpose is answered by its own route, and by the default route when it has
-// none.
-func TestAPurposeIsRoutedToItsOwnRouteThenToTheDefault(t *testing.T) {
-	config := completion.Config{Routes: map[string]completion.Route{
-		"proofreading":          {Agent: "a", Model: "m1"},
-		completion.DefaultRoute: {Agent: "b", Model: "m2"},
-	}}
-	for _, one := range []struct {
-		purpose, name, agent string
-	}{
-		{"proofreading", "proofreading", "a"},
-		{"summary", completion.DefaultRoute, "b"},
-		{"", completion.DefaultRoute, "b"},
-	} {
-		name, route, found := config.GetRoute(one.purpose)
-		if !found || name != one.name || route.Agent != one.agent {
-			t.Errorf("GetRoute(%q) = %q, %+v, %v; want %q on agent %q",
-				one.purpose, name, route, found, one.name, one.agent)
-		}
+// The default stands under ai.default, with the agent, the model and the limit.
+func TestTheDefaultIsReadFromItsOwnKey(t *testing.T) {
+	var config completion.Config
+	if err := json.Unmarshal([]byte(`{"default": {"agent": "a", "model": "m", "concurrency": 3}}`), &config); err != nil {
+		t.Fatal(err)
+	}
+	if want := (completion.Route{Agent: "a", Model: "m", Concurrency: 3}); config.Default != want {
+		t.Errorf("read %+v, want %+v", config.Default, want)
 	}
 }
 
-// A configuration without the purpose and without a default routes nothing.
-func TestNoRouteIsFoundWhereNothingIsConfigured(t *testing.T) {
-	for _, config := range []completion.Config{
-		{},
-		{Routes: map[string]completion.Route{"proofreading": {Agent: "a"}}},
-	} {
-		if _, _, found := config.GetRoute("summary"); found {
-			t.Errorf("%+v routes a purpose it names no route for", config)
-		}
+// A file of the older shape keeps its default route, and the routes of single
+// purposes are not read.
+func TestAnOlderFileKeepsItsDefaultRoute(t *testing.T) {
+	var config completion.Config
+	older := `{"routes": {"default": {"agent": "a", "model": "m", "concurrency": 2}, "proofreading": {"agent": "b"}}}`
+	if err := json.Unmarshal([]byte(older), &config); err != nil {
+		t.Fatal(err)
+	}
+	if want := (completion.Route{Agent: "a", Model: "m", Concurrency: 2}); config.Default != want {
+		t.Errorf("read %+v, want %+v", config.Default, want)
+	}
+
+	if err := json.Unmarshal([]byte(`{"routes": {"proofreading": {"agent": "b"}}}`), &config); err != nil {
+		t.Fatal(err)
+	}
+	if config.Default != (completion.Route{}) {
+		t.Errorf("a purpose's route was read as the default: %+v", config.Default)
 	}
 }
 
-// An empty purpose never reads a route filed under the empty name.
-func TestAnEmptyPurposeIsAnsweredByTheDefaultRoute(t *testing.T) {
-	config := completion.Config{Routes: map[string]completion.Route{
-		"":                      {Agent: "wrong"},
-		completion.DefaultRoute: {Agent: "right"},
-	}}
-	if _, route, _ := config.GetRoute(""); route.Agent != "right" {
-		t.Errorf("an empty purpose was routed to %q", route.Agent)
+// The default of the new shape stands over the routes of the older one.
+func TestTheDefaultStandsOverTheOlderRoutes(t *testing.T) {
+	var config completion.Config
+	both := `{"default": {"agent": "new"}, "routes": {"default": {"agent": "old"}}}`
+	if err := json.Unmarshal([]byte(both), &config); err != nil {
+		t.Fatal(err)
+	}
+	if config.Default.Agent != "new" {
+		t.Errorf("read agent %q, want new", config.Default.Agent)
 	}
 }
 
