@@ -1397,7 +1397,7 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 func newHostOfProviders(t *testing.T) *Host {
 	t.Helper()
 	host := NewHost("desktop.editor")
-	t.Cleanup(func() { _ = host.TeardownAll(context.Background(), time.Second) })
+	t.Cleanup(func() { _ = host.TeardownAll(t.Context(), time.Second) })
 	for _, id := range []string{"md.numen.provider-c", "md.numen.provider-a", "md.numen.provider-b"} {
 		host.plugins[id] = DiscoveredPlugin{Manifest: Manifest{
 			ID:             id,
