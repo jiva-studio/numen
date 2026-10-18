@@ -153,12 +153,13 @@ type listed struct {
 	Deps       []string
 }
 
-// The core and the desktop meet a plugin only through the plugin contract. What
-// the build resolved is what is read, so a package reached through another
-// answers for it too, on every platform and in the monolithic build.
+// The core and the desktop meet a plugin only through the protocol: they are
+// compiled from no plugin and no module of the plugin SDK. What the build
+// resolved is what is read, so a package reached through another answers for
+// it too, on every platform and in the monolithic build.
 //
 // A test file is left out: a test stands outside the package it exercises.
-func TestNothingTheCoreOrTheDesktopIsCompiledFromIsAPlugin(t *testing.T) {
+func TestNothingTheCoreOrTheDesktopIsCompiledFromIsAPluginOrTheSDK(t *testing.T) {
 	builds := []struct {
 		module    string
 		dir       string
@@ -181,7 +182,7 @@ func TestNothingTheCoreOrTheDesktopIsCompiledFromIsAPlugin(t *testing.T) {
 					}
 					for _, pkg := range packages {
 						for _, dep := range pkg.Deps {
-							if isPlugin(dep) {
+							if isPlugin(dep) || isSDK(dep) {
 								t.Errorf("%s reaches %s", pkg.ImportPath, dep)
 							}
 						}

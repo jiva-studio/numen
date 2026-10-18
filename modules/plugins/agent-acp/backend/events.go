@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agentrun"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 

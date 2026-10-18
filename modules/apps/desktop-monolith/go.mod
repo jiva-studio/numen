@@ -22,7 +22,7 @@ require (
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/core v0.0.0 // indirect
-	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go v0.0.0 // indirect
+	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault v0.0.0 // indirect
 	github.com/jolestar/go-commons-pool/v2 v2.1.2 // indirect
 	github.com/klippa-app/go-pdfium v1.19.8 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -63,4 +63,4 @@ replace github.com/jiva-studio/numen/modules/plugins/reader-epub => ../../plugin
 
 replace github.com/jiva-studio/numen/modules/plugins/reader-pdf => ../../plugins/reader-pdf
 
-replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go => ../../libs/plugin-sdk-go
+replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault => ../../libs/plugin-sdk-go/vault

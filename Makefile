@@ -6,6 +6,8 @@ WIRE     := modules/libs/wire
 PROTOCOL := modules/libs/protocol
 PLUGIN_SDK := modules/libs/plugin-sdk
 PLUGIN_SDK_GO := modules/libs/plugin-sdk-go
+# The base module of the Go plugin SDK and each feature module under it.
+PLUGIN_SDK_GO_MODULES := $(patsubst %/go.mod,%,$(wildcard $(PLUGIN_SDK_GO)/go.mod $(PLUGIN_SDK_GO)/*/go.mod))
 
 DESKTOP  := modules/apps/desktop
 DESKTOP_MONOLITH := modules/apps/desktop-monolith
@@ -197,19 +199,22 @@ lib_plugin_sdk_lint: lib_plugin_sdk_typecheck
 # ---------------------------- Lib: Plugin SDK Go ------------------------------
 .PHONY: lib_plugin_sdk_go_build
 lib_plugin_sdk_go_build: ## build plugin-sdk-go Go library
-	cd $(PLUGIN_SDK_GO) && go build ./...
+	for m in $(PLUGIN_SDK_GO_MODULES); do (cd $$m && go build ./...) || exit 1; done
 
 .PHONY: lib_plugin_sdk_go_compile
 lib_plugin_sdk_go_compile: lib_plugin_sdk_go_build
 
 .PHONY: lib_plugin_sdk_go_test
 lib_plugin_sdk_go_test: ## run plugin-sdk-go tests with race detector
-	cd $(PLUGIN_SDK_GO) && go test ./... -race
+	for m in $(PLUGIN_SDK_GO_MODULES); do (cd $$m && go test ./... -race) || exit 1; done
 
 .PHONY: lib_plugin_sdk_go_lint
 lib_plugin_sdk_go_lint: ## run linters for plugin-sdk-go
-	cd $(PLUGIN_SDK_GO) && go vet ./...
-	cd $(PLUGIN_SDK_GO) && golangci-lint run ./...
+	for m in $(PLUGIN_SDK_GO_MODULES); do (cd $$m && go vet ./... && golangci-lint run ./...) || exit 1; done
+
+.PHONY: lib_plugin_sdk_go_vet
+lib_plugin_sdk_go_vet: ## vet every plugin-sdk-go module
+	for m in $(PLUGIN_SDK_GO_MODULES); do (cd $$m && go vet ./...) || exit 1; done
 
 # ------------------------------ Plugins Tooling -------------------------------
 .PHONY: create_plugin

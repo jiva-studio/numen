@@ -2,6 +2,20 @@
 
 Backend server lifecycle SDK for native Numen plugins.
 
+## Modules
+
+The SDK is a base module and a feature module in each folder that has a `go.mod`. A plugin requires the base module and the feature modules it imports, each with a `replace` to its folder. A feature module requires the base module at most and no other feature module.
+
+| Module | Packages | Used by |
+|---|---|---|
+| `plugin-sdk-go` | `server`, `ai` | every native plugin; `ai` by proofreading |
+| `plugin-sdk-go/agent` | `agent/agentrun`, `agent/completion` | agent, agent-acp, agent-claude |
+| `plugin-sdk-go/models` | `models` | embeddings, ocr, transcription |
+| `plugin-sdk-go/onnx` | `onnx` | embeddings, ocr, transcription |
+| `plugin-sdk-go/vault` | `vault` | reader-epub, reader-pdf |
+
+`make lib_plugin_sdk_go_vet`, `lib_plugin_sdk_go_build` and `lib_plugin_sdk_go_test` run over every module.
+
 ## Capabilities
 
 - Automatic CLI flag parsing (`-port`, `-token`) with `NUMEN_PLUGIN_PORT` and `NUMEN_PLUGIN_TOKEN` environment variable fallbacks.

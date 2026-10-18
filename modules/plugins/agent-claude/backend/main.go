@@ -13,8 +13,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agentrun"
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/completion"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/completion"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"

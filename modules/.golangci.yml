@@ -89,6 +89,15 @@ linters:
             - pkg: "net"
               desc: "the domain performs no I/O"
 
+        # Every module of the plugin SDK, the base and each feature module under it.
+        plugin-sdk:
+          list-mode: lax
+          files:
+            - "$all"
+          deny:
+            - pkg: "github.com/jiva-studio/numen/modules/libs/plugin-sdk-go"
+              desc: "the core and the applications meet a plugin through the protocol and name no SDK module"
+
         usecase:
           list-mode: lax
           files:

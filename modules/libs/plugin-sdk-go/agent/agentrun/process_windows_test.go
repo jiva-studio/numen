@@ -1,4 +1,4 @@
-//go:build unix
+//go:build windows
 
 package agentrun_test
 
@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agentrun"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
 )
 
 // Cancelling the context of a supervised command ends what the command started as well. The output
@@ -18,7 +18,7 @@ import (
 func TestSuperviseEndsWhatTheChildStarted(t *testing.T) {
 	running, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	cmd := exec.CommandContext(running, "sh", "-c", "sleep 120 & echo started; wait")
+	cmd := exec.CommandContext(running, "cmd", "/c", "echo started & ping -n 120 127.0.0.1")
 	agentrun.Supervise(cmd)
 	out, err := cmd.StdoutPipe()
 	if err != nil {
@@ -34,16 +34,13 @@ func TestSuperviseEndsWhatTheChildStarted(t *testing.T) {
 	}
 	cancel()
 
-	ended := make(chan error, 1)
+	ended := make(chan struct{})
 	go func() {
-		_, err := io.Copy(io.Discard, reader)
-		ended <- err
+		_, _ = io.Copy(io.Discard, reader)
+		close(ended)
 	}()
 	select {
-	case err := <-ended:
-		if err != nil {
-			t.Fatal(err)
-		}
+	case <-ended:
 	case <-time.After(30 * time.Second):
 		t.Fatal("what the child started outlived it")
 	}

@@ -6,7 +6,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/completion"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/completion"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
