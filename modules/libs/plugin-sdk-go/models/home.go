@@ -60,9 +60,9 @@ func GetQuota() int64 {
 	return DefaultQuota
 }
 
-// reserveSuffix names the file beside a download that says how many bytes the
-// download will hold, and staleReservation is how long a reservation that is
-// not touched keeps counting.
+// reserveSuffix ends the name of a reservation, the file that holds the bytes a
+// download will hold and, on a second line, the file it writes.
+// staleReservation is how long a reservation that is not touched keeps counting.
 const (
 	reserveSuffix    = ".reserve"
 	staleReservation = 10 * time.Minute

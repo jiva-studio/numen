@@ -24,9 +24,11 @@ func TestReserveQuotaRefusesWhatTheOtherReservationsLeaveNoRoomFor(t *testing.T)
 		t.Fatalf("second reservation error = %v", err)
 	}
 	first.Release()
-	if _, err := Reserve(context.Background(), root, 60, ""); err != nil {
+	again, err := Reserve(context.Background(), root, 60, "")
+	if err != nil {
 		t.Fatalf("after release: %v", err)
 	}
+	again.Release()
 }
 
 func TestReserveQuotaOfAnUnknownSizeClaimsWhatIsLeft(t *testing.T) {
@@ -39,6 +41,7 @@ func TestReserveQuotaOfAnUnknownSizeClaimsWhatIsLeft(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer claim.Release()
 	if claim.Room != 60 {
 		t.Fatalf("room = %d, want 60", claim.Room)
 	}
@@ -101,11 +104,8 @@ func TestLockQuotaReportsAFolderItCannotCreate(t *testing.T) {
 }
 
 func TestReservationKeepsItselfAlive(t *testing.T) {
-	previous := touchInterval
-	touchInterval = 10 * time.Millisecond
-	t.Cleanup(func() { touchInterval = previous })
 	root := t.TempDir()
-	claim, err := Reserve(context.Background(), root, 10, "")
+	claim, err := reserve(context.Background(), root, 10, "", 10*time.Millisecond)
 	if err != nil {
 		t.Fatal(err)
 	}
