@@ -22,12 +22,12 @@ const createSettings = () => {
   const log = {
     getWriter: (name: string) => {
       writers.push(name)
-      return () => {}
+      return vi.fn()
     },
   } as unknown as MessageLog
   const handle = { openTab: vi.fn(async () => ''), openTabBeside: vi.fn(async () => '') }
   const windowTabs = { handle } as unknown as ReturnType<typeof useWindowTabs>
-  const settings = useSettings({ core, words: WORDS, log, windowTabs, onSizeChanged: () => {} })
+  const settings = useSettings({ core, words: WORDS, log, windowTabs, onSizeChanged: vi.fn() })
   return { settings, writers, handle }
 }
 
@@ -159,7 +159,7 @@ describe('the lists the palette offers for a setting', () => {
 
   it('previews what the keyboard stands on in an appearance list, and nowhere else', () => {
     const { settings } = createSettings()
-    const preview = vi.spyOn(settings.dressed, 'previewItem').mockImplementation(() => {})
+    const preview = vi.spyOn(settings.dressed, 'previewItem').mockImplementation(vi.fn())
 
     settings.kept.previewItem('syncing', 'off')
     settings.kept.previewItem('appearance', 'preset:dracula')
@@ -240,7 +240,7 @@ describe('the settings tab', () => {
 
   it('opens the settings file in a tab of its own', () => {
     const { settings } = createSettings()
-    const open = vi.spyOn(settings.file, 'openSettingsFile').mockImplementation(() => {})
+    const open = vi.spyOn(settings.file, 'openSettingsFile').mockImplementation(vi.fn())
 
     settings.configured.state.installation.openFile()
 

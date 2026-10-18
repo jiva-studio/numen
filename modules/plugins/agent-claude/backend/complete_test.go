@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -131,5 +133,25 @@ func TestCompleteAnswersWithTheModelTheHostNames(t *testing.T) {
 	}
 	if !strings.Contains(string(seen), "--model m2") || strings.Contains(string(seen), "--model m1") {
 		t.Errorf("command did not see the host's model in:\n%s", seen)
+	}
+}
+
+// The models Complete answers with are those the endpoint lists, the configured one the default.
+func TestTheCompletionModelsAreTheEndpoints(t *testing.T) {
+	endpoint := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"data": [{"id": "opus", "display_name": "Opus"}, {"id": "haiku", "display_name": "Haiku"}]}`))
+	}))
+	defer endpoint.Close()
+	svc := &agentServer{}
+	svc.applyConfig(map[string]string{"apiKey": "host-key", "baseUrl": endpoint.URL, "model": "haiku"})
+
+	res, err := svc.ListCompletionModels(context.Background(), connect.NewRequest(&numenv1.ListCompletionModelsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	models := res.Msg.GetModels()
+	if len(models) != 2 || models[0].GetName() != "opus" || models[0].GetIsDefault() ||
+		models[1].GetName() != "haiku" || !models[1].GetIsDefault() {
+		t.Errorf("listed %v", models)
 	}
 }

@@ -20,37 +20,35 @@ type Current struct {
 	Plugins                  []PluginInfo
 }
 
-// Catalogue reads the models the settings can name and the plugins, with the
-// models each plugin answers completions with. Both are read at once, from one
-// listing of the agent programs.
-type Catalogue func() ([]Model, []PluginInfo)
-
 // Get reads every setting, the models a setting can name, and the limits the
 // settings are refused outside.
 type Get struct {
 	read                     func() (written, path string, err error)
-	catalogue                Catalogue
+	models                   func() []Model
 	nestedHeadingLimitBounds Bounds
 	latestDayStartTime       string
 	day                      review.Day
 	now                      port.Clock
+	plugins                  func() []PluginInfo
 }
 
 func NewGet(
 	read func() (written, path string, err error),
-	catalogue Catalogue,
+	models func() []Model,
 	nestedHeadingLimitBounds Bounds,
 	latestDayStartTime string,
 	day review.Day,
 	now port.Clock,
+	plugins func() []PluginInfo,
 ) *Get {
 	return &Get{
 		read:                     read,
-		catalogue:                catalogue,
+		models:                   models,
 		nestedHeadingLimitBounds: nestedHeadingLimitBounds,
 		latestDayStartTime:       latestDayStartTime,
 		day:                      day,
 		now:                      now,
+		plugins:                  plugins,
 	}
 }
 
@@ -60,9 +58,12 @@ func (u *Get) Execute() (Current, error) {
 		return Current{}, err
 	}
 	var models []Model
+	if u.models != nil {
+		models = u.models()
+	}
 	var pluginInfos []PluginInfo
-	if u.catalogue != nil {
-		models, pluginInfos = u.catalogue()
+	if u.plugins != nil {
+		pluginInfos = u.plugins()
 	}
 	return Current{
 		Written:                  written,

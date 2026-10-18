@@ -498,8 +498,8 @@ type PluginInfo struct {
 	Secrets []string `protobuf:"bytes,9,rep,name=secrets,proto3" json:"secrets,omitempty"`
 	// The names of the secrets that have a key stored. A key never travels here.
 	StoredSecrets []string `protobuf:"bytes,10,rep,name=stored_secrets,json=storedSecrets,proto3" json:"stored_secrets,omitempty"`
-	// The models the plugin answers completions with, as the agent programs it
-	// runs list them. Empty where it lists none.
+	// The models the plugin answers completions with, as its
+	// CompletionService.ListCompletionModels lists them. Empty where it lists none.
 	Models []*PluginModel `protobuf:"bytes,11,rep,name=models,proto3" json:"models,omitempty"`
 	// Whether the person lets the plugin ask for model completions.
 	CompletionConsent CompletionConsent `protobuf:"varint,12,opt,name=completion_consent,json=completionConsent,proto3,enum=numen.v1.CompletionConsent" json:"completion_consent,omitempty"`

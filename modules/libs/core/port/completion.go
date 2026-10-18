@@ -18,7 +18,7 @@ var (
 
 	// ErrNoConsent means the person has not let the plugin ask for completions,
 	// or has refused it.
-	ErrNoConsent = errors.New("the person has not let the plugin ask a model")
+	ErrNoConsent = errors.New("AI access not allowed — allow it in Settings → AI")
 )
 
 // Question is what a plugin asks of a model.

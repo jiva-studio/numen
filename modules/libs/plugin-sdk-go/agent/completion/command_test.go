@@ -82,3 +82,17 @@ func TestRunCommandStopsACommandThatWritesTooMuch(t *testing.T) {
 		}
 	}
 }
+
+// The Claude Code CLI is offered by the aliases its --model takes, none of them as its default.
+func TestTheClaudeModelsAreTheAliasesOfItsModelFlag(t *testing.T) {
+	var names []string
+	for _, one := range ListClaudeModels() {
+		names = append(names, one.GetName())
+		if one.GetIsDefault() || one.GetTitle() == "" {
+			t.Errorf("%v is listed as a default or without a title", one)
+		}
+	}
+	if strings.Join(names, ",") != "sonnet,opus,haiku" {
+		t.Errorf("listed %v", names)
+	}
+}

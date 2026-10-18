@@ -14,6 +14,10 @@ option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/nume
 service CompletionService {
   // Complete answers the question with text.
   rpc Complete(CompleteRequest) returns (CompleteResponse);
+
+  // ListCompletionModels lists the models Complete answers with: a model named
+  // here is one Complete accepts. None leaves the model to the agent alone.
+  rpc ListCompletionModels(ListCompletionModelsRequest) returns (ListCompletionModelsResponse);
 }
 
 // HostService is what the host answers for a plugin that holds the ai:complete
@@ -103,4 +107,20 @@ enum CompletionErrorCode {
 // CompletionAnswer is what a model said.
 message CompletionAnswer {
   string text = 1;
+}
+
+message ListCompletionModelsRequest {}
+
+message ListCompletionModelsResponse {
+  repeated CompletionModel models = 1;
+}
+
+// CompletionModel is one model an agent answers completions with.
+message CompletionModel {
+  // What CompleteRequest.model names it by.
+  string name = 1;
+  // What it is called when shown to a person.
+  string title = 2;
+  // Set on the model the agent answers with when CompleteRequest.model is empty.
+  bool is_default = 3;
 }

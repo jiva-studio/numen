@@ -6,13 +6,7 @@ import type { PluginInfo, SettingEdit } from '@/entities/settings'
 import { getSettingAt as at } from '@/entities/settings'
 import AiSettingsSection from './AiSettingsSection.vue'
 import type { Installation, SettingsTabState } from '../types'
-
-/** The entry at a place of a list, which the test needs there. */
-const pick = <T>(list: readonly T[], at: number): T => {
-  const found = list[at]
-  if (found === undefined) throw new Error(`nothing at ${at}`)
-  return found
-}
+import { pick } from '@/testing/pick'
 
 const createPlugin = (id: string, name: string, over: Partial<PluginInfo> = {}): PluginInfo => ({
   id,
@@ -186,7 +180,10 @@ describe('the keys', () => {
 
   it('are removed where one is set', async () => {
     const { wrapper, secrets } = createSection()
-    const remove = wrapper.findAll('button').find((one) => one.text() === 'Delete')!
+    const remove = pick(
+      wrapper.findAll('button').filter((one) => one.text() === 'Delete'),
+      0,
+    )
     await remove.trigger('click')
     expect(secrets).toStrictEqual(['delete test.agent-b apiKey'])
   })

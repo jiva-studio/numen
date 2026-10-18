@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -64,5 +65,17 @@ func TestWhatTheInstallationOpensAnswers(t *testing.T) {
 	by, err := OpenProofreader(func() (port.Proofreader, error) { return answering{}, nil })
 	if err != nil || by == nil {
 		t.Errorf("got %v, %v", by, err)
+	}
+}
+
+// A proofreading stopped for want of consent says where to allow it; any other
+// stop says what stopped it.
+func TestAProofreadErrorSaysWhereToAllowAModel(t *testing.T) {
+	refused := fmt.Errorf("batch 1: unavailable: %w", port.ErrNoConsent)
+	if got := GetProofreadError(refused); got != "AI access not allowed — allow it in Settings → AI" {
+		t.Errorf("said %q", got)
+	}
+	if got := GetProofreadError(errors.New("the model broke")); got != "the model broke" {
+		t.Errorf("said %q", got)
 	}
 }

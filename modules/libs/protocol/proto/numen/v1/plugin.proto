@@ -65,8 +65,8 @@ message PluginInfo {
   repeated string secrets = 9;
   // The names of the secrets that have a key stored. A key never travels here.
   repeated string stored_secrets = 10;
-  // The models the plugin answers completions with, as the agent programs it
-  // runs list them. Empty where it lists none.
+  // The models the plugin answers completions with, as its
+  // CompletionService.ListCompletionModels lists them. Empty where it lists none.
   repeated PluginModel models = 11;
   // Whether the person lets the plugin ask for model completions.
   CompletionConsent completion_consent = 12;

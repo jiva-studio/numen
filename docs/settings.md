@@ -452,7 +452,7 @@ Every recording handed over ends in an answer, and only one of them is "later". 
 
 An installation naming no profile proofreads nothing, and nothing asks for a key or a network.
 
-A profile says how a text is cut into requests. Which model answers them is not a profile's to say: the proofreading plugin asks the host, and the host answers from the plugin's own `agent` setting, else from [`ai.default`](#where-a-plugins-questions-to-a-model-are-answered), which names the agent plugin, the model and the number of questions answered at once. With no agent to answer, or before the person lets the plugin ask, proofreading fails with "unavailable" and nothing is corrected.
+A profile says how a text is cut into requests. Which model answers them is not a profile's to say: the proofreading plugin asks the host, and the host answers from the plugin's own `agent` setting, else from [`ai.default`](#where-a-plugins-questions-to-a-model-are-answered), which names the agent plugin, the model and the number of questions answered at once. With no agent to answer, proofreading fails with "unavailable"; before the person lets the plugin ask, it fails with "AI access not allowed — allow it in Settings → AI". Either way nothing is corrected.
 
 ```json
 {
@@ -611,9 +611,9 @@ An agent that is not installed, is disabled or does not declare `ai.completion.p
 
 The file is read at every question, so a choice written while the application runs applies to the next one.
 
-The first question of a plugin the person has not answered for is refused with `NO_CONSENT`, and the settings page puts it to the person: the AI section names the plugin that asked, with Allow and Refuse. Refused, every question of that plugin is answered `NO_CONSENT`, which the plugin shows as the reason nothing was answered; the proofreading plugin answers it as unavailable, with that reason.
+The first question of a plugin the person has not answered for is refused with `NO_CONSENT`, and the settings page puts it to the person: the AI section names the plugin that asked, with Allow and Refuse. Refused, every question of that plugin is answered `NO_CONSENT`, which the plugin shows as the reason nothing was answered; the proofreading plugin answers it as permission denied, and the proofreading stands in the list of what is being done with "AI access not allowed — allow it in Settings → AI".
 
-The settings page writes all of these. Its AI section holds the default agent and its model, a switch for each plugin that may ask, and the keys of the secrets plugins declare; a plugin's own section draws its setting of type `agent` as two lists, the agent first, "Default (<the agent answering it now>)" at its head, then the model, "Agent default" at its head. The models a list offers are the ones the agent's programs list.
+The settings page writes all of these. Its AI section holds the default agent and its model, a switch for each plugin that may ask, and the keys of the secrets plugins declare; a plugin's own section draws its setting of type `agent` as two lists, the agent first, "Default (<the agent answering it now>)" at its head, then the model, "Agent default" at its head. The models a list offers are the ones the agent lists through `CompletionService.ListCompletionModels`: the models its `Complete` answers with.
 
 A file of an older shape, holding `ai.routes`, still loads: its `routes.default` is read as `ai.default` where the file names no `ai.default`, and the routes of single purposes are not read.
 

@@ -57,26 +57,3 @@ func TestAFileWithRoutesByPurposeLoads(t *testing.T) {
 		t.Errorf("the default reads %+v, want %+v", held.AI.Default, want)
 	}
 }
-
-// A provider offers the models of the programs it runs, each name once, and
-// none of another provider's.
-func TestAProviderOffersTheModelsOfItsOwnPrograms(t *testing.T) {
-	programs := []port.AgentProgram{
-		{Provider: "p.one", Name: "a", Models: []port.AgentModel{{Name: "m1"}, {Name: "m2"}}},
-		{Provider: "p.two", Name: "b", Models: []port.AgentModel{{Name: "other"}}},
-		{Provider: "p.one", Name: "c", Models: []port.AgentModel{{Name: "m2"}, {Name: "m3", IsDefault: true}}},
-	}
-	got := getProviderModels(programs, "p.one")
-	want := []port.AgentModel{{Name: "m1"}, {Name: "m2"}, {Name: "m3", IsDefault: true}}
-	if len(got) != len(want) {
-		t.Fatalf("offered %v, want %v", got, want)
-	}
-	for at := range want {
-		if got[at] != want[at] {
-			t.Errorf("model %d is %+v, want %+v", at, got[at], want[at])
-		}
-	}
-	if none := getProviderModels(programs, "p.three"); len(none) != 0 {
-		t.Errorf("a provider running nothing offered %v", none)
-	}
-}

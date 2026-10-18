@@ -19,7 +19,7 @@ const answer = (path: string): Neighbourhood => ({
 })
 
 /** A stream that stays open, so a loop waiting on it is not the one under test. */
-const waitForever = () => new Promise<never>(() => {})
+const waitForever = () => new Promise<never>(vi.fn())
 
 const settled = {
   id: '01JQVAULTPHYSICS0000000000',
@@ -47,7 +47,7 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     agentUnreachable: async () => '',
     watchVaultChanges: async function* () {},
     watchFocus: async function* () {},
-    writeOpenTabs: async () => {},
+    writeOpenTabs: vi.fn(() => Promise.resolve()),
     watchEdits: async function* () {},
     watchTasks: async function* () {
       await waitForever()
@@ -71,14 +71,14 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     getReviewSettings: async () => ({ starts: '04:00', latest: '12:00', day: '2026-09-04' }),
     setReviewSettings: async () => null,
     getSettings: async () => ({ written: '{}', path: '/numen.json', models: [] }),
-    updateSettings: async () => {},
+    updateSettings: vi.fn(() => Promise.resolve()),
     writePluginSecret: vi.fn(() => Promise.resolve()),
     deletePluginSecret: vi.fn(() => Promise.resolve()),
     getSettingsFile: async () => ({ written: '{}', path: '/numen.json' }),
     saveSettingsFile: async () => ({ isChanged: false }),
     watchQuit: async function* () {},
-    reportFlush: async () => {},
-    detachTab: async () => {},
+    reportFlush: vi.fn(() => Promise.resolve()),
+    detachTab: vi.fn(() => Promise.resolve()),
     ...over,
   }
 }
@@ -240,9 +240,13 @@ describe('another vault under this window', () => {
   const createWindow = (core: Core) => {
     const drawn: string[] = []
     const window = useWindowDisplay(core, {
-      wait: async () => {},
-      onVaultChanged: async (paths) => void drawn.push(`changed ${paths.join(' ')}`),
-      reload: () => void drawn.push('reloaded'),
+      wait: vi.fn(() => Promise.resolve()),
+      onVaultChanged: async (paths) => {
+        drawn.push(`changed ${paths.join(' ')}`)
+      },
+      reload: () => {
+        drawn.push('reloaded')
+      },
     })
     return { window, drawn }
   }
@@ -514,7 +518,7 @@ describe('what the application is doing', () => {
         await waitForever()
       },
     })
-    const window = useWindowDisplay(core, { wait: async () => {} })
+    const window = useWindowDisplay(core, { wait: vi.fn(() => Promise.resolve()) })
 
     await window.start()
     await nap()
@@ -545,7 +549,7 @@ describe('what the application is doing', () => {
     })
     // The clock is the test's, so the wait between one stream and the next is
     // not a second of it.
-    const window = useWindowDisplay(core, { wait: async () => {} })
+    const window = useWindowDisplay(core, { wait: vi.fn(() => Promise.resolve()) })
 
     await window.start()
     await nap()
@@ -586,7 +590,7 @@ describe('what the application is doing', () => {
         await waitForever()
       },
     })
-    const window = useWindowDisplay(core, { wait: async () => {} })
+    const window = useWindowDisplay(core, { wait: vi.fn(() => Promise.resolve()) })
 
     await window.start()
     await nap()
@@ -653,7 +657,9 @@ describe('the first note shown', () => {
     })
     const window = useWindowDisplay(core, {
       wait: waitForever,
-      reportChange: (one) => void said.push(one),
+      reportChange: (one) => {
+        said.push(one)
+      },
     })
 
     await window.start()
@@ -671,7 +677,11 @@ describe('the first note shown', () => {
         return { path: 'Opening.md' }
       },
     })
-    const window = useWindowDisplay(core, { onVaultChanged: (paths) => void changed.push(paths) })
+    const window = useWindowDisplay(core, {
+      onVaultChanged: (paths) => {
+        changed.push(paths)
+      },
+    })
 
     await window.start()
     await nap()
@@ -692,7 +702,9 @@ describe('the first note shown', () => {
         waits.push(ms)
         window.close()
       },
-      onVaultChanged: (paths) => void changed.push(paths),
+      onVaultChanged: (paths) => {
+        changed.push(paths)
+      },
     })
 
     await window.start()

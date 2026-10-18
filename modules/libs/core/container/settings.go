@@ -2,12 +2,10 @@ package container
 
 import (
 	"encoding/json"
-	"slices"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/completion"
 )
@@ -189,47 +187,29 @@ func (c Config) SetSettings(said Settings) Config {
 	return c
 }
 
-// GetCatalogue reads, as the window asks, the models each setting that names one
-// can be set to, and the discovered plugins with their settings schemas, each
-// plugin that answers completions with the models its agent programs list. The
-// programs are listed once for both.
-func (c Config) GetCatalogue() func() ([]port.Model, []port.PluginInfo) {
-	return func() ([]port.Model, []port.PluginInfo) {
+// Plugins reads, as the window asks, the discovered plugins and their settings
+// schemas, each plugin that answers completions with the models it answers with.
+func (c Config) Plugins() func() []port.PluginInfo {
+	return func() []port.PluginInfo {
+		if c.PluginHost == nil {
+			return nil
+		}
+		var discoverer port.PluginDiscoverer = c.PluginHost
+		infos := discoverer.GetPluginInfos()
+		c.setCompletionModels(infos)
+		return infos
+	}
+}
+
+// Models reads, as the window asks, the models each setting that names one can
+// be set to, and the programs the agent setting can name.
+//
+// The settings are read with them, so every row is answered against what is in
+// force; a file that cannot be read is answered against the defaults. The
+// programs and their models are the ones the agent plugins list.
+func (c Config) Models() func() []port.Model {
+	return func() []port.Model {
 		held := c.getSettingsOrDefaults()
-		programs := c.getAgentPrograms(held.Agent)
-		return settings.AgentModels(agentAt, held.Agent, programs), c.getPluginInfos(programs)
+		return settings.AgentModels(agentAt, held.Agent, c.getAgentPrograms(held.Agent))
 	}
-}
-
-// getPluginInfos is the discovered plugins, each plugin that answers completions
-// with the models of the programs it runs, every model named once.
-func (c Config) getPluginInfos(programs []port.AgentProgram) []port.PluginInfo {
-	if c.PluginHost == nil {
-		return nil
-	}
-	var discoverer port.PluginDiscoverer = c.PluginHost
-	infos := discoverer.GetPluginInfos()
-	for at, info := range infos {
-		if slices.Contains(info.Capabilities, plugin.CapabilityAgentProvider) {
-			infos[at].Models = getProviderModels(programs, info.ID)
-		}
-	}
-	return infos
-}
-
-// getProviderModels is the models of the programs the provider runs, in the
-// order they are listed, each name once.
-func getProviderModels(programs []port.AgentProgram, provider string) []port.AgentModel {
-	var models []port.AgentModel
-	for _, program := range programs {
-		if program.Provider != provider {
-			continue
-		}
-		for _, model := range program.Models {
-			if !slices.ContainsFunc(models, func(held port.AgentModel) bool { return held.Name == model.Name }) {
-				models = append(models, model)
-			}
-		}
-	}
-	return models
 }

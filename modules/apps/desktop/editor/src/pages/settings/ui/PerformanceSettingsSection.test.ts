@@ -8,15 +8,18 @@ import PerformanceSettingsSection from './PerformanceSettingsSection.vue'
 import type { Installation, SettingsTabState } from '../types'
 import { WORDS as words } from '../words'
 import paths from '../paths.json'
+import { pick } from '@/testing/pick'
 
 const createSection = (file: Record<string, unknown> = {}) => {
   const written: SettingEdit[] = []
   const installation: Installation = {
     getSetting: (path) => at(file, path),
     getModels: () => [],
-    write: (said) => void written.push(...said),
+    write: (said) => {
+      written.push(...said)
+    },
     file: ref('/numen.json'),
-    openFile: () => {},
+    openFile: vi.fn(),
     themes: ref([]),
     applied: ref('preset:numen'),
     mode: ref('system'),
@@ -26,17 +29,17 @@ const createSection = (file: Record<string, unknown> = {}) => {
       interfaceScale: { least: 0.8, most: 2 },
       textScale: { least: 0.8, most: 1.75 },
     }),
-    choose: () => {},
+    choose: vi.fn(),
     isSyncing: ref(true),
     isNesting: ref(true),
     headings: ref(6),
     headingsBounds: ref({ least: 2, most: 9 }),
-    chooseHeadings: () => {},
+    chooseHeadings: vi.fn(),
     dayStartTime: ref('04:00'),
     latestDayStartTime: ref('12:00'),
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
-    chooseDayStartTime: () => {},
+    chooseDayStartTime: vi.fn(),
   }
   const state: SettingsTabState = { installation }
   const wrapper = mount(PerformanceSettingsSection, {
@@ -89,10 +92,10 @@ describe('PerformanceSettingsSection', () => {
     const numberFields = wrapper.findAllComponents({ name: 'NumberField' })
     expect(numberFields).toHaveLength(4)
 
-    numberFields[0]!.vm.$emit('commit', 128)
-    numberFields[1]!.vm.$emit('commit', 12)
-    numberFields[2]!.vm.$emit('commit', 4)
-    numberFields[3]!.vm.$emit('commit', 8)
+    pick(numberFields, 0).vm.$emit('commit', 128)
+    pick(numberFields, 1).vm.$emit('commit', 12)
+    pick(numberFields, 2).vm.$emit('commit', 4)
+    pick(numberFields, 3).vm.$emit('commit', 8)
 
     expect(written).toStrictEqual([
       { at: paths.performanceEmbeddingBatchSize, value: '128' },
@@ -106,10 +109,10 @@ describe('PerformanceSettingsSection', () => {
     const { wrapper, written } = createSection({ performance: { profile: 'custom' } })
     const numberFields = wrapper.findAllComponents({ name: 'NumberField' })
 
-    numberFields[0]!.vm.$emit('commit', null)
-    numberFields[1]!.vm.$emit('commit', null)
-    numberFields[2]!.vm.$emit('commit', null)
-    numberFields[3]!.vm.$emit('commit', null)
+    pick(numberFields, 0).vm.$emit('commit', null)
+    pick(numberFields, 1).vm.$emit('commit', null)
+    pick(numberFields, 2).vm.$emit('commit', null)
+    pick(numberFields, 3).vm.$emit('commit', null)
 
     expect(written).toHaveLength(0)
   })

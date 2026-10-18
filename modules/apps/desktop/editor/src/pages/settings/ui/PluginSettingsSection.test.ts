@@ -6,13 +6,7 @@ import type { PluginInfo, SettingEdit } from '@/entities/settings'
 import { getSettingAt as at } from '@/entities/settings'
 import PluginSettingsSection from './PluginSettingsSection.vue'
 import type { Installation, SettingsTabState } from '../types'
-
-/** The entry at a place of a list, which the test needs there. */
-const pick = <T>(list: readonly T[], at: number): T => {
-  const found = list[at]
-  if (found === undefined) throw new Error(`nothing at ${at}`)
-  return found
-}
+import { pick } from '@/testing/pick'
 
 const SAMPLE_PLUGIN: PluginInfo = {
   id: 'test.transcription',
@@ -70,10 +64,12 @@ const createSection = (
   const installation: Installation = {
     getSetting: (path) => at(file, path),
     getModels: () => [],
-    write: (said) => void written.push(...said),
+    write: (said) => {
+      written.push(...said)
+    },
     plugins: ref(plugins),
     file: ref('/numen.json'),
-    openFile: () => {},
+    openFile: vi.fn(),
     themes: ref([]),
     applied: ref('preset:numen'),
     mode: ref('system'),
@@ -83,17 +79,17 @@ const createSection = (
       interfaceScale: { least: 0.8, most: 2 },
       textScale: { least: 0.8, most: 1.75 },
     }),
-    choose: () => {},
+    choose: vi.fn(),
     isSyncing: ref(true),
     isNesting: ref(true),
     headings: ref(6),
     headingsBounds: ref({ least: 2, most: 9 }),
-    chooseHeadings: () => {},
+    chooseHeadings: vi.fn(),
     dayStartTime: ref('04:00'),
     latestDayStartTime: ref('12:00'),
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
-    chooseDayStartTime: () => {},
+    chooseDayStartTime: vi.fn(),
   }
   const state: SettingsTabState = { installation }
   const wrapper = mount(PluginSettingsSection, {

@@ -29,8 +29,9 @@ func TestGetAnswersTheSettingsTheirModelsAndTheDay(t *testing.T) {
 		},
 	}
 	get := settings.NewGet(
-		read, func() ([]port.Model, []port.PluginInfo) { return models, pluginList }, bounds, "08:00",
+		read, func() []port.Model { return models }, bounds, "08:00",
 		review.Day{Starts: review.DayStartTime, In: time.UTC}, func() time.Time { return morning },
+		func() []port.PluginInfo { return pluginList },
 	)
 
 	got, err := get.Execute()
@@ -57,7 +58,7 @@ func TestGetAnswersTheSettingsTheirModelsAndTheDay(t *testing.T) {
 
 func TestGetAnswersNoModelsWhereNoneAreBound(t *testing.T) {
 	t.Parallel()
-	get := settings.NewGet(read, nil, settings.Bounds{}, "", review.Day{In: time.UTC}, time.Now)
+	get := settings.NewGet(read, nil, settings.Bounds{}, "", review.Day{In: time.UTC}, time.Now, nil)
 
 	got, err := get.Execute()
 	if err != nil {
@@ -75,7 +76,7 @@ func TestGetRefusesWhenTheFileCannotBeRead(t *testing.T) {
 	t.Parallel()
 	get := settings.NewGet(
 		func() (string, string, error) { return "", "", errRead },
-		nil, settings.Bounds{}, "", review.Day{In: time.UTC}, time.Now,
+		nil, settings.Bounds{}, "", review.Day{In: time.UTC}, time.Now, nil,
 	)
 
 	if _, err := get.Execute(); !errors.Is(err, errRead) {

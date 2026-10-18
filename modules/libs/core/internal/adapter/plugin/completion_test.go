@@ -22,6 +22,16 @@ type answeringAgent struct {
 	got      *v1.CompleteRequest
 	response *v1.CompleteResponse
 	failure  error
+	models   []*v1.CompletionModel
+}
+
+func (a *answeringAgent) ListCompletionModels(
+	context.Context, *connect.Request[v1.ListCompletionModelsRequest],
+) (*connect.Response[v1.ListCompletionModelsResponse], error) {
+	if a.failure != nil {
+		return nil, a.failure
+	}
+	return connect.NewResponse(&v1.ListCompletionModelsResponse{Models: a.models}), nil
 }
 
 func (a *answeringAgent) Complete(
@@ -325,5 +335,35 @@ func TestARouteNamesTheAgentOverTheLowestID(t *testing.T) {
 	id, err := agents.getAgentID("md.numen.provider-c")
 	if err != nil || id != "md.numen.provider-c" {
 		t.Errorf("named, got %q, %v", id, err)
+	}
+}
+
+// The bridge lists the models the agent says it completes with, in its order.
+func TestTheAgentListsTheModelsItCompletesWith(t *testing.T) {
+	host := newCompletionHost(t, &answeringAgent{models: []*v1.CompletionModel{
+		{Name: "a", Title: "A"}, {Name: "b", Title: "B", IsDefault: true},
+	}})
+	bridge, err := OpenCompletionBridge(t.Context(), host, "md.numen.agent")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = bridge.Close() })
+	got, err := bridge.ListModels(t.Context())
+	want := []port.AgentModel{{Name: "a", Title: "A"}, {Name: "b", Title: "B", IsDefault: true}}
+	if err != nil || len(got) != 2 || got[0] != want[0] || got[1] != want[1] {
+		t.Errorf("listed %+v, %v; want %+v", got, err, want)
+	}
+}
+
+// An agent that cannot list its models is unavailable.
+func TestAnAgentThatCannotListItsModelsIsUnavailable(t *testing.T) {
+	host := newCompletionHost(t, &answeringAgent{failure: connect.NewError(connect.CodeUnavailable, errors.New("down"))})
+	bridge, err := OpenCompletionBridge(t.Context(), host, "md.numen.agent")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = bridge.Close() })
+	if _, err := bridge.ListModels(t.Context()); !errors.Is(err, port.ErrUnavailable) {
+		t.Errorf("error = %v, want port.ErrUnavailable", err)
 	}
 }

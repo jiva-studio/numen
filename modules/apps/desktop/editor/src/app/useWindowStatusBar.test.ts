@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { useWindowStatusBar } from './useWindowStatusBar'
 import type { Task } from '@/shared/notices/task'
+import { pick } from '@/testing/pick'
 
 describe('useWindowStatusBar', () => {
   it('maps empty tasks to empty status bar tasks', () => {
@@ -38,14 +39,14 @@ describe('useWindowStatusBar', () => {
     const statusBar = useWindowStatusBar({ tasks })
 
     expect(statusBar.tasks.value).toHaveLength(2)
-    const task1 = statusBar.tasks.value[0]!
+    const task1 = pick(statusBar.tasks.value, 0)
     expect(task1.id).toBe('task-1')
     expect(task1.label).toBe('Indexing book')
     expect(task1.progress).toBe(50)
     expect(task1.state).toBe('running')
     expect(task1.group).toBe('Indexing')
 
-    const task2 = statusBar.tasks.value[1]!
+    const task2 = pick(statusBar.tasks.value, 1)
     expect(task2.progress).toBeUndefined()
     expect(task2.state).toBe('running')
     expect(task2.group).toBe('Audio & Transcription')
@@ -88,7 +89,7 @@ describe('useWindowStatusBar detail and unit', () => {
     error: '',
     isUserStarted: false,
   }
-  const first = (task: Task) => useWindowStatusBar({ tasks: ref([task]) }).tasks.value[0]!
+  const first = (task: Task) => pick(useWindowStatusBar({ tasks: ref([task]) }).tasks.value, 0)
 
   it('carries what the task is about, and nothing where it is about nothing', () => {
     expect(first({ ...base, about: 'doc.pdf' }).about).toBe('doc.pdf')
@@ -142,5 +143,27 @@ describe('useWindowStatusBar groups and handlers', () => {
     const bare = useWindowStatusBar({ tasks: ref([plain]) })
     expect(() => bare.onCancelTask('t')).not.toThrow()
     expect(() => bare.onRetryTask('t')).not.toThrow()
+  })
+})
+
+describe('a proofreading the person has not allowed', () => {
+  it('stands failed in the status bar, saying where to allow it', () => {
+    const reason = 'AI access not allowed — allow it in Settings → AI'
+    const tasks = ref<readonly Task[]>([
+      {
+        id: 'proofread-talks/one.mp3',
+        label: 'Proofreading a transcript',
+        about: 'talks/one.mp3',
+        done: 0,
+        total: 0,
+        counting: 'things',
+        error: reason,
+        isUserStarted: true,
+      },
+    ])
+
+    const [shown] = useWindowStatusBar({ tasks }).tasks.value
+
+    expect(shown).toMatchObject({ state: 'failed', error: reason, canCancel: false })
   })
 })

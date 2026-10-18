@@ -337,3 +337,13 @@ func TestProofreaderBridgeKeepsTheEndOfAContextWhileStartingAsItIs(t *testing.T)
 		})
 	}
 }
+
+func TestProofreaderBridgeReadsAModelThePersonHasNotAllowedAsNoConsent(t *testing.T) {
+	mock := &mockProofreadingServer{failure: connect.NewError(connect.CodePermissionDenied, errors.New("not allowed"))}
+	bridge, _ := openTestProofreader(t, mock)
+
+	_, err := bridge.ProofreadScan(t.Context(), []domain.ProofreadPage{{Number: 1}}, 0)
+	if !errors.Is(err, port.ErrNoConsent) {
+		t.Errorf("got %v, want %v", err, port.ErrNoConsent)
+	}
+}

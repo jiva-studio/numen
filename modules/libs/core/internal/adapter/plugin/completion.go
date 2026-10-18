@@ -199,3 +199,17 @@ func readWireQuestion(wire *v1.CompletionQuestion) port.Question {
 		},
 	}
 }
+
+// ListModels returns the models the agent plugin answers completions with, in
+// the order it lists them.
+func (b *CompletionBridge) ListModels(ctx context.Context) ([]port.AgentModel, error) {
+	res, err := b.client.ListCompletionModels(ctx, connect.NewRequest(&v1.ListCompletionModelsRequest{}))
+	if err != nil {
+		return nil, readCompletionError(ctx, err)
+	}
+	models := make([]port.AgentModel, 0, len(res.Msg.GetModels()))
+	for _, one := range res.Msg.GetModels() {
+		models = append(models, port.AgentModel{Name: one.GetName(), Title: one.GetTitle(), IsDefault: one.GetIsDefault()})
+	}
+	return models, nil
+}

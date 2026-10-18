@@ -41,3 +41,16 @@ func getCompletionCommand(command []string) (string, []string) {
 	}
 	return "", nil
 }
+
+// ListCompletionModels lists the models Complete answers with: the aliases the Claude Code CLI
+// takes, while a command that gives a single answer is there to take them.
+func (s *agentServer) ListCompletionModels(
+	context.Context,
+	*connect.Request[numenv1.ListCompletionModelsRequest],
+) (*connect.Response[numenv1.ListCompletionModelsResponse], error) {
+	res := &numenv1.ListCompletionModelsResponse{}
+	if name, _ := getCompletionCommand(s.command); name != "" {
+		res.Models = completion.ListClaudeModels()
+	}
+	return connect.NewResponse(res), nil
+}

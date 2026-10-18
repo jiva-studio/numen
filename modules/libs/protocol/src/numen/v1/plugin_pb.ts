@@ -252,8 +252,8 @@ export type PluginInfo = Message<"numen.v1.PluginInfo"> & {
   storedSecrets: string[];
 
   /**
-   * The models the plugin answers completions with, as the agent programs it
-   * runs list them. Empty where it lists none.
+   * The models the plugin answers completions with, as its
+   * CompletionService.ListCompletionModels lists them. Empty where it lists none.
    *
    * @generated from field: repeated numen.v1.PluginModel models = 11;
    */

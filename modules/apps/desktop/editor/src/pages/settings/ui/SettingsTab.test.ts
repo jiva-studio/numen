@@ -82,9 +82,13 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
   const installation: Installation = {
     getSetting: (path) => at(file, path),
     getModels: (path) => MODELS.filter((one) => one.namedAt.join('.') === path.join('.')),
-    write: (said) => void written.push(...said),
+    write: (said) => {
+      written.push(...said)
+    },
     file: ref('/numen.json'),
-    openFile: () => void done.push('opens the file'),
+    openFile: () => {
+      done.push('opens the file')
+    },
     themes: ref([
       { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
       { name: 'mine:sea', title: 'sea', isBuiltIn: false, isPinned: false },
@@ -97,7 +101,9 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
       interfaceScale: { least: 0.8, most: 2 },
       textScale: { least: 0.8, most: 1.75 },
     }),
-    choose: (item) => void done.push(`choose ${item}`),
+    choose: (item) => {
+      done.push(`choose ${item}`)
+    },
     isSyncing: computed({
       get: () => isSyncing.value,
       set: (on) => {
@@ -114,12 +120,16 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
     }),
     headings: ref(6),
     headingsBounds: ref({ least: 2, most: 9 }),
-    chooseHeadings: (count) => void done.push(`headings ${count}`),
+    chooseHeadings: (count) => {
+      done.push(`headings ${count}`)
+    },
     dayStartTime: ref('04:00'),
     latestDayStartTime: ref('12:00'),
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
-    chooseDayStartTime: (hour) => void done.push(`day starts ${hour}`),
+    chooseDayStartTime: (hour) => {
+      done.push(`day starts ${hour}`)
+    },
   }
   const tab = mount(SettingsTab, {
     props: { state: { installation } },

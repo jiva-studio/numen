@@ -337,7 +337,7 @@ func (t *Worker) proofreadTranscript(
 	id := run.GetProofreadID(path)
 	fail := func(err error) {
 		t.reportTask(run.Task{
-			ID: id, Title: "Proofreading a transcript", About: path, Error: err.Error(),
+			ID: id, Title: "Proofreading a transcript", About: path, Error: run.GetProofreadError(err),
 		}, isUserStarted)
 	}
 	if isUserStarted {

@@ -234,7 +234,6 @@ func TestAModelThatCannotBeReachedIsUnavailable(t *testing.T) {
 		"no route":    ai.ErrNoRoute,
 		"unavailable": ai.ErrUnavailable,
 		"no host":     ai.ErrNoHost,
-		"no consent":  ai.ErrNoConsent,
 		"wrapped":     fmt.Errorf("batch 1: %w", ai.ErrNoRoute),
 	}
 	for name, failure := range cases {
@@ -284,5 +283,15 @@ func TestWithoutAHostTheProofreadingFailsAndInventsNothing(t *testing.T) {
 
 	if connect.CodeOf(err) != connect.CodeUnavailable || res != nil {
 		t.Errorf("got %v, %v", res, err)
+	}
+}
+
+func TestAModelThePersonHasNotAllowedIsPermissionDenied(t *testing.T) {
+	proof := newProofreadingServer(func(context.Context, *numenv1.CompletionQuestion) (string, error) {
+		return "", fmt.Errorf("batch 1: %w", ai.ErrNoConsent)
+	})
+	_, err := proof.ProofreadText(t.Context(), connect.NewRequest(scanRequest(0, page(1, line(1, "words")))))
+	if connect.CodeOf(err) != connect.CodePermissionDenied || !errors.Is(err, ai.ErrNoConsent) {
+		t.Errorf("got %v, want permission denied", err)
 	}
 }

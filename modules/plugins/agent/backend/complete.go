@@ -43,3 +43,16 @@ func (s *agentServer) Complete(
 		return *reply.Content, nil
 	})
 }
+
+// ListCompletionModels lists the model Complete answers with when it is named none.
+func (s *agentServer) ListCompletionModels(
+	context.Context,
+	*connect.Request[numenv1.ListCompletionModelsRequest],
+) (*connect.Response[numenv1.ListCompletionModelsResponse], error) {
+	s.mu.RLock()
+	model := getModel("", s.modelName)
+	s.mu.RUnlock()
+	return connect.NewResponse(&numenv1.ListCompletionModelsResponse{
+		Models: []*numenv1.CompletionModel{{Name: model, Title: model, IsDefault: true}},
+	}), nil
+}

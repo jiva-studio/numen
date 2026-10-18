@@ -31,7 +31,10 @@ import (
 // providerServer is an agent plugin that runs the programs it is given.
 type providerServer struct {
 	numenv1connect.UnimplementedAgentServiceHandler
+	numenv1connect.UnimplementedCompletionServiceHandler
 	programs []*v1.AgentProgram
+	// completionModels are what it says Complete answers with.
+	completionModels []*v1.CompletionModel
 	// onlyWith, when set, is the program the plugin lists only under a command line set for it.
 	onlyWith string
 
@@ -83,6 +86,12 @@ func (s *providerServer) getCommands() []*v1.AgentProgramCommand {
 	return slices.Clone(s.commands)
 }
 
+func (s *providerServer) ListCompletionModels(
+	context.Context, *connect.Request[v1.ListCompletionModelsRequest],
+) (*connect.Response[v1.ListCompletionModelsResponse], error) {
+	return connect.NewResponse(&v1.ListCompletionModelsResponse{Models: s.completionModels}), nil
+}
+
 func (s *providerServer) GetAgentPrograms(
 	_ context.Context, req *connect.Request[v1.GetAgentProgramsRequest],
 ) (*connect.Response[v1.GetAgentProgramsResponse], error) {
@@ -127,6 +136,7 @@ func hostWith(t *testing.T, capabilities map[string][]string, servers map[string
 	for id, served := range servers {
 		mux := http.NewServeMux()
 		mux.Handle(numenv1connect.NewAgentServiceHandler(served))
+		mux.Handle(numenv1connect.NewCompletionServiceHandler(served))
 		server := httptest.NewServer(mux)
 		t.Cleanup(server.Close)
 		ports[id] = server.Listener.Addr().(*net.TCPAddr).Port
@@ -332,7 +342,7 @@ func TestTheWindowIsOfferedWhatThePluginsList(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	models, _ := (container.Config{PluginHost: host, SettingsPath: settings}).GetCatalogue()()
+	models := (container.Config{PluginHost: host, SettingsPath: settings}).Models()()
 
 	byPath := map[string][]port.Model{}
 	for _, one := range models {
@@ -391,7 +401,7 @@ func TestAPluginThatCannotListItsProgramsIsToldToTheErrorHandler(t *testing.T) {
 		PluginHost: host, SettingsPath: settingsFile,
 		ErrorHandler: func(err error) { told = append(told, err) },
 	}
-	models, _ := cfg.GetCatalogue()()
+	models := cfg.Models()()
 
 	if len(told) != 1 || !strings.Contains(told[0].Error(), providerOne) {
 		t.Errorf("the error handler was told %v", told)

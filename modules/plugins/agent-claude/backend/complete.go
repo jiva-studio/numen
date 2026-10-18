@@ -62,3 +62,21 @@ func buildCompletionEnvironment(held []string, key, base string) []string {
 	}
 	return out
 }
+
+// ListCompletionModels lists the models Complete answers with: those the endpoint lists, the
+// configured one marked as the default.
+func (s *agentServer) ListCompletionModels(
+	ctx context.Context,
+	_ *connect.Request[numenv1.ListCompletionModelsRequest],
+) (*connect.Response[numenv1.ListCompletionModelsResponse], error) {
+	s.mu.RLock()
+	configured := s.completionModel
+	s.mu.RUnlock()
+	res := &numenv1.ListCompletionModelsResponse{}
+	for _, one := range s.catalogue.get(ctx) {
+		res.Models = append(res.Models, &numenv1.CompletionModel{
+			Name: one.Name, Title: one.Title, IsDefault: one.Name == configured,
+		})
+	}
+	return connect.NewResponse(res), nil
+}

@@ -107,7 +107,7 @@ A printed line holds its words: on a page they stay where they were printed. Spe
 
 The proofreading plugin does it, and the core does not. The core collects the numbered lines of a recognition or a transcript, sends them to the plugin with the kind of text and the sizes of the window, and applies the corrections that come back. The plugin builds the batches, holds the two instructions, applies the gates to each reply, gathers the replies of overlapping batches, and answers with corrections per line.
 
-The plugin names no model: it asks the host for a completion, and the host answers from the plugin's own `agent` setting, else from `ai.default` in [Settings](settings.md), which says which agent plugin answers, with which model, and how many questions at once. An agent that is not installed or cannot be reached, or a plugin the person has not let ask a model, fails the call as unavailable, and nothing is corrected. The plugin invents no text and holds no key.
+The plugin names no model: it asks the host for a completion, and the host answers from the plugin's own `agent` setting, else from `ai.default` in [Settings](settings.md), which says which agent plugin answers, with which model, and how many questions at once. An agent that is not installed or cannot be reached fails the call as unavailable, and nothing is corrected. Before the person lets the plugin ask a model, the call fails as permission denied, and the list of what is being done says "AI access not allowed — allow it in Settings → AI". The plugin invents no text and holds no key.
 
 ## Profiles
 

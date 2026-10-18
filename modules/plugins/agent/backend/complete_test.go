@@ -144,3 +144,17 @@ func TestCompleteAnswersWithTheModelTheHostNames(t *testing.T) {
 		t.Errorf("asked model %q, want m2", got.Model)
 	}
 }
+
+func TestTheCompletionModelIsTheConfiguredOne(t *testing.T) {
+	svc := &agentServer{}
+	svc.updateConfig(map[string]string{"model": "m1"})
+
+	res, err := svc.ListCompletionModels(context.Background(), connect.NewRequest(&numenv1.ListCompletionModelsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	models := res.Msg.GetModels()
+	if len(models) != 1 || models[0].GetName() != "m1" || !models[0].GetIsDefault() {
+		t.Errorf("listed %v", models)
+	}
+}
