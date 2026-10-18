@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -315,4 +316,52 @@ func TestTheStreamOpensBeforeTheProgramSaysAnything(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, _ = readSteps(stream)
+}
+
+// The command the environment names comes first, then Claude Code on the path, then in a place it
+// is installed to.
+func TestFindClaudeTakesTheEnvironmentThenThePathThenThePlaces(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the places are unix paths")
+	}
+	withoutClaudeAnywhere(t)
+	if got := findClaude(); got != "" {
+		t.Fatalf("found %q on an empty machine", got)
+	}
+
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	claudeSearchPlaces = []string{"~/.local/bin/claude"}
+	inPlace := filepath.Join(home, ".local", "bin", "claude")
+	writeRunnable(t, inPlace)
+	if got := findClaude(); got != inPlace {
+		t.Fatalf("found %q, want %q", got, inPlace)
+	}
+
+	bin := t.TempDir()
+	t.Setenv("PATH", bin)
+	onPath := filepath.Join(bin, "claude")
+	writeRunnable(t, onPath)
+	if got := findClaude(); got != onPath {
+		t.Fatalf("found %q, want %q", got, onPath)
+	}
+
+	t.Setenv("CLAUDE_COMMAND", "/opt/claude-a")
+	if got := findClaude(); got != "/opt/claude-a" {
+		t.Fatalf("found %q", got)
+	}
+	t.Setenv("NUMEN_CLAUDE_COMMAND", "/opt/claude-b")
+	if got := findClaude(); got != "/opt/claude-b" {
+		t.Fatalf("found %q", got)
+	}
+}
+
+func writeRunnable(t *testing.T, at string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(at), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(at, []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
 }

@@ -1,3 +1,3 @@
-// Package agentrun supervises the child processes an agent plugin runs and keeps the registry of
-// the work they are doing.
+// Package agentrun finds the programs an agent plugin runs, supervises the child processes it starts
+// and keeps the registry of the work they are doing.
 package agentrun
