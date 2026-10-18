@@ -42,7 +42,7 @@ jobs:
           cache-dependency-path: modules/package-lock.json
 
       - name: Install dependencies
-        run: npm ci --prefix modules
+        uses: ./.github/actions/install-node-modules
 
       # Correctness and the boundaries between the modules. It runs before the
       # build, because what it refuses is cheaper to read than a type error.
@@ -80,7 +80,7 @@ jobs:
           cache-dependency-path: modules/package-lock.json
 
       - name: Install dependencies
-        run: npm ci --prefix modules
+        uses: ./.github/actions/install-node-modules
 
       - uses: ./.github/actions/setup-playwright
 

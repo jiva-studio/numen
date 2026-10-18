@@ -61,7 +61,7 @@ jobs:
           cache-dependency-path: modules/package-lock.json
 
       - name: Install dependencies
-        run: npm ci --prefix modules
+        uses: ./.github/actions/install-node-modules
 
       - uses: ./.github/actions/setup-webkit
 
@@ -84,7 +84,7 @@ jobs:
           go build -tags debug -o numen-debug ./cmd/numen
 
       - name: Run desktop E2E tests
-        run: cd modules/tests/e2e/desktop && npx playwright test
+        run: cd modules/tests/e2e/desktop && ../../../node_modules/.bin/playwright test
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: failure()

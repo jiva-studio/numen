@@ -8,3 +8,8 @@ require (
 )
 
 require github.com/quasilyte/go-ruleguard/dsl v0.3.23
+
+tool (
+	connectrpc.com/connect/cmd/protoc-gen-connect-go
+	google.golang.org/protobuf/cmd/protoc-gen-go
+)

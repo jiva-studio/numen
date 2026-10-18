@@ -40,7 +40,7 @@ jobs:
           cache-dependency-path: modules/package-lock.json
 
       - name: Install Node dependencies
-        run: npm ci --prefix modules
+        uses: ./.github/actions/install-node-modules
 
       - name: Build UI components
         run: npm run build --prefix modules/libs/ui
