@@ -212,10 +212,6 @@ lib_plugin_sdk_go_test: ## run plugin-sdk-go tests with race detector
 lib_plugin_sdk_go_lint: ## run linters for plugin-sdk-go
 	for m in $(PLUGIN_SDK_GO_MODULES); do (cd $$m && go vet ./... && golangci-lint run ./...) || exit 1; done
 
-.PHONY: lib_plugin_sdk_go_vet
-lib_plugin_sdk_go_vet: ## vet every plugin-sdk-go module
-	for m in $(PLUGIN_SDK_GO_MODULES); do (cd $$m && go vet ./...) || exit 1; done
-
 # ------------------------------ Plugins Tooling -------------------------------
 .PHONY: create_plugin
 create_plugin: ## scaffold a new plugin (usage: make create_plugin name=<id> [template=<reader|compute|agent>] [type=<native|frontend>])

@@ -14,7 +14,7 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 | `plugin-sdk-go/onnx` | `onnx` | embeddings, ocr, transcription |
 | `plugin-sdk-go/vault` | `vault` | reader-epub, reader-pdf |
 
-`make lib_plugin_sdk_go_vet`, `lib_plugin_sdk_go_build` and `lib_plugin_sdk_go_test` run over every module.
+`make lib_plugin_sdk_go_lint`, `lib_plugin_sdk_go_build` and `lib_plugin_sdk_go_test` run over every module.
 
 ## Capabilities
 
