@@ -20,3 +20,16 @@ func TestAPluginTheHostGaveNoRuntimeHasNoLibraryAndTheAutoProvider(t *testing.T)
 		t.Errorf("GetLibrary() = %q, GetProvider() = %q", GetLibrary(), GetProvider())
 	}
 }
+
+func TestGetProviderOrIsTheFallbackForAuto(t *testing.T) {
+	for _, name := range []string{"", "auto", " AUTO "} {
+		t.Setenv(EnvProvider, name)
+		if got := GetProviderOr("cpu"); got != "cpu" {
+			t.Errorf("with %q, GetProviderOr(cpu) = %q, want cpu", name, got)
+		}
+	}
+	t.Setenv(EnvProvider, "cuda")
+	if got := GetProviderOr("cpu"); got != "cuda" {
+		t.Errorf("GetProviderOr(cpu) = %q, want the host's cuda", got)
+	}
+}

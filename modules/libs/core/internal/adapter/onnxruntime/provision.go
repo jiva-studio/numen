@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 // Config is what the runtime is provisioned from.
@@ -24,6 +25,10 @@ type Config struct {
 	// Machine lists the folders shared libraries are searched in. Nil is the
 	// folders this platform keeps them in.
 	Machine []string
+	// Check returns an error when this machine cannot open the library at a
+	// path. Nil opens it with the platform loader and asks it for the API the
+	// plugins call.
+	Check func(at string) error
 }
 
 // Provisioner finds or fetches the library once per plugin folder and hands the
@@ -48,13 +53,14 @@ func New(cfg Config) *Provisioner {
 // Provision returns the path of the library and the name of the execution
 // provider for the plugin that stands in pluginDir.
 //
-// The library is, in order: the one a person names in the environment, one this
-// machine holds (beside the plugin or the host, in the folders shared libraries
-// live in, in the package store), and last the pinned release, fetched into the
-// models home. A GPU provider is refused for the pinned release, which is the
-// CPU build. A caller that arrives while another is provisioning waits for it,
-// against its own context. A failure is returned to the caller that met it and
-// the next call tries again.
+// The library is, in order: the one a person names in the environment, used as
+// given; the first one this machine holds that opens (beside the plugin or the
+// host, in the folders shared libraries live in, in the package store, in the
+// folders the platform loader searches); and last the pinned release, fetched
+// into the models home. A GPU provider is refused for the pinned release, which
+// is the CPU build. A caller that arrives while another is provisioning waits
+// for it, against its own context. A failure is returned to the caller that met
+// it and the next call tries again.
 func (p *Provisioner) Provision(ctx context.Context, pluginDir string) (string, string, error) {
 	select {
 	case p.gate <- struct{}{}:
@@ -69,22 +75,40 @@ func (p *Provisioner) Provision(ctx context.Context, pluginDir string) (string, 
 	if err != nil {
 		return "", "", err
 	}
-	library, isPinned, err := p.locate(ctx, pluginDir)
+	found, err := p.locate(ctx, pluginDir)
 	if err != nil {
-		return "", "", fmt.Errorf("the onnx runtime: %w", err)
+		return "", "", fmt.Errorf("the onnx runtime: %w%s", err, found.describeSkipped())
 	}
-	if isPinned && provider.isGPU() {
-		return "", "", fmt.Errorf("the onnx runtime: the %s provider needs a GPU build, and this machine holds none: install one and name it in %s, or use the cpu provider",
-			provider, libraryEnvs[0])
+	if found.isPinned && provider.isGPU() {
+		return "", "", fmt.Errorf("the onnx runtime: the %s provider needs a GPU build, and this machine holds none that opens: install one and name it in %s, or use the cpu provider%s",
+			provider, libraryEnvs[0], found.describeSkipped())
 	}
-	p.ready[pluginDir] = answer{library: library, provider: provider}
-	return library, string(provider), nil
+	p.ready[pluginDir] = answer{library: found.library, provider: provider}
+	return found.library, string(provider), nil
 }
 
-// locate returns the library and whether it is the pinned release.
-func (p *Provisioner) locate(ctx context.Context, pluginDir string) (string, bool, error) {
+// location is the library a search settled on, whether it is the pinned
+// release, and why each library the machine holds was passed over.
+type location struct {
+	library  string
+	isPinned bool
+	skipped  []string
+}
+
+// describeSkipped returns the libraries passed over and why, one per line, or
+// empty when none was.
+func (l location) describeSkipped() string {
+	if len(l.skipped) == 0 {
+		return ""
+	}
+	return "\nthe libraries this machine holds that do not open:\n  " + strings.Join(l.skipped, "\n  ")
+}
+
+// locate returns the library: the one named in the environment, the first one
+// the machine holds that opens, or the pinned release.
+func (p *Provisioner) locate(ctx context.Context, pluginDir string) (location, error) {
 	if named := getEnvLibrary(); named != "" {
-		return named, false, nil
+		return location{library: named}, nil
 	}
 	release := p.cfg.Release
 	if release == (Release{}) {
@@ -94,11 +118,22 @@ func (p *Provisioner) locate(ctx context.Context, pluginDir string) (string, boo
 	if home == "" {
 		home, _ = GetHome()
 	}
-	if at := findOnMachine(pluginDir, home, release.LibrarySum, p.cfg.Machine); at != "" {
-		return at, false, nil
+	check := p.cfg.Check
+	if check == nil {
+		check = checkLibrary
+	}
+	var found location
+	for _, at := range getCandidates(pluginDir, home, release.LibrarySum, p.cfg.Machine) {
+		if err := check(at); err != nil {
+			found.skipped = append(found.skipped, fmt.Sprintf("%s: %v", at, err))
+			continue
+		}
+		found.library = at
+		return found, nil
 	}
 	library, err := p.acquire(ctx, release, home)
-	return library, true, err
+	found.library, found.isPinned = library, true
+	return found, err
 }
 
 // acquire returns the path of the pinned library, verified against its sum.

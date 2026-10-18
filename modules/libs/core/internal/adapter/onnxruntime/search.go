@@ -82,42 +82,134 @@ func getBesideDirs(pluginDir string) []string {
 	return out
 }
 
-// findOnMachine returns the first library this machine holds without fetching
-// one: beside the plugin or the host, where an earlier run unpacked one (when it
-// holds the pinned sum), in the folders shared libraries live in, and in the
-// package store. machine replaces the folders shared libraries live in when it
-// is not nil.
-func findOnMachine(pluginDir, home, librarySum string, machine []string) string {
-	return findOnMachineInStore(pluginDir, home, librarySum, machine, filepath.Join("/nix/store", "*-onnxruntime-*", "lib"))
+// getCandidates returns every library this machine holds without fetching one,
+// in the order they are tried: beside the plugin or the host, where an earlier
+// run unpacked one (when it holds the pinned sum), in the folders shared
+// libraries live in, in the package store, and in the folders the platform
+// loader searches. A machine list that is not nil replaces the folders shared
+// libraries live in, and the package store and the loader folders are then not
+// searched.
+func getCandidates(pluginDir, home, librarySum string, machine []string) []string {
+	return getCandidatesInStore(pluginDir, home, librarySum, machine, filepath.Join("/nix/store", "*-onnxruntime-*", "lib"))
 }
 
-// findOnMachineInStore searches the machine and a package store pattern.
-func findOnMachineInStore(pluginDir, home, librarySum string, machine []string, storePattern string) string {
+// getCandidatesInStore searches the machine and a package store pattern.
+func getCandidatesInStore(pluginDir, home, librarySum string, machine []string, storePattern string) []string {
 	name := getLibraryName(runtime.GOOS)
+	var out []string
 	for _, dir := range getBesideDirs(pluginDir) {
 		if at := filepath.Join(dir, name); isFile(at) {
-			return at
+			out = append(out, at)
 		}
 	}
 	if at := filepath.Join(home, name); home != "" && isFile(at) && verifyFile(at, librarySum) == nil {
-		return at
+		out = append(out, at)
 	}
 	isDefault := machine == nil
-	if machine == nil {
+	if isDefault {
 		machine = getMachineDirs()
 	}
 	for _, dir := range machine {
-		if found := findMatching(filepath.Join(dir, name+"*")); len(found) > 0 {
-			return found[0]
+		out = append(out, findMatching(filepath.Join(dir, name+"*"))...)
+	}
+	if isDefault {
+		out = append(out, findMatching(filepath.Join(storePattern, name+"*"))...)
+		for _, dir := range getLoaderDirs(runtime.GOOS) {
+			out = append(out, findMatching(filepath.Join(dir, name+"*"))...)
 		}
 	}
-	if !isDefault {
-		return ""
+	return removeDuplicates(out)
+}
+
+// getLoaderDirs returns the further folders the platform loader searches for a
+// library named without a folder: the folders /etc/ld.so.conf names, the dyld
+// search paths on darwin, and System32 and PATH on windows.
+func getLoaderDirs(goos string) []string {
+	switch goos {
+	case "darwin":
+		out := filepath.SplitList(os.Getenv("DYLD_LIBRARY_PATH"))
+		out = append(out, filepath.SplitList(os.Getenv("DYLD_FALLBACK_LIBRARY_PATH"))...)
+		if home, err := os.UserHomeDir(); err == nil {
+			out = append(out, filepath.Join(home, "lib"))
+		}
+		return out
+	case "windows":
+		var out []string
+		if root := os.Getenv("SystemRoot"); root != "" {
+			out = append(out, filepath.Join(root, "System32"), root)
+		}
+		return append(out, filepath.SplitList(os.Getenv("PATH"))...)
 	}
-	if found := findMatching(filepath.Join(storePattern, name+"*")); len(found) > 0 {
-		return found[0]
+	return readLoaderConfig("/etc/ld.so.conf", map[string]bool{})
+}
+
+// readLoaderConfig returns the folders a loader configuration file names,
+// following its include lines. seen holds the files already read.
+func readLoaderConfig(at string, seen map[string]bool) []string {
+	if seen[at] {
+		return nil
 	}
-	return ""
+	seen[at] = true
+	raw, err := os.ReadFile(at)
+	if err != nil {
+		return nil
+	}
+	var out []string
+	for _, line := range strings.Split(string(raw), "\n") {
+		line, _, _ = strings.Cut(line, "#")
+		fields := strings.FieldsFunc(line, isConfigSeparator)
+		switch {
+		case len(fields) == 0, fields[0] == "hwcap":
+		case fields[0] == "include":
+			for _, pattern := range fields[1:] {
+				out = append(out, readIncludedConfig(at, pattern, seen)...)
+			}
+		default:
+			out = append(out, fields...)
+		}
+	}
+	return out
+}
+
+// readIncludedConfig returns the folders the files one include pattern names
+// hold. A relative pattern stands beside the file that includes it.
+func readIncludedConfig(from, pattern string, seen map[string]bool) []string {
+	if !filepath.IsAbs(pattern) {
+		pattern = filepath.Join(filepath.Dir(from), pattern)
+	}
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return nil
+	}
+	var out []string
+	for _, match := range matches {
+		out = append(out, readLoaderConfig(match, seen)...)
+	}
+	return out
+}
+
+// isConfigSeparator reports whether r separates the folders on one line of a
+// loader configuration file.
+func isConfigSeparator(r rune) bool {
+	return r == ' ' || r == '\t' || r == '\r' || r == ',' || r == ':'
+}
+
+// removeDuplicates returns the paths with each file kept once, at the first
+// path that names it.
+func removeDuplicates(paths []string) []string {
+	seen := make(map[string]bool, len(paths))
+	var out []string
+	for _, at := range paths {
+		resolved, err := filepath.EvalSymlinks(at)
+		if err != nil {
+			resolved = at
+		}
+		if !seen[resolved] {
+			seen[resolved] = true
+			out = append(out, at)
+		}
+	}
+	return out
 }
 
 // isFile reports whether a regular file stands at the path.

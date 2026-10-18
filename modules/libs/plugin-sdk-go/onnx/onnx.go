@@ -2,7 +2,10 @@
 // runtime: the library it provisioned and the execution provider it chose.
 package onnx
 
-import "os"
+import (
+	"os"
+	"strings"
+)
 
 const (
 	// EnvLibrary names the path of the ONNX Runtime library.
@@ -29,4 +32,13 @@ func GetProvider() string {
 		return name
 	}
 	return DefaultProvider
+}
+
+// GetProviderOr returns the execution provider the host chose, or fallback when
+// it chose auto or none.
+func GetProviderOr(fallback string) string {
+	if name := GetProvider(); !strings.EqualFold(strings.TrimSpace(name), DefaultProvider) {
+		return name
+	}
+	return fallback
 }
