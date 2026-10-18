@@ -48,6 +48,12 @@ func (c Config) settings() onnxruntime.Settings {
 	return onnxruntime.Settings{Runtime: cmp.Or(c.Runtime, onnx.GetLibrary())}
 }
 
+// getSessionProvider returns the execution provider the sessions open on: the
+// one the host names, and the CPU when it names auto.
+func getSessionProvider() onnxruntime.Provider {
+	return onnxruntime.Provider(onnx.GetProviderOr(string(onnxruntime.ProviderCPU)))
+}
+
 // folder is where the models are kept and whether they may be fetched.
 func (c Config) folder() models.Folder {
 	return models.Folder{

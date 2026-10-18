@@ -8,6 +8,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -77,11 +78,14 @@ func serve(t *testing.T, body []byte) (*httptest.Server, *atomic.Int32) {
 	return server, &hits
 }
 
+// newConfig returns a configuration that fetches the archive from the server and
+// opens every library it finds.
 func newConfig(server *httptest.Server, archive []byte) onnxruntime.Config {
 	return onnxruntime.Config{
 		Dir:     "",
 		Machine: []string{},
 		Client:  server.Client(),
+		Check:   func(string) error { return nil },
 		Release: onnxruntime.Release{
 			Address:    server.URL + "/onnxruntime.tgz",
 			Sum:        sum(archive),
@@ -615,4 +619,101 @@ func writeLibraryDir(t *testing.T) string {
 	dir := t.TempDir()
 	writeLibrary(t, dir)
 	return dir
+}
+
+// refuse returns a check that refuses the libraries at the given paths.
+func refuse(paths ...string) func(string) error {
+	return func(at string) error {
+		for _, refused := range paths {
+			if at == refused {
+				return errors.New("serves no API 23")
+			}
+		}
+		return nil
+	}
+}
+
+func TestProvisionTriesTheNextLibraryWhenOneDoesNotOpen(t *testing.T) {
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	server, hits := serve(t, archive)
+	cfg := newConfig(server, archive)
+	cfg.Dir = t.TempDir()
+	old, held := writeLibraryDir(t), writeLibraryDir(t)
+	cfg.Machine = []string{old, held}
+	plugin := t.TempDir()
+	beside := writeLibrary(t, filepath.Join(plugin, "bin"))
+	cfg.Check = refuse(beside, filepath.Join(old, filepath.Base(beside)))
+
+	got, _, err := onnxruntime.New(cfg).Provision(t.Context(), plugin)
+	if err != nil || got != filepath.Join(held, filepath.Base(beside)) {
+		t.Fatalf("Provision() = %q, %v, want the library in %s", got, err, held)
+	}
+	if hits.Load() != 0 {
+		t.Errorf("the server was asked %d times", hits.Load())
+	}
+}
+
+func TestProvisionTriesEveryLibraryInAFolder(t *testing.T) {
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	server, _ := serve(t, archive)
+	cfg := newConfig(server, archive)
+	cfg.Dir = t.TempDir()
+	shared := t.TempDir()
+	name := filepath.Base(writeLibrary(t, t.TempDir()))
+	older, newer := filepath.Join(shared, name+".1.16.3"), filepath.Join(shared, name+".1.23.0")
+	for _, at := range []string{older, newer} {
+		if err := os.WriteFile(at, []byte(at), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	cfg.Machine = []string{shared}
+	cfg.Check = refuse(older)
+
+	if got, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir()); err != nil || got != newer {
+		t.Fatalf("Provision() = %q, %v, want %q", got, err, newer)
+	}
+}
+
+func TestProvisionFetchesThePinnedLibraryWhenNoneTheMachineHoldsOpens(t *testing.T) {
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	server, hits := serve(t, archive)
+	cfg := newConfig(server, archive)
+	cfg.Dir = t.TempDir()
+	shared := t.TempDir()
+	cfg.Machine = []string{shared}
+	cfg.Check = refuse(writeLibrary(t, shared))
+
+	got, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir())
+	if err != nil || !strings.HasPrefix(got, cfg.Dir) {
+		t.Fatalf("Provision() = %q, %v, want the pinned library under %s", got, err, cfg.Dir)
+	}
+	if hits.Load() != 1 {
+		t.Errorf("the server was asked %d times, want 1", hits.Load())
+	}
+}
+
+func TestProvisionNamesTheLibrariesThatDoNotOpenWhenAGPUProviderMeetsThePinnedBuild(t *testing.T) {
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	server, _ := serve(t, archive)
+	cfg := newConfig(server, archive)
+	cfg.Dir = t.TempDir()
+	cfg.Provider = "cuda"
+	shared := t.TempDir()
+	cfg.Machine = []string{shared}
+	gpu := writeLibrary(t, shared)
+	cfg.Check = refuse(gpu)
+
+	_, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir())
+	if err == nil || !strings.Contains(err.Error(), "GPU build") || !strings.Contains(err.Error(), gpu) {
+		t.Fatalf("Provision() = %v, want a GPU build refusal naming %s", err, gpu)
+	}
+}
+
+func TestProvisionUsesALibraryNamedInTheEnvironmentWithoutOpeningIt(t *testing.T) {
+	named := filepath.Join(t.TempDir(), "libonnxruntime-gpu.so")
+	t.Setenv("NUMEN_ONNX_RUNTIME_LIB", named)
+	cfg := onnxruntime.Config{Dir: t.TempDir(), Provider: "cuda", Machine: []string{}, Check: refuse(named)}
+	if got, provider, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir()); err != nil || got != named || provider != "cuda" {
+		t.Fatalf("Provision() = %q, %q, %v, want %q and cuda", got, provider, err, named)
+	}
 }
