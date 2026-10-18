@@ -1,5 +1,10 @@
 package domain
 
+import (
+	"cmp"
+	"slices"
+)
+
 // A ProofreadLine is one numbered run of words a proofreader is asked about:
 // the number the line is known by, and what it says.
 type ProofreadLine struct {
@@ -25,6 +30,21 @@ type ProofreadCorrection struct {
 // IsJoined says whether the correction puts more than one line together.
 func (c ProofreadCorrection) IsJoined() bool { return c.Last > c.Number }
 
+// FindUnaskedCorrection returns the first correction whose line is none of the
+// lines asked about, and false where every correction names a line asked about.
+func FindUnaskedCorrection(asked []ProofreadLine, made []ProofreadCorrection) (ProofreadCorrection, bool) {
+	numbers := make(map[int]bool, len(asked))
+	for _, line := range asked {
+		numbers[line.Number] = true
+	}
+	for _, one := range made {
+		if !numbers[one.Number] {
+			return one, true
+		}
+	}
+	return ProofreadCorrection{}, false
+}
+
 // A ScanProofreading is what a proofreader put right over a run of pages.
 type ScanProofreading struct {
 	Corrections []ProofreadCorrection
@@ -43,6 +63,20 @@ type SpeechWindow struct {
 	From int
 	// Limit is the most lines answered. Zero answers every line from From.
 	Limit int
+}
+
+// GetLines returns the lines of a transcript the window answers for: those
+// numbered From or later, no more than Limit of them. The lines stand in the
+// order of their numbers.
+func (w SpeechWindow) GetLines(lines []ProofreadLine) []ProofreadLine {
+	at, _ := slices.BinarySearchFunc(lines, w.From, func(line ProofreadLine, from int) int {
+		return cmp.Compare(line.Number, from)
+	})
+	end := len(lines)
+	if w.Limit > 0 {
+		end = min(end, at+w.Limit)
+	}
+	return lines[at:end]
 }
 
 // A SpeechProofreading is what a proofreader put right over a window of a

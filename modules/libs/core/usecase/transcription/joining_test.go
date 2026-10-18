@@ -176,3 +176,44 @@ func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 		t.Errorf("the transcript says %+v", cues)
 	}
 }
+
+// A run taking up a transcript asks about the lines from where the run before
+// stopped. A correction of a line before them is no answer to what was asked,
+// and the transcript stands as the run before left it.
+func TestARunTakingUpATranscriptRefusesACorrectionOfALineItDidNotAsk(t *testing.T) {
+	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all."}
+	u, v, shelved, by, hash := newProofreadTranscript(t, says(joins(0, 1, putTogether)), words...)
+	u.BatchSize, u.Overlap, u.InFlight = 2, 0, 1
+
+	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
+	by.stop = func(calls int) {
+		if calls == 2 {
+			stop()
+		}
+	}
+	if _, err := u.Execute(ctx, v, recordingPath); !errors.Is(err, context.Canceled) {
+		t.Fatalf("stopped with %v", err)
+	}
+	name := domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash)
+	left := readCues(t, shelved, name)
+
+	again := newTranscriptProofreading(t, u.readers, u.derived, scripted{reply: domain.SpeechProofreading{
+		Corrections: []domain.ProofreadCorrection{fixes(0, onItsOwn)},
+		IsDone:      true,
+	}})
+	again.BatchSize, again.Overlap, again.InFlight = 2, 0, 1
+	if _, err := again.Execute(t.Context(), v, recordingPath); !errors.Is(err, errCorrectionUnasked) {
+		t.Fatalf("got %v, want %v", err, errCorrectionUnasked)
+	}
+
+	cues := readCues(t, shelved, name)
+	if len(cues) != len(left) || cues[0].Text != putTogether {
+		t.Fatalf("the transcript says %+v", cues)
+	}
+	for at := range cues {
+		if cues[at].Text != left[at].Text {
+			t.Errorf("line %d says %q, the run before left %q", at, cues[at].Text, left[at].Text)
+		}
+	}
+}

@@ -285,21 +285,19 @@ func (u Proofread) lines(
 // getCorrectionLines returns the corrections as lines of the recognition, rejecting
 // any correction whose line number was not asked about or that joins lines.
 func getCorrectionLines(asked []domain.ProofreadPage, made []domain.ProofreadCorrection) ([]domain.CorrectionLine, error) {
-	valid := make(map[int]bool)
-	for _, page := range asked {
-		for _, line := range page.Lines {
-			valid[line.Number] = true
-		}
-	}
 	out := make([]domain.CorrectionLine, len(made))
 	for i, one := range made {
 		if one.IsJoined() {
 			return nil, fmt.Errorf("%w: scan correction %d-%d cannot join lines", ErrJoinedCorrectionNotAllowed, one.Number, one.Last)
 		}
-		if !valid[one.Number] {
-			return nil, fmt.Errorf("%w: scan correction line %d was not asked", ErrUnaskedCorrectionLine, one.Number)
-		}
 		out[i] = domain.CorrectionLine{Number: one.Number, Text: one.Text}
+	}
+	var lines []domain.ProofreadLine
+	for _, page := range asked {
+		lines = append(lines, page.Lines...)
+	}
+	if one, ok := domain.FindUnaskedCorrection(lines, made); ok {
+		return nil, fmt.Errorf("%w: scan correction line %d was not asked", ErrUnaskedCorrectionLine, one.Number)
 	}
 	return out, nil
 }
