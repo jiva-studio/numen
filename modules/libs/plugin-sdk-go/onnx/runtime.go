@@ -86,6 +86,9 @@ func (r *Runtime[E]) record(engine E, at string) {
 
 // Register adds a hook that runs once with the library the runtime is opened
 // from. A hook registered after the runtime opened never runs.
+//
+// A hook runs under the runtime's lock and works only with the path it is
+// given; it calls no method of this Runtime.
 func (r *Runtime[E]) Register(hook func(at string)) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
