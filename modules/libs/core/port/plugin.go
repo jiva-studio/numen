@@ -55,7 +55,8 @@ func (e Endpoint) BaseURL() string {
 	return fmt.Sprintf("http://%s:%d", e.Host, e.Port)
 }
 
-// PluginResolver locates plugins by capability, file extension, or identifier.
+// PluginResolver locates plugins by capability, file extension, or identifier. Of several enabled
+// plugins that match a capability or an extension, the one with the lowest id is found.
 type PluginResolver interface {
 	FindPluginByCapability(capability string) (DiscoveredPlugin, bool)
 	FindPluginByFileExtension(ext string) (DiscoveredPlugin, bool)
@@ -84,7 +85,7 @@ type PluginPathValidator interface {
 	ValidatePluginPath(pluginID, targetPath string) (string, error)
 }
 
-// PluginDiscoverer scans for available plugins and returns their metadata.
+// PluginDiscoverer scans for available plugins and returns their metadata in the order of their ids.
 type PluginDiscoverer interface {
 	Discover() error
 	GetPluginInfos() []PluginInfo

@@ -310,3 +310,19 @@ func TestTheAgentGivesItsReferenceBackOnce(t *testing.T) {
 		t.Errorf("gave back %d references, want 1", host.released)
 	}
 }
+
+// Without an agent named, the provider with the lowest id answers at every lookup; a route naming
+// another provider is answered by that one.
+func TestARouteNamesTheAgentOverTheLowestID(t *testing.T) {
+	agents := NewCompletionAgents(newHostOfProviders(t))
+	for range 100 {
+		id, err := agents.getAgentID("")
+		if err != nil || id != "md.numen.provider-a" {
+			t.Fatalf("without a name, got %q, %v", id, err)
+		}
+	}
+	id, err := agents.getAgentID("md.numen.provider-c")
+	if err != nil || id != "md.numen.provider-c" {
+		t.Errorf("named, got %q, %v", id, err)
+	}
+}

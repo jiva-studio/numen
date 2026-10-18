@@ -39,8 +39,8 @@ func NewCompletionAgents(host CompletionPluginHost) *CompletionAgents {
 	return &CompletionAgents{host: host}
 }
 
-// OpenCompletionAgent activates the agent plugin with the id given, or the one
-// the host finds by capability when the id is empty.
+// OpenCompletionAgent activates the agent plugin with the id given, or, when the
+// id is empty, the provider with the lowest id.
 func (a *CompletionAgents) OpenCompletionAgent(ctx context.Context, agent string) (port.CompletionAgent, error) {
 	pluginID, err := a.getAgentID(agent)
 	if err != nil {
