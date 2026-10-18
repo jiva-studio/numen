@@ -3,7 +3,7 @@ module github.com/jiva-studio/numen/modules/libs/protocol
 go 1.26.9
 
 require (
-	connectrpc.com/connect v1.21.0
+	connectrpc.com/connect v1.21.1
 	google.golang.org/protobuf v1.36.12
 )
 
