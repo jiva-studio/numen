@@ -140,6 +140,12 @@ type loaded struct {
 // a day and one run file to a day.
 func load(tb testing.TB, cards, days, perDay int) loaded {
 	tb.Helper()
+	return loadAt(tb, time.Now, cards, days, perDay)
+}
+
+// loadAt is load with every request reading the time from now.
+func loadAt(tb testing.TB, now port.Clock, cards, days, perDay int) loaded {
+	tb.Helper()
 
 	s := openVault(tb, loadDeck(cards))
 	on := &loadCounts{}
@@ -152,8 +158,8 @@ func load(tb testing.TB, cards, days, perDay int) loaded {
 		s.presets,
 	)
 	schedules.Cache = countingKept{inner: appstate.SchedulesAt(filepath.Join(tb.TempDir(), "faces")), on: on}
-	loadAnswers(tb, s, cards, days, perDay)
-	reviewUseCase := flashcards.NewCountReviews(logs, schedules, today, time.Now)
+	loadAnswers(tb, s, now(), cards, days, perDay)
+	reviewUseCase := flashcards.NewCountReviews(logs, schedules, today, now)
 	reviewUseCase.Cache = countingKept{inner: appstate.SchedulesAt(filepath.Join(tb.TempDir(), "days")), on: on}
 	return loaded{
 		vaulted:   s,
@@ -162,11 +168,11 @@ func load(tb testing.TB, cards, days, perDay int) loaded {
 		logs:      logs,
 		owed: flashcards.NewCountCardsDue(
 			s.standings, schedules, s.presets,
-			today, time.Now,
+			today, now,
 		),
 		sat: flashcards.NewSession(
 			s.marking, s.standings, schedules,
-			s.presets, today, time.Now,
+			s.presets, today, now,
 		),
 		review: reviewUseCase,
 		faces:  cards,
@@ -221,9 +227,11 @@ func loadMark(n int) string {
 	return string(out)
 }
 
-// answered writes a run file for each of the last days days, each holding
-// perDay answers over the vault's cards.
-func loadAnswers(tb testing.TB, s vaulted, cards, days, perDay int) {
+// loadAnswers writes a run file for each of the days days of review before the
+// one holding now, each holding perDay answers over the vault's cards. A day's
+// answers begin at noon of that day in the zone the days are counted in, so
+// all of them fall inside one day of review.
+func loadAnswers(tb testing.TB, s vaulted, now time.Time, cards, days, perDay int) {
 	tb.Helper()
 	ctx := tb.Context()
 
@@ -232,10 +240,10 @@ func loadAnswers(tb testing.TB, s vaulted, cards, days, perDay int) {
 		tb.Fatal(err)
 	}
 	log := flashcards.Log{Stores: s.logs}
-	at := time.Now().Add(-time.Duration(days) * 24 * time.Hour)
+	y, m, d := today.GetDate(now).Date()
 	card := 0
 	for day := range days {
-		when := at.Add(time.Duration(day) * 24 * time.Hour)
+		when := time.Date(y, m, d-days+day, 12, 0, 0, 0, time.Local)
 		run, err := log.Open(ctx, s.vault, when)
 		if err != nil {
 			tb.Fatal(err)
