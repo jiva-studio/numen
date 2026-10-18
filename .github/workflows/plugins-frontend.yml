@@ -13,7 +13,9 @@ on:
       - "modules/libs/plugin-sdk/**"
       - "modules/libs/wire/**"
       - "modules/libs/protocol/**"
+      - "modules/package.json"
       - "modules/package-lock.json"
+      - ".github/actions/**"
       - "!**/*.md"
       - "!docs/**"
       - "Makefile"
@@ -31,7 +33,9 @@ on:
       - "modules/libs/plugin-sdk/**"
       - "modules/libs/wire/**"
       - "modules/libs/protocol/**"
+      - "modules/package.json"
       - "modules/package-lock.json"
+      - ".github/actions/**"
       - "!**/*.md"
       - "!docs/**"
       - "Makefile"
@@ -46,8 +50,9 @@ permissions:
   contents: read
 
 jobs:
-  # Every plugin's own suite, under its own configuration. A plugin reaches the
-  # components through their build, as it does in the window.
+  # Every plugin's own suite, under its own configuration. The make target
+  # builds the components first: a plugin reaches them through their build, as
+  # it does in the window.
   tests:
     name: Plugin Tests
     runs-on: ubuntu-latest
@@ -65,9 +70,6 @@ jobs:
 
       - name: Install dependencies
         uses: ./.github/actions/install-node-modules
-
-      - name: Build the components
-        run: npm run build --prefix modules/libs/ui
 
       - name: Run plugin tests
         run: make plugins_frontend_test
@@ -92,9 +94,6 @@ jobs:
         uses: ./.github/actions/install-node-modules
 
       - uses: ./.github/actions/setup-playwright
-
-      - name: Build the components
-        run: npm run build --prefix modules/libs/ui
 
       - name: Run plugin stories
         run: make plugins_stories

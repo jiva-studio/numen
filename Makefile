@@ -76,14 +76,14 @@ plugins_lint: $(addprefix plugin_,$(addsuffix _lint,$(PLUGIN_NAMES))) ## lint al
 plugins_test: $(addprefix plugin_,$(addsuffix _test,$(PLUGIN_NAMES))) ## run tests across all plugins
 
 .PHONY: plugins_frontend_test
-plugins_frontend_test: ## run the frontend tests of every plugin
+plugins_frontend_test: lib_ui_build ## run the frontend tests of every plugin
 	@set -e; for dir in $(dir $(wildcard $(PLUGINS)/*/package.json)); do \
 		echo "$$dir"; \
 		(cd "$$dir" && npm test); \
 	done
 
 .PHONY: plugins_stories
-plugins_stories: ## draw the stories of every plugin in Chromium and WebKit
+plugins_stories: lib_ui_build ## draw the stories of every plugin in Chromium and WebKit
 	cd $(PLUGINS) && npx vitest run
 
 .PHONY: plugins_package
