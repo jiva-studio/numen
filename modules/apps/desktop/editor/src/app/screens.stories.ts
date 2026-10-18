@@ -518,17 +518,18 @@ const PLAYER: Player = {
 }
 
 const createRecordings = (cues: readonly Cue[]): Recordings => ({
-  getSummary: async () => ({
-    duration: RUNS,
-    mediaUrl: MEDIA,
-    mediaType: 'audio/mpeg',
-    url: '',
-  }),
-  getTaskStates: async () => ({ transcript: 'done' }),
-  readTranscript: async () => ({ cues, isEditable: true, prose: '' }),
-  readArticle: async () => ({ cues: [], isEditable: true, prose: '' }),
+  getSummary: () =>
+    Promise.resolve({
+      duration: RUNS,
+      mediaUrl: MEDIA,
+      mediaType: 'audio/mpeg',
+      url: '',
+    }),
+  getTaskStates: () => Promise.resolve({ transcript: 'done' }),
+  readTranscript: () => Promise.resolve({ cues, isEditable: true, prose: '' }),
+  readArticle: () => Promise.resolve({ cues: [], isEditable: true, prose: '' }),
   writeTranscript: fn(() => Promise.resolve()),
-  findCueTime: async () => null,
+  findCueTime: () => Promise.resolve(null),
 })
 
 /** The words heard in a recording, against the moment each was said. */
@@ -634,19 +635,19 @@ const VAULT: Record<string, readonly Entry[]> = {
 
 /** A files tab over that vault, and the reading of the folders named in it. */
 const files = (open: readonly string[]) => {
-  const list = useFileTree({ list: async (at: string) => VAULT[at] ?? [] })
+  const list = useFileTree({ list: (at: string) => Promise.resolve(VAULT[at] ?? []) })
   const state = useFilesTab(list, {
     openDestination: fn(),
     runCommand: fn(),
     movePath: fn(() => Promise.resolve()),
     setDraggedPaths: fn(),
     createFolder: fn(() => Promise.resolve()),
-    createNote: async () => '',
-    createDeck: async () => '',
-    createStencil: async () => '',
-    createPreset: async () => '',
-    importUrl: async () => '',
-    importUrls: async () => [],
+    createNote: () => Promise.resolve(''),
+    createDeck: () => Promise.resolve(''),
+    createStencil: () => Promise.resolve(''),
+    createPreset: () => Promise.resolve(''),
+    importUrl: () => Promise.resolve(''),
+    importUrls: () => Promise.resolve([]),
     showError: fn(),
   })
   const read = (async () => {
@@ -744,12 +745,13 @@ const overLine = (at: number, ends: number) => ({
 const HIGHLIGHTS = [overLine(10, 396), overLine(11, 412), overLine(12, 372)]
 
 const BOOK: Documents = {
-  getDocumentLayout: async () => ({
-    pages: Array.from({ length: LEAVES }, () => PAGE),
-    fingerprint: '1024 1700000000000000000 book.pdf',
-  }),
+  getDocumentLayout: () =>
+    Promise.resolve({
+      pages: Array.from({ length: LEAVES }, () => PAGE),
+      fingerprint: '1024 1700000000000000000 book.pdf',
+    }),
   getPageUrl: (_path, at) => createPage(at),
-  getHighlights: async () => [[{ page: OPENS_AT, rects: HIGHLIGHTS }]],
+  getHighlights: () => Promise.resolve([[{ page: OPENS_AT, rects: HIGHLIGHTS }]]),
 }
 
 /**

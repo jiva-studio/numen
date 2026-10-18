@@ -241,8 +241,9 @@ describe('another vault under this window', () => {
     const drawn: string[] = []
     const window = useWindowDisplay(core, {
       wait: vi.fn(() => Promise.resolve()),
-      onVaultChanged: async (paths) => {
+      onVaultChanged: (paths) => {
         drawn.push(`changed ${paths.join(' ')}`)
+        return Promise.resolve()
       },
       reload: () => {
         drawn.push('reloaded')
