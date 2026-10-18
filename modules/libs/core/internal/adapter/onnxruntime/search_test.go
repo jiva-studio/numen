@@ -88,3 +88,15 @@ func TestCheckLibraryRefusesAFileThatIsNotALibrary(t *testing.T) {
 		t.Error("checkLibrary() opened a file that is not a library")
 	}
 }
+
+func TestFindInDirsSearchesOnlyAbsoluteFolders(t *testing.T) {
+	dir := t.TempDir()
+	at := filepath.Join(dir, "libonnxruntime.so")
+	if err := os.WriteFile(at, []byte("a library"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(dir)
+	if got := findInDirs([]string{"", ".", dir}, "libonnxruntime.so"); !slices.Equal(got, []string{at}) {
+		t.Errorf("findInDirs() = %q, want only %q", got, at)
+	}
+}

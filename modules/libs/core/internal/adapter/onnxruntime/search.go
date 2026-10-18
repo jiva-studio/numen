@@ -109,16 +109,24 @@ func getCandidatesInStore(pluginDir, home, librarySum string, machine []string, 
 	if isDefault {
 		machine = getMachineDirs()
 	}
-	for _, dir := range machine {
-		out = append(out, findMatching(filepath.Join(dir, name+"*"))...)
-	}
+	out = append(out, findInDirs(machine, name)...)
 	if isDefault {
 		out = append(out, findMatching(filepath.Join(storePattern, name+"*"))...)
-		for _, dir := range getLoaderDirs(runtime.GOOS) {
+		out = append(out, findInDirs(getLoaderDirs(runtime.GOOS), name)...)
+	}
+	return removeDuplicates(out)
+}
+
+// findInDirs returns every file named for the library in the folders. A folder
+// that is not an absolute path is not searched.
+func findInDirs(dirs []string, name string) []string {
+	var out []string
+	for _, dir := range dirs {
+		if filepath.IsAbs(dir) {
 			out = append(out, findMatching(filepath.Join(dir, name+"*"))...)
 		}
 	}
-	return removeDuplicates(out)
+	return out
 }
 
 // getLoaderDirs returns the further folders the platform loader searches for a
