@@ -16,8 +16,6 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
@@ -254,10 +252,15 @@ func (s *Server) ServeContext(ctx context.Context) error {
 	}
 	defer s.listener.Close()
 
-	handler := h2c.NewHandler(s.mux, &http2.Server{})
+	// The plugin speaks HTTP/1.1 and HTTP/2 with prior knowledge, both over
+	// plain TCP on loopback.
+	var protocols http.Protocols
+	protocols.SetHTTP1(true)
+	protocols.SetUnencryptedHTTP2(true)
 	httpSrv := &http.Server{
-		Handler:           handler,
+		Handler:           s.mux,
 		ReadHeaderTimeout: s.readHeaderTimeout,
+		Protocols:         &protocols,
 	}
 
 	serveErrCh := make(chan error, 1)

@@ -8,11 +8,7 @@ require (
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
 )
 
-require (
-	golang.org/x/net v0.61.0 // indirect
-	golang.org/x/text v0.43.0 // indirect
-	google.golang.org/protobuf v1.36.12 // indirect
-)
+require google.golang.org/protobuf v1.36.12 // indirect
 
 replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go => ../../libs/plugin-sdk-go
 

@@ -387,3 +387,58 @@ func TestServerShutdownTimeoutError(t *testing.T) {
 		t.Fatal("in-flight request did not complete")
 	}
 }
+
+// protoRecorder records the HTTP version of every response it carries.
+type protoRecorder struct {
+	next   http.RoundTripper
+	mu     sync.Mutex
+	majors []int
+}
+
+func (p *protoRecorder) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := p.next.RoundTrip(req)
+	if resp != nil {
+		p.mu.Lock()
+		p.majors = append(p.majors, resp.ProtoMajor)
+		p.mu.Unlock()
+	}
+	return resp, err
+}
+
+func TestServerAnswersHTTP1AndUnencryptedHTTP2(t *testing.T) {
+	s := New(WithPort(0), WithToken(""), WithStdout(io.Discard), WithStdin(nil))
+	port, err := s.Listen()
+	if err != nil {
+		t.Fatalf("Listen failed: %v", err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	serveErrCh := make(chan error, 1)
+	go func() { serveErrCh <- s.ServeContext(ctx) }()
+	t.Cleanup(func() {
+		cancel()
+		<-serveErrCh
+	})
+
+	for _, want := range []int{1, 2} {
+		var protocols http.Protocols
+		protocols.SetHTTP1(want == 1)
+		protocols.SetUnencryptedHTTP2(want == 2)
+		recorder := &protoRecorder{next: &http.Transport{Protocols: &protocols}}
+		client := numenv1connect.NewPluginLifecycleServiceClient(
+			&http.Client{Transport: recorder},
+			fmt.Sprintf("http://127.0.0.1:%d", port),
+		)
+		resp, err := client.Ping(context.Background(), connect.NewRequest(&numenv1.PingRequest{}))
+		if err != nil {
+			t.Fatalf("Ping over HTTP/%d failed: %v", want, err)
+		}
+		if resp.Msg.GetStatus() != "ok" {
+			t.Errorf("Ping over HTTP/%d status = %q, want ok", want, resp.Msg.GetStatus())
+		}
+		recorder.mu.Lock()
+		if len(recorder.majors) != 1 || recorder.majors[0] != want {
+			t.Errorf("response versions = %v, want [%d]", recorder.majors, want)
+		}
+		recorder.mu.Unlock()
+	}
+}

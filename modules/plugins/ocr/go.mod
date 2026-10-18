@@ -14,8 +14,6 @@ require (
 
 require (
 	github.com/up-zero/gotool v0.0.0-20260120011100-d685b2532b5a // indirect
-	golang.org/x/net v0.61.0 // indirect
-	golang.org/x/text v0.43.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 )
 
