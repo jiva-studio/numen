@@ -54,7 +54,7 @@ jobs:
 
       # A screen reaches the components through their build.
       - name: Install dependencies
-        run: npm ci --prefix modules
+        uses: ./.github/actions/install-node-modules
 
       # A screen reaches the components through their build.
       - name: Build the components

@@ -70,7 +70,7 @@ jobs:
       # A window reaches the components through their build; everything else it
       # names is linked or fetched by the one install at the source root.
       - name: Install dependencies
-        run: npm ci --prefix modules
+        uses: ./.github/actions/install-node-modules
 
       - uses: ./.github/actions/setup-playwright
 

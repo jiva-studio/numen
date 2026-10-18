@@ -1,0 +1,13 @@
+name: "Install Node dependencies"
+description: "Installs the npm workspaces at modules/ exactly as the lock file pins them"
+runs:
+  using: "composite"
+  steps:
+    # Install scripts run only for the packages named in the rebuild: esbuild
+    # and unrs-resolver check the native binary of the platform they run on.
+    - name: Install Node dependencies
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        npm ci --ignore-scripts --prefix modules
+        npm rebuild esbuild unrs-resolver --prefix modules

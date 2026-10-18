@@ -154,7 +154,7 @@ jobs:
         run: |
           set -euo pipefail
           at="git-cliff-$CLIFF-x86_64-unknown-linux-gnu.tar.gz"
-          curl -sfSL -o "$RUNNER_TEMP/$at" \
+          curl --proto '=https' --tlsv1.2 -sfSL -o "$RUNNER_TEMP/$at" \
             "https://github.com/orhun/git-cliff/releases/download/v$CLIFF/$at"
           echo "$SHA256  $RUNNER_TEMP/$at" | sha256sum -c -
           tar -xzf "$RUNNER_TEMP/$at" -C "$RUNNER_TEMP"
@@ -307,7 +307,7 @@ jobs:
         env:
           VERSION: ${{ needs.naming.outputs.version }}
         run: |
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.47.0
+          go -C modules/apps/desktop/build/tools install tool
 
           staged="$RUNNER_TEMP/staged"
           mkdir -p "$staged"
@@ -632,7 +632,7 @@ jobs:
           BUILD: ${{ needs.naming.outputs.build }}
           COMMIT: ${{ needs.naming.outputs.commit }}
         run: |
-          go install github.com/akavel/rsrc@v0.10.2
+          go -C build/tools install tool
 
           into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
           # -s -w drop the debugging tables, which are a quarter of the binary
@@ -679,7 +679,7 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update && sudo apt-get install -y nsis
-          curl -sfSL "$WEBVIEW2" -o "$RUNNER_TEMP/webview2.exe"
+          curl --proto '=https' --tlsv1.2 -sfSL "$WEBVIEW2" -o "$RUNNER_TEMP/webview2.exe"
           echo "$SHA256  $RUNNER_TEMP/webview2.exe" | sha256sum -c -
 
           makensis -V2 \

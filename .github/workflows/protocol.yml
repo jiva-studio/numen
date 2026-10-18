@@ -79,11 +79,12 @@ jobs:
         with:
           setup_only: true
 
+      # The Go plugins are the tools of this module; go.sum pins them.
       - name: Install protobuf plugins
-        run: |
-          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12
-          go install connectrpc.com/connect/cmd/protoc-gen-connect-go@v1.21.0
-          npm ci --prefix ../..
+        run: go install tool
+
+      - name: Install Node dependencies
+        uses: ./.github/actions/install-node-modules
 
       - name: Lint Protobuf schema
         run: buf lint

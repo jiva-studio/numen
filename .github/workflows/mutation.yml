@@ -98,7 +98,7 @@ jobs:
 
       - name: Install dependencies
         if: matrix.kind == 'ts'
-        run: npm ci --prefix modules
+        uses: ./.github/actions/install-node-modules
 
       # The windows reach the shared components through their build.
       - name: Build the components

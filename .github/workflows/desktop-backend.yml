@@ -167,8 +167,7 @@ jobs:
           cache-dependency-path: modules/package-lock.json
 
       - name: Install Node dependencies
-        working-directory: modules
-        run: npm ci
+        uses: ./.github/actions/install-node-modules
 
       - name: Build UI components
         working-directory: modules/libs/ui
