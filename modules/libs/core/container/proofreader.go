@@ -15,15 +15,6 @@ var (
 	errProofreadingUnavailable = errors.New("proofreading plugin is unavailable or not installed")
 )
 
-// ProofreaderSpec is what the platform is told to start: the command line,
-// the model it answers with, and what it is being asked to put right.
-type ProofreaderSpec struct {
-	Command     []string
-	Model       string
-	Instruction string
-	InFlight    int
-}
-
 // getProfile is the place a recognition is put right at, by the name a consumer
 // names it under.
 func (c Config) getProfile(name string) (Profile, error) {
@@ -31,23 +22,12 @@ func (c Config) getProfile(name string) (Profile, error) {
 	if !held {
 		return Profile{}, fmt.Errorf("no proofreading profile named %q", name)
 	}
-	switch profile.Use {
-	case UseService, UseAgent:
-	default:
-		return Profile{}, fmt.Errorf(
-			"proofreading profile %q is used through %q, which is neither %q nor %q",
-			name, profile.Use, UseService, UseAgent)
-	}
-	if !profile.HasModel() {
-		return Profile{}, fmt.Errorf(
-			"proofreading profile %q names no model to use with %q", name, profile.Use)
-	}
 	return c.resolveInFlight(profile), nil
 }
 
-// resolveInFlight is the profile with the number of batches it asks about at once
+// resolveInFlight is the profile with the number of requests one call answers
 // settled: its own, then the performance profile's LLM concurrency, then the
-// default of its kind.
+// default.
 func (c Config) resolveInFlight(profile Profile) Profile {
 	profile.InFlight = profile.GetInFlight(c.ResolvedCompute.LlmConcurrency)
 	return profile
@@ -63,36 +43,22 @@ func (c Config) ProofreaderReady() bool {
 	return false
 }
 
-// Proofreader is what puts a recognition right at the profile named, told what it
-// is proofreading.
+// Proofreader is what puts a recognition right at the profile named.
 //
 // Naming no profile is naming no proofreader: nothing comes back and a recognition
 // is used exactly as it was read.
-func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) {
+func (c Config) Proofreader(name string) (port.Proofreader, error) {
 	if name == "" {
 		return nil, nil
 	}
-	profile, err := c.getProfile(name)
-	if err != nil {
+	if _, err := c.getProfile(name); err != nil {
 		return nil, err
 	}
-
-	if profile.Use == UseService {
-		if host, ok := c.findPluginHost("proofreading"); ok {
-			return plugin.OpenProofreaderBridge(host)
-		}
+	host, ok := c.findPluginHost("proofreading")
+	if !ok {
 		return nil, errProofreadingUnavailable
 	}
-	if c.AgentProofreader == nil {
-		return nil, fmt.Errorf(
-			"proofreading profile %q reaches a command line this application does not start", name)
-	}
-	return c.AgentProofreader(ProofreaderSpec{
-		Command:     profile.Command,
-		Model:       profile.Model,
-		Instruction: instruction,
-		InFlight:    profile.InFlight,
-	})
+	return plugin.OpenProofreaderBridge(host)
 }
 
 // GetScanProofreading is what a document's reading is put right with: the
@@ -112,30 +78,14 @@ func (c Config) GetSpeechProofreading() run.ProofreadingConfig {
 func (c Config) getProofreading(config Proofread) run.ProofreadingConfig {
 	profile := c.resolveInFlight(c.Proofreading.Profiles[config.Profile])
 	return run.ProofreadingConfig{
-		IsNamed:     config.Profile != "",
-		IsAutomatic: config.IsAutomatic,
-		By:          func(what string) (port.Proofreader, error) { return c.Proofreader(config.Profile, what) },
-		Queue: func(what string) (port.ProofreadQueue, error) {
-			return c.ProofreadQueue(config.Profile, what)
-		},
+		IsNamed:         config.Profile != "",
+		IsAutomatic:     config.IsAutomatic,
+		By:              func() (port.Proofreader, error) { return c.Proofreader(config.Profile) },
 		Batch:           profile.BatchSize,
 		Overlap:         profile.Overlap,
 		InFlight:        profile.InFlight,
-		MaxEditDistance: c.Proofreading.Distance(),
+		MaxEditDistance: c.Proofreading.MaxEditDistance,
 	}
-}
-
-// ProofreadQueue is where batches are left for the profile named to answer
-// about later. A profile with no queue leaves nothing.
-func (c Config) ProofreadQueue(name, _ string) (port.ProofreadQueue, error) {
-	if name == "" {
-		return nil, nil
-	}
-	_, err := c.getProfile(name)
-	if err != nil {
-		return nil, err
-	}
-	return nil, nil
 }
 
 // CreateRecognitionProofread is what puts a document's recognition right, and

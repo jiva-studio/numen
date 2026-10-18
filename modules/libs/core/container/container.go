@@ -110,11 +110,6 @@ type Config struct {
 	// its own. Left nil, the document and book plugins of PluginHost give it.
 	Texts port.TextExtractor
 
-	// AgentProofreader opens a profile that reaches the command line a person
-	// already has. The platform supplies it, since core starts no process; an
-	// installation that supplies none names no such profile.
-	AgentProofreader func(ProofreaderSpec) (port.Proofreader, error)
-
 	// Agent is which agent answers in the panel. It arrives the way Embedding
 	// does.
 	Agent settings.Agent

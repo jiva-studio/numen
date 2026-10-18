@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"io/fs"
 	"slices"
@@ -16,10 +15,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// puts is a proofreader answering with what it was told to say about a batch,
-// and keeping the lines it was asked about.
+// puts is a proofreader answering with the correction it was told to make on a
+// page, and keeping the pages it was asked about.
 type puts struct {
-	says map[int]string
+	says map[int]domain.ProofreadCorrection
 
 	mu    sync.Mutex
 	asked []int
@@ -27,20 +26,32 @@ type puts struct {
 
 func (p *puts) GetName() string { return "a proofreader" }
 
-func (p *puts) Proofread(_ context.Context, batches []domain.ProofreadBatch) (map[int]string, error) {
+func (p *puts) ProofreadScan(
+	_ context.Context, pages []domain.ProofreadPage, _ float64,
+) (domain.ScanProofreading, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	out := map[int]string{}
-	for _, batch := range batches {
-		p.asked = append(p.asked, batch.Number)
-		if said, held := p.says[batch.Number]; held {
-			out[batch.Number] = said
+	var out domain.ScanProofreading
+	for _, page := range pages {
+		p.asked = append(p.asked, page.Number)
+		if said, held := p.says[page.Number]; held {
+			out.Corrections = append(out.Corrections, said)
 		}
 	}
 	return out, nil
 }
 
-// lines is what this proofreader was asked about.
+func (p *puts) ProofreadSpeech(
+	context.Context, []domain.ProofreadLine, domain.SpeechWindow,
+) (domain.SpeechProofreading, error) {
+	return domain.SpeechProofreading{}, errSpeechNotProofread
+}
+
+// errSpeechNotProofread is what the fakes answer to a transcript, which a
+// recognition never sends.
+var errSpeechNotProofread = errors.New("a recognition has no speech to proofread")
+
+// lines is the pages this proofreader was asked about.
 func (p *puts) lines() []int {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -182,15 +193,17 @@ func (s *shelf) names() []domain.ArtifactName {
 	return out
 }
 
-// A corrector answers about a page with whatever it was told to say about it,
-// and keeps the pages of every request it was given.
+// A corrector answers about a page with the correction it was told to make on
+// it, and keeps the pages of every request it was given.
 type corrector struct {
-	name  string
-	says  map[int]string
-	asked [][]int
-	// about is what each batch it was given said the text holds.
-	about []string
-	fail  error
+	name string
+	says map[int]domain.ProofreadCorrection
+	// refuses is the pages whose reply is no answer.
+	refuses map[int]bool
+	asked   [][]int
+	// distances is the edit distance each request was given.
+	distances []float64
+	fail      error
 	// stop is called with the number of requests made so far.
 	stop func(int)
 }
@@ -202,33 +215,47 @@ func (c *corrector) GetName() string {
 	return c.name
 }
 
-func (c *corrector) Proofread(ctx context.Context, pages []domain.ProofreadBatch) (map[int]string, error) {
+func (c *corrector) ProofreadScan(
+	ctx context.Context, pages []domain.ProofreadPage, maxEditDistance float64,
+) (domain.ScanProofreading, error) {
 	var at []int
 	for _, page := range pages {
 		at = append(at, page.Number)
-		c.about = append(c.about, page.Prompt)
 	}
 	c.asked = append(c.asked, at)
+	c.distances = append(c.distances, maxEditDistance)
 	if c.stop != nil {
 		c.stop(len(c.asked))
 	}
 	if err := ctx.Err(); err != nil {
-		return nil, err
+		return domain.ScanProofreading{}, err
 	}
 	if c.fail != nil {
-		return nil, c.fail
+		return domain.ScanProofreading{}, c.fail
 	}
-	out := map[int]string{}
+	var out domain.ScanProofreading
 	for _, page := range pages {
+		if c.refuses[page.Number] {
+			out.Uncorrected++
+			continue
+		}
 		if said, has := c.says[page.Number]; has {
-			out[page.Number] = said
+			out.Corrections = append(out.Corrections, said)
 		}
 	}
 	return out, nil
 }
 
-// corrects is a reply putting one line right.
-func corrects(at int, text string) string { return fmt.Sprintf("%d|%s", at, text) }
+func (c *corrector) ProofreadSpeech(
+	context.Context, []domain.ProofreadLine, domain.SpeechWindow,
+) (domain.SpeechProofreading, error) {
+	return domain.SpeechProofreading{}, errSpeechNotProofread
+}
+
+// corrects is the correction putting one line right.
+func corrects(at int, text string) domain.ProofreadCorrection {
+	return domain.ProofreadCorrection{Number: at, Last: at, Text: text}
+}
 
 func readShelf(t *testing.T, shelved *shelf, name domain.ArtifactName) []byte {
 	t.Helper()

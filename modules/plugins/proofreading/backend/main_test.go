@@ -229,25 +229,6 @@ func TestProofreadTextHandlesEveryKindTheSchemaNames(t *testing.T) {
 	}
 }
 
-func TestProofreadAnswersEachBatchUnderTheInstructionItIsGiven(t *testing.T) {
-	proof, h := newServer(func(prompt string) string { return "corrected " + prompt })
-
-	res, err := proof.Proofread(t.Context(), connect.NewRequest(&numenv1.ProofreadRequest{
-		Instruction: "be exact",
-		Batches:     []*numenv1.ProofreadBatch{{Number: 4, Prompt: "one"}, {Number: 9, Prompt: "two"}},
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if got := res.Msg.GetReplies(); len(got) != 2 || got[4] != "corrected one" || got[9] != "corrected two" {
-		t.Errorf("replies %v", got)
-	}
-	if h.asked[0].GetMessages()[0].GetText() != "be exact" {
-		t.Errorf("instruction %q", h.asked[0].GetMessages()[0].GetText())
-	}
-}
-
 func TestAModelThatCannotBeReachedIsUnavailable(t *testing.T) {
 	cases := map[string]error{
 		"no route":    ai.ErrNoRoute,

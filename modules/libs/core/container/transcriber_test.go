@@ -1,45 +1,32 @@
 package container
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
-// A transcript is put right at the profile the settings name for speech, and
-// what puts it right is told it is proofreading speech. The profile named for a
-// scanned reading is another setting and is not read here.
+// A transcript is put right at the profile the settings name for speech. The
+// profile named for a scanned reading is another setting and is not read here.
 func TestATranscriptIsPutRightWithTheProfileNamedForSpeech(t *testing.T) {
 	cfg := Config{ServiceDir: ".numen"}
-	cfg.Proofreading = DefaultProofreading()
 	cfg.Proofreading.Profiles = map[string]Profile{
-		"speech": {Use: UseAgent, Model: "one model", BatchSize: 1, InFlight: 1},
-		"scans":  {Use: UseAgent, Model: "another model", BatchSize: 1, InFlight: 1},
+		"scans": {BatchSize: 1, InFlight: 1},
 	}
 	cfg.TranscriptProofreading = Proofread{Profile: "speech"}
 	cfg.ScanProofreading = Proofread{Profile: "scans", IsAutomatic: true}
 
-	var opened ProofreaderSpec
-	cfg.AgentProofreader = func(said ProofreaderSpec) (port.Proofreader, error) {
-		opened = said
-		return nil, errors.New("nothing on this machine puts a transcript right")
-	}
-
 	held := cfg.OpenTranscriptionWorker(t.Context(), nil, run.NewTasks(), nil)
-	_, _ = held.Proofread(t.Context(), domain.Vault{ID: "v", Path: t.TempDir()}, "talks/one.mp3")
+	_, err := held.Proofread(t.Context(), domain.Vault{ID: "v", Path: t.TempDir()}, "talks/one.mp3")
 	held.Wait()
 
-	if opened.Model != "one model" {
-		t.Errorf("a transcript was put right at the profile using %q", opened.Model)
-	}
-	if opened.Instruction != proofread.SpeechInstruction {
-		t.Error("what puts a transcript right was not told it is proofreading speech")
+	if err == nil || !strings.Contains(err.Error(), `"speech"`) {
+		t.Errorf("a transcript was put right with %v, want the profile named for speech", err)
 	}
 }
 

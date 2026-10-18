@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"strings"
 	"testing"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
@@ -38,7 +38,7 @@ func (p proofreadable) put(t *testing.T, by port.Proofreader) Proofread {
 
 // newProofreadRecognition is that recognition, a proofreading of it, and the
 // proofreader the proofreading was made with.
-func newProofreadRecognition(t *testing.T, says map[int]string) (Proofread, domain.Vault, *shelf, *corrector) {
+func newProofreadRecognition(t *testing.T, says map[int]domain.ProofreadCorrection) (Proofread, domain.Vault, *shelf, *corrector) {
 	t.Helper()
 	held := newProofreadable(t)
 	by := &corrector{says: says}
@@ -87,7 +87,7 @@ func TestNoProofreadingIsMadeWithNothingToProofreadWith(t *testing.T) {
 }
 
 func TestTheCorrectionsGoBesideTheRecognitionAndTheRecognitionIsNotTouched(t *testing.T) {
-	put, v, shelved, _ := newProofreadRecognition(t, map[int]string{
+	put, v, shelved, _ := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{
 		0: corrects(0, "the WORDS 1"),
 		2: corrects(2, "the WORDS 3"),
 	})
@@ -118,7 +118,7 @@ func TestTheCorrectionsGoBesideTheRecognitionAndTheRecognitionIsNotTouched(t *te
 }
 
 func TestACorrectedRecognitionIsTheTextTheSourceIsCutFrom(t *testing.T) {
-	put, v, shelved, _ := newProofreadRecognition(t, map[int]string{0: corrects(0, "the WORDS 1")})
+	put, v, shelved, _ := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{0: corrects(0, "the WORDS 1")})
 
 	if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
@@ -135,10 +135,10 @@ func TestACorrectedRecognitionIsTheTextTheSourceIsCutFrom(t *testing.T) {
 }
 
 func TestAPageWhoseReplyIsNoAnswerIsLeftAsItWasRead(t *testing.T) {
-	put, v, shelved, _ := newProofreadRecognition(t, map[int]string{
-		0: corrects(0, "the "+proofread.Opens+"WORDS"+proofread.Closes+" 1"),
+	put, v, shelved, by := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{
 		1: corrects(1, "the WORDS 2"),
 	})
+	by.refuses = map[int]bool{0: true}
 
 	res, err := put.Execute(t.Context(), v, documentPath)
 	if err != nil {
@@ -160,7 +160,7 @@ func TestAPageWhoseReplyIsNoAnswerIsLeftAsItWasRead(t *testing.T) {
 
 func TestARunStoppedPartWayIsTakenUpAtThePageItStoppedOn(t *testing.T) {
 	held := newProofreadable(t)
-	by := &corrector{says: map[int]string{
+	by := &corrector{says: map[int]domain.ProofreadCorrection{
 		0: corrects(0, "the WORDS 1"),
 		2: corrects(2, "the WORDS 3"),
 	}}
@@ -177,7 +177,7 @@ func TestARunStoppedPartWayIsTakenUpAtThePageItStoppedOn(t *testing.T) {
 		t.Fatalf("stopped with %v", err)
 	}
 
-	again := &corrector{says: map[int]string{2: corrects(2, "the WORDS 3")}}
+	again := &corrector{says: map[int]domain.ProofreadCorrection{2: corrects(2, "the WORDS 3")}}
 	res, err := held.put(t, again).Execute(t.Context(), v, documentPath)
 	if err != nil {
 		t.Fatal(err)
@@ -206,7 +206,7 @@ func TestARunStoppedPartWayIsTakenUpAtThePageItStoppedOn(t *testing.T) {
 }
 
 func TestCorrectionsAnotherProofreaderMadeAreNotTakenUp(t *testing.T) {
-	put, v, shelved, _ := newProofreadRecognition(t, map[int]string{0: corrects(0, "the WORDS 1")})
+	put, v, shelved, _ := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{0: corrects(0, "the WORDS 1")})
 	names := textNames(t, shelved)
 	stood, err := json.Marshal(checkpoint{By: "somebody else", Pages: 3})
 	if err != nil {
@@ -268,7 +268,7 @@ func TestARecognitionThatIsNotThereIsNothingToProofread(t *testing.T) {
 }
 
 func TestASourceIsCutAgainAsItsPagesArePutRight(t *testing.T) {
-	put, v, _, _ := newProofreadRecognition(t, map[int]string{0: corrects(0, "the WORDS 1")})
+	put, v, _, _ := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{0: corrects(0, "the WORDS 1")})
 	cuts := 0
 	put.Cut = func(context.Context, domain.Vault, string) error {
 		cuts++
@@ -285,7 +285,7 @@ func TestASourceIsCutAgainAsItsPagesArePutRight(t *testing.T) {
 }
 
 func TestABatchThatWasNotCutIsAskedAboutAgain(t *testing.T) {
-	put, v, shelved, by := newProofreadRecognition(t, map[int]string{
+	put, v, shelved, by := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{
 		0: corrects(0, "the WORDS 1"),
 		2: corrects(2, "the WORDS 3"),
 	})
@@ -343,50 +343,6 @@ func textNames(t *testing.T, shelved *shelf) names {
 	return names{}
 }
 
-// A proofreadQueue takes a run of pages away and answers about them when it is
-// told it is ready.
-type proofreadQueue struct {
-	*corrector
-	left  map[string][]int
-	ready map[string]bool
-	// isGone is a batch the proofreader will never answer about.
-	isGone bool
-}
-
-func newProofreadQueue(says map[int]string) *proofreadQueue {
-	return &proofreadQueue{
-		corrector: &corrector{says: says},
-		left:      map[string][]int{},
-		ready:     map[string]bool{},
-	}
-}
-
-func (q *proofreadQueue) Submit(_ context.Context, pages []domain.ProofreadBatch) (string, error) {
-	var at []int
-	for _, page := range pages {
-		at = append(at, page.Number)
-	}
-	name := fmt.Sprintf("batch-%d", len(q.left)+1)
-	q.left[name] = at
-	return name, nil
-}
-
-func (q *proofreadQueue) GetReplies(_ context.Context, name string) (map[int]string, bool, error) {
-	if q.isGone {
-		return nil, false, errors.New("the proofreader has forgotten this batch")
-	}
-	if !q.ready[name] {
-		return nil, false, nil
-	}
-	out := map[int]string{}
-	for _, at := range q.left[name] {
-		if said, has := q.says[at]; has {
-			out[at] = said
-		}
-	}
-	return out, true, nil
-}
-
 // getCheckpoint is what the recognition says about who put it right and how far
 // they got.
 func getCheckpoint(t *testing.T, shelved *shelf) checkpoint {
@@ -398,87 +354,12 @@ func getCheckpoint(t *testing.T, shelved *shelf) checkpoint {
 	return stood
 }
 
-func TestPagesAreLeftForTheProofreaderAndCollectedByAnotherRun(t *testing.T) {
-	held := newProofreadable(t)
-	left := newProofreadQueue(map[int]string{0: corrects(0, "the WORDS 1")})
-	put, v, shelved := held.put(t, left), held.vault, held.shelved
-	put.Queue = left
-
-	res, err := put.Execute(t.Context(), v, documentPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !res.IsWaiting || res.Fixed != 0 {
-		t.Errorf("got %+v", res)
-	}
-	stood := getCheckpoint(t, shelved)
-	if stood.Batch != "batch-1" || stood.Left != 2 || stood.Pages != 0 {
-		t.Fatalf("the recognition stands at %+v", stood)
-	}
-
-	// Nothing is collected until the proofreader has answered.
-	res, err = put.Execute(t.Context(), v, documentPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !res.IsWaiting || res.Fixed != 0 {
-		t.Errorf("got %+v", res)
-	}
-
-	left.ready["batch-1"] = true
-	res, err = put.Execute(t.Context(), v, documentPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.Fixed != 1 || res.Read != 2 || !res.IsWaiting {
-		t.Errorf("got %+v", res)
-	}
-	if stood := getCheckpoint(t, shelved); stood.Pages != 2 || stood.Batch != "batch-2" {
-		t.Errorf("the recognition stands at %+v", stood)
-	}
-
-	names := textNames(t, shelved)
-	doc, err := text.ReadComposed(t.Context(), shelved, "ocr", names.hash, readShelf(t, shelved, names.artifact))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(doc.Text, "the WORDS 1") {
-		t.Errorf("the recognition says %q", doc.Text)
-	}
-}
-
-func TestABatchTheProofreaderHasForgottenIsLeftAgain(t *testing.T) {
-	held := newProofreadable(t)
-	left := newProofreadQueue(nil)
-	put, v, shelved := held.put(t, left), held.vault, held.shelved
-	put.Queue = left
-
-	if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
-		t.Fatal(err)
-	}
-	left.isGone = true
-	if _, err := put.Execute(t.Context(), v, documentPath); err == nil {
-		t.Fatal("a batch nobody will answer about was waited for")
-	}
-	if stood := getCheckpoint(t, shelved); stood.Batch != "" {
-		t.Errorf("the recognition still waits on %+v", stood)
-	}
-
-	left.isGone = false
-	if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
-		t.Fatal(err)
-	}
-	if same := left.left["batch-2"]; len(same) != 2 || same[0] != 0 {
-		t.Errorf("the pages left again are %v", same)
-	}
-}
-
 // A recognition nothing is left to be asked about is not work, and nothing is told
 // about it.
 func TestARecognitionAtItsLastPageReportsNoProgress(t *testing.T) {
 	held := newProofreadable(t)
 	v := held.vault
-	first := held.put(t, &corrector{says: map[int]string{0: corrects(0, "the WORDS 1")}})
+	first := held.put(t, &corrector{says: map[int]domain.ProofreadCorrection{0: corrects(0, "the WORDS 1")}})
 	if _, err := first.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}
@@ -500,7 +381,7 @@ func TestARecognitionAtItsLastPageReportsNoProgress(t *testing.T) {
 
 // A proofreading given a known hash skips reading the source file from disk.
 func TestAProofreadingGivenAKnownHashDoesNotReadTheSourceFile(t *testing.T) {
-	put, v, _, _ := newProofreadRecognition(t, map[int]string{
+	put, v, _, _ := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{
 		0: corrects(0, "the WORDS 1"),
 	})
 	put.readers = brokenReaders{}
@@ -512,5 +393,108 @@ func TestAProofreadingGivenAKnownHashDoesNotReadTheSourceFile(t *testing.T) {
 	}
 	if res.Fixed != 1 {
 		t.Errorf("expected 1 fixed line, got %+v", res)
+	}
+}
+
+// A proofreader that cannot answer ends the run, and nothing is written for a
+// page it did not answer about.
+func TestAProofreaderThatIsUnavailableEndsTheRunAndWritesNothing(t *testing.T) {
+	put, v, shelved, by := newProofreadRecognition(t, nil)
+	by.fail = fmt.Errorf("%w: no route for the purpose", port.ErrUnavailable)
+
+	_, err := put.Execute(t.Context(), v, documentPath)
+
+	if !errors.Is(err, port.ErrUnavailable) {
+		t.Fatalf("got %v, want the proofreader to be unavailable", err)
+	}
+	names := textNames(t, shelved)
+	if _, err := shelved.ReadArtifact(t.Context(), names.corrections); err == nil {
+		t.Error("corrections were written for pages nobody answered about")
+	}
+	if _, err := shelved.ReadArtifact(t.Context(), names.far); err == nil {
+		t.Error("a checkpoint was written for pages nobody answered about")
+	}
+}
+
+// The limit on how far a correction may stand from its line is the proofreader's
+// to apply, and it is given as configured.
+func TestTheEditDistanceIsGivenToTheProofreaderAsConfigured(t *testing.T) {
+	for _, distance := range []float64{0, 0.45} {
+		put, v, _, by := newProofreadRecognition(t, nil)
+		put.MaxEditDistance = distance
+
+		if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
+			t.Fatal(err)
+		}
+		if len(by.distances) == 0 {
+			t.Fatal("the proofreader was asked nothing")
+		}
+		for _, got := range by.distances {
+			if got != distance {
+				t.Errorf("asked with %v, want %v", got, distance)
+			}
+		}
+	}
+}
+
+func TestTheCheckpointNamesTheProofreaderAndThePagesDone(t *testing.T) {
+	put, v, shelved, _ := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{0: corrects(0, "the WORDS 1")})
+
+	if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := getCheckpoint(t, shelved); got.By != "a proofreader" || got.Pages != 4 {
+		t.Errorf("got %+v", got)
+	}
+}
+
+func TestOnlyTheCorrectionsOfPagesTheCountClaimsAreKept(t *testing.T) {
+	held := newProofreadable(t)
+	names := textNames(t, held.shelved)
+	store, err := held.derived.Open(held.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pages := []domain.ProofreadPage{
+		{Number: 0, Lines: []domain.ProofreadLine{{Number: 0}, {Number: 1}}},
+		{Number: 1, Lines: []domain.ProofreadLine{{Number: 2}, {Number: 3}}},
+	}
+	written := []domain.CorrectionLine{{Number: 0, Text: "a"}, {Number: 2, Text: "b"}, {Number: 3, Text: "c"}}
+	if err := store.WriteArtifact(t.Context(), names.corrections, correction.Pack(written)); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := dropCorrections(t.Context(), store, names.corrections, pages, 1); err != nil {
+		t.Fatal(err)
+	}
+
+	kept := correction.Unpack(readShelf(t, held.shelved, names.corrections))
+	if len(kept) != 1 || kept[0].Number != 0 {
+		t.Errorf("kept %+v, want the correction of the first page alone", kept)
+	}
+}
+
+func TestProofreadRecognitionRejectsInvalidCorrectionBatches(t *testing.T) {
+	put1, v1, shelved1, _ := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{
+		0: {Number: 0, Last: 1, Text: "joined"},
+	})
+	if _, err := put1.Execute(t.Context(), v1, documentPath); !errors.Is(err, ErrJoinedCorrectionNotAllowed) {
+		t.Errorf("Execute() error = %v, want %v", err, ErrJoinedCorrectionNotAllowed)
+	}
+	names1 := textNames(t, shelved1)
+	if _, err := shelved1.ReadArtifact(t.Context(), names1.corrections); !errors.Is(err, fs.ErrNotExist) {
+		t.Error("corrections artifact written for rejected joined batch")
+	}
+
+	put2, v2, shelved2, _ := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{
+		0: {Number: 9999, Text: "unasked"},
+	})
+	if _, err := put2.Execute(t.Context(), v2, documentPath); !errors.Is(err, ErrUnaskedCorrectionLine) {
+		t.Errorf("Execute() error = %v, want %v", err, ErrUnaskedCorrectionLine)
+	}
+	names2 := textNames(t, shelved2)
+	if _, err := shelved2.ReadArtifact(t.Context(), names2.corrections); !errors.Is(err, fs.ErrNotExist) {
+		t.Error("corrections artifact written for rejected unasked batch")
 	}
 }

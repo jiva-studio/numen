@@ -588,7 +588,7 @@ func (h *artifactHandler) proofreadRecognition(
 
 func getRecognitionProofreadState(res recognition.ProofreadResult) v1.State {
 	switch {
-	case res.IsBusy, res.IsWaiting:
+	case res.IsBusy:
 		return v1.State_STATE_RUNNING
 	case res.IsNone:
 		return v1.State_STATE_NONE

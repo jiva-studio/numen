@@ -56,12 +56,6 @@ func proofreadRecognitionCommand(
 	switch {
 	case res.IsBusy:
 		fmt.Fprintf(out, "%s is already being proofread, and nothing was done\n", res.Path)
-	case res.IsWaiting:
-		// What a collected batch did is said here too: a run that leaves a
-		// batch collects one before it.
-		fmt.Fprintf(out, "put %d lines right, %d pages left as they were read; "+
-			"%d of %d pages of %s are with the proofreader, ask again to collect them\n",
-			res.Fixed, res.UncorrectedPages, res.Read, res.Pages, res.Path)
 	case res.IsNone:
 		fmt.Fprintf(out, "%s has no recognition to proofread\n", res.Path)
 	default:

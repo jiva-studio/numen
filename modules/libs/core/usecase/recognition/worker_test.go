@@ -57,10 +57,6 @@ func newWatchedUnder(t *testing.T, ctx context.Context, why error) *watched {
 		Sources:   newStore(),
 		Documents: documents{},
 		Tasks:     tasks,
-		Wait:      waitForContext,
-		Proofreading: run.ProofreadingConfig{
-			Queue: func(string) (port.ProofreadQueue, error) { return nil, nil },
-		},
 		Runtime: Runtime{
 			Ready: func() bool { return true },
 			Open: func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
@@ -361,15 +357,14 @@ func TestTheApplicationWaitsForARecognitionItStarted(t *testing.T) {
 	}
 }
 
-// A queue that failed to build is said, as the proofreader that failed to build
-// is said. A person who configured a queue and is given none is owed the reason.
-func TestAProofreadQueueThatFailedToBuildIsSaid(t *testing.T) {
+// A proofreader that failed to open is said. A person who configured one and is
+// given none is owed the reason.
+func TestAProofreaderThatFailedToOpenIsSaid(t *testing.T) {
 	w := newWatched(t, nil)
 	w.Worker.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true,
-		By: func(string) (port.Proofreader, error) { return &puts{}, nil },
-		Queue: func(string) (port.ProofreadQueue, error) {
-			return nil, errors.New("no queue for the proofreading service")
+		By: func() (port.Proofreader, error) {
+			return nil, errors.New("proofreading plugin is unavailable")
 		},
 	}
 
@@ -377,7 +372,7 @@ func TestAProofreadQueueThatFailedToBuildIsSaid(t *testing.T) {
 
 	at, held := w.getTask(t)
 	if !held {
-		t.Fatal("a queue that failed to build was not said")
+		t.Fatal("a proofreader that failed to open was not said")
 	}
 	if at.Error == "" || at.About != "a.pdf" {
 		t.Errorf("got %+v", at)

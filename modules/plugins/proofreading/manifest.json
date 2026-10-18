@@ -7,7 +7,7 @@
   "capabilities": ["proofreading"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onCommand:proofread"],
-  "permissions": ["vault:read", "ai:complete"],
+  "permissions": ["ai:complete"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false

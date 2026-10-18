@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/proofreading.proto.
  */
 export const file_numen_v1_proofreading: GenFile = /*@__PURE__*/
-  fileDesc("ChtudW1lbi92MS9wcm9vZnJlYWRpbmcucHJvdG8SCG51bWVuLnYxIhsKGUdldFByb29mcmVhZGVySW5mb1JlcXVlc3QiKgoaR2V0UHJvb2ZyZWFkZXJJbmZvUmVzcG9uc2USDAoEbmFtZRgBIAEoCSIwCg5Qcm9vZnJlYWRCYXRjaBIOCgZudW1iZXIYASABKAUSDgoGcHJvbXB0GAIgASgJIlIKEFByb29mcmVhZFJlcXVlc3QSKQoHYmF0Y2hlcxgBIAMoCzIYLm51bWVuLnYxLlByb29mcmVhZEJhdGNoEhMKC2luc3RydWN0aW9uGAIgASgJIn4KEVByb29mcmVhZFJlc3BvbnNlEjkKB3JlcGxpZXMYASADKAsyKC5udW1lbi52MS5Qcm9vZnJlYWRSZXNwb25zZS5SZXBsaWVzRW50cnkaLgoMUmVwbGllc0VudHJ5EgsKA2tleRgBIAEoBRINCgV2YWx1ZRgCIAEoCToCOAEiLQoNUHJvb2ZyZWFkTGluZRIOCgZudW1iZXIYASABKAUSDAoEdGV4dBgCIAEoCSJICg5Qcm9vZnJlYWRHcm91cBIOCgZudW1iZXIYASABKAUSJgoFbGluZXMYAiADKAsyFy5udW1lbi52MS5Qcm9vZnJlYWRMaW5lIjEKFFByb29mcmVhZFNjYW5PcHRpb25zEhkKEW1heF9lZGl0X2Rpc3RhbmNlGAEgASgBIl4KFlByb29mcmVhZFNwZWVjaE9wdGlvbnMSDAoEc2l6ZRgBIAEoBRIPCgdvdmVybGFwGAIgASgFEhEKCWZyb21fbGluZRgDIAEoBRISCgpsaW5lX2xpbWl0GAQgASgFItYBChRQcm9vZnJlYWRUZXh0UmVxdWVzdBIlCgRraW5kGAEgASgOMhcubnVtZW4udjEuUHJvb2ZyZWFkS2luZBIoCgZncm91cHMYAiADKAsyGC5udW1lbi52MS5Qcm9vZnJlYWRHcm91cBIuCgRzY2FuGAMgASgLMh4ubnVtZW4udjEuUHJvb2ZyZWFkU2Nhbk9wdGlvbnNIABIyCgZzcGVlY2gYBCABKAsyIC5udW1lbi52MS5Qcm9vZnJlYWRTcGVlY2hPcHRpb25zSABCCQoHb3B0aW9ucyJBChNQcm9vZnJlYWRDb3JyZWN0aW9uEg4KBm51bWJlchgBIAEoBRIMCgRsYXN0GAIgASgFEgwKBHRleHQYAyABKAkihAEKFVByb29mcmVhZFRleHRSZXNwb25zZRIyCgtjb3JyZWN0aW9ucxgBIAMoCzIdLm51bWVuLnYxLlByb29mcmVhZENvcnJlY3Rpb24SEwoLdW5jb3JyZWN0ZWQYAiABKAUSEQoJbmV4dF9saW5lGAMgASgFEg8KB2lzX2RvbmUYBCABKAgqYwoNUHJvb2ZyZWFkS2luZBIeChpQUk9PRlJFQURfS0lORF9VTlNQRUNJRklFRBAAEhcKE1BST09GUkVBRF9LSU5EX1NDQU4QARIZChVQUk9PRlJFQURfS0lORF9TUEVFQ0gQAjKOAgoTUHJvb2ZyZWFkaW5nU2VydmljZRJfChJHZXRQcm9vZnJlYWRlckluZm8SIy5udW1lbi52MS5HZXRQcm9vZnJlYWRlckluZm9SZXF1ZXN0GiQubnVtZW4udjEuR2V0UHJvb2ZyZWFkZXJJbmZvUmVzcG9uc2USRAoJUHJvb2ZyZWFkEhoubnVtZW4udjEuUHJvb2ZyZWFkUmVxdWVzdBobLm51bWVuLnYxLlByb29mcmVhZFJlc3BvbnNlElAKDVByb29mcmVhZFRleHQSHi5udW1lbi52MS5Qcm9vZnJlYWRUZXh0UmVxdWVzdBofLm51bWVuLnYxLlByb29mcmVhZFRleHRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChtudW1lbi92MS9wcm9vZnJlYWRpbmcucHJvdG8SCG51bWVuLnYxIhsKGUdldFByb29mcmVhZGVySW5mb1JlcXVlc3QiKgoaR2V0UHJvb2ZyZWFkZXJJbmZvUmVzcG9uc2USDAoEbmFtZRgBIAEoCSItCg1Qcm9vZnJlYWRMaW5lEg4KBm51bWJlchgBIAEoBRIMCgR0ZXh0GAIgASgJIkgKDlByb29mcmVhZEdyb3VwEg4KBm51bWJlchgBIAEoBRImCgVsaW5lcxgCIAMoCzIXLm51bWVuLnYxLlByb29mcmVhZExpbmUiMQoUUHJvb2ZyZWFkU2Nhbk9wdGlvbnMSGQoRbWF4X2VkaXRfZGlzdGFuY2UYASABKAEiXgoWUHJvb2ZyZWFkU3BlZWNoT3B0aW9ucxIMCgRzaXplGAEgASgFEg8KB292ZXJsYXAYAiABKAUSEQoJZnJvbV9saW5lGAMgASgFEhIKCmxpbmVfbGltaXQYBCABKAUi1gEKFFByb29mcmVhZFRleHRSZXF1ZXN0EiUKBGtpbmQYASABKA4yFy5udW1lbi52MS5Qcm9vZnJlYWRLaW5kEigKBmdyb3VwcxgCIAMoCzIYLm51bWVuLnYxLlByb29mcmVhZEdyb3VwEi4KBHNjYW4YAyABKAsyHi5udW1lbi52MS5Qcm9vZnJlYWRTY2FuT3B0aW9uc0gAEjIKBnNwZWVjaBgEIAEoCzIgLm51bWVuLnYxLlByb29mcmVhZFNwZWVjaE9wdGlvbnNIAEIJCgdvcHRpb25zIkEKE1Byb29mcmVhZENvcnJlY3Rpb24SDgoGbnVtYmVyGAEgASgFEgwKBGxhc3QYAiABKAUSDAoEdGV4dBgDIAEoCSKEAQoVUHJvb2ZyZWFkVGV4dFJlc3BvbnNlEjIKC2NvcnJlY3Rpb25zGAEgAygLMh0ubnVtZW4udjEuUHJvb2ZyZWFkQ29ycmVjdGlvbhITCgt1bmNvcnJlY3RlZBgCIAEoBRIRCgluZXh0X2xpbmUYAyABKAUSDwoHaXNfZG9uZRgEIAEoCCpjCg1Qcm9vZnJlYWRLaW5kEh4KGlBST09GUkVBRF9LSU5EX1VOU1BFQ0lGSUVEEAASFwoTUFJPT0ZSRUFEX0tJTkRfU0NBThABEhkKFVBST09GUkVBRF9LSU5EX1NQRUVDSBACMsgBChNQcm9vZnJlYWRpbmdTZXJ2aWNlEl8KEkdldFByb29mcmVhZGVySW5mbxIjLm51bWVuLnYxLkdldFByb29mcmVhZGVySW5mb1JlcXVlc3QaJC5udW1lbi52MS5HZXRQcm9vZnJlYWRlckluZm9SZXNwb25zZRJQCg1Qcm9vZnJlYWRUZXh0Eh4ubnVtZW4udjEuUHJvb2ZyZWFkVGV4dFJlcXVlc3QaHy5udW1lbi52MS5Qcm9vZnJlYWRUZXh0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.GetProofreaderInfoRequest
@@ -43,69 +43,6 @@ export const GetProofreaderInfoResponseSchema: GenMessage<GetProofreaderInfoResp
   messageDesc(file_numen_v1_proofreading, 1);
 
 /**
- * @generated from message numen.v1.ProofreadBatch
- */
-export type ProofreadBatch = Message<"numen.v1.ProofreadBatch"> & {
-  /**
-   * @generated from field: int32 number = 1;
-   */
-  number: number;
-
-  /**
-   * @generated from field: string prompt = 2;
-   */
-  prompt: string;
-};
-
-/**
- * Describes the message numen.v1.ProofreadBatch.
- * Use `create(ProofreadBatchSchema)` to create a new message.
- */
-export const ProofreadBatchSchema: GenMessage<ProofreadBatch> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 2);
-
-/**
- * @generated from message numen.v1.ProofreadRequest
- */
-export type ProofreadRequest = Message<"numen.v1.ProofreadRequest"> & {
-  /**
-   * @generated from field: repeated numen.v1.ProofreadBatch batches = 1;
-   */
-  batches: ProofreadBatch[];
-
-  /**
-   * @generated from field: string instruction = 2;
-   */
-  instruction: string;
-};
-
-/**
- * Describes the message numen.v1.ProofreadRequest.
- * Use `create(ProofreadRequestSchema)` to create a new message.
- */
-export const ProofreadRequestSchema: GenMessage<ProofreadRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 3);
-
-/**
- * @generated from message numen.v1.ProofreadResponse
- */
-export type ProofreadResponse = Message<"numen.v1.ProofreadResponse"> & {
-  /**
-   * Map of batch number to proofread reply.
-   *
-   * @generated from field: map<int32, string> replies = 1;
-   */
-  replies: { [key: number]: string };
-};
-
-/**
- * Describes the message numen.v1.ProofreadResponse.
- * Use `create(ProofreadResponseSchema)` to create a new message.
- */
-export const ProofreadResponseSchema: GenMessage<ProofreadResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 4);
-
-/**
  * ProofreadLine is one numbered run of words.
  *
  * @generated from message numen.v1.ProofreadLine
@@ -127,7 +64,7 @@ export type ProofreadLine = Message<"numen.v1.ProofreadLine"> & {
  * Use `create(ProofreadLineSchema)` to create a new message.
  */
 export const ProofreadLineSchema: GenMessage<ProofreadLine> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 5);
+  messageDesc(file_numen_v1_proofreading, 2);
 
 /**
  * ProofreadGroup is lines answered for as a whole. A scan group is one page.
@@ -152,7 +89,7 @@ export type ProofreadGroup = Message<"numen.v1.ProofreadGroup"> & {
  * Use `create(ProofreadGroupSchema)` to create a new message.
  */
 export const ProofreadGroupSchema: GenMessage<ProofreadGroup> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 6);
+  messageDesc(file_numen_v1_proofreading, 3);
 
 /**
  * ProofreadScanOptions are the settings of a scan request.
@@ -174,7 +111,7 @@ export type ProofreadScanOptions = Message<"numen.v1.ProofreadScanOptions"> & {
  * Use `create(ProofreadScanOptionsSchema)` to create a new message.
  */
 export const ProofreadScanOptionsSchema: GenMessage<ProofreadScanOptions> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 7);
+  messageDesc(file_numen_v1_proofreading, 4);
 
 /**
  * ProofreadSpeechOptions are the settings of a speech request. Speech
@@ -217,7 +154,7 @@ export type ProofreadSpeechOptions = Message<"numen.v1.ProofreadSpeechOptions"> 
  * Use `create(ProofreadSpeechOptionsSchema)` to create a new message.
  */
 export const ProofreadSpeechOptionsSchema: GenMessage<ProofreadSpeechOptions> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 8);
+  messageDesc(file_numen_v1_proofreading, 5);
 
 /**
  * @generated from message numen.v1.ProofreadTextRequest
@@ -259,7 +196,7 @@ export type ProofreadTextRequest = Message<"numen.v1.ProofreadTextRequest"> & {
  * Use `create(ProofreadTextRequestSchema)` to create a new message.
  */
 export const ProofreadTextRequestSchema: GenMessage<ProofreadTextRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 9);
+  messageDesc(file_numen_v1_proofreading, 6);
 
 /**
  * ProofreadCorrection puts line number right. A correction of several lines
@@ -290,7 +227,7 @@ export type ProofreadCorrection = Message<"numen.v1.ProofreadCorrection"> & {
  * Use `create(ProofreadCorrectionSchema)` to create a new message.
  */
 export const ProofreadCorrectionSchema: GenMessage<ProofreadCorrection> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 10);
+  messageDesc(file_numen_v1_proofreading, 7);
 
 /**
  * @generated from message numen.v1.ProofreadTextResponse
@@ -328,7 +265,7 @@ export type ProofreadTextResponse = Message<"numen.v1.ProofreadTextResponse"> & 
  * Use `create(ProofreadTextResponseSchema)` to create a new message.
  */
 export const ProofreadTextResponseSchema: GenMessage<ProofreadTextResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_proofreading, 11);
+  messageDesc(file_numen_v1_proofreading, 8);
 
 /**
  * ProofreadKind is what is being proofread. The proofreader chooses its own
@@ -382,16 +319,6 @@ export const ProofreadingService: GenService<{
     methodKind: "unary";
     input: typeof GetProofreaderInfoRequestSchema;
     output: typeof GetProofreaderInfoResponseSchema;
-  },
-  /**
-   * Proofread submits text batches to be proofread and returns corrections.
-   *
-   * @generated from rpc numen.v1.ProofreadingService.Proofread
-   */
-  proofread: {
-    methodKind: "unary";
-    input: typeof ProofreadRequestSchema;
-    output: typeof ProofreadResponseSchema;
   },
   /**
    * ProofreadText proofreads numbered lines of one kind of text and returns the
