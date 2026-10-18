@@ -533,6 +533,22 @@ func TestACorrectionOfALineTheTranscriptDoesNotHaveEndsTheRun(t *testing.T) {
 	}
 }
 
+// A window asks about one line to a call, and a run reaching from it into the
+// next line is no answer to what was asked.
+func TestARunReachingPastTheWindowEndsTheRun(t *testing.T) {
+	u, v, shelved, _, hash := newProofreadTranscript(t, nil, "first thing", "secnd thing")
+	u.by = scripted{reply: domain.SpeechProofreading{
+		Corrections: []domain.ProofreadCorrection{joins(0, 1, "first thing, second thing")}, Next: 1,
+	}}
+
+	if _, err := u.Execute(t.Context(), v, recordingPath); !errors.Is(err, errCorrectionUnasked) {
+		t.Fatalf("got %v, want %v", err, errCorrectionUnasked)
+	}
+	if _, err := shelved.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash)); err == nil {
+		t.Error("a run past the window was written")
+	}
+}
+
 // The end of the context stops the run between two windows.
 func TestTheEndOfTheContextStopsTheRunBetweenWindows(t *testing.T) {
 	u, v, _, by, _ := newProofreadTranscript(t, nil, "first thing", "secnd thing", "third thing")

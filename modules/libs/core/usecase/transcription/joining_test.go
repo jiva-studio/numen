@@ -85,17 +85,46 @@ const (
 	onItsOwn    = "connected with Radhika."
 )
 
+// sequenced is a proofreader answering each call with the next of its replies.
+type sequenced struct {
+	noScan
+	replies []domain.SpeechProofreading
+	calls   int
+}
+
+func (s *sequenced) GetName() string { return "a proofreader" }
+
+func (s *sequenced) ProofreadSpeech(
+	context.Context, []domain.ProofreadLine, domain.SpeechWindow,
+) (domain.SpeechProofreading, error) {
+	if s.calls >= len(s.replies) {
+		return domain.SpeechProofreading{}, fmt.Errorf("call %d past the %d replies", s.calls, len(s.replies))
+	}
+	reply := s.replies[s.calls]
+	s.calls++
+	return reply, nil
+}
+
 // A correction of a line another correction put into a run is answered too
 // late: the words no longer stand on their own, and the correction is dropped.
 //
-// It holds whether the two corrections arrive in one call or in two.
+// It holds whether the two corrections arrive in one call or in two. The second
+// call takes up again at the last line of the run, as a sentence reaching past
+// a cut is taken up.
 func TestALineAlreadyPutIntoARunIsLeftInIt(t *testing.T) {
-	for _, lines := range []int{1, 4} {
-		t.Run(fmt.Sprintf("%d lines to a call", lines), func(t *testing.T) {
-			u, v, shelved, hash := newOverlappingRun(t, lines, says(
-				joins(0, 1, putTogether),
-				fixes(1, onItsOwn),
-			))
+	for name, one := range map[string]struct {
+		lines int
+		by    port.Proofreader
+	}{
+		"in one call": {4, &corrector{says: says(joins(0, 1, putTogether), fixes(1, onItsOwn))}},
+		"in two calls": {2, &sequenced{replies: []domain.SpeechProofreading{
+			{Corrections: []domain.ProofreadCorrection{joins(0, 1, putTogether)}, Next: 1},
+			{Corrections: []domain.ProofreadCorrection{fixes(1, onItsOwn)}, Next: 4, IsDone: true},
+		}}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			u, v, shelved, hash := newOverlappingRun(t, one.lines, nil)
+			u.by = one.by
 
 			if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 				t.Fatal(err)

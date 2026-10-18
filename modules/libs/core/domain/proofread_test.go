@@ -42,6 +42,11 @@ func TestACorrectionOfALineNotAskedAboutIsFound(t *testing.T) {
 		t.Errorf("got %+v, %v, want the correction of line 4", one, found)
 	}
 	if one, found := domain.FindUnaskedCorrection(asked, []domain.ProofreadCorrection{
+		{Number: 2, Text: "asked"}, {Number: 3, Last: 5, Text: "a run past the lines asked"},
+	}); !found || one.Number != 3 {
+		t.Errorf("got %+v, %v, want the run from line 3", one, found)
+	}
+	if one, found := domain.FindUnaskedCorrection(asked, []domain.ProofreadCorrection{
 		{Number: 3, Text: "asked"}, {Number: 2, Last: 3, Text: "asked as a run"},
 	}); found {
 		t.Errorf("found %+v among corrections of lines asked about", one)

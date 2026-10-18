@@ -31,14 +31,17 @@ type ProofreadCorrection struct {
 func (c ProofreadCorrection) IsJoined() bool { return c.Last > c.Number }
 
 // FindUnaskedCorrection returns the first correction whose line is none of the
-// lines asked about, and false where every correction names a line asked about.
+// lines asked about, or whose run reaches past the last of them, and false
+// where every correction stands within the lines asked about.
 func FindUnaskedCorrection(asked []ProofreadLine, made []ProofreadCorrection) (ProofreadCorrection, bool) {
 	numbers := make(map[int]bool, len(asked))
+	last := -1
 	for _, line := range asked {
 		numbers[line.Number] = true
+		last = max(last, line.Number)
 	}
 	for _, one := range made {
-		if !numbers[one.Number] {
+		if !numbers[one.Number] || one.Last > last {
 			return one, true
 		}
 	}
