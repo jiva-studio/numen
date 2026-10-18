@@ -20,7 +20,7 @@ describe('MediaUrlTab', () => {
   })
 
   it('shows error when url cannot be handled', async () => {
-    vi.mocked(downloaderClient.canHandle).mockResolvedValueOnce({ canHandle: false } as any)
+    vi.mocked(downloaderClient.canHandle).mockResolvedValueOnce({ canHandle: false } as never)
     const wrapper = mount(MediaUrlTab, { props: { state: {} } })
 
     const input = wrapper.find('input[type="url"]')
@@ -32,11 +32,11 @@ describe('MediaUrlTab', () => {
   })
 
   it('fetches media metadata and cues when url is handled', async () => {
-    vi.mocked(downloaderClient.canHandle).mockResolvedValueOnce({ canHandle: true } as any)
+    vi.mocked(downloaderClient.canHandle).mockResolvedValueOnce({ canHandle: true } as never)
     vi.mocked(downloaderClient.getText).mockResolvedValueOnce({
       title: 'Sample Video',
       cues: [{ startMs: 1000, endMs: 2000, text: 'First line' }],
-    } as any)
+    } as never)
 
     const wrapper = mount(MediaUrlTab, { props: { state: {} } })
     const input = wrapper.find('input[type="url"]')

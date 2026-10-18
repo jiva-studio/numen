@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { useTabLinks } from '@/features/tab-linking'
-import { isNotePath, useTabSync } from './useTabSync'
+import { isNotePath, useTabSync, type TabSyncDeps } from './useTabSync'
 
 describe('useTabSync', () => {
   it('synchronizes path to linked note, plex, and files tabs', () => {
@@ -12,7 +12,7 @@ describe('useTabSync', () => {
     const revealPathMock = vi.fn()
     const plexGoMock = vi.fn()
 
-    const heldMock: any = {
+    const heldMock = {
       getTab: (id: string) => {
         if (id === 'note-1') return { kind: { kind: 'note' }, state: { id: 'note-state-1' } }
         if (id === 'plex-1') return { kind: { kind: 'plex' } }
@@ -28,11 +28,11 @@ describe('useTabSync', () => {
         }
         return null
       },
-    }
+    } as unknown as TabSyncDeps['held']
 
-    const editingMock: any = {
+    const editingMock = {
       noted: { loadInTab: loadInTabMock },
-    }
+    } as unknown as TabSyncDeps['editing']
 
     const sync = useTabSync({ held: heldMock, tabLinks, editing: editingMock })
 
@@ -52,7 +52,7 @@ describe('useTabSync', () => {
   it('handles edge cases in tab sync safely', () => {
     const tabLinks = useTabLinks()
     const loadInTabMock = vi.fn()
-    const heldMock: any = {
+    const heldMock = {
       getTab: (id: string) => {
         if (id === 'missing-state') return { kind: { kind: 'plex' } }
         if (id === 'agent-tab') return { kind: { kind: 'agent' } }
@@ -65,11 +65,11 @@ describe('useTabSync', () => {
         }
         return null
       },
-    }
+    } as unknown as TabSyncDeps['held']
     const sync = useTabSync({
       held: heldMock,
       tabLinks,
-      editing: { noted: { loadInTab: loadInTabMock } } as any,
+      editing: { noted: { loadInTab: loadInTabMock } } as unknown as TabSyncDeps['editing'],
     })
 
     expect(sync.syncPathFromTab('', 'test.md')).toBe(false)
@@ -92,7 +92,7 @@ describe('useTabSync', () => {
     const loadInTabMock = vi.fn()
     const plexGoMock = vi.fn()
 
-    const heldMock: any = {
+    const heldMock = {
       getTab: (id: string) => {
         if (id === 'note-1') return { kind: { kind: 'note' } }
         if (id === 'plex-1') return { kind: { kind: 'plex' } }
@@ -104,11 +104,11 @@ describe('useTabSync', () => {
         }
         return null
       },
-    }
+    } as unknown as TabSyncDeps['held']
 
-    const editingMock: any = {
+    const editingMock = {
       noted: { loadInTab: loadInTabMock },
-    }
+    } as unknown as TabSyncDeps['editing']
 
     const sync = useTabSync({ held: heldMock, tabLinks, editing: editingMock })
 
@@ -120,7 +120,8 @@ describe('useTabSync', () => {
   })
 })
 
-const createLinkedTabs = (...targets: string[]): any => ({ getLinkedTargets: () => targets })
+const createLinkedTabs = (...targets: string[]): TabSyncDeps['tabLinks'] =>
+  ({ getLinkedTargets: () => targets }) as unknown as TabSyncDeps['tabLinks']
 
 describe('isNotePath', () => {
   it('holds for markdown files and for paths without an extension', () => {
@@ -137,12 +138,12 @@ describe('isNotePath', () => {
 describe('useTabSync targets', () => {
   it('loads the note under the id its tab state holds', () => {
     const loadInTab = vi.fn()
-    const held: any = { getTab: () => ({ kind: { kind: 'note' }, state: { id: 'kept' } }) }
+    const held = { getTab: () => ({ kind: { kind: 'note' }, state: { id: 'kept' } }) } as unknown as TabSyncDeps['held']
 
     useTabSync({
       held,
       tabLinks: createLinkedTabs('note:other'),
-      editing: { noted: { loadInTab } } as any,
+      editing: { noted: { loadInTab } } as unknown as TabSyncDeps['editing'],
     }).syncPathFromTab('s', 'a.md', 'A')
 
     expect(loadInTab).toHaveBeenCalledWith('kept', 'a.md', 'A')
@@ -150,12 +151,12 @@ describe('useTabSync targets', () => {
 
   it('loads a stateless note tab under its id without the leading note:', () => {
     const loadInTab = vi.fn()
-    const held: any = { getTab: () => ({ kind: { kind: 'note' } }) }
+    const held = { getTab: () => ({ kind: { kind: 'note' } }) } as unknown as TabSyncDeps['held']
 
     useTabSync({
       held,
       tabLinks: createLinkedTabs('note:abc', 'x-note:def'),
-      editing: { noted: { loadInTab } } as any,
+      editing: { noted: { loadInTab } } as unknown as TabSyncDeps['editing'],
     }).syncPathFromTab('s', 'a.md')
 
     expect(loadInTab).toHaveBeenCalledWith('abc', 'a.md', '')
@@ -164,11 +165,11 @@ describe('useTabSync targets', () => {
 
   it('leaves a plex tab alone when it already shows the path', () => {
     const go = vi.fn()
-    const held: any = {
+    const held = {
       getTab: () => ({ kind: { kind: 'plex' } }),
       getTabStateIn: () => ({ view: { here: { value: 'same.md' }, go } }),
-    }
-    const sync = useTabSync({ held, tabLinks: createLinkedTabs('p'), editing: {} as any })
+    } as unknown as TabSyncDeps['held']
+    const sync = useTabSync({ held, tabLinks: createLinkedTabs('p'), editing: {} as unknown as TabSyncDeps['editing'] })
 
     sync.syncPathFromTab('s', 'same.md')
     expect(go).not.toHaveBeenCalled()
@@ -178,8 +179,8 @@ describe('useTabSync targets', () => {
   })
 
   it('skips a files tab that has no state', () => {
-    const held: any = { getTab: () => ({ kind: { kind: 'files' } }), getTabStateIn: () => null }
-    const sync = useTabSync({ held, tabLinks: createLinkedTabs('f'), editing: {} as any })
+    const held = { getTab: () => ({ kind: { kind: 'files' } }), getTabStateIn: () => null } as unknown as TabSyncDeps['held']
+    const sync = useTabSync({ held, tabLinks: createLinkedTabs('f'), editing: {} as unknown as TabSyncDeps['editing'] })
 
     expect(sync.syncPathFromTab('s', 'a.md')).toBe(true)
   })
@@ -188,11 +189,11 @@ describe('useTabSync targets', () => {
 describe('useTabSync guards', () => {
   it('refuses an empty source tab id or an empty path even when targets are linked', () => {
     const loadInTab = vi.fn()
-    const held: any = { getTab: () => ({ kind: { kind: 'note' } }) }
+    const held = { getTab: () => ({ kind: { kind: 'note' } }) } as unknown as TabSyncDeps['held']
     const sync = useTabSync({
       held,
       tabLinks: createLinkedTabs('n'),
-      editing: { noted: { loadInTab } } as any,
+      editing: { noted: { loadInTab } } as unknown as TabSyncDeps['editing'],
     })
 
     expect(sync.syncPathFromTab('', 'a.md')).toBe(false)
@@ -202,14 +203,14 @@ describe('useTabSync guards', () => {
 
   it('refuses a sync started while one is running, and accepts the next after it ends', () => {
     const inner: boolean[] = []
-    const held: any = { getTab: () => ({ kind: { kind: 'note' } }) }
+    const held = { getTab: () => ({ kind: { kind: 'note' } }) } as unknown as TabSyncDeps['held']
     const loadInTab = vi.fn(() => {
       inner.push(sync.syncPathFromTab('s', 'b.md'))
     })
     const sync = useTabSync({
       held,
       tabLinks: createLinkedTabs('n'),
-      editing: { noted: { loadInTab } } as any,
+      editing: { noted: { loadInTab } } as unknown as TabSyncDeps['editing'],
     })
 
     expect(sync.syncPathFromTab('s', 'a.md')).toBe(true)
@@ -221,7 +222,7 @@ describe('useTabSync guards', () => {
   })
 
   it('ends the running state when a target throws', () => {
-    const held: any = { getTab: () => ({ kind: { kind: 'note' } }) }
+    const held = { getTab: () => ({ kind: { kind: 'note' } }) } as unknown as TabSyncDeps['held']
     let fail = true
     const loadInTab = vi.fn(() => {
       if (fail) throw new Error('boom')
@@ -229,7 +230,7 @@ describe('useTabSync guards', () => {
     const sync = useTabSync({
       held,
       tabLinks: createLinkedTabs('n'),
-      editing: { noted: { loadInTab } } as any,
+      editing: { noted: { loadInTab } } as unknown as TabSyncDeps['editing'],
     })
 
     expect(() => sync.syncPathFromTab('s', 'a.md')).toThrow('boom')

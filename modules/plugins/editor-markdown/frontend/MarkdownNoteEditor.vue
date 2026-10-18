@@ -212,7 +212,7 @@ defineExpose({
       :model-value="docContent"
       :language="editorLanguage"
       :is-live="true"
-      v-bind="props.extensions ? { extensions: props.extensions as any } : {}"
+      v-bind="props.extensions ? { extensions: props.extensions as Extension } : {}"
       class="markdown-note-editor__pane note__text"
       @update:model-value="onUpdateModelValue"
       @save="onSave"

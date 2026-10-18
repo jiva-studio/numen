@@ -4,19 +4,41 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useNoteEditors } from './useNoteEditors'
 
+interface MockParts {
+  changes?: { reportNoteChange: unknown; close: unknown }
+  notes: { flush: unknown; has: (id: string) => boolean; getPath: (id: string) => string; stale: () => null; flushPending: unknown; close: unknown }
+  making: { name: string }
+  decks: { flush: unknown; kept: unknown; kind: string }
+  stencils: { flush: unknown; kept: unknown; kind: string }
+  schedules: { flush: unknown; kind: string }
+  fileFlush: { addHandler: ReturnType<typeof vi.fn>; close: ReturnType<typeof vi.fn> }
+  reached: { name: string }
+}
+
+interface MockCalls {
+  raised: unknown[][]
+  openNotes: [unknown, { onReplaced: () => void }]
+  writer: [unknown, unknown]
+  decks: unknown[]
+  stencils: [unknown, unknown, { writeMessage: unknown }]
+  schedules: [{ writeMessage: unknown; today: () => string }]
+  flush: unknown[]
+  reached: [unknown, unknown]
+}
+
 const h = vi.hoisted(() => ({
-  calls: {} as any,
-  parts: {} as any,
+  calls: {} as MockCalls,
+  parts: {} as MockParts,
 }))
 
 vi.mock('@/entities/deck', () => ({ cards: { name: 'cards' }, presets: { name: 'presets' } }))
 vi.mock('@/entities/note', () => ({
   openNotes: (...args: unknown[]) => {
-    h.calls.openNotes = args
+    h.calls.openNotes = args as MockCalls['openNotes']
     return h.parts.notes
   },
   createNoteWriter: (...args: unknown[]) => {
-    h.calls.writer = args
+    h.calls.writer = args as MockCalls['writer']
     return h.parts.making
   },
 }))
@@ -28,13 +50,13 @@ vi.mock('@/pages/deck-editor', () => ({
 }))
 vi.mock('@/pages/stencil-editor', () => ({
   useStencilTabs: (...args: unknown[]) => {
-    h.calls.stencils = args
+    h.calls.stencils = args as MockCalls['stencils']
     return h.parts.stencils
   },
 }))
 vi.mock('@/pages/preset-editor', () => ({
   usePresetTab: (...args: unknown[]) => {
-    h.calls.schedules = args
+    h.calls.schedules = args as MockCalls['schedules']
     return h.parts.schedules
   },
 }))
@@ -49,7 +71,7 @@ vi.mock('@/features/file-conflict', () => ({
 }))
 vi.mock('@/features/command-palette', () => ({
   createNotes: (...args: unknown[]) => {
-    h.calls.reached = args
+    h.calls.reached = args as MockCalls['reached']
     return h.parts.reached
   },
 }))
@@ -60,7 +82,16 @@ const store = (title: string | undefined) => ({
 })
 
 beforeEach(() => {
-  h.calls = { raised: [] }
+  h.calls = {
+    raised: [],
+    openNotes: [null, { onReplaced: vi.fn() }],
+    writer: [null, null],
+    decks: [],
+    stencils: [null, null, { writeMessage: null }],
+    schedules: [{ writeMessage: null, today: () => '' }],
+    flush: [],
+    reached: [null, null],
+  }
   const flush = (name: string) => ({ name: `${name}.flush` })
   h.parts = {
     changes: { reportNoteChange: vi.fn(), close: vi.fn() },
@@ -82,15 +113,15 @@ beforeEach(() => {
 })
 
 const create = () => {
-  const writers: Record<string, any> = {}
-  const log: any = {
+  const writers: Record<string, unknown> = {}
+  const log = {
     getWriter: vi.fn((name: string) => (writers[name] ??= vi.fn())),
   }
-  const core: any = { name: 'core' }
-  const tabOpeners: any = { name: 'openers' }
-  const held: any = { handle: { name: 'handle' } }
+  const core = { name: 'core' }
+  const tabOpeners = { name: 'openers' }
+  const held = { handle: { name: 'handle' } }
   const day = () => 'monday'
-  const editors = useNoteEditors({ core, log, tabOpeners, held, day })
+  const editors = useNoteEditors({ core, log, tabOpeners, held, day } as unknown as Parameters<typeof useNoteEditors>[0])
   return { editors, writers, core, tabOpeners, held, day }
 }
 
@@ -115,7 +146,7 @@ describe('the note editors', () => {
   it('flushes the notes, decks, stencils and schedules', () => {
     create()
 
-    expect(h.parts.fileFlush.addHandler.mock.calls.map((c: any[]) => c[0])).toEqual([
+    expect(h.parts.fileFlush.addHandler.mock.calls.map((c: unknown[]) => c[0])).toEqual([
       h.parts.notes.flush,
       h.parts.decks.flush,
       h.parts.stencils.flush,

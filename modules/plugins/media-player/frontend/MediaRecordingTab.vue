@@ -18,6 +18,7 @@ const props = withDefaults(
     at: '',
     path: '',
     title: 'Record Audio',
+    state: () => ({}),
   },
 )
 
@@ -120,8 +121,8 @@ async function onStartRecording() {
     elapsedMs.value = 0
     startTimer()
     emit('recordStart')
-  } catch (err: any) {
-    errorMessage.value = err?.message || 'Could not access microphone'
+  } catch (err: unknown) {
+    errorMessage.value = err instanceof Error ? err.message : 'Could not access microphone'
     status.value = 'idle'
   }
 }

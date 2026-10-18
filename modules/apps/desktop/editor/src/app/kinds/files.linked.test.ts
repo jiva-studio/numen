@@ -11,11 +11,11 @@ describe('createFilesKind with linked tabs', () => {
     const held = useWindowTabs()
 
     const loadInTabMock = vi.fn()
-    const editingMock: any = {
+    const editingMock = {
       notes: { applyPathChanges: vi.fn() },
       making: { createUntitled: vi.fn() },
       noted: { loadInTab: loadInTabMock },
-    }
+    } as unknown as Parameters<typeof useTabSync>[0]['editing']
 
     const tabSync = useTabSync({ held, tabLinks, editing: editingMock })
 
@@ -37,28 +37,28 @@ describe('createFilesKind with linked tabs', () => {
           },
         }),
         createUrl: vi.fn(),
-      } as any,
-      tabOpeners: {} as any,
+      } as never,
+      tabOpeners: {} as never,
       held,
-      runs: { canRun: () => true } as any,
+      runs: { canRun: () => true } as never,
       editing: editingMock,
-      vaults: { makes: shallowRef(new Map()) } as any,
-      getTarget: () => ({}) as any,
+      vaults: { makes: shallowRef(new Map()) } as never,
+      getTarget: () => ({}) as never,
       runCommand: () => {},
-      commandDeps: () => ({}) as any,
+      commandDeps: () => ({}) as never,
       dragged: shallowRef([]),
       writeMessage: () => {},
-      destinations: {} as any,
+      destinations: {} as never,
       tabLinks,
       tabSync,
     })
 
-    const noteKind: any = {
+    const noteKind = {
       kind: 'note',
       open: () => ({}),
       getTitle: () => 'My Note',
       pane: {},
-    }
+    } as never
 
     held.registerKinds([filesKind.files.kind, noteKind])
 
@@ -68,9 +68,10 @@ describe('createFilesKind with linked tabs', () => {
     tabLinks.linkTabs(filesTabId, noteTabId)
     held.handle.show(filesTabId)
 
-    const filesState = held.getTabStateIn<any>(filesTabId, 'files')
+    const filesState = held.getTabStateIn<{ list: { getEntryAt: (p: string) => unknown }; activate: (p: string) => void }>(filesTabId, 'files')
+    if (!filesState) throw new Error('filesState expected')
     vi.spyOn(filesState.list, 'getEntryAt').mockImplementation(
-      ((p: string) => entriesMap.get(p) as any) as any,
+      ((p: string) => entriesMap.get(p) as unknown) as never,
     )
 
     filesState.activate('folder/target.md')

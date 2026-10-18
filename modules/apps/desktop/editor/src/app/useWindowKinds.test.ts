@@ -4,21 +4,29 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useWindowKinds } from './useWindowKinds'
 
+type MockSeen = {
+  writeMessage: unknown
+  dragged: unknown
+  destinations: unknown
+  askAgent: (q: string) => void
+  about: () => unknown
+}
+
 const h = vi.hoisted(() => ({
-  seen: {} as Record<string, any>,
-  plexes: {} as Record<string, any>,
-  agents: {} as Record<string, any>,
+  seen: {} as Record<'plex' | 'agent' | 'files', MockSeen>,
+  plexes: {} as Record<string, unknown>,
+  agents: {} as Record<string, unknown>,
 }))
 
 vi.mock('./kinds/plex', () => ({
   createPlexKind: (args: unknown) => {
-    h.seen.plex = args
+    h.seen.plex = args as MockSeen
     return h.plexes
   },
 }))
 vi.mock('./kinds/agent', () => ({
   createAgentKind: (args: unknown) => {
-    h.seen.agent = args
+    h.seen.agent = args as MockSeen
     return h.agents
   },
 }))
@@ -27,25 +35,25 @@ vi.mock('./kinds/media', () => ({
 }))
 vi.mock('./kinds/files', () => ({
   createFilesKind: (args: unknown) => {
-    h.seen.files = args
+    h.seen.files = args as MockSeen
     return { files: { kind: 'files' }, made: 'made' }
   },
 }))
 
 const create = () => {
   const writer = vi.fn()
-  const deps: any = {
+  const deps = {
     log: { getWriter: vi.fn(() => writer) },
     tabOpeners: { openFileAt: vi.fn(), openFile: vi.fn() },
     held: { registerKinds: vi.fn() },
     editing: { kinds: ['note', 'deck'] },
     settings: { kinds: ['settings'] },
-  }
+  } as unknown as Parameters<typeof useWindowKinds>[0]
   return { deps, writer, window: useWindowKinds(deps) }
 }
 
 beforeEach(() => {
-  h.seen = {}
+  h.seen = {} as Record<'plex' | 'agent' | 'files', MockSeen>
   h.plexes = {
     kind: 'plex',
     looking: vi.fn(() => 'Ideas/Plan.md'),

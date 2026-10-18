@@ -13,7 +13,7 @@ describe('useCrossWindowTabs', () => {
       tabs: ref([{ id: 'tab-1', title: 'Plex' }]),
     }
 
-    const replies: any[] = []
+    const replies: unknown[] = []
     senderChannel.onmessage = (event) => {
       replies.push(event.data)
     }

@@ -12,7 +12,7 @@ const asked = {
   getBook: vi.fn(),
   readBookMarkup: vi.fn(),
 }
-client.books = asked as any
+client.books = asked as unknown as typeof client.books
 
 /** An answer with nothing in it, for a test that cares about one field only. */
 const nothing = {

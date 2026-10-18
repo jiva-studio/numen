@@ -662,7 +662,7 @@ describe('useFilesTab helper and interaction methods', () => {
 
     expect(one.getNameOf('Entropy.md')).toBe('Entropy.md')
     expect(one.getNameOf('nonexistent/file.txt')).toBe('file.txt')
-    expect(one.canRun({} as any)).toBe(true)
+    expect(one.canRun({} as never)).toBe(true)
     expect(one.getFolderFor(null)).toBe(ROOT)
   })
 })

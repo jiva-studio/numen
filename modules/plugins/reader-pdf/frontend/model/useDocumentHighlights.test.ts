@@ -3,13 +3,15 @@ import { ref } from 'vue'
 import { useDocumentHighlights as useDocumentHighlightsOriginal } from './useDocumentHighlights'
 import type { Documents, PageHighlight, Rect } from '../types'
 
+type HighlightsOptions = Parameters<typeof useDocumentHighlightsOriginal>[2]
+
 const useDocumentHighlights = (
   documents: Documents,
   path: string,
-  pageNumber: any,
-  error: any,
-  onGoToPage: any,
-  isOpen: any,
+  pageNumber: HighlightsOptions['pageNumber'],
+  error: HighlightsOptions['error'],
+  onGoToPage: HighlightsOptions['onGoToPage'],
+  isOpen: HighlightsOptions['isOpen'],
 ) => useDocumentHighlightsOriginal(documents, path, { pageNumber, error, onGoToPage, isOpen })
 
 describe('useDocumentHighlights', () => {

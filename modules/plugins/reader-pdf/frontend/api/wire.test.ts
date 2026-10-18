@@ -13,8 +13,8 @@ const asked = {
   readOcr: vi.fn(),
 }
 
-client.documents = asked as any
-client.ocr = asked as any
+client.documents = asked as unknown as typeof client.documents
+client.ocr = asked as unknown as typeof client.ocr
 
 describe('the layout of a document', () => {
   it('comes back as the size of every page and the file it was read from', async () => {

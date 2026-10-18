@@ -74,8 +74,14 @@ vi.mock('./useAppBootstrap', () => ({
   },
 }))
 
+interface FrontTab {
+  id: string
+  kind: unknown
+  state?: unknown
+}
+
 /** The tab in front, as the window's tabs hand it out. */
-const front = ref<any>(null)
+const front = ref<FrontTab | null>(null)
 
 /** A kind that says what its tab stands over. */
 const createKind = (on: unknown) => ({ name: 'kind', getTarget: vi.fn(() => on) })

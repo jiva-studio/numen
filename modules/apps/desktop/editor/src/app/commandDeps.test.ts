@@ -6,150 +6,6 @@ import { useSettings } from './useSettings'
 import { WORDS } from '@/shared/words'
 import type { Model } from '@/entities/settings'
 
-describe('createCommandDeps', () => {
-  const model: Model = {
-    namedAt: ['indexing', 'model', 'name'],
-    name: 'e5-small-int8',
-    title: 'e5-small-int8',
-    group: 'On this machine',
-    isDefault: false,
-    presence: 'present',
-    writes: [{ at: ['indexing', 'model', 'name'], value: 'e5-small-int8' }],
-  }
-
-  it('chooses an indexing model when found in models', async () => {
-    const written: any[] = []
-    const deps = createCommandDeps({
-      core: {} as any,
-      held: { openTabOfKind: () => {}, requestClose: () => {} } as any,
-      making: {} as any,
-      made: {} as any,
-      setVaultName: () => {},
-      reload: () => {},
-      loadArtifactStates: async () => {},
-      reached: {} as any,
-      openPreset: async () => {},
-      dressed: { chooseItem: async () => {} },
-      oneName: { choose: async () => {} },
-      nesting: { choose: async () => {}, chooseCount: async () => {} },
-      rest: {
-        writeSettings: async (w) => void written.push(...w),
-        getModelsAt: () => [model],
-      },
-      recorded: {},
-      pointed: {},
-      files: () => ({ revealPath: () => {} }),
-      plexes: () => ({ travel: async () => {}, leavePath: async () => {} }),
-      agents: () => ({ askQuestion: async () => {} }),
-      getOpeningNote: () => '',
-      runs: {} as any,
-      writeMessage: () => {},
-    })
-
-    await deps.settings.chooseIndexingModel('e5-small-int8')
-    expect(written).toStrictEqual(model.writes)
-  })
-
-  it('writes a plugin setting when chosen', async () => {
-    const written: any[] = []
-    const deps = createCommandDeps({
-      core: {} as any,
-      held: { openTabOfKind: () => {}, requestClose: () => {} } as any,
-      making: {} as any,
-      made: {} as any,
-      setVaultName: () => {},
-      reload: () => {},
-      loadArtifactStates: async () => {},
-      reached: {} as any,
-      openPreset: async () => {},
-      dressed: { chooseItem: async () => {} },
-      oneName: { choose: async () => {} },
-      nesting: { choose: async () => {}, chooseCount: async () => {} },
-      rest: {
-        writeSettings: async (w) => void written.push(...w),
-      },
-      recorded: {},
-      pointed: {},
-      files: () => ({ revealPath: () => {} }),
-      plexes: () => ({ travel: async () => {}, leavePath: async () => {} }),
-      agents: () => ({ askQuestion: async () => {} }),
-      getOpeningNote: () => '',
-      runs: {} as any,
-      writeMessage: () => {},
-    })
-
-    await deps.settings.choosePluginSetting?.('transcription', 'autoRun', true)
-    expect(written).toStrictEqual([
-      { at: ['plugins', 'transcription', 'autoRun'], value: 'true' },
-    ])
-  })
-
-  it('chooses an indexing model when not found in models', async () => {
-    const written: any[] = []
-    const deps = createCommandDeps({
-      core: {} as any,
-      held: { openTabOfKind: () => {}, requestClose: () => {} } as any,
-      making: {} as any,
-      made: {} as any,
-      setVaultName: () => {},
-      reload: () => {},
-      loadArtifactStates: async () => {},
-      reached: {} as any,
-      openPreset: async () => {},
-      dressed: { chooseItem: async () => {} },
-      oneName: { choose: async () => {} },
-      nesting: { choose: async () => {}, chooseCount: async () => {} },
-      rest: {
-        writeSettings: async (w) => void written.push(...w),
-        getModelsAt: () => [],
-      },
-      recorded: {},
-      pointed: {},
-      files: () => ({ revealPath: () => {} }),
-      plexes: () => ({ travel: async () => {}, leavePath: async () => {} }),
-      agents: () => ({ askQuestion: async () => {} }),
-      getOpeningNote: () => '',
-      runs: {} as any,
-      writeMessage: () => {},
-    })
-
-    await deps.settings.chooseIndexingModel('custom-model')
-    expect(written).toStrictEqual([{ at: ['indexing', 'model', 'name'], value: '"custom-model"' }])
-  })
-
-  it('handles choosing performance profile', async () => {
-    const written: any[] = []
-    const deps = createCommandDeps({
-      core: {} as any,
-      held: {} as any,
-      making: {} as any,
-      made: {} as any,
-      setVaultName: () => {},
-      reload: () => {},
-      loadArtifactStates: async () => {},
-      reached: {} as any,
-      openPreset: async () => {},
-      dressed: { chooseItem: async () => {} },
-      oneName: { choose: async () => {} },
-      nesting: { choose: async () => {}, chooseCount: async () => {} },
-      rest: {
-        writeSettings: async (w) => void written.push(...w),
-      },
-      recorded: {},
-      pointed: {},
-      files: () => ({ revealPath: () => {} }),
-      plexes: () => ({ travel: async () => {}, leavePath: async () => {} }),
-      agents: () => ({ askQuestion: async () => {} }),
-      getOpeningNote: () => '',
-      runs: {} as any,
-      writeMessage: () => {},
-    })
-
-    await deps.settings.choosePerformance('maximum')
-    expect(written).toStrictEqual([{ at: ['performance', 'profile'], value: '"maximum"' }])
-  })
-})
-
 /** Every dependency a fake that records what it was handed. */
 const createOptions = (over: Partial<CommandDepsOptions> = {}) => {
   const calls: unknown[][] = []
@@ -177,25 +33,108 @@ const createOptions = (over: Partial<CommandDepsOptions> = {}) => {
     } as never,
     setVaultName: record('setVaultName'),
     reload: record('reload'),
-    loadArtifactStates: async () => {},
+    loadArtifactStates: vi.fn(),
     reached: {} as never,
-    openPreset: async (path) => void record('openPreset')(path),
-    dressed: { chooseItem: async () => {} },
-    oneName: { choose: async () => {} },
-    nesting: { choose: async () => {}, chooseCount: async () => {} },
-    rest: { writeSettings: async (written) => void record('writeSettings')(written) },
+    openPreset: async (path) => {
+      await Promise.resolve()
+      record('openPreset')(path)
+    },
+    dressed: { chooseItem: vi.fn() },
+    oneName: { choose: vi.fn() },
+    nesting: { choose: vi.fn(), chooseCount: vi.fn() },
+    rest: {
+      writeSettings: (written) => {
+        record('writeSettings')(written)
+      },
+    },
     recorded: {},
     pointed: {},
     files: () => ({ revealPath: record('revealPath') }),
-    plexes: () => ({ travel: async () => {}, leavePath: async () => {} }),
-    agents: () => ({ askQuestion: (text: string) => void record('askQuestion')(text) }),
+    plexes: () => ({ travel: vi.fn(), leavePath: vi.fn() }),
+    agents: () => ({
+      askQuestion: (text: string) => {
+        record('askQuestion')(text)
+      },
+    }),
     getOpeningNote: () => '',
     runs: {} as never,
-    writeMessage: () => {},
+    writeMessage: vi.fn(),
     ...over,
   }
   return { deps: createCommandDeps(options), calls, options }
 }
+
+describe('createCommandDeps', () => {
+  const model: Model = {
+    namedAt: ['indexing', 'model', 'name'],
+    name: 'e5-small-int8',
+    title: 'e5-small-int8',
+    group: 'On this machine',
+    isDefault: false,
+    presence: 'present',
+    writes: [{ at: ['indexing', 'model', 'name'], value: 'e5-small-int8' }],
+  }
+
+  it('chooses an indexing model when found in models', async () => {
+    const written: unknown[] = []
+    const { deps } = createOptions({
+      rest: {
+        writeSettings: (w: unknown[]) => {
+          written.push(...w)
+        },
+        getModelsAt: () => [model],
+      } as unknown as CommandDepsOptions['rest'],
+    })
+
+    await deps.settings.chooseIndexingModel('e5-small-int8')
+    expect(written).toStrictEqual(model.writes)
+  })
+
+  it('writes a plugin setting when chosen', async () => {
+    const written: unknown[] = []
+    const { deps } = createOptions({
+      rest: {
+        writeSettings: (w: unknown[]) => {
+          written.push(...w)
+        },
+      } as unknown as CommandDepsOptions['rest'],
+    })
+
+    await deps.settings.choosePluginSetting?.('transcription', 'autoRun', true)
+    expect(written).toStrictEqual([
+      { at: ['plugins', 'transcription', 'autoRun'], value: 'true' },
+    ])
+  })
+
+  it('chooses an indexing model when not found in models', async () => {
+    const written: unknown[] = []
+    const { deps } = createOptions({
+      rest: {
+        writeSettings: (w: unknown[]) => {
+          written.push(...w)
+        },
+        getModelsAt: () => [],
+      } as unknown as CommandDepsOptions['rest'],
+    })
+
+    await deps.settings.chooseIndexingModel('custom-model')
+    expect(written).toStrictEqual([{ at: ['indexing', 'model', 'name'], value: '"custom-model"' }])
+  })
+
+  it('handles choosing performance profile', async () => {
+    const written: unknown[] = []
+    const { deps } = createOptions({
+      rest: {
+        writeSettings: (w: unknown[]) => {
+          written.push(...w)
+        },
+      } as unknown as CommandDepsOptions['rest'],
+    })
+
+    await deps.settings.choosePerformance('maximum')
+    expect(written).toStrictEqual([{ at: ['performance', 'profile'], value: '"maximum"' }])
+  })
+})
 
 describe('the commands reach the window', () => {
   afterEach(() => {
@@ -425,24 +364,24 @@ describe('the commands reach the window', () => {
 
 describe('useSettings step groups', () => {
   it('returns step groups for indexingModel and performanceProfile', () => {
-    const core: any = {
+    const core = {
       fileKinds: async () => new Map(),
       fileChanges: () => () => {},
       fileList: async () => [],
       read: async () => '',
       write: async () => {},
       appState: () => {},
-    }
-    const log: any = {
+    } as never
+    const log = {
       getWriter: () => () => {},
-    }
-    const windowTabs: any = {
+    } as never
+    const windowTabs = {
       handle: {
         front: () => null,
         open: () => {},
         close: () => {},
       },
-    }
+    } as never
 
     const settings = useSettings({
       core,
