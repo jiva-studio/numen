@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // newWholeRun is a run over a transcript asked about in one window.
@@ -140,10 +141,11 @@ func TestARunOverLinesAlreadyPutTogetherIsDropped(t *testing.T) {
 	}
 }
 
-// A transcript whose lines were put together is taken up again at the moment
-// the count stands at, which putting them together did not move. The numbers
-// the lines are known by are not the same ones the run before it saw.
-func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
+// runJoinUntilStopped is a run over four spans, two lines to a call, that puts
+// the first two together and is stopped in its second call. It returns a run
+// taking the transcript up again with the proofreader given.
+func runJoinUntilStopped(t *testing.T, again port.Proofreader) (Proofread, domain.Vault, *shelf, string) {
+	t.Helper()
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all."}
 	u, v, shelved, by, hash := newProofreadTranscript(t, says(joins(0, 1, putTogether)), words...)
 	u.BatchSize, u.Overlap, u.InFlight = 2, 0, 1
@@ -159,8 +161,17 @@ func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 		t.Fatalf("stopped with %v", err)
 	}
 
-	again := newTranscriptProofreading(t, u.readers, u.derived, &corrector{})
-	again.BatchSize, again.Overlap, again.InFlight = 2, 0, 1
+	resumed := newTranscriptProofreading(t, u.readers, u.derived, again)
+	resumed.BatchSize, resumed.Overlap, resumed.InFlight = 2, 0, 1
+	return resumed, v, shelved, hash
+}
+
+// A transcript whose lines were put together is taken up again at the moment
+// the count stands at, which putting them together did not move. The numbers
+// the lines are known by are not the same ones the run before it saw.
+func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
+	again, v, shelved, hash := runJoinUntilStopped(t, &corrector{})
+
 	res, err := again.Execute(t.Context(), v, recordingPath)
 	if err != nil {
 		t.Fatal(err)
@@ -181,28 +192,13 @@ func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 // stopped. A correction of a line before them is no answer to what was asked,
 // and the transcript stands as the run before left it.
 func TestARunTakingUpATranscriptRefusesACorrectionOfALineItDidNotAsk(t *testing.T) {
-	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all."}
-	u, v, shelved, by, hash := newProofreadTranscript(t, says(joins(0, 1, putTogether)), words...)
-	u.BatchSize, u.Overlap, u.InFlight = 2, 0, 1
-
-	ctx, stop := context.WithCancel(t.Context())
-	defer stop()
-	by.stop = func(calls int) {
-		if calls == 2 {
-			stop()
-		}
-	}
-	if _, err := u.Execute(ctx, v, recordingPath); !errors.Is(err, context.Canceled) {
-		t.Fatalf("stopped with %v", err)
-	}
-	name := domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash)
-	left := readCues(t, shelved, name)
-
-	again := newTranscriptProofreading(t, u.readers, u.derived, scripted{reply: domain.SpeechProofreading{
+	again, v, shelved, hash := runJoinUntilStopped(t, scripted{reply: domain.SpeechProofreading{
 		Corrections: []domain.ProofreadCorrection{fixes(0, onItsOwn)},
 		IsDone:      true,
 	}})
-	again.BatchSize, again.Overlap, again.InFlight = 2, 0, 1
+	name := domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash)
+	left := readCues(t, shelved, name)
+
 	if _, err := again.Execute(t.Context(), v, recordingPath); !errors.Is(err, errCorrectionUnasked) {
 		t.Fatalf("got %v, want %v", err, errCorrectionUnasked)
 	}
