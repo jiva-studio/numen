@@ -18,8 +18,8 @@ type Config struct {
 
 // Route is where the questions of one purpose go.
 type Route struct {
-	// Agent is the id of the agent plugin that answers. Empty is the agent the
-	// installation provides.
+	// Agent is the id of the agent plugin that answers. Empty is the provider
+	// with the lowest id.
 	Agent string `json:"agent,omitempty"`
 	// Model is the model the agent answers with. Empty leaves it to the agent.
 	Model string `json:"model,omitempty"`

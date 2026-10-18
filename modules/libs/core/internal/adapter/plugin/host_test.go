@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -1388,5 +1389,65 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 	}
 	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}
+
+// newHostOfProviders registers three plugins sharing a capability and an extension, in an order
+// that is not the order of their ids.
+func newHostOfProviders(t *testing.T) *Host {
+	t.Helper()
+	host := NewHost("desktop.editor")
+	t.Cleanup(func() { _ = host.TeardownAll(context.Background(), time.Second) })
+	for _, id := range []string{"md.numen.provider-c", "md.numen.provider-a", "md.numen.provider-b"} {
+		host.plugins[id] = DiscoveredPlugin{Manifest: Manifest{
+			ID:             id,
+			Capabilities:   []string{CapabilityAgentProvider},
+			FileExtensions: []string{".fixture"},
+		}}
+	}
+	return host
+}
+
+// Of several enabled plugins with the capability or the extension, the one with the lowest id is
+// found, at every lookup.
+func TestTheLowestIDOfSeveralProvidersIsFound(t *testing.T) {
+	host := newHostOfProviders(t)
+	for range 100 {
+		byCapability, ok := host.FindPluginByCapability(CapabilityAgentProvider)
+		if !ok || byCapability.Manifest.ID != "md.numen.provider-a" {
+			t.Fatalf("by capability found %q, %v", byCapability.Manifest.ID, ok)
+		}
+		byExtension, ok := host.FindPluginByFileExtension(".fixture")
+		if !ok || byExtension.Manifest.ID != "md.numen.provider-a" {
+			t.Fatalf("by extension found %q, %v", byExtension.Manifest.ID, ok)
+		}
+	}
+
+	host.SetSettings(map[string]map[string]any{"md.numen.provider-a": {settingEnabled: false}})
+	if found, _ := host.FindPluginByCapability(CapabilityAgentProvider); found.Manifest.ID != "md.numen.provider-b" {
+		t.Errorf("with the lowest disabled, found %q", found.Manifest.ID)
+	}
+}
+
+// The host lists its plugins in the order of their ids.
+func TestTheHostListsPluginsInIDOrder(t *testing.T) {
+	host := newHostOfProviders(t)
+	want := []string{"md.numen.provider-a", "md.numen.provider-b", "md.numen.provider-c"}
+	for range 20 {
+		var listed, infos, statuses []string
+		for _, p := range host.GetPlugins() {
+			listed = append(listed, p.Manifest.ID)
+		}
+		for _, info := range host.GetPluginInfos() {
+			infos = append(infos, info.ID)
+		}
+		for _, status := range host.GetPluginStatuses() {
+			statuses = append(statuses, status.ID)
+		}
+		for name, got := range map[string][]string{"plugins": listed, "infos": infos, "statuses": statuses} {
+			if !slices.Equal(got, want) {
+				t.Fatalf("%s listed %v, want %v", name, got, want)
+			}
+		}
 	}
 }

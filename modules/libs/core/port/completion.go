@@ -55,8 +55,8 @@ type Completer interface {
 
 // CompletionAgents opens the agent a route names.
 type CompletionAgents interface {
-	// OpenCompletionAgent returns the agent named, or the one the installation
-	// provides when the name is empty. An agent that is not there or cannot be
+	// OpenCompletionAgent returns the agent named, or, when the name is empty,
+	// the provider with the lowest id. An agent that is not there or cannot be
 	// reached fails with ErrUnavailable.
 	OpenCompletionAgent(ctx context.Context, agent string) (CompletionAgent, error)
 }

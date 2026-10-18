@@ -296,7 +296,7 @@ func (h *Host) GetEventBus() *EventBus {
 	return h.bus
 }
 
-// GetPlugins returns all discovered plugins registered with the host.
+// GetPlugins returns all discovered plugins registered with the host, in the order of their ids.
 func (h *Host) GetPlugins() []DiscoveredPlugin {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -305,10 +305,18 @@ func (h *Host) GetPlugins() []DiscoveredPlugin {
 		return nil
 	}
 
+	return h.getPluginsInOrderLocked()
+}
+
+// getPluginsInOrderLocked returns the registered plugins in the order of their ids. Every lookup
+// and listing of the host walks the plugins in this order, so the first plugin to match is the one
+// with the lowest id.
+func (h *Host) getPluginsInOrderLocked() []DiscoveredPlugin {
 	result := make([]DiscoveredPlugin, 0, len(h.plugins))
 	for _, p := range h.plugins {
 		result = append(result, p)
 	}
+	slices.SortFunc(result, func(a, b DiscoveredPlugin) int { return strings.Compare(a.Manifest.ID, b.Manifest.ID) })
 	return result
 }
 
@@ -328,7 +336,8 @@ func (h *Host) GetPlugin(id string) (DiscoveredPlugin, bool) {
 	return p, true
 }
 
-// FindPluginByCapability finds the first registered plugin that declares the given capability.
+// FindPluginByCapability finds the enabled plugin with the lowest id among those declaring the
+// given capability.
 func (h *Host) FindPluginByCapability(capability string) (DiscoveredPlugin, bool) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -337,7 +346,7 @@ func (h *Host) FindPluginByCapability(capability string) (DiscoveredPlugin, bool
 		return emptyDiscoveredPlugin(), false
 	}
 
-	for _, p := range h.plugins {
+	for _, p := range h.getPluginsInOrderLocked() {
 		if !h.isPluginEnabledLocked(p.Manifest.ID) {
 			continue
 		}
@@ -348,7 +357,8 @@ func (h *Host) FindPluginByCapability(capability string) (DiscoveredPlugin, bool
 	return emptyDiscoveredPlugin(), false
 }
 
-// FindPluginByFileExtension finds the first registered plugin that declares support for the given file extension.
+// FindPluginByFileExtension finds the enabled plugin with the lowest id among those declaring
+// support for the given file extension.
 func (h *Host) FindPluginByFileExtension(ext string) (DiscoveredPlugin, bool) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -357,7 +367,7 @@ func (h *Host) FindPluginByFileExtension(ext string) (DiscoveredPlugin, bool) {
 		return emptyDiscoveredPlugin(), false
 	}
 
-	for _, p := range h.plugins {
+	for _, p := range h.getPluginsInOrderLocked() {
 		if !h.isPluginEnabledLocked(p.Manifest.ID) {
 			continue
 		}
@@ -376,7 +386,8 @@ func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error)
 		return nil, nil
 	}
 	candidates := make([]string, 0)
-	for id, p := range h.plugins {
+	for _, p := range h.getPluginsInOrderLocked() {
+		id := p.Manifest.ID
 		if !h.isPluginEnabledLocked(id) {
 			continue
 		}
@@ -1069,13 +1080,13 @@ func (h *Host) getPluginStatusLocked(pluginID string) PluginStatus {
 	return status
 }
 
-// GetPluginStatuses returns statuses for all registered plugins.
+// GetPluginStatuses returns statuses for all registered plugins, in the order of their ids.
 func (h *Host) GetPluginStatuses() []PluginStatus {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	statuses := make([]PluginStatus, 0, len(h.plugins)+len(h.problems))
-	for _, p := range h.plugins {
+	for _, p := range h.getPluginsInOrderLocked() {
 		statuses = append(statuses, h.getPluginStatusLocked(p.Manifest.ID))
 	}
 	for _, problem := range h.problems {
@@ -1188,7 +1199,7 @@ func (h *Host) GetPaletteCommands() []PaletteCommand {
 	defer h.mu.RUnlock()
 
 	var commands []PaletteCommand
-	for _, p := range h.plugins {
+	for _, p := range h.getPluginsInOrderLocked() {
 		for _, s := range p.Manifest.Settings {
 			if s.Palette {
 				commands = append(commands, PaletteCommand{
@@ -1313,13 +1324,14 @@ func (h *Host) NotifyAllPluginConfigs(ctx context.Context) error {
 	return firstErr
 }
 
-// GetPluginInfos returns specifications of all registered plugins and their settings schemas.
+// GetPluginInfos returns specifications of all registered plugins and their settings schemas, in
+// the order of their ids.
 func (h *Host) GetPluginInfos() []port.PluginInfo {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	result := make([]port.PluginInfo, 0, len(h.plugins))
-	for _, p := range h.plugins {
+	for _, p := range h.getPluginsInOrderLocked() {
 		isActive := h.isPluginActiveLocked(p.Manifest.ID)
 
 		settings := make([]port.PluginSetting, 0, len(p.Manifest.Settings))
@@ -1360,13 +1372,14 @@ func (h *Host) GetPluginInfos() []port.PluginInfo {
 	return result
 }
 
-// GetWirePluginInfos returns wire specifications of all registered plugins and their settings schemas.
+// GetWirePluginInfos returns wire specifications of all registered plugins and their settings
+// schemas, in the order of their ids.
 func (h *Host) GetWirePluginInfos() []*v1.PluginInfo {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	result := make([]*v1.PluginInfo, 0, len(h.plugins))
-	for _, p := range h.plugins {
+	for _, p := range h.getPluginsInOrderLocked() {
 		isActive := h.isPluginActiveLocked(p.Manifest.ID)
 
 		settings := make([]*v1.PluginSetting, 0, len(p.Manifest.Settings))
