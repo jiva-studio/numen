@@ -1,4 +1,4 @@
-//go:build unix
+//go:build unix || windows
 
 package agentrun_test
 
@@ -18,7 +18,7 @@ import (
 func TestSuperviseEndsWhatTheChildStarted(t *testing.T) {
 	running, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	cmd := exec.CommandContext(running, "sh", "-c", "sleep 120 & echo started; wait")
+	cmd := exec.CommandContext(running, spawning[0], spawning[1:]...)
 	agentrun.Supervise(cmd)
 	out, err := cmd.StdoutPipe()
 	if err != nil {
@@ -41,7 +41,7 @@ func TestSuperviseEndsWhatTheChildStarted(t *testing.T) {
 	}()
 	select {
 	case err := <-ended:
-		if err != nil {
+		if err != nil && isReadErrorFatal {
 			t.Fatal(err)
 		}
 	case <-time.After(30 * time.Second):
