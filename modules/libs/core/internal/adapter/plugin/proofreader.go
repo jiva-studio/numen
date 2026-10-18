@@ -109,7 +109,7 @@ func (b *ProofreaderBridge) proofreadText(
 ) (*v1.ProofreadTextResponse, error) {
 	client, lease, err := openPlugin(ctx, b.host, b.pluginID, numenv1connect.NewProofreadingServiceClient)
 	if err != nil {
-		return nil, err
+		return nil, readActivationError(err)
 	}
 	defer func() { _ = lease.Close() }()
 
@@ -143,6 +143,16 @@ func readProofreadError(ctx context.Context, err error) error {
 	default:
 		return fmt.Errorf("proofread rpc: %w", err)
 	}
+}
+
+// readActivationError sorts the failure to start the proofreading plugin: the
+// end of a context is kept as it is, and any other failure is
+// port.ErrUnavailable.
+func readActivationError(err error) error {
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return err
+	}
+	return fmt.Errorf("%w: %w", port.ErrUnavailable, err)
 }
 
 func writeWireLines(lines []domain.ProofreadLine) []*v1.ProofreadLine {

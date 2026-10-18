@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // newWholeRun is a run over a transcript asked about in one window.
@@ -84,17 +85,46 @@ const (
 	onItsOwn    = "connected with Radhika."
 )
 
+// sequenced is a proofreader answering each call with the next of its replies.
+type sequenced struct {
+	noScan
+	replies []domain.SpeechProofreading
+	calls   int
+}
+
+func (s *sequenced) GetName() string { return "a proofreader" }
+
+func (s *sequenced) ProofreadSpeech(
+	context.Context, []domain.ProofreadLine, domain.SpeechWindow,
+) (domain.SpeechProofreading, error) {
+	if s.calls >= len(s.replies) {
+		return domain.SpeechProofreading{}, fmt.Errorf("call %d past the %d replies", s.calls, len(s.replies))
+	}
+	reply := s.replies[s.calls]
+	s.calls++
+	return reply, nil
+}
+
 // A correction of a line another correction put into a run is answered too
 // late: the words no longer stand on their own, and the correction is dropped.
 //
-// It holds whether the two corrections arrive in one call or in two.
+// It holds whether the two corrections arrive in one call or in two. The second
+// call takes up again at the last line of the run, as a sentence reaching past
+// a cut is taken up.
 func TestALineAlreadyPutIntoARunIsLeftInIt(t *testing.T) {
-	for _, lines := range []int{1, 4} {
-		t.Run(fmt.Sprintf("%d lines to a call", lines), func(t *testing.T) {
-			u, v, shelved, hash := newOverlappingRun(t, lines, says(
-				joins(0, 1, putTogether),
-				fixes(1, onItsOwn),
-			))
+	for name, one := range map[string]struct {
+		lines int
+		by    port.Proofreader
+	}{
+		"in one call": {4, &corrector{says: says(joins(0, 1, putTogether), fixes(1, onItsOwn))}},
+		"in two calls": {2, &sequenced{replies: []domain.SpeechProofreading{
+			{Corrections: []domain.ProofreadCorrection{joins(0, 1, putTogether)}, Next: 1},
+			{Corrections: []domain.ProofreadCorrection{fixes(1, onItsOwn)}, Next: 4, IsDone: true},
+		}}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			u, v, shelved, hash := newOverlappingRun(t, one.lines, nil)
+			u.by = one.by
 
 			if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 				t.Fatal(err)
@@ -140,10 +170,11 @@ func TestARunOverLinesAlreadyPutTogetherIsDropped(t *testing.T) {
 	}
 }
 
-// A transcript whose lines were put together is taken up again at the moment
-// the count stands at, which putting them together did not move. The numbers
-// the lines are known by are not the same ones the run before it saw.
-func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
+// runJoinUntilStopped is a run over four spans, two lines to a call, that puts
+// the first two together and is stopped in its second call. It returns a run
+// taking the transcript up again with the proofreader given.
+func runJoinUntilStopped(t *testing.T, again port.Proofreader) (Proofread, domain.Vault, *shelf, string) {
+	t.Helper()
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all."}
 	u, v, shelved, by, hash := newProofreadTranscript(t, says(joins(0, 1, putTogether)), words...)
 	u.BatchSize, u.Overlap, u.InFlight = 2, 0, 1
@@ -159,8 +190,17 @@ func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 		t.Fatalf("stopped with %v", err)
 	}
 
-	again := newTranscriptProofreading(t, u.readers, u.derived, &corrector{})
-	again.BatchSize, again.Overlap, again.InFlight = 2, 0, 1
+	resumed := newTranscriptProofreading(t, u.readers, u.derived, again)
+	resumed.BatchSize, resumed.Overlap, resumed.InFlight = 2, 0, 1
+	return resumed, v, shelved, hash
+}
+
+// A transcript whose lines were put together is taken up again at the moment
+// the count stands at, which putting them together did not move. The numbers
+// the lines are known by are not the same ones the run before it saw.
+func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
+	again, v, shelved, hash := runJoinUntilStopped(t, &corrector{})
+
 	res, err := again.Execute(t.Context(), v, recordingPath)
 	if err != nil {
 		t.Fatal(err)
@@ -174,5 +214,31 @@ func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 	cues := readCues(t, shelved, domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash))
 	if len(cues) != 3 || cues[0].Text != putTogether {
 		t.Errorf("the transcript says %+v", cues)
+	}
+}
+
+// A run taking up a transcript asks about the lines from where the run before
+// stopped. A correction of a line before them is no answer to what was asked,
+// and the transcript stands as the run before left it.
+func TestARunTakingUpATranscriptRefusesACorrectionOfALineItDidNotAsk(t *testing.T) {
+	again, v, shelved, hash := runJoinUntilStopped(t, scripted{reply: domain.SpeechProofreading{
+		Corrections: []domain.ProofreadCorrection{fixes(0, onItsOwn)},
+		IsDone:      true,
+	}})
+	name := domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash)
+	left := readCues(t, shelved, name)
+
+	if _, err := again.Execute(t.Context(), v, recordingPath); !errors.Is(err, errCorrectionUnasked) {
+		t.Fatalf("got %v, want %v", err, errCorrectionUnasked)
+	}
+
+	cues := readCues(t, shelved, name)
+	if len(cues) != len(left) || cues[0].Text != putTogether {
+		t.Fatalf("the transcript says %+v", cues)
+	}
+	for at := range cues {
+		if cues[at].Text != left[at].Text {
+			t.Errorf("line %d says %q, the run before left %q", at, cues[at].Text, left[at].Text)
+		}
 	}
 }

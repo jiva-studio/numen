@@ -133,6 +133,10 @@ var errNoProgress = errors.New("the proofreader did not move past the line it be
 // have.
 var errCorrectionOutside = errors.New("the proofreader corrected a line the transcript does not have")
 
+// errCorrectionUnasked is a correction naming a line the window did not ask
+// about.
+var errCorrectionUnasked = errors.New("the proofreader corrected a line it was not asked about")
+
 // putting is what says who put a transcript right and how far they got.
 type putting struct {
 	By string `json:"by"`
@@ -319,7 +323,7 @@ func (u Proofread) askWindow(
 	if !got.IsDone {
 		end = got.Next
 	}
-	wrote, err := p.applyCorrections(got.Corrections)
+	wrote, err := p.applyCorrections(window, got.Corrections)
 	if err != nil {
 		return got, fmt.Errorf("proofread %s: %w", p.path, err)
 	}
@@ -361,15 +365,23 @@ func (p *transcriptProofreadJob) markAskedLines(end int) {
 
 // applyCorrections puts the window's corrections into the cues, and says whether
 // any cue changed. The corrections go in by the line, so what a transcript ends
-// as does not turn on the order they arrive in.
-func (p *transcriptProofreadJob) applyCorrections(corrections []domain.ProofreadCorrection) (bool, error) {
+// as does not turn on the order they arrive in. A window holding a correction
+// of a line it did not ask about puts nothing in.
+func (p *transcriptProofreadJob) applyCorrections(
+	window domain.SpeechWindow, corrections []domain.ProofreadCorrection,
+) (bool, error) {
+	for _, one := range corrections {
+		if one.Number < 0 || one.Number >= len(p.cues) || one.Last >= len(p.cues) {
+			return false, fmt.Errorf("%w: %d-%d", errCorrectionOutside, one.Number, one.Last)
+		}
+	}
+	if one, ok := domain.FindUnaskedCorrection(window.GetLines(p.lines), corrections); ok {
+		return false, fmt.Errorf("%w: %d", errCorrectionUnasked, one.Number)
+	}
 	sorted := slices.Clone(corrections)
 	slices.SortStableFunc(sorted, func(a, b domain.ProofreadCorrection) int { return a.Number - b.Number })
 	wrote := false
 	for _, one := range sorted {
-		if one.Number < 0 || one.Number >= len(p.cues) || one.Last >= len(p.cues) {
-			return wrote, fmt.Errorf("%w: %d-%d", errCorrectionOutside, one.Number, one.Last)
-		}
 		if p.putLine(one) {
 			wrote = true
 		}

@@ -294,3 +294,46 @@ func TestProofreaderBridgeNoPlugin(t *testing.T) {
 		t.Fatal("expected error when no plugin registered, got nil")
 	}
 }
+
+// inactiveHost resolves the proofreading plugin and fails to start it with the
+// error it holds.
+type inactiveHost struct {
+	leaseHost
+	failure error
+}
+
+func (h *inactiveHost) EnsureActive(context.Context, string) (port.Endpoint, error) {
+	return port.Endpoint{}, h.failure
+}
+
+func TestProofreaderBridgeReadsAPluginThatCannotStartAsUnavailable(t *testing.T) {
+	bridge, err := OpenProofreaderBridge(&inactiveHost{failure: errors.New("the process exited")})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = bridge.ProofreadScan(t.Context(), []domain.ProofreadPage{{Number: 1}}, 0)
+	if !errors.Is(err, port.ErrUnavailable) {
+		t.Errorf("scan: got %v, want %v", err, port.ErrUnavailable)
+	}
+	_, err = bridge.ProofreadSpeech(t.Context(), nil, domain.SpeechWindow{})
+	if !errors.Is(err, port.ErrUnavailable) {
+		t.Errorf("speech: got %v, want %v", err, port.ErrUnavailable)
+	}
+}
+
+func TestProofreaderBridgeKeepsTheEndOfAContextWhileStartingAsItIs(t *testing.T) {
+	for _, end := range []error{context.Canceled, context.DeadlineExceeded} {
+		t.Run(end.Error(), func(t *testing.T) {
+			bridge, err := OpenProofreaderBridge(&inactiveHost{failure: fmt.Errorf("wait for ready: %w", end)})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			_, err = bridge.ProofreadSpeech(t.Context(), nil, domain.SpeechWindow{})
+			if !errors.Is(err, end) || errors.Is(err, port.ErrUnavailable) {
+				t.Errorf("got %v, want %v alone", err, end)
+			}
+		})
+	}
+}
