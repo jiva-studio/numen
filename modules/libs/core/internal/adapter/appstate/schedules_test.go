@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -119,8 +120,11 @@ func TestAFolderThatCannotBeMadeFailsTheWrite(t *testing.T) {
 	}
 }
 
-// A file is written with mode 0644.
-func TestAWrittenFileIsReadableByEveryone(t *testing.T) {
+// A file is written readable by its owner alone.
+func TestAWrittenFileIsTheOwnersAlone(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows files have no permission bits to read")
+	}
 	dir := filepath.Join(t.TempDir(), "flashcards")
 	if err := appstate.SchedulesAt(dir).Write(t.Context(), "vault-a", []byte("{}")); err != nil {
 		t.Fatal(err)
@@ -129,7 +133,7 @@ func TestAWrittenFileIsReadableByEveryone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := info.Mode().Perm(); got != 0o644 {
+	if got := info.Mode().Perm(); got != 0o600 {
 		t.Errorf("mode %v", got)
 	}
 }

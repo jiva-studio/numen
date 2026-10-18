@@ -55,7 +55,7 @@ func (r *VaultRegistry) load() (registryFile, error) {
 }
 
 func (r *VaultRegistry) save(f registryFile) error {
-	if err := os.MkdirAll(filepath.Dir(r.path), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(r.path), privateDirMode); err != nil {
 		return err
 	}
 	raw, err := json.MarshalIndent(f, "", "  ")
@@ -66,14 +66,15 @@ func (r *VaultRegistry) save(f registryFile) error {
 	return replace(r.path, raw)
 }
 
-// replace writes the registry beside itself and renames it over the top: a
+// replace writes a file beside itself and renames it over the top: a
 // half-written registry is the one thing here that costs the user manual work
 // to recover from.
 //
 // Every write gets a temporary file of its own, so two processes writing the
-// list at once each rename a whole one. The bytes are flushed before the
+// file at once each rename a whole one. The bytes are flushed before the
 // rename and the folder after it, so a machine that loses power has either the
-// old list or the new one.
+// old file or the new one. The file in place carries privateFileMode, whatever
+// mode the one it replaced had.
 func replace(path string, content []byte) error {
 	dir := filepath.Dir(path)
 	tmp, err := os.CreateTemp(dir, "."+filepath.Base(path)+".*")
@@ -93,7 +94,7 @@ func replace(path string, content []byte) error {
 	if err := tmp.Close(); err != nil {
 		return err
 	}
-	if err := os.Chmod(tmp.Name(), 0o644); err != nil {
+	if err := os.Chmod(tmp.Name(), privateFileMode); err != nil {
 		return err
 	}
 	if err := os.Rename(tmp.Name(), path); err != nil {
