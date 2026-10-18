@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import Reader from './Reader.vue'
+import { READER_WORDS } from '../lib/strip'
 
 const PAGES = Array.from({ length: 8 }, () => ({ width: 612, height: 792 }))
 
@@ -203,5 +204,24 @@ describe('a key struck over the pages', () => {
     const held = mount(Reader, { props: { pages: [] } })
 
     expect(getReaderHandle(held).handleKey(press('ArrowRight'))).toBe(false)
+  })
+})
+
+describe('where the keyboard stands', () => {
+  it('is put on the pages, which are the region named for them', () => {
+    const held = mount(Reader, { props: { pages: PAGES }, attachTo: document.body })
+
+    ;(held.vm as unknown as { focusPages: () => void }).focusPages()
+
+    const region = held.get('[role="region"]').element
+    expect(document.activeElement).toBe(region)
+    expect(region.getAttribute('aria-label')).toBe(READER_WORDS.pages)
+    held.unmount()
+  })
+
+  it('leaves the pages out of the order the tab key walks', () => {
+    const held = mount(Reader, { props: { pages: PAGES } })
+
+    expect((held.get('[role="region"]').element as HTMLElement).tabIndex).toBe(-1)
   })
 })

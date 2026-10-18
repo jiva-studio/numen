@@ -244,3 +244,21 @@ export const TheKeyboardReachesIt: Story = {
     expect(input.getAttribute('aria-valuenow')).toBe('20')
   },
 }
+
+/** A label written beside the field names it, through the id it is given. */
+export const NamedByItsLabel: Story = {
+  render: (args) => ({
+    components: { NumberField },
+    setup: () => ({ args, value: ref<number | null>(args.value) }),
+    template: `
+      <div style="padding: 2rem; inline-size: 12rem">
+        <label for="minutes-a-day">Minutes a day</label>
+        <NumberField id="minutes-a-day" v-model="value" :min="args.min" :max="args.max" />
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    expect(canvas.getByRole('spinbutton', { name: 'Minutes a day' })).toBe(field(canvasElement))
+  },
+}

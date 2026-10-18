@@ -19,6 +19,14 @@ describe('MediaUrlTab', () => {
     expect(wrapper.find('button[type="submit"]').text()).toBe(words.download)
   })
 
+  it('names the address field by its label', () => {
+    const wrapper = mount(MediaUrlTab, { props: { state: {} }, attachTo: document.body })
+    const field = wrapper.get('input[type="url"]').element as HTMLInputElement
+
+    expect([...(field.labels ?? [])].map((label) => label.textContent)).toEqual([words.mediaUrl])
+    wrapper.unmount()
+  })
+
   it('shows error when url cannot be handled', async () => {
     vi.mocked(downloaderClient.canHandle).mockResolvedValueOnce({ canHandle: false } as never)
     const wrapper = mount(MediaUrlTab, { props: { state: {} } })
@@ -27,7 +35,9 @@ describe('MediaUrlTab', () => {
     await input.setValue('https://example.com/unsupported')
     await wrapper.find('form').trigger('submit.prevent')
 
-    expect(downloaderClient.canHandle).toHaveBeenCalledWith({ url: 'https://example.com/unsupported' })
+    expect(downloaderClient.canHandle).toHaveBeenCalledWith({
+      url: 'https://example.com/unsupported',
+    })
     expect(wrapper.text()).toContain(words.unsupportedUrl)
   })
 
@@ -40,7 +50,7 @@ describe('MediaUrlTab', () => {
 
     const wrapper = mount(MediaUrlTab, { props: { state: {} } })
     const input = wrapper.find('input[type="url"]')
-    await input.setValue('https://example.com/video' )
+    await input.setValue('https://example.com/video')
     await wrapper.find('form').trigger('submit.prevent')
 
     expect(downloaderClient.getText).toHaveBeenCalledWith({ url: 'https://example.com/video' })

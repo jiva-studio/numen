@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SEARCH_DEBOUNCE_MS } from '../lib/search'
 import PlexQuickLinkPopover from './PlexQuickLinkPopover.vue'
+import { WORDS as words } from '../words'
 
 describe('PlexQuickLinkPopover component', () => {
   beforeEach(() => {
@@ -32,6 +33,16 @@ describe('PlexQuickLinkPopover component', () => {
       attachTo: document.body,
     })
   }
+
+  it('names the field it is typed into by its label', () => {
+    const wrapper = mountPopover()
+    const field = wrapper.get('input').element as HTMLInputElement
+
+    expect([...(field.labels ?? [])].map((label) => label.textContent)).toEqual([
+      words.quickLinkLabel,
+    ])
+    wrapper.unmount()
+  })
 
   it('renders positioned at specified coordinates', () => {
     const wrapper = mountPopover({ at: { x: 250, y: 180 } })

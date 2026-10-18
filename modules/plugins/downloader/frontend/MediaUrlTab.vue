@@ -4,7 +4,7 @@
  *
  * Downloads media from web addresses and renders an embed player with cues.
  */
-import { computed, ref, useTemplateRef } from 'vue'
+import { computed, ref, useId, useTemplateRef } from 'vue'
 import type { Cue } from '@numen/protocol'
 import { downloaderClient } from './client'
 import Embed from './embed/Embed.vue'
@@ -25,7 +25,8 @@ const props = defineProps<{
 
 /* --------------------------------- State ---------------------------------- */
 const initialUrl = computed(() => {
-  const s = props.state as { url?: { value?: string } | string; path?: string; at?: string } | undefined
+  const s = props.state as
+    { url?: { value?: string } | string; path?: string; at?: string } | undefined
   if (typeof s?.url === 'string') return s.url
   if (typeof s?.url?.value === 'string') return s.url.value
   return props.path || props.at || ''
@@ -38,6 +39,8 @@ const errorMessage = ref('')
 const statusMessage = ref('')
 const cues = ref<CueItem[]>([])
 const mediaTitle = ref('')
+
+const urlFieldId = useId()
 
 const player = useTemplateRef<{ seek(ms: number): void }>('player')
 
@@ -106,7 +109,9 @@ function formatTime(ms: number): string {
   <div class="media-downloader">
     <header class="media-downloader__toolbar">
       <form class="media-downloader__form" @submit.prevent="onDownload">
+        <label :for="urlFieldId" class="sr-only">{{ words.mediaUrl }}</label>
         <input
+          :id="urlFieldId"
           v-model="inputUrl"
           type="url"
           class="media-downloader__input"

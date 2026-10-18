@@ -5,6 +5,7 @@ export const WORDS = {
   download: 'Download',
   downloadMedia: 'Download Media',
   downloadFromUrl: 'Media: Download from URL',
+  mediaUrl: 'Media or web page URL',
   enterUrl: 'Enter media or web page URL...',
   downloading: 'Downloading media...',
   checking: 'Checking URL...',

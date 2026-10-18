@@ -5,6 +5,7 @@
  * is not handed on, and a number past the bounds is neither.
  */
 import { mount } from '@vue/test-utils'
+import { h } from 'vue'
 import { describe, expect, it } from 'vitest'
 import NumberField from './NumberField.vue'
 
@@ -373,5 +374,26 @@ describe('a field the caller holds the value of', () => {
     await field.vm.$nextTick()
 
     expect(field.get('input').element.value).toBe('45')
+  })
+})
+
+describe('what the field is called', () => {
+  it('is named by a label pointing at the id it is given', () => {
+    const named = mount(
+      () => [h('label', { for: 'minutes' }, 'Minutes a day'), h(NumberField, { id: 'minutes' })],
+      { attachTo: document.body },
+    )
+    const field = named.get<HTMLInputElement>('input').element
+
+    expect([...(field.labels ?? [])].map((label) => label.textContent)).toEqual(['Minutes a day'])
+    named.unmount()
+  })
+
+  it('makes up an id of its own where it is given none, and no two alike', () => {
+    const pair = mount(() => h('div', [h(NumberField, {}), h(NumberField, {})]))
+    const ids = pair.findAll('input').map((field) => field.attributes('id'))
+
+    expect(ids.every(Boolean)).toBe(true)
+    expect(new Set(ids).size).toBe(2)
   })
 })

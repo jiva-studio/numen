@@ -12,12 +12,16 @@ export const WORDS = {
   dropName: (relation: PlexRelation) => `as ${getRelationName(relation)}`,
   /** The notes that stayed unjoined, because the vault would not write the link. */
   notJoined: 'These were not joined:',
+  /** What the field in the quick-link popover is called. */
+  quickLinkLabel: 'Note to link',
   /** The input placeholder in the quick-link popover. */
   quickLinkPlaceholder: 'Search or type note title…',
   /** The action to create a note with the typed title. */
   createNote: (title: string) => `Create "${title}"`,
   /** When no existing notes match the search query. */
   noMatches: 'No matching notes',
+  /** What the link description field in the inspector is called. */
+  linkDescription: 'Link description',
   /** The input placeholder for link description in inspector. */
   linkDescriptionPlaceholder: 'Link description…',
   /** Button to add reverse direction. */
