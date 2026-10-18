@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -191,7 +192,10 @@ func TestSavingIntoAFolderThatCannotBeCreatedIsReported(t *testing.T) {
 	}
 }
 
-func TestTheFolderAndFileAreReadableByOthers(t *testing.T) {
+func TestTheFolderAndFileAreTheOwnersAlone(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows files have no permission bits to read")
+	}
 	isolateEnvironment(t)
 	dir := filepath.Join(t.TempDir(), "state")
 	path := filepath.Join(dir, "vaults.json")
@@ -203,15 +207,41 @@ func TestTheFolderAndFileAreReadableByOthers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if perm := folder.Mode().Perm(); perm&0o700 != 0o700 || perm&0o055 != 0o055 || perm&0o022 != 0 {
-		t.Errorf("folder mode = %o, want 755 less the umask", perm)
+	if perm := folder.Mode().Perm(); perm != 0o700 {
+		t.Errorf("folder mode = %o, want 700", perm)
 	}
 	file, err := os.Stat(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if perm := file.Mode().Perm(); perm&0o600 != 0o600 || perm&0o044 != 0o044 || perm&0o133 != 0 {
-		t.Errorf("file mode = %o, want 644 less the umask", perm)
+	if perm := file.Mode().Perm(); perm != 0o600 {
+		t.Errorf("file mode = %o, want 600", perm)
+	}
+}
+
+// A registry an older build left readable by everyone is the owner's alone
+// after the next write.
+func TestAWriteNarrowsTheModeOfAnExistingFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows files have no permission bits to read")
+	}
+	isolateEnvironment(t)
+	path := filepath.Join(t.TempDir(), "vaults.json")
+	if err := os.WriteFile(path, []byte(`{"v":1,"vaults":[]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(path, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := appstate.OpenAt(path).Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}); err != nil {
+		t.Fatal(err)
+	}
+	file, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if perm := file.Mode().Perm(); perm != 0o600 {
+		t.Errorf("file mode = %o, want 600", perm)
 	}
 }
 

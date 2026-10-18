@@ -12,8 +12,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 )
 
-// A folder the write makes is open to everyone to read and enter.
-func TestAMadeFolderIsOpenToEveryone(t *testing.T) {
+// A folder the write makes is open to its owner alone, whatever the umask.
+func TestAMadeFolderIsTheOwnersAlone(t *testing.T) {
 	old := syscall.Umask(0)
 	t.Cleanup(func() { syscall.Umask(old) })
 
@@ -25,7 +25,7 @@ func TestAMadeFolderIsOpenToEveryone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := info.Mode().Perm(); got != 0o755 {
+	if got := info.Mode().Perm(); got != 0o700 {
 		t.Errorf("mode %v", got)
 	}
 }
@@ -43,12 +43,14 @@ func TestAWriteThatRunsOutOfRoomLeavesNothingBehind(t *testing.T) {
 		t.Fatal(err)
 	}
 	limit := old
-	limit.Cur = 8
+	// The limit sits above every file the test binary writes for itself, its
+	// log among them.
+	limit.Cur = 1 << 20
 	if err := syscall.Setrlimit(syscall.RLIMIT_FSIZE, &limit); err != nil {
 		t.Skipf("the file size cannot be limited: %v", err)
 	}
 	before, canCount := countDescriptors()
-	err := kept.Write(t.Context(), "vault-a", make([]byte, 4096))
+	err := kept.Write(t.Context(), "vault-a", make([]byte, 2<<20))
 	after, _ := countDescriptors()
 	if restoreErr := syscall.Setrlimit(syscall.RLIMIT_FSIZE, &old); restoreErr != nil {
 		t.Fatal(restoreErr)
