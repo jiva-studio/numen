@@ -113,33 +113,28 @@ func isSecretEnv(upper string) bool {
 	return false
 }
 
-// onnxRuntimeEnv are the variables of the host a plugin that declares the ONNX
-// Runtime is also launched with: where the loader finds shared libraries, where
-// the accelerator toolkits are installed and which devices the plugin may use.
-var onnxRuntimeEnv = []string{
-	"LD_LIBRARY_PATH",
-	"CUDA_VISIBLE_DEVICES", "CUDA_PATH", "CUDA_HOME",
-	"NVIDIA_VISIBLE_DEVICES", "NVIDIA_DRIVER_CAPABILITIES",
-	"ROCR_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES",
-}
-
 // onnxRuntimeEnvPrefix names the versioned toolkit folders the CUDA installer sets on windows.
 const onnxRuntimeEnvPrefix = "CUDA_PATH_V"
 
-// darwinRuntimeEnv are the further loader variables passed on darwin.
-var darwinRuntimeEnv = []string{"DYLD_LIBRARY_PATH", "DYLD_FALLBACK_LIBRARY_PATH"}
-
-// isRuntimeEnv reports whether a variable is one a plugin that declares the ONNX
-// Runtime is launched with on goos.
+// isRuntimeEnv reports whether a variable is one of the host variables a plugin
+// that declares the ONNX Runtime is also launched with on goos: where the loader
+// finds shared libraries, where the accelerator toolkits are installed and which
+// devices the plugin may use.
 func isRuntimeEnv(goos, key string) bool {
 	upper := strings.ToUpper(strings.TrimSpace(key))
 	if upper == "" || isSecretEnv(upper) {
 		return false
 	}
-	if slices.Contains(onnxRuntimeEnv, upper) || strings.HasPrefix(upper, onnxRuntimeEnvPrefix) {
+	switch upper {
+	case "LD_LIBRARY_PATH",
+		"CUDA_VISIBLE_DEVICES", "CUDA_PATH", "CUDA_HOME",
+		"NVIDIA_VISIBLE_DEVICES", "NVIDIA_DRIVER_CAPABILITIES",
+		"ROCR_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES":
 		return true
+	case "DYLD_LIBRARY_PATH", "DYLD_FALLBACK_LIBRARY_PATH":
+		return goos == "darwin"
 	}
-	return goos == "darwin" && slices.Contains(darwinRuntimeEnv, upper)
+	return strings.HasPrefix(upper, onnxRuntimeEnvPrefix)
 }
 
 // sanitizeEnvironment returns the host variables a plugin process is launched
