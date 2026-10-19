@@ -13,6 +13,7 @@ func Mount(s *server.Server) error {
 }
 
 func mount(s *server.Server, books *BookServer) error {
+	s.OnClose(books.Close)
 	s.Register(numenv1connect.NewBookServiceHandler(books, s.HandlerOptions()...))
 	return nil
 }

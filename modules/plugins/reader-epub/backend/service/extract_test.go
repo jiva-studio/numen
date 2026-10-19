@@ -145,14 +145,17 @@ func writeBook(t *testing.T) (dir, name string, size, mtime int64) {
 	return dir, name, info.Size(), info.ModTime().UnixNano()
 }
 
-func readEntry(path, entry string, baseline *numenv1.Fingerprint) (*connect.Response[numenv1.ReadBookEntryResponse], error) {
-	return NewBookServer().ReadBookEntry(context.Background(),
+func readEntry(t *testing.T, path, entry string, baseline *numenv1.Fingerprint) (*connect.Response[numenv1.ReadBookEntryResponse], error) {
+	t.Helper()
+	server := NewBookServer()
+	t.Cleanup(server.Close)
+	return server.ReadBookEntry(context.Background(),
 		connect.NewRequest(&numenv1.ReadBookEntryRequest{Path: path, Entry: entry, Baseline: baseline}))
 }
 
 func TestReadBookEntryAnswersTheBytesOfTheEntry(t *testing.T) {
 	_, name, size, mtime := writeBook(t)
-	resp, err := readEntry(name, "EPUB/cover.png", &numenv1.Fingerprint{Path: name, Size: size, Mtime: mtime})
+	resp, err := readEntry(t, name, "EPUB/cover.png", &numenv1.Fingerprint{Path: name, Size: size, Mtime: mtime})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +166,7 @@ func TestReadBookEntryAnswersTheBytesOfTheEntry(t *testing.T) {
 
 func TestReadBookEntryAnswersWithoutABaseline(t *testing.T) {
 	_, name, _, _ := writeBook(t)
-	if _, err := readEntry(name, "EPUB/cover.png", nil); err != nil {
+	if _, err := readEntry(t, name, "EPUB/cover.png", nil); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -176,7 +179,7 @@ func TestReadBookEntryRefusesAFileThatChanged(t *testing.T) {
 	}
 	for label, baseline := range cases {
 		t.Run(label, func(t *testing.T) {
-			_, err := readEntry(name, "EPUB/cover.png", baseline)
+			_, err := readEntry(t, name, "EPUB/cover.png", baseline)
 			if connect.CodeOf(err) != connect.CodeAborted {
 				t.Fatalf("code = %v (%v), want aborted", connect.CodeOf(err), err)
 			}
@@ -186,7 +189,7 @@ func TestReadBookEntryRefusesAFileThatChanged(t *testing.T) {
 
 func TestReadBookEntryRefusesAnEntryTheArchiveLacks(t *testing.T) {
 	_, name, _, _ := writeBook(t)
-	_, err := readEntry(name, "EPUB/missing.png", nil)
+	_, err := readEntry(t, name, "EPUB/missing.png", nil)
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Fatalf("code = %v (%v), want not found", connect.CodeOf(err), err)
 	}
@@ -198,7 +201,7 @@ func TestReadBookEntryRefusesAPathOutsideTheVault(t *testing.T) {
 	if err := os.WriteFile(outside, createPictureEpub(t), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	_, err := readEntry(outside, "EPUB/cover.png", nil)
+	_, err := readEntry(t, outside, "EPUB/cover.png", nil)
 	if connect.CodeOf(err) != connect.CodePermissionDenied {
 		t.Fatalf("code = %v (%v), want permission denied", connect.CodeOf(err), err)
 	}
@@ -212,14 +215,14 @@ func TestReadBookEntryRefusesAFileThatIsNoBook(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "junk.epub"), []byte("junk"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	_, err := readEntry("junk.epub", "EPUB/cover.png", nil)
+	_, err := readEntry(t, "junk.epub", "EPUB/cover.png", nil)
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("code = %v (%v), want invalid argument", connect.CodeOf(err), err)
 	}
 }
 
 func TestReadBookEntryRefusesNoPath(t *testing.T) {
-	_, err := readEntry("", "EPUB/cover.png", nil)
+	_, err := readEntry(t, "", "EPUB/cover.png", nil)
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("code = %v (%v), want invalid argument", connect.CodeOf(err), err)
 	}
@@ -227,7 +230,7 @@ func TestReadBookEntryRefusesNoPath(t *testing.T) {
 
 func TestReadBookEntryRefusesNoEntry(t *testing.T) {
 	_, name, _, _ := writeBook(t)
-	_, err := readEntry(name, "", nil)
+	_, err := readEntry(t, name, "", nil)
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("code = %v (%v), want invalid argument", connect.CodeOf(err), err)
 	}
@@ -241,7 +244,7 @@ func TestReadBookEntryRefusesNotFound(t *testing.T) {
 	}
 	for _, target := range []string{"nonexistent.epub", "sub"} {
 		t.Run(target, func(t *testing.T) {
-			_, err := readEntry(target, "EPUB/cover.png", nil)
+			_, err := readEntry(t, target, "EPUB/cover.png", nil)
 			if connect.CodeOf(err) != connect.CodeNotFound {
 				t.Fatalf("code = %v (%v), want not found", connect.CodeOf(err), err)
 			}
@@ -251,7 +254,7 @@ func TestReadBookEntryRefusesNotFound(t *testing.T) {
 
 func TestReadBookEntryAnswersWithZeroMtimeBaseline(t *testing.T) {
 	_, name, size, _ := writeBook(t)
-	if _, err := readEntry(name, "EPUB/cover.png", &numenv1.Fingerprint{Path: name, Size: size, Mtime: 0}); err != nil {
+	if _, err := readEntry(t, name, "EPUB/cover.png", &numenv1.Fingerprint{Path: name, Size: size, Mtime: 0}); err != nil {
 		t.Fatalf("expected success with Mtime == 0, got %v", err)
 	}
 }
