@@ -16,8 +16,8 @@ import (
 
 const mostListed = 1000
 
-func readBookFile(path string) ([]byte, error) {
-	cleanPath, err := vault.ValidatePath(path)
+func (s *BookServer) readBookFile(path string) ([]byte, error) {
+	cleanPath, err := vault.ValidatePathIn(s.vaultRoot(), path)
 	if err != nil {
 		return nil, err
 	}
@@ -27,11 +27,19 @@ func readBookFile(path string) ([]byte, error) {
 // BookServer implements numenv1connect.BookServiceHandler.
 type BookServer struct {
 	numenv1connect.UnimplementedBookServiceHandler
+
+	// vaultRoot is the vault the paths of requests are held to.
+	vaultRoot func() string
 }
 
-// NewBookServer returns an initialized BookServer.
+// NewBookServer returns a BookServer that holds paths to the vault NUMEN_VAULT_PATH names.
 func NewBookServer() *BookServer {
-	return &BookServer{}
+	return &BookServer{vaultRoot: func() string { return os.Getenv("NUMEN_VAULT_PATH") }}
+}
+
+// NewBookServerIn returns a BookServer that holds paths to the vault at vaultRoot.
+func NewBookServerIn(vaultRoot string) *BookServer {
+	return &BookServer{vaultRoot: func() string { return vaultRoot }}
 }
 
 // GetBook parses an EPUB file and returns metadata, documents, and parts.
@@ -43,7 +51,7 @@ func (s *BookServer) GetBook(
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
-	raw, err := readBookFile(path)
+	raw, err := s.readBookFile(path)
 	if err != nil {
 		if errors.Is(err, vault.ErrOutsideVault) || errors.Is(err, vault.ErrPathTraversal) {
 			return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
@@ -101,7 +109,7 @@ func (s *BookServer) ReadBookMarkup(
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
-	raw, err := readBookFile(path)
+	raw, err := s.readBookFile(path)
 	if err != nil {
 		if errors.Is(err, vault.ErrOutsideVault) || errors.Is(err, vault.ErrPathTraversal) {
 			return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
@@ -167,7 +175,7 @@ func (s *BookServer) ReadBookEntry(
 	if req.Msg.GetEntry() == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("entry required"))
 	}
-	cleanPath, err := vault.ValidatePath(path)
+	cleanPath, err := vault.ValidatePathIn(s.vaultRoot(), path)
 	if err != nil {
 		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
 	}

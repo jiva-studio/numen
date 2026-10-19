@@ -9,12 +9,19 @@ import (
 
 // Mount registers the plugin's services on s.
 func Mount(s *server.Server) error {
-	s.Register(numenv1connect.NewBookServiceHandler(NewBookServer(), s.HandlerOptions()...))
+	return mount(s, NewBookServer())
+}
+
+func mount(s *server.Server, books *BookServer) error {
+	s.Register(numenv1connect.NewBookServiceHandler(books, s.HandlerOptions()...))
 	return nil
 }
 
 // NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
-// from the variables a launched process of the plugin is given.
+// from the variables a launched process of the plugin is given. It holds the paths of requests to
+// the vault those name.
 func NewHandler(vars map[string]string) (http.Handler, error) {
-	return server.NewLinkedHandler(vars, Mount)
+	return server.NewLinkedHandler(vars, func(s *server.Server) error {
+		return mount(s, NewBookServerIn(vars["NUMEN_VAULT_PATH"]))
+	})
 }
