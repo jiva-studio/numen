@@ -88,6 +88,7 @@ func TestAnswerRefusesAnEmptyText(t *testing.T) {
 
 func TestAnswerReportsACancelledCallAsCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	_, err := Answer(ctx, ask(message("user", "q")), func(ctx context.Context, _ Request) (string, error) {
 		cancel()
 		return "late", nil

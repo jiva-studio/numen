@@ -58,24 +58,27 @@ const listed = (source, from) => {
   let depth = 0
   let entries = 0
   let quote = null
-  for (let i = at; i < source.length; i += 1) {
+  let i = at
+  while (i < source.length) {
     const c = source[i]
     if (quote) {
       if (c === '\\') i += 1
       else if (c === quote) quote = null
+      i += 1
       continue
     }
     // A bracket written in prose is not a bracket, and an apostrophe in prose
     // is not a quote: a comment is stepped over whole.
     if (c === '/' && source[i + 1] === '/') {
-      i = source.indexOf('\n', i)
-      if (i < 0) return null
+      const next = source.indexOf('\n', i)
+      if (next < 0) return null
+      i = next + 1
       continue
     }
     if (c === '/' && source[i + 1] === '*') {
-      i = source.indexOf('*/', i)
-      if (i < 0) return null
-      i += 1
+      const next = source.indexOf('*/', i)
+      if (next < 0) return null
+      i = next + 2
       continue
     }
     if (c === "'" || c === '"' || c === '`') {
@@ -89,6 +92,7 @@ const listed = (source, from) => {
       depth -= 1
       if (depth === 0) return { text: source.slice(at, i + 1), entries }
     }
+    i += 1
   }
   return null
 }

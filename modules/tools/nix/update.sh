@@ -24,7 +24,7 @@ version=$(printf '%s' "$said" | jq -r .version)
 url=$(printf '%s' "$said" | jq -r '.files[] | select(.name == "numen-linux-amd64.tar.gz") | .url')
 sum=$(printf '%s' "$said" | jq -r '.files[] | select(.name == "numen-linux-amd64.tar.gz") | .sha256')
 
-if [ -z "$url" ] || [ "$url" = null ]; then
+if [[ -z "$url" || "$url" = "null" ]]; then
   echo "the $channel shelf holds no Linux build" >&2
   exit 1
 fi
