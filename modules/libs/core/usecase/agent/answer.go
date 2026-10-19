@@ -38,23 +38,40 @@ func Answer(ctx context.Context, agent Starter, task port.Task) (string, error) 
 		return "", fmt.Errorf("%w: %w", port.ErrUnavailable, err)
 	}
 	defer func() { _ = run.Stop() }()
+	return readAnswer(ctx, run.GetSteps())
+}
 
+// readAnswer is what the agent said in the steps it takes, until they are over or the context ends.
+func readAnswer(ctx context.Context, steps <-chan port.Step) (string, error) {
 	var said strings.Builder
-	for step := range run.GetSteps() {
-		if step.Kind == domain.StepSay {
-			said.WriteString(step.Text)
-		}
-		if step.Kind == domain.StepStop && step.Detail != "" && step.Detail != stoppedDone {
-			return "", failAnswer(ctx, fmt.Errorf("the agent stopped: %s", step.Detail))
+	for {
+		select {
+		case <-ctx.Done():
+			return "", ctx.Err()
+		case step, isOpen := <-steps:
+			if !isOpen {
+				return finishAnswer(ctx, said.String())
+			}
+			if step.Kind == domain.StepSay {
+				said.WriteString(step.Text)
+			}
+			if step.Kind == domain.StepStop && step.Detail != "" && step.Detail != stoppedDone {
+				return "", failAnswer(ctx, fmt.Errorf("the agent stopped: %s", step.Detail))
+			}
 		}
 	}
+}
+
+// finishAnswer is the text the agent said, once its steps are over. The end of the context makes it
+// no answer of the agent's.
+func finishAnswer(ctx context.Context, said string) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
-	if strings.TrimSpace(said.String()) == "" {
+	if strings.TrimSpace(said) == "" {
 		return "", fmt.Errorf("%w: %w", port.ErrUnavailable, errNoAnswer)
 	}
-	return said.String(), nil
+	return said, nil
 }
 
 // failAnswer is the failure of an answer: the end of the caller's context is the caller's own, and

@@ -161,3 +161,23 @@ func TestTheEndOfTheContextIsNotAnUnavailability(t *testing.T) {
 		}
 	}
 }
+
+// A run that never closes its steps does not hold the answer past the end of the context.
+func TestTheEndOfTheContextEndsTheWaitForSteps(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	held := &starter{run: &run{steps: make(chan port.Step)}}
+	done := make(chan error, 1)
+	go func() {
+		_, err := agent.Answer(ctx, held, port.Task{})
+		done <- err
+	}()
+
+	cancel()
+
+	if err := <-done; !errors.Is(err, context.Canceled) {
+		t.Errorf("got %v, want context.Canceled", err)
+	}
+	if held.run.stopped != 1 {
+		t.Errorf("the run was stopped %d times, want 1", held.run.stopped)
+	}
+}
