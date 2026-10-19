@@ -2,6 +2,7 @@ package container_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -22,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // makeConfig is a container carrying one profile under a name.
@@ -87,7 +89,7 @@ func TestAProfileDegradesWhenPluginAbsent(t *testing.T) {
 	if why == nil {
 		t.Fatal("want error when plugin absent, got nil")
 	}
-	if !strings.Contains(why.Error(), "unavailable") {
+	if !errors.Is(why, port.ErrUnavailable) {
 		t.Errorf("expected unavailable error, got: %v", why)
 	}
 	if proofreader != nil {
@@ -188,7 +190,7 @@ func TestTheProofreadingOfAKindOfTextCarriesTheSettingsOfItsProfile(t *testing.T
 	if scan.By == nil {
 		t.Fatal("a named profile opens nothing")
 	}
-	if _, why := scan.By(); why == nil || !strings.Contains(why.Error(), "unavailable") {
+	if _, why := scan.By(); !errors.Is(why, port.ErrUnavailable) {
 		t.Errorf("a profile with no plugin opened with %v", why)
 	}
 

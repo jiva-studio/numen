@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"connectrpc.com/connect"
@@ -12,10 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-)
-
-var (
-	ErrNoBookPlugin = errors.New("no active book reader plugin found")
 )
 
 // BookPluginHost provides plugin resolution and activation for the book bridge.
@@ -35,12 +30,9 @@ type BookBridge struct {
 
 // OpenBookBridge activates or connects to the book plugin and returns a BookBridge.
 func OpenBookBridge(ctx context.Context, host BookPluginHost) (*BookBridge, error) {
-	p, ok := host.FindPluginByCapability("book")
-	if !ok {
-		p, ok = host.FindPluginByFileExtension(".epub")
-		if !ok {
-			return nil, ErrNoBookPlugin
-		}
+	p, err := host.ResolveCapability(CapabilityBook)
+	if err != nil {
+		return nil, err
 	}
 
 	client, lease, err := openPlugin(ctx, host, p.Manifest.ID, numenv1connect.NewBookServiceClient)

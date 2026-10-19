@@ -145,16 +145,6 @@ func NewPluginHost(target string, dirs ...string) *plugin.Host {
 	return host
 }
 
-func (c Config) findPluginHost(capability string) (port.PluginManager, bool) {
-	if c.PluginHost == nil || c.SafeMode {
-		return nil, false
-	}
-	if _, ok := c.PluginHost.FindPluginByCapability(capability); !ok {
-		return nil, false
-	}
-	return c.PluginHost, true
-}
-
 // Clock is the clock every scenario assembled here is handed.
 
 func (c Config) Clock() port.Clock {

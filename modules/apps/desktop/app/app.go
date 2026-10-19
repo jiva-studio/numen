@@ -11,7 +11,6 @@ import (
 	"os"
 	"path"
 	"runtime/debug"
-	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -72,10 +71,7 @@ func Run(opts ...*Options) error {
 		cfg.RegistryPath = opt.RegistryPath
 	}
 	cfg.ShouldRebuildIndex = opt.RebuildIndex
-	cfg.SafeMode = opt.SafeMode
-	if cfg.SafeMode && cfg.PluginHost != nil {
-		setPluginSafeMode(cfg.PluginHost, true)
-	}
+	cfg = cfg.SetSafeMode(opt.SafeMode)
 
 	agentFlags := agentOptions{
 		addr:  opt.McpAddr,
@@ -149,11 +145,9 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 	if err := debugOpts.ensureVault(cfg, vault); err != nil {
 		return err
 	}
-	if cfg.PluginHost != nil {
-		defer func() {
-			_ = teardownPlugins(cfg.PluginHost)
-		}()
-	}
+	defer func() {
+		_ = cfg.StopPlugins(context.Background())
+	}()
 	if err := scaleFlags.validate(); err != nil {
 		return err
 	}
@@ -186,10 +180,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 		reachable.Stop,
 		shutdown.Report("numen", os.Stderr, "", opened.Close),
 		shutdown.Report("numen", os.Stderr, "plugins", func() error {
-			if cfg.PluginHost != nil {
-				return teardownPlugins(cfg.PluginHost)
-			}
-			return nil
+			return cfg.StopPlugins(context.Background())
 		}),
 		stop,
 	)
@@ -248,9 +239,7 @@ func openInstallation(
 	if err != nil {
 		return shownInstallation{}, err
 	}
-	if cfg.PluginHost != nil {
-		setPluginVaultPath(cfg.PluginHost, opened.GetCurrentVault().Path)
-	}
+	cfg.SetPluginVaultPath(opened.GetCurrentVault().Path)
 	return shownInstallation{pages: pages, opened: opened}, nil
 }
 
@@ -334,9 +323,7 @@ func connectWindow(
 	})
 
 	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
-		if cfg.PluginHost != nil {
-			setPluginVaultPath(cfg.PluginHost, v.Path)
-		}
+		cfg.SetPluginVaultPath(v.Path)
 		err := reachable.RunWhileStopped(func() error { return opened.Show(ctx, v) })
 		naming(opened.State.GetOpenTabs())
 		return err
@@ -390,25 +377,4 @@ func getWindowTitle(v domain.Vault, open domain.OpenTabs) string {
 type agentOptions struct {
 	addr  string
 	isOff bool
-}
-
-func teardownPlugins(host any) error {
-	if ctrl, ok := host.(interface {
-		TeardownAll(context.Context, time.Duration) error
-	}); ok {
-		return ctrl.TeardownAll(context.Background(), 2*time.Second)
-	}
-	return nil
-}
-
-func setPluginSafeMode(host any, safeMode bool) {
-	if ctrl, ok := host.(interface{ SetSafeMode(bool) }); ok {
-		ctrl.SetSafeMode(safeMode)
-	}
-}
-
-func setPluginVaultPath(host any, path string) {
-	if ctrl, ok := host.(interface{ SetVaultPath(string) }); ok {
-		ctrl.SetVaultPath(path)
-	}
 }

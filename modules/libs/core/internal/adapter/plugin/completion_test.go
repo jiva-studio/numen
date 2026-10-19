@@ -77,8 +77,11 @@ func (h *completionHost) FindPluginByCapability(capability string) (port.Discove
 	return port.DiscoveredPlugin{Manifest: h.plugins[h.byCap]}, true
 }
 
-func (h *completionHost) FindPluginByFileExtension(string) (port.DiscoveredPlugin, bool) {
-	return port.DiscoveredPlugin{}, false
+func (h *completionHost) ResolveCapability(capability string) (port.DiscoveredPlugin, error) {
+	if found, ok := h.FindPluginByCapability(capability); ok {
+		return found, nil
+	}
+	return port.DiscoveredPlugin{}, &port.UnavailableError{Capability: capability, Reason: port.PluginNotInstalled}
 }
 
 func (h *completionHost) GetPlugin(id string) (port.DiscoveredPlugin, bool) {

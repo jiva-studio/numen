@@ -55,9 +55,6 @@ type OpenDocument interface {
 // DocumentRenderer is an alias for PageRenderer.
 type DocumentRenderer = PageRenderer
 
-// Document is an alias for OpenDocument.
-type Document = OpenDocument
-
 // A document that cannot be read is one of these, and a caller says which of
 // the two it met.
 var (

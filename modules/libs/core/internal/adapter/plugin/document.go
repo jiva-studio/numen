@@ -23,11 +23,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-var (
-	// ErrNoDocumentPlugin is returned when no plugin provides document capability.
-	ErrNoDocumentPlugin = errors.New("no active document plugin found")
-)
-
 // DocumentPluginHost provides plugin resolution, activation, permissions, and path validation.
 type DocumentPluginHost interface {
 	port.PluginResolver
@@ -47,9 +42,9 @@ type DocumentBridge struct {
 
 // OpenDocumentBridge activates or connects to the document plugin and returns a DocumentBridge.
 func OpenDocumentBridge(ctx context.Context, host DocumentPluginHost) (*DocumentBridge, error) {
-	p, ok := host.FindPluginByCapability("document")
-	if !ok {
-		return nil, ErrNoDocumentPlugin
+	p, err := host.ResolveCapability(CapabilityDocument)
+	if err != nil {
+		return nil, err
 	}
 
 	client, lease, err := openPlugin(ctx, host, p.Manifest.ID, numenv1connect.NewDocumentServiceClient)

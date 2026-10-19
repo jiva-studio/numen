@@ -14,10 +14,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-var (
-	errNoTranscriptionPlugin = errors.New("no active audio/video transcription plugin found")
-)
-
 // TranscriberPluginHost provides resolution, activation, reference tracking, permissions, and path validation.
 type TranscriberPluginHost interface {
 	port.PluginResolver
@@ -38,9 +34,9 @@ type TranscriberBridge struct {
 
 // OpenTranscriberBridge activates or connects to the transcription plugin and returns a port.Transcriber.
 func OpenTranscriberBridge(ctx context.Context, host TranscriberPluginHost) (*TranscriberBridge, error) {
-	plugin, ok := host.FindPluginByCapability("transcription")
-	if !ok {
-		return nil, errNoTranscriptionPlugin
+	plugin, err := host.ResolveCapability(CapabilityTranscription)
+	if err != nil {
+		return nil, err
 	}
 
 	client, lease, err := openPlugin(ctx, host, plugin.Manifest.ID, numenv1connect.NewTranscriptionServiceClient)

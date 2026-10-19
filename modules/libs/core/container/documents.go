@@ -2,8 +2,6 @@ package container
 
 import (
 	"context"
-	"errors"
-	"image"
 	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -11,14 +9,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-var (
-	errDocumentUnavailable = errors.New("document plugin is unavailable or not installed")
-)
-
-var _ port.Document = (*unavailableOpenDocument)(nil)
-
 // DocumentRenderer is the port that renders pages of documents.
-// Core retains abstract port.DocumentRenderer / port.Document ports.
+// It is the same port as PageRenderer.
 func (c Config) DocumentRenderer() port.DocumentRenderer { return c.PageRenderer() }
 
 // TextExtractor takes the text out of a file whose text is laid out on printed pages.
@@ -26,40 +18,32 @@ func (c Config) TextExtractor() port.TextExtractor {
 	if c.Texts != nil {
 		return c.Texts
 	}
-	if c.PluginHost != nil && !c.SafeMode {
-		if _, ok := c.PluginHost.FindPluginByCapability("document"); ok {
-			return hostDocumentPort{host: c.PluginHost}
+	host, err := c.resolvePlugin(plugin.CapabilityDocument)
+	if err != nil {
+		if books, bookErr := c.resolvePlugin(plugin.CapabilityBook); bookErr == nil {
+			return hostDocumentPort{host: books}
 		}
-		if _, ok := c.PluginHost.FindPluginByCapability("book"); ok {
-			return hostDocumentPort{host: c.PluginHost}
-		}
+		return unavailableDocument{why: err}
 	}
-	return unavailableDocument{}
+	return hostDocumentPort{host: host}
 }
 
 // PageRenderer draws such a document's pages.
 func (c Config) PageRenderer() port.PageRenderer {
-	if c.PluginHost != nil && !c.SafeMode {
-		if _, ok := c.PluginHost.FindPluginByCapability("document"); ok {
-			return hostDocumentPort{host: c.PluginHost}
-		}
+	host, err := c.resolvePlugin(plugin.CapabilityDocument)
+	if err != nil {
+		return unavailableDocument{why: err}
 	}
-	return unavailableDocument{}
+	return hostDocumentPort{host: host}
 }
 
+// hostDocumentPort reaches the document and the book plugins, each looked up when it is asked.
 type hostDocumentPort struct {
 	host port.PluginManager
 }
 
-func (h hostDocumentPort) openBridge(ctx context.Context) (*plugin.DocumentBridge, error) {
-	if h.host == nil {
-		return nil, errDocumentUnavailable
-	}
-	return plugin.OpenDocumentBridge(ctx, h.host)
-}
-
 func (h hostDocumentPort) Read(ctx context.Context, raw []byte) (domain.TextLayer, error) {
-	bridge, err := h.openBridge(ctx)
+	bridge, err := plugin.OpenDocumentBridge(ctx, h.host)
 	if err != nil {
 		return domain.TextLayer{}, err
 	}
@@ -68,9 +52,6 @@ func (h hostDocumentPort) Read(ctx context.Context, raw []byte) (domain.TextLaye
 }
 
 func (h hostDocumentPort) ReadBook(ctx context.Context, raw []byte) (domain.BookText, error) {
-	if h.host == nil {
-		return domain.BookText{}, errDocumentUnavailable
-	}
 	bridge, err := plugin.OpenBookBridge(ctx, h.host)
 	if err != nil {
 		return domain.BookText{}, err
@@ -80,7 +61,7 @@ func (h hostDocumentPort) ReadBook(ctx context.Context, raw []byte) (domain.Book
 }
 
 func (h hostDocumentPort) GetHighlights(ctx context.Context, raw []byte, starts []int, pages []int) ([]domain.HighlightBox, error) {
-	bridge, err := h.openBridge(ctx)
+	bridge, err := plugin.OpenDocumentBridge(ctx, h.host)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +70,7 @@ func (h hostDocumentPort) GetHighlights(ctx context.Context, raw []byte, starts 
 }
 
 func (h hostDocumentPort) OpenDocument(ctx context.Context, file io.ReadSeekCloser) (port.OpenDocument, error) {
-	bridge, err := h.openBridge(ctx)
+	bridge, err := plugin.OpenDocumentBridge(ctx, h.host)
 	if err != nil {
 		if file != nil {
 			_ = file.Close()
@@ -104,34 +85,26 @@ func (h hostDocumentPort) OpenDocument(ctx context.Context, file io.ReadSeekClos
 	return doc, nil
 }
 
-type unavailableDocument struct{}
-
-func (unavailableDocument) Read(_ context.Context, _ []byte) (domain.TextLayer, error) {
-	return domain.TextLayer{}, errDocumentUnavailable
+// unavailableDocument answers every ask with why no document plugin is there.
+type unavailableDocument struct {
+	why error
 }
 
-func (unavailableDocument) GetHighlights(_ context.Context, _ []byte, _ []int, _ []int) ([]domain.HighlightBox, error) {
-	return nil, errDocumentUnavailable
+func (u unavailableDocument) Read(_ context.Context, _ []byte) (domain.TextLayer, error) {
+	return domain.TextLayer{}, u.why
 }
 
-func (unavailableDocument) ReadBook(_ context.Context, _ []byte) (domain.BookText, error) {
-	return domain.BookText{}, errDocumentUnavailable
+func (u unavailableDocument) GetHighlights(_ context.Context, _ []byte, _ []int, _ []int) ([]domain.HighlightBox, error) {
+	return nil, u.why
 }
 
-func (unavailableDocument) OpenDocument(_ context.Context, file io.ReadSeekCloser) (port.OpenDocument, error) {
+func (u unavailableDocument) ReadBook(_ context.Context, _ []byte) (domain.BookText, error) {
+	return domain.BookText{}, u.why
+}
+
+func (u unavailableDocument) OpenDocument(_ context.Context, file io.ReadSeekCloser) (port.OpenDocument, error) {
 	if file != nil {
 		_ = file.Close()
 	}
-	return nil, errDocumentUnavailable
+	return nil, u.why
 }
-
-type unavailableOpenDocument struct{}
-
-func (unavailableOpenDocument) GetPageCount() int { return 0 }
-func (unavailableOpenDocument) GetPageSize(_ int) (float64, float64, error) {
-	return 0, 0, errDocumentUnavailable
-}
-func (unavailableOpenDocument) RenderPage(_, _ int) (image.Image, error) {
-	return nil, errDocumentUnavailable
-}
-func (unavailableOpenDocument) Close() {}

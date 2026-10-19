@@ -393,7 +393,7 @@ func refuse(w http.ResponseWriter, err error) {
 		http.Error(w, err.Error(), http.StatusUnsupportedMediaType)
 	case errors.Is(err, errNoVault):
 		http.Error(w, err.Error(), http.StatusConflict)
-	case errors.Is(err, errNoDocuments):
+	case errors.Is(err, errNoDocuments), errors.Is(err, port.ErrUnavailable):
 		http.Error(w, err.Error(), http.StatusNotImplemented)
 	default:
 		http.Error(w, err.Error(), http.StatusInternalServerError)

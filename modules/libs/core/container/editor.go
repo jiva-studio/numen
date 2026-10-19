@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"errors"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
@@ -64,10 +63,11 @@ func (e EditorAssembly) GetPluginDir(id string) (string, bool) {
 }
 
 func (e EditorAssembly) OpenBookClient(ctx context.Context) (any, func(), error) {
-	if e.cfg.PluginHost == nil || e.cfg.SafeMode {
-		return nil, nil, errors.New("no plugin host configured")
+	host, err := e.cfg.resolvePlugin(plugin.CapabilityBook)
+	if err != nil {
+		return nil, nil, err
 	}
-	bridge, err := plugin.OpenBookBridge(ctx, e.cfg.PluginHost)
+	bridge, err := plugin.OpenBookBridge(ctx, host)
 	if err != nil {
 		return nil, nil, err
 	}

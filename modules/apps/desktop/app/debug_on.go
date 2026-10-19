@@ -120,9 +120,7 @@ func (d *DebugOptions) serveHTTP(
 	naming := func(open domain.OpenTabs) {}
 	opened.State.NotifyOpenTabs = naming
 	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
-		if cfg.PluginHost != nil {
-			setPluginVaultPath(cfg.PluginHost, v.Path)
-		}
+		cfg.SetPluginVaultPath(v.Path)
 		err := reachable.RunWhileStopped(func() error { return opened.Show(ctx, v) })
 		naming(opened.State.GetOpenTabs())
 		return err

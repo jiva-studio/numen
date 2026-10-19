@@ -15,10 +15,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-var (
-	errNoDownloaderPlugin = errors.New("no active media downloader plugin found")
-)
-
 // DownloaderPluginHost provides plugin resolution, activation, and permission checking for downloads.
 type DownloaderPluginHost interface {
 	port.PluginResolver
@@ -36,12 +32,9 @@ type DownloaderBridge struct {
 
 // OpenDownloaderBridge activates or connects to the downloader plugin and returns a port.Downloader.
 func OpenDownloaderBridge(ctx context.Context, host DownloaderPluginHost) (*DownloaderBridge, error) {
-	plugin, ok := host.FindPluginByCapability("downloader")
-	if !ok {
-		plugin, ok = host.FindPluginByCapability("media.download")
-	}
-	if !ok {
-		return nil, errNoDownloaderPlugin
+	plugin, err := host.ResolveCapability(CapabilityDownloader)
+	if err != nil {
+		return nil, err
 	}
 
 	client, lease, err := openPlugin(ctx, host, plugin.Manifest.ID, numenv1connect.NewDownloadServiceClient)

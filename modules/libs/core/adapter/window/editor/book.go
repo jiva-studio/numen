@@ -50,14 +50,9 @@ func (h *bookHandler) GetBook(
 ) (*connect.Response[v1.GetBookResponse], error) {
 	client, closeClient, err := h.getClient(ctx)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, connect.NewError(getReachCode(err), err)
 	}
-	if client == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
-	}
-	if closeClient != nil {
-		defer closeClient()
-	}
+	defer closeClient()
 	return client.GetBook(ctx, r)
 }
 
@@ -72,14 +67,9 @@ func (h *bookHandler) ReadBookMarkup(
 ) (*connect.Response[v1.ReadBookMarkupResponse], error) {
 	client, closeClient, err := h.getClient(ctx)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, connect.NewError(getReachCode(err), err)
 	}
-	if client == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
-	}
-	if closeClient != nil {
-		defer closeClient()
-	}
+	defer closeClient()
 	return client.ReadBookMarkup(ctx, r)
 }
 
@@ -128,12 +118,7 @@ func (h *bookHandler) ReadEntry(ctx context.Context, mark document.Fingerprint, 
 	if err != nil {
 		return nil, fmt.Errorf("open the book plugin: %w", err)
 	}
-	if client == nil {
-		return nil, errNoDocuments
-	}
-	if closeClient != nil {
-		defer closeClient()
-	}
+	defer closeClient()
 	return client.ReadEntry(ctx, newWireFingerprint(mark), entry)
 }
 
@@ -146,20 +131,24 @@ func isMisnamed(err error) bool {
 		errors.Is(err, document.ErrNotAPicture)
 }
 
+// getClient opens the book plugin's client, with the close that lets it go. A
+// build with no book plugin, or one whose client answers none of a book's asks,
+// is errNoDocuments.
 func (h *bookHandler) getClient(ctx context.Context) (bookClient, func(), error) {
 	if h.openClient == nil {
-		return nil, nil, nil
+		return nil, nil, errNoDocuments
 	}
 	raw, closer, err := h.openClient(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
+	if closer == nil {
+		closer = func() {}
+	}
 	client, ok := raw.(bookClient)
 	if !ok {
-		if closer != nil {
-			closer()
-		}
-		return nil, nil, nil
+		closer()
+		return nil, nil, fmt.Errorf("%w: the book plugin answers with %T", errNoDocuments, raw)
 	}
 	return client, closer, nil
 }

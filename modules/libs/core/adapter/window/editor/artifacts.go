@@ -694,7 +694,8 @@ func getDownloadCode(err error) connect.Code {
 	return connect.CodeFailedPrecondition
 }
 
-// getReachCode is the code a file that could not be reached is answered with.
+// getReachCode is the code a file that could not be reached is answered with. A
+// plugin that is not there to answer is a build that cannot do it.
 func getReachCode(err error) connect.Code {
 	switch {
 	case errors.Is(err, source.ErrOutside):
@@ -703,6 +704,8 @@ func getReachCode(err error) connect.Code {
 		return connect.CodeNotFound
 	case errors.Is(err, errNoVault):
 		return connect.CodeFailedPrecondition
+	case errors.Is(err, source.ErrUnavailable), errors.Is(err, errNoDocuments):
+		return connect.CodeUnimplemented
 	default:
 		return connect.CodeInternal
 	}

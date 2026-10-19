@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -9,42 +10,39 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
 
-// EmbedderReady reports whether an embedding plugin is active or present.
+// EmbedderReady reports whether an embedding plugin is enabled.
 func (c Config) EmbedderReady() bool {
-	if c.PluginHost != nil && !c.SafeMode {
-		if _, ok := c.PluginHost.FindPluginByCapability("embedding"); ok {
-			return true
-		}
-	}
-	return false
+	return c.hasPlugin(plugin.CapabilityEmbedding)
 }
 
 // Embedders are what makes the vectors a vault is searched by and what makes
 // the vector a question is asked with.
 //
-// When the embedding plugin is absent or disabled, search queries seamlessly fall
-// back to SQLite FTS5 full-text search without throwing errors.
+// An installation with no embedding plugin enabled has neither, and no error:
+// search answers on the words of the full-text index alone.
 func (c Config) Embedders(ctx context.Context, _ *run.Tasks) (indexing, asking port.Embedder, closer func() error, why error) {
-	if host, ok := c.findPluginHost("embedding"); ok {
-		bridge, err := plugin.OpenEmbedderBridge(ctx, host)
-		if err != nil {
-			return nil, nil, func() error { return nil }, err
-		}
-		return bridge, bridge, bridge.Close, nil
+	embedder, closeEmbedder, err := c.Embedder(ctx)
+	if err != nil {
+		return nil, nil, func() error { return nil }, err
 	}
-	return nil, nil, func() error { return nil }, nil
+	return embedder, embedder, closeEmbedder, nil
 }
 
-// Embedder is what makes the vectors a vault is searched by, waited for.
+// Embedder is what makes the vectors a vault is searched by, waited for. It is
+// nil where no embedding plugin is enabled.
 func (c Config) Embedder(ctx context.Context) (port.Embedder, func() error, error) {
-	if host, ok := c.findPluginHost("embedding"); ok {
-		bridge, err := plugin.OpenEmbedderBridge(ctx, host)
-		if err != nil {
-			return nil, nil, err
-		}
-		return bridge, bridge.Close, nil
+	host, err := c.resolvePlugin(plugin.CapabilityEmbedding)
+	if errors.Is(err, port.ErrUnavailable) {
+		return nil, func() error { return nil }, nil
 	}
-	return nil, func() error { return nil }, nil
+	if err != nil {
+		return nil, nil, err
+	}
+	bridge, err := plugin.OpenEmbedderBridge(ctx, host)
+	if err != nil {
+		return nil, nil, err
+	}
+	return bridge, bridge.Close, nil
 }
 
 // OpenQuestionEmbedder is what embeds a question, for a run that fills no

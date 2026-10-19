@@ -18,24 +18,11 @@ func configureLocations(cfg container.Config, where cli.Locations) container.Con
 	cfg.IndexPath = where.Index
 	cfg.RegistryPath = where.Registry
 	cfg.ServiceDir = where.ServiceDir
-	cfg.SafeMode = where.SafeMode
-	if cfg.SafeMode && cfg.PluginHost != nil {
-		if host, ok := cfg.PluginHost.(interface{ SetSafeMode(bool) }); ok {
-			host.SetSafeMode(true)
-		}
-	}
+	cfg = cfg.SetSafeMode(where.SafeMode)
 	if chosen, err := cfg.Settings(); err == nil {
 		cfg = cfg.SetSettings(chosen)
 	}
 	return cfg
-}
-
-func setVaultPath(cfg container.Config, p string) {
-	if cfg.PluginHost != nil {
-		if host, ok := cfg.PluginHost.(interface{ SetVaultPath(string) }); ok {
-			host.SetVaultPath(p)
-		}
-	}
 }
 
 // makeDeps is what the terminal works through, built for the places one run was
@@ -52,27 +39,27 @@ func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 			Vaults: func() (cli.Vaults, error) { return createVaults(cfg) },
 			Links:  func(ctx context.Context) (cli.Links, error) { return createLinks(ctx, cfg) },
 			Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
-				setVaultPath(cfg, v.Path)
+				cfg.SetPluginVaultPath(v.Path)
 				return createScan(ctx, cfg, v, rebuild)
 			},
 			Recognise: func(ctx context.Context, v domain.Vault, fetching func()) (cli.Recognise, error) {
-				setVaultPath(cfg, v.Path)
+				cfg.SetPluginVaultPath(v.Path)
 				return createRecognition(ctx, cfg, v, fetching)
 			},
 			Transcribe: func(ctx context.Context, v domain.Vault, fetching func()) (cli.Transcribe, error) {
-				setVaultPath(cfg, v.Path)
+				cfg.SetPluginVaultPath(v.Path)
 				return createTranscription(ctx, cfg, v, fetching)
 			},
 			ImportURL: func(ctx context.Context, v domain.Vault) (cli.ImportURL, error) {
-				setVaultPath(cfg, v.Path)
+				cfg.SetPluginVaultPath(v.Path)
 				return createImportURL(ctx, cfg)
 			},
 			ProofreadRecognition: func(ctx context.Context, v domain.Vault) (cli.ProofreadRecognition, error) {
-				setVaultPath(cfg, v.Path)
+				cfg.SetPluginVaultPath(v.Path)
 				return createProofreadRecognition(ctx, cfg, v)
 			},
 			ProofreadTranscript: func(ctx context.Context, v domain.Vault) (cli.ProofreadTranscript, error) {
-				setVaultPath(cfg, v.Path)
+				cfg.SetPluginVaultPath(v.Path)
 				return createProofreadTranscript(ctx, cfg, v)
 			},
 			Search: func(ctx context.Context, errorHandler port.ErrorHandler) (cli.Search, error) {
@@ -122,7 +109,7 @@ func createLinks(ctx context.Context, cfg container.Config) (cli.Links, error) {
 func createScan(
 	ctx context.Context, cfg container.Config, v domain.Vault, rebuild bool,
 ) (cli.Scan, error) {
-	setVaultPath(cfg, v.Path)
+	cfg.SetPluginVaultPath(v.Path)
 	indexing := cfg
 	indexing.ShouldRebuildIndex = rebuild
 	db, err := indexing.OpenIndex(ctx)
@@ -161,7 +148,7 @@ func closeIfOpen(closeFn func() error) {
 func createRecognition(
 	ctx context.Context, cfg container.Config, v domain.Vault, fetching func(),
 ) (cli.Recognise, error) {
-	setVaultPath(cfg, v.Path)
+	cfg.SetPluginVaultPath(v.Path)
 	if !cfg.RecogniserReady() {
 		fetching()
 	}
@@ -191,7 +178,7 @@ func createRecognition(
 func createTranscription(
 	ctx context.Context, cfg container.Config, v domain.Vault, fetching func(),
 ) (cli.Transcribe, error) {
-	setVaultPath(cfg, v.Path)
+	cfg.SetPluginVaultPath(v.Path)
 	if !cfg.TranscriberReady() {
 		fetching()
 	}
@@ -257,7 +244,7 @@ func createImportURL(ctx context.Context, cfg container.Config) (cli.ImportURL, 
 func createProofreadRecognition(
 	ctx context.Context, cfg container.Config, v domain.Vault,
 ) (cli.ProofreadRecognition, error) {
-	setVaultPath(cfg, v.Path)
+	cfg.SetPluginVaultPath(v.Path)
 	proofread, held, err := cfg.CreateRecognitionProofread()
 	if err != nil || !held {
 		return cli.ProofreadRecognition{}, err
@@ -276,7 +263,7 @@ func createProofreadRecognition(
 func createProofreadTranscript(
 	ctx context.Context, cfg container.Config, v domain.Vault,
 ) (cli.ProofreadTranscript, error) {
-	setVaultPath(cfg, v.Path)
+	cfg.SetPluginVaultPath(v.Path)
 	proofread, held, err := cfg.CreateTranscriptProofread()
 	if err != nil || !held {
 		return cli.ProofreadTranscript{}, err

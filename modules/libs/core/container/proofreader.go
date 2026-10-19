@@ -1,7 +1,6 @@
 package container
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
@@ -9,10 +8,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
-)
-
-var (
-	errProofreadingUnavailable = errors.New("proofreading plugin is unavailable or not installed")
 )
 
 // getProfile is the place a recognition is put right at, by the name a consumer
@@ -35,12 +30,7 @@ func (c Config) resolveInFlight(profile Profile) Profile {
 
 // ProofreaderReady says whether a proofreading plugin is available and ready.
 func (c Config) ProofreaderReady() bool {
-	if c.PluginHost != nil && !c.SafeMode {
-		if _, ok := c.PluginHost.FindPluginByCapability("proofreading"); ok {
-			return true
-		}
-	}
-	return false
+	return c.hasPlugin(plugin.CapabilityProofreading)
 }
 
 // Proofreader is what puts a recognition right at the profile named.
@@ -54,9 +44,9 @@ func (c Config) Proofreader(name string) (port.Proofreader, error) {
 	if _, err := c.getProfile(name); err != nil {
 		return nil, err
 	}
-	host, ok := c.findPluginHost("proofreading")
-	if !ok {
-		return nil, errProofreadingUnavailable
+	host, err := c.resolvePlugin(plugin.CapabilityProofreading)
+	if err != nil {
+		return nil, err
 	}
 	return plugin.OpenProofreaderBridge(host)
 }

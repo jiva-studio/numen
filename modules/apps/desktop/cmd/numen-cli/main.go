@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/plugincli"
@@ -27,15 +26,9 @@ func run() int {
 	// The settings are read here and nowhere below: an entry point says what it
 	// found, and nothing further down can reach the machine's own file.
 	cfg := platform.GetConfig()
-	if cfg.PluginHost != nil {
-		defer func() {
-			if host, ok := cfg.PluginHost.(interface {
-				TeardownAll(context.Context, time.Duration) error
-			}); ok {
-				_ = host.TeardownAll(context.Background(), 2*time.Second)
-			}
-		}()
-	}
+	defer func() {
+		_ = cfg.StopPlugins(context.Background())
+	}()
 
 	chosen, err := cfg.Settings()
 	if err != nil {

@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"connectrpc.com/connect"
@@ -11,10 +10,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-)
-
-var (
-	errNoEmbedderPlugin = errors.New("no active embedding plugin found")
 )
 
 // EmbedderPluginHost provides plugin resolution and activation for embeddings.
@@ -35,9 +30,9 @@ type EmbedderBridge struct {
 
 // OpenEmbedderBridge activates or connects to the embedding plugin and returns a port.Embedder.
 func OpenEmbedderBridge(ctx context.Context, host EmbedderPluginHost) (*EmbedderBridge, error) {
-	plugin, ok := host.FindPluginByCapability("embedding")
-	if !ok {
-		return nil, errNoEmbedderPlugin
+	plugin, err := host.ResolveCapability(CapabilityEmbedding)
+	if err != nil {
+		return nil, err
 	}
 
 	client, lease, err := openPlugin(ctx, host, plugin.Manifest.ID, numenv1connect.NewEmbeddingServiceClient)

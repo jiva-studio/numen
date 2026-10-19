@@ -90,8 +90,9 @@ func TestBookBridgeWithoutPlugin(t *testing.T) {
 	ctx := t.Context()
 
 	_, err := OpenBookBridge(ctx, host)
-	if !errors.Is(err, ErrNoBookPlugin) {
-		t.Fatalf("expected ErrNoBookPlugin, got %v", err)
+	var missing *port.UnavailableError
+	if !errors.As(err, &missing) || missing.Reason != port.PluginNotInstalled || missing.Capability != CapabilityBook {
+		t.Fatalf("got %v, want the book plugin not installed", err)
 	}
 }
 
