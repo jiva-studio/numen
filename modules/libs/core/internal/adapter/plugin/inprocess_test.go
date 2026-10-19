@@ -535,3 +535,27 @@ func TestAShutdownThatFailsOnAnUnactivatedBuiltInIsReported(t *testing.T) {
 		t.Error("the failed shutdown was not reported")
 	}
 }
+
+// A built-in plugin is served the host variables a launched process is given and no others.
+func TestABuiltInPluginIsNotGivenTheVariablesOfTheHostProcess(t *testing.T) {
+	t.Setenv("DESKTOP_ONLY_SETTING", "kept-out")
+	t.Setenv("PATH", "/usr/bin")
+	t.Setenv("DESKTOP_API_KEY", "secret")
+	host := newBuiltInHost(t)
+	backend := newBuiltInBackend()
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first agent"))
+
+	if _, err := host.EnsureActive(t.Context(), firstBuiltInID); err != nil {
+		t.Fatalf("EnsureActive: %v", err)
+	}
+
+	vars := backend.lastVars(t)
+	if vars["PATH"] != "/usr/bin" {
+		t.Errorf("PATH = %q, want the host's", vars["PATH"])
+	}
+	for _, name := range []string{"DESKTOP_ONLY_SETTING", "DESKTOP_API_KEY"} {
+		if _, held := vars[name]; held {
+			t.Errorf("the plugin was given %s", name)
+		}
+	}
+}

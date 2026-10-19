@@ -53,6 +53,8 @@ func TestWhatThePluginRulesRefuse(t *testing.T) {
 		{"ocr", numenModules + "plugins/embeddings/backend/engine", true},
 		{"agent", numenModules + "plugins/agent-acp/backend", true},
 		{"agent-acp", numenModules + "plugins/agent", true},
+		{"agent-codex", numenModules + "plugins/agent-antigravity/backend", true},
+		{"agent-antigravity", numenModules + "plugins/agent-codex", true},
 		{"ocr", numenModules + "plugins/ocr/backend/engine", false},
 		{"ocr", numenModules + "libs/plugin-sdk-go/server", false},
 		{"ocr", numenModules + "libs/protocol/gen/numen/v1", false},

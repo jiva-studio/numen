@@ -596,7 +596,7 @@ A plugin that holds the `ai:complete` permission asks the host for a completion 
   },
   "plugins": {
     "md.numen.proofreading": {
-      "agent": { "agent": "md.numen.agent-acp", "model": "" },
+      "agent": { "agent": "md.numen.agent-claude", "model": "sonnet" },
       "aiConsent": true
     }
   }
@@ -613,7 +613,7 @@ A plugin that holds the `ai:complete` permission asks the host for a completion 
 
 An agent that is not installed, is disabled or does not declare `ai.completion.provider` is answered `NO_ROUTE`, and so is a question when no plugin declares the capability; no other agent answers in its place. An agent that is installed and cannot be started or reached is answered `UNAVAILABLE`. A model the agent does not offer is the agent's own error, and reaches the plugin as it said it.
 
-`md.numen.agent-acp` answers through an ACP agent installed on the machine: Codex through `codex-acp`, Cursor through `cursor-agent acp`. Each question opens a session of its own in an empty folder, with no MCP servers, no file system or terminal and every permission refused, sends the system text and the question as one prompt, and closes the session. Its models are named `<program>/<model>`, as the agent reports them for a session (`codex/gpt-5`); an agent that reports none is offered by its name alone and answers with its own model. An empty model is the first installed agent with its own model. Claude Code is answered by `md.numen.agent-claude` alone.
+`md.numen.agent-acp` is the generic ACP client: it answers through the agents the settings name by an `acp:<program>` section with a `command`, one question to one session of its own in an empty folder, with no MCP servers, no file system or terminal and every permission refused. Its models are named `<program>/<model>`, as the agent reports them for a session; an agent that reports none is offered by its name alone and answers with its own model. An empty model is the first agent with its own model. Claude Code is answered by `md.numen.agent-claude` alone. `md.numen.agent-codex` (the `codex` CLI) and `md.numen.agent-antigravity` (the `agy` CLI) run tasks and declare no `ai.completion.provider`, so a question routed to them is answered `NO_ROUTE`.
 
 The file is read at every question, so a choice written while the application runs applies to the next one.
 

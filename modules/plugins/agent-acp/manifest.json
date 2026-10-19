@@ -1,9 +1,9 @@
 {
   "id": "md.numen.agent-acp",
-  "name": "ACP External Agents",
+  "name": "ACP Agents",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "ACP External coding agents runner and discovery (Antigravity, Codex, Cursor)",
+  "description": "Generic Agent Client Protocol client: discovers programs that speak ACP and answers completions through them",
   "capabilities": ["agent", "ai.agent.provider", "ai.completion.provider"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onCommand:askAgent", "onView:agent"],
