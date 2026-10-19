@@ -167,18 +167,6 @@ type PluginManifestSetting struct {
 	Step        float64              `json:"step,omitempty"`
 }
 
-// PluginAgentTool declares a custom tool provided or required by an agent plugin.
-type PluginAgentTool struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-}
-
-// PluginAgentConfig declares agent system prompt extensions and custom tools in the manifest.
-type PluginAgentConfig struct {
-	SystemPrompt string            `json:"systemPrompt"`
-	Tools        []PluginAgentTool `json:"tools"`
-}
-
 // PluginManifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.
 type PluginManifest struct {
 	ID               string                  `json:"id"`
@@ -199,8 +187,7 @@ type PluginManifest struct {
 	// Secrets are the names of the secrets, such as an API key, the plugin asks the
 	// host to keep. The host hands them over as Configure values, empty while a
 	// secret has no key, and never puts one in the environment or on the command line.
-	Secrets []string          `json:"secrets,omitempty"`
-	Agent   PluginAgentConfig `json:"agent,omitzero"`
+	Secrets []string `json:"secrets,omitempty"`
 }
 
 // ReadManifest decodes and validates a manifest from JSON input.

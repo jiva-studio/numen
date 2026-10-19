@@ -36,12 +36,6 @@ type SettingOptions = port.PluginSettingOptions
 // Setting declares one configuration field managed by the core host.
 type Setting = port.PluginManifestSetting
 
-// AgentTool declares a custom tool provided or required by an agent plugin.
-type AgentTool = port.PluginAgentTool
-
-// AgentConfig declares agent system prompt extensions and custom tools in the manifest.
-type AgentConfig = port.PluginAgentConfig
-
 // Manifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.
 type Manifest = port.PluginManifest
 

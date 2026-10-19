@@ -9,7 +9,7 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 | Module | Packages | Used by |
 |---|---|---|
 | `plugin-sdk-go` | `server`, `ai` | every native plugin; `ai` by proofreading |
-| `plugin-sdk-go/agent` | `agent/agentrun`, `agent/completion` | agent, agent-acp, agent-claude |
+| `plugin-sdk-go/agent` | `agent/agentrun`, `agent/completion`, `agent/harness`, `agent/toolcall` | agent, agent-acp, agent-claude |
 | `plugin-sdk-go/models` | `models` | embeddings, ocr, transcription |
 | `plugin-sdk-go/onnx` | `onnx` | embeddings, ocr, transcription |
 | `plugin-sdk-go/vault` | `vault` | reader-epub, reader-pdf |
@@ -27,6 +27,8 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 - `agentrun`: `Locate` finds an agent program on the path or in the places it is installed to; the registry of the runs an agent plugin has started and the session each conversation is on, and the supervision that ends a child and everything it started.
 - `ai.Complete(ctx, question)` asks the host for a model completion (needs the `ai:complete` permission); the host answers from the agent the plugin's `agent` setting names, else the default, and returns `ai.ErrNoConsent` until the person lets the plugin ask. The host endpoint comes from `NUMEN_HOST_PORT` and the token from `NUMEN_PLUGIN_TOKEN`.
 - `completion.Answer(ctx, question, run)` is the body of `CompletionService.Complete` for an agent plugin: it reads the question, answers the model's text, answers `UNAVAILABLE` (reason in the log) when `run` fails or sends no text, and returns a cancelled call as cancelled. `completion.RunCommand` runs a CLI with the prompt on stdin.
+- `harness.Server` is numen's own agent, served by the agent plugin and linkable into any process that hosts a vault: it answers `AgentService` and `CompletionService` from an OpenAI-compatible chat API whose base URL (OpenRouter by default), key and model `Configure` hands over. A task lists the vault's tools over MCP at `tools_url` with `tools_token`, offers the model the ones the task names as function tools, calls each one the model asks for through MCP and feeds the result back, for `max_steps` requests to the model (25 by default). It starts no process and builds for android and ios.
+- `toolcall.Describe(words, name, call, args)` is a call of a vault tool as a person is told about it, read by the `ToolDeclaration`s of the task; `toolcall.ReadPartialField` reads a field of arguments still arriving.
 
 ## Models
 

@@ -125,7 +125,7 @@ func createTestAgentPluginTree(t *testing.T, dir string) {
 		"name": "Agent Plugin",
 		"version": "1.0.0",
 		"description": "Agent and chat provider",
-		"capabilities": ["agent"],
+		"capabilities": ["ai.agent.provider"],
 		"targets": ["desktop.editor"],
 		"activationEvents": ["onCommand:askAgent"],
 		"permissions": [],
@@ -138,15 +138,6 @@ func createTestAgentPluginTree(t *testing.T, dir string) {
 			"type": "process",
 			"entrypoint": "bin/agent",
 			"serviceName": "numen.v1.AgentService"
-		},
-		"agent": {
-			"systemPrompt": "base prompt",
-			"tools": [
-				{
-					"name": "manifest_tool",
-					"description": "manifest tool description"
-				}
-			]
 		}
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
@@ -155,54 +146,8 @@ func createTestAgentPluginTree(t *testing.T, dir string) {
 }
 
 func TestAgentBridge(t *testing.T) {
-	serverImpl := &mockAgentServer{}
-	mux := http.NewServeMux()
-	testsupport.HandlePluginLifecycle(mux)
-	mux.Handle(numenv1connect.NewAgentServiceHandler(serverImpl))
-
-	server := httptest.NewServer(mux)
-	defer server.Close()
-
-	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
-
-	tmp := t.TempDir()
-	createTestAgentPluginTree(t, tmp)
-
-	host := NewHost("desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
-		t.Fatalf("Discover failed: %v", err)
-	}
-
-	plugin, ok := host.GetPlugin("md.numen.agent")
-	if !ok {
-		t.Fatalf("plugin not found")
-	}
-	if plugin.Manifest.Agent.SystemPrompt != "base prompt" {
-		t.Errorf("manifest system prompt = %q, want 'base prompt'", plugin.Manifest.Agent.SystemPrompt)
-	}
-	if len(plugin.Manifest.Agent.Tools) != 1 || plugin.Manifest.Agent.Tools[0].Name != "manifest_tool" {
-		t.Errorf("manifest tools = %+v, want 1 tool", plugin.Manifest.Agent.Tools)
-	}
-
-	cmd := exec.Command("sleep", "10")
-	if err := cmd.Start(); err != nil {
-		t.Fatalf("start mock proc failed: %v", err)
-	}
-	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
-	}()
-
-	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
-		return cmd.Process, io.NopCloser(r), nil
-	})
-
+	bridge := openTestBridge(t, &mockAgentServer{})
 	ctx := t.Context()
-	bridge, err := OpenAgentBridgeForPlugin(ctx, host, "md.numen.agent")
-	if err != nil {
-		t.Fatalf("OpenAgentBridgeForPlugin failed: %v", err)
-	}
 
 	run, err := bridge.StartRun(ctx, port.Task{
 		Question: "hello world",
@@ -290,43 +235,8 @@ func (s *floodAgentServer) AskAgent(
 }
 
 func TestAgentBridge_UnreadChannelDoesNotDeadlock(t *testing.T) {
-	mux := http.NewServeMux()
-	testsupport.HandlePluginLifecycle(mux)
-	mux.Handle(numenv1connect.NewAgentServiceHandler(&floodAgentServer{}))
-
-	server := httptest.NewServer(mux)
-	defer server.Close()
-
-	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
-
-	tmp := t.TempDir()
-	createTestAgentPluginTree(t, tmp)
-
-	host := NewHost("desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
-		t.Fatalf("Discover failed: %v", err)
-	}
-
-	cmd := exec.Command("sleep", "10")
-	if err := cmd.Start(); err != nil {
-		t.Fatalf("start mock proc failed: %v", err)
-	}
-	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
-	}()
-
-	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
-		return cmd.Process, io.NopCloser(r), nil
-	})
-
+	bridge := openTestBridge(t, &floodAgentServer{})
 	ctx := t.Context()
-	bridge, err := OpenAgentBridgeForPlugin(ctx, host, "md.numen.agent")
-	if err != nil {
-		t.Fatalf("OpenAgentBridgeForPlugin failed: %v", err)
-	}
-	defer bridge.Close()
 
 	run, err := bridge.StartRun(ctx, port.Task{Question: "test flood"})
 	if err != nil {
