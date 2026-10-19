@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/agenttest"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
@@ -17,7 +18,7 @@ func TestResolveCommandWithEmptyCommand(t *testing.T) {
 }
 
 func TestTheToolCallsOfCodexAreReported(t *testing.T) {
-	script := writeScript(t, "codex",
+	script := agenttest.WriteScript(t, "codex",
 		`echo '{"type":"item.started","item":{"type":"mcp_tool_call","name":"read_note","arguments":{"path":"a.md"}}}'`+"\n"+
 			`echo '{"type":"item.completed","item":{"type":"mcp_tool_call"}}'`+"\n"+
 			`echo '{"type":"item.completed","item":{"type":"agent_message"}}'`+"\n"+

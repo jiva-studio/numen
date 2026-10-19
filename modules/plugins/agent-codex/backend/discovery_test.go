@@ -1,13 +1,14 @@
 package main
 
 import (
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/agenttest"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
 func TestDiscoveryWithMockBins(t *testing.T) {
-	needsShell(t)
+	agenttest.NeedsShell(t)
 	binDir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(binDir, "codex"), []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
 		t.Fatal(err)

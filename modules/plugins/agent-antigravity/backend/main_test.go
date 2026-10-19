@@ -1,47 +1,21 @@
 package main
 
 import (
-	"net/http"
-	"net/http/httptest"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/agenttest"
 	"os"
 	"path/filepath"
-	"runtime"
 	"slices"
-	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
 
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
-
-// writeScript writes an executable shell script and answers with its path.
-func writeScript(t *testing.T, name, body string) string {
-	t.Helper()
-	needsShell(t)
-	path := filepath.Join(t.TempDir(), name)
-	if err := os.WriteFile(path, []byte("#!/bin/sh\n"+body), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	return path
-}
-
-// startAgent serves the agent over HTTP and answers with a client of it.
-func startAgent(t *testing.T) numenv1connect.AgentServiceClient {
-	t.Helper()
-	srv := &agentServer{}
-	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewAgentServiceHandler(srv))
-	testServer := httptest.NewServer(mux)
-	t.Cleanup(testServer.Close)
-	return numenv1connect.NewAgentServiceClient(http.DefaultClient, testServer.URL)
-}
 
 // A program that is not installed is listed so.
 func TestAProgramThatIsNotInstalledListsNoModels(t *testing.T) {
 	withoutAgentsAnywhere(t)
-	client := startAgent(t)
+	client := agenttest.Serve(t, &agentServer{})
 
 	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
 	if err != nil {
@@ -51,64 +25,6 @@ func TestAProgramThatIsNotInstalledListsNoModels(t *testing.T) {
 		if one.GetIsInstalled() || len(one.GetModels()) != 0 {
 			t.Errorf("%v", one)
 		}
-	}
-}
-
-// The run is started from the request: the command line, the folder, the model and the tools it is
-// given.
-func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
-	root := t.TempDir()
-	out := filepath.Join(t.TempDir(), "run")
-	script := writeScript(t, "agy",
-		"pwd > "+out+".dir\n"+
-			"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+".argv\n")
-	client := startAgent(t)
-
-	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
-		Prompt:     "the question",
-		Command:    []string{script, "--first"},
-		Root:       root,
-		Model:      "gpt-x",
-		ToolsUrl:   "http://127.0.0.1:1/mcp",
-		ToolsToken: "secret",
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	for stream.Receive() {
-	}
-	if err := stream.Err(); err != nil {
-		t.Fatal(err)
-	}
-
-	argv, err := os.ReadFile(out + ".argv")
-	if err != nil {
-		t.Fatal(err)
-	}
-	lines := strings.Split(strings.TrimSpace(string(argv)), "\n")
-	if lines[0] != "--first" || lines[1] != "-p" || lines[2] != "the question" {
-		t.Errorf("the arguments are %v", lines)
-	}
-	for _, want := range []string{"--output-format", "stream-json", "--model", "gpt-x"} {
-		if !slices.Contains(lines, want) {
-			t.Errorf("%q absent from %v", want, lines)
-		}
-	}
-	dir, err := os.ReadFile(out + ".dir")
-	if err != nil {
-		t.Fatal(err)
-	}
-	resolved, _ := filepath.EvalSymlinks(root)
-	if got := strings.TrimSpace(string(dir)); got != root && got != resolved {
-		t.Errorf("started in %q, want %q", got, root)
-	}
-}
-
-// needsShell skips a test that runs a script where the system has no shell to run it.
-func needsShell(t *testing.T) {
-	t.Helper()
-	if runtime.GOOS == "windows" {
-		t.Skip("the fixtures are shell scripts")
 	}
 }
 
@@ -124,14 +40,14 @@ func withoutAgentsAnywhere(t *testing.T) {
 
 // The program list names Antigravity, installed where it is found, and lists no models.
 func TestTheProgramListNamesAntigravityWithoutModels(t *testing.T) {
-	needsShell(t)
+	agenttest.NeedsShell(t)
 	t.Setenv("HOME", t.TempDir())
 	bin := t.TempDir()
 	if err := os.WriteFile(filepath.Join(bin, "agy"), []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	t.Setenv("PATH", bin)
-	client := startAgent(t)
+	client := agenttest.Serve(t, &agentServer{})
 
 	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
 	if err != nil {
@@ -151,7 +67,7 @@ func TestTheProgramListNamesAntigravityWithoutModels(t *testing.T) {
 // A command line the installation set counts as the program being installed.
 func TestAProgramIsInstalledUnderTheCommandLineTheInstallationSet(t *testing.T) {
 	withoutAgentsAnywhere(t)
-	client := startAgent(t)
+	client := agenttest.Serve(t, &agentServer{})
 
 	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{
 		Commands: []*numenv1.AgentProgramCommand{{Program: "antigravity", Command: []string{"/opt/agy"}}},
@@ -161,5 +77,31 @@ func TestAProgramIsInstalledUnderTheCommandLineTheInstallationSet(t *testing.T) 
 	}
 	if programs := got.Msg.GetPrograms(); len(programs) != 1 || !programs[0].GetIsInstalled() {
 		t.Errorf("the programs are %v", programs)
+	}
+}
+
+// The run is started from the request: the command line, the folder, the model and the prompt.
+func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
+	root := t.TempDir()
+	script, read := agenttest.RecordingProgram(t, "agy")
+
+	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &numenv1.AskAgentRequest{
+		Prompt:  "the question",
+		Command: []string{script, "--first"},
+		Root:    root,
+		Model:   "gemini-x",
+	})
+
+	dir, lines := read()
+	if lines[0] != "--first" || lines[1] != "-p" || lines[2] != "the question" {
+		t.Errorf("the arguments are %v", lines)
+	}
+	for _, want := range []string{"--output-format", "stream-json", "--model", "gemini-x"} {
+		if !slices.Contains(lines, want) {
+			t.Errorf("%q absent from %v", want, lines)
+		}
+	}
+	if !agenttest.IsDir(dir, root) {
+		t.Errorf("started in %q, want %q", dir, root)
 	}
 }

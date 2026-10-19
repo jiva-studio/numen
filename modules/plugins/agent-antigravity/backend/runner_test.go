@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/agenttest"
 	"slices"
 	"testing"
 
@@ -29,7 +30,7 @@ func TestTheSessionOfTheConversationIsHandedToTheNextRun(t *testing.T) {
 }
 
 func TestTheSessionAndTheContentOfAntigravityAreReported(t *testing.T) {
-	script := writeScript(t, "agy",
+	script := agenttest.WriteScript(t, "agy",
 		`echo '{"session_id":"s-1","content":"hello"}'`+"\n"+
 			`echo '{"tool_calls":[{"name":"read_note","arguments":{"path":"a.md"}}]}'`+"\n")
 	var reg agentrun.Registry
