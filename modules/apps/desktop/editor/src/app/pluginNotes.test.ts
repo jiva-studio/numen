@@ -103,6 +103,69 @@ describe('createPluginNotes', () => {
     await expect(notes.writeNote('a.md', 'refused')).rejects.toThrow('could not be written')
   })
 
+  it('answers a read with the writes made before it and none made after it', async () => {
+    const deps = createDeps()
+    const notes = createPluginNotes(deps)
+
+    const first = notes.writeNote('a.md', 'A')
+    const read = notes.readNote('a.md')
+    const second = notes.writeNote('a.md', 'B')
+
+    getPending(deps.pending, 0).finish()
+    expect(await read).toEqual({ body: 'A' })
+    expect(deps.write).toHaveBeenCalledTimes(2)
+
+    getPending(deps.pending, 1).finish()
+    await Promise.all([first, second])
+    expect(deps.stored.get('a.md')).toBe('B')
+  })
+
+  it('does not merge a write made after a read into a write made before it', async () => {
+    const deps = createDeps()
+    const notes = createPluginNotes(deps)
+
+    const running = notes.writeNote('a.md', 'A')
+    const before = notes.writeNote('a.md', 'B')
+    const read = notes.readNote('a.md')
+    const after = notes.writeNote('a.md', 'C')
+
+    getPending(deps.pending, 0).finish()
+    await tick()
+    getPending(deps.pending, 1).finish()
+    expect(await read).toEqual({ body: 'B' })
+
+    getPending(deps.pending, 2).finish()
+    await Promise.all([running, before, after])
+    expect(deps.write.mock.calls.map((call) => call[1])).toEqual(['A', 'B', 'C'])
+  })
+
+  it('does not let a refused write reject or block the writes after it', async () => {
+    const deps = createDeps()
+    const notes = createPluginNotes(deps)
+    deps.write.mockResolvedValueOnce({ ok: false, error: 'changed' } as WriteResult)
+
+    await expect(notes.writeNote('a.md', 'refused')).rejects.toThrow('could not be written')
+
+    const next = notes.writeNote('a.md', 'kept')
+    getPending(deps.pending, 0).finish()
+    await next
+    expect(deps.stored.get('a.md')).toBe('kept')
+  })
+
+  it('does not let a failed write reject the callers of the writes queued behind it', async () => {
+    const deps = createDeps()
+    const notes = createPluginNotes(deps)
+    deps.write.mockRejectedValueOnce(new Error('unreachable'))
+
+    const failed = notes.writeNote('a.md', 'lost')
+    const queued = notes.writeNote('a.md', 'kept')
+    await expect(failed).rejects.toThrow('unreachable')
+
+    getPending(deps.pending, 0).finish()
+    await queued
+    expect(deps.stored.get('a.md')).toBe('kept')
+  })
+
   it('writes again once the previous writes of the path are done', async () => {
     const deps = createDeps()
     const notes = createPluginNotes(deps)
@@ -112,6 +175,7 @@ describe('createPluginNotes', () => {
     await first
 
     const second = notes.writeNote('a.md', 'two')
+    await tick()
     expect(deps.write).toHaveBeenCalledTimes(2)
     getPending(deps.pending, 1).finish()
     await second

@@ -23,45 +23,49 @@ export interface PluginNotes {
 const NOT_WRITTEN = 'the note could not be written'
 const UNREADABLE = 'the frontmatter of this note cannot be read'
 
+interface QueuedWrite {
+  body: string
+  done: Promise<void>
+}
+
 /**
- * Each path has one write in the air at a time, and the newest body queued
- * behind it is the next write. A read of a path answers once the writes of that
- * path have landed.
+ * Each path has one write in the air at a time. Writes made while one is in the
+ * air share the next write, which carries the newest body. A read of a path
+ * answers after the writes made before it and none made after it, and a write
+ * that fails rejects only the callers that asked for it.
  */
 export const createPluginNotes = (deps: PluginNotesDeps): PluginNotes => {
-  const queued = new Map<string, string>()
-  const running = new Map<string, Promise<void>>()
-
-  const writeQueued = async (path: string): Promise<void> => {
-    let failure: unknown = null
-    for (let body = queued.get(path); body !== undefined; body = queued.get(path)) {
-      queued.delete(path)
-      try {
-        const answered = await deps.write(path, body, null)
-        failure = answered.ok ? null : new Error(NOT_WRITTEN)
-      } catch (error) {
-        failure = error
-      }
-    }
-    running.delete(path)
-    if (failure !== null) throw failure
-  }
+  const queued = new Map<string, QueuedWrite>()
+  const tails = new Map<string, Promise<void>>()
 
   const writeNote = (path: string, body: string): Promise<void> => {
-    queued.set(path, body)
-    const inFlight = running.get(path) ?? writeQueued(path)
-    running.set(path, inFlight)
-    return inFlight
-  }
-
-  const waitForWrites = async (path: string): Promise<void> => {
-    await running.get(path)?.catch(() => undefined)
+    const waiting = queued.get(path)
+    if (waiting) {
+      waiting.body = body
+      return waiting.done
+    }
+    const job: QueuedWrite = { body, done: Promise.resolve() }
+    const run = async (): Promise<void> => {
+      if (queued.get(path) === job) queued.delete(path)
+      const answered = await deps.write(path, job.body, null)
+      if (!answered.ok) throw new Error(NOT_WRITTEN)
+    }
+    queued.set(path, job)
+    const before = tails.get(path)
+    job.done = before ? before.then(run) : run()
+    const settled: Promise<void> = job.done
+      .catch(() => undefined)
+      .then(() => {
+        if (tails.get(path) === settled) tails.delete(path)
+      })
+    tails.set(path, settled)
+    return job.done
   }
 
   const readNote = async (path: string): Promise<{ body: string; error?: string }> => {
-    const answered = await (running.has(path)
-      ? waitForWrites(path).then(() => deps.read(path))
-      : deps.read(path))
+    const before = tails.get(path)
+    queued.delete(path)
+    const answered = await (before ? before.then(() => deps.read(path)) : deps.read(path))
     if (answered.ok) return { body: answered.value.body }
     return { body: '', error: ERROR_MESSAGES[convertErrorCode(answered.error)] || UNREADABLE }
   }

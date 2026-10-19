@@ -221,6 +221,39 @@ describe('createCustomTabKind (loading)', () => {
   })
 })
 
+describe('createCustomTabKind (failed writes)', () => {
+  const host = (writeNote: (path: string, body: string) => Promise<void>) => ({
+    registerKind: () => vi.fn(),
+    registerExtensionReader: () => vi.fn(),
+    openTab: () => Promise.resolve(''),
+    writeNote,
+  })
+  const open = (writeNote: (path: string, body: string) => Promise<void>) =>
+    createCustomTabKind(
+      'md.numen.editor-markdown',
+      { kind: 'note', component: null, title: 'Markdown Note' },
+      host(writeNote),
+    ).open('notes/test.md', 'tab') as {
+      errorMessage: { value: string }
+      updateBody: (body: string) => void
+      save: () => void
+    }
+
+  it('shows the message of a write that was rejected', async () => {
+    const state = open(() => Promise.reject(new Error('the note could not be written')))
+    state.updateBody('edited')
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.errorMessage.value).toBe('the note could not be written')
+  })
+
+  it('shows the message of a save that was rejected', async () => {
+    const state = open(() => Promise.reject(new Error('unreachable')))
+    state.save()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.errorMessage.value).toBe('unreachable')
+  })
+})
+
 describe('createReaderTabKind (source resolution)', () => {
   it('identifies source via registration source property', () => {
     const kind = createReaderTabKind('audio-plugin', {
