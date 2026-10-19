@@ -154,7 +154,7 @@ const openPresetTab = async (
     writeMessage: () => {},
     today: () => NOW,
   })
-  const state = await kind.kind.open('Steady.md')
+  const state = await kind.kind.open('Steady.md', 'tab')
   // The read and the curve behind it are two answers, and both are awaited.
   await Promise.resolve()
   await Promise.resolve()
@@ -223,7 +223,7 @@ const opening = async (file: Partial<Settings>) => {
     writeMessage: () => {},
     today: () => NOW,
   })
-  return { tab: await kind.kind.open('Steady.md'), written, resolveRead }
+  return { tab: await kind.kind.open('Steady.md', 'tab'), written, resolveRead }
 }
 
 describe('the value the goal steers', () => {

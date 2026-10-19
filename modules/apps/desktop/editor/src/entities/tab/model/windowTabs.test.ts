@@ -119,7 +119,9 @@ describe('a tab of a kind', () => {
     expect(onScreen(window.layout.value)).toEqual([id])
     expect(window.getTab(id)?.kind.kind).toBe('nothing')
     expect(window.getTab(id)?.kind.getTitle?.(window.getTab(id)?.state)).toBe('Plugin unavailable')
-    expect(window.getTab(id)?.kind.getOpenTab?.(window.getTab(id)?.state)).toEqual({ path: 'One.md' })
+    expect(window.getTab(id)?.kind.getOpenTab?.(window.getTab(id)?.state)).toEqual({
+      path: 'One.md',
+    })
   })
 })
 
@@ -396,9 +398,10 @@ describe('reconciling tabs for a path', () => {
     expect(window.getTab(noteTabId)).not.toBeNull()
   })
 
-  it('preserves tool tabs like plex when reconciling file tabs', async () => {
+  it('preserves the tabs of a kind that declares itself a tool', async () => {
     const plexKind = kind({
       kind: 'plex',
+      isTool: true,
       getOpenTab: (state: { at: string }) => ({ path: state.at }),
     })
     const noteKind = kind({
@@ -839,5 +842,104 @@ describe('a tab of a kind that is not registered', () => {
 
     expect(opened).not.toBe(missing)
     expect(window.getTab(opened)?.state).toEqual({ at: 'b', title: 'b' })
+  })
+})
+
+describe('the identity a kind is told as its tab opens', () => {
+  it('is the one the window files the tab under', async () => {
+    const given: string[] = []
+    const thing = kind({
+      open: (at: string, id: string) => {
+        given.push(id)
+        return { at, title: at }
+      },
+    })
+    const window = useWindowTabs()
+    window.registerKinds([thing.one])
+
+    const id = await window.openTabOfKind('thing', 'Note.md')
+
+    expect(given).toEqual([id])
+  })
+})
+
+describe('the kinds the window holds', () => {
+  it('are the ones registered, and a kind let go of is no longer held', () => {
+    const window = useWindowTabs()
+    const release = window.registerKind(kind().one)
+
+    expect(window.hasKind('thing')).toBe(true)
+    expect(window.hasKind('other')).toBe(false)
+    release()
+    expect(window.hasKind('thing')).toBe(false)
+  })
+})
+
+describe('a window opened with nothing to restore', () => {
+  const placed = (name: string, pane: 'main' | 'aside', order: number) =>
+    kind({ kind: name, placement: { pane, order } }).one
+
+  it('opens one tab of every placed kind, in the pane and the order each declares', async () => {
+    const window = useWindowTabs()
+    window.registerKinds([
+      placed('files', 'aside', 1),
+      kind({ kind: 'unplaced' }).one,
+      placed('agent', 'aside', 0),
+      placed('plex', 'main', 0),
+    ])
+
+    await window.openPlacedTabs(() => {
+      throw new Error('no placed tab fails here')
+    })
+
+    const panes = getPanes(window.layout.value.root)
+    expect(panes.map((one) => [one.id, one.tabs.map((id) => id.split(':')[0])])).toStrictEqual([
+      ['main', ['plex']],
+      ['aside', ['agent', 'files']],
+    ])
+    expect(window.tabs.value.map((tab) => tab.id.split(':')[0])).toStrictEqual([
+      'plex',
+      'agent',
+      'files',
+    ])
+  })
+
+  it('gives the whole window to the aside kinds where no kind is placed in the main pane', async () => {
+    const window = useWindowTabs()
+    window.registerKinds([placed('agent', 'aside', 0)])
+
+    await window.openPlacedTabs(() => {
+      throw new Error('no placed tab fails here')
+    })
+
+    expect(getPanes(window.layout.value.root).map((one) => one.id)).toStrictEqual(['main'])
+    expect(onScreen(window.layout.value).map((id) => id.split(':')[0])).toStrictEqual(['agent'])
+  })
+})
+
+describe('a placed kind whose tab fails to open', () => {
+  it('is told, left out of the layout, and lets go of what it started', async () => {
+    const failure = new Error('the plugin is gone')
+    const stopped: string[] = []
+    const window = useWindowTabs()
+    window.registerKinds([
+      kind({ kind: 'agent', placement: { pane: 'aside', order: 0 } }).one,
+      kind({
+        kind: 'plex',
+        placement: { pane: 'main', order: 0 },
+        open: () => {
+          onScopeDispose(() => stopped.push('plex'))
+          throw failure
+        },
+      }).one,
+    ])
+    const told: [string, unknown][] = []
+
+    await window.openPlacedTabs((name, error) => told.push([name, error]))
+
+    expect(told).toStrictEqual([['plex', failure]])
+    expect(stopped).toStrictEqual(['plex'])
+    expect(onScreen(window.layout.value).map((id) => id.split(':')[0])).toStrictEqual(['agent'])
+    expect(window.tabs.value.map((tab) => tab.id.split(':')[0])).toStrictEqual(['agent'])
   })
 })

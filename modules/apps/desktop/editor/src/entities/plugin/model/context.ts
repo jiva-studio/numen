@@ -55,7 +55,8 @@ export function createPluginContext(
     subscriptions,
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
-    registerTabKind: (reg: TabKindRegistration) => add(host.registerTabKind(pluginId, reg)),
+    registerTabKind: <State>(reg: TabKindRegistration<State>) =>
+      add(host.registerTabKind(pluginId, reg)),
     registerCommand: (reg: CommandRegistration) => add(host.registerCommand(pluginId, reg)),
     registerAgentProvider: (reg: AgentProviderRegistration) =>
       add(host.registerAgentProvider(pluginId, reg)),

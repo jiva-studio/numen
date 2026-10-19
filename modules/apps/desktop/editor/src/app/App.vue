@@ -53,6 +53,7 @@ const linkMenu = useTabLinkMenu({
   tabLinks,
   getTabs: () => held.tabs.value,
   getKind: (id) => held.getTab(id)?.kind.kind,
+  isLinkable: (id) => held.getTab(id)?.kind.navigate !== undefined,
 })
 const writeMessage = log.getWriter('window')
 
@@ -134,6 +135,7 @@ function onTabContextMenu(tabId: string, at: { x: number; y: number }) {
       :at="linkMenu.at.value"
       :is-linked="linkMenu.isLinked.value"
       :linked-target-title="linkMenu.linkedTargetTitle.value"
+      :get-tab-icon="getTabIcon"
       @link="linkMenu.link"
       @unlink="linkMenu.unlink"
       @close="linkMenu.close"

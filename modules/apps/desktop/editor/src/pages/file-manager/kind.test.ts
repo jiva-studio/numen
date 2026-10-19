@@ -48,7 +48,7 @@ const createKindOver = (tree: FileTree, deps: Partial<FilesTabDeps> = {}) =>
 describe('a files tab', () => {
   it('is called Files and is one tab per window', () => {
     const kind = createKindOver(createTreeOf().tree)
-    const state = kind.open('')
+    const state = kind.open('', 'tab')
 
     expect(kind.kind).toBe(FILES)
     expect(kind.getTitle?.(state)).toBe('Files')
@@ -58,7 +58,7 @@ describe('a files tab', () => {
   it('opens on the root of the vault', () => {
     const { tree, openFolder } = createTreeOf()
 
-    createKindOver(tree).open('')
+    createKindOver(tree).open('', 'tab')
 
     expect(openFolder).toHaveBeenCalledExactlyOnceWith(ROOT)
   })
@@ -66,7 +66,7 @@ describe('a files tab', () => {
   it('lets go of its tree when it closes, and goes', () => {
     const { tree, close } = createTreeOf()
     const kind = createKindOver(tree)
-    const state = kind.open('')
+    const state = kind.open('', 'tab')
 
     expect(kind.onClose?.(state, FILES)).toBe(true)
     expect(close).toHaveBeenCalledTimes(1)
@@ -77,7 +77,7 @@ describe('a path selected in a files tab', () => {
   it('is reported with the tab it was selected in, the first of them', async () => {
     const { tree, selectedPaths } = createTreeOf()
     const onSelectPath = vi.fn<NonNullable<FilesTabDeps['onSelectPath']>>()
-    const state = createKindOver(tree, { onSelectPath }).open('')
+    const state = createKindOver(tree, { onSelectPath }).open('', 'tab')
 
     selectedPaths.value = ['notes/a.md', 'notes/b.md']
     await nextTick()
@@ -88,7 +88,7 @@ describe('a path selected in a files tab', () => {
   it('is not reported where the selection is emptied', async () => {
     const { tree, selectedPaths } = createTreeOf()
     const onSelectPath = vi.fn<NonNullable<FilesTabDeps['onSelectPath']>>()
-    createKindOver(tree, { onSelectPath }).open('')
+    createKindOver(tree, { onSelectPath }).open('', 'tab')
 
     selectedPaths.value = ['notes/a.md']
     await nextTick()
@@ -101,7 +101,7 @@ describe('a path selected in a files tab', () => {
 
   it('is taken where the window asks for no report', async () => {
     const { tree, selectedPaths } = createTreeOf()
-    createKindOver(tree).open('')
+    createKindOver(tree).open('', 'tab')
 
     selectedPaths.value = ['notes/a.md']
 
@@ -144,5 +144,24 @@ describe('a path revealed in the files tab', () => {
     const files = createFilesKind(handle, () => ({}) as FileTree, {} as FilesTabDeps)
 
     await expect(files.revealPath('notes/a.md')).resolves.toBeUndefined()
+  })
+})
+
+describe('a files tab a linked tab moves', () => {
+  it('reveals the path it is moved to, a note or not', async () => {
+    const revealPath = vi.fn(async (_path: string) => {})
+    const kind = createKindOver(createTreeOf().tree)
+    const state = { list: { revealPath } } as unknown as FilesTabState
+
+    await kind.navigate?.(state, 'Books/Guide.pdf', '')
+
+    expect(revealPath).toHaveBeenCalledWith('Books/Guide.pdf')
+  })
+
+  it('is a tool the trailing pane opens with, after the agent', () => {
+    const kind = createKindOver(createTreeOf().tree)
+
+    expect(kind.isTool).toBe(true)
+    expect(kind.placement).toStrictEqual({ pane: 'aside', order: 1 })
   })
 })

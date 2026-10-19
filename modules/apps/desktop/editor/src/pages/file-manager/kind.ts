@@ -36,6 +36,9 @@ export function createFilesKind(
       state.list.close()
       return true
     },
+    navigate: (state, path) => state.list.revealPath(path),
+    isTool: true,
+    placement: { pane: 'aside', order: 1 },
   }
 
   const revealPath = async (path: string) => {

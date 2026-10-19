@@ -2,10 +2,9 @@
 /**
  * Popover menu for linking a tab with another eligible open tab or unlinking it.
  */
-import { computed } from 'vue'
+import { computed, type Component } from 'vue'
 import { Menu, type Position } from '@numen/ui'
-import { Link2Off, type LucideIcon } from '@lucide/vue'
-import { findTabKindIcon } from '@/entities/tab'
+import { Link2Off } from '@lucide/vue'
 import type { EligibleLinkTab, TabId } from '../types'
 import { createLinkMenuItems, UNLINK_ID } from '../lib/menu'
 
@@ -15,6 +14,7 @@ const props = withDefaults(
     tabId: TabId
     eligibleTabs: readonly EligibleLinkTab[]
     at: Position
+    getTabIcon: (tab: TabId) => Component | null
     isLinked?: boolean
     linkedTargetTitle?: string
   }>(),
@@ -47,10 +47,9 @@ function onDismiss() {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-function getIconFor(id: string): LucideIcon | null {
+function getIconFor(id: string): Component | null {
   if (id === UNLINK_ID) return Link2Off
-  const tab = props.eligibleTabs.find((t) => t.id === id)
-  return tab ? findTabKindIcon(tab.kind) : null
+  return props.eligibleTabs.some((t) => t.id === id) ? props.getTabIcon(id) : null
 }
 </script>
 

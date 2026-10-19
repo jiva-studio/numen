@@ -10,14 +10,13 @@ describe('createFilesKind with linked tabs', () => {
     const tabLinks = useTabLinks()
     const held = useWindowTabs()
 
-    const loadInTabMock = vi.fn()
+    const navigateNote = vi.fn()
     const editingMock = {
       notes: { applyPathChanges: vi.fn() },
       making: { createUntitled: vi.fn() },
-      noted: { loadInTab: loadInTabMock },
-    } as unknown as Parameters<typeof useTabSync>[0]['editing']
+    } as never
 
-    const tabSync = useTabSync({ held, tabLinks, editing: editingMock })
+    const tabSync = useTabSync({ held, tabLinks, onError: vi.fn() })
 
     const entriesMap = new Map([
       [
@@ -58,6 +57,7 @@ describe('createFilesKind with linked tabs', () => {
       open: () => ({}),
       getTitle: () => 'My Note',
       pane: {},
+      navigate: navigateNote,
     } as never
 
     held.registerKinds([filesKind.files.kind, noteKind])
@@ -68,7 +68,10 @@ describe('createFilesKind with linked tabs', () => {
     tabLinks.linkTabs(filesTabId, noteTabId)
     held.handle.show(filesTabId)
 
-    const filesState = held.getTabStateIn<{ list: { getEntryAt: (p: string) => unknown }; activate: (p: string) => void }>(filesTabId, 'files')
+    const filesState = held.getTabStateIn<{
+      list: { getEntryAt: (p: string) => unknown }
+      activate: (p: string) => void
+    }>(filesTabId, 'files')
     if (!filesState) throw new Error('filesState expected')
     vi.spyOn(filesState.list, 'getEntryAt').mockImplementation(
       ((p: string) => entriesMap.get(p) as unknown) as never,
@@ -76,8 +79,8 @@ describe('createFilesKind with linked tabs', () => {
 
     filesState.activate('folder/target.md')
 
-    expect(loadInTabMock).toHaveBeenCalledWith(
-      noteTabId.replace(/^note:/, ''),
+    expect(navigateNote).toHaveBeenCalledWith(
+      held.getTab(noteTabId)?.state,
       'folder/target.md',
       'target.md',
     )

@@ -44,11 +44,15 @@ export const CONVERSATION = 'conversation'
 export const generateId = (kind: string): string => `${kind}:${crypto.randomUUID()}`
 
 /**
- * The plex with the room, and one pane along the trailing edge holding the
- * agent in front of the files. The person begins in the plex.
+ * The main tabs with the room, and one pane along the trailing edge holding the
+ * aside tabs, the first of each in front. The person begins in the main pane.
+ * Where one side holds nothing, the other is the whole window.
  */
-export const createWorkspace = (plex: string, agent: string, files: string): Workspace => ({
-  root: branch('root', [pane('main', [plex]), pane('aside', [agent, files])], [0.72, 0.28]),
-  axis: 'horizontal',
-  focus: 'main',
-})
+export const createWorkspace = (main: readonly string[], aside: readonly string[]): Workspace => {
+  const only = aside.length === 0 ? main : aside
+  const root =
+    main.length > 0 && aside.length > 0
+      ? branch('root', [pane('main', main), pane('aside', aside)], [0.72, 0.28])
+      : pane('main', only)
+  return { root, axis: 'horizontal', focus: 'main' }
+}

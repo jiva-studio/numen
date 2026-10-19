@@ -51,14 +51,51 @@ export interface ReaderPaneProps {
   readonly state?: unknown
 }
 
-// TabKindRegistration registers a custom workspace tab.
-export interface TabKindRegistration {
+// TabTarget is what a command asked over one tab is over.
+export interface TabTarget {
+  readonly path?: string
+  readonly title?: string
+  readonly file?: string
+  readonly source?: 'note' | 'book' | 'recording' | 'url' | 'other' | null
+}
+
+// TabPlacement is where a tab of a kind opens in a window that starts with nothing to restore.
+export interface TabPlacement {
+  // The main pane, or the pane along the trailing edge.
+  readonly pane: 'main' | 'aside'
+  // The tab's place among the tabs of that pane, lowest first. The first one is in front.
+  readonly order: number
+}
+
+// TabKindRegistration registers a kind of workspace tab. A registration that
+// declares open owns what its tabs hold; one that does not holds the note at
+// the path its tab opens on.
+export interface TabKindRegistration<State = unknown> {
   kind: string
   component: unknown
   title?: string
   source?: 'note' | 'book' | 'recording' | 'url' | 'other' | string
   actions?: Record<string, (at: string, ...args: unknown[]) => unknown>
-  onClose?: (state: unknown, id: string) => boolean
+  onClose?(state: State, id: string): boolean
+  // What the tab `id` holds, made as it opens on `at`, inside the tab's effect scope.
+  open?(at: string, id: string): State
+  getTitle?(state: State): string
+  // The identity a tab takes from what it opens on: the same `at` opened twice is one tab.
+  identity?(at: string): string
+  onShow?(state: State, id: string): void
+  // A key struck while the tab is in front, answered with whether the tab took it.
+  onKeyPress?(state: State, event: KeyboardEvent): boolean
+  getTarget?(state: State): TabTarget
+  getOpenTab?(state: State): { readonly path: string }
+  // The window is going; what the tab holds is released without asking.
+  onDestroy?(state: State, id: string): void
+  // The tab moves to a vault path a tab linked to it moved to. A kind that declares it can be linked.
+  navigate?(state: State, path: string, title: string): void | Promise<void>
+  // Its tabs stand beside files, and a file opened on a path never closes one of them.
+  isTool?: boolean
+  // The icon its tabs carry before their title.
+  icon?: unknown
+  placement?: TabPlacement
 }
 
 // CommandRegistration registers a palette or keybound action.
@@ -102,7 +139,7 @@ export interface PluginContext {
   readonly pluginId: string
   readonly subscriptions: Disposable[]
   registerReader(registration: ReaderRegistration): Disposable
-  registerTabKind(registration: TabKindRegistration): Disposable
+  registerTabKind<State>(registration: TabKindRegistration<State>): Disposable
   registerCommand(registration: CommandRegistration): Disposable
   registerAgentProvider(registration: AgentProviderRegistration): Disposable
   getSetting<T = unknown>(key: string): T | undefined

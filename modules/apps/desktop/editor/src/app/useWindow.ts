@@ -3,10 +3,11 @@
  * few things one kind asks of another.
  */
 import { watch } from 'vue'
+import { formatErrorMessage } from '@numen/wire'
 import { core } from './vault'
 import { resolveDeckPreset } from './deckPreset'
 import { runSupport, type CommandTarget, type NoteLookup } from '@/features/command-palette'
-import { AGENT, FILES, PLEX, createWorkspace, fileOpeners, useWindowTabs } from '@/entities/tab'
+import { fileOpeners, useWindowTabs } from '@/entities/tab'
 import { createMessageLog } from '@/shared/notices/messages'
 import { createMediaTypeProbe } from '@/entities/media'
 import { WORDS as words } from '@/shared/words'
@@ -95,6 +96,7 @@ interface AppLifecycleDeps {
   window: ReturnType<typeof useWindowDisplay>
   editing: ReturnType<typeof useNoteEditors>
   pluginLoader?: import('@/features/plugin-loader').PluginLoader
+  writeMessage: MessageWriter
 }
 
 function initAppLifecycle(deps: AppLifecycleDeps) {
@@ -118,10 +120,9 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
         return
       }
     }
-    const plex = await held.openTabOfKind(PLEX)
-    const talk = await held.openTabOfKind(AGENT)
-    const tree = await held.openTabOfKind(FILES)
-    held.layout.value = createWorkspace(plex, talk, tree)
+    await held.openPlacedTabs((kind, error) =>
+      deps.writeMessage(`The ${kind} tab did not open: ${formatErrorMessage(error)}`, 'error'),
+    )
   }
 
   useAppBootstrap({
@@ -200,7 +201,11 @@ function initWindowServices(
     day: () => settingsHolder.current!.dayBegins.day.value,
   })
 
-  const tabSync = useTabSync({ held: base.held, tabLinks: base.tabLinks, editing })
+  const tabSync = useTabSync({
+    held: base.held,
+    tabLinks: base.tabLinks,
+    onError: (error) => base.writeMessage(formatErrorMessage(error), 'error'),
+  })
 
   const window = useWindowDisplay(
     core,
@@ -333,6 +338,7 @@ export const useWindow = () => {
     window,
     editing,
     pluginLoader: base.pluginLoader,
+    writeMessage: base.writeMessage,
   })
 
   return {

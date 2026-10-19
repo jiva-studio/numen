@@ -22,6 +22,7 @@ export function useSettingsTab(handle: WindowHandle, installation: Installation)
     getTitle: () => words.settings,
     pane: SettingsTab,
     identity: () => SETTINGS,
+    isTool: true,
   }
 
   /** The settings put in front of the person. */

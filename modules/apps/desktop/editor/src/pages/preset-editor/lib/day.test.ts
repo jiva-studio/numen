@@ -99,7 +99,7 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
     writeMessage: () => {},
     today: () => DAY,
   })
-  const state = await kind.kind.open('Sanskrit.md')
+  const state = await kind.kind.open('Sanskrit.md', 'tab')
   for (let i = 0; i < 10; i += 1) await Promise.resolve()
   return { state, written }
 }

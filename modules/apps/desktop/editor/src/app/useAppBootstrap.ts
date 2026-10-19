@@ -21,10 +21,10 @@ export function useAppBootstrap(deps: BootstrapDeps) {
   onMounted(async () => {
     await deps.loadVaults()
     await deps.startSettings()
+    await deps.startPlugins?.()
     await deps.startLayout()
     void deps.startWindow()
     deps.startEditing()
-    await deps.startPlugins?.()
   })
 
   onUnmounted(() => {
