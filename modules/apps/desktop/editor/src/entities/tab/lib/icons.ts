@@ -6,13 +6,11 @@ import {
   BookText,
   Braces,
   FileText,
-  FolderTree,
   Gauge,
   Globe,
   Layers,
   LayoutTemplate,
   SlidersHorizontal,
-  Waypoints,
   type LucideIcon,
 } from '@lucide/vue'
 import {
@@ -20,9 +18,7 @@ import {
   BOOK,
   DECK,
   DOCUMENT,
-  FILES,
   NOTE,
-  PLEX,
   PRESET,
   RECORDING,
   SETTINGS,
@@ -32,9 +28,7 @@ import {
 } from './workspace'
 
 const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
-  [PLEX, Waypoints],
   [AGENT, Bot],
-  [FILES, FolderTree],
   [NOTE, FileText],
   [DOCUMENT, BookOpen],
   [BOOK, BookText],

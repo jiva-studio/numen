@@ -7,7 +7,7 @@
 import { ref } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
 import { createAnswerGuard } from '../lib/questions'
-import { getRenamedPath } from '../lib/paths'
+import { getRenamedPath } from '@numen/plugin-sdk'
 import { areNeighbourhoodsEqual } from '../lib/picture'
 import type { Neighbourhood, PathRename } from '../types'
 

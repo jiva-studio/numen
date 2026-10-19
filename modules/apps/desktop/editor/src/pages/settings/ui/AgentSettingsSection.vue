@@ -34,7 +34,9 @@ const hasAgent = computed(() => activeProgram.value !== '')
 
 const agentModelPath = computed(() => ['agent', activeProgram.value, 'model'] as const)
 const agentStepsPath = computed(() => ['agent', activeProgram.value, 'max_steps'] as const)
-const agentHooksPath = computed(() => ['agent', activeProgram.value, 'reads_hooks_and_skills'] as const)
+const agentHooksPath = computed(
+  () => ['agent', activeProgram.value, 'reads_hooks_and_skills'] as const,
+)
 
 const getChoices = (at: readonly string[]): readonly SelectChoice[] =>
   createModelChoices(fields, at, words)

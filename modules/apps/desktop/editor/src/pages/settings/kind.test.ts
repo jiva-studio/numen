@@ -42,6 +42,7 @@ const installation = (): Installation =>
     latestDayStartTime: ref('12:00'),
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
+    retryPlugin: vi.fn(),
     chooseDayStartTime: vi.fn(),
     getSetting: () => undefined,
     getModels: () => [],

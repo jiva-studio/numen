@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, type PropType } from 'vue'
 import { mount } from '@vue/test-utils'
-import type { TabKindRegistration } from '@numen/plugin-sdk'
+import type { PluginContext, TabKindRegistration } from '@numen/plugin-sdk'
 import { createPluginHost } from './host'
 import {
   createDeclaredPane,
@@ -42,11 +42,11 @@ describe('a registration that says what its tabs hold', () => {
   })
 
   it('opens its tabs itself, under the identity the window gives them', () => {
-    const kind = createDeclaredTabKind('md.numen.held', declare())
+    const kind = createDeclaredTabKind('md.numen.sample', declare())
 
     expect(kind.open('Graph.md', 'held:1')).toEqual({ at: 'Graph.md', id: 'held:1', title: '' })
     expect(kind.kind).toBe('held')
-    expect(kind.pluginId).toBe('md.numen.held')
+    expect(kind.pluginId).toBe('md.numen.sample')
   })
 
   it('is called what it calls a tab, and its title where it calls it nothing', () => {
@@ -90,7 +90,7 @@ describe('the hooks a registration hands over', () => {
 
 describe('the pane of a declared kind', () => {
   it('draws the component on the state of the tab, outside a shadow root and with nothing else', () => {
-    const view = mount(createDeclaredPane('md.numen.held', Pane), {
+    const view = mount(createDeclaredPane('md.numen.sample', Pane), {
       props: { state: { at: 'Graph.md', id: 'held:1', title: '' } },
     })
 
@@ -105,10 +105,10 @@ describe('the pane of a declared kind', () => {
         throw new Error('the graph is gone')
       },
     })
-    const view = mount(createDeclaredPane('md.numen.held', Broken), { props: { state: {} } })
+    const view = mount(createDeclaredPane('md.numen.sample', Broken), { props: { state: {} } })
     await view.vm.$nextTick()
 
-    expect(view.text()).toContain('Plugin "md.numen.held" crashed')
+    expect(view.text()).toContain('Plugin "md.numen.sample" crashed')
     expect(view.text()).toContain('the graph is gone')
   })
 
@@ -130,7 +130,7 @@ describe('a declared kind registered through a plugin context', () => {
       registerExtensionReader: vi.fn(() => vi.fn()),
       openTab: vi.fn(() => Promise.resolve('tab')),
     }
-    const context = createPluginHost(deps).createContext('md.numen.held')
+    const context = createPluginHost(deps).createContext('md.numen.sample')
 
     const sub = context.registerTabKind<Held>({
       kind: 'held',
@@ -144,5 +144,58 @@ describe('a declared kind registered through a plugin context', () => {
     expect(kind?.open('A.md', 'held:1')).toEqual({ at: 'A.md', id: 'held:1', title: 'T' })
     sub.dispose()
     expect(registered).toHaveLength(0)
+  })
+})
+
+describe('the services a plugin context is given', () => {
+  const createDeps = (over: Partial<PluginHostDeps> = {}): PluginHostDeps => ({
+    registerKind: () => vi.fn(),
+    registerExtensionReader: () => vi.fn(),
+    openTab: () => Promise.resolve('tab'),
+    ...over,
+  })
+
+  it('are the window and the notes the host has made by the time the plugin activates', () => {
+    const workspace = { name: 'workspace' } as unknown as NonNullable<PluginContext['workspace']>
+    const notes = { name: 'notes' } as unknown as NonNullable<PluginContext['notes']>
+    const host = createPluginHost(
+      createDeps({ getWorkspace: () => workspace, getNotes: () => notes }),
+    )
+
+    const context = host.createContext('md.numen.sample')
+
+    expect(context.workspace).toMatchObject(workspace)
+    expect(context.notes).toMatchObject(notes)
+  })
+
+  it('are absent where the host offers none', () => {
+    const context = createPluginHost(createDeps()).createContext('md.numen.sample')
+
+    expect(context).not.toHaveProperty('workspace')
+    expect(context).not.toHaveProperty('notes')
+  })
+
+  it('tell every plugin listening for a change to the vault, and a failing one is reported', async () => {
+    const onError = vi.fn()
+    const host = createPluginHost(createDeps({ onError }))
+    const heard: unknown[] = []
+    const reading = {
+      id: 'md.numen.one',
+      name: 'One',
+      version: '1.0.0',
+      permissions: ['vault:read'],
+    }
+    host.createContext('md.numen.one', reading).onVaultChange((event) => {
+      heard.push(event)
+    })
+    host.createContext('md.numen.two', reading).onVaultChange(() => {
+      throw new Error('no')
+    })
+
+    host.notifyVaultChange({ paths: ['A.md'] })
+    await new Promise((done) => setTimeout(done, 0))
+
+    expect(heard).toStrictEqual([{ paths: ['A.md'] }])
+    expect(onError).toHaveBeenCalledWith('md.numen.two', expect.any(Error))
   })
 })

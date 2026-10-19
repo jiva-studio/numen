@@ -51,34 +51,35 @@ const settingEnabled = "enabled"
 
 // Host manages the discovery, lifecycle, activation, and communication endpoints of plugins.
 type Host struct {
-	mu             sync.RWMutex
-	target         string
-	dirs           []string
-	plugins        map[string]DiscoveredPlugin
-	supervisors    map[string]*Supervisor
-	endpoints      map[string]Endpoint
-	launcher       Launcher
-	safeMode       bool
-	vaultPath      string
-	bus            *EventBus
-	settings       map[string]map[string]any
-	persistHandler PersistHandler
-	evictTicker    *time.Ticker
-	evictDone      chan struct{}
-	evictWg        sync.WaitGroup
-	isEvictStopped bool
-	isClosed       bool
-	stdinsMu       sync.Mutex
-	stdins         map[stdinKey]io.Closer
-	processLimits  ProcessLimits
-	activation     ActivationPolicy
-	onPluginFailed func(pluginID string, cause error)
-	errorHandler   ErrorHandler
-	onDisk         map[string]bool
-	discoverMu     sync.RWMutex
-	failedPlugins  []pluginFailure
-	problems       []DiscoveryProblem
-	completer      port.Completer
+	mu               sync.RWMutex
+	target           string
+	dirs             []string
+	plugins          map[string]DiscoveredPlugin
+	supervisors      map[string]*Supervisor
+	endpoints        map[string]Endpoint
+	launcher         Launcher
+	safeMode         bool
+	vaultPath        string
+	bus              *EventBus
+	settings         map[string]map[string]any
+	persistHandler   PersistHandler
+	evictTicker      *time.Ticker
+	evictDone        chan struct{}
+	evictWg          sync.WaitGroup
+	isEvictStopped   bool
+	isClosed         bool
+	stdinsMu         sync.Mutex
+	stdins           map[stdinKey]io.Closer
+	processLimits    ProcessLimits
+	activation       ActivationPolicy
+	onPluginFailed   func(port.PluginFailure)
+	onFailureCleared func(pluginID string)
+	errorHandler     ErrorHandler
+	onDisk           map[string]bool
+	discoverMu       sync.RWMutex
+	failedPlugins    []port.PluginFailure
+	problems         []DiscoveryProblem
+	completer        port.Completer
 	// consentAsks holds the plugins that asked for a completion the person has
 	// not answered for, since the host started.
 	consentAsks   map[string]bool
@@ -97,37 +98,38 @@ type Host struct {
 // NewHost creates a new plugin host for the specified target application and search paths.
 func NewHost(target string, dirs ...string) *Host {
 	h := &Host{
-		mu:             sync.RWMutex{},
-		target:         target,
-		dirs:           dirs,
-		plugins:        make(map[string]DiscoveredPlugin),
-		supervisors:    make(map[string]*Supervisor),
-		endpoints:      make(map[string]Endpoint),
-		launcher:       nil,
-		safeMode:       false,
-		vaultPath:      "",
-		bus:            nil,
-		settings:       make(map[string]map[string]any),
-		persistHandler: nil,
-		evictTicker:    time.NewTicker(30 * time.Second),
-		evictDone:      make(chan struct{}),
-		isClosed:       false,
-		stdins:         make(map[stdinKey]io.Closer),
-		processLimits:  DefaultProcessLimits(),
-		activation:     DefaultActivationPolicy(),
-		onPluginFailed: nil,
-		errorHandler:   nil,
-		onDisk:         make(map[string]bool),
-		discoverMu:     sync.RWMutex{},
-		failedPlugins:  nil,
-		problems:       nil,
-		completer:      nil,
-		consentAsks:    make(map[string]bool),
-		keyStore:       nil,
-		hostEndpoint:   nil,
-		hostAddress:    hostEndpointAddress,
-		onnxRuntime:    nil,
-		builtIns:       make(map[string]builtInPlugin),
+		mu:               sync.RWMutex{},
+		target:           target,
+		dirs:             dirs,
+		plugins:          make(map[string]DiscoveredPlugin),
+		supervisors:      make(map[string]*Supervisor),
+		endpoints:        make(map[string]Endpoint),
+		launcher:         nil,
+		safeMode:         false,
+		vaultPath:        "",
+		bus:              nil,
+		settings:         make(map[string]map[string]any),
+		persistHandler:   nil,
+		evictTicker:      time.NewTicker(30 * time.Second),
+		evictDone:        make(chan struct{}),
+		isClosed:         false,
+		stdins:           make(map[stdinKey]io.Closer),
+		processLimits:    DefaultProcessLimits(),
+		activation:       DefaultActivationPolicy(),
+		onPluginFailed:   nil,
+		onFailureCleared: nil,
+		errorHandler:     nil,
+		onDisk:           make(map[string]bool),
+		discoverMu:       sync.RWMutex{},
+		failedPlugins:    nil,
+		problems:         nil,
+		completer:        nil,
+		consentAsks:      make(map[string]bool),
+		keyStore:         nil,
+		hostEndpoint:     nil,
+		hostAddress:      hostEndpointAddress,
+		onnxRuntime:      nil,
+		builtIns:         make(map[string]builtInPlugin),
 	}
 	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
@@ -171,11 +173,19 @@ func (h *Host) reportError(err error) {
 	}
 }
 
-// SetOnPluginFailed registers a callback invoked once when a plugin has failed to activate repeatedly.
-func (h *Host) SetOnPluginFailed(fn func(pluginID string, cause error)) {
+// SetOnPluginFailed registers a callback invoked once when a plugin has failed to activate repeatedly,
+// and again when a retry of it fails.
+func (h *Host) SetOnPluginFailed(fn func(port.PluginFailure)) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.onPluginFailed = fn
+}
+
+// SetOnFailureCleared registers a callback invoked with the id of a plugin whose failure the host forgets, because the plugin started, was enabled or was disabled.
+func (h *Host) SetOnFailureCleared(fn func(pluginID string)) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.onFailureCleared = fn
 }
 
 // SetLauncher overrides the process launcher for testing.
@@ -524,14 +534,19 @@ func (h *Host) failActivation(ctx context.Context, pluginID string, sup *Supervi
 		failedNow = sup.RecordActivationFailure(time.Now(), h.activation, cause) && !wasFailed
 	}
 	if failedNow {
-		h.failedPlugins = append(h.failedPlugins, pluginFailure{pluginID: pluginID, cause: cause})
+		h.failedPlugins = append(h.failedPlugins, h.newPluginFailureLocked(pluginID, sup, cause))
 	}
 	h.mu.Unlock()
 }
 
-type pluginFailure struct {
-	pluginID string
-	cause    error
+// newPluginFailureLocked is the failure a person is told of for a plugin the host has given up.
+func (h *Host) newPluginFailureLocked(pluginID string, sup *Supervisor, cause error) port.PluginFailure {
+	return port.PluginFailure{
+		PluginID: pluginID,
+		Name:     h.plugins[pluginID].Manifest.Name,
+		Reason:   describeFailure(cause),
+		At:       sup.GetFailedAt(),
+	}
 }
 
 // deliverPluginFailures hands the plugins that just failed for good to the failure callback, outside every lock.
@@ -546,7 +561,7 @@ func (h *Host) deliverPluginFailures() {
 		return
 	}
 	for _, failure := range failures {
-		notify(failure.pluginID, failure.cause)
+		notify(failure)
 	}
 }
 
@@ -1060,22 +1075,23 @@ func (h *Host) SetPluginEnabled(ctx context.Context, pluginID string, enabled bo
 	return h.SetPluginSetting(ctx, pluginID, settingEnabled, enabled)
 }
 
-// applyEnabledChange stops a plugin that was disabled and clears the failures of one that was enabled.
+// applyEnabledChange stops a plugin that was disabled and clears the failures of one that was enabled or disabled.
 func (h *Host) applyEnabledChange(ctx context.Context, pluginID string, value any) error {
 	enabled, ok := value.(bool)
 	if !ok {
 		return nil
 	}
+	var stopErr error
 	if !enabled {
-		return h.stopPlugin(ctx, pluginID)
+		stopErr = h.stopPlugin(ctx, pluginID)
 	}
 	h.mu.RLock()
 	sup := h.supervisors[pluginID]
 	h.mu.RUnlock()
 	if sup != nil {
-		sup.ResetActivationFailures()
+		h.clearFailure(pluginID, sup)
 	}
-	return nil
+	return stopErr
 }
 
 // GetPluginStatus returns the status of the specified plugin.
@@ -1412,6 +1428,7 @@ func (h *Host) GetPluginInfos() []port.PluginInfo {
 			Secrets:       p.Manifest.Secrets,
 			StoredSecrets: h.getStoredSecretsLocked(p.Manifest.ID),
 			Consent:       h.getCompletionConsentLocked(p.Manifest),
+			Failure:       h.getFailureLocked(p.Manifest.ID),
 		})
 	}
 	return result
@@ -1509,4 +1526,80 @@ func emptyEndpoint() Endpoint {
 
 func isEmptyEndpoint(e Endpoint) bool {
 	return e.Host == "" && e.Port == 0 && e.Transport == nil
+}
+
+// getFailureLocked is why the host holds a plugin off, and nil while it does not.
+func (h *Host) getFailureLocked(pluginID string) *port.PluginFailure {
+	sup, ok := h.supervisors[pluginID]
+	if !ok {
+		return nil
+	}
+	failed, cause := sup.GetActivationFailure()
+	if !failed {
+		return nil
+	}
+	failure := h.newPluginFailureLocked(pluginID, sup, cause)
+	return &failure
+}
+
+// clearFailure forgets the failed activations of a plugin and tells the cleared callback where the plugin
+// had been suspended.
+func (h *Host) clearFailure(pluginID string, sup *Supervisor) {
+	wasFailed, _ := sup.GetActivationFailure()
+	sup.ResetActivationFailures()
+	if !wasFailed {
+		return
+	}
+	h.mu.RLock()
+	notify := h.onFailureCleared
+	h.mu.RUnlock()
+	if notify != nil {
+		notify(pluginID)
+	}
+}
+
+// RetryPlugin forgets the failures of a plugin and starts it once. The failure is set where the plugin fails
+// again, and the host suspends it at once.
+func (h *Host) RetryPlugin(ctx context.Context, pluginID string) (*port.PluginFailure, error) {
+	h.mu.RLock()
+	_, known := h.plugins[pluginID]
+	sup := h.supervisors[pluginID]
+	h.mu.RUnlock()
+	if !known {
+		return nil, &port.UnavailableError{PluginID: pluginID, Reason: port.PluginNotInstalled, Err: errPluginNotFound}
+	}
+	if sup != nil {
+		h.clearFailure(pluginID, sup)
+	}
+
+	_, err := h.EnsureActive(ctx, pluginID)
+	if err == nil {
+		h.Release(pluginID)
+		return nil, nil
+	}
+	var unavailable *port.UnavailableError
+	if errors.As(err, &unavailable) || ctx.Err() != nil {
+		return nil, err
+	}
+	failure := h.recordActivationFailure(pluginID, err)
+	h.deliverPluginFailures()
+	return failure, nil
+}
+
+// recordActivationFailure records a failed activation as the last one the plugin is allowed, and returns the failure.
+func (h *Host) recordActivationFailure(pluginID string, cause error) *port.PluginFailure {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	sup, ok := h.supervisors[pluginID]
+	if !ok {
+		return nil
+	}
+	policy := h.activation
+	policy.MaxFailures = 1
+	if !sup.RecordActivationFailure(time.Now(), policy, cause) {
+		return nil
+	}
+	failure := h.newPluginFailureLocked(pluginID, sup, cause)
+	h.failedPlugins = append(h.failedPlugins, failure)
+	return &failure
 }

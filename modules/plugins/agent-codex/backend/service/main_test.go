@@ -68,7 +68,7 @@ func TestAProgramThatIsNotInstalledListsNoModels(t *testing.T) {
 	}
 }
 
-// What Codex listed is kept for as long as the command line stays the same.
+// What Codex listed is cached for as long as the command line stays the same.
 func TestWhatCodexListedIsKeptWhileTheCommandStaysTheSame(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	counter := filepath.Join(t.TempDir(), "starts")
@@ -136,7 +136,7 @@ func TestAProgramIsInstalledUnderTheCommandLineTheInstallationSet(t *testing.T) 
 }
 
 // A listing that failed is left alone for a while and then asked for again, and what Codex lists then is
-// kept.
+// cached.
 func TestAFailedCodexListingIsAskedForAgain(t *testing.T) {
 	agenttest.NeedsShell(t)
 	t.Setenv("HOME", t.TempDir())

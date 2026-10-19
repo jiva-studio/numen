@@ -56,6 +56,9 @@ func (s *Supervisor) RecordActivationFailure(now time.Time, policy ActivationPol
 	s.failure = cause
 	s.retryAt = now.Add(policy.getBackoff(s.failures))
 	if (policy.MaxFailures > 0 && s.failures >= policy.MaxFailures) || errors.Is(cause, port.ErrUnsupportedProtocol) {
+		if !s.failed {
+			s.failedAt = now
+		}
 		s.failed = true
 	}
 	return s.failed
@@ -73,6 +76,7 @@ func (s *Supervisor) ResetActivationFailures() {
 	s.failures = 0
 	s.failure = nil
 	s.failed = false
+	s.failedAt = time.Time{}
 	s.retryAt = time.Time{}
 }
 
@@ -89,9 +93,28 @@ func (s *Supervisor) CheckActivationAllowed(now time.Time) error {
 	return nil
 }
 
+// GetFailedAt returns when the plugin was given up, and the zero time while it has not failed.
+func (s *Supervisor) GetFailedAt() time.Time {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.failedAt
+}
+
 // GetActivationFailure returns the last activation error once the plugin has failed for good.
 func (s *Supervisor) GetActivationFailure() (bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.failed, s.failure
+}
+
+// describeFailure is why a plugin failed to start, in words a person reads.
+func describeFailure(cause error) string {
+	switch {
+	case errors.Is(cause, port.ErrUnsupportedProtocol):
+		return "The plugin speaks a plugin protocol version this Numen does not support. Update the plugin or Numen."
+	case errors.Is(cause, errHandshakeTimeout):
+		return "The plugin did not finish starting in time."
+	default:
+		return "The plugin could not be started: " + cause.Error()
+	}
 }

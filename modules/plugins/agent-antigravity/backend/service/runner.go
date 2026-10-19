@@ -32,7 +32,7 @@ func resolveCommand(command []string) (string, []string) {
 }
 
 func makeAntigravityCommand(
-	running context.Context, req *numenv1.AskAgentRequest, reg *agentrun.Registry,
+	runCtx context.Context, req *numenv1.AskAgentRequest, reg *agentrun.Registry,
 ) (*exec.Cmd, func(), error) {
 	binName, baseArgs := resolveCommand(req.GetCommand())
 	args := append([]string{}, baseArgs...)
@@ -48,7 +48,7 @@ func makeAntigravityCommand(
 		args = append(args, "--conversation", sessID)
 	}
 
-	cmd := exec.CommandContext(running, binName, args...)
+	cmd := exec.CommandContext(runCtx, binName, args...)
 	if req.GetToolsUrl() != "" {
 		tempHome, clean, err := setupAntigravityHome(Endpoint{URL: req.GetToolsUrl(), Token: req.GetToolsToken()})
 		if err != nil {

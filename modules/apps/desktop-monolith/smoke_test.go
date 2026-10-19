@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -34,6 +35,8 @@ type answers struct {
 	Single   string
 	Pages    int
 	Programs []string
+	// AgentPrograms is the names of the programs each coding agent plugin lists.
+	AgentPrograms map[string][]string
 }
 
 // newChatAPI is an OpenAI-compatible chat API that answers every question with modelReply, as one
@@ -115,6 +118,9 @@ func newLaunchedHost(t *testing.T) port.PluginManager {
 	t.Cleanup(func() { _ = os.RemoveAll(folder) })
 	buildPlugin(t, folder, "agent")
 	buildPlugin(t, folder, "reader-pdf")
+	for _, id := range codingAgentIDs {
+		buildPlugin(t, folder, strings.TrimPrefix(id, "md.numen."))
+	}
 	host := container.NewPluginHost("desktop.editor", folder)
 	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), 2*time.Second) })
 	return host
@@ -140,14 +146,14 @@ func askBuild(t *testing.T, host port.PluginManager, chatURL string) answers {
 	if err != nil {
 		t.Fatalf("AskAgent: %v", err)
 	}
-	var said strings.Builder
+	var chat strings.Builder
 	for stream.Receive() {
-		said.WriteString(stream.Msg().GetSaid())
+		chat.WriteString(stream.Msg().GetSaid())
 	}
 	if err := stream.Err(); err != nil {
 		t.Fatalf("AskAgent stream: %v", err)
 	}
-	got.Chat = said.String()
+	got.Chat = chat.String()
 
 	single, err := numenv1connect.NewCompletionServiceClient(agentClient, agent.BaseURL(), withToken(agent.Token)).
 		Complete(t.Context(), connect.NewRequest(&numenv1.CompleteRequest{Question: &numenv1.CompletionQuestion{
@@ -166,6 +172,8 @@ func askBuild(t *testing.T, host port.PluginManager, chatURL string) answers {
 	for _, program := range programs.Msg.GetPrograms() {
 		got.Programs = append(got.Programs, program.GetName())
 	}
+
+	got.AgentPrograms = listCodingAgentPrograms(t, host)
 
 	reader, err := host.EnsureActive(t.Context(), readerID)
 	if err != nil {
@@ -237,6 +245,14 @@ func TestBothBuildsAnswerAlike(t *testing.T) {
 		fromLaunched.Pages != fromLinked.Pages || !slices.Equal(fromLaunched.Programs, fromLinked.Programs) {
 		t.Errorf("the launched build answered %+v, the linked build %+v", fromLaunched, fromLinked)
 	}
+	for id, want := range map[string][]string{"md.numen.agent-acp": nil, "md.numen.agent-codex": {"codex"}} {
+		if got := fromLinked.AgentPrograms[id]; !slices.Equal(got, want) {
+			t.Errorf("%s lists %v, want %v", id, got, want)
+		}
+	}
+	if !maps.EqualFunc(fromLaunched.AgentPrograms, fromLinked.AgentPrograms, slices.Equal) {
+		t.Errorf("the launched build lists %v, the linked build %v", fromLaunched.AgentPrograms, fromLinked.AgentPrograms)
+	}
 	for _, id := range []string{agentID, readerID} {
 		inProcess, ok1 := linked.GetPlugin(id)
 		onDisk, ok2 := launched.GetPlugin(id)
@@ -244,4 +260,33 @@ func TestBothBuildsAnswerAlike(t *testing.T) {
 			t.Errorf("%s declares %v linked and %v launched", id, inProcess.Manifest.Capabilities, onDisk.Manifest.Capabilities)
 		}
 	}
+}
+
+// codingAgentIDs are the plugins that run a coding agent program. The folder of each is its id without
+// the md.numen. prefix.
+var codingAgentIDs = []string{"md.numen.agent-acp", "md.numen.agent-antigravity", "md.numen.agent-claude", "md.numen.agent-codex"}
+
+// listCodingAgentPrograms asks each coding agent plugin of a host for the names of its programs. A
+// program is listed whether or not its command is installed on the machine.
+func listCodingAgentPrograms(t *testing.T, host port.PluginManager) map[string][]string {
+	t.Helper()
+	// Codex is asked for its models through a command that does not exist, so no installed CLI is started.
+	absentCodex := []*numenv1.AgentProgramCommand{{Program: "codex", Command: []string{filepath.Join(t.TempDir(), "absent")}}}
+	listed := make(map[string][]string, len(codingAgentIDs))
+	for _, id := range codingAgentIDs {
+		endpoint, err := host.EnsureActive(t.Context(), id)
+		if err != nil {
+			t.Fatalf("activate %s: %v", id, err)
+		}
+		res, err := numenv1connect.NewAgentServiceClient(newClient(endpoint), endpoint.BaseURL(), withToken(endpoint.Token)).
+			GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{Commands: absentCodex}))
+		if err != nil {
+			t.Fatalf("GetAgentPrograms of %s: %v", id, err)
+		}
+		listed[id] = nil
+		for _, program := range res.Msg.GetPrograms() {
+			listed[id] = append(listed[id], program.GetName())
+		}
+	}
+	return listed
 }

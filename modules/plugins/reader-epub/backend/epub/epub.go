@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"path"
 	"sort"
 	"strings"
@@ -154,25 +155,9 @@ var (
 
 // Read extracts one book from the bytes of an EPUB file.
 func Read(raw []byte) (*Book, error) {
-	archive, err := zip.NewReader(bytes.NewReader(raw), int64(len(raw)))
-	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrNotArchive, err)
-	}
-	files := createArchiveIndex(archive)
-
-	opfPath, err := readPackagePath(files)
+	files, pkg, err := openPackage(bytes.NewReader(raw), int64(len(raw)))
 	if err != nil {
 		return nil, err
-	}
-	pkg, err := readPackage(files, opfPath)
-	if err != nil {
-		return nil, err
-	}
-	locked := readEncryptedPaths(files)
-	for _, item := range pkg.spine {
-		if locked[item.path] {
-			return nil, fmt.Errorf("%w: %s", ErrEncrypted, item.path)
-		}
 	}
 
 	text := newExtractor()
@@ -234,14 +219,66 @@ func Read(raw []byte) (*Book, error) {
 // What the entry holds is the file's own bytes, and what the manifest calls it
 // is not among them.
 func (b *Book) Entry(name string) ([]byte, error) {
+	return readEntry(b.files, name)
+}
+
+// openPackage indexes the archive behind r and checks that it contains a book whose
+// spine is readable.
+func openPackage(r io.ReaderAt, size int64) (map[string]*zip.File, packageDoc, error) {
+	archive, err := zip.NewReader(r, size)
+	if err != nil {
+		return nil, packageDoc{}, fmt.Errorf("%w: %w", ErrNotArchive, err)
+	}
+	files := createArchiveIndex(archive)
+
+	opfPath, err := readPackagePath(files)
+	if err != nil {
+		return nil, packageDoc{}, err
+	}
+	pkg, err := readPackage(files, opfPath)
+	if err != nil {
+		return nil, packageDoc{}, err
+	}
+	locked := readEncryptedPaths(files)
+	for _, item := range pkg.spine {
+		if locked[item.path] {
+			return nil, packageDoc{}, fmt.Errorf("%w: %s", ErrEncrypted, item.path)
+		}
+	}
+	return files, pkg, nil
+}
+
+func readEntry(files map[string]*zip.File, name string) ([]byte, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%w: the archive is not named", ErrNoEntry)
 	}
-	raw, ok := readBounded(b.files[path.Clean(name)], mostPerDocument)
+	raw, ok := readBounded(files[path.Clean(name)], mostPerDocument)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", ErrNoEntry, name)
 	}
 	return raw, nil
+}
+
+// An Archive is the index of the entries of one EPUB file, read through a reader that
+// stays open. Only the entry asked for is read, and any number of goroutines may
+// ask at once while the reader serves concurrent reads.
+type Archive struct {
+	files map[string]*zip.File
+}
+
+// OpenArchive indexes the EPUB behind r, of size bytes, and refuses what
+// Read refuses.
+func OpenArchive(r io.ReaderAt, size int64) (*Archive, error) {
+	files, _, err := openPackage(r, size)
+	if err != nil {
+		return nil, err
+	}
+	return &Archive{files: files}, nil
+}
+
+// Entry is the bytes of one entry of the archive, as Book.Entry answers them.
+func (a *Archive) Entry(name string) ([]byte, error) {
+	return readEntry(a.files, name)
 }
 
 // A Location is where an offset in the text falls.

@@ -26,7 +26,7 @@ func (s *runner) AskAgent(
 	if err != nil {
 		return err
 	}
-	return agentrun.Relay(ctx, work, stream)
+	return agentrun.ForwardResponses(ctx, work, stream)
 }
 
 func TestARecordingProgramRecordsTheFolderAndTheArguments(t *testing.T) {

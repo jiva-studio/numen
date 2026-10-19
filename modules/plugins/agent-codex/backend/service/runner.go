@@ -30,7 +30,7 @@ func resolveCommand(command []string) (string, []string) {
 	return FindCodex(), nil
 }
 
-func makeCodexCommand(running context.Context, req *numenv1.AskAgentRequest) *exec.Cmd {
+func makeCodexCommand(runCtx context.Context, req *numenv1.AskAgentRequest) *exec.Cmd {
 	binName, baseArgs := resolveCommand(req.GetCommand())
 	args := append([]string{}, baseArgs...)
 	args = append(args,
@@ -47,5 +47,5 @@ func makeCodexCommand(running context.Context, req *numenv1.AskAgentRequest) *ex
 		args = append(args, "--model", model)
 	}
 	args = append(args, req.GetPrompt())
-	return exec.CommandContext(running, binName, args...)
+	return exec.CommandContext(runCtx, binName, args...)
 }

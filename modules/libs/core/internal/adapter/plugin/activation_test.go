@@ -9,6 +9,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 func newDiscoveredHost(t *testing.T) *Host {
@@ -101,7 +103,7 @@ func TestAPluginIsReportedFailedAfterTheFailureLimit(t *testing.T) {
 	host.SetActivationPolicy(policy)
 
 	var notified []string
-	host.SetOnPluginFailed(func(id string, _ error) { notified = append(notified, id) })
+	host.SetOnPluginFailed(func(failure port.PluginFailure) { notified = append(notified, failure.PluginID) })
 	launches := 0
 	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		launches++

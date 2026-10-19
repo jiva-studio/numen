@@ -67,6 +67,7 @@ const installation: Installation = {
   write: fn(),
   writeSecret: fn(),
   deleteSecret: fn(),
+  retryPlugin: fn(),
   plugins: ref(PLUGINS),
   file: ref('/numen.json'),
   openFile: fn(),

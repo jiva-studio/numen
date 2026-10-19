@@ -30,6 +30,7 @@ import { useAppBootstrap } from './useAppBootstrap'
 import { createPluginSupport, watchPluginSettings } from './useWindowPlugins'
 
 import { createDisplayOptions, createTargetResolver } from './useWindowDisplayOptions'
+import type { PluginServices } from './pluginServices'
 import type { MessageWriter } from '@/shared/notices/messages'
 
 interface WindowCommandsOptions {
@@ -81,7 +82,8 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     recorded: rec.recorded ?? {},
     pointed: rec.pointed ?? {},
     files: () => kinds.files,
-    plexes: () => kinds.plexes,
+    travel: (path) => kinds.travel(path),
+    leavePath: (from, to) => kinds.leavePath(from, to),
     agents: () => kinds.agents,
     getOpeningNote: () => window.opening.value,
     writeMessage,
@@ -152,11 +154,13 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   const tabOpeners = fileOpeners({ ...core, reconcileTab: held.reconcileTab })
   const runs = runSupport()
   const plays = createMediaTypeProbe()
+  const pluginServices: PluginServices = {}
   const { pluginHost, pluginLoader } = createPluginSupport({
     held,
     tabLinks,
     tabOpeners,
     settingsHolder,
+    services: pluginServices,
     reportError: (pluginId, error) =>
       log.getWriter(`plugin:${pluginId}`)(
         `Plugin ${pluginId} failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -177,7 +181,18 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
       await core.write(path, body, null)
     },
   })
-  return { log, writeMessage, held, tabLinks, tabOpeners, runs, plays, pluginHost, pluginLoader }
+  return {
+    log,
+    writeMessage,
+    held,
+    tabLinks,
+    tabOpeners,
+    runs,
+    plays,
+    pluginHost,
+    pluginLoader,
+    pluginServices,
+  }
 }
 
 type WindowCore = ReturnType<typeof initWindowCore>
@@ -215,6 +230,7 @@ function initWindowServices(
       getKinds: () => ctx.kinds,
       tabOpeners: base.tabOpeners,
       getVaults: () => ctx.vaults,
+      notifyPlugins: (event) => base.pluginHost.notifyVaultChange(event),
     }),
   )
 
@@ -275,10 +291,12 @@ function initWindowKindsAndCommands(
     tabSync,
   })
 
+  Object.assign(base.pluginServices, ctx.kinds.services)
+
   const knows: NoteLookup = {
     getTitle: (path) => {
       const heldId = editing.reached.getTabAt(path)
-      return heldId === null ? ctx.kinds.plexes.getName(path) : editing.getTitle(heldId)
+      return heldId === null ? '' : editing.getTitle(heldId)
     },
     getTabAt: (path) => editing.reached.getTabAt(path),
   }

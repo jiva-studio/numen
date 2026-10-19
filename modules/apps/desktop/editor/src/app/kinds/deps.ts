@@ -1,5 +1,5 @@
 /** What the window gives the tab kinds it opens. */
-import type { CommandDeps, CommandTarget, runSupport } from '@/features/command-palette'
+import type { CommandDeps, CommandTarget, runSupport, SearchDeps } from '@/features/command-palette'
 import type { FileOpeners, useWindowTabs } from '@/entities/tab'
 import type { createMediaTypeProbe } from '@/entities/media'
 import type { MessageLog } from '@/shared/notices/messages'
@@ -13,7 +13,7 @@ import type { useVaults } from '../useVaults'
 import type { useWindowDisplay } from '../useWindowDisplay'
 
 export interface WindowKindsDeps {
-  core: NotePort & FilePort
+  core: NotePort & FilePort & Pick<SearchDeps, 'names'>
   log: MessageLog
   tabOpeners: FileOpeners
   held: ReturnType<typeof useWindowTabs>

@@ -75,6 +75,10 @@ type Assembly interface {
 	// The use cases that store and remove the key of a secret a plugin declares.
 	OpenWritePluginSecret() *settings.WriteSecret
 	OpenDeletePluginSecret() *settings.DeleteSecret
+	// OpenRetryPlugin starts a plugin the host suspends once more.
+	OpenRetryPlugin() *settings.RetryPlugin
+	// ReportPluginFailures puts a task in the list for each plugin the host suspends.
+	ReportPluginFailures(tasks *run.Tasks)
 
 	// IsRebuildingIndex is whether this launch was asked to read every file
 	// into the cache again. It belongs to the vault the window opened on and to

@@ -64,6 +64,14 @@ export interface PluginModel {
   readonly isDefault: boolean
 }
 
+/** Why the host holds a plugin off after it failed to start, and when it gave the plugin up. */
+export interface PluginFailure {
+  /** The reason, in words a person reads. */
+  readonly reason: string
+  /** When the host gave the plugin up, in milliseconds since the Unix epoch. */
+  readonly failedAt: number
+}
+
 /** Information about an installed and active plugin, including declarative settings. */
 export interface PluginInfo {
   readonly id: string
@@ -79,6 +87,8 @@ export interface PluginInfo {
   /** The models it answers completions with, none where it lists none. */
   readonly models: readonly PluginModel[]
   readonly consent: Consent
+  /** Set while the host holds the plugin off. */
+  readonly failure?: PluginFailure | undefined
 }
 
 /** The agent and the model a setting of type `agent` holds. Empty is the default. */

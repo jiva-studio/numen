@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 
 	"connectrpc.com/connect"
@@ -30,16 +29,19 @@ type BookServer struct {
 
 	// vaultRoot is the vault the paths of requests are held to.
 	vaultRoot func() string
+
+	// books caches the books entries are read from, and closes them when the server closes.
+	books *bookCache
 }
 
-// NewBookServer returns a BookServer that holds paths to the vault NUMEN_VAULT_PATH names.
+// NewBookServer returns a BookServer that restricts paths to the vault NUMEN_VAULT_PATH names.
 func NewBookServer() *BookServer {
-	return &BookServer{vaultRoot: func() string { return os.Getenv("NUMEN_VAULT_PATH") }}
+	return &BookServer{vaultRoot: func() string { return os.Getenv("NUMEN_VAULT_PATH") }, books: newBookCache()}
 }
 
-// NewBookServerIn returns a BookServer that holds paths to the vault at vaultRoot.
+// NewBookServerIn returns a BookServer that restricts paths to the vault at vaultRoot.
 func NewBookServerIn(vaultRoot string) *BookServer {
-	return &BookServer{vaultRoot: func() string { return vaultRoot }}
+	return &BookServer{vaultRoot: func() string { return vaultRoot }, books: newBookCache()}
 }
 
 // GetBook parses an EPUB file and returns metadata, documents, and parts.
@@ -179,41 +181,34 @@ func (s *BookServer) ReadBookEntry(
 	if err != nil {
 		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
 	}
-	file, err := os.Open(cleanPath)
+	book, err := s.books.acquire(cleanPath)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
-	}
-	defer file.Close()
-	info, err := file.Stat()
-	// gomutants:disable-next-line BRANCH_IF reason="Stat on an open file descriptor does not fail"
-	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
-	}
-	if baseline := req.Msg.GetBaseline(); baseline != nil && !isFingerprintOf(baseline, info) {
-		return nil, connect.NewError(connect.CodeAborted, fmt.Errorf("read book %s: the file changed", path))
-	}
-	raw, err := io.ReadAll(file)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
-	}
-	book, err := epub.Read(raw)
-	if err != nil {
+		if errors.Is(err, errCacheClosed) {
+			return nil, connect.NewError(connect.CodeUnavailable, fmt.Errorf("read book %s: %w", path, err))
+		}
+		if errors.Is(err, errReadFile) {
+			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
+		}
 		return nil, newReadError(err)
 	}
-	body, err := book.Entry(req.Msg.GetEntry())
+	defer s.books.release(book)
+	if baseline := req.Msg.GetBaseline(); baseline != nil && !isFingerprintOf(baseline, book.size, book.mtime) {
+		return nil, connect.NewError(connect.CodeAborted, fmt.Errorf("read book %s: the file changed", path))
+	}
+	body, err := book.archive.Entry(req.Msg.GetEntry())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 	return connect.NewResponse(&numenv1.ReadBookEntryResponse{Body: body}), nil
 }
 
-// isFingerprintOf is whether the file is the bytes the fingerprint names. A
-// stamp of zero names no time.
-func isFingerprintOf(named *numenv1.Fingerprint, info os.FileInfo) bool {
-	if named.GetSize() != info.Size() {
+// isFingerprintOf is whether a file of the size and the stamp given is the bytes the
+// fingerprint names. A stamp of zero names no time.
+func isFingerprintOf(named *numenv1.Fingerprint, size, mtime int64) bool {
+	if named.GetSize() != size {
 		return false
 	}
-	return named.GetMtime() == 0 || named.GetMtime() == info.ModTime().UnixNano()
+	return named.GetMtime() == 0 || named.GetMtime() == mtime
 }
 
 // newReadError is the status a book that could not be read is refused under: a
@@ -224,4 +219,9 @@ func newReadError(err error) error {
 		return connect.NewError(connect.CodeFailedPrecondition, fmt.Errorf("read epub: %w", err))
 	}
 	return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("parse epub: %w", err))
+}
+
+// Close closes the cached books.
+func (s *BookServer) Close() {
+	s.books.Close()
 }
