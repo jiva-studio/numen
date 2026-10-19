@@ -266,7 +266,6 @@ describe('the settings tab', () => {
       capabilities: [],
       secrets: [],
       storedSecrets: [],
-      models: [],
       consent: 'none' as const,
       settings: [
         {
@@ -312,7 +311,6 @@ describe('the settings tab', () => {
         capabilities: [],
         secrets: [],
         storedSecrets: [],
-        models: [],
         consent: 'none',
         settings: [
           {
