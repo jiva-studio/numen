@@ -70,7 +70,7 @@ export const Answered: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await waitFor(() => expect(canvas.getByText('What is entropy?')).toBeTruthy())
-    expect(canvas.getByText(/how many ways a system/)).toBeTruthy()
+    await waitFor(() => expect(canvas.getByText(/how many ways a system/)).toBeTruthy())
   },
 }
 

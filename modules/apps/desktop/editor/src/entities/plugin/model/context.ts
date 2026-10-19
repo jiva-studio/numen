@@ -113,22 +113,38 @@ function guardFiles(files: VaultFiles, requireWrite: (operation: string) => void
   }
 }
 
-/** The agent of the window: asking it needs ai:complete, and naming vault files needs vault:read. */
+/** Whether a setting path lies in the agent subtree of the settings. */
+const isAgentPath = (path: readonly string[]): boolean => path[0] === 'agent'
+
+/**
+ * The agent of the window: asking it needs ai:complete, naming vault files needs
+ * vault:read, and the settings it reads and writes are the ones under `agent`.
+ */
 function guardAgent(
   agent: AgentHost,
   requirePerm: (permission: string, operation: string) => void,
 ): AgentHost {
   return {
     ...agent,
+    getSetting: (path) => (isAgentPath(path) ? agent.getSetting(path) : undefined),
+    writeSetting: async (path, value) => {
+      if (!isAgentPath(path)) {
+        throw new Error(
+          `agent.writeSetting is limited to the agent settings, not "${path.join('.')}"`,
+        )
+      }
+      await agent.writeSetting(path, value)
+    },
+    getModelsAt: (path) => (isAgentPath(path) ? agent.getModelsAt(path) : []),
     ask: (query) => {
       requirePerm('ai:complete', 'agent.ask')
       return agent.ask(query)
     },
-    finish: async (conversation) => {
+    finish: (conversation) => {
       requirePerm('ai:complete', 'agent.finish')
       return agent.finish(conversation)
     },
-    resolve: async (written) => {
+    resolve: (written) => {
       requirePerm('vault:read', 'agent.resolve')
       return agent.resolve(written)
     },

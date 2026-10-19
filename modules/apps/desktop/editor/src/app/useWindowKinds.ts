@@ -39,7 +39,11 @@ export function useWindowKinds(deps: WindowKindsDeps) {
   }
 
   /** Something to ask, put in the agent the person was last in and put in front. */
-  const agents = { askQuestion: (text: string) => held.sendText(AGENT, text).then(() => {}) }
+  const agents = {
+    askQuestion: async (text: string): Promise<void> => {
+      await held.sendText(AGENT, text)
+    },
+  }
 
   const destinations: DestinationDeps = {
     travel: (path) => travel(path),

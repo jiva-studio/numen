@@ -157,7 +157,7 @@ vi.mock('@/entities/deck', async (original) => ({
   ...cardsSaid,
 }))
 
-vi.mock('@/app/agentPort', () => ({ agentPort: { ask: held, finish: async () => {} } }))
+vi.mock('@/app/agentPort', () => ({ agentPort: { ask: held, finish: () => Promise.resolve() } }))
 
 const themesSaid = {
   themes: {

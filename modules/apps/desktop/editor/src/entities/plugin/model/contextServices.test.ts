@@ -46,6 +46,9 @@ const createServices = () => {
     finish: vi.fn(() => Promise.resolve()),
     resolve: vi.fn(() => Promise.resolve(new Map())),
     getUnreachable: vi.fn(() => ''),
+    getSetting: vi.fn(),
+    writeSetting: vi.fn(() => Promise.resolve()),
+    getModelsAt: vi.fn(() => []),
   } as unknown as AgentHost
   const host = {
     getAgent: () => agent,
@@ -189,19 +192,25 @@ describe('a command a plugin runs over the vault', () => {
   })
 })
 
+/** The agent a context was handed, which every test of it was given. */
+const getAgent = (context: PluginContext): AgentHost => {
+  if (!context.agent) throw new Error('the context was handed no agent')
+  return context.agent
+}
+
 const ASKING: Record<string, [string, Call]> = {
   ask: [
     'ai:complete',
     (c) =>
-      c.agent!.ask({
+      getAgent(c).ask({
         question: 'q',
         focus: '',
         conversation: 'c',
         signal: new AbortController().signal,
       }),
   ],
-  finish: ['ai:complete', (c) => c.agent!.finish('c')],
-  resolve: ['vault:read', (c) => c.agent!.resolve(['name://A'])],
+  finish: ['ai:complete', (c) => getAgent(c).finish('c')],
+  resolve: ['vault:read', (c) => getAgent(c).resolve(['name://A'])],
 }
 
 describe('the agent a plugin asks', () => {
@@ -230,7 +239,27 @@ describe('the agent a plugin asks', () => {
   it('reads why it cannot be reached without a permission', () => {
     const { context } = createContext([])
 
-    expect(context.agent!.getUnreachable()).toBe('')
+    expect(getAgent(context).getUnreachable()).toBe('')
+  })
+
+  it('reads, writes and lists the settings under agent, and no others', async () => {
+    const { context, agent } = createContext([])
+    const asked = getAgent(context)
+
+    await asked.writeSetting(['agent', 'use'], 'zeta')
+    asked.getSetting(['agent', 'use'])
+    asked.getModelsAt(['agent', 'zeta', 'model'])
+
+    expect(agent.writeSetting).toHaveBeenCalledWith(['agent', 'use'], 'zeta')
+    expect(agent.getSetting).toHaveBeenCalledWith(['agent', 'use'])
+    expect(agent.getModelsAt).toHaveBeenCalledWith(['agent', 'zeta', 'model'])
+
+    const elsewhere = ['plugins', 'md.numen.other', 'enabled']
+    expect(asked.getSetting(elsewhere)).toBeUndefined()
+    expect(asked.getModelsAt(elsewhere)).toStrictEqual([])
+    await expect(asked.writeSetting(elsewhere, false)).rejects.toThrowError(/agent settings/)
+    expect(agent.getSetting).toHaveBeenCalledTimes(1)
+    expect(agent.writeSetting).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -254,7 +283,9 @@ describe('the manifest of a plugin that writes through the window', () => {
   it('view-agent-chat declares what the agent it asks needs', async () => {
     const { context } = createContext(readPermissions('view-agent-chat'))
 
-    await Promise.all(Object.values(ASKING).map(([, call]) => call(context)))
+    await expect(
+      Promise.all(Object.values(ASKING).map(([, call]) => call(context))),
+    ).resolves.toHaveLength(Object.keys(ASKING).length)
   })
 
   it('view-plex-graph declares what the notes it joins and makes need', async () => {
