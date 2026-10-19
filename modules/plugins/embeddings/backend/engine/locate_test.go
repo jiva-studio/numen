@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/gomlx/go-huggingface/hub"
@@ -232,9 +233,12 @@ func TestLocateCachedReportsFalseOnCorruptSums(t *testing.T) {
 }
 
 func TestLocatePassesRevision(t *testing.T) {
+	var mu sync.Mutex
 	var requestedPath string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
 		requestedPath = r.URL.Path
+		mu.Unlock()
 		http.Error(w, "not found", http.StatusNotFound)
 	}))
 	defer srv.Close()
@@ -243,21 +247,32 @@ func TestLocatePassesRevision(t *testing.T) {
 	t.Setenv(models.EnvDir, t.TempDir())
 	t.Setenv(models.EnvOffline, "")
 
+	getPath := func() string {
+		mu.Lock()
+		defer mu.Unlock()
+		return requestedPath
+	}
+	resetPath := func() {
+		mu.Lock()
+		defer mu.Unlock()
+		requestedPath = ""
+	}
+
 	cfg := LocalModel{
 		Name:           "owner/repo",
 		Revision:       "custom-rev",
 		ShouldDownload: true,
 	}
 	_, _ = Locate(context.Background(), cfg, nil)
-	if !strings.Contains(requestedPath, "/revision/custom-rev") {
-		t.Fatalf("requested path = %q, want revision custom-rev", requestedPath)
+	if !strings.Contains(getPath(), "/revision/custom-rev") {
+		t.Fatalf("requested path = %q, want revision custom-rev", getPath())
 	}
 
-	requestedPath = ""
+	resetPath()
 	cfg.Revision = ""
 	_, _ = Locate(context.Background(), cfg, nil)
-	if !strings.Contains(requestedPath, "/revision/main") {
-		t.Fatalf("requested path = %q, want default revision main", requestedPath)
+	if !strings.Contains(getPath(), "/revision/main") {
+		t.Fatalf("requested path = %q, want default revision main", getPath())
 	}
 }
 
