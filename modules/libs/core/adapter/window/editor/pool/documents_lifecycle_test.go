@@ -218,9 +218,9 @@ func TestADocumentThatCannotBeOpenedIsReportedAndNotKept(t *testing.T) {
 	if attempts != 2 {
 		t.Errorf("the file was read %d times, want 2", attempts)
 	}
-	waitFor(t, "the failed document is forgotten", func() bool {
-		return getOpenCount(docs) == 1 && slices.Equal(getOrder(docs), []document.Fingerprint{markOf("good")})
-	})
+	if getOpenCount(docs) != 1 || !slices.Equal(getOrder(docs), []document.Fingerprint{markOf("good")}) {
+		t.Errorf("the failed document is still held: %d open, order %v", getOpenCount(docs), getOrder(docs))
+	}
 }
 
 func TestADocumentAskedAfterTheWindowWentDoesNotLockTheWindow(t *testing.T) {

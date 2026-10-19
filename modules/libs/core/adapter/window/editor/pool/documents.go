@@ -184,21 +184,20 @@ func (d *Documents) Use(
 	return use(doc)
 }
 
-// Load opens the document and tells whoever is waiting.
+// Load opens the document and tells whoever is waiting. A document that could
+// not be opened is forgotten before anyone is told, so the next ask reads the
+// file again.
 func (d *Documents) Load(mark document.Fingerprint, doc *Document, open func() (port.OpenDocument, error)) {
 	doc.Scan, doc.why = open()
+	if doc.why != nil {
+		d.mu.Lock()
+		if d.open[mark] == doc {
+			delete(d.open, mark)
+			d.RemoveFromOrder(mark)
+		}
+		d.mu.Unlock()
+	}
 	close(doc.ready)
-	if doc.why == nil {
-		return
-	}
-	// A document that could not be opened is not kept, so the next ask reads
-	// the file again.
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	if d.open[mark] == doc {
-		delete(d.open, mark)
-		d.RemoveFromOrder(mark)
-	}
 }
 
 // Release puts a document back and starts the clock on closing it.
