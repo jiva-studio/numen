@@ -199,3 +199,33 @@ func TestReadRefusalWalksEveryCode(t *testing.T) {
 		t.Error("an unknown code must be an error")
 	}
 }
+
+// A client made from the variables of a linked plugin asks the host they name, and reads nothing
+// from the environment.
+func TestClientFromVarsReadsTheHostFromItsVariables(t *testing.T) {
+	host := &fakeHost{answer: &numenv1.CompletionAnswer{Text: "fixed"}}
+	srv := startHost(t, host)
+	t.Setenv(HostPortEnv, "")
+	t.Setenv(PluginTokenEnv, "process-token")
+
+	client, err := NewClientFromVars(map[string]string{
+		HostPortEnv:    strconv.Itoa(srv.Listener.Addr().(*net.TCPAddr).Port),
+		PluginTokenEnv: "linked-token",
+	})
+	if err != nil {
+		t.Fatalf("NewClientFromVars: %v", err)
+	}
+	text, err := client.Complete(t.Context(), newQuestion())
+	if err != nil || text != "fixed" {
+		t.Fatalf("Complete = %q, %v", text, err)
+	}
+	if host.auth != "Bearer linked-token" {
+		t.Errorf("authorization = %q, want the token of the variables", host.auth)
+	}
+}
+
+func TestClientFromVarsFailsWithoutHostPort(t *testing.T) {
+	if _, err := NewClientFromVars(map[string]string{PluginTokenEnv: "tok"}); !errors.Is(err, ErrNoHost) {
+		t.Fatalf("got %v, want ErrNoHost", err)
+	}
+}

@@ -55,11 +55,21 @@ func NewClient(httpClient connect.HTTPClient, baseURL, token string) *Client {
 // NewClientFromEnv creates a client for the host named by NUMEN_HOST_PORT,
 // authenticating with NUMEN_PLUGIN_TOKEN.
 func NewClientFromEnv() (*Client, error) {
-	port := strings.TrimSpace(os.Getenv(HostPortEnv))
+	return NewClientFromVars(map[string]string{
+		HostPortEnv:    os.Getenv(HostPortEnv),
+		PluginTokenEnv: os.Getenv(PluginTokenEnv),
+	})
+}
+
+// NewClientFromVars creates a client for the host named by the NUMEN_HOST_PORT entry of vars,
+// authenticating with its NUMEN_PLUGIN_TOKEN entry. They are the variables a host gives a plugin
+// it links into its own process.
+func NewClientFromVars(vars map[string]string) (*Client, error) {
+	port := strings.TrimSpace(vars[HostPortEnv])
 	if port == "" {
 		return nil, ErrNoHost
 	}
-	return NewClient(http.DefaultClient, "http://127.0.0.1:"+port, os.Getenv(PluginTokenEnv)), nil
+	return NewClient(http.DefaultClient, "http://127.0.0.1:"+port, vars[PluginTokenEnv]), nil
 }
 
 // Complete asks the host to answer the question and returns the text.

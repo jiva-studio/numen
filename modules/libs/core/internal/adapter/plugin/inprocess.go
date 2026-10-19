@@ -117,7 +117,8 @@ func (t *InProcessTransport) RoundTrip(req *http.Request) (*http.Response, error
 
 // RegisterBuiltIn registers a plugin linked into this binary from its manifest.json and what
 // makes the handler of its backend. serve is called at each activation with the variables a
-// launched process of the plugin is given. A plugin of the same id found on disk is registered
+// launched process of the plugin is given: the host variables a process is launched with and the
+// launch variables. A plugin of the same id found on disk is registered
 // over it, and the built-in takes its place again when that one leaves the disk.
 func (h *Host) RegisterBuiltIn(manifestJSON []byte, serve func(vars map[string]string) (http.Handler, error)) error {
 	manifest, err := ReadManifest(bytes.NewReader(manifestJSON))
@@ -165,7 +166,8 @@ func (h *Host) startBuiltIn(ctx context.Context, p DiscoveredPlugin, builtIn bui
 		return emptyEndpoint(), fmt.Errorf("launch plugin %s: %w", p.Manifest.ID, err)
 	}
 	vars := make(map[string]string)
-	for _, entry := range h.getEnvironmentVars(ctx, p.Manifest.ID, 0, token, runtimeVars) {
+	launchVars := h.getEnvironmentVars(ctx, p.Manifest.ID, 0, token, runtimeVars)
+	for _, entry := range sanitizeEnvironment(os.Environ(), launchVars, p.Manifest.Runtimes) {
 		name, value, _ := strings.Cut(entry, "=")
 		vars[name] = value
 	}

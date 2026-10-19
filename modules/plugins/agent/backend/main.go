@@ -5,25 +5,17 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/harness"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
-	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/modules/plugins/agent/backend/service"
 )
 
-// newPluginServer is the plugin process's server: the SDK's lifecycle, which hands the settings to
-// the agent, and the agent's services.
-func newPluginServer(agent *harness.Server, opts ...server.Option) *server.Server {
-	s := server.New(append(opts, server.WithUpdateConfig(agent.Configure))...)
-	s.Register(numenv1connect.NewAgentServiceHandler(agent, s.HandlerOptions()...))
-	s.Register(numenv1connect.NewCompletionServiceHandler(agent, s.HandlerOptions()...))
-	return s
-}
-
 func main() {
-	agent := &harness.Server{}
-	err := newPluginServer(agent).Serve()
-	_ = agent.Close()
-	if err != nil {
+	s := server.New()
+	if err := service.Mount(s); err != nil {
+		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
+		os.Exit(1)
+	}
+	if err := s.Serve(); err != nil {
 		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
 		os.Exit(1)
 	}

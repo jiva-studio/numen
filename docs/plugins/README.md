@@ -12,6 +12,8 @@ Numen plugins follow a dual-mode architectural contract:
 
 In the monolithic build, `modules/apps/desktop-monolith` is the composition root and the one module that names plugins. It registers each plugin it links once, with `app.RegisterPlugin(manifest, serve)`: `manifest` is the plugin's own `manifest.json`, embedded by the package at the root of the plugin's module, and `serve` makes the handler of the plugin's backend from the variables a launched process of it is given. The handler is a linked server of the plugin SDK (`server.NewLinkedHandler`) with the plugin's services mounted on it, so each plugin answers its own services and its own `Configure`. A plugin the monolith does not link is launched as a process.
 
+A plugin joins the monolith in three steps. Its module has a `manifest.go` that embeds `manifest.json`, its backend lives in an importable package `backend/service` whose `Mount(s *server.Server) error` registers its services and whose `NewHandler(vars)` returns `server.NewLinkedHandler(vars, Mount)`, and `registerPlugins` in `modules/apps/desktop-monolith/main.go` gains one line. What the plugin holds open is closed with `s.OnClose`, which runs when the host shuts the plugin down. The monolith links Numen Agent, Claude Code, proofreading, the downloader, embeddings, OCR, transcription and both readers. CI runs `TestBothBuildsAnswerAlike` in that module: the same chat, single answer and document call go to the plugins linked into the process and to the plugins launched as processes, and the answers and the declared capabilities are compared.
+
 ### Host Lifecycle & IPC Transport
 
 Plugins communicating over Connect-RPC use loopback TCP:
