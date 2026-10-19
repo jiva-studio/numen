@@ -7,76 +7,23 @@
  * blend came to. The build in `vite.config.ts` writes into the Go package's
  * assets and has nothing to say about either.
  */
-import { accessSync, constants } from 'node:fs'
-import { join } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
 import { coverageConfigDefaults, defineConfig } from 'vitest/config'
-import type { BrowserCommand } from 'vitest/node'
-import { playwright } from '@vitest/browser-playwright'
 import vue from '@vitejs/plugin-vue'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
-
-/** A place on the page the browser drives the pointer to. */
-interface Position {
-  readonly x: number
-  readonly y: number
-}
-
-/**
- * The pointer put down at one place, carried to another and lifted, by the
- * browser itself. What a drag leaves behind — a selection, a capture — is then
- * the browser's own.
- */
-const sweep: BrowserCommand<[from: Position, to: Position]> = async ({ page }, from, to) => {
-  await page.mouse.move(from.x, from.y)
-  await page.mouse.down()
-  await page.mouse.move(to.x, to.y)
-  await page.mouse.up()
-}
-
-declare module 'vitest/browser' {
-  interface BrowserCommands {
-    sweep: (from: Position, to: Position) => Promise<void>
-  }
-}
-
-const CANDIDATES = ['google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser']
-
-/**
- * A browser already on the machine; undefined uses Playwright's own.
- *
- * A run under `CI` takes the pinned build unless it was pointed at one, so the
- * version the stories are drawn in is the version the workflow fetched.
- */
-function systemChrome(): string | undefined {
-  const explicit = process.env['CHROME_PATH']
-  if (explicit) return explicit
-  if (process.env['CI']) return undefined
-
-  for (const directory of (process.env['PATH'] ?? '').split(':')) {
-    if (!directory) continue
-    for (const name of CANDIDATES) {
-      const candidate = join(directory, name)
-      try {
-        accessSync(candidate, constants.X_OK)
-        return candidate
-      } catch {
-        continue
-      }
-    }
-  }
-  return undefined
-}
-
-const chrome = systemChrome()
+import { getStoryBrowser } from '../../../libs/ui/.storybook/browser'
 
 const alias = {
   '@': fileURLToPath(new URL('./src', import.meta.url)),
   '@plugins': fileURLToPath(new URL('../../../plugins', import.meta.url)),
-  '@numen/plugin-sdk': fileURLToPath(new URL('../../../libs/plugin-sdk/src/index.ts', import.meta.url)),
+  '@numen/plugin-sdk': fileURLToPath(
+    new URL('../../../libs/plugin-sdk/src/index.ts', import.meta.url),
+  ),
   '@numen/protocol': fileURLToPath(new URL('../../../libs/protocol/index.ts', import.meta.url)),
   '@numen/wire': fileURLToPath(new URL('../../../libs/wire/index.ts', import.meta.url)),
-  '@numen/ui/styles.css': fileURLToPath(new URL('../../../libs/ui/dist/numen-ui.css', import.meta.url)),
+  '@numen/ui/styles.css': fileURLToPath(
+    new URL('../../../libs/ui/dist/numen-ui.css', import.meta.url),
+  ),
   '@numen/ui': fileURLToPath(new URL('../../../libs/ui/dist/index.js', import.meta.url)),
 }
 
@@ -117,23 +64,7 @@ export default defineConfig({
           // Every story is drawn twice, and the frames of all of them come off
           // one machine.
           testTimeout: 30_000,
-          browser: {
-            enabled: true,
-            headless: true,
-            provider: playwright(),
-            // The window is WebKit on a mac and on Linux, and Chromium on
-            // Windows. Every story is rendered in both.
-            instances: [
-              {
-                browser: 'chromium',
-                ...(chrome
-                  ? { provider: playwright({ launchOptions: { executablePath: chrome } }) }
-                  : {}),
-              },
-              { browser: 'webkit' },
-            ],
-            commands: { sweep },
-          },
+          browser: getStoryBrowser(),
         },
       },
     ],
