@@ -35,3 +35,26 @@ func TestTheLinkedHandlerAnswersTheDocumentService(t *testing.T) {
 		t.Fatal("the document has no pages")
 	}
 }
+
+// A linked handler holds the paths of requests to the vault of its variables.
+func TestTheLinkedHandlerRefusesADocumentOutsideTheVaultOfItsVariables(t *testing.T) {
+	t.Setenv("NUMEN_VAULT_PATH", "")
+	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token", "NUMEN_VAULT_PATH": t.TempDir()})
+	if err != nil {
+		t.Fatalf("NewHandler: %v", err)
+	}
+	web := httptest.NewServer(handler)
+	defer web.Close()
+	path, err := filepath.Abs(filepath.Join("..", "pdf", "testdata", "tiny.pdf"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req := connect.NewRequest(&numenv1.GetDocumentRequest{Path: path})
+	req.Header().Set("Authorization", "Bearer linked-token")
+	_, err = numenv1connect.NewDocumentServiceClient(web.Client(), web.URL).GetDocument(t.Context(), req)
+
+	if connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("GetDocument outside the vault = %v, want permission denied", err)
+	}
+}

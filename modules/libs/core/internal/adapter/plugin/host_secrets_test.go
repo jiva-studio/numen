@@ -92,6 +92,7 @@ type configured struct {
 	mu            sync.Mutex
 	calls         []*v1.ConfigureRequest
 	unimplemented bool
+	shutdowns     int
 }
 
 func (c *configured) Configure(
@@ -104,6 +105,16 @@ func (c *configured) Configure(
 		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("no configure"))
 	}
 	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
+}
+
+// Shutdown counts the shutdowns the plugin is asked for.
+func (c *configured) Shutdown(
+	_ context.Context, _ *connect.Request[v1.ShutdownRequest],
+) (*connect.Response[v1.ShutdownResponse], error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.shutdowns++
+	return connect.NewResponse(&v1.ShutdownResponse{Success: true}), nil
 }
 
 func (c *configured) last(t *testing.T) *v1.ConfigureRequest {
