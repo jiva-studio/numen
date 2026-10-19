@@ -31,7 +31,7 @@ type bookCache struct {
 }
 
 func newBookCache() *bookCache {
-	return &bookCache{openFile: os.Open}
+	return &bookCache{openFile: openShared}
 }
 
 // A cachedBook is a book whose file stays open until it is evicted and has no readers.
