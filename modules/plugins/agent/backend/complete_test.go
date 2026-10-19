@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -55,7 +59,20 @@ func TestCompleteAnswersFromTheChatAPIWithTheConfiguredKeyAndNoTools(t *testing.
 	}
 }
 
+func TestCompleteReleasesTheReadLock(t *testing.T) {
+	svc := &agentServer{}
+	_, _ = svc.Complete(context.Background(), askCompletion("why?"))
+	if !svc.mu.TryLock() {
+		t.Fatal("read lock was not released")
+	}
+	svc.mu.Unlock()
+}
+
 func TestCompleteIsUnavailableWithoutAKey(t *testing.T) {
+	var logBuf bytes.Buffer
+	log.SetOutput(&logBuf)
+	defer log.SetOutput(os.Stderr)
+
 	t.Setenv("OPENAI_API_KEY", "env-key")
 	t.Setenv("NUMEN_AGENT_KEY", "env-key")
 	called := false
@@ -70,14 +87,43 @@ func TestCompleteIsUnavailableWithoutAKey(t *testing.T) {
 	if res.Msg.GetError() != numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE || res.Msg.GetAnswer() != nil {
 		t.Errorf("got %+v", res.Msg)
 	}
+	if !strings.Contains(logBuf.String(), errNoKey.Error()) {
+		t.Errorf("log %q did not contain %q", logBuf.String(), errNoKey.Error())
+	}
 	if called {
 		t.Error("the chat API was called without a key")
 	}
 }
 
 func TestCompleteIsUnavailableWhenTheChatAPIFails(t *testing.T) {
+	var logBuf bytes.Buffer
+	log.SetOutput(&logBuf)
+	defer log.SetOutput(os.Stderr)
+
 	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, "bad key", http.StatusUnauthorized)
+	}))
+	defer chat.Close()
+	svc := &agentServer{baseURL: chat.URL, apiKey: "k"}
+
+	res, err := svc.Complete(context.Background(), askCompletion("why?"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Msg.GetError() != numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE {
+		t.Errorf("got %+v", res.Msg)
+	}
+	if !strings.Contains(logBuf.String(), "status 401") {
+		t.Errorf("log %q did not contain status 401", logBuf.String())
+	}
+}
+
+func TestCompleteWhenChatReplyContentIsNil(t *testing.T) {
+	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode(chatResponse{Choices: []struct {
+			Message      chatMessage `json:"message"`
+			FinishReason string      `json:"finish_reason"`
+		}{{Message: chatMessage{Role: "assistant", Content: nil}}}})
 	}))
 	defer chat.Close()
 	svc := &agentServer{baseURL: chat.URL, apiKey: "k"}

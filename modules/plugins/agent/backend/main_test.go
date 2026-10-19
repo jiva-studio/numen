@@ -3,10 +3,14 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"testing/iotest"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -71,8 +75,9 @@ func TestAgentServerRPC(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetAgentTools failed: %v", err)
 	}
-	if len(toolsResp.Msg.GetTools()) != 2 {
-		t.Errorf("expected 2 tools, got %d", len(toolsResp.Msg.GetTools()))
+	tools := toolsResp.Msg.GetTools()
+	if len(tools) != 2 || tools[0] == nil || tools[0].GetName() != "initial_tool" || tools[1] == nil || tools[1].GetName() != "new_tool" {
+		t.Errorf("unexpected tools: %+v", tools)
 	}
 	if toolsResp.Msg.GetSystemPromptExtension() != "You are an assistant. Extra rules." {
 		t.Errorf("unexpected prompt extension: %q", toolsResp.Msg.GetSystemPromptExtension())
@@ -800,5 +805,469 @@ func TestToolCallingConnectRPCSearch(t *testing.T) {
 	}
 	if !strings.Contains(searchOutputReceived, "general relativity") {
 		t.Errorf("expected search output to contain query, got %q", searchOutputReceived)
+	}
+}
+
+func TestChatTimeout(t *testing.T) {
+	if chatTimeout != 60*time.Second {
+		t.Errorf("chatTimeout = %v, want 60s", chatTimeout)
+	}
+	client := getHTTPClient(nil)
+	if client.Timeout != 60*time.Second {
+		t.Errorf("getHTTPClient(nil).Timeout = %v, want 60s", client.Timeout)
+	}
+	customClient := &http.Client{Timeout: 10 * time.Second}
+	if got := getHTTPClient(customClient); got != customClient {
+		t.Errorf("getHTTPClient(customClient) = %v, want %v", got, customClient)
+	}
+}
+
+func TestUpdateConfig(t *testing.T) {
+	svc := &agentServer{systemPrompt: "initial-prompt", modelName: "initial-model"}
+	// Empty strings or missing keys should not overwrite
+	svc.updateConfig(map[string]string{"system_prompt": "", "model": ""})
+	if svc.systemPrompt != "initial-prompt" || svc.modelName != "initial-model" {
+		t.Errorf("empty string overwrote config: prompt=%q, model=%q", svc.systemPrompt, svc.modelName)
+	}
+	// Non-empty values should update
+	svc.updateConfig(map[string]string{"system_prompt": "new-prompt", "model": "new-model"})
+	if svc.systemPrompt != "new-prompt" || svc.modelName != "new-model" {
+		t.Errorf("non-empty string failed to update config: prompt=%q, model=%q", svc.systemPrompt, svc.modelName)
+	}
+}
+
+func TestAskAgentInstructions(t *testing.T) {
+	var seenMessages []chatMessage
+	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req chatRequest
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		seenMessages = req.Messages
+		content := "done"
+		_ = json.NewEncoder(w).Encode(chatResponse{Choices: []struct {
+			Message      chatMessage `json:"message"`
+			FinishReason string      `json:"finish_reason"`
+		}{{Message: chatMessage{Role: "assistant", Content: &content}}}})
+	}))
+	defer chat.Close()
+
+	svc := &agentServer{systemPrompt: "base-sys"}
+	svc.updateConfig(map[string]string{"apiKey": "k", "baseUrl": chat.URL})
+
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewAgentServiceHandler(svc))
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	client := numenv1connect.NewAgentServiceClient(http.DefaultClient, server.URL)
+	stream, err := client.AskAgent(context.Background(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Prompt:       "hi",
+		Instructions: "custom-instruction",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for stream.Receive() {
+	}
+	if len(seenMessages) == 0 || seenMessages[0].Role != "system" || !strings.Contains(*seenMessages[0].Content, "custom-instruction\nbase-sys") {
+		t.Fatalf("system message did not include instructions: %+v", seenMessages)
+	}
+}
+
+func TestAskAgentMaxStepsOne(t *testing.T) {
+	turns := 0
+	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		turns++
+		_ = json.NewEncoder(w).Encode(chatResponse{Choices: []struct {
+			Message      chatMessage `json:"message"`
+			FinishReason string      `json:"finish_reason"`
+		}{{
+			FinishReason: "tool_calls",
+			Message: chatMessage{
+				Role: "assistant",
+				ToolCalls: []toolCall{{
+					ID:       "call_1",
+					Type:     "function",
+					Function: toolCallFunction{Name: "dummy", Arguments: "{}"},
+				}},
+			},
+		}}})
+	}))
+	defer chat.Close()
+
+	svc := &agentServer{
+		executor: func(ctx context.Context, name string, args string) (string, error) {
+			return "ok", nil
+		},
+	}
+	svc.updateConfig(map[string]string{"apiKey": "k", "baseUrl": chat.URL})
+
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewAgentServiceHandler(svc))
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	client := numenv1connect.NewAgentServiceClient(http.DefaultClient, server.URL)
+	stream, err := client.AskAgent(context.Background(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Prompt:   "loop",
+		MaxSteps: 1,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stoppedReason string
+	for stream.Receive() {
+		if s := stream.Msg().GetStopped(); s != "" {
+			stoppedReason = s
+		}
+	}
+	if turns != 1 {
+		t.Fatalf("expected 1 turn with MaxSteps=1, got %d", turns)
+	}
+	if stoppedReason != "max_turns_exceeded" {
+		t.Fatalf("expected stopped reason max_turns_exceeded, got %q", stoppedReason)
+	}
+}
+
+func TestAskAgentChunkSize64(t *testing.T) {
+	reply65 := strings.Repeat("a", 65)
+	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(chatResponse{Choices: []struct {
+			Message      chatMessage `json:"message"`
+			FinishReason string      `json:"finish_reason"`
+		}{{Message: chatMessage{Role: "assistant", Content: &reply65}}}})
+	}))
+	defer chat.Close()
+
+	svc := &agentServer{}
+	svc.updateConfig(map[string]string{"apiKey": "k", "baseUrl": chat.URL})
+
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewAgentServiceHandler(svc))
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	client := numenv1connect.NewAgentServiceClient(http.DefaultClient, server.URL)
+	stream, err := client.AskAgent(context.Background(), connect.NewRequest(&numenv1.AskAgentRequest{Prompt: "hi"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var chunks []string
+	for stream.Receive() {
+		if said := stream.Msg().GetSaid(); said != "" {
+			chunks = append(chunks, said)
+		}
+	}
+	if len(chunks) != 2 || len(chunks[0]) != 64 || len(chunks[1]) != 1 {
+		t.Fatalf("expected chunks of len 64 and 1, got %v", chunks)
+	}
+
+	svcNoKey := &agentServer{}
+	muxNoKey := http.NewServeMux()
+	muxNoKey.Handle(numenv1connect.NewAgentServiceHandler(svcNoKey))
+	serverNoKey := httptest.NewServer(muxNoKey)
+	defer serverNoKey.Close()
+
+	clientNoKey := numenv1connect.NewAgentServiceClient(http.DefaultClient, serverNoKey.URL)
+	streamNoKey, err := clientNoKey.AskAgent(context.Background(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Prompt: strings.Repeat("x", 40),
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var chunksNoKey []string
+	for streamNoKey.Receive() {
+		if said := streamNoKey.Msg().GetSaid(); said != "" {
+			chunksNoKey = append(chunksNoKey, said)
+		}
+	}
+	if len(chunksNoKey) != 2 || len(chunksNoKey[0]) != 64 || len(chunksNoKey[1]) != 1 {
+		t.Fatalf("expected fallback chunks of len 64 and 1, got %v", chunksNoKey)
+	}
+}
+
+func TestAskAgentFallbackCustomTools(t *testing.T) {
+	svc0 := &agentServer{}
+	mux0 := http.NewServeMux()
+	mux0.Handle(numenv1connect.NewAgentServiceHandler(svc0))
+	s0 := httptest.NewServer(mux0)
+	defer s0.Close()
+	c0 := numenv1connect.NewAgentServiceClient(http.DefaultClient, s0.URL)
+	st0, err := c0.AskAgent(context.Background(), connect.NewRequest(&numenv1.AskAgentRequest{Prompt: "test"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var said0 string
+	for st0.Receive() {
+		said0 += st0.Msg().GetSaid()
+	}
+	if strings.Contains(said0, "custom tools available") {
+		t.Errorf("expected no custom tools summary, got %q", said0)
+	}
+
+	svc1 := &agentServer{
+		tools: []*numenv1.AgentToolDefinition{{Name: "t1"}},
+	}
+	mux1 := http.NewServeMux()
+	mux1.Handle(numenv1connect.NewAgentServiceHandler(svc1))
+	s1 := httptest.NewServer(mux1)
+	defer s1.Close()
+	c1 := numenv1connect.NewAgentServiceClient(http.DefaultClient, s1.URL)
+	st1, err := c1.AskAgent(context.Background(), connect.NewRequest(&numenv1.AskAgentRequest{Prompt: "test"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var said1 string
+	for st1.Receive() {
+		said1 += st1.Msg().GetSaid()
+	}
+	if !strings.Contains(said1, "(1 custom tools available)") {
+		t.Errorf("expected (1 custom tools available), got %q", said1)
+	}
+}
+
+func TestExecuteToolReleasesReadLock(t *testing.T) {
+	svc := &agentServer{}
+	_, _ = svc.executeTool(context.Background(), "unknown", "")
+	if !svc.mu.TryLock() {
+		t.Fatal("read lock was not released")
+	}
+	svc.mu.Unlock()
+}
+
+type testSearchHandler struct {
+	numenv1connect.UnimplementedSearchServiceHandler
+	gotQuery string
+	gotLimit int32
+}
+
+func (h *testSearchHandler) SearchPassages(
+	_ context.Context,
+	req *connect.Request[numenv1.SearchPassagesRequest],
+) (*connect.Response[numenv1.SearchPassagesResponse], error) {
+	h.gotQuery = req.Msg.GetQuery()
+	h.gotLimit = req.Msg.GetLimit()
+	return connect.NewResponse(&numenv1.SearchPassagesResponse{
+		Found: []*numenv1.Passage{{Text: "found"}},
+	}), nil
+}
+
+func TestDefaultExecuteToolSearch(t *testing.T) {
+	handler := &testSearchHandler{}
+	searchMux := http.NewServeMux()
+	searchMux.Handle(numenv1connect.NewSearchServiceHandler(handler))
+	searchServer := httptest.NewServer(searchMux)
+	defer searchServer.Close()
+
+	svc := &agentServer{}
+
+	t.Setenv("NUMEN_SEARCH_URL", "")
+	if _, err := svc.defaultExecuteTool(context.Background(), "knowledge_search", `{"query":"q"}`); err == nil {
+		t.Fatal("expected error when NUMEN_SEARCH_URL is empty")
+	}
+
+	t.Setenv("NUMEN_SEARCH_URL", searchServer.URL)
+
+	_, err := svc.defaultExecuteTool(context.Background(), "search", `{"query":"q1","limit":1}`)
+	if err != nil || handler.gotLimit != 1 || handler.gotQuery != "q1" {
+		t.Fatalf("search tool failed: err=%v limit=%d query=%s", err, handler.gotLimit, handler.gotQuery)
+	}
+
+	_, err = svc.defaultExecuteTool(context.Background(), "knowledge_search", `{"query":"q2","limit":0}`)
+	if err != nil || handler.gotLimit != 5 || handler.gotQuery != "q2" {
+		t.Fatalf("knowledge_search tool with 0 limit failed: err=%v limit=%d query=%s", err, handler.gotLimit, handler.gotQuery)
+	}
+
+	_, err = svc.defaultExecuteTool(context.Background(), "search", "raw query string")
+	if err != nil || handler.gotQuery != "raw query string" || handler.gotLimit != 5 {
+		t.Fatalf("raw query failed: err=%v limit=%d query=%s", err, handler.gotLimit, handler.gotQuery)
+	}
+
+	_, err = svc.defaultExecuteTool(context.Background(), "search", `{"limit":3}`)
+	if err != nil || handler.gotQuery != `{"limit":3}` || handler.gotLimit != 5 {
+		t.Fatalf("json without query: got query=%q, limit=%d", handler.gotQuery, handler.gotLimit)
+	}
+
+	if _, err := svc.defaultExecuteTool(context.Background(), "unknown_tool", `{"query":"q"}`); err == nil {
+		t.Fatal("expected error for unknown tool")
+	}
+}
+
+func TestGetBaseURLAndModel(t *testing.T) {
+	t.Setenv("NUMEN_AGENT_URL", "")
+	if got := getBaseURL(""); got != defaultBaseURL {
+		t.Errorf("getBaseURL(\"\") = %q, want %q", got, defaultBaseURL)
+	}
+	t.Setenv("NUMEN_AGENT_URL", "http://env.url")
+	if got := getBaseURL(""); got != "http://env.url" {
+		t.Errorf("getBaseURL(\"\") with env = %q, want http://env.url", got)
+	}
+	if got := getBaseURL("http://conf.url"); got != "http://conf.url" {
+		t.Errorf("getBaseURL(\"http://conf.url\") = %q, want http://conf.url", got)
+	}
+
+	if got := getModel("", ""); got != defaultModel {
+		t.Errorf("getModel(\"\", \"\") = %q, want %q", got, defaultModel)
+	}
+	if got := getModel("req", "conf"); got != "req" {
+		t.Errorf("getModel(\"req\", \"conf\") = %q, want req", got)
+	}
+	if got := getModel("", "conf"); got != "conf" {
+		t.Errorf("getModel(\"\", \"conf\") = %q, want conf", got)
+	}
+}
+
+func TestFormatTools(t *testing.T) {
+	tools := []*numenv1.AgentToolDefinition{
+		{Name: "t1", ParametersJsonSchema: `{"type":"string"}`},
+		{Name: "t2", ParametersJsonSchema: `invalid-json`},
+		{Name: "t3"},
+	}
+	res := formatTools(tools, nil)
+	if len(res) != 3 {
+		t.Fatalf("expected 3 tools, got %d", len(res))
+	}
+	if string(res[0].Function.Parameters) != `{"type":"string"}` {
+		t.Errorf("expected parsed schema, got %s", res[0].Function.Parameters)
+	}
+	if string(res[1].Function.Parameters) != `{"type":"object","properties":{}}` {
+		t.Errorf("expected default schema for invalid json, got %s", res[1].Function.Parameters)
+	}
+
+	res = formatTools(tools, []string{"t1"})
+	if len(res) != 1 || res[0].Function.Name != "t1" {
+		t.Fatalf("expected 1 tool t1, got %+v", res)
+	}
+
+	if res := formatTools(nil, nil); res != nil {
+		t.Errorf("expected nil, got %+v", res)
+	}
+
+	if res := formatTools(tools, []string{"nonexistent"}); res != nil {
+		t.Errorf("expected nil, got %+v", res)
+	}
+}
+
+func TestExtractToolMeta(t *testing.T) {
+	about, path := extractToolMeta("invalid json")
+	if about != "invalid json" || path != "" {
+		t.Errorf("invalid json: got about=%q, path=%q", about, path)
+	}
+	about, path = extractToolMeta(`{"file":"f.txt","query":"q"}`)
+	if about != "q" || path != "f.txt" {
+		t.Errorf("file/query: got about=%q, path=%q", about, path)
+	}
+	about, path = extractToolMeta(`{"path":"p.txt","about":"a"}`)
+	if about != "a" || path != "p.txt" {
+		t.Errorf("path/about: got about=%q, path=%q", about, path)
+	}
+	about, path = extractToolMeta(`{"key":"val"}`)
+	if about != `{"key":"val"}` || path != "" {
+		t.Errorf("other key: got about=%q, path=%q", about, path)
+	}
+}
+
+type errReaderTransport struct{}
+
+func (errReaderTransport) RoundTrip(*http.Request) (*http.Response, error) {
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(iotest.ErrReader(errors.New("read failed"))),
+	}, nil
+}
+
+func TestCallChat(t *testing.T) {
+	var gotReq chatRequest
+	var gotContentType string
+	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotContentType = r.Header.Get("Content-Type")
+		_ = json.NewDecoder(r.Body).Decode(&gotReq)
+		content := "response text"
+		_ = json.NewEncoder(w).Encode(chatResponse{Choices: []struct {
+			Message      chatMessage `json:"message"`
+			FinishReason string      `json:"finish_reason"`
+		}{{Message: chatMessage{Role: "assistant", Content: &content}}}})
+	}))
+	defer chat.Close()
+
+	msg, err := callChat(context.Background(), http.DefaultClient, chat.URL, "key", "model", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotContentType != "application/json" {
+		t.Errorf("Content-Type = %q, want application/json", gotContentType)
+	}
+	if gotReq.Temperature != 0 {
+		t.Errorf("Temperature = %v, want 0", gotReq.Temperature)
+	}
+	if msg.Content == nil || *msg.Content != "response text" {
+		t.Errorf("unexpected message: %+v", msg)
+	}
+
+	_, err = callChat(context.Background(), http.DefaultClient, "http://[::1]:namedport", "key", "model", nil, nil)
+	if err == nil || !strings.Contains(err.Error(), "create chat request") {
+		t.Errorf("expected create chat request error, got %v", err)
+	}
+
+	closedServer := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	closedServer.Close()
+	_, err = callChat(context.Background(), http.DefaultClient, closedServer.URL, "key", "model", nil, nil)
+	if err == nil || errors.Unwrap(err) == nil {
+		t.Errorf("expected wrapped send chat request error, got %v", err)
+	}
+
+	errClient := &http.Client{Transport: errReaderTransport{}}
+	_, err = callChat(context.Background(), errClient, chat.URL, "key", "model", nil, nil)
+	if err == nil || !strings.Contains(err.Error(), "read chat response") || errors.Unwrap(err) == nil {
+		t.Errorf("expected wrapped read chat response error, got %v", err)
+	}
+
+	statusServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		content := "err"
+		_ = json.NewEncoder(w).Encode(chatResponse{Choices: []struct {
+			Message      chatMessage `json:"message"`
+			FinishReason string      `json:"finish_reason"`
+		}{{Message: chatMessage{Role: "assistant", Content: &content}}}})
+	}))
+	defer statusServer.Close()
+	_, err = callChat(context.Background(), http.DefaultClient, statusServer.URL, "key", "model", nil, nil)
+	if err == nil || !strings.Contains(err.Error(), "status 500") {
+		t.Errorf("expected status 500 error, got %v", err)
+	}
+
+	badJSONServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("not-json"))
+	}))
+	defer badJSONServer.Close()
+	_, err = callChat(context.Background(), http.DefaultClient, badJSONServer.URL, "key", "model", nil, nil)
+	if err == nil || !strings.Contains(err.Error(), "unmarshal chat response") || errors.Unwrap(err) == nil {
+		t.Errorf("expected wrapped unmarshal chat response error, got %v", err)
+	}
+
+	emptyChoicesServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"choices":[]}`))
+	}))
+	defer emptyChoicesServer.Close()
+	_, err = callChat(context.Background(), http.DefaultClient, emptyChoicesServer.URL, "key", "model", nil, nil)
+	if err == nil || !strings.Contains(err.Error(), "no completion returned") {
+		t.Errorf("expected no completion returned error, got %v", err)
+	}
+}
+
+func TestSplitChunks(t *testing.T) {
+	if got := splitChunks("", 5); len(got) != 1 || got[0] != "" {
+		t.Errorf("splitChunks(\"\", 5) = %v, want [\"\"]", got)
+	}
+	if got := splitChunks("12345", 5); len(got) != 1 || got[0] != "12345" {
+		t.Errorf("splitChunks(\"12345\", 5) = %v, want [\"12345\"]", got)
+	}
+	if got := splitChunks("123456", 5); len(got) != 2 || got[0] != "12345" || got[1] != "6" {
+		t.Errorf("splitChunks(\"123456\", 5) = %v, want [\"12345\", \"6\"]", got)
+	}
+	if got := splitChunks("1234567890", 5); len(got) != 2 || got[0] != "12345" || got[1] != "67890" {
+		t.Errorf("splitChunks(\"1234567890\", 5) = %v, want [\"12345\", \"67890\"]", got)
+	}
+	if got := splitChunks("12345678901", 5); len(got) != 3 || got[0] != "12345" || got[1] != "67890" || got[2] != "1" {
+		t.Errorf("splitChunks(\"12345678901\", 5) = %v, want [\"12345\", \"67890\", \"1\"]", got)
 	}
 }
