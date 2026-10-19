@@ -62,7 +62,6 @@ func downloadModel(ctx context.Context, cfg LocalModel, file string, progress Fe
 		return Paths{}, fmt.Errorf("models folder: %w", err)
 	}
 	repo := hub.New(cfg.Name).WithProgressBar(false).WithCacheDir(filepath.Join(home, "huggingface"))
-	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="revision is used by remote downloads, which cannot run during offline unit tests"
 	if cfg.Revision != "" {
 		repo = repo.WithRevision(cfg.Revision)
 	}

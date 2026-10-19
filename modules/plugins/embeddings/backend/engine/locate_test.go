@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"io/fs"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -182,6 +184,8 @@ func TestLocateErrorsWhenModelsHomeFails(t *testing.T) {
 	t.Setenv(models.EnvDir, "")
 	t.Setenv("XDG_CONFIG_HOME", "")
 	t.Setenv("HOME", "")
+	t.Setenv("APPDATA", "")
+	t.Setenv("LOCALAPPDATA", "")
 	_, err := Locate(context.Background(), LocalModel{Name: "owner/repo", ShouldDownload: true}, nil)
 	if err == nil || !strings.Contains(err.Error(), "models folder") {
 		t.Fatalf("Locate() error = %v, want models folder error", err)
@@ -226,3 +230,34 @@ func TestLocateCachedReportsFalseOnCorruptSums(t *testing.T) {
 		t.Fatalf("corrupt tokenizer: locateCached() = %v, %v, want ok=false and non-nil error", ok, err)
 	}
 }
+
+func TestLocatePassesRevision(t *testing.T) {
+	var requestedPath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestedPath = r.URL.Path
+		http.Error(w, "not found", http.StatusNotFound)
+	}))
+	defer srv.Close()
+
+	t.Setenv("HF_ENDPOINT", srv.URL)
+	t.Setenv(models.EnvDir, t.TempDir())
+	t.Setenv(models.EnvOffline, "")
+
+	cfg := LocalModel{
+		Name:           "owner/repo",
+		Revision:       "custom-rev",
+		ShouldDownload: true,
+	}
+	_, _ = Locate(context.Background(), cfg, nil)
+	if !strings.Contains(requestedPath, "/revision/custom-rev") {
+		t.Fatalf("requested path = %q, want revision custom-rev", requestedPath)
+	}
+
+	requestedPath = ""
+	cfg.Revision = ""
+	_, _ = Locate(context.Background(), cfg, nil)
+	if !strings.Contains(requestedPath, "/revision/main") {
+		t.Fatalf("requested path = %q, want default revision main", requestedPath)
+	}
+}
+
