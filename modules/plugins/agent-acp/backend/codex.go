@@ -129,6 +129,7 @@ func askCodexModels(ctx context.Context, command []string) ([]AgentModel, error)
 	defer stop()
 	cmd := exec.CommandContext(running, name, slices.Concat(args, []string{"app-server"})...)
 	in, err := cmd.StdinPipe()
+	// gomutants:disable-next-line BRANCH_IF reason="cmd.StdinPipe cannot fail on an unstarted exec.Cmd"
 	if err != nil {
 		return nil, err
 	}

@@ -22,6 +22,7 @@ type AntigravityConfig struct {
 // ReadCodexConfig reads the OpenAI Codex configuration from standard locations.
 func ReadCodexConfig() (*CodexConfig, error) {
 	home, err := os.UserHomeDir()
+	// gomutants:disable-next-line BRANCH_IF reason="os.UserHomeDir fails only when user home directory cannot be determined"
 	if err != nil {
 		return nil, err
 	}
@@ -43,6 +44,7 @@ func ReadCodexConfig() (*CodexConfig, error) {
 // ReadAntigravityConfig reads the Google Antigravity CLI configuration from standard locations.
 func ReadAntigravityConfig() (*AntigravityConfig, error) {
 	home, err := os.UserHomeDir()
+	// gomutants:disable-next-line BRANCH_IF reason="os.UserHomeDir fails only when user home directory cannot be determined"
 	if err != nil {
 		return nil, err
 	}
@@ -71,6 +73,7 @@ func parseSimpleToml(content string) *CodexConfig {
 	lines := strings.Split(content, "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
+		// gomutants:disable-next-line INVERT_LOGICAL reason="comments start with # and empty lines yield a single split part, so neither matches the key 'model' when fallthrough occurs"
 		if strings.HasPrefix(line, "#") || line == "" {
 			continue
 		}

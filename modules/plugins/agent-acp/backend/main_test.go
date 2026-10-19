@@ -50,7 +50,7 @@ func TestAgentServerToolsAndPrompt(t *testing.T) {
 	ctx := context.Background()
 
 	// RegisterTool
-	_, err := srv.RegisterTool(ctx, connect.NewRequest(&numenv1.RegisterToolRequest{
+	regResp, err := srv.RegisterTool(ctx, connect.NewRequest(&numenv1.RegisterToolRequest{
 		Tool: &numenv1.AgentToolDefinition{
 			Name:        "test_tool",
 			Description: "A test tool",
@@ -58,6 +58,9 @@ func TestAgentServerToolsAndPrompt(t *testing.T) {
 	}))
 	if err != nil {
 		t.Fatal(err)
+	}
+	if regResp == nil || !regResp.Msg.GetSuccess() {
+		t.Fatal("expected successful tool registration")
 	}
 
 	// ExtendSystemPrompt
@@ -71,6 +74,17 @@ func TestAgentServerToolsAndPrompt(t *testing.T) {
 		t.Errorf("expected prompt 'Always be polite.', got %q", extResp.Msg.GetFullPrompt())
 	}
 
+	// ExtendSystemPrompt a second time to append to existing prompt
+	extResp2, err := srv.ExtendSystemPrompt(ctx, connect.NewRequest(&numenv1.ExtendSystemPromptRequest{
+		Extension: "Be concise.",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if extResp2.Msg.GetFullPrompt() != "Always be polite.\nBe concise." {
+		t.Errorf("expected prompt 'Always be polite.\\nBe concise.', got %q", extResp2.Msg.GetFullPrompt())
+	}
+
 	// GetAgentTools
 	toolsResp, err := srv.GetAgentTools(ctx, connect.NewRequest(&numenv1.GetAgentToolsRequest{}))
 	if err != nil {
@@ -82,8 +96,8 @@ func TestAgentServerToolsAndPrompt(t *testing.T) {
 	if toolsResp.Msg.GetTools()[0].GetName() != "test_tool" {
 		t.Errorf("expected tool test_tool, got %s", toolsResp.Msg.GetTools()[0].GetName())
 	}
-	if toolsResp.Msg.GetSystemPromptExtension() != "Always be polite." {
-		t.Errorf("expected prompt extension 'Always be polite.', got %q", toolsResp.Msg.GetSystemPromptExtension())
+	if toolsResp.Msg.GetSystemPromptExtension() != "Always be polite.\nBe concise." {
+		t.Errorf("expected prompt extension 'Always be polite.\\nBe concise.', got %q", toolsResp.Msg.GetSystemPromptExtension())
 	}
 }
 

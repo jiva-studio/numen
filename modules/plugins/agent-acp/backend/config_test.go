@@ -44,3 +44,11 @@ func TestReadConfigurations(t *testing.T) {
 		t.Errorf("expected model gemini-2.5-pro, got %s", agyCfg.Model)
 	}
 }
+
+func TestParseSimpleToml(t *testing.T) {
+	cfg := parseSimpleToml("model = \"claude-3=5-sonnet\"\n")
+	if cfg.Model != "claude-3=5-sonnet" {
+		t.Errorf("expected model 'claude-3=5-sonnet', got %q", cfg.Model)
+	}
+}
+
