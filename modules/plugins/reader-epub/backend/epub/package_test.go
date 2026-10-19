@@ -441,3 +441,9 @@ func TestResolveEmptyHref(t *testing.T) {
 		t.Errorf("resolve(\"OEBPS\", \"\") = %q, want \"\"", got)
 	}
 }
+
+func TestResolveHrefWhenTargetResolvesToEmpty(t *testing.T) {
+	if got := epub.ResolveHref("OEBPS", "#fragment"); got != "" {
+		t.Errorf("ResolveHref(\"OEBPS\", \"#fragment\") = %q, want \"\"", got)
+	}
+}

@@ -176,6 +176,7 @@ func (s *BookServer) ReadBookEntry(
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
 	}
 	defer file.Close()
+	// gomutants:disable-next-line BRANCH_IF reason="Stat on an open file descriptor does not fail"
 	info, err := file.Stat()
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))

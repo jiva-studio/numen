@@ -99,4 +99,21 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	if resp.Msg.GetTitle() != "Test Book" {
 		t.Fatalf("expected title 'Test Book', got %q", resp.Msg.GetTitle())
 	}
+
+	// 4. GetBook with path traversal -> PermissionDenied
+	_, err = server.GetBook(ctx, connect.NewRequest(&numenv1.GetBookRequest{
+		Path: "../outside.epub",
+	}))
+	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("expected CodePermissionDenied for GetBook path traversal, got %v", err)
+	}
+
+	// 5. ReadBookMarkup with path traversal -> PermissionDenied
+	_, err = server.ReadBookMarkup(ctx, connect.NewRequest(&numenv1.ReadBookMarkupRequest{
+		Path:     "../outside.epub",
+		Document: "EPUB/chapter1.xhtml",
+	}))
+	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("expected CodePermissionDenied for ReadBookMarkup path traversal, got %v", err)
+	}
 }
