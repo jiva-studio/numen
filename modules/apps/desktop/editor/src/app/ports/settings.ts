@@ -65,7 +65,7 @@ export interface SettingsPort {
   /** The key of a secret a plugin declares, removed. */
   deletePluginSecret(pluginId: string, name: string): Promise<void>
   /**
-   * A plugin the host holds off, started once more. The answer is why it failed
+   * A plugin the host suspends, started once more. The answer is why it failed
    * again, and empty where it started.
    */
   retryPlugin(pluginId: string): Promise<string>

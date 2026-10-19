@@ -1528,7 +1528,7 @@ func isEmptyEndpoint(e Endpoint) bool {
 	return e.Host == "" && e.Port == 0 && e.Transport == nil
 }
 
-// getFailureLocked is why the host holds a plugin off, and nil while it does not.
+// getFailureLocked is why the host suspends a plugin, and nil while it does not.
 func (h *Host) getFailureLocked(pluginID string) *port.PluginFailure {
 	sup, ok := h.supervisors[pluginID]
 	if !ok {

@@ -116,8 +116,8 @@ func (c *bookCache) openBook(path string) (*cachedBook, error) {
 	}, nil
 }
 
-// evict drops a book from the cache: its file closes now when no request reads it,
-// and when the last reader releases it otherwise. The caller has the lock.
+// evict drops a book from the cache. The file of a book with no readers closes at once, and the
+// file of a book with readers closes when the last one releases it. The caller has the lock.
 func (c *bookCache) evict(book *cachedBook) {
 	book.evicted = true
 	if book.readers == 0 {

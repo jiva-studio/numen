@@ -124,7 +124,7 @@ export const WORDS = {
   asking: (name: string) => `${name} asks to use a model.`,
   allow: 'Allow',
   refuse: 'Refuse',
-  /** The plugins the host holds off after they failed to start. */
+  /** The plugins the host suspends after they failed to start. */
   pluginsStopped: 'Plugins that stopped',
   pluginStoppedAt: (when: string) => `Stopped ${when}`,
   pluginRetry: 'Retry',
