@@ -2,6 +2,7 @@
  * Tab kinds and openers declared for the desktop window.
  */
 import { shallowRef } from 'vue'
+import { formatErrorMessage } from '@numen/wire'
 import type { DestinationDeps } from '@/features/command-palette'
 import { FILES, PLEX } from '@/entities/tab'
 import { createAgentKind } from './kinds/agent'
@@ -49,7 +50,11 @@ export function useWindowKinds(deps: WindowKindsDeps) {
       ...deps,
       nesting: settings.nesting,
       dragged,
-      ask: (text) => void agents.askQuestion(text),
+      ask: (text) => {
+        agents
+          .askQuestion(text)
+          .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
+      },
       writeMessage,
     }),
     notes: createVaultNotes({ core, search: core, making: editing.making }),

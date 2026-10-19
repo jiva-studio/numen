@@ -149,9 +149,9 @@ describe('a declared kind registered through a plugin context', () => {
 
 describe('the services a plugin context is given', () => {
   const createDeps = (over: Partial<PluginHostDeps> = {}): PluginHostDeps => ({
-    registerKind: () => () => {},
-    registerExtensionReader: () => () => {},
-    openTab: async () => 'tab',
+    registerKind: () => vi.fn(),
+    registerExtensionReader: () => vi.fn(),
+    openTab: () => Promise.resolve('tab'),
     ...over,
   })
 
@@ -185,7 +185,9 @@ describe('the services a plugin context is given', () => {
       version: '1.0.0',
       permissions: ['vault:read'],
     }
-    host.createContext('md.numen.one', reading).onVaultChange((event) => void heard.push(event))
+    host.createContext('md.numen.one', reading).onVaultChange((event) => {
+      heard.push(event)
+    })
     host.createContext('md.numen.two', reading).onVaultChange(() => {
       throw new Error('no')
     })

@@ -2,6 +2,7 @@
  * The window and the notes of the vault, as a plugin's tabs are given them.
  */
 import { computed, type Ref, type ShallowRef } from 'vue'
+import { formatErrorMessage } from '@numen/wire'
 import type { VaultFiles, VaultNotes, WorkspaceHost } from '@numen/plugin-sdk'
 import type { SearchDeps } from '@/features/command-palette'
 import type { FileOpeners } from '@/entities/tab'
@@ -46,11 +47,14 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
     setDraggedPaths: (paths) => {
       dragged.value = paths
     },
-    openFile: (path, options) =>
-      void tabOpeners.openFile(path, options?.title ?? '', {
-        ...(options?.placement ? { where: options.placement } : {}),
-        ...(options?.line === undefined ? {} : { line: options.line }),
-      }),
+    openFile: (path, options) => {
+      tabOpeners
+        .openFile(path, options?.title ?? '', {
+          ...(options?.placement ? { where: options.placement } : {}),
+          ...(options?.line === undefined ? {} : { line: options.line }),
+        })
+        .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
+    },
     syncPath: (tabId, path, title) => deps.tabSync?.syncPathFromTab(tabId, path, title) ?? false,
     runCommand: (id, { path, title }) => deps.runCommand(id, { ...deps.getTarget(), path, title }),
     ask: (text) => deps.ask(text),

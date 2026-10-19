@@ -271,8 +271,14 @@ describe('the commands reach the window', () => {
   it('travels and leaves through the window', async () => {
     const went: string[] = []
     const { deps } = createOptions({
-      travel: async (path) => void went.push(`travel ${path}`),
-      leavePath: async (from, to) => void went.push(`leave ${from} ${to}`),
+      travel: (path) => {
+        went.push(`travel ${path}`)
+        return Promise.resolve()
+      },
+      leavePath: (from, to) => {
+        went.push(`leave ${from} ${to}`)
+        return Promise.resolve()
+      },
     })
 
     await deps.goes.travel('Llama.md')

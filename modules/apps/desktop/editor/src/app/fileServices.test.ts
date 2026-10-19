@@ -19,11 +19,11 @@ vi.mock('@/entities/deck', async (importOriginal) => ({
 }))
 vi.mock('@/entities/artifact', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/entities/artifact')>()),
-  running: { fetchArtifact: vi.fn() },
+  running: { fetchArtifact: vi.fn(() => Promise.resolve()) },
 }))
 vi.mock('@/features/command-palette', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/features/command-palette')>()),
-  runInvocation: vi.fn(async () => undefined),
+  runInvocation: vi.fn(() => Promise.resolve(undefined)),
 }))
 
 const target = {
@@ -52,7 +52,7 @@ const setup = () => {
     writeMessage,
   })
   const files = createVaultFiles({
-    core: { list: async (folder) => [{ path: `${folder}/a.md` }] as never },
+    core: { list: (folder) => Promise.resolve([{ path: `${folder}/a.md` }] as never) },
     made,
     making: { createUntitled } as never,
     getTarget: () => target as never,
@@ -252,7 +252,7 @@ describe('the window’s commands over a row', () => {
       made: { transcript: 'done' },
       others: ['b.md'],
     })
-    expect(runCommand.mock.calls[1]![1]).toMatchObject({ path: '', file: '', made: {}, others: [] })
+    expect(runCommand.mock.calls.at(1)?.at(1)).toMatchObject({ path: '', file: '', made: {}, others: [] })
   })
 
   it('are drawn with the window’s icons, and an entry by what it is', () => {

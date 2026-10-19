@@ -8,10 +8,10 @@ import type { NoteCreator } from '@/entities/note'
 const createWorkspace = (over: Partial<WorkspaceHostDeps> = {}) => {
   const failure = ref('')
   const deps = {
-    window: { failure, opening: ref('Root.md'), readInitialNote: vi.fn(async () => 'Root.md') },
+    window: { failure, opening: ref('Root.md'), readInitialNote: vi.fn(() => Promise.resolve('Root.md')) },
     nesting: { isNesting: ref(true), headings: ref(3) },
     dragged: shallowRef<readonly string[]>([]),
-    tabOpeners: { openFile: vi.fn(async () => {}) },
+    tabOpeners: { openFile: vi.fn(() => Promise.resolve()) },
     tabSync: { syncPathFromTab: vi.fn(() => true) },
     getTarget: () => ({ tab: 'plex:1', kind: 'plex', path: 'Here.md' }) as unknown as CommandTarget,
     runCommand: vi.fn(),
@@ -95,24 +95,28 @@ describe('the window a plugin is handed', () => {
 describe('the notes of the vault a plugin is handed', () => {
   const createNotes = () => {
     const making = {
-      createUntitled: vi.fn(async () => ({ path: 'Untitled.md', title: 'Untitled' })),
-      createInRelation: vi.fn(async () => ({ path: 'Made.md', title: 'Made' })),
-      createWithTitle: vi.fn(async () => null),
-      join: vi.fn(async () => true),
-      replaceLinks: vi.fn(async () => false),
+      createUntitled: vi.fn(() => Promise.resolve(({ path: 'Untitled.md', title: 'Untitled' }))),
+      createInRelation: vi.fn(() => Promise.resolve(({ path: 'Made.md', title: 'Made' }))),
+      createWithTitle: vi.fn(() => Promise.resolve(null)),
+      join: vi.fn(() => Promise.resolve(true)),
+      replaceLinks: vi.fn(() => Promise.resolve(false)),
     } as unknown as NoteCreator
     const core = {
-      neighbourhood: vi.fn(async (path: string) => ({
-        focus: { path, title: 'Root' },
-        focusType: 'note' as const,
-        related: [],
-      })),
-      headings: vi.fn(async () => new Map()),
+      neighbourhood: vi.fn((path: string) =>
+        Promise.resolve({
+          focus: { path, title: 'Root' },
+          focusType: 'note' as const,
+          related: [],
+        }),
+      ),
+      headings: vi.fn(() => Promise.resolve(new Map())),
     }
     const search = {
-      names: vi.fn(async () => [
-        { path: 'One.md', title: 'One', heading: '', line: -1, at: [], type: 'note' as const },
-      ]),
+      names: vi.fn(() =>
+        Promise.resolve([
+          { path: 'One.md', title: 'One', heading: '', line: -1, at: [], type: 'note' as const },
+        ]),
+      ),
     }
     return { making, core, search, notes: createVaultNotes({ core, search, making }) }
   }

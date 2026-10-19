@@ -41,12 +41,12 @@ const create = ({ plex, hasPlexKind = true }: { plex?: Plex; hasPlexKind?: boole
   const writer = vi.fn()
   const deps = {
     log: { getWriter: vi.fn(() => writer) },
-    tabOpeners: { openFileAt: vi.fn(), openFile: vi.fn(async () => {}) },
+    tabOpeners: { openFileAt: vi.fn(), openFile: vi.fn(() => Promise.resolve()) },
     held: {
       registerKinds: vi.fn(),
       hasKind: vi.fn(() => hasPlexKind),
-      navigateTab: vi.fn(async () => 'plex:1'),
-      navigateTabsAt: vi.fn(async () => {}),
+      navigateTab: vi.fn(() => Promise.resolve('plex:1')),
+      navigateTabsAt: vi.fn(() => Promise.resolve()),
       handle: { last: vi.fn(() => (plex ? { id: 'plex:1', state: 'plex state' } : null)) },
       getTab: vi.fn(() => ({ kind: { getTarget: () => plex?.target } })),
     },
@@ -62,7 +62,7 @@ const create = ({ plex, hasPlexKind = true }: { plex?: Plex; hasPlexKind?: boole
 
 beforeEach(() => {
   h.seen = {} as Record<'agent' | 'files', MockSeen>
-  h.agents = { kind: 'agent', askQuestion: vi.fn() }
+  h.agents = { kind: 'agent', askQuestion: vi.fn(() => Promise.resolve()) }
 })
 
 describe('the window kinds', () => {

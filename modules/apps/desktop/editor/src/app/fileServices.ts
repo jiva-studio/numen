@@ -33,14 +33,11 @@ export interface FileMakersDeps {
 
 /** The decks, stencils, presets and urls the window makes, each put in front of the person. */
 export function createFileMakers({ core, tabOpeners, notes, writeMessage }: FileMakersDeps) {
-  const fetchArtifact = async (path: string): Promise<void> => {
-    try {
-      await running.fetchArtifact(path)
-    } catch (error) {
-      writeMessage(formatErrorMessage(error), 'error')
-      return
-    }
-    notes.applyPathChanges([path])
+  const fetchArtifact = (path: string): void => {
+    running.fetchArtifact(path).then(
+      () => notes.applyPathChanges([path]),
+      (error: unknown) => writeMessage(formatErrorMessage(error), 'error'),
+    )
   }
 
   return createFileCreators(
@@ -50,7 +47,7 @@ export function createFileMakers({ core, tabOpeners, notes, writeMessage }: File
       createPreset: (title, folder) => presets.createPreset(title, folder),
       createUrl: async (address, folder) => {
         const made = await core.createUrl(address, folder)
-        if (made.ok) void fetchArtifact(made.value.path)
+        if (made.ok) fetchArtifact(made.value.path)
         return made
       },
     },
