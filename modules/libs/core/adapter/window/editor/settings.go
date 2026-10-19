@@ -186,9 +186,9 @@ func newWirePluginInfos(held []settings.PluginInfo) []*v1.PluginInfo {
 }
 
 // newWirePluginModels is the models a plugin answers completions with, as the wire carries them.
-func newWirePluginModels(held []settings.AgentModel) []*v1.PluginModel {
-	models := make([]*v1.PluginModel, 0, len(held))
-	for _, one := range held {
+func newWirePluginModels(agentModels []settings.AgentModel) []*v1.PluginModel {
+	models := make([]*v1.PluginModel, 0, len(agentModels))
+	for _, one := range agentModels {
 		models = append(models, &v1.PluginModel{Name: one.Name, Title: one.Title, IsDefault: one.IsDefault})
 	}
 	return models

@@ -111,7 +111,7 @@ beforeEach(() => {
     editing: {
       notes: { applyPathChanges: vi.fn() },
       changes: { reportChange: vi.fn() },
-      noted: { measureAll: vi.fn() },
+      noteMeasurer: { measureAll: vi.fn() },
       reached: { getTabAt: vi.fn(() => null) },
       getTitle: vi.fn(() => 'a title'),
       making: {},

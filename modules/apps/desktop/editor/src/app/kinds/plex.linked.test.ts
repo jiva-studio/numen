@@ -19,7 +19,7 @@ interface MockPlexState {
 
 const createPlexLinkedFixture = (neighbourhoodPath: string, neighbourhoodTitle: string) => {
   const tabLinks = useTabLinks()
-  const held = useWindowTabs()
+  const windowTabs = useWindowTabs()
 
   const navigateNote = vi.fn()
   const openFileMock = vi.fn()
@@ -46,7 +46,7 @@ const createPlexLinkedFixture = (neighbourhoodPath: string, neighbourhoodTitle: 
     },
   } as never
 
-  const tabSync = useTabSync({ held, tabLinks, onError: vi.fn() })
+  const tabSync = useTabSync({ windowTabs, tabLinks, onError: vi.fn() })
 
   const plexKind = createPlexKind({
     core: {
@@ -57,7 +57,7 @@ const createPlexLinkedFixture = (neighbourhoodPath: string, neighbourhoodTitle: 
         }),
     } as never,
     tabOpeners: tabOpenersMock,
-    held,
+    held: windowTabs,
     editing: editingMock,
     settings: settingsMock,
     window: windowMock,
@@ -70,12 +70,12 @@ const createPlexLinkedFixture = (neighbourhoodPath: string, neighbourhoodTitle: 
     tabSync,
   })
 
-  return { tabLinks, held, navigateNote, revealPathMock, plexKind }
+  return { tabLinks, windowTabs, navigateNote, revealPathMock, plexKind }
 }
 
 describe('createPlexKind with linked tabs', () => {
   it('loads note in linked tab when plex node is opened', async () => {
-    const { tabLinks, held, navigateNote, plexKind } = createPlexLinkedFixture(
+    const { tabLinks, windowTabs, navigateNote, plexKind } = createPlexLinkedFixture(
       'Target.md',
       'Target Title',
     )
@@ -88,15 +88,15 @@ describe('createPlexKind with linked tabs', () => {
       navigate: navigateNote,
     } as never
 
-    held.registerKinds([plexKind.kind, noteKind])
+    windowTabs.registerKinds([plexKind.kind, noteKind])
 
-    const plexTabId = await held.openTabOfKind('plex', 'Start.md')
-    const noteTabId = await held.openTabOfKind('note', 'Note.md')
+    const plexTabId = await windowTabs.openTabOfKind('plex', 'Start.md')
+    const noteTabId = await windowTabs.openTabOfKind('note', 'Note.md')
 
     tabLinks.linkTabs(plexTabId, noteTabId)
-    held.handle.show(plexTabId)
+    windowTabs.handle.show(plexTabId)
 
-    const plexState = held.getTabStateIn<MockPlexState>(plexTabId, 'plex')
+    const plexState = windowTabs.getTabStateIn<MockPlexState>(plexTabId, 'plex')
     if (!plexState) throw new Error('plexState expected')
     await plexState.view.go('Start.md')
 
@@ -108,14 +108,14 @@ describe('createPlexKind with linked tabs', () => {
 
     plexState.openNode(targetNode.id)
     expect(navigateNote).toHaveBeenCalledWith(
-      held.getTab(noteTabId)?.state,
+      windowTabs.getTab(noteTabId)?.state,
       'Target.md',
       'Target Title',
     )
   })
 
   it('reveals file in linked files tab when plex node is activated', async () => {
-    const { tabLinks, held, revealPathMock, plexKind } = createPlexLinkedFixture(
+    const { tabLinks, windowTabs, revealPathMock, plexKind } = createPlexLinkedFixture(
       'Selected.md',
       'Selected Title',
     )
@@ -134,15 +134,15 @@ describe('createPlexKind with linked tabs', () => {
       navigate: (state: typeof filesStateMock, path: string) => state.list.revealPath(path),
     } as never
 
-    held.registerKinds([plexKind.kind, filesKind])
+    windowTabs.registerKinds([plexKind.kind, filesKind])
 
-    const plexTabId = await held.openTabOfKind('plex', 'Start.md')
-    const filesTabId = await held.openTabOfKind('files', '')
+    const plexTabId = await windowTabs.openTabOfKind('plex', 'Start.md')
+    const filesTabId = await windowTabs.openTabOfKind('files', '')
 
     tabLinks.linkTabs(plexTabId, filesTabId)
-    held.handle.show(plexTabId)
+    windowTabs.handle.show(plexTabId)
 
-    const plexState = held.getTabStateIn<MockPlexState>(plexTabId, 'plex')
+    const plexState = windowTabs.getTabStateIn<MockPlexState>(plexTabId, 'plex')
     if (!plexState) throw new Error('plexState expected')
     await plexState.view.go('Start.md')
 

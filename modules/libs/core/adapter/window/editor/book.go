@@ -50,12 +50,12 @@ func (h *bookHandler) GetBook(
 ) (*connect.Response[v1.GetBookResponse], error) {
 	client, closeClient, err := h.getClient(ctx)
 	if err != nil {
-		return nil, readPluginError(err)
+		return nil, convertPluginError(err)
 	}
 	defer closeClient()
 	res, err := client.GetBook(ctx, r)
 	if err != nil {
-		return nil, readPluginError(err)
+		return nil, convertPluginError(err)
 	}
 	return res, nil
 }
@@ -71,12 +71,12 @@ func (h *bookHandler) ReadBookMarkup(
 ) (*connect.Response[v1.ReadBookMarkupResponse], error) {
 	client, closeClient, err := h.getClient(ctx)
 	if err != nil {
-		return nil, readPluginError(err)
+		return nil, convertPluginError(err)
 	}
 	defer closeClient()
 	res, err := client.ReadBookMarkup(ctx, r)
 	if err != nil {
-		return nil, readPluginError(err)
+		return nil, convertPluginError(err)
 	}
 	return res, nil
 }
@@ -161,11 +161,11 @@ func (h *bookHandler) getClient(ctx context.Context) (bookClient, func(), error)
 	return client, closer, nil
 }
 
-// readPluginError is what a failure to open the book plugin, or of an ask of
+// convertPluginError is what a failure to open the book plugin, or of an ask of
 // it, is answered with: a code the failure carries is kept, the end of the
 // caller's context is coded as such, and anything else is coded as a file that
 // could not be reached.
-func readPluginError(err error) error {
+func convertPluginError(err error) error {
 	var coded *connect.Error
 	switch {
 	case errors.As(err, &coded):

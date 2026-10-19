@@ -264,7 +264,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
   const rest = createSettingsStore(core, words, log.getWriter('configured'))
   const secrets = createSecretStore(core, {
     words,
-    say: log.getWriter('keys'),
+    notify: log.getWriter('keys'),
     refresh: rest.start,
   })
 

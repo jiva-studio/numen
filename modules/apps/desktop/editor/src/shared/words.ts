@@ -165,7 +165,7 @@ export const WORDS = {
   /** The group the counts are drawn in. */
   headingsGroup: 'How many headings nest under a note at once',
   unturned: 'That setting could not be written:',
-  unkept: 'That key could not be kept:',
+  secretFailed: 'That key could not be stored:',
   /** The settings the vault answered with could not be read. */
   unreadSettings: 'The settings could not be read, so what is drawn is what they last held.',
   asking: 'Confirm',

@@ -8,7 +8,7 @@ import { useWindowTabs } from '@/entities/tab'
 describe('createFilesKind with linked tabs', () => {
   it('syncs note when destination is activated in linked tab', async () => {
     const tabLinks = useTabLinks()
-    const held = useWindowTabs()
+    const windowTabs = useWindowTabs()
 
     const navigateNote = vi.fn()
     const editingMock = {
@@ -16,7 +16,7 @@ describe('createFilesKind with linked tabs', () => {
       making: { createUntitled: vi.fn() },
     } as never
 
-    const tabSync = useTabSync({ held, tabLinks, onError: vi.fn() })
+    const tabSync = useTabSync({ windowTabs, tabLinks, onError: vi.fn() })
 
     const entriesMap = new Map([
       [
@@ -38,7 +38,7 @@ describe('createFilesKind with linked tabs', () => {
         createUrl: vi.fn(),
       } as never,
       tabOpeners: {} as never,
-      held,
+      held: windowTabs,
       runs: { canRun: () => true } as never,
       editing: editingMock,
       vaults: { makes: shallowRef(new Map()) } as never,
@@ -60,15 +60,15 @@ describe('createFilesKind with linked tabs', () => {
       navigate: navigateNote,
     } as never
 
-    held.registerKinds([filesKind.files.kind, noteKind])
+    windowTabs.registerKinds([filesKind.files.kind, noteKind])
 
-    const filesTabId = await held.openTabOfKind('files', '')
-    const noteTabId = await held.openTabOfKind('note', 'Note.md')
+    const filesTabId = await windowTabs.openTabOfKind('files', '')
+    const noteTabId = await windowTabs.openTabOfKind('note', 'Note.md')
 
     tabLinks.linkTabs(filesTabId, noteTabId)
-    held.handle.show(filesTabId)
+    windowTabs.handle.show(filesTabId)
 
-    const filesState = held.getTabStateIn<{
+    const filesState = windowTabs.getTabStateIn<{
       list: { getEntryAt: (p: string) => unknown }
       activate: (p: string) => void
     }>(filesTabId, 'files')
@@ -80,7 +80,7 @@ describe('createFilesKind with linked tabs', () => {
     filesState.activate('folder/target.md')
 
     expect(navigateNote).toHaveBeenCalledWith(
-      held.getTab(noteTabId)?.state,
+      windowTabs.getTab(noteTabId)?.state,
       'folder/target.md',
       'target.md',
     )

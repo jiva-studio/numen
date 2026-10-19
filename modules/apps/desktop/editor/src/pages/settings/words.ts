@@ -128,7 +128,7 @@ export const WORDS = {
   keys: 'Keys',
   keyStored: 'Set',
   keyMissing: 'Not set',
-  keyDetail: 'Kept in the system keychain, never in the settings file, and never shown again.',
+  keyDetail: 'Stored in the system keychain, never in the settings file, and never shown again.',
   keyPlaceholder: 'Paste a key',
   keySave: 'Save',
   keyReplace: 'Replace',

@@ -148,7 +148,7 @@ func (s *agentServer) AskAgent(
 	recordSession := func(session string) { s.registry.SetSession(conversation, session) }
 	reasons := make(chan string, 1)
 	go func() {
-		reasons <- parseStream(runCtx, out, stream.Send, toolcall.ReadWords(msg.GetToolDeclarations()), recordSession)
+		reasons <- parseStream(runCtx, out, stream.Send, toolcall.IndexDeclarations(msg.GetToolDeclarations()), recordSession)
 	}()
 
 	// A run let go of ends here, whatever the programs the child started hold of its output.

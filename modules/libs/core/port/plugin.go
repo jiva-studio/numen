@@ -179,7 +179,7 @@ type PluginManager interface {
 	PluginPathValidator
 	// SetSafeMode stops every running plugin when enabled, and starts none until it is disabled.
 	SetSafeMode(enabled bool)
-	// SetVaultPath is the vault the plugins' paths are held inside.
+	// SetVaultPath is the vault the plugins' paths are inside.
 	SetVaultPath(path string)
 	// TeardownAll stops every plugin, giving each the grace period to exit.
 	TeardownAll(ctx context.Context, gracePeriod time.Duration) error

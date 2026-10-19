@@ -864,7 +864,7 @@ describe('the identity a kind is told as its tab opens', () => {
 })
 
 describe('the kinds the window holds', () => {
-  it('are the ones registered, and a kind let go of is no longer held', () => {
+  it('are the ones registered, and a kind removed is no longer listed', () => {
     const window = useWindowTabs()
     const release = window.registerKind(kind().one)
 

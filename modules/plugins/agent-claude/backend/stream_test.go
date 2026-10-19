@@ -10,12 +10,12 @@ import (
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
-var testWords = map[string]toolcall.Words{
+var testWords = map[string]toolcall.Declaration{
 	"note_edit": {Title: "Edit a note", Kind: "edit", About: "path", Match: "stood", Text: "becomes"},
 	"note_read": {Title: "Read notes", Kind: "read", About: "paths", Element: "path"},
 }
 
-func parseLines(t *testing.T, words map[string]toolcall.Words, lines ...string) ([]*numenv1.AskAgentResponse, string) {
+func parseLines(t *testing.T, words map[string]toolcall.Declaration, lines ...string) ([]*numenv1.AskAgentResponse, string) {
 	t.Helper()
 	var got []*numenv1.AskAgentResponse
 	send := func(r *numenv1.AskAgentResponse) error {
@@ -234,7 +234,7 @@ func TestAChangeIsLocatedByThePathArgumentAlone(t *testing.T) {
 	var got []*numenv1.AskAgentResponse
 	p := &streamParser{
 		send:  func(r *numenv1.AskAgentResponse) error { got = append(got, r); return nil },
-		words: map[string]toolcall.Words{"note_edit": {About: "title", Match: "stood", Text: "becomes"}},
+		words: map[string]toolcall.Declaration{"note_edit": {About: "title", Match: "stood", Text: "becomes"}},
 		now:   func() time.Time { return time.Unix(100, 0) },
 	}
 	p.tool, p.callID = "mcp__numen__note_edit", "c"
@@ -253,7 +253,7 @@ func TestStreamParserPreviewIntervalPacing(t *testing.T) {
 		return nil
 	}
 	tick := time.Unix(0, 0)
-	words := map[string]toolcall.Words{
+	words := map[string]toolcall.Declaration{
 		"note_edit": {About: "Edit a note", Match: "path", Text: "text"},
 	}
 	r := strings.NewReader(strings.Join([]string{
@@ -369,7 +369,7 @@ func TestReportEditIgnoredWhenToolHasNoTextDeclaration(t *testing.T) {
 		got = append(got, r)
 		return nil
 	}
-	words := map[string]toolcall.Words{
+	words := map[string]toolcall.Declaration{
 		"note_read": {About: "Read notes", Match: "path", Text: ""},
 	}
 	r := strings.NewReader(strings.Join([]string{

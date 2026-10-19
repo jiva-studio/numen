@@ -202,7 +202,7 @@ function initWindowServices(
   })
 
   const tabSync = useTabSync({
-    held: base.held,
+    windowTabs: base.held,
     tabLinks: base.tabLinks,
     onError: (error) => base.writeMessage(formatErrorMessage(error), 'error'),
   })
@@ -223,7 +223,7 @@ function initWindowServices(
     words,
     log: base.log,
     windowTabs: base.held,
-    onSizeChanged: () => editing.noted.measureAll(),
+    onSizeChanged: () => editing.noteMeasurer.measureAll(),
   })
   settingsHolder.current = settings
 

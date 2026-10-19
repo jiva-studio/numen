@@ -50,11 +50,11 @@ type streamedReply struct {
 }
 
 // stream asks the model for the next message as send does, with the reply streamed as server-sent
-// events. Each piece of its text goes to say as it arrives, and an error from say ends the stream
+// events. Each piece of its text goes to emit as it arrives, and an error from emit ends the stream
 // and is returned as it is. A chat API that answers the stream with one whole JSON reply has its
-// text go to say at once. A 400 or 422 answer is errStreamRefused.
+// text go to emit at once. A 400 or 422 answer is errStreamRefused.
 func (c chat) stream(
-	ctx context.Context, model string, messages []message, tools []functionTool, say func(string) error,
+	ctx context.Context, model string, messages []message, tools []functionTool, emit func(string) error,
 ) (message, string, error) {
 	body, err := json.Marshal(chatRequest{Model: model, Messages: messages, Tools: tools, Stream: true})
 	if err != nil {
@@ -89,13 +89,13 @@ func (c chat) stream(
 			return message{}, "", err
 		}
 		if text := reply.Content; text != nil && *text != "" {
-			if err := say(*text); err != nil {
+			if err := emit(*text); err != nil {
 				return message{}, "", err
 			}
 		}
 		return reply, finished, nil
 	}
-	return readStream(reader, say)
+	return readStream(reader, emit)
 }
 
 // isWholeReply reports whether the answer is one JSON object, which a stream of events never
@@ -117,9 +117,9 @@ func isWholeReply(reader *bufio.Reader) bool {
 	}
 }
 
-// readStream reads server-sent events until the `[DONE]` event, sending each piece of text to say.
+// readStream reads server-sent events until the `[DONE]` event, sending each piece of text to emit.
 // A stream that ends before it, with no reason the model stopped, is errStreamEnded.
-func readStream(reader *bufio.Reader, say func(string) error) (message, string, error) {
+func readStream(reader *bufio.Reader, emit func(string) error) (message, string, error) {
 	var reply streamedReply
 	var data bytes.Buffer
 	for {
@@ -133,7 +133,7 @@ func readStream(reader *bufio.Reader, say func(string) error) (message, string, 
 		}
 		if len(line) == 0 || readErr != nil {
 			if data.Len() > 0 {
-				isDone, err := reply.add(data.Bytes(), say)
+				isDone, err := reply.add(data.Bytes(), emit)
 				if err != nil {
 					return message{}, "", err
 				}
@@ -158,9 +158,9 @@ func readStream(reader *bufio.Reader, say func(string) error) (message, string, 
 	}
 }
 
-// add takes one event's data into the reply, sending its text to say. It reports whether the
+// add takes one event's data into the reply, sending its text to emit. It reports whether the
 // event is the stream's last.
-func (r *streamedReply) add(data []byte, say func(string) error) (bool, error) {
+func (r *streamedReply) add(data []byte, emit func(string) error) (bool, error) {
 	if string(data) == "[DONE]" {
 		return true, nil
 	}
@@ -177,7 +177,7 @@ func (r *streamedReply) add(data []byte, say func(string) error) (bool, error) {
 	choice := chunk.Choices[0]
 	if text := choice.Delta.Content; text != "" {
 		r.text.WriteString(text)
-		if err := say(text); err != nil {
+		if err := emit(text); err != nil {
 			return false, err
 		}
 	}

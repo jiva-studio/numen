@@ -31,7 +31,7 @@ function createNullChanges() {
   }
 }
 
-function createNoted(held: ReturnType<typeof useWindowTabs>) {
+function createNoteMeasurer(held: ReturnType<typeof useWindowTabs>) {
   return {
     measureAll: () => {
       for (const tab of held.tabs.value) {
@@ -64,7 +64,7 @@ export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditors
   const changes = createNullChanges()
   const notes = openNotes(core, { onReplaced: changes.reportNoteChange })
   const making = createNoteWriter(core, log.getWriter('made'))
-  const noted = createNoted(held)
+  const noteMeasurer = createNoteMeasurer(held)
 
   const decks = useDeckTabs(cards, presets, { handle: held.handle, tabOpeners })
   const stencils = useStencilTabs(cards, held.handle, {
@@ -105,7 +105,7 @@ export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditors
     changes,
     notes,
     making,
-    noted,
+    noteMeasurer,
     decks,
     stencils,
     schedules,
