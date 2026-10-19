@@ -342,6 +342,7 @@ func (s *agentServer) executeTool(ctx context.Context, name, args string) (strin
 
 func (s *agentServer) defaultExecuteTool(ctx context.Context, name, args string) (string, error) {
 	searchURL := os.Getenv("NUMEN_SEARCH_URL")
+	// gomutants:disable-next-line EXPRESSION_REMOVE reason="a request to an empty URL errors and falls through to the same refusal"
 	if searchURL != "" && (name == "knowledge_search" || name == "search") {
 		query := args
 		limit := 5
@@ -445,6 +446,7 @@ func formatTools(allTools []*numenv1.AgentToolDefinition, requestedTools []strin
 
 func extractToolMeta(args string) (string, string) {
 	var parsed map[string]any
+	// gomutants:disable-next-line BRANCH_IF reason="a nil map lookup falls through to the same fallback values"
 	if err := json.Unmarshal([]byte(args), &parsed); err != nil {
 		return args, ""
 	}
@@ -516,14 +518,17 @@ func callChat(
 }
 
 func splitChunks(s string, chunkSize int) []string {
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a string of exactly chunk size falls through to the single-chunk append"
 	if len(s) <= chunkSize {
 		return []string{s}
 	}
 	var chunks []string
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a multiple of chunk size appends the tail in the loop rather than the following if"
 	for len(s) > chunkSize {
 		chunks = append(chunks, s[:chunkSize])
 		s = s[chunkSize:]
 	}
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT reason="the loop exits with at least one remaining character, so len is always positive"
 	if len(s) > 0 {
 		chunks = append(chunks, s)
 	}
