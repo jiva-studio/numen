@@ -87,10 +87,15 @@ export const createProgramModels =
         ...programs.map((one) =>
           createModel(at, { name: one.name, title: one.title, isDefault: one.isDefault ?? false }),
         ),
-        createModel(at, { title: 'Nothing answers', isDefault: !programs.some((one) => one.isDefault) }),
+        createModel(at, {
+          title: 'Nothing answers',
+          isDefault: !programs.some((one) => one.isDefault),
+        }),
       ]
     }
-    const program = programs.find((one) => at.length === 3 && one.name === at[1] && at[2] === 'model')
+    const program = programs.find(
+      (one) => at.length === 3 && one.name === at[1] && at[2] === 'model',
+    )
     if (!program) return []
     return [
       createModel(at, { title: 'Whatever this machine answers with', isDefault: true }),

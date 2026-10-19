@@ -10,25 +10,16 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// The question a plugin sends is read with its messages, its purpose and its hints, and a
-// temperature left unset stays unset.
-func TestAQuestionIsReadWithItsMessagesPurposeAndHints(t *testing.T) {
-	temperature := 0.5
+// The question a plugin sends is read with its messages and its purpose.
+func TestAQuestionIsReadWithItsMessagesAndPurpose(t *testing.T) {
 	got := readWireQuestion(&v1.CompletionQuestion{
 		Messages: []*v1.CompletionMessage{{Role: "system", Text: "be brief"}, {Role: "user", Text: "hi"}},
 		Purpose:  "proofreading",
-		Hints:    &v1.CompletionHints{CostPriority: 1, MaxTokens: 10, Temperature: &temperature},
 	})
-	if got.Purpose != "proofreading" || len(got.Messages) != 2 || got.Messages[0] != (port.Message{Role: "system", Text: "be brief"}) ||
-		got.Hints.CostPriority != 1 || got.Hints.MaxTokens != 10 || got.Hints.Temperature == nil || *got.Hints.Temperature != temperature {
+	if got.Purpose != "proofreading" || len(got.Messages) != 2 || got.Messages[0] != (port.Message{Role: "system", Text: "be brief"}) {
 		t.Errorf("read %+v", got)
 	}
-
-	unset := readWireQuestion(&v1.CompletionQuestion{Hints: &v1.CompletionHints{}})
-	if unset.Hints.Temperature != nil {
-		t.Errorf("a temperature left unset was read as %v", *unset.Hints.Temperature)
-	}
-	if bare := readWireQuestion(nil); len(bare.Messages) != 0 || bare.Hints.Temperature != nil {
+	if bare := readWireQuestion(nil); len(bare.Messages) != 0 {
 		t.Errorf("read %+v", bare)
 	}
 }

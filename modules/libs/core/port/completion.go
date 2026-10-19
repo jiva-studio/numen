@@ -29,8 +29,6 @@ type Question struct {
 	Messages []Message
 	// Purpose is what the answer is for. It routes nothing.
 	Purpose string
-	// Hints are what the answer should favour.
-	Hints Hints
 }
 
 // Message is one turn of the conversation a question carries.
@@ -38,19 +36,6 @@ type Message struct {
 	// Role is who wrote the text: "system", "user" or "assistant".
 	Role string
 	Text string
-}
-
-// Hints are priorities in the range 0 to 1. They are requests, and an agent may
-// ignore them.
-type Hints struct {
-	QualityPriority float64
-	SpeedPriority   float64
-	CostPriority    float64
-	// MaxTokens is the most tokens the answer may hold. Zero leaves the limit to
-	// the agent.
-	MaxTokens int
-	// Temperature is the sampling temperature. Nil leaves it to the agent.
-	Temperature *float64
 }
 
 // CompletionChoice is the agent program and the model a plugin's completions go

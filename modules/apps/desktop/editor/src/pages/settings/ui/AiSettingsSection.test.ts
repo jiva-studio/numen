@@ -106,10 +106,7 @@ describe('the default agent', () => {
     const { wrapper, written } = createSection({
       ai: { default: { agent: 'agent-b', model: 'b-fast' } },
     })
-    pick(wrapper.findAllComponents({ name: 'Select' }), 0).vm.$emit(
-      'update:modelValue',
-      'agent-a',
-    )
+    pick(wrapper.findAllComponents({ name: 'Select' }), 0).vm.$emit('update:modelValue', 'agent-a')
     expect(written).toStrictEqual([
       { at: ['ai', 'default', 'agent'], value: '"agent-a"' },
       { at: ['ai', 'default', 'model'], value: '""' },

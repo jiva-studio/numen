@@ -65,14 +65,12 @@ describe('the agents', () => {
   })
 
   it('answer by default as the program the settings use, else the default of the plugins', () => {
-    expect(getAgents(createSource({ agent: { use: 'zeta' } })).map((one) => one.isDefault)).toStrictEqual([
-      false,
-      true,
-    ])
-    expect(getAgents(createSource({ agent: { use: '' } })).map((one) => one.isDefault)).toStrictEqual([
-      false,
-      false,
-    ])
+    expect(
+      getAgents(createSource({ agent: { use: 'zeta' } })).map((one) => one.isDefault),
+    ).toStrictEqual([false, true])
+    expect(
+      getAgents(createSource({ agent: { use: '' } })).map((one) => one.isDefault),
+    ).toStrictEqual([false, false])
   })
 
   it('are found by id, and by the default where none is named', () => {
@@ -104,13 +102,13 @@ describe('the choice a setting holds', () => {
 
 describe('the agents a plugin can name', () => {
   it('start with the default, said with the agent that answers it now', () => {
-    expect(
-      createPluginAgentChoices(AGENTS, { defaultAgent: '', chosen: '' }, words),
-    ).toStrictEqual([
-      { id: '', text: 'Default (Alpha)' },
-      { id: 'alpha', text: 'Alpha' },
-      { id: 'zeta', text: 'Zeta' },
-    ])
+    expect(createPluginAgentChoices(AGENTS, { defaultAgent: '', chosen: '' }, words)).toStrictEqual(
+      [
+        { id: '', text: 'Default (Alpha)' },
+        { id: 'alpha', text: 'Alpha' },
+        { id: 'zeta', text: 'Zeta' },
+      ],
+    )
     expect(
       createPluginAgentChoices(AGENTS, { defaultAgent: 'zeta', chosen: '' }, words)[0]?.text,
     ).toBe('Default (Zeta)')

@@ -27,21 +27,8 @@ func readWireQuestion(wire *v1.CompletionQuestion) port.Question {
 	for i, message := range wire.GetMessages() {
 		messages[i] = port.Message{Role: message.GetRole(), Text: message.GetText()}
 	}
-	hints := wire.GetHints()
-	var temperature *float64
-	if hints != nil && hints.Temperature != nil {
-		value := hints.GetTemperature()
-		temperature = &value
-	}
 	return port.Question{
 		Messages: messages,
 		Purpose:  wire.GetPurpose(),
-		Hints: port.Hints{
-			QualityPriority: hints.GetQualityPriority(),
-			SpeedPriority:   hints.GetSpeedPriority(),
-			CostPriority:    hints.GetCostPriority(),
-			MaxTokens:       int(hints.GetMaxTokens()),
-			Temperature:     temperature,
-		},
 	}
 }

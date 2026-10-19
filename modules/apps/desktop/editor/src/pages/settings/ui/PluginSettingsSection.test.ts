@@ -174,7 +174,12 @@ describe('PluginSettingsSection', () => {
 })
 
 const PROGRAMS: readonly ProgramFixture[] = [
-  { name: 'test-agent', title: 'Test Agent', isDefault: true, models: [{ name: 'quick', title: 'Quick' }] },
+  {
+    name: 'test-agent',
+    title: 'Test Agent',
+    isDefault: true,
+    models: [{ name: 'quick', title: 'Quick' }],
+  },
 ]
 
 const ASKING: PluginInfo = {
@@ -202,7 +207,8 @@ describe('a setting of type agent', () => {
   it('offers the models of the agent it names, the agent default first', () => {
     const { wrapper } = createSection(
       { plugins: { 'test.asking': { agent: { agent: 'test-agent', model: 'quick' } } } },
-      [ASKING], PROGRAMS,
+      [ASKING],
+      PROGRAMS,
     )
     const selects = wrapper.findAllComponents({ name: 'Select' })
     expect(selects).toHaveLength(2)
@@ -228,7 +234,8 @@ describe('a setting of type agent', () => {
   it('keeps an agent no plugin lists, said so', () => {
     const { wrapper } = createSection(
       { plugins: { 'test.asking': { agent: { agent: 'test.gone' } } } },
-      [ASKING], PROGRAMS,
+      [ASKING],
+      PROGRAMS,
     )
     const choices = pick(wrapper.findAllComponents({ name: 'Select' }), 0).props('choices')
     expect(choices.at(-1)).toMatchObject({

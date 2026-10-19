@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/completion.proto.
  */
 export const file_numen_v1_completion: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9jb21wbGV0aW9uLnByb3RvEghudW1lbi52MSJMChpIb3N0U2VydmljZUNvbXBsZXRlUmVxdWVzdBIuCghxdWVzdGlvbhgBIAEoCzIcLm51bWVuLnYxLkNvbXBsZXRpb25RdWVzdGlvbiJ3ChtIb3N0U2VydmljZUNvbXBsZXRlUmVzcG9uc2USKgoGYW5zd2VyGAEgASgLMhoubnVtZW4udjEuQ29tcGxldGlvbkFuc3dlchIsCgVlcnJvchgCIAEoDjIdLm51bWVuLnYxLkNvbXBsZXRpb25FcnJvckNvZGUifgoSQ29tcGxldGlvblF1ZXN0aW9uEi0KCG1lc3NhZ2VzGAEgAygLMhsubnVtZW4udjEuQ29tcGxldGlvbk1lc3NhZ2USDwoHcHVycG9zZRgCIAEoCRIoCgVoaW50cxgDIAEoCzIZLm51bWVuLnYxLkNvbXBsZXRpb25IaW50cyIvChFDb21wbGV0aW9uTWVzc2FnZRIMCgRyb2xlGAEgASgJEgwKBHRleHQYAiABKAkimAEKD0NvbXBsZXRpb25IaW50cxIYChBxdWFsaXR5X3ByaW9yaXR5GAEgASgBEhYKDnNwZWVkX3ByaW9yaXR5GAIgASgBEhUKDWNvc3RfcHJpb3JpdHkYAyABKAESEgoKbWF4X3Rva2VucxgEIAEoBRIYCgt0ZW1wZXJhdHVyZRgFIAEoAUgAiAEBQg4KDF90ZW1wZXJhdHVyZSIgChBDb21wbGV0aW9uQW5zd2VyEgwKBHRleHQYASABKAkqrQEKE0NvbXBsZXRpb25FcnJvckNvZGUSJQohQ09NUExFVElPTl9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIgoeQ09NUExFVElPTl9FUlJPUl9DT0RFX05PX1JPVVRFEAESJQohQ09NUExFVElPTl9FUlJPUl9DT0RFX1VOQVZBSUxBQkxFEAISJAogQ09NUExFVElPTl9FUlJPUl9DT0RFX05PX0NPTlNFTlQQAzJmCgtIb3N0U2VydmljZRJXCghDb21wbGV0ZRIkLm51bWVuLnYxLkhvc3RTZXJ2aWNlQ29tcGxldGVSZXF1ZXN0GiUubnVtZW4udjEuSG9zdFNlcnZpY2VDb21wbGV0ZVJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChludW1lbi92MS9jb21wbGV0aW9uLnByb3RvEghudW1lbi52MSJMChpIb3N0U2VydmljZUNvbXBsZXRlUmVxdWVzdBIuCghxdWVzdGlvbhgBIAEoCzIcLm51bWVuLnYxLkNvbXBsZXRpb25RdWVzdGlvbiJ3ChtIb3N0U2VydmljZUNvbXBsZXRlUmVzcG9uc2USKgoGYW5zd2VyGAEgASgLMhoubnVtZW4udjEuQ29tcGxldGlvbkFuc3dlchIsCgVlcnJvchgCIAEoDjIdLm51bWVuLnYxLkNvbXBsZXRpb25FcnJvckNvZGUiVAoSQ29tcGxldGlvblF1ZXN0aW9uEi0KCG1lc3NhZ2VzGAEgAygLMhsubnVtZW4udjEuQ29tcGxldGlvbk1lc3NhZ2USDwoHcHVycG9zZRgCIAEoCSIvChFDb21wbGV0aW9uTWVzc2FnZRIMCgRyb2xlGAEgASgJEgwKBHRleHQYAiABKAkiIAoQQ29tcGxldGlvbkFuc3dlchIMCgR0ZXh0GAEgASgJKq0BChNDb21wbGV0aW9uRXJyb3JDb2RlEiUKIUNPTVBMRVRJT05fRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiIKHkNPTVBMRVRJT05fRVJST1JfQ09ERV9OT19ST1VURRABEiUKIUNPTVBMRVRJT05fRVJST1JfQ09ERV9VTkFWQUlMQUJMRRACEiQKIENPTVBMRVRJT05fRVJST1JfQ09ERV9OT19DT05TRU5UEAMyZgoLSG9zdFNlcnZpY2USVwoIQ29tcGxldGUSJC5udW1lbi52MS5Ib3N0U2VydmljZUNvbXBsZXRlUmVxdWVzdBolLm51bWVuLnYxLkhvc3RTZXJ2aWNlQ29tcGxldGVSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * @generated from message numen.v1.HostServiceCompleteRequest
@@ -79,13 +79,6 @@ export type CompletionQuestion = Message<"numen.v1.CompletionQuestion"> & {
    * @generated from field: string purpose = 2;
    */
   purpose: string;
-
-  /**
-   * What the answer should favour. Unset hints leave the choice to the host.
-   *
-   * @generated from field: numen.v1.CompletionHints hints = 3;
-   */
-  hints?: CompletionHints | undefined;
 };
 
 /**
@@ -120,56 +113,6 @@ export const CompletionMessageSchema: GenMessage<CompletionMessage> = /*@__PURE_
   messageDesc(file_numen_v1_completion, 3);
 
 /**
- * CompletionHints are priorities in the range 0 to 1 and are requests, not
- * guarantees.
- *
- * @generated from message numen.v1.CompletionHints
- */
-export type CompletionHints = Message<"numen.v1.CompletionHints"> & {
-  /**
-   * How much answer quality matters.
-   *
-   * @generated from field: double quality_priority = 1;
-   */
-  qualityPriority: number;
-
-  /**
-   * How much a quick answer matters.
-   *
-   * @generated from field: double speed_priority = 2;
-   */
-  speedPriority: number;
-
-  /**
-   * How much a cheap answer matters.
-   *
-   * @generated from field: double cost_priority = 3;
-   */
-  costPriority: number;
-
-  /**
-   * The most tokens the answer may hold. Zero leaves the limit to the host.
-   *
-   * @generated from field: int32 max_tokens = 4;
-   */
-  maxTokens: number;
-
-  /**
-   * Sampling temperature. Unset leaves it to the host.
-   *
-   * @generated from field: optional double temperature = 5;
-   */
-  temperature?: number | undefined;
-};
-
-/**
- * Describes the message numen.v1.CompletionHints.
- * Use `create(CompletionHintsSchema)` to create a new message.
- */
-export const CompletionHintsSchema: GenMessage<CompletionHints> = /*@__PURE__*/
-  messageDesc(file_numen_v1_completion, 4);
-
-/**
  * CompletionAnswer is what a model said.
  *
  * @generated from message numen.v1.CompletionAnswer
@@ -186,7 +129,7 @@ export type CompletionAnswer = Message<"numen.v1.CompletionAnswer"> & {
  * Use `create(CompletionAnswerSchema)` to create a new message.
  */
 export const CompletionAnswerSchema: GenMessage<CompletionAnswer> = /*@__PURE__*/
-  messageDesc(file_numen_v1_completion, 5);
+  messageDesc(file_numen_v1_completion, 4);
 
 /**
  * CompletionErrorCode is why a served completion call was refused. The zero

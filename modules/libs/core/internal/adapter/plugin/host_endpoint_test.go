@@ -114,9 +114,7 @@ func TestAPluginWithThePermissionIsAnswered(t *testing.T) {
 		asked = question
 		return "fixed", nil
 	}))
-	temperature := 0.25
 	request := newHostQuestion()
-	request.Msg.Question.Hints = &v1.CompletionHints{QualityPriority: 0.5, MaxTokens: 64, Temperature: &temperature}
 
 	res, err := newHostClient(t, fakeCallers, "token-a").Complete(t.Context(), request)
 	if err != nil {
@@ -126,8 +124,7 @@ func TestAPluginWithThePermissionIsAnswered(t *testing.T) {
 		t.Errorf("answered %v", res.Msg)
 	}
 	if asked.Purpose != "proofreading" || len(asked.Messages) != 1 || asked.Messages[0].Text != "fix this" ||
-		asked.Messages[0].Role != "user" || asked.Hints.QualityPriority != 0.5 || asked.Hints.MaxTokens != 64 ||
-		asked.Hints.Temperature == nil || *asked.Hints.Temperature != temperature {
+		asked.Messages[0].Role != "user" {
 		t.Errorf("the completer was asked %+v", asked)
 	}
 	if len(fakeCallers.checked) != 2 || fakeCallers.checked[0] != "md.numen.a ai:complete" || fakeCallers.checked[1] != "md.numen.a consent" {

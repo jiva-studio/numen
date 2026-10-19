@@ -39,13 +39,11 @@ func startHost(t *testing.T, h *fakeHost) *httptest.Server {
 }
 
 func newQuestion() *numenv1.CompletionQuestion {
-	temperature := 0.2
 	return &numenv1.CompletionQuestion{
 		Purpose: "proofreading",
 		Messages: []*numenv1.CompletionMessage{
 			{Role: "user", Text: "fix this"},
 		},
-		Hints: &numenv1.CompletionHints{QualityPriority: 0.9, MaxTokens: 64, Temperature: &temperature},
 	}
 }
 
@@ -64,8 +62,7 @@ func TestClientCompleteSendsQuestionAndTokenAndReturnsText(t *testing.T) {
 	if host.auth != "Bearer secret" {
 		t.Errorf("got authorization %q, want %q", host.auth, "Bearer secret")
 	}
-	if host.got.GetPurpose() != "proofreading" || host.got.GetMessages()[0].GetText() != "fix this" ||
-		host.got.GetHints().GetMaxTokens() != 64 || host.got.GetHints().GetTemperature() != 0.2 {
+	if host.got.GetPurpose() != "proofreading" || host.got.GetMessages()[0].GetText() != "fix this" {
 		t.Errorf("host received %v", host.got)
 	}
 }
