@@ -5,7 +5,8 @@
 import { watch } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
 import { core } from './vault'
-import { resolveDeckPreset } from './deckPreset'
+import { openCommandTab } from './commandTabs'
+import { createNoteLookup } from './editorTabs'
 import { runSupport, type CommandTarget, type NoteLookup } from '@/features/command-palette'
 import { fileOpeners, useWindowTabs } from '@/entities/tab'
 import { createMessageLog } from '@/shared/notices/messages'
@@ -70,11 +71,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     reload: vaultsModule.reload,
     loadArtifactStates: vaultsModule.loadArtifactStates,
     reached: editing.reached,
-    openPreset: (path) =>
-      resolveDeckPreset(core, path, {
-        openPreset: (presetPath) => void held.openTabOfKind('preset', presetPath),
-        writeMessage,
-      }),
+    openPreset: (path) => openCommandTab({ vaultCore: core, held, writeMessage }, path, 'preset'),
     dressed: settings.dressed,
     oneName: settings.oneName,
     nesting: settings.nesting,
@@ -213,7 +210,6 @@ function initWindowServices(
     log: base.log,
     tabOpeners: base.tabOpeners,
     held: base.held,
-    day: () => settingsHolder.current!.dayBegins.day.value,
   })
 
   const tabSync = useTabSync({
@@ -293,13 +289,7 @@ function initWindowKindsAndCommands(
 
   Object.assign(base.pluginServices, ctx.kinds.services)
 
-  const knows: NoteLookup = {
-    getTitle: (path) => {
-      const heldId = editing.reached.getTabAt(path)
-      return heldId === null ? '' : editing.getTitle(heldId)
-    },
-    getTabAt: (path) => editing.reached.getTabAt(path),
-  }
+  const knows: NoteLookup = createNoteLookup(editing, base.held)
 
   ctx.commands = initWindowCommands({
     held: base.held,

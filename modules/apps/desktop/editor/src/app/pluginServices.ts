@@ -3,7 +3,14 @@
  */
 import { computed, type Ref, type ShallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import type { AgentHost, NoteRef, VaultFiles, VaultNotes, WorkspaceHost } from '@numen/plugin-sdk'
+import type {
+  AgentHost,
+  BufferHost,
+  NoteRef,
+  VaultFiles,
+  VaultNotes,
+  WorkspaceHost,
+} from '@numen/plugin-sdk'
 import type { SearchDeps } from '@/features/command-palette'
 import type { FileOpeners } from '@/entities/tab'
 import { CREATABLE, type NoteCreator } from '@/entities/note'
@@ -19,6 +26,7 @@ export interface PluginServices {
   notes?: VaultNotes
   files?: VaultFiles
   agent?: AgentHost
+  buffers?: BufferHost
 }
 
 /** What the window hands a plugin's tabs. */
@@ -39,6 +47,10 @@ export interface WorkspaceHostDeps extends PathCommandDeps {
   /** The note the tool tab the person was last in stands on. */
   readonly getNoteInFocus: () => NoteRef
   readonly writeMessage: MessageWriter
+  /** A writer of messages under a name of its own. */
+  readonly getMessageWriter: (name: string) => MessageWriter
+  /** The day it is for the person now. */
+  readonly today: () => string
 }
 
 export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
@@ -70,6 +82,8 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
     runCommand: (id, { path, title }) => deps.runCommand(id, { ...deps.getTarget(), path, title }),
     ask: (text) => deps.ask(text),
     showError: (text) => writeMessage(text, 'error'),
+    getMessageWriter: (name) => deps.getMessageWriter(name),
+    getToday: () => deps.today(),
     ...createPathCommandHost(deps),
   }
 }

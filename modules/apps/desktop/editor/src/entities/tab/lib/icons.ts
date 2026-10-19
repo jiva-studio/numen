@@ -5,25 +5,11 @@ import {
   BookText,
   Braces,
   FileText,
-  Gauge,
   Globe,
-  Layers,
-  LayoutTemplate,
   SlidersHorizontal,
   type LucideIcon,
 } from '@lucide/vue'
-import {
-  BOOK,
-  DECK,
-  DOCUMENT,
-  NOTE,
-  PRESET,
-  RECORDING,
-  SETTINGS,
-  SETTINGS_FILE,
-  STENCIL,
-  URL,
-} from './workspace'
+import { BOOK, DOCUMENT, NOTE, RECORDING, SETTINGS, SETTINGS_FILE, URL } from './workspace'
 
 const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
   [NOTE, FileText],
@@ -31,9 +17,6 @@ const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
   [BOOK, BookText],
   [RECORDING, AudioLines],
   [URL, Globe],
-  [DECK, Layers],
-  [STENCIL, LayoutTemplate],
-  [PRESET, Gauge],
   [SETTINGS, SlidersHorizontal],
   [SETTINGS_FILE, Braces],
 ])

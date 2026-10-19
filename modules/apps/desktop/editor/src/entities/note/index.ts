@@ -16,11 +16,13 @@ export type {
   PairLink,
   WriteResult,
 } from './lib/note'
-export { openNotes } from './model/notes'
-export type { Notes, OpenNote } from './lib/noteTypes'
-export { getMarkOf } from './lib/tabState'
-export type { NoteBaseline, State } from './lib/tabState'
+export { convertErrorCode, ERROR_MESSAGES, getMarkOf, openNotes } from '@numen/plugin-sdk'
+export type {
+  NoteBaseline,
+  NoteCore as Notes,
+  NoteState as State,
+  OpenNote,
+} from '@numen/plugin-sdk'
 export { CREATABLE, UNTITLED, createNoteWriter } from './model/maker'
 export type { NoteCreator, NoteMaker, NoteRef } from './model/maker'
-export { convertErrorCode } from './model/queue'
-export { ERROR_MESSAGES, WORDS } from './words'
+export { WORDS } from './words'

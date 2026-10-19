@@ -17,20 +17,25 @@ import { computed, nextTick, onMounted, ref, shallowRef, type Component } from '
 import { SettingsTab, type Installation } from '@/pages/settings'
 import type { Model } from '@/entities/settings'
 import {
-  DEFAULTS,
-  PresetTab,
-  type Curve,
-  type Point,
-  type PresetCounts,
-  type PresetTabState,
-  type Settings as Scheduling,
-  type SettingsBounds,
+  DECK,
   DeckTab,
-  type DeckTabState,
+  PRESET,
+  PresetTab,
+  STENCIL,
   StencilTab,
+  type DeckTabState,
+  type PresetTabState,
   type StencilTabState,
 } from '@plugins/flashcards-studio/frontend'
-import type { Marks } from '@/entities/deck'
+import {
+  DEFAULTS,
+  type Curve,
+  type Marks,
+  type Point,
+  type PresetCounts,
+  type Settings as Scheduling,
+  type SettingsBounds,
+} from '@plugins/flashcards-studio/frontend/cards'
 import { AudioPlayerTab } from '@plugins/media-player/frontend'
 import { useTranscript, type Cue, type Player, type Recordings } from '@/entities/media'
 import { useTranscriptTab } from '@/entities/media'
@@ -46,7 +51,7 @@ import { FolderTree } from '@lucide/vue'
 import type { CommandTarget } from '@/features/command-palette'
 import type { Entry } from '@/entities/file'
 import { findTabKindIcon } from '@/entities/tab'
-import { DECK, DOCUMENT, FILES, PRESET, RECORDING, SETTINGS, STENCIL } from '@/entities/tab'
+import { DOCUMENT, FILES, RECORDING, SETTINGS } from '@/entities/tab'
 
 /** Every tab this file draws, under the identity the window opens it at. */
 const TABS: readonly Tab[] = [

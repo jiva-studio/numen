@@ -3,12 +3,11 @@
  */
 import { settingsService } from '@/shared/clients'
 import { consented, fetched } from './words'
-import { isStaleAnswer } from '@/shared/answers'
 import { DEFAULT_HEADINGS } from '@/entities/settings'
 import { DEFAULT_STARTS } from '@/entities/settings'
 import { getSettingAt } from '@/entities/settings'
 import { write } from '@/entities/settings'
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage, isStaleAnswer } from '@numen/wire'
 import type { Configuration, PluginSettingInfo } from '@/entities/settings'
 import type { NestingSettings } from '@/entities/settings'
 import type { ReviewSettings } from '@/entities/settings'

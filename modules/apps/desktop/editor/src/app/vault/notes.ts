@@ -1,7 +1,7 @@
 /**
  * Note domain methods for the window core.
  */
-import { asFailure, asValue } from '@numen/wire'
+import { asFailure, asValue, findErrorCode, isStaleAnswer } from '@numen/wire'
 import { notes } from '@/shared/clients'
 import {
   mapBaseline,
@@ -14,7 +14,6 @@ import {
   run,
   writes,
 } from './words'
-import { findErrorCode, isStaleAnswer } from '@/shared/answers'
 import type { NotePort } from '@/app/ports/notes'
 import type { VaultPort } from '@/app/ports/vault'
 

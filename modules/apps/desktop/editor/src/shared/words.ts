@@ -7,7 +7,7 @@
  */
 // Stryker disable StringLiteral: interface copy
 import { commandKeyChord, keyChord } from '@numen/ui'
-import { ERRORS } from './words/errors'
+import { ERRORS } from '@numen/wire'
 
 export { ERRORS }
 
@@ -66,8 +66,8 @@ export const WORDS = {
   reveal: 'Show this note in the files',
   /** The preset this note is: the note itself, or the one a deck is scheduled by. */
   preset: 'Open the preset',
-  /** The deck in front names no preset, so the defaults schedule it. */
-  noPreset: 'This deck names no preset, so it is scheduled by the defaults.',
+  /** What a file is made as, or a command leads to, when the plugin that offers it is off or did not start. */
+  notOffered: 'That is not offered: the plugin that makes it is off or did not start.',
   newNote: 'New note',
   newDeck: 'New deck',
   newStencil: 'New stencil',

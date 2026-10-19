@@ -145,4 +145,18 @@ describe('mock plugin context', () => {
     expect(createMockPluginContext({ agent }).agent).toBe(agent)
     expect(createMockPluginContext()).not.toHaveProperty('agent')
   })
+
+  it('hands over the open files and the way to close a tab it is given, and none where it is given none', () => {
+    const buffers = { track: () => ({ dispose: () => {} }) } as unknown as NonNullable<
+      PluginContext['buffers']
+    >
+    const closeTab = () => {}
+
+    const ctx = createMockPluginContext({ buffers, closeTab })
+
+    expect(ctx.buffers).toBe(buffers)
+    expect(ctx.closeTab).toBe(closeTab)
+    expect(createMockPluginContext()).not.toHaveProperty('buffers')
+    expect(createMockPluginContext()).not.toHaveProperty('closeTab')
+  })
 })

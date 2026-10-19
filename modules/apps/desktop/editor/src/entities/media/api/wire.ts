@@ -3,7 +3,7 @@
  * duration, transcript cues, and article prose.
  */
 import type { Cue as CueMessage } from '@numen/protocol'
-import { retryWhileBusy } from '@/shared/answers'
+import { retryWhileBusy } from '@numen/wire'
 import { running } from '@/entities/artifact/@x/media'
 import * as clients from '@/shared/clients'
 import type { Cue } from '../lib/cues'

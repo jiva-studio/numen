@@ -1,11 +1,6 @@
 /**
- * Editing, conflict handling, and flushing for open notes and flashcard stores.
+ * Editing, conflict handling, and flushing for open notes.
  */
-import { cards } from '@/entities/deck'
-import { presets } from '@/entities/deck'
-import { useDeckTabs } from '@/pages/deck-editor'
-import { useStencilTabs } from '@/pages/stencil-editor'
-import { usePresetTab } from '@/pages/preset-editor'
 import { openNotes, createNoteWriter } from '@/entities/note'
 import { raiseConflicts, useFileFlush } from '@/features/file-conflict'
 import { createNotes, type SearchDeps, type Store } from '@/features/command-palette'
@@ -20,7 +15,6 @@ export interface NoteEditorsDeps {
   log: MessageLog
   tabOpeners: FileOpeners
   held: ReturnType<typeof useWindowTabs>
-  day: () => string
 }
 
 function createNullChanges() {
@@ -60,41 +54,21 @@ function createNotedStore(notes: ReturnType<typeof openNotes>): Store {
   }
 }
 
-export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditorsDeps) {
+export function useNoteEditors({ core, log, tabOpeners, held }: NoteEditorsDeps) {
   const changes = createNullChanges()
   const notes = openNotes(core, { onReplaced: changes.reportNoteChange })
   const making = createNoteWriter(core, log.getWriter('made'))
   const noted = createNoted(held)
 
-  const decks = useDeckTabs(cards, presets, { handle: held.handle, tabOpeners })
-  const stencils = useStencilTabs(cards, held.handle, {
-    tabOpeners,
-    writeMessage: log.getWriter('stencil'),
-  })
-  const schedules = usePresetTab({
-    core: presets,
-    handle: held.handle,
-    tabOpeners,
-    writeMessage: log.getWriter('preset'),
-    today: day,
-  })
-
   const fileFlush = useFileFlush(core)
   fileFlush.addHandler(notes.flush)
-  fileFlush.addHandler(decks.flush)
-  fileFlush.addHandler(stencils.flush)
-  fileFlush.addHandler(schedules.flush)
 
   raiseConflicts(notes, fileFlush)
-  raiseConflicts(decks, fileFlush)
-  raiseConflicts(stencils, fileFlush)
 
   const notedStore = createNotedStore(notes)
-  const stores: readonly Store[] = [notedStore, decks.kept, stencils.kept]
+  const stores: readonly Store[] = [notedStore]
   const reached = createNotes(stores, tabOpeners)
   const getTitle = (id: string): string => stores.find((one) => one.has(id))?.getTitle(id) ?? ''
-
-  const kinds = [decks.kind, stencils.kind, schedules.kind]
 
   const close = () => {
     changes.close()
@@ -106,14 +80,10 @@ export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditors
     notes,
     making,
     noted,
-    decks,
-    stencils,
-    schedules,
     fileFlush,
     stores,
     reached,
     getTitle,
-    kinds,
     close,
   }
 }

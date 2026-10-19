@@ -8,7 +8,7 @@
  */
 import { ref, shallowRef, watch, type Ref, type ShallowRef } from 'vue'
 import { createFollower } from '@numen/ui'
-import { createAnswerGuard } from '@/shared/questions'
+import { createAnswerGuard } from '@numen/plugin-sdk'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { DESIGNED, EMPTY_RANGE, SCHEMES } from '@/entities/settings'
 import type { Appearance, Mode, Ranges, Sizes, Theme, Themes } from '@/entities/settings'

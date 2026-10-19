@@ -20,12 +20,6 @@ export const RECORDING = 'recording'
 export const URL = 'url'
 /** The folders and files of the vault, one tab of them to a window. */
 export const FILES = 'files'
-/** A deck edited in the window, under the path the vault files it at. */
-export const DECK = 'deck'
-/** A stencil edited in the window, under the path the vault files it at. */
-export const STENCIL = 'stencil'
-/** A preset edited in the window, under the path the vault files it at. */
-export const PRESET = 'preset'
 /** What this installation is configured as, one tab of it to a window. */
 export const SETTINGS = 'settings'
 /** The settings file itself, opened whole as text, one tab of it to a window. */

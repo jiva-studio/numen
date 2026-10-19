@@ -4,7 +4,6 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
-import { WORDS } from '@/shared/words'
 import { useWindow } from './useWindow'
 
 /** What each part was made with, and what it was made as. */
@@ -12,11 +11,9 @@ const h = vi.hoisted(() => ({
   args: {} as Record<string, any>,
   f: {} as Record<string, any>,
   core: { name: 'core', fileKinds: vi.fn() },
-  getDeckPreset: vi.fn(),
 }))
 
 vi.mock('./vault', () => ({ core: h.core }))
-vi.mock('@/entities/deck', () => ({ presets: { getDeckPreset: h.getDeckPreset } }))
 vi.mock('@/features/command-palette', () => ({ runSupport: () => ({ name: 'runs' }) }))
 vi.mock('@/entities/media', () => ({ createMediaTypeProbe: () => ({ name: 'plays' }) }))
 vi.mock('@/features/tab-linking', () => ({ useTabLinks: () => h.f.tabLinks }))
@@ -97,7 +94,6 @@ beforeEach(() => {
   front.value = null
   h.args = {}
   h.core.fileKinds.mockReset()
-  h.getDeckPreset.mockReset()
   const writer = vi.fn()
   h.f = {
     writer,
@@ -106,6 +102,7 @@ beforeEach(() => {
     tabOpeners: { openFileAt: vi.fn() },
     held: {
       layout: ref(null),
+      tabs: ref<{ id: string; title: string }[]>([]),
       handle: { front: () => front.value },
       getTab: vi.fn((id: string) =>
         front.value?.id === id ? { kind: front.value.kind } : undefined,
@@ -113,6 +110,7 @@ beforeEach(() => {
       releaseTab: vi.fn(() => true),
       reconcileTab: vi.fn(),
       openTabOfKind: vi.fn(),
+      resolveCommand: vi.fn(),
       close: vi.fn(),
     },
     editing: {
@@ -262,12 +260,6 @@ describe('the parts of the window', () => {
     expect(h.args.commands.writeMessage).toBe(h.f.writer)
   })
 
-  it('are told which day begins from the settings', () => {
-    useWindow()
-
-    expect(h.args.editing.day()).toBe('monday')
-  })
-
   it('are told the paths that changed, in every editor and in the commands', async () => {
     useWindow()
     const paths = ['a.md']
@@ -346,6 +338,31 @@ describe('what the window knows of a note', () => {
 
     expect(h.args.commands.knows.getTitle('a.md')).toBe('')
   })
+
+  describe('in a tab of a kind that edits files', () => {
+    const stand = () => {
+      h.f.held.tabs.value = [{ id: 'deck:a', title: 'Animals' }]
+      h.f.held.getTab.mockReturnValue({
+        state: { path: 'a.md' },
+        kind: { flushPending: async () => {}, getOpenTab: () => ({ path: 'a.md' }) },
+      })
+    }
+
+    it('is the tab it is open in', () => {
+      stand()
+      useWindow()
+
+      expect(h.args.commands.knows.getTabAt('a.md')).toBe('deck:a')
+    })
+
+    it('is its title from that tab', () => {
+      stand()
+      h.f.editing.getTitle.mockReturnValue('')
+      useWindow()
+
+      expect(h.args.commands.knows.getTitle('a.md')).toBe('Animals')
+    })
+  })
 })
 
 describe('a tab closed', () => {
@@ -412,72 +429,26 @@ describe('a preset opened', () => {
   const mockFileKind = (type: string) =>
     h.core.fileKinds.mockResolvedValue(new Map([['a.md', { type }]]))
 
-  it('opens the schedules over a file that is no deck, asking nothing of the presets', async () => {
-    mockFileKind('note')
-    useWindow()
-
-    await h.args.commands.openPreset('a.md')
-
-    expect(h.core.fileKinds).toHaveBeenCalledWith(['a.md'])
-    expect(h.f.held.openTabOfKind).toHaveBeenCalledWith('preset', 'a.md')
-    expect(h.getDeckPreset).not.toHaveBeenCalled()
-  })
-
-  it('opens the schedules over a file the vault has no kind for', async () => {
-    h.core.fileKinds.mockResolvedValue(new Map())
-    useWindow()
-
-    await h.args.commands.openPreset('a.md')
-
-    expect(h.f.held.openTabOfKind).toHaveBeenCalledWith('preset', 'a.md')
-    expect(h.getDeckPreset).not.toHaveBeenCalled()
-  })
-
-  it('says why the preset of a deck could not be read', async () => {
+  it('is asked of the kinds of the window with the type the vault names the file', async () => {
     mockFileKind('deck')
-    h.getDeckPreset.mockResolvedValue({ ok: false, error: 'missing' })
+    h.f.held.resolveCommand.mockResolvedValue({ ok: true, kind: 'preset', at: 'Presets/Fast.md' })
     useWindow()
 
     await h.args.commands.openPreset('a.md')
 
-    expect(h.getDeckPreset).toHaveBeenCalledWith('a.md')
-    expect(h.f.writer).toHaveBeenCalledWith(WORDS.errors.missing, 'error')
-    expect(h.f.held.openTabOfKind).not.toHaveBeenCalled()
-  })
-
-  it('says a deck has no preset where the answer names none', async () => {
-    mockFileKind('deck')
-    h.getDeckPreset.mockResolvedValue({ ok: true, value: { preset: { path: '', title: 'T' } } })
-    useWindow()
-
-    await h.args.commands.openPreset('a.md')
-
-    expect(h.f.writer).toHaveBeenCalledWith(WORDS.noPreset, 'caution')
-    expect(h.f.held.openTabOfKind).not.toHaveBeenCalled()
-  })
-
-  it('says a deck has no preset where the answer holds none', async () => {
-    mockFileKind('deck')
-    h.getDeckPreset.mockResolvedValue({ ok: true, value: {} })
-    useWindow()
-
-    await h.args.commands.openPreset('a.md')
-
-    expect(h.f.writer).toHaveBeenCalledWith(WORDS.noPreset, 'caution')
-  })
-
-  it('opens the preset a deck is under, with its title', async () => {
-    mockFileKind('deck')
-    h.getDeckPreset.mockResolvedValue({
-      ok: true,
-      value: { preset: { path: 'Presets/Fast.md', title: 'Fast' } },
-    })
-    useWindow()
-
-    await h.args.commands.openPreset('a.md')
-
+    expect(h.f.held.resolveCommand).toHaveBeenCalledWith('a.md', 'preset', 'deck')
     expect(h.f.held.openTabOfKind).toHaveBeenCalledWith('preset', 'Presets/Fast.md')
-    expect(h.f.writer).not.toHaveBeenCalled()
+  })
+
+  it('says why it leads nowhere', async () => {
+    mockFileKind('deck')
+    h.f.held.resolveCommand.mockResolvedValue({ ok: false, text: 'no preset', severity: 'caution' })
+    useWindow()
+
+    await h.args.commands.openPreset('a.md')
+
+    expect(h.f.writer).toHaveBeenCalledWith('no preset', 'caution')
+    expect(h.f.held.openTabOfKind).not.toHaveBeenCalled()
   })
 })
 

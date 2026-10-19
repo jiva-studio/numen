@@ -8,11 +8,15 @@ import { describe, expect, it } from 'vitest'
 
 import { findIcon } from '@/shared/icons'
 import { getNoteIcon } from '@/entities/note'
-import { findTabKindIcon } from '@/entities/tab'
-import { PRESET } from '@/entities/tab'
 import { createCommands, createPathCommands } from '@/features/command-palette'
 import { createMenuItems } from '@plugins/view-file-tree/frontend'
 import { ITEMS, NONE } from '@plugins/view-plex-graph/frontend'
+import { activate, PRESET } from '@plugins/flashcards-studio/frontend'
+import {
+  createMockBufferHost,
+  createMockPluginContext,
+  type WorkspaceHost,
+} from '@numen/plugin-sdk'
 import { createWelcomeActions } from '@/pages/welcome'
 import { WORDS as words } from '@/shared/words'
 import type { NoteType, Source } from '@/entities/file'
@@ -80,6 +84,17 @@ describe('the icon of a kind of note', () => {
   })
 
   it('draws a preset as the tab that opens it does', () => {
-    expect(getNoteIcon('preset')).toBe(findTabKindIcon(PRESET))
+    const context = createMockPluginContext({
+      workspace: {
+        getMessageWriter: () => () => {},
+        getToday: () => '2026-09-04',
+      } as unknown as WorkspaceHost,
+      buffers: createMockBufferHost(),
+    })
+    activate(context)
+
+    const kind = context.getRegisteredTabKinds().find((one) => one.kind === PRESET)
+
+    expect(getNoteIcon('preset')).toBe(kind?.icon)
   })
 })

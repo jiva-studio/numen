@@ -7,7 +7,11 @@ import tseslint from 'typescript-eslint'
 const contract = ['plugin-sdk', 'ui', 'wire', 'protocol']
 
 /** The shared fixtures of the contract that a test reads by path. */
-const fixtureReaders = ['reader-epub/frontend/lib/markup.test.ts']
+const fixtureReaders = [
+  'reader-epub/frontend/lib/markup.test.ts',
+  'flashcards-studio/frontend/cards/lib/presets.test.ts',
+  'flashcards-studio/frontend/preset/lib/sketch.test.ts',
+]
 
 /** The harness the stories of every plugin are drawn in, which belongs to no plugin. */
 const storyHarness = ['.storybook/**']

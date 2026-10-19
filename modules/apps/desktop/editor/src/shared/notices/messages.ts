@@ -6,15 +6,9 @@
  * is drawn.
  */
 import { shallowRef, type Ref } from 'vue'
+import type { MessageKind, MessageWriter } from '@numen/plugin-sdk'
 
-/**
- * What kind of thing the window said.
- *
- * An error is what did not happen. A caution is worth reading and needs
- * nothing done at once. A report is what a command did. A state is so until
- * something else makes it not so.
- */
-export type MessageKind = 'error' | 'caution' | 'report' | 'state'
+export type { MessageKind, MessageWriter }
 
 /** One message the window holds. */
 export interface WindowMessage {
@@ -25,9 +19,6 @@ export interface WindowMessage {
   readonly kind: MessageKind
   readonly text: string
 }
-
-/** How one part of the window writes a message, replacing what it last wrote. */
-export type MessageWriter = (text: string, kind?: MessageKind) => void
 
 /** The messages the window holds, and what changes them. */
 export interface MessageLog {

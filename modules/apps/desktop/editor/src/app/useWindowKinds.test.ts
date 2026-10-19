@@ -46,8 +46,12 @@ const create = ({ plex, hasPlexKind = true }: { plex?: Plex; hasPlexKind?: boole
       handle: { last: vi.fn(() => (plex ? { id: 'plex:1', state: 'plex state' } : null)) },
       getTab: vi.fn(() => ({ kind: { getTarget: () => plex?.target } })),
     },
-    editing: { kinds: ['note', 'deck'], making: {} },
-    settings: { kinds: ['settings'], nesting: { isNesting: ref(true), headings: ref(2) } },
+    editing: { making: {}, fileFlush: { addHandler: vi.fn(), raise: vi.fn() } },
+    settings: {
+      kinds: ['settings'],
+      nesting: { isNesting: ref(true), headings: ref(2) },
+      dayBegins: { day: ref('2026-09-04') },
+    },
     window: { failure: ref(''), opening: ref('Root.md'), readInitialNote: vi.fn() },
     core: {},
     getTarget: vi.fn(() => ({})),
@@ -74,10 +78,10 @@ describe('the window kinds', () => {
     expect(window.dragged.value).toEqual([])
   })
 
-  it('registers the kinds of the editors and the settings, in that order', () => {
+  it('registers the kinds of the settings', () => {
     const { deps } = create()
 
-    expect(deps.held.registerKinds).toHaveBeenCalledWith(['note', 'deck', 'settings'])
+    expect(deps.held.registerKinds).toHaveBeenCalledWith(['settings'])
   })
 
   it('makes files through the makers it hands the commands, and reveals a path in the files tab', async () => {
@@ -172,10 +176,13 @@ describe('the services the window gives a plugin', () => {
     workspace?.ask('what is this?')
     workspace?.setDraggedPaths(['a.md'])
     workspace?.showError('the link was not written')
+    workspace?.getMessageWriter('stencil')('named a stencil')
 
     expect(deps.held.sendText).toHaveBeenCalledWith('agent', 'what is this?')
     expect(window.dragged.value).toStrictEqual(['a.md'])
     expect(writer).toHaveBeenCalledWith('the link was not written', 'error')
+    expect(deps.log.getWriter).toHaveBeenCalledWith('stencil')
+    expect(workspace?.getToday()).toBe('2026-09-04')
     expect(workspace?.openingPath.value).toBe('Root.md')
     expect(workspace?.headingDisplay.count.value).toBe(2)
     expect(notes?.creatableRelations).toStrictEqual(['parent', 'child', 'jump'])

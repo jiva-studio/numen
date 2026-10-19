@@ -1070,3 +1070,73 @@ describe('text put to the tabs of a kind', () => {
     await expect(window.sendText('thing', 'hello')).resolves.toBe(id)
   })
 })
+
+describe('where a command over a file leads', () => {
+  it('is where the first kind that answers for it says, asked with the type of the file', async () => {
+    const asked: string[][] = []
+    const window = told([
+      kind({
+        resolveCommand: async (at, command, type) => {
+          asked.push([at, command, type])
+          return { ok: true, kind: 'preset', at: 'Slow.md' }
+        },
+      }).declared,
+    ])
+
+    expect(await window.resolveCommand('Animals.md', 'preset', 'deck')).toStrictEqual({
+      ok: true,
+      kind: 'preset',
+      at: 'Slow.md',
+    })
+    expect(asked).toStrictEqual([['Animals.md', 'preset', 'deck']])
+  })
+
+  it('is asked of the next kind where one answers nothing', async () => {
+    const window = told([
+      kind({ resolveCommand: async () => null }).declared,
+      kind({
+        kind: 'second',
+        resolveCommand: async () => ({ ok: false, text: 'no', severity: 'caution' }),
+      }).declared,
+    ])
+
+    expect(await window.resolveCommand('a.md', 'preset', 'note')).toStrictEqual({
+      ok: false,
+      text: 'no',
+      severity: 'caution',
+    })
+  })
+
+  it('is nowhere where no kind answers', async () => {
+    const window = told([kind().declared])
+
+    expect(await window.resolveCommand('a.md', 'preset', 'note')).toBeNull()
+  })
+})
+
+describe('a file made as the kind that edits it', () => {
+  it('is asked of that kind, under the folder and the name given', async () => {
+    const made: string[][] = []
+    const window = told([
+      kind({
+        createFile: async (folder, name) => {
+          made.push([folder, name])
+          return { ok: true, value: { path: `${folder}/${name}.md` } }
+        },
+      }).declared,
+    ])
+
+    expect(await window.createFileOfKind('thing', 'dir', 'Name')).toStrictEqual({
+      ok: true,
+      value: { path: 'dir/Name.md' },
+    })
+    expect(made).toStrictEqual([['dir', 'Name']])
+  })
+
+  it('is asked of nothing where the kind makes no file or is not registered', () => {
+    const window = told([kind().declared])
+
+    expect(window.createFileOfKind('thing', 'dir', 'Name')).toBeUndefined()
+    expect(window.createFileOfKind('nothing', 'dir', 'Name')).toBeUndefined()
+  })
+})

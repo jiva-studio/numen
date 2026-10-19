@@ -4,6 +4,7 @@
 import type {
   AgentHost,
   AgentProviderRegistration,
+  BufferHost,
   CommandRegistration,
   Disposable,
   FileSelectEvent,
@@ -76,6 +77,8 @@ export interface PluginHostDeps {
   readonly getFiles?: () => VaultFiles | undefined
   /** The agent the window asks, once the window has made it. */
   readonly getAgent?: () => AgentHost | undefined
+  /** The open files of the window, once the window has made them. */
+  readonly getBuffers?: () => BufferHost | undefined
 }
 
 export interface PluginContextHost {
@@ -105,4 +108,5 @@ export interface PluginContextHost {
   getNotes?(): VaultNotes | undefined
   getFiles?(): VaultFiles | undefined
   getAgent?(): AgentHost | undefined
+  getBuffers?(): BufferHost | undefined
 }
