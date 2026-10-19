@@ -949,7 +949,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	" \x01(\x01H\x02R\x04step\x88\x01\x01B\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
-	"\x05_step\"\xc4\x03\n" +
+	"\x05_step\"\xd2\x03\n" +
 	"\n" +
 	"PluginInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -964,7 +964,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x0estored_secrets\x18\n" +
 	" \x03(\tR\rstoredSecrets\x12J\n" +
 	"\x12completion_consent\x18\f \x01(\x0e2\x1b.numen.v1.CompletionConsentR\x11completionConsent\x121\n" +
-	"\afailure\x18\r \x01(\v2\x17.numen.v1.PluginFailureR\afailure\"R\n" +
+	"\afailure\x18\r \x01(\v2\x17.numen.v1.PluginFailureR\afailureJ\x04\b\v\x10\fR\x06models\"R\n" +
 	"\rPluginFailure\x12\x16\n" +
 	"\x06reason\x18\x01 \x01(\tR\x06reason\x12)\n" +
 	"\x11failed_at_unix_ms\x18\x02 \x01(\x03R\x0efailedAtUnixMs\"\x13\n" +

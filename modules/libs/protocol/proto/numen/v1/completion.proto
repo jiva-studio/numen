@@ -36,6 +36,9 @@ message CompletionQuestion {
   // What the answer is for (e.g. "proofreading"). It routes nothing; a purpose
   // names neither a model, an agent nor a key.
   string purpose = 2;
+
+  reserved 3;
+  reserved "hints";
 }
 
 message CompletionMessage {

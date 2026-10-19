@@ -67,6 +67,8 @@ message PluginInfo {
   repeated string secrets = 9;
   // The names of the secrets that have a key stored. A key never travels here.
   repeated string stored_secrets = 10;
+  reserved 11;
+  reserved "models";
   // Whether the person lets the plugin ask for model completions.
   CompletionConsent completion_consent = 12;
   // Set while the host suspends the plugin after it failed to start.

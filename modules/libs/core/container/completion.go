@@ -59,7 +59,9 @@ func (p *completionPrograms) GetProgram(ctx context.Context, name string) (port.
 	if name == "" {
 		name = held.GetUse()
 	}
-	programs, listErr := p.provider.GetPrograms(ctx, held.GetCommands())
+	listing, stop := context.WithTimeout(ctx, programsLimit)
+	defer stop()
+	programs, listErr := p.provider.GetPrograms(listing, held.GetCommands())
 	found, isFound := findProgram(programs, name)
 	switch {
 	case !isFound && listErr != nil:
