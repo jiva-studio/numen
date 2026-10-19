@@ -114,6 +114,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     getWorkspace: () => deps.services?.workspace,
     getNotes: () => deps.services?.notes,
     getFiles: () => deps.services?.files,
+    getAgent: () => deps.services?.agent,
   })
   const pluginLoader = createPluginLoader({
     host: pluginHost,

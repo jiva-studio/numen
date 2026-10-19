@@ -1,3 +1,4 @@
+import type { AgentHost } from './agent'
 import type { VaultFiles, VaultNotes, WorkspaceHost } from './workspace'
 
 // Disposable is a handle released on teardown.
@@ -85,6 +86,8 @@ export interface TabKindRegistration<State = unknown> {
   // The identity a tab takes from what it opens on: the same `at` opened twice is one tab.
   identity?(at: string): string
   onShow?(state: State, id: string): void
+  // The tab is handed text meant for it, such as a question the window puts to it.
+  receiveText?(state: State, text: string): void
   // A key struck while the tab is in front, answered with whether the tab took it.
   onKeyPress?(state: State, event: KeyboardEvent): boolean
   getTarget?(state: State): TabTarget
@@ -159,6 +162,8 @@ export interface PluginContext {
   readonly notes?: VaultNotes
   // The folders and files of the vault, where the host offers them.
   readonly files?: VaultFiles
+  // The agent the window asks, where the host offers one.
+  readonly agent?: AgentHost
 }
 
 // PluginManifest describes the metadata in manifest.json.

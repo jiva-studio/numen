@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
 import { Plex, Tree, WelcomePage, WorkspaceLayout } from '@numen/ui'
-import { AgentTab } from '@/pages/agent-chat'
+import { AgentTab } from '@plugins/view-agent-chat/frontend'
 import { DocumentTab } from '@plugins/reader-pdf/frontend'
 import { FilesTab } from '@plugins/view-file-tree/frontend'
 import { PlexTab } from '@plugins/view-plex-graph/frontend'

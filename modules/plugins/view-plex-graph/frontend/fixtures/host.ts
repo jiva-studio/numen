@@ -39,6 +39,8 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     draggedPaths: ref([]),
     setDraggedPaths: () => {},
     openFile: (path, options) => void recorded.opened.push([path, options]),
+    openFileAt: () => {},
+    getNoteInFocus: () => ({ path: '', title: '' }),
     syncPath: (tabId, path, title) => {
       recorded.synced.push([tabId, path, title])
       return linked[tabId] ?? false

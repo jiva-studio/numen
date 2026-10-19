@@ -7,7 +7,7 @@ import { nextTick, ref } from 'vue'
 import * as ui from '@numen/ui'
 import type { Conversation, Turn } from '@numen/ui'
 import { useAgentConversation } from './useAgentConversation'
-import type { Span } from '@/shared/span'
+import type { Span } from '@numen/plugin-sdk'
 
 vi.mock('@numen/ui', async (importOriginal) => {
   const original = await importOriginal<typeof import('@numen/ui')>()
