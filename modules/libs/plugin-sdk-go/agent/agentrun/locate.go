@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 )
@@ -32,7 +33,7 @@ func findInPlaces(places []string) string {
 			if home == "" {
 				continue
 			}
-			place = filepath.Join(home, place[2:])
+			place = filepath.Join(escapeGlob(home), place[2:])
 		}
 		matches, err := filepath.Glob(place)
 		if err != nil {
@@ -45,6 +46,22 @@ func findInPlaces(places []string) string {
 		}
 	}
 	return ""
+}
+
+// escapeGlob returns the glob pattern that matches only path.
+func escapeGlob(path string) string {
+	var pattern strings.Builder
+	for _, r := range path {
+		switch {
+		case r == '*' || r == '?' || r == '[':
+			pattern.WriteString("[" + string(r) + "]")
+		case r == '\\' && runtime.GOOS != "windows":
+			pattern.WriteString(`\\`)
+		default:
+			pattern.WriteRune(r)
+		}
+	}
+	return pattern.String()
 }
 
 // isRunnable is a regular file with an execute bit, held under the exact name it was looked for by.

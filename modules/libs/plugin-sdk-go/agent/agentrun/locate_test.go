@@ -112,11 +112,38 @@ func TestLocateSkipsADirectory(t *testing.T) {
 
 func TestLocateSkipsAPlaceThatIsNotAPattern(t *testing.T) {
 	isolateMachine(t)
-	t.Setenv("HOME", filepath.Join(t.TempDir(), "["))
 	want := filepath.Join(t.TempDir(), "tool")
 	writeExecutable(t, want, 0o755)
-	if got := Locate(nil, []string{"~/.local/bin/tool", want}); got != want {
+	if got := Locate(nil, []string{"~/.local/bin/[", want}); got != want {
 		t.Fatalf("found %q, want %q", got, want)
+	}
+}
+
+// The home is read as a folder name, and only the place after "~/" is a pattern.
+func TestLocateReadsTheHomeLiterally(t *testing.T) {
+	isolateMachine(t)
+	for _, name := range []string{"[x]", "*", "?", "[", `a\b`} {
+		home := filepath.Join(t.TempDir(), name)
+		t.Setenv("HOME", home)
+		want := filepath.Join(home, ".nvm/versions/node/v1/bin/tool")
+		writeExecutable(t, want, 0o755)
+		if got := Locate(nil, []string{"~/.nvm/versions/node/*/bin/tool"}); got != want {
+			t.Errorf("home %q: found %q, want %q", name, got, want)
+		}
+	}
+}
+
+func TestEscapeGlobMatchesOnlyThePath(t *testing.T) {
+	isolateMachine(t)
+	for _, path := range []string{"/home/[x]", "/home/*", "/home/?", "/home/[", `/home/a\b`, "/home/plain"} {
+		if ok, err := filepath.Match(escapeGlob(path), path); err != nil || !ok {
+			t.Errorf("escapeGlob(%q) = %q does not match the path: %v", path, escapeGlob(path), err)
+		}
+	}
+	for path, other := range map[string]string{"/home/[x]": "/home/x", "/home/*": "/home/a", "/home/?": "/home/a"} {
+		if ok, _ := filepath.Match(escapeGlob(path), other); ok {
+			t.Errorf("escapeGlob(%q) matches %q", path, other)
+		}
 	}
 }
 
