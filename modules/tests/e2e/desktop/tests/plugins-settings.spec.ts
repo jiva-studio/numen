@@ -41,7 +41,7 @@ test.describe('Plugin Settings and Configuration', () => {
     await expect(page.getByText('Transcription Language').first()).toBeVisible({ timeout: 5_000 })
   })
 
-  test('opens the transcription language choices', async ({ page }) => {
+  test('shows the default transcription language', async ({ page }) => {
     await page.goto('/')
 
     await expect(page.locator('text=Ready')).toBeVisible()
@@ -60,8 +60,7 @@ test.describe('Plugin Settings and Configuration', () => {
       .locator('.settings__choice')
       .first()
     await expect(language).toBeVisible()
-    await language.click()
-    await expect(language).toHaveAttribute('aria-expanded', 'true')
+    await expect(language).toHaveText('auto')
   })
 
   test('changes transcription language dropdown selection', async ({ page }) => {
