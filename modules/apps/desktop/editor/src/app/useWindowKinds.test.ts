@@ -13,19 +13,19 @@ type MockSeen = {
 }
 
 const hoisted = vi.hoisted(() => ({
-  seen: {} as Record<'agent' | 'files', MockSeen>,
+  built: {} as Record<'agent' | 'files', MockSeen>,
   agents: {} as Record<string, unknown>,
 }))
 
 vi.mock('./kinds/agent', () => ({
   createAgentKind: (args: unknown) => {
-    hoisted.seen.agent = args as MockSeen
+    hoisted.built.agent = args as MockSeen
     return hoisted.agents
   },
 }))
 vi.mock('./fileServices', () => ({
   createFileMakers: (args: unknown) => {
-    hoisted.seen.files = args as MockSeen
+    hoisted.built.files = args as MockSeen
     return 'made'
   },
   createVaultFiles: () => ({ name: 'files' }),
@@ -61,7 +61,7 @@ const create = ({ plex, hasPlexKind = true }: { plex?: Plex; hasPlexKind?: boole
 }
 
 beforeEach(() => {
-  hoisted.seen = {} as Record<'agent' | 'files', MockSeen>
+  hoisted.built = {} as Record<'agent' | 'files', MockSeen>
   hoisted.agents = { kind: 'agent', askQuestion: vi.fn(() => Promise.resolve()) }
 })
 
@@ -70,7 +70,7 @@ describe('the window kinds', () => {
     const { deps, writer } = create()
 
     expect(deps.log.getWriter).toHaveBeenCalledWith('command')
-    expect(hoisted.seen.files.writeMessage).toBe(writer)
+    expect(hoisted.built.files.writeMessage).toBe(writer)
   })
 
   it('starts with nothing dragged', () => {
@@ -107,15 +107,15 @@ describe('what the agent is about', () => {
   it('is what the plex the person was last in is over', () => {
     create({ plex: { target: { path: 'Ideas/Plan.md', title: 'The plan' } } })
 
-    expect(hoisted.seen.agent.about()).toEqual({ path: 'Ideas/Plan.md', title: 'The plan' })
+    expect(hoisted.built.agent.about()).toEqual({ path: 'Ideas/Plan.md', title: 'The plan' })
   })
 
   it('is no note at all in a window holding no plex, or one over nothing', () => {
     create()
-    expect(hoisted.seen.agent.about()).toEqual({ path: '', title: '' })
+    expect(hoisted.built.agent.about()).toEqual({ path: '', title: '' })
 
     create({ plex: {} })
-    expect(hoisted.seen.agent.about()).toEqual({ path: '', title: '' })
+    expect(hoisted.built.agent.about()).toEqual({ path: '', title: '' })
   })
 })
 

@@ -40,7 +40,7 @@ const window = (options: HostOptions = {}) => {
   }
   /** The person is in this tab now. */
   const showTab = (id: string) => kind.onShow!(open.get(id)!.state, id)
-  /** The tab closes, and the window lets go of what it held. */
+  /** The tab closes, and the window drops what it held. */
   const closeTab = (id: string) => {
     const one = open.get(id)!
     kind.onClose!(one.state, id)
@@ -263,28 +263,28 @@ describe('a plex tab as it moves', () => {
     await state.view.go('physics/Ontology.md')
     await settle()
 
-    expect(one.said.synced).toStrictEqual([[id, 'physics/Ontology.md', 'physics/Ontology']])
+    expect(one.recorded.synced).toStrictEqual([[id, 'physics/Ontology.md', 'physics/Ontology']])
   })
 
   it('tells them nothing when it comes to stand nowhere', async () => {
     const one = window()
     const { state } = await one.openTab('One.md')
-    one.said.synced.length = 0
+    one.recorded.synced.length = 0
 
     await state.view.go('')
     await settle()
 
-    expect(one.said.synced).toStrictEqual([])
+    expect(one.recorded.synced).toStrictEqual([])
   })
 
   it('tells them the note of a node the person chose', async () => {
     const one = window()
     const { id, state } = await one.openTab('One.md')
-    one.said.synced.length = 0
+    one.recorded.synced.length = 0
 
     state.activate(state.picture.value!.nodes[0]!.id)
 
-    expect(one.said.synced[0]).toStrictEqual([id, 'One.md', 'One'])
+    expect(one.recorded.synced[0]).toStrictEqual([id, 'One.md', 'One'])
   })
 })
 

@@ -64,7 +64,7 @@ export interface HostOptions {
 
 /** A window and a vault that answer a files tab, and what the tab asked of them. */
 export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
-  const said = {
+  const recorded = {
     synced: [] as [string, string, string | undefined][],
     opened: [] as [string, OpenFileOptions | undefined][],
     commands: [] as [string, PathCommandTarget][],
@@ -79,39 +79,39 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
     readOpeningPath: async () => '',
     headingDisplay: { isNesting: ref(false), count: ref(0) },
     draggedPaths: ref([]),
-    setDraggedPaths: (paths) => void said.dragged.push(paths),
-    openFile: (path, options) => void said.opened.push([path, options]),
+    setDraggedPaths: (paths) => void recorded.dragged.push(paths),
+    openFile: (path, options) => void recorded.opened.push([path, options]),
     syncPath: (tabId, path, title) => {
-      said.synced.push([tabId, path, title])
+      recorded.synced.push([tabId, path, title])
       return linked[tabId] ?? false
     },
     runCommand: () => {},
     ask: () => {},
-    showError: (text) => void said.errors.push(text),
-    runPathCommand: (id, target) => void said.commands.push([id, target]),
+    showError: (text) => void recorded.errors.push(text),
+    runPathCommand: (id, target) => void recorded.commands.push([id, target]),
     ...drawing,
   }
 
   const record = (what: string) => async (folder: string, name?: string) => {
-    said.made.push([what, folder, name].filter((one) => one !== undefined).join(' '))
+    recorded.made.push([what, folder, name].filter((one) => one !== undefined).join(' '))
     return `${folder}${name ?? what}`
   }
 
   const files: VaultFiles = {
     list: async (folder) => folders[folder] ?? [],
-    move: async (from, to) => void said.made.push(`move ${from} ${to}`),
-    createFolder: async (path) => void said.made.push(`folder ${path}`),
+    move: async (from, to) => void recorded.made.push(`move ${from} ${to}`),
+    createFolder: async (path) => void recorded.made.push(`folder ${path}`),
     createNote: record('note'),
     createDeck: record('deck'),
     createStencil: record('stencil'),
     createPreset: record('preset'),
     importUrl: record('url'),
     importUrls: async (folder, urls) => {
-      said.made.push(`urls ${folder} ${urls.join(' ')}`)
+      recorded.made.push(`urls ${folder} ${urls.join(' ')}`)
       return urls
     },
   }
 
   const host: FileTreeHost = { workspace, files }
-  return { host, said }
+  return { host, recorded }
 }

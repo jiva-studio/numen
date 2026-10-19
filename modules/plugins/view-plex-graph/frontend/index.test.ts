@@ -27,7 +27,7 @@ describe('view-plex-graph plugin', () => {
     expect(tabKinds[0]?.open).toBeTypeOf('function')
   })
 
-  it('holds two subscriptions, the tab kind and the vault, and lets go of both', () => {
+  it('holds two subscriptions, the tab kind and the vault, and releases both', () => {
     const { ctx } = createContext()
     activate(ctx)
 

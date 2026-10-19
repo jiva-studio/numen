@@ -17,13 +17,13 @@ const note = (path: string): Entry => ({
 
 const createContext = () => {
   const folders: Record<string, readonly Entry[]> = { '': [note('A.md')] }
-  const { host, said } = createHost({ folders })
+  const { host, recorded } = createHost({ folders })
   const ctx = createMockPluginContext({
     pluginId: 'md.numen.view-file-tree',
     workspace: host.workspace,
     files: host.files,
   })
-  return { ctx, said, folders }
+  return { ctx, recorded, folders }
 }
 
 describe('view-file-tree plugin', () => {
@@ -38,7 +38,7 @@ describe('view-file-tree plugin', () => {
     expect(tabKinds[0]?.open).toBeTypeOf('function')
   })
 
-  it('holds two subscriptions, the tab kind and the vault, and lets go of both', () => {
+  it('holds two subscriptions, the tab kind and the vault, and releases both', () => {
     const { ctx } = createContext()
     activate(ctx)
 

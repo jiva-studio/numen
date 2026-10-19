@@ -8,16 +8,16 @@ import { createPlexTabDeps } from './tabDeps'
 
 describe('a note a plex tab opens', () => {
   it('goes to the tabs linked to it, and opens nowhere else', () => {
-    const { host, said } = createHost({ linked: { 'plex:1': true } })
+    const { host, recorded } = createHost({ linked: { 'plex:1': true } })
 
     createPlexTabDeps(host, 'plex:1').openNote('One.md', { title: 'One', showing: 'beside' })
 
-    expect(said.synced).toStrictEqual([['plex:1', 'One.md', 'One']])
-    expect(said.opened).toStrictEqual([])
+    expect(recorded.synced).toStrictEqual([['plex:1', 'One.md', 'One']])
+    expect(recorded.opened).toStrictEqual([])
   })
 
   it('opens where the person asked, at the line asked, where no tab is linked to it', () => {
-    const { host, said } = createHost()
+    const { host, recorded } = createHost()
 
     createPlexTabDeps(host, 'plex:1').openNote('One.md', {
       title: 'One',
@@ -25,48 +25,50 @@ describe('a note a plex tab opens', () => {
       line: 4,
     })
 
-    expect(said.opened).toStrictEqual([['One.md', { title: 'One', placement: 'beside', line: 4 }]])
+    expect(recorded.opened).toStrictEqual([
+      ['One.md', { title: 'One', placement: 'beside', line: 4 }],
+    ])
   })
 
   it('opens with no title, placement or line where none is asked', () => {
-    const { host, said } = createHost()
+    const { host, recorded } = createHost()
 
     createPlexTabDeps(host, 'plex:1').openNote('One.md')
 
-    expect(said.synced).toStrictEqual([['plex:1', 'One.md', '']])
-    expect(said.opened).toStrictEqual([['One.md', { title: '' }]])
+    expect(recorded.synced).toStrictEqual([['plex:1', 'One.md', '']])
+    expect(recorded.opened).toStrictEqual([['One.md', { title: '' }]])
   })
 })
 
 describe('what else a plex tab asks of the window', () => {
   it('moves the tabs linked to it to a path it selects', () => {
-    const { host, said } = createHost()
+    const { host, recorded } = createHost()
     const deps = createPlexTabDeps(host, 'plex:2')
 
     deps.onSelectPath?.('Two.md', 'Two')
     deps.onSelectPath?.('Three.md')
 
-    expect(said.synced).toStrictEqual([
+    expect(recorded.synced).toStrictEqual([
       ['plex:2', 'Two.md', 'Two'],
       ['plex:2', 'Three.md', ''],
     ])
   })
 
   it('runs a command over a note, asks the agent and says what failed', () => {
-    const { host, said } = createHost()
+    const { host, recorded } = createHost()
     const deps = createPlexTabDeps(host, 'plex:1')
 
     deps.runCommand('rename', 'One.md', 'One')
     deps.askAgent('what is One?')
     deps.showMessage('the link was not written')
 
-    expect(said.commands).toStrictEqual([['rename', { path: 'One.md', title: 'One' }]])
-    expect(said.questions).toStrictEqual(['what is One?'])
-    expect(said.errors).toStrictEqual(['the link was not written'])
+    expect(recorded.commands).toStrictEqual([['rename', { path: 'One.md', title: 'One' }]])
+    expect(recorded.questions).toStrictEqual(['what is One?'])
+    expect(recorded.errors).toStrictEqual(['the link was not written'])
   })
 
   it('makes and joins notes through the notes of the vault', async () => {
-    const { host, said } = createHost()
+    const { host, recorded } = createHost()
     const deps = createPlexTabDeps(host, 'plex:1')
 
     await deps.editor.createInRelation('One.md', 'child')
@@ -78,11 +80,11 @@ describe('what else a plex tab asks of the window', () => {
     expect(await deps.editor.replaceLinks('One.md', 'Two.md', [])).toBe(true)
     expect(await deps.createUntitledNote()).toBe('Untitled.md')
 
-    expect(said.made).toStrictEqual([
+    expect(recorded.made).toStrictEqual([
       ['One.md', 'child'],
       ['One.md', 'parent'],
     ])
-    expect(said.joined).toStrictEqual([['One.md', 'Two.md', 'jump']])
+    expect(recorded.joined).toStrictEqual([['One.md', 'Two.md', 'jump']])
     expect(deps.creatable).toStrictEqual(['parent', 'child', 'jump'])
   })
 

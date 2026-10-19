@@ -1001,13 +1001,13 @@ describe('the tabs standing on a path that went', () => {
       fixed.one,
     ])
     const gone = await window.openTabOfKind('walker', 'Gone.md')
-    const kept = await window.openTabOfKind('walker', 'Elsewhere.md')
+    const survivor = await window.openTabOfKind('walker', 'Elsewhere.md')
     const still = await window.openTabOfKind('fixed', 'Gone.md')
 
     await window.navigateTabsAt('Gone.md', 'Root.md')
 
     expect(window.getTab(gone)?.state).toMatchObject({ at: 'Root.md' })
-    expect(window.getTab(kept)?.state).toMatchObject({ at: 'Elsewhere.md' })
+    expect(window.getTab(survivor)?.state).toMatchObject({ at: 'Elsewhere.md' })
     expect(window.getTab(still)?.state).toMatchObject({ at: 'Gone.md' })
   })
 })

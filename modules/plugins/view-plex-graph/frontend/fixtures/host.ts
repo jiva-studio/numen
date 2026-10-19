@@ -18,7 +18,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
   const openingPath = ref(opening)
   const isNesting = ref(true)
   const asked = { opening: [] as string[], headings: [] as (readonly string[])[] }
-  const said = {
+  const recorded = {
     synced: [] as [string, string, string | undefined][],
     opened: [] as [string, OpenFileOptions | undefined][],
     commands: [] as [string, NoteRef][],
@@ -38,14 +38,14 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     headingDisplay: { isNesting, count: ref(6) },
     draggedPaths: ref([]),
     setDraggedPaths: () => {},
-    openFile: (path, options) => void said.opened.push([path, options]),
+    openFile: (path, options) => void recorded.opened.push([path, options]),
     syncPath: (tabId, path, title) => {
-      said.synced.push([tabId, path, title])
+      recorded.synced.push([tabId, path, title])
       return linked[tabId] ?? false
     },
-    runCommand: (id, target) => void said.commands.push([id, target]),
-    ask: (text) => void said.questions.push(text),
-    showError: (text) => void said.errors.push(text),
+    runCommand: (id, target) => void recorded.commands.push([id, target]),
+    ask: (text) => void recorded.questions.push(text),
+    showError: (text) => void recorded.errors.push(text),
     getPathCommands: () => [],
     runPathCommand: () => {},
     getCommandIcon: () => null,
@@ -65,15 +65,15 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     findNotes: async () => [],
     createUntitledNote: async () => 'Untitled.md',
     createInRelation: async (from, relation) => {
-      said.made.push([from, relation])
+      recorded.made.push([from, relation])
       return { path: 'Made.md', title: 'Made' }
     },
     createWithTitle: async (title, from, relation) => {
-      said.made.push([from, relation])
+      recorded.made.push([from, relation])
       return { path: `${title}.md`, title }
     },
     join: async (from, to, relation) => {
-      said.joined.push([from, to, relation])
+      recorded.joined.push([from, to, relation])
       return true
     },
     replaceLinks: async () => true,
@@ -81,5 +81,5 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
   }
 
   const host: PlexHost = { workspace, notes }
-  return { host, openingPath, isNesting, asked, said }
+  return { host, openingPath, isNesting, asked, recorded }
 }

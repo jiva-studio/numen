@@ -31,7 +31,7 @@ export interface MenuRequest {
   readonly at: { x: number; y: number }
 }
 
-/** Where rows let go of landed, as the tree reports it. */
+/** Where dropped rows landed, as the tree reports it. */
 export type DropPosition = { readonly into: string | null } | { readonly before: string }
 
 export interface FileCommandTarget {

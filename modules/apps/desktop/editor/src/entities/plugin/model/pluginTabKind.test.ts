@@ -42,11 +42,11 @@ describe('a registration that says what its tabs hold', () => {
   })
 
   it('opens its tabs itself, under the identity the window gives them', () => {
-    const kind = createDeclaredTabKind('md.numen.held', declare())
+    const kind = createDeclaredTabKind('md.numen.sample', declare())
 
     expect(kind.open('Graph.md', 'held:1')).toEqual({ at: 'Graph.md', id: 'held:1', title: '' })
     expect(kind.kind).toBe('held')
-    expect(kind.pluginId).toBe('md.numen.held')
+    expect(kind.pluginId).toBe('md.numen.sample')
   })
 
   it('is called what it calls a tab, and its title where it calls it nothing', () => {
@@ -90,7 +90,7 @@ describe('the hooks a registration hands over', () => {
 
 describe('the pane of a declared kind', () => {
   it('draws the component on the state of the tab, outside a shadow root and with nothing else', () => {
-    const view = mount(createDeclaredPane('md.numen.held', Pane), {
+    const view = mount(createDeclaredPane('md.numen.sample', Pane), {
       props: { state: { at: 'Graph.md', id: 'held:1', title: '' } },
     })
 
@@ -105,10 +105,10 @@ describe('the pane of a declared kind', () => {
         throw new Error('the graph is gone')
       },
     })
-    const view = mount(createDeclaredPane('md.numen.held', Broken), { props: { state: {} } })
+    const view = mount(createDeclaredPane('md.numen.sample', Broken), { props: { state: {} } })
     await view.vm.$nextTick()
 
-    expect(view.text()).toContain('Plugin "md.numen.held" crashed')
+    expect(view.text()).toContain('Plugin "md.numen.sample" crashed')
     expect(view.text()).toContain('the graph is gone')
   })
 
@@ -130,7 +130,7 @@ describe('a declared kind registered through a plugin context', () => {
       registerExtensionReader: vi.fn(() => vi.fn()),
       openTab: vi.fn(() => Promise.resolve('tab')),
     }
-    const context = createPluginHost(deps).createContext('md.numen.held')
+    const context = createPluginHost(deps).createContext('md.numen.sample')
 
     const sub = context.registerTabKind<Held>({
       kind: 'held',
@@ -162,14 +162,14 @@ describe('the services a plugin context is given', () => {
       createDeps({ getWorkspace: () => workspace, getNotes: () => notes }),
     )
 
-    const context = host.createContext('md.numen.held')
+    const context = host.createContext('md.numen.sample')
 
     expect(context.workspace).toBe(workspace)
     expect(context.notes).toBe(notes)
   })
 
   it('are absent where the host offers none', () => {
-    const context = createPluginHost(createDeps()).createContext('md.numen.held')
+    const context = createPluginHost(createDeps()).createContext('md.numen.sample')
 
     expect(context).not.toHaveProperty('workspace')
     expect(context).not.toHaveProperty('notes')

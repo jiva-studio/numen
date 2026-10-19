@@ -21,44 +21,44 @@ const holding = (one: Entry | null) =>
 
 describe('a file a files tab opens', () => {
   it('goes to the tabs linked to it where it is a note one of them takes', () => {
-    const { host, said } = createHost({ linked: { files: true } })
+    const { host, recorded } = createHost({ linked: { files: true } })
 
     createFilesTabDeps(host, 'files').openEntry(entry())
 
-    expect(said.synced).toStrictEqual([['files', 'a.md', 'a.md']])
-    expect(said.opened).toStrictEqual([])
+    expect(recorded.synced).toStrictEqual([['files', 'a.md', 'a.md']])
+    expect(recorded.opened).toStrictEqual([])
   })
 
   it('opens in the pane the person is in where no linked tab takes it, or it is no note', () => {
-    const { host, said } = createHost({ linked: { files: true } })
+    const { host, recorded } = createHost({ linked: { files: true } })
     const deps = createFilesTabDeps(host, 'files')
 
     deps.openEntry(entry({ path: 'Heat.pdf', name: 'Heat.pdf', kind: 'book' }))
     deps.openEntry(entry({ path: 'Untitled', name: '' }))
 
-    expect(said.opened).toStrictEqual([['Heat.pdf', { title: 'Heat.pdf', placement: 'here' }]])
-    expect(said.synced).toStrictEqual([['files', 'Untitled', '']])
+    expect(recorded.opened).toStrictEqual([['Heat.pdf', { title: 'Heat.pdf', placement: 'here' }]])
+    expect(recorded.synced).toStrictEqual([['files', 'Untitled', '']])
   })
 
   it('opens under its path where it has no name and no linked tab takes it', () => {
-    const { host, said } = createHost()
+    const { host, recorded } = createHost()
 
     createFilesTabDeps(host, 'files').openEntry(entry({ path: 'Untitled', name: '' }))
 
-    expect(said.opened).toStrictEqual([['Untitled', { title: 'Untitled', placement: 'here' }]])
+    expect(recorded.opened).toStrictEqual([['Untitled', { title: 'Untitled', placement: 'here' }]])
   })
 })
 
 describe('a path a files tab selects', () => {
   it('moves the tabs linked to it, a note by its kind or by its path', () => {
-    const { host, said } = createHost()
+    const { host, recorded } = createHost()
     const deps = createFilesTabDeps(host, 'files')
 
     deps.onSelectPath?.('a.md', holding(entry()))
     deps.onSelectPath?.('b.md', holding(entry({ path: 'b.md', name: 'b', kind: 'other' })))
     deps.onSelectPath?.('c.txt', holding(entry({ path: 'c.txt', name: 'c', kind: 'note' })))
 
-    expect(said.synced).toStrictEqual([
+    expect(recorded.synced).toStrictEqual([
       ['files', 'a.md', 'a.md'],
       ['files', 'b.md', 'b'],
       ['files', 'c.txt', 'c'],
@@ -66,20 +66,20 @@ describe('a path a files tab selects', () => {
   })
 
   it('moves nothing for a folder, a file that is no note, or a path the tree does not hold', () => {
-    const { host, said } = createHost()
+    const { host, recorded } = createHost()
     const deps = createFilesTabDeps(host, 'files')
 
     deps.onSelectPath?.('notes', holding(entry({ path: 'notes', isFolder: true })))
     deps.onSelectPath?.('Cover.png', holding(entry({ path: 'Cover.png', kind: 'other' })))
     deps.onSelectPath?.('gone.md', holding(null))
 
-    expect(said.synced).toStrictEqual([])
+    expect(recorded.synced).toStrictEqual([])
   })
 })
 
 describe('what else a files tab asks of the window', () => {
   it('runs a command over the paths and makes, moves and imports through the files of the vault', async () => {
-    const { host, said } = createHost()
+    const { host, recorded } = createHost()
     const deps = createFilesTabDeps(host, 'files')
 
     deps.runCommand('remove', ['a.md', 'b.md'], { name: 'a', source: 'note' })
@@ -92,10 +92,10 @@ describe('what else a files tab asks of the window', () => {
     expect(await deps.importUrl('dir/', 'https://a.test')).toBe('dir/https://a.test')
     expect(await deps.importUrls('dir/', ['https://b.test'])).toStrictEqual(['https://b.test'])
 
-    expect(said.commands).toStrictEqual([
+    expect(recorded.commands).toStrictEqual([
       ['remove', { paths: ['a.md', 'b.md'], name: 'a', source: 'note' }],
     ])
-    expect(said.made).toStrictEqual([
+    expect(recorded.made).toStrictEqual([
       'move a.md dir/a.md',
       'folder dir',
       'note dir/',
@@ -108,14 +108,14 @@ describe('what else a files tab asks of the window', () => {
   })
 
   it('shares what is dragged, says what failed and draws through the window', () => {
-    const { host, said } = createHost()
+    const { host, recorded } = createHost()
     const deps = createFilesTabDeps(host, 'files')
 
     deps.setDraggedPaths(['a.md'])
     deps.showError('taken')
 
-    expect(said.dragged).toStrictEqual([['a.md']])
-    expect(said.errors).toStrictEqual(['taken'])
+    expect(recorded.dragged).toStrictEqual([['a.md']])
+    expect(recorded.errors).toStrictEqual(['taken'])
     expect(
       deps.getPathCommands({ entry: entry(), isSeveral: true }).map((one) => one.id),
     ).toStrictEqual(['remove'])

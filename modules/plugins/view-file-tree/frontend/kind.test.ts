@@ -66,7 +66,7 @@ describe('a files tab', () => {
     expect(revealPath).toHaveBeenCalledExactlyOnceWith('notes/a.md')
   })
 
-  it('lets go of its tree when it closes, and goes', () => {
+  it('releases its tree when it closes, and goes', () => {
     const { tree, close } = createTreeOf()
     const { kind } = createKindOver(tree)
     const { state } = openTab(kind)
@@ -96,20 +96,20 @@ describe('a path selected in a files tab', () => {
   it('moves the tabs linked to it, the first path of the selection', async () => {
     const { tree, selectedPaths, entries } = createTreeOf()
     entries.set('notes/a.md', note('notes/a.md'))
-    const { kind, said } = createKindOver(tree)
+    const { kind, recorded } = createKindOver(tree)
     openTab(kind, '', 'files:one')
 
     selectedPaths.value = ['notes/a.md', 'notes/b.md']
     await nextTick()
 
-    expect(said.synced).toStrictEqual([['files:one', 'notes/a.md', 'a']])
+    expect(recorded.synced).toStrictEqual([['files:one', 'notes/a.md', 'a']])
   })
 
   it('moves nothing for a folder, a file that is not a note, or an emptied selection', async () => {
     const { tree, selectedPaths, entries } = createTreeOf()
     entries.set('notes', { ...note('notes'), isFolder: true })
     entries.set('Cover.png', { ...note('Cover.png'), kind: 'other' })
-    const { kind, said } = createKindOver(tree)
+    const { kind, recorded } = createKindOver(tree)
     openTab(kind)
 
     for (const paths of [['notes'], ['Cover.png'], []]) {
@@ -117,20 +117,20 @@ describe('a path selected in a files tab', () => {
       await nextTick()
     }
 
-    expect(said.synced).toStrictEqual([])
+    expect(recorded.synced).toStrictEqual([])
   })
 
   it('stops following the selection once the tab is gone', async () => {
     const { tree, selectedPaths, entries } = createTreeOf()
     entries.set('notes/a.md', note('notes/a.md'))
-    const { kind, said } = createKindOver(tree)
+    const { kind, recorded } = createKindOver(tree)
     const { scope } = openTab(kind)
     scope.stop()
 
     selectedPaths.value = ['notes/a.md']
     await nextTick()
 
-    expect(said.synced).toStrictEqual([])
+    expect(recorded.synced).toStrictEqual([])
   })
 })
 
