@@ -27,7 +27,6 @@ var (
 	errNoChoice  = errors.New("the chat API returned no message")
 	errPlainKey  = errors.New("a key is sent only over https, or over http to this machine")
 	errDowngrade = errors.New("a redirect would send a key over plain http")
-	errCutOff    = errors.New(reasonCut)
 )
 
 // message is one message of a conversation with the chat API.

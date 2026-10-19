@@ -2,11 +2,11 @@
 // @generated from file numen/v1/completion.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-// A one-shot model completion: messages in, text out.
+// A plugin's question to a model: messages in, text out.
 //
 // A plugin that needs a language model states what it needs and the host
-// decides which model answers. The question carries no tools, no vault and no
-// conversation.
+// decides which agent and model answer. The question carries no tools, no
+// vault and no conversation.
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
@@ -16,56 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/completion.proto.
  */
 export const file_numen_v1_completion: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9jb21wbGV0aW9uLnByb3RvEghudW1lbi52MSJQCg9Db21wbGV0ZVJlcXVlc3QSLgoIcXVlc3Rpb24YASABKAsyHC5udW1lbi52MS5Db21wbGV0aW9uUXVlc3Rpb24SDQoFbW9kZWwYAiABKAkibAoQQ29tcGxldGVSZXNwb25zZRIqCgZhbnN3ZXIYASABKAsyGi5udW1lbi52MS5Db21wbGV0aW9uQW5zd2VyEiwKBWVycm9yGAIgASgOMh0ubnVtZW4udjEuQ29tcGxldGlvbkVycm9yQ29kZSJMChpIb3N0U2VydmljZUNvbXBsZXRlUmVxdWVzdBIuCghxdWVzdGlvbhgBIAEoCzIcLm51bWVuLnYxLkNvbXBsZXRpb25RdWVzdGlvbiJ3ChtIb3N0U2VydmljZUNvbXBsZXRlUmVzcG9uc2USKgoGYW5zd2VyGAEgASgLMhoubnVtZW4udjEuQ29tcGxldGlvbkFuc3dlchIsCgVlcnJvchgCIAEoDjIdLm51bWVuLnYxLkNvbXBsZXRpb25FcnJvckNvZGUifgoSQ29tcGxldGlvblF1ZXN0aW9uEi0KCG1lc3NhZ2VzGAEgAygLMhsubnVtZW4udjEuQ29tcGxldGlvbk1lc3NhZ2USDwoHcHVycG9zZRgCIAEoCRIoCgVoaW50cxgDIAEoCzIZLm51bWVuLnYxLkNvbXBsZXRpb25IaW50cyIvChFDb21wbGV0aW9uTWVzc2FnZRIMCgRyb2xlGAEgASgJEgwKBHRleHQYAiABKAkimAEKD0NvbXBsZXRpb25IaW50cxIYChBxdWFsaXR5X3ByaW9yaXR5GAEgASgBEhYKDnNwZWVkX3ByaW9yaXR5GAIgASgBEhUKDWNvc3RfcHJpb3JpdHkYAyABKAESEgoKbWF4X3Rva2VucxgEIAEoBRIYCgt0ZW1wZXJhdHVyZRgFIAEoAUgAiAEBQg4KDF90ZW1wZXJhdHVyZSIgChBDb21wbGV0aW9uQW5zd2VyEgwKBHRleHQYASABKAkiHQobTGlzdENvbXBsZXRpb25Nb2RlbHNSZXF1ZXN0IkkKHExpc3RDb21wbGV0aW9uTW9kZWxzUmVzcG9uc2USKQoGbW9kZWxzGAEgAygLMhkubnVtZW4udjEuQ29tcGxldGlvbk1vZGVsIkIKD0NvbXBsZXRpb25Nb2RlbBIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCmlzX2RlZmF1bHQYAyABKAgqrQEKE0NvbXBsZXRpb25FcnJvckNvZGUSJQohQ09NUExFVElPTl9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIgoeQ09NUExFVElPTl9FUlJPUl9DT0RFX05PX1JPVVRFEAESJQohQ09NUExFVElPTl9FUlJPUl9DT0RFX1VOQVZBSUxBQkxFEAISJAogQ09NUExFVElPTl9FUlJPUl9DT0RFX05PX0NPTlNFTlQQAzK9AQoRQ29tcGxldGlvblNlcnZpY2USQQoIQ29tcGxldGUSGS5udW1lbi52MS5Db21wbGV0ZVJlcXVlc3QaGi5udW1lbi52MS5Db21wbGV0ZVJlc3BvbnNlEmUKFExpc3RDb21wbGV0aW9uTW9kZWxzEiUubnVtZW4udjEuTGlzdENvbXBsZXRpb25Nb2RlbHNSZXF1ZXN0GiYubnVtZW4udjEuTGlzdENvbXBsZXRpb25Nb2RlbHNSZXNwb25zZTJmCgtIb3N0U2VydmljZRJXCghDb21wbGV0ZRIkLm51bWVuLnYxLkhvc3RTZXJ2aWNlQ29tcGxldGVSZXF1ZXN0GiUubnVtZW4udjEuSG9zdFNlcnZpY2VDb21wbGV0ZVJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
-
-/**
- * @generated from message numen.v1.CompleteRequest
- */
-export type CompleteRequest = Message<"numen.v1.CompleteRequest"> & {
-  /**
-   * @generated from field: numen.v1.CompletionQuestion question = 1;
-   */
-  question?: CompletionQuestion | undefined;
-
-  /**
-   * The model the host routed the question to. Empty leaves the choice to the
-   * agent; a model the agent does not offer is the agent's error.
-   *
-   * @generated from field: string model = 2;
-   */
-  model: string;
-};
-
-/**
- * Describes the message numen.v1.CompleteRequest.
- * Use `create(CompleteRequestSchema)` to create a new message.
- */
-export const CompleteRequestSchema: GenMessage<CompleteRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_completion, 0);
-
-/**
- * @generated from message numen.v1.CompleteResponse
- */
-export type CompleteResponse = Message<"numen.v1.CompleteResponse"> & {
-  /**
-   * @generated from field: numen.v1.CompletionAnswer answer = 1;
-   */
-  answer?: CompletionAnswer | undefined;
-
-  /**
-   * Set when the call was served and refused. The answer is then unset.
-   *
-   * @generated from field: numen.v1.CompletionErrorCode error = 2;
-   */
-  error: CompletionErrorCode;
-};
-
-/**
- * Describes the message numen.v1.CompleteResponse.
- * Use `create(CompleteResponseSchema)` to create a new message.
- */
-export const CompleteResponseSchema: GenMessage<CompleteResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_completion, 1);
+  fileDesc("ChludW1lbi92MS9jb21wbGV0aW9uLnByb3RvEghudW1lbi52MSJMChpIb3N0U2VydmljZUNvbXBsZXRlUmVxdWVzdBIuCghxdWVzdGlvbhgBIAEoCzIcLm51bWVuLnYxLkNvbXBsZXRpb25RdWVzdGlvbiJ3ChtIb3N0U2VydmljZUNvbXBsZXRlUmVzcG9uc2USKgoGYW5zd2VyGAEgASgLMhoubnVtZW4udjEuQ29tcGxldGlvbkFuc3dlchIsCgVlcnJvchgCIAEoDjIdLm51bWVuLnYxLkNvbXBsZXRpb25FcnJvckNvZGUifgoSQ29tcGxldGlvblF1ZXN0aW9uEi0KCG1lc3NhZ2VzGAEgAygLMhsubnVtZW4udjEuQ29tcGxldGlvbk1lc3NhZ2USDwoHcHVycG9zZRgCIAEoCRIoCgVoaW50cxgDIAEoCzIZLm51bWVuLnYxLkNvbXBsZXRpb25IaW50cyIvChFDb21wbGV0aW9uTWVzc2FnZRIMCgRyb2xlGAEgASgJEgwKBHRleHQYAiABKAkimAEKD0NvbXBsZXRpb25IaW50cxIYChBxdWFsaXR5X3ByaW9yaXR5GAEgASgBEhYKDnNwZWVkX3ByaW9yaXR5GAIgASgBEhUKDWNvc3RfcHJpb3JpdHkYAyABKAESEgoKbWF4X3Rva2VucxgEIAEoBRIYCgt0ZW1wZXJhdHVyZRgFIAEoAUgAiAEBQg4KDF90ZW1wZXJhdHVyZSIgChBDb21wbGV0aW9uQW5zd2VyEgwKBHRleHQYASABKAkqrQEKE0NvbXBsZXRpb25FcnJvckNvZGUSJQohQ09NUExFVElPTl9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIgoeQ09NUExFVElPTl9FUlJPUl9DT0RFX05PX1JPVVRFEAESJQohQ09NUExFVElPTl9FUlJPUl9DT0RFX1VOQVZBSUxBQkxFEAISJAogQ09NUExFVElPTl9FUlJPUl9DT0RFX05PX0NPTlNFTlQQAzJmCgtIb3N0U2VydmljZRJXCghDb21wbGV0ZRIkLm51bWVuLnYxLkhvc3RTZXJ2aWNlQ29tcGxldGVSZXF1ZXN0GiUubnVtZW4udjEuSG9zdFNlcnZpY2VDb21wbGV0ZVJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * @generated from message numen.v1.HostServiceCompleteRequest
@@ -82,7 +33,7 @@ export type HostServiceCompleteRequest = Message<"numen.v1.HostServiceCompleteRe
  * Use `create(HostServiceCompleteRequestSchema)` to create a new message.
  */
 export const HostServiceCompleteRequestSchema: GenMessage<HostServiceCompleteRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_completion, 2);
+  messageDesc(file_numen_v1_completion, 0);
 
 /**
  * @generated from message numen.v1.HostServiceCompleteResponse
@@ -106,7 +57,7 @@ export type HostServiceCompleteResponse = Message<"numen.v1.HostServiceCompleteR
  * Use `create(HostServiceCompleteResponseSchema)` to create a new message.
  */
 export const HostServiceCompleteResponseSchema: GenMessage<HostServiceCompleteResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_completion, 3);
+  messageDesc(file_numen_v1_completion, 1);
 
 /**
  * CompletionQuestion is what a plugin asks of a model.
@@ -122,8 +73,8 @@ export type CompletionQuestion = Message<"numen.v1.CompletionQuestion"> & {
   messages: CompletionMessage[];
 
   /**
-   * What the answer is for (e.g. "proofreading"). It is handed to the agent and
-   * routes nothing; a purpose names neither a model, an agent nor a key.
+   * What the answer is for (e.g. "proofreading"). It routes nothing; a purpose
+   * names neither a model, an agent nor a key.
    *
    * @generated from field: string purpose = 2;
    */
@@ -142,7 +93,7 @@ export type CompletionQuestion = Message<"numen.v1.CompletionQuestion"> & {
  * Use `create(CompletionQuestionSchema)` to create a new message.
  */
 export const CompletionQuestionSchema: GenMessage<CompletionQuestion> = /*@__PURE__*/
-  messageDesc(file_numen_v1_completion, 4);
+  messageDesc(file_numen_v1_completion, 2);
 
 /**
  * @generated from message numen.v1.CompletionMessage
@@ -166,7 +117,7 @@ export type CompletionMessage = Message<"numen.v1.CompletionMessage"> & {
  * Use `create(CompletionMessageSchema)` to create a new message.
  */
 export const CompletionMessageSchema: GenMessage<CompletionMessage> = /*@__PURE__*/
-  messageDesc(file_numen_v1_completion, 5);
+  messageDesc(file_numen_v1_completion, 3);
 
 /**
  * CompletionHints are priorities in the range 0 to 1 and are requests, not
@@ -216,7 +167,7 @@ export type CompletionHints = Message<"numen.v1.CompletionHints"> & {
  * Use `create(CompletionHintsSchema)` to create a new message.
  */
 export const CompletionHintsSchema: GenMessage<CompletionHints> = /*@__PURE__*/
-  messageDesc(file_numen_v1_completion, 6);
+  messageDesc(file_numen_v1_completion, 4);
 
 /**
  * CompletionAnswer is what a model said.
@@ -235,72 +186,7 @@ export type CompletionAnswer = Message<"numen.v1.CompletionAnswer"> & {
  * Use `create(CompletionAnswerSchema)` to create a new message.
  */
 export const CompletionAnswerSchema: GenMessage<CompletionAnswer> = /*@__PURE__*/
-  messageDesc(file_numen_v1_completion, 7);
-
-/**
- * @generated from message numen.v1.ListCompletionModelsRequest
- */
-export type ListCompletionModelsRequest = Message<"numen.v1.ListCompletionModelsRequest"> & {
-};
-
-/**
- * Describes the message numen.v1.ListCompletionModelsRequest.
- * Use `create(ListCompletionModelsRequestSchema)` to create a new message.
- */
-export const ListCompletionModelsRequestSchema: GenMessage<ListCompletionModelsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_completion, 8);
-
-/**
- * @generated from message numen.v1.ListCompletionModelsResponse
- */
-export type ListCompletionModelsResponse = Message<"numen.v1.ListCompletionModelsResponse"> & {
-  /**
-   * @generated from field: repeated numen.v1.CompletionModel models = 1;
-   */
-  models: CompletionModel[];
-};
-
-/**
- * Describes the message numen.v1.ListCompletionModelsResponse.
- * Use `create(ListCompletionModelsResponseSchema)` to create a new message.
- */
-export const ListCompletionModelsResponseSchema: GenMessage<ListCompletionModelsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_completion, 9);
-
-/**
- * CompletionModel is one model an agent answers completions with.
- *
- * @generated from message numen.v1.CompletionModel
- */
-export type CompletionModel = Message<"numen.v1.CompletionModel"> & {
-  /**
-   * What CompleteRequest.model names it by.
-   *
-   * @generated from field: string name = 1;
-   */
-  name: string;
-
-  /**
-   * What it is called when shown to a person.
-   *
-   * @generated from field: string title = 2;
-   */
-  title: string;
-
-  /**
-   * Set on the model the agent answers with when CompleteRequest.model is empty.
-   *
-   * @generated from field: bool is_default = 3;
-   */
-  isDefault: boolean;
-};
-
-/**
- * Describes the message numen.v1.CompletionModel.
- * Use `create(CompletionModelSchema)` to create a new message.
- */
-export const CompletionModelSchema: GenMessage<CompletionModel> = /*@__PURE__*/
-  messageDesc(file_numen_v1_completion, 10);
+  messageDesc(file_numen_v1_completion, 5);
 
 /**
  * CompletionErrorCode is why a served completion call was refused. The zero
@@ -315,16 +201,16 @@ export enum CompletionErrorCode {
   UNSPECIFIED = 0,
 
   /**
-   * No agent answers the question: the agent the settings name is not
-   * installed, is disabled or answers no completions, or no plugin answers
-   * completions at all.
+   * No agent answers the question: the program the settings name is not
+   * installed or no plugin lists it, or no program is installed at all.
    *
    * @generated from enum value: COMPLETION_ERROR_CODE_NO_ROUTE = 1;
    */
   NO_ROUTE = 1,
 
   /**
-   * The agent the question is routed to cannot be reached.
+   * The program the question is routed to cannot be reached or stopped without
+   * an answer.
    *
    * @generated from enum value: COMPLETION_ERROR_CODE_UNAVAILABLE = 2;
    */
@@ -347,37 +233,6 @@ export const CompletionErrorCodeSchema: GenEnum<CompletionErrorCode> = /*@__PURE
   enumDesc(file_numen_v1_completion, 0);
 
 /**
- * CompletionService is what an agent plugin answers: one completion for the
- * host.
- *
- * @generated from service numen.v1.CompletionService
- */
-export const CompletionService: GenService<{
-  /**
-   * Complete answers the question with text.
-   *
-   * @generated from rpc numen.v1.CompletionService.Complete
-   */
-  complete: {
-    methodKind: "unary";
-    input: typeof CompleteRequestSchema;
-    output: typeof CompleteResponseSchema;
-  },
-  /**
-   * ListCompletionModels lists the models Complete answers with: a model named
-   * here is one Complete accepts. None leaves the model to the agent alone.
-   *
-   * @generated from rpc numen.v1.CompletionService.ListCompletionModels
-   */
-  listCompletionModels: {
-    methodKind: "unary";
-    input: typeof ListCompletionModelsRequestSchema;
-    output: typeof ListCompletionModelsResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_numen_v1_completion, 0);
-
-/**
  * HostService is what the host answers for a plugin that holds the ai:complete
  * permission.
  *
@@ -398,5 +253,5 @@ export const HostService: GenService<{
     output: typeof HostServiceCompleteResponseSchema;
   },
 }> = /*@__PURE__*/
-  serviceDesc(file_numen_v1_completion, 1);
+  serviceDesc(file_numen_v1_completion, 0);
 

@@ -57,13 +57,6 @@ export interface PluginSettingInfo {
  */
 export type Consent = 'none' | 'unanswered' | 'asked' | 'allowed' | 'refused'
 
-/** One model a plugin that answers completions offers. */
-export interface PluginModel {
-  readonly name: string
-  readonly title: string
-  readonly isDefault: boolean
-}
-
 /** Why the host suspends a plugin after it failed to start, and when it gave the plugin up. */
 export interface PluginFailure {
   /** The reason, in words a person reads. */
@@ -84,14 +77,12 @@ export interface PluginInfo {
   /** The names of the secrets the plugin declares, and those that have a key stored. */
   readonly secrets: readonly string[]
   readonly storedSecrets: readonly string[]
-  /** The models it answers completions with, none where it lists none. */
-  readonly models: readonly PluginModel[]
   readonly consent: Consent
   /** Set while the host suspends the plugin. */
   readonly failure?: PluginFailure | undefined
 }
 
-/** The agent and the model a setting of type `agent` holds. Empty is the default. */
+/** The agent program and the model a setting of type `agent` holds. Empty is the default. */
 export interface CompletionChoice {
   readonly agent: string
   readonly model: string

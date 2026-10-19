@@ -179,21 +179,11 @@ func newWirePluginInfos(held []settings.PluginInfo) []*v1.PluginInfo {
 			Secrets:      one.Secrets,
 			// The names of the stored secrets travel, and a key never does.
 			StoredSecrets:     one.StoredSecrets,
-			Models:            newWirePluginModels(one.Models),
 			CompletionConsent: consents[one.Consent],
 			Failure:           newWirePluginFailure(one.Failure),
 		})
 	}
 	return infos
-}
-
-// newWirePluginModels is the models a plugin answers completions with, as the wire carries them.
-func newWirePluginModels(agentModels []settings.AgentModel) []*v1.PluginModel {
-	models := make([]*v1.PluginModel, 0, len(agentModels))
-	for _, one := range agentModels {
-		models = append(models, &v1.PluginModel{Name: one.Name, Title: one.Title, IsDefault: one.IsDefault})
-	}
-	return models
 }
 
 // consents is whether the person lets a plugin ask a model, as the wire carries it.

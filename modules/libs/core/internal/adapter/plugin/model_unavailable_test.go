@@ -21,10 +21,6 @@ type stubModelHost struct {
 	released atomic.Int32
 }
 
-func (h *stubModelHost) FindPluginByCapability(string) (port.DiscoveredPlugin, bool) {
-	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.stub"}}, true
-}
-
 func (h *stubModelHost) ResolveCapability(string) (port.DiscoveredPlugin, error) {
 	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.stub"}}, nil
 }

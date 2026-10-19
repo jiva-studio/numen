@@ -27,10 +27,6 @@ type leaseHost struct {
 	released  atomic.Int32
 }
 
-func (h *leaseHost) FindPluginByCapability(string) (port.DiscoveredPlugin, bool) {
-	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.stub"}}, true
-}
-
 func (h *leaseHost) ResolveCapability(string) (port.DiscoveredPlugin, error) {
 	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.stub"}}, nil
 }
@@ -99,7 +95,6 @@ func newLeaseHost(t *testing.T) *leaseHost {
 	t.Helper()
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewAgentServiceHandler(&mockAgentServer{}))
-	mux.Handle(numenv1connect.NewCompletionServiceHandler(numenv1connect.UnimplementedCompletionServiceHandler{}))
 	mux.Handle(numenv1connect.NewDocumentServiceHandler(stubDocumentServer{}))
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(stubEmbeddingServer{}))
 	mux.Handle(numenv1connect.NewRecognitionServiceHandler(stubRecognitionServer{}))

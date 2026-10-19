@@ -1,26 +1,43 @@
 /**
  * The agents a plugin's questions to a model can go to, and their models, as
- * lists a person picks from. An agent is a plugin that answers completions; the
- * core routes to the one a plugin's setting names, else to the default of the
- * settings, else to the agent with the lowest id.
+ * lists a person picks from. An agent is a program the plugins list; the core
+ * routes to the one a plugin's setting names, else to the default of the
+ * settings, else to the program the agent section of the settings names.
  */
-import type { CompletionChoice, PluginInfo } from '@/entities/settings'
+import type { CompletionChoice, Model, PluginInfo, SettingSource } from '@/entities/settings'
 import type { SelectChoice } from '@numen/ui'
 
-/** The capability of a plugin that answers completions. */
-export const COMPLETION_PROVIDER = 'ai.completion.provider'
+/** Where the program that answers stands in the settings file, and where each program's model does. */
+const USE_AT = ['agent', 'use'] as const
+const modelAt = (program: string): readonly string[] => ['agent', program, 'model']
 
 /** Where the default agent and its model stand in the settings file. */
 export const DEFAULT_AGENT_AT = ['ai', 'default', 'agent'] as const
 export const DEFAULT_MODEL_AT = ['ai', 'default', 'model'] as const
 
+/** One model an agent offers. */
+export interface AgentModel {
+  readonly name: string
+  readonly title: string
+}
+
+/** An agent program a plugin lists, with the models it offers. */
+export interface Agent {
+  /** What a task asks for the program by. */
+  readonly id: string
+  readonly name: string
+  /** Whether it answers where the settings name no agent. */
+  readonly isDefault: boolean
+  readonly models: readonly AgentModel[]
+}
+
 /** What this says in the window's voice. */
 export interface AgentWords {
   /** The row of a plugin's setting that leaves the agent to the default, with its name. */
   readonly agentByDefault: (name: string) => string
-  /** The row of the default that leaves it to the agent with the lowest id, with its name. */
+  /** The row of the default that leaves it to the installation's agent, with its name. */
   readonly agentFirst: (name: string) => string
-  /** That row where no agent is installed. */
+  /** That row where no agent answers. */
   readonly agentNone: string
   /** Said beside an agent the settings name and this installation does not hold. */
   readonly agentMissing: string
@@ -28,17 +45,35 @@ export interface AgentWords {
   readonly modelByAgent: string
 }
 
-/** The agents installed, in the order of their ids. */
-export const getAgents = (plugins: readonly PluginInfo[]): readonly PluginInfo[] =>
-  plugins
-    .filter((one) => one.capabilities.includes(COMPLETION_PROVIDER))
-    .sort((a, b) => (a.id < b.id ? -1 : Number(a.id > b.id)))
+/** The settings as the agents are read from them. */
+export type AgentSource = Pick<SettingSource, 'getModels' | 'getSetting'>
 
-/** The agent an id names, else the one with the lowest id where the id is empty. */
-export const findAgent = (plugins: readonly PluginInfo[], id: string): PluginInfo | undefined => {
-  const agents = getAgents(plugins)
-  return id === '' ? agents[0] : agents.find((one) => one.id === id)
+const toAgentModel = (one: Model): AgentModel => ({ name: one.name, title: one.title || one.name })
+
+/**
+ * The agents the plugins list, in the order they list them: each program, with
+ * the models it reports. The one that answers where the settings name none is
+ * the program under `agent.use`, else the default of the plugins.
+ */
+export const getAgents = (source: AgentSource): readonly Agent[] => {
+  const use = source.getSetting(USE_AT)
+  return source
+    .getModels(USE_AT)
+    .filter((one) => one.name !== '')
+    .map((one) => ({
+      id: one.name,
+      name: one.title || one.name,
+      isDefault: typeof use === 'string' ? one.name === use : one.isDefault,
+      models: source
+        .getModels(modelAt(one.name))
+        .filter((model) => model.name !== '')
+        .map(toAgentModel),
+    }))
 }
+
+/** The agent an id names, else the one that answers by default where the id is empty. */
+export const findAgent = (agents: readonly Agent[], id: string): Agent | undefined =>
+  id === '' ? agents.find((one) => one.isDefault) : agents.find((one) => one.id === id)
 
 /** The choice a setting of type `agent` holds, and the empty choice for any other value. */
 export const readChoice = (value: unknown): CompletionChoice => {
@@ -50,13 +85,13 @@ export const readChoice = (value: unknown): CompletionChoice => {
   }
 }
 
-/** The installed agents as rows, with an agent the settings name and nobody installed. */
+/** The agents as rows, with an agent the settings name and no plugin lists. */
 const getAgentRows = (
-  plugins: readonly PluginInfo[],
+  agents: readonly Agent[],
   chosen: string,
   words: AgentWords,
 ): readonly SelectChoice[] => {
-  const rows = getAgents(plugins).map((one) => ({ id: one.id, text: one.name }))
+  const rows = agents.map((one) => ({ id: one.id, text: one.name }))
   if (chosen === '' || rows.some((one) => one.id === chosen)) return rows
   return [...rows, { id: chosen, text: chosen, detail: words.agentMissing }]
 }
@@ -66,27 +101,27 @@ const getAgentRows = (
  * agent that answers it now.
  */
 export const createPluginAgentChoices = (
-  plugins: readonly PluginInfo[],
+  agents: readonly Agent[],
   { defaultAgent, chosen }: { readonly defaultAgent: string; readonly chosen: string },
   words: AgentWords,
 ): readonly SelectChoice[] => {
-  const answering = findAgent(plugins, defaultAgent)
+  const answering = findAgent(agents, defaultAgent)
   const name = answering?.name ?? (defaultAgent || words.agentNone)
-  return [{ id: '', text: words.agentByDefault(name) }, ...getAgentRows(plugins, chosen, words)]
+  return [{ id: '', text: words.agentByDefault(name) }, ...getAgentRows(agents, chosen, words)]
 }
 
 /**
- * The agents the default can name: the agent with the lowest id first, said
+ * The agents the default can name: the agent of the installation first, said
  * with its name, which is the one that answers while the default names none.
  */
 export const createDefaultAgentChoices = (
-  plugins: readonly PluginInfo[],
+  agents: readonly Agent[],
   chosen: string,
   words: AgentWords,
 ): readonly SelectChoice[] => {
-  const first = findAgent(plugins, '')
+  const first = findAgent(agents, '')
   const text = first ? words.agentFirst(first.name) : words.agentNone
-  return [{ id: '', text }, ...getAgentRows(plugins, chosen, words)]
+  return [{ id: '', text }, ...getAgentRows(agents, chosen, words)]
 }
 
 /**
@@ -94,11 +129,11 @@ export const createDefaultAgentChoices = (
  * a model the settings name and the agent does not list.
  */
 export const createAgentModelChoices = (
-  agent: PluginInfo | undefined,
+  agent: Agent | undefined,
   chosen: string,
   words: AgentWords,
 ): readonly SelectChoice[] => {
-  const rows = (agent?.models ?? []).map((one) => ({ id: one.name, text: one.title || one.name }))
+  const rows = (agent?.models ?? []).map((one) => ({ id: one.name, text: one.title }))
   const listed =
     chosen === '' || rows.some((one) => one.id === chosen)
       ? rows

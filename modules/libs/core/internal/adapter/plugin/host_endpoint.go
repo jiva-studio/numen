@@ -138,10 +138,14 @@ func (e *HostEndpoint) authorize(header, permission string) (string, error) {
 }
 
 // answerFailure answers a call that failed: the end of the caller's context is
-// cancelled, a refusal is answered with its code, and anything else is internal.
+// cancelled, a question nothing can answer is an invalid argument, a refusal is
+// answered with its code, and anything else is internal.
 func answerFailure(ctx context.Context, err error) (*connect.Response[v1.HostServiceCompleteResponse], error) {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return nil, connect.NewError(connect.CodeCanceled, ctxErr)
+	}
+	if errors.Is(err, port.ErrInvalidQuestion) {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	if code, isRefusal := writeRefusal(err); isRefusal {
 		return refuseCompletion(code), nil

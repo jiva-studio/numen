@@ -2,8 +2,6 @@ package service
 
 import (
 	"context"
-	"slices"
-	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -31,24 +29,5 @@ func TestLifecycleServer(t *testing.T) {
 	}
 	if !shutResp.Msg.GetSuccess() {
 		t.Error("expected shutdown success")
-	}
-}
-
-// The command lines of the settings name the agents completions are answered by.
-func TestTheCommandLinesOfTheSettingsNameTheCompletionAgents(t *testing.T) {
-	agent, _ := fakeACPAgent(t, "fake", "config")
-	svc := &agentServer{}
-
-	_, err := svc.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{
-		Commands: []*numenv1.AgentProgramCommand{
-			{Program: "acp:fake", Command: agent.Command},
-			{Program: "other", Command: []string{"/bin/other"}},
-		},
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if models := listCompletionModels(t, svc); !slices.ContainsFunc(models, func(m string) bool { return strings.HasPrefix(m, "fake/m1=") }) {
-		t.Errorf("the completion models are %v", models)
 	}
 }

@@ -141,28 +141,10 @@ func askBuild(t *testing.T, host port.PluginManager, chatURL string) answers {
 	agentClient := newClient(agent)
 	var got answers
 
-	stream, err := numenv1connect.NewAgentServiceClient(agentClient, agent.BaseURL(), withToken(agent.Token)).
-		AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{Prompt: "How many notes are there?"}))
-	if err != nil {
-		t.Fatalf("AskAgent: %v", err)
-	}
-	var chat strings.Builder
-	for stream.Receive() {
-		chat.WriteString(stream.Msg().GetSaid())
-	}
-	if err := stream.Err(); err != nil {
-		t.Fatalf("AskAgent stream: %v", err)
-	}
-	got.Chat = chat.String()
-
-	single, err := numenv1connect.NewCompletionServiceClient(agentClient, agent.BaseURL(), withToken(agent.Token)).
-		Complete(t.Context(), connect.NewRequest(&numenv1.CompleteRequest{Question: &numenv1.CompletionQuestion{
-			Messages: []*numenv1.CompletionMessage{{Role: "user", Text: "How many notes are there?"}},
-		}}))
-	if err != nil {
-		t.Fatalf("Complete: %v", err)
-	}
-	got.Single = single.Msg.GetAnswer().GetText()
+	agentService := numenv1connect.NewAgentServiceClient(agentClient, agent.BaseURL(), withToken(agent.Token))
+	chat := ask(t, agentService, &numenv1.AskAgentRequest{Prompt: "How many notes are there?"})
+	got.Chat = chat
+	got.Single = ask(t, agentService, &numenv1.AskAgentRequest{Prompt: "How many notes are there?"})
 
 	programs, err := numenv1connect.NewAgentServiceClient(agentClient, agent.BaseURL(), withToken(agent.Token)).
 		GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
@@ -190,6 +172,23 @@ func askBuild(t *testing.T, host port.PluginManager, chatURL string) answers {
 	}
 	got.Pages = len(document.Msg.GetPages())
 	return got
+}
+
+// ask puts the task to the agent and returns what it said.
+func ask(t *testing.T, client numenv1connect.AgentServiceClient, task *numenv1.AskAgentRequest) string {
+	t.Helper()
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(task))
+	if err != nil {
+		t.Fatalf("AskAgent: %v", err)
+	}
+	var said strings.Builder
+	for stream.Receive() {
+		said.WriteString(stream.Msg().GetSaid())
+	}
+	if err := stream.Err(); err != nil {
+		t.Fatalf("AskAgent stream: %v", err)
+	}
+	return said.String()
 }
 
 // newClient is the HTTP client that reaches an endpoint, in-process or on a port.

@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/plugin.proto.
  */
 export const file_numen_v1_plugin: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9wbHVnaW4ucHJvdG8SCG51bWVuLnYxIg0KC1BpbmdSZXF1ZXN0IjAKDFBpbmdSZXNwb25zZRIOCgZzdGF0dXMYASABKAkSEAoIcHJvdG9jb2wYAiABKAUiKgoPU2h1dGRvd25SZXF1ZXN0EhcKD3RpbWVvdXRfc2Vjb25kcxgBIAEoBSIjChBTaHV0ZG93blJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiqAEKEENvbmZpZ3VyZVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEhoKEmNvbmZpZ3VyYXRpb25fanNvbhgCIAEoCRI2CgZ2YWx1ZXMYAyADKAsyJi5udW1lbi52MS5Db25maWd1cmVSZXF1ZXN0LlZhbHVlc0VudHJ5Gi0KC1ZhbHVlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiMwoRQ29uZmlndXJlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSLWAQoNUGx1Z2luU2V0dGluZxILCgNrZXkYASABKAkSDAoEdHlwZRgCIAEoCRINCgV0aXRsZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIUCgxkZWZhdWx0X2pzb24YBSABKAkSDwoHcGFsZXR0ZRgGIAEoCBIPCgdvcHRpb25zGAcgAygJEhAKA21pbhgIIAEoAUgAiAEBEhAKA21heBgJIAEoAUgBiAEBEhEKBHN0ZXAYCiABKAFIAogBAUIGCgRfbWluQgYKBF9tYXhCBwoFX3N0ZXAi6AIKClBsdWdpbkluZm8SCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIPCgd2ZXJzaW9uGAMgASgJEhMKC2Rlc2NyaXB0aW9uGAQgASgJEhQKDGNhcGFiaWxpdGllcxgFIAMoCRIpCghzZXR0aW5ncxgGIAMoCzIXLm51bWVuLnYxLlBsdWdpblNldHRpbmcSEQoJaXNfYWN0aXZlGAcgASgIEhMKC3Blcm1pc3Npb25zGAggAygJEg8KB3NlY3JldHMYCSADKAkSFgoOc3RvcmVkX3NlY3JldHMYCiADKAkSJQoGbW9kZWxzGAsgAygLMhUubnVtZW4udjEuUGx1Z2luTW9kZWwSNwoSY29tcGxldGlvbl9jb25zZW50GAwgASgOMhsubnVtZW4udjEuQ29tcGxldGlvbkNvbnNlbnQSKAoHZmFpbHVyZRgNIAEoCzIXLm51bWVuLnYxLlBsdWdpbkZhaWx1cmUiOgoNUGx1Z2luRmFpbHVyZRIOCgZyZWFzb24YASABKAkSGQoRZmFpbGVkX2F0X3VuaXhfbXMYAiABKAMiPgoLUGx1Z2luTW9kZWwSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRISCgppc19kZWZhdWx0GAMgASgIIhMKEUdldFBsdWdpbnNSZXF1ZXN0IjsKEkdldFBsdWdpbnNSZXNwb25zZRIlCgdwbHVnaW5zGAEgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbyIkChNEZWxpdmVyRXZlbnRSZXF1ZXN0Eg0KBWV2ZW50GAEgASgJIlUKFERlbGl2ZXJFdmVudFJlc3BvbnNlEi0KBWVycm9yGAEgASgOMh4ubnVtZW4udjEuUGx1Z2luRXZlbnRFcnJvckNvZGUSDgoGcmVhc29uGAIgASgJKrgBChFDb21wbGV0aW9uQ29uc2VudBIiCh5DT01QTEVUSU9OX0NPTlNFTlRfVU5TUEVDSUZJRUQQABIhCh1DT01QTEVUSU9OX0NPTlNFTlRfVU5BTlNXRVJFRBABEhwKGENPTVBMRVRJT05fQ09OU0VOVF9BU0tFRBACEh4KGkNPTVBMRVRJT05fQ09OU0VOVF9BTExPV0VEEAMSHgoaQ09NUExFVElPTl9DT05TRU5UX1JFRlVTRUQQBCpkChRQbHVnaW5FdmVudEVycm9yQ29kZRInCiNQTFVHSU5fRVZFTlRfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiMKH1BMVUdJTl9FVkVOVF9FUlJPUl9DT0RFX1JFRlVTRUQQATLYAQoWUGx1Z2luTGlmZWN5Y2xlU2VydmljZRI1CgRQaW5nEhUubnVtZW4udjEuUGluZ1JlcXVlc3QaFi5udW1lbi52MS5QaW5nUmVzcG9uc2USQQoIU2h1dGRvd24SGS5udW1lbi52MS5TaHV0ZG93blJlcXVlc3QaGi5udW1lbi52MS5TaHV0ZG93blJlc3BvbnNlEkQKCUNvbmZpZ3VyZRIaLm51bWVuLnYxLkNvbmZpZ3VyZVJlcXVlc3QaGy5udW1lbi52MS5Db25maWd1cmVSZXNwb25zZTJYCg1QbHVnaW5TZXJ2aWNlEkcKCkdldFBsdWdpbnMSGy5udW1lbi52MS5HZXRQbHVnaW5zUmVxdWVzdBocLm51bWVuLnYxLkdldFBsdWdpbnNSZXNwb25zZTJjChJQbHVnaW5FdmVudFNlcnZpY2USTQoMRGVsaXZlckV2ZW50Eh0ubnVtZW4udjEuRGVsaXZlckV2ZW50UmVxdWVzdBoeLm51bWVuLnYxLkRlbGl2ZXJFdmVudFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChVudW1lbi92MS9wbHVnaW4ucHJvdG8SCG51bWVuLnYxIg0KC1BpbmdSZXF1ZXN0IjAKDFBpbmdSZXNwb25zZRIOCgZzdGF0dXMYASABKAkSEAoIcHJvdG9jb2wYAiABKAUiKgoPU2h1dGRvd25SZXF1ZXN0EhcKD3RpbWVvdXRfc2Vjb25kcxgBIAEoBSIjChBTaHV0ZG93blJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiqAEKEENvbmZpZ3VyZVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEhoKEmNvbmZpZ3VyYXRpb25fanNvbhgCIAEoCRI2CgZ2YWx1ZXMYAyADKAsyJi5udW1lbi52MS5Db25maWd1cmVSZXF1ZXN0LlZhbHVlc0VudHJ5Gi0KC1ZhbHVlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiMwoRQ29uZmlndXJlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSLWAQoNUGx1Z2luU2V0dGluZxILCgNrZXkYASABKAkSDAoEdHlwZRgCIAEoCRINCgV0aXRsZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIUCgxkZWZhdWx0X2pzb24YBSABKAkSDwoHcGFsZXR0ZRgGIAEoCBIPCgdvcHRpb25zGAcgAygJEhAKA21pbhgIIAEoAUgAiAEBEhAKA21heBgJIAEoAUgBiAEBEhEKBHN0ZXAYCiABKAFIAogBAUIGCgRfbWluQgYKBF9tYXhCBwoFX3N0ZXAiwQIKClBsdWdpbkluZm8SCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIPCgd2ZXJzaW9uGAMgASgJEhMKC2Rlc2NyaXB0aW9uGAQgASgJEhQKDGNhcGFiaWxpdGllcxgFIAMoCRIpCghzZXR0aW5ncxgGIAMoCzIXLm51bWVuLnYxLlBsdWdpblNldHRpbmcSEQoJaXNfYWN0aXZlGAcgASgIEhMKC3Blcm1pc3Npb25zGAggAygJEg8KB3NlY3JldHMYCSADKAkSFgoOc3RvcmVkX3NlY3JldHMYCiADKAkSNwoSY29tcGxldGlvbl9jb25zZW50GAwgASgOMhsubnVtZW4udjEuQ29tcGxldGlvbkNvbnNlbnQSKAoHZmFpbHVyZRgNIAEoCzIXLm51bWVuLnYxLlBsdWdpbkZhaWx1cmUiOgoNUGx1Z2luRmFpbHVyZRIOCgZyZWFzb24YASABKAkSGQoRZmFpbGVkX2F0X3VuaXhfbXMYAiABKAMiEwoRR2V0UGx1Z2luc1JlcXVlc3QiOwoSR2V0UGx1Z2luc1Jlc3BvbnNlEiUKB3BsdWdpbnMYASADKAsyFC5udW1lbi52MS5QbHVnaW5JbmZvIiQKE0RlbGl2ZXJFdmVudFJlcXVlc3QSDQoFZXZlbnQYASABKAkiVQoURGVsaXZlckV2ZW50UmVzcG9uc2USLQoFZXJyb3IYASABKA4yHi5udW1lbi52MS5QbHVnaW5FdmVudEVycm9yQ29kZRIOCgZyZWFzb24YAiABKAkquAEKEUNvbXBsZXRpb25Db25zZW50EiIKHkNPTVBMRVRJT05fQ09OU0VOVF9VTlNQRUNJRklFRBAAEiEKHUNPTVBMRVRJT05fQ09OU0VOVF9VTkFOU1dFUkVEEAESHAoYQ09NUExFVElPTl9DT05TRU5UX0FTS0VEEAISHgoaQ09NUExFVElPTl9DT05TRU5UX0FMTE9XRUQQAxIeChpDT01QTEVUSU9OX0NPTlNFTlRfUkVGVVNFRBAEKmQKFFBsdWdpbkV2ZW50RXJyb3JDb2RlEicKI1BMVUdJTl9FVkVOVF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIwofUExVR0lOX0VWRU5UX0VSUk9SX0NPREVfUkVGVVNFRBABMtgBChZQbHVnaW5MaWZlY3ljbGVTZXJ2aWNlEjUKBFBpbmcSFS5udW1lbi52MS5QaW5nUmVxdWVzdBoWLm51bWVuLnYxLlBpbmdSZXNwb25zZRJBCghTaHV0ZG93bhIZLm51bWVuLnYxLlNodXRkb3duUmVxdWVzdBoaLm51bWVuLnYxLlNodXRkb3duUmVzcG9uc2USRAoJQ29uZmlndXJlEhoubnVtZW4udjEuQ29uZmlndXJlUmVxdWVzdBobLm51bWVuLnYxLkNvbmZpZ3VyZVJlc3BvbnNlMlgKDVBsdWdpblNlcnZpY2USRwoKR2V0UGx1Z2lucxIbLm51bWVuLnYxLkdldFBsdWdpbnNSZXF1ZXN0GhwubnVtZW4udjEuR2V0UGx1Z2luc1Jlc3BvbnNlMmMKElBsdWdpbkV2ZW50U2VydmljZRJNCgxEZWxpdmVyRXZlbnQSHS5udW1lbi52MS5EZWxpdmVyRXZlbnRSZXF1ZXN0Gh4ubnVtZW4udjEuRGVsaXZlckV2ZW50UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.PingRequest
@@ -259,14 +259,6 @@ export type PluginInfo = Message<"numen.v1.PluginInfo"> & {
   storedSecrets: string[];
 
   /**
-   * The models the plugin answers completions with, as its
-   * CompletionService.ListCompletionModels lists them. Empty where it lists none.
-   *
-   * @generated from field: repeated numen.v1.PluginModel models = 11;
-   */
-  models: PluginModel[];
-
-  /**
    * Whether the person lets the plugin ask for model completions.
    *
    * @generated from field: numen.v1.CompletionConsent completion_consent = 12;
@@ -317,41 +309,6 @@ export const PluginFailureSchema: GenMessage<PluginFailure> = /*@__PURE__*/
   messageDesc(file_numen_v1_plugin, 8);
 
 /**
- * PluginModel is one model a plugin that answers completions offers.
- *
- * @generated from message numen.v1.PluginModel
- */
-export type PluginModel = Message<"numen.v1.PluginModel"> & {
-  /**
-   * What a setting names the model by.
-   *
-   * @generated from field: string name = 1;
-   */
-  name: string;
-
-  /**
-   * What the model is called when shown to a person.
-   *
-   * @generated from field: string title = 2;
-   */
-  title: string;
-
-  /**
-   * Set on the model the plugin answers with when it is named none.
-   *
-   * @generated from field: bool is_default = 3;
-   */
-  isDefault: boolean;
-};
-
-/**
- * Describes the message numen.v1.PluginModel.
- * Use `create(PluginModelSchema)` to create a new message.
- */
-export const PluginModelSchema: GenMessage<PluginModel> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 9);
-
-/**
  * @generated from message numen.v1.GetPluginsRequest
  */
 export type GetPluginsRequest = Message<"numen.v1.GetPluginsRequest"> & {
@@ -362,7 +319,7 @@ export type GetPluginsRequest = Message<"numen.v1.GetPluginsRequest"> & {
  * Use `create(GetPluginsRequestSchema)` to create a new message.
  */
 export const GetPluginsRequestSchema: GenMessage<GetPluginsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 10);
+  messageDesc(file_numen_v1_plugin, 9);
 
 /**
  * @generated from message numen.v1.GetPluginsResponse
@@ -379,7 +336,7 @@ export type GetPluginsResponse = Message<"numen.v1.GetPluginsResponse"> & {
  * Use `create(GetPluginsResponseSchema)` to create a new message.
  */
 export const GetPluginsResponseSchema: GenMessage<GetPluginsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 11);
+  messageDesc(file_numen_v1_plugin, 10);
 
 /**
  * @generated from message numen.v1.DeliverEventRequest
@@ -398,7 +355,7 @@ export type DeliverEventRequest = Message<"numen.v1.DeliverEventRequest"> & {
  * Use `create(DeliverEventRequestSchema)` to create a new message.
  */
 export const DeliverEventRequestSchema: GenMessage<DeliverEventRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 12);
+  messageDesc(file_numen_v1_plugin, 11);
 
 /**
  * @generated from message numen.v1.DeliverEventResponse
@@ -424,7 +381,7 @@ export type DeliverEventResponse = Message<"numen.v1.DeliverEventResponse"> & {
  * Use `create(DeliverEventResponseSchema)` to create a new message.
  */
 export const DeliverEventResponseSchema: GenMessage<DeliverEventResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 13);
+  messageDesc(file_numen_v1_plugin, 12);
 
 /**
  * CompletionConsent is whether the person lets a plugin ask for model

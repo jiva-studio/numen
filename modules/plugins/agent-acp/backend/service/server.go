@@ -8,8 +8,7 @@ import (
 
 type agentServer struct {
 	numenv1connect.UnimplementedAgentServiceHandler
-	numenv1connect.UnimplementedCompletionServiceHandler
-	// acpAgents returns the agents completions are answered by. Nil is those the settings name.
+	// acpAgents returns the agents the programs are listed for. Nil is those the settings name.
 	acpAgents func() []acpAgent
 	acpModels acpModelCache
 

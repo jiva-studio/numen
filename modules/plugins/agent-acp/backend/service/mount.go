@@ -14,7 +14,6 @@ func Mount(s *server.Server) error {
 
 func mount(s *server.Server, agent *agentServer) error {
 	s.Register(numenv1connect.NewAgentServiceHandler(agent, s.HandlerOptions()...))
-	s.Register(numenv1connect.NewCompletionServiceHandler(agent, s.HandlerOptions()...))
 	return nil
 }
 

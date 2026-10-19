@@ -1,0 +1,92 @@
+package service
+
+import (
+	"context"
+	"strings"
+	"sync"
+	"time"
+)
+
+// acpListLimit is how long an agent has to open the session its models are read from.
+const acpListLimit = 15 * time.Second
+
+// acpFailureBackoff is how long an agent that failed to list is left alone.
+const acpFailureBackoff = 30 * time.Second
+
+// getACPAgents returns the agents the server was given, else those the settings name.
+func (s *agentServer) getACPAgents() []acpAgent {
+	if s.acpAgents != nil {
+		return s.acpAgents()
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return getACPAgentsFromCommands(s.commands)
+}
+
+// acpListing is what an agent reports for a session: its models and the one it answers with.
+type acpListing struct {
+	models  []acpModel
+	current string
+}
+
+// acpModelCache keeps what each agent listed, for as long as the command that starts it stays the
+// same. A failure keeps nothing, and the agent that failed is left alone for a while.
+type acpModelCache struct {
+	mu       sync.Mutex
+	kept     map[string]acpListing
+	failedAt map[string]time.Time
+	// now is the clock the backoff is kept by. Nil is the system clock.
+	now func() time.Time
+}
+
+// getNow returns the time by the clock of the cache.
+func (c *acpModelCache) getNow() time.Time {
+	if c.now == nil {
+		return time.Now()
+	}
+	return c.now()
+}
+
+// get returns the agent's listing: the one kept, or the one it reports now. The agent is asked
+// without the lock held.
+func (c *acpModelCache) get(ctx context.Context, agent acpAgent) acpListing {
+	key := agent.Program + "\x00" + strings.Join(agent.Command, "\x00")
+	c.mu.Lock()
+	listing, isKept := c.kept[key]
+	failedAt, hasFailed := c.failedAt[key]
+	isBackingOff := hasFailed && c.getNow().Sub(failedAt) < acpFailureBackoff
+	c.mu.Unlock()
+	if isKept || isBackingOff {
+		return listing
+	}
+	listing, err := readACPListing(ctx, agent)
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if err != nil {
+		if ctx.Err() == nil {
+			if c.failedAt == nil {
+				c.failedAt = make(map[string]time.Time)
+			}
+			c.failedAt[key] = c.getNow()
+		}
+		return acpListing{}
+	}
+	if c.kept == nil {
+		c.kept = make(map[string]acpListing)
+	}
+	c.kept[key] = listing
+	delete(c.failedAt, key)
+	return listing
+}
+
+// readACPListing opens a session with the agent and returns the models it reports for it.
+func readACPListing(ctx context.Context, agent acpAgent) (acpListing, error) {
+	asking, stop := context.WithTimeout(ctx, acpListLimit)
+	defer stop()
+	session, err := openACPSession(asking, agent)
+	if err != nil {
+		return acpListing{}, err
+	}
+	defer session.close()
+	return acpListing{models: session.models, current: session.current}, nil
+}

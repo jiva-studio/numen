@@ -459,8 +459,8 @@ export type AskAgentResponse = Message<"numen.v1.AskAgentResponse"> & {
     case: "toolCall";
   } | {
     /**
-     * The agent has finished, and this is why it stopped. Empty when it
-     * stopped because it was done.
+     * The agent has finished, and this is why it stopped. Empty, or "done", when
+     * it stopped because it was done.
      *
      * @generated from field: string stopped = 3;
      */

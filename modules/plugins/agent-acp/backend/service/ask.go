@@ -14,8 +14,11 @@ import (
 // reasonDone is why a task stops when the agent has answered.
 const reasonDone = "done"
 
-// errNoTools is why a task naming tools is refused: the client opens sessions with no MCP server.
-var errNoTools = errors.New("this agent answers single questions and runs no tools")
+var (
+	// errNoTools is why a task naming tools is refused: the client opens sessions with no MCP server.
+	errNoTools           = errors.New("this agent answers single questions and runs no tools")
+	errAgentNotInstalled = errors.New("the ACP agent is not installed")
+)
 
 // answer asks the agent one question in a session of its own, with the model the agent reports by
 // the id, and returns the text of its answer.

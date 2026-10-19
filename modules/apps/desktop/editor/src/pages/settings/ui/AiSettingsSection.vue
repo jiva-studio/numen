@@ -17,6 +17,7 @@ import {
   createAgentModelChoices,
   createDefaultAgentChoices,
   findAgent,
+  getAgents,
   getAskingPlugins,
   getPluginsWithSecrets,
 } from '../lib/agents'
@@ -37,12 +38,13 @@ const defaults = computed<CompletionChoice>(() => {
     model: typeof model === 'string' ? model : '',
   }
 })
+const agents = computed(() => getAgents(installation.value))
 const agentChoices = computed(() =>
-  createDefaultAgentChoices(plugins.value, defaults.value.agent, words),
+  createDefaultAgentChoices(agents.value, defaults.value.agent, words),
 )
 const modelChoices = computed(() =>
   createAgentModelChoices(
-    findAgent(plugins.value, defaults.value.agent),
+    findAgent(agents.value, defaults.value.agent),
     defaults.value.model,
     words,
   ),

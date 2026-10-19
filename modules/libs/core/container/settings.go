@@ -188,16 +188,14 @@ func (c Config) SetSettings(said Settings) Config {
 }
 
 // Plugins reads, as the window asks, the discovered plugins and their settings
-// schemas, each plugin that answers completions with the models it answers with.
+// schemas.
 func (c Config) Plugins() func() []port.PluginInfo {
 	return func() []port.PluginInfo {
 		if c.PluginHost == nil {
 			return nil
 		}
 		var discoverer port.PluginDiscoverer = c.PluginHost
-		infos := discoverer.GetPluginInfos()
-		c.setCompletionModels(infos)
-		return infos
+		return discoverer.GetPluginInfos()
 	}
 }
 

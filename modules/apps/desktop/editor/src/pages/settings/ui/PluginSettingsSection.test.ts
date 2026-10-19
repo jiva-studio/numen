@@ -6,6 +6,7 @@ import type { PluginInfo, SettingEdit } from '@/entities/settings'
 import { getSettingAt as at } from '@/entities/settings'
 import PluginSettingsSection from './PluginSettingsSection.vue'
 import type { Installation, SettingsTabState } from '../types'
+import { createProgramModels, type ProgramFixture } from '@/testing/installation'
 import { pick } from '@/testing/pick'
 
 const SAMPLE_PLUGIN: PluginInfo = {
@@ -17,7 +18,6 @@ const SAMPLE_PLUGIN: PluginInfo = {
   capabilities: [],
   secrets: [],
   storedSecrets: [],
-  models: [],
   consent: 'none',
   settings: [
     {
@@ -59,11 +59,12 @@ const SAMPLE_PLUGIN: PluginInfo = {
 const createSection = (
   file: Record<string, unknown> = {},
   plugins: readonly PluginInfo[] = [SAMPLE_PLUGIN],
+  programs: readonly ProgramFixture[] = [],
 ) => {
   const written: SettingEdit[] = []
   const installation: Installation = {
     getSetting: (path) => at(file, path),
-    getModels: () => [],
+    getModels: createProgramModels(programs),
     write: (said) => {
       written.push(...said)
     },
@@ -172,14 +173,9 @@ describe('PluginSettingsSection', () => {
   })
 })
 
-const AGENT: PluginInfo = {
-  ...SAMPLE_PLUGIN,
-  id: 'test.agent',
-  name: 'Test Agent',
-  settings: [],
-  capabilities: ['ai.completion.provider'],
-  models: [{ name: 'quick', title: 'Quick', isDefault: true }],
-}
+const PROGRAMS: readonly ProgramFixture[] = [
+  { name: 'test-agent', title: 'Test Agent', isDefault: true, models: [{ name: 'quick', title: 'Quick' }] },
+]
 
 const ASKING: PluginInfo = {
   ...SAMPLE_PLUGIN,
@@ -192,25 +188,25 @@ const ASKING: PluginInfo = {
 }
 
 describe('a setting of type agent', () => {
-  it('offers the default, said with the agent that answers it, then the installed agents', () => {
-    const { wrapper } = createSection({}, [ASKING, AGENT])
+  it('offers the default, said with the agent that answers it, then the agents the plugins list', () => {
+    const { wrapper } = createSection({}, [ASKING], PROGRAMS)
     const selects = wrapper.findAllComponents({ name: 'Select' })
     expect(selects).toHaveLength(1)
     expect(pick(selects, 0).props('choices')).toStrictEqual([
       { id: '', text: 'Default (Test Agent)' },
-      { id: 'test.agent', text: 'Test Agent' },
+      { id: 'test-agent', text: 'Test Agent' },
     ])
     expect(wrapper.find('.settings__text-input').exists()).toBe(false)
   })
 
   it('offers the models of the agent it names, the agent default first', () => {
     const { wrapper } = createSection(
-      { plugins: { 'test.asking': { agent: { agent: 'test.agent', model: 'quick' } } } },
-      [ASKING, AGENT],
+      { plugins: { 'test.asking': { agent: { agent: 'test-agent', model: 'quick' } } } },
+      [ASKING], PROGRAMS,
     )
     const selects = wrapper.findAllComponents({ name: 'Select' })
     expect(selects).toHaveLength(2)
-    expect(pick(selects, 0).props('modelValue')).toBe('test.agent')
+    expect(pick(selects, 0).props('modelValue')).toBe('test-agent')
     expect(pick(selects, 1).props('modelValue')).toBe('quick')
     expect(pick(selects, 1).props('choices')).toStrictEqual([
       { id: '', text: 'Agent default' },
@@ -219,20 +215,20 @@ describe('a setting of type agent', () => {
   })
 
   it('is written as the agent and the model, under the plugin', () => {
-    const { wrapper, written } = createSection({}, [ASKING, AGENT])
-    wrapper.findComponent({ name: 'Select' }).vm.$emit('update:modelValue', 'test.agent')
+    const { wrapper, written } = createSection({}, [ASKING], PROGRAMS)
+    wrapper.findComponent({ name: 'Select' }).vm.$emit('update:modelValue', 'test-agent')
     expect(written).toStrictEqual([
       {
         at: ['plugins', 'test.asking', 'agent'],
-        value: JSON.stringify({ agent: 'test.agent', model: '' }, null, 2),
+        value: JSON.stringify({ agent: 'test-agent', model: '' }, null, 2),
       },
     ])
   })
 
-  it('keeps an agent that is not installed, said so', () => {
+  it('keeps an agent no plugin lists, said so', () => {
     const { wrapper } = createSection(
       { plugins: { 'test.asking': { agent: { agent: 'test.gone' } } } },
-      [ASKING, AGENT],
+      [ASKING], PROGRAMS,
     )
     const choices = pick(wrapper.findAllComponents({ name: 'Select' }), 0).props('choices')
     expect(choices.at(-1)).toMatchObject({

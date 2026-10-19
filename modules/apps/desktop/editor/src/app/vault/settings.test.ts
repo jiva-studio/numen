@@ -185,10 +185,9 @@ describe('every setting', () => {
               version: '1.0.0',
               description: 'Sample plugin',
               isActive: true,
-              capabilities: ['ai.completion.provider'],
+              capabilities: ['ai.agent.provider'],
               secrets: ['apiKey'],
               storedSecrets: ['apiKey'],
-              models: [{ name: 'quick', title: 'Quick', isDefault: true }],
               completionConsent: CompletionConsent.ASKED,
               settings: [
                 {
@@ -215,10 +214,9 @@ describe('every setting', () => {
         version: '1.0.0',
         description: 'Sample plugin',
         isActive: true,
-        capabilities: ['ai.completion.provider'],
+        capabilities: ['ai.agent.provider'],
         secrets: ['apiKey'],
         storedSecrets: ['apiKey'],
-        models: [{ name: 'quick', title: 'Quick', isDefault: true }],
         consent: 'asked',
         settings: [
           {
@@ -306,7 +304,6 @@ describe('a plugin the host suspends', () => {
               capabilities: [],
               secrets: [],
               storedSecrets: [],
-              models: [],
               completionConsent: CompletionConsent.UNSPECIFIED,
               settings: [],
               failure: {

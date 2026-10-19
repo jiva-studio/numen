@@ -169,8 +169,8 @@ message AskAgentResponse {
     string said = 1;
     // A tool the agent is using.
     ToolCall tool_call = 2;
-    // The agent has finished, and this is why it stopped. Empty when it
-    // stopped because it was done.
+    // The agent has finished, and this is why it stopped. Empty, or "done", when
+    // it stopped because it was done.
     string stopped = 3;
     // The tool the agent was using has finished. Nothing of this application's
     // is running from here until the next step arrives.

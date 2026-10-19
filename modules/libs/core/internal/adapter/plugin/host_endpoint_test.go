@@ -486,3 +486,14 @@ func TestTheCallerIsTheTokensPlugin(t *testing.T) {
 		t.Errorf("the completer was told the caller is %q, want md.numen.a", got)
 	}
 }
+
+// A question nothing can answer is an invalid argument, not a refusal.
+func TestAQuestionNothingCanAnswerIsAnInvalidArgument(t *testing.T) {
+	held := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
+		return "", fmt.Errorf("%w: no message", port.ErrInvalidQuestion)
+	}))
+	_, err := newHostClient(t, held, "token-a").Complete(t.Context(), newHostQuestion())
+	if got := readCode(t, err); got != connect.CodeInvalidArgument {
+		t.Errorf("code = %v, want invalid argument", got)
+	}
+}

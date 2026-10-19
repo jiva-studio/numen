@@ -85,8 +85,6 @@ type PluginInfo struct {
 	// StoredSecrets those of them that have a key stored. A key never appears here.
 	Secrets       []string
 	StoredSecrets []string
-	// Models are the models the plugin answers completions with, as it lists them.
-	Models []AgentModel
 	// Consent is whether the person lets the plugin ask for model completions.
 	Consent CompletionConsent
 	// Failure is set while the host suspends the plugin after it failed to start.

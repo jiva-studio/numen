@@ -10,23 +10,24 @@ var (
 	// ErrUnavailable means whatever answers cannot be reached right now.
 	ErrUnavailable = errors.New("unavailable")
 
-	// ErrNoRoute means no agent answers the question: the agent the settings name
-	// is not installed, is disabled or answers no completions, or no plugin
-	// answers completions at all. It is an unavailability: the question has
-	// nowhere to go.
+	// ErrNoRoute means no agent answers the question: the program the settings
+	// name is not installed or no plugin lists it, or no program is installed at
+	// all. It is an unavailability: the question has nowhere to go.
 	ErrNoRoute = fmt.Errorf("%w: no agent answers the question", ErrUnavailable)
 
 	// ErrNoConsent means the person has not let the plugin ask for completions,
 	// or has refused it.
 	ErrNoConsent = errors.New("AI access not allowed — allow it in Settings → AI")
+
+	// ErrInvalidQuestion means the question holds nothing an agent can answer.
+	ErrInvalidQuestion = errors.New("invalid question")
 )
 
 // Question is what a plugin asks of a model.
 type Question struct {
 	// Messages are the conversation so far, oldest first.
 	Messages []Message
-	// Purpose is what the answer is for. It is handed to the agent and routes
-	// nothing.
+	// Purpose is what the answer is for. It routes nothing.
 	Purpose string
 	// Hints are what the answer should favour.
 	Hints Hints
@@ -52,12 +53,14 @@ type Hints struct {
 	Temperature *float64
 }
 
-// CompletionChoice is the agent and the model a plugin's completions go to, as
-// the person set them in the plugin's setting of type SettingTypeAgent.
+// CompletionChoice is the agent program and the model a plugin's completions go
+// to, as the person set them in the plugin's setting of type SettingTypeAgent.
 type CompletionChoice struct {
-	// Agent is the id of the agent plugin. Empty is the default of the settings.
+	// Agent is the name of the agent program. Empty is the default of the
+	// settings.
 	Agent string `json:"agent,omitempty"`
-	// Model is the model the agent answers with. Empty is the agent's own.
+	// Model is the model the program answers with. Empty is the one the settings
+	// name for the program, else the program's own.
 	Model string `json:"model,omitempty"`
 }
 
@@ -89,21 +92,15 @@ type CompletionChoices interface {
 	GetCompletionChoice(pluginID string) CompletionChoice
 }
 
-// CompletionAgents opens the agent a route names.
-type CompletionAgents interface {
-	// OpenCompletionAgent returns the agent named, or, when the name is empty,
-	// the provider with the lowest id. An agent that is not there, or answers no
-	// completions, fails with ErrNoRoute, and one that cannot be reached with
-	// ErrUnavailable.
-	OpenCompletionAgent(ctx context.Context, agent string) (CompletionAgent, error)
-}
-
-// CompletionAgent is an agent answering one question at a time with a model of
-// its own.
-type CompletionAgent interface {
-	// Complete answers the question with the model named. Empty leaves the
-	// model to the agent.
-	Complete(ctx context.Context, model string, question Question) (string, error)
-	// Close lets the agent go. It may be called more than once.
-	Close() error
+// CompletionPrograms finds the program a route names and starts the tasks that
+// carry the questions to it.
+type CompletionPrograms interface {
+	// GetProgram returns the program named, or, when the name is empty, the one
+	// the settings name, else the default of the plugins. A program that is not
+	// installed or that no plugin lists fails with ErrNoRoute, and plugins that
+	// cannot be reached with ErrUnavailable.
+	GetProgram(ctx context.Context, name string) (AgentProgram, error)
+	// StartRun starts the task on the program it names, under that program's
+	// section of the settings.
+	StartRun(ctx context.Context, task Task) (Run, error)
 }

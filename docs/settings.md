@@ -452,7 +452,7 @@ Every recording handed over ends in an answer, and only one of them is "later". 
 
 An installation naming no profile proofreads nothing, and nothing asks for a key or a network.
 
-A profile says how a text is cut into requests. Which model answers them is not a profile's to say: the proofreading plugin asks the host, and the host answers from the plugin's own `agent` setting, else from [`ai.default`](#where-a-plugins-questions-to-a-model-are-answered), which names the agent plugin, the model and the number of questions answered at once. With no agent to answer, proofreading fails with "unavailable"; before the person lets the plugin ask, it fails with "AI access not allowed — allow it in Settings → AI". Either way nothing is corrected.
+A profile says how a text is cut into requests. Which model answers them is not a profile's to say: the proofreading plugin asks the host, and the host answers from the plugin's own `agent` setting, else from [`ai.default`](#where-a-plugins-questions-to-a-model-are-answered), which names the agent program, the model and the number of questions answered at once. With no agent to answer, proofreading fails with "unavailable"; before the person lets the plugin ask, it fails with "AI access not allowed — allow it in Settings → AI". Either way nothing is corrected.
 
 ```json
 {
@@ -492,7 +492,7 @@ Scans and transcripts through the `claude` command line on this machine, two que
 ```json
 {
   "ai": {
-    "default": { "agent": "md.numen.agent-claude", "model": "haiku", "concurrency": 2 }
+    "default": { "agent": "claude", "model": "haiku", "concurrency": 2 }
   },
   "plugins": {
     "md.numen.proofreading": { "aiConsent": true }
@@ -587,16 +587,16 @@ An installation naming no agent and asking for no tools opens no port and writes
 
 ## Where a plugin's questions to a model are answered
 
-A plugin that holds the `ai:complete` permission asks the host for a completion and names neither a model, an agent nor a key. The host knows which plugin asks by the token it gave that plugin at launch, and answers from that plugin's own agent setting, else from `ai.default`. Nothing in a question chooses where it goes.
+A plugin that holds the `ai:complete` permission asks the host for a completion and names neither a model, an agent nor a key. The host knows which plugin asks by the token it gave that plugin at launch, and answers from that plugin's own agent setting, else from `ai.default`. Nothing in a question chooses where it goes. The question reaches the agent as a task that names no tool and no conversation, so the agent has none of the vault's tools, and the answer is what the agent said.
 
 ```json
 {
   "ai": {
-    "default": { "agent": "md.numen.agent-claude", "model": "haiku", "concurrency": 2 }
+    "default": { "agent": "claude", "model": "haiku", "concurrency": 2 }
   },
   "plugins": {
     "md.numen.proofreading": {
-      "agent": { "agent": "md.numen.agent-claude", "model": "sonnet" },
+      "agent": { "agent": "claude", "model": "sonnet" },
       "aiConsent": true
     }
   }
@@ -605,21 +605,21 @@ A plugin that holds the `ai:complete` permission asks the host for a completion 
 
 | | |
 | --- | --- |
-| `ai.default.agent` | the id of the agent plugin that answers a plugin whose own setting names none. Empty is the installed plugin with the lowest id that declares the `ai.completion.provider` capability. |
-| `ai.default.model` | the model that agent answers with. Empty leaves the choice to the agent. It goes with the default agent alone. |
+| `ai.default.agent` | the name of the agent program that answers a plugin whose own setting names none (`claude`, `codex`, `antigravity`, `acp:<name>`, the names the AI section lists). Empty is the program `agent.use` names, else the default of the plugins. |
+| `ai.default.model` | the model that program answers with. Empty is the model `agent.<program>.model` names, else the program's own. It goes with the default agent alone. |
 | `ai.default.concurrency` | how many questions one agent answers at once; the others wait for a place, and a question whose plugin gave up leaves the wait. Below one is one. |
 | `plugins.<id>.<key>` | a plugin's own choice, under the key of the setting of type `agent` its manifest declares: `agent` and `model`. An empty `agent` is `ai.default`, agent and model both; an empty `model` is the chosen agent's own. |
 | `plugins.<id>.aiConsent` | whether the person lets the plugin ask a model: `true` or `false`. Left out, the person has not answered. |
 
-An agent that is not installed, is disabled or does not declare `ai.completion.provider` is answered `NO_ROUTE`, and so is a question when no plugin declares the capability; no other agent answers in its place. An agent that is installed and cannot be started or reached is answered `UNAVAILABLE`. A model the agent does not offer is the agent's own error, and reaches the plugin as it said it.
+A program that is not installed or that no plugin lists is answered `NO_ROUTE`, and so is a question when `agent.use` is empty or no program is installed; no other program answers in its place. A program whose plugin cannot be reached, that stops without an answer or that says nothing is answered `UNAVAILABLE`, with the reason it stopped for in the log. The command line, the options and the model of the program's section under `agent` apply to the task as they do to the panel's. A model the program does not offer is the program's own error.
 
-`md.numen.agent-acp` is the generic ACP client: it answers through the agents the settings name by an `acp:<program>` section with a `command`, one question to one session of its own in an empty folder, with no MCP servers, no file system or terminal and every permission refused. Its models are named `<program>/<model>`, as the agent reports them for a session; an agent that reports none is offered by its name alone and answers with its own model. An empty model is the first agent with its own model. Claude Code is answered by `md.numen.agent-claude` alone. `md.numen.agent-codex` (the `codex` CLI) and `md.numen.agent-antigravity` (the `agy` CLI) run tasks and declare no `ai.completion.provider`, so a question routed to them is answered `NO_ROUTE`.
+Every agent that runs a task answers a question, and a task that names no tool is given none. `md.numen.agent-claude` starts `claude` with no tool, no MCP server and one turn. `md.numen.agent-codex` starts `codex exec` read-only and ephemeral, without the user's configuration, the MCP servers in it and the tools of its own that can be turned off, in an empty folder. `md.numen.agent-antigravity` starts `agy` without the permission skip, with a home that holds no MCP server, in an empty folder. `md.numen.agent` asks the chat API with no tool and connects to no tool server. `md.numen.agent-acp` is the generic ACP client: it lists a program `acp:<name>` for each section of that name under `agent` with a `command`, with the models the agent reports for a session, and answers a task that names no tool in one session of its own in an empty folder, with no MCP servers, no file system or terminal and every permission refused. It stops a task that names a tool.
 
 The file is read at every question, so a choice written while the application runs applies to the next one.
 
 The first question of a plugin the person has not answered for is refused with `NO_CONSENT`, and the settings page puts it to the person: the AI section names the plugin that asked, with Allow and Refuse. Refused, every question of that plugin is answered `NO_CONSENT`, which the plugin shows as the reason nothing was answered; the proofreading plugin answers it as permission denied, and the proofreading stands in the list of what is being done with "AI access not allowed — allow it in Settings → AI".
 
-The settings page writes all of these. Its AI section holds the default agent and its model, a switch for each plugin that may ask, and the keys of the secrets plugins declare; a plugin's own section draws its setting of type `agent` as two lists, the agent first, "Default (<the agent answering it now>)" at its head, then the model, "Agent default" at its head. The models a list offers are the ones the agent lists through `CompletionService.ListCompletionModels`: the models its `Complete` answers with.
+The settings page writes all of these. Its AI section holds the default agent and its model, a switch for each plugin that may ask, and the keys of the secrets plugins declare; a plugin's own section draws its setting of type `agent` as two lists, the agent first, "Default (<the agent answering it now>)" at its head, then the model, "Agent default" at its head. The agents a list offers are the programs the plugins list, and the models are the ones each program lists for `GetAgentPrograms`.
 
 A file of an older shape, holding `ai.routes`, still loads: its `routes.default` is read as `ai.default` where the file names no `ai.default`, and the routes of single purposes are not read.
 

@@ -50,16 +50,14 @@ func TestABuildWithoutKeysServesNone(t *testing.T) {
 	}
 }
 
-// The consent and the models of a plugin travel to the window; a key never does.
-func TestAPluginTravelsWithItsConsentAndModels(t *testing.T) {
+// The consent of a plugin travels to the window; a key never does.
+func TestAPluginTravelsWithItsConsent(t *testing.T) {
 	infos := newWirePluginInfos([]setting.PluginInfo{{
 		ID: "md.numen.sample", Secrets: []string{"apiKey"}, StoredSecrets: []string{"apiKey"},
-		Models:  []setting.AgentModel{{Name: "m", Title: "M", IsDefault: true}},
 		Consent: setting.ConsentAsked,
 	}})
 	one := infos[0]
 	if one.GetCompletionConsent() != v1.CompletionConsent_COMPLETION_CONSENT_ASKED ||
-		len(one.GetModels()) != 1 || one.GetModels()[0].GetName() != "m" || !one.GetModels()[0].GetIsDefault() ||
 		len(one.GetStoredSecrets()) != 1 || one.GetSecrets()[0] != "apiKey" {
 		t.Errorf("travelled as %v", one)
 	}

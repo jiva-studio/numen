@@ -10,7 +10,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/completion"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -177,7 +176,7 @@ func Start(ctx context.Context, reg *Registry, spec Spec) (*Work, error) {
 		case scanErr != nil:
 			reader.reportStop(scanErr.Error())
 		case waitErr != nil:
-			reader.reportStop(completion.FailureMessage(waitErr, stderr.String()))
+			reader.reportStop(FailureMessage(waitErr, stderr.String()))
 		}
 	}()
 	return w, nil

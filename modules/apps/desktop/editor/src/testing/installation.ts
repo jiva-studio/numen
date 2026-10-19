@@ -1,6 +1,6 @@
 import { fn } from 'storybook/test'
 import { ref } from 'vue'
-import type { PluginInfo } from '@/entities/settings'
+import type { Model, PluginInfo } from '@/entities/settings'
 import type { Installation } from '@/pages/settings/types'
 
 /** An installation whose calls are recorded and which holds the defaults, with what a test cares about put over it. */
@@ -50,7 +50,50 @@ export const createPluginInfo = (
   capabilities: [],
   secrets: [],
   storedSecrets: [],
-  models: [],
   consent: 'none',
   ...over,
 })
+
+/** A program a plugin lists, and the models it reports. */
+export interface ProgramFixture {
+  readonly name: string
+  readonly title: string
+  /** Whether it answers where the settings name none. */
+  readonly isDefault?: boolean
+  readonly models?: readonly { readonly name: string; readonly title: string }[]
+}
+
+const createModel = (at: readonly string[], over: Partial<Model>): Model => ({
+  namedAt: at,
+  name: '',
+  title: '',
+  group: '',
+  isDefault: false,
+  writes: [],
+  presence: 'nothing to fetch',
+  ...over,
+})
+
+/**
+ * What the installation answers `getModels` with for the agent section: the programs under
+ * `agent.use`, with the choice of none after them, and the models each reports under its own
+ * `model`, with the choice of its own model first.
+ */
+export const createProgramModels =
+  (programs: readonly ProgramFixture[]) =>
+  (at: readonly string[]): readonly Model[] => {
+    if (at.join('.') === 'agent.use') {
+      return [
+        ...programs.map((one) =>
+          createModel(at, { name: one.name, title: one.title, isDefault: one.isDefault ?? false }),
+        ),
+        createModel(at, { title: 'Nothing answers', isDefault: !programs.some((one) => one.isDefault) }),
+      ]
+    }
+    const program = programs.find((one) => at.length === 3 && one.name === at[1] && at[2] === 'model')
+    if (!program) return []
+    return [
+      createModel(at, { title: 'Whatever this machine answers with', isDefault: true }),
+      ...(program.models ?? []).map((one) => createModel(at, one)),
+    ]
+  }
