@@ -630,3 +630,152 @@ func TestAssembleWhitespaceBoxWithinSameLineIsDropped(t *testing.T) {
 		t.Fatalf("got %d boxes, want 1", len(boxes))
 	}
 }
+
+func TestDistinctSortsKeptRegionsByOrder(t *testing.T) {
+	lowerOrder := Region{Label: "first", Score: 0.2, Rect: image.Rect(0, 0, 50, 50), Order: 1}
+	higherOrder := Region{Label: "second", Score: 0.9, Rect: image.Rect(60, 60, 100, 100), Order: 2}
+
+	result := Distinct([]Region{lowerOrder, higherOrder}, 0.5)
+	if len(result) != 2 || result[0].Label != "first" || result[1].Label != "second" {
+		t.Fatalf("Distinct kept %+v, want [first, second] sorted by Order", result)
+	}
+}
+
+func TestOverlapDisjointRectangles(t *testing.T) {
+	a := image.Rect(0, 0, 10, 10)
+	b := image.Rect(20, 20, 30, 30)
+	if got := overlap(a, b); got != 0 {
+		t.Errorf("overlap of disjoint rectangles = %v, want 0", got)
+	}
+}
+
+func TestOverlapPartial(t *testing.T) {
+	a := image.Rect(0, 0, 10, 10)
+	b := image.Rect(5, 0, 15, 20)
+	if got, want := overlap(a, b), 0.2; got != want {
+		t.Errorf("overlap = %v, want %v", got, want)
+	}
+}
+
+func TestOverlapUnitArea(t *testing.T) {
+	a := image.Rect(0, 0, 1, 1)
+	b := image.Rect(0, 0, 1, 1)
+	if got, want := overlap(a, b), 1.0; got != want {
+		t.Errorf("overlap of unit rectangles = %v, want %v", got, want)
+	}
+}
+
+func TestIsInsideDisjointRectangles(t *testing.T) {
+	a := image.Rect(0, 0, 10, 10)
+	b := image.Rect(20, 20, 30, 30)
+	if isInside(a, b) {
+		t.Error("isInside returned true for disjoint rectangles")
+	}
+}
+
+func TestAssembleSingleWordHyphenation(t *testing.T) {
+	lines := []Line{
+		{Text: "pre-", Box: image.Rect(0, 10, 50, 30)},
+		{Text: "fix", Box: image.Rect(0, 40, 50, 60)},
+	}
+	text, boxes := Assemble(lines)
+	if want := "prefix"; text != want {
+		t.Errorf("Assemble text = %q, want %q", text, want)
+	}
+	if len(boxes) != 2 {
+		t.Fatalf("got %d boxes, want 2", len(boxes))
+	}
+	if got, want := text[boxes[0].Span.From:boxes[0].Span.To], "pre"; got != want {
+		t.Errorf("box 0 span text = %q, want %q", got, want)
+	}
+}
+
+func TestAssembleHyphenAfterNonLetterNotStripped(t *testing.T) {
+	lines := []Line{
+		{Text: "clause 1-", Box: image.Rect(0, 10, 80, 30)},
+		{Text: "2", Box: image.Rect(0, 40, 50, 60)},
+	}
+	text, boxes := Assemble(lines)
+	if want := "clause 1- 2"; text != want {
+		t.Errorf("Assemble text = %q, want %q", text, want)
+	}
+	if len(boxes) != 2 {
+		t.Fatalf("got %d boxes, want 2", len(boxes))
+	}
+	if got, want := text[boxes[0].Span.From:boxes[0].Span.To], "clause 1-"; got != want {
+		t.Errorf("box 0 span text = %q, want %q", got, want)
+	}
+	if got, want := text[boxes[1].Span.From:boxes[1].Span.To], "2"; got != want {
+		t.Errorf("box 1 span text = %q, want %q", got, want)
+	}
+}
+
+func TestMeasureVerticalOverlap(t *testing.T) {
+	t.Run("MultipleLinesTop", func(t *testing.T) {
+		line := []Line{
+			{Box: image.Rect(0, 10, 50, 30)},
+			{Box: image.Rect(0, 15, 50, 35)},
+		}
+		box := Line{Box: image.Rect(0, 12, 50, 32)}
+		if got, want := measureVerticalOverlap(line, box), 0.75; got != want {
+			t.Errorf("overlap = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("VaryingHeight", func(t *testing.T) {
+		line := []Line{
+			{Box: image.Rect(0, 10, 50, 20)},
+		}
+		box := Line{Box: image.Rect(0, 10, 50, 30)}
+		if got, want := measureVerticalOverlap(line, box), 1.0; got != want {
+			t.Errorf("overlap = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("ZeroHeight", func(t *testing.T) {
+		line := []Line{{Box: image.Rect(0, 10, 50, 30)}}
+		box := Line{Box: image.Rect(0, 10, 50, 10)}
+		if got := measureVerticalOverlap(line, box); got != 0 {
+			t.Errorf("zero height overlap = %v, want 0", got)
+		}
+	})
+
+	t.Run("UnitHeight", func(t *testing.T) {
+		line := []Line{{Box: image.Rect(0, 10, 50, 11)}}
+		box := Line{Box: image.Rect(0, 10, 50, 11)}
+		if got, want := measureVerticalOverlap(line, box), 1.0; got != want {
+			t.Errorf("unit height overlap = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("DisjointVertically", func(t *testing.T) {
+		line := []Line{{Box: image.Rect(0, 10, 50, 20)}}
+		box := Line{Box: image.Rect(0, 30, 50, 40)}
+		if got := measureVerticalOverlap(line, box); got != 0 {
+			t.Errorf("disjoint overlap = %v, want 0", got)
+		}
+	})
+
+	t.Run("PartialOverlapArithmetic", func(t *testing.T) {
+		line := []Line{{Box: image.Rect(0, 10, 50, 30)}}
+		box := Line{Box: image.Rect(0, 20, 50, 40)}
+		if got, want := measureVerticalOverlap(line, box), 0.5; got != want {
+			t.Errorf("partial overlap = %v, want %v", got, want)
+		}
+	})
+}
+
+func TestAssembleLeadingWhitespaceBoxWithinSameLine(t *testing.T) {
+	lines := []Line{
+		{Text: "   ", Box: image.Rect(0, 10, 40, 30)},
+		{Text: "valid", Box: image.Rect(50, 10, 100, 30)},
+	}
+	text, boxes := Assemble(lines)
+	if text != "valid" {
+		t.Errorf("text = %q, want %q", text, "valid")
+	}
+	if len(boxes) != 1 {
+		t.Fatalf("got %d boxes, want 1", len(boxes))
+	}
+}
+

@@ -115,3 +115,54 @@ func TestIsFetchedOfAPathOrAnUnnamedModel(t *testing.T) {
 		t.Fatal("a name that is no address and no file counts as fetched")
 	}
 }
+
+func TestIsFetchedUnpinnedModel(t *testing.T) {
+	dir := t.TempDir()
+	cfg := Config{Dir: dir}
+	address := "https://example.invalid/unpinned/model.onnx"
+	held := RecogniserModel{Name: address}
+	if IsFetched(cfg, held) {
+		t.Fatal("an unpinned model not in cache counts as fetched")
+	}
+	cacheFile := filepath.Join(dir, models.GetCacheName(address, ""))
+	if err := os.WriteFile(cacheFile, []byte("unpinned-weights"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if !IsFetched(cfg, held) {
+		t.Fatal("an unpinned model in cache is not fetched")
+	}
+}
+
+func TestIsFetchedNonAddressIgnoredEvenIfCacheFileExists(t *testing.T) {
+	dir := t.TempDir()
+	cfg := Config{Dir: dir}
+	name := "custom-model.onnx"
+	held := RecogniserModel{Name: name}
+	cacheFile := filepath.Join(dir, models.GetCacheName(name, ""))
+	if err := os.WriteFile(cacheFile, []byte("weights"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if IsFetched(cfg, held) {
+		t.Fatal("a non-address name found via cache counts as fetched")
+	}
+}
+
+func TestIsFetchedReturnsFalseWhenGetDirFails(t *testing.T) {
+	dir := t.TempDir()
+	t.Chdir(dir)
+	address := "https://example.invalid/unpinned/model.onnx"
+	cacheName := models.GetCacheName(address, "")
+	if err := os.WriteFile(filepath.Join(dir, cacheName), []byte("weights"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("NUMEN_MODELS_DIR", "")
+	t.Setenv("XDG_CONFIG_HOME", "")
+	t.Setenv("HOME", "")
+
+	cfg := Config{}
+	held := RecogniserModel{Name: address}
+	if IsFetched(cfg, held) {
+		t.Fatal("IsFetched returned true when folder().GetDir() failed")
+	}
+}
+
