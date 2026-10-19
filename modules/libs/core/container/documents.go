@@ -37,7 +37,8 @@ func (c Config) PageRenderer() port.PageRenderer {
 	return hostDocumentPort{host: host}
 }
 
-// hostDocumentPort reaches the document and the book plugins, each looked up when it is asked.
+// hostDocumentPort reaches the document and the book plugins, each looked up when it is asked. A
+// document it opens holds its own reference on the plugin.
 type hostDocumentPort struct {
 	host port.PluginManager
 }
@@ -77,12 +78,8 @@ func (h hostDocumentPort) OpenDocument(ctx context.Context, file io.ReadSeekClos
 		}
 		return nil, err
 	}
-	doc, err := bridge.OpenDocument(ctx, file)
-	if err != nil {
-		_ = bridge.Close()
-		return nil, err
-	}
-	return doc, nil
+	defer bridge.Close()
+	return bridge.OpenDocument(ctx, file)
 }
 
 // unavailableDocument answers every ask with why no document plugin is there.

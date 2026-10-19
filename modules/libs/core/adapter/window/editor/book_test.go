@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"slices"
@@ -201,6 +202,9 @@ func TestAnAbsentBookPluginIsAnsweredAsUnimplemented(t *testing.T) {
 		"not installed": &port.UnavailableError{Capability: "book", Reason: port.PluginNotInstalled},
 		"disabled":      &port.UnavailableError{Capability: "book", Reason: port.PluginDisabled},
 		"failed":        &port.UnavailableError{PluginID: "md.numen.epub", Reason: port.PluginFailed, Err: errors.New("exit 1")},
+		"no program": &port.UnavailableError{
+			PluginID: "md.numen.epub", Reason: port.PluginFailed, Err: fmt.Errorf("start bin/epub: %w", fs.ErrNotExist),
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			api, handler, _ := readFrom(t, newBookClient())
@@ -219,6 +223,24 @@ func TestAnAbsentBookPluginIsAnsweredAsUnimplemented(t *testing.T) {
 				t.Errorf("a picture was answered %d, want not implemented", out.Code)
 			}
 		})
+	}
+}
+
+// A plugin that goes away once its client is open is answered the same way,
+// and what else it says is kept as it said it.
+func TestABookPluginThatGoesAwayIsAnsweredAsUnimplemented(t *testing.T) {
+	for why, want := range map[error]connect.Code{
+		&port.UnavailableError{PluginID: "md.numen.epub", Reason: port.PluginFailed}: connect.CodeUnimplemented,
+		connect.NewError(connect.CodeNotFound, errors.New("no such book")):           connect.CodeNotFound,
+	} {
+		client := newBookClient()
+		client.failure = why
+		api, _, _ := readFrom(t, client)
+
+		_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: reflowed}))
+		if code := connect.CodeOf(err); code != want {
+			t.Errorf("%v was answered %v, want %v", why, code, want)
+		}
 	}
 }
 

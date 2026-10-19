@@ -36,12 +36,12 @@ func (c Config) hasPlugin(capability string) bool {
 	return err == nil
 }
 
-// SetSafeMode is the configuration started in safe mode or out of it. In safe mode the plugin host
-// stops every plugin it runs and starts none.
+// SetSafeMode is the configuration started in safe mode or out of it, and its plugin host with it.
+// In safe mode the host stops every plugin it runs and starts none.
 func (c Config) SetSafeMode(enabled bool) Config {
 	c.SafeMode = enabled
-	if enabled && c.PluginHost != nil {
-		c.PluginHost.SetSafeMode(true)
+	if c.PluginHost != nil {
+		c.PluginHost.SetSafeMode(enabled)
 	}
 	return c
 }

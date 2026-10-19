@@ -192,4 +192,7 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 	if !safe.SafeMode {
 		t.Error("safe mode was not set")
 	}
+	if !cfg.SetSafeMode(false).RecogniserReady() {
+		t.Error("the host stayed in safe mode once it was left")
+	}
 }

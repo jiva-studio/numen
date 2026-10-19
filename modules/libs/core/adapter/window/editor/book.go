@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 // bookClient is what a book plugin answers: the shape of a book, one document of
@@ -53,7 +54,11 @@ func (h *bookHandler) GetBook(
 		return nil, connect.NewError(getReachCode(err), err)
 	}
 	defer closeClient()
-	return client.GetBook(ctx, r)
+	res, err := client.GetBook(ctx, r)
+	if err != nil {
+		return nil, readBookError(err)
+	}
+	return res, nil
 }
 
 // ReadBookMarkup answers with one document of a book, as the markup a window
@@ -70,7 +75,11 @@ func (h *bookHandler) ReadBookMarkup(
 		return nil, connect.NewError(getReachCode(err), err)
 	}
 	defer closeClient()
-	return client.ReadBookMarkup(ctx, r)
+	res, err := client.ReadBookMarkup(ctx, r)
+	if err != nil {
+		return nil, readBookError(err)
+	}
+	return res, nil
 }
 
 // Entry answers with the bytes of one entry of a book's archive, which is how a
@@ -151,4 +160,15 @@ func (h *bookHandler) getClient(ctx context.Context) (bookClient, func(), error)
 		return nil, nil, fmt.Errorf("%w: the book plugin answers with %T", errNoDocuments, raw)
 	}
 	return client, closer, nil
+}
+
+// readBookError is what a failed ask of the book plugin is answered with: a
+// plugin that is not there to answer is a build that cannot read books, and
+// anything else the plugin said is kept as it is.
+func readBookError(err error) error {
+	var coded *connect.Error
+	if errors.As(err, &coded) || !errors.Is(err, source.ErrUnavailable) {
+		return err
+	}
+	return connect.NewError(connect.CodeUnimplemented, err)
 }

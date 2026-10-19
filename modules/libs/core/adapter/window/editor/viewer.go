@@ -367,6 +367,8 @@ func getDrawCode(err error) connect.Code {
 	switch {
 	case errors.Is(err, pool.ErrBusy):
 		return connect.CodeUnavailable
+	case errors.Is(err, errNoDocuments), errors.Is(err, port.ErrUnavailable):
+		return connect.CodeUnimplemented
 	case errors.Is(err, document.ErrNoPage), errors.Is(err, document.ErrChanged),
 		errors.Is(err, document.ErrNoEntry):
 		return connect.CodeNotFound
@@ -384,6 +386,8 @@ func refuse(w http.ResponseWriter, err error) {
 		// The window is told when to ask again.
 		w.Header().Set("Retry-After", "1")
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
+	case errors.Is(err, errNoDocuments), errors.Is(err, port.ErrUnavailable):
+		http.Error(w, err.Error(), http.StatusNotImplemented)
 	case errors.Is(err, document.ErrNoPage), errors.Is(err, document.ErrChanged), source.IsNoNote(err),
 		errors.Is(err, document.ErrNoEntry):
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -393,8 +397,6 @@ func refuse(w http.ResponseWriter, err error) {
 		http.Error(w, err.Error(), http.StatusUnsupportedMediaType)
 	case errors.Is(err, errNoVault):
 		http.Error(w, err.Error(), http.StatusConflict)
-	case errors.Is(err, errNoDocuments), errors.Is(err, port.ErrUnavailable):
-		http.Error(w, err.Error(), http.StatusNotImplemented)
 	default:
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

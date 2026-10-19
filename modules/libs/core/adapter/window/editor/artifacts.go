@@ -700,12 +700,12 @@ func getReachCode(err error) connect.Code {
 	switch {
 	case errors.Is(err, source.ErrOutside):
 		return connect.CodeInvalidArgument
+	case errors.Is(err, source.ErrUnavailable), errors.Is(err, errNoDocuments):
+		return connect.CodeUnimplemented
 	case errors.Is(err, fs.ErrNotExist), source.IsNoNote(err):
 		return connect.CodeNotFound
 	case errors.Is(err, errNoVault):
 		return connect.CodeFailedPrecondition
-	case errors.Is(err, source.ErrUnavailable), errors.Is(err, errNoDocuments):
-		return connect.CodeUnimplemented
 	default:
 		return connect.CodeInternal
 	}
