@@ -4,19 +4,21 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/plugins/reader-epub/backend/epub"
 )
 
 var pngBytes = []byte("\x89PNG\r\n\x1a\nnot really a picture")
 
-// createPictureEpub is a book with one chapter and one picture entry.
-func createPictureEpub(t *testing.T) []byte {
+func createZipEpub(t *testing.T, entries map[string][]byte) []byte {
 	t.Helper()
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
@@ -34,7 +36,20 @@ func createPictureEpub(t *testing.T) []byte {
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
   <rootfiles><rootfile full-path="EPUB/package.opf" media-type="application/oebps-package+xml"/></rootfiles>
 </container>`))
-	write("EPUB/package.opf", []byte(`<?xml version="1.0"?>
+	for name, content := range entries {
+		write(name, content)
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return buf.Bytes()
+}
+
+// createPictureEpub is a book with one chapter and one picture entry.
+func createPictureEpub(t *testing.T) []byte {
+	t.Helper()
+	return createZipEpub(t, map[string][]byte{
+		"EPUB/package.opf": []byte(`<?xml version="1.0"?>
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="id" version="3.0">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Pictured</dc:title><dc:identifier id="id">x</dc:identifier></metadata>
   <manifest>
@@ -42,18 +57,15 @@ func createPictureEpub(t *testing.T) []byte {
     <item id="c2" href="c2.xhtml" media-type="application/xhtml+xml"/>
   </manifest>
   <spine><itemref idref="c1"/><itemref idref="c2"/></spine>
-</package>`))
-	write("EPUB/c1.xhtml", []byte(`<?xml version="1.0"?>
+</package>`),
+		"EPUB/c1.xhtml": []byte(`<?xml version="1.0"?>
 <html xmlns="http://www.w3.org/1999/xhtml"><head><title>One</title></head>
-<body><h1>First part</h1><p>Hello reader epub</p></body></html>`))
-	write("EPUB/c2.xhtml", []byte(`<?xml version="1.0"?>
+<body><h1>First part</h1><p>Hello reader epub</p><span epub:type="pagebreak" title="1"></span><span epub:type="pagebreak" title="2"></span></body></html>`),
+		"EPUB/c2.xhtml": []byte(`<?xml version="1.0"?>
 <html xmlns="http://www.w3.org/1999/xhtml"><head><title>Two</title></head>
-<body><h1>Second part</h1><p>Goodbye reader epub</p></body></html>`))
-	write("EPUB/cover.png", pngBytes)
-	if err := zw.Close(); err != nil {
-		t.Fatal(err)
-	}
-	return buf.Bytes()
+<body><h1>Second part</h1><p>Goodbye reader epub</p></body></html>`),
+		"EPUB/cover.png": pngBytes,
+	})
 }
 
 func TestExtractBookTextAnswersTheTextAndTheParts(t *testing.T) {
@@ -75,6 +87,10 @@ func TestExtractBookTextAnswersTheTextAndTheParts(t *testing.T) {
 			t.Errorf("part %q stands at %d, outside a text of %d bytes", part.GetTitle(), part.GetOffset(), len(resp.Msg.GetText()))
 		}
 	}
+	pages := resp.Msg.GetPrintedPages()
+	if len(pages) != 2 || pages[0].GetLabel() != "1" || pages[1].GetLabel() != "2" {
+		t.Errorf("the pages are %v, want 2 pages", pages)
+	}
 }
 
 func TestExtractBookTextRefusesBytesThatAreNoBook(t *testing.T) {
@@ -83,13 +99,33 @@ func TestExtractBookTextRefusesBytesThatAreNoBook(t *testing.T) {
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("code = %v (%v), want invalid argument", connect.CodeOf(err), err)
 	}
+	if !errors.Is(err, epub.ErrNotArchive) {
+		t.Fatalf("err = %v, want errors.Is ErrNotArchive", err)
+	}
 }
 
-func TestExtractBookTextRefusesNoBytes(t *testing.T) {
-	_, err := NewBookServer().ExtractBookText(context.Background(),
-		connect.NewRequest(&numenv1.ExtractBookTextRequest{}))
-	if connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Fatalf("code = %v (%v), want invalid argument", connect.CodeOf(err), err)
+func TestExtractBookTextRefusesEmptyOrIncomplete(t *testing.T) {
+	cases := []struct {
+		name       string
+		req        *numenv1.ExtractBookTextRequest
+		wantErrMsg string
+	}{
+		{name: "no bytes", req: &numenv1.ExtractBookTextRequest{}, wantErrMsg: "data required"},
+		{name: "single byte", req: &numenv1.ExtractBookTextRequest{Data: []byte{0}}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := NewBookServer().ExtractBookText(context.Background(), connect.NewRequest(tc.req))
+			if connect.CodeOf(err) != connect.CodeInvalidArgument {
+				t.Fatalf("code = %v (%v), want invalid argument", connect.CodeOf(err), err)
+			}
+			if tc.wantErrMsg != "" && !strings.Contains(err.Error(), tc.wantErrMsg) {
+				t.Fatalf("err = %v, want substring %q", err, tc.wantErrMsg)
+			}
+			if tc.wantErrMsg == "" && strings.Contains(err.Error(), "data required") {
+				t.Fatalf("err = %v, should not be 'data required'", err)
+			}
+		})
 	}
 }
 
@@ -166,6 +202,9 @@ func TestReadBookEntryRefusesAPathOutsideTheVault(t *testing.T) {
 	if connect.CodeOf(err) != connect.CodePermissionDenied {
 		t.Fatalf("code = %v (%v), want permission denied", connect.CodeOf(err), err)
 	}
+	if !errors.Is(err, vault.ErrOutsideVault) {
+		t.Fatalf("err = %v, want errors.Is ErrOutsideVault", err)
+	}
 }
 
 func TestReadBookEntryRefusesAFileThatIsNoBook(t *testing.T) {
@@ -191,5 +230,55 @@ func TestReadBookEntryRefusesNoEntry(t *testing.T) {
 	_, err := readEntry(name, "", nil)
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("code = %v (%v), want invalid argument", connect.CodeOf(err), err)
+	}
+}
+
+func TestReadBookEntryRefusesNotFound(t *testing.T) {
+	dir, _, _, _ := writeBook(t)
+	subDir := filepath.Join(dir, "sub")
+	if err := os.Mkdir(subDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, target := range []string{"nonexistent.epub", "sub"} {
+		t.Run(target, func(t *testing.T) {
+			_, err := readEntry(target, "EPUB/cover.png", nil)
+			if connect.CodeOf(err) != connect.CodeNotFound {
+				t.Fatalf("code = %v (%v), want not found", connect.CodeOf(err), err)
+			}
+		})
+	}
+}
+
+func TestReadBookEntryAnswersWithZeroMtimeBaseline(t *testing.T) {
+	_, name, size, _ := writeBook(t)
+	if _, err := readEntry(name, "EPUB/cover.png", &numenv1.Fingerprint{Path: name, Size: size, Mtime: 0}); err != nil {
+		t.Fatalf("expected success with Mtime == 0, got %v", err)
+	}
+}
+
+func createEncryptedEpub(t *testing.T) []byte {
+	t.Helper()
+	return createZipEpub(t, map[string][]byte{
+		"META-INF/encryption.xml": []byte(`<?xml version="1.0"?>
+<encryption xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+  <EncryptedData xmlns="http://www.w3.org/2001/04/xmlenc#">
+    <CipherData><CipherReference URI="EPUB/c1.xhtml"/></CipherData>
+  </EncryptedData>
+</encryption>`),
+		"EPUB/package.opf": []byte(`<?xml version="1.0"?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="id" version="3.0">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Encrypted</dc:title><dc:identifier id="id">x</dc:identifier></metadata>
+  <manifest><item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/></manifest>
+  <spine><itemref idref="c1"/></spine>
+</package>`),
+		"EPUB/c1.xhtml": []byte(`<html><body><p>Encrypted</p></body></html>`),
+	})
+}
+
+func TestExtractBookTextRefusesEncryptedBook(t *testing.T) {
+	_, err := NewBookServer().ExtractBookText(context.Background(),
+		connect.NewRequest(&numenv1.ExtractBookTextRequest{Data: createEncryptedEpub(t)}))
+	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
+		t.Fatalf("code = %v (%v), want failed precondition", connect.CodeOf(err), err)
 	}
 }
