@@ -49,6 +49,13 @@ func (w *pipeResponseWriter) Write(b []byte) (int, error) {
 	return w.pw.Write(b)
 }
 
+// Flush sends the response header, so a handler that streams is heard before it ends.
+func (w *pipeResponseWriter) Flush() {
+	w.once.Do(func() {
+		close(w.headerReady)
+	})
+}
+
 func (w *pipeResponseWriter) WriteHeader(code int) {
 	w.code = code
 	w.once.Do(func() {
@@ -73,16 +80,19 @@ func NewInProcessTransport(handler http.Handler) *InProcessTransport {
 func (t *InProcessTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	pr, pw := io.Pipe()
 	rw := newPipeResponseWriter(pw)
+	// The body ends with the error of the request context, whether the handler has written its header or not.
+	stop := context.AfterFunc(req.Context(), func() { _ = pw.CloseWithError(req.Context().Err()) })
 
 	go func() {
 		defer func() {
+			stop()
 			rw.once.Do(func() {
 				close(rw.headerReady)
 			})
 			if r := recover(); r != nil {
 				_ = pw.CloseWithError(fmt.Errorf("panic in in-process handler: %v", r))
 			} else {
-				_ = pw.Close()
+				_ = pw.CloseWithError(req.Context().Err())
 			}
 		}()
 		t.handler.ServeHTTP(rw, req)
@@ -91,7 +101,6 @@ func (t *InProcessTransport) RoundTrip(req *http.Request) (*http.Response, error
 	select {
 	case <-rw.headerReady:
 	case <-req.Context().Done():
-		_ = pw.CloseWithError(req.Context().Err())
 		return nil, req.Context().Err()
 	}
 

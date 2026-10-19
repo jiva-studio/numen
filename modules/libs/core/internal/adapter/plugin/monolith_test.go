@@ -382,3 +382,57 @@ func TestABuiltInPluginThatSpeaksAnotherProtocolIsRefused(t *testing.T) {
 		t.Fatalf("EnsureActive() = %v, want %v naming the plugin", err, port.ErrUnsupportedProtocol)
 	}
 }
+
+// A handler that flushes is heard before it ends.
+func TestAFlushSendsTheHeaderOfAStreamingHandler(t *testing.T) {
+	release := make(chan struct{})
+	defer close(release)
+	transport := NewInProcessTransport(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.(http.Flusher).Flush()
+		<-release
+	}))
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://inprocess/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := transport.RoundTrip(req)
+	if err != nil {
+		t.Fatalf("RoundTrip: %v", err)
+	}
+	_ = resp.Body.Close()
+}
+
+// A call whose context ends after the header has been written ends with the error of the context.
+func TestACallWhoseContextEndsAfterTheHeaderEndsWithThatError(t *testing.T) {
+	transport := NewInProcessTransport(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		<-r.Context().Done()
+	}))
+	ctx, cancel := context.WithCancel(t.Context())
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://inprocess/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := transport.RoundTrip(req)
+	if err != nil {
+		t.Fatalf("RoundTrip: %v", err)
+	}
+	defer resp.Body.Close()
+
+	cancel()
+	read := make(chan error, 1)
+	go func() {
+		_, err := io.ReadAll(resp.Body)
+		read <- err
+	}()
+
+	select {
+	case err := <-read:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("the body ended with %v, want the cancellation", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("the body was not ended by the cancellation")
+	}
+}
