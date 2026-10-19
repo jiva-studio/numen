@@ -1,7 +1,7 @@
 import { test, expect, type Page } from 'playwright/test'
 import { getGraph, openWorkspace } from './support/workspace.js'
 
-async function openLinkInspector(page: Page) {
+const openLinkInspector = async (page: Page) => {
   await openWorkspace(page)
   await expect(page.locator('.plex-frame:not([data-moving])')).toBeAttached()
 

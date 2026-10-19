@@ -27,7 +27,7 @@ const UNREADABLE = 'the frontmatter of this note cannot be read'
  * behind it is the next write. A read of a path answers once the writes of that
  * path have landed.
  */
-export function createPluginNotes(deps: PluginNotesDeps): PluginNotes {
+export const createPluginNotes = (deps: PluginNotesDeps): PluginNotes => {
   const queued = new Map<string, string>()
   const running = new Map<string, Promise<void>>()
 

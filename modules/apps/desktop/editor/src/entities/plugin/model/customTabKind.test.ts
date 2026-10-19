@@ -187,9 +187,9 @@ describe('createCustomTabKind', () => {
 describe('createCustomTabKind (loading)', () => {
   const registration = { kind: 'note', component: null, title: 'Markdown Note' }
   const createHost = (readNote?: (path: string) => Promise<string | undefined>) => ({
-    registerKind: () => () => {},
-    registerExtensionReader: () => () => {},
-    openTab: async () => '',
+    registerKind: () => vi.fn(),
+    registerExtensionReader: () => vi.fn(),
+    openTab: () => Promise.resolve(''),
     ...(readNote ? { readNote } : {}),
   })
   const open = (readNote?: (path: string) => Promise<string | undefined>) =>
@@ -199,11 +199,11 @@ describe('createCustomTabKind (loading)', () => {
     ) as { isLoading: { value: boolean } }
 
   it('is loading until the note has been read', async () => {
-    let finish: (body: string) => void = () => {}
-    const state = open(() => new Promise<string>((resolve) => (finish = resolve)))
+    const reads: ((body: string) => void)[] = []
+    const state = open(() => new Promise<string>((resolve) => reads.push(resolve)))
     expect(state.isLoading.value).toBe(true)
 
-    finish('# Body')
+    reads[0]?.('# Body')
     await new Promise((resolve) => setTimeout(resolve, 0))
     expect(state.isLoading.value).toBe(false)
   })

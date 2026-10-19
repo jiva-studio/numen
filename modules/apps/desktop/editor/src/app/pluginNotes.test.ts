@@ -11,6 +11,12 @@ interface Pending {
   readonly finish: () => void
 }
 
+const getPending = (pending: readonly Pending[], at: number): Pending => {
+  const one = pending[at]
+  if (!one) throw new Error('write ' + at + ' was not made')
+  return one
+}
+
 const createDeps = () => {
   const stored = new Map<string, string>([['a.md', 'original']])
   const pending: Pending[] = []
@@ -38,39 +44,42 @@ describe('createPluginNotes', () => {
     const notes = createPluginNotes(deps)
 
     const first = notes.writeNote('a.md', 'one')
-    void notes.writeNote('a.md', 'two')
+    const middle = notes.writeNote('a.md', 'two')
     const last = notes.writeNote('a.md', 'three')
     expect(deps.write).toHaveBeenCalledTimes(1)
 
-    deps.pending[0]!.finish()
+    getPending(deps.pending, 0).finish()
     await tick()
     expect(deps.write).toHaveBeenCalledTimes(2)
     expect(deps.write).toHaveBeenLastCalledWith('a.md', 'three', null)
 
-    deps.pending[1]!.finish()
-    await Promise.all([first, last])
+    getPending(deps.pending, 1).finish()
+    await Promise.all([first, middle, last])
     expect(deps.stored.get('a.md')).toBe('three')
   })
 
   it('answers a read after the writes of that path have landed', async () => {
     const deps = createDeps()
     const notes = createPluginNotes(deps)
-    void notes.writeNote('a.md', 'edited')
+    const write = notes.writeNote('a.md', 'edited')
 
     const read = notes.readNote('a.md')
     await tick()
     expect(deps.read).not.toHaveBeenCalled()
 
-    deps.pending[0]!.finish()
+    getPending(deps.pending, 0).finish()
     expect(await read).toEqual({ body: 'edited' })
+    await write
   })
 
   it('reads a path at once when it has no write in the air', async () => {
     const deps = createDeps()
     const notes = createPluginNotes(deps)
-    void notes.writeNote('b.md', 'other')
+    const write = notes.writeNote('b.md', 'other')
 
     expect(await notes.readNote('a.md')).toEqual({ body: 'original' })
+    getPending(deps.pending, 0).finish()
+    await write
   })
 
   it('writes again once the previous writes of the path are done', async () => {
@@ -78,12 +87,12 @@ describe('createPluginNotes', () => {
     const notes = createPluginNotes(deps)
 
     const first = notes.writeNote('a.md', 'one')
-    deps.pending[0]!.finish()
+    getPending(deps.pending, 0).finish()
     await first
 
     const second = notes.writeNote('a.md', 'two')
     expect(deps.write).toHaveBeenCalledTimes(2)
-    deps.pending[1]!.finish()
+    getPending(deps.pending, 1).finish()
     await second
     expect(deps.stored.get('a.md')).toBe('two')
   })
