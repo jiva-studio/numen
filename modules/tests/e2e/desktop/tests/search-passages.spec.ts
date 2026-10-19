@@ -29,15 +29,16 @@ test.describe('Full-Text Search and Passage Navigation', () => {
 
     await searchInput.fill('Entropy')
 
-    // The result of the Entropy note is chosen once the search has drawn it
-    const result = page
+    // The passage of the Entropy note is chosen once the search has drawn it
+    const passage = page
+      .getByRole('group', { name: /Meaning/ })
       .getByRole('option')
-      .filter({ has: page.locator('[data-palette="name"]', { hasText: /^Entropy$/ }) })
+      .filter({ hasText: 'A measure of uncertainty' })
       .first()
-    await expect(result).toBeVisible()
-    await result.click()
+    await expect(passage).toBeVisible()
+    await passage.click()
 
-    // The note opens in its own tab and its text is drawn in the editor
+    // The note opens in the editor with the passage in it
     await expect(page.getByRole('tab', { name: /Entropy/i }).first()).toHaveAttribute(
       'aria-selected',
       'true',

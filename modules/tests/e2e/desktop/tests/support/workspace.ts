@@ -9,22 +9,15 @@ export const openWorkspace = async (page: Page): Promise<void> => {
   await expect(getGraph(page)).toBeVisible()
 }
 
-/** The row the keyboard stands on in the open palette. */
-const getLitRowName = (page: Page): Locator =>
-  page.locator('[role="option"][aria-selected="true"] [data-palette="name"]')
-
-/** Opens the palette on a command and waits until the keyboard stands on it. */
-const findPaletteCommand = async (page: Page, query: string, name: string): Promise<Locator> => {
+/** Runs the command of that exact name once the palette has drawn it for the words typed. */
+export const runPaletteCommand = async (page: Page, query: string, name: string): Promise<void> => {
   await page.keyboard.press('Control+p')
   const field = page.locator('input[data-palette="field"]').first()
   await expect(field).toBeVisible()
   await field.fill(query)
-  await expect(getLitRowName(page)).toHaveText(name)
-  return field
-}
-
-/** Runs a palette command once the keyboard stands on it. */
-export const runPaletteCommand = async (page: Page, query: string, name: string): Promise<void> => {
-  await findPaletteCommand(page, query, name)
-  await page.keyboard.press('Enter')
+  const command = page
+    .getByRole('option')
+    .filter({ has: page.locator('[data-palette="name"]', { hasText: new RegExp(`^${name}$`) }) })
+    .first()
+  await command.click()
 }
