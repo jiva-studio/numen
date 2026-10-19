@@ -56,3 +56,17 @@ func TestATempDocumentIsAllowedOnlyWhenTheCallerAllowsIt(t *testing.T) {
 		t.Errorf("other temp file: err = %v", err)
 	}
 }
+
+// A vault root given to ValidatePathIn holds the path, whatever the environment says.
+func TestValidatePathInHoldsThePathToTheRootItIsGiven(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("NUMEN_VAULT_PATH", "")
+
+	inside, err := ValidatePathIn(root, "notes/a.md")
+	if err != nil || inside != filepath.Join(root, "notes", "a.md") {
+		t.Errorf("a relative path = %q, %v; want it joined to the root", inside, err)
+	}
+	if _, err := ValidatePathIn(root, filepath.Join(t.TempDir(), "b.md")); !errors.Is(err, ErrOutsideVault) {
+		t.Errorf("a path outside the root = %v, want ErrOutsideVault", err)
+	}
+}
