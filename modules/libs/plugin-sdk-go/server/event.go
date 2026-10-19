@@ -8,7 +8,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// EventHandler receives an event the plugin's manifest subscribes to in activationEvents.
+// EventHandler receives an event the plugin's manifest subscribes to in activationEvents. An error it
+// returns is answered to the host as the plugin's refusal of the event.
 type EventHandler func(ctx context.Context, event string) error
 
 // WithEventHandler mounts numen.v1.PluginEventService, which hands each delivered event to fn.
@@ -25,17 +26,16 @@ type eventServer struct {
 	handle EventHandler
 }
 
-// DeliverEvent passes the event to the plugin's handler and answers its error. A handler's
-// Unimplemented is answered as Internal; Unimplemented tells the host the plugin takes no events.
+// DeliverEvent passes the event to the plugin's handler. A handler error is answered as a refusal
+// that carries its text; the call itself succeeds.
 func (s eventServer) DeliverEvent(
 	ctx context.Context,
 	req *connect.Request[numenv1.DeliverEventRequest],
 ) (*connect.Response[numenv1.DeliverEventResponse], error) {
+	answer := &numenv1.DeliverEventResponse{}
 	if err := s.handle(ctx, req.Msg.GetEvent()); err != nil {
-		if connect.CodeOf(err) == connect.CodeUnimplemented {
-			return nil, connect.NewError(connect.CodeInternal, err)
-		}
-		return nil, err
+		answer.Error = numenv1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_REFUSED
+		answer.Reason = err.Error()
 	}
-	return connect.NewResponse(&numenv1.DeliverEventResponse{}), nil
+	return connect.NewResponse(answer), nil
 }

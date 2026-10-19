@@ -24,11 +24,13 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// eventRecorder serves numen.v1.PluginEventService and keeps every event it is handed.
+// eventRecorder serves numen.v1.PluginEventService and keeps every event it is handed. It refuses each
+// with refusal when that is set, and fails the call with failure when that is set.
 type eventRecorder struct {
 	numenv1connect.UnimplementedPluginEventServiceHandler
 	mu      sync.Mutex
 	events  []string
+	refusal string
 	failure error
 }
 
@@ -41,6 +43,12 @@ func (r *eventRecorder) DeliverEvent(
 	r.events = append(r.events, req.Msg.GetEvent())
 	if r.failure != nil {
 		return nil, r.failure
+	}
+	if r.refusal != "" {
+		return connect.NewResponse(&v1.DeliverEventResponse{
+			Error:  v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_REFUSED,
+			Reason: r.refusal,
+		}), nil
 	}
 	return connect.NewResponse(&v1.DeliverEventResponse{}), nil
 }
@@ -160,7 +168,7 @@ func TestAPluginThatTakesNoEventsIsActivatedWithoutAnError(t *testing.T) {
 }
 
 func TestAPluginThatRefusesAnEventIsReportedAndTheOthersStillReceiveIt(t *testing.T) {
-	refusing := &eventRecorder{failure: connect.NewError(connect.CodeInternal, errors.New("the index is closed"))}
+	refusing := &eventRecorder{refusal: "the index is closed"}
 	working := &eventRecorder{}
 	host := newEventHost(t,
 		map[string][]string{"a.refusing": {"onOpen"}, "b.working": {"onOpen"}},
@@ -169,10 +177,37 @@ func TestAPluginThatRefusesAnEventIsReportedAndTheOthersStillReceiveIt(t *testin
 
 	_, err := host.TriggerEvent(t.Context(), "onOpen")
 
-	if err == nil || !strings.Contains(err.Error(), "deliver onOpen to plugin a.refusing") || !strings.Contains(err.Error(), "the index is closed") {
+	if !errors.Is(err, errEventRefused) || !strings.Contains(err.Error(), "deliver onOpen to plugin a.refusing") || !strings.Contains(err.Error(), "the index is closed") {
 		t.Fatalf("TriggerEvent() = %v, want the refusal naming the event and the plugin", err)
 	}
 	if got := working.getEvents(); !slices.Equal(got, []string{"onOpen"}) {
 		t.Fatalf("the working plugin received %v, want [onOpen]", got)
+	}
+}
+
+func TestAPluginWhoseEventCallFailsIsReportedApartFromARefusal(t *testing.T) {
+	failing := &eventRecorder{failure: connect.NewError(connect.CodeInternal, errors.New("the handler panicked"))}
+	host := newEventHost(t,
+		map[string][]string{"md.test.failing": {"onOpen"}},
+		map[string]int{"md.test.failing": servePlugin(t, failing)},
+	)
+
+	_, err := host.TriggerEvent(t.Context(), "onOpen")
+
+	if err == nil || errors.Is(err, errEventRefused) || connect.CodeOf(err) != connect.CodeInternal {
+		t.Fatalf("TriggerEvent() = %v, want the failed call reported as %v and not as a refusal", err, connect.CodeInternal)
+	}
+}
+
+func TestReadEventRefusalHandlesEveryCode(t *testing.T) {
+	testsupport.CheckHandled(t, func(code v1.PluginEventErrorCode) bool {
+		err := readEventRefusal(code, "the index is closed")
+		if code == v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED {
+			return err == nil
+		}
+		return errors.Is(err, errEventRefused) && strings.Contains(err.Error(), "the index is closed") && !strings.Contains(err.Error(), "unknown code")
+	})
+	if err := readEventRefusal(v1.PluginEventErrorCode(99), "why"); !errors.Is(err, errEventRefused) || !strings.Contains(err.Error(), "unknown code 99") {
+		t.Fatalf("readEventRefusal(99) = %v, want a refusal naming the unknown code", err)
 	}
 }

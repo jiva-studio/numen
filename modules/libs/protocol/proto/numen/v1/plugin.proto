@@ -117,7 +117,8 @@ message GetPluginsResponse {
 }
 
 // PluginEventService hands a running plugin an event its manifest's activationEvents subscribe to.
-// A plugin serves it only when it takes events.
+// A plugin serves it only when it takes events. A plugin that takes the event and refuses it answers
+// with error set; a status code means the call was not served.
 service PluginEventService {
   rpc DeliverEvent(DeliverEventRequest) returns (DeliverEventResponse);
 }
@@ -127,4 +128,18 @@ message DeliverEventRequest {
   string event = 1;
 }
 
-message DeliverEventResponse {}
+message DeliverEventResponse {
+  // Set when the plugin took the event and refused it.
+  PluginEventErrorCode error = 1;
+  // The plugin's words for the refusal. Empty when error is unset.
+  string reason = 2;
+}
+
+// PluginEventErrorCode is why a plugin that took an event refused it. The zero
+// value means it did not.
+enum PluginEventErrorCode {
+  PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED = 0;
+
+  // The plugin's event handler answered an error, which reason carries.
+  PLUGIN_EVENT_ERROR_CODE_REFUSED = 1;
+}
