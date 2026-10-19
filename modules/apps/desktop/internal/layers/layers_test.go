@@ -37,12 +37,12 @@ type standing struct {
 }
 
 // named are files every walk below has to have reached: the desktop's entry
-// point, the deepest file it holds, and the phone. A count says how much was
+// point, a file of its internal packages, and the phone. A count says how much was
 // read and never what, and a walk that stopped at the desktop's border would
 // clear any floor the desktop's own files fill.
 var named = []string{
 	"desktop/cmd/numen/main.go",
-	"desktop/internal/adapter/runner/process.go",
+	"desktop/internal/platform/platform.go",
 	"mobile/bind/mobile.go",
 }
 
