@@ -112,8 +112,7 @@ jobs:
   test:
     name: Tests
     needs: [changes]
-    # Heavy: runs in the merge queue and on main, and reports as skipped on a pull request.
-    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') && github.event_name != 'pull_request' }}
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
