@@ -21,7 +21,7 @@ export type { WindowKindsDeps } from './kinds/deps'
 /** Something to ask, put in the agent the person was last in and put in front. */
 function createAgentAsker(held: WindowKindsDeps['held'], writeMessage: MessageWriter) {
   return {
-    askQuestion: async (text: string): Promise<void> => {
+    askQuestion: (text: string): void => {
       if (!held.hasKind(AGENT)) {
         writeMessage(
           'The agent chat is not available: its plugin is off or did not start.',
@@ -29,7 +29,7 @@ function createAgentAsker(held: WindowKindsDeps['held'], writeMessage: MessageWr
         )
         return
       }
-      await held
+      held
         .sendText(AGENT, text)
         .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
     },
@@ -75,7 +75,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
       nesting: settings.nesting,
       dragged,
       getNoteInFocus: getPlexTarget,
-      ask: (text) => void agents.askQuestion(text),
+      ask: (text) => agents.askQuestion(text),
       writeMessage,
     }),
     notes: createVaultNotes({ core, search: core, making: editing.making }),
