@@ -49,3 +49,31 @@ jobs:
 
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+  plugin-staging:
+    name: "Release plugin staging"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # A plugin with a backend has a bin folder after the build and a plugin with a frontend has a
+      # dist folder; the release stages the plugins of that tree.
+      - name: Stage the plugins as the release does
+        run: |
+          set -euo pipefail
+          built="$RUNNER_TEMP/built"
+          mkdir -p "$built"
+          for p in modules/plugins/*; do
+            if [ -f "$p/manifest.json" ]; then
+              name=$(basename "$p")
+              mkdir -p "$built/$name"
+              cp "$p/manifest.json" "$built/$name/"
+              if [ -d "$p/backend" ]; then mkdir -p "$built/$name/bin"; touch "$built/$name/bin/$name"; fi
+              if [ -d "$p/frontend" ]; then mkdir -p "$built/$name/dist"; touch "$built/$name/dist/index.js"; fi
+            fi
+          done
+          .github/scripts/stage-plugins.sh "$built" "$RUNNER_TEMP/staged"
+          .github/scripts/check-staged-plugins.sh modules/plugins "$RUNNER_TEMP/staged"

@@ -265,17 +265,8 @@ jobs:
           install -Dm755 "$RUNNER_TEMP/numen" "$tree/numen"
           install -Dm755 "$RUNNER_TEMP/numen-flashcards" "$tree/numen-flashcards"
 
-          if [ -d modules/plugins ]; then
-            for p in modules/plugins/*; do
-              if [ -f "$p/manifest.json" ] && [ -d "$p/bin" ]; then
-                name=$(basename "$p")
-                mkdir -p "$tree/plugins/$name"
-                cp "$p/manifest.json" "$tree/plugins/$name/"
-                cp -r "$p/bin" "$tree/plugins/$name/"
-                if [ -d "$p/dist" ]; then cp -r "$p/dist" "$tree/plugins/$name/"; fi
-              fi
-            done
-          fi
+          .github/scripts/stage-plugins.sh modules/plugins "$tree/plugins"
+          .github/scripts/check-staged-plugins.sh modules/plugins "$tree/plugins"
 
           install -Dm644 "$at/numen.desktop" -t "$tree/share/applications"
           install -Dm644 "$at/numen-flashcards.desktop" -t "$tree/share/applications"
@@ -622,6 +613,7 @@ jobs:
         run: |
           make install INSTALL="npm ci"
           make interface
+          make plugins_frontend_build
 
       # Explorer, the taskbar and Alt-Tab draw a program by the icon linked
       # into it.
@@ -653,14 +645,18 @@ jobs:
 
           mkdir -p "$RUNNER_TEMP/plugins"
           for p in ../../plugins/*; do
-            if [ -f "$p/manifest.json" ] && [ -d "$p/backend" ]; then
+            if [ -f "$p/manifest.json" ] && { [ -d "$p/backend" ] || [ -d "$p/dist" ]; }; then
               name=$(basename "$p")
-              mkdir -p "$RUNNER_TEMP/plugins/$name/bin"
-              GOOS=windows GOARCH=amd64 go build -trimpath -o "$RUNNER_TEMP/plugins/$name/bin/$name.exe" "$p/backend"
+              mkdir -p "$RUNNER_TEMP/plugins/$name"
+              if [ -d "$p/backend" ]; then
+                mkdir -p "$RUNNER_TEMP/plugins/$name/bin"
+                GOOS=windows GOARCH=amd64 go build -trimpath -o "$RUNNER_TEMP/plugins/$name/bin/$name.exe" "$p/backend"
+              fi
               cp "$p/manifest.json" "$RUNNER_TEMP/plugins/$name/"
               if [ -d "$p/dist" ]; then cp -r "$p/dist" "$RUNNER_TEMP/plugins/$name/"; fi
             fi
           done
+          ../../../.github/scripts/check-staged-plugins.sh ../../plugins "$RUNNER_TEMP/plugins"
 
       - name: Create Windows zip archive
         env:
@@ -736,6 +732,7 @@ jobs:
         run: |
           make install INSTALL="npm ci"
           make interface
+          make plugins_frontend_build
 
       # Both architectures come off this one machine: the window links against
       # frameworks the SDK carries for each.
@@ -764,17 +761,21 @@ jobs:
 
           mkdir -p "$RUNNER_TEMP/plugins"
           for p in ../../plugins/*; do
-            if [ -f "$p/manifest.json" ] && [ -d "$p/backend" ]; then
+            if [ -f "$p/manifest.json" ] && { [ -d "$p/backend" ] || [ -d "$p/dist" ]; }; then
               name=$(basename "$p")
-              mkdir -p "$RUNNER_TEMP/plugins/$name/bin"
-              CGO_ENABLED=1 GOARCH=arm64 go build -trimpath -o "$RUNNER_TEMP/plugins/$name/bin/$name-arm64" "$p/backend"
-              CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -trimpath -o "$RUNNER_TEMP/plugins/$name/bin/$name-amd64" "$p/backend"
-              lipo -create "$RUNNER_TEMP/plugins/$name/bin/$name-arm64" "$RUNNER_TEMP/plugins/$name/bin/$name-amd64" -output "$RUNNER_TEMP/plugins/$name/bin/$name"
-              rm "$RUNNER_TEMP/plugins/$name/bin/$name-arm64" "$RUNNER_TEMP/plugins/$name/bin/$name-amd64"
+              mkdir -p "$RUNNER_TEMP/plugins/$name"
+              if [ -d "$p/backend" ]; then
+                mkdir -p "$RUNNER_TEMP/plugins/$name/bin"
+                CGO_ENABLED=1 GOARCH=arm64 go build -trimpath -o "$RUNNER_TEMP/plugins/$name/bin/$name-arm64" "$p/backend"
+                CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -trimpath -o "$RUNNER_TEMP/plugins/$name/bin/$name-amd64" "$p/backend"
+                lipo -create "$RUNNER_TEMP/plugins/$name/bin/$name-arm64" "$RUNNER_TEMP/plugins/$name/bin/$name-amd64" -output "$RUNNER_TEMP/plugins/$name/bin/$name"
+                rm "$RUNNER_TEMP/plugins/$name/bin/$name-arm64" "$RUNNER_TEMP/plugins/$name/bin/$name-amd64"
+              fi
               cp "$p/manifest.json" "$RUNNER_TEMP/plugins/$name/"
               if [ -d "$p/dist" ]; then cp -r "$p/dist" "$RUNNER_TEMP/plugins/$name/"; fi
             fi
           done
+          ../../../.github/scripts/check-staged-plugins.sh ../../plugins "$RUNNER_TEMP/plugins"
 
       - name: Assemble macOS application bundle
         env:

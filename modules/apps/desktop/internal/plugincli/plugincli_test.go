@@ -256,10 +256,52 @@ func TestPluginPackage_Success(t *testing.T) {
 		zippedFiles = append(zippedFiles, f.Name)
 	}
 
-	for _, expected := range []string{"manifest.json", "go.mod", "backend/main.go", "README.md"} {
-		if !slices.Contains(zippedFiles, expected) {
-			t.Errorf("expected archive to contain %s, got: %v", expected, zippedFiles)
+	if want := []string{"manifest.json"}; !slices.Equal(zippedFiles, want) {
+		t.Errorf("archive holds %v, want %v", zippedFiles, want)
+	}
+}
+
+// An archive holds manifest.json, bin and dist, a plugin with a frontend alone included, and no source file or older archive.
+func TestPluginPackage_HoldsOnlyWhatThePluginShips(t *testing.T) {
+	pluginDir := filepath.Join(t.TempDir(), "view-sample")
+	files := map[string]string{
+		"manifest.json":             `{"id": "md.numen.view-sample", "name": "View", "version": "1.0.0"}`,
+		"frontend/view.ts":          "source",
+		"README.md":                 "readme",
+		"dist/view.js":              "built",
+		"dist/assets/view.css":      "built",
+		"dist/old-0.9.0.zip":        "older archive",
+		"bin/view-sample":           "binary",
+		"node_modules/dep/index.js": "dependency",
+	}
+	for name, content := range files {
+		path := filepath.Join(pluginDir, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
 		}
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	archivePath, err := Package(pluginDir, "", &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("unexpected package error: %v", err)
+	}
+
+	zipReader, err := zip.OpenReader(archivePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer zipReader.Close()
+	var zipped []string
+	for _, f := range zipReader.File {
+		zipped = append(zipped, f.Name)
+	}
+	slices.Sort(zipped)
+	want := []string{"bin/view-sample", "dist/assets/view.css", "dist/view.js", "manifest.json"}
+	if !slices.Equal(zipped, want) {
+		t.Errorf("archive holds %v, want %v", zipped, want)
 	}
 }
 
