@@ -3,20 +3,14 @@
  */
 import type { EligibleLinkTab, TabId, TabLinkGroup } from '../types'
 
-/** The kinds of tab whose selection can follow another. */
-export const LINKABLE_KINDS = ['note', 'files', 'plex'] as const
-
-/** Whether a tab of this kind can be linked. */
-export function isLinkableKind(kind: string | undefined): boolean {
-  return LINKABLE_KINDS.some((one) => one === kind)
-}
-
 /** What the eligibility is read from. */
 export interface EligibilityInput {
   /** The tab a link would leave. */
   readonly from: TabId
   readonly tabs: readonly { readonly id: TabId; readonly title: string }[]
   getKind(tab: TabId): string | undefined
+  /** Whether the tab's selection can follow another's. */
+  isLinkable(tab: TabId): boolean
   getGroupOf(tab: TabId): TabLinkGroup | null
 }
 
@@ -27,7 +21,7 @@ export function getEligibleTabs(input: EligibilityInput): readonly EligibleLinkT
     .filter((tab) => {
       if (tab.id === input.from) return false
       if (group?.tabs.includes(tab.id)) return false
-      return isLinkableKind(input.getKind(tab.id))
+      return input.isLinkable(tab.id)
     })
     .map((tab) => ({
       id: tab.id,

@@ -6,7 +6,7 @@ import { watch } from 'vue'
 import { core } from './vault'
 import { resolveDeckPreset } from './deckPreset'
 import { runSupport, type CommandTarget, type NoteLookup } from '@/features/command-palette'
-import { AGENT, FILES, PLEX, createWorkspace, fileOpeners, useWindowTabs } from '@/entities/tab'
+import { fileOpeners, useWindowTabs } from '@/entities/tab'
 import { createMessageLog } from '@/shared/notices/messages'
 import { createMediaTypeProbe } from '@/entities/media'
 import { WORDS as words } from '@/shared/words'
@@ -118,10 +118,7 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
         return
       }
     }
-    const plex = await held.openTabOfKind(PLEX)
-    const talk = await held.openTabOfKind(AGENT)
-    const tree = await held.openTabOfKind(FILES)
-    held.layout.value = createWorkspace(plex, talk, tree)
+    await held.openPlacedTabs()
   }
 
   useAppBootstrap({
@@ -200,7 +197,7 @@ function initWindowServices(
     day: () => settingsHolder.current!.dayBegins.day.value,
   })
 
-  const tabSync = useTabSync({ held: base.held, tabLinks: base.tabLinks, editing })
+  const tabSync = useTabSync({ held: base.held, tabLinks: base.tabLinks })
 
   const window = useWindowDisplay(
     core,

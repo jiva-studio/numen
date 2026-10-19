@@ -10,6 +10,7 @@ interface Entry {
   id: string
   title: string
   kind?: string
+  icon?: object
   openTab?: Record<string, string>
   /** The tab is listed but the window cannot resolve it. */
   unresolved?: boolean
@@ -26,7 +27,7 @@ const create = (entries: Entry[], front: { id: string; kind: string } | null = n
       if (!one || one.unresolved) return undefined
       return {
         state: {},
-        kind: { kind: one.kind ?? 'note', getOpenTab: () => one.openTab },
+        kind: { kind: one.kind ?? 'note', icon: one.icon, getOpenTab: () => one.openTab },
       }
     },
   } as unknown as Parameters<typeof useOpenTabs>[0]['windowTabs']
@@ -146,5 +147,14 @@ describe('the tab icon', () => {
     const held = create([])
 
     expect(held.getTabIcon('missing')).toBe(findTabKindIcon(''))
+  })
+})
+
+describe('the tab icon a kind declares', () => {
+  it('is drawn in place of the one the window keeps for that kind', () => {
+    const icon = { name: 'DeclaredIcon' }
+    const held = create([{ id: 'p', title: 'P', kind: 'agent', icon }])
+
+    expect(held.getTabIcon('p')).toBe(icon)
   })
 })

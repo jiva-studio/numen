@@ -18,14 +18,14 @@ import {
 import { closeTab, openTab, openTabBeside, pane, paneById, getPanes } from '@numen/ui'
 import type { Tab, Workspace } from '@numen/ui'
 import type { ActiveTab, AnyTabKind, KindTab, WindowHandle, WindowTab } from '../lib/kinds'
-import { generateId } from '../lib/workspace'
+import { createWorkspace, generateId } from '../lib/workspace'
 import { createUnavailableKind } from '../lib/unavailable'
 
 /** The identity a pane made by a split is filed under. */
 const generatePaneId = () => crypto.randomUUID()
 
 export function useWindowTabs() {
-  const { byKind, registerKinds, registerKind } = createTabRegistry()
+  const { byKind, registerKinds, registerKind, hasKind } = createTabRegistry()
   const { scopes, drop } = createTabScopes()
   const open = shallowRef<ReadonlyMap<string, WindowTab>>(new Map())
   const layout = ref<Workspace>({
@@ -46,6 +46,9 @@ export function useWindowTabs() {
   const openers = createTabOpeners({ open, layout, byKind, scopes, drop })
   const closers = createTabClosers({ open, layout, drop })
   const handle = createWindowHandle({ ...openers, ...queries })
+  const openPlacedTabs = async () => {
+    layout.value = await createPlacedWorkspace([...byKind.values()], openers.createTab)
+  }
   const onKeyPress = (event: KeyboardEvent): boolean =>
     dispatchTabKeyPress(layout.value, open.value, event)
 
@@ -55,6 +58,8 @@ export function useWindowTabs() {
     handle,
     registerKinds,
     registerKind,
+    hasKind,
+    openPlacedTabs,
     getTab: queries.getTab,
     getTabStateIn: queries.getTabStateIn,
     createTab: openers.createTab,
@@ -83,7 +88,29 @@ function createTabRegistry() {
       if (byKind.get(kind.kind) === kind) byKind.delete(kind.kind)
     }
   }
-  return { byKind, registerKinds, registerKind }
+  const hasKind = (kind: string): boolean => byKind.has(kind)
+  return { byKind, registerKinds, registerKind, hasKind }
+}
+
+/** The pane a placed kind opens in, the main one first, and its place there. */
+const comparePlacement = (one: AnyTabKind, other: AnyTabKind): number => {
+  const rank = (kind: AnyTabKind) => (kind.placement?.pane === 'main' ? 0 : 1)
+  return rank(one) - rank(other) || (one.placement?.order ?? 0) - (other.placement?.order ?? 0)
+}
+
+/** A tab of every kind that declares a placement, laid out as each declares. */
+async function createPlacedWorkspace(
+  kinds: readonly AnyTabKind[],
+  createTab: (kind: string) => Promise<string>,
+): Promise<Workspace> {
+  const main: string[] = []
+  const aside: string[] = []
+  for (const one of kinds.filter((kind) => kind.placement).sort(comparePlacement)) {
+    const id = await createTab(one.kind)
+    if (one.placement?.pane === 'main') main.push(id)
+    else aside.push(id)
+  }
+  return createWorkspace(main, aside)
 }
 
 /** Effect scope manager for active tabs. */
@@ -142,7 +169,7 @@ function createTabOpeners(ctx: TabOpenerContext) {
     const id = one.identity ? `${kind}:${one.identity(at)}` : generateId(kind)
     if (ctx.open.value.has(id)) return id
     const scope = effectScope(true)
-    const state = scope.run(() => one.open(at))
+    const state = scope.run(() => one.open(at, id))
     ctx.scopes.set(id, scope)
     ctx.open.value = new Map(ctx.open.value).set(id, { kind: one, state })
     return id
@@ -203,7 +230,7 @@ function createTabClosers(ctx: TabStoreContext) {
   const reconcileTab = (path: string, newKind: string) => {
     if (!path) return
     for (const [id, one] of ctx.open.value) {
-      if (one.kind.kind === newKind || TOOL_KINDS.has(one.kind.kind)) continue
+      if (one.kind.kind === newKind || one.kind.isTool) continue
       if (getTabPath(one) === path) requestClose(id)
     }
   }
@@ -259,9 +286,6 @@ function dispatchTabKeyPress(
   }
   return false
 }
-
-/** Non-file tool tabs that are preserved across file tab reconciliations. */
-const TOOL_KINDS = new Set(['agent', 'files', 'plex', 'settings'])
 
 /** The file path a tab stands on. */
 const getTabPath = (tab: WindowTab): string => {

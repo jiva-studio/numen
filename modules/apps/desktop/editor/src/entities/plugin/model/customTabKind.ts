@@ -23,6 +23,7 @@ import {
   stripMarkdownExtension,
 } from './styles'
 import type { PluginHostDeps } from './types'
+import { pickDeclaredHooks } from './pluginTabKind'
 
 function getReaderTargetSource(path: string | undefined): 'recording' | 'book' | 'other' {
   if (!path) return 'other'
@@ -341,8 +342,6 @@ export function createCustomTabKind(
       const s = state as { path?: string; at?: string } | undefined
       return { path: s?.path ?? s?.at ?? '' }
     },
-    ...(registration.onClose
-      ? { onClose: (state: unknown, id: string) => registration.onClose!(state, id) }
-      : {}),
+    ...pickDeclaredHooks(registration),
   }
 }

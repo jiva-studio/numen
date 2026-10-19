@@ -3,13 +3,14 @@
  * what choosing an item does.
  */
 import { computed, ref } from 'vue'
-import { getEligibleTabs, getLinkedTitle, isLinkableKind } from '../lib/eligibility'
+import { getEligibleTabs, getLinkedTitle } from '../lib/eligibility'
 import type { TabId, TabLinksState } from '../types'
 
 export interface TabLinkMenuDeps {
   readonly tabLinks: TabLinksState
   getTabs(): readonly { readonly id: TabId; readonly title: string }[]
   getKind(tab: TabId): string | undefined
+  isLinkable(tab: TabId): boolean
 }
 
 export function useTabLinkMenu(deps: TabLinkMenuDeps) {
@@ -23,6 +24,7 @@ export function useTabLinkMenu(deps: TabLinkMenuDeps) {
           from: tabId.value,
           tabs: deps.getTabs(),
           getKind: deps.getKind,
+          isLinkable: deps.isLinkable,
           getGroupOf: deps.tabLinks.getGroupOf,
         }),
   )
@@ -39,7 +41,7 @@ export function useTabLinkMenu(deps: TabLinkMenuDeps) {
 
   /** The menu asked for on a tab; a tab of a kind that cannot be linked has none. */
   const open = (tab: TabId, where: { x: number; y: number }): void => {
-    if (!isLinkableKind(deps.getKind(tab))) return
+    if (!deps.isLinkable(tab)) return
     tabId.value = tab
     at.value = where
   }

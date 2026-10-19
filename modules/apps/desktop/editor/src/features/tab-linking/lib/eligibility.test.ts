@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getEligibleTabs, getLinkedTitle, isLinkableKind, LINKABLE_KINDS } from './eligibility'
+import { getEligibleTabs, getLinkedTitle } from './eligibility'
 import type { TabLinkGroup } from '../types'
 
 const TABS = [
@@ -9,21 +9,14 @@ const TABS = [
   { id: 'd', title: 'D' },
 ]
 const KINDS: Record<string, string> = { a: 'note', b: 'files', c: 'agent', d: 'plex' }
+const LINKABLE = new Set(['a', 'b', 'd'])
 
 const input = (groups: Record<string, TabLinkGroup> = {}) => ({
   from: 'a',
   tabs: TABS,
   getKind: (tab: string) => KINDS[tab],
+  isLinkable: (tab: string) => LINKABLE.has(tab),
   getGroupOf: (tab: string) => groups[tab] ?? null,
-})
-
-describe('the kinds of tab that can be linked', () => {
-  it('are notes, files and plexes', () => {
-    expect(LINKABLE_KINDS).toStrictEqual(['note', 'files', 'plex'])
-    expect(['note', 'files', 'plex'].every(isLinkableKind)).toBe(true)
-    expect(isLinkableKind('agent')).toBe(false)
-    expect(isLinkableKind(undefined)).toBe(false)
-  })
 })
 
 describe('the tabs a link may end at', () => {

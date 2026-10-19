@@ -477,3 +477,12 @@ describe('something to ask where the window holds no state for the tab', () => {
     expect(shown).toStrictEqual(['agent-1'])
   })
 })
+
+describe('the agent tab as the window keeps it', () => {
+  it('is a tool the trailing pane opens with, in front of the rest', () => {
+    const { kind } = tabs()
+
+    expect(kind.isTool).toBe(true)
+    expect(kind.placement).toStrictEqual({ pane: 'aside', order: 0 })
+  })
+})

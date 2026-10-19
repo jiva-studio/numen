@@ -53,7 +53,13 @@ describe('the settings tab', () => {
     const held = installation()
     const settings = useSettingsTab(window_().handle, held)
     expect(settings.state.installation).toBe(held)
-    expect(settings.kind.open('')).toBe(settings.state)
+    expect(settings.kind.open('', 'tab')).toBe(settings.state)
+  })
+
+  it('is a tool that no window opens with', () => {
+    const settings = useSettingsTab(window_().handle, installation())
+    expect(settings.kind.isTool).toBe(true)
+    expect(settings.kind).not.toHaveProperty('placement')
   })
 
   it('is called what the settings are called', () => {
@@ -83,7 +89,7 @@ describe('the settings tab', () => {
 
   it('is open once the window opens its tab', () => {
     const settings = useSettingsTab(window_().handle, installation())
-    settings.kind.open('')
+    settings.kind.open('', 'tab')
     expect(settings.isOpen.value).toBe(true)
   })
 

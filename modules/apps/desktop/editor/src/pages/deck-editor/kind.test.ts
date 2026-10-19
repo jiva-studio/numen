@@ -31,7 +31,7 @@ describe('a deck tab opened', () => {
     inside.cardTabPathMap.set('tab-1', 'decks/Animals.md')
     inside.pendingTabIds.set('decks/Animals.md', 'tab-1')
 
-    expect(kind.open('tab-1')).toBe(state)
+    expect(kind.open('tab-1', 'tab')).toBe(state)
 
     expect(inside.store.open).toHaveBeenCalledWith('tab-1', 'decks/Animals.md')
     expect(inside.cardTabPathMap.has('tab-1')).toBe(false)
@@ -45,7 +45,7 @@ describe('a deck tab opened', () => {
   it('opens the note at the path it was asked for where no card tab filed one', () => {
     const { inside, kind } = createInside()
 
-    kind.open('decks/Animals.md')
+    kind.open('decks/Animals.md', 'tab')
 
     expect(inside.store.open).toHaveBeenCalledWith('decks/Animals.md', 'decks/Animals.md')
   })

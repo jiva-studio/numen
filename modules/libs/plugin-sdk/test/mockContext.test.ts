@@ -17,6 +17,29 @@ describe('mock plugin context', () => {
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
   })
 
+  it('keeps a kind that says what its tabs hold, with the hooks it declares', () => {
+    const ctx = createMockPluginContext({ pluginId: 'graph-plugin' })
+    const navigated: string[] = []
+    ctx.registerTabKind<{ here: string }>({
+      kind: 'graph',
+      component: {},
+      open: (at) => ({ here: at }),
+      navigate: (state, path) => {
+        navigated.push(`${state.here} -> ${path}`)
+      },
+      isTool: true,
+      placement: { pane: 'main', order: 0 },
+    })
+
+    const [kind] = ctx.getRegisteredTabKinds()
+    const state = kind?.open?.('Start.md', 'graph:1')
+    void kind?.navigate?.(state, 'Next.md', 'Next')
+
+    expect(state).toStrictEqual({ here: 'Start.md' })
+    expect(navigated).toStrictEqual(['Start.md -> Next.md'])
+    expect(kind?.placement).toStrictEqual({ pane: 'main', order: 0 })
+  })
+
   it('handles command triggers and async handlers', async () => {
     const ctx = createMockPluginContext()
     let executed = false
@@ -115,4 +138,3 @@ describe('mock plugin context', () => {
     expect(result).toBe('url:https://example.com')
   })
 })
-

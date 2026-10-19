@@ -19,6 +19,7 @@ const setup = (groups: Record<string, TabLinkGroup> = {}, targets: string[] = []
       { id: 'c', title: 'C' },
     ],
     getKind: (tab) => KINDS[tab],
+    isLinkable: (tab) => tab !== 'c' && tab in KINDS,
   })
   return { menu, tabLinks }
 }

@@ -72,7 +72,7 @@ describe('createReaderTabKind', () => {
       title: 'EPUB Reader',
     })
 
-    const openState = readerKind.open('books/alice.epub') as {
+    const openState = readerKind.open('books/alice.epub', 'tab') as {
       path: string
       file: string
       title: string
@@ -117,7 +117,7 @@ describe('createCustomTabKind', () => {
       title: 'Markdown Note',
     })
 
-    const openState = customKind.open('notes/ideas.md') as {
+    const openState = customKind.open('notes/ideas.md', 'tab') as {
       at: string
       path: string
       title: string
@@ -166,7 +166,7 @@ describe('createCustomTabKind', () => {
       },
     )
 
-    const openState = customKind.open('notes/test.md') as {
+    const openState = customKind.open('notes/test.md', 'tab') as {
       note: { value: { path: string; body: string } }
       body: { value: string }
       updateBody: (body: string) => void
@@ -267,7 +267,7 @@ describe('createCustomTabKind (actions)', () => {
       },
     )
 
-    const state = kind.open('decks/test.md') as Record<string, unknown>
+    const state = kind.open('decks/test.md', 'tab') as Record<string, unknown>
     expect(typeof state.exportDeck).toBe('function')
     expect(typeof state.syncDeck).toBe('function')
 
@@ -295,7 +295,7 @@ describe('createCustomTabKind (actions)', () => {
       },
     )
 
-    const state = kind.open('decks/legacy.md') as {
+    const state = kind.open('decks/legacy.md', 'tab') as {
       addCard: (stencil: string, values: readonly { field: string; text: string }[]) => void
     }
     expect(typeof state.addCard).toBe('function')
@@ -327,7 +327,7 @@ describe('createCustomTabKind (actions)', () => {
       },
     )
 
-    const state = kind.open('decks/secure.md') as Record<string, unknown>
+    const state = kind.open('decks/secure.md', 'tab') as Record<string, unknown>
     expect(state.path).toBe('decks/secure.md')
     expect(state.file).toBeUndefined()
     expect(typeof state.path).toBe('string')

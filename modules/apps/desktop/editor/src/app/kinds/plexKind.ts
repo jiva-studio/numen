@@ -5,6 +5,7 @@ import { watch } from 'vue'
 import type { TabKind, WindowHandle } from '@/entities/tab'
 import { PLEX } from '@/entities/tab'
 import type { PathRename } from '@/shared/paths'
+import { isNotePath } from '../useTabSync'
 import {
   usePlexTab,
   PlexTab,
@@ -55,6 +56,11 @@ function createPlexTabDefinition(
       return { path, title: (path && state.getName(path)) || path }
     },
     getOpenTab: (state) => ({ path: state.view.here.value }),
+    navigate: async (state, path) => {
+      if (isNotePath(path) && state.view.here.value !== path) await state.view.go(path)
+    },
+    isTool: true,
+    placement: { pane: 'main', order: 0 },
   }
 }
 

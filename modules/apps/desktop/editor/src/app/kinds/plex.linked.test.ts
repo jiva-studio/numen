@@ -49,7 +49,7 @@ const createPlexLinkedFixture = (neighbourhoodPath: string, neighbourhoodTitle: 
     },
   } as never
 
-  const tabSync = useTabSync({ held, tabLinks, editing: editingMock })
+  const tabSync = useTabSync({ held, tabLinks })
 
   const plexKind = createPlexKind({
     core: {
@@ -88,6 +88,7 @@ describe('createPlexKind with linked tabs', () => {
       open: () => ({}),
       getTitle: () => 'My Note',
       pane: {},
+      navigate: loadInTabMock,
     } as never
 
     held.registerKinds([plexKind.kind, noteKind])
@@ -102,13 +103,15 @@ describe('createPlexKind with linked tabs', () => {
     if (!plexState) throw new Error('plexState expected')
     await plexState.view.go('Start.md')
 
-    const targetNode = plexState.picture.value.nodes.find((n: MockPlexNode) => n.title === 'Target Title')
+    const targetNode = plexState.picture.value.nodes.find(
+      (n: MockPlexNode) => n.title === 'Target Title',
+    )
     expect(targetNode).toBeDefined()
     if (!targetNode) throw new Error('targetNode expected')
 
     plexState.openNode(targetNode.id)
     expect(loadInTabMock).toHaveBeenCalledWith(
-      noteTabId.replace(/^note:/, ''),
+      held.getTab(noteTabId)?.state,
       'Target.md',
       'Target Title',
     )
@@ -131,6 +134,7 @@ describe('createPlexKind with linked tabs', () => {
       open: () => filesStateMock,
       getTitle: () => 'Files',
       pane: {},
+      navigate: (state: typeof filesStateMock, path: string) => state.list.revealPath(path),
     } as never
 
     held.registerKinds([plexKind.kind, filesKind])
@@ -145,7 +149,9 @@ describe('createPlexKind with linked tabs', () => {
     if (!plexState) throw new Error('plexState expected')
     await plexState.view.go('Start.md')
 
-    const targetNode = plexState.picture.value.nodes.find((n: MockPlexNode) => n.title === 'Selected Title')
+    const targetNode = plexState.picture.value.nodes.find(
+      (n: MockPlexNode) => n.title === 'Selected Title',
+    )
     expect(targetNode).toBeDefined()
     if (!targetNode) throw new Error('targetNode expected')
 

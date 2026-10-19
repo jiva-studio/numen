@@ -18,6 +18,7 @@ const setup = () => {
     startWindow: noteLater('startWindow'),
     startEditing: note('startEditing'),
     startLayout: noteLater('startLayout'),
+    startPlugins: noteLater('startPlugins'),
     closeWindow: note('closeWindow'),
     closeEditing: note('closeEditing'),
     closeTabs: note('closeTabs'),
@@ -35,7 +36,7 @@ const setup = () => {
 }
 
 describe('a window mounting', () => {
-  it('loads the vaults, settings and layout, then starts the window and the editing', async () => {
+  it('loads the vaults, settings, plugins and layout, then starts the window and the editing', async () => {
     const { calls } = setup()
 
     await new Promise((resolve) => setTimeout(resolve, 0))
@@ -43,6 +44,7 @@ describe('a window mounting', () => {
     expect(calls).toStrictEqual([
       'loadVaults',
       'startSettings',
+      'startPlugins',
       'startLayout',
       'startWindow',
       'startEditing',

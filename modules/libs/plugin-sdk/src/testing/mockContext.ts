@@ -22,16 +22,17 @@ export interface MockPluginContext extends PluginContext {
 
 // createMockPluginContext builds a controllable context for unit tests.
 export function createMockPluginContext(
-  initialValues?: Partial<PluginContext> & { pluginId?: string; initialSettings?: Record<string, unknown> },
+  initialValues?: Partial<PluginContext> & {
+    pluginId?: string
+    initialSettings?: Record<string, unknown>
+  },
 ): MockPluginContext {
   const pluginId = initialValues?.pluginId ?? 'test.plugin'
   const readers: ReaderRegistration[] = []
   const tabKinds: TabKindRegistration[] = []
   const commands: CommandRegistration[] = []
   const agentProviders: AgentProviderRegistration[] = []
-  const settings = new Map<string, unknown>(
-    Object.entries(initialValues?.initialSettings ?? {}),
-  )
+  const settings = new Map<string, unknown>(Object.entries(initialValues?.initialSettings ?? {}))
   const settingListeners = new Map<string, Set<(val: unknown) => void>>()
   const vaultListeners = new Set<(event: VaultChangeEvent) => void | Promise<void>>()
   const fileSelectListeners = new Set<(event: FileSelectEvent) => void | Promise<void>>()
@@ -59,7 +60,7 @@ export function createMockPluginContext(
       return addDisposable(disposable)
     },
 
-    registerTabKind(registration: TabKindRegistration): Disposable {
+    registerTabKind<State>(registration: TabKindRegistration<State>): Disposable {
       tabKinds.push(registration)
       const disposable: Disposable = {
         dispose: () => {

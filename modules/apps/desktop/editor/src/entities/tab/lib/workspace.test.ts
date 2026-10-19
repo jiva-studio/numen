@@ -78,7 +78,7 @@ describe('the name a conversation is answered under', () => {
 })
 
 describe('the layout the window opens with', () => {
-  const createLayout = () => createWorkspace('plex:one', 'agent:one', 'files:tree')
+  const createLayout = () => createWorkspace(['plex:one'], ['agent:one', 'files:tree'])
 
   it('holds two panes, the plex alone and the agent over the files', () => {
     const layout = createLayout()
@@ -116,5 +116,27 @@ describe('the layout the window opens with', () => {
     const layout = createLayout()
     expect(layout.focus).toBe('main')
     expect(getPanes(layout.root).find((one) => one.id === 'main')?.tabs).toStrictEqual(['plex:one'])
+  })
+})
+
+describe('the layout of a window with one side empty', () => {
+  it('is the main tabs alone where nothing stands aside', () => {
+    const layout = createWorkspace(['plex:one'], [])
+    expect(getPanes(layout.root).map((one) => [one.id, one.tabs])).toStrictEqual([
+      ['main', ['plex:one']],
+    ])
+    expect(layout.focus).toBe('main')
+  })
+
+  it('is the aside tabs, as the whole window, where nothing stands in the main pane', () => {
+    const layout = createWorkspace([], ['agent:one', 'files:tree'])
+    expect(getPanes(layout.root).map((one) => [one.id, one.tabs, one.active])).toStrictEqual([
+      ['main', ['agent:one', 'files:tree'], 'agent:one'],
+    ])
+  })
+
+  it('is one empty pane where no kind is placed', () => {
+    const layout = createWorkspace([], [])
+    expect(getPanes(layout.root).map((one) => one.tabs)).toStrictEqual([[]])
   })
 })

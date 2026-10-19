@@ -37,6 +37,8 @@ export function createAgentKind(
       return true
     },
     getTarget: () => about(),
+    isTool: true,
+    placement: { pane: 'aside', order: 0 },
   }
 
   /** Something to ask, put in the agent the person was last in and put in front. */

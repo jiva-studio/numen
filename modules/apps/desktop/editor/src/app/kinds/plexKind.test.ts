@@ -520,3 +520,33 @@ describe('every plex asked again, in the cases that tell', () => {
     expect(one.views[0]?.went).toStrictEqual([])
   })
 })
+
+describe('a plex tab a linked tab moves', () => {
+  it('goes to the note it is moved to', async () => {
+    const one = window('Opening.md')
+    const { state } = await one.openTab('Start.md')
+
+    await one.kind.navigate?.(state, 'Next.md', 'Next')
+
+    expect(state.view.here.value).toBe('Next.md')
+  })
+
+  it('stays where it stands when moved to a file that is not a note, or to where it is', async () => {
+    const one = window('Opening.md')
+    const { state } = await one.openTab('Start.md')
+    const go = vi.spyOn(state.view, 'go')
+
+    await one.kind.navigate?.(state, 'Books/Guide.pdf', '')
+    await one.kind.navigate?.(state, 'Start.md', '')
+
+    expect(go).not.toHaveBeenCalled()
+    expect(state.view.here.value).toBe('Start.md')
+  })
+
+  it('is a tool the main pane opens with', () => {
+    const one = window()
+
+    expect(one.kind.isTool).toBe(true)
+    expect(one.kind.placement).toStrictEqual({ pane: 'main', order: 0 })
+  })
+})

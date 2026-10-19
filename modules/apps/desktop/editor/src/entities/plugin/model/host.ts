@@ -18,6 +18,7 @@ import { addListener, notifyListeners, runCommand, type PluginListener } from '.
 import { extractPaletteCommands } from './palette'
 import { matchesShortcut } from './shortcuts'
 import { createPluginPaneWrapper, createReaderTabKind, createCustomTabKind } from './customTabKind'
+import { createDeclaredTabKind, isDeclaredTabKind } from './pluginTabKind'
 import type { PluginContextHost, PluginHostDeps } from './types'
 
 export { createPluginPaneWrapper }
@@ -175,9 +176,10 @@ function registerTabKindEntry(
   if (BUILTIN_TAB_KINDS.has(registration.kind)) {
     return { dispose: () => {} }
   }
-  const cleanups: (() => void)[] = [
-    deps.registerKind(createCustomTabKind(pluginId, registration, { ...deps, getContext })),
-  ]
+  const kind = isDeclaredTabKind(registration)
+    ? createDeclaredTabKind(pluginId, registration, getContext)
+    : createCustomTabKind(pluginId, registration, { ...deps, getContext })
+  const cleanups: (() => void)[] = [deps.registerKind(kind)]
   if (deps.registerEditor) {
     const unreg = deps.registerEditor(
       registration.kind,

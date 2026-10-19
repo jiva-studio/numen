@@ -24,6 +24,14 @@ import {
 import { book, editor, reader } from './stubs'
 
 const App = (await import('@/app/App.vue')).default
+const { pluginCatalog } = await import('@/app/pluginCatalog')
+
+/**
+ * Every plugin frontend, imported before a window is drawn. A window activates its
+ * plugins before it lays out its tabs, and a test reads the layout a moment after
+ * mounting.
+ */
+const pluginsImported = Promise.all(Object.values(pluginCatalog.loaders).map((load) => load()))
 
 /** A moment for whatever the window asked the vault for to come back. */
 const settle = () => new Promise((done) => setTimeout(done, 0))
@@ -48,6 +56,7 @@ afterEach(() => {
  * themselves are the window's own, and they are what is asked about here.
  */
 async function mountWindow() {
+  await pluginsImported
   const window = mount(App, {
     global: {
       // A stub is named by the binding the component is drawn through, and the

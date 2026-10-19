@@ -1,5 +1,6 @@
 /** A kind of tab: what one of its tabs holds, and what a kind may ask of the window. */
 import type { Component } from 'vue'
+import type { TabPlacement } from '@numen/plugin-sdk'
 import type { Source } from '@/entities/file/@x/tab'
 import type { ProgressOf } from './tab'
 
@@ -31,7 +32,7 @@ export interface TabKind<TabState, K extends string = string> {
    * It is made at once, so whatever it watches is caught by the tab's scope
    * and let go of with the tab.
    */
-  open(at: string): TabState
+  open(at: string, id: string): TabState
   /** What the tab is called, as what it holds now stands. */
   getTitle?(state: TabState): string
   /** The one word the tab carries beside its title, or nothing. */
@@ -67,6 +68,17 @@ export interface TabKind<TabState, K extends string = string> {
    * says nothing here lets go the way a tab of it closes.
    */
   onDestroy?(state: TabState, id: string): void
+  /**
+   * The tab moves to a path a tab linked to it moved to. A kind that declares
+   * it can be linked.
+   */
+  navigate?(state: TabState, path: string, title: string): void | Promise<void>
+  /** Its tabs stand beside files: a file opened on a path never closes one of them. */
+  readonly isTool?: boolean
+  /** The icon its tabs carry before their title. */
+  readonly icon?: Component
+  /** Where a tab of it opens in a window that starts with nothing to restore. */
+  readonly placement?: TabPlacement
 }
 
 /**
