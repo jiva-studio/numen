@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -156,6 +157,7 @@ func createTestAgentPluginTree(t *testing.T, dir string) {
 func TestAgentBridge(t *testing.T) {
 	serverImpl := &mockAgentServer{}
 	mux := http.NewServeMux()
+	testsupport.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewAgentServiceHandler(serverImpl))
 
 	server := httptest.NewServer(mux)
@@ -289,6 +291,7 @@ func (s *floodAgentServer) AskAgent(
 
 func TestAgentBridge_UnreadChannelDoesNotDeadlock(t *testing.T) {
 	mux := http.NewServeMux()
+	testsupport.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewAgentServiceHandler(&floodAgentServer{}))
 
 	server := httptest.NewServer(mux)
@@ -368,6 +371,7 @@ func openTestBridge(t *testing.T, handler numenv1connect.AgentServiceHandler) *A
 	t.Helper()
 
 	mux := http.NewServeMux()
+	testsupport.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewAgentServiceHandler(handler))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)

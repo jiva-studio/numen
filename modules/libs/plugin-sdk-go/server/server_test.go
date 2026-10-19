@@ -103,6 +103,9 @@ func TestServerLifecycleRPC(t *testing.T) {
 	if pingResp.Msg.GetStatus() != "ok" {
 		t.Errorf("status = %q, want 'ok'", pingResp.Msg.GetStatus())
 	}
+	if got := pingResp.Msg.GetProtocol(); got != ProtocolVersion {
+		t.Errorf("protocol = %d, want %d", got, ProtocolVersion)
+	}
 
 	// 2. Configure
 	confResp, err := client.Configure(ctx, connect.NewRequest(&numenv1.ConfigureRequest{

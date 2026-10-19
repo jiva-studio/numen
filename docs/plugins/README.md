@@ -18,7 +18,8 @@ Plugins communicating over Connect-RPC use loopback TCP:
   ```
   NUMEN_READY port=12345
   ```
-- All plugins implement the `numen.v1.PluginLifecycleService` providing `Ping` and `Shutdown` endpoints.
+- All plugins implement the `numen.v1.PluginLifecycleService` providing `Ping` and `Shutdown` endpoints. `Ping` answers with the protocol version the plugin speaks; the Go SDK fills it in.
+- After the handshake the host calls `Ping`. A plugin whose protocol differs from its manifest's `protocol` or from the host's is stopped and reported failed at once.
 - A plugin whose `lifecycle.idleTimeoutSeconds` is above zero is terminated after that many seconds without active clients.
 
 ---

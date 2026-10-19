@@ -20,6 +20,8 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 )
 
 type mockDocumentServer struct {
@@ -97,6 +99,7 @@ func (u *unnammedReadSeekCloser) Close() error {
 func TestDocumentBridge_PreservesTempFileUntilClose(t *testing.T) {
 	mockServer := &mockDocumentServer{}
 	mux := http.NewServeMux()
+	testsupport.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewDocumentServiceHandler(mockServer))
 
 	server := httptest.NewServer(mux)

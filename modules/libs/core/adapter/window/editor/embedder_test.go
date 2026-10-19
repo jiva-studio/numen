@@ -96,6 +96,7 @@ func TestTheEmbedderConfiguredIsTheOneOnHand(t *testing.T) {
 	}
 
 	mux := http.NewServeMux()
+	testsupport.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(&mockEmbeddingServer{}))
 	server := httptest.NewServer(mux)
 	defer server.Close()

@@ -215,6 +215,14 @@ func ReadManifest(r io.Reader) (PluginManifest, error) {
 	return m, nil
 }
 
+// GetProtocol returns the plugin protocol the manifest declares. An absent protocol is 1.
+func (m PluginManifest) GetProtocol() int {
+	if m.Protocol == 0 {
+		return 1
+	}
+	return m.Protocol
+}
+
 // Validate checks the manifest and returns every violation joined into one error.
 func (m PluginManifest) Validate() error {
 	return errors.Join(m.ListIssues()...)

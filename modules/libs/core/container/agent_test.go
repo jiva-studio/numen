@@ -25,6 +25,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -135,6 +136,7 @@ func hostWith(t *testing.T, capabilities map[string][]string, servers map[string
 	ports := map[string]int{}
 	for id, served := range servers {
 		mux := http.NewServeMux()
+		testsupport.HandlePluginLifecycle(mux)
 		mux.Handle(numenv1connect.NewAgentServiceHandler(served))
 		mux.Handle(numenv1connect.NewCompletionServiceHandler(served))
 		server := httptest.NewServer(mux)

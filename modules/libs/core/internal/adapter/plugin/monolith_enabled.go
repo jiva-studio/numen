@@ -254,7 +254,8 @@ func (s *monolithLifecycleServer) Ping(
 	_ *connect.Request[v1.PingRequest],
 ) (*connect.Response[v1.PingResponse], error) {
 	return connect.NewResponse(&v1.PingResponse{
-		Status: "ok",
+		Status:   "ok",
+		Protocol: port.PluginProtocolVersion,
 	}), nil
 }
 
@@ -293,6 +294,9 @@ func (h *Host) activatePlugin(ctx context.Context, p DiscoveredPlugin, sup *Supe
 		Port:      0,
 		Token:     "monolith",
 		Transport: transport,
+	}
+	if err := checkPluginProtocol(ctx, p.Manifest, endpoint); err != nil {
+		return emptyEndpoint(), err
 	}
 
 	now := time.Now()

@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -109,6 +110,7 @@ func createTestProofreadingPluginTree(t *testing.T, dir string) {
 func openTestProofreader(t *testing.T, mock *mockProofreadingServer) (*ProofreaderBridge, *Host) {
 	t.Helper()
 	mux := http.NewServeMux()
+	testsupport.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewProofreadingServiceHandler(mock))
 
 	server := httptest.NewServer(mux)

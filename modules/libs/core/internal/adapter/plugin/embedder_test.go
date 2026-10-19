@@ -18,6 +18,8 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 )
 
 type mockEmbeddingServer struct {
@@ -81,6 +83,7 @@ func TestOpenEmbedderBridgeNoPlugin(t *testing.T) {
 func TestEmbedderBridge(t *testing.T) {
 	mockServer := &mockEmbeddingServer{}
 	mux := http.NewServeMux()
+	testsupport.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(mockServer))
 
 	server := httptest.NewServer(mux)
