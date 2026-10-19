@@ -6,7 +6,7 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { onMounted, ref, type Component } from 'vue'
+import { nextTick, onMounted, ref, type Component } from 'vue'
 import { Copy, CornerDownRight, FileText } from '@lucide/vue'
 import Menu from './Menu.vue'
 import { MENU_TRIGGERS_ALL, type MenuItem, type MenuTrigger } from './item'
@@ -505,5 +505,95 @@ export const TypingToJump: Story = {
     const menu = within(menuElement()!)
     await userEvent.keyboard('c')
     await expect(menu.getByRole('menuitem', { name: 'Copy path' })).toHaveFocus()
+  },
+}
+
+/**
+ * A menu opened near the bottom of a scrolling container, which scrolls
+ * itself as the menu opens. The menu stays open through that scroll, and a
+ * scroll the person makes afterwards closes it.
+ */
+const renderScrollingOpening = (args: Knobs) => ({
+  components: { Menu },
+  setup() {
+    const open = ref(false)
+    const at = ref({ x: 0, y: 0 })
+    const from = ref<HTMLElement | null>(null)
+    const scroller = ref<HTMLElement | null>(null)
+
+    const ask = async (event: MouseEvent) => {
+      from.value = event.currentTarget as HTMLElement
+      const box = from.value.getBoundingClientRect()
+      at.value = { x: box.left, y: box.bottom }
+      open.value = true
+      await nextTick()
+      scroller.value?.scrollTo({ top: scroller.value.scrollHeight })
+    }
+
+    return { args, open, at, from, scroller, ask }
+  },
+  template: `
+    <div
+      ref="scroller"
+      data-scroller
+      class="numen"
+      style="height:100vh;overflow-y:auto;background:var(--numen-surface)"
+    >
+      <div style="height:150vh"></div>
+      <button
+        type="button"
+        style="margin-inline-start:40px;padding:10px 18px;border-radius:6px;border:1px solid var(--numen-rule);background:var(--numen-raised);color:var(--numen-ink);font-family:var(--numen-font-sans)"
+        @click="ask"
+      >Language</button>
+      <div style="height:40vh"></div>
+      <Menu
+        :items="args.items"
+        :at="at"
+        :open="open"
+        :from="from"
+        @dismiss="open = false; args.onDismiss()"
+      />
+    </div>
+  `,
+})
+
+const scrollerOf = (canvasElement: HTMLElement) =>
+  canvasElement.querySelector<HTMLElement>('[data-scroller]')!
+
+export const OpenedWhileTheContainerScrolls: Story = {
+  render: renderScrollingOpening,
+  play: async ({ args, canvasElement }) => {
+    const scroller = scrollerOf(canvasElement)
+    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Language' }))
+    await waitFor(async () => {
+      await expect(scroller.scrollTop).toBeGreaterThan(0)
+    })
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+
+    await expect(menuElement()).not.toBeNull()
+    await expect(args.onDismiss).not.toHaveBeenCalled()
+  },
+}
+
+export const ClosedByAScrollOfThePerson: Story = {
+  render: renderScrollingOpening,
+  play: async ({ args, canvasElement }) => {
+    const scroller = scrollerOf(canvasElement)
+    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Language' }))
+    await waitFor(async () => {
+      await expect(scroller.scrollTop).toBeGreaterThan(0)
+    })
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    await expect(menuElement()).not.toBeNull()
+
+    scroller.dispatchEvent(new WheelEvent('wheel', { deltaY: -120, bubbles: true }))
+    scroller.scrollTo({ top: 0 })
+
+    await waitFor(async () => {
+      await expect(args.onDismiss).toHaveBeenCalled()
+    })
+    await waitFor(async () => {
+      await expect(menuElement()).toBeNull()
+    })
   },
 }

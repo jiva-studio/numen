@@ -54,9 +54,35 @@ describe('what dismisses the menu', () => {
     expect(dismiss).toHaveBeenCalledTimes(1)
   })
 
-  it('is a scroll of any element, which does not bubble', () => {
+  it('is a scroll of any element after input, which does not bubble', () => {
     const { dismiss, ground } = setup()
     ground.listen()
+    window.dispatchEvent(new Event('wheel'))
+    createElement().dispatchEvent(new Event('scroll'))
+    expect(dismiss).toHaveBeenCalledTimes(1)
+  })
+
+  it('is not a scroll before any input, as opening the menu causes one', () => {
+    const { dismiss, ground } = setup()
+    ground.listen()
+    createElement().dispatchEvent(new Event('scroll'))
+    expect(dismiss).not.toHaveBeenCalled()
+  })
+
+  it('is not a scroll after input from an earlier opening', () => {
+    const { dismiss, ground } = setup()
+    ground.listen()
+    window.dispatchEvent(new Event('wheel'))
+    ground.release()
+    ground.listen()
+    createElement().dispatchEvent(new Event('scroll'))
+    expect(dismiss).not.toHaveBeenCalled()
+  })
+
+  it.each(['wheel', 'touchstart', 'keydown'])('is a scroll after %s', (name) => {
+    const { dismiss, ground } = setup()
+    ground.listen()
+    window.dispatchEvent(new Event(name))
     createElement().dispatchEvent(new Event('scroll'))
     expect(dismiss).toHaveBeenCalledTimes(1)
   })
@@ -93,6 +119,7 @@ describe('what dismisses the menu', () => {
     const { dismiss, ground } = setup(menuElement)
     ground.listen()
 
+    window.dispatchEvent(new Event('wheel'))
     inside.dispatchEvent(new Event('pointerdown', { bubbles: true }))
     inside.dispatchEvent(new Event('scroll'))
     expect(dismiss).not.toHaveBeenCalled()
@@ -101,6 +128,7 @@ describe('what dismisses the menu', () => {
 
 describe('letting go of the window', () => {
   const fire = (): void => {
+    window.dispatchEvent(new Event('wheel'))
     createElement().dispatchEvent(new Event('pointerdown', { bubbles: true }))
     createElement().dispatchEvent(new Event('scroll'))
     window.dispatchEvent(new Event('resize'))
