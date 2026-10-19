@@ -28,18 +28,18 @@ type AgentModel struct {
 	Title string `json:"title"`
 }
 
-// modelCatalogue keeps the models the endpoint listed, for as long as the key and the endpoint it
-// was asked with stay the same. A failure is kept as none.
+// modelCatalogue caches the models the endpoint listed, for as long as the key and the endpoint it
+// was asked with stay the same. A failure caches none.
 type modelCatalogue struct {
-	mu     sync.Mutex
-	key    string
-	base   string
-	kept   []AgentModel
-	isKept bool
+	mu       sync.Mutex
+	key      string
+	base     string
+	cached   []AgentModel
+	isCached bool
 }
 
 // update changes the key and the endpoint the models are asked with, for each the values give, and
-// drops what was kept.
+// drops what is cached.
 func (c *modelCatalogue) update(values map[string]string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -49,7 +49,7 @@ func (c *modelCatalogue) update(values map[string]string) {
 	if base, ok := values["baseUrl"]; ok {
 		c.base = base
 	}
-	c.kept, c.isKept = nil, false
+	c.cached, c.isCached = nil, false
 }
 
 // credentials are the key and the endpoint the models are asked with.
@@ -59,13 +59,13 @@ func (c *modelCatalogue) credentials() (key, base string) {
 	return c.key, c.base
 }
 
-// get are the models the endpoint lists: the ones kept, or those it lists now.
+// get are the models the endpoint lists: the cached ones, or those it lists now.
 func (c *modelCatalogue) get(ctx context.Context) []AgentModel {
 	c.mu.Lock()
-	if c.isKept {
-		kept := c.kept
+	if c.isCached {
+		cached := c.cached
 		c.mu.Unlock()
-		return kept
+		return cached
 	}
 	key, base := c.key, c.base
 	c.mu.Unlock()
@@ -80,11 +80,11 @@ func (c *modelCatalogue) get(ctx context.Context) []AgentModel {
 		models = nil
 	}
 
-	// What was listed under a key and an endpoint that have been changed since is not kept.
+	// What was listed under a key and an endpoint that have been changed since is not cached.
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.key == key && c.base == base {
-		c.kept, c.isKept = models, true
+		c.cached, c.isCached = models, true
 	}
 	return models
 }

@@ -3,11 +3,13 @@
  * change of size, and Escape.
  *
  * Each of them puts the menu away, and what putting it away comes to is the
- * caller's.
+ * caller's. A scroll puts it away once the person has given input since the
+ * menu opened; the scroll that opening itself causes does not.
  */
 import { onBeforeUnmount } from 'vue'
 import type { ShallowRef } from 'vue'
 import { isInside } from './outside'
+import { MENU_INPUT_EVENTS, createScrollGate } from './scroll'
 
 export interface MenuGroundState {
   /** The window listened to, and listened to once however often this is called. */
@@ -29,6 +31,15 @@ export function useMenuGround(
     dismiss()
   }
 
+  const gate = createScrollGate()
+
+  const dismissOutsideScroll = (event: Event): void => {
+    if (!gate.isUserScroll()) return
+    dismissOutside(event)
+  }
+
+  const noteInput = (): void => gate.noteInput()
+
   const onWindowKey = (event: KeyboardEvent): void => {
     if (event.key !== 'Escape') return
     event.preventDefault()
@@ -37,14 +48,21 @@ export function useMenuGround(
 
   const listen = (): void => {
     window.addEventListener('pointerdown', dismissOutside, true)
-    window.addEventListener('scroll', dismissOutside, true)
+    MENU_INPUT_EVENTS.forEach((name) =>
+      window.addEventListener(name, noteInput, { capture: true, passive: true }),
+    )
+    window.addEventListener('scroll', dismissOutsideScroll, true)
     window.addEventListener('resize', dismissOutside)
     window.addEventListener('keydown', onWindowKey)
   }
 
   const release = (): void => {
+    gate.reset()
     window.removeEventListener('pointerdown', dismissOutside, true)
-    window.removeEventListener('scroll', dismissOutside, true)
+    MENU_INPUT_EVENTS.forEach((name) =>
+      window.removeEventListener(name, noteInput, { capture: true }),
+    )
+    window.removeEventListener('scroll', dismissOutsideScroll, true)
     window.removeEventListener('resize', dismissOutside)
     window.removeEventListener('keydown', onWindowKey)
   }

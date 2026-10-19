@@ -440,3 +440,36 @@ func TestAChangeBeingWrittenIsADraft(t *testing.T) {
 		t.Errorf("got %+v, want %+v", got, want)
 	}
 }
+
+type failingAgentServer struct {
+	numenv1connect.UnimplementedAgentServiceHandler
+}
+
+func (s *failingAgentServer) AskAgent(
+	_ context.Context,
+	_ *connect.Request[v1.AskAgentRequest],
+	stream *connect.ServerStream[v1.AskAgentResponse],
+) error {
+	_ = stream.Send(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_Said{Said: "partial"}})
+	return connect.NewError(connect.CodeInternal, fmt.Errorf("the program crashed"))
+}
+
+// A stream the plugin ends with an error is a run that stopped, and the error is why.
+func TestARunWhoseStreamFailsStopsWithTheError(t *testing.T) {
+	bridge := openTestBridge(t, &failingAgentServer{})
+
+	run, err := bridge.StartRun(t.Context(), port.Task{Question: "q"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = run.Stop() }()
+
+	var steps []port.Step
+	for step := range run.GetSteps() {
+		steps = append(steps, step)
+	}
+	if len(steps) != 2 || steps[0].Text != "partial" || steps[1].Kind != domain.StepStop ||
+		!strings.Contains(steps[1].Detail, "the program crashed") {
+		t.Errorf("the steps are %+v", steps)
+	}
+}

@@ -8,7 +8,7 @@ import type { MessageWriter } from '@/shared/notices/messages'
 /** Everything this says in the window's voice. */
 export interface SecretWords {
   /** The key could not be stored or removed. */
-  readonly unkept: string
+  readonly secretFailed: string
 }
 
 /** What this asks of the vault. */
@@ -20,21 +20,21 @@ export interface SecretDeps {
 /** Where this says what happened, and how the settings are read again after. */
 export interface SecretOptions {
   readonly words: SecretWords
-  readonly say: MessageWriter
+  readonly notify: MessageWriter
   readonly refresh: () => Promise<void>
 }
 
 /**
- * Storing and removing a key. A refusal is said, and the settings are read
+ * Storing and removing a key. A refusal is notified, and the settings are read
  * again either way, so what is drawn as set is what the vault records.
  */
-export function createSecretStore(core: SecretDeps, { words, say, refresh }: SecretOptions) {
-  const run = async (asked: () => Promise<void>): Promise<void> => {
-    say('')
+export function createSecretStore(core: SecretDeps, { words, notify, refresh }: SecretOptions) {
+  const run = async (operation: () => Promise<void>): Promise<void> => {
+    notify('')
     try {
-      await asked()
+      await operation()
     } catch (thrown) {
-      say(`${words.unkept} ${formatErrorMessage(thrown)}`, 'error')
+      notify(`${words.secretFailed} ${formatErrorMessage(thrown)}`, 'error')
     }
     await refresh()
   }

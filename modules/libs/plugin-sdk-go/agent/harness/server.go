@@ -107,7 +107,7 @@ func (s *Server) AskAgent(
 
 // Ask is AskAgent with the steps going to send.
 func (s *Server) Ask(ctx context.Context, task *numenv1.AskAgentRequest, send func(*numenv1.AskAgentResponse) error) error {
-	running, cancel := context.WithCancel(ctx)
+	taskCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	conversation := task.GetConversation()
@@ -118,9 +118,9 @@ func (s *Server) Ask(ctx context.Context, task *numenv1.AskAgentRequest, send fu
 	defer s.registry.Remove(work)
 	defer work.End()
 
-	tools, err := openToolbox(running, task.GetToolsUrl(), task.GetToolsToken(), task.GetTools())
+	tools, err := openToolbox(taskCtx, task.GetToolsUrl(), task.GetToolsToken(), task.GetTools())
 	if err != nil {
-		if running.Err() != nil {
+		if taskCtx.Err() != nil {
 			return nil
 		}
 		return send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Stopped{
@@ -129,24 +129,24 @@ func (s *Server) Ask(ctx context.Context, task *numenv1.AskAgentRequest, send fu
 	}
 	defer tools.close()
 
-	held := s.getConversation(conversation)
-	messages := make([]message, 0, len(held)+2)
+	history := s.getConversation(conversation)
+	messages := make([]message, 0, len(history)+2)
 	if instructions := task.GetInstructions(); instructions != "" {
 		messages = append(messages, message{Role: "system", Content: newText(instructions)})
 	}
-	messages = append(messages, held...)
+	messages = append(messages, history...)
 	messages = append(messages, message{Role: "user", Content: newText(task.GetPrompt())})
 
-	worked := &run{
+	taskRun := &run{
 		chat:  s.getChat(),
 		model: s.getModel(task.GetModel()),
 		tools: tools,
-		words: toolcall.ReadWords(task.GetToolDeclarations()),
+		words: toolcall.IndexDeclarations(task.GetToolDeclarations()),
 		turns: int(task.GetMaxSteps()),
 		send:  send,
 	}
-	said, reason, err := worked.answer(running, messages)
-	if running.Err() != nil {
+	transcript, reason, err := taskRun.answer(taskCtx, messages)
+	if taskCtx.Err() != nil {
 		return nil
 	}
 	if failed := (*chatFailure)(nil); errors.As(err, &failed) {
@@ -155,7 +155,7 @@ func (s *Server) Ask(ctx context.Context, task *numenv1.AskAgentRequest, send fu
 		return err
 	}
 	if reason == reasonDone || reason == reasonTurns || reason == reasonCut {
-		s.keepConversation(conversation, said[len(messages)-1:])
+		s.appendConversation(conversation, transcript[len(messages)-1:])
 	}
 	return send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Stopped{Stopped: reason}})
 }
@@ -170,9 +170,9 @@ func (s *Server) getConversation(conversation string) []message {
 	return append([]message(nil), s.conversations[conversation]...)
 }
 
-// keepConversation adds what was said in one task to the conversation. A task that named no
+// appendConversation adds what was said in one task to the conversation. A task that named no
 // conversation keeps nothing.
-func (s *Server) keepConversation(conversation string, said []message) {
+func (s *Server) appendConversation(conversation string, transcript []message) {
 	if conversation == "" {
 		return
 	}
@@ -181,7 +181,7 @@ func (s *Server) keepConversation(conversation string, said []message) {
 	if s.conversations == nil {
 		s.conversations = map[string][]message{}
 	}
-	s.conversations[conversation] = append(s.conversations[conversation], said...)
+	s.conversations[conversation] = append(s.conversations[conversation], transcript...)
 }
 
 // FinishConversation stops what is still being answered in the conversation and forgets what was

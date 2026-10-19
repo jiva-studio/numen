@@ -94,8 +94,12 @@ type claudeArguments struct {
 // defaultTurns is how many times the program may go round on one task where the task names no limit.
 const defaultTurns = 100
 
-// buildClaudeArguments returns what the program is started with.
+// buildClaudeArguments returns what the program is started with. A run that names no tool is one
+// answer: the program is given no tool, no MCP server and one turn.
 func buildClaudeArguments(in claudeArguments) []string {
+	if len(in.tools) == 0 {
+		return buildAnswerArguments(in)
+	}
 	turns := in.turns
 	if turns <= 0 {
 		turns = defaultTurns
@@ -137,6 +141,32 @@ func buildClaudeArguments(in claudeArguments) []string {
 	}
 	args = append(args, "--setting-sources", sources)
 
+	if in.instructions != "" {
+		args = append(args, "--append-system-prompt", in.instructions)
+	}
+	if in.model != "" {
+		args = append(args, "--model", in.model)
+	}
+	if in.session != "" {
+		args = append(args, "--resume", in.session)
+	}
+	return args
+}
+
+// buildAnswerArguments returns what the program is started with to give one answer: no tool, no
+// MCP server, no setting of this machine's and one turn.
+func buildAnswerArguments(in claudeArguments) []string {
+	args := []string{
+		"-p",
+		"--output-format", "stream-json",
+		"--verbose",
+		"--include-partial-messages",
+		"--strict-mcp-config",
+		"--permission-mode", "dontAsk",
+		"--max-turns", "1",
+		"--tools", "",
+		"--setting-sources", "",
+	}
 	if in.instructions != "" {
 		args = append(args, "--append-system-prompt", in.instructions)
 	}

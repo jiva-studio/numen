@@ -74,13 +74,9 @@ func (s *agentServer) AskAgent(
 	msg := req.Msg
 	s.mu.RLock()
 	systemPrompt := s.systemPrompt
-	toolNames := msg.GetTools()
-	if len(toolNames) == 0 {
-		for _, t := range s.tools {
-			toolNames = append(toolNames, t.GetName())
-		}
-	}
+	defaultModel := s.completionModel
 	s.mu.RUnlock()
+	toolNames := msg.GetTools()
 
 	instructions := msg.GetInstructions()
 	if systemPrompt != "" {
@@ -104,15 +100,23 @@ func (s *agentServer) AskAgent(
 		})
 	}
 
-	configFile, err := writeMcpConfig(msg.GetToolsUrl(), msg.GetToolsToken())
-	if err != nil {
-		return connect.NewError(connect.CodeInternal, fmt.Errorf("write mcp config: %w", err))
+	var configFile string
+	if len(toolNames) > 0 {
+		var err error
+		configFile, err = writeMcpConfig(msg.GetToolsUrl(), msg.GetToolsToken())
+		if err != nil {
+			return connect.NewError(connect.CodeInternal, fmt.Errorf("write mcp config: %w", err))
+		}
+	}
+	model := msg.GetModel()
+	if model == "" {
+		model = defaultModel
 	}
 
 	conversation := msg.GetConversation()
 	claudeArgs := buildClaudeArguments(claudeArguments{
 		instructions:  instructions,
-		model:         msg.GetModel(),
+		model:         model,
 		configuration: configFile,
 		session:       s.registry.GetSession(conversation),
 		turns:         int(msg.GetMaxSteps()),
@@ -142,7 +146,8 @@ func (s *agentServer) AskAgent(
 
 	cmd := exec.CommandContext(runCtx, cmdName, slices.Concat(cmdArgs, claudeArgs)...)
 	cmd.Dir = msg.GetRoot()
-	cmd.Env = buildEnvironment(s.getEnvironment())
+	key, base := s.catalogue.credentials()
+	cmd.Env = buildKeyEnvironment(s.getEnvironment(), key, base)
 	cmd.Stdin = strings.NewReader(msg.GetPrompt())
 	agentrun.Supervise(cmd)
 
@@ -161,7 +166,7 @@ func (s *agentServer) AskAgent(
 	recordSession := func(session string) { s.registry.SetSession(conversation, session) }
 	reasons := make(chan string, 1)
 	go func() {
-		reasons <- parseStream(runCtx, out, stream.Send, toolcall.ReadWords(msg.GetToolDeclarations()), recordSession)
+		reasons <- parseStream(runCtx, out, stream.Send, toolcall.IndexDeclarations(msg.GetToolDeclarations()), recordSession)
 	}()
 
 	// A run that is closed ends here, whatever the programs the child started hold of its output.

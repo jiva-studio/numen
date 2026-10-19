@@ -3,7 +3,7 @@ package settings
 import "context"
 
 // WriteSecret stores the key of a secret a plugin declares and records that the
-// secret is stored. The key is kept in the key store and never in the file.
+// secret is stored. The key is stored in the key store and never in the file.
 type WriteSecret struct {
 	write func(ctx context.Context, pluginID, name, key string) error
 }

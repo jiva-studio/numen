@@ -43,10 +43,10 @@ export const findAgent = (plugins: readonly PluginInfo[], id: string): PluginInf
 /** The choice a setting of type `agent` holds, and the empty choice for any other value. */
 export const readChoice = (value: unknown): CompletionChoice => {
   if (typeof value !== 'object' || value === null) return { agent: '', model: '' }
-  const held = value as Record<string, unknown>
+  const fields = value as Record<string, unknown>
   return {
-    agent: typeof held['agent'] === 'string' ? held['agent'] : '',
-    model: typeof held['model'] === 'string' ? held['model'] : '',
+    agent: typeof fields['agent'] === 'string' ? fields['agent'] : '',
+    model: typeof fields['model'] === 'string' ? fields['model'] : '',
   }
 }
 

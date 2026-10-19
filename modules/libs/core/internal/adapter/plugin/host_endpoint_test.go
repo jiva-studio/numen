@@ -80,9 +80,9 @@ func newCallers(completer port.Completer) *callers {
 }
 
 // newHostClient serves the endpoint's handler and returns a client calling it with the token.
-func newHostClient(t *testing.T, held *callers, token string) numenv1connect.HostServiceClient {
+func newHostClient(t *testing.T, fakeCallers *callers, token string) numenv1connect.HostServiceClient {
 	t.Helper()
-	endpoint := &HostEndpoint{callers: held}
+	endpoint := &HostEndpoint{callers: fakeCallers}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostServiceHandler(endpoint))
 	server := httptest.NewServer(mux)
@@ -110,7 +110,7 @@ func readCode(t *testing.T, err error) connect.Code {
 // is told the question as the plugin put it.
 func TestAPluginWithThePermissionIsAnswered(t *testing.T) {
 	var asked port.Question
-	held := newCallers(completerFunc(func(_ context.Context, question port.Question) (string, error) {
+	fakeCallers := newCallers(completerFunc(func(_ context.Context, question port.Question) (string, error) {
 		asked = question
 		return "fixed", nil
 	}))
@@ -118,7 +118,7 @@ func TestAPluginWithThePermissionIsAnswered(t *testing.T) {
 	request := newHostQuestion()
 	request.Msg.Question.Hints = &v1.CompletionHints{QualityPriority: 0.5, MaxTokens: 64, Temperature: &temperature}
 
-	res, err := newHostClient(t, held, "token-a").Complete(t.Context(), request)
+	res, err := newHostClient(t, fakeCallers, "token-a").Complete(t.Context(), request)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,20 +130,20 @@ func TestAPluginWithThePermissionIsAnswered(t *testing.T) {
 		asked.Hints.Temperature == nil || *asked.Hints.Temperature != temperature {
 		t.Errorf("the completer was asked %+v", asked)
 	}
-	if len(held.checked) != 2 || held.checked[0] != "md.numen.a ai:complete" || held.checked[1] != "md.numen.a consent" {
-		t.Errorf("checked %v, want md.numen.a ai:complete, then its consent", held.checked)
+	if len(fakeCallers.checked) != 2 || fakeCallers.checked[0] != "md.numen.a ai:complete" || fakeCallers.checked[1] != "md.numen.a consent" {
+		t.Errorf("checked %v, want md.numen.a ai:complete, then its consent", fakeCallers.checked)
 	}
 }
 
 // A plugin without the ai:complete permission is refused, and nothing is asked of a model.
 func TestAPluginWithoutThePermissionIsRefused(t *testing.T) {
 	asked := false
-	held := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
+	fakeCallers := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
 		asked = true
 		return "", nil
 	}))
 
-	_, err := newHostClient(t, held, "token-b").Complete(t.Context(), newHostQuestion())
+	_, err := newHostClient(t, fakeCallers, "token-b").Complete(t.Context(), newHostQuestion())
 	if got := readCode(t, err); got != connect.CodePermissionDenied {
 		t.Errorf("code = %v, want permission denied", got)
 	}
@@ -162,16 +162,16 @@ func TestACallerWithoutAKnownTokenIsRefused(t *testing.T) {
 		{"unknown", "token-x"},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			held := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
+			fakeCallers := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
 				t.Error("a model was asked for a caller nobody knows")
 				return "", nil
 			}))
-			_, err := newHostClient(t, held, one.token).Complete(t.Context(), newHostQuestion())
+			_, err := newHostClient(t, fakeCallers, one.token).Complete(t.Context(), newHostQuestion())
 			if got := readCode(t, err); got != connect.CodeUnauthenticated {
 				t.Errorf("code = %v, want unauthenticated", got)
 			}
-			if len(held.checked) != 0 {
-				t.Errorf("checked %v for a caller nobody knows", held.checked)
+			if len(fakeCallers.checked) != 0 {
+				t.Errorf("checked %v for a caller nobody knows", fakeCallers.checked)
 			}
 		})
 	}
@@ -179,8 +179,8 @@ func TestACallerWithoutAKnownTokenIsRefused(t *testing.T) {
 
 // A header that is no bearer token is not read as one.
 func TestAHeaderThatIsNoBearerTokenIsRefused(t *testing.T) {
-	held := newCallers(nil)
-	endpoint := &HostEndpoint{callers: held}
+	fakeCallers := newCallers(nil)
+	endpoint := &HostEndpoint{callers: fakeCallers}
 	for _, header := range []string{"", "token-a", "Basic token-a", "bearer token-a"} {
 		if _, err := endpoint.authorize(header, PermissionAIComplete); readCode(t, err) != connect.CodeUnauthenticated {
 			t.Errorf("header %q was accepted", header)
@@ -199,8 +199,8 @@ func TestARefusedCompletionAnswersWithItsCode(t *testing.T) {
 		{"unreachable", fmt.Errorf("agent: %w", port.ErrUnavailable), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			held := newCallers(completerFunc(func(context.Context, port.Question) (string, error) { return "", one.err }))
-			res, err := newHostClient(t, held, "token-a").Complete(t.Context(), newHostQuestion())
+			fakeCallers := newCallers(completerFunc(func(context.Context, port.Question) (string, error) { return "", one.err }))
+			res, err := newHostClient(t, fakeCallers, "token-a").Complete(t.Context(), newHostQuestion())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -224,10 +224,10 @@ func TestAHostWithoutACompleterAnswersNoRoute(t *testing.T) {
 
 // A failure that is no refusal is a status.
 func TestAFailureOfTheCompleterIsAStatus(t *testing.T) {
-	held := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
+	fakeCallers := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
 		return "", errors.New("the model broke")
 	}))
-	_, err := newHostClient(t, held, "token-a").Complete(t.Context(), newHostQuestion())
+	_, err := newHostClient(t, fakeCallers, "token-a").Complete(t.Context(), newHostQuestion())
 	if got := readCode(t, err); got != connect.CodeInternal {
 		t.Errorf("code = %v, want internal", got)
 	}
@@ -237,13 +237,13 @@ func TestAFailureOfTheCompleterIsAStatus(t *testing.T) {
 func TestAPluginCancellingEndsTheQuestion(t *testing.T) {
 	started := make(chan struct{})
 	ended := make(chan error, 1)
-	held := newCallers(completerFunc(func(ctx context.Context, _ port.Question) (string, error) {
+	fakeCallers := newCallers(completerFunc(func(ctx context.Context, _ port.Question) (string, error) {
 		close(started)
 		<-ctx.Done()
 		ended <- ctx.Err()
 		return "", ctx.Err()
 	}))
-	client := newHostClient(t, held, "token-a")
+	client := newHostClient(t, fakeCallers, "token-a")
 
 	ctx, cancel := context.WithCancel(t.Context())
 	failed := make(chan error, 1)
@@ -269,8 +269,8 @@ func TestAPluginCancellingEndsTheQuestion(t *testing.T) {
 
 // The endpoint listens on the loopback interface and answers for a token.
 func TestTheHostEndpointListensOnLoopbackAndServes(t *testing.T) {
-	held := newCallers(completerFunc(func(context.Context, port.Question) (string, error) { return "ok", nil }))
-	endpoint, err := OpenHostEndpoint(t.Context(), hostEndpointAddress, held)
+	fakeCallers := newCallers(completerFunc(func(context.Context, port.Question) (string, error) { return "ok", nil }))
+	endpoint, err := OpenHostEndpoint(t.Context(), hostEndpointAddress, fakeCallers)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -422,9 +422,9 @@ func TestAHostEndpointThatCannotStartDoesNotStopALaunch(t *testing.T) {
 // The host endpoint binds the loopback interface and refuses any address that
 // would bind more.
 func TestTheHostEndpointListensOnLoopbackOnly(t *testing.T) {
-	held := newCallers(nil)
+	fakeCallers := newCallers(nil)
 	for _, address := range []string{":0", "0.0.0.0:0", "[::]:0", "localhost:0", "192.168.1.5:0", "127.0.0.1", ""} {
-		endpoint, err := OpenHostEndpoint(t.Context(), address, held)
+		endpoint, err := OpenHostEndpoint(t.Context(), address, fakeCallers)
 		if err == nil {
 			_ = endpoint.Close(t.Context())
 			t.Errorf("address %q was bound", address)
@@ -436,7 +436,7 @@ func TestTheHostEndpointListensOnLoopbackOnly(t *testing.T) {
 	if host.hostAddress != "127.0.0.1:0" {
 		t.Errorf("a host listens on %q by default", host.hostAddress)
 	}
-	endpoint, err := OpenHostEndpoint(t.Context(), host.hostAddress, held)
+	endpoint, err := OpenHostEndpoint(t.Context(), host.hostAddress, fakeCallers)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -447,11 +447,11 @@ func TestTheHostEndpointListensOnLoopbackOnly(t *testing.T) {
 // nothing is asked of a model.
 func TestAPluginWithoutConsentIsAnsweredNoConsent(t *testing.T) {
 	asked := false
-	held := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
+	fakeCallers := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
 		asked = true
 		return "", nil
 	}))
-	res, err := newHostClient(t, held, "token-c").Complete(t.Context(), newHostQuestion())
+	res, err := newHostClient(t, fakeCallers, "token-c").Complete(t.Context(), newHostQuestion())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -465,12 +465,12 @@ func TestAPluginWithoutConsentIsAnsweredNoConsent(t *testing.T) {
 
 // A plugin without the permission is refused before its consent is looked at.
 func TestThePermissionIsCheckedBeforeTheConsent(t *testing.T) {
-	held := newCallers(nil)
-	if _, err := newHostClient(t, held, "token-b").Complete(t.Context(), newHostQuestion()); err == nil {
+	fakeCallers := newCallers(nil)
+	if _, err := newHostClient(t, fakeCallers, "token-b").Complete(t.Context(), newHostQuestion()); err == nil {
 		t.Fatal("a plugin without the permission was served")
 	}
-	if slices.Contains(held.checked, "md.numen.b consent") {
-		t.Errorf("checked %v", held.checked)
+	if slices.Contains(fakeCallers.checked, "md.numen.b consent") {
+		t.Errorf("checked %v", fakeCallers.checked)
 	}
 }
 

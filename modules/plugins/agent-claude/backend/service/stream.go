@@ -24,7 +24,7 @@ const previewInterval = 50 * time.Millisecond
 
 type streamParser struct {
 	send        func(*numenv1.AskAgentResponse) error
-	words       map[string]toolcall.Words
+	words       map[string]toolcall.Declaration
 	now         func() time.Time
 	last        time.Time
 	record      func(string)
@@ -96,7 +96,7 @@ func parseStream(
 	ctx context.Context,
 	r io.Reader,
 	send func(*numenv1.AskAgentResponse) error,
-	words map[string]toolcall.Words,
+	words map[string]toolcall.Declaration,
 	record func(string),
 ) string {
 	return parseStreamWithClock(ctx, r, send, words, record, time.Now)
@@ -107,7 +107,7 @@ func parseStreamWithClock(
 	ctx context.Context,
 	r io.Reader,
 	send func(*numenv1.AskAgentResponse) error,
-	words map[string]toolcall.Words,
+	words map[string]toolcall.Declaration,
 	record func(string),
 	now func() time.Time,
 ) string {

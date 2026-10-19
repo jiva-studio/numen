@@ -190,7 +190,7 @@ type PluginManager interface {
 	PluginPathValidator
 	// SetSafeMode stops every running plugin when enabled, and starts none until it is disabled.
 	SetSafeMode(enabled bool)
-	// SetVaultPath is the vault the plugins' paths are held inside.
+	// SetVaultPath is the vault the plugins' paths are inside.
 	SetVaultPath(path string)
 	// SetOnPluginFailed registers a callback invoked once when a plugin has failed to start repeatedly,
 	// and again when a retry of it fails.

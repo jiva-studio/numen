@@ -124,6 +124,14 @@ describe('being put away', () => {
     expect(menu.emitted('dismiss')).toHaveLength(1)
   })
 
+  it('stays when the page scrolls on its own as it opens', async () => {
+    const menu = mountMenu()
+    await settle()
+
+    document.dispatchEvent(new Event('scroll'))
+    expect(menu.emitted('dismiss')).toBeUndefined()
+  })
+
   it('asks to go when the page under it scrolls, and stays when its own list does', async () => {
     const menu = mountMenu()
     await settle()
@@ -131,6 +139,7 @@ describe('being put away', () => {
     getDrawnMenu()!.dispatchEvent(new Event('scroll'))
     expect(menu.emitted('dismiss')).toBeUndefined()
 
+    window.dispatchEvent(new Event('wheel'))
     document.dispatchEvent(new Event('scroll'))
     expect(menu.emitted('dismiss')).toHaveLength(1)
   })

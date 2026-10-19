@@ -184,6 +184,7 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 		Command:    []string{script, "--first"},
 		Root:       root,
 		Model:      "gpt-x",
+		Tools:      []string{"note_read"},
 		ToolsUrl:   "http://127.0.0.1:1/mcp",
 		ToolsToken: "secret",
 	})
@@ -219,5 +220,45 @@ func TestAskAgentReportsAFailedRun(t *testing.T) {
 	}
 	if stopped != "not signed in" {
 		t.Errorf("the run stopped with %q", stopped)
+	}
+}
+
+// A request naming no tool is one answer: the program is given no MCP server, no sandbox bypass,
+// none of its own tools that can be turned off, an empty folder, and the instructions before the
+// prompt.
+func TestAskAgentOffersNoToolWhenRequestToolsEmpty(t *testing.T) {
+	root := t.TempDir()
+	script, read := agenttest.RecordingProgram(t, "codex")
+
+	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &numenv1.AskAgentRequest{
+		Prompt:       "the question",
+		Instructions: "be brief",
+		Command:      []string{script},
+		Root:         root,
+		Model:        "gpt-x",
+		ToolsUrl:     "http://127.0.0.1:1/mcp",
+		ToolsToken:   "secret",
+	})
+
+	dir, lines := read()
+	joined := strings.Join(lines, "\n")
+	if lines[0] != "exec" || !strings.HasSuffix(joined, "\n--\nbe brief\n\nthe question") {
+		t.Errorf("the arguments are %v", lines)
+	}
+	for _, want := range []string{"--ignore-user-config", "--ephemeral", "--model\ngpt-x", "--sandbox\nread-only", "--disable\nshell_tool"} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("%q absent from %v", want, lines)
+		}
+	}
+	for _, refused := range []string{"--dangerously-bypass-approvals-and-sandbox", "mcp_servers", "secret", "127.0.0.1"} {
+		if strings.Contains(joined, refused) {
+			t.Errorf("%q is among %v", refused, lines)
+		}
+	}
+	if agenttest.IsDir(dir, root) {
+		t.Errorf("started in %q, the folder the request names", dir)
+	}
+	if _, err := os.Stat(dir); err == nil {
+		t.Errorf("the folder %q is still there", dir)
 	}
 }

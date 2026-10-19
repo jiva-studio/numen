@@ -64,12 +64,12 @@ type CompletionChoice struct {
 // ReadCompletionChoice reads the value of a setting of type SettingTypeAgent. A
 // value of any other shape is the empty choice.
 func ReadCompletionChoice(value any) CompletionChoice {
-	held, ok := value.(map[string]any)
+	fields, ok := value.(map[string]any)
 	if !ok {
 		return CompletionChoice{}
 	}
-	agent, _ := held["agent"].(string)
-	model, _ := held["model"].(string)
+	agent, _ := fields["agent"].(string)
+	model, _ := fields["model"].(string)
 	return CompletionChoice{Agent: agent, Model: model}
 }
 

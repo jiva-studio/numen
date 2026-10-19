@@ -134,7 +134,7 @@ func TestWhatABookIsIsAskedOfThePlugin(t *testing.T) {
 		t.Errorf("the book is %q, asked for %q", out.Msg.GetTitle(), client.book.GetPath())
 	}
 	if *closed != 1 {
-		t.Errorf("the plugin was let go %d times, want once", *closed)
+		t.Errorf("the plugin was closed %d times, want once", *closed)
 	}
 }
 
@@ -164,7 +164,7 @@ func TestOneDocumentOfABookIsAskedOfThePlugin(t *testing.T) {
 		t.Errorf("the markup is %q, asked for %q", out.Msg.GetMarkup(), client.markup.GetDocument())
 	}
 	if *closed != 1 {
-		t.Errorf("the plugin was let go %d times, want once", *closed)
+		t.Errorf("the plugin was closed %d times, want once", *closed)
 	}
 }
 
@@ -266,7 +266,7 @@ func TestAFailureToOpenTheBookPluginKeepsItsCode(t *testing.T) {
 	}
 }
 
-// A client that is no book reader is no book plugin, and the client is let go.
+// A client that is no book reader is no book plugin, and the client is closed.
 func TestAClientThatReadsNoBooksIsAnsweredAsUnimplemented(t *testing.T) {
 	api, _, _ := readFrom(t, newBookClient())
 	closed := 0
@@ -277,7 +277,7 @@ func TestAClientThatReadsNoBooksIsAnsweredAsUnimplemented(t *testing.T) {
 		t.Errorf("a book was answered %v, want unimplemented", code)
 	}
 	if closed != 1 {
-		t.Errorf("the client was let go %d times, want once", closed)
+		t.Errorf("the client was closed %d times, want once", closed)
 	}
 }
 
@@ -317,7 +317,7 @@ func TestAPictureTheBookCarries(t *testing.T) {
 		t.Errorf("the plugin was asked at %v, want the bytes the address names", asked)
 	}
 	if *closed != 1 {
-		t.Errorf("the plugin was let go %d times, want once", *closed)
+		t.Errorf("the plugin was closed %d times, want once", *closed)
 	}
 }
 

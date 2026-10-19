@@ -201,13 +201,13 @@ func TestAPluginWhoseEventCallFailsIsReportedApartFromARefusal(t *testing.T) {
 
 func TestReadEventRefusalHandlesEveryCode(t *testing.T) {
 	testsupport.CheckHandled(t, func(code v1.PluginEventErrorCode) bool {
-		err := readEventRefusal(code, "the index is closed")
+		err := convertEventRefusal(code, "the index is closed")
 		if code == v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED {
 			return err == nil
 		}
 		return errors.Is(err, errEventRefused) && strings.Contains(err.Error(), "the index is closed") && !strings.Contains(err.Error(), "unknown code")
 	})
-	if err := readEventRefusal(v1.PluginEventErrorCode(99), "why"); !errors.Is(err, errEventRefused) || !strings.Contains(err.Error(), "unknown code 99") {
-		t.Fatalf("readEventRefusal(99) = %v, want a refusal naming the unknown code", err)
+	if err := convertEventRefusal(v1.PluginEventErrorCode(99), "why"); !errors.Is(err, errEventRefused) || !strings.Contains(err.Error(), "unknown code 99") {
+		t.Fatalf("convertEventRefusal(99) = %v, want a refusal naming the unknown code", err)
 	}
 }
