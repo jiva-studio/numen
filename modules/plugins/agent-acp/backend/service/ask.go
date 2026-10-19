@@ -53,10 +53,10 @@ func (s *agentServer) AskAgent(
 		return sendStopped(stream, err.Error())
 	}
 	text, err := s.answer(ctx, agent, msg.GetModel(), msg.GetInstructions(), msg.GetPrompt())
-	if ctx.Err() != nil {
-		return nil
-	}
 	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return ctxErr
+		}
 		return sendStopped(stream, err.Error())
 	}
 	if err := stream.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Said{Said: text}}); err != nil {

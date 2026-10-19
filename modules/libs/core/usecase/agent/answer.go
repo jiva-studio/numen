@@ -41,13 +41,11 @@ func Answer(ctx context.Context, agent Starter, task port.Task) (string, error) 
 
 	var said strings.Builder
 	for step := range run.GetSteps() {
-		switch step.Kind {
-		case domain.StepSay:
+		if step.Kind == domain.StepSay {
 			said.WriteString(step.Text)
-		case domain.StepStop:
-			if step.Detail != "" && step.Detail != stoppedDone {
-				return "", failAnswer(ctx, fmt.Errorf("the agent stopped: %s", step.Detail))
-			}
+		}
+		if step.Kind == domain.StepStop && step.Detail != "" && step.Detail != stoppedDone {
+			return "", failAnswer(ctx, fmt.Errorf("the agent stopped: %s", step.Detail))
 		}
 	}
 	if err := ctx.Err(); err != nil {
