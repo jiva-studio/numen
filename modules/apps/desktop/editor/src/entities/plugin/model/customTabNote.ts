@@ -50,6 +50,13 @@ const splitRead = (result: NoteRead): { body?: string; error?: string } => {
   return result ?? {}
 }
 
+/** The body and the error a read answered, put where the tab shows them. */
+const applyRead = (at: string, result: NoteRead, state: NoteReadState): void => {
+  const { body, error } = splitRead(result)
+  if (body !== undefined) state.note.value = { path: at, body }
+  if (error) state.errorMessage.value = error
+}
+
 /** The body the first read gives, unless the tab was edited while it was in flight. */
 export const startNoteRead = (
   at: string,
@@ -59,10 +66,7 @@ export const startNoteRead = (
   readNote(at)
     .then((result) => {
       state.isLoading.value = false
-      if (state.hasEdited()) return
-      const { body, error } = splitRead(result)
-      if (body !== undefined) state.note.value = { path: at, body }
-      if (error) state.errorMessage.value = error
+      if (!state.hasEdited()) applyRead(at, result, state)
     })
     .catch((err) => {
       state.isLoading.value = false
