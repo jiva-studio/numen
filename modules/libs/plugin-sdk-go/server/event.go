@@ -25,12 +25,16 @@ type eventServer struct {
 	handle EventHandler
 }
 
-// DeliverEvent passes the event to the plugin's handler and answers its error.
+// DeliverEvent passes the event to the plugin's handler and answers its error. A handler's
+// Unimplemented is answered as Internal; Unimplemented tells the host the plugin takes no events.
 func (s eventServer) DeliverEvent(
 	ctx context.Context,
 	req *connect.Request[numenv1.DeliverEventRequest],
 ) (*connect.Response[numenv1.DeliverEventResponse], error) {
 	if err := s.handle(ctx, req.Msg.GetEvent()); err != nil {
+		if connect.CodeOf(err) == connect.CodeUnimplemented {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
 		return nil, err
 	}
 	return connect.NewResponse(&numenv1.DeliverEventResponse{}), nil

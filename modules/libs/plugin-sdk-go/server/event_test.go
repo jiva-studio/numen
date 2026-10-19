@@ -102,3 +102,14 @@ func TestAnEventWithoutTheTokenIsRefused(t *testing.T) {
 		t.Fatalf("the handler ran %d times, want 0", got)
 	}
 }
+
+func TestAHandlerAnsweringUnimplementedIsReportedAsAFailure(t *testing.T) {
+	client := newEventClient(serveEvents(t, WithEventHandler(func(_ context.Context, _ string) error {
+		return connect.NewError(connect.CodeUnimplemented, errors.New("not yet"))
+	})), eventToken)
+
+	_, err := client.DeliverEvent(t.Context(), connect.NewRequest(&numenv1.DeliverEventRequest{Event: "onFile:pdf"}))
+	if connect.CodeOf(err) != connect.CodeInternal {
+		t.Fatalf("DeliverEvent() = %v, want %v", err, connect.CodeInternal)
+	}
+}
