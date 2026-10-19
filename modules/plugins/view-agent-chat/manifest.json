@@ -7,7 +7,7 @@
   "capabilities": ["view.agent-chat", "ui.view"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onStartupFinished", "onView:agent"],
-  "permissions": ["ai:complete", "vault:read"],
+  "permissions": ["vault:read"],
   "frontend": {
     "entrypoint": "dist/index.js",
     "styles": "dist/styles.css"

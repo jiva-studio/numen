@@ -200,7 +200,7 @@ const getAgent = (context: PluginContext): AgentHost => {
 
 const ASKING: Record<string, [string, Call]> = {
   ask: [
-    'ai:complete',
+    'vault:read',
     (c) =>
       getAgent(c).ask({
         question: 'q',
@@ -209,7 +209,7 @@ const ASKING: Record<string, [string, Call]> = {
         signal: new AbortController().signal,
       }),
   ],
-  finish: ['ai:complete', (c) => getAgent(c).finish('c')],
+  finish: ['vault:read', (c) => getAgent(c).finish('c')],
   resolve: ['vault:read', (c) => getAgent(c).resolve(['name://A'])],
 }
 

@@ -117,8 +117,8 @@ function guardFiles(files: VaultFiles, requireWrite: (operation: string) => void
 const isAgentPath = (path: readonly string[]): boolean => path[0] === 'agent'
 
 /**
- * The agent of the window: asking it needs ai:complete, naming vault files needs
- * vault:read, and the settings it reads and writes are the ones under `agent`.
+ * The agent of the window: asking it and naming vault files need vault:read, and
+ * the settings it reads and writes are the ones under `agent`.
  */
 function guardAgent(
   agent: AgentHost,
@@ -137,11 +137,11 @@ function guardAgent(
     },
     getModelsAt: (path) => (isAgentPath(path) ? agent.getModelsAt(path) : []),
     ask: (query) => {
-      requirePerm('ai:complete', 'agent.ask')
+      requirePerm('vault:read', 'agent.ask')
       return agent.ask(query)
     },
     finish: (conversation) => {
-      requirePerm('ai:complete', 'agent.finish')
+      requirePerm('vault:read', 'agent.finish')
       return agent.finish(conversation)
     },
     resolve: (written) => {
