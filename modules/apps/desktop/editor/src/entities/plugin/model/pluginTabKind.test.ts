@@ -164,8 +164,8 @@ describe('the services a plugin context is given', () => {
 
     const context = host.createContext('md.numen.sample')
 
-    expect(context.workspace).toBe(workspace)
-    expect(context.notes).toBe(notes)
+    expect(context.workspace).toMatchObject(workspace)
+    expect(context.notes).toMatchObject(notes)
   })
 
   it('are absent where the host offers none', () => {

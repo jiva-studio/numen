@@ -7,7 +7,7 @@
   "capabilities": ["view.file-tree", "ui.view"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onStartupFinished", "onView:file-tree"],
-  "permissions": ["vault:read"],
+  "permissions": ["vault:read", "vault:write"],
   "frontend": {
     "entrypoint": "dist/index.js",
     "styles": "dist/styles.css"

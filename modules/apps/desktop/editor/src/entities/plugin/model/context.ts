@@ -11,6 +11,9 @@ import type {
   ReaderRegistration,
   TabKindRegistration,
   VaultChangeEvent,
+  VaultFiles,
+  VaultNotes,
+  WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { PluginContextHost } from './types'
 
@@ -40,6 +43,93 @@ function checkPermission(target: PermissionTarget, permission: string, operation
   }
 }
 
+/** The commands of the window over a file that change nothing in the vault. */
+const READ_ONLY_COMMANDS: ReadonlySet<string> = new Set(['read', 'travel', 'copy', 'ask'])
+
+/** The notes of the vault, their writes held to `vault:write`. */
+function guardNotes(notes: VaultNotes, requireWrite: (operation: string) => void): VaultNotes {
+  return {
+    ...notes,
+    createUntitledNote: async () => {
+      requireWrite('notes.createUntitledNote')
+      return notes.createUntitledNote()
+    },
+    createInRelation: async (from, relation) => {
+      requireWrite('notes.createInRelation')
+      return notes.createInRelation(from, relation)
+    },
+    createWithTitle: async (title, from, relation) => {
+      requireWrite('notes.createWithTitle')
+      return notes.createWithTitle(title, from, relation)
+    },
+    join: async (...args: Parameters<VaultNotes['join']>) => {
+      requireWrite('notes.join')
+      return notes.join(...args)
+    },
+    replaceLinks: async (first, second, links) => {
+      requireWrite('notes.replaceLinks')
+      return notes.replaceLinks(first, second, links)
+    },
+  }
+}
+
+/** The files of the vault, their writes held to `vault:write`. */
+function guardFiles(files: VaultFiles, requireWrite: (operation: string) => void): VaultFiles {
+  return {
+    ...files,
+    move: async (from, to) => {
+      requireWrite('files.move')
+      return files.move(from, to)
+    },
+    createFolder: async (path) => {
+      requireWrite('files.createFolder')
+      return files.createFolder(path)
+    },
+    createNote: async (folder) => {
+      requireWrite('files.createNote')
+      return files.createNote(folder)
+    },
+    createDeck: async (folder, name) => {
+      requireWrite('files.createDeck')
+      return files.createDeck(folder, name)
+    },
+    createStencil: async (folder, name) => {
+      requireWrite('files.createStencil')
+      return files.createStencil(folder, name)
+    },
+    createPreset: async (folder, name) => {
+      requireWrite('files.createPreset')
+      return files.createPreset(folder, name)
+    },
+    importUrl: async (folder, url) => {
+      requireWrite('files.importUrl')
+      return files.importUrl(folder, url)
+    },
+    importUrls: async (folder, urls) => {
+      requireWrite('files.importUrls')
+      return files.importUrls(folder, urls)
+    },
+  }
+}
+
+/** The window, its commands that change the vault held to `vault:write`. */
+function guardWorkspace(
+  workspace: WorkspaceHost,
+  requireWrite: (operation: string) => void,
+): WorkspaceHost {
+  return {
+    ...workspace,
+    runCommand: (id, target) => {
+      if (!READ_ONLY_COMMANDS.has(id)) requireWrite(`workspace.runCommand ${id}`)
+      workspace.runCommand(id, target)
+    },
+    runPathCommand: (id, target) => {
+      if (!READ_ONLY_COMMANDS.has(id)) requireWrite(`workspace.runPathCommand ${id}`)
+      workspace.runPathCommand(id, target)
+    },
+  }
+}
+
 export function createPluginContext(
   pluginId: string,
   host: PluginContextHost,
@@ -49,6 +139,7 @@ export function createPluginContext(
   const add = (d: Disposable) => trackSubscription(subscriptions, d)
   const target: PermissionTarget = { pluginId, manifest }
   const requirePerm = (p: string, op: string) => checkPermission(target, p, op)
+  const requireWrite = (operation: string) => requirePerm('vault:write', operation)
   const workspace = host.getWorkspace?.()
   const notes = host.getNotes?.()
   const files = host.getFiles?.()
@@ -56,9 +147,9 @@ export function createPluginContext(
   return {
     pluginId,
     subscriptions,
-    ...(workspace ? { workspace } : {}),
-    ...(notes ? { notes } : {}),
-    ...(files ? { files } : {}),
+    ...(workspace ? { workspace: guardWorkspace(workspace, requireWrite) } : {}),
+    ...(notes ? { notes: guardNotes(notes, requireWrite) } : {}),
+    ...(files ? { files: guardFiles(files, requireWrite) } : {}),
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
     registerTabKind: <State>(reg: TabKindRegistration<State>) =>
