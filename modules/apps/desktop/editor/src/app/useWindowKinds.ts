@@ -63,7 +63,11 @@ export function useWindowKinds(deps: WindowKindsDeps) {
 
   return {
     agents,
-    files: { revealPath: (path: string) => held.navigateTab(FILES, path) },
+    files: {
+      revealPath: async (path: string): Promise<void> => {
+        if (held.hasKind(FILES)) await held.navigateTab(FILES, path)
+      },
+    },
     made,
     destinations,
     dragged,

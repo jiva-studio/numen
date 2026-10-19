@@ -93,6 +93,14 @@ describe('the window kinds', () => {
     await window.files.revealPath('notes/a.md')
     expect(deps.held.navigateTab).toHaveBeenCalledWith('files', 'notes/a.md')
   })
+
+  it('reveals nothing where the window has no files kind', async () => {
+    const { deps, window } = create({ hasPlexKind: false })
+
+    await window.files.revealPath('notes/a.md')
+
+    expect(deps.held.navigateTab).not.toHaveBeenCalled()
+  })
 })
 
 describe('what the agent is about', () => {

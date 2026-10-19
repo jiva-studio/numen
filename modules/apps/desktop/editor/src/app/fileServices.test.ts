@@ -252,7 +252,12 @@ describe('the window’s commands over a row', () => {
       made: { transcript: 'done' },
       others: ['b.md'],
     })
-    expect(runCommand.mock.calls.at(1)?.at(1)).toMatchObject({ path: '', file: '', made: {}, others: [] })
+    expect(runCommand.mock.calls.at(1)?.at(1)).toMatchObject({
+      path: '',
+      file: '',
+      made: {},
+      others: [],
+    })
   })
 
   it('are drawn with the window’s icons, and an entry by what it is', () => {

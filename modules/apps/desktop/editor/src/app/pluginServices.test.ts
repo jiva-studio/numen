@@ -8,7 +8,11 @@ import type { NoteCreator } from '@/entities/note'
 const createWorkspace = (over: Partial<WorkspaceHostDeps> = {}) => {
   const failure = ref('')
   const deps = {
-    window: { failure, opening: ref('Root.md'), readInitialNote: vi.fn(() => Promise.resolve('Root.md')) },
+    window: {
+      failure,
+      opening: ref('Root.md'),
+      readInitialNote: vi.fn(() => Promise.resolve('Root.md')),
+    },
     nesting: { isNesting: ref(true), headings: ref(3) },
     dragged: shallowRef<readonly string[]>([]),
     tabOpeners: { openFile: vi.fn(() => Promise.resolve()) },
@@ -95,8 +99,8 @@ describe('the window a plugin is handed', () => {
 describe('the notes of the vault a plugin is handed', () => {
   const createNotes = () => {
     const making = {
-      createUntitled: vi.fn(() => Promise.resolve(({ path: 'Untitled.md', title: 'Untitled' }))),
-      createInRelation: vi.fn(() => Promise.resolve(({ path: 'Made.md', title: 'Made' }))),
+      createUntitled: vi.fn(() => Promise.resolve({ path: 'Untitled.md', title: 'Untitled' })),
+      createInRelation: vi.fn(() => Promise.resolve({ path: 'Made.md', title: 'Made' })),
       createWithTitle: vi.fn(() => Promise.resolve(null)),
       join: vi.fn(() => Promise.resolve(true)),
       replaceLinks: vi.fn(() => Promise.resolve(false)),
