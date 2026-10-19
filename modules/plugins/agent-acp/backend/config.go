@@ -71,6 +71,7 @@ func parseSimpleToml(content string) *CodexConfig {
 	lines := strings.Split(content, "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
+		// gomutants:disable-next-line INVERT_LOGICAL reason="comments start with # and empty lines yield a single split part, so neither matches the key 'model' when fallthrough occurs"
 		if strings.HasPrefix(line, "#") || line == "" {
 			continue
 		}
