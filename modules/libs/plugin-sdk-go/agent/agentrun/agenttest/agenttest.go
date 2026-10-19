@@ -92,3 +92,26 @@ func IsDir(got, want string) bool {
 	resolved, _ := filepath.EvalSymlinks(want)
 	return got == want || got == resolved
 }
+
+// CheckLinkedHandler serves the handler a host that links the plugin in gets and checks that it
+// answers GetAgentState with the token it was given and refuses a call without it.
+func CheckLinkedHandler(t *testing.T, newHandler func(map[string]string) (http.Handler, error)) {
+	t.Helper()
+	handler, err := newHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token"})
+	if err != nil {
+		t.Fatalf("NewHandler: %v", err)
+	}
+	web := httptest.NewServer(handler)
+	defer web.Close()
+	client := numenv1connect.NewAgentServiceClient(web.Client(), web.URL)
+
+	req := connect.NewRequest(&numenv1.GetAgentStateRequest{})
+	req.Header().Set("Authorization", "Bearer linked-token")
+	if _, err := client.GetAgentState(t.Context(), req); err != nil {
+		t.Fatalf("call with the token: %v", err)
+	}
+	_, err = client.GetAgentState(t.Context(), connect.NewRequest(&numenv1.GetAgentStateRequest{}))
+	if connect.CodeOf(err) != connect.CodeUnauthenticated {
+		t.Fatalf("call without the token = %v, want unauthenticated", err)
+	}
+}

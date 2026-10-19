@@ -9,10 +9,7 @@ import (
 
 // Mount registers the plugin's services on s.
 func Mount(s *server.Server) error {
-	return mount(s, &agentServer{})
-}
-
-func mount(s *server.Server, agent *agentServer) error {
+	agent := &agentServer{}
 	s.OnClose(func() { _ = agent.Close() })
 	s.Register(numenv1connect.NewAgentServiceHandler(agent, s.HandlerOptions()...))
 	return nil

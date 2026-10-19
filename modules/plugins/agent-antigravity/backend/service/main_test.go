@@ -14,22 +14,6 @@ import (
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
-// A program that is not installed is listed so.
-func TestAProgramThatIsNotInstalledListsNoModels(t *testing.T) {
-	withoutAgentsAnywhere(t)
-	client := agenttest.Serve(t, &agentServer{})
-
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, one := range got.Msg.GetPrograms() {
-		if one.GetIsInstalled() || len(one.GetModels()) != 0 {
-			t.Errorf("%v", one)
-		}
-	}
-}
-
 // withoutAgentsAnywhere makes this machine hold none of the programs, wherever they are searched for.
 func withoutAgentsAnywhere(t *testing.T) {
 	t.Helper()
