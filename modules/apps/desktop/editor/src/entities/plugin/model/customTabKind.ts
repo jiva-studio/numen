@@ -249,7 +249,7 @@ function createCustomTabState(at: string, deps: CustomTabStateDeps) {
   const write = (body: string): void => {
     const writeNote = deps.hostDeps?.writeNote
     if (!writeNote) return
-    void writeNote(at, body).catch((err) => {
+    writeNote(at, body).catch((err) => {
       errorMessageRef.value = err instanceof Error ? err.message : String(err)
     })
   }
