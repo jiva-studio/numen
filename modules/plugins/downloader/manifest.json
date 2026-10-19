@@ -10,7 +10,8 @@
   "permissions": ["network:outbound", "vault:write"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
-    "keepAliveWhileVisible": false
+    "keepAliveWhileVisible": false,
+    "memoryLimitBytes": 2147483648
   },
   "backend": {
     "type": "process",

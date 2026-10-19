@@ -18,7 +18,8 @@
   ],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
-    "keepAliveWhileVisible": false
+    "keepAliveWhileVisible": false,
+    "memoryLimitBytes": 1073741824
   },
   "backend": {
     "type": "process",

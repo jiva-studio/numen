@@ -226,8 +226,8 @@ func TestValidateWorkingDirectory(t *testing.T) {
 
 func TestProcessLimits(t *testing.T) {
 	defaults := DefaultProcessLimits()
-	if defaults.CPULimitSeconds == 0 {
-		t.Error("expected non-zero default CPU limit")
+	if defaults.CPULimitSeconds != 0 {
+		t.Errorf("the default CPU limit is %d seconds, want none", defaults.CPULimitSeconds)
 	}
 	if defaults.MemoryLimitBytes == 0 {
 		t.Error("expected non-zero default memory limit")
@@ -284,8 +284,8 @@ func TestProcessLimits(t *testing.T) {
 
 func TestHostProcessLimitsConfig(t *testing.T) {
 	h := NewHost("test")
-	if h.processLimits.CPULimitSeconds == 0 || h.processLimits.MemoryLimitBytes == 0 {
-		t.Fatal("expected default limits to be initialized in NewHost")
+	if h.processLimits != DefaultProcessLimits() {
+		t.Fatalf("NewHost holds %v, want the default limits", h.processLimits)
 	}
 
 	customLimits := ProcessLimits{

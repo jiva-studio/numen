@@ -11,7 +11,8 @@
   "secrets": ["apiKey"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
-    "keepAliveWhileVisible": false
+    "keepAliveWhileVisible": false,
+    "memoryLimitBytes": 4294967296
   },
   "backend": {
     "type": "process",
