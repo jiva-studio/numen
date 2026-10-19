@@ -223,9 +223,8 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: modules/libs/core/adapter/index/migration-forward-only.sh "$BASE"
 
-  # Heavy: the steps run in the merge queue and on main, and are skipped on a pull request.
-  # The steps carry the condition: a matrix job skipped whole reports under its
-  # unexpanded name, which no required check holds.
+  # The steps carry the condition that skips a documentation-only change: a matrix
+  # job skipped whole reports under its unexpanded name, which no required check holds.
   go:
     name: Tests (${{ matrix.name }})
     needs: [asked, changes]
@@ -246,7 +245,7 @@ jobs:
         working-directory: modules/libs/core
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') && github.event_name != 'pull_request'
+        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
         with:
           persist-credentials: false
 
@@ -255,20 +254,20 @@ jobs:
       # machine's.
       - id: setup-go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') && github.event_name != 'pull_request'
+        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
         with:
           go-version-file: modules/libs/core/go.mod
           cache: false
 
       # Where the compiler keeps what it built is the machine's own answer.
       - id: go-cache-paths
-        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') && github.event_name != 'pull_request'
+        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
         run: |
           echo "build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
           echo "modules=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') && github.event_name != 'pull_request'
+        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
         with:
           path: ${{ steps.go-cache-paths.outputs.modules }}
           key: go-mod-core-${{ matrix.runner }}-${{ hashFiles('modules/libs/core/go.sum') }}
@@ -278,7 +277,7 @@ jobs:
       # changed and re-runs the tests that changed. The prefix restores main's
       # newest build when the Go version or go.sum differs.
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') && github.event_name != 'pull_request'
+        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
         with:
           path: ${{ steps.go-cache-paths.outputs.build }}
           key: go-build-core-${{ matrix.runner }}-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('modules/libs/core/go.sum') }}
@@ -287,7 +286,7 @@ jobs:
       # A test builds its vault in a temporary folder, and there is memory here
       # to hold every one of them.
       - name: Configure Linux temporary directory
-        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') && github.event_name != 'pull_request' && matrix.runner == 'ubuntu-latest'
+        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') && matrix.runner == 'ubuntu-latest'
         run: echo "TMPDIR=/dev/shm" >> "$GITHUB_ENV"
 
       # A Windows runner hands out a temporary folder on the system drive and
@@ -295,7 +294,7 @@ jobs:
       # in moves to the drive the runner keeps for its own work, and what this
       # machine offers is written into the log beside the timings it produces.
       - name: Configure Windows temporary directory
-        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') && github.event_name != 'pull_request' && matrix.runner == 'windows-latest'
+        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') && matrix.runner == 'windows-latest'
         run: |
           powershell -NoProfile -Command "Get-PSDrive -PSProvider FileSystem | Format-Table -AutoSize Name,Used,Free" || true
           powershell -NoProfile -Command "Get-MpComputerStatus | Format-List RealTimeProtectionEnabled,AntivirusEnabled" || true
@@ -306,13 +305,13 @@ jobs:
       # -race because a scan will grow concurrent, and the cheapest time to find
       # that out is before it does. Every machine runs every test.
       - name: Run Go tests
-        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') && github.event_name != 'pull_request'
+        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
         run: go test ${{ matrix.race && '-race' || '' }} ./...
 
       # A push to main writes what it built, and every other run only reads it.
       # A run that found something still built most of it.
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: ${{ (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') && github.event_name != 'pull_request' && !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') && !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         with:
           path: ${{ steps.go-cache-paths.outputs.build }}
           key: go-build-core-${{ matrix.runner }}-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('modules/libs/core/go.sum') }}
