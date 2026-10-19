@@ -48,11 +48,6 @@ type shelvedBook struct {
 	retired bool
 }
 
-// fingerprint is the size and the stamp of the file the book was opened from.
-func (b *shelvedBook) fingerprint() (size, mtime int64) {
-	return b.size, b.mtime
-}
-
 // take returns the book at path, opened if the shelf holds none of the file as it
 // is now. The caller gives it back with release.
 func (s *shelf) take(path string) (*shelvedBook, error) {
