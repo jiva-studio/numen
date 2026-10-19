@@ -66,6 +66,7 @@ func Distinct(regions []Region, most float64) []Region {
 		for _, k := range kept {
 			if overlap(r.Rect, k.Rect) > most || isInside(r.Rect, k.Rect) {
 				covered = true
+				// gomutants:disable-next-line INVERT_LOOP_CTRL reason="covered is already true; continuing the loop checks further kept regions with identical results"
 				break
 			}
 		}
@@ -84,6 +85,7 @@ func overlap(a, b image.Rectangle) float64 {
 	}
 	common := float64(both.Dx() * both.Dy())
 	either := float64(a.Dx()*a.Dy()) + float64(b.Dx()*b.Dy()) - common
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,BRANCH_IF reason="either is area(a)+area(b)-common; since common is positive, either is always positive"
 	if either <= 0 {
 		return 0
 	}
@@ -116,6 +118,7 @@ func Assemble(lines []Line) (string, []Box) {
 		}
 		if n := getHyphenLength(out); n > 0 {
 			out = out[:len(out)-n]
+			// gomutants:disable-next-line INTEGER_DECREMENT reason="len(kept) is at least 1 whenever out holds text"
 			if k := len(kept); k > 0 {
 				kept[k-1].Span.To -= n
 			}

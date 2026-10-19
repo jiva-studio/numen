@@ -444,12 +444,32 @@ func TestDistinctPreservesInputOrderForEqualScores(t *testing.T) {
 }
 
 func TestDistinctPreservesDisjointRegionsInOriginalOrder(t *testing.T) {
-	first := Region{Label: "first", Score: 0.9, Rect: image.Rect(0, 0, 50, 50), Order: 1}
-	second := Region{Label: "second", Score: 0.5, Rect: image.Rect(60, 60, 100, 100), Order: 2}
-
-	result := Distinct([]Region{second, first}, 0.5)
-	if len(result) != 2 || result[0].Label != "first" || result[1].Label != "second" {
-		t.Fatalf("Distinct kept %+v, want [first, second] sorted by order", result)
+	tests := []struct {
+		name    string
+		regions []Region
+	}{
+		{
+			name: "HigherScoreFirstInOrder",
+			regions: []Region{
+				{Label: "second", Score: 0.5, Rect: image.Rect(60, 60, 100, 100), Order: 2},
+				{Label: "first", Score: 0.9, Rect: image.Rect(0, 0, 50, 50), Order: 1},
+			},
+		},
+		{
+			name: "LowerScoreFirstInOrder",
+			regions: []Region{
+				{Label: "first", Score: 0.2, Rect: image.Rect(0, 0, 50, 50), Order: 1},
+				{Label: "second", Score: 0.9, Rect: image.Rect(60, 60, 100, 100), Order: 2},
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := Distinct(tc.regions, 0.5)
+			if len(result) != 2 || result[0].Label != "first" || result[1].Label != "second" {
+				t.Fatalf("Distinct kept %+v, want [first, second] sorted by order", result)
+			}
+		})
 	}
 }
 
@@ -617,16 +637,181 @@ func TestGroupEarlyTerminationStopsYielding(t *testing.T) {
 	}
 }
 
-func TestAssembleWhitespaceBoxWithinSameLineIsDropped(t *testing.T) {
-	lines := []Line{
-		{Text: "hello", Box: image.Rect(0, 10, 50, 30)},
-		{Text: "   ", Box: image.Rect(60, 10, 100, 30)},
+func TestAssembleWhitespaceBoxWithinSameLine(t *testing.T) {
+	tests := []struct {
+		name  string
+		lines []Line
+		want  string
+	}{
+		{
+			name: "TrailingWhitespaceDropped",
+			lines: []Line{
+				{Text: "hello", Box: image.Rect(0, 10, 50, 30)},
+				{Text: "   ", Box: image.Rect(60, 10, 100, 30)},
+			},
+			want: "hello",
+		},
+		{
+			name: "LeadingWhitespaceIgnored",
+			lines: []Line{
+				{Text: "   ", Box: image.Rect(0, 10, 40, 30)},
+				{Text: "valid", Box: image.Rect(50, 10, 100, 30)},
+			},
+			want: "valid",
+		},
 	}
-	text, boxes := Assemble(lines)
-	if text != "hello" {
-		t.Errorf("text = %q, want %q", text, "hello")
-	}
-	if len(boxes) != 1 {
-		t.Fatalf("got %d boxes, want 1", len(boxes))
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			text, boxes := Assemble(tc.lines)
+			if text != tc.want {
+				t.Errorf("text = %q, want %q", text, tc.want)
+			}
+			if len(boxes) != 1 {
+				t.Fatalf("got %d boxes, want 1", len(boxes))
+			}
+		})
 	}
 }
+
+func TestOverlap(t *testing.T) {
+	tests := []struct {
+		name string
+		a, b image.Rectangle
+		want float64
+	}{
+		{
+			name: "Disjoint",
+			a:    image.Rect(0, 0, 10, 10),
+			b:    image.Rect(20, 20, 30, 30),
+			want: 0,
+		},
+		{
+			name: "Partial",
+			a:    image.Rect(0, 0, 10, 10),
+			b:    image.Rect(5, 0, 15, 20),
+			want: 0.2,
+		},
+		{
+			name: "UnitArea",
+			a:    image.Rect(0, 0, 1, 1),
+			b:    image.Rect(0, 0, 1, 1),
+			want: 1.0,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := overlap(tc.a, tc.b); got != tc.want {
+				t.Errorf("overlap(%v, %v) = %v, want %v", tc.a, tc.b, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestIsInsideDisjointRectangles(t *testing.T) {
+	a := image.Rect(0, 0, 10, 10)
+	b := image.Rect(20, 20, 30, 30)
+	if isInside(a, b) {
+		t.Error("isInside returned true for disjoint rectangles")
+	}
+}
+
+func TestAssembleHyphenation(t *testing.T) {
+	tests := []struct {
+		name      string
+		lines     []Line
+		wantText  string
+		wantSpans []string
+	}{
+		{
+			name: "SingleWordHyphenation",
+			lines: []Line{
+				{Text: "pre-", Box: image.Rect(0, 10, 50, 30)},
+				{Text: "fix", Box: image.Rect(0, 40, 50, 60)},
+			},
+			wantText:  "prefix",
+			wantSpans: []string{"pre", "fix"},
+		},
+		{
+			name: "HyphenAfterNonLetterNotStripped",
+			lines: []Line{
+				{Text: "clause 1-", Box: image.Rect(0, 10, 80, 30)},
+				{Text: "2", Box: image.Rect(0, 40, 50, 60)},
+			},
+			wantText:  "clause 1- 2",
+			wantSpans: []string{"clause 1-", "2"},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			text, boxes := Assemble(tc.lines)
+			if text != tc.wantText {
+				t.Errorf("Assemble text = %q, want %q", text, tc.wantText)
+			}
+			if len(boxes) != len(tc.wantSpans) {
+				t.Fatalf("got %d boxes, want %d", len(boxes), len(tc.wantSpans))
+			}
+			for i, wantSpan := range tc.wantSpans {
+				if got := text[boxes[i].Span.From:boxes[i].Span.To]; got != wantSpan {
+					t.Errorf("box %d span text = %q, want %q", i, got, wantSpan)
+				}
+			}
+		})
+	}
+}
+
+func TestMeasureVerticalOverlap(t *testing.T) {
+	tests := []struct {
+		name string
+		line []Line
+		box  Line
+		want float64
+	}{
+		{
+			name: "MultipleLinesTop",
+			line: []Line{
+				{Box: image.Rect(0, 10, 50, 30)},
+				{Box: image.Rect(0, 15, 50, 35)},
+			},
+			box:  Line{Box: image.Rect(0, 12, 50, 32)},
+			want: 0.75,
+		},
+		{
+			name: "VaryingHeight",
+			line: []Line{{Box: image.Rect(0, 10, 50, 20)}},
+			box:  Line{Box: image.Rect(0, 10, 50, 30)},
+			want: 1.0,
+		},
+		{
+			name: "ZeroHeight",
+			line: []Line{{Box: image.Rect(0, 10, 50, 30)}},
+			box:  Line{Box: image.Rect(0, 10, 50, 10)},
+			want: 0,
+		},
+		{
+			name: "UnitHeight",
+			line: []Line{{Box: image.Rect(0, 10, 50, 11)}},
+			box:  Line{Box: image.Rect(0, 10, 50, 11)},
+			want: 1.0,
+		},
+		{
+			name: "DisjointVertically",
+			line: []Line{{Box: image.Rect(0, 10, 50, 20)}},
+			box:  Line{Box: image.Rect(0, 30, 50, 40)},
+			want: 0,
+		},
+		{
+			name: "PartialOverlapArithmetic",
+			line: []Line{{Box: image.Rect(0, 10, 50, 30)}},
+			box:  Line{Box: image.Rect(0, 20, 50, 40)},
+			want: 0.5,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := measureVerticalOverlap(tc.line, tc.box); got != tc.want {
+				t.Errorf("overlap = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
