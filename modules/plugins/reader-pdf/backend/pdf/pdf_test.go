@@ -358,8 +358,12 @@ func TestAPageSaysHowBigItIs(t *testing.T) {
 			if err != nil {
 				t.Fatalf("render with 0 DPI failed: %v", err)
 			}
-			if drawnDefault.Bounds().Dx() <= 100 {
-				t.Errorf("expected 300 DPI image to have width > 100, got %d", drawnDefault.Bounds().Dx())
+			drawn300, err := held.RenderPage(0, 300)
+			if err != nil {
+				t.Fatalf("render with 300 DPI failed: %v", err)
+			}
+			if drawnDefault.Bounds() != drawn300.Bounds() {
+				t.Errorf("page 0 default DPI bounds %v != 300 DPI bounds %v", drawnDefault.Bounds(), drawn300.Bounds())
 			}
 		})
 	}
