@@ -172,7 +172,7 @@ export function getRenamedPath(renames: readonly PathRename[], path: string): st
   return renames.find((one) => one.from === path)?.to ?? ''
 }
 
-// isNotePath says whether a vault path is a note: a markdown file, or a path without an extension.
+// isNotePath says whether a vault path is a note: a markdown file, or a file name without an extension.
 export function isNotePath(path: string): boolean {
-  return path.endsWith('.md') || !path.includes('.')
+  return path.endsWith('.md') || !getFileName(path).includes('.')
 }

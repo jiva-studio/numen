@@ -25,7 +25,7 @@ export function createPlexTabDeps({ workspace, notes }: PlexHost, id: string): P
     headings: workspace.headingDisplay.count,
     openNote: (path, options) => {
       const title = options?.title ?? ''
-      if (workspace.syncPath(id, path, title)) return
+      if (options?.line === undefined && workspace.syncPath(id, path, title)) return
       workspace.openFile(path, {
         title,
         ...(options?.showing ? { placement: options.showing } : {}),

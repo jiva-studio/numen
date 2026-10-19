@@ -16,6 +16,15 @@ describe('a note a plex tab opens', () => {
     expect(recorded.opened).toStrictEqual([])
   })
 
+  it('opens at the line asked even where a tab is linked to it', () => {
+    const { host, recorded } = createHost({ linked: { 'plex:1': true } })
+
+    createPlexTabDeps(host, 'plex:1').openNote('One.md', { title: 'One', line: 4 })
+
+    expect(recorded.synced).toStrictEqual([])
+    expect(recorded.opened).toStrictEqual([['One.md', { title: 'One', line: 4 }]])
+  })
+
   it('opens where the person asked, at the line asked, where no tab is linked to it', () => {
     const { host, recorded } = createHost()
 
