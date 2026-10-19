@@ -3,7 +3,7 @@
  * window asks of a kind.
  */
 import { defineComponent, h, onErrorCaptured, ref, type Component } from 'vue'
-import type { PluginContext, TabKindRegistration } from '@numen/plugin-sdk'
+import type { TabKindRegistration } from '@numen/plugin-sdk'
 import type { AnyTabKind } from '@/entities/tab/@x/plugin'
 import { renderFallback, resolvePluginComponent } from './styles'
 
@@ -42,14 +42,10 @@ export function pickDeclaredHooks(registration: TabKindRegistration): Partial<An
 }
 
 /**
- * The pane of a declared kind: its component, given the tab's state and the
- * plugin's context. A component that fails is replaced by the plugin's failure.
+ * The pane of a declared kind: its component, given the tab's state and nothing
+ * else. A component that fails is replaced by the plugin's failure.
  */
-export function createDeclaredPane(
-  pluginId: string,
-  rawComponent: unknown,
-  getContext?: () => PluginContext | undefined,
-): Component {
+export function createDeclaredPane(pluginId: string, rawComponent: unknown): Component {
   const component = resolvePluginComponent(rawComponent)
   return defineComponent({
     name: `PluginKindPane[${pluginId}]`,
@@ -62,9 +58,7 @@ export function createDeclaredPane(
       })
       return () => {
         if (error.value) return renderFallback(pluginId, error.value)
-        if (!component) return null
-        const context = getContext?.()
-        return h(component, { state: props.state, ...(context ? { context } : {}) })
+        return component ? h(component, { state: props.state }) : null
       }
     },
   })
@@ -74,7 +68,6 @@ export function createDeclaredPane(
 export function createDeclaredTabKind(
   pluginId: string,
   registration: DeclaredTabKindRegistration,
-  getContext?: () => PluginContext | undefined,
 ): AnyTabKind {
   const { kind, title, getTitle } = registration
   return {
@@ -83,6 +76,6 @@ export function createDeclaredTabKind(
     pluginId,
     open: (at, id) => registration.open(at, id),
     getTitle: (state) => getTitle?.(state) ?? title ?? kind,
-    pane: createDeclaredPane(pluginId, registration.component, getContext),
+    pane: createDeclaredPane(pluginId, registration.component),
   }
 }

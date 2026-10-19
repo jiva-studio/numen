@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, type PropType } from 'vue'
 import { mount } from '@vue/test-utils'
-import type { PluginContext, TabKindRegistration } from '@numen/plugin-sdk'
+import type { TabKindRegistration } from '@numen/plugin-sdk'
 import { createPluginHost } from './host'
 import {
   createDeclaredPane,
@@ -22,10 +22,8 @@ const Pane = defineComponent({
   name: 'HeldPane',
   props: {
     state: { type: Object as PropType<Held>, required: true },
-    context: { type: Object as PropType<PluginContext>, default: undefined },
   },
-  setup: (props) => () =>
-    h('p', { class: 'held' }, `${props.state.at} ${props.context?.pluginId ?? 'none'}`),
+  setup: (props) => () => h('p', { class: 'held' }, props.state.at),
 })
 
 const declare = (over: Partial<TabKindRegistration<Held>> = {}): DeclaredTabKindRegistration =>
@@ -91,25 +89,14 @@ describe('the hooks a registration hands over', () => {
 })
 
 describe('the pane of a declared kind', () => {
-  it('draws the component on the state of the tab and the context of the plugin', () => {
-    const context = { pluginId: 'md.numen.held' } as PluginContext
-    const view = mount(
-      createDeclaredPane('md.numen.held', Pane, () => context),
-      {
-        props: { state: { at: 'Graph.md', id: 'held:1', title: '' } },
-      },
-    )
-
-    expect(view.find('.held').text()).toBe('Graph.md md.numen.held')
-    expect(view.element.shadowRoot).toBeNull()
-  })
-
-  it('draws the component without a context where the plugin has none', () => {
-    const view = mount(createDeclaredPane('p', Pane), {
-      props: { state: { at: 'A.md', id: 'held:1', title: '' } },
+  it('draws the component on the state of the tab, outside a shadow root and with nothing else', () => {
+    const view = mount(createDeclaredPane('md.numen.held', Pane), {
+      props: { state: { at: 'Graph.md', id: 'held:1', title: '' } },
     })
 
-    expect(view.find('.held').text()).toBe('A.md none')
+    expect(view.find('.held').text()).toBe('Graph.md')
+    expect(view.element.shadowRoot).toBeNull()
+    expect(view.find('.held').attributes()).toStrictEqual({ class: 'held' })
   })
 
   it('says the plugin failed where the component throws', async () => {

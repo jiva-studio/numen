@@ -177,7 +177,7 @@ function registerTabKindEntry(
     return { dispose: () => {} }
   }
   const kind = isDeclaredTabKind(registration)
-    ? createDeclaredTabKind(pluginId, registration, getContext)
+    ? createDeclaredTabKind(pluginId, registration)
     : createCustomTabKind(pluginId, registration, { ...deps, getContext })
   const cleanups: (() => void)[] = [deps.registerKind(kind)]
   if (deps.registerEditor) {
