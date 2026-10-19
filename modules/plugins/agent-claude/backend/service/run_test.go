@@ -379,7 +379,7 @@ func TestWriteMcpConfigRequiresBothUrlAndToken(t *testing.T) {
 // A program started by an agent linked into the host's process is given the variables its
 // launch gives it, and none of the others this process holds.
 func TestTheProgramOfALinkedAgentIsStartedWithTheVariablesOfItsLaunch(t *testing.T) {
-	t.Setenv("DESKTOP_ONLY_SETTING", "kept-out")
+	t.Setenv("DESKTOP_ONLY_SETTING", "excluded")
 	out := filepath.Join(t.TempDir(), "env")
 	script := writeScript(t, "claude", "env > "+out+"\n")
 	client := startAgent(t, &agentServer{environ: getVariables(map[string]string{"PATH": os.Getenv("PATH"), "NUMEN_VAULT_PATH": "/vault"})})

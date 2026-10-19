@@ -27,7 +27,7 @@ import (
 const programName = "claude"
 
 // readsHooksOption is the option that lets the program read the hooks, skills and standing
-// instructions this machine holds for it. What a vault carries is refused either way.
+// instructions this machine holds for it. What a vault holds is refused either way.
 const readsHooksOption = "reads_hooks_and_skills"
 
 // programTitle is what the program is called when shown to a person.
@@ -164,7 +164,7 @@ func (s *agentServer) AskAgent(
 		reasons <- parseStream(runCtx, out, stream.Send, toolcall.ReadWords(msg.GetToolDeclarations()), recordSession)
 	}()
 
-	// A run let go of ends here, whatever the programs the child started hold of its output.
+	// A run that is closed ends here, whatever the programs the child started hold of its output.
 	var failedReason string
 	select {
 	case failedReason = <-reasons:

@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// Mount registers the agent's services on s and hands the settings and secrets Configure carries to
+// Mount registers the agent's services on s and hands the settings and secrets Configure receives to
 // the agent. The agent's tasks end when s closes.
 func Mount(s *server.Server) error {
 	agent := &harness.Server{}

@@ -47,7 +47,7 @@ func TestTheToolCallsOfCodexAreReported(t *testing.T) {
 		t.Errorf("expected a finished tool, got %v", got[1])
 	}
 	if got[2].GetSaid() != "plain text\n" {
-		t.Errorf("expected the plain line said, got %v", got[2])
+		t.Errorf("expected the plain line as text, got %v", got[2])
 	}
 }
 

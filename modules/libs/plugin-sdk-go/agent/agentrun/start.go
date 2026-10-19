@@ -83,8 +83,8 @@ func (r *Reader) reportStop(reason string) {
 // Start starts the child of the spec and returns the work that reads its output. A line that is
 // a JSON object goes to the handler; any other line is said as it is.
 func Start(ctx context.Context, reg *Registry, spec Spec) (*Work, error) {
-	running, stop := context.WithCancel(ctx)
-	cmd, cleanup, err := spec.Build(running)
+	runCtx, stop := context.WithCancel(ctx)
+	cmd, cleanup, err := spec.Build(runCtx)
 	if err != nil {
 		stop()
 		return nil, err
@@ -164,7 +164,7 @@ func Start(ctx context.Context, reg *Registry, spec Spec) (*Work, error) {
 			}
 		}
 		scanErr := scanner.Err()
-		isCancelled := running.Err() != nil
+		isCancelled := runCtx.Err() != nil
 		if scanErr != nil {
 			stop()
 		}
@@ -183,9 +183,9 @@ func Start(ctx context.Context, reg *Registry, spec Spec) (*Work, error) {
 	return w, nil
 }
 
-// Relay sends the responses of the work to the stream until the work is done, and stops the work
+// ForwardResponses sends the responses of the work to the stream until the work is done, and stops the work
 // when the stream or the call ends first.
-func Relay(ctx context.Context, work *Work, stream interface {
+func ForwardResponses(ctx context.Context, work *Work, stream interface {
 	Send(*numenv1.AskAgentResponse) error
 }) error {
 	for {
