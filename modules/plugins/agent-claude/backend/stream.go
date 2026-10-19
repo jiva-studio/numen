@@ -220,6 +220,7 @@ func (p *streamParser) parseStreamEvent(_ context.Context, ev streamEvent) {
 }
 
 func (p *streamParser) parseAssistantMessage(_ context.Context, said event) {
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="json.Unmarshal on an empty message returns an error and stops"
 	if p.isStreaming || len(said.Message) == 0 {
 		return
 	}

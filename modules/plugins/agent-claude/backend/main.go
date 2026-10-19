@@ -110,6 +110,7 @@ func (s *agentServer) AskAgent(
 	runCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="work.Output is unused because agent-claude writes responses directly to the stream"
 	work := agentrun.NewWork(conversation, 0, cancel)
 	if !s.registry.Add(work) {
 		removeFile(configFile)
@@ -300,6 +301,7 @@ func main() {
 
 // removeFile removes the file, if there is one.
 func removeFile(path string) {
+	// gomutants:disable-next-line BRANCH_IF reason="os.Remove on an empty path returns ErrNotExist which is ignored"
 	if path == "" {
 		return
 	}

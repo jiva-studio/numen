@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -80,7 +81,7 @@ func TestLifecycleServer(t *testing.T) {
 
 func TestFetchAnthropicModels(t *testing.T) {
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("x-api-key") != "test-key" {
+		if r.Header.Get("x-api-key") != "test-key" || r.Header.Get("anthropic-version") != "2023-06-01" || r.URL.Path != "/v1/models" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -94,12 +95,28 @@ func TestFetchAnthropicModels(t *testing.T) {
 	defer mockServer.Close()
 
 	ctx := context.Background()
-	models, err := fetchAnthropicModels(ctx, "test-key", mockServer.URL)
+	models, err := fetchAnthropicModels(ctx, "test-key", mockServer.URL+"/")
 	if err != nil {
 		t.Fatalf("fetchAnthropicModels failed: %v", err)
 	}
 	if len(models) != 1 || models[0].Name != "claude-3-5-sonnet" {
 		t.Errorf("unexpected models: %+v", models)
+	}
+
+	canceledCtx, cancel := context.WithCancel(ctx)
+	cancel()
+	_, err = fetchAnthropicModels(canceledCtx, "test-key", mockServer.URL)
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("expected wrapped context.Canceled, got %v", err)
+	}
+
+	errServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`{"data":[{"id":"m"}]}`))
+	}))
+	defer errServer.Close()
+	if _, err := fetchAnthropicModels(ctx, "test-key", errServer.URL); err == nil {
+		t.Error("expected error on 500 status code")
 	}
 }
 
@@ -146,6 +163,57 @@ func TestAnEndedRequestKeepsNoModels(t *testing.T) {
 	}
 	if got := catalogue.get(t.Context()); len(got) != 1 {
 		t.Errorf("the next request got %+v", got)
+	}
+}
+
+func TestCatalogueDropsKeptModelsWhenBaseUrlChangesConcurrently(t *testing.T) {
+	entered := make(chan struct{})
+	proceed := make(chan struct{})
+	releaseProceed := func() {
+		select {
+		case <-proceed:
+		default:
+			close(proceed)
+		}
+	}
+	t.Cleanup(releaseProceed)
+
+	srv1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		close(entered)
+		<-proceed
+		_, _ = w.Write([]byte(`{"data": [{"id": "m1"}]}`))
+	}))
+	defer srv1.Close()
+	defer releaseProceed()
+
+	srv2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"data": [{"id": "m2"}]}`))
+	}))
+	defer srv2.Close()
+
+	var catalogue modelCatalogue
+	catalogue.update(map[string]string{"apiKey": "k", "baseUrl": srv1.URL})
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		catalogue.get(t.Context())
+	}()
+
+	select {
+	case <-entered:
+	case <-done:
+		t.Fatal("catalogue.get returned before contacting the first server")
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for catalogue.get to contact the first server")
+	}
+	catalogue.update(map[string]string{"apiKey": "k", "baseUrl": srv2.URL})
+	releaseProceed()
+	<-done
+
+	got := catalogue.get(t.Context())
+	if len(got) != 1 || got[0].Name != "m2" {
+		t.Fatalf("expected models from srv2, got %+v", got)
 	}
 }
 
@@ -534,4 +602,128 @@ func withoutClaudeAnywhere(t *testing.T) {
 	was := claudeSearchPlaces
 	claudeSearchPlaces = nil
 	t.Cleanup(func() { claudeSearchPlaces = was })
+}
+
+func TestGetAgentProgramsIgnoresCommandsForOtherPrograms(t *testing.T) {
+	withoutClaudeAnywhere(t)
+	t.Setenv(anthropicKeyVar, "")
+	client := startAgent(t, &agentServer{})
+
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{
+		Commands: []*numenv1.AgentProgramCommand{
+			{Program: "other", Command: []string{"/bin/other"}},
+		},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if programs := got.Msg.GetPrograms(); len(programs) != 1 || programs[0].GetIsInstalled() {
+		t.Errorf("expected claude to not be installed, got programs: %v", programs)
+	}
+}
+
+func TestAskAgentUsesServerToolsWhenRequestToolsEmpty(t *testing.T) {
+	out := filepath.Join(t.TempDir(), "run")
+	script := writeScript(t, "mock-claude.sh",
+		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+".argv\n"+
+			"echo '{\"type\":\"result\",\"is_error\":false}'\n")
+	agentSvc := &agentServer{
+		tools: []*numenv1.AgentToolDefinition{
+			{Name: "note_read"},
+			{Name: "note_write"},
+		},
+	}
+	client := startAgent(t, agentSvc)
+
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Prompt:  "q",
+		Command: []string{script},
+		Tools:   nil,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	collectSteps(t, stream)
+
+	raw, err := os.ReadFile(out + ".argv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	argv := strings.Split(strings.TrimSpace(string(raw)), "\n")
+	assertPair(t, argv, "--allowedTools", "WebSearch,mcp__numen__note_read,mcp__numen__note_write")
+
+	agentSvc.applyConfig(map[string]string{"apiKey": "k2"})
+}
+
+func TestAskAgentAppendsSystemPrompt(t *testing.T) {
+	out := filepath.Join(t.TempDir(), "run")
+	script := writeScript(t, "mock-claude.sh",
+		"for a in \"$@\"; do printf '%s\\0' \"$a\"; done > "+out+".argv\n"+
+			"echo '{\"type\":\"result\",\"is_error\":false}'\n")
+	agentSvc := &agentServer{systemPrompt: "vault prompt"}
+	client := startAgent(t, agentSvc)
+
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Prompt:       "q",
+		Command:      []string{script},
+		Instructions: "task instructions",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	collectSteps(t, stream)
+
+	raw, err := os.ReadFile(out + ".argv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	argv := strings.Split(string(raw), "\x00")
+	assertPair(t, argv, "--append-system-prompt", "task instructions\nvault prompt")
+}
+
+func TestAskAgentFailsWhenMcpConfigCannotBeWritten(t *testing.T) {
+	script := writeScript(t, "mock-claude.sh", "echo '{\"type\":\"result\",\"is_error\":false}'\n")
+	t.Setenv("TMPDIR", "/dev/null/nowhere")
+	client := startAgent(t, &agentServer{})
+
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Prompt:     "q",
+		Command:    []string{script},
+		ToolsUrl:   "http://127.0.0.1:1/mcp",
+		ToolsToken: "tok",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for stream.Receive() {
+	}
+	if connect.CodeOf(stream.Err()) != connect.CodeInternal {
+		t.Fatalf("expected CodeInternal when mcp config cannot be written, got: %v", stream.Err())
+	}
+}
+
+func TestAskAgentDropsInternalClaudeEnvironmentVariables(t *testing.T) {
+	t.Setenv("CLAUDECODE", "internal-secret")
+	out := filepath.Join(t.TempDir(), "run.env")
+	script := writeScript(t, "mock-claude.sh",
+		"env > "+out+"\n"+
+			"echo '{\"type\":\"result\",\"is_error\":false}'\n")
+	client := startAgent(t, &agentServer{})
+
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Prompt:  "q",
+		Command: []string{script},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	collectSteps(t, stream)
+
+	raw, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(raw), "CLAUDECODE") {
+		t.Fatalf("environment contains CLAUDECODE:\n%s", raw)
+	}
 }
