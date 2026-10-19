@@ -196,6 +196,25 @@ describe('wikilink completion in other places of a document', () => {
       expect(search).toHaveBeenCalledWith('Be')
     })
 
+    it('is the one after the last opened brackets where an earlier pair is left open', async () => {
+      const search = vi.fn().mockResolvedValue([])
+      const doc = 'See [[Alpha [[Be'
+
+      await createWikilinkSource({ search })(getContext(doc, doc.length))
+
+      expect(search).toHaveBeenCalledWith('Be')
+    })
+
+    it('is not read where the link before the caret is closed', async () => {
+      const search = vi.fn().mockResolvedValue([])
+      const doc = 'See [[Alpha] and more'
+
+      const result = await createWikilinkSource({ search })(getContext(doc, doc.length))
+
+      expect(result).toBeNull()
+      expect(search).not.toHaveBeenCalled()
+    })
+
     it('is trimmed of the space around it', async () => {
       const search = vi.fn().mockResolvedValue([])
       const doc = 'See [[  Quantum  '

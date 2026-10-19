@@ -9,6 +9,7 @@ import {
   type Completion,
   type CompletionContext,
   type CompletionResult,
+  type CompletionSource,
 } from '@codemirror/autocomplete'
 import { syntaxTree } from '@codemirror/language'
 import type { Extension } from '@codemirror/state'
@@ -136,8 +137,8 @@ async function completeNotes(
   }
 }
 
-export function createWikilinkSource(options: WikilinkCompletionOptions) {
-  return async (context: CompletionContext): Promise<CompletionResult | null> => {
+export function createWikilinkSource(options: WikilinkCompletionOptions): CompletionSource {
+  return (context: CompletionContext) => {
     const innermost = syntaxTree(context.state).resolveInner(context.pos, 1)
     if (isCode(innermost)) return null
 
