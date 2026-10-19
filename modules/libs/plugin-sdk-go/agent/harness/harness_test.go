@@ -538,3 +538,31 @@ func TestTheVaultTokenIsNotFollowedToPlainHTTP(t *testing.T) {
 		t.Errorf("steps are %v", steps)
 	}
 }
+
+func TestTheCompletionModelsAreTheListedOnesWithTheConfiguredOneAsDefault(t *testing.T) {
+	model := &fakeChat{models: []string{"m0", "m1"}}
+	s := newServer(model.serve(t).URL)
+
+	res, err := s.ListCompletionModels(t.Context(), connect.NewRequest(&numenv1.ListCompletionModelsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := res.Msg.GetModels()
+	if len(got) != 2 || got[0].GetIsDefault() || !got[1].GetIsDefault() || got[1].GetName() != "m1" {
+		t.Errorf("the models are %+v", got)
+	}
+}
+
+func TestTheCompletionModelIsTheConfiguredOneWhereNoneIsListed(t *testing.T) {
+	model := &fakeChat{status: http.StatusUnauthorized}
+	s := newServer(model.serve(t).URL)
+
+	res, err := s.ListCompletionModels(t.Context(), connect.NewRequest(&numenv1.ListCompletionModelsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := res.Msg.GetModels()
+	if len(got) != 1 || got[0].GetName() != "m1" || !got[0].GetIsDefault() {
+		t.Errorf("the models are %+v", got)
+	}
+}

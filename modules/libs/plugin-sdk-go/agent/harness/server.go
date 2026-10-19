@@ -289,3 +289,29 @@ func (s *Server) Complete(
 func (s *Server) Close() error {
 	return s.registry.Close()
 }
+
+// ListCompletionModels lists the models Complete answers with: those the chat API lists, the
+// configured one marked as the default. Where the chat API lists none, it is the configured one
+// alone.
+func (s *Server) ListCompletionModels(
+	ctx context.Context,
+	_ *connect.Request[numenv1.ListCompletionModelsRequest],
+) (*connect.Response[numenv1.ListCompletionModelsResponse], error) {
+	configured := s.getModel("")
+	var listed []model
+	if models, err := s.listModels(ctx); err == nil {
+		listed = models
+	}
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return nil, connect.NewError(connect.CodeCanceled, ctxErr)
+	}
+	res := &numenv1.ListCompletionModelsResponse{}
+	if len(listed) == 0 {
+		res.Models = []*numenv1.CompletionModel{{Name: configured, Title: configured, IsDefault: true}}
+		return connect.NewResponse(res), nil
+	}
+	for _, one := range listed {
+		res.Models = append(res.Models, &numenv1.CompletionModel{Name: one.Name, Title: one.Title, IsDefault: one.Name == configured})
+	}
+	return connect.NewResponse(res), nil
+}
