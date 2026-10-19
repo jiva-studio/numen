@@ -4,7 +4,7 @@ go 1.26.9
 
 require (
 	connectrpc.com/connect v1.21.1
-	github.com/ebitengine/purego v0.11.1
+	github.com/ebitengine/purego v0.11.2
 	github.com/google/jsonschema-go v0.4.3
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/open-spaced-repetition/go-fsrs/v3 v3.3.1

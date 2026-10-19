@@ -4,8 +4,8 @@ go 1.26.9
 
 require (
 	connectrpc.com/connect v1.21.1
-	github.com/getcharzp/onnxruntime_purego v1.24.0
-	github.com/gomlx/go-huggingface v0.4.1
+	github.com/getcharzp/onnxruntime_purego v1.25.0
+	github.com/gomlx/go-huggingface v0.4.3
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go v0.0.0
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models v0.0.0
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx v0.0.0
@@ -13,9 +13,9 @@ require (
 )
 
 require (
-	github.com/ebitengine/purego v0.11.1 // indirect
+	github.com/ebitengine/purego v0.11.2 // indirect
 	github.com/gofrs/flock v0.13.0 // indirect
-	github.com/gomlx/compute v0.1.3 // indirect
+	github.com/gomlx/compute v0.1.6 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/up-zero/gotool v0.0.0-20260105010850-4a05e8fadd54 // indirect

@@ -39,6 +39,13 @@ updates:
       go-major:
         patterns: ["*"]
         update-types: ["major"]
+    # go-huggingface 0.4.4 and later require Go 1.27. go-ocr calls the
+    # EnableCUDA of onnxruntime_purego 1.25, and the OCR plugin builds both.
+    ignore:
+      - dependency-name: github.com/gomlx/go-huggingface
+        versions: [">= 0.4.4"]
+      - dependency-name: github.com/getcharzp/onnxruntime_purego
+        versions: [">= 1.26.0"]
 
   # The interface, sites and tools packages managed by npm workspaces at /modules
   - package-ecosystem: npm
