@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -19,23 +20,31 @@ import (
 
 const testToken = "vault-token"
 
-// chatRequest is what the fake chat API was sent.
-type chatRequest struct {
+// sentRequest is what the fake chat API was sent.
+type sentRequest struct {
 	Auth     string
 	Model    string         `json:"model"`
 	Messages []message      `json:"messages"`
 	Tools    []functionTool `json:"tools"`
+	Stream   bool           `json:"stream"`
 }
 
 // fakeChat is an OpenAI-compatible chat API that answers each request with the next reply it holds,
-// repeating the last, and keeps every request.
+// repeating the last, and keeps every request, refused ones too. A streaming request is answered
+// with the reply in pieces: its text word by word, and each tool call in three fragments. script,
+// where it is set, is the data of the events that answer the first request. refusesStream answers
+// a streaming request 400 Bad Request, and ignoresStream answers it with the whole reply.
 type fakeChat struct {
-	mu       sync.Mutex
-	replies  []message
-	status   int
-	finish   string
-	models   []string
-	requests []chatRequest
+	mu            sync.Mutex
+	replies       []message
+	script        []string
+	status        int
+	finish        string
+	models        []string
+	refusesStream bool
+	ignoresStream bool
+	requests      []sentRequest
+	answered      int
 }
 
 func (f *fakeChat) serve(t *testing.T) *httptest.Server {
@@ -57,21 +66,73 @@ func (f *fakeChat) serve(t *testing.T) *httptest.Server {
 			_ = json.NewEncoder(w).Encode(listing)
 			return
 		}
-		var got chatRequest
+		var got sentRequest
 		_ = json.NewDecoder(r.Body).Decode(&got)
 		got.Auth = r.Header.Get("Authorization")
 		f.requests = append(f.requests, got)
-		reply := f.replies[min(len(f.requests), len(f.replies))-1]
+		if got.Stream && f.refusesStream {
+			http.Error(w, `{"error":{"message":"stream is not supported"}}`, http.StatusBadRequest)
+			return
+		}
+		f.answered++
+		if got.Stream && f.script != nil && f.answered == 1 {
+			writeEvents(w, f.script)
+			return
+		}
+		reply := f.replies[min(f.answered, len(f.replies))-1]
+		if got.Stream && !f.ignoresStream {
+			writeEvents(w, f.getPieces(reply))
+			return
+		}
 		_ = json.NewEncoder(w).Encode(map[string]any{"choices": []map[string]any{{"message": reply, "finish_reason": f.finish}}})
 	}))
 	t.Cleanup(srv.Close)
 	return srv
 }
 
-func (f *fakeChat) getRequests() []chatRequest {
+// getPieces is the data of the events that stream the reply, ending with [DONE].
+func (f *fakeChat) getPieces(reply message) []string {
+	var events []string
+	addDelta := func(delta map[string]any, finish any) {
+		event, _ := json.Marshal(map[string]any{"choices": []map[string]any{{"delta": delta, "finish_reason": finish}}})
+		events = append(events, string(event))
+	}
+	addDelta(map[string]any{"role": "assistant"}, nil)
+	if reply.Content != nil {
+		for _, word := range strings.SplitAfter(*reply.Content, " ") {
+			addDelta(map[string]any{"content": word}, nil)
+		}
+	}
+	for i, call := range reply.ToolCalls {
+		half := len(call.Function.Arguments) / 2
+		addDelta(map[string]any{"tool_calls": []map[string]any{{
+			"index": i, "id": call.ID, "type": "function", "function": map[string]any{"name": call.Function.Name, "arguments": ""},
+		}}}, nil)
+		for _, part := range []string{call.Function.Arguments[:half], call.Function.Arguments[half:]} {
+			addDelta(map[string]any{"tool_calls": []map[string]any{{"index": i, "function": map[string]any{"arguments": part}}}}, nil)
+		}
+	}
+	finish := f.finish
+	if finish == "" {
+		finish = "stop"
+	}
+	addDelta(map[string]any{}, finish)
+	return append(events, "[DONE]")
+}
+
+// writeEvents writes each data as one server-sent event, flushing after each.
+func writeEvents(w http.ResponseWriter, data []string) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	for _, one := range data {
+		_, _ = fmt.Fprintf(w, "data: %s\n\n", one)
+		w.(http.Flusher).Flush()
+	}
+}
+
+func (f *fakeChat) getRequests() []sentRequest {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	return append([]chatRequest(nil), f.requests...)
+	return append([]sentRequest(nil), f.requests...)
 }
 
 // newCallReply is a reply of the model that calls the tool with the arguments.
@@ -151,7 +212,7 @@ func ask(t *testing.T, s *Server, task *numenv1.AskAgentRequest) []*numenv1.AskA
 	return steps
 }
 
-// describeSteps writes the steps out one word each.
+// describeSteps writes the steps out one word each, a run of pieces of what was said as one.
 func describeSteps(steps []*numenv1.AskAgentResponse) string {
 	words := make([]string, 0, len(steps))
 	for _, one := range steps {
@@ -163,12 +224,25 @@ func describeSteps(steps []*numenv1.AskAgentResponse) string {
 		case one.GetToolFinished() != nil:
 			words = append(words, "finished")
 		case one.GetSaid() != "":
-			words = append(words, "said")
+			if len(words) == 0 || words[len(words)-1] != "said" {
+				words = append(words, "said")
+			}
 		default:
 			words = append(words, "stopped")
 		}
 	}
 	return strings.Join(words, " ")
+}
+
+// getSaid is every piece of what was said, in the order it was sent.
+func getSaid(steps []*numenv1.AskAgentResponse) []string {
+	var said []string
+	for _, one := range steps {
+		if text := one.GetSaid(); text != "" {
+			said = append(said, text)
+		}
+	}
+	return said
 }
 
 func newServer(chatURL string) *Server {
@@ -191,8 +265,8 @@ func TestAToolTheModelCallsRunsAndItsResultIsFedBack(t *testing.T) {
 	if call.GetTool() != "Read a note" || call.GetKind() != "read" || call.GetCall() != "call-1" || call.GetPath() != "Plan.md" {
 		t.Errorf("the call is %+v", call)
 	}
-	if steps[4].GetSaid() != "Water the garden." || steps[5].GetStopped() != reasonDone {
-		t.Errorf("the answer is %q, stopped %q", steps[4].GetSaid(), steps[5].GetStopped())
+	if said, last := strings.Join(getSaid(steps), ""), steps[len(steps)-1]; said != "Water the garden." || last.GetStopped() != reasonDone {
+		t.Errorf("the answer is %q, stopped %q", said, last.GetStopped())
 	}
 	if calls := vault.getCalls(); len(calls) != 1 || calls[0] != `{"path":"Plan.md"}` {
 		t.Errorf("the vault was called with %v", calls)
@@ -363,7 +437,7 @@ func TestCompleteAnswersWithNoTools(t *testing.T) {
 		t.Fatalf("got %+v", res.Msg)
 	}
 	got := model.getRequests()[0]
-	if got.Auth != "Bearer host-key" || got.Model != "m1" || len(got.Tools) != 0 || len(got.Messages) != 2 {
+	if got.Auth != "Bearer host-key" || got.Model != "m1" || len(got.Tools) != 0 || len(got.Messages) != 2 || got.Stream {
 		t.Errorf("the request was %+v", got)
 	}
 }
@@ -415,7 +489,7 @@ func TestAnAnswerCutOffAtItsLengthLimitIsReportedSo(t *testing.T) {
 
 	steps := ask(t, s, newTask("", "Plan?"))
 
-	if got := describeSteps(steps); got != "model said stopped" || steps[2].GetStopped() != reasonCut {
+	if got := describeSteps(steps); got != "model said stopped" || steps[len(steps)-1].GetStopped() != reasonCut {
 		t.Errorf("steps are %q, stopped %q", got, steps[len(steps)-1].GetStopped())
 	}
 }
