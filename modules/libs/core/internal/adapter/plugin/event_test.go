@@ -69,18 +69,30 @@ func servePlugin(t *testing.T, recorder *eventRecorder) int {
 }
 
 // newEventHost returns a host whose plugins subscribe to the given activation events and run on the given ports.
+// The host is torn down before its processes are killed.
 func newEventHost(t *testing.T, subscriptions map[string][]string, ports map[string]int) *Host {
 	t.Helper()
 	host := NewHost("desktop.editor")
 	for id, events := range subscriptions {
 		host.plugins[id] = DiscoveredPlugin{Manifest: port.PluginManifest{ID: id, ActivationEvents: events}}
 	}
+	var mu sync.Mutex
+	var procs []*os.Process
+	t.Cleanup(func() {
+		mu.Lock()
+		defer mu.Unlock()
+		for _, proc := range procs {
+			killProcess(t, proc)
+		}
+	})
 	host.SetLauncher(func(_ context.Context, p DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		cmd := newIdleCommand()
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}
-		t.Cleanup(func() { killProcess(t, cmd.Process) })
+		mu.Lock()
+		procs = append(procs, cmd.Process)
+		mu.Unlock()
 		handshake := fmt.Sprintf("NUMEN_READY port=%d\n", ports[p.Manifest.ID])
 		return cmd.Process, io.NopCloser(strings.NewReader(handshake)), nil
 	})
