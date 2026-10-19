@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { useTabLinks } from '@/features/tab-linking'
-import { isNotePath, useTabSync, type TabSyncDeps } from './useTabSync'
+import { useTabSync, type TabSyncDeps } from './useTabSync'
 
 type Navigate = (state: unknown, path: string, title: string) => void
 
@@ -67,18 +67,6 @@ describe('a path chosen in a linked tab', () => {
       useTabSync({ held, tabLinks: useTabLinks(), onError: vi.fn() }).syncPathFromTab('s', 'a.md'),
     ).toBe(false)
     expect(navigate).not.toHaveBeenCalled()
-  })
-})
-
-describe('isNotePath', () => {
-  it('holds for markdown files and for paths without an extension', () => {
-    expect(isNotePath('Ideas/Plan.md')).toBe(true)
-    expect(isNotePath('Ideas/Plan')).toBe(true)
-  })
-
-  it('does not hold for other extensions', () => {
-    expect(isNotePath('Books/Guide.pdf')).toBe(false)
-    expect(isNotePath('Ideas/Plan.txt')).toBe(false)
   })
 })
 

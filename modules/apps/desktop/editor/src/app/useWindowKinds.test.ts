@@ -2,36 +2,26 @@
  * The kinds a window registers, and what each is handed of the others.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
 import { useWindowKinds } from './useWindowKinds'
 
 type MockSeen = {
   writeMessage: unknown
   dragged: unknown
   destinations: unknown
-  askAgent: (q: string) => void
   about: () => unknown
 }
 
 const h = vi.hoisted(() => ({
-  seen: {} as Record<'plex' | 'agent' | 'files', MockSeen>,
-  plexes: {} as Record<string, unknown>,
+  seen: {} as Record<'agent' | 'files', MockSeen>,
   agents: {} as Record<string, unknown>,
 }))
 
-vi.mock('./kinds/plex', () => ({
-  createPlexKind: (args: unknown) => {
-    h.seen.plex = args as MockSeen
-    return h.plexes
-  },
-}))
 vi.mock('./kinds/agent', () => ({
   createAgentKind: (args: unknown) => {
     h.seen.agent = args as MockSeen
     return h.agents
   },
-}))
-vi.mock('./kinds/media', () => ({
-  createMediaKinds: () => ({}),
 }))
 vi.mock('./kinds/files', () => ({
   createFilesKind: (args: unknown) => {
@@ -40,26 +30,36 @@ vi.mock('./kinds/files', () => ({
   },
 }))
 
-const create = () => {
+/** The plex tab the window holds, and what its kind says it is over. */
+interface Plex {
+  readonly target?: { path: string; title: string }
+}
+
+const create = ({ plex, hasPlexKind = true }: { plex?: Plex; hasPlexKind?: boolean } = {}) => {
   const writer = vi.fn()
   const deps = {
     log: { getWriter: vi.fn(() => writer) },
-    tabOpeners: { openFileAt: vi.fn(), openFile: vi.fn() },
-    held: { registerKinds: vi.fn() },
-    editing: { kinds: ['note', 'deck'] },
-    settings: { kinds: ['settings'] },
+    tabOpeners: { openFileAt: vi.fn(), openFile: vi.fn(async () => {}) },
+    held: {
+      registerKinds: vi.fn(),
+      hasKind: vi.fn(() => hasPlexKind),
+      navigateTab: vi.fn(async () => 'plex:1'),
+      navigateTabsAt: vi.fn(async () => {}),
+      handle: { last: vi.fn(() => (plex ? { id: 'plex:1', state: 'plex state' } : null)) },
+      getTab: vi.fn(() => ({ kind: { getTarget: () => plex?.target } })),
+    },
+    editing: { kinds: ['note', 'deck'], making: {} },
+    settings: { kinds: ['settings'], nesting: { isNesting: ref(true), headings: ref(2) } },
+    window: { failure: ref(''), opening: ref('Root.md'), readInitialNote: vi.fn() },
+    core: {},
+    getTarget: vi.fn(() => ({})),
+    runCommand: vi.fn(),
   } as unknown as Parameters<typeof useWindowKinds>[0]
   return { deps, writer, window: useWindowKinds(deps) }
 }
 
 beforeEach(() => {
-  h.seen = {} as Record<'plex' | 'agent' | 'files', MockSeen>
-  h.plexes = {
-    kind: 'plex',
-    looking: vi.fn(() => 'Ideas/Plan.md'),
-    getName: vi.fn(() => 'The plan'),
-    travel: vi.fn(),
-  }
+  h.seen = {} as Record<'agent' | 'files', MockSeen>
   h.agents = { kind: 'agent', askQuestion: vi.fn() }
 })
 
@@ -68,15 +68,13 @@ describe('the window kinds', () => {
     const { deps, writer } = create()
 
     expect(deps.log.getWriter).toHaveBeenCalledWith('command')
-    expect(h.seen.plex.writeMessage).toBe(writer)
     expect(h.seen.files.writeMessage).toBe(writer)
   })
 
-  it('starts with nothing dragged, shared by the plex and files kinds', () => {
+  it('starts with nothing dragged, shared with the files kind', () => {
     const { window } = create()
 
     expect(window.dragged.value).toEqual([])
-    expect(h.seen.plex.dragged).toBe(window.dragged)
     expect(h.seen.files.dragged).toBe(window.dragged)
   })
 
@@ -87,7 +85,6 @@ describe('the window kinds', () => {
       'note',
       'deck',
       'settings',
-      'plex',
       'agent',
       'files',
     ])
@@ -101,41 +98,51 @@ describe('the window kinds', () => {
   })
 })
 
-describe('asking the agent from the plex', () => {
-  it('puts the text to the agent as a question', () => {
+describe('what the agent is about', () => {
+  it('is what the plex the person was last in is over', () => {
+    create({ plex: { target: { path: 'Ideas/Plan.md', title: 'The plan' } } })
+
+    expect(h.seen.agent.about()).toEqual({ path: 'Ideas/Plan.md', title: 'The plan' })
+  })
+
+  it('is no note at all in a window holding no plex, or one over nothing', () => {
     create()
+    expect(h.seen.agent.about()).toEqual({ path: '', title: '' })
 
-    h.seen.plex.askAgent('what is this?')
-
-    expect(h.agents.askQuestion).toHaveBeenCalledWith('what is this?')
+    create({ plex: {} })
+    expect(h.seen.agent.about()).toEqual({ path: '', title: '' })
   })
 })
 
-describe('what the agent is about', () => {
-  it('is the plex path under the name the plex gives it', () => {
-    create()
+describe('a note travelled to', () => {
+  it('is put in the plex the person was last in', async () => {
+    const { deps, window } = create()
 
-    expect(h.seen.agent.about()).toEqual({ path: 'Ideas/Plan.md', title: 'The plan' })
-    expect(h.plexes.getName).toHaveBeenCalledWith('Ideas/Plan.md')
+    await window.travel('a.md')
+
+    expect(deps.held.navigateTab).toHaveBeenCalledWith('plex', 'a.md')
+    expect(deps.tabOpeners.openFile).not.toHaveBeenCalled()
   })
 
-  it('is titled by the path when the plex gives it no name', () => {
-    create()
-    h.plexes.getName = vi.fn(() => '')
+  it('is opened in its editor where the window has no plex kind', async () => {
+    const { deps, window } = create({ hasPlexKind: false })
 
-    expect(h.seen.agent.about()).toEqual({ path: 'Ideas/Plan.md', title: 'Ideas/Plan.md' })
+    await window.destinations.travel('a.md')
+
+    expect(deps.held.navigateTab).not.toHaveBeenCalled()
+    expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.md', '', 'here')
+  })
+
+  it('moves every tab standing on a note that left the vault', async () => {
+    const { deps, window } = create()
+
+    await window.leavePath('Gone.md', 'Root.md')
+
+    expect(deps.held.navigateTabsAt).toHaveBeenCalledWith('Gone.md', 'Root.md')
   })
 })
 
 describe('the destinations', () => {
-  it('travel moves the plex to the path', () => {
-    const { window } = create()
-
-    window.destinations.travel('a.md')
-
-    expect(h.plexes.travel).toHaveBeenCalledWith('a.md')
-  })
-
   it('open the file at the path with the one run', () => {
     const { deps, window } = create()
     const run = { from: 1, to: 4 }
@@ -151,5 +158,23 @@ describe('the destinations', () => {
     window.destinations.openFile('a.md', 'A', 7)
 
     expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.md', 'A', { where: 'here', line: 7 })
+  })
+})
+
+describe('the services the window gives a plugin', () => {
+  it('ask the agent, share what is dragged and stand on the note the vault opens with', () => {
+    const { window, writer } = create()
+    const { workspace, notes } = window.services
+
+    workspace?.ask('what is this?')
+    workspace?.setDraggedPaths(['a.md'])
+    workspace?.showError('the link was not written')
+
+    expect(h.agents.askQuestion).toHaveBeenCalledWith('what is this?')
+    expect(window.dragged.value).toStrictEqual(['a.md'])
+    expect(writer).toHaveBeenCalledWith('the link was not written', 'error')
+    expect(workspace?.openingPath.value).toBe('Root.md')
+    expect(workspace?.headingDisplay.count.value).toBe(2)
+    expect(notes?.creatableRelations).toStrictEqual(['parent', 'child', 'jump'])
   })
 })

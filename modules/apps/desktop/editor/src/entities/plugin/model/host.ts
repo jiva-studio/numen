@@ -280,6 +280,8 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
     ...createEventBridge(deps, registry),
     openTab: (kind: string, at?: string) => deps.openTab(kind, at),
     closeTab: (id: string) => deps.closeTab?.(id),
+    getWorkspace: () => deps.getWorkspace?.(),
+    getNotes: () => deps.getNotes?.(),
   }
 }
 
@@ -347,6 +349,9 @@ export function createPluginHost(deps: PluginHostDeps) {
     },
     getSetting: contextHost.getSetting,
     onSettingChange: contextHost.onSettingChange,
+    /** A change to the vault, told to every plugin that listens for one. */
+    notifyVaultChange: (event: VaultChangeEvent): void =>
+      notifyListeners(registry.vaultListeners, event, deps),
     disposePlugin,
     disposeAll: () => disposeAllEntries(registry, deps),
     getRegisteredReaders: () => [...registry.readers.values()].map((r) => r.reg),

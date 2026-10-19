@@ -76,13 +76,17 @@ describe('createPluginLoader', () => {
       getRegisteredReaders: vi.fn(() => []),
       getRegisteredTabKinds: vi.fn(() => []),
       getRegisteredCommands: vi.fn(() => []),
+      notifyVaultChange: vi.fn(),
       triggerSettingChange,
       settings,
     }
   }
 
   const frontendManifestFetch = (async () =>
-    ({ ok: true, json: async () => ({ id: 'x', frontend: {} }) }) as Response) as unknown as typeof fetch
+    ({
+      ok: true,
+      json: async () => ({ id: 'x', frontend: {} }),
+    }) as Response) as unknown as typeof fetch
 
   function createTestLoader(
     host: PluginHost,
@@ -299,7 +303,11 @@ describe('createPluginLoader', () => {
 describe('createPluginLoader catalog manifests', () => {
   it('hands the catalog manifest to the context of a plugin, on every activation', async () => {
     const createContext = vi.fn((pluginId: string) => ({ pluginId }) as unknown as PluginContext)
-    const host = { createContext, disposePlugin: vi.fn(), disposeAll: vi.fn() } as unknown as PluginHost
+    const host = {
+      createContext,
+      disposePlugin: vi.fn(),
+      disposeAll: vi.fn(),
+    } as unknown as PluginHost
     const manifest = { id: 'cat.plugin', name: 'Cat', version: '1', permissions: ['vault:read'] }
     const loader = createPluginLoader({
       host,
@@ -456,7 +464,10 @@ describe('createPluginLoader failures, order and toggles', () => {
 
   it('follows the enabled setting through one subscription per plugin', async () => {
     const { host, listeners } = createHost()
-    const loader = createPluginLoader({ host, loaders: { p: async () => ({ activate: () => {} }) } })
+    const loader = createPluginLoader({
+      host,
+      loaders: { p: async () => ({ activate: () => {} }) },
+    })
     await loader.start()
     await loader.trackPlugins(['p'])
 
@@ -473,7 +484,10 @@ describe('createPluginLoader failures, order and toggles', () => {
     const loader = createPluginLoader({
       host,
       fetch: (async () =>
-        ({ ok: true, json: async () => ({ id: 'dyn', frontend: {} }) }) as Response) as unknown as typeof fetch,
+        ({
+          ok: true,
+          json: async () => ({ id: 'dyn', frontend: {} }),
+        }) as Response) as unknown as typeof fetch,
       dynamicImport: async (url) => {
         imports.push(url)
         return { activate: () => {} }
@@ -492,7 +506,10 @@ describe('createPluginLoader failures, order and toggles', () => {
     const loader = createPluginLoader({
       host,
       fetch: (async () =>
-        ({ ok: true, json: async () => ({ id: 'dyn', frontend: {} }) }) as Response) as unknown as typeof fetch,
+        ({
+          ok: true,
+          json: async () => ({ id: 'dyn', frontend: {} }),
+        }) as Response) as unknown as typeof fetch,
       dynamicImport: async (url) => {
         imports.push(url)
         return { activate: () => {} }

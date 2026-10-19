@@ -12,7 +12,6 @@ import {
   Layers,
   LayoutTemplate,
   SlidersHorizontal,
-  Waypoints,
   type LucideIcon,
 } from '@lucide/vue'
 import {
@@ -22,7 +21,6 @@ import {
   DOCUMENT,
   FILES,
   NOTE,
-  PLEX,
   PRESET,
   RECORDING,
   SETTINGS,
@@ -32,7 +30,6 @@ import {
 } from './workspace'
 
 const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
-  [PLEX, Waypoints],
   [AGENT, Bot],
   [FILES, FolderTree],
   [NOTE, FileText],

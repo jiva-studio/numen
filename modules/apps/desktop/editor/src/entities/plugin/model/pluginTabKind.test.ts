@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, type PropType } from 'vue'
 import { mount } from '@vue/test-utils'
-import type { TabKindRegistration } from '@numen/plugin-sdk'
+import type { PluginContext, TabKindRegistration } from '@numen/plugin-sdk'
 import { createPluginHost } from './host'
 import {
   createDeclaredPane,
@@ -144,5 +144,56 @@ describe('a declared kind registered through a plugin context', () => {
     expect(kind?.open('A.md', 'held:1')).toEqual({ at: 'A.md', id: 'held:1', title: 'T' })
     sub.dispose()
     expect(registered).toHaveLength(0)
+  })
+})
+
+describe('the services a plugin context is given', () => {
+  const createDeps = (over: Partial<PluginHostDeps> = {}): PluginHostDeps => ({
+    registerKind: () => () => {},
+    registerExtensionReader: () => () => {},
+    openTab: async () => 'tab',
+    ...over,
+  })
+
+  it('are the window and the notes the host has made by the time the plugin activates', () => {
+    const workspace = { name: 'workspace' } as unknown as NonNullable<PluginContext['workspace']>
+    const notes = { name: 'notes' } as unknown as NonNullable<PluginContext['notes']>
+    const host = createPluginHost(
+      createDeps({ getWorkspace: () => workspace, getNotes: () => notes }),
+    )
+
+    const context = host.createContext('md.numen.held')
+
+    expect(context.workspace).toBe(workspace)
+    expect(context.notes).toBe(notes)
+  })
+
+  it('are absent where the host offers none', () => {
+    const context = createPluginHost(createDeps()).createContext('md.numen.held')
+
+    expect(context).not.toHaveProperty('workspace')
+    expect(context).not.toHaveProperty('notes')
+  })
+
+  it('tell every plugin listening for a change to the vault, and a failing one is reported', async () => {
+    const onError = vi.fn()
+    const host = createPluginHost(createDeps({ onError }))
+    const heard: unknown[] = []
+    const reading = {
+      id: 'md.numen.one',
+      name: 'One',
+      version: '1.0.0',
+      permissions: ['vault:read'],
+    }
+    host.createContext('md.numen.one', reading).onVaultChange((event) => void heard.push(event))
+    host.createContext('md.numen.two', reading).onVaultChange(() => {
+      throw new Error('no')
+    })
+
+    host.notifyVaultChange({ paths: ['A.md'] })
+    await new Promise((done) => setTimeout(done, 0))
+
+    expect(heard).toStrictEqual([{ paths: ['A.md'] }])
+    expect(onError).toHaveBeenCalledWith('md.numen.two', expect.any(Error))
   })
 })

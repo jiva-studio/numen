@@ -50,7 +50,8 @@ const createOptions = (over: Partial<CommandDepsOptions> = {}) => {
     recorded: {},
     pointed: {},
     files: () => ({ revealPath: record('revealPath') }),
-    plexes: () => ({ travel: vi.fn(), leavePath: vi.fn() }),
+    travel: vi.fn(),
+    leavePath: vi.fn(),
     agents: () => ({
       askQuestion: (text: string) => {
         record('askQuestion')(text)
@@ -101,9 +102,7 @@ describe('createCommandDeps', () => {
     })
 
     await deps.settings.choosePluginSetting?.('transcription', 'autoRun', true)
-    expect(written).toStrictEqual([
-      { at: ['plugins', 'transcription', 'autoRun'], value: 'true' },
-    ])
+    expect(written).toStrictEqual([{ at: ['plugins', 'transcription', 'autoRun'], value: 'true' }])
   })
 
   it('chooses an indexing model when not found in models', async () => {
@@ -269,13 +268,11 @@ describe('the commands reach the window', () => {
     ])
   })
 
-  it('travels and leaves through the plex', async () => {
+  it('travels and leaves through the window', async () => {
     const went: string[] = []
     const { deps } = createOptions({
-      plexes: () => ({
-        travel: async (path) => void went.push(`travel ${path}`),
-        leavePath: async (from, to) => void went.push(`leave ${from} ${to}`),
-      }),
+      travel: async (path) => void went.push(`travel ${path}`),
+      leavePath: async (from, to) => void went.push(`leave ${from} ${to}`),
     })
 
     await deps.goes.travel('Llama.md')

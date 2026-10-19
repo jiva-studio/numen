@@ -62,10 +62,10 @@ export interface CommandsDepsOptions {
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   pointed?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   files: () => { revealPath: (path: string) => void }
-  plexes: () => {
-    travel: (path: string) => Promise<void> | void
-    leavePath: (from: string, to: string) => Promise<void> | void
-  }
+  /** A note put in front of the person in the plex they were last in. */
+  travel: (path: string) => Promise<void> | void
+  /** Every tab standing on a path moved to another. */
+  leavePath: (from: string, to: string) => Promise<void> | void
   agents: () => { askQuestion: (text: string) => Promise<void> | void }
   getOpeningNote: () => string
   writeMessage: MessageWriter
