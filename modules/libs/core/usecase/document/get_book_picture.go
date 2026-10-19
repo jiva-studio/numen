@@ -30,12 +30,12 @@ var pictured = map[string]bool{
 // GetBookPicture reads one picture out of a book's archive.
 type GetBookPicture struct {
 	readers port.VaultReaders
-	books   Books
+	books   port.Book
 	detect  func([]byte) string
 }
 
 // NewGetBookPicture settles the type of an entry by detect, which reads the bytes.
-func NewGetBookPicture(readers port.VaultReaders, books Books, detect func([]byte) string) GetBookPicture {
+func NewGetBookPicture(readers port.VaultReaders, books port.Book, detect func([]byte) string) GetBookPicture {
 	return GetBookPicture{readers: readers, books: books, detect: detect}
 }
 
@@ -53,7 +53,7 @@ func (u GetBookPicture) Execute(
 	if err := checkUnchanged(named, mark); err != nil {
 		return Picture{}, err
 	}
-	body, err := u.books.ReadEntry(ctx, mark, entry)
+	body, err := u.books.ReadEntry(ctx, getDomainFingerprint(mark), entry)
 	if errors.Is(err, port.ErrBookChanged) {
 		return Picture{}, ErrChanged
 	}

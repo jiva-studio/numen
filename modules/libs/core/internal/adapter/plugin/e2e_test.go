@@ -12,9 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"connectrpc.com/connect"
-	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
-
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -217,8 +214,7 @@ func TestRealBookPluginProcessE2E(t *testing.T) {
 	}()
 
 	// Query non-existent book - expect error from plugin service
-	req := connect.NewRequest(&v1.GetBookRequest{Path: "nonexistent.epub"})
-	_, err = bridge.GetBook(ctx, req)
+	_, err = bridge.GetBook(ctx, "nonexistent.epub")
 	if err == nil {
 		t.Fatal("expected error querying nonexistent book from real plugin")
 	}

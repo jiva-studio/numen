@@ -24,6 +24,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -122,10 +123,34 @@ func (p *paper) getPageDraws(index int) int {
 // newViewingAPI is a window reading the documents of the vaults the readers open
 // through the viewer.
 func newViewingAPI(readers port.VaultReaders, v *viewer) *Services {
+	return newBooksAPI(readers, absentBooks{}, v)
+}
+
+// newBooksAPI is that window reading the books of the vaults through books.
+func newBooksAPI(readers port.VaultReaders, books port.Book, v *viewer) *Services {
 	services := newBareServices()
 	services.readFiles(readers)
-	services.readDocuments(readers, v)
+	services.readDocuments(readers, books, v)
 	return services
+}
+
+// absentBooks is a build whose book plugin is not installed.
+type absentBooks struct{}
+
+func (absentBooks) GetBook(context.Context, string) (domain.BookShape, error) {
+	return domain.BookShape{}, absentBookPlugin()
+}
+
+func (absentBooks) ReadBookMarkup(context.Context, string, string, *domain.Fingerprint) (string, error) {
+	return "", absentBookPlugin()
+}
+
+func (absentBooks) ReadEntry(context.Context, domain.Fingerprint, string) ([]byte, error) {
+	return nil, absentBookPlugin()
+}
+
+func absentBookPlugin() error {
+	return &port.UnavailableError{Capability: "book", Reason: port.PluginNotInstalled}
 }
 
 // stat is what the vault says about the file at a path, as an address names it.

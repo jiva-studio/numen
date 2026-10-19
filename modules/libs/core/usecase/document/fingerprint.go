@@ -51,3 +51,12 @@ func checkUnchanged(named, found Fingerprint) error {
 	}
 	return nil
 }
+
+// getDomainFingerprint is the fingerprint as the core states it.
+func getDomainFingerprint(mark Fingerprint) domain.Fingerprint {
+	out := domain.Fingerprint{Path: mark.Path, Size: mark.Size}
+	if mark.Mtime != 0 {
+		out.ModTime = time.Unix(0, mark.Mtime)
+	}
+	return out
+}

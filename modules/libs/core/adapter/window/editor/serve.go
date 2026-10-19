@@ -338,8 +338,7 @@ func createWindow(
 	state.EmitEvent = made.EmitEvent
 	readers := made.GetVaultReaders()
 	services.readFiles(readers)
-	services.readDocuments(readers, shown)
-	services.Book.openClient = made.OpenBookClient
+	services.readDocuments(readers, made.GetBooks(), shown)
 	services.readTexts(made.OpenSourceTexts())
 	services.Ocr.highlight = &highlight
 	services.Note.getOpeningNote = note.NewGetOpeningNote(made.GetNoteQueries())

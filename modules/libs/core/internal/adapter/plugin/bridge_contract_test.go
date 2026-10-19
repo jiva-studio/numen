@@ -94,6 +94,18 @@ var bridgeContracts = []bridgeContract{
 			return isZeroResult(b.ReadBook(ctx, []byte("PK")))
 		})
 	}},
+	{"book shape", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
+		b, err := OpenBookBridge(ctx, h)
+		return createContract(b, err, func(b *BookBridge, ctx context.Context) (bool, error) {
+			return isZeroResult(b.GetBook(ctx, "a.epub"))
+		})
+	}},
+	{"book entry", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
+		b, err := OpenBookBridge(ctx, h)
+		return createContract(b, err, func(b *BookBridge, ctx context.Context) (bool, error) {
+			return isZeroResult(b.ReadEntry(ctx, domain.Fingerprint{Path: "a.epub"}, "cover.png"))
+		})
+	}},
 	{"agent", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
 		b, err := OpenAgentBridgeForPlugin(ctx, h, contractPluginID)
 		return createContract(b, err, func(b *AgentBridge, ctx context.Context) (bool, error) {

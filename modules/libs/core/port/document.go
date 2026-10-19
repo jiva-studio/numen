@@ -55,13 +55,15 @@ type OpenDocument interface {
 // DocumentRenderer is an alias for PageRenderer.
 type DocumentRenderer = PageRenderer
 
-// A document that cannot be read is one of these, and a caller says which of
-// the two it met.
+// A document or book that cannot be read is refused with one of these, and a
+// caller says which it met.
 var (
 	// ErrNotADocument is bytes that are not the format at all.
 	ErrNotADocument = errors.New("not a document this reads")
 	// ErrEncrypted is a document whose text is locked.
 	ErrEncrypted = errors.New("the document is locked")
+	// ErrNoBook is a path that holds no book.
+	ErrNoBook = errors.New("there is no such book")
 	// ErrNoBookEntry is an entry the archive of a book does not hold.
 	ErrNoBookEntry = errors.New("the book has no such entry")
 	// ErrBookChanged is a book whose file is no longer the bytes an ask named.
