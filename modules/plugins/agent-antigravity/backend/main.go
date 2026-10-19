@@ -22,11 +22,13 @@ func (s *agentServer) AskAgent(
 	req *connect.Request[numenv1.AskAgentRequest],
 	stream *connect.ServerStream[numenv1.AskAgentResponse],
 ) error {
-	_ = stream.Send(&numenv1.AskAgentResponse{
+	if err := stream.Send(&numenv1.AskAgentResponse{
 		Step: &numenv1.AskAgentResponse_ModelStarted{
 			ModelStarted: &numenv1.ModelStarted{},
 		},
-	})
+	}); err != nil {
+		return err
+	}
 
 	work, err := agentrun.Start(ctx, &s.Registry, newSpec(req.Msg, &s.Registry))
 	if err != nil {

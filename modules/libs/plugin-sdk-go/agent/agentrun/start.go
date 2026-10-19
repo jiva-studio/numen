@@ -58,12 +58,12 @@ func (r *Reader) Send(resp *numenv1.AskAgentResponse) {
 	}
 }
 
-// SetSession keeps the session the next task of the conversation is asked in. A run in no
-// conversation keeps none.
 // CountStep counts one step of the run, for a program whose stream does not say when a tool
 // finished.
 func (r *Reader) CountStep() { r.done++ }
 
+// SetSession keeps the session the next task of the conversation is asked in. A run in no
+// conversation keeps none.
 func (r *Reader) SetSession(session string) {
 	if r.conversation != "" && session != "" {
 		r.registry.SetSession(r.conversation, session)
@@ -164,9 +164,13 @@ func Start(ctx context.Context, reg *Registry, spec Spec) (*Work, error) {
 			}
 		}
 		scanErr := scanner.Err()
+		isCancelled := running.Err() != nil
+		if scanErr != nil {
+			stop()
+		}
 		_ = stdout.Close()
 		waitErr := cmd.Wait()
-		if isLimited || running.Err() != nil {
+		if isLimited || isCancelled {
 			return
 		}
 		switch {

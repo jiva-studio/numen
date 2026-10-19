@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
@@ -326,5 +327,25 @@ func TestStartStopsAtTheStepLimitOfCountedSteps(t *testing.T) {
 
 	if len(got) != 1 || got[0].GetStopped() != "reached maximum limit of 3 steps" {
 		t.Errorf("got %v", got)
+	}
+}
+
+func TestStartEndsTheChildThatIgnoresTheClosedOutputAfterALineTooLong(t *testing.T) {
+	var reg agentrun.Registry
+	work, err := agentrun.Start(t.Context(), &reg, shell(
+		`trap '' PIPE; head -c 5000000 /dev/zero | tr '\0' x; echo; sleep 30`, nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan []*numenv1.AskAgentResponse, 1)
+	go func() { done <- drain(work) }()
+
+	select {
+	case got := <-done:
+		if len(got) != 1 || got[0].GetStopped() == "" {
+			t.Errorf("got %v", got)
+		}
+	case <-time.After(15 * time.Second):
+		t.Fatal("the child was left running")
 	}
 }

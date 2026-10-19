@@ -1,6 +1,7 @@
 package main
 
 import (
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -57,7 +58,7 @@ func TestTheSessionAndTheContentOfAntigravityAreReported(t *testing.T) {
 }
 
 func TestAFailedHomeSetupEndsTheRunBeforeItStarts(t *testing.T) {
-	t.Setenv("TMPDIR", "/nonexistent/tmp")
+	setUnusableTempDir(t)
 	var reg agentrun.Registry
 
 	_, err := agentrun.Start(t.Context(), &reg, newSpec(
@@ -106,5 +107,14 @@ done`+"\n")
 	}
 	if last := got[len(got)-1]; last.GetStopped() != "reached maximum limit of 1 steps" {
 		t.Errorf("the last step is %v", last)
+	}
+}
+
+// setUnusableTempDir points every variable the temporary folder is read from at a folder that does
+// not exist.
+func setUnusableTempDir(t *testing.T) {
+	t.Helper()
+	for _, name := range []string{"TMPDIR", "TMP", "TEMP"} {
+		t.Setenv(name, filepath.Join(t.TempDir(), "absent"))
 	}
 }

@@ -110,7 +110,7 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 
 // A home that cannot be set up is reported to the stream as the reason the run stopped.
 func TestAskAgentReportsAHomeThatCannotBeSetUp(t *testing.T) {
-	t.Setenv("TMPDIR", "/nonexistent/tmp")
+	setUnusableTempDir(t)
 	stream, err := agenttest.Serve(t, &agentServer{}).AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
 		Command:  []string{"agy"},
 		ToolsUrl: "http://127.0.0.1:1/mcp",
