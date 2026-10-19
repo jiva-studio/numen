@@ -330,10 +330,10 @@ describe('a plugin the host holds off', () => {
   it('is started again by its id, and the answer is why it failed again', async () => {
     asked.retryPlugin.mockResolvedValue({ failure: 'The plugin did not finish starting in time.' })
 
-    const said = await core.retryPlugin('sample.plugin')
+    const failure = await core.retryPlugin('sample.plugin')
 
     expect(asked.retryPlugin).toHaveBeenLastCalledWith({ pluginId: 'sample.plugin' })
-    expect(said).toBe('The plugin did not finish starting in time.')
+    expect(failure).toBe('The plugin did not finish starting in time.')
   })
 
   it('is answered with nothing where it started', async () => {

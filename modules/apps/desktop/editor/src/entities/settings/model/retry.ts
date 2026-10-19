@@ -1,5 +1,5 @@
 /**
- * A plugin the host holds off, started once more.
+ * A plugin the host suspends, started once more.
  */
 import { formatErrorMessage } from '@numen/wire'
 import type { MessageWriter } from '@/shared/notices/messages'
@@ -20,24 +20,24 @@ export interface RetryDeps {
 /** Where this says what happened, and how the settings are read again after. */
 export interface RetryOptions {
   readonly words: RetryWords
-  readonly say: MessageWriter
+  readonly notify: MessageWriter
   readonly refresh: () => Promise<void>
 }
 
 /**
- * Starting a plugin again. A plugin that fails again is said with its reason,
+ * Starting a plugin again. A plugin that fails again is reported with its reason,
  * and the settings are read again either way, so what is drawn as failed is what
  * the host holds.
  */
-export function createPluginRetry(core: RetryDeps, { words, say, refresh }: RetryOptions) {
+export function createPluginRetry(core: RetryDeps, { words, notify, refresh }: RetryOptions) {
   /** The plugin started once more. */
   const retryPlugin = async (pluginId: string): Promise<void> => {
-    say('')
+    notify('')
     try {
       const failure = await core.retryPlugin(pluginId)
-      if (failure !== '') say(`${words.failedAgain} ${failure}`, 'caution')
+      if (failure !== '') notify(`${words.failedAgain} ${failure}`, 'caution')
     } catch (thrown) {
-      say(`${words.refused} ${formatErrorMessage(thrown)}`, 'error')
+      notify(`${words.refused} ${formatErrorMessage(thrown)}`, 'error')
     }
     await refresh()
   }

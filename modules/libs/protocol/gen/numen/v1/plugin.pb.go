@@ -561,7 +561,7 @@ type PluginInfo struct {
 	Models []*PluginModel `protobuf:"bytes,11,rep,name=models,proto3" json:"models,omitempty"`
 	// Whether the person lets the plugin ask for model completions.
 	CompletionConsent CompletionConsent `protobuf:"varint,12,opt,name=completion_consent,json=completionConsent,proto3,enum=numen.v1.CompletionConsent" json:"completion_consent,omitempty"`
-	// Set while the host holds the plugin off after it failed to start.
+	// Set while the host suspends the plugin after it failed to start.
 	Failure       *PluginFailure `protobuf:"bytes,13,opt,name=failure,proto3" json:"failure,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -688,7 +688,7 @@ func (x *PluginInfo) GetFailure() *PluginFailure {
 	return nil
 }
 
-// PluginFailure is why a plugin is held off, and when it was.
+// PluginFailure is why a plugin is suspended, and when it was.
 type PluginFailure struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The reason, in words a person reads.

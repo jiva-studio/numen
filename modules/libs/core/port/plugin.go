@@ -70,7 +70,7 @@ func (e *UnavailableError) Unwrap() error {
 	return e.Err
 }
 
-// PluginFailure is a plugin the host holds off after it failed to start, and why.
+// PluginFailure is a plugin the host suspends after it failed to start, and why.
 type PluginFailure struct {
 	PluginID string
 	// Name is what the plugin is called to a person.
@@ -195,9 +195,8 @@ type PluginManager interface {
 	// SetOnPluginFailed registers a callback invoked once when a plugin has failed to start repeatedly,
 	// and again when a retry of it fails.
 	SetOnPluginFailed(fn func(PluginFailure))
-	// SetOnPluginRecovered registers a callback invoked with the id of a plugin the host stops holding
-	// off.
-	SetOnPluginRecovered(fn func(pluginID string))
+	// SetOnFailureCleared registers a callback invoked with the id of a plugin whose failure the host forgets, because the plugin started, was enabled or was disabled.
+	SetOnFailureCleared(fn func(pluginID string))
 	// RetryPlugin forgets the failures of a plugin and starts it once. The failure is set where the
 	// plugin fails again; an unknown plugin is an *UnavailableError.
 	RetryPlugin(ctx context.Context, pluginID string) (*PluginFailure, error)

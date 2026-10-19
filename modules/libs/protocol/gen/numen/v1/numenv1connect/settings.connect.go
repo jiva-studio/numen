@@ -91,8 +91,8 @@ type SettingsServiceClient interface {
 	// and clears the record that it is stored. The plugin is handed its secrets
 	// again.
 	DeletePluginSecret(context.Context, *connect.Request[v1.DeletePluginSecretRequest]) (*connect.Response[v1.DeletePluginSecretResponse], error)
-	// RetryPlugin forgets the failures of a plugin the host holds off, and starts
-	// it once. A plugin that fails again is held off again, and the call answers
+	// RetryPlugin forgets the failures of a plugin the host suspends, and starts
+	// it once. A plugin that fails again is suspended again, and the call answers
 	// the reason.
 	RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error)
 }
@@ -224,8 +224,8 @@ type SettingsServiceHandler interface {
 	// and clears the record that it is stored. The plugin is handed its secrets
 	// again.
 	DeletePluginSecret(context.Context, *connect.Request[v1.DeletePluginSecretRequest]) (*connect.Response[v1.DeletePluginSecretResponse], error)
-	// RetryPlugin forgets the failures of a plugin the host holds off, and starts
-	// it once. A plugin that fails again is held off again, and the call answers
+	// RetryPlugin forgets the failures of a plugin the host suspends, and starts
+	// it once. A plugin that fails again is suspended again, and the call answers
 	// the reason.
 	RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error)
 }

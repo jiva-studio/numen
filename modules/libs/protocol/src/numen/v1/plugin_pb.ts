@@ -274,7 +274,7 @@ export type PluginInfo = Message<"numen.v1.PluginInfo"> & {
   completionConsent: CompletionConsent;
 
   /**
-   * Set while the host holds the plugin off after it failed to start.
+   * Set while the host suspends the plugin after it failed to start.
    *
    * @generated from field: numen.v1.PluginFailure failure = 13;
    */
@@ -289,7 +289,7 @@ export const PluginInfoSchema: GenMessage<PluginInfo> = /*@__PURE__*/
   messageDesc(file_numen_v1_plugin, 7);
 
 /**
- * PluginFailure is why a plugin is held off, and when it was.
+ * PluginFailure is why a plugin is suspended, and when it was.
  *
  * @generated from message numen.v1.PluginFailure
  */

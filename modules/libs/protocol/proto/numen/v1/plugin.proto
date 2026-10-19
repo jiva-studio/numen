@@ -72,11 +72,11 @@ message PluginInfo {
   repeated PluginModel models = 11;
   // Whether the person lets the plugin ask for model completions.
   CompletionConsent completion_consent = 12;
-  // Set while the host holds the plugin off after it failed to start.
+  // Set while the host suspends the plugin after it failed to start.
   PluginFailure failure = 13;
 }
 
-// PluginFailure is why a plugin is held off, and when it was.
+// PluginFailure is why a plugin is suspended, and when it was.
 message PluginFailure {
   // The reason, in words a person reads.
   string reason = 1;

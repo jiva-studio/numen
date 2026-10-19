@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The plugins the host holds off after they failed to start: why, when, and the
+ * The plugins the host suspends after they failed to start: why, when, and the
  * two things a person can do about it.
  */
 import { computed } from 'vue'

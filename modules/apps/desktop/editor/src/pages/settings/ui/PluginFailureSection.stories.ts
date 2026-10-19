@@ -1,5 +1,5 @@
 /**
- * A plugin the host holds off, drawn in a browser.
+ * A plugin the host suspends, drawn in a browser.
  *
  * What is asked here is what only a browser can answer: that the reason and the
  * two answers fit the page at the width of a narrow window, and that each
@@ -48,7 +48,7 @@ const meta: Meta<typeof PluginFailureSection> = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** A plugin held off is drawn with its reason, and only that plugin. */
+/** A plugin suspended is drawn with its reason, and only that plugin. */
 export const APluginHeldOff: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

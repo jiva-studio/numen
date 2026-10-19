@@ -13,44 +13,49 @@ import (
 	setting "github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 )
 
-func newRetryHandler(retry func(context.Context, string) (*setting.PluginFailure, error)) *settingsHandler {
-	return &settingsHandler{retryPlugin: setting.NewRetryPlugin(retry)}
+func newRetryHandler(t *testing.T, retry func(context.Context, string) (*setting.PluginFailure, error)) *settingsHandler {
+	t.Helper()
+	useCase, err := setting.NewRetryPlugin(retry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return &settingsHandler{retryPlugin: useCase}
 }
 
 // A plugin that starts again is answered with no failure.
 func TestARetriedPluginThatStartsIsAnsweredWithNoFailure(t *testing.T) {
-	var asked string
-	handler := newRetryHandler(func(_ context.Context, id string) (*setting.PluginFailure, error) {
-		asked = id
+	var askedID string
+	handler := newRetryHandler(t, func(_ context.Context, id string) (*setting.PluginFailure, error) {
+		askedID = id
 		return nil, nil
 	})
 
-	said, err := handler.RetryPlugin(t.Context(), connect.NewRequest(&v1.RetryPluginRequest{PluginId: "md.numen.sample"}))
+	answer, err := handler.RetryPlugin(t.Context(), connect.NewRequest(&v1.RetryPluginRequest{PluginId: "md.numen.sample"}))
 
-	if err != nil || said.Msg.GetFailure() != "" || asked != "md.numen.sample" {
-		t.Fatalf("answered %v, %v for %q", said, err, asked)
+	if err != nil || answer.Msg.GetFailure() != "" || askedID != "md.numen.sample" {
+		t.Fatalf("answered %v, %v for %q", answer, err, askedID)
 	}
 }
 
 // A plugin that fails again is answered with its reason.
 func TestARetriedPluginThatFailsAgainIsAnsweredWithItsReason(t *testing.T) {
-	handler := newRetryHandler(func(context.Context, string) (*setting.PluginFailure, error) {
+	handler := newRetryHandler(t, func(context.Context, string) (*setting.PluginFailure, error) {
 		return &setting.PluginFailure{PluginID: "md.numen.sample", Reason: "The plugin did not finish starting in time."}, nil
 	})
 
-	said, err := handler.RetryPlugin(t.Context(), connect.NewRequest(&v1.RetryPluginRequest{PluginId: "md.numen.sample"}))
+	answer, err := handler.RetryPlugin(t.Context(), connect.NewRequest(&v1.RetryPluginRequest{PluginId: "md.numen.sample"}))
 
-	if err != nil || said.Msg.GetFailure() != "The plugin did not finish starting in time." {
-		t.Fatalf("answered %v, %v", said, err)
+	if err != nil || answer.Msg.GetFailure() != "The plugin did not finish starting in time." {
+		t.Fatalf("answered %v, %v", answer, err)
 	}
 }
 
 // A plugin nobody installed is not found, and any other refusal is the core's.
 func TestARetryOfAPluginThatIsNotInstalledIsNotFound(t *testing.T) {
-	missing := newRetryHandler(func(_ context.Context, id string) (*setting.PluginFailure, error) {
+	missing := newRetryHandler(t, func(_ context.Context, id string) (*setting.PluginFailure, error) {
 		return nil, &setting.UnavailableError{PluginID: id, Reason: setting.PluginNotInstalled}
 	})
-	broken := newRetryHandler(func(context.Context, string) (*setting.PluginFailure, error) {
+	broken := newRetryHandler(t, func(context.Context, string) (*setting.PluginFailure, error) {
 		return nil, errors.New("the host is closed")
 	})
 

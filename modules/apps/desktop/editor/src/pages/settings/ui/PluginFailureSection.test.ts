@@ -14,8 +14,8 @@ const createSection = (plugins: readonly PluginInfo[]) => {
   const written: SettingEdit[] = []
   const retryPlugin = vi.fn()
   const installation = createInstallation({
-    write: (said) => {
-      written.push(...said)
+    write: (edits) => {
+      written.push(...edits)
     },
     plugins: ref(plugins),
     retryPlugin,
@@ -30,7 +30,7 @@ describe('PluginFailureSection', () => {
     expect(wrapper.find('section').exists()).toBe(false)
   })
 
-  it('draws a plugin held off with its reason and each answer named for it', () => {
+  it('draws a plugin suspended with its reason and each answer named for it', () => {
     const { wrapper } = createSection([createPluginInfo('sample.ok', 'Sample Ok'), STOPPED])
 
     const group = wrapper.get('[role="group"]')

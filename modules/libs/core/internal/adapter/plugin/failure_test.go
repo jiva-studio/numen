@@ -56,7 +56,7 @@ func TestRetryStartsAFailedPluginAndTellsItRecovered(t *testing.T) {
 	var procs []*os.Process
 	host.SetLauncher(launchAnsweringPing(t, port.PluginProtocolVersion+1, &procs))
 	var recovered []string
-	host.SetOnPluginRecovered(func(id string) { recovered = append(recovered, id) })
+	host.SetOnFailureCleared(func(id string) { recovered = append(recovered, id) })
 	if _, err := host.EnsureActive(t.Context(), failingPluginID); err == nil {
 		t.Fatal("expected the first start to fail")
 	}
@@ -117,7 +117,7 @@ func TestEnablingAFailedPluginTellsItRecovered(t *testing.T) {
 		t.Fatalf("RetryPlugin() error = %v", err)
 	}
 	var recovered []string
-	host.SetOnPluginRecovered(func(id string) { recovered = append(recovered, id) })
+	host.SetOnFailureCleared(func(id string) { recovered = append(recovered, id) })
 
 	if err := host.SetPluginEnabled(t.Context(), failingPluginID, true); err != nil {
 		t.Fatalf("SetPluginEnabled() error = %v", err)
@@ -147,5 +147,26 @@ func TestAFailureIsDescribedInWordsAPersonReads(t *testing.T) {
 				t.Fatalf("describeFailure() = %q, want %q", got, tc.want)
 			}
 		})
+	}
+}
+
+func TestDisablingAFailedPluginClearsItsFailure(t *testing.T) {
+	host := newDiscoveredHost(t)
+	host.SetLauncher(failLaunching)
+	if _, err := host.RetryPlugin(t.Context(), failingPluginID); err != nil {
+		t.Fatalf("RetryPlugin() error = %v", err)
+	}
+	var cleared []string
+	host.SetOnFailureCleared(func(id string) { cleared = append(cleared, id) })
+
+	if err := host.SetPluginEnabled(t.Context(), failingPluginID, false); err != nil {
+		t.Fatalf("SetPluginEnabled() error = %v", err)
+	}
+
+	if len(cleared) != 1 || cleared[0] != failingPluginID {
+		t.Fatalf("cleared = %v, want one report of %s", cleared, failingPluginID)
+	}
+	if got := getFailure(t, host, failingPluginID); got != nil {
+		t.Fatalf("failure after disabling = %+v, want none", got)
 	}
 }

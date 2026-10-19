@@ -1,48 +1,53 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createPluginRetry, type RetryDeps } from './retry'
 
-const words = { failedAgain: 'It stopped again.', refused: 'It could not be asked.' }
+const words = { failedAgain: 'It stopped again.', refused: 'It could not be calls.' }
 
 const createRetry = (answer: Promise<string>) => {
-  const asked: string[] = []
+  const calls: string[] = []
   const core: RetryDeps = {
     retryPlugin: (pluginId) => {
-      asked.push(pluginId)
+      calls.push(pluginId)
       return answer
     },
   }
-  const said = vi.fn()
+  const notified = vi.fn()
   const refresh = vi.fn(() => Promise.resolve())
-  return { asked, said, refresh, retry: createPluginRetry(core, { words, say: said, refresh }) }
+  return {
+    calls,
+    notified,
+    refresh,
+    retry: createPluginRetry(core, { words, notify: notified, refresh }),
+  }
 }
 
 describe('a plugin retried', () => {
   it('is handed to the vault by its id, and the settings are read again', async () => {
-    const { asked, said, refresh, retry } = createRetry(Promise.resolve(''))
+    const { calls, notified, refresh, retry } = createRetry(Promise.resolve(''))
     await retry.retryPlugin('md.numen.sample')
-    expect(asked).toStrictEqual(['md.numen.sample'])
-    expect(said).toHaveBeenCalledOnce()
-    expect(said).toHaveBeenLastCalledWith('')
+    expect(calls).toStrictEqual(['md.numen.sample'])
+    expect(notified).toHaveBeenCalledOnce()
+    expect(notified).toHaveBeenLastCalledWith('')
     expect(refresh).toHaveBeenCalledOnce()
   })
 
-  it('that fails again is said with its reason', async () => {
-    const { said, refresh, retry } = createRetry(
+  it('that fails again is notified with its reason', async () => {
+    const { notified, refresh, retry } = createRetry(
       Promise.resolve('The plugin did not finish starting in time.'),
     )
     await retry.retryPlugin('md.numen.sample')
-    expect(said).toHaveBeenLastCalledWith(
+    expect(notified).toHaveBeenLastCalledWith(
       'It stopped again. The plugin did not finish starting in time.',
       'caution',
     )
     expect(refresh).toHaveBeenCalledOnce()
   })
 
-  it('that cannot be asked is said as an error, and the settings are read again', async () => {
-    const { said, refresh, retry } = createRetry(Promise.reject(new Error('core unreachable')))
+  it('that cannot be calls is notified as an error, and the settings are read again', async () => {
+    const { notified, refresh, retry } = createRetry(Promise.reject(new Error('core unreachable')))
     await retry.retryPlugin('md.numen.sample')
-    expect(said).toHaveBeenLastCalledWith(
-      expect.stringContaining('It could not be asked.'),
+    expect(notified).toHaveBeenLastCalledWith(
+      expect.stringContaining('It could not be calls.'),
       'error',
     )
     expect(refresh).toHaveBeenCalledOnce()

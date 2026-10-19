@@ -563,8 +563,8 @@ export const SettingsService: GenService<{
     output: typeof DeletePluginSecretResponseSchema;
   },
   /**
-   * RetryPlugin forgets the failures of a plugin the host holds off, and starts
-   * it once. A plugin that fails again is held off again, and the call answers
+   * RetryPlugin forgets the failures of a plugin the host suspends, and starts
+   * it once. A plugin that fails again is suspended again, and the call answers
    * the reason.
    *
    * @generated from rpc numen.v1.SettingsService.RetryPlugin

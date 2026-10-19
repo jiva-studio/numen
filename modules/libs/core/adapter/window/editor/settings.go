@@ -234,14 +234,14 @@ func (h *settingsHandler) DeletePluginSecret(
 }
 
 // newWirePluginFailure is why the host holds a plugin off, as the wire carries it, and nil for a plugin it does not.
-func newWirePluginFailure(held *settings.PluginFailure) *v1.PluginFailure {
-	if held == nil {
+func newWirePluginFailure(failure *settings.PluginFailure) *v1.PluginFailure {
+	if failure == nil {
 		return nil
 	}
-	return &v1.PluginFailure{Reason: held.Reason, FailedAtUnixMs: held.At.UnixMilli()}
+	return &v1.PluginFailure{Reason: failure.Reason, FailedAtUnixMs: failure.At.UnixMilli()}
 }
 
-// RetryPlugin starts a plugin the host holds off once more. A plugin that fails
+// RetryPlugin starts a plugin the host suspends once more. A plugin that fails
 // again is answered with its reason, and one the host does not know is not found.
 func (h *settingsHandler) RetryPlugin(
 	ctx context.Context, r *connect.Request[v1.RetryPluginRequest],

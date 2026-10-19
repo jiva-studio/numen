@@ -131,8 +131,13 @@ func (e EditorAssembly) OpenDeletePluginSecret() *settings.DeleteSecret {
 	return settings.NewDeleteSecret(e.cfg.GetPluginSecretDeleter())
 }
 
+// OpenRetryPlugin is nil where the retry cannot be made, which the window answers as served by no build.
 func (e EditorAssembly) OpenRetryPlugin() *settings.RetryPlugin {
-	return settings.NewRetryPlugin(e.cfg.GetPluginRetrier())
+	retry, err := settings.NewRetryPlugin(e.cfg.GetPluginRetrier())
+	if err != nil {
+		return nil
+	}
+	return retry
 }
 
 func (e EditorAssembly) ReportPluginFailures(tasks *run.Tasks) {

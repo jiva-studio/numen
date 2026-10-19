@@ -166,7 +166,7 @@ export const WORDS = {
   headingsGroup: 'How many headings nest under a note at once',
   unturned: 'That setting could not be written:',
   unkept: 'That key could not be kept:',
-  /** A plugin the host holds off was started again. */
+  /** A plugin the host suspends was started again. */
   pluginFailedAgain: 'That plugin stopped again:',
   pluginRetryRefused: 'That plugin could not be started:',
   /** The settings the vault answered with could not be read. */

@@ -1,9 +1,9 @@
 /**
- * The plugins the host holds off, and the words that say when.
+ * The plugins the host suspends, and the words that say when.
  */
 import type { PluginInfo } from '@/entities/settings'
 
-/** The plugins the host holds off, in the order they are listed. */
+/** The plugins the host suspends, in the order they are listed. */
 export const getFailedPlugins = (plugins: readonly PluginInfo[]): readonly PluginInfo[] =>
   plugins.filter((one) => one.failure !== undefined)
 
