@@ -10,11 +10,11 @@ const getErrorMessage = (err: unknown): string => (err instanceof Error ? err.me
  * A write error is shown until a newer write succeeds, and the failure of a write
  * that a newer write replaced is not shown.
  */
-export function createNoteWriter(
+export const createNoteWriter = (
   at: string,
   writeNote: PluginHostDeps['writeNote'],
   errorMessage: Ref<string>,
-): (body: string) => void {
+): ((body: string) => void) => {
   let writes = 0
   let hasWriteError = false
   return (body) => {
@@ -42,22 +42,27 @@ export interface NoteReadState {
   readonly hasEdited: () => boolean
 }
 
+type NoteRead = Awaited<ReturnType<NonNullable<PluginHostDeps['readNote']>>>
+
+/** What a read answers, as the body and the error it holds. */
+const splitRead = (result: NoteRead): { body?: string; error?: string } => {
+  if (typeof result === 'string') return { body: result }
+  return result ?? {}
+}
+
 /** The body the first read gives, unless the tab was edited while it was in flight. */
-export function startNoteRead(
+export const startNoteRead = (
   at: string,
   readNote: NonNullable<PluginHostDeps['readNote']>,
   state: NoteReadState,
-): void {
+): void => {
   readNote(at)
     .then((result) => {
       state.isLoading.value = false
       if (state.hasEdited()) return
-      if (typeof result === 'string') {
-        state.note.value = { path: at, body: result }
-      } else if (result && typeof result === 'object') {
-        if (result.body !== undefined) state.note.value = { path: at, body: result.body }
-        if (result.error) state.errorMessage.value = result.error
-      }
+      const { body, error } = splitRead(result)
+      if (body !== undefined) state.note.value = { path: at, body }
+      if (error) state.errorMessage.value = error
     })
     .catch((err) => {
       state.isLoading.value = false
