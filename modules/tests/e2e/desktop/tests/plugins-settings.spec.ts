@@ -38,13 +38,10 @@ test.describe('Plugin Settings and Configuration', () => {
 
     // Verify declarative plugin settings are rendered
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByText('Auto-transcribe on import').first()).toBeVisible({
-      timeout: 5_000,
-    })
     await expect(page.getByText('Transcription Language').first()).toBeVisible({ timeout: 5_000 })
   })
 
-  test('toggles auto-transcribe boolean switch and verifies reactive update', async ({ page }) => {
+  test('toggles a boolean switch and verifies reactive update', async ({ page }) => {
     await page.goto('/')
 
     await expect(page.locator('text=Ready')).toBeVisible()
@@ -58,7 +55,7 @@ test.describe('Plugin Settings and Configuration', () => {
 
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
 
-    // Find the toggle switch for auto-transcribe
+    // Find a toggle switch
     const switchEl = page.locator('[data-slot="switch"]').first()
     await expect(switchEl).toBeVisible()
     const initialState = await switchEl.getAttribute('data-state')

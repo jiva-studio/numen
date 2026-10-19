@@ -73,22 +73,29 @@ func (a *CompletionAgents) getAgentID(agent string) (string, error) {
 
 // CompletionBridge connects a completion to an out-of-process agent plugin via Connect-RPC.
 type CompletionBridge struct {
-	client numenv1connect.CompletionServiceClient
-	lease  *pluginLease
+	service pluginService[numenv1connect.CompletionServiceClient]
+	lease   *pluginLease
 }
 
 // OpenCompletionBridge activates or connects to the agent plugin with the id given.
 func OpenCompletionBridge(ctx context.Context, host port.PluginActivator, pluginID string) (*CompletionBridge, error) {
-	client, lease, err := openPlugin(ctx, host, pluginID, numenv1connect.NewCompletionServiceClient)
+	_, lease, err := openPlugin(ctx, host, pluginID, numenv1connect.NewCompletionServiceClient)
 	if err != nil {
 		return nil, err
 	}
-	return &CompletionBridge{client: client, lease: lease}, nil
+	service := pluginService[numenv1connect.CompletionServiceClient]{host: host, pluginID: pluginID, newClient: numenv1connect.NewCompletionServiceClient}
+	return &CompletionBridge{service: service, lease: lease}, nil
 }
 
 // Complete asks the agent plugin to answer the question with the model named.
 func (b *CompletionBridge) Complete(ctx context.Context, model string, question port.Question) (string, error) {
-	res, err := b.client.Complete(ctx, connect.NewRequest(&v1.CompleteRequest{
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = call.Close() }()
+
+	res, err := client.Complete(ctx, connect.NewRequest(&v1.CompleteRequest{
 		Question: writeWireQuestion(question),
 		Model:    model,
 	}))
@@ -203,7 +210,13 @@ func readWireQuestion(wire *v1.CompletionQuestion) port.Question {
 // ListModels returns the models the agent plugin answers completions with, in
 // the order it lists them.
 func (b *CompletionBridge) ListModels(ctx context.Context) ([]port.AgentModel, error) {
-	res, err := b.client.ListCompletionModels(ctx, connect.NewRequest(&v1.ListCompletionModelsRequest{}))
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = call.Close() }()
+
+	res, err := client.ListCompletionModels(ctx, connect.NewRequest(&v1.ListCompletionModelsRequest{}))
 	if err != nil {
 		return nil, readCompletionError(ctx, err)
 	}

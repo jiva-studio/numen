@@ -21,16 +21,17 @@ var (
 )
 
 // ProcessLimits defines resource bounds for out-of-process plugins.
+// CPULimitSeconds is RLIMIT_CPU, the CPU time the process may use over its whole life; zero sets none.
 // MemoryLimitBytes specifies resident memory threshold monitored by the supervisor.
 type ProcessLimits struct {
 	CPULimitSeconds  uint64
 	MemoryLimitBytes uint64
 }
 
-// DefaultProcessLimits returns standard resource limits for plugin processes.
+// DefaultProcessLimits returns standard resource limits for plugin processes. A plugin that computes
+// runs for as long as it is kept, so the defaults set no CPU limit.
 func DefaultProcessLimits() ProcessLimits {
 	return ProcessLimits{
-		CPULimitSeconds:  1800,
 		MemoryLimitBytes: 4 * 1024 * 1024 * 1024,
 	}
 }

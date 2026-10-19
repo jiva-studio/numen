@@ -3,7 +3,6 @@ package plugin
 import (
 	"context"
 	"fmt"
-	"image"
 	"io"
 	"net"
 	"net/http"
@@ -22,7 +21,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // restartedPlugin answers every service a bridge reaches, and counts the calls
@@ -141,6 +139,8 @@ func newRestartedPlugin(t *testing.T) (*restartedPlugin, *httptest.Server) {
 	mux.Handle(numenv1connect.NewBookServiceHandler(restartedBook{plugin: plugin}))
 	mux.Handle(numenv1connect.NewDownloadServiceHandler(restartedDownload{plugin: plugin}))
 	mux.Handle(numenv1connect.NewAgentServiceHandler(restartedAgent{plugin: plugin}))
+	mux.Handle(numenv1connect.NewProofreadingServiceHandler(restartedProofreading{plugin: plugin}))
+	mux.Handle(numenv1connect.NewCompletionServiceHandler(restartedCompletion{plugin: plugin}))
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(testsupport.PluginLifecycle{}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
@@ -189,18 +189,18 @@ func (l *restartingLauncher) count() int {
 func writeRestartedPlugin(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
-	at := filepath.Join(dir, "all")
+	at := filepath.Join(dir, "stub")
 	if err := os.MkdirAll(at, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	manifest := `{
-		"id": "md.numen.all",
+		"id": "md.numen.stub",
 		"name": "All",
 		"version": "1.0.0",
-		"capabilities": ["embedding", "recognition", "transcription", "document", "book", "downloader"],
+		"capabilities": ["embedding", "recognition", "transcription", "document", "book", "downloader", "proofreading"],
 		"targets": ["desktop.editor"],
 		"permissions": ["vault:read", "network:outbound"],
-		"backend": {"type": "process", "entrypoint": "bin/all"}
+		"backend": {"type": "process", "entrypoint": "bin/stub"}
 	}`
 	if err := os.WriteFile(filepath.Join(at, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
@@ -211,42 +211,7 @@ func writeRestartedPlugin(t *testing.T) string {
 // A bridge opened before its plugin stopped reaches the plugin at the port it
 // was started again on, at the next call.
 func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
-	for _, tc := range []struct {
-		name string
-		open func(context.Context, *Host) (io.Closer, func(context.Context) error, error)
-	}{
-		{"embedder", func(ctx context.Context, h *Host) (io.Closer, func(context.Context) error, error) {
-			b, err := OpenEmbedderBridge(ctx, h)
-			return b, func(ctx context.Context) error { _, err := b.Embed(ctx, []string{"a"}); return err }, err
-		}},
-		{"recogniser", func(ctx context.Context, h *Host) (io.Closer, func(context.Context) error, error) {
-			b, err := OpenRecogniserBridge(ctx, h)
-			return b, func(ctx context.Context) error {
-				_, err := b.Recognise(ctx, image.NewRGBA(image.Rect(0, 0, 1, 1)))
-				return err
-			}, err
-		}},
-		{"transcriber", func(ctx context.Context, h *Host) (io.Closer, func(context.Context) error, error) {
-			b, err := OpenTranscriberBridge(ctx, h)
-			return b, func(ctx context.Context) error { _, err := b.Transcribe(ctx, port.Audio{}); return err }, err
-		}},
-		{"document", func(ctx context.Context, h *Host) (io.Closer, func(context.Context) error, error) {
-			b, err := OpenDocumentBridge(ctx, h)
-			return b, func(ctx context.Context) error { _, err := b.Read(ctx, []byte("%PDF")); return err }, err
-		}},
-		{"book", func(ctx context.Context, h *Host) (io.Closer, func(context.Context) error, error) {
-			b, err := OpenBookBridge(ctx, h)
-			return b, func(ctx context.Context) error { _, err := b.ReadBook(ctx, []byte("PK")); return err }, err
-		}},
-		{"downloader", func(ctx context.Context, h *Host) (io.Closer, func(context.Context) error, error) {
-			b, err := OpenDownloaderBridge(ctx, h)
-			return b, func(ctx context.Context) error { _, err := b.GetMetadata(ctx, "https://example.org"); return err }, err
-		}},
-		{"agent", func(ctx context.Context, h *Host) (io.Closer, func(context.Context) error, error) {
-			b, err := OpenAgentBridgeForPlugin(ctx, h, "md.numen.all")
-			return b, func(ctx context.Context) error { _, err := b.GetPrograms(ctx, nil); return err }, err
-		}},
-	} {
+	for _, tc := range bridgeContracts {
 		t.Run(tc.name, func(t *testing.T) {
 			host := NewHost("desktop.editor", writeRestartedPlugin(t))
 			if err := host.Discover(); err != nil {
@@ -260,7 +225,7 @@ func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 				t.Fatalf("open: %v", err)
 			}
 			defer func() { _ = bridge.Close() }()
-			if err := call(t.Context()); err != nil {
+			if _, err := call(t.Context()); err != nil {
 				t.Fatalf("the first call failed: %v", err)
 			}
 
@@ -269,12 +234,12 @@ func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 			waitUntil(t, "the stopped plugin to lose its endpoint", func() bool {
 				host.mu.RLock()
 				defer host.mu.RUnlock()
-				_, held := host.endpoints["md.numen.all"]
+				_, held := host.endpoints[contractPluginID]
 				return !held
 			})
 			firstServer.Close()
 
-			if err := call(t.Context()); err != nil {
+			if _, err := call(t.Context()); err != nil {
 				t.Fatalf("the call after the restart failed: %v", err)
 			}
 			if got := launcher.count(); got != 2 {
@@ -288,4 +253,28 @@ func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 			}
 		})
 	}
+}
+
+type restartedProofreading struct {
+	numenv1connect.UnimplementedProofreadingServiceHandler
+	plugin *restartedPlugin
+}
+
+func (r restartedProofreading) ProofreadText(
+	context.Context, *connect.Request[v1.ProofreadTextRequest],
+) (*connect.Response[v1.ProofreadTextResponse], error) {
+	r.plugin.asked.Add(1)
+	return connect.NewResponse(&v1.ProofreadTextResponse{Corrections: []*v1.ProofreadCorrection{{}}}), nil
+}
+
+type restartedCompletion struct {
+	numenv1connect.UnimplementedCompletionServiceHandler
+	plugin *restartedPlugin
+}
+
+func (r restartedCompletion) Complete(
+	context.Context, *connect.Request[v1.CompleteRequest],
+) (*connect.Response[v1.CompleteResponse], error) {
+	r.plugin.asked.Add(1)
+	return connect.NewResponse(&v1.CompleteResponse{Answer: &v1.CompletionAnswer{Text: "answer"}}), nil
 }

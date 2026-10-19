@@ -109,6 +109,7 @@ The manifest declares identity, activation rules, required permissions, and serv
 - **`lifecycle`**:
   - `idleTimeoutSeconds`: Seconds of inactivity before process eviction; it cannot be negative.
   - `keepAliveWhileVisible`: Keep alive while a tab displaying the plugin is open.
+  - `memoryLimitBytes` (or `memoryLimitMB`): The resident memory the plugin process may hold before the host evicts it. A plugin with a backend declares it, and declares `idleTimeoutSeconds` too (`0` keeps it running). The host sets no CPU limit on a plugin process.
 - **`backend`**: `type` is `process` (the only backend type) and `entrypoint` is required.
 - **`frontend`**: `entrypoint` is required, `styles` is optional.
 - **`settings`**: Declarative settings schema automatically rendered in host settings and stored by the core. The host hands the settings to the plugin in `Configure`, once it is running and again on every change; they are not in its environment. A setting has a `key`, a `type` (`boolean`, `string`, `number`, `enum`, `select`, `range` or `agent`), a `title`, a `description` and a `default`; `enum` and `select` take `options`, `range` and `number` take `min`, `max` and `step`. Neither `storedSecrets` nor `aiConsent` may be a key: the host keeps both.
