@@ -523,27 +523,6 @@ func TestTheProgramIsInstalledUnderTheCommandLineTheInstallationSet(t *testing.T
 	}
 }
 
-func TestExtractCallDetails(t *testing.T) {
-	about, path, span := extractCallDetails(`{"query":"algebra","path":"notes/math.md","start":10,"length":5}`)
-	if path != "notes/math.md" {
-		t.Errorf("expected path notes/math.md, got %q", path)
-	}
-	if about != "algebra" {
-		t.Errorf("expected about algebra, got %q", about)
-	}
-	if span == nil || span.From != 10 || span.To != 15 {
-		t.Errorf("unexpected span: %+v", span)
-	}
-
-	aboutFile, pathFile, _ := extractCallDetails(`{"file":"notes/file.md"}`)
-	if pathFile != "notes/file.md" {
-		t.Errorf("expected path notes/file.md, got %q", pathFile)
-	}
-	if aboutFile != "notes/file.md" {
-		t.Errorf("expected about notes/file.md, got %q", aboutFile)
-	}
-}
-
 // withoutClaudeAnywhere makes this machine hold no Claude Code, wherever the program is searched
 // for.
 func withoutClaudeAnywhere(t *testing.T) {

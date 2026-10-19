@@ -569,12 +569,16 @@ None of this is turned in the window. Every key here is a machine's answer rathe
 
 | | |
 | --- | --- |
-| `use` | which agent answers. `claude` is Claude Code, reached by starting it and reading what it prints. Empty answers with none, and the panel says so. |
+| `use` | which agent answers. `claude` is Claude Code, reached by starting it and reading what it prints. `numen` is Numen Agent, numen's own: the `md.numen.agent` plugin asks an OpenAI-compatible chat API and calls this vault's tools for the model. Empty answers with none, and the panel says so. |
 | `serve_tools` | whether the tools go on a port, which is how an agent a person runs themselves reaches this vault. Off. The agent `use` names is served either way, so an installation naming one has the port open for it. |
 | `claude.command` | what starts it: the command line's path, and anything it is started through. Empty asks the path, then the folders its installers write to. Worth naming for an installation those folders do not cover, and for one machine carrying several. |
 | `claude.model` | which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. Empty takes whatever that installation answers with. Worth naming because a panel is read while somebody waits. |
 | `claude.max_steps` | how many times it may go to the model before it is stopped. 30. |
 | `claude.reads_hooks_and_skills` | whether it reads what this machine holds configured for it: hooks, skills, standing instructions in `CLAUDE.md`, plugins. Off. A hook is a shell command Claude Code runs itself, and a question typed into a panel is not asking for one. On, what is configured for this person is read; what a vault carries is refused either way, since a vault arrives from elsewhere. |
+| `numen.model` | which model of the chat API answers. Empty takes the plugin's own `model` setting. |
+| `numen.max_steps` | how many requests it may make to the model before it is stopped. 25. |
+
+Which chat API Numen Agent asks is the plugin's own setting, `plugins.md.numen.agent.baseUrl`: OpenRouter, `https://openrouter.ai/api/v1`, unless it names another, such as `http://localhost:11434/v1` for Ollama. Its key is the plugin's `apiKey` secret, kept in the system keychain; an endpoint on this machine may take none. A key is sent only over https, or over http to this machine. The agent counts as installed while the chat API lists its models, and the models it lists are the ones offered.
 
 A section is kept whether it is the one in use or not, so trying another agent for an afternoon costs nothing.
 

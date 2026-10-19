@@ -6,11 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
-	"strconv"
 	"strings"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/toolcall"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -23,14 +22,9 @@ const reportChunk = 200
 // previewInterval is the shortest time between two reports of a change being written.
 const previewInterval = 50 * time.Millisecond
 
-// toolWords is how one vault tool is spoken about and read while a call of it is written.
-type toolWords struct {
-	title, kind, about, element, match, text string
-}
-
 type streamParser struct {
 	send        func(*numenv1.AskAgentResponse) error
-	words       map[string]toolWords
+	words       map[string]toolcall.Words
 	now         func() time.Time
 	last        time.Time
 	record      func(string)
@@ -102,7 +96,7 @@ func parseStream(
 	ctx context.Context,
 	r io.Reader,
 	send func(*numenv1.AskAgentResponse) error,
-	words map[string]toolWords,
+	words map[string]toolcall.Words,
 	record func(string),
 ) string {
 	return parseStreamWithClock(ctx, r, send, words, record, time.Now)
@@ -113,7 +107,7 @@ func parseStreamWithClock(
 	ctx context.Context,
 	r io.Reader,
 	send func(*numenv1.AskAgentResponse) error,
-	words map[string]toolWords,
+	words map[string]toolcall.Words,
 	record func(string),
 	now func() time.Time,
 ) string {
@@ -275,100 +269,24 @@ func stripServerPrefix(tool string) string {
 	return tool
 }
 
-// buildCallStep is a tool call as the person is told about it. A tool the vault declared is shown
-// by its title, with its effect and what the call is about read by the arguments it declared.
+// buildCallStep is a tool call as the person is told about it.
 func (p *streamParser) buildCallStep(callID, tool, args string) *numenv1.AskAgentResponse {
-	name := stripServerPrefix(tool)
-	words, declared := p.words[name]
-	call := &numenv1.ToolCall{Tool: name, Call: callID, Written: int32(len([]rune(args)))}
-	if declared {
-		if words.title != "" {
-			call.Tool = words.title
-		}
-		call.Kind = words.kind
-		if words.about == "" {
-			call.Written = 0
-		} else {
-			call.About = getAbout(words, args)
-			if words.about == "path" {
-				call.Path, call.Span = call.About, getSpan(args)
-			}
-		}
-	} else {
-		call.About, call.Path, call.Span = extractCallDetails(args)
-	}
+	call := toolcall.Describe(p.words, stripServerPrefix(tool), callID, args)
 	return &numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_ToolCall{ToolCall: call}}
-}
-
-// getSpan is the run of a source's text a call names, read once the arguments parse whole.
-func getSpan(args string) *numenv1.Span {
-	var made map[string]any
-	if err := json.Unmarshal([]byte(args), &made); err != nil {
-		return nil
-	}
-	start, _ := made["start"].(float64)
-	length, _ := made["length"].(float64)
-	if length <= 0 {
-		return nil
-	}
-	return &numenv1.Span{From: int32(start), To: int32(start + length)}
-}
-
-// getAbout is what a call is about, read from the arguments as far as they have arrived.
-func getAbout(words toolWords, args string) string {
-	var made map[string]any
-	if err := json.Unmarshal([]byte(args), &made); err != nil {
-		if seen := getPartialJSONField(args, words.element); seen != "" {
-			return seen
-		}
-		return getPartialJSONField(args, words.about)
-	}
-	switch value := made[words.about].(type) {
-	case string:
-		return value
-	case []any:
-		return describeCollection(value, words.element)
-	}
-	return ""
-}
-
-// describeCollection is the first element of a collection by the name it carries, and how many
-// others there are.
-func describeCollection(value []any, inside string) string {
-	if len(value) == 0 {
-		return ""
-	}
-	first := ""
-	switch element := value[0].(type) {
-	case string:
-		first = element
-	case map[string]any:
-		if inside == "" {
-			return ""
-		}
-		first, _ = element[inside].(string)
-	}
-	if first == "" {
-		return ""
-	}
-	if len(value) > 1 {
-		return fmt.Sprintf("%s and %d more", first, len(value)-1)
-	}
-	return first
 }
 
 // reportEdit reports the change a call is writing, once the text that replaces the match has
 // begun to arrive. A change is reported at most once every previewInterval.
 func (p *streamParser) reportEdit() {
 	words, declared := p.words[stripServerPrefix(p.tool)]
-	if !declared || words.text == "" {
+	if !declared || words.Text == "" {
 		return
 	}
 	args := p.arguments.String()
-	if !strings.Contains(args, `"`+words.text+`"`) {
+	if !strings.Contains(args, `"`+words.Text+`"`) {
 		return
 	}
-	path, match := getPartialJSONField(args, "path"), getPartialJSONField(args, words.match)
+	path, match := toolcall.ReadPartialField(args, "path"), toolcall.ReadPartialField(args, words.Match)
 	if path == "" || match == "" {
 		return
 	}
@@ -382,7 +300,7 @@ func (p *streamParser) reportEdit() {
 			Call:  p.callID,
 			Path:  path,
 			Match: match,
-			Text:  getPartialJSONField(args, words.text),
+			Text:  toolcall.ReadPartialField(args, words.Text),
 		},
 	}})
 }
@@ -442,86 +360,4 @@ func formatSubtype(subtype string) string {
 		}
 		return subtype
 	}
-}
-
-func extractCallDetails(args string) (string, string, *numenv1.Span) {
-	if args == "" {
-		return "", "", nil
-	}
-	var parsed map[string]any
-	if err := json.Unmarshal([]byte(args), &parsed); err == nil {
-		var about, path string
-		if p, ok := parsed["path"].(string); ok {
-			path = p
-		} else if f, ok := parsed["file"].(string); ok {
-			path = f
-		}
-
-		if q, ok := parsed["query"].(string); ok {
-			about = q
-		} else if a, ok := parsed["about"].(string); ok {
-			about = a
-		} else if t, ok := parsed["title"].(string); ok {
-			about = t
-		} else if path != "" {
-			about = path
-		} else {
-			about = args
-		}
-
-		var span *numenv1.Span
-		startVal, hasStart := parsed["start"]
-		lenVal, hasLen := parsed["length"]
-		if hasStart && hasLen {
-			var from, length float64
-			if s, ok := startVal.(float64); ok {
-				from = s
-			}
-			if l, ok := lenVal.(float64); ok {
-				length = l
-			}
-			if from >= 0 && length >= 0 && from <= math.MaxInt32-length {
-				span = &numenv1.Span{
-					From: int32(from),
-					To:   int32(from + length),
-				}
-			}
-		}
-		return about, path, span
-	}
-
-	// Partial JSON fallback
-	path := getPartialJSONField(args, "path")
-	if path == "" {
-		path = getPartialJSONField(args, "file")
-	}
-	query := getPartialJSONField(args, "query")
-	about := query
-	if about == "" {
-		about = getPartialJSONField(args, "about")
-	}
-	if about == "" {
-		about = getPartialJSONField(args, "title")
-	}
-	if about == "" {
-		about = path
-	}
-
-	var span *numenv1.Span
-	startStr := getPartialJSONField(args, "start")
-	lenStr := getPartialJSONField(args, "length")
-	if startStr != "" && lenStr != "" {
-		if s, err := strconv.ParseInt(startStr, 10, 32); err == nil {
-			if l, err := strconv.ParseInt(lenStr, 10, 32); err == nil {
-				if s >= 0 && l >= 0 && s <= math.MaxInt32-l {
-					span = &numenv1.Span{
-						From: int32(s),
-						To:   int32(s + l),
-					}
-				}
-			}
-		}
-	}
-
-	return about, path, span
 }

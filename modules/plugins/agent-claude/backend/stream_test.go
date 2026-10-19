@@ -6,15 +6,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/toolcall"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
-var testWords = map[string]toolWords{
-	"note_edit": {title: "Edit a note", kind: "edit", about: "path", match: "stood", text: "becomes"},
-	"note_read": {title: "Read notes", kind: "read", about: "paths", element: "path"},
+var testWords = map[string]toolcall.Words{
+	"note_edit": {Title: "Edit a note", Kind: "edit", About: "path", Match: "stood", Text: "becomes"},
+	"note_read": {Title: "Read notes", Kind: "read", About: "paths", Element: "path"},
 }
 
-func parseLines(t *testing.T, words map[string]toolWords, lines ...string) ([]*numenv1.AskAgentResponse, string) {
+func parseLines(t *testing.T, words map[string]toolcall.Words, lines ...string) ([]*numenv1.AskAgentResponse, string) {
 	t.Helper()
 	var got []*numenv1.AskAgentResponse
 	send := func(r *numenv1.AskAgentResponse) error {
@@ -229,24 +230,11 @@ func TestTheChildIsNotToldAboutSomebodyElsesSession(t *testing.T) {
 	}
 }
 
-func TestPartialJSONFieldIsReadAtEveryTruncation(t *testing.T) {
-	const whole = `{"path":"Note.md","stood":"abc"}`
-	for i := 0; i <= len(whole); i++ {
-		got := getPartialJSONField(whole[:i], "stood")
-		if !strings.HasPrefix("abc", got) {
-			t.Errorf("%q: %q is not a prefix", whole[:i], got)
-		}
-	}
-	if getPartialJSONField(whole, "missing") != "" {
-		t.Error("a missing field was read")
-	}
-}
-
 func TestAChangeIsLocatedByThePathArgumentAlone(t *testing.T) {
 	var got []*numenv1.AskAgentResponse
 	p := &streamParser{
 		send:  func(r *numenv1.AskAgentResponse) error { got = append(got, r); return nil },
-		words: map[string]toolWords{"note_edit": {about: "title", match: "stood", text: "becomes"}},
+		words: map[string]toolcall.Words{"note_edit": {About: "title", Match: "stood", Text: "becomes"}},
 		now:   func() time.Time { return time.Unix(100, 0) },
 	}
 	p.tool, p.callID = "mcp__numen__note_edit", "c"

@@ -15,6 +15,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/completion"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/toolcall"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
@@ -146,7 +147,7 @@ func (s *agentServer) AskAgent(
 	recordSession := func(session string) { s.registry.SetSession(conversation, session) }
 	reasons := make(chan string, 1)
 	go func() {
-		reasons <- parseStream(runCtx, out, stream.Send, getToolWords(msg.GetToolDeclarations()), recordSession)
+		reasons <- parseStream(runCtx, out, stream.Send, toolcall.ReadWords(msg.GetToolDeclarations()), recordSession)
 	}()
 
 	// A run let go of ends here, whatever the programs the child started hold of its output.
@@ -276,22 +277,6 @@ func (s *agentServer) GetAgentTools(
 		Tools:                 toolsCopy,
 		SystemPromptExtension: s.systemPrompt,
 	}), nil
-}
-
-// getToolWords indexes the declarations of the vault's tools by tool name.
-func getToolWords(declarations []*numenv1.ToolDeclaration) map[string]toolWords {
-	words := make(map[string]toolWords, len(declarations))
-	for _, d := range declarations {
-		words[d.GetName()] = toolWords{
-			title:   d.GetTitle(),
-			kind:    d.GetKind(),
-			about:   d.GetAbout(),
-			element: d.GetElement(),
-			match:   d.GetMatch(),
-			text:    d.GetText(),
-		}
-	}
-	return words
 }
 
 func main() {

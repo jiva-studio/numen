@@ -466,11 +466,11 @@ var builtInMonolithPlugins = map[string]DiscoveredPlugin{
 		Dir: "modules/plugins/agent",
 		Manifest: Manifest{
 			ID:           "md.numen.agent",
-			Name:         "Autonomous Agent & Chat Provider",
+			Name:         "Numen Agent",
 			Version:      "1.0.0",
-			Capabilities: []string{"agent"},
+			Capabilities: []string{"ai.agent.provider", CapabilityAgentProvider},
 			Targets:      []string{"desktop.editor"},
-			Permissions:  []string{PermissionVaultRead, PermissionVaultWrite},
+			Permissions:  []string{PermissionNetworkOutbound, PermissionVaultRead, PermissionVaultWrite},
 			Backend: Backend{
 				Type:        "process",
 				ServiceName: "numen.v1.AgentService",
