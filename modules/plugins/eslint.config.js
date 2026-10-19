@@ -9,6 +9,9 @@ const contract = ['plugin-sdk', 'ui', 'wire', 'protocol']
 /** The shared fixtures of the contract that a test reads by path. */
 const fixtureReaders = ['reader-epub/frontend/lib/markup.test.ts']
 
+/** The harness the stories of every plugin are drawn in, which belongs to no plugin. */
+const storyHarness = ['.storybook/**']
+
 const hostMessage =
   'plugins must not import host internals (@/*); use @numen/plugin-sdk or @numen/ui instead'
 
@@ -52,7 +55,7 @@ function pluginImportBlocks() {
     const dirs = '*/'.repeat(depth)
     blocks.push({
       files: [`${dirs}*.{ts,vue}`],
-      ignores: fixtureReaders,
+      ignores: [...fixtureReaders, ...storyHarness],
       rules: { 'no-restricted-imports': createRestrictions(depth) },
     })
   }
