@@ -3,6 +3,7 @@ package harness
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -564,5 +565,43 @@ func TestTheCompletionModelIsTheConfiguredOneWhereNoneIsListed(t *testing.T) {
 	got := res.Msg.GetModels()
 	if len(got) != 1 || got[0].GetName() != "m1" || !got[0].GetIsDefault() {
 		t.Errorf("the models are %+v", got)
+	}
+}
+
+func TestAStepThatCannotBeSentEndsTheRunWithItsError(t *testing.T) {
+	model := &fakeChat{replies: []message{newCallReply("c", "note_read", `{"path":"A.md"}`), newTextReply("ok")}}
+	vault := &fakeVault{}
+	s := newServer(model.serve(t).URL)
+	gone := errors.New("the window let go")
+	sent := 0
+
+	err := s.Ask(t.Context(), newTask(vault.serve(t), "Read."), func(*numenv1.AskAgentResponse) error {
+		sent++
+		if sent == 2 {
+			return gone
+		}
+		return nil
+	})
+
+	if !errors.Is(err, gone) {
+		t.Errorf("the run ended with %v", err)
+	}
+	if calls := vault.getCalls(); len(calls) != 0 {
+		t.Errorf("the vault was called after the call could not be told: %v", calls)
+	}
+}
+
+func TestCompleteIsUnavailableWhenTheModelSaysNothing(t *testing.T) {
+	model := &fakeChat{replies: []message{{Role: "assistant"}}}
+	s := newServer(model.serve(t).URL)
+
+	res, err := s.Complete(t.Context(), connect.NewRequest(&numenv1.CompleteRequest{Question: &numenv1.CompletionQuestion{
+		Messages: []*numenv1.CompletionMessage{{Role: "user", Text: "why?"}},
+	}}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Msg.GetError() != numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE {
+		t.Errorf("got %+v", res.Msg)
 	}
 }
