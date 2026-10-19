@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { effectScope, onScopeDispose } from 'vue'
-import { openTab, getPanes } from '@numen/ui'
+import { openTab, getPanes, paneById } from '@numen/ui'
 import type { Workspace } from '@numen/ui'
 import type { FileKind } from '@/entities/file/@x/tab'
 import type { AnyTabKind, WindowHandle } from '../lib/kinds'
@@ -941,5 +941,73 @@ describe('a placed kind whose tab fails to open', () => {
     expect(stopped).toStrictEqual(['plex'])
     expect(onScreen(window.layout.value).map((id) => id.split(':')[0])).toStrictEqual(['agent'])
     expect(window.tabs.value.map((tab) => tab.id.split(':')[0])).toStrictEqual(['agent'])
+  })
+})
+
+describe('a tab of a kind moved to a path', () => {
+  /** A kind whose tabs stand on a path, and move when asked. */
+  const walker = (name = 'walker') =>
+    kind({
+      kind: name,
+      open: (at: string) => ({ at, title: at }),
+      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+      navigate: (state: { at: string; title: string }, path: string) => {
+        state.at = path
+      },
+    })
+
+  it('is the one the person was last in, put in front', async () => {
+    const one = walker()
+    const window = useWindowTabs()
+    window.registerKinds([one.one, kind().one])
+    const first = await window.openTabOfKind('walker', 'One.md')
+    const second = await window.openTabOfKind('walker', 'Two.md')
+    window.onTabShown(first)
+    await window.openTabOfKind('thing', 'Else.md')
+
+    const moved = await window.navigateTab('walker', 'Wanted.md')
+
+    expect(moved).toBe(first)
+    expect(window.getTab(first)?.state).toMatchObject({ at: 'Wanted.md' })
+    expect(window.getTab(second)?.state).toMatchObject({ at: 'Two.md' })
+    expect(paneById(window.layout.value.root, window.layout.value.focus)?.active).toBe(first)
+  })
+
+  it('is a new one opened there where the window holds none', async () => {
+    const window = useWindowTabs()
+    window.registerKinds([walker().one])
+
+    const id = await window.navigateTab('walker', 'Wanted.md')
+
+    expect(window.getTab(id)?.state).toMatchObject({ at: 'Wanted.md' })
+  })
+})
+
+describe('the tabs standing on a path that went', () => {
+  it('move to another, every one of a kind that navigates, and no other', async () => {
+    const window = useWindowTabs()
+    const fixed = kind({
+      kind: 'fixed',
+      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+    })
+    window.registerKinds([
+      kind({
+        kind: 'walker',
+        getOpenTab: (state: { at: string }) => ({ path: state.at }),
+        navigate: (state: { at: string }, path: string) => {
+          state.at = path
+        },
+      }).one,
+      fixed.one,
+    ])
+    const gone = await window.openTabOfKind('walker', 'Gone.md')
+    const kept = await window.openTabOfKind('walker', 'Elsewhere.md')
+    const still = await window.openTabOfKind('fixed', 'Gone.md')
+
+    await window.navigateTabsAt('Gone.md', 'Root.md')
+
+    expect(window.getTab(gone)?.state).toMatchObject({ at: 'Root.md' })
+    expect(window.getTab(kept)?.state).toMatchObject({ at: 'Elsewhere.md' })
+    expect(window.getTab(still)?.state).toMatchObject({ at: 'Gone.md' })
   })
 })

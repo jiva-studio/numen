@@ -46,6 +46,8 @@ export function createMockPluginContext(
   const context: MockPluginContext = {
     pluginId,
     subscriptions,
+    ...(initialValues?.workspace ? { workspace: initialValues.workspace } : {}),
+    ...(initialValues?.notes ? { notes: initialValues.notes } : {}),
 
     registerReader(registration: ReaderRegistration): Disposable {
       readers.push(registration)

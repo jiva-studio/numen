@@ -17,7 +17,7 @@ import {
   type FilesTabDeps,
   type FilesTabState,
 } from '@/pages/file-manager'
-import { isNotePath } from '../useTabSync'
+import { isNotePath } from '@numen/plugin-sdk'
 import { WORDS as words } from '@/shared/words'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { WindowKindsDeps } from './deps'

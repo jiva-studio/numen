@@ -1,3 +1,4 @@
+import type { VaultChangeEvent } from '@numen/plugin-sdk'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { CommandTarget } from '@/features/command-palette'
 import type { PathRename } from '@/shared/paths'
@@ -14,19 +15,20 @@ export interface DisplayWiring {
   getKinds: () => ReturnType<typeof useWindowKinds>
   tabOpeners: ReturnType<typeof fileOpeners>
   getVaults: () => ReturnType<typeof useVaults>
+  notifyPlugins: (event: VaultChangeEvent) => void
 }
 
 export function createDisplayOptions(deps: DisplayWiring) {
-  const { editing, getCommands, getKinds, tabOpeners, getVaults } = deps
+  const { editing, getCommands, getKinds, tabOpeners, getVaults, notifyPlugins } = deps
   return {
     onVaultChanged: async (paths: readonly string[], renamed: readonly PathRename[]) => {
       editing.notes.applyPathChanges(paths, renamed)
       getCommands().commands.applyRenames(renamed)
       await getKinds().files.refreshChangedPaths(paths, renamed)
-      await getKinds().plexes.refresh(renamed)
+      notifyPlugins({ paths, renamed })
     },
     reportChange: editing.changes.reportChange,
-    travelTo: (path: string) => getKinds().plexes.travel(path),
+    travelTo: (path: string) => getKinds().travel(path),
     openFileAt: (path: string, spans: readonly Span[]) => void tabOpeners.openFileAt(path, spans),
     reload: () => getVaults().reload(),
   }

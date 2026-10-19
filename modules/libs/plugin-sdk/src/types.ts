@@ -1,3 +1,5 @@
+import type { VaultNotes, WorkspaceHost } from './workspace'
+
 // Disposable is a handle released on teardown.
 export interface Disposable {
   dispose(): void
@@ -151,6 +153,10 @@ export interface PluginContext {
   openTab?(kind: string, at?: string): Promise<string> | void
   closeTab?(id: string): void
   hasPermission?(permission: string): boolean
+  // The window the plugin's tabs are drawn in, where the host offers one.
+  readonly workspace?: WorkspaceHost
+  // The notes of the vault, where the host offers them.
+  readonly notes?: VaultNotes
 }
 
 // PluginManifest describes the metadata in manifest.json.

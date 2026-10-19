@@ -55,6 +55,7 @@ export function useWindowTabs() {
   const openers = createTabOpeners({ open, layout, byKind, scopes, drop })
   const closers = createTabClosers({ open, layout, drop })
   const handle = createWindowHandle({ ...openers, ...queries })
+  const navigation = createTabNavigation(open, openers)
   /** A kind whose tab fails to open is told to `onError` and left out of the layout. */
   const openPlacedTabs = async (onError: PlacementError) => {
     layout.value = await createPlacedWorkspace([...byKind.values()], openers.createTab, onError)
@@ -70,6 +71,8 @@ export function useWindowTabs() {
     registerKind,
     hasKind,
     openPlacedTabs,
+    navigateTab: navigation.navigateTab,
+    navigateTabsAt: navigation.navigateTabsAt,
     getTab: queries.getTab,
     getTabStateIn: queries.getTabStateIn,
     createTab: openers.createTab,
@@ -272,6 +275,35 @@ function createTabClosers(ctx: TabStoreContext) {
   }
 
   return { releaseTab, requestClose, reconcileTab, close }
+}
+
+/** Moving the tabs of a kind that navigates to another path. */
+function createTabNavigation(
+  open: ShallowRef<ReadonlyMap<string, WindowTab>>,
+  openers: Pick<ReturnType<typeof createTabOpeners>, 'openTabOfKind' | 'show'>,
+) {
+  /**
+   * The tab of a kind the person was last in, put in front and moved to the
+   * path; a tab of it opened there where the window holds none.
+   */
+  const navigateTab = async (kind: string, at: string): Promise<string> => {
+    const last = [...open.value].filter(([, one]) => one.kind.kind === kind).at(-1)
+    if (!last) return openers.openTabOfKind(kind, at)
+    const [id, one] = last
+    openers.show(id)
+    await one.kind.navigate?.(one.state, at, '')
+    return id
+  }
+
+  /** Every tab standing on a path, of a kind that navigates, moved to another. */
+  const navigateTabsAt = async (from: string, to: string): Promise<void> => {
+    const standing = [...open.value.values()].filter(
+      (one) => one.kind.navigate && getTabPath(one) === from,
+    )
+    await Promise.all(standing.map(async (one) => one.kind.navigate?.(one.state, to, '')))
+  }
+
+  return { navigateTab, navigateTabsAt }
 }
 
 interface WindowHandleDeps {

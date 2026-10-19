@@ -11,6 +11,8 @@ import type {
   ReaderRegistration,
   TabKindRegistration,
   VaultChangeEvent,
+  VaultNotes,
+  WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { AnyTabKind, SourceReader } from '@/entities/tab/@x/plugin'
 
@@ -64,6 +66,10 @@ export interface PluginHostDeps {
   readonly readNote?:
     ((path: string) => Promise<{ body?: string; error?: string } | string | undefined>) | undefined
   readonly writeNote?: ((path: string, body: string) => Promise<void>) | undefined
+  /** The window a plugin's tabs are drawn in, once the window has made it. */
+  readonly getWorkspace?: () => WorkspaceHost | undefined
+  /** The notes of the vault, once the window has made them. */
+  readonly getNotes?: () => VaultNotes | undefined
 }
 
 export interface PluginContextHost {
@@ -89,4 +95,6 @@ export interface PluginContextHost {
   emitFileSelect(pluginId: string, event: FileSelectEvent): void
   openTab?(kind: string, at?: string): Promise<string>
   closeTab?(id: string): void
+  getWorkspace?(): WorkspaceHost | undefined
+  getNotes?(): VaultNotes | undefined
 }
