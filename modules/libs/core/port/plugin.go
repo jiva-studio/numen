@@ -70,6 +70,17 @@ func (e *UnavailableError) Unwrap() error {
 	return e.Err
 }
 
+// PluginFailure is a plugin the host suspends after it failed to start, and why.
+type PluginFailure struct {
+	PluginID string
+	// Name is what the plugin is called to a person.
+	Name string
+	// Reason is why the plugin failed, in words a person reads.
+	Reason string
+	// At is when the host gave the plugin up.
+	At time.Time
+}
+
 // PluginPersistHandler is called when a plugin modifies its own settings.
 type PluginPersistHandler func(pluginID string, key string, value any) error
 
@@ -181,6 +192,14 @@ type PluginManager interface {
 	SetSafeMode(enabled bool)
 	// SetVaultPath is the vault the plugins' paths are held inside.
 	SetVaultPath(path string)
+	// SetOnPluginFailed registers a callback invoked once when a plugin has failed to start repeatedly,
+	// and again when a retry of it fails.
+	SetOnPluginFailed(fn func(PluginFailure))
+	// SetOnFailureCleared registers a callback invoked with the id of a plugin whose failure the host forgets, because the plugin started, was enabled or was disabled.
+	SetOnFailureCleared(fn func(pluginID string))
+	// RetryPlugin forgets the failures of a plugin and starts it once. The failure is set where the
+	// plugin fails again; an unknown plugin is an *UnavailableError.
+	RetryPlugin(ctx context.Context, pluginID string) (*PluginFailure, error)
 	// TeardownAll stops every plugin, giving each the grace period to exit.
 	TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 }

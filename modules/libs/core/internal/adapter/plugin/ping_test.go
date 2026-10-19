@@ -82,9 +82,9 @@ func TestAPluginThatSpeaksAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			host := newDiscoveredHost(t)
 			var failedID string
-			var failure error
-			host.SetOnPluginFailed(func(pluginID string, cause error) {
-				failedID, failure = pluginID, cause
+			var reason string
+			host.SetOnPluginFailed(func(failed port.PluginFailure) {
+				failedID, reason = failed.PluginID, failed.Reason
 			})
 			var procs []*os.Process
 			host.SetLauncher(launchAnsweringPing(t, tc.protocol, &procs))
@@ -93,8 +93,8 @@ func TestAPluginThatSpeaksAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
 			if !errors.Is(err, port.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), tc.want) {
 				t.Fatalf("EnsureActive() = %v, want %v naming %q", err, port.ErrUnsupportedProtocol, tc.want)
 			}
-			if failedID != "md.numen.ocr" || !errors.Is(failure, port.ErrUnsupportedProtocol) {
-				t.Fatalf("failure reported for %q with %v, want md.numen.ocr with the protocol error", failedID, failure)
+			if failedID != "md.numen.ocr" || reason != describeFailure(port.ErrUnsupportedProtocol) {
+				t.Fatalf("failure reported for %q with %q, want md.numen.ocr with the protocol reason", failedID, reason)
 			}
 			if err := procs[0].Signal(syscall.Signal(0)); !errors.Is(err, os.ErrProcessDone) {
 				t.Fatalf("signal the refused process: %v, want %v", err, os.ErrProcessDone)

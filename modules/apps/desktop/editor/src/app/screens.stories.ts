@@ -155,6 +155,9 @@ const INSTALLATION: Installation = {
   deleteSecret: () => {
     DONE.push('key gone')
   },
+  retryPlugin: () => {
+    DONE.push('plugin retried')
+  },
   chooseDayStartTime: (time) => {
     DONE.push(`day ${time}`)
   },

@@ -54,6 +54,7 @@ const createSection = (
     deleteSecret: (pluginId, name) => {
       secrets.push(`delete ${pluginId} ${name}`)
     },
+    retryPlugin: vi.fn(),
     plugins: ref(plugins),
     file: ref('/numen.json'),
     openFile: vi.fn(),

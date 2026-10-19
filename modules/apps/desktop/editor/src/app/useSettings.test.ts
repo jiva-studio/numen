@@ -47,7 +47,15 @@ describe('the settings as they are put together', () => {
   it('gives each setting a message writer under a name of its own', () => {
     const { writers } = createSettings()
 
-    expect(writers).toStrictEqual(['reviewed', 'nesting', 'worn', 'named', 'configured', 'keys'])
+    expect(writers).toStrictEqual([
+      'reviewed',
+      'nesting',
+      'worn',
+      'named',
+      'configured',
+      'keys',
+      'plugins',
+    ])
   })
 
   it('opens the settings tab as kind of tab', () => {

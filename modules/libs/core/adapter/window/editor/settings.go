@@ -21,6 +21,7 @@ type settingsHandler struct {
 	writeFile    *settings.WriteFile
 	writeSecret  *settings.WriteSecret
 	deleteSecret *settings.DeleteSecret
+	retryPlugin  *settings.RetryPlugin
 }
 
 // errNoSettings is what a build that serves no settings answers.
@@ -180,6 +181,7 @@ func newWirePluginInfos(held []settings.PluginInfo) []*v1.PluginInfo {
 			StoredSecrets:     one.StoredSecrets,
 			Models:            newWirePluginModels(one.Models),
 			CompletionConsent: consents[one.Consent],
+			Failure:           newWirePluginFailure(one.Failure),
 		})
 	}
 	return infos
@@ -229,4 +231,35 @@ func (h *settingsHandler) DeletePluginSecret(
 		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
 	}
 	return connect.NewResponse(&v1.DeletePluginSecretResponse{}), nil
+}
+
+// newWirePluginFailure is why the host holds a plugin off, as the wire carries it, and nil for a plugin it does not.
+func newWirePluginFailure(failure *settings.PluginFailure) *v1.PluginFailure {
+	if failure == nil {
+		return nil
+	}
+	return &v1.PluginFailure{Reason: failure.Reason, FailedAtUnixMs: failure.At.UnixMilli()}
+}
+
+// RetryPlugin starts a plugin the host suspends once more. A plugin that fails
+// again is answered with its reason, and one the host does not know is not found.
+func (h *settingsHandler) RetryPlugin(
+	ctx context.Context, r *connect.Request[v1.RetryPluginRequest],
+) (*connect.Response[v1.RetryPluginResponse], error) {
+	if h.retryPlugin == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
+	}
+	failure, err := h.retryPlugin.Execute(ctx, r.Msg.GetPluginId())
+	if err != nil {
+		var unavailable *settings.UnavailableError
+		if errors.As(err, &unavailable) && unavailable.Reason == settings.PluginNotInstalled {
+			return nil, connect.NewError(connect.CodeNotFound, err)
+		}
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	reply := &v1.RetryPluginResponse{}
+	if failure != nil {
+		reply.Failure = failure.Reason
+	}
+	return connect.NewResponse(reply), nil
 }

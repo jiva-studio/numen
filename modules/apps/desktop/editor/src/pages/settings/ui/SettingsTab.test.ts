@@ -127,6 +127,7 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
     latestDayStartTime: ref('12:00'),
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
+    retryPlugin: vi.fn(),
     chooseDayStartTime: (hour) => {
       done.push(`day starts ${hour}`)
     },

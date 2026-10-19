@@ -852,6 +852,96 @@ func (*DeletePluginSecretResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{13}
 }
 
+type RetryPluginRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The plugin, by its id.
+	PluginId      string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RetryPluginRequest) Reset() {
+	*x = RetryPluginRequest{}
+	mi := &file_numen_v1_settings_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RetryPluginRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RetryPluginRequest) ProtoMessage() {}
+
+func (x *RetryPluginRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RetryPluginRequest.ProtoReflect.Descriptor instead.
+func (*RetryPluginRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *RetryPluginRequest) GetPluginId() string {
+	if x != nil {
+		return x.PluginId
+	}
+	return ""
+}
+
+type RetryPluginResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Set when the plugin failed to start again, in words a person reads.
+	Failure       string `protobuf:"bytes,1,opt,name=failure,proto3" json:"failure,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RetryPluginResponse) Reset() {
+	*x = RetryPluginResponse{}
+	mi := &file_numen_v1_settings_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RetryPluginResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RetryPluginResponse) ProtoMessage() {}
+
+func (x *RetryPluginResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RetryPluginResponse.ProtoReflect.Descriptor instead.
+func (*RetryPluginResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *RetryPluginResponse) GetFailure() string {
+	if x != nil {
+		return x.Failure
+	}
+	return ""
+}
+
 var File_numen_v1_settings_proto protoreflect.FileDescriptor
 
 const file_numen_v1_settings_proto_rawDesc = "" +
@@ -900,19 +990,24 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\x19DeletePluginSecretRequest\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\"\x1c\n" +
-	"\x1aDeletePluginSecretResponse*s\n" +
+	"\x1aDeletePluginSecretResponse\"1\n" +
+	"\x12RetryPluginRequest\x12\x1b\n" +
+	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\"/\n" +
+	"\x13RetryPluginResponse\x12\x18\n" +
+	"\afailure\x18\x01 \x01(\tR\afailure*s\n" +
 	"\bPresence\x12\x18\n" +
 	"\x14PRESENCE_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10PRESENCE_PRESENT\x10\x01\x12\x18\n" +
 	"\x14PRESENCE_NOT_FETCHED\x10\x02\x12\x1d\n" +
-	"\x19PRESENCE_NOTHING_TO_FETCH\x10\x032\xa7\x04\n" +
+	"\x19PRESENCE_NOTHING_TO_FETCH\x10\x032\xf3\x04\n" +
 	"\x0fSettingsService\x12J\n" +
 	"\vGetSettings\x12\x1c.numen.v1.GetSettingsRequest\x1a\x1d.numen.v1.GetSettingsResponse\x12P\n" +
 	"\rWriteSettings\x12\x1e.numen.v1.WriteSettingsRequest\x1a\x1f.numen.v1.WriteSettingsResponse\x12Y\n" +
 	"\x10ReadSettingsFile\x12!.numen.v1.ReadSettingsFileRequest\x1a\".numen.v1.ReadSettingsFileResponse\x12\\\n" +
 	"\x11WriteSettingsFile\x12\".numen.v1.WriteSettingsFileRequest\x1a#.numen.v1.WriteSettingsFileResponse\x12\\\n" +
 	"\x11WritePluginSecret\x12\".numen.v1.WritePluginSecretRequest\x1a#.numen.v1.WritePluginSecretResponse\x12_\n" +
-	"\x12DeletePluginSecret\x12#.numen.v1.DeletePluginSecretRequest\x1a$.numen.v1.DeletePluginSecretResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x12DeletePluginSecret\x12#.numen.v1.DeletePluginSecretRequest\x1a$.numen.v1.DeletePluginSecretResponse\x12J\n" +
+	"\vRetryPlugin\x12\x1c.numen.v1.RetryPluginRequest\x1a\x1d.numen.v1.RetryPluginResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_settings_proto_rawDescOnce sync.Once
@@ -927,7 +1022,7 @@ func file_numen_v1_settings_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_settings_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_numen_v1_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_numen_v1_settings_proto_goTypes = []any{
 	(Presence)(0),                      // 0: numen.v1.Presence
 	(*GetSettingsRequest)(nil),         // 1: numen.v1.GetSettingsRequest
@@ -944,32 +1039,36 @@ var file_numen_v1_settings_proto_goTypes = []any{
 	(*WritePluginSecretResponse)(nil),  // 12: numen.v1.WritePluginSecretResponse
 	(*DeletePluginSecretRequest)(nil),  // 13: numen.v1.DeletePluginSecretRequest
 	(*DeletePluginSecretResponse)(nil), // 14: numen.v1.DeletePluginSecretResponse
-	(*Bounds)(nil),                     // 15: numen.v1.Bounds
-	(*PluginInfo)(nil),                 // 16: numen.v1.PluginInfo
-	(ErrorCode)(0),                     // 17: numen.v1.ErrorCode
+	(*RetryPluginRequest)(nil),         // 15: numen.v1.RetryPluginRequest
+	(*RetryPluginResponse)(nil),        // 16: numen.v1.RetryPluginResponse
+	(*Bounds)(nil),                     // 17: numen.v1.Bounds
+	(*PluginInfo)(nil),                 // 18: numen.v1.PluginInfo
+	(ErrorCode)(0),                     // 19: numen.v1.ErrorCode
 }
 var file_numen_v1_settings_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.GetSettingsResponse.models:type_name -> numen.v1.Model
-	15, // 1: numen.v1.GetSettingsResponse.nested_heading_limit_bounds:type_name -> numen.v1.Bounds
-	16, // 2: numen.v1.GetSettingsResponse.plugins:type_name -> numen.v1.PluginInfo
+	17, // 1: numen.v1.GetSettingsResponse.nested_heading_limit_bounds:type_name -> numen.v1.Bounds
+	18, // 2: numen.v1.GetSettingsResponse.plugins:type_name -> numen.v1.PluginInfo
 	4,  // 3: numen.v1.Model.writes:type_name -> numen.v1.Setting
 	0,  // 4: numen.v1.Model.presence:type_name -> numen.v1.Presence
 	4,  // 5: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
-	17, // 6: numen.v1.WriteSettingsFileResponse.error:type_name -> numen.v1.ErrorCode
+	19, // 6: numen.v1.WriteSettingsFileResponse.error:type_name -> numen.v1.ErrorCode
 	1,  // 7: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
 	5,  // 8: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
 	7,  // 9: numen.v1.SettingsService.ReadSettingsFile:input_type -> numen.v1.ReadSettingsFileRequest
 	9,  // 10: numen.v1.SettingsService.WriteSettingsFile:input_type -> numen.v1.WriteSettingsFileRequest
 	11, // 11: numen.v1.SettingsService.WritePluginSecret:input_type -> numen.v1.WritePluginSecretRequest
 	13, // 12: numen.v1.SettingsService.DeletePluginSecret:input_type -> numen.v1.DeletePluginSecretRequest
-	2,  // 13: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
-	6,  // 14: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
-	8,  // 15: numen.v1.SettingsService.ReadSettingsFile:output_type -> numen.v1.ReadSettingsFileResponse
-	10, // 16: numen.v1.SettingsService.WriteSettingsFile:output_type -> numen.v1.WriteSettingsFileResponse
-	12, // 17: numen.v1.SettingsService.WritePluginSecret:output_type -> numen.v1.WritePluginSecretResponse
-	14, // 18: numen.v1.SettingsService.DeletePluginSecret:output_type -> numen.v1.DeletePluginSecretResponse
-	13, // [13:19] is the sub-list for method output_type
-	7,  // [7:13] is the sub-list for method input_type
+	15, // 13: numen.v1.SettingsService.RetryPlugin:input_type -> numen.v1.RetryPluginRequest
+	2,  // 14: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
+	6,  // 15: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
+	8,  // 16: numen.v1.SettingsService.ReadSettingsFile:output_type -> numen.v1.ReadSettingsFileResponse
+	10, // 17: numen.v1.SettingsService.WriteSettingsFile:output_type -> numen.v1.WriteSettingsFileResponse
+	12, // 18: numen.v1.SettingsService.WritePluginSecret:output_type -> numen.v1.WritePluginSecretResponse
+	14, // 19: numen.v1.SettingsService.DeletePluginSecret:output_type -> numen.v1.DeletePluginSecretResponse
+	16, // 20: numen.v1.SettingsService.RetryPlugin:output_type -> numen.v1.RetryPluginResponse
+	14, // [14:21] is the sub-list for method output_type
+	7,  // [7:14] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name
 	7,  // [7:7] is the sub-list for extension extendee
 	0,  // [0:7] is the sub-list for field type_name
@@ -990,7 +1089,7 @@ func file_numen_v1_settings_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_settings_proto_rawDesc), len(file_numen_v1_settings_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   14,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
