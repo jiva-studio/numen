@@ -5,7 +5,7 @@
  * given is an address on this machine, and the page there is what frames a
  * host. What this window hands that page is worth holding to.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import MediaEmbed from './MediaEmbed.vue'
 import { WORDS as words } from '../words'
@@ -113,14 +113,14 @@ describe('a copy of the video on this disk', () => {
 
 describe('the height a person drew the player', () => {
   it('is where the player opens, where the store holds one', () => {
-    const store = { read: () => 300, write: () => {} }
+    const store = { read: () => 300, write: vi.fn() }
     const drawn = mount(MediaEmbed, { props: { embed: EMBED, copy: '', words, store } })
 
     expect(drawn.get('iframe').attributes('style')).toContain('300px')
   })
 
   it('leaves the player at sixteen by nine where the store holds none', () => {
-    const store = { read: () => null, write: () => {} }
+    const store = { read: () => null, write: vi.fn() }
     const drawn = mount(MediaEmbed, { props: { embed: EMBED, copy: '', words, store } })
 
     expect(drawn.get('iframe').attributes('style')).toBeUndefined()

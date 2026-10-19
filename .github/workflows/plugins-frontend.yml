@@ -8,6 +8,8 @@ on:
       - "modules/plugins/*/vite.config.ts"
       - "modules/plugins/*/vitest.config.ts"
       - "modules/plugins/vitest.config.ts"
+      - "modules/plugins/eslint.config.js"
+      - "modules/plugins/*/manifest.json"
       - "modules/plugins/.storybook/**"
       - "modules/libs/ui/**"
       - "modules/libs/plugin-sdk/**"
@@ -15,6 +17,8 @@ on:
       - "modules/libs/protocol/**"
       - "modules/package.json"
       - "modules/package-lock.json"
+      - "modules/prettier.config.mjs"
+      - "modules/.prettierignore"
       - ".github/actions/**"
       - "!**/*.md"
       - "!docs/**"
@@ -28,6 +32,8 @@ on:
       - "modules/plugins/*/vite.config.ts"
       - "modules/plugins/*/vitest.config.ts"
       - "modules/plugins/vitest.config.ts"
+      - "modules/plugins/eslint.config.js"
+      - "modules/plugins/*/manifest.json"
       - "modules/plugins/.storybook/**"
       - "modules/libs/ui/**"
       - "modules/libs/plugin-sdk/**"
@@ -35,6 +41,8 @@ on:
       - "modules/libs/protocol/**"
       - "modules/package.json"
       - "modules/package-lock.json"
+      - "modules/prettier.config.mjs"
+      - "modules/.prettierignore"
       - ".github/actions/**"
       - "!**/*.md"
       - "!docs/**"
@@ -50,6 +58,34 @@ permissions:
   contents: read
 
 jobs:
+  # The frontends of every plugin under the one ESLint configuration in
+  # modules/plugins, and in the Prettier style of the modules.
+  lint:
+    name: Plugin Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-node-modules
+
+      - name: Lint plugin frontends
+        working-directory: modules/plugins
+        run: ../node_modules/.bin/eslint .
+
+      - name: Check plugin formatting
+        working-directory: modules
+        run: node_modules/.bin/prettier --check "plugins/**/*.{ts,vue,json,css,js}"
+
   # Every plugin's own suite, under its own configuration. The make target
   # builds the components first: a plugin reaches them through their build, as
   # it does in the window.
