@@ -17,7 +17,10 @@ var absentPlugins = []string{"md.numen.agent-acp", "md.numen.agent-antigravity",
 // have no plugin folder.
 func getUnaccountedPlugins(backends, registered, absent []string) []string {
 	var unaccounted []string
-	for _, id := range backends {
+	for i, id := range backends {
+		if slices.Contains(backends[:i], id) {
+			unaccounted = append(unaccounted, id+" is declared by more than one backend")
+		}
 		if !slices.Contains(registered, id) && !slices.Contains(absent, id) {
 			unaccounted = append(unaccounted, id+" is neither registered nor listed as absent")
 		}
@@ -43,6 +46,7 @@ func TestWhatThePluginRegistrationRuleRefuses(t *testing.T) {
 	for name, got := range map[string][]string{
 		"a plugin neither registered nor absent": getUnaccountedPlugins(backends, []string{"a", "b"}, nil),
 		"an absent plugin that is registered":    getUnaccountedPlugins(backends, []string{"a", "b", "c"}, []string{"c"}),
+		"an id declared twice":                   getUnaccountedPlugins([]string{"a", "a"}, []string{"a"}, nil),
 		"an absent plugin that does not exist":   getUnaccountedPlugins(backends, []string{"a", "b", "c"}, []string{"d"}),
 	} {
 		if len(got) == 0 {

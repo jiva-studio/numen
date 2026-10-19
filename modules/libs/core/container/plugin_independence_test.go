@@ -384,14 +384,21 @@ func TestNoCoreOrHostSourceSpellsOutAPluginID(t *testing.T) {
 	})
 }
 
-// getAnonymousAssertions is every type assertion of a file to an interface
-// that is spelled out where it is asserted.
+// getAnonymousAssertions is every type assertion and type switch case of a file
+// naming an interface that is spelled out where it is asserted.
 func getAnonymousAssertions(file *ast.File) []token.Pos {
 	var found []token.Pos
 	ast.Inspect(file, func(n ast.Node) bool {
-		if assertion, ok := n.(*ast.TypeAssertExpr); ok {
-			if _, anonymous := assertion.Type.(*ast.InterfaceType); anonymous {
-				found = append(found, assertion.Pos())
+		switch n := n.(type) {
+		case *ast.TypeAssertExpr:
+			if _, anonymous := n.Type.(*ast.InterfaceType); anonymous {
+				found = append(found, n.Pos())
+			}
+		case *ast.CaseClause:
+			for _, one := range n.List {
+				if _, anonymous := one.(*ast.InterfaceType); anonymous {
+					found = append(found, one.Pos())
+				}
 			}
 		}
 		return true
@@ -411,6 +418,7 @@ func TestWhatTheAnonymousAssertionRuleRefuses(t *testing.T) {
 		{`package p; func f(x any) { _ = x.(fmt.Stringer) }`, false},
 		{`package p; func f(x any) { _ = x.(*Host) }`, false},
 		{`package p; func f(x any) { switch x.(type) { case int: } }`, false},
+		{`package p; func f(x any) { switch x.(type) { case interface{ Stop() }: } }`, true},
 	} {
 		if got := len(getAnonymousAssertions(parseSource(t, one.src))) > 0; got != one.isRefused {
 			t.Errorf("%s: refused is %v, want %v", one.src, got, one.isRefused)
