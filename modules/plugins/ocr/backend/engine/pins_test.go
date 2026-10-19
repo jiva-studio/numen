@@ -158,8 +158,13 @@ func TestIsFetchedReturnsFalseWhenGetDirFails(t *testing.T) {
 	t.Setenv("NUMEN_MODELS_DIR", "")
 	t.Setenv("XDG_CONFIG_HOME", "")
 	t.Setenv("HOME", "")
+	t.Setenv("APPDATA", "")
+	t.Setenv("LOCALAPPDATA", "")
 
 	cfg := Config{}
+	if _, err := cfg.folder().GetDir(); err == nil {
+		t.Fatal("cfg.folder().GetDir() succeeded without environment directory variables")
+	}
 	held := RecogniserModel{Name: address}
 	if IsFetched(cfg, held) {
 		t.Fatal("IsFetched returned true when folder().GetDir() failed")
