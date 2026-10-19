@@ -244,6 +244,27 @@ func TestABookPluginThatGoesAwayIsAnsweredAsUnimplemented(t *testing.T) {
 	}
 }
 
+// A failure to open the plugin that carries a code, or ends the caller's
+// context, is answered with that code.
+func TestAFailureToOpenTheBookPluginKeepsItsCode(t *testing.T) {
+	for why, want := range map[error]connect.Code{
+		connect.NewError(connect.CodePermissionDenied, errors.New("no")): connect.CodePermissionDenied,
+		context.DeadlineExceeded: connect.CodeDeadlineExceeded,
+	} {
+		api, _, _ := readFrom(t, newBookClient())
+		api.Book.openClient = func(context.Context) (any, func(), error) { return nil, nil, why }
+
+		_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: reflowed}))
+		if code := connect.CodeOf(err); code != want {
+			t.Errorf("%v was answered %v, want %v", why, code, want)
+		}
+		_, err = api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{Path: reflowed}))
+		if code := connect.CodeOf(err); code != want {
+			t.Errorf("%v was answered %v for markup, want %v", why, code, want)
+		}
+	}
+}
+
 // A client that is no book reader is no book plugin, and the client is let go.
 func TestAClientThatReadsNoBooksIsAnsweredAsUnimplemented(t *testing.T) {
 	api, _, _ := readFrom(t, newBookClient())

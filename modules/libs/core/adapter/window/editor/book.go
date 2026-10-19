@@ -51,7 +51,7 @@ func (h *bookHandler) GetBook(
 ) (*connect.Response[v1.GetBookResponse], error) {
 	client, closeClient, err := h.getClient(ctx)
 	if err != nil {
-		return nil, connect.NewError(getReachCode(err), err)
+		return nil, readOpenError(err)
 	}
 	defer closeClient()
 	res, err := client.GetBook(ctx, r)
@@ -72,7 +72,7 @@ func (h *bookHandler) ReadBookMarkup(
 ) (*connect.Response[v1.ReadBookMarkupResponse], error) {
 	client, closeClient, err := h.getClient(ctx)
 	if err != nil {
-		return nil, connect.NewError(getReachCode(err), err)
+		return nil, readOpenError(err)
 	}
 	defer closeClient()
 	res, err := client.ReadBookMarkup(ctx, r)
@@ -171,4 +171,21 @@ func readBookError(err error) error {
 		return err
 	}
 	return connect.NewError(connect.CodeUnimplemented, err)
+}
+
+// readOpenError is what a failure to open the book plugin is answered with: a
+// code the failure carries and the end of the caller's context are kept, and
+// anything else is coded as a file that could not be reached.
+func readOpenError(err error) error {
+	var coded *connect.Error
+	switch {
+	case errors.As(err, &coded):
+		return err
+	case errors.Is(err, context.Canceled):
+		return connect.NewError(connect.CodeCanceled, err)
+	case errors.Is(err, context.DeadlineExceeded):
+		return connect.NewError(connect.CodeDeadlineExceeded, err)
+	default:
+		return connect.NewError(getReachCode(err), err)
+	}
 }
