@@ -41,7 +41,7 @@ test.describe('Plugin Settings and Configuration', () => {
     await expect(page.getByText('Transcription Language').first()).toBeVisible({ timeout: 5_000 })
   })
 
-  test('toggles a boolean switch and verifies reactive update', async ({ page }) => {
+  test('selects a transcription language and verifies reactive update', async ({ page }) => {
     await page.goto('/')
 
     await expect(page.locator('text=Ready')).toBeVisible()
@@ -55,15 +55,14 @@ test.describe('Plugin Settings and Configuration', () => {
 
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
 
-    // Find a toggle switch
-    const switchEl = page.locator('[data-slot="switch"]').first()
-    await expect(switchEl).toBeVisible()
-    const initialState = await switchEl.getAttribute('data-state')
-
-    // Click switch to toggle state
-    await switchEl.click()
-    const nextState = initialState === 'checked' ? 'unchecked' : 'checked'
-    await expect(switchEl).toHaveAttribute('data-state', nextState)
+    const language = page
+      .getByRole('region', { name: 'Audio/Video Transcription' })
+      .locator('.settings__choice')
+      .first()
+    await expect(language).toBeVisible()
+    await language.click()
+    await page.getByRole('menuitem', { name: 'es', exact: true }).click()
+    await expect(language).toHaveText('es')
   })
 
   test('changes transcription language dropdown selection', async ({ page }) => {
@@ -99,12 +98,14 @@ test.describe('Plugin Settings and Configuration', () => {
 
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
 
-    const switchEl = page.locator('[data-slot="switch"]').first()
-    await expect(switchEl).toBeVisible()
-    const initialState = await switchEl.getAttribute('data-state')
-    await switchEl.click()
-    const toggledState = initialState === 'checked' ? 'unchecked' : 'checked'
-    await expect(switchEl).toHaveAttribute('data-state', toggledState)
+    const language = page
+      .getByRole('region', { name: 'Audio/Video Transcription' })
+      .locator('.settings__choice')
+      .first()
+    await expect(language).toBeVisible()
+    await language.click()
+    await page.getByRole('menuitem', { name: 'de', exact: true }).click()
+    await expect(language).toHaveText('de')
 
     // Close Settings tab
     const closeBtn = page.getByRole('button', { name: /Close Settings/i }).first()
@@ -121,11 +122,13 @@ test.describe('Plugin Settings and Configuration', () => {
 
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
 
-    // Verify switch retained the toggled value
-    await expect(page.locator('[data-slot="switch"]').first()).toHaveAttribute(
-      'data-state',
-      toggledState,
-    )
+    // Verify the language kept the selected value
+    await expect(
+      page
+        .getByRole('region', { name: 'Audio/Video Transcription' })
+        .locator('.settings__choice')
+        .first(),
+    ).toHaveText('de')
   })
 
   test('searches palette and executes Files navigation command', async ({ page }) => {

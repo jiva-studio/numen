@@ -153,7 +153,7 @@ func TestThePermissionsTheGuideListsAreTheValidators(t *testing.T) {
 	if len(documented) == 0 {
 		t.Fatal("the guide lists no permissions: a rule checked against nothing")
 	}
-	valid := append(slices.Clone(port.PluginPermissions), port.PermissionNetworkAlias)
+	valid := append(port.PluginPermissions(), port.PermissionNetworkAlias)
 	for _, difference := range listPermissionDifferences(documented, valid) {
 		t.Error(difference)
 	}

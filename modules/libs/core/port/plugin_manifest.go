@@ -35,7 +35,9 @@ const (
 )
 
 // PluginPermissions is every permission a manifest may declare, in its canonical spelling.
-var PluginPermissions = []string{PermissionVaultRead, PermissionVaultWrite, PermissionNetworkOutbound, PermissionAIComplete}
+func PluginPermissions() []string {
+	return []string{PermissionVaultRead, PermissionVaultWrite, PermissionNetworkOutbound, PermissionAIComplete}
+}
 
 var (
 	ErrEmptyID             = errors.New("plugin id cannot be empty")
@@ -322,7 +324,7 @@ func (m PluginManifest) ValidatePermissions() error {
 func (m PluginManifest) listPermissionIssues() []error {
 	var issues []error
 	for _, p := range m.Permissions {
-		if !slices.Contains(PluginPermissions, NormalizePermission(p)) {
+		if !slices.Contains(PluginPermissions(), NormalizePermission(p)) {
 			issues = append(issues, fmt.Errorf("%w: %s", ErrInvalidPermission, p))
 		}
 	}
