@@ -138,6 +138,9 @@ func readStream(reader *bufio.Reader, say func(string) error) (message, string, 
 					return message{}, "", err
 				}
 				if isDone {
+					if reply.finished == "" {
+						return message{}, "", errStreamEnded
+					}
 					return reply.getMessage(), reply.finished, nil
 				}
 				data.Reset()

@@ -122,6 +122,17 @@ func TestAStreamThatEndsBeforeTheReplyStopsTheRun(t *testing.T) {
 	}
 }
 
+func TestAStreamDoneWithNoReasonToStopStopsTheRun(t *testing.T) {
+	model := &fakeChat{script: []string{`{"choices":[{"delta":{"content":"The plan "}}]}`, `[DONE]`}}
+	s := newServer(model.serve(t).URL)
+
+	steps := ask(t, s, newTask("", "Plan?"))
+
+	if reason := steps[len(steps)-1].GetStopped(); reason != errStreamEnded.Error() {
+		t.Errorf("stopped %q", reason)
+	}
+}
+
 func TestACancelledRunStopsReadingTheStream(t *testing.T) {
 	released := make(chan struct{})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
