@@ -5,14 +5,15 @@ import "github.com/jiva-studio/numen/modules/libs/core/port"
 // Setting is one setting of the file, and what to put there. Model is a model a
 // setting can name, and Presence is what its files are on this machine.
 type (
-	Setting       = port.Setting
-	Model         = port.Model
-	Presence      = port.Presence
-	PluginSetting = port.PluginSetting
-	PluginInfo    = port.PluginInfo
-	PluginFailure = port.PluginFailure
-	AgentModel    = port.AgentModel
-	Consent       = port.CompletionConsent
+	Setting          = port.Setting
+	Model            = port.Model
+	Presence         = port.Presence
+	PluginSetting    = port.PluginSetting
+	PluginInfo       = port.PluginInfo
+	PluginFailure    = port.PluginFailure
+	UnavailableError = port.UnavailableError
+	AgentModel       = port.AgentModel
+	Consent          = port.CompletionConsent
 )
 
 // Whether the person lets a plugin ask for model completions.
@@ -30,6 +31,9 @@ const (
 	Present        = port.Present
 	NotFetched     = port.NotFetched
 )
+
+// A plugin the host cannot reach is not installed, disabled or failed.
+const PluginNotInstalled = port.PluginNotInstalled
 
 // ErrNotASetting is a value the settings cannot be read out of again. Nothing is
 // written, and the value is the caller's to correct.

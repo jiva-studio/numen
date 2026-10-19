@@ -10,65 +10,22 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { ref } from 'vue'
 import PluginFailureSection from './PluginFailureSection.vue'
 import type { PluginInfo } from '@/entities/settings'
-import type { Installation } from '../types'
-
-const createPlugin = (id: string, name: string, over: Partial<PluginInfo> = {}): PluginInfo => ({
-  id,
-  name,
-  version: '1.0.0',
-  description: '',
-  isActive: false,
-  settings: [],
-  capabilities: [],
-  secrets: [],
-  storedSecrets: [],
-  models: [],
-  consent: 'none',
-  ...over,
-})
+import { createInstallation, createPluginInfo } from '@/testing/installation'
 
 const PLUGINS: readonly PluginInfo[] = [
-  createPlugin('sample.stopped', 'Sample Stopped', {
+  createPluginInfo('sample.stopped', 'Sample Stopped', {
     failure: {
       reason: 'The plugin could not be started: exec format error',
       failedAt: Date.UTC(2026, 9, 19, 12, 30),
     },
   }),
-  createPlugin('sample.running', 'Sample Running', { isActive: true }),
+  createPluginInfo('sample.running', 'Sample Running', { isActive: true }),
 ]
 
 const retryPlugin = fn()
 const write = fn()
 
-const installation: Installation = {
-  getSetting: () => undefined,
-  getModels: () => [],
-  write,
-  writeSecret: fn(),
-  deleteSecret: fn(),
-  retryPlugin,
-  plugins: ref(PLUGINS),
-  file: ref('/numen.json'),
-  openFile: fn(),
-  themes: ref([]),
-  applied: ref('preset:numen'),
-  mode: ref('system'),
-  isPinned: ref(false),
-  sizes: ref({ interfaceScale: 1, textScale: 1 }),
-  bounds: ref({
-    interfaceScale: { least: 0.8, most: 2 },
-    textScale: { least: 0.8, most: 1.75 },
-  }),
-  choose: fn(),
-  isSyncing: ref(true),
-  isNesting: ref(true),
-  headings: ref(6),
-  headingsBounds: ref({ least: 1, most: 12 }),
-  chooseHeadings: fn(),
-  dayStartTime: ref('04:00'),
-  latestDayStartTime: ref('12:00'),
-  chooseDayStartTime: fn(),
-}
+const installation = createInstallation({ write, retryPlugin, plugins: ref(PLUGINS) })
 
 /** The section at the width a story gives. */
 const section = (width: string) => () => ({

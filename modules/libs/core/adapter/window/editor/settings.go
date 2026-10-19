@@ -8,7 +8,6 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 )
 
@@ -252,8 +251,8 @@ func (h *settingsHandler) RetryPlugin(
 	}
 	failure, err := h.retryPlugin.Execute(ctx, r.Msg.GetPluginId())
 	if err != nil {
-		var unavailable *port.UnavailableError
-		if errors.As(err, &unavailable) && unavailable.Reason == port.PluginNotInstalled {
+		var unavailable *settings.UnavailableError
+		if errors.As(err, &unavailable) && unavailable.Reason == settings.PluginNotInstalled {
 			return nil, connect.NewError(connect.CodeNotFound, err)
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)

@@ -1,35 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import type { PluginInfo } from '@/entities/settings'
+import { createPluginInfo } from '@/testing/installation'
 import { formatFailedAt, getFailedPlugins } from './failures'
-
-const createPlugin = (id: string, over: Partial<PluginInfo> = {}): PluginInfo => ({
-  id,
-  name: id,
-  version: '1.0.0',
-  description: '',
-  isActive: false,
-  settings: [],
-  capabilities: [],
-  secrets: [],
-  storedSecrets: [],
-  models: [],
-  consent: 'none',
-  ...over,
-})
 
 describe('the plugins held off', () => {
   it('are those with a failure, in the order listed', () => {
     const failure = { reason: 'The plugin did not finish starting in time.', failedAt: 0 }
     const listed = [
-      createPlugin('sample.b', { failure }),
-      createPlugin('sample.ok'),
-      createPlugin('sample.a', { failure }),
+      createPluginInfo('sample.b', 'B', { failure }),
+      createPluginInfo('sample.ok', 'Ok'),
+      createPluginInfo('sample.a', 'A', { failure }),
     ]
     expect(getFailedPlugins(listed).map((one) => one.id)).toStrictEqual(['sample.b', 'sample.a'])
   })
 
   it('are none where every plugin starts', () => {
-    expect(getFailedPlugins([createPlugin('sample.ok')])).toStrictEqual([])
+    expect(getFailedPlugins([createPluginInfo('sample.ok', 'Ok')])).toStrictEqual([])
   })
 })
 

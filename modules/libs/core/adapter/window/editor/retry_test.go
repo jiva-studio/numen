@@ -10,18 +10,17 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	setting "github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 )
 
-func newRetrying(retry func(context.Context, string) (*port.PluginFailure, error)) *settingsHandler {
+func newRetrying(retry func(context.Context, string) (*setting.PluginFailure, error)) *settingsHandler {
 	return &settingsHandler{retryPlugin: setting.NewRetryPlugin(retry)}
 }
 
 // A plugin that starts again is answered with no failure.
 func TestARetriedPluginThatStartsIsAnsweredWithNoFailure(t *testing.T) {
 	var asked string
-	handler := newRetrying(func(_ context.Context, id string) (*port.PluginFailure, error) {
+	handler := newRetrying(func(_ context.Context, id string) (*setting.PluginFailure, error) {
 		asked = id
 		return nil, nil
 	})
@@ -35,8 +34,8 @@ func TestARetriedPluginThatStartsIsAnsweredWithNoFailure(t *testing.T) {
 
 // A plugin that fails again is answered with its reason.
 func TestARetriedPluginThatFailsAgainIsAnsweredWithItsReason(t *testing.T) {
-	handler := newRetrying(func(context.Context, string) (*port.PluginFailure, error) {
-		return &port.PluginFailure{PluginID: "md.numen.sample", Reason: "The plugin did not finish starting in time."}, nil
+	handler := newRetrying(func(context.Context, string) (*setting.PluginFailure, error) {
+		return &setting.PluginFailure{PluginID: "md.numen.sample", Reason: "The plugin did not finish starting in time."}, nil
 	})
 
 	said, err := handler.RetryPlugin(t.Context(), connect.NewRequest(&v1.RetryPluginRequest{PluginId: "md.numen.sample"}))
@@ -48,10 +47,10 @@ func TestARetriedPluginThatFailsAgainIsAnsweredWithItsReason(t *testing.T) {
 
 // A plugin nobody installed is not found, and any other refusal is the core's.
 func TestARetryOfAPluginThatIsNotInstalledIsNotFound(t *testing.T) {
-	missing := newRetrying(func(_ context.Context, id string) (*port.PluginFailure, error) {
-		return nil, &port.UnavailableError{PluginID: id, Reason: port.PluginNotInstalled}
+	missing := newRetrying(func(_ context.Context, id string) (*setting.PluginFailure, error) {
+		return nil, &setting.UnavailableError{PluginID: id, Reason: setting.PluginNotInstalled}
 	})
-	broken := newRetrying(func(context.Context, string) (*port.PluginFailure, error) {
+	broken := newRetrying(func(context.Context, string) (*setting.PluginFailure, error) {
 		return nil, errors.New("the host is closed")
 	})
 
@@ -77,7 +76,7 @@ func TestABuildWithoutSettingsServesNoRetry(t *testing.T) {
 func TestAFailedPluginTravelsWithItsReasonAndTime(t *testing.T) {
 	at := time.UnixMilli(1_700_000_000_123)
 	infos := newWirePluginInfos([]setting.PluginInfo{
-		{ID: "md.numen.sample", Failure: &port.PluginFailure{Reason: "The plugin did not finish starting in time.", At: at}},
+		{ID: "md.numen.sample", Failure: &setting.PluginFailure{Reason: "The plugin did not finish starting in time.", At: at}},
 		{ID: "md.numen.other"},
 	})
 
