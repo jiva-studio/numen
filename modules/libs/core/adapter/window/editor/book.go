@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 // bookClient is what a book plugin answers: the shape of a book, one document of
@@ -51,12 +50,12 @@ func (h *bookHandler) GetBook(
 ) (*connect.Response[v1.GetBookResponse], error) {
 	client, closeClient, err := h.getClient(ctx)
 	if err != nil {
-		return nil, readOpenError(err)
+		return nil, readPluginError(err)
 	}
 	defer closeClient()
 	res, err := client.GetBook(ctx, r)
 	if err != nil {
-		return nil, readBookError(err)
+		return nil, readPluginError(err)
 	}
 	return res, nil
 }
@@ -72,12 +71,12 @@ func (h *bookHandler) ReadBookMarkup(
 ) (*connect.Response[v1.ReadBookMarkupResponse], error) {
 	client, closeClient, err := h.getClient(ctx)
 	if err != nil {
-		return nil, readOpenError(err)
+		return nil, readPluginError(err)
 	}
 	defer closeClient()
 	res, err := client.ReadBookMarkup(ctx, r)
 	if err != nil {
-		return nil, readBookError(err)
+		return nil, readPluginError(err)
 	}
 	return res, nil
 }
@@ -162,21 +161,11 @@ func (h *bookHandler) getClient(ctx context.Context) (bookClient, func(), error)
 	return client, closer, nil
 }
 
-// readBookError is what a failed ask of the book plugin is answered with: a
-// plugin that is not there to answer is a build that cannot read books, and
-// anything else the plugin said is kept as it is.
-func readBookError(err error) error {
-	var coded *connect.Error
-	if errors.As(err, &coded) || !errors.Is(err, source.ErrUnavailable) {
-		return err
-	}
-	return connect.NewError(connect.CodeUnimplemented, err)
-}
-
-// readOpenError is what a failure to open the book plugin is answered with: a
-// code the failure carries and the end of the caller's context are kept, and
-// anything else is coded as a file that could not be reached.
-func readOpenError(err error) error {
+// readPluginError is what a failure to open the book plugin, or of an ask of
+// it, is answered with: a code the failure carries is kept, the end of the
+// caller's context is coded as such, and anything else is coded as a file that
+// could not be reached.
+func readPluginError(err error) error {
 	var coded *connect.Error
 	switch {
 	case errors.As(err, &coded):

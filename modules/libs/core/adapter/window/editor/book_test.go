@@ -227,11 +227,12 @@ func TestAnAbsentBookPluginIsAnsweredAsUnimplemented(t *testing.T) {
 }
 
 // A plugin that goes away once its client is open is answered the same way,
-// and what else it says is kept as it said it.
+// a code it gives is kept, and an uncoded failure is internal.
 func TestABookPluginThatGoesAwayIsAnsweredAsUnimplemented(t *testing.T) {
 	for why, want := range map[error]connect.Code{
 		&port.UnavailableError{PluginID: "md.numen.epub", Reason: port.PluginFailed}: connect.CodeUnimplemented,
 		connect.NewError(connect.CodeNotFound, errors.New("no such book")):           connect.CodeNotFound,
+		errors.New("the plugin broke"):                                               connect.CodeInternal,
 	} {
 		client := newBookClient()
 		client.failure = why
