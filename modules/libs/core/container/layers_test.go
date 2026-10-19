@@ -1219,9 +1219,9 @@ func getAdaptersIn(dir, at string) ([]string, error) {
 }
 
 // public are the adapters an application names for itself: the four it serves
-// something through, and the three it composes or configures.
+// something through, and the two it composes or configures.
 var public = []string{
-	"agent", "cli", "index", "mcp", "settings",
+	"cli", "index", "mcp", "settings",
 	"window/editor", "window/flashcards",
 }
 
