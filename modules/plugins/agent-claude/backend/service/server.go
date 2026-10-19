@@ -42,6 +42,17 @@ type agentServer struct {
 	registry        agentrun.Registry
 	catalogue       modelCatalogue
 	completionModel string
+
+	// environ is the variables a program of the agent is started with; nil is those of this process.
+	environ []string
+}
+
+// getEnvironment returns the variables a program of the agent is started with.
+func (s *agentServer) getEnvironment() []string {
+	if s.environ != nil {
+		return s.environ
+	}
+	return os.Environ()
 }
 
 // applyConfig keeps the key and the endpoint the models are asked with, dropping the models asked
@@ -131,7 +142,7 @@ func (s *agentServer) AskAgent(
 
 	cmd := exec.CommandContext(runCtx, cmdName, slices.Concat(cmdArgs, claudeArgs)...)
 	cmd.Dir = msg.GetRoot()
-	cmd.Env = buildEnvironment(os.Environ())
+	cmd.Env = buildEnvironment(s.getEnvironment())
 	cmd.Stdin = strings.NewReader(msg.GetPrompt())
 	agentrun.Supervise(cmd)
 
@@ -285,7 +296,10 @@ func (s *agentServer) GetAgentTools(
 // Mount registers the agent's services on s and hands Configure's settings to the model catalogue.
 // The runs the agent started end when s closes.
 func Mount(s *server.Server) error {
-	agentSvc := &agentServer{}
+	return mount(s, &agentServer{})
+}
+
+func mount(s *server.Server, agentSvc *agentServer) error {
 	s.SetUpdateConfig(agentSvc.applyConfig)
 	s.Register(numenv1connect.NewAgentServiceHandler(agentSvc, s.HandlerOptions()...))
 	s.Register(numenv1connect.NewCompletionServiceHandler(agentSvc, s.HandlerOptions()...))
@@ -296,7 +310,9 @@ func Mount(s *server.Server) error {
 // NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
 // from the variables a launched process of the plugin is given.
 func NewHandler(vars map[string]string) (http.Handler, error) {
-	return server.NewLinkedHandler(vars, Mount)
+	return server.NewLinkedHandler(vars, func(s *server.Server) error {
+		return mount(s, &agentServer{environ: getVariables(vars)})
+	})
 }
 
 // removeFile removes the file, if there is one.

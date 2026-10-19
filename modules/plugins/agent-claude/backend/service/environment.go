@@ -28,3 +28,13 @@ func buildEnvironment(held []string) []string {
 	}
 	return out
 }
+
+// getVariables returns vars as the entries of an environment. A host that links the plugin in
+// gives it the variables a launched process of it would be started with.
+func getVariables(vars map[string]string) []string {
+	out := make([]string, 0, len(vars))
+	for name, value := range vars {
+		out = append(out, name+"="+value)
+	}
+	return out
+}

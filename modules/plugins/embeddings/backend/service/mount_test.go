@@ -53,3 +53,22 @@ func TestTheLinkedHandlerEmbedsThroughTheServiceItsConfigureNames(t *testing.T) 
 		t.Errorf("vector = %v", got)
 	}
 }
+
+// The model is read while Configure changes it.
+func TestTheModelIsReadWhileConfigureChangesIt(t *testing.T) {
+	srv := newEmbeddingServer()
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for range 200 {
+			srv.updateConfig(map[string]string{"model": "other-model"})
+		}
+	}()
+
+	for range 200 {
+		if _, err := srv.GetEmbeddingModel(t.Context(), connect.NewRequest(&numenv1.GetEmbeddingModelRequest{})); err != nil {
+			t.Fatal(err)
+		}
+	}
+	<-done
+}

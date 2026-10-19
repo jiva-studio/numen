@@ -375,3 +375,29 @@ func TestWriteMcpConfigRequiresBothUrlAndToken(t *testing.T) {
 		t.Errorf("expected no config file when token is empty, got %q", file)
 	}
 }
+
+// A program started by an agent linked into the host's process is given the variables its
+// launch gives it, and none of the others this process holds.
+func TestTheProgramOfALinkedAgentIsStartedWithTheVariablesOfItsLaunch(t *testing.T) {
+	t.Setenv("DESKTOP_ONLY_SETTING", "kept-out")
+	out := filepath.Join(t.TempDir(), "env")
+	script := writeScript(t, "claude", "env > "+out+"\n")
+	client := startAgent(t, &agentServer{environ: getVariables(map[string]string{"PATH": os.Getenv("PATH"), "NUMEN_VAULT_PATH": "/vault"})})
+
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{Prompt: "hi", Command: []string{script}}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	collectSteps(t, stream)
+
+	raw, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(raw), "DESKTOP_ONLY_SETTING") {
+		t.Errorf("the program was given a variable of the host process: %q", raw)
+	}
+	if !strings.Contains(string(raw), "NUMEN_VAULT_PATH=/vault") {
+		t.Errorf("the program was not given the variables of the launch: %q", raw)
+	}
+}

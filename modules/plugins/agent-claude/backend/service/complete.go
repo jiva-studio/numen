@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"os"
 	"strings"
 
 	"connectrpc.com/connect"
@@ -41,7 +40,7 @@ func (s *agentServer) Complete(
 			return "", errNoCommand
 		}
 		args = append(args, buildCompletionArguments(request.System, model)...)
-		return completion.RunCommand(ctx, name, args, buildCompletionEnvironment(os.Environ(), key, base), request.Prompt)
+		return completion.RunCommand(ctx, name, args, buildCompletionEnvironment(s.getEnvironment(), key, base), request.Prompt)
 	})
 }
 

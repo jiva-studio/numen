@@ -127,16 +127,19 @@ func (s *embeddingServer) GetEmbeddingModel(
 	_ context.Context,
 	_ *connect.Request[numenv1.GetEmbeddingModelRequest],
 ) (*connect.Response[numenv1.GetEmbeddingModelResponse], error) {
-	concurrency := s.modelInfo.Concurrency
+	s.mu.Lock()
+	info := s.modelInfo
+	s.mu.Unlock()
+	concurrency := info.Concurrency
 	if concurrency <= 0 {
 		concurrency = 4
 	}
 	return connect.NewResponse(&numenv1.GetEmbeddingModelResponse{
-		Name:        s.modelInfo.Name,
-		Dimensions:  int32(s.modelInfo.Dimensions),
-		MaxTokens:   int32(s.modelInfo.MaxTokens),
-		Pooling:     s.modelInfo.Pooling,
-		From:        s.modelInfo.From,
+		Name:        info.Name,
+		Dimensions:  int32(info.Dimensions),
+		MaxTokens:   int32(info.MaxTokens),
+		Pooling:     info.Pooling,
+		From:        info.From,
 		Concurrency: int32(concurrency),
 	}), nil
 }
