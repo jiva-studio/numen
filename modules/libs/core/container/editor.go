@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
@@ -62,18 +61,6 @@ func (e EditorAssembly) GetPluginDir(id string) (string, bool) {
 	return p.Dir, true
 }
 
-func (e EditorAssembly) OpenBookClient(ctx context.Context) (any, func(), error) {
-	host, err := e.cfg.resolvePlugin(plugin.CapabilityBook)
-	if err != nil {
-		return nil, nil, err
-	}
-	bridge, err := plugin.OpenBookBridge(ctx, host)
-	if err != nil {
-		return nil, nil, err
-	}
-	return bridge, func() { _ = bridge.Close() }, nil
-}
-
 func (e EditorAssembly) EmitEvent(event string) {
 	if e.cfg.PluginHost != nil {
 		var emitter port.PluginEventEmitter = e.cfg.PluginHost
@@ -87,6 +74,7 @@ func (e EditorAssembly) GetVaultReaders() port.VaultReaders   { return e.cfg.Vau
 func (e EditorAssembly) GetVaultWriters() port.VaultWriters   { return e.cfg.VaultWriters() }
 func (e EditorAssembly) GetDerivedStores() port.DerivedStores { return e.cfg.GetDerivedStores() }
 
+func (e EditorAssembly) GetBooks() port.Book                  { return e.cfg.Books() }
 func (e EditorAssembly) GetTextExtractor() port.TextExtractor { return e.cfg.TextExtractor() }
 func (e EditorAssembly) GetPageRenderer() port.PageRenderer   { return e.cfg.PageRenderer() }
 func (e EditorAssembly) GetVaultIdentity() port.VaultIdentity { return e.cfg.VaultIdentity() }

@@ -130,7 +130,8 @@ func TestGetBookPictureSettlesTheTypeByTheBytes(t *testing.T) {
 	if got.Type != "image/png" || string(got.Body) != plate {
 		t.Errorf("the picture is %q of %d bytes", got.Type, len(got.Body))
 	}
-	if len(held.asked) != 1 || held.asked[0] != named {
+	if len(held.asked) != 1 || held.asked[0].Path != named.Path || held.asked[0].Size != named.Size ||
+		held.asked[0].ModTime.UnixNano() != named.Mtime {
 		t.Errorf("the archive was asked at %+v, want once at %+v", held.asked, named)
 	}
 
@@ -202,4 +203,41 @@ func fingerprintOf(t *testing.T, v domain.Vault) document.Fingerprint {
 		t.Fatal(err)
 	}
 	return found.Fingerprint
+}
+
+func TestGetBookAnswersTheShapeTheBooksGive(t *testing.T) {
+	t.Parallel()
+	held := newBook()
+
+	got, err := document.NewGetBook(held).Execute(t.Context(), bookPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Title != bookPath || len(got.Sections) != 1 {
+		t.Errorf("the book is %+v", got)
+	}
+
+	held.failure = port.ErrNoBook
+	if _, err := document.NewGetBook(held).Execute(t.Context(), bookPath); !errors.Is(err, port.ErrNoBook) {
+		t.Errorf("a path with no book was answered with %v", err)
+	}
+}
+
+func TestReadBookMarkupAsksWithTheBaselineAndPassesTheRefusalOn(t *testing.T) {
+	t.Parallel()
+	held := newBook()
+	held.entries["OEBPS/first.xhtml"] = []byte("<p>Alpha</p>")
+	read := document.NewReadBookMarkup(held)
+	baseline := &domain.Fingerprint{Path: bookPath, Size: 7}
+
+	got, err := read.Execute(t.Context(), bookPath, "OEBPS/first.xhtml", baseline)
+	if err != nil || got != "<p>Alpha</p>" {
+		t.Fatalf("the markup is %q, err = %v", got, err)
+	}
+	if len(held.asked) != 1 || held.asked[0] != *baseline {
+		t.Errorf("the book was asked at %+v, want once at %+v", held.asked, *baseline)
+	}
+	if _, err := read.Execute(t.Context(), bookPath, "OEBPS/gone.xhtml", nil); !errors.Is(err, document.ErrNoEntry) {
+		t.Errorf("a section the book lacks was answered with %v", err)
+	}
 }

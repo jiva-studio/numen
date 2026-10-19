@@ -97,10 +97,10 @@ const (
 type archive struct {
 	entries map[string][]byte
 	failure error
-	asked   []document.Fingerprint
+	asked   []domain.Fingerprint
 }
 
-func (a *archive) ReadEntry(_ context.Context, mark document.Fingerprint, entry string) ([]byte, error) {
+func (a *archive) ReadEntry(_ context.Context, mark domain.Fingerprint, entry string) ([]byte, error) {
 	a.asked = append(a.asked, mark)
 	if a.failure != nil {
 		return nil, a.failure
@@ -118,4 +118,25 @@ func newBook() *archive {
 		"OEBPS/pictures/plate.png": []byte(plate),
 		"OEBPS/pictures/cover.svg": []byte(cover),
 	}}
+}
+
+func (a *archive) GetBook(_ context.Context, path string) (domain.BookShape, error) {
+	if a.failure != nil {
+		return domain.BookShape{}, a.failure
+	}
+	return domain.BookShape{Title: path, Sections: []domain.BookSection{{Path: "OEBPS/first.xhtml", Length: 5}}}, nil
+}
+
+func (a *archive) ReadBookMarkup(_ context.Context, _, section string, baseline *domain.Fingerprint) (string, error) {
+	if baseline != nil {
+		a.asked = append(a.asked, *baseline)
+	}
+	if a.failure != nil {
+		return "", a.failure
+	}
+	body, held := a.entries[section]
+	if !held {
+		return "", document.ErrNoEntry
+	}
+	return string(body), nil
 }

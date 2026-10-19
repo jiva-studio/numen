@@ -25,14 +25,6 @@ type Documents interface {
 	) error
 }
 
-// Books reads the archives of books.
-type Books interface {
-	// ReadEntry answers the bytes of one entry of the archive of the book at a
-	// fingerprint. It refuses an entry the archive lacks with ErrNoEntry, and a
-	// file that is other bytes now with port.ErrBookChanged.
-	ReadEntry(ctx context.Context, mark Fingerprint, entry string) ([]byte, error)
-}
-
 // PageKey is one drawn page: which document, which page, and how wide it was
 // drawn.
 type PageKey struct {

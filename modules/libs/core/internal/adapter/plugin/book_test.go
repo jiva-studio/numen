@@ -9,14 +9,17 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -32,17 +35,36 @@ func (s *fakeBookServer) GetBook(
 	if req.Msg.GetPath() == "nonexistent.epub" {
 		return nil, connect.NewError(connect.CodeNotFound, errors.New("not found"))
 	}
+	if req.Msg.GetPath() == "locked.epub" {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("locked"))
+	}
 	return connect.NewResponse(&v1.GetBookResponse{
-		Title:     "Bridged Book",
-		PageCount: 10,
-		TextBytes: 5000,
+		Title:        "Bridged Book",
+		Documents:    []*v1.SpineDocument{{Path: "one.xhtml", Offset: 1, Length: 9}},
+		Parts:        []*v1.BookPart{{Title: "One", Offset: 1, Level: 2}},
+		PrintedPages: []*v1.PrintedPage{{Label: "iv", Offset: 4}},
+		PageCount:    10,
+		TextBytes:    5000,
+		PageBytes:    500,
+		Fingerprint:  &v1.Fingerprint{Path: req.Msg.GetPath(), Size: 12, Mtime: 34},
 	}), nil
 }
 
 func (s *fakeBookServer) ReadBookMarkup(
 	_ context.Context,
-	_ *connect.Request[v1.ReadBookMarkupRequest],
+	req *connect.Request[v1.ReadBookMarkupRequest],
 ) (*connect.Response[v1.ReadBookMarkupResponse], error) {
+	switch req.Msg.GetDocument() {
+	case "changed.xhtml":
+		return nil, connect.NewError(connect.CodeAborted, errors.New("changed"))
+	case "missing.xhtml":
+		return nil, connect.NewError(connect.CodeNotFound, errors.New("missing"))
+	case "baseline.xhtml":
+		mark := req.Msg.GetBaseline()
+		return connect.NewResponse(&v1.ReadBookMarkupResponse{
+			Markup: fmt.Sprintf("%t:%s:%d:%d", mark != nil, mark.GetPath(), mark.GetSize(), mark.GetMtime()),
+		}), nil
+	}
 	return connect.NewResponse(&v1.ReadBookMarkupResponse{
 		Markup: "<p>Bridged markup</p>",
 	}), nil
@@ -137,26 +159,21 @@ func TestBookBridgeWithFakePlugin(t *testing.T) {
 	defer bridge.Close()
 
 	// Test GetBook
-	resp, err := bridge.GetBook(ctx, connect.NewRequest(&v1.GetBookRequest{
-		Path: "test.epub",
-	}))
+	shape, err := bridge.GetBook(ctx, "test.epub")
 	if err != nil {
 		t.Fatalf("unexpected GetBook error: %v", err)
 	}
-	if resp.Msg.GetTitle() != "Bridged Book" {
-		t.Fatalf("expected title 'Bridged Book', got %q", resp.Msg.GetTitle())
+	if shape.Title != "Bridged Book" {
+		t.Fatalf("expected title 'Bridged Book', got %q", shape.Title)
 	}
 
 	// Test ReadBookMarkup
-	markupResp, err := bridge.ReadBookMarkup(ctx, connect.NewRequest(&v1.ReadBookMarkupRequest{
-		Path:     "test.epub",
-		Document: "doc.xhtml",
-	}))
+	markup, err := bridge.ReadBookMarkup(ctx, "test.epub", "doc.xhtml", nil)
 	if err != nil {
 		t.Fatalf("unexpected ReadBookMarkup error: %v", err)
 	}
-	if !strings.Contains(markupResp.Msg.GetMarkup(), "Bridged markup") {
-		t.Fatalf("unexpected markup: %s", markupResp.Msg.GetMarkup())
+	if !strings.Contains(markup, "Bridged markup") {
+		t.Fatalf("unexpected markup: %s", markup)
 	}
 }
 
@@ -230,7 +247,7 @@ func TestBookBridgeReadBookNamesWhyABookIsRefused(t *testing.T) {
 
 func TestBookBridgeReadEntryAsksForTheEntryOfTheFile(t *testing.T) {
 	bridge := openFakeBookBridge(t, PermissionVaultRead)
-	body, err := bridge.ReadEntry(t.Context(), &v1.Fingerprint{Path: "a.epub", Size: 1, Mtime: 2}, "cover.png")
+	body, err := bridge.ReadEntry(t.Context(), domain.Fingerprint{Path: "a.epub", Size: 1, ModTime: time.Unix(0, 2)}, "cover.png")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -241,7 +258,7 @@ func TestBookBridgeReadEntryAsksForTheEntryOfTheFile(t *testing.T) {
 
 func TestBookBridgeReadEntryNamesWhyAnEntryIsRefused(t *testing.T) {
 	bridge := openFakeBookBridge(t, PermissionVaultRead)
-	named := &v1.Fingerprint{Path: "a.epub"}
+	named := domain.Fingerprint{Path: "a.epub"}
 	if _, err := bridge.ReadEntry(t.Context(), named, "changed"); !errors.Is(err, port.ErrBookChanged) {
 		t.Errorf("a file that changed: err = %v, want ErrBookChanged", err)
 	}
@@ -259,7 +276,61 @@ func TestBookBridgeRefusesAPluginWithoutVaultRead(t *testing.T) {
 	if _, err := bridge.ReadBook(t.Context(), []byte("x")); err == nil {
 		t.Error("ReadBook was answered for a plugin without vault read")
 	}
-	if _, err := bridge.ReadEntry(t.Context(), &v1.Fingerprint{Path: "a"}, "e"); err == nil {
+	if _, err := bridge.ReadEntry(t.Context(), domain.Fingerprint{Path: "a"}, "e"); err == nil {
 		t.Error("ReadEntry was answered for a plugin without vault read")
+	}
+}
+
+func TestBookBridgeGetBookAnswersTheShapeOfTheBook(t *testing.T) {
+	bridge := openFakeBookBridge(t, PermissionVaultRead)
+	got, err := bridge.GetBook(t.Context(), "a.epub")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := domain.BookShape{
+		Title:       "Bridged Book",
+		Sections:    []domain.BookSection{{Path: "one.xhtml", Offset: 1, Length: 9}},
+		Parts:       []domain.BookPart{{Title: "One", Offset: 1, Level: 2}},
+		Pages:       []domain.BookPage{{Label: "iv", Offset: 4}},
+		PageCount:   10,
+		TextBytes:   5000,
+		PageBytes:   500,
+		Fingerprint: domain.Fingerprint{Path: "a.epub", Size: 12, ModTime: time.Unix(0, 34)},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("shape = %+v, want %+v", got, want)
+	}
+}
+
+func TestBookBridgeGetBookNamesWhyABookIsRefused(t *testing.T) {
+	bridge := openFakeBookBridge(t, PermissionVaultRead)
+	if _, err := bridge.GetBook(t.Context(), "nonexistent.epub"); !errors.Is(err, port.ErrNoBook) || errors.Is(err, port.ErrNoBookEntry) {
+		t.Errorf("a path with no book: err = %v, want ErrNoBook", err)
+	}
+	if _, err := bridge.GetBook(t.Context(), "locked.epub"); !errors.Is(err, port.ErrEncrypted) {
+		t.Errorf("a locked book: err = %v, want ErrEncrypted", err)
+	}
+}
+
+func TestBookBridgeReadBookMarkupSendsTheBaselineItIsGiven(t *testing.T) {
+	bridge := openFakeBookBridge(t, PermissionVaultRead)
+	got, err := bridge.ReadBookMarkup(t.Context(), "a.epub", "baseline.xhtml", nil)
+	if err != nil || got != "false::0:0" {
+		t.Errorf("no baseline: markup = %q, err = %v, want the plugin told none", got, err)
+	}
+	baseline := &domain.Fingerprint{Path: "a.epub", Size: 3, ModTime: time.Unix(0, 9)}
+	got, err = bridge.ReadBookMarkup(t.Context(), "a.epub", "baseline.xhtml", baseline)
+	if err != nil || got != "true:a.epub:3:9" {
+		t.Errorf("a baseline: markup = %q, err = %v, want the plugin told the baseline", got, err)
+	}
+}
+
+func TestBookBridgeReadBookMarkupNamesWhyASectionIsRefused(t *testing.T) {
+	bridge := openFakeBookBridge(t, PermissionVaultRead)
+	if _, err := bridge.ReadBookMarkup(t.Context(), "a.epub", "changed.xhtml", nil); !errors.Is(err, port.ErrBookChanged) {
+		t.Errorf("a file that changed: err = %v, want ErrBookChanged", err)
+	}
+	if _, err := bridge.ReadBookMarkup(t.Context(), "a.epub", "missing.xhtml", nil); !errors.Is(err, port.ErrNoBookEntry) {
+		t.Errorf("a section the book lacks: err = %v, want ErrNoBookEntry", err)
 	}
 }

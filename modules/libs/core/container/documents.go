@@ -105,3 +105,50 @@ func (u unavailableDocument) OpenDocument(_ context.Context, file io.ReadSeekClo
 	}
 	return nil, u.why
 }
+
+// Books reads the books that reflow, through the book plugin looked up at each call.
+func (c Config) Books() port.Book { return hostBookPort{config: c} }
+
+// hostBookPort reaches the book plugin, looked up when it is asked. A call made
+// while none answers is refused with a *port.UnavailableError.
+type hostBookPort struct {
+	config Config
+}
+
+// openBridge opens a bridge on the book plugin the host resolves now.
+func (h hostBookPort) openBridge(ctx context.Context) (*plugin.BookBridge, error) {
+	host, err := h.config.resolvePlugin(plugin.CapabilityBook)
+	if err != nil {
+		return nil, err
+	}
+	return plugin.OpenBookBridge(ctx, host)
+}
+
+func (h hostBookPort) GetBook(ctx context.Context, path string) (domain.BookShape, error) {
+	bridge, err := h.openBridge(ctx)
+	if err != nil {
+		return domain.BookShape{}, err
+	}
+	defer bridge.Close()
+	return bridge.GetBook(ctx, path)
+}
+
+func (h hostBookPort) ReadBookMarkup(
+	ctx context.Context, path, section string, baseline *domain.Fingerprint,
+) (string, error) {
+	bridge, err := h.openBridge(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer bridge.Close()
+	return bridge.ReadBookMarkup(ctx, path, section, baseline)
+}
+
+func (h hostBookPort) ReadEntry(ctx context.Context, baseline domain.Fingerprint, entry string) ([]byte, error) {
+	bridge, err := h.openBridge(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer bridge.Close()
+	return bridge.ReadEntry(ctx, baseline, entry)
+}

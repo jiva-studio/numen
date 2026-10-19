@@ -3,7 +3,6 @@ package editor
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -12,18 +11,10 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
-
-// bookClient is what a book plugin answers: the shape of a book, one document of
-// it as markup, and the bytes of one entry of its archive.
-type bookClient interface {
-	GetBook(context.Context, *connect.Request[v1.GetBookRequest]) (*connect.Response[v1.GetBookResponse], error)
-	ReadBookMarkup(
-		context.Context, *connect.Request[v1.ReadBookMarkupRequest],
-	) (*connect.Response[v1.ReadBookMarkupResponse], error)
-	ReadEntry(ctx context.Context, baseline *v1.Fingerprint, entry string) ([]byte, error)
-}
 
 // bookHandler answers what a book that reflows is, and the pictures it carries.
 type bookHandler struct {
@@ -31,7 +22,8 @@ type bookHandler struct {
 
 	state          *State
 	viewer         *viewer
-	openClient     func(context.Context) (any, func(), error)
+	getBook        *document.GetBook
+	readBookMarkup *document.ReadBookMarkup
 	getBookPicture *document.GetBookPicture
 }
 
@@ -48,16 +40,14 @@ func (h *bookHandler) GetBook(
 	ctx context.Context,
 	r *connect.Request[v1.GetBookRequest],
 ) (*connect.Response[v1.GetBookResponse], error) {
-	client, closeClient, err := h.getClient(ctx)
-	if err != nil {
-		return nil, convertPluginError(err)
+	if h.getBook == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 	}
-	defer closeClient()
-	res, err := client.GetBook(ctx, r)
+	shape, err := h.getBook.Execute(ctx, r.Msg.GetPath())
 	if err != nil {
-		return nil, convertPluginError(err)
+		return nil, convertBookError(err)
 	}
-	return res, nil
+	return connect.NewResponse(newWireBook(shape)), nil
 }
 
 // ReadBookMarkup answers with one document of a book, as the markup a window
@@ -69,16 +59,43 @@ func (h *bookHandler) ReadBookMarkup(
 	ctx context.Context,
 	r *connect.Request[v1.ReadBookMarkupRequest],
 ) (*connect.Response[v1.ReadBookMarkupResponse], error) {
-	client, closeClient, err := h.getClient(ctx)
-	if err != nil {
-		return nil, convertPluginError(err)
+	if h.readBookMarkup == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 	}
-	defer closeClient()
-	res, err := client.ReadBookMarkup(ctx, r)
-	if err != nil {
-		return nil, convertPluginError(err)
+	var baseline *domain.Fingerprint
+	if named := r.Msg.GetBaseline(); named != nil {
+		baseline = &domain.Fingerprint{Path: named.GetPath(), Size: named.GetSize(), ModTime: instant(named.GetMtime())}
 	}
-	return res, nil
+	markup, err := h.readBookMarkup.Execute(ctx, r.Msg.GetPath(), r.Msg.GetDocument(), baseline)
+	if err != nil {
+		return nil, convertBookError(err)
+	}
+	return connect.NewResponse(&v1.ReadBookMarkupResponse{Markup: markup}), nil
+}
+
+// newWireBook is the shape of a book as the schema carries it.
+func newWireBook(shape domain.BookShape) *v1.GetBookResponse {
+	out := &v1.GetBookResponse{
+		Title:       shape.Title,
+		PageCount:   int32(shape.PageCount),
+		TextBytes:   int32(shape.TextBytes),
+		PageBytes:   int32(shape.PageBytes),
+		Fingerprint: &v1.Fingerprint{Path: shape.Fingerprint.Path, Size: shape.Fingerprint.Size, Mtime: stamp(shape.Fingerprint.ModTime)},
+	}
+	for _, section := range shape.Sections {
+		out.Documents = append(out.Documents, &v1.SpineDocument{
+			Path: section.Path, Offset: int32(section.Offset), Length: int32(section.Length),
+		})
+	}
+	for _, part := range shape.Parts {
+		out.Parts = append(out.Parts, &v1.BookPart{
+			Title: part.Title, Offset: int32(part.Offset), Level: int32(part.Level),
+		})
+	}
+	for _, page := range shape.Pages {
+		out.PrintedPages = append(out.PrintedPages, &v1.PrintedPage{Label: page.Label, Offset: int32(page.Offset)})
+	}
+	return out
 }
 
 // Entry answers with the bytes of one entry of a book's archive, which is how a
@@ -119,17 +136,6 @@ func (h *bookHandler) Entry(w http.ResponseWriter, r *http.Request, path, entry 
 	_, _ = w.Write(picture.Body)
 }
 
-// ReadEntry answers with the bytes of one entry of the archive of the book at a
-// fingerprint, read by the book plugin.
-func (h *bookHandler) ReadEntry(ctx context.Context, mark document.Fingerprint, entry string) ([]byte, error) {
-	client, closeClient, err := h.getClient(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("open the book plugin: %w", err)
-	}
-	defer closeClient()
-	return client.ReadEntry(ctx, newWireFingerprint(mark), entry)
-}
-
 // isMisnamed is whether the bytes are not what they are called: a file that is no
 // book, and an entry of one that is no picture. It is the one thing a person can
 // act on.
@@ -139,35 +145,25 @@ func isMisnamed(err error) bool {
 		errors.Is(err, document.ErrNotAPicture)
 }
 
-// getClient opens the book plugin's client, with the close that lets it go. A
-// build with no book plugin, or one whose client answers none of a book's asks,
-// is errNoDocuments.
-func (h *bookHandler) getClient(ctx context.Context) (bookClient, func(), error) {
-	if h.openClient == nil {
-		return nil, nil, errNoDocuments
-	}
-	raw, closer, err := h.openClient(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	if closer == nil {
-		closer = func() {}
-	}
-	client, ok := raw.(bookClient)
-	if !ok {
-		closer()
-		return nil, nil, fmt.Errorf("%w: the book plugin answers with %T", errNoDocuments, raw)
-	}
-	return client, closer, nil
-}
-
-// convertPluginError is what a failure to open the book plugin, or of an ask of
-// it, is answered with: a code the failure carries is kept, the end of the
-// caller's context is coded as such, and anything else is coded as a file that
-// could not be reached.
-func convertPluginError(err error) error {
+// convertBookError is the error an ask of a book is answered with. An absent
+// book plugin is unimplemented, a book or an entry it lacks is not found, bytes
+// that are no book are an invalid argument, a locked book a failed precondition
+// and a file that changed aborted. A code the failure carries is kept, the end of
+// the caller's context is coded as such, and anything else is coded as a file
+// that could not be reached.
+func convertBookError(err error) error {
 	var coded *connect.Error
 	switch {
+	case errors.Is(err, port.ErrUnavailable):
+		return connect.NewError(connect.CodeUnimplemented, err)
+	case errors.Is(err, port.ErrNoBook), errors.Is(err, port.ErrNoBookEntry):
+		return connect.NewError(connect.CodeNotFound, err)
+	case errors.Is(err, port.ErrNotADocument):
+		return connect.NewError(connect.CodeInvalidArgument, err)
+	case errors.Is(err, port.ErrEncrypted):
+		return connect.NewError(connect.CodeFailedPrecondition, err)
+	case errors.Is(err, port.ErrBookChanged):
+		return connect.NewError(connect.CodeAborted, err)
 	case errors.As(err, &coded):
 		return err
 	case errors.Is(err, context.Canceled):

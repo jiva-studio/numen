@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -20,7 +21,7 @@ type BookPluginHost interface {
 	port.PluginAuthorizer
 }
 
-// BookBridge connects BookService calls to an out-of-process book reader plugin via Connect-RPC.
+// BookBridge implements port.Book and reads the text of a book over Connect-RPC, against an out-of-process book reader plugin.
 type BookBridge struct {
 	host     BookPluginHost
 	pluginID string
@@ -48,30 +49,87 @@ func OpenBookBridge(ctx context.Context, host BookPluginHost) (*BookBridge, erro
 	}, nil
 }
 
-// GetBook forwards the GetBook RPC to the plugin process.
-func (b *BookBridge) GetBook(
-	ctx context.Context,
-	req *connect.Request[v1.GetBookRequest],
-) (*connect.Response[v1.GetBookResponse], error) {
+// GetBook asks the plugin for the shape of the book at a path.
+func (b *BookBridge) GetBook(ctx context.Context, path string) (domain.BookShape, error) {
 	client, call, err := b.service.open(ctx)
 	if err != nil {
-		return nil, err
+		return domain.BookShape{}, err
 	}
 	defer func() { _ = call.Close() }()
-	return client.GetBook(ctx, req)
+
+	resp, err := client.GetBook(ctx, connect.NewRequest(&v1.GetBookRequest{Path: path}))
+	if err != nil {
+		return domain.BookShape{}, getBookError(err, port.ErrNoBook)
+	}
+	return newBookShape(resp.Msg), nil
 }
 
-// ReadBookMarkup forwards the ReadBookMarkup RPC to the plugin process.
+// newBookShape is the shape of a book as the plugin answered it.
+func newBookShape(msg *v1.GetBookResponse) domain.BookShape {
+	out := domain.BookShape{
+		Title:       msg.GetTitle(),
+		PageCount:   int(msg.GetPageCount()),
+		TextBytes:   int(msg.GetTextBytes()),
+		PageBytes:   int(msg.GetPageBytes()),
+		Fingerprint: newFingerprint(msg.GetFingerprint()),
+	}
+	for _, section := range msg.GetDocuments() {
+		out.Sections = append(out.Sections, domain.BookSection{
+			Path: section.GetPath(), Offset: int(section.GetOffset()), Length: int(section.GetLength()),
+		})
+	}
+	for _, part := range msg.GetParts() {
+		out.Parts = append(out.Parts, domain.BookPart{
+			Title: part.GetTitle(), Offset: int(part.GetOffset()), Level: int(part.GetLevel()),
+		})
+	}
+	for _, page := range msg.GetPrintedPages() {
+		out.Pages = append(out.Pages, domain.BookPage{Label: page.GetLabel(), Offset: int(page.GetOffset())})
+	}
+	return out
+}
+
+// newFingerprint is a fingerprint as the schema carries it: the time in
+// nanoseconds since the epoch, and zero for a file nothing was said about.
+func newFingerprint(wire *v1.Fingerprint) domain.Fingerprint {
+	if wire == nil {
+		return domain.Fingerprint{}
+	}
+	out := domain.Fingerprint{Path: wire.GetPath(), Size: wire.GetSize()}
+	if wire.GetMtime() != 0 {
+		out.ModTime = time.Unix(0, wire.GetMtime())
+	}
+	return out
+}
+
+// newWireFingerprint is a fingerprint as the schema carries it.
+func newWireFingerprint(mark domain.Fingerprint) *v1.Fingerprint {
+	out := &v1.Fingerprint{Path: mark.Path, Size: mark.Size}
+	if !mark.ModTime.IsZero() {
+		out.Mtime = mark.ModTime.UnixNano()
+	}
+	return out
+}
+
+// ReadBookMarkup asks the plugin for the markup of one section of the book at a path.
 func (b *BookBridge) ReadBookMarkup(
-	ctx context.Context,
-	req *connect.Request[v1.ReadBookMarkupRequest],
-) (*connect.Response[v1.ReadBookMarkupResponse], error) {
+	ctx context.Context, path, section string, baseline *domain.Fingerprint,
+) (string, error) {
 	client, call, err := b.service.open(ctx)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer func() { _ = call.Close() }()
-	return client.ReadBookMarkup(ctx, req)
+
+	req := &v1.ReadBookMarkupRequest{Path: path, Document: section}
+	if baseline != nil {
+		req.Baseline = newWireFingerprint(*baseline)
+	}
+	resp, err := client.ReadBookMarkup(ctx, connect.NewRequest(req))
+	if err != nil {
+		return "", getBookError(err, port.ErrNoBookEntry)
+	}
+	return resp.Msg.GetMarkup(), nil
 }
 
 // Close releases the active reference count for the book plugin in the host supervisor.
@@ -94,7 +152,7 @@ func (b *BookBridge) ReadBook(ctx context.Context, raw []byte) (domain.BookText,
 
 	resp, err := client.ExtractBookText(ctx, connect.NewRequest(&v1.ExtractBookTextRequest{Data: raw}))
 	if err != nil {
-		return domain.BookText{}, getBookError(err)
+		return domain.BookText{}, getBookError(err, port.ErrNoBookEntry)
 	}
 	out := domain.BookText{Text: resp.Msg.GetText()}
 	for _, part := range resp.Msg.GetParts() {
@@ -107,15 +165,16 @@ func (b *BookBridge) ReadBook(ctx context.Context, raw []byte) (domain.BookText,
 }
 
 // getBookError is the error a refusal of the plugin is answered with: the ports'
-// own for a book that cannot be read, an entry it lacks and a file that changed.
-func getBookError(err error) error {
+// own for a book that cannot be read, a file that changed, and, as missing, what
+// the plugin did not find.
+func getBookError(err, missing error) error {
 	switch connect.CodeOf(err) {
 	case connect.CodeInvalidArgument:
 		return fmt.Errorf("%w: %v", port.ErrNotADocument, err)
 	case connect.CodeFailedPrecondition:
 		return fmt.Errorf("%w: %v", port.ErrEncrypted, err)
 	case connect.CodeNotFound:
-		return fmt.Errorf("%w: %v", port.ErrNoBookEntry, err)
+		return fmt.Errorf("%w: %v", missing, err)
 	case connect.CodeAborted:
 		return fmt.Errorf("%w: %v", port.ErrBookChanged, err)
 	default:
@@ -125,7 +184,7 @@ func getBookError(err error) error {
 
 // ReadEntry asks the plugin for one entry of the archive of the book at a path,
 // while the file is the bytes the baseline names.
-func (b *BookBridge) ReadEntry(ctx context.Context, baseline *v1.Fingerprint, entry string) ([]byte, error) {
+func (b *BookBridge) ReadEntry(ctx context.Context, baseline domain.Fingerprint, entry string) ([]byte, error) {
 	if err := b.host.CheckPluginPermission(b.pluginID, PermissionVaultRead); err != nil {
 		return nil, err
 	}
@@ -136,12 +195,12 @@ func (b *BookBridge) ReadEntry(ctx context.Context, baseline *v1.Fingerprint, en
 	defer func() { _ = call.Close() }()
 
 	resp, err := client.ReadBookEntry(ctx, connect.NewRequest(&v1.ReadBookEntryRequest{
-		Path:     baseline.GetPath(),
+		Path:     baseline.Path,
 		Entry:    entry,
-		Baseline: baseline,
+		Baseline: newWireFingerprint(baseline),
 	}))
 	if err != nil {
-		return nil, getBookError(err)
+		return nil, getBookError(err, port.ErrNoBookEntry)
 	}
 	return resp.Msg.GetBody(), nil
 }

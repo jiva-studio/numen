@@ -96,6 +96,20 @@ type restartedBook struct {
 	plugin *restartedPlugin
 }
 
+func (r restartedBook) GetBook(
+	context.Context, *connect.Request[v1.GetBookRequest],
+) (*connect.Response[v1.GetBookResponse], error) {
+	r.plugin.asked.Add(1)
+	return connect.NewResponse(&v1.GetBookResponse{}), nil
+}
+
+func (r restartedBook) ReadBookEntry(
+	context.Context, *connect.Request[v1.ReadBookEntryRequest],
+) (*connect.Response[v1.ReadBookEntryResponse], error) {
+	r.plugin.asked.Add(1)
+	return connect.NewResponse(&v1.ReadBookEntryResponse{}), nil
+}
+
 func (r restartedBook) ExtractBookText(
 	context.Context, *connect.Request[v1.ExtractBookTextRequest],
 ) (*connect.Response[v1.ExtractBookTextResponse], error) {
