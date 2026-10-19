@@ -57,7 +57,7 @@ jobs:
 
       - name: Lint plugin frontends
         working-directory: modules/plugins
-        run: npx eslint .
+        run: ../node_modules/.bin/eslint .
 
       - name: Check plugin formatting
-        run: npx prettier --check "plugins/**/*.{ts,vue,json,css,js}"
+        run: node_modules/.bin/prettier --check "plugins/**/*.{ts,vue,json,css,js}"
