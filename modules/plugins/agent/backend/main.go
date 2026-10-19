@@ -10,14 +10,18 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-func main() {
-	agent := &harness.Server{}
-
-	s := server.New(server.WithUpdateConfig(agent.Configure))
+// newPluginServer is the plugin process's server: the SDK's lifecycle, which hands the settings to
+// the agent, and the agent's services.
+func newPluginServer(agent *harness.Server, opts ...server.Option) *server.Server {
+	s := server.New(append(opts, server.WithUpdateConfig(agent.Configure))...)
 	s.Register(numenv1connect.NewAgentServiceHandler(agent, s.HandlerOptions()...))
 	s.Register(numenv1connect.NewCompletionServiceHandler(agent, s.HandlerOptions()...))
+	return s
+}
 
-	err := s.Serve()
+func main() {
+	agent := &harness.Server{}
+	err := newPluginServer(agent).Serve()
 	_ = agent.Close()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
