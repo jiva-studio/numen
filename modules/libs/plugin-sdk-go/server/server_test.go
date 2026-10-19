@@ -445,3 +445,22 @@ func TestServerAnswersHTTP1AndUnencryptedHTTP2(t *testing.T) {
 		recorder.mu.Unlock()
 	}
 }
+
+// A server that serves on a port runs what OnClose added when Serve returns.
+func TestServerRunsItsClosersWhenServeReturns(t *testing.T) {
+	s := New(WithPort(0), WithStdout(io.Discard), WithStdin(nil))
+	closed := 0
+	s.OnClose(func() { closed++ })
+	if _, err := s.Listen(); err != nil {
+		t.Fatalf("Listen failed: %v", err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	if err := s.ServeContext(ctx); err != nil {
+		t.Fatalf("ServeContext: %v", err)
+	}
+	if closed != 1 {
+		t.Fatalf("closers ran %d times, want once", closed)
+	}
+}

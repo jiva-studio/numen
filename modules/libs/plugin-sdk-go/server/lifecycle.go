@@ -36,6 +36,13 @@ func WithLifecycleUpdateConfig(fn func(values map[string]string)) LifecycleOptio
 	}
 }
 
+// WithLifecycleShutdown sets what the Shutdown RPC runs before it signals termination.
+func WithLifecycleShutdown(fn func()) LifecycleOption {
+	return func(s *LifecycleServer) {
+		s.onShutdown = fn
+	}
+}
+
 // LifecycleServer implements numen.v1.PluginLifecycleService.
 type LifecycleServer struct {
 	numenv1connect.UnimplementedPluginLifecycleServiceHandler
@@ -44,6 +51,7 @@ type LifecycleServer struct {
 	mu           sync.RWMutex
 	config       map[string]string
 	onConfigure  func(ctx context.Context, values map[string]string) error
+	onShutdown   func()
 }
 
 // NewLifecycleServer creates a lifecycle service handler with a shutdown signal channel.
@@ -74,6 +82,9 @@ func (s *LifecycleServer) Shutdown(
 	_ context.Context,
 	_ *connect.Request[numenv1.ShutdownRequest],
 ) (*connect.Response[numenv1.ShutdownResponse], error) {
+	if s.onShutdown != nil {
+		s.onShutdown()
+	}
 	s.TriggerShutdown()
 	return connect.NewResponse(&numenv1.ShutdownResponse{
 		Success: true,

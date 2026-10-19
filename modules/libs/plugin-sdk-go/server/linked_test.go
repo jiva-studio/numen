@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"net/http/httptest"
+	"slices"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -66,5 +67,44 @@ func TestALinkedHandlerWhoseMountFailsIsNotMade(t *testing.T) {
 	handler, err := NewLinkedHandler(map[string]string{}, func(*Server) error { return failure })
 	if !errors.Is(err, failure) || handler != nil {
 		t.Fatalf("NewLinkedHandler = %v, %v; want the failure and no handler", handler, err)
+	}
+}
+
+// The Shutdown RPC runs what the mount added with OnClose, last added first, once.
+func TestALinkedHandlerRunsItsClosersWhenTheHostShutsItDown(t *testing.T) {
+	var closed []string
+	handler, err := NewLinkedHandler(map[string]string{tokenVar: "linked-token"}, func(s *Server) error {
+		s.OnClose(func() { closed = append(closed, "first") })
+		s.OnClose(func() { closed = append(closed, "second") })
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("NewLinkedHandler: %v", err)
+	}
+	web := httptest.NewServer(handler)
+	defer web.Close()
+	client := numenv1connect.NewPluginLifecycleServiceClient(web.Client(), web.URL,
+		connect.WithInterceptors(&bearerAuthInterceptor{token: "linked-token"}))
+
+	for range 2 {
+		if _, err := client.Shutdown(t.Context(), connect.NewRequest(&numenv1.ShutdownRequest{})); err != nil {
+			t.Fatalf("Shutdown: %v", err)
+		}
+	}
+
+	if want := []string{"second", "first"}; !slices.Equal(closed, want) {
+		t.Fatalf("closed %v, want %v", closed, want)
+	}
+}
+
+// A mount that fails runs the closers it added.
+func TestALinkedHandlerWhoseMountFailsClosesWhatItAdded(t *testing.T) {
+	closed := false
+	_, err := NewLinkedHandler(map[string]string{}, func(s *Server) error {
+		s.OnClose(func() { closed = true })
+		return errors.New("the backend cannot start")
+	})
+	if err == nil || !closed {
+		t.Fatalf("NewLinkedHandler = %v, closed %v", err, closed)
 	}
 }

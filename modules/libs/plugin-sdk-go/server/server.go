@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"slices"
 	"strconv"
 	"sync"
 	"syscall"
@@ -156,6 +157,9 @@ type Server struct {
 	onConfigure       func(ctx context.Context, values map[string]string) error
 	onEvent           EventHandler
 
+	closeOnce sync.Once
+	closers   []func()
+
 	lifecycle   *LifecycleServer
 	interceptor connect.Interceptor
 	mux         *http.ServeMux
@@ -166,21 +170,22 @@ type Server struct {
 // New constructs a plugin server using command flags, environment variables, and options.
 func New(opts ...Option) *Server {
 	port, token := parseDefaultFlags()
-	return newServer(port, token, opts)
+	return newServer(port, token, opts, false)
 }
 
 // NewLinkedHandler returns the handler a host that links the plugin into its own process serves it
 // through: a server with the services mount registers on it, which authenticates with the token
 // vars holds under NUMEN_PLUGIN_TOKEN and reads no flag.
 func NewLinkedHandler(vars map[string]string, mount func(*Server) error) (http.Handler, error) {
-	s := newServer(0, vars[tokenVar], nil)
+	s := newServer(0, vars[tokenVar], nil, true)
 	if err := mount(s); err != nil {
+		s.Close()
 		return nil, err
 	}
 	return s.mux, nil
 }
 
-func newServer(port int, token string, opts []Option) *Server {
+func newServer(port int, token string, opts []Option, linked bool) *Server {
 	s := &Server{
 		port:              port,
 		token:             token,
@@ -196,7 +201,11 @@ func newServer(port int, token string, opts []Option) *Server {
 	}
 
 	s.interceptor = NewAuthInterceptor(s.token)
-	s.lifecycle = NewLifecycleServer(make(chan struct{}), WithLifecycleConfigure(s.onConfigure))
+	lifecycleOpts := []LifecycleOption{WithLifecycleConfigure(s.onConfigure)}
+	if linked {
+		lifecycleOpts = append(lifecycleOpts, WithLifecycleShutdown(s.Close))
+	}
+	s.lifecycle = NewLifecycleServer(make(chan struct{}), lifecycleOpts...)
 
 	s.Register(numenv1connect.NewPluginLifecycleServiceHandler(s.lifecycle, s.HandlerOptions()...))
 	if s.onEvent != nil {
@@ -204,6 +213,21 @@ func newServer(port int, token string, opts []Option) *Server {
 	}
 
 	return s
+}
+
+// OnClose adds what Close runs. A server that serves on a port runs it when Serve returns; a linked
+// server runs it when the host shuts the plugin down.
+func (s *Server) OnClose(fn func()) {
+	s.closers = append(s.closers, fn)
+}
+
+// Close runs what OnClose added, once, last added first.
+func (s *Server) Close() {
+	s.closeOnce.Do(func() {
+		for _, fn := range slices.Backward(s.closers) {
+			fn()
+		}
+	})
 }
 
 // Register mounts a service handler on the server multiplexer.
@@ -269,6 +293,7 @@ func (s *Server) Serve() error {
 
 // ServeContext runs the HTTP/2 server until context cancellation or shutdown is triggered.
 func (s *Server) ServeContext(ctx context.Context) error {
+	defer s.Close()
 	if _, err := s.Listen(); err != nil {
 		return err
 	}
