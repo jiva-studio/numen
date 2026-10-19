@@ -70,7 +70,7 @@ export function createWikilinkExtension(options: WikilinkOptions): Extension {
         }
 
         const isHeadingQuery = target.query.includes('#')
-        let suggestions: Completion[] = []
+        let suggestions: Completion[]
 
         if (isHeadingQuery && options.headings) {
           const parts = target.query.split('#')

@@ -30,7 +30,9 @@ const targetPath =
     : '')
 
 const isExistingState = isBookTabState(props.state)
-const internalState = isExistingState ? null : useBookTab(useBookReader(books, targetPath, { words }))
+const internalState = isExistingState
+  ? null
+  : useBookTab(useBookReader(books, targetPath, { words }))
 const tabState = isExistingState ? props.state! : internalState!
 
 /* --------------------------------- State ---------------------------------- */
@@ -39,7 +41,7 @@ const bookContent = useTemplateRef<InstanceType<typeof BookContent>>('bookConten
 watchEffect(() => tabState.setBookHandle(bookContent.value ?? null))
 watchEffect(() => {
   if (!isExistingState && props.state && typeof props.state === 'object' && tabState.title.value) {
-    (props.state as Record<string, unknown>).title = tabState.title.value
+    ;(props.state as Record<string, unknown>).title = tabState.title.value
   }
 })
 

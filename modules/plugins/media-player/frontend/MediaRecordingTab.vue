@@ -4,7 +4,7 @@
  * recording timer, and preview playback.
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { Mic, Pause, Play, RotateCcw, Square, Volume2 } from '@lucide/vue'
+import { Mic, Pause, Play, RotateCcw, Square } from '@lucide/vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
@@ -48,7 +48,6 @@ let mediaRecorder: MediaRecorder | null = null
 let recordedChunks: Blob[] = []
 
 const isRecording = computed(() => status.value === 'recording')
-const isPaused = computed(() => status.value === 'paused')
 const hasRecording = computed(() => recordedAudioUrl.value !== null)
 
 /**
@@ -467,7 +466,9 @@ function formatClock(ms: number): string {
   inline-size: 4px;
   background: var(--numen-rule, #4b5563);
   border-radius: 2px;
-  transition: height 0.1s ease, background-color 0.1s ease;
+  transition:
+    height 0.1s ease,
+    background-color 0.1s ease;
 }
 
 .media-recorder__waveform-bar--active {
@@ -587,7 +588,12 @@ function formatClock(ms: number): string {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 </style>

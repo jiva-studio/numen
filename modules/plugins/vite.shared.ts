@@ -1,0 +1,85 @@
+/**
+ * The build every plugin frontend shares: the paths its imports resolve to,
+ * and the one ES module and stylesheet it is packed into.
+ *
+ * A plugin's `vite.config.ts` and `vitest.config.ts` name the aliases and
+ * externals they use; the paths and the shape of the bundle are written here.
+ */
+import { existsSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import type { Plugin, PluginOption, UserConfig } from 'vite'
+
+const modules = resolve(import.meta.dirname, '..')
+
+/** Every alias a plugin may resolve, in the order Vite tries them. */
+const ALIASES = {
+  '@': resolve(modules, 'apps/desktop/editor/src'),
+  '@plugins': import.meta.dirname,
+  '@numen/plugin-sdk/testing': resolve(modules, 'libs/plugin-sdk/src/testing/index.ts'),
+  '@numen/plugin-sdk': resolve(modules, 'libs/plugin-sdk/src/index.ts'),
+  '@numen/protocol': resolve(modules, 'libs/protocol/index.ts'),
+  '@numen/ui/styles.css': resolve(modules, 'libs/ui/dist/numen-ui.css'),
+  '@numen/ui': resolve(modules, 'libs/ui/dist/index.js'),
+  '@numen/wire': resolve(modules, 'libs/wire/index.ts'),
+} as const
+
+export type AliasName = keyof typeof ALIASES
+
+/** The named aliases and their paths, in the order of `ALIASES`. */
+export function getPluginAliases(names: readonly AliasName[]): Record<string, string> {
+  const wanted = new Set(names)
+  return Object.fromEntries(
+    Object.entries(ALIASES).filter(([name]) => wanted.has(name as AliasName)),
+  )
+}
+
+/** Writes an empty `dist/styles.css` when the bundle carries no stylesheet. */
+function createStylesPlugin(root: string): Plugin {
+  return {
+    name: 'ensure-styles',
+    apply: 'build',
+    closeBundle() {
+      const cssPath = resolve(root, 'dist', 'styles.css')
+      if (!existsSync(cssPath)) {
+        writeFileSync(cssPath, '')
+      }
+    },
+  }
+}
+
+export interface PluginBuildOptions {
+  /** The plugin's directory, which holds `frontend/index.ts` and receives `dist/`. */
+  readonly root: string
+  /** The plugins of the build ahead of the stylesheet one, such as `vue()`. */
+  readonly plugins: readonly PluginOption[]
+  readonly aliases: readonly AliasName[]
+  /** The modules the host provides at runtime, left out of the bundle. */
+  readonly external: readonly string[]
+}
+
+/** The build of one plugin frontend into `dist/index.js` and `dist/styles.css`. */
+export function createPluginBuildConfig(options: PluginBuildOptions): UserConfig {
+  return {
+    plugins: [...options.plugins, createStylesPlugin(options.root)],
+    resolve: { alias: getPluginAliases(options.aliases) },
+    build: {
+      outDir: 'dist',
+      emptyOutDir: true,
+      lib: {
+        entry: resolve(options.root, 'frontend/index.ts'),
+        formats: ['es'],
+        fileName: () => 'index.js',
+        cssFileName: 'styles',
+      },
+      rollupOptions: {
+        external: [...options.external],
+        output: {
+          assetFileNames: (assetInfo) => {
+            if (assetInfo.name?.endsWith('.css')) return 'styles.css'
+            return assetInfo.name || 'asset'
+          },
+        },
+      },
+    },
+  }
+}

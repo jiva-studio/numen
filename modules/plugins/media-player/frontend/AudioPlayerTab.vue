@@ -56,7 +56,6 @@ const localPosition = ref(0)
 const localDuration = ref(0)
 const playbackRate = ref(1.0)
 const isMuted = ref(false)
-const volume = ref(1.0)
 const draggingPosition = ref<number | null>(null)
 
 const AVAILABLE_RATES = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0] as const
@@ -226,9 +225,8 @@ function onWaveformClick(event: MouseEvent) {
   const target = event.currentTarget as HTMLElement
   if (!target) return
   const rect = target.getBoundingClientRect()
-  const fraction = rect && rect.width > 0
-    ? Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
-    : 0
+  const fraction =
+    rect && rect.width > 0 ? Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)) : 0
   const targetMs = Math.round(fraction * (totalDuration.value || 0))
   onSeekMs(targetMs)
 }
@@ -363,11 +361,7 @@ function formatClock(ms: number): string {
           ···
         </button>
         <div v-if="isMenuOpen && isDeletable" class="audio-player__dropdown">
-          <button
-            type="button"
-            class="audio-player__dropdown-item"
-            @click="onDeleteTranscript"
-          >
+          <button type="button" class="audio-player__dropdown-item" @click="onDeleteTranscript">
             Delete the transcript
           </button>
         </div>
@@ -460,7 +454,11 @@ function formatClock(ms: number): string {
     </div>
 
     <!-- Transcript section with timestamp navigation -->
-    <section v-if="transcriptCues.length > 0" class="audio-player__transcript" aria-label="Transcript">
+    <section
+      v-if="transcriptCues.length > 0"
+      class="audio-player__transcript"
+      aria-label="Transcript"
+    >
       <h3 class="audio-player__transcript-header">Transcript</h3>
       <div class="audio-player__cues">
         <article
@@ -483,7 +481,9 @@ function formatClock(ms: number): string {
     </section>
 
     <div v-else class="audio-player__empty-transcript">
-      <p class="audio-player__empty-note transcript__text">No transcript available for this audio file.</p>
+      <p class="audio-player__empty-note transcript__text">
+        No transcript available for this audio file.
+      </p>
     </div>
   </div>
 </template>

@@ -7,7 +7,7 @@
 import { computed, ref, useId, useTemplateRef } from 'vue'
 import type { Cue } from '@numen/protocol'
 import { downloaderClient } from './client'
-import Embed from './embed/Embed.vue'
+import MediaEmbed from './embed/MediaEmbed.vue'
 import { WORDS as words } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -141,7 +141,7 @@ function formatTime(ms: number): string {
       </h2>
 
       <div v-if="hasPlayer" class="media-downloader__player-wrapper">
-        <Embed
+        <MediaEmbed
           ref="player"
           :embed="activeUrl"
           :copy="''"

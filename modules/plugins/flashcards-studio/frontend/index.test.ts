@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
-import plugin, {
-  activate,
-  DeckEditorTab,
-  StencilEditorTab,
-  PresetEditorTab,
-} from './index'
+import plugin, { activate, DeckEditorTab, StencilEditorTab, PresetEditorTab } from './index'
 
 describe('flashcards-studio plugin', () => {
   it('registers deck, stencil, and preset tab kinds upon activation', () => {
