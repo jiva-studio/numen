@@ -255,9 +255,10 @@ function createCustomTabState(at: string, deps: CustomTabStateDeps) {
   }
 
   if (deps.hostDeps?.readNote) {
-    void deps.hostDeps
+    deps.hostDeps
       .readNote(at)
       .then((result) => {
+        isLoading.value = false
         if (hasEdited) return
         if (typeof result === 'string') {
           noteRef.value = { path: at, body: result }
@@ -271,10 +272,8 @@ function createCustomTabState(at: string, deps: CustomTabStateDeps) {
         }
       })
       .catch((err) => {
-        errorMessageRef.value = err instanceof Error ? err.message : String(err)
-      })
-      .finally(() => {
         isLoading.value = false
+        errorMessageRef.value = err instanceof Error ? err.message : String(err)
       })
   }
   return {
