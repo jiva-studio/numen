@@ -17,7 +17,7 @@ check_profile() {
 	fi
 }
 
-if [ "${1:-}" = "--check" ]; then
+if [[ "${1:-}" = "--check" ]]; then
 	check_profile "$here/../cmd/numen/default.pgo"
 	exit
 fi

@@ -87,7 +87,7 @@ export const findTestdata = (at, tests) => {
       kept.add(dirname(resolved))
     }
   }
-  const sorted = [...kept].sort()
+  const sorted = [...kept].sort((a, b) => a.localeCompare(b))
   return sorted.filter(
     (one) => !sorted.some((other) => other !== one && one.startsWith(`${other}/`)),
   )
