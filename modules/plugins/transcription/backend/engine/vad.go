@@ -137,6 +137,8 @@ type speechPass struct {
 	input, memory, sampling *ort.Value
 }
 
+var newTensor = ort.NewTensor
+
 // newSpeechPass makes the tensors over the buffers of a recording.
 func newSpeechPass(sound []float32) (*speechPass, error) {
 	p := &speechPass{
@@ -147,14 +149,14 @@ func newSpeechPass(sound []float32) (*speechPass, error) {
 		count:  (len(sound) + speechWindow - 1) / speechWindow,
 	}
 	var err error
-	if p.input, err = ort.NewTensor([]int64{1, speechWindow}, p.window); err != nil {
+	if p.input, err = newTensor([]int64{1, speechWindow}, p.window); err != nil {
 		return nil, err
 	}
-	if p.memory, err = ort.NewTensor([]int64{2, 1, speechMemory / 2}, p.state); err != nil {
+	if p.memory, err = newTensor([]int64{2, 1, speechMemory / 2}, p.state); err != nil {
 		p.destroy()
 		return nil, err
 	}
-	if p.sampling, err = ort.NewTensor(nil, p.rate); err != nil {
+	if p.sampling, err = newTensor(nil, p.rate); err != nil {
 		p.destroy()
 		return nil, err
 	}
@@ -174,6 +176,7 @@ func (p *speechPass) destroy() {
 // silence where the recording ends short of it.
 func (p *speechPass) load(i int) {
 	clear(p.window)
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="copy fills at most the window length"
 	copy(p.window, p.sound[i*speechWindow:min((i+1)*speechWindow, len(p.sound))])
 }
 
