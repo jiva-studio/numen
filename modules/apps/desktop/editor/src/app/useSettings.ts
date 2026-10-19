@@ -270,7 +270,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
     refresh: rest.start,
   })
   const retry = createPluginRetry(core, {
-    words: { unstarted: words.pluginUnstarted, unasked: words.pluginUnasked },
+    words: { failedAgain: words.pluginFailedAgain, refused: words.pluginRetryRefused },
     say: log.getWriter('plugins'),
     refresh: rest.start,
   })

@@ -1580,13 +1580,13 @@ func (h *Host) RetryPlugin(ctx context.Context, pluginID string) (*port.PluginFa
 	if errors.As(err, &unavailable) || ctx.Err() != nil {
 		return nil, err
 	}
-	failure := h.holdOff(pluginID, err)
+	failure := h.recordLastFailure(pluginID, err)
 	h.deliverPluginFailures()
 	return failure, nil
 }
 
-// holdOff records a failed activation as the last one the plugin is allowed, and returns the failure.
-func (h *Host) holdOff(pluginID string, cause error) *port.PluginFailure {
+// recordLastFailure records a failed activation as the last one the plugin is allowed, and returns the failure.
+func (h *Host) recordLastFailure(pluginID string, cause error) *port.PluginFailure {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	sup, ok := h.supervisors[pluginID]

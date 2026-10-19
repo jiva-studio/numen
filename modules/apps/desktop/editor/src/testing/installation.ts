@@ -1,20 +1,19 @@
+import { fn } from 'storybook/test'
 import { ref } from 'vue'
 import type { PluginInfo } from '@/entities/settings'
 import type { Installation } from '@/pages/settings/types'
 
-const nothing = (): void => {}
-
-/** An installation that does nothing and holds the defaults, with what a test cares about put over it. */
+/** An installation whose calls are recorded and which holds the defaults, with what a test cares about put over it. */
 export const createInstallation = (over: Partial<Installation> = {}): Installation => ({
   getSetting: () => undefined,
   getModels: () => [],
-  write: nothing,
-  writeSecret: nothing,
-  deleteSecret: nothing,
-  retryPlugin: nothing,
+  write: fn(),
+  writeSecret: fn(),
+  deleteSecret: fn(),
+  retryPlugin: fn(),
   plugins: ref([]),
   file: ref('/numen.json'),
-  openFile: nothing,
+  openFile: fn(),
   themes: ref([]),
   applied: ref('preset:numen'),
   mode: ref('system'),
@@ -24,15 +23,15 @@ export const createInstallation = (over: Partial<Installation> = {}): Installati
     interfaceScale: { least: 0.8, most: 2 },
     textScale: { least: 0.8, most: 1.75 },
   }),
-  choose: nothing,
+  choose: fn(),
   isSyncing: ref(true),
   isNesting: ref(true),
   headings: ref(6),
   headingsBounds: ref({ least: 1, most: 12 }),
-  chooseHeadings: nothing,
+  chooseHeadings: fn(),
   dayStartTime: ref('04:00'),
   latestDayStartTime: ref('12:00'),
-  chooseDayStartTime: nothing,
+  chooseDayStartTime: fn(),
   ...over,
 })
 

@@ -7,9 +7,9 @@ import type { MessageWriter } from '@/shared/notices/messages'
 /** Everything this says in the window's voice. */
 export interface RetryWords {
   /** The plugin failed to start again, which a reason follows. */
-  readonly unstarted: string
+  readonly failedAgain: string
   /** The plugin could not be asked to start. */
-  readonly unasked: string
+  readonly refused: string
 }
 
 /** What this asks of the vault. */
@@ -35,9 +35,9 @@ export function createPluginRetry(core: RetryDeps, { words, say, refresh }: Retr
     say('')
     try {
       const failure = await core.retryPlugin(pluginId)
-      if (failure !== '') say(`${words.unstarted} ${failure}`, 'caution')
+      if (failure !== '') say(`${words.failedAgain} ${failure}`, 'caution')
     } catch (thrown) {
-      say(`${words.unasked} ${formatErrorMessage(thrown)}`, 'error')
+      say(`${words.refused} ${formatErrorMessage(thrown)}`, 'error')
     }
     await refresh()
   }
