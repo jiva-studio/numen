@@ -2,8 +2,7 @@ version: 2
 
 # Every module the product ships, and the two that gate it. Each manifest is
 # its own project — there is no module at the repository root — so
-# the list has to be written out; nothing here discovers a directory it was not
-# told about.
+# each directory, or a pattern for a family of them, is written out.
 #
 # Grouped, because a dependency raised one pull request at a time is a
 # dependency nobody reads. What arrives is one branch per ecosystem per month,
@@ -11,9 +10,10 @@ version: 2
 # not travel with fourteen patches.
 
 updates:
-  # The Go modules: the core, the two applications that carry it, the schema's
-  # generated Go, the plugin SDK with each of its feature modules, and the tools
-  # the release is built with.
+  # The Go modules: the core, the applications that carry it, the schema's
+  # generated Go, the plugin SDK with each of its feature modules, the plugins,
+  # and the tools the release is built with. A module that replaces another
+  # local module is listed beside it, so one group bump moves them together.
   - package-ecosystem: gomod
     directories:
       - /modules/libs/core
@@ -24,8 +24,10 @@ updates:
       - /modules/libs/plugin-sdk-go/onnx
       - /modules/libs/plugin-sdk-go/vault
       - /modules/apps/desktop
+      - /modules/apps/desktop-monolith
       - /modules/apps/mobile
       - /modules/apps/desktop/build/tools
+      - /modules/plugins/*
     schedule:
       interval: monthly
     commit-message:
@@ -52,6 +54,11 @@ updates:
       npm-major:
         patterns: ["*"]
         update-types: ["major"]
+    # TypeScript 7 has no JavaScript API, and vue-tsc and @vue/compiler-sfc
+    # call that API.
+    ignore:
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
