@@ -172,3 +172,20 @@ func TestRoundUpToBucket(t *testing.T) {
 		}
 	}
 }
+
+func TestAddRow(t *testing.T) {
+	dst := make([]float32, 10)
+	src := []float32{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	addRow(dst, src)
+	for i, want := range src {
+		if dst[i] != want {
+			t.Errorf("dst[%d] = %f, want %f", i, dst[i], want)
+		}
+	}
+	addRow(dst, src)
+	for i, v := range src {
+		if want := v * 2; dst[i] != want {
+			t.Errorf("dst[%d] = %f, want %f", i, dst[i], want)
+		}
+	}
+}
