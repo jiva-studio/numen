@@ -3,7 +3,7 @@
  */
 import { computed, ref, watch } from 'vue'
 import type { PlexNeighbourhood, PlexRelation, PlexDestination } from '@numen/ui'
-import { getFileName } from '../lib/paths'
+import { getFileName } from '@numen/plugin-sdk'
 import { NEW_NOTE, OFFERED } from '../lib/menu'
 import { convertNeighbourhood, getNoteTypes } from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'

@@ -13,7 +13,7 @@ import { usePlexView as viewing, type PlexView } from './usePlexView'
 import { WORDS as words } from '../words'
 import { createVault, settle, viewOn, type Types, type NeighbourSpec } from '../fixtures'
 import type { NoteHeading, NoteRelation, PathRename } from '../types'
-import { getRenamedPath } from '../lib/paths'
+import { getRenamedPath } from '@numen/plugin-sdk'
 
 /** A plex tab with the window it is drawn in written down. */
 const tab = (

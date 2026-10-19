@@ -40,7 +40,10 @@ import {
   useDocumentTab,
   type Documents,
 } from '@plugins/reader-pdf/frontend'
-import { FilesTab, ROOT, useFilesTab, useFileTree } from '@/pages/file-manager'
+import { FilesTab, ROOT, useFilesTab, useFileTree } from '@plugins/view-file-tree/frontend'
+import { createPathCommandHost } from './fileServices'
+import { FolderTree } from '@lucide/vue'
+import type { CommandTarget } from '@/features/command-palette'
 import type { Entry } from '@/entities/file'
 import { findTabKindIcon } from '@/entities/tab'
 import { DECK, DOCUMENT, FILES, PRESET, RECORDING, SETTINGS, STENCIL } from '@/entities/tab'
@@ -56,8 +59,12 @@ const TABS: readonly Tab[] = [
   { id: `${DOCUMENT}:boltzmann`, title: 'Boltzmann 1877.pdf' },
 ]
 
-/** A tab is drawn as its kind, which is what stands before the identity. */
-const getTabIcon = (id: string) => findTabKindIcon(id.split(':')[0] ?? id)
+/**
+ * A tab is drawn as its kind, which is what stands before the identity. The files
+ * tab is the file tree plugin's, and is drawn as the icon its kind declares.
+ */
+const getTabIcon = (id: string) =>
+  id === FILES ? FolderTree : findTabKindIcon(id.split(':')[0] ?? id)
 
 /** One tab filling the window, drawn in the chrome the window draws it in. */
 const window = (tab: string, tabPane: Component, state: unknown) => ({
@@ -640,7 +647,13 @@ const VAULT: Record<string, readonly Entry[]> = {
 const files = (open: readonly string[]) => {
   const list = useFileTree({ list: (at: string) => Promise.resolve(VAULT[at] ?? []) })
   const state = useFilesTab(list, {
-    openDestination: fn(),
+    ...createPathCommandHost({
+      runs: { canRun: () => true },
+      vaults: { makes: { value: new Map() } },
+      getTarget: () => ({}) as CommandTarget,
+      runCommand: fn(),
+    }),
+    openEntry: fn(),
     runCommand: fn(),
     movePath: fn(() => Promise.resolve()),
     setDraggedPaths: fn(),

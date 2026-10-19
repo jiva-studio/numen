@@ -11,10 +11,6 @@ export interface TabSyncDeps {
   onError: (error: unknown) => void
 }
 
-export function isNotePath(path: string): boolean {
-  return path.endsWith('.md') || !path.includes('.')
-}
-
 export function useTabSync({ held, tabLinks, onError }: TabSyncDeps) {
   let isSyncing = false
 
