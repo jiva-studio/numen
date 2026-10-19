@@ -3,6 +3,7 @@
  */
 import { shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
+import type { MessageWriter } from '@/shared/notices/messages'
 import type { DestinationDeps } from '@/features/command-palette'
 import { AGENT, FILES, PLEX } from '@/entities/tab'
 import { agentPort } from './agentPort'
@@ -16,6 +17,22 @@ import {
 import { createFileMakers, createVaultFiles } from './fileServices'
 
 export type { WindowKindsDeps } from './kinds/deps'
+
+/** Something to ask, put in the agent the person was last in and put in front. */
+function createAgentAsker(held: WindowKindsDeps['held'], writeMessage: MessageWriter) {
+  return {
+    askQuestion: async (text: string): Promise<void> => {
+      if (!held.hasKind(AGENT)) {
+        writeMessage(
+          'The agent chat is not available: its plugin is off or did not start.',
+          'error',
+        )
+        return
+      }
+      await held.sendText(AGENT, text)
+    },
+  }
+}
 
 /**
  * Initializes and registers view kinds for the desktop window.
@@ -38,12 +55,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     return { path: target?.path ?? '', title: target?.title ?? '' }
   }
 
-  /** Something to ask, put in the agent the person was last in and put in front. */
-  const agents = {
-    askQuestion: async (text: string): Promise<void> => {
-      await held.sendText(AGENT, text)
-    },
-  }
+  const agents = createAgentAsker(held, writeMessage)
 
   const destinations: DestinationDeps = {
     travel: (path) => travel(path),

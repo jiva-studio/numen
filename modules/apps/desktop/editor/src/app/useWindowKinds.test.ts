@@ -192,6 +192,16 @@ describe('the services the window gives a plugin', () => {
     expect(writer).toHaveBeenCalledWith(expect.any(String), 'error')
   })
 
+  it('tell the person a question cannot be put where the window has no agent tab kind', async () => {
+    const { deps, window, writer } = create({ hasPlexKind: false })
+
+    window.services.workspace?.ask('what is this?')
+    await Promise.resolve()
+
+    expect(deps.held.sendText).not.toHaveBeenCalled()
+    expect(writer).toHaveBeenCalledWith(expect.stringContaining('not available'), 'error')
+  })
+
   it('offer the agent the window asks, over the port it talks on', async () => {
     const { window } = create()
 
