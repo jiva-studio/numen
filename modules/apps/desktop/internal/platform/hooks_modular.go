@@ -3,20 +3,11 @@
 package platform
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// RegisterDocumentHandler sets the in-process DocumentServiceHandler.
-func RegisterDocumentHandler(_ numenv1connect.DocumentServiceHandler) {}
-
-// RegisterBookHandler sets the in-process BookServiceHandler.
-func RegisterBookHandler(_ numenv1connect.BookServiceHandler) {}
-
-// RegisterRecognitionHandler sets the in-process RecognitionServiceHandler.
-func RegisterRecognitionHandler(_ numenv1connect.RecognitionServiceHandler) {}
-
-// RegisterTranscriptionHandler sets the in-process TranscriptionServiceHandler.
-func RegisterTranscriptionHandler(_ numenv1connect.TranscriptionServiceHandler) {}
-
-// RegisterEmbeddingHandler sets the in-process EmbeddingServiceHandler.
-func RegisterEmbeddingHandler(_ numenv1connect.EmbeddingServiceHandler) {}
+// newPluginHost is the plugin host of this binary.
+func newPluginHost(target string, dirs ...string) port.PluginManager {
+	return container.NewPluginHost(target, dirs...)
+}

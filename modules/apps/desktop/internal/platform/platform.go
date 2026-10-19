@@ -16,7 +16,7 @@ import (
 // it. What a settings file says is read over it.
 func GetConfig() container.Config {
 	return container.Config{
-		PluginHost: container.NewPluginHost("desktop.editor", getPluginsDirs()...),
+		PluginHost: newPluginHost("desktop.editor", getPluginsDirs()...),
 	}
 }
 

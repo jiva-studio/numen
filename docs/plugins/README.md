@@ -10,6 +10,8 @@ Numen plugins follow a dual-mode architectural contract:
 1. **In-tree Monolithic Build**: Plugins compile directly into the application binary for development without IPC overhead.
 2. **Out-of-Process Modular Build**: Plugins execute as independent subprocesses communicating with the core host over loopback Connect-RPC HTTP/2.
 
+In the monolithic build, `modules/apps/desktop-monolith` is the composition root and the one module that names plugins. It registers each plugin it links once, with `app.RegisterPlugin(manifest, serve)`: `manifest` is the plugin's own `manifest.json`, embedded by the package at the root of the plugin's module, and `serve` makes the handler of the plugin's backend from the variables a launched process of it is given. The handler is a linked server of the plugin SDK (`server.NewLinkedHandler`) with the plugin's services mounted on it, so each plugin answers its own services and its own `Configure`. A plugin the monolith does not link is launched as a process.
+
 ### Host Lifecycle & IPC Transport
 
 Plugins communicating over Connect-RPC use loopback TCP:

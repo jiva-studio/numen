@@ -24,11 +24,16 @@ func IsTempDocument(cleanPath string) bool {
 		strings.HasPrefix(filepath.Base(cleanPath), tempDocumentPrefix)
 }
 
-// ValidatePath returns the clean path inside the vault named by NUMEN_VAULT_PATH.
-// A relative path is joined to the vault root, and with no vault root the clean
-// path is returned as given. A clean path for which an allow function returns
-// true is returned without the vault check.
+// ValidatePath returns the clean path inside the vault named by NUMEN_VAULT_PATH, as
+// ValidatePathIn returns it inside that vault.
 func ValidatePath(path string, allow ...func(cleanPath string) bool) (string, error) {
+	return ValidatePathIn(os.Getenv("NUMEN_VAULT_PATH"), path, allow...)
+}
+
+// ValidatePathIn returns the clean path inside the vault at vaultRoot. A relative path is joined
+// to the vault root, and with no vault root the clean path is returned as given. A clean path for
+// which an allow function returns true is returned without the vault check.
+func ValidatePathIn(vaultRoot, path string, allow ...func(cleanPath string) bool) (string, error) {
 	if path == "" {
 		return "", ErrEmptyPath
 	}
@@ -42,7 +47,6 @@ func ValidatePath(path string, allow ...func(cleanPath string) bool) (string, er
 		}
 	}
 
-	vaultRoot := os.Getenv("NUMEN_VAULT_PATH")
 	if vaultRoot == "" {
 		return cleanPath, nil
 	}

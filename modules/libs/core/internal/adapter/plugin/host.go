@@ -91,6 +91,7 @@ type Host struct {
 	hostEndpoint   *HostEndpoint
 	hostAddress    string
 	onnxRuntime    RuntimeProvisioner
+	builtIns       map[string]builtInPlugin
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
@@ -126,6 +127,7 @@ func NewHost(target string, dirs ...string) *Host {
 		hostEndpoint:   nil,
 		hostAddress:    hostEndpointAddress,
 		onnxRuntime:    nil,
+		builtIns:       make(map[string]builtInPlugin),
 	}
 	h.bus = NewEventBus(h, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
@@ -443,13 +445,9 @@ func (h *Host) prepareSupervisorLocked(pluginID string) (DiscoveredPlugin, *Supe
 
 	p, ok := h.plugins[pluginID]
 	if !ok {
-		p, ok = h.resolveMonolithPlugin(pluginID)
-		if !ok {
-			return DiscoveredPlugin{}, nil, &port.UnavailableError{
-				PluginID: pluginID, Reason: port.PluginNotInstalled, Err: errPluginNotFound,
-			}
+		return DiscoveredPlugin{}, nil, &port.UnavailableError{
+			PluginID: pluginID, Reason: port.PluginNotInstalled, Err: errPluginNotFound,
 		}
-		h.plugins[pluginID] = p
 	}
 
 	sup, hasSup := h.supervisors[pluginID]

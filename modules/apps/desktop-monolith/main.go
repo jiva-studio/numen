@@ -3,42 +3,30 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/app"
-	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+	readerepub "github.com/jiva-studio/numen/modules/plugins/reader-epub"
 	epubservice "github.com/jiva-studio/numen/modules/plugins/reader-epub/backend/service"
+	readerpdf "github.com/jiva-studio/numen/modules/plugins/reader-pdf"
 	pdfservice "github.com/jiva-studio/numen/modules/plugins/reader-pdf/backend/service"
 )
 
 func main() {
-	wireMonolithHandlers(appRegistry{})
+	registerPlugins(app.RegisterPlugin)
 	if err := app.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "numen:", err)
 		os.Exit(1)
 	}
 }
 
-// handlerRegistry is where the monolith registers its in-process handlers.
-type handlerRegistry interface {
-	RegisterDocumentHandler(numenv1connect.DocumentServiceHandler)
-	RegisterBookHandler(numenv1connect.BookServiceHandler)
-}
+// serveFunc makes the handler of a plugin's backend from the variables a launched process of the
+// plugin is given.
+type serveFunc = func(vars map[string]string) (http.Handler, error)
 
-type appRegistry struct{}
-
-func (appRegistry) RegisterDocumentHandler(h numenv1connect.DocumentServiceHandler) {
-	app.RegisterDocumentHandler(h)
-}
-
-func (appRegistry) RegisterBookHandler(h numenv1connect.BookServiceHandler) {
-	app.RegisterBookHandler(h)
-}
-
-// wireMonolithHandlers registers the handlers that do real work. A capability
-// with no handler stays unregistered, so the host reports its plugin as
-// unavailable.
-func wireMonolithHandlers(r handlerRegistry) {
-	r.RegisterDocumentHandler(pdfservice.NewDocumentServer())
-	r.RegisterBookHandler(epubservice.NewBookServer())
+// registerPlugins registers each plugin this binary links in, with its own manifest and backend.
+func registerPlugins(register func(manifest []byte, serve serveFunc)) {
+	register(readerpdf.Manifest, pdfservice.NewHandler)
+	register(readerepub.Manifest, epubservice.NewHandler)
 }
