@@ -115,3 +115,16 @@ message GetPluginsRequest {}
 message GetPluginsResponse {
   repeated PluginInfo plugins = 1;
 }
+
+// PluginEventService hands a running plugin an event its manifest's activationEvents subscribe to.
+// A plugin serves it only when it takes events.
+service PluginEventService {
+  rpc DeliverEvent(DeliverEventRequest) returns (DeliverEventResponse);
+}
+
+message DeliverEventRequest {
+  // The event as the host names it, such as onFile:pdf or onCommand:proofread.
+  string event = 1;
+}
+
+message DeliverEventResponse {}

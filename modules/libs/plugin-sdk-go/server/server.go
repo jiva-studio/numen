@@ -151,6 +151,7 @@ type Server struct {
 	shutdownTimeout   time.Duration
 	readHeaderTimeout time.Duration
 	onConfigure       func(ctx context.Context, values map[string]string) error
+	onEvent           EventHandler
 
 	lifecycle   *LifecycleServer
 	interceptor connect.Interceptor
@@ -180,6 +181,9 @@ func New(opts ...Option) *Server {
 	s.lifecycle = NewLifecycleServer(make(chan struct{}), WithLifecycleConfigure(s.onConfigure))
 
 	s.Register(numenv1connect.NewPluginLifecycleServiceHandler(s.lifecycle, s.HandlerOptions()...))
+	if s.onEvent != nil {
+		s.Register(numenv1connect.NewPluginEventServiceHandler(eventServer{handle: s.onEvent}, s.HandlerOptions()...))
+	}
 
 	return s
 }
