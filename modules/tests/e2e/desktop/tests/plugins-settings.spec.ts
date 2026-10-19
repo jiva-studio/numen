@@ -61,7 +61,7 @@ test.describe('Plugin Settings and Configuration', () => {
       .first()
     await expect(language).toBeVisible()
     await language.click()
-    await page.getByRole('menuitemradio', { name: 'es', exact: true }).click()
+    await page.locator('[role="menu"] button', { hasText: /^es$/ }).click()
     await expect(language).toHaveText('es')
   })
 
@@ -104,7 +104,7 @@ test.describe('Plugin Settings and Configuration', () => {
       .first()
     await expect(language).toBeVisible()
     await language.click()
-    await page.getByRole('menuitemradio', { name: 'de', exact: true }).click()
+    await page.locator('[role="menu"] button', { hasText: /^de$/ }).click()
     await expect(language).toHaveText('de')
 
     // Close Settings tab
