@@ -36,7 +36,7 @@ type DocumentPluginHost interface {
 type DocumentBridge struct {
 	host     DocumentPluginHost
 	pluginID string
-	client   numenv1connect.DocumentServiceClient
+	service  pluginService[numenv1connect.DocumentServiceClient]
 	lease    *pluginLease
 }
 
@@ -47,7 +47,7 @@ func OpenDocumentBridge(ctx context.Context, host DocumentPluginHost) (*Document
 		return nil, err
 	}
 
-	client, lease, err := openPlugin(ctx, host, p.Manifest.ID, numenv1connect.NewDocumentServiceClient)
+	_, lease, err := openPlugin(ctx, host, p.Manifest.ID, numenv1connect.NewDocumentServiceClient)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func OpenDocumentBridge(ctx context.Context, host DocumentPluginHost) (*Document
 	return &DocumentBridge{
 		host:     host,
 		pluginID: p.Manifest.ID,
-		client:   client,
+		service:  pluginService[numenv1connect.DocumentServiceClient]{host: host, pluginID: p.Manifest.ID, newClient: numenv1connect.NewDocumentServiceClient},
 		lease:    lease,
 	}, nil
 }
@@ -76,7 +76,13 @@ func (b *DocumentBridge) Read(ctx context.Context, raw []byte) (domain.TextLayer
 	req := connect.NewRequest(&v1.ExtractTextRequest{
 		Data: raw,
 	})
-	resp, err := b.client.ExtractText(ctx, req)
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return domain.TextLayer{}, err
+	}
+	defer func() { _ = call.Close() }()
+
+	resp, err := client.ExtractText(ctx, req)
 	if err != nil {
 		return domain.TextLayer{}, fmt.Errorf("rpc extract text: %w", err)
 	}
@@ -116,7 +122,13 @@ func (b *DocumentBridge) GetHighlights(ctx context.Context, raw []byte, starts [
 	req := connect.NewRequest(&v1.GetHighlightsRequest{
 		Path: tmpPath,
 	})
-	resp, err := b.client.GetHighlights(ctx, req)
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = call.Close() }()
+
+	resp, err := client.GetHighlights(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("rpc get highlights: %w", err)
 	}
@@ -236,29 +248,37 @@ func (b *DocumentBridge) OpenDocument(ctx context.Context, file io.ReadSeekClose
 	req := connect.NewRequest(&v1.GetDocumentRequest{
 		Path: path,
 	})
-	resp, err := b.client.GetDocument(ctx, req)
+	client, held, err := b.service.open(ctx)
 	if err != nil {
+		if cleanup != nil {
+			cleanup()
+		}
+		return nil, err
+	}
+
+	resp, err := client.GetDocument(ctx, req)
+	if err != nil {
+		_ = held.Close()
 		if cleanup != nil {
 			cleanup()
 		}
 		return nil, fmt.Errorf("rpc get document: %w", err)
 	}
 
-	b.host.Acquire(b.pluginID)
 	return &remoteDocument{
-		host:     b.host,
-		pluginID: b.pluginID,
-		client:   b.client,
-		path:     path,
-		pages:    resp.Msg.GetPages(),
-		cleanup:  cleanup,
+		held:    held,
+		service: b.service,
+		path:    path,
+		pages:   resp.Msg.GetPages(),
+		cleanup: cleanup,
 	}, nil
 }
 
+// remoteDocument is a document the plugin holds open. It holds its own reference on the plugin
+// until it is closed, and draws each page at the endpoint the plugin is at then.
 type remoteDocument struct {
-	host      port.PluginActivator
-	pluginID  string
-	client    numenv1connect.DocumentServiceClient
+	held      *pluginLease
+	service   pluginService[numenv1connect.DocumentServiceClient]
 	path      string
 	pages     []*v1.Page
 	cleanup   func()
@@ -287,7 +307,13 @@ func (d *remoteDocument) RenderPage(index, dpi int) (image.Image, error) {
 		Page: int32(index),
 		Dpi:  int32(dpi),
 	})
-	resp, err := d.client.RenderPage(ctx, req)
+	client, call, err := d.service.open(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = call.Close() }()
+
+	resp, err := client.RenderPage(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("rpc render page: %w", err)
 	}
@@ -304,10 +330,7 @@ func (d *remoteDocument) Close() {
 			d.cleanup()
 			d.cleanup = nil
 		}
-		if d.host != nil && d.pluginID != "" {
-			d.host.Release(d.pluginID)
-			d.host = nil
-		}
+		_ = d.held.Close()
 	})
 }
 

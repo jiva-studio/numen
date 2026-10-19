@@ -22,7 +22,7 @@ type EmbedderPluginHost interface {
 type EmbedderBridge struct {
 	host        port.PluginActivator
 	pluginID    string
-	client      numenv1connect.EmbeddingServiceClient
+	service     pluginService[numenv1connect.EmbeddingServiceClient]
 	lease       *pluginLease
 	model       port.EmbeddingModel
 	concurrency int
@@ -63,7 +63,7 @@ func OpenEmbedderBridge(ctx context.Context, host EmbedderPluginHost) (*Embedder
 	return &EmbedderBridge{
 		host:        host,
 		pluginID:    plugin.Manifest.ID,
-		client:      client,
+		service:     pluginService[numenv1connect.EmbeddingServiceClient]{host: host, pluginID: plugin.Manifest.ID, newClient: numenv1connect.NewEmbeddingServiceClient},
 		lease:       lease,
 		model:       model,
 		concurrency: concurrency,
@@ -84,7 +84,13 @@ func (b *EmbedderBridge) Embed(ctx context.Context, texts []string) ([][]float32
 	req := connect.NewRequest(&v1.EmbedBatchRequest{
 		Texts: texts,
 	})
-	resp, err := b.client.EmbedBatch(ctx, req)
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = call.Close() }()
+
+	resp, err := client.EmbedBatch(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("embed batch rpc: %w", err)
 	}

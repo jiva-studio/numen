@@ -56,3 +56,18 @@ func readEnsureActiveError(pluginID string, err error) error {
 	}
 	return &port.UnavailableError{PluginID: pluginID, Reason: port.PluginFailed, Err: err}
 }
+
+// pluginService is one service of a plugin, with a client made for the endpoint
+// the plugin is at when a call is made. A plugin started again on another port
+// is reached there.
+type pluginService[C any] struct {
+	host      port.PluginActivator
+	pluginID  string
+	newClient func(connect.HTTPClient, string, ...connect.ClientOption) C
+}
+
+// open activates the plugin, or finds it running, and returns a client for the
+// endpoint it is at now with the reference the call holds until it is closed.
+func (s pluginService[C]) open(ctx context.Context) (C, *pluginLease, error) {
+	return openPlugin(ctx, s.host, s.pluginID, s.newClient)
+}

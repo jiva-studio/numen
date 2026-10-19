@@ -26,7 +26,7 @@ type DownloaderPluginHost interface {
 type DownloaderBridge struct {
 	host     DownloaderPluginHost
 	pluginID string
-	client   numenv1connect.DownloadServiceClient
+	service  pluginService[numenv1connect.DownloadServiceClient]
 	lease    *pluginLease
 }
 
@@ -37,7 +37,7 @@ func OpenDownloaderBridge(ctx context.Context, host DownloaderPluginHost) (*Down
 		return nil, err
 	}
 
-	client, lease, err := openPlugin(ctx, host, plugin.Manifest.ID, numenv1connect.NewDownloadServiceClient)
+	_, lease, err := openPlugin(ctx, host, plugin.Manifest.ID, numenv1connect.NewDownloadServiceClient)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func OpenDownloaderBridge(ctx context.Context, host DownloaderPluginHost) (*Down
 	return &DownloaderBridge{
 		host:     host,
 		pluginID: plugin.Manifest.ID,
-		client:   client,
+		service:  pluginService[numenv1connect.DownloadServiceClient]{host: host, pluginID: plugin.Manifest.ID, newClient: numenv1connect.NewDownloadServiceClient},
 		lease:    lease,
 	}, nil
 }
@@ -55,7 +55,13 @@ func (b *DownloaderBridge) CanHandle(ctx context.Context, at domain.URL) (bool, 
 	req := connect.NewRequest(&v1.CanHandleRequest{
 		Url: string(at),
 	})
-	resp, err := b.client.CanHandle(ctx, req)
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() { _ = call.Close() }()
+
+	resp, err := client.CanHandle(ctx, req)
 	if err != nil {
 		return false, fmt.Errorf("rpc can handle: %w", err)
 	}
@@ -69,7 +75,13 @@ func (b *DownloaderBridge) GetDownloadModel(ctx context.Context, at domain.URL) 
 	req := connect.NewRequest(&v1.GetDownloadModelRequest{
 		Url: string(at),
 	})
-	resp, err := b.client.GetDownloadModel(ctx, req)
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return port.DownloadModel{}, err
+	}
+	defer func() { _ = call.Close() }()
+
+	resp, err := client.GetDownloadModel(ctx, req)
 	if err != nil {
 		return port.DownloadModel{}, fmt.Errorf("rpc get download model: %w", err)
 	}
@@ -91,7 +103,13 @@ func (b *DownloaderBridge) GetMetadata(ctx context.Context, at domain.URL) (port
 	req := connect.NewRequest(&v1.GetMetadataRequest{
 		Url: string(at),
 	})
-	resp, err := b.client.GetMetadata(ctx, req)
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return port.Metadata{}, err
+	}
+	defer func() { _ = call.Close() }()
+
+	resp, err := client.GetMetadata(ctx, req)
 	if err != nil {
 		return port.Metadata{}, fmt.Errorf("rpc get metadata: %w", err)
 	}
@@ -121,7 +139,13 @@ func (b *DownloaderBridge) GetText(ctx context.Context, at domain.URL, want port
 			IsAutomatic: want.IsAutomatic,
 		},
 	})
-	resp, err := b.client.GetText(ctx, req)
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return port.Text{}, err
+	}
+	defer func() { _ = call.Close() }()
+
+	resp, err := client.GetText(ctx, req)
 	if err != nil {
 		var connErr *connect.Error
 		if errors.As(err, &connErr) && connErr.Code() == connect.CodeNotFound {
@@ -159,7 +183,13 @@ func (b *DownloaderBridge) Download(ctx context.Context, at domain.URL, into io.
 	req := connect.NewRequest(&v1.DownloadMediaRequest{
 		Url: string(at),
 	})
-	stream, err := b.client.DownloadMedia(ctx, req)
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return port.Copy{}, err
+	}
+	defer func() { _ = call.Close() }()
+
+	stream, err := client.DownloadMedia(ctx, req)
 	if err != nil {
 		var connErr *connect.Error
 		if errors.As(err, &connErr) && connErr.Code() == connect.CodeNotFound {

@@ -193,7 +193,7 @@ func TestDocumentBridgeNoPlugin(t *testing.T) {
 }
 
 func TestRemoteDocumentRenderPageRejectsOutOfRangeInputs(t *testing.T) {
-	// The nil client panics on any call, so a rejected input never reaches it.
+	// The zero service panics on any call, so a rejected input never reaches it.
 	doc := &remoteDocument{}
 	beyond := int64(math.MaxInt32) + 1
 	cases := []struct {
