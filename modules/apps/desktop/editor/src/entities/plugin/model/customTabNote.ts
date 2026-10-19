@@ -57,6 +57,16 @@ const applyRead = (at: string, result: NoteRead, state: NoteReadState): void => 
   if (error) state.errorMessage.value = error
 }
 
+const finishRead = (at: string, result: NoteRead, state: NoteReadState): void => {
+  state.isLoading.value = false
+  if (!state.hasEdited()) applyRead(at, result, state)
+}
+
+const failRead = (err: unknown, state: NoteReadState): void => {
+  state.isLoading.value = false
+  state.errorMessage.value = getErrorMessage(err)
+}
+
 /** The body the first read gives, unless the tab was edited while it was in flight. */
 export const startNoteRead = (
   at: string,
@@ -64,12 +74,6 @@ export const startNoteRead = (
   state: NoteReadState,
 ): void => {
   readNote(at)
-    .then((result) => {
-      state.isLoading.value = false
-      if (!state.hasEdited()) applyRead(at, result, state)
-    })
-    .catch((err) => {
-      state.isLoading.value = false
-      state.errorMessage.value = getErrorMessage(err)
-    })
+    .then((result) => finishRead(at, result, state))
+    .catch((err) => failRead(err, state))
 }
