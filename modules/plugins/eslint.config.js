@@ -12,11 +12,14 @@ const fixtureReaders = ['reader-epub/frontend/lib/markup.test.ts']
 /** The harness the stories of every plugin are drawn in, which belongs to no plugin. */
 const storyHarness = ['.storybook/**']
 
+/** The build configuration of each plugin, which reads the build every plugin shares from `../vite.shared`. */
+const buildConfigs = ['*/vite.config.ts', '*/vitest.config.ts']
+
 const hostMessage =
   'plugins must not import host internals (@/*); use @numen/plugin-sdk or @numen/ui instead'
 
 /** Imports a plugin frontend may not write, given how far out of its directory a relative path reaches. */
-function createRestrictions(escapes) {
+function createRestrictions(escapes, shared) {
   return [
     'error',
     {
@@ -48,7 +51,7 @@ function createRestrictions(escapes) {
           ? []
           : [
               {
-                regex: `^(\\.\\./){${escapes},}`,
+                regex: `^(\\.\\./){${escapes},}${shared === undefined ? '' : `(?!${shared}$)`}`,
                 message: 'a plugin names only files of its own directory',
               },
             ]),
@@ -66,10 +69,14 @@ function pluginImportBlocks() {
     const dirs = '*/'.repeat(depth)
     blocks.push({
       files: [`${dirs}*.{ts,vue}`],
-      ignores: [...fixtureReaders, ...storyHarness],
+      ignores: [...fixtureReaders, ...storyHarness, ...(depth === 1 ? buildConfigs : [])],
       rules: { 'no-restricted-imports': createRestrictions(depth) },
     })
   }
+  blocks.push({
+    files: buildConfigs,
+    rules: { 'no-restricted-imports': createRestrictions(1, 'vite\\.shared') },
+  })
   return blocks
 }
 
