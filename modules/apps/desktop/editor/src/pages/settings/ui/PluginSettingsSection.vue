@@ -63,7 +63,7 @@ function getAgentChoices(choice: CompletionChoice) {
 }
 
 /** The models of the agent the setting names, and none while it names the default. */
-function getModelChoices(choice: CompletionChoice) {
+const getModelChoices = (choice: CompletionChoice) => {
   if (choice.agent === '') return null
   return createAgentModelChoices(findAgent(agents.value, choice.agent), choice.model, words)
 }
