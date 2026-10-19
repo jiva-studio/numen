@@ -112,6 +112,11 @@ func writeScript(t *testing.T, name, body string) string {
 	return path
 }
 
+// quoteShell wraps a string in single quotes with escaped internal single quotes for shell scripts.
+func quoteShell(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+}
+
 // startAgent serves the agent over HTTP and answers with a client of it.
 func startAgent(t *testing.T) numenv1connect.AgentServiceClient {
 	t.Helper()

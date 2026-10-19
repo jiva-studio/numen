@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -27,10 +29,12 @@ func TestCodexModelCacheClearsFailedKeyOnSuccess(t *testing.T) {
 		t.Fatal("expected failedKey to be set")
 	}
 
-	_ = os.WriteFile(failing, []byte("#!/bin/sh\n"+
+	if err := os.WriteFile(failing, []byte("#!/bin/sh\n"+
 		`echo '{"id":1,"result":{}}'`+"\n"+
 		`echo '{"id":2,"result":{"data":[{"model":"gpt-ok"}]}}'`+"\n"+
-		"while read -r _; do :; done\n"), 0o755)
+		"while read -r _; do :; done\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
 
 	now = now.Add(codexFailureBackoff)
 	got := cache.get(t.Context(), []string{failing})
@@ -75,7 +79,7 @@ func TestAskCodexModelsCommandArguments(t *testing.T) {
 	needsShell(t)
 	out := filepath.Join(t.TempDir(), "args")
 	script := writeScript(t, "codex",
-		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+"\n"+
+		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+quoteShell(out)+"\n"+
 			`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"m1"}]}}'`+"\n"+
 			"while read -r _; do :; done\n")
@@ -106,20 +110,44 @@ func TestAskCodexModelsStartFailure(t *testing.T) {
 
 func TestAskCodexModelsStopsCommand(t *testing.T) {
 	needsShell(t)
+	pidFile := filepath.Join(t.TempDir(), "pid")
 	script := writeScript(t, "codex",
-		`echo '{"id":1,"result":{}}'`+"\n"+
+		fmt.Sprintf("echo $$ > %s\n", quoteShell(pidFile))+
+			`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"m1"}]}}'`+"\n"+
 			"while :; do sleep 0.05; done\n")
 
 	ctx, cancel := context.WithTimeout(t.Context(), 3*time.Second)
 	defer cancel()
 
+	start := time.Now()
 	models, err := askCodexModels(ctx, []string{script})
+	elapsed := time.Since(start)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(models) != 1 {
 		t.Fatalf("expected 1 model, got %v", models)
+	}
+	if elapsed > 2*time.Second {
+		t.Errorf("expected prompt return, took %v", elapsed)
+	}
+
+	pidBytes, err := os.ReadFile(pidFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(pidBytes)))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	proc, err := os.FindProcess(pid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := proc.Signal(syscall.Signal(0)); !errors.Is(err, os.ErrProcessDone) && !errors.Is(err, syscall.ESRCH) {
+		t.Fatalf("expected process %d to be stopped and reaped, got %v", pid, err)
 	}
 }
 

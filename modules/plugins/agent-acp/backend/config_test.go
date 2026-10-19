@@ -52,3 +52,30 @@ func TestParseSimpleToml(t *testing.T) {
 	}
 }
 
+func isolateWithoutHome(t *testing.T) {
+	t.Helper()
+	t.Setenv("HOME", "")
+	t.Setenv("USERPROFILE", "")
+	t.Setenv("HOMEDRIVE", "")
+	t.Setenv("HOMEPATH", "")
+	if _, err := os.UserHomeDir(); err == nil {
+		t.Skip("this platform finds a home without any environment")
+	}
+}
+
+func TestReadCodexConfigFailsWithoutHome(t *testing.T) {
+	isolateWithoutHome(t)
+	cfg, err := ReadCodexConfig()
+	if err == nil {
+		t.Fatalf("expected error reading codex config without home directory, got %v", cfg)
+	}
+}
+
+func TestReadAntigravityConfigFailsWithoutHome(t *testing.T) {
+	isolateWithoutHome(t)
+	cfg, err := ReadAntigravityConfig()
+	if err == nil {
+		t.Fatalf("expected error reading antigravity config without home directory, got %v", cfg)
+	}
+}
+

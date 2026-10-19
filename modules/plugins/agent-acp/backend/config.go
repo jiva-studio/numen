@@ -22,7 +22,6 @@ type AntigravityConfig struct {
 // ReadCodexConfig reads the OpenAI Codex configuration from standard locations.
 func ReadCodexConfig() (*CodexConfig, error) {
 	home, err := os.UserHomeDir()
-	// gomutants:disable-next-line BRANCH_IF reason="os.UserHomeDir fails only when user home directory cannot be determined"
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +43,6 @@ func ReadCodexConfig() (*CodexConfig, error) {
 // ReadAntigravityConfig reads the Google Antigravity CLI configuration from standard locations.
 func ReadAntigravityConfig() (*AntigravityConfig, error) {
 	home, err := os.UserHomeDir()
-	// gomutants:disable-next-line BRANCH_IF reason="os.UserHomeDir fails only when user home directory cannot be determined"
 	if err != nil {
 		return nil, err
 	}

@@ -53,7 +53,7 @@ func TestStartRunWorkBufferCapacity(t *testing.T) {
 func TestConfigureCommandTokenEnv(t *testing.T) {
 	needsShell(t)
 	out := filepath.Join(t.TempDir(), "token")
-	script := writeScript(t, "runner", "printf '%s' \"$NUMEN_TOKEN\" > "+out+"\n")
+	script := writeScript(t, "runner", "printf '%s' \"$NUMEN_TOKEN\" > "+quoteShell(out)+"\n")
 	runner := &AgentRunner{Registry: &agentrun.Registry{}}
 
 	w, err := runner.StartRun(t.Context(), RunParams{
@@ -129,7 +129,7 @@ func TestStartRunProgramDetection(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			out := filepath.Join(t.TempDir(), "args")
-			script := writeScript(t, tc.scriptName, "for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+"\n")
+			script := writeScript(t, tc.scriptName, "for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+quoteShell(out)+"\n")
 			runner := &AgentRunner{Registry: &agentrun.Registry{}}
 
 			w, err := runner.StartRun(t.Context(), RunParams{
