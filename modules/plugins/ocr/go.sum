@@ -1,7 +1,7 @@
-connectrpc.com/connect v1.21.0 h1:LhqSJt7jHf5NJBo9Jq/t/9FjcYAideif0mg+qe2jCUs=
-connectrpc.com/connect v1.21.0/go.mod h1:A2ygJrukXwWy32vkCAAHNVguZrqZ+jeZ9rGRnGR4dN4=
-github.com/ebitengine/purego v0.11.0 h1:jhp/D+Nyv7UUW8HAcmcjt2N2rYrYi9m3SL21k0Ua/NI=
-github.com/ebitengine/purego v0.11.0/go.mod h1:DCHPP08djqhNSoTfImcnHYQRZmd0qhakvrozqaEYhGQ=
+connectrpc.com/connect v1.21.1 h1:h2kacdlzXpZU2OQFSv98xkjYXNUSr/ptxmGVbS/+CRM=
+connectrpc.com/connect v1.21.1/go.mod h1:fhMcVJ5w6r/yTYhnkEbW6+sIF7OZ5Ay7KYgmfebh2ek=
+github.com/ebitengine/purego v0.11.1 h1:2zpWRSQNVKN4eKsKO9eM1ILDgWfYMY9GwqRmK6XeQ/0=
+github.com/ebitengine/purego v0.11.1/go.mod h1:DCHPP08djqhNSoTfImcnHYQRZmd0qhakvrozqaEYhGQ=
 github.com/getcharzp/go-ocr v0.0.0-20260818071741-a892e438f08d h1:kyS3N5yt90bOogWJ/U695Ske/CtP9jtn8JYnjUPWdWM=
 github.com/getcharzp/go-ocr v0.0.0-20260818071741-a892e438f08d/go.mod h1:2MBjAl0RZOpexoNRywB+yjpXd018HH3AVlV3EZBpTAE=
 github.com/getcharzp/onnxruntime_purego v1.24.0 h1:EP5pb4B12pqkrQT/Z5Und7KiZaTl0zhFGch/w1hDsMY=
