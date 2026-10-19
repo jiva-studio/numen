@@ -7,6 +7,7 @@ import (
 	"image"
 	"io"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -117,11 +118,14 @@ const contractPluginID = "md.numen.stub"
 // what is wrong with the way it refuses. A plugin that is down, and one that is
 // not installed, fail the bridge with port.ErrUnavailable, at the open or at the
 // call, and never with a value.
-func listRefusalProblems(ctx context.Context, host bridgeHost, open func(context.Context, bridgeHost) (io.Closer, bridgeCall, error), isRefusal func(error) bool) []string {
-	var problems []string
+func listRefusalProblems(ctx context.Context, host bridgeHost, open func(context.Context, bridgeHost) (io.Closer, bridgeCall, error), isRefusal func(error) bool) (problems []string) {
 	bridge, call, err := open(ctx, host)
 	if err == nil {
-		defer func() { _ = bridge.Close() }()
+		defer func() {
+			if closeErr := bridge.Close(); closeErr != nil {
+				problems = append(problems, fmt.Sprintf("closing the bridge failed: %v", closeErr))
+			}
+		}()
 		var isZero bool
 		isZero, err = call(ctx)
 		if err == nil {
@@ -182,42 +186,53 @@ type brokenBridge struct{}
 
 func (brokenBridge) Close() error { return nil }
 
+type failingBridge struct{}
+
+func (failingBridge) Close() error { return errors.New("not closed") }
+
 // The check refuses each way a bridge can answer a plugin that cannot answer
 // wrongly, and passes the way it should.
 func TestTheRefusalCheckRefusesABridgeThatAnswersWrongly(t *testing.T) {
 	cases := []struct {
 		name string
 		open func(context.Context, bridgeHost) (io.Closer, bridgeCall, error)
-		want int
+		// want is what the problems say, and empty where there are none.
+		want string
 	}{
 		{"a refusal with no value", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
 			return nil, nil, &port.UnavailableError{Reason: port.PluginNotInstalled}
-		}, 0},
+		}, ""},
 		{"a call that fails as it should", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
 			return brokenBridge{}, func(context.Context) (bool, error) {
 				return true, &port.UnavailableError{Reason: port.PluginNotInstalled}
 			}, nil
-		}, 0},
+		}, ""},
 		{"a bridge returned with the error", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
 			return brokenBridge{}, nil, &port.UnavailableError{Reason: port.PluginNotInstalled}
-		}, 1},
+		}, "a bridge was returned"},
 		{"a call that succeeds", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
 			return brokenBridge{}, func(context.Context) (bool, error) { return false, nil }, nil
-		}, 1},
+		}, "returned no error"},
 		{"a value with the error", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
 			return brokenBridge{}, func(context.Context) (bool, error) {
 				return false, &port.UnavailableError{Reason: port.PluginNotInstalled}
 			}, nil
-		}, 1},
+		}, "a value was returned"},
+		{"a bridge that fails to close", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
+			return failingBridge{}, func(context.Context) (bool, error) {
+				return true, &port.UnavailableError{Reason: port.PluginNotInstalled}
+			}, nil
+		}, "closing the bridge failed"},
 		{"an error that is not unavailable", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
 			return brokenBridge{}, func(context.Context) (bool, error) { return true, errors.New("boom") }, nil
-		}, 1},
+		}, "not the refusal asked for"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			got := listRefusalProblems(t.Context(), nil, tc.open, isNotInstalled)
-			if len(got) != tc.want {
-				t.Errorf("%d problems found, want %d: %v", len(got), tc.want, got)
+			joined := strings.Join(got, "; ")
+			if tc.want == "" && len(got) != 0 || !strings.Contains(joined, tc.want) {
+				t.Errorf("problems found: %q, want %q", joined, tc.want)
 			}
 		})
 	}
