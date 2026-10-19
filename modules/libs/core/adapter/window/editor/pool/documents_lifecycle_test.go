@@ -218,9 +218,9 @@ func TestADocumentThatCannotBeOpenedIsReportedAndNotKept(t *testing.T) {
 	if attempts != 2 {
 		t.Errorf("the file was read %d times, want 2", attempts)
 	}
-	waitFor(t, "the failed document is forgotten", func() bool {
-		return getOpenCount(docs) == 1 && slices.Equal(getOrder(docs), []document.Fingerprint{markOf("good")})
-	})
+	if getOpenCount(docs) != 1 || !slices.Equal(getOrder(docs), []document.Fingerprint{markOf("good")}) {
+		t.Errorf("the failed document is still held: %d open, order %v", getOpenCount(docs), getOrder(docs))
+	}
 }
 
 func TestADocumentAskedAfterTheWindowWentDoesNotLockTheWindow(t *testing.T) {
@@ -616,5 +616,25 @@ func TestRetiringClosesOnlyTheDocumentNobodyHolds(t *testing.T) {
 	docs.CloseIfIdle(markOf("a"), doc)
 	if !s.isClosed() || getOpenCount(docs) != 0 || len(getOrder(docs)) != 0 {
 		t.Error("an idle document was not retired")
+	}
+}
+
+func TestADocumentGivenBackAfterItWasReplacedLeavesTheReplacementHeld(t *testing.T) {
+	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
+	mark := markOf("a")
+	failed := &Document{uses: 1}
+	replacement := &Document{uses: 1}
+	docs.open[mark] = replacement
+	docs.isClosing = true
+
+	docs.Release(mark, failed)
+
+	if docs.open[mark] != replacement {
+		t.Error("giving back the document that failed removed the one that replaced it")
+	}
+	select {
+	case <-docs.empty:
+		t.Error("the window was told nothing is open while the replacement is held")
+	default:
 	}
 }
