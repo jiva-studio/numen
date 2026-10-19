@@ -123,7 +123,7 @@ func newLaunchedHost(t *testing.T) port.PluginManager {
 // askBuild puts a chat, a single answer and a document to the plugins of a host.
 func askBuild(t *testing.T, host port.PluginManager, chatURL string) answers {
 	t.Helper()
-	host.SetKeyStore(heldKeys{agentID + "/apiKey": "chat-key"})
+	host.SetKeyStore(heldKeys{"md.numen.agent/apiKey": "chat-key"})
 	host.SetSettings(map[string]map[string]any{
 		agentID: {"baseUrl": chatURL, "model": "small-model", port.SettingStoredSecrets: []any{"apiKey"}},
 	})
