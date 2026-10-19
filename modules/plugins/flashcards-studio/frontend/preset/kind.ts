@@ -69,11 +69,13 @@ interface KindDeps {
   bounds: Ref<SettingsBounds>
   core: Presets
   today: () => string
-  flush: (path: string) => Promise<void>
+  /** The preset each tab state was made for, which stays the one it was made for wherever its file goes. */
+  states: WeakMap<PresetTabState, OpenPreset>
+  flush: (state: PresetTabState) => Promise<void>
 }
 
 function createPresetKind(deps: KindDeps): TabKindRegistration<PresetTabState> {
-  const { context, open, titles, bounds, core, today, flush } = deps
+  const { context, open, titles, bounds, core, today, states, flush } = deps
   const getTitle = (path: string): string =>
     titles.get(path) || getFileName(path) || words.newPreset
 
@@ -85,7 +87,9 @@ function createPresetKind(deps: KindDeps): TabKindRegistration<PresetTabState> {
       const one = createOpenPreset(path, today(), bounds.value)
       open.set(path, one)
       void readPreset(one, { core, bounds, titles, today: today() })
-      return createPresetState(one, path, context)
+      const state = createPresetState(one, path, context)
+      states.set(state, one)
+      return state
     },
     getTitle: (one) => getTitle(one.id),
     identity: (path) => path,
@@ -96,7 +100,7 @@ function createPresetKind(deps: KindDeps): TabKindRegistration<PresetTabState> {
       return false
     },
     onDestroy: () => {},
-    flushPending: (one) => flush(one.id),
+    flushPending: (one) => flush(one),
     createFile: (folder, name) => core.createPreset(name, folder),
     resolveCommand: async (at, command, type) => {
       if (command !== 'preset') return null
@@ -153,12 +157,23 @@ export function usePresetTab(deps: PresetTabDeps) {
     })
   }
 
-  const flushPath = async (path: string): Promise<void> => {
-    const one = open.get(path)
+  const states = new WeakMap<PresetTabState, OpenPreset>()
+
+  const flushState = async (state: PresetTabState): Promise<void> => {
+    const one = states.get(state)
     if (one) await flushOne(one)
   }
 
-  const kind = createPresetKind({ context, open, titles, bounds, core, today, flush: flushPath })
+  const kind = createPresetKind({
+    context,
+    open,
+    titles,
+    bounds,
+    core,
+    today,
+    states,
+    flush: flushState,
+  })
 
   const applyPathChanges = (
     paths: readonly string[],

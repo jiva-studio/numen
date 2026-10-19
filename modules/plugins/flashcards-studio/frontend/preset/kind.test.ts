@@ -1225,6 +1225,16 @@ describe('what the window asks of a preset tab', () => {
     expect(written.at(-1)?.newADay).toBe(4)
   })
 
+  it('is to write what a preset owes out wherever its file went since the tab opened', async () => {
+    const { state, written, kind } = await openPresetTab()
+    state.updateSetting('newADay', 4)
+    kind.applyPathChanges(['Beside.md'], [{ from: 'Steady.md', to: 'Beside.md' }])
+
+    await kind.kind.flushPending?.(state)
+
+    expect(written.at(-1)?.newADay).toBe(4)
+  })
+
   it('is to write nothing for a tab it does not hold', async () => {
     const { written, kind } = await openPresetTab()
 

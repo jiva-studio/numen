@@ -153,15 +153,19 @@ function guardAgent(
 }
 
 /** The open files of the window, their being written out held to `vault:write`. */
-function guardBuffers(buffers: BufferHost, requireWrite: (operation: string) => void): BufferHost {
+function guardBuffers(
+  buffers: BufferHost,
+  requireWrite: (operation: string) => void,
+  add: (disposable: Disposable) => Disposable,
+): BufferHost {
   return {
     track: (open) => {
       requireWrite('buffers.track')
-      return buffers.track(open)
+      return add(buffers.track(open))
     },
     addFlushHandler: (handler) => {
       requireWrite('buffers.addFlushHandler')
-      return buffers.addFlushHandler(handler)
+      return add(buffers.addFlushHandler(handler))
     },
   }
 }
@@ -199,6 +203,7 @@ function guardService<K extends keyof Services, S>(
 function guardServices(
   host: PluginContextHost,
   requirePerm: (permission: string, operation: string) => void,
+  add: (disposable: Disposable) => Disposable,
 ): Services {
   const requireWrite = (operation: string) => requirePerm('vault:write', operation)
   return {
@@ -206,7 +211,7 @@ function guardServices(
     ...guardService('notes', host.getNotes?.(), (one) => guardNotes(one, requireWrite)),
     ...guardService('files', host.getFiles?.(), (one) => guardFiles(one, requireWrite)),
     ...guardService('agent', host.getAgent?.(), (one) => guardAgent(one, requirePerm)),
-    ...guardService('buffers', host.getBuffers?.(), (one) => guardBuffers(one, requireWrite)),
+    ...guardService('buffers', host.getBuffers?.(), (one) => guardBuffers(one, requireWrite, add)),
   }
 }
 
@@ -223,7 +228,7 @@ export function createPluginContext(
   return {
     pluginId,
     subscriptions,
-    ...guardServices(host, requirePerm),
+    ...guardServices(host, requirePerm, add),
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
     registerTabKind: <State>(reg: TabKindRegistration<State>) =>

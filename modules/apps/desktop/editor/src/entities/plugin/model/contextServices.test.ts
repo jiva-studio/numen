@@ -162,6 +162,22 @@ describe('the open files a plugin hands the window', () => {
   })
 })
 
+describe('the registrations of a plugin in the open files', () => {
+  it('are released when the plugin is disposed', () => {
+    const { context, buffers } = createContext(['vault:write'])
+    const released = vi.fn()
+    vi.mocked(buffers.track).mockReturnValue({ dispose: released })
+    vi.mocked(buffers.addFlushHandler).mockReturnValue({ dispose: released })
+
+    context.buffers!.track({} as never)
+    context.buffers!.addFlushHandler(async () => {})
+    expect(context.subscriptions).toHaveLength(2)
+    for (const one of [...context.subscriptions]) one.dispose()
+
+    expect(released).toHaveBeenCalledTimes(2)
+  })
+})
+
 describe('a file a plugin writes', () => {
   it.each(Object.entries(FILE_WRITES))(
     'is refused through %s without vault:write',
