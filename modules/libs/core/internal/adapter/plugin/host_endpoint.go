@@ -226,6 +226,12 @@ func (h *Host) getLaunchVars(ctx context.Context, pluginID, pluginDir string, ru
 	if err != nil {
 		return nil, fmt.Errorf("launch plugin %s: %w", pluginID, err)
 	}
+	return h.getEnvironmentVars(ctx, pluginID, processPort, token, runtimeVars), nil
+}
+
+// getEnvironmentVars is the environment variables of a plugin about to start, with the variables of
+// the runtimes it was provisioned.
+func (h *Host) getEnvironmentVars(ctx context.Context, pluginID string, processPort int, token string, runtimeVars []string) []string {
 	hostPort, err := h.openHostEndpoint(ctx)
 	if err != nil {
 		h.reportError(fmt.Errorf("open host endpoint for plugin %s: %w", pluginID, err))
@@ -235,7 +241,7 @@ func (h *Host) getLaunchVars(ctx context.Context, pluginID, pluginDir string, ru
 	defer h.mu.RUnlock()
 	return getPluginVars(pluginID, launchEnvironment{
 		vaultPath: h.vaultPath, port: processPort, hostPort: hostPort, token: token, runtimeVars: runtimeVars,
-	}), nil
+	})
 }
 
 // checkLoopback accepts only an address that names a loopback IP: an empty host

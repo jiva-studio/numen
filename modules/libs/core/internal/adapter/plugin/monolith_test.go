@@ -1,13 +1,17 @@
 //go:build plugins_monolith
 
-package plugin_test
+package plugin
 
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -15,261 +19,268 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-type mockDocumentServer struct {
-	numenv1connect.UnimplementedDocumentServiceHandler
+const (
+	firstBuiltInID  = "md.example.first"
+	secondBuiltInID = "md.example.second"
+)
+
+// newBuiltInManifest is the manifest.json of an agent plugin that declares the apiKey secret, a
+// model setting and the runtimes given.
+func newBuiltInManifest(id string, runtimes ...string) []byte {
+	declared := ""
+	if len(runtimes) > 0 {
+		declared = fmt.Sprintf(`"runtimes": [%q],`, strings.Join(runtimes, `","`))
+	}
+	return fmt.Appendf(nil, `{
+		"id": %q,
+		"name": "Example Agent",
+		"version": "1.0.0",
+		"capabilities": ["agent"],
+		"targets": ["desktop.editor"],
+		"permissions": [],
+		%s
+		"secrets": ["apiKey"],
+		"backend": {"type": "process", "entrypoint": "bin/example", "serviceName": "numen.v1.AgentService"},
+		"settings": [{"key": "model", "type": "string", "title": "Model", "default": "small-model"}]
+	}`, id, declared)
 }
 
-func (s *mockDocumentServer) ExtractText(
-	_ context.Context,
-	_ *connect.Request[v1.ExtractTextRequest],
-) (*connect.Response[v1.ExtractTextResponse], error) {
-	return connect.NewResponse(&v1.ExtractTextResponse{
-		Text: "in-process document text",
-	}), nil
-}
-
-type mockRecognitionServer struct {
-	numenv1connect.UnimplementedRecognitionServiceHandler
-}
-
-func (s *mockRecognitionServer) GetRecognitionModel(
-	_ context.Context,
-	_ *connect.Request[v1.GetRecognitionModelRequest],
-) (*connect.Response[v1.GetRecognitionModelResponse], error) {
-	return connect.NewResponse(&v1.GetRecognitionModelResponse{
-		Layout:     "monolith-layout",
-		Recogniser: "monolith-recog",
-	}), nil
-}
-
-type mockBookServer struct {
-	numenv1connect.UnimplementedBookServiceHandler
-}
-
-func (s *mockBookServer) GetBook(
-	_ context.Context,
-	_ *connect.Request[v1.GetBookRequest],
-) (*connect.Response[v1.GetBookResponse], error) {
-	return connect.NewResponse(&v1.GetBookResponse{
-		Title: "In-Process Book",
-	}), nil
-}
-
-type mockTranscriptionServer struct {
-	numenv1connect.UnimplementedTranscriptionServiceHandler
-}
-
-func (s *mockTranscriptionServer) GetTranscriptionModel(
-	_ context.Context,
-	_ *connect.Request[v1.GetTranscriptionModelRequest],
-) (*connect.Response[v1.GetTranscriptionModelResponse], error) {
-	return connect.NewResponse(&v1.GetTranscriptionModelResponse{
-		Model: "monolith-parakeet",
-	}), nil
-}
-
-type mockEmbeddingServer struct {
-	numenv1connect.UnimplementedEmbeddingServiceHandler
-}
-
-func (s *mockEmbeddingServer) GetEmbeddingModel(
-	_ context.Context,
-	_ *connect.Request[v1.GetEmbeddingModelRequest],
-) (*connect.Response[v1.GetEmbeddingModelResponse], error) {
-	return connect.NewResponse(&v1.GetEmbeddingModelResponse{
-		Name:       "bge-m3-inprocess",
-		Dimensions: 1024,
-	}), nil
-}
-
-type mockDownloadServer struct {
-	numenv1connect.UnimplementedDownloadServiceHandler
-}
-
-func (s *mockDownloadServer) GetDownloadModel(
-	_ context.Context,
-	_ *connect.Request[v1.GetDownloadModelRequest],
-) (*connect.Response[v1.GetDownloadModelResponse], error) {
-	return connect.NewResponse(&v1.GetDownloadModelResponse{
-		Tool: "yt-dlp",
-	}), nil
-}
-
-type mockAgentServer struct {
+// agentPrompt answers GetAgentTools with its own prompt.
+type agentPrompt struct {
 	numenv1connect.UnimplementedAgentServiceHandler
+	prompt string
 }
 
-func (s *mockAgentServer) GetAgentTools(
-	_ context.Context,
-	_ *connect.Request[v1.GetAgentToolsRequest],
+func (a *agentPrompt) GetAgentTools(
+	_ context.Context, _ *connect.Request[v1.GetAgentToolsRequest],
 ) (*connect.Response[v1.GetAgentToolsResponse], error) {
-	return connect.NewResponse(&v1.GetAgentToolsResponse{
-		SystemPromptExtension: "monolith agent prompt",
-	}), nil
+	return connect.NewResponse(&v1.GetAgentToolsResponse{SystemPromptExtension: a.prompt}), nil
 }
 
-type mockProofreadingServer struct {
-	numenv1connect.UnimplementedProofreadingServiceHandler
+// builtInBackend is the backend of one built-in plugin: the variables it was made with and the
+// Configure calls it received.
+type builtInBackend struct {
+	mu    sync.Mutex
+	vars  []map[string]string
+	probe *configured
 }
 
-func (s *mockProofreadingServer) GetProofreaderInfo(
-	_ context.Context,
-	_ *connect.Request[v1.GetProofreaderInfoRequest],
-) (*connect.Response[v1.GetProofreaderInfoResponse], error) {
-	return connect.NewResponse(&v1.GetProofreaderInfoResponse{
-		Name: "monolith-proofreader",
-	}), nil
+func (b *builtInBackend) serve(prompt string) func(map[string]string) (http.Handler, error) {
+	return func(vars map[string]string) (http.Handler, error) {
+		b.mu.Lock()
+		b.vars = append(b.vars, vars)
+		b.mu.Unlock()
+		mux := http.NewServeMux()
+		mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(b.probe))
+		mux.Handle(numenv1connect.NewAgentServiceHandler(&agentPrompt{prompt: prompt}))
+		return mux, nil
+	}
 }
 
-func TestMonolithInProcessDispatch(t *testing.T) {
-	plugin.ClearMonolithHandlers()
-	defer plugin.ClearMonolithHandlers()
-	t.Setenv(plugin.EnvONNXRuntimeLib, "")
-	t.Setenv(plugin.EnvONNXProvider, "")
+func (b *builtInBackend) lastVars(t *testing.T) map[string]string {
+	t.Helper()
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if len(b.vars) == 0 {
+		t.Fatal("the built-in plugin was never served")
+	}
+	return b.vars[len(b.vars)-1]
+}
 
-	plugin.RegisterDocumentServiceHandler(&mockDocumentServer{})
-	plugin.RegisterRecognitionServiceHandler(&mockRecognitionServer{})
-	plugin.RegisterBookServiceHandler(&mockBookServer{})
-	plugin.RegisterTranscriptionServiceHandler(&mockTranscriptionServer{})
-	plugin.RegisterEmbeddingServiceHandler(&mockEmbeddingServer{})
-	plugin.RegisterDownloadServiceHandler(&mockDownloadServer{})
-	plugin.RegisterAgentServiceHandler(&mockAgentServer{})
-	plugin.RegisterProofreadingServiceHandler(&mockProofreadingServer{})
+func newBuiltInBackend() *builtInBackend {
+	return &builtInBackend{probe: &configured{}}
+}
 
-	host := plugin.NewHost("desktop.editor")
-	host.SetRuntimeProvisioner(fixedProvisioner{library: "/models/libonnxruntime.so", provider: "cpu"})
+func newBuiltInHost(t *testing.T, dirs ...string) *Host {
+	t.Helper()
+	host := NewHost("desktop.editor", dirs...)
+	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	return host
+}
+
+func registerBuiltIn(t *testing.T, host *Host, manifest []byte, serve func(map[string]string) (http.Handler, error)) {
+	t.Helper()
+	if err := host.RegisterBuiltIn(manifest, serve); err != nil {
+		t.Fatalf("RegisterBuiltIn: %v", err)
+	}
+}
+
+func getAgentPrompt(t *testing.T, endpoint Endpoint) string {
+	t.Helper()
+	client := numenv1connect.NewAgentServiceClient(EndpointClient(endpoint), endpoint.BaseURL())
+	res, err := client.GetAgentTools(t.Context(), connect.NewRequest(&v1.GetAgentToolsRequest{}))
+	if err != nil {
+		t.Fatalf("GetAgentTools: %v", err)
+	}
+	return res.Msg.GetSystemPromptExtension()
+}
+
+// Two built-in plugins serving the same service each answer from their own handler.
+func TestEachBuiltInPluginAnswersFromItsOwnHandler(t *testing.T) {
+	host := newBuiltInHost(t)
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), newBuiltInBackend().serve("first agent"))
+	registerBuiltIn(t, host, newBuiltInManifest(secondBuiltInID), newBuiltInBackend().serve("second agent"))
+
+	for id, want := range map[string]string{firstBuiltInID: "first agent", secondBuiltInID: "second agent"} {
+		endpoint, err := host.EnsureActive(t.Context(), id)
+		if err != nil {
+			t.Fatalf("EnsureActive(%s): %v", id, err)
+		}
+		if endpoint.Port != 0 || endpoint.Transport == nil {
+			t.Fatalf("%s is not served in-process: %+v", id, endpoint)
+		}
+		if got := getAgentPrompt(t, endpoint); got != want {
+			t.Errorf("%s answered %q, want %q", id, got, want)
+		}
+	}
+}
+
+// A built-in plugin is registered without being found on disk, so a capability finds it.
+func TestABuiltInPluginIsFoundByItsCapability(t *testing.T) {
+	host := newBuiltInHost(t)
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), newBuiltInBackend().serve("first agent"))
+
+	found, ok := host.FindPluginByCapability("agent")
+	if !ok || found.Manifest.ID != firstBuiltInID {
+		t.Fatalf("FindPluginByCapability(agent) = %+v, %v", found, ok)
+	}
+}
+
+// A built-in plugin is made with the variables a launched process is given, and the token it is
+// given names it to the host.
+func TestABuiltInPluginIsGivenItsOwnLaunchVariables(t *testing.T) {
+	host := newBuiltInHost(t)
+	host.SetVaultPath("/vaults/example")
+	backend := newBuiltInBackend()
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first agent"))
+
+	endpoint, err := host.EnsureActive(t.Context(), firstBuiltInID)
+	if err != nil {
+		t.Fatalf("EnsureActive: %v", err)
+	}
+	vars := backend.lastVars(t)
+	if vars["NUMEN_PLUGIN_ID"] != firstBuiltInID || vars["NUMEN_VAULT_PATH"] != "/vaults/example" {
+		t.Errorf("vars = %v", vars)
+	}
+	if vars["NUMEN_PLUGIN_TOKEN"] == "" || vars["NUMEN_PLUGIN_TOKEN"] != endpoint.Token {
+		t.Errorf("token %q, endpoint token %q", vars["NUMEN_PLUGIN_TOKEN"], endpoint.Token)
+	}
+	if id, ok := host.GetPluginIDByToken(endpoint.Token); !ok || id != firstBuiltInID {
+		t.Errorf("GetPluginIDByToken = %q, %v", id, ok)
+	}
+}
+
+// Configure reaches the built-in plugin's own lifecycle service with its settings and secrets.
+func TestABuiltInPluginIsConfiguredWithItsSettingsAndSecrets(t *testing.T) {
+	host := newBuiltInHost(t)
+	host.SetKeyStore(newKeys(map[string]string{firstBuiltInID + "/apiKey": fromKeychain}))
+	host.SetSettings(map[string]map[string]any{
+		firstBuiltInID: {"model": "large-model", port.SettingStoredSecrets: []any{"apiKey"}},
+	})
+	backend := newBuiltInBackend()
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first agent"))
+
+	if _, err := host.EnsureActive(t.Context(), firstBuiltInID); err != nil {
+		t.Fatalf("EnsureActive: %v", err)
+	}
+	values := backend.probe.last(t).GetValues()
+	if values["model"] != "large-model" || values["apiKey"] != fromKeychain {
+		t.Fatalf("Configure values = %v", values)
+	}
+}
+
+// A backend that cannot be made fails the activation with the plugin named.
+func TestABuiltInPluginWhoseBackendFailsIsNotActivated(t *testing.T) {
+	host := newBuiltInHost(t)
+	failure := errors.New("the backend cannot start")
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), func(map[string]string) (http.Handler, error) {
+		return nil, failure
+	})
+
+	_, err := host.EnsureActive(t.Context(), firstBuiltInID)
+	if !errors.Is(err, failure) || !strings.Contains(err.Error(), firstBuiltInID) {
+		t.Fatalf("EnsureActive() = %v, want the failure with the plugin named", err)
+	}
+}
+
+// A built-in plugin is registered once, and only for the target it names.
+func TestABuiltInPluginIsRefusedTwiceAndForAnotherTarget(t *testing.T) {
+	host := newBuiltInHost(t)
+	serve := newBuiltInBackend().serve("first agent")
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), serve)
+
+	if err := host.RegisterBuiltIn(newBuiltInManifest(firstBuiltInID), serve); !errors.Is(err, errBuiltInRegistered) {
+		t.Errorf("second registration = %v, want errBuiltInRegistered", err)
+	}
+	other := NewHost("mobile.reader")
+	t.Cleanup(func() { _ = other.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	if err := other.RegisterBuiltIn(newBuiltInManifest(firstBuiltInID), serve); !errors.Is(err, errNotForTarget) {
+		t.Errorf("registration for another target = %v, want errNotForTarget", err)
+	}
+	if err := host.RegisterBuiltIn([]byte(`{"id": "not a manifest"`), serve); err == nil {
+		t.Error("a manifest that does not parse is registered")
+	}
+}
+
+// A plugin found on disk with no built-in of its id is launched as a process.
+func TestAPluginOnDiskThatIsNotBuiltInIsLaunched(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+	host := newBuiltInHost(t, tmp)
 	if err := host.Discover(); err != nil {
-		t.Fatalf("Discover failed: %v", err)
+		t.Fatalf("Discover: %v", err)
+	}
+	launched := make(chan string, 1)
+	host.SetLauncher(func(_ context.Context, p DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		launched <- p.Manifest.ID
+		return nil, nil, errors.New("no process in this test")
+	})
+
+	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err == nil {
+		t.Fatal("the launch that failed activated the plugin")
+	}
+	if got := <-launched; got != "md.numen.ocr" {
+		t.Fatalf("launched %q", got)
+	}
+}
+
+// A built-in plugin whose copy on disk is removed is the built-in again.
+func TestABuiltInPluginRemovedFromDiskIsTheBuiltInAgain(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+	host := newBuiltInHost(t, tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover: %v", err)
+	}
+	manifest, err := os.ReadFile(filepath.Join(tmp, "ocr", "manifest.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	registerBuiltIn(t, host, manifest, newBuiltInBackend().serve("built-in ocr"))
+	if p, _ := host.GetPlugin("md.numen.ocr"); p.Dir == "" {
+		t.Fatal("the copy on disk was replaced by the built-in")
 	}
 
-	ctx := t.Context()
-
-	// 1. DocumentService dispatch
-	endpointDoc, err := host.EnsureActive(ctx, "md.numen.pdf")
-	if err != nil {
-		t.Fatalf("EnsureActive(pdf) failed: %v", err)
+	if err := os.RemoveAll(filepath.Join(tmp, "ocr")); err != nil {
+		t.Fatal(err)
 	}
-	if endpointDoc.Port != 0 {
-		t.Fatalf("expected port 0 for in-process monolith, got %d", endpointDoc.Port)
-	}
-	if endpointDoc.Transport == nil {
-		t.Fatal("expected non-nil in-process transport")
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover: %v", err)
 	}
 
-	docClient := numenv1connect.NewDocumentServiceClient(plugin.EndpointClient(endpointDoc), endpointDoc.BaseURL())
-	docResp, err := docClient.ExtractText(ctx, connect.NewRequest(&v1.ExtractTextRequest{}))
+	p, ok := host.GetPlugin("md.numen.ocr")
+	if !ok || p.Dir != "" {
+		t.Fatalf("GetPlugin = %+v, %v; want the built-in", p, ok)
+	}
+	endpoint, err := host.EnsureActive(t.Context(), "md.numen.ocr")
 	if err != nil {
-		t.Fatalf("docClient.ExtractText failed: %v", err)
+		t.Fatalf("EnsureActive: %v", err)
 	}
-	if docResp.Msg.GetText() != "in-process document text" {
-		t.Fatalf("unexpected document text: %q", docResp.Msg.GetText())
-	}
-
-	// 2. RecognitionService dispatch
-	endpointOcr, err := host.EnsureActive(ctx, "md.numen.ocr")
-	if err != nil {
-		t.Fatalf("EnsureActive(ocr) failed: %v", err)
-	}
-	recogClient := numenv1connect.NewRecognitionServiceClient(plugin.EndpointClient(endpointOcr), endpointOcr.BaseURL())
-	recogResp, err := recogClient.GetRecognitionModel(ctx, connect.NewRequest(&v1.GetRecognitionModelRequest{}))
-	if err != nil {
-		t.Fatalf("recogClient.GetRecognitionModel failed: %v", err)
-	}
-	if recogResp.Msg.GetLayout() != "monolith-layout" {
-		t.Fatalf("unexpected layout: %q", recogResp.Msg.GetLayout())
-	}
-
-	// 3. BookService dispatch
-	endpointBook, err := host.EnsureActive(ctx, "md.numen.epub")
-	if err != nil {
-		t.Fatalf("EnsureActive(epub) failed: %v", err)
-	}
-	bookClient := numenv1connect.NewBookServiceClient(plugin.EndpointClient(endpointBook), endpointBook.BaseURL())
-	bookResp, err := bookClient.GetBook(ctx, connect.NewRequest(&v1.GetBookRequest{}))
-	if err != nil {
-		t.Fatalf("bookClient.GetBook failed: %v", err)
-	}
-	if bookResp.Msg.GetTitle() != "In-Process Book" {
-		t.Fatalf("unexpected book title: %q", bookResp.Msg.GetTitle())
-	}
-
-	// 4. TranscriptionService dispatch
-	endpointTrans, err := host.EnsureActive(ctx, "md.numen.transcription")
-	if err != nil {
-		t.Fatalf("EnsureActive(transcription) failed: %v", err)
-	}
-	transClient := numenv1connect.NewTranscriptionServiceClient(plugin.EndpointClient(endpointTrans), endpointTrans.BaseURL())
-	transResp, err := transClient.GetTranscriptionModel(ctx, connect.NewRequest(&v1.GetTranscriptionModelRequest{}))
-	if err != nil {
-		t.Fatalf("transClient.GetTranscriptionModel failed: %v", err)
-	}
-	if transResp.Msg.GetModel() != "monolith-parakeet" {
-		t.Fatalf("unexpected transcription model: %q", transResp.Msg.GetModel())
-	}
-
-	// 5. EmbeddingService dispatch
-	endpointEmbed, err := host.EnsureActive(ctx, "md.numen.embeddings")
-	if err != nil {
-		t.Fatalf("EnsureActive(embeddings) failed: %v", err)
-	}
-	embedClient := numenv1connect.NewEmbeddingServiceClient(plugin.EndpointClient(endpointEmbed), endpointEmbed.BaseURL())
-	embedResp, err := embedClient.GetEmbeddingModel(ctx, connect.NewRequest(&v1.GetEmbeddingModelRequest{}))
-	if err != nil {
-		t.Fatalf("embedClient.GetEmbeddingModel failed: %v", err)
-	}
-	if embedResp.Msg.GetName() != "bge-m3-inprocess" || embedResp.Msg.GetDimensions() != 1024 {
-		t.Fatalf("unexpected embedding model: %+v", embedResp.Msg)
-	}
-
-	// 6. DownloadService dispatch
-	endpointDownloader, err := host.EnsureActive(ctx, "md.numen.downloader")
-	if err != nil {
-		t.Fatalf("EnsureActive(downloader) failed: %v", err)
-	}
-	downloadClient := numenv1connect.NewDownloadServiceClient(plugin.EndpointClient(endpointDownloader), endpointDownloader.BaseURL())
-	downloadResp, err := downloadClient.GetDownloadModel(ctx, connect.NewRequest(&v1.GetDownloadModelRequest{}))
-	if err != nil {
-		t.Fatalf("downloadClient.GetDownloadModel failed: %v", err)
-	}
-	if downloadResp.Msg.GetTool() != "yt-dlp" {
-		t.Fatalf("unexpected download model tool: %q", downloadResp.Msg.GetTool())
-	}
-
-	// 7. AgentService dispatch
-	endpointAgent, err := host.EnsureActive(ctx, "md.numen.agent")
-	if err != nil {
-		t.Fatalf("EnsureActive(agent) failed: %v", err)
-	}
-	agentClient := numenv1connect.NewAgentServiceClient(plugin.EndpointClient(endpointAgent), endpointAgent.BaseURL())
-	agentResp, err := agentClient.GetAgentTools(ctx, connect.NewRequest(&v1.GetAgentToolsRequest{}))
-	if err != nil {
-		t.Fatalf("agentClient.GetAgentTools failed: %v", err)
-	}
-	if agentResp.Msg.GetSystemPromptExtension() != "monolith agent prompt" {
-		t.Fatalf("unexpected system prompt extension: %q", agentResp.Msg.GetSystemPromptExtension())
-	}
-
-	// 8. ProofreadingService dispatch
-	endpointProof, err := host.EnsureActive(ctx, "md.numen.proofreading")
-	if err != nil {
-		t.Fatalf("EnsureActive(proofreading) failed: %v", err)
-	}
-	proofClient := numenv1connect.NewProofreadingServiceClient(plugin.EndpointClient(endpointProof), endpointProof.BaseURL())
-	proofResp, err := proofClient.GetProofreaderInfo(ctx, connect.NewRequest(&v1.GetProofreaderInfoRequest{}))
-	if err != nil {
-		t.Fatalf("proofClient.GetProofreaderInfo failed: %v", err)
-	}
-	if proofResp.Msg.GetName() != "monolith-proofreader" {
-		t.Fatalf("unexpected proofreader name: %q", proofResp.Msg.GetName())
-	}
-
-	// 9. Teardown
-	if err := host.TeardownAll(ctx, 100*time.Millisecond); err != nil {
-		t.Fatalf("TeardownAll failed: %v", err)
+	if got := getAgentPrompt(t, endpoint); got != "built-in ocr" {
+		t.Fatalf("answered %q", got)
 	}
 }
 
@@ -282,51 +293,70 @@ func (f fixedProvisioner) Provision(_ context.Context, _ string) (string, string
 	return f.library, f.provider, f.err
 }
 
-// An in-process plugin that declares the runtime finds the same variables a
-// launched process is given, in the process that is its own.
-func TestMonolithInProcessPluginIsGivenTheRuntime(t *testing.T) {
-	plugin.ClearMonolithHandlers()
-	defer plugin.ClearMonolithHandlers()
-	t.Setenv(plugin.EnvONNXRuntimeLib, "")
-	t.Setenv(plugin.EnvONNXProvider, "")
-
-	host := plugin.NewHost("desktop.editor")
+// A built-in plugin that declares the runtime finds the same variables a launched process is
+// given, in the process that is its own and among the variables it is made with.
+func TestABuiltInPluginIsGivenTheRuntime(t *testing.T) {
+	t.Setenv(EnvONNXRuntimeLib, "")
+	t.Setenv(EnvONNXProvider, "")
+	host := newBuiltInHost(t)
 	host.SetRuntimeProvisioner(fixedProvisioner{library: "/models/libonnxruntime.so", provider: "coreml"})
-	if err := host.Discover(); err != nil {
-		t.Fatalf("Discover failed: %v", err)
+	backend := newBuiltInBackend()
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, "onnxruntime"), backend.serve("first agent"))
+
+	if _, err := host.EnsureActive(t.Context(), firstBuiltInID); err != nil {
+		t.Fatalf("EnsureActive: %v", err)
 	}
-	if _, err := host.EnsureActive(t.Context(), "md.numen.ocr"); err != nil {
-		t.Fatalf("EnsureActive(ocr) failed: %v", err)
+	if got := os.Getenv(EnvONNXRuntimeLib); got != "/models/libonnxruntime.so" {
+		t.Errorf("%s = %q", EnvONNXRuntimeLib, got)
 	}
-	if got := os.Getenv(plugin.EnvONNXRuntimeLib); got != "/models/libonnxruntime.so" {
-		t.Errorf("%s = %q", plugin.EnvONNXRuntimeLib, got)
+	if got := os.Getenv(EnvONNXProvider); got != "coreml" {
+		t.Errorf("%s = %q", EnvONNXProvider, got)
 	}
-	if got := os.Getenv(plugin.EnvONNXProvider); got != "coreml" {
-		t.Errorf("%s = %q", plugin.EnvONNXProvider, got)
+	if got := backend.lastVars(t)[EnvONNXProvider]; got != "coreml" {
+		t.Errorf("vars hold %s = %q", EnvONNXProvider, got)
 	}
 }
 
-// An in-process plugin whose runtime cannot be provisioned is not activated.
-func TestMonolithInProcessPluginIsNotActivatedWithoutItsRuntime(t *testing.T) {
-	plugin.ClearMonolithHandlers()
-	defer plugin.ClearMonolithHandlers()
-	t.Setenv(plugin.EnvONNXRuntimeLib, "")
-
+// A built-in plugin whose runtime cannot be provisioned is not activated.
+func TestABuiltInPluginIsNotActivatedWithoutItsRuntime(t *testing.T) {
+	t.Setenv(EnvONNXRuntimeLib, "")
 	failure := errors.New("the archive is not the pinned one")
-	host := plugin.NewHost("desktop.editor")
+	host := newBuiltInHost(t)
 	host.SetRuntimeProvisioner(fixedProvisioner{err: failure})
-	if err := host.Discover(); err != nil {
-		t.Fatalf("Discover failed: %v", err)
-	}
-	_, err := host.EnsureActive(t.Context(), "md.numen.transcription")
-	if !errors.Is(err, failure) || !strings.Contains(err.Error(), "md.numen.transcription") {
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, "onnxruntime"), newBuiltInBackend().serve("first agent"))
+
+	_, err := host.EnsureActive(t.Context(), firstBuiltInID)
+	if !errors.Is(err, failure) || !strings.Contains(err.Error(), firstBuiltInID) {
 		t.Fatalf("EnsureActive() = %v, want the failure with the plugin named", err)
 	}
-	if got := os.Getenv(plugin.EnvONNXRuntimeLib); got != "" {
-		t.Errorf("%s = %q after a failed provisioning", plugin.EnvONNXRuntimeLib, got)
+	if got := os.Getenv(EnvONNXRuntimeLib); got != "" {
+		t.Errorf("%s = %q after a failed provisioning", EnvONNXRuntimeLib, got)
 	}
 }
 
+// An activation that lost the race with a shutdown leaves the plugin dormant and gives no endpoint.
+func TestABuiltInActivationThatLostTheRaceWithShutdownIsRejected(t *testing.T) {
+	host := newBuiltInHost(t)
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), newBuiltInBackend().serve("first agent"))
+	p, _ := host.GetPlugin(firstBuiltInID)
+	host.mu.RLock()
+	sup := host.supervisors[firstBuiltInID]
+	host.mu.RUnlock()
+
+	endpoint, err := host.activatePlugin(t.Context(), p, sup)
+
+	if !errors.Is(err, errActivationAborted) {
+		t.Fatalf("expected errActivationAborted, got %v", err)
+	}
+	if !isEmptyEndpoint(endpoint) {
+		t.Fatalf("expected no endpoint, got %+v", endpoint)
+	}
+	if sup.GetState() != StateDormant {
+		t.Fatalf("expected StateDormant, got %v", sup.GetState())
+	}
+}
+
+// newerProtocolLifecycle answers Ping as a plugin that speaks a protocol after the host's.
 type newerProtocolLifecycle struct {
 	numenv1connect.UnimplementedPluginLifecycleServiceHandler
 }
@@ -338,45 +368,17 @@ func (newerProtocolLifecycle) Ping(
 	return connect.NewResponse(&v1.PingResponse{Status: "ok", Protocol: port.PluginProtocolVersion + 1}), nil
 }
 
-// The host's in-process lifecycle reports the protocol the host speaks.
-func TestMonolithInProcessPluginReportsTheHostsProtocol(t *testing.T) {
-	plugin.ClearMonolithHandlers()
-	defer plugin.ClearMonolithHandlers()
+// A built-in plugin that reports another protocol is refused.
+func TestABuiltInPluginThatSpeaksAnotherProtocolIsRefused(t *testing.T) {
+	host := newBuiltInHost(t)
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), func(map[string]string) (http.Handler, error) {
+		mux := http.NewServeMux()
+		mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(newerProtocolLifecycle{}))
+		return mux, nil
+	})
 
-	host := plugin.NewHost("desktop.editor")
-	if err := host.Discover(); err != nil {
-		t.Fatalf("Discover failed: %v", err)
-	}
-	endpoint, err := host.EnsureActive(t.Context(), "md.numen.pdf")
-	if err != nil {
-		t.Fatalf("EnsureActive(pdf) failed: %v", err)
-	}
-	defer host.Release("md.numen.pdf")
-
-	client := numenv1connect.NewPluginLifecycleServiceClient(plugin.EndpointClient(endpoint), endpoint.BaseURL())
-	resp, err := client.Ping(t.Context(), connect.NewRequest(&v1.PingRequest{}))
-	if err != nil {
-		t.Fatalf("Ping failed: %v", err)
-	}
-	if got := resp.Msg.GetProtocol(); got != port.PluginProtocolVersion {
-		t.Fatalf("Ping protocol = %d, want %d", got, port.PluginProtocolVersion)
-	}
-}
-
-// An in-process plugin that reports another protocol is refused.
-func TestMonolithInProcessPluginThatSpeaksAnotherProtocolIsRefused(t *testing.T) {
-	plugin.ClearMonolithHandlers()
-	defer plugin.ClearMonolithHandlers()
-	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(newerProtocolLifecycle{}))
-	plugin.RegisterMonolithPluginHandler("md.numen.pdf", mux)
-
-	host := plugin.NewHost("desktop.editor")
-	if err := host.Discover(); err != nil {
-		t.Fatalf("Discover failed: %v", err)
-	}
-	_, err := host.EnsureActive(t.Context(), "md.numen.pdf")
-	if !errors.Is(err, port.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), "md.numen.pdf speaks protocol 2") {
-		t.Fatalf("EnsureActive(pdf) = %v, want %v naming the plugin", err, port.ErrUnsupportedProtocol)
+	_, err := host.EnsureActive(t.Context(), firstBuiltInID)
+	if !errors.Is(err, port.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), firstBuiltInID+" speaks protocol 2") {
+		t.Fatalf("EnsureActive() = %v, want %v naming the plugin", err, port.ErrUnsupportedProtocol)
 	}
 }

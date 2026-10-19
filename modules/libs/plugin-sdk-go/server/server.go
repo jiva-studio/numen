@@ -20,6 +20,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
+// tokenVar names the variable holding the token the host authenticates with.
+const tokenVar = "NUMEN_PLUGIN_TOKEN"
+
 var (
 	flagMu           sync.Mutex
 	defaultPortFlag  int
@@ -62,7 +65,7 @@ func parseDefaultFlags() (int, string) {
 		}
 	}
 	if token == "" {
-		token = os.Getenv("NUMEN_PLUGIN_TOKEN")
+		token = os.Getenv(tokenVar)
 	}
 
 	return port, token
@@ -163,6 +166,21 @@ type Server struct {
 // New constructs a plugin server using command flags, environment variables, and options.
 func New(opts ...Option) *Server {
 	port, token := parseDefaultFlags()
+	return newServer(port, token, opts)
+}
+
+// NewLinkedHandler returns the handler a host that links the plugin into its own process serves it
+// through: a server with the services mount registers on it, which authenticates with the token
+// vars holds under NUMEN_PLUGIN_TOKEN and reads no flag.
+func NewLinkedHandler(vars map[string]string, mount func(*Server) error) (http.Handler, error) {
+	s := newServer(0, vars[tokenVar], nil)
+	if err := mount(s); err != nil {
+		return nil, err
+	}
+	return s.mux, nil
+}
+
+func newServer(port int, token string, opts []Option) *Server {
 	s := &Server{
 		port:              port,
 		token:             token,
