@@ -92,6 +92,9 @@ export const settingsCore: SettingsPort = {
           isDefault: m.isDefault,
         })),
         consent: consented[p.completionConsent],
+        ...(p.failure
+          ? { failure: { reason: p.failure.reason, failedAt: Number(p.failure.failedAtUnixMs) } }
+          : {}),
         settings: (p.settings ?? []).map((s) => {
           let defaultValue: unknown = undefined
           if (s.defaultJson) {
@@ -148,5 +151,9 @@ export const settingsCore: SettingsPort = {
   },
   deletePluginSecret: async (pluginId, name) => {
     await settingsService.deletePluginSecret({ pluginId, name })
+  },
+  retryPlugin: async (pluginId) => {
+    const answer = await settingsService.retryPlugin({ pluginId })
+    return answer.failure
   },
 }

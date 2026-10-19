@@ -89,6 +89,8 @@ type PluginInfo struct {
 	Models []AgentModel
 	// Consent is whether the person lets the plugin ask for model completions.
 	Consent CompletionConsent
+	// Failure is set while the host holds the plugin off after it failed to start.
+	Failure *PluginFailure
 }
 
 // CompletionConsent is whether the person lets a plugin ask for model

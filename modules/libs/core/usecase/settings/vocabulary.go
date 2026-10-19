@@ -10,6 +10,7 @@ type (
 	Presence      = port.Presence
 	PluginSetting = port.PluginSetting
 	PluginInfo    = port.PluginInfo
+	PluginFailure = port.PluginFailure
 	AgentModel    = port.AgentModel
 	Consent       = port.CompletionConsent
 )

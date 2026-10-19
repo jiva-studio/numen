@@ -124,6 +124,13 @@ export const WORDS = {
   asking: (name: string) => `${name} asks to use a model.`,
   allow: 'Allow',
   refuse: 'Refuse',
+  /** The plugins the host holds off after they failed to start. */
+  pluginsStopped: 'Plugins that stopped',
+  pluginStoppedAt: (when: string) => `Stopped ${when}`,
+  pluginRetry: 'Retry',
+  pluginDisable: 'Disable',
+  pluginRetryFor: (name: string) => `Retry ${name}`,
+  pluginDisableFor: (name: string) => `Disable ${name}`,
   /** The keys of the secrets plugins declare. */
   keys: 'Keys',
   keyStored: 'Set',

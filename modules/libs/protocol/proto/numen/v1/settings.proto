@@ -47,6 +47,11 @@ service SettingsService {
   // and clears the record that it is stored. The plugin is handed its secrets
   // again.
   rpc DeletePluginSecret(DeletePluginSecretRequest) returns (DeletePluginSecretResponse);
+
+  // RetryPlugin forgets the failures of a plugin the host holds off, and starts
+  // it once. A plugin that fails again is held off again, and the call answers
+  // the reason.
+  rpc RetryPlugin(RetryPluginRequest) returns (RetryPluginResponse);
 }
 
 message GetSettingsRequest {}
@@ -184,3 +189,13 @@ message DeletePluginSecretRequest {
 }
 
 message DeletePluginSecretResponse {}
+
+message RetryPluginRequest {
+  // The plugin, by its id.
+  string plugin_id = 1;
+}
+
+message RetryPluginResponse {
+  // Set when the plugin failed to start again, in words a person reads.
+  string failure = 1;
+}

@@ -131,6 +131,14 @@ func (e EditorAssembly) OpenDeletePluginSecret() *settings.DeleteSecret {
 	return settings.NewDeleteSecret(e.cfg.GetPluginSecretDeleter())
 }
 
+func (e EditorAssembly) OpenRetryPlugin() *settings.RetryPlugin {
+	return settings.NewRetryPlugin(e.cfg.GetPluginRetrier())
+}
+
+func (e EditorAssembly) ReportPluginFailures(tasks *run.Tasks) {
+	e.cfg.ReportPluginFailures(tasks)
+}
+
 func (e EditorAssembly) IsRebuildingIndex() bool     { return e.cfg.ShouldRebuildIndex }
 func (e EditorAssembly) IsTranscribingUnasked() bool { return e.cfg.ShouldTranscribe }
 
