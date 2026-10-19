@@ -2,22 +2,6 @@ package main
 
 import "github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
 
-var claudeSearchPlaces = []string{
-	"~/.local/bin/claude",
-	"~/.claude/local/claude",
-	"~/Applications/Claude Code URL Handler.app/Contents/MacOS/claude",
-	"/Applications/Claude Code URL Handler.app/Contents/MacOS/claude",
-	"~/.bun/bin/claude",
-	"~/.volta/bin/claude",
-	"~/.npm-global/bin/claude",
-	"~/.nvm/versions/node/*/bin/claude",
-	"~/.nix-profile/bin/claude",
-	"/opt/homebrew/bin/claude",
-	"/usr/local/bin/claude",
-	"/run/current-system/sw/bin/claude",
-	"/nix/var/nix/profiles/default/bin/claude",
-}
-
 var antigravitySearchPlaces = []string{
 	"~/.local/bin/agy",
 	"~/.local/bin/antigravity",
@@ -57,12 +41,6 @@ var cursorSearchPlaces = []string{
 	"~/.cursor/bin/cursor",
 	"/usr/bin/cursor",
 }
-
-// IsClaudeInstalled checks whether Claude Code CLI is available on this machine; it answers completions.
-func IsClaudeInstalled() bool { return agentrun.Locate([]string{"claude"}, claudeSearchPlaces) != "" }
-
-// FindClaude returns the path of the Claude Code CLI, or the bare name where not found.
-func FindClaude() string { return findCommand("claude", []string{"claude"}, claudeSearchPlaces) }
 
 // IsAntigravityInstalled checks whether Antigravity CLI is available on this machine.
 func IsAntigravityInstalled() bool {
@@ -107,4 +85,44 @@ func findCommand(bare string, names, places []string) string {
 		return found
 	}
 	return bare
+}
+
+var codexACPSearchPlaces = []string{
+	"~/.local/bin/codex-acp",
+	"~/.npm-global/bin/codex-acp",
+	"~/.bun/bin/codex-acp",
+	"/opt/homebrew/bin/codex-acp",
+	"/usr/local/bin/codex-acp",
+	"~/.nix-profile/bin/codex-acp",
+	"/run/current-system/sw/bin/codex-acp",
+}
+
+var cursorAgentSearchPlaces = []string{
+	"~/.local/bin/cursor-agent",
+	"/opt/homebrew/bin/cursor-agent",
+	"/usr/local/bin/cursor-agent",
+	"~/.nix-profile/bin/cursor-agent",
+	"/run/current-system/sw/bin/cursor-agent",
+}
+
+// acpAgent is an installed agent that serves the Agent Client Protocol over its standard streams.
+type acpAgent struct {
+	// Program is what a completion model names the agent by.
+	Program string
+	Title   string
+	// Command starts the agent's ACP server.
+	Command []string
+}
+
+// GetACPAgents returns the installed ACP agents, the one a completion takes by default first:
+// Codex through its codex-acp server, and the Cursor agent through its acp command.
+func GetACPAgents() []acpAgent {
+	var agents []acpAgent
+	if found := agentrun.Locate([]string{"codex-acp"}, codexACPSearchPlaces); found != "" {
+		agents = append(agents, acpAgent{Program: "codex", Title: "OpenAI Codex", Command: []string{found}})
+	}
+	if found := agentrun.Locate([]string{"cursor-agent"}, cursorAgentSearchPlaces); found != "" {
+		agents = append(agents, acpAgent{Program: "cursor", Title: "Cursor", Command: []string{found, "acp"}})
+	}
+	return agents
 }

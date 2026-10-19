@@ -613,6 +613,8 @@ A plugin that holds the `ai:complete` permission asks the host for a completion 
 
 An agent that is not installed, is disabled or does not declare `ai.completion.provider` is answered `NO_ROUTE`, and so is a question when no plugin declares the capability; no other agent answers in its place. An agent that is installed and cannot be started or reached is answered `UNAVAILABLE`. A model the agent does not offer is the agent's own error, and reaches the plugin as it said it.
 
+`md.numen.agent-acp` answers through an ACP agent installed on the machine: Codex through `codex-acp`, Cursor through `cursor-agent acp`. Each question opens a session of its own in an empty folder, with no MCP servers, no file system or terminal and every permission refused, sends the system text and the question as one prompt, and closes the session. Its models are named `<program>/<model>`, as the agent reports them for a session (`codex/gpt-5`); an agent that reports none is offered by its name alone and answers with its own model. An empty model is the first installed agent with its own model. Claude Code is answered by `md.numen.agent-claude` alone.
+
 The file is read at every question, so a choice written while the application runs applies to the next one.
 
 The first question of a plugin the person has not answered for is refused with `NO_CONSENT`, and the settings page puts it to the person: the AI section names the plugin that asked, with Allow and Refuse. Refused, every question of that plugin is answered `NO_CONSENT`, which the plugin shows as the reason nothing was answered; the proofreading plugin answers it as permission denied, and the proofreading stands in the list of what is being done with "AI access not allowed — allow it in Settings → AI".

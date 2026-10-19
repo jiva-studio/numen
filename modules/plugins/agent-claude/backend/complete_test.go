@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -153,5 +154,24 @@ func TestTheCompletionModelsAreTheEndpoints(t *testing.T) {
 	if len(models) != 2 || models[0].GetName() != "opus" || models[0].GetIsDefault() ||
 		models[1].GetName() != "haiku" || !models[1].GetIsDefault() {
 		t.Errorf("listed %v", models)
+	}
+}
+
+func TestCompletionArgumentsGiveNoToolsAndOneTurn(t *testing.T) {
+	got := buildCompletionArguments("be brief", "m1")
+	for _, pair := range [][2]string{
+		{"--output-format", "text"}, {"--max-turns", "1"}, {"--tools", ""}, {"--setting-sources", ""},
+		{"--append-system-prompt", "be brief"}, {"--model", "m1"},
+	} {
+		assertPair(t, got, pair[0], pair[1])
+	}
+	for _, flag := range []string{"-p", "--strict-mcp-config"} {
+		if !slices.Contains(got, flag) {
+			t.Errorf("%s absent from %q", flag, got)
+		}
+	}
+	bare := buildCompletionArguments("", "")
+	if slices.Contains(bare, "--append-system-prompt") || slices.Contains(bare, "--model") {
+		t.Errorf("got %q", bare)
 	}
 }
