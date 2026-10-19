@@ -17,7 +17,8 @@
   "runtimes": ["onnxruntime"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
-    "keepAliveWhileVisible": false
+    "keepAliveWhileVisible": false,
+    "memoryLimitBytes": 4294967296
   },
   "backend": {
     "type": "process",
@@ -25,14 +26,6 @@
     "serviceName": "numen.v1.TranscriptionService"
   },
   "settings": [
-    {
-      "key": "autoTranscribeOnImport",
-      "type": "boolean",
-      "title": "Auto-transcribe on import",
-      "description": "Automatically transcribe audio and video files added to the vault",
-      "default": false,
-      "palette": true
-    },
     {
       "key": "language",
       "type": "enum",

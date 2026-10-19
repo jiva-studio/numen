@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"context"
-	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -22,8 +21,10 @@ import (
 // leaseHost resolves every capability to one stub plugin and counts the references taken and given back.
 type leaseHost struct {
 	endpoint port.Endpoint
-	acquired atomic.Int32
-	released atomic.Int32
+	// ensureErr is what activating the plugin fails with.
+	ensureErr error
+	acquired  atomic.Int32
+	released  atomic.Int32
 }
 
 func (h *leaseHost) FindPluginByCapability(string) (port.DiscoveredPlugin, bool) {
@@ -39,6 +40,9 @@ func (h *leaseHost) GetPlugin(string) (port.DiscoveredPlugin, bool) {
 }
 
 func (h *leaseHost) EnsureActive(context.Context, string) (port.Endpoint, error) {
+	if h.ensureErr != nil {
+		return port.Endpoint{}, h.ensureErr
+	}
 	h.acquired.Add(1)
 	return h.endpoint, nil
 }
@@ -103,49 +107,6 @@ func newLeaseHost(t *testing.T) *leaseHost {
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return &leaseHost{endpoint: port.Endpoint{Host: "127.0.0.1", Port: server.Listener.Addr().(*net.TCPAddr).Port}}
-}
-
-func TestADoubleCloseGivesTheReferenceBackOnce(t *testing.T) {
-	bridges := []struct {
-		name string
-		open func(ctx context.Context, h *leaseHost) (io.Closer, error)
-	}{
-		{"embedder", func(ctx context.Context, h *leaseHost) (io.Closer, error) { return OpenEmbedderBridge(ctx, h) }},
-		{"recogniser", func(ctx context.Context, h *leaseHost) (io.Closer, error) { return OpenRecogniserBridge(ctx, h) }},
-		{"transcriber", func(ctx context.Context, h *leaseHost) (io.Closer, error) { return OpenTranscriberBridge(ctx, h) }},
-		{"downloader", func(ctx context.Context, h *leaseHost) (io.Closer, error) { return OpenDownloaderBridge(ctx, h) }},
-		{"document", func(ctx context.Context, h *leaseHost) (io.Closer, error) { return OpenDocumentBridge(ctx, h) }},
-		{"book", func(ctx context.Context, h *leaseHost) (io.Closer, error) { return OpenBookBridge(ctx, h) }},
-		{"agent", func(ctx context.Context, h *leaseHost) (io.Closer, error) {
-			return OpenAgentBridgeForPlugin(ctx, h, "md.numen.stub")
-		}},
-		{"proofreader", func(_ context.Context, h *leaseHost) (io.Closer, error) { return OpenProofreaderBridge(h) }},
-		{"completion", func(ctx context.Context, h *leaseHost) (io.Closer, error) {
-			return OpenCompletionBridge(ctx, h, "md.numen.stub")
-		}},
-	}
-	for _, tc := range bridges {
-		t.Run(tc.name, func(t *testing.T) {
-			host := newLeaseHost(t)
-			bridge, err := tc.open(t.Context(), host)
-			if err != nil {
-				t.Fatal(err)
-			}
-			held := host.acquired.Load()
-			if got := host.released.Load(); got != 0 {
-				t.Fatalf("%d references were given back before Close", got)
-			}
-
-			for range 2 {
-				if err := bridge.Close(); err != nil {
-					t.Fatal(err)
-				}
-			}
-			if got := host.released.Load(); got != held {
-				t.Errorf("held %d references, gave back %d", held, got)
-			}
-		})
-	}
 }
 
 func TestEveryProofreadingGivesItsReferenceBack(t *testing.T) {

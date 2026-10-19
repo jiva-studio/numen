@@ -3,6 +3,8 @@
 package plugin
 
 import (
+	"errors"
+	"os"
 	"os/exec"
 	"syscall"
 	"testing"
@@ -75,5 +77,43 @@ func TestLinuxProcessLimitsProcessAliveAfterMemoryLimit(t *testing.T) {
 
 	if err := cmd.Process.Signal(syscall.Signal(0)); err != nil {
 		t.Fatalf("process exited unexpectedly after applyProcessLimits: %v", err)
+	}
+}
+
+// A process started under the host's default limits has no RLIMIT_CPU, and one
+// started under a CPU limit has exactly that.
+func TestLinuxADefaultProcessHasNoCPULimit(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		limits ProcessLimits
+		want   uint64
+	}{
+		{"the defaults", DefaultProcessLimits(), unix.RLIM_INFINITY},
+		{"a limit of ten seconds", ProcessLimits{CPULimitSeconds: 10}, 10},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cmd := exec.Command("sleep", "5")
+			if err := cmd.Start(); err != nil {
+				t.Fatalf("failed to start mock process: %v", err)
+			}
+			defer func() {
+				if err := cmd.Process.Kill(); err != nil && !errors.Is(err, os.ErrProcessDone) {
+					t.Errorf("kill the mock process: %v", err)
+				}
+				if _, err := cmd.Process.Wait(); err != nil {
+					t.Errorf("wait for the mock process: %v", err)
+				}
+			}()
+			if err := applyProcessLimits(cmd.Process.Pid, tc.limits); err != nil {
+				t.Fatalf("applyProcessLimits failed: %v", err)
+			}
+			var rlim unix.Rlimit
+			if err := unix.Prlimit(cmd.Process.Pid, unix.RLIMIT_CPU, nil, &rlim); err != nil {
+				t.Fatalf("get RLIMIT_CPU: %v", err)
+			}
+			if rlim.Cur != tc.want {
+				t.Errorf("RLIMIT_CPU is %d, want %d", rlim.Cur, tc.want)
+			}
+		})
 	}
 }
