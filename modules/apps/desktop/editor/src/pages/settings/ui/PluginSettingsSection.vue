@@ -54,13 +54,12 @@ function getChoice(pluginId: string, key: string): CompletionChoice {
 }
 
 /** The agents the setting can name, the default first. */
-function getAgentChoices(choice: CompletionChoice) {
-  return createPluginAgentChoices(
+const getAgentChoices = (choice: CompletionChoice) =>
+  createPluginAgentChoices(
     agents.value,
     { defaultAgent: defaultAgent.value, chosen: choice.agent },
     words,
   )
-}
 
 /** The models of the agent the setting names, and none while it names the default. */
 const getModelChoices = (choice: CompletionChoice) => {
