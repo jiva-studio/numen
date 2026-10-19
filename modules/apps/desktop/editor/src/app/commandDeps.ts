@@ -31,10 +31,10 @@ export interface CommandDepsOptions {
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   pointed?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   files: () => { revealPath: (path: string) => void }
-  plexes: () => {
-    travel: (path: string) => Promise<void> | void
-    leavePath: (from: string, to: string) => Promise<void> | void
-  }
+  /** A note put in front of the person in the plex they were last in. */
+  travel: (path: string) => Promise<void> | void
+  /** Every tab standing on a path moved to another. */
+  leavePath: (from: string, to: string) => Promise<void> | void
   agents: () => { askQuestion: (text: string) => Promise<void> | void }
   getOpeningNote: () => string
   runs: RunSupport
@@ -89,14 +89,14 @@ function createRunCommands(options: CommandDepsOptions): CommandDeps['runs'] {
 }
 
 function createNavigationCommands(options: CommandDepsOptions): CommandDeps['goes'] {
-  const { files, plexes, agents, held, openPreset, getOpeningNote, search } = options
+  const { files, travel, leavePath, agents, held, openPreset, getOpeningNote, search } = options
   return {
     revealPath: (path) => void files().revealPath(path),
     travel: async (path) => {
-      await plexes().travel(path)
+      await travel(path)
     },
     leave: async (from, to) => {
-      await plexes().leavePath(from, to)
+      await leavePath(from, to)
     },
     getOpeningNote,
     openTab: (kind) => void held.openTabOfKind(kind),

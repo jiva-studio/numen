@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import { useTabLinks } from '@/features/tab-linking'
-import { isNotePath, useTabSync, type TabSyncDeps } from './useTabSync'
+import { useTabSync, type TabSyncDeps } from './useTabSync'
 
 type Navigate = (state: unknown, path: string, title: string) => void
 
-const createWindowTabs = (tabs: Record<string, { state?: unknown; navigate?: Navigate }>) =>
+const createHeld = (tabs: Record<string, { state?: unknown; navigate?: Navigate }>) =>
   ({
     getTab: (id: string) => {
       const one = tabs[id]
@@ -14,7 +14,7 @@ const createWindowTabs = (tabs: Record<string, { state?: unknown; navigate?: Nav
         kind: { kind: id.split(':')[0], ...(one.navigate ? { navigate: one.navigate } : {}) },
       }
     },
-  }) as unknown as TabSyncDeps['windowTabs']
+  }) as unknown as TabSyncDeps['held']
 
 const createLinkedTabs = (...targets: string[]): TabSyncDeps['tabLinks'] => ({
   getLinkedTargets: () => targets,
@@ -27,13 +27,13 @@ describe('a path chosen in a linked tab', () => {
     tabLinks.linkTabs('plex:1', 'other:1')
     const files = vi.fn<Navigate>()
     const other = vi.fn<Navigate>()
-    const windowTabs = createWindowTabs({
+    const held = createHeld({
       'plex:1': { navigate: vi.fn() },
       'files:1': { state: 'files state', navigate: files },
       'other:1': { state: 'other state', navigate: other },
     })
 
-    const synced = useTabSync({ windowTabs, tabLinks, onError: vi.fn() }).syncPathFromTab(
+    const synced = useTabSync({ held, tabLinks, onError: vi.fn() }).syncPathFromTab(
       'plex:1',
       'test.md',
       'Test',
@@ -46,10 +46,10 @@ describe('a path chosen in a linked tab', () => {
 
   it('leaves alone a linked tab whose kind cannot move, and one the window no longer holds', () => {
     const navigate = vi.fn<Navigate>()
-    const windowTabs = createWindowTabs({ 'agent:1': {}, 'files:1': { navigate } })
+    const held = createHeld({ 'agent:1': {}, 'files:1': { navigate } })
 
     const synced = useTabSync({
-      windowTabs,
+      held,
       tabLinks: createLinkedTabs('agent:1', 'gone:1', 'files:1'),
       onError: vi.fn(),
     }).syncPathFromTab('s', 'a.md')
@@ -61,27 +61,12 @@ describe('a path chosen in a linked tab', () => {
 
   it('moves nothing from a tab linked to none', () => {
     const navigate = vi.fn<Navigate>()
-    const windowTabs = createWindowTabs({ 'files:1': { navigate } })
+    const held = createHeld({ 'files:1': { navigate } })
 
     expect(
-      useTabSync({ windowTabs, tabLinks: useTabLinks(), onError: vi.fn() }).syncPathFromTab(
-        's',
-        'a.md',
-      ),
+      useTabSync({ held, tabLinks: useTabLinks(), onError: vi.fn() }).syncPathFromTab('s', 'a.md'),
     ).toBe(false)
     expect(navigate).not.toHaveBeenCalled()
-  })
-})
-
-describe('isNotePath', () => {
-  it('holds for markdown files and for paths without an extension', () => {
-    expect(isNotePath('Ideas/Plan.md')).toBe(true)
-    expect(isNotePath('Ideas/Plan')).toBe(true)
-  })
-
-  it('does not hold for other extensions', () => {
-    expect(isNotePath('Books/Guide.pdf')).toBe(false)
-    expect(isNotePath('Ideas/Plan.txt')).toBe(false)
   })
 })
 
@@ -89,7 +74,7 @@ describe('useTabSync guards', () => {
   it('refuses an empty source tab id or an empty path even when targets are linked', () => {
     const navigate = vi.fn<Navigate>()
     const sync = useTabSync({
-      windowTabs: createWindowTabs({ 'note:1': { navigate } }),
+      held: createHeld({ 'note:1': { navigate } }),
       tabLinks: createLinkedTabs('note:1'),
       onError: vi.fn(),
     })
@@ -105,7 +90,7 @@ describe('useTabSync guards', () => {
       inner.push(sync.syncPathFromTab('s', 'b.md'))
     })
     const sync = useTabSync({
-      windowTabs: createWindowTabs({ 'note:1': { navigate } }),
+      held: createHeld({ 'note:1': { navigate } }),
       tabLinks: createLinkedTabs('note:1'),
       onError: vi.fn(),
     })
@@ -124,7 +109,7 @@ describe('useTabSync guards', () => {
       if (fail) throw new Error('boom')
     })
     const sync = useTabSync({
-      windowTabs: createWindowTabs({ 'note:1': { navigate } }),
+      held: createHeld({ 'note:1': { navigate } }),
       tabLinks: createLinkedTabs('note:1'),
       onError: vi.fn(),
     })
@@ -140,13 +125,13 @@ describe('a linked tab that fails to move', () => {
     const onError = vi.fn()
     const failure = new Error('the plugin is gone')
     const other = vi.fn<Navigate>()
-    const windowTabs = createWindowTabs({
+    const held = createHeld({
       'plex:1': { navigate: () => Promise.reject(failure) },
       'files:1': { navigate: other },
     })
 
     const synced = useTabSync({
-      windowTabs,
+      held,
       tabLinks: createLinkedTabs('plex:1', 'files:1'),
       onError,
     }).syncPathFromTab('s', 'a.md')

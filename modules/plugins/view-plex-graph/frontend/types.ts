@@ -9,7 +9,7 @@ import type {
   PlexRelation,
   PlexDestination,
 } from '@numen/ui'
-import type { PluginContext } from '@numen/plugin-sdk'
+import type { PathRename, PluginContext } from '@numen/plugin-sdk'
 
 /** Which of four types a note can be. */
 export type NoteType = 'note' | 'deck' | 'stencil' | 'preset'
@@ -50,10 +50,7 @@ export interface Neighbourhood {
 export type NoteRelation = PlexRelation
 
 /** A path rename. */
-export interface PathRename {
-  readonly from: string
-  readonly to: string
-}
+export type { PathRename }
 
 /** The one question a plex asks of the vault: what is around a note. */
 export interface Neighbours {

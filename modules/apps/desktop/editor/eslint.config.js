@@ -24,15 +24,10 @@ const lifetimes = [
 const layerOrder = ['shared', 'entities', 'features', 'widgets', 'pages', 'app']
 const sliceLayers = ['entities', 'features', 'widgets', 'pages']
 
-// A plugin is an element of its own. A plugin reaches the host and another
-// plugin through no policy, so both directions are refused wherever a plugin
-// file is linted; the host reaches a plugin through the policy below.
-const pluginElement = { type: 'plugin', pattern: '../../../plugins/*', capture: ['name'] }
-
 const layerElements = createLayerElements({
   order: layerOrder,
   sliceLayers,
-  extra: [{ type: 'testing', pattern: 'src/testing' }, pluginElement],
+  extra: [{ type: 'testing', pattern: 'src/testing' }],
 })
 
 const layerPolicies = createLayerPolicies({
@@ -40,12 +35,6 @@ const layerPolicies = createLayerPolicies({
   sliceLayers,
   extra: [
     { allow: { to: { element: { type: 'testing' } } } },
-    // Host to plugin: every layer and the entry reach a plugin.
-    {
-      from: { element: { type: [...layerOrder, 'testing'] } },
-      allow: { to: { element: { type: 'plugin' } } },
-    },
-    { from: { file: { categories: 'entry' } }, allow: { to: { element: { type: 'plugin' } } } },
     { from: { element: { type: 'testing' } }, allow: { to: { element: { type: layerOrder } } } },
   ],
 })
@@ -192,7 +181,10 @@ export default tseslint.config(
     },
   },
 
-  // Package boundaries: no reaching out of the module via relative paths
+  // Package boundaries: no reaching out of the module via relative paths, and
+  // no plugin named. The window meets its plugins through the loader, which
+  // finds them by their manifests; the tests and stories that draw the composed
+  // window are the files that name one.
   {
     files: ['src/**/*.{ts,vue}'],
     ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.stories.ts', 'src/testing/**'],
@@ -205,6 +197,11 @@ export default tseslint.config(
               group: ['**/libs/**', '**/apps/**'],
               message:
                 'reach libraries and other applications by their package names (@numen/*), never by relative paths out of the module',
+            },
+            {
+              group: ['@plugins/**', '**/plugins/**'],
+              message:
+                'the window names no plugin: a plugin registers what it offers through @numen/plugin-sdk, and the loader finds it',
             },
           ],
         },

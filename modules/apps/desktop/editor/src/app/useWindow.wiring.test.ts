@@ -68,6 +68,13 @@ vi.mock('./useWindowKinds', () => ({
 }))
 vi.mock('./useWindowStatusBar', () => ({ useWindowStatusBar: () => ({ name: 'statusBar' }) }))
 vi.mock('./useAppHotkeys', () => ({ useAppHotkeys: vi.fn() }))
+vi.mock('./useWindowPlugins', () => ({
+  createPluginSupport: (args: unknown) => {
+    h.args.plugins = args
+    return { pluginHost: h.f.pluginHost, pluginLoader: {} }
+  },
+  watchPluginSettings: vi.fn(),
+}))
 vi.mock('./useAppBootstrap', () => ({
   useAppBootstrap: (args: unknown) => {
     h.args.bootstrap = args
@@ -111,7 +118,7 @@ beforeEach(() => {
     editing: {
       notes: { applyPathChanges: vi.fn() },
       changes: { reportChange: vi.fn() },
-      noteMeasurer: { measureAll: vi.fn() },
+      noted: { measureAll: vi.fn() },
       reached: { getTabAt: vi.fn(() => null) },
       getTitle: vi.fn(() => 'a title'),
       making: {},
@@ -156,9 +163,13 @@ beforeEach(() => {
       palette: {},
       onKeyDown: vi.fn(),
     },
+    pluginHost: { notifyVaultChange: vi.fn() },
     kinds: {
-      files: { name: 'files', refreshChangedPaths: vi.fn() },
-      plexes: { name: 'plexes', refresh: vi.fn(), travel: vi.fn(), getName: vi.fn(() => 'a name') },
+      files: { name: 'files' },
+      travel: vi.fn(),
+      leavePath: vi.fn(),
+      dragged: ref([]),
+      services: { workspace: { name: 'workspace' }, notes: { name: 'notes' } },
       agents: { name: 'agents' },
       made: {},
       recorded: {},
@@ -266,16 +277,15 @@ describe('the parts of the window', () => {
 
     expect(h.f.editing.notes.applyPathChanges).toHaveBeenCalledWith(paths, renamed)
     expect(h.f.commands.commands.applyRenames).toHaveBeenCalledWith(renamed)
-    expect(h.f.kinds.files.refreshChangedPaths).toHaveBeenCalledWith(paths, renamed)
-    expect(h.f.kinds.plexes.refresh).toHaveBeenCalledWith(renamed)
+    expect(h.f.pluginHost.notifyVaultChange).toHaveBeenCalledWith({ paths, renamed })
   })
 
-  it('are asked to travel to a path through the plexes', () => {
+  it('are asked to travel to a path through the kinds', () => {
     useWindow()
 
     h.args.display.travelTo('a.md')
 
-    expect(h.f.kinds.plexes.travel).toHaveBeenCalledWith('a.md')
+    expect(h.f.kinds.travel).toHaveBeenCalledWith('a.md')
   })
 
   it('are asked to open a file at the spans through the openers', () => {
@@ -305,7 +315,10 @@ describe('the parts of the window', () => {
     useWindow()
 
     expect(h.args.commands.files()).toBe(h.f.kinds.files)
-    expect(h.args.commands.plexes()).toBe(h.f.kinds.plexes)
+    h.args.commands.travel('a.md')
+    h.args.commands.leavePath('a.md', 'b.md')
+    expect(h.f.kinds.travel).toHaveBeenCalledWith('a.md')
+    expect(h.f.kinds.leavePath).toHaveBeenCalledWith('a.md', 'b.md')
     expect(h.args.commands.agents()).toBe(h.f.kinds.agents)
     expect(h.args.commands.getOpeningNote()).toBe('opening')
   })
@@ -328,11 +341,10 @@ describe('what the window knows of a note', () => {
     expect(h.f.editing.getTitle).toHaveBeenCalledWith('t9')
   })
 
-  it('is its name from the plexes where it is open in no tab', () => {
+  it('is no title where it is open in no tab', () => {
     useWindow()
 
-    expect(h.args.commands.knows.getTitle('a.md')).toBe('a name')
-    expect(h.f.kinds.plexes.getName).toHaveBeenCalledWith('a.md')
+    expect(h.args.commands.knows.getTitle('a.md')).toBe('')
   })
 })
 
@@ -492,5 +504,13 @@ describe('the layout started with an initial tab', () => {
     } finally {
       globalThis.location = originalLocation
     }
+  })
+})
+
+describe('the services a plugin is given', () => {
+  it('are the ones the kinds made, handed to the plugins once the kinds are made', () => {
+    useWindow()
+
+    expect(h.args.plugins.services).toStrictEqual(h.f.kinds.services)
   })
 })

@@ -1,4 +1,5 @@
 import { watch } from 'vue'
+import type { PluginServices } from './pluginServices'
 import { createPluginHost } from '@/entities/plugin'
 import {
   DEFAULT_PLUGIN_ENABLED,
@@ -21,6 +22,8 @@ export interface PluginSupportDeps {
   ) => Promise<{ body?: string; error?: string } | string | undefined>
   readonly reportError?: (pluginId: string, error: unknown) => void
   readonly writeNote?: (path: string, body: string) => Promise<void>
+  /** The window and the notes a plugin's tabs are given, filled once the window has made them. */
+  readonly services?: PluginServices
 }
 
 function createPluginSettingsAccessor(settingsHolder: {
@@ -108,6 +111,9 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     onCustomCardAdded: writeCustomCard,
     ...(deps.readNote !== undefined ? { readNote: deps.readNote } : {}),
     ...(deps.writeNote !== undefined ? { writeNote: deps.writeNote } : {}),
+    getWorkspace: () => deps.services?.workspace,
+    getNotes: () => deps.services?.notes,
+    getFiles: () => deps.services?.files,
   })
   const pluginLoader = createPluginLoader({
     host: pluginHost,
