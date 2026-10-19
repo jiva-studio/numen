@@ -1,4 +1,4 @@
-package main
+package toolcall
 
 import (
 	"encoding/json"
@@ -6,8 +6,8 @@ import (
 	"unicode/utf8"
 )
 
-// getPartialJSONField reads the value of a named field in JSON that has not finished arriving.
-func getPartialJSONField(arguments, field string) string {
+// ReadPartialField reads the value of a named field in JSON that has not finished arriving.
+func ReadPartialField(arguments, field string) string {
 	if field == "" {
 		return ""
 	}

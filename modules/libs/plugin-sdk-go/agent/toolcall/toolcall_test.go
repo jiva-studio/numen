@@ -1,0 +1,80 @@
+package toolcall
+
+import (
+	"strings"
+	"testing"
+
+	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+)
+
+var testWords = ReadWords([]*numenv1.ToolDeclaration{
+	{Name: "note_edit", Title: "Edit a note", Kind: "edit", About: "path", Match: "stood", Text: "becomes"},
+	{Name: "note_read", Title: "Read notes", Kind: "read", About: "paths", Element: "path"},
+	{Name: "vault_list", Title: "List the vault", Kind: "read"},
+})
+
+func TestADeclaredCallIsShownByItsTitleEffectAndPath(t *testing.T) {
+	got := Describe(testWords, "note_edit", "c1", `{"path":"Ideas/Plan.md","start":4,"length":3}`)
+	if got.GetTool() != "Edit a note" || got.GetKind() != "edit" || got.GetCall() != "c1" {
+		t.Errorf("got %+v", got)
+	}
+	if got.GetAbout() != "Ideas/Plan.md" || got.GetPath() != "Ideas/Plan.md" {
+		t.Errorf("about %q path %q", got.GetAbout(), got.GetPath())
+	}
+	if got.GetSpan().GetFrom() != 4 || got.GetSpan().GetTo() != 7 {
+		t.Errorf("span %+v", got.GetSpan())
+	}
+}
+
+func TestACollectionIsShownByItsFirstElementAndTheCountOfTheRest(t *testing.T) {
+	got := Describe(testWords, "note_read", "c", `{"paths":[{"path":"A.md"},{"path":"B.md"},{"path":"C.md"}]}`)
+	if got.GetAbout() != "A.md and 2 more" || got.GetPath() != "" {
+		t.Errorf("got %+v", got)
+	}
+}
+
+func TestACallOfAToolThatIsAboutNothingCountsNothingWritten(t *testing.T) {
+	got := Describe(testWords, "vault_list", "c", `{"depth":2}`)
+	if got.GetWritten() != 0 || got.GetAbout() != "" {
+		t.Errorf("got %+v", got)
+	}
+}
+
+func TestAnUndeclaredCallIsReadByItsCommonArguments(t *testing.T) {
+	got := Describe(nil, "search", "c", `{"query":"algebra","path":"notes/math.md","start":10,"length":5}`)
+	if got.GetTool() != "search" || got.GetAbout() != "algebra" || got.GetPath() != "notes/math.md" {
+		t.Errorf("got %+v", got)
+	}
+	if got.GetSpan().GetFrom() != 10 || got.GetSpan().GetTo() != 15 {
+		t.Errorf("span %+v", got.GetSpan())
+	}
+
+	file := Describe(nil, "open", "c", `{"file":"notes/file.md"}`)
+	if file.GetPath() != "notes/file.md" || file.GetAbout() != "notes/file.md" {
+		t.Errorf("got %+v", file)
+	}
+}
+
+func TestAnUndeclaredCallIsReadAsItArrives(t *testing.T) {
+	got := Describe(nil, "search", "c", `{"query":"alge`)
+	if got.GetAbout() != "alge" {
+		t.Errorf("got %+v", got)
+	}
+	spanned := Describe(nil, "read", "c", `{"path":"a.md","start":"2","length":"3","x`)
+	if spanned.GetSpan().GetFrom() != 2 || spanned.GetSpan().GetTo() != 5 {
+		t.Errorf("span %+v", spanned.GetSpan())
+	}
+}
+
+func TestPartialFieldIsReadAtEveryTruncation(t *testing.T) {
+	const whole = `{"path":"Note.md","stood":"abc"}`
+	for i := 0; i <= len(whole); i++ {
+		got := ReadPartialField(whole[:i], "stood")
+		if !strings.HasPrefix("abc", got) {
+			t.Errorf("%q: %q is not a prefix", whole[:i], got)
+		}
+	}
+	if ReadPartialField(whole, "missing") != "" {
+		t.Error("a missing field was read")
+	}
+}
