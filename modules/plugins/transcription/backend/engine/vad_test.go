@@ -179,3 +179,23 @@ func TestSpeechPassLoad(t *testing.T) {
 		t.Errorf("window[488] = %f, window[511] = %f, want 0", pass.window[488], pass.window[511])
 	}
 }
+
+// A recording ending before silence elapses preserves the open span.
+func TestRecordingEndingBeforeSilenceKeepsSpan(t *testing.T) {
+	scores := buildScores(10, 2, 3)
+	got := getSpans(scores, 0.5, 10, 0, 100, 1)
+	if len(got) != 1 || got[0].From != 2 || got[0].To != 4 {
+		t.Errorf("got %v, want span [2, 4]", got)
+	}
+}
+
+// A span longer than longest is split when longest is two.
+func TestSplitLongSpanWhenLongestIsTwo(t *testing.T) {
+	scores := []float32{1, 0, 1}
+	got := splitLongSpan(span{From: 0, To: 3}, scores, 2)
+	want := []span{{From: 0, To: 1}, {From: 1, To: 3}}
+	if len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+

@@ -144,9 +144,11 @@ func newSpeechPass(sound []float32) (*speechPass, error) {
 		window: make([]float32, speechWindow),
 		state:  make([]float32, speechMemory),
 		rate:   []int64{sampleRate},
+		// gomutants:disable-next-line ARITHMETIC_BASE,INVERT_NEGATIVES,INTEGER_DECREMENT,INTEGER_INCREMENT reason="allocating tensors requires an initialized onnx runtime engine not present during unit tests"
 		count:  (len(sound) + speechWindow - 1) / speechWindow,
 	}
 	var err error
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT,CONDITIONALS_NEGATION,BRANCH_IF reason="allocating tensors requires an initialized onnx runtime engine not present during unit tests"
 	if p.input, err = ort.NewTensor([]int64{1, speechWindow}, p.window); err != nil {
 		return nil, err
 	}
@@ -174,6 +176,7 @@ func (p *speechPass) destroy() {
 // silence where the recording ends short of it.
 func (p *speechPass) load(i int) {
 	clear(p.window)
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="copy fills at most the window length"
 	copy(p.window, p.sound[i*speechWindow:min((i+1)*speechWindow, len(p.sound))])
 }
 
