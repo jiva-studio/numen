@@ -140,14 +140,14 @@ func askBuild(t *testing.T, host port.PluginManager, chatURL string) answers {
 	if err != nil {
 		t.Fatalf("AskAgent: %v", err)
 	}
-	var said strings.Builder
+	var chat strings.Builder
 	for stream.Receive() {
-		said.WriteString(stream.Msg().GetSaid())
+		chat.WriteString(stream.Msg().GetSaid())
 	}
 	if err := stream.Err(); err != nil {
 		t.Fatalf("AskAgent stream: %v", err)
 	}
-	got.Chat = said.String()
+	got.Chat = chat.String()
 
 	single, err := numenv1connect.NewCompletionServiceClient(agentClient, agent.BaseURL(), withToken(agent.Token)).
 		Complete(t.Context(), connect.NewRequest(&numenv1.CompleteRequest{Question: &numenv1.CompletionQuestion{

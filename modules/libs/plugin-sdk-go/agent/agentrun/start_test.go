@@ -34,13 +34,13 @@ func drain(work *agentrun.Work) []*numenv1.AskAgentResponse {
 	return got
 }
 
-func said(text string) *numenv1.AskAgentResponse {
+func newSaidResponse(text string) *numenv1.AskAgentResponse {
 	return &numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Said{Said: text}}
 }
 
 func TestStartHandsJSONLinesToTheHandlerAndSaysTheOthers(t *testing.T) {
 	spec := shell(`echo '{"say":"hello"}'; echo plain text; echo; echo 42`,
-		func(r *agentrun.Reader, event map[string]any) { r.Send(said(event["say"].(string))) })
+		func(r *agentrun.Reader, event map[string]any) { r.Send(newSaidResponse(event["say"].(string))) })
 	var reg agentrun.Registry
 
 	work, err := agentrun.Start(t.Context(), &reg, spec)
@@ -77,7 +77,7 @@ func TestStartRunsTheChildInTheRootWithTheToken(t *testing.T) {
 	root := t.TempDir()
 	spec := shell(`echo "{\"dir\":\"$(pwd)\",\"token\":\"$NUMEN_TOKEN\"}"`,
 		func(r *agentrun.Reader, event map[string]any) {
-			r.Send(said(event["dir"].(string) + " " + event["token"].(string)))
+			r.Send(newSaidResponse(event["dir"].(string) + " " + event["token"].(string)))
 		})
 	spec.Root, spec.Token = root, "secret-1"
 	var reg agentrun.Registry
@@ -91,8 +91,8 @@ func TestStartRunsTheChildInTheRootWithTheToken(t *testing.T) {
 	if len(got) != 1 || got[0].GetSaid() == "" {
 		t.Fatalf("got %v", got)
 	}
-	if said := got[0].GetSaid(); !strings.HasSuffix(said, " secret-1") || !strings.Contains(said, "/") {
-		t.Errorf("the child said %q", said)
+	if text := got[0].GetSaid(); !strings.HasSuffix(text, " secret-1") || !strings.Contains(text, "/") {
+		t.Errorf("the child said %q", text)
 	}
 }
 
@@ -203,7 +203,7 @@ func (s *recordingStream) Send(resp *numenv1.AskAgentResponse) error {
 	return s.err
 }
 
-func TestRelaySendsEveryResponseUntilTheWorkIsDone(t *testing.T) {
+func TestForwardResponsesSendsEveryResponseUntilTheWorkIsDone(t *testing.T) {
 	var reg agentrun.Registry
 	work, err := agentrun.Start(t.Context(), &reg, shell(`echo one; echo two`, nil))
 	if err != nil {
@@ -211,7 +211,7 @@ func TestRelaySendsEveryResponseUntilTheWorkIsDone(t *testing.T) {
 	}
 	stream := &recordingStream{}
 
-	if err := agentrun.Relay(t.Context(), work, stream); err != nil {
+	if err := agentrun.ForwardResponses(t.Context(), work, stream); err != nil {
 		t.Fatal(err)
 	}
 	if len(stream.got) != 2 || stream.got[0].GetSaid() != "one\n" || stream.got[1].GetSaid() != "two\n" {
@@ -219,7 +219,7 @@ func TestRelaySendsEveryResponseUntilTheWorkIsDone(t *testing.T) {
 	}
 }
 
-func TestRelayStopsTheWorkWhenTheStreamFails(t *testing.T) {
+func TestForwardResponsesStopsTheWorkWhenTheStreamFails(t *testing.T) {
 	var reg agentrun.Registry
 	work, err := agentrun.Start(t.Context(), &reg, shell(`echo one; sleep 30`, nil))
 	if err != nil {
@@ -227,12 +227,12 @@ func TestRelayStopsTheWorkWhenTheStreamFails(t *testing.T) {
 	}
 	stream := &recordingStream{err: context.Canceled}
 
-	if err := agentrun.Relay(t.Context(), work, stream); err != context.Canceled {
+	if err := agentrun.ForwardResponses(t.Context(), work, stream); err != context.Canceled {
 		t.Errorf("got %v", err)
 	}
 }
 
-func TestRelayStopsTheWorkWhenTheCallEnds(t *testing.T) {
+func TestForwardResponsesStopsTheWorkWhenTheCallEnds(t *testing.T) {
 	var reg agentrun.Registry
 	work, err := agentrun.Start(t.Context(), &reg, shell(`sleep 30`, nil))
 	if err != nil {
@@ -241,7 +241,7 @@ func TestRelayStopsTheWorkWhenTheCallEnds(t *testing.T) {
 	ended, end := context.WithCancel(t.Context())
 	end()
 
-	if err := agentrun.Relay(ended, work, &recordingStream{}); err != context.Canceled {
+	if err := agentrun.ForwardResponses(ended, work, &recordingStream{}); err != context.Canceled {
 		t.Errorf("got %v", err)
 	}
 }
