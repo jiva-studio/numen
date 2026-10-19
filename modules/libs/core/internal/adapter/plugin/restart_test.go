@@ -140,7 +140,6 @@ func newRestartedPlugin(t *testing.T) (*restartedPlugin, *httptest.Server) {
 	mux.Handle(numenv1connect.NewDownloadServiceHandler(restartedDownload{plugin: plugin}))
 	mux.Handle(numenv1connect.NewAgentServiceHandler(restartedAgent{plugin: plugin}))
 	mux.Handle(numenv1connect.NewProofreadingServiceHandler(restartedProofreading{plugin: plugin}))
-	mux.Handle(numenv1connect.NewCompletionServiceHandler(restartedCompletion{plugin: plugin}))
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(testsupport.PluginLifecycle{}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
@@ -265,16 +264,4 @@ func (r restartedProofreading) ProofreadText(
 ) (*connect.Response[v1.ProofreadTextResponse], error) {
 	r.plugin.asked.Add(1)
 	return connect.NewResponse(&v1.ProofreadTextResponse{Corrections: []*v1.ProofreadCorrection{{}}}), nil
-}
-
-type restartedCompletion struct {
-	numenv1connect.UnimplementedCompletionServiceHandler
-	plugin *restartedPlugin
-}
-
-func (r restartedCompletion) Complete(
-	context.Context, *connect.Request[v1.CompleteRequest],
-) (*connect.Response[v1.CompleteResponse], error) {
-	r.plugin.asked.Add(1)
-	return connect.NewResponse(&v1.CompleteResponse{Answer: &v1.CompletionAnswer{Text: "answer"}}), nil
 }
