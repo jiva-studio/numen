@@ -13,7 +13,7 @@ interface Pending {
 
 const getPending = (pending: readonly Pending[], at: number): Pending => {
   const one = pending[at]
-  if (!one) throw new Error('write ' + at + ' was not made')
+  if (!one) throw new Error(`write ${at} was not made`)
   return one
 }
 
