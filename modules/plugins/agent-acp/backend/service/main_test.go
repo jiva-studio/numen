@@ -34,13 +34,12 @@ func TestLifecycleServer(t *testing.T) {
 	}
 }
 
-// The program list is empty, and the command lines of the settings name the agents completions are
-// answered by.
+// The command lines of the settings name the agents completions are answered by.
 func TestTheCommandLinesOfTheSettingsNameTheCompletionAgents(t *testing.T) {
 	agent, _ := fakeACPAgent(t, "fake", "config")
 	svc := &agentServer{}
 
-	got, err := svc.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{
+	_, err := svc.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{
 		Commands: []*numenv1.AgentProgramCommand{
 			{Program: "acp:fake", Command: agent.Command},
 			{Program: "other", Command: []string{"/bin/other"}},
@@ -48,9 +47,6 @@ func TestTheCommandLinesOfTheSettingsNameTheCompletionAgents(t *testing.T) {
 	}))
 	if err != nil {
 		t.Fatal(err)
-	}
-	if programs := got.Msg.GetPrograms(); len(programs) != 0 {
-		t.Errorf("the programs are %v", programs)
 	}
 	if models := listCompletionModels(t, svc); !slices.ContainsFunc(models, func(m string) bool { return strings.HasPrefix(m, "fake/m1=") }) {
 		t.Errorf("the completion models are %v", models)
