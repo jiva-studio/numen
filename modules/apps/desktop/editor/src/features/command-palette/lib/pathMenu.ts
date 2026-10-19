@@ -34,7 +34,7 @@ const NOTED: ReadonlyMap<string, string> = new Map(
 
 /** One command over a note, in the group it stands in. */
 const getNoteCommand = (id: string, group: string): readonly PathItem[] => {
-  return [{ id, text: NOTED.get(id)!, group }]
+  return [{ id, text: NOTED.get(id) ?? id, group }]
 }
 
 /** What a row standing for a note offers. */
