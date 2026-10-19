@@ -33,7 +33,11 @@ describe('a path chosen in a linked tab', () => {
       'other:1': { state: 'other state', navigate: other },
     })
 
-    const synced = useTabSync({ held, tabLinks }).syncPathFromTab('plex:1', 'test.md', 'Test')
+    const synced = useTabSync({ held, tabLinks, onError: vi.fn() }).syncPathFromTab(
+      'plex:1',
+      'test.md',
+      'Test',
+    )
 
     expect(synced).toBe(true)
     expect(files).toHaveBeenCalledWith('files state', 'test.md', 'Test')
@@ -47,6 +51,7 @@ describe('a path chosen in a linked tab', () => {
     const synced = useTabSync({
       held,
       tabLinks: createLinkedTabs('agent:1', 'gone:1', 'files:1'),
+      onError: vi.fn(),
     }).syncPathFromTab('s', 'a.md')
 
     expect(synced).toBe(true)
@@ -58,7 +63,9 @@ describe('a path chosen in a linked tab', () => {
     const navigate = vi.fn<Navigate>()
     const held = createHeld({ 'files:1': { navigate } })
 
-    expect(useTabSync({ held, tabLinks: useTabLinks() }).syncPathFromTab('s', 'a.md')).toBe(false)
+    expect(
+      useTabSync({ held, tabLinks: useTabLinks(), onError: vi.fn() }).syncPathFromTab('s', 'a.md'),
+    ).toBe(false)
     expect(navigate).not.toHaveBeenCalled()
   })
 })
@@ -81,6 +88,7 @@ describe('useTabSync guards', () => {
     const sync = useTabSync({
       held: createHeld({ 'note:1': { navigate } }),
       tabLinks: createLinkedTabs('note:1'),
+      onError: vi.fn(),
     })
 
     expect(sync.syncPathFromTab('', 'a.md')).toBe(false)
@@ -96,6 +104,7 @@ describe('useTabSync guards', () => {
     const sync = useTabSync({
       held: createHeld({ 'note:1': { navigate } }),
       tabLinks: createLinkedTabs('note:1'),
+      onError: vi.fn(),
     })
 
     expect(sync.syncPathFromTab('s', 'a.md')).toBe(true)
@@ -114,10 +123,34 @@ describe('useTabSync guards', () => {
     const sync = useTabSync({
       held: createHeld({ 'note:1': { navigate } }),
       tabLinks: createLinkedTabs('note:1'),
+      onError: vi.fn(),
     })
 
     expect(() => sync.syncPathFromTab('s', 'a.md')).toThrow('boom')
     fail = false
     expect(sync.syncPathFromTab('s', 'a.md')).toBe(true)
+  })
+})
+
+describe('a linked tab that fails to move', () => {
+  it('is told to the window, and the rest still move', async () => {
+    const onError = vi.fn()
+    const failure = new Error('the plugin is gone')
+    const other = vi.fn<Navigate>()
+    const held = createHeld({
+      'plex:1': { navigate: () => Promise.reject(failure) },
+      'files:1': { navigate: other },
+    })
+
+    const synced = useTabSync({
+      held,
+      tabLinks: createLinkedTabs('plex:1', 'files:1'),
+      onError,
+    }).syncPathFromTab('s', 'a.md')
+    await Promise.resolve()
+
+    expect(synced).toBe(true)
+    expect(other).toHaveBeenCalledOnce()
+    expect(onError).toHaveBeenCalledWith(failure)
   })
 })

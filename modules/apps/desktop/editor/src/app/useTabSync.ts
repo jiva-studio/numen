@@ -7,13 +7,15 @@ import type { TabId, TabLinksState } from '@/features/tab-linking'
 export interface TabSyncDeps {
   held: Pick<ReturnType<typeof useWindowTabs>, 'getTab'>
   tabLinks: Pick<TabLinksState, 'getLinkedTargets'>
+  /** A linked tab that failed to move, told to the window. */
+  onError: (error: unknown) => void
 }
 
 export function isNotePath(path: string): boolean {
   return path.endsWith('.md') || !path.includes('.')
 }
 
-export function useTabSync({ held, tabLinks }: TabSyncDeps) {
+export function useTabSync({ held, tabLinks, onError }: TabSyncDeps) {
   let isSyncing = false
 
   /** Every tab linked to the source moves to the path, through its kind's navigate. */
@@ -26,7 +28,8 @@ export function useTabSync({ held, tabLinks }: TabSyncDeps) {
     try {
       for (const targetId of targets) {
         const target = held.getTab(targetId)
-        if (target) void target.kind.navigate?.(target.state, path, title)
+        const moved = target?.kind.navigate?.(target.state, path, title)
+        if (moved) moved.catch(onError)
       }
       return true
     } finally {

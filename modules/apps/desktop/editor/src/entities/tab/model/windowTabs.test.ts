@@ -888,7 +888,9 @@ describe('a window opened with nothing to restore', () => {
       placed('plex', 'main', 0),
     ])
 
-    await window.openPlacedTabs()
+    await window.openPlacedTabs(() => {
+      throw new Error('no placed tab fails here')
+    })
 
     const panes = getPanes(window.layout.value.root)
     expect(panes.map((one) => [one.id, one.tabs.map((id) => id.split(':')[0])])).toStrictEqual([
@@ -906,9 +908,38 @@ describe('a window opened with nothing to restore', () => {
     const window = useWindowTabs()
     window.registerKinds([placed('agent', 'aside', 0)])
 
-    await window.openPlacedTabs()
+    await window.openPlacedTabs(() => {
+      throw new Error('no placed tab fails here')
+    })
 
     expect(getPanes(window.layout.value.root).map((one) => one.id)).toStrictEqual(['main'])
     expect(onScreen(window.layout.value).map((id) => id.split(':')[0])).toStrictEqual(['agent'])
+  })
+})
+
+describe('a placed kind whose tab fails to open', () => {
+  it('is told, left out of the layout, and lets go of what it started', async () => {
+    const failure = new Error('the plugin is gone')
+    const stopped: string[] = []
+    const window = useWindowTabs()
+    window.registerKinds([
+      kind({ kind: 'agent', placement: { pane: 'aside', order: 0 } }).one,
+      kind({
+        kind: 'plex',
+        placement: { pane: 'main', order: 0 },
+        open: () => {
+          onScopeDispose(() => stopped.push('plex'))
+          throw failure
+        },
+      }).one,
+    ])
+    const told: [string, unknown][] = []
+
+    await window.openPlacedTabs((name, error) => told.push([name, error]))
+
+    expect(told).toStrictEqual([['plex', failure]])
+    expect(stopped).toStrictEqual(['plex'])
+    expect(onScreen(window.layout.value).map((id) => id.split(':')[0])).toStrictEqual(['agent'])
+    expect(window.tabs.value.map((tab) => tab.id.split(':')[0])).toStrictEqual(['agent'])
   })
 })

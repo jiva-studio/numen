@@ -127,8 +127,8 @@ describe('a declared kind registered through a plugin context', () => {
         registered.push(kind)
         return () => registered.splice(registered.indexOf(kind), 1)
       },
-      registerExtensionReader: () => () => {},
-      openTab: async () => 'tab',
+      registerExtensionReader: vi.fn(() => vi.fn()),
+      openTab: vi.fn(() => Promise.resolve('tab')),
     }
     const context = createPluginHost(deps).createContext('md.numen.held')
 

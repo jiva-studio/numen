@@ -16,7 +16,7 @@ describe('createFilesKind with linked tabs', () => {
       making: { createUntitled: vi.fn() },
     } as never
 
-    const tabSync = useTabSync({ held, tabLinks })
+    const tabSync = useTabSync({ held, tabLinks, onError: vi.fn() })
 
     const entriesMap = new Map([
       [

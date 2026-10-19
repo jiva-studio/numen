@@ -46,8 +46,9 @@ export function useWindowTabs() {
   const openers = createTabOpeners({ open, layout, byKind, scopes, drop })
   const closers = createTabClosers({ open, layout, drop })
   const handle = createWindowHandle({ ...openers, ...queries })
-  const openPlacedTabs = async () => {
-    layout.value = await createPlacedWorkspace([...byKind.values()], openers.createTab)
+  /** A kind whose tab fails to open is told to `onError` and left out of the layout. */
+  const openPlacedTabs = async (onError: PlacementError) => {
+    layout.value = await createPlacedWorkspace([...byKind.values()], openers.createTab, onError)
   }
   const onKeyPress = (event: KeyboardEvent): boolean =>
     dispatchTabKeyPress(layout.value, open.value, event)
@@ -98,19 +99,37 @@ const comparePlacement = (one: AnyTabKind, other: AnyTabKind): number => {
   return rank(one) - rank(other) || (one.placement?.order ?? 0) - (other.placement?.order ?? 0)
 }
 
+/** What is told of a placed kind whose tab failed to open. */
+type PlacementError = (kind: string, error: unknown) => void
+
 /** A tab of every kind that declares a placement, laid out as each declares. */
 async function createPlacedWorkspace(
   kinds: readonly AnyTabKind[],
   createTab: (kind: string) => Promise<string>,
+  onError: PlacementError,
 ): Promise<Workspace> {
   const main: string[] = []
   const aside: string[] = []
   for (const one of kinds.filter((kind) => kind.placement).sort(comparePlacement)) {
-    const id = await createTab(one.kind)
-    if (one.placement?.pane === 'main') main.push(id)
-    else aside.push(id)
+    try {
+      const id = await createTab(one.kind)
+      if (one.placement?.pane === 'main') main.push(id)
+      else aside.push(id)
+    } catch (error) {
+      onError(one.kind, error)
+    }
   }
   return createWorkspace(main, aside)
+}
+
+/** What a tab holds, made in its scope; a tab that fails to open lets go of whatever it started. */
+const openInScope = <T>(scope: EffectScope, open: () => T): T | undefined => {
+  try {
+    return scope.run(open)
+  } catch (error) {
+    scope.stop()
+    throw error
+  }
 }
 
 /** Effect scope manager for active tabs. */
@@ -169,7 +188,7 @@ function createTabOpeners(ctx: TabOpenerContext) {
     const id = one.identity ? `${kind}:${one.identity(at)}` : generateId(kind)
     if (ctx.open.value.has(id)) return id
     const scope = effectScope(true)
-    const state = scope.run(() => one.open(at, id))
+    const state = openInScope(scope, () => one.open(at, id))
     ctx.scopes.set(id, scope)
     ctx.open.value = new Map(ctx.open.value).set(id, { kind: one, state })
     return id

@@ -46,7 +46,7 @@ const createPlexLinkedFixture = (neighbourhoodPath: string, neighbourhoodTitle: 
     },
   } as never
 
-  const tabSync = useTabSync({ held, tabLinks })
+  const tabSync = useTabSync({ held, tabLinks, onError: vi.fn() })
 
   const plexKind = createPlexKind({
     core: {
