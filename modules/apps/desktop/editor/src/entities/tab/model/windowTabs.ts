@@ -24,6 +24,15 @@ import { createUnavailableKind } from '../lib/unavailable'
 /** The identity a pane made by a split is filed under. */
 const generatePaneId = () => crypto.randomUUID()
 
+/** The file path a tab stands on. */
+const getTabPath = (tab: WindowTab): string => {
+  const openTab = tab.kind.getOpenTab?.(tab.state)
+  if (openTab?.path) return openTab.path
+  const target = tab.kind.getTarget?.(tab.state)
+  // Stryker disable next-line StringLiteral: reconcileTab returns before comparing when the path asked for is empty, so the empty fallback is never compared
+  return target?.path || target?.file || ''
+}
+
 export function useWindowTabs() {
   const { byKind, registerKinds, registerKind, hasKind } = createTabRegistry()
   const { scopes, drop } = createTabScopes()
@@ -304,15 +313,6 @@ function dispatchTabKeyPress(
     if (one?.kind.onKeyPress?.(one.state, event)) return true
   }
   return false
-}
-
-/** The file path a tab stands on. */
-const getTabPath = (tab: WindowTab): string => {
-  const openTab = tab.kind.getOpenTab?.(tab.state)
-  if (openTab?.path) return openTab.path
-  const target = tab.kind.getTarget?.(tab.state)
-  // Stryker disable next-line StringLiteral: reconcileTab returns before comparing when the path asked for is empty, so the empty fallback is never compared
-  return target?.path || target?.file || ''
 }
 
 /** One tab let go of, and the rest kept. */
