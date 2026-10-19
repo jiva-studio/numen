@@ -137,6 +137,8 @@ type speechPass struct {
 	input, memory, sampling *ort.Value
 }
 
+var newTensor = ort.NewTensor
+
 // newSpeechPass makes the tensors over the buffers of a recording.
 func newSpeechPass(sound []float32) (*speechPass, error) {
 	p := &speechPass{
@@ -144,19 +146,17 @@ func newSpeechPass(sound []float32) (*speechPass, error) {
 		window: make([]float32, speechWindow),
 		state:  make([]float32, speechMemory),
 		rate:   []int64{sampleRate},
-		// gomutants:disable-next-line ARITHMETIC_BASE,INVERT_NEGATIVES,INTEGER_DECREMENT,INTEGER_INCREMENT reason="allocating tensors requires an initialized onnx runtime engine not present during unit tests"
 		count:  (len(sound) + speechWindow - 1) / speechWindow,
 	}
 	var err error
-	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT,CONDITIONALS_NEGATION,BRANCH_IF reason="allocating tensors requires an initialized onnx runtime engine not present during unit tests"
-	if p.input, err = ort.NewTensor([]int64{1, speechWindow}, p.window); err != nil {
+	if p.input, err = newTensor([]int64{1, speechWindow}, p.window); err != nil {
 		return nil, err
 	}
-	if p.memory, err = ort.NewTensor([]int64{2, 1, speechMemory / 2}, p.state); err != nil {
+	if p.memory, err = newTensor([]int64{2, 1, speechMemory / 2}, p.state); err != nil {
 		p.destroy()
 		return nil, err
 	}
-	if p.sampling, err = ort.NewTensor(nil, p.rate); err != nil {
+	if p.sampling, err = newTensor(nil, p.rate); err != nil {
 		p.destroy()
 		return nil, err
 	}

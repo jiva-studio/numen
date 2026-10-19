@@ -1,6 +1,12 @@
 package engine
 
-import "testing"
+import (
+	"errors"
+	"slices"
+	"testing"
+
+	ort "github.com/getcharzp/onnxruntime_purego"
+)
 
 // buildScores is a run of windows, sure where the ones named are and sure of nothing
 // elsewhere.
@@ -198,4 +204,111 @@ func TestSplitLongSpanWhenLongestIsTwo(t *testing.T) {
 		t.Errorf("got %v, want %v", got, want)
 	}
 }
+
+// A recording's window count covers every sample, rounding up to the next full window.
+func TestNewSpeechPassCount(t *testing.T) {
+	orig := newTensor
+	newTensor = func(shape []int64, data any) (*ort.Value, error) {
+		return &ort.Value{}, nil
+	}
+	t.Cleanup(func() { newTensor = orig })
+
+	for _, tc := range []struct {
+		samples int
+		want    int
+	}{
+		{0, 0},
+		{1, 1},
+		{511, 1},
+		{512, 1},
+		{513, 2},
+		{1024, 2},
+		{1025, 3},
+	}{
+		pass, err := newSpeechPass(make([]float32, tc.samples))
+		if err != nil {
+			t.Fatalf("samples %d: unexpected error: %v", tc.samples, err)
+		}
+		if pass.count != tc.want {
+			t.Errorf("samples %d: count = %d, want %d", tc.samples, pass.count, tc.want)
+		}
+		if len(pass.window) != 512 {
+			t.Errorf("samples %d: window len = %d, want 512", tc.samples, len(pass.window))
+		}
+		if len(pass.state) != 256 {
+			t.Errorf("samples %d: state len = %d, want 256", tc.samples, len(pass.state))
+		}
+		pass.destroy()
+	}
+}
+
+// Tensor construction prepares input, memory, and sampling tensors with expected shapes.
+func TestNewSpeechPassTensorShapes(t *testing.T) {
+	orig := newTensor
+	var shapes [][]int64
+	newTensor = func(shape []int64, data any) (*ort.Value, error) {
+		shapes = append(shapes, shape)
+		return &ort.Value{}, nil
+	}
+	t.Cleanup(func() { newTensor = orig })
+
+	pass, err := newSpeechPass(make([]float32, 513))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer pass.destroy()
+
+	if len(shapes) != 3 {
+		t.Fatalf("tensors created = %d, want 3", len(shapes))
+	}
+	if !slices.Equal(shapes[0], []int64{1, 512}) {
+		t.Errorf("input shape = %v, want [1, 512]", shapes[0])
+	}
+	if !slices.Equal(shapes[1], []int64{2, 1, 128}) {
+		t.Errorf("memory shape = %v, want [2, 1, 128]", shapes[1])
+	}
+	if shapes[2] != nil {
+		t.Errorf("sampling shape = %v, want nil", shapes[2])
+	}
+}
+
+// Tensor construction fails when no runtime engine is initialized.
+func TestNewSpeechPassWithoutEngineFails(t *testing.T) {
+	pass, err := newSpeechPass(make([]float32, 513))
+	if err == nil {
+		defer pass.destroy()
+		t.Fatal("expected error when engine is uninitialized, got nil")
+	}
+	if pass != nil {
+		t.Errorf("pass = %v, want nil on error", pass)
+	}
+}
+
+// Construction failure at any tensor allocation cleans up and returns the error.
+func TestNewSpeechPassConstructorErrors(t *testing.T) {
+	orig := newTensor
+	t.Cleanup(func() { newTensor = orig })
+
+	errBoom := errors.New("boom")
+	for _, failStep := range []int{0, 1, 2} {
+		step := 0
+		newTensor = func(shape []int64, data any) (*ort.Value, error) {
+			if step == failStep {
+				step++
+				return nil, errBoom
+			}
+			step++
+			return &ort.Value{}, nil
+		}
+
+		pass, err := newSpeechPass(make([]float32, 513))
+		if !errors.Is(err, errBoom) {
+			t.Errorf("step %d: err = %v, want %v", failStep, err, errBoom)
+		}
+		if pass != nil {
+			t.Errorf("step %d: pass = %v, want nil", failStep, pass)
+		}
+	}
+}
+
 
