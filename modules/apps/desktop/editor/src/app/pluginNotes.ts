@@ -20,6 +20,7 @@ export interface PluginNotes {
   readonly writeNote: (path: string, body: string) => Promise<void>
 }
 
+const NOT_WRITTEN = 'the note could not be written'
 const UNREADABLE = 'the frontmatter of this note cannot be read'
 
 /**
@@ -36,8 +37,8 @@ export const createPluginNotes = (deps: PluginNotesDeps): PluginNotes => {
     for (let body = queued.get(path); body !== undefined; body = queued.get(path)) {
       queued.delete(path)
       try {
-        await deps.write(path, body, null)
-        failure = null
+        const answered = await deps.write(path, body, null)
+        failure = answered.ok ? null : new Error(NOT_WRITTEN)
       } catch (error) {
         failure = error
       }
@@ -58,8 +59,9 @@ export const createPluginNotes = (deps: PluginNotesDeps): PluginNotes => {
   }
 
   const readNote = async (path: string): Promise<{ body: string; error?: string }> => {
-    await waitForWrites(path)
-    const answered = await deps.read(path)
+    const answered = await (running.has(path)
+      ? waitForWrites(path).then(() => deps.read(path))
+      : deps.read(path))
     if (answered.ok) return { body: answered.value.body }
     return { body: '', error: ERROR_MESSAGES[convertErrorCode(answered.error)] || UNREADABLE }
   }

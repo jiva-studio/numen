@@ -3,19 +3,9 @@ import { openWorkspace, runPaletteCommand } from './support/workspace.js'
 
 test.describe('Plugin Settings and Configuration', () => {
   test('opens command palette and navigates to Settings tab', async ({ page }) => {
-    await page.goto('/')
+    await openWorkspace(page)
 
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    // Trigger command palette with Control+p
-    await page.keyboard.press('Control+p')
-
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-
-    // Search and select Settings command
-    await paletteInput.fill('Settings')
-    await page.keyboard.press('Enter')
+    await runPaletteCommand(page, 'Settings', 'Settings')
 
     // Verify Settings tab opened
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })

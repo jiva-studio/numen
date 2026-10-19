@@ -82,6 +82,27 @@ describe('createPluginNotes', () => {
     await write
   })
 
+  it('starts a read at once when no write is in the air, before a write made after it', async () => {
+    const deps = createDeps()
+    const notes = createPluginNotes(deps)
+
+    const read = notes.readNote('a.md')
+    const write = notes.writeNote('a.md', 'later')
+    expect(deps.read).toHaveBeenCalledTimes(1)
+
+    expect(await read).toEqual({ body: 'original' })
+    getPending(deps.pending, 0).finish()
+    await write
+  })
+
+  it('rejects a write the vault refused', async () => {
+    const deps = createDeps()
+    deps.write.mockResolvedValueOnce({ ok: false, error: 'changed' } as WriteResult)
+    const notes = createPluginNotes(deps)
+
+    await expect(notes.writeNote('a.md', 'refused')).rejects.toThrow('could not be written')
+  })
+
   it('writes again once the previous writes of the path are done', async () => {
     const deps = createDeps()
     const notes = createPluginNotes(deps)
