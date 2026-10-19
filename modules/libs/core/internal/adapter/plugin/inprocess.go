@@ -202,7 +202,9 @@ func (h *Host) startBuiltIn(ctx context.Context, p DiscoveredPlugin, builtIn bui
 // what it holds open is closed.
 func (h *Host) shutdownBuiltIn(ctx context.Context, endpoint Endpoint) {
 	if shutdown := h.createRPCShutdown(endpoint, time.Second); shutdown != nil {
-		_ = shutdown(context.WithoutCancel(ctx))
+		if err := shutdown(context.WithoutCancel(ctx)); err != nil {
+			h.reportError(fmt.Errorf("shut down the handler of built-in plugin that was not activated: %w", err))
+		}
 	}
 }
 

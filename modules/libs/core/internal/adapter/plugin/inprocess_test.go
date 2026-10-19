@@ -509,3 +509,29 @@ func TestAPluginOnDiskIsLaunchedWhereABuiltInSharesItsId(t *testing.T) {
 		t.Fatalf("the copy on disk was served by the built-in: %+v", endpoint)
 	}
 }
+
+// A handler that cannot be shut down is reported, and the activation error stays the cause.
+func TestAShutdownThatFailsOnAnUnactivatedBuiltInIsReported(t *testing.T) {
+	host := newBuiltInHost(t)
+	reported := make(chan error, 4)
+	host.SetErrorHandler(func(err error) { reported <- err })
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), func(map[string]string) (http.Handler, error) {
+		mux := http.NewServeMux()
+		mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(newerProtocolLifecycle{}))
+		return mux, nil
+	})
+
+	_, err := host.EnsureActive(t.Context(), firstBuiltInID)
+
+	if !errors.Is(err, port.ErrUnsupportedProtocol) {
+		t.Fatalf("EnsureActive() = %v, want %v", err, port.ErrUnsupportedProtocol)
+	}
+	select {
+	case got := <-reported:
+		if !strings.Contains(got.Error(), "shut down the handler") {
+			t.Errorf("reported %v", got)
+		}
+	default:
+		t.Error("the failed shutdown was not reported")
+	}
+}
