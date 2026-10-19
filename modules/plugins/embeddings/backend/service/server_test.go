@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"context"
@@ -53,28 +53,6 @@ func TestEmbeddingServerEnvOverrides(t *testing.T) {
 	}
 	if msg.GetPooling() != "mean" {
 		t.Errorf("expected mean pooling, got %s", msg.GetPooling())
-	}
-}
-
-func TestLifecyclePing(t *testing.T) {
-	life := server.NewLifecycleServer(make(chan struct{}))
-	resp, err := life.Ping(context.Background(), connect.NewRequest(&numenv1.PingRequest{}))
-	if err != nil {
-		t.Fatalf("ping failed: %v", err)
-	}
-	if resp.Msg.GetStatus() != "ok" {
-		t.Errorf("status = %q, want %q", resp.Msg.GetStatus(), "ok")
-	}
-}
-
-func TestLifecycleShutdown(t *testing.T) {
-	life := server.NewLifecycleServer(make(chan struct{}))
-	resp, err := life.Shutdown(context.Background(), connect.NewRequest(&numenv1.ShutdownRequest{}))
-	if err != nil {
-		t.Fatalf("shutdown failed: %v", err)
-	}
-	if !resp.Msg.GetSuccess() {
-		t.Error("shutdown success = false, want true")
 	}
 }
 

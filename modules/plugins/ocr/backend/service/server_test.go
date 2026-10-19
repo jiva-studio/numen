@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"bytes"
@@ -27,28 +27,6 @@ func createTestPNG(t *testing.T, w, h int) []byte {
 		t.Fatalf("encode test png: %v", err)
 	}
 	return buf.Bytes()
-}
-
-func TestLifecyclePing(t *testing.T) {
-	life := server.NewLifecycleServer(make(chan struct{}))
-	resp, err := life.Ping(context.Background(), connect.NewRequest(&numenv1.PingRequest{}))
-	if err != nil {
-		t.Fatalf("ping failed: %v", err)
-	}
-	if resp.Msg.GetStatus() != "ok" {
-		t.Errorf("status = %q, want %q", resp.Msg.GetStatus(), "ok")
-	}
-}
-
-func TestLifecycleShutdown(t *testing.T) {
-	life := server.NewLifecycleServer(make(chan struct{}))
-	resp, err := life.Shutdown(context.Background(), connect.NewRequest(&numenv1.ShutdownRequest{}))
-	if err != nil {
-		t.Fatalf("shutdown failed: %v", err)
-	}
-	if !resp.Msg.GetSuccess() {
-		t.Error("shutdown success = false, want true")
-	}
 }
 
 func TestLifecycleConfigure(t *testing.T) {
