@@ -107,14 +107,7 @@ func TestNumenAgentIsConfiguredWithItsBaseURLAndKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive: %v", err)
 	}
-	client := numenv1connect.NewAgentServiceClient(
-		&http.Client{Transport: endpoint.Transport.(http.RoundTripper)}, endpoint.BaseURL(),
-		connect.WithInterceptors(connect.UnaryInterceptorFunc(func(next connect.UnaryFunc) connect.UnaryFunc {
-			return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-				req.Header().Set("Authorization", "Bearer "+endpoint.Token)
-				return next(ctx, req)
-			}
-		})))
+	client := numenv1connect.NewAgentServiceClient(newClient(endpoint), endpoint.BaseURL(), withToken(endpoint.Token))
 	res, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
 	if err != nil {
 		t.Fatalf("GetAgentPrograms: %v", err)
