@@ -29,7 +29,9 @@ function createAgentAsker(held: WindowKindsDeps['held'], writeMessage: MessageWr
         )
         return
       }
-      await held.sendText(AGENT, text)
+      await held
+        .sendText(AGENT, text)
+        .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
     },
   }
 }
@@ -73,11 +75,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
       nesting: settings.nesting,
       dragged,
       getNoteInFocus: getPlexTarget,
-      ask: (text) => {
-        agents
-          .askQuestion(text)
-          .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
-      },
+      ask: (text) => void agents.askQuestion(text),
       writeMessage,
     }),
     notes: createVaultNotes({ core, search: core, making: editing.making }),
