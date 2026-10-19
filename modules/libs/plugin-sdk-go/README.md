@@ -9,7 +9,7 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 | Module | Packages | Used by |
 |---|---|---|
 | `plugin-sdk-go` | `server`, `ai` | every native plugin; `ai` by proofreading |
-| `plugin-sdk-go/agent` | `agent/agentrun`, `agent/completion`, `agent/harness`, `agent/toolcall` | agent, agent-acp, agent-claude |
+| `plugin-sdk-go/agent` | `agent/agentrun`, `agent/completion`, `agent/harness`, `agent/toolcall` | agent, agent-acp, agent-antigravity, agent-claude, agent-codex |
 | `plugin-sdk-go/models` | `models` | embeddings, ocr, transcription |
 | `plugin-sdk-go/onnx` | `onnx` | embeddings, ocr, transcription |
 | `plugin-sdk-go/vault` | `vault` | reader-epub, reader-pdf |

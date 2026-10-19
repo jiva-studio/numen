@@ -50,7 +50,6 @@ func (r *eventReader) handle(rawMap map[string]any) {
 			},
 		})
 	}
-	r.handleCodexEvent(rawMap)
 	r.handleToolCalls(rawMap)
 
 	if content, ok := rawMap["content"].(string); ok && content != "" {
@@ -132,35 +131,6 @@ func (r *eventReader) continueBlock(evObj map[string]any) {
 	}
 	if partial, ok := delta["partial_json"].(string); ok {
 		r.currentArgs.WriteString(partial)
-	}
-}
-
-func (r *eventReader) handleCodexEvent(rawMap map[string]any) {
-	evType, _ := rawMap["type"].(string)
-	item, _ := rawMap["item"].(map[string]any)
-
-	switch evType {
-	case "item.started":
-		if item != nil && item["type"] == "mcp_tool_call" {
-			name, _ := item["name"].(string)
-			args, _ := json.Marshal(item["arguments"])
-			r.send(&numenv1.AskAgentResponse{
-				Step: &numenv1.AskAgentResponse_ToolCall{
-					ToolCall: &numenv1.ToolCall{
-						Tool:  name,
-						About: string(args),
-					},
-				},
-			})
-		}
-	case "item.completed":
-		if item != nil && item["type"] == "mcp_tool_call" {
-			r.send(&numenv1.AskAgentResponse{
-				Step: &numenv1.AskAgentResponse_ToolFinished{
-					ToolFinished: &numenv1.ToolFinished{},
-				},
-			})
-		}
 	}
 }
 

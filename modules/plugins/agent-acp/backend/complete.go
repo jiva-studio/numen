@@ -81,12 +81,14 @@ func (s *agentServer) ListCompletionModels(
 	return connect.NewResponse(res), nil
 }
 
-// getACPAgents returns the agents the server was given, else those installed.
+// getACPAgents returns the agents the server was given, else those the settings name.
 func (s *agentServer) getACPAgents() []acpAgent {
 	if s.acpAgents != nil {
 		return s.acpAgents()
 	}
-	return GetACPAgents()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return getACPAgentsFromCommands(s.commands)
 }
 
 // findCompletionAgent returns the agent the model names and the model id within it.

@@ -15,14 +15,13 @@ import (
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
-// AgentRunner executes external coding agents and emits AskAgentResponse events.
+// AgentRunner executes the Antigravity CLI and emits AskAgentResponse events.
 type AgentRunner struct {
 	Registry *agentrun.Registry
 }
 
-// RunParams specifies execution options for an agent invocation.
+// RunParams specifies execution options for an Antigravity invocation.
 type RunParams struct {
-	Program      string
 	Command      []string
 	Model        string
 	Prompt       string
@@ -32,29 +31,11 @@ type RunParams struct {
 	Root         string
 }
 
-// StartRun starts the agent process and returns the Work handle.
+// StartRun starts the Antigravity process and returns the Work handle.
 func (r *AgentRunner) StartRun(ctx context.Context, params RunParams) (*agentrun.Work, error) {
-	if params.Program == "" {
-		params.Program = "antigravity"
-	}
-
 	running, stop := context.WithCancel(ctx)
 	binName, baseArgs := resolveCommand(params)
-
-	isAntigravity := params.Program == "antigravity" || strings.HasSuffix(binName, "agy") || strings.HasSuffix(binName, "antigravity")
-	isCodex := params.Program == "codex" || strings.HasSuffix(binName, "codex")
-
-	var cmd *exec.Cmd
-	var cleanupTempHome func()
-
-	switch {
-	case isAntigravity:
-		cmd, cleanupTempHome = makeAntigravityCommand(running, binName, baseArgs, params, r.Registry)
-	case isCodex:
-		cmd = makeCodexCommand(running, binName, baseArgs, params)
-	default:
-		cmd = exec.CommandContext(running, binName, baseArgs...)
-	}
+	cmd, cleanupTempHome := makeAntigravityCommand(running, binName, baseArgs, params, r.Registry)
 
 	configureCommand(cmd, params)
 
@@ -97,14 +78,7 @@ func resolveCommand(params RunParams) (string, []string) {
 	if len(params.Command) > 0 {
 		return params.Command[0], params.Command[1:]
 	}
-	switch params.Program {
-	case "codex":
-		return FindCodex(), nil
-	case "cursor":
-		return FindCursor(), nil
-	default:
-		return FindAntigravity(), nil
-	}
+	return FindAntigravity(), nil
 }
 
 func configureCommand(cmd *exec.Cmd, params RunParams) {
@@ -145,27 +119,6 @@ func makeAntigravityCommand(
 		}
 	}
 	return cmd, nil
-}
-
-func makeCodexCommand(
-	running context.Context, binName string, baseArgs []string, params RunParams,
-) *exec.Cmd {
-	args := append([]string{}, baseArgs...)
-	args = append(args,
-		"exec",
-		"--json",
-		"--dangerously-bypass-approvals-and-sandbox",
-	)
-	if params.Tools.URL != "" {
-		mcpURL := fmt.Sprintf(`mcp_servers.numen.url=%q`, params.Tools.URL)
-		mcpHeader := fmt.Sprintf(`mcp_servers.numen.http_headers={"Authorization"="Bearer %s"}`, params.Tools.Token)
-		args = append(args, "-c", mcpURL, "-c", mcpHeader)
-	}
-	if params.Model != "" && params.Model != "default" {
-		args = append(args, "--model", params.Model)
-	}
-	args = append(args, params.Prompt)
-	return exec.CommandContext(running, binName, args...)
 }
 
 func readAgentOutput(
