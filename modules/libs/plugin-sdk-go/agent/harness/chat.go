@@ -64,6 +64,14 @@ type model struct {
 	Title string
 }
 
+// chatRequest is what the chat API is asked for the next message of a conversation.
+type chatRequest struct {
+	Model    string         `json:"model"`
+	Messages []message      `json:"messages"`
+	Tools    []functionTool `json:"tools,omitempty"`
+	Stream   bool           `json:"stream,omitempty"`
+}
+
 // chat is an OpenAI-compatible chat API: its base URL and the key presented to it, empty for an
 // endpoint that asks for none.
 type chat struct {
@@ -78,23 +86,28 @@ func newText(text string) *string { return &text }
 // send asks the model for the next message of the conversation, offering it the tools. It returns
 // the message and why the model stopped writing it, 'length' for a message cut off at its limit.
 func (c chat) send(ctx context.Context, model string, messages []message, tools []functionTool) (message, string, error) {
-	body, err := json.Marshal(struct {
-		Model    string         `json:"model"`
-		Messages []message      `json:"messages"`
-		Tools    []functionTool `json:"tools,omitempty"`
-	}{Model: model, Messages: messages, Tools: tools})
+	body, err := json.Marshal(chatRequest{Model: model, Messages: messages, Tools: tools})
 	if err != nil {
 		return message{}, "", fmt.Errorf("marshal chat request: %w", err)
 	}
+	answer, err := c.do(ctx, http.MethodPost, "/chat/completions", body)
+	if err != nil {
+		return message{}, "", err
+	}
+	return readReply(answer)
+}
 
+// readReply decodes a whole answer of the chat API into its first message and why the model
+// stopped writing it.
+func readReply(answer []byte) (message, string, error) {
 	var reply struct {
 		Choices []struct {
 			Message      message `json:"message"`
 			FinishReason string  `json:"finish_reason"`
 		} `json:"choices"`
 	}
-	if err := c.do(ctx, http.MethodPost, "/chat/completions", body, &reply); err != nil {
-		return message{}, "", err
+	if err := json.Unmarshal(answer, &reply); err != nil {
+		return message{}, "", fmt.Errorf("decode chat response: %w", err)
 	}
 	if len(reply.Choices) == 0 {
 		return message{}, "", errNoChoice
@@ -104,14 +117,18 @@ func (c chat) send(ctx context.Context, model string, messages []message, tools 
 
 // listModels asks the chat API for the models it serves.
 func (c chat) listModels(ctx context.Context) ([]model, error) {
+	answer, err := c.do(ctx, http.MethodGet, "/models", nil)
+	if err != nil {
+		return nil, err
+	}
 	var listing struct {
 		Data []struct {
 			ID   string `json:"id"`
 			Name string `json:"name"`
 		} `json:"data"`
 	}
-	if err := c.do(ctx, http.MethodGet, "/models", nil, &listing); err != nil {
-		return nil, err
+	if err := json.Unmarshal(answer, &listing); err != nil {
+		return nil, fmt.Errorf("decode chat response: %w", err)
 	}
 	models := make([]model, 0, len(listing.Data))
 	for _, one := range listing.Data {
@@ -122,8 +139,28 @@ func (c chat) listModels(ctx context.Context) ([]model, error) {
 	return models, nil
 }
 
-// do sends one request to the chat API and decodes its answer into out.
-func (c chat) do(ctx context.Context, method, path string, body []byte, out any) error {
+// do sends one request to the chat API and returns its answer. An answer other than 200 OK is an
+// error.
+func (c chat) do(ctx context.Context, method, path string, body []byte) ([]byte, error) {
+	resp, err := c.open(ctx, method, path, body)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	answer, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read chat response: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, newStatusError(resp.Status, answer)
+	}
+	return answer, nil
+}
+
+// open sends one request to the chat API and returns the response as soon as it begins. A key is
+// sent only where isPrivate allows, and no redirect takes it anywhere else.
+func (c chat) open(ctx context.Context, method, path string, body []byte) (*http.Response, error) {
 	base := strings.TrimSuffix(c.baseURL, "/")
 	if base == "" {
 		base = DefaultBaseURL
@@ -134,7 +171,7 @@ func (c chat) do(ctx context.Context, method, path string, body []byte, out any)
 	}
 	req, err := http.NewRequestWithContext(ctx, method, base+path, reader)
 	if err != nil {
-		return fmt.Errorf("create chat request: %w", err)
+		return nil, fmt.Errorf("create chat request: %w", err)
 	}
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -145,7 +182,7 @@ func (c chat) do(ctx context.Context, method, path string, body []byte, out any)
 	}
 	if c.key != "" {
 		if !isPrivate(req.URL) {
-			return errPlainKey
+			return nil, errPlainKey
 		}
 		req.Header.Set("Authorization", "Bearer "+c.key)
 		guarded := *client
@@ -154,21 +191,14 @@ func (c chat) do(ctx context.Context, method, path string, body []byte, out any)
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("send chat request: %w", err)
+		return nil, fmt.Errorf("send chat request: %w", err)
 	}
-	defer resp.Body.Close()
+	return resp, nil
+}
 
-	answer, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("read chat response: %w", err)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("the chat API answered %s: %s", resp.Status, strings.TrimSpace(string(answer)))
-	}
-	if err := json.Unmarshal(answer, out); err != nil {
-		return fmt.Errorf("decode chat response: %w", err)
-	}
-	return nil
+// newStatusError is an answer of the chat API other than 200 OK: its status and what it said.
+func newStatusError(status string, answer []byte) error {
+	return fmt.Errorf("the chat API answered %s: %s", status, strings.TrimSpace(string(answer)))
 }
 
 // isPrivate reports whether what is sent to the address stays private: over https, or over http to
