@@ -58,7 +58,12 @@ export function useWindowTabs() {
   const navigation = createTabNavigation(open, openers)
   /** A kind whose tab fails to open is told to `onError` and left out of the layout. */
   const openPlacedTabs = async (onError: PlacementError) => {
+    const earlier = getPanes(layout.value.root).flatMap((one) => one.tabs)
     layout.value = await createPlacedWorkspace([...byKind.values()], openers.createTab, onError)
+    const placed = new Set(getPanes(layout.value.root).flatMap((one) => one.tabs))
+    for (const id of earlier) {
+      if (open.value.has(id) && !placed.has(id)) layout.value = openTab(layout.value, id)
+    }
   }
   const onKeyPress = (event: KeyboardEvent): boolean =>
     dispatchTabKeyPress(layout.value, open.value, event)

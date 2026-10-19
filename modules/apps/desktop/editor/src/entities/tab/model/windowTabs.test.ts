@@ -904,6 +904,20 @@ describe('a window opened with nothing to restore', () => {
     ])
   })
 
+  it('keeps a tab the person opened before the placed tabs were laid out, in front', async () => {
+    const window = useWindowTabs()
+    window.registerKinds([placed('plex', 'main', 0), kind({ kind: 'settings' }).one])
+    const early = await window.openTabOfKind('settings')
+
+    await window.openPlacedTabs(() => {
+      throw new Error('no placed tab fails here')
+    })
+
+    const [main] = getPanes(window.layout.value.root)
+    expect(main?.tabs.map((id) => id.split(':')[0])).toStrictEqual(['plex', 'settings'])
+    expect(main?.active).toBe(early)
+  })
+
   it('gives the whole window to the aside kinds where no kind is placed in the main pane', async () => {
     const window = useWindowTabs()
     window.registerKinds([placed('agent', 'aside', 0)])
