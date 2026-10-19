@@ -166,11 +166,11 @@ func TestEveryBridgeAnswersAPluginThatIsNotInstalledWithUnavailable(t *testing.T
 	for _, tc := range bridgeContracts {
 		t.Run(tc.name, func(t *testing.T) {
 			host := NewHost("desktop.editor")
-			t.Cleanup(func() {
-				if err := host.TeardownAll(context.Background(), 50*time.Millisecond); err != nil {
+			defer func() {
+				if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 					t.Errorf("TeardownAll: %v", err)
 				}
-			})
+			}()
 			for _, problem := range listRefusalProblems(t.Context(), host, tc.open, isNotInstalled) {
 				t.Error(problem)
 			}
