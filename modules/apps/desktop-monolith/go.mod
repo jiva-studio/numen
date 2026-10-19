@@ -13,9 +13,22 @@ require (
 require (
 	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de // indirect
+	github.com/getcharzp/go-ocr v0.0.0-20260818071741-a892e438f08d // indirect
+	github.com/getcharzp/onnxruntime_purego v1.25.0 // indirect
 	github.com/go-shiori/dom v0.0.0-20230515143342-73569d674e1c // indirect
 	github.com/go-shiori/go-readability v0.0.0-20251205110129-5db1dc9836f0 // indirect
+	github.com/gofrs/flock v0.13.0 // indirect
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
+	github.com/gomlx/compute v0.1.6 // indirect
+	github.com/gomlx/go-huggingface v0.4.3 // indirect
+	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
+	github.com/icza/bitio v1.1.0 // indirect
+	github.com/mewkiz/flac v1.0.14 // indirect
+	github.com/mewkiz/pkg v0.0.0-20250417130911-3f050ff8c56d // indirect
+	github.com/mewpkg/term v0.0.0-20241026122259-37a80af23985 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+	github.com/up-zero/gotool v0.0.0-20260120011100-d685b2532b5a // indirect
+	golang.org/x/image v0.47.0 // indirect
 )
 
 require (
@@ -31,12 +44,17 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go v0.0.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent v0.0.0 // indirect
+	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models v0.0.0 // indirect
+	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx v0.0.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault v0.0.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/agent v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/agent-claude v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/downloader v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/embeddings v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/ocr v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/proofreading v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/transcription v0.0.0
 	github.com/jolestar/go-commons-pool/v2 v2.1.2 // indirect
 	github.com/klippa-app/go-pdfium v1.21.3 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -90,3 +108,13 @@ replace github.com/jiva-studio/numen/modules/plugins/proofreading => ../../plugi
 replace github.com/jiva-studio/numen/modules/plugins/downloader => ../../plugins/downloader
 
 replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent => ../../libs/plugin-sdk-go/agent
+
+replace github.com/jiva-studio/numen/modules/plugins/embeddings => ../../plugins/embeddings
+
+replace github.com/jiva-studio/numen/modules/plugins/ocr => ../../plugins/ocr
+
+replace github.com/jiva-studio/numen/modules/plugins/transcription => ../../plugins/transcription
+
+replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models => ../../libs/plugin-sdk-go/models
+
+replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx => ../../libs/plugin-sdk-go/onnx

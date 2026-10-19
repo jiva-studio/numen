@@ -52,7 +52,8 @@ func TestEachPluginIsRegisteredOnceByItsOwnManifest(t *testing.T) {
 
 	slices.Sort(ids)
 	if want := []string{
-		"md.numen.agent", "md.numen.agent-claude", "md.numen.downloader", "md.numen.epub", "md.numen.pdf", "md.numen.proofreading",
+		"md.numen.agent", "md.numen.agent-claude", "md.numen.downloader", "md.numen.embeddings", "md.numen.epub",
+		"md.numen.ocr", "md.numen.pdf", "md.numen.proofreading", "md.numen.transcription",
 	}; !slices.Equal(ids, want) {
 		t.Fatalf("registered %v, want %v", ids, want)
 	}
