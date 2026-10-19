@@ -72,3 +72,16 @@ func TestTheModelIsReadWhileConfigureChangesIt(t *testing.T) {
 	}
 	<-done
 }
+
+// A dimension or a token limit the model answer cannot hold is not taken from the environment.
+func TestAnOverrideAboveWhatTheAnswerHoldsIsIgnored(t *testing.T) {
+	want := newEmbeddingServer().modelInfo
+	t.Setenv("NUMEN_EMBEDDING_DIMENSIONS", "4294967296")
+	t.Setenv("NUMEN_EMBEDDING_MAX_TOKENS", "4294967296")
+
+	got := newEmbeddingServer().modelInfo
+
+	if got.Dimensions != want.Dimensions || got.MaxTokens != want.MaxTokens {
+		t.Fatalf("dimensions %d and tokens %d, want %d and %d", got.Dimensions, got.MaxTokens, want.Dimensions, want.MaxTokens)
+	}
+}

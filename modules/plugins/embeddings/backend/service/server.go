@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
@@ -67,12 +68,12 @@ func newEmbeddingServer() *embeddingServer {
 		local.File = file
 	}
 	if envDim := os.Getenv("NUMEN_EMBEDDING_DIMENSIONS"); envDim != "" {
-		if d, err := strconv.Atoi(envDim); err == nil && d > 0 {
+		if d, err := strconv.Atoi(envDim); err == nil && d > 0 && d <= math.MaxInt32 {
 			info.Dimensions = d
 		}
 	}
 	if envTokens := os.Getenv("NUMEN_EMBEDDING_MAX_TOKENS"); envTokens != "" {
-		if t, err := strconv.Atoi(envTokens); err == nil && t > 0 {
+		if t, err := strconv.Atoi(envTokens); err == nil && t > 0 && t <= math.MaxInt32 {
 			info.MaxTokens = t
 		}
 	}
