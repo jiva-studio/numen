@@ -30,18 +30,18 @@ type BookServer struct {
 	// vaultRoot is the vault the paths of requests are held to.
 	vaultRoot func() string
 
-	// books holds the books entries are read from, open until the server closes.
-	books *shelf
+	// books caches the books entries are read from, and closes them when the server closes.
+	books *bookCache
 }
 
-// NewBookServer returns a BookServer that holds paths to the vault NUMEN_VAULT_PATH names.
+// NewBookServer returns a BookServer that restricts paths to the vault NUMEN_VAULT_PATH names.
 func NewBookServer() *BookServer {
-	return &BookServer{vaultRoot: func() string { return os.Getenv("NUMEN_VAULT_PATH") }, books: newShelf()}
+	return &BookServer{vaultRoot: func() string { return os.Getenv("NUMEN_VAULT_PATH") }, books: newBookCache()}
 }
 
-// NewBookServerIn returns a BookServer that holds paths to the vault at vaultRoot.
+// NewBookServerIn returns a BookServer that restricts paths to the vault at vaultRoot.
 func NewBookServerIn(vaultRoot string) *BookServer {
-	return &BookServer{vaultRoot: func() string { return vaultRoot }, books: newShelf()}
+	return &BookServer{vaultRoot: func() string { return vaultRoot }, books: newBookCache()}
 }
 
 // GetBook parses an EPUB file and returns metadata, documents, and parts.
@@ -181,9 +181,9 @@ func (s *BookServer) ReadBookEntry(
 	if err != nil {
 		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
 	}
-	book, err := s.books.take(cleanPath)
+	book, err := s.books.acquire(cleanPath)
 	if err != nil {
-		if errors.Is(err, errShelfClosed) {
+		if errors.Is(err, errCacheClosed) {
 			return nil, connect.NewError(connect.CodeUnavailable, fmt.Errorf("read book %s: %w", path, err))
 		}
 		if errors.Is(err, errReadFile) {
@@ -221,7 +221,7 @@ func newReadError(err error) error {
 	return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("parse epub: %w", err))
 }
 
-// Close closes the books the server holds open.
+// Close closes the cached books.
 func (s *BookServer) Close() {
 	s.books.Close()
 }

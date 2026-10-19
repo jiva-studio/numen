@@ -31,7 +31,7 @@ func readEntryFrom(server *BookServer, name, entry string) (*connect.Response[nu
 		connect.NewRequest(&numenv1.ReadBookEntryRequest{Path: name, Entry: entry}))
 }
 
-func TestReadBookEntryOpensTheBookOnceForManyEntries(t *testing.T) {
+func TestReadBookEntryOpensTheFileOnceForManyEntries(t *testing.T) {
 	dir, name, _, _ := writeBook(t)
 	server, opens := newCountingServer(t, dir)
 	for range 50 {
@@ -46,7 +46,7 @@ func TestReadBookEntryOpensTheBookOnceForManyEntries(t *testing.T) {
 	}
 }
 
-func TestReadBookEntryOpensTheBookAgainWhenTheFileChanged(t *testing.T) {
+func TestReadBookEntryReopensTheBookWhenTheFileChanged(t *testing.T) {
 	dir, name, _, _ := writeBook(t)
 	server, opens := newCountingServer(t, dir)
 	if _, err := readEntryFrom(server, name, "EPUB/cover.png"); err != nil {
@@ -76,10 +76,10 @@ func TestReadBookEntryOpensTheBookAgainWhenTheFileChanged(t *testing.T) {
 	}
 }
 
-func TestReadBookEntryHoldsAtMostSomeBooksOpen(t *testing.T) {
+func TestReadBookEntryEvictsTheLeastRecentlyReadBook(t *testing.T) {
 	dir, _, _, _ := writeBook(t)
 	server, opens := newCountingServer(t, dir)
-	for i := range mostOpenBooks + 1 {
+	for i := range maxCachedBooks + 1 {
 		name := filepath.Join(dir, "copy"+string(rune('a'+i))+".epub")
 		if err := os.WriteFile(name, createPictureEpub(t), 0o644); err != nil {
 			t.Fatal(err)
@@ -88,15 +88,15 @@ func TestReadBookEntryHoldsAtMostSomeBooksOpen(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if got := len(server.books.open); got != mostOpenBooks {
-		t.Fatalf("%d books are open, want %d", got, mostOpenBooks)
+	if got := len(server.books.books); got != maxCachedBooks {
+		t.Fatalf("%d books are open, want %d", got, maxCachedBooks)
 	}
-	// The first book was the least recently read and was let go.
+	// The first book was the least recently read and was evicted.
 	if _, err := readEntryFrom(server, "copya.epub", "EPUB/cover.png"); err != nil {
 		t.Fatal(err)
 	}
-	if got := opens.Load(); got != mostOpenBooks+2 {
-		t.Errorf("the files were opened %d times, want %d", got, mostOpenBooks+2)
+	if got := opens.Load(); got != maxCachedBooks+2 {
+		t.Errorf("the files were opened %d times, want %d", got, maxCachedBooks+2)
 	}
 }
 
@@ -125,13 +125,13 @@ func TestReadBookEntryAnswersConcurrentRequests(t *testing.T) {
 	}
 }
 
-func TestCloseClosesTheFilesOfTheBooksHeld(t *testing.T) {
+func TestCloseClosesTheFilesOfTheCachedBooks(t *testing.T) {
 	dir, name, _, _ := writeBook(t)
 	server, _ := newCountingServer(t, dir)
 	if _, err := readEntryFrom(server, name, "EPUB/cover.png"); err != nil {
 		t.Fatal(err)
 	}
-	file := server.books.open[0].file
+	file := server.books.books[0].file
 	server.Close()
 	if _, err := file.Stat(); err == nil {
 		t.Error("the file of the book is still open after Close")
@@ -142,10 +142,10 @@ func TestCloseClosesTheFilesOfTheBooksHeld(t *testing.T) {
 	}
 }
 
-func TestCloseLeavesAReadingRequestItsFile(t *testing.T) {
+func TestCloseKeepsTheFileOpenForAReadingRequest(t *testing.T) {
 	dir, name, _, _ := writeBook(t)
 	server, _ := newCountingServer(t, dir)
-	book, err := server.books.take(filepath.Join(dir, name))
+	book, err := server.books.acquire(filepath.Join(dir, name))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -222,7 +222,7 @@ func (b *Book) Entry(name string) ([]byte, error) {
 	return readEntry(b.files, name)
 }
 
-// openPackage indexes the archive behind r and checks that it holds a book whose
+// openPackage indexes the archive behind r and checks that it contains a book whose
 // spine is readable.
 func openPackage(r io.ReaderAt, size int64) (map[string]*zip.File, packageDoc, error) {
 	archive, err := zip.NewReader(r, size)
@@ -259,14 +259,14 @@ func readEntry(files map[string]*zip.File, name string) ([]byte, error) {
 	return raw, nil
 }
 
-// An Archive is the index of the entries of one EPUB file, held over a reader that
+// An Archive is the index of the entries of one EPUB file, read through a reader that
 // stays open. Only the entry asked for is read, and any number of goroutines may
 // ask at once while the reader serves concurrent reads.
 type Archive struct {
 	files map[string]*zip.File
 }
 
-// OpenArchive indexes the EPUB behind r, which holds size bytes, and refuses what
+// OpenArchive indexes the EPUB behind r, of size bytes, and refuses what
 // Read refuses.
 func OpenArchive(r io.ReaderAt, size int64) (*Archive, error) {
 	files, _, err := openPackage(r, size)
