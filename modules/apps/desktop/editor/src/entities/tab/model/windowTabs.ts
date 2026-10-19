@@ -300,7 +300,9 @@ function createTabNavigation(
     const standing = [...open.value.values()].filter(
       (one) => one.kind.navigate && getTabPath(one) === from,
     )
-    await Promise.all(standing.map(async (one) => one.kind.navigate?.(one.state, to, '')))
+    await Promise.all(
+      standing.map((one) => Promise.resolve(one.kind.navigate?.(one.state, to, ''))),
+    )
   }
 
   return { navigateTab, navigateTabsAt }
