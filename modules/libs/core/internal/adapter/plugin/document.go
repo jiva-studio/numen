@@ -266,7 +266,7 @@ func (b *DocumentBridge) OpenDocument(ctx context.Context, file io.ReadSeekClose
 	}
 
 	return &remoteDocument{
-		lease:    lease,
+		lease:   lease,
 		service: b.service,
 		path:    path,
 		pages:   resp.Msg.GetPages(),
@@ -277,7 +277,7 @@ func (b *DocumentBridge) OpenDocument(ctx context.Context, file io.ReadSeekClose
 // remoteDocument is a document the plugin holds open. It holds its own reference on the plugin
 // until it is closed, and draws each page at the endpoint the plugin is at then.
 type remoteDocument struct {
-	lease      *pluginLease
+	lease     *pluginLease
 	service   pluginService[numenv1connect.DocumentServiceClient]
 	path      string
 	pages     []*v1.Page
