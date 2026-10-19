@@ -3,6 +3,10 @@ package agentrun
 import (
 	"context"
 	"sync"
+
+	"connectrpc.com/connect"
+
+	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
 // Registry is the work an agent started and has not been told is over, and the session each
@@ -100,4 +104,15 @@ func (r *Registry) SetSession(conversation, session string) {
 		r.sessions = map[string]string{}
 	}
 	r.sessions[conversation] = session
+}
+
+// FinishConversation answers FinishConversation: it ends the conversation of the request.
+func (r *Registry) FinishConversation(
+	ctx context.Context,
+	req *connect.Request[numenv1.FinishConversationRequest],
+) (*connect.Response[numenv1.FinishConversationResponse], error) {
+	if err := r.EndConversation(ctx, req.Msg.GetConversation()); err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&numenv1.FinishConversationResponse{}), nil
 }

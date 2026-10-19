@@ -14,69 +14,9 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
-
-func TestAgentServerToolsAndPrompt(t *testing.T) {
-	srv := &agentServer{
-		runner: &AgentRunner{Registry: &agentrun.Registry{}},
-	}
-
-	ctx := context.Background()
-
-	// RegisterTool
-	regResp, err := srv.RegisterTool(ctx, connect.NewRequest(&numenv1.RegisterToolRequest{
-		Tool: &numenv1.AgentToolDefinition{
-			Name:        "test_tool",
-			Description: "A test tool",
-		},
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if regResp == nil || !regResp.Msg.GetSuccess() {
-		t.Fatal("expected successful tool registration")
-	}
-
-	// ExtendSystemPrompt
-	extResp, err := srv.ExtendSystemPrompt(ctx, connect.NewRequest(&numenv1.ExtendSystemPromptRequest{
-		Extension: "Always be polite.",
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if extResp.Msg.GetFullPrompt() != "Always be polite." {
-		t.Errorf("expected prompt 'Always be polite.', got %q", extResp.Msg.GetFullPrompt())
-	}
-
-	// ExtendSystemPrompt a second time to append to existing prompt
-	extResp2, err := srv.ExtendSystemPrompt(ctx, connect.NewRequest(&numenv1.ExtendSystemPromptRequest{
-		Extension: "Be concise.",
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if extResp2.Msg.GetFullPrompt() != "Always be polite.\nBe concise." {
-		t.Errorf("expected prompt 'Always be polite.\\nBe concise.', got %q", extResp2.Msg.GetFullPrompt())
-	}
-
-	// GetAgentTools
-	toolsResp, err := srv.GetAgentTools(ctx, connect.NewRequest(&numenv1.GetAgentToolsRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(toolsResp.Msg.GetTools()) != 1 {
-		t.Fatalf("expected 1 tool, got %d", len(toolsResp.Msg.GetTools()))
-	}
-	if toolsResp.Msg.GetTools()[0].GetName() != "test_tool" {
-		t.Errorf("expected tool test_tool, got %s", toolsResp.Msg.GetTools()[0].GetName())
-	}
-	if toolsResp.Msg.GetSystemPromptExtension() != "Always be polite.\nBe concise." {
-		t.Errorf("expected prompt extension 'Always be polite.\\nBe concise.', got %q", toolsResp.Msg.GetSystemPromptExtension())
-	}
-}
 
 // writeScript writes an executable shell script and answers with its path.
 func writeScript(t *testing.T, name, body string) string {
@@ -89,15 +29,10 @@ func writeScript(t *testing.T, name, body string) string {
 	return path
 }
 
-// quoteShell wraps a string in single quotes with escaped internal single quotes for shell scripts.
-func quoteShell(s string) string {
-	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
-}
-
 // startAgent serves the agent over HTTP and answers with a client of it.
 func startAgent(t *testing.T) numenv1connect.AgentServiceClient {
 	t.Helper()
-	srv := &agentServer{runner: &AgentRunner{Registry: &agentrun.Registry{}}}
+	srv := &agentServer{}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewAgentServiceHandler(srv))
 	testServer := httptest.NewServer(mux)
@@ -318,4 +253,9 @@ func withoutAgentsAnywhere(t *testing.T) {
 	was := codexSearchPlaces
 	codexSearchPlaces = nil
 	t.Cleanup(func() { codexSearchPlaces = was })
+}
+
+// quoteShell wraps a string in single quotes with escaped internal single quotes for shell scripts.
+func quoteShell(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }

@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
@@ -12,67 +10,22 @@ import (
 func TestResolveCommandWithEmptyCommand(t *testing.T) {
 	withoutAgentsAnywhere(t)
 
-	bin, args := resolveCommand(RunParams{})
+	bin, args := resolveCommand(nil)
 	if bin != "codex" || len(args) != 0 {
 		t.Errorf("expected codex and empty args, got %s, %v", bin, args)
 	}
-
 }
 
-func TestStartRunWorkBufferCapacity(t *testing.T) {
-	needsShell(t)
-	script := writeScript(t, "runner", "exit 0\n")
-	runner := &AgentRunner{Registry: &agentrun.Registry{}}
-
-	w, err := runner.StartRun(t.Context(), RunParams{
-		Command: []string{script},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = w.Stop() }()
-
-	if got := cap(w.Output); got != 64 {
-		t.Errorf("expected work output channel capacity 64, got %d", got)
-	}
-}
-
-func TestConfigureCommandTokenEnv(t *testing.T) {
-	needsShell(t)
-	out := filepath.Join(t.TempDir(), "token")
-	script := writeScript(t, "runner", "printf '%s' \"$NUMEN_TOKEN\" > "+quoteShell(out)+"\n")
-	runner := &AgentRunner{Registry: &agentrun.Registry{}}
-
-	w, err := runner.StartRun(t.Context(), RunParams{
-		Command: []string{script},
-		Tools:   Endpoint{Token: "test-token-xyz"},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = w.Stop() }()
-
-	// Wait for the script to finish and write out.
-	for range w.Output {
-	}
-
-	data, err := os.ReadFile(out)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(data) != "test-token-xyz" {
-		t.Errorf("expected NUMEN_TOKEN 'test-token-xyz', got %q", string(data))
-	}
-}
-
-func TestStartRunReportsTheToolCallsOfCodex(t *testing.T) {
+func TestTheToolCallsOfCodexAreReported(t *testing.T) {
 	script := writeScript(t, "codex",
 		`echo '{"type":"item.started","item":{"type":"mcp_tool_call","name":"read_note","arguments":{"path":"a.md"}}}'`+"\n"+
 			`echo '{"type":"item.completed","item":{"type":"mcp_tool_call"}}'`+"\n"+
+			`echo '{"type":"item.completed","item":{"type":"agent_message"}}'`+"\n"+
+			`echo '{"type":"turn.completed"}'`+"\n"+
 			"echo plain text\n")
-	runner := &AgentRunner{Registry: &agentrun.Registry{}}
+	var reg agentrun.Registry
 
-	w, err := runner.StartRun(t.Context(), RunParams{Command: []string{script}})
+	w, err := agentrun.Start(t.Context(), &reg, newSpec(&numenv1.AskAgentRequest{Command: []string{script}}))
 	if err != nil {
 		t.Fatal(err)
 	}

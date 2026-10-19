@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sync"
 
 	"connectrpc.com/connect"
 
@@ -15,11 +14,7 @@ import (
 )
 
 type agentServer struct {
-	numenv1connect.UnimplementedAgentServiceHandler
-	runner       *AgentRunner
-	mu           sync.RWMutex
-	systemPrompt string
-	tools        []*numenv1.AgentToolDefinition
+	agentrun.Service
 }
 
 func (s *agentServer) AskAgent(
@@ -33,46 +28,11 @@ func (s *agentServer) AskAgent(
 		},
 	})
 
-	params := RunParams{
-		Command:      req.Msg.GetCommand(),
-		Model:        req.Msg.GetModel(),
-		Prompt:       req.Msg.GetPrompt(),
-		Conversation: req.Msg.GetConversation(),
-		Tools:        Endpoint{URL: req.Msg.GetToolsUrl(), Token: req.Msg.GetToolsToken()},
-		MaxSteps:     int(req.Msg.GetMaxSteps()),
-		Root:         req.Msg.GetRoot(),
-	}
-	work, err := s.runner.StartRun(ctx, params)
+	work, err := agentrun.Start(ctx, &s.Registry, newSpec(req.Msg, &s.Registry))
 	if err != nil {
 		return fmt.Errorf("start agent run: %w", err)
 	}
-
-	for {
-		select {
-		case <-ctx.Done():
-			_ = work.Stop()
-			return ctx.Err()
-		case resp, ok := <-work.Output:
-			if !ok {
-				return nil
-			}
-			if err := stream.Send(resp); err != nil {
-				_ = work.Stop()
-				return err
-			}
-		}
-	}
-}
-
-func (s *agentServer) FinishConversation(
-	ctx context.Context,
-	req *connect.Request[numenv1.FinishConversationRequest],
-) (*connect.Response[numenv1.FinishConversationResponse], error) {
-	conv := req.Msg.GetConversation()
-	if conv != "" {
-		_ = s.runner.Registry.EndConversation(ctx, conv)
-	}
-	return connect.NewResponse(&numenv1.FinishConversationResponse{}), nil
+	return agentrun.Relay(ctx, work, stream)
 }
 
 func (s *agentServer) GetAgentState(
@@ -104,48 +64,6 @@ func (s *agentServer) GetAgentPrograms(
 	}), nil
 }
 
-func (s *agentServer) RegisterTool(
-	_ context.Context,
-	req *connect.Request[numenv1.RegisterToolRequest],
-) (*connect.Response[numenv1.RegisterToolResponse], error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if tool := req.Msg.GetTool(); tool != nil {
-		s.tools = append(s.tools, tool)
-	}
-	return connect.NewResponse(&numenv1.RegisterToolResponse{Success: true}), nil
-}
-
-func (s *agentServer) ExtendSystemPrompt(
-	_ context.Context,
-	req *connect.Request[numenv1.ExtendSystemPromptRequest],
-) (*connect.Response[numenv1.ExtendSystemPromptResponse], error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if ext := req.Msg.GetExtension(); ext != "" {
-		if s.systemPrompt != "" {
-			s.systemPrompt += "\n" + ext
-		} else {
-			s.systemPrompt = ext
-		}
-	}
-	return connect.NewResponse(&numenv1.ExtendSystemPromptResponse{
-		FullPrompt: s.systemPrompt,
-	}), nil
-}
-
-func (s *agentServer) GetAgentTools(
-	_ context.Context,
-	_ *connect.Request[numenv1.GetAgentToolsRequest],
-) (*connect.Response[numenv1.GetAgentToolsResponse], error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return connect.NewResponse(&numenv1.GetAgentToolsResponse{
-		Tools:                 s.tools,
-		SystemPromptExtension: s.systemPrompt,
-	}), nil
-}
-
 func main() {
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
@@ -156,12 +74,8 @@ func main() {
 func run() error {
 	s := server.New()
 
-	var reg agentrun.Registry
-	defer reg.Close()
-
-	agentSvc := &agentServer{
-		runner: &AgentRunner{Registry: &reg},
-	}
+	agentSvc := &agentServer{}
+	defer agentSvc.Close()
 
 	s.Register(numenv1connect.NewAgentServiceHandler(agentSvc, s.HandlerOptions()...))
 

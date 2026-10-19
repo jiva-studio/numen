@@ -1,8 +1,7 @@
 package main
 
 import (
-	"os"
-	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
@@ -12,66 +11,31 @@ import (
 func TestResolveCommandWithEmptyCommand(t *testing.T) {
 	withoutAgentsAnywhere(t)
 
-	bin, args := resolveCommand(RunParams{})
+	bin, args := resolveCommand(nil)
 	if bin != "agy" || len(args) != 0 {
 		t.Errorf("expected agy and empty args, got %s, %v", bin, args)
 	}
 }
 
-func TestStartRunWorkBufferCapacity(t *testing.T) {
-	needsShell(t)
-	script := writeScript(t, "runner", "exit 0\n")
-	runner := &AgentRunner{Registry: &agentrun.Registry{}}
+func TestTheSessionOfTheConversationIsHandedToTheNextRun(t *testing.T) {
+	var reg agentrun.Registry
+	reg.SetSession("c-1", "s-1")
 
-	w, err := runner.StartRun(t.Context(), RunParams{
-		Command: []string{script},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = w.Stop() }()
+	cmd, _ := makeAntigravityCommand(t.Context(), &numenv1.AskAgentRequest{Conversation: "c-1", Prompt: "q"}, &reg)
 
-	if got := cap(w.Output); got != 64 {
-		t.Errorf("expected work output channel capacity 64, got %d", got)
+	if !slices.Contains(cmd.Args, "--conversation") || !slices.Contains(cmd.Args, "s-1") {
+		t.Errorf("the arguments are %v", cmd.Args)
 	}
 }
 
-func TestConfigureCommandTokenEnv(t *testing.T) {
-	needsShell(t)
-	out := filepath.Join(t.TempDir(), "token")
-	script := writeScript(t, "runner", "printf '%s' \"$NUMEN_TOKEN\" > "+quoteShell(out)+"\n")
-	runner := &AgentRunner{Registry: &agentrun.Registry{}}
-
-	w, err := runner.StartRun(t.Context(), RunParams{
-		Command: []string{script},
-		Tools:   Endpoint{Token: "test-token-xyz"},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = w.Stop() }()
-
-	// Wait for the script to finish and write out.
-	for range w.Output {
-	}
-
-	data, err := os.ReadFile(out)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(data) != "test-token-xyz" {
-		t.Errorf("expected NUMEN_TOKEN 'test-token-xyz', got %q", string(data))
-	}
-}
-
-func TestStartRunKeepsTheSessionAndSaysTheContent(t *testing.T) {
+func TestTheSessionAndTheContentOfAntigravityAreReported(t *testing.T) {
 	script := writeScript(t, "agy",
 		`echo '{"session_id":"s-1","content":"hello"}'`+"\n"+
 			`echo '{"tool_calls":[{"name":"read_note","arguments":{"path":"a.md"}}]}'`+"\n")
-	reg := &agentrun.Registry{}
-	runner := &AgentRunner{Registry: reg}
+	var reg agentrun.Registry
 
-	w, err := runner.StartRun(t.Context(), RunParams{Command: []string{script}, Conversation: "c-1"})
+	w, err := agentrun.Start(t.Context(), &reg, newSpec(
+		&numenv1.AskAgentRequest{Command: []string{script}, Conversation: "c-1"}, &reg))
 	if err != nil {
 		t.Fatal(err)
 	}
