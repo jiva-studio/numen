@@ -82,7 +82,7 @@ type PluginInfo struct {
 	// Permissions are the permissions the manifest declares.
 	Permissions []string
 	// Secrets are the names of the secrets the manifest declares, and
-	// StoredSecrets those of them that have a key stored. No key is held here.
+	// StoredSecrets those of them that have a key stored. A key never appears here.
 	Secrets       []string
 	StoredSecrets []string
 	// Models are the models the plugin answers completions with, as it lists them.

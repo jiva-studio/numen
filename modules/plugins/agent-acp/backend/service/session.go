@@ -21,7 +21,7 @@ const (
 	acpProtocolVersion = 1
 	// maxAnswerBytes is the most text an answer may hold.
 	maxAnswerBytes = 4 << 20
-	// stderrTailBytes is how much of the agent's error output is kept for its failure message.
+	// stderrTailBytes is how much of the agent's error output is retained for its failure message.
 	stderrTailBytes = 8 << 10
 	// methodNotFound is the JSON-RPC error code for a method the client does not serve.
 	methodNotFound = -32601
@@ -330,7 +330,7 @@ func (s *acpSession) answerRequest(request rpcMessage) error {
 	return nil
 }
 
-// readUpdate keeps the text of the agent's message chunks for this session.
+// readUpdate appends the text of the agent's message chunks for this session.
 func (s *acpSession) readUpdate(params json.RawMessage) error {
 	text, isChunk := s.readChunk(params)
 	if !isChunk {
@@ -407,7 +407,7 @@ func (o acpConfigOption) getModels() []acpModel {
 	return models
 }
 
-// tailBuffer keeps the last bytes written to it.
+// tailBuffer retains the last bytes written to it.
 type tailBuffer struct {
 	mu  sync.Mutex
 	buf []byte

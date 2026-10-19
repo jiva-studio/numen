@@ -55,9 +55,9 @@ func (c choices) GetCompletionChoice(pluginID string) port.CompletionChoice {
 	return c[pluginID]
 }
 
-func newRouter(t *testing.T, config completion.Config, chosen choices, held *agents) *completion.Router {
+func newRouter(t *testing.T, config completion.Config, chosen choices, fake *agents) *completion.Router {
 	t.Helper()
-	router, err := completion.NewRouter(func() completion.Config { return config }, chosen, held)
+	router, err := completion.NewRouter(func() completion.Config { return config }, chosen, fake)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,40 +79,40 @@ func TestARouterIsRefusedWhatItCannotWorkWithout(t *testing.T) {
 }
 
 // A plugin naming no agent is answered by the default agent and model, and the
-// agent is let go once it has answered.
+// agent is closed once it has answered.
 func TestAPluginNamingNoAgentIsAnsweredByTheDefault(t *testing.T) {
-	held := &agents{}
-	router := newRouter(t, completion.Config{Default: completion.Route{Agent: "agent-d", Model: "model-d"}}, choices{}, held)
+	fake := &agents{}
+	router := newRouter(t, completion.Config{Default: completion.Route{Agent: "agent-d", Model: "model-d"}}, choices{}, fake)
 
 	got, err := router.Complete(t.Context(), "plugin.a", port.Question{Purpose: "proofreading"})
 	if err != nil || got != "answer to proofreading" {
 		t.Fatalf("answered %q, %v", got, err)
 	}
-	if len(held.opened) != 1 || held.opened[0] != "agent-d" || held.models[0] != "model-d" {
-		t.Errorf("opened %v with %v, want agent-d with model-d", held.opened, held.models)
+	if len(fake.opened) != 1 || fake.opened[0] != "agent-d" || fake.models[0] != "model-d" {
+		t.Errorf("opened %v with %v, want agent-d with model-d", fake.opened, fake.models)
 	}
-	if held.closed.Load() != 1 {
-		t.Errorf("%d agents let go, want 1", held.closed.Load())
+	if fake.closed.Load() != 1 {
+		t.Errorf("%d agents closed, want 1", fake.closed.Load())
 	}
 }
 
 // An empty default opens the agent by the empty name, which is the provider
 // with the lowest id, and leaves the model to it.
 func TestAnEmptyDefaultLeavesTheAgentAndTheModelToTheProviders(t *testing.T) {
-	held := &agents{}
-	router := newRouter(t, completion.Config{}, choices{}, held)
+	fake := &agents{}
+	router := newRouter(t, completion.Config{}, choices{}, fake)
 	if _, err := router.Complete(t.Context(), "plugin.a", port.Question{}); err != nil {
 		t.Fatal(err)
 	}
-	if held.opened[0] != "" || held.models[0] != "" {
-		t.Errorf("opened %q with model %q, want both empty", held.opened[0], held.models[0])
+	if fake.opened[0] != "" || fake.models[0] != "" {
+		t.Errorf("opened %q with model %q, want both empty", fake.opened[0], fake.models[0])
 	}
 }
 
 // A plugin whose setting names an agent is answered by that agent with the
 // model the setting names, and the default model goes with the default alone.
 func TestAPluginsOwnChoiceStandsOverTheDefault(t *testing.T) {
-	held := &agents{}
+	fake := &agents{}
 	router := newRouter(t,
 		completion.Config{Default: completion.Route{Agent: "agent-d", Model: "model-d"}},
 		choices{
@@ -120,7 +120,7 @@ func TestAPluginsOwnChoiceStandsOverTheDefault(t *testing.T) {
 			"plugin.b": {Agent: "agent-b"},
 			"plugin.c": {Model: "ignored"},
 		},
-		held)
+		fake)
 
 	for _, one := range []string{"plugin.a", "plugin.b", "plugin.c", "plugin.d"} {
 		if _, err := router.Complete(t.Context(), one, port.Question{}); err != nil {
@@ -130,9 +130,9 @@ func TestAPluginsOwnChoiceStandsOverTheDefault(t *testing.T) {
 	wantAgents := []string{"agent-a", "agent-b", "agent-d", "agent-d"}
 	wantModels := []string{"model-a", "", "model-d", "model-d"}
 	for at := range wantAgents {
-		if held.opened[at] != wantAgents[at] || held.models[at] != wantModels[at] {
+		if fake.opened[at] != wantAgents[at] || fake.models[at] != wantModels[at] {
 			t.Errorf("question %d went to %q with %q, want %q with %q",
-				at, held.opened[at], held.models[at], wantAgents[at], wantModels[at])
+				at, fake.opened[at], fake.models[at], wantAgents[at], wantModels[at])
 		}
 	}
 }
@@ -140,31 +140,31 @@ func TestAPluginsOwnChoiceStandsOverTheDefault(t *testing.T) {
 // The agent a plugin's setting names fails the question as it fails: the
 // question is not taken to any other agent.
 func TestAMissingAgentFailsTheQuestionWithNoOtherAgentAsked(t *testing.T) {
-	held := &agents{openErr: port.ErrNoRoute}
+	fake := &agents{openErr: port.ErrNoRoute}
 	router := newRouter(t, completion.Config{Default: completion.Route{Agent: "agent-d"}},
-		choices{"plugin.a": {Agent: "absent"}}, held)
+		choices{"plugin.a": {Agent: "absent"}}, fake)
 
 	for range 3 {
 		if _, err := router.Complete(t.Context(), "plugin.a", port.Question{}); !errors.Is(err, port.ErrNoRoute) {
 			t.Fatalf("error = %v, want port.ErrNoRoute", err)
 		}
 	}
-	if len(held.opened) != 0 {
-		t.Errorf("opened %v", held.opened)
+	if len(fake.opened) != 0 {
+		t.Errorf("opened %v", fake.opened)
 	}
 }
 
 // What a question says about its purpose routes nothing: only the plugin's
 // setting and the default do.
 func TestAQuestionCannotChooseItsRoute(t *testing.T) {
-	held := &agents{}
-	router := newRouter(t, completion.Config{Default: completion.Route{Agent: "agent-d"}}, choices{}, held)
+	fake := &agents{}
+	router := newRouter(t, completion.Config{Default: completion.Route{Agent: "agent-d"}}, choices{}, fake)
 	for _, purpose := range []string{"proofreading", "md.numen.agent-claude", "default"} {
 		if _, err := router.Complete(t.Context(), "plugin.a", port.Question{Purpose: purpose}); err != nil {
 			t.Fatal(err)
 		}
 	}
-	for _, opened := range held.opened {
+	for _, opened := range fake.opened {
 		if opened != "agent-d" {
 			t.Errorf("a question was taken to %q", opened)
 		}
@@ -173,10 +173,10 @@ func TestAQuestionCannotChooseItsRoute(t *testing.T) {
 
 // The settings and the choices are read at every question.
 func TestAChoiceEditedInTheSettingsAppliesToTheNextQuestion(t *testing.T) {
-	held := &agents{}
+	fake := &agents{}
 	config := completion.Config{Default: completion.Route{Agent: "early"}}
 	chosen := choices{}
-	router, err := completion.NewRouter(func() completion.Config { return config }, chosen, held)
+	router, err := completion.NewRouter(func() completion.Config { return config }, chosen, fake)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,8 +191,8 @@ func TestAChoiceEditedInTheSettingsAppliesToTheNextQuestion(t *testing.T) {
 	if _, err := router.Complete(t.Context(), "plugin.a", port.Question{}); err != nil {
 		t.Fatal(err)
 	}
-	if want := []string{"early", "late", "own"}; held.opened[0] != want[0] || held.opened[1] != want[1] || held.opened[2] != want[2] {
-		t.Errorf("opened %v, want %v", held.opened, want)
+	if want := []string{"early", "late", "own"}; fake.opened[0] != want[0] || fake.opened[1] != want[1] || fake.opened[2] != want[2] {
+		t.Errorf("opened %v, want %v", fake.opened, want)
 	}
 }
 
@@ -311,15 +311,15 @@ func TestACancelledQuestionLeavesTheQueueAndStopsTheAnswer(t *testing.T) {
 
 // A question whose context is already cancelled opens no agent.
 func TestAQuestionCancelledBeforeItStartsOpensNoAgent(t *testing.T) {
-	held := &agents{}
-	router := newRouter(t, completion.Config{}, choices{}, held)
+	fake := &agents{}
+	router := newRouter(t, completion.Config{}, choices{}, fake)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	if _, err := router.Complete(ctx, "plugin.a", port.Question{}); !errors.Is(err, context.Canceled) {
 		t.Fatalf("error = %v, want context.Canceled", err)
 	}
-	if len(held.opened) != 0 {
-		t.Errorf("opened %v", held.opened)
+	if len(fake.opened) != 0 {
+		t.Errorf("opened %v", fake.opened)
 	}
 }
 

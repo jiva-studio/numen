@@ -646,7 +646,7 @@ func TestAStepThatCannotBeSentEndsTheRunWithItsError(t *testing.T) {
 	model := &fakeChat{replies: []message{newCallReply("c", "note_read", `{"path":"A.md"}`), newTextReply("ok")}}
 	vault := &fakeVault{}
 	s := newServer(model.serve(t).URL)
-	gone := errors.New("the window let go")
+	gone := errors.New("the window closed")
 	sent := 0
 
 	err := s.Ask(t.Context(), newTask(vault.serve(t), "Read."), func(*numenv1.AskAgentResponse) error {

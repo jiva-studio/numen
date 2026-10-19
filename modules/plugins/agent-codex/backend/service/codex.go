@@ -61,17 +61,17 @@ const codexListLimit = 15 * time.Second
 // codexFailureBackoff is how long a command line that failed to list is left alone.
 const codexFailureBackoff = 30 * time.Second
 
-// codexModelCache keeps what Codex listed, for as long as the command line asked stays the same. A
-// failure keeps nothing, and the command line that failed is left alone for a while.
+// codexModelCache caches what Codex listed, for as long as the command line asked stays the same. A
+// failure caches nothing, and the command line that failed is not asked again for a while.
 type codexModelCache struct {
-	mu     sync.Mutex
-	key    string
-	models []AgentModel
-	isKept bool
+	mu       sync.Mutex
+	key      string
+	models   []AgentModel
+	isCached bool
 	// failedKey and failedAt are the command line Codex last failed to list under, and when.
 	failedKey string
 	failedAt  time.Time
-	// now is the clock the backoff is kept by. Empty is the system clock.
+	// now is the clock the backoff uses. Empty is the system clock.
 	now func() time.Time
 }
 
@@ -83,12 +83,12 @@ func (c *codexModelCache) getNow() time.Time {
 	return c.now()
 }
 
-// get are the models Codex lists: the ones kept, or those it lists now.
+// get are the models Codex lists: the cached ones, or those it lists now.
 func (c *codexModelCache) get(ctx context.Context, command []string) []AgentModel {
 	key := strings.Join(command, " ")
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if c.isKept && c.key == key {
+	if c.isCached && c.key == key {
 		return c.models
 	}
 	if c.failedKey == key && c.getNow().Sub(c.failedAt) < codexFailureBackoff {
@@ -103,7 +103,7 @@ func (c *codexModelCache) get(ctx context.Context, command []string) []AgentMode
 		}
 		return nil
 	}
-	c.key, c.models, c.isKept = key, models, true
+	c.key, c.models, c.isCached = key, models, true
 	c.failedKey = ""
 	return models
 }
