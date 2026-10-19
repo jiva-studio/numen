@@ -32,6 +32,7 @@ type fakeChat struct {
 	mu       sync.Mutex
 	replies  []message
 	status   int
+	finish   string
 	models   []string
 	requests []chatRequest
 }
@@ -60,7 +61,7 @@ func (f *fakeChat) serve(t *testing.T) *httptest.Server {
 		got.Auth = r.Header.Get("Authorization")
 		f.requests = append(f.requests, got)
 		reply := f.replies[min(len(f.requests), len(f.replies))-1]
-		_ = json.NewEncoder(w).Encode(map[string]any{"choices": []map[string]any{{"message": reply}}})
+		_ = json.NewEncoder(w).Encode(map[string]any{"choices": []map[string]any{{"message": reply, "finish_reason": f.finish}}})
 	}))
 	t.Cleanup(srv.Close)
 	return srv
@@ -403,5 +404,94 @@ func TestAskAgentStreamsTheStepsOverConnect(t *testing.T) {
 	}
 	if got := describeSteps(steps); got != "model call finished model said stopped" {
 		t.Errorf("steps are %q", got)
+	}
+}
+
+func TestAnAnswerCutOffAtItsLengthLimitIsReportedSo(t *testing.T) {
+	cut := newTextReply("The plan is to")
+	model := &fakeChat{replies: []message{cut}, finish: "length"}
+	s := newServer(model.serve(t).URL)
+
+	steps := ask(t, s, newTask("", "Plan?"))
+
+	if got := describeSteps(steps); got != "model said stopped" || steps[2].GetStopped() != reasonCut {
+		t.Errorf("steps are %q, stopped %q", got, steps[len(steps)-1].GetStopped())
+	}
+}
+
+func TestACallWithNoArgumentsIsToldBackWithAnEmptyObject(t *testing.T) {
+	model := &fakeChat{replies: []message{newCallReply("c", "note_read", ""), newTextReply("ok")}}
+	vault := &fakeVault{}
+	s := newServer(model.serve(t).URL)
+
+	ask(t, s, newTask(vault.serve(t), "Read."))
+
+	told := model.getRequests()[1].Messages
+	if args := told[len(told)-2].ToolCalls[0].Function.Arguments; args != "{}" {
+		t.Errorf("the call was told back with %q", args)
+	}
+	if calls := vault.getCalls(); len(calls) != 1 || calls[0] != "{}" {
+		t.Errorf("the vault was called with %v", calls)
+	}
+}
+
+func TestAKeyIsNotSentOverPlainHTTPToAnotherMachine(t *testing.T) {
+	s := &Server{}
+	s.Configure(map[string]string{SettingBaseURL: "http://192.0.2.1/v1", SettingAPIKey: "host-key"})
+
+	steps := ask(t, s, newTask("", "Hello?"))
+
+	if reason := steps[len(steps)-1].GetStopped(); reason != errPlainKey.Error() {
+		t.Errorf("stopped %q", reason)
+	}
+}
+
+func TestAKeyIsNotFollowedToPlainHTTP(t *testing.T) {
+	err := refuseDowngrade(httptest.NewRequest(http.MethodGet, "http://192.0.2.1/v1/models", nil), nil)
+	if err == nil {
+		t.Error("a redirect to plain http was followed")
+	}
+	if err := refuseDowngrade(httptest.NewRequest(http.MethodGet, "https://example.com/v1/models", nil), nil); err != nil {
+		t.Errorf("a redirect to https was refused: %v", err)
+	}
+}
+
+func TestTheVaultTokenIsNotSentOverPlainHTTPToAnotherMachine(t *testing.T) {
+	model := &fakeChat{replies: []message{newTextReply("hi")}}
+	s := newServer(model.serve(t).URL)
+
+	steps := ask(t, s, newTask("http://192.0.2.1/mcp", "Hello?"))
+
+	if len(steps) != 1 || !strings.Contains(steps[0].GetStopped(), errPlainToken.Error()) {
+		t.Errorf("steps are %v", steps)
+	}
+}
+
+func TestAFailedListingIsAskedAgain(t *testing.T) {
+	model := &fakeChat{status: http.StatusServiceUnavailable, models: []string{"m1"}}
+	s := newServer(model.serve(t).URL)
+	if _, err := s.listModels(t.Context()); err == nil {
+		t.Fatal("a refusing chat API listed models")
+	}
+	model.mu.Lock()
+	model.status = 0
+	model.mu.Unlock()
+
+	if models, err := s.listModels(t.Context()); err != nil || len(models) != 1 {
+		t.Errorf("the second listing is %v, %v", models, err)
+	}
+}
+
+func TestCompleteAsksTheModelTheHostNames(t *testing.T) {
+	model := &fakeChat{replies: []message{newTextReply("the answer")}}
+	s := newServer(model.serve(t).URL)
+
+	if _, err := s.Complete(t.Context(), connect.NewRequest(&numenv1.CompleteRequest{Model: "routed", Question: &numenv1.CompletionQuestion{
+		Messages: []*numenv1.CompletionMessage{{Role: "user", Text: "why?"}},
+	}})); err != nil {
+		t.Fatal(err)
+	}
+	if got := model.getRequests()[0].Model; got != "routed" {
+		t.Errorf("the model asked was %q", got)
 	}
 }

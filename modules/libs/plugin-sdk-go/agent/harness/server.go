@@ -52,7 +52,6 @@ type Server struct {
 	model         string
 	conversations map[string][]message
 	models        []model
-	modelsErr     error
 	isListed      bool
 
 	registry agentrun.Registry
@@ -73,7 +72,7 @@ func (s *Server) Configure(values map[string]string) {
 	if name, ok := values[SettingModel]; ok {
 		s.model = name
 	}
-	s.models, s.modelsErr, s.isListed = nil, nil, false
+	s.models, s.isListed = nil, false
 }
 
 // getChat is the chat API as the settings name it.
@@ -155,7 +154,7 @@ func (s *Server) Ask(ctx context.Context, task *numenv1.AskAgentRequest, send fu
 	} else if err != nil {
 		return err
 	}
-	if reason == reasonDone || reason == reasonTurns {
+	if reason == reasonDone || reason == reasonTurns || reason == reasonCut {
 		s.keepConversation(conversation, said[len(messages)-1:])
 	}
 	return send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Stopped{Stopped: reason}})
@@ -242,7 +241,7 @@ func (s *Server) listModels(ctx context.Context) ([]model, error) {
 	s.mu.Lock()
 	if s.isListed {
 		defer s.mu.Unlock()
-		return s.models, s.modelsErr
+		return s.models, nil
 	}
 	asked := chat{baseURL: s.baseURL, key: s.key, client: s.Client}
 	s.mu.Unlock()
@@ -254,28 +253,28 @@ func (s *Server) listModels(ctx context.Context) ([]model, error) {
 		return nil, ctx.Err()
 	}
 
-	// What was listed under settings that have changed since is not kept.
+	// A failure is asked again, and what was listed under settings that have changed since is not kept.
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.baseURL == asked.baseURL && s.key == asked.key {
-		s.models, s.modelsErr, s.isListed = models, err, true
+	if err == nil && s.baseURL == asked.baseURL && s.key == asked.key {
+		s.models, s.isListed = models, true
 	}
 	return models, err
 }
 
-// Complete answers one question from the model with no tools, no vault and no conversation.
+// Complete answers one question from the model the host names, else the configured one, with no tools, no vault and no conversation.
 func (s *Server) Complete(
 	ctx context.Context,
 	req *connect.Request[numenv1.CompleteRequest],
 ) (*connect.Response[numenv1.CompleteResponse], error) {
-	asked, name := s.getChat(), s.getModel("")
+	asked, name := s.getChat(), s.getModel(req.Msg.GetModel())
 	return completion.Answer(ctx, req.Msg.GetQuestion(), func(ctx context.Context, request completion.Request) (string, error) {
 		var messages []message
 		if request.System != "" {
 			messages = append(messages, message{Role: "system", Content: newText(request.System)})
 		}
 		messages = append(messages, message{Role: "user", Content: newText(request.Prompt)})
-		reply, err := asked.send(ctx, name, messages, nil)
+		reply, _, err := asked.send(ctx, name, messages, nil)
 		if err != nil || reply.Content == nil {
 			return "", err
 		}

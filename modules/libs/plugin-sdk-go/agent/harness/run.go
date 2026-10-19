@@ -2,6 +2,7 @@ package harness
 
 import (
 	"context"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/toolcall"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
@@ -15,6 +16,9 @@ const reasonDone = "done"
 
 // reasonTurns is why a run stops when the model is still calling tools after its last turn.
 const reasonTurns = "the agent reached the limit of steps without finishing"
+
+// reasonCut is why a run stops when the model's answer was cut off at its length limit.
+const reasonCut = "the answer was cut off at the model's length limit"
 
 // chatFailure is a run stopped by a request to the chat API that failed. It stops the run and is
 // reported as why it stopped.
@@ -49,12 +53,17 @@ func (r *run) answer(ctx context.Context, messages []message) ([]message, string
 		}); err != nil {
 			return messages, "", err
 		}
-		reply, err := r.chat.send(ctx, r.model, messages, r.tools.offered)
+		reply, finished, err := r.chat.send(ctx, r.model, messages, r.tools.offered)
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return messages, "", ctxErr
 		}
 		if err != nil {
 			return messages, "", &chatFailure{err: err}
+		}
+		for i := range reply.ToolCalls {
+			if strings.TrimSpace(reply.ToolCalls[i].Function.Arguments) == "" {
+				reply.ToolCalls[i].Function.Arguments = "{}"
+			}
 		}
 		messages = append(messages, reply)
 
@@ -62,6 +71,9 @@ func (r *run) answer(ctx context.Context, messages []message) ([]message, string
 			if err := r.send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Said{Said: *text}}); err != nil {
 				return messages, "", err
 			}
+		}
+		if len(reply.ToolCalls) == 0 && finished == "length" {
+			return messages, reasonCut, nil
 		}
 		if len(reply.ToolCalls) == 0 {
 			return messages, reasonDone, nil

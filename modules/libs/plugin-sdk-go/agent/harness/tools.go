@@ -3,8 +3,10 @@ package harness
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	neturl "net/url"
 	"slices"
 	"strings"
 
@@ -13,6 +15,9 @@ import (
 
 // toolPrefix is what an agent program puts before the name of a tool of the vault's server.
 const toolPrefix = "mcp__numen__"
+
+// errPlainToken is a tool server the token would reach unencrypted.
+var errPlainToken = errors.New("the vault's tools are reached only over https, or over http on this machine")
 
 // emptySchema is the parameters of a tool whose server declares none.
 var emptySchema = json.RawMessage(`{"type":"object","properties":{}}`)
@@ -42,6 +47,9 @@ func (b bearer) RoundTrip(req *http.Request) (*http.Response, error) {
 func openToolbox(ctx context.Context, url, token string, named []string) (*toolbox, error) {
 	if url == "" {
 		return &toolbox{}, nil
+	}
+	if address, err := neturl.Parse(url); err != nil || !isPrivate(address) {
+		return nil, errPlainToken
 	}
 	transport := &mcp.StreamableClientTransport{
 		Endpoint:             url,

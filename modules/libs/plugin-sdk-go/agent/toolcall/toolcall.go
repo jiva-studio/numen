@@ -65,7 +65,7 @@ func readSpan(args string) *numenv1.Span {
 	}
 	start, _ := made["start"].(float64)
 	length, _ := made["length"].(float64)
-	if length <= 0 {
+	if length <= 0 || start < 0 || start > math.MaxInt32-length {
 		return nil
 	}
 	return &numenv1.Span{From: int32(start), To: int32(start + length)}

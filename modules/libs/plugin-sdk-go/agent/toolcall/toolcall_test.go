@@ -74,7 +74,18 @@ func TestPartialFieldIsReadAtEveryTruncation(t *testing.T) {
 			t.Errorf("%q: %q is not a prefix", whole[:i], got)
 		}
 	}
+	if got := ReadPartialField(whole, "stood"); got != "abc" {
+		t.Errorf("the whole input read %q", got)
+	}
 	if ReadPartialField(whole, "missing") != "" {
 		t.Error("a missing field was read")
+	}
+}
+
+func TestASpanOutsideTheTextIsNoSpan(t *testing.T) {
+	for _, args := range []string{`{"path":"a.md","start":-4,"length":3}`, `{"path":"a.md","start":2147483647,"length":3}`} {
+		if span := Describe(testWords, "note_edit", "c", args).GetSpan(); span != nil {
+			t.Errorf("%s: span %+v", args, span)
+		}
 	}
 }

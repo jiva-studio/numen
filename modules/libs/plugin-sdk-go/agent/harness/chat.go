@@ -7,7 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -21,7 +23,11 @@ const defaultModel = "openai/gpt-4o-mini"
 // requestLimit is how long one request to the chat API may take.
 const requestLimit = 2 * time.Minute
 
-var errNoChoice = errors.New("the chat API returned no message")
+var (
+	errNoChoice  = errors.New("the chat API returned no message")
+	errPlainKey  = errors.New("a key is sent only over https, or over http to this machine")
+	errDowngrade = errors.New("the chat API redirected a request that carries a key to http")
+)
 
 // message is one message of a conversation with the chat API.
 type message struct {
@@ -68,29 +74,31 @@ type chat struct {
 // newText is a pointer to the text, for the content of a message.
 func newText(text string) *string { return &text }
 
-// send asks the model for the next message of the conversation, offering it the tools.
-func (c chat) send(ctx context.Context, model string, messages []message, tools []functionTool) (message, error) {
+// send asks the model for the next message of the conversation, offering it the tools. It returns
+// the message and why the model stopped writing it, 'length' for a message cut off at its limit.
+func (c chat) send(ctx context.Context, model string, messages []message, tools []functionTool) (message, string, error) {
 	body, err := json.Marshal(struct {
 		Model    string         `json:"model"`
 		Messages []message      `json:"messages"`
 		Tools    []functionTool `json:"tools,omitempty"`
 	}{Model: model, Messages: messages, Tools: tools})
 	if err != nil {
-		return message{}, fmt.Errorf("marshal chat request: %w", err)
+		return message{}, "", fmt.Errorf("marshal chat request: %w", err)
 	}
 
 	var reply struct {
 		Choices []struct {
-			Message message `json:"message"`
+			Message      message `json:"message"`
+			FinishReason string  `json:"finish_reason"`
 		} `json:"choices"`
 	}
 	if err := c.do(ctx, http.MethodPost, "/chat/completions", body, &reply); err != nil {
-		return message{}, err
+		return message{}, "", err
 	}
 	if len(reply.Choices) == 0 {
-		return message{}, errNoChoice
+		return message{}, "", errNoChoice
 	}
-	return reply.Choices[0].Message, nil
+	return reply.Choices[0].Message, reply.Choices[0].FinishReason, nil
 }
 
 // listModels asks the chat API for the models it serves.
@@ -130,13 +138,18 @@ func (c chat) do(ctx context.Context, method, path string, body []byte, out any)
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	if c.key != "" {
-		req.Header.Set("Authorization", "Bearer "+c.key)
-	}
-
 	client := c.client
 	if client == nil {
 		client = &http.Client{Timeout: requestLimit}
+	}
+	if c.key != "" {
+		if !isPrivate(req.URL) {
+			return errPlainKey
+		}
+		req.Header.Set("Authorization", "Bearer "+c.key)
+		guarded := *client
+		guarded.CheckRedirect = refuseDowngrade
+		client = &guarded
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -153,6 +166,34 @@ func (c chat) do(ctx context.Context, method, path string, body []byte, out any)
 	}
 	if err := json.Unmarshal(answer, out); err != nil {
 		return fmt.Errorf("decode chat response: %w", err)
+	}
+	return nil
+}
+
+// isPrivate reports whether what is sent to the address stays private: over https, or over http to
+// this machine.
+func isPrivate(address *url.URL) bool {
+	if address.Scheme == "https" {
+		return true
+	}
+	if address.Scheme != "http" {
+		return false
+	}
+	host := address.Hostname()
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
+}
+
+// refuseDowngrade follows a redirect only while what is sent stays private, and at most ten times.
+func refuseDowngrade(req *http.Request, via []*http.Request) error {
+	if !isPrivate(req.URL) {
+		return errDowngrade
+	}
+	if len(via) >= 10 {
+		return errors.New("the chat API redirected ten times")
 	}
 	return nil
 }
