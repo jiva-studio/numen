@@ -622,7 +622,9 @@ func TestGetAgentProgramsIgnoresCommandsForOtherPrograms(t *testing.T) {
 	}
 }
 
-func TestAskAgentUsesServerToolsWhenRequestToolsEmpty(t *testing.T) {
+// A task that names no tool is one answer: the program is given no tool, whatever tools the server
+// holds, and no file naming the vault's tools.
+func TestAskAgentOffersNoToolWhenRequestToolsEmpty(t *testing.T) {
 	out := filepath.Join(t.TempDir(), "run")
 	script := writeScript(t, "mock-claude.sh",
 		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+".argv\n"+
@@ -636,9 +638,10 @@ func TestAskAgentUsesServerToolsWhenRequestToolsEmpty(t *testing.T) {
 	client := startAgent(t, agentSvc)
 
 	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
-		Prompt:  "q",
-		Command: []string{script},
-		Tools:   nil,
+		Prompt:     "q",
+		Command:    []string{script},
+		ToolsUrl:   "http://127.0.0.1:7717/mcp",
+		ToolsToken: "let-me-in",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -650,9 +653,50 @@ func TestAskAgentUsesServerToolsWhenRequestToolsEmpty(t *testing.T) {
 		t.Fatal(err)
 	}
 	argv := strings.Split(strings.TrimSpace(string(raw)), "\n")
-	assertPair(t, argv, "--allowedTools", "WebSearch,mcp__numen__note_read,mcp__numen__note_write")
+	assertPair(t, argv, "--tools", "")
+	assertPair(t, argv, "--max-turns", "1")
+	for _, flag := range []string{"--allowedTools", "--mcp-config"} {
+		if slices.Contains(argv, flag) {
+			t.Errorf("%s is among %v", flag, argv)
+		}
+	}
+	for _, arg := range argv {
+		if strings.Contains(arg, "note_") || strings.Contains(arg, "let-me-in") || strings.Contains(arg, "WebSearch") {
+			t.Errorf("the program was given %q", arg)
+		}
+	}
+}
 
-	agentSvc.applyConfig(map[string]string{"apiKey": "k2"})
+// The key the host configured is the program's key for a run, and the model the host configured
+// answers a task that names none.
+func TestAskAgentRunsWithTheConfiguredKeyAndModel(t *testing.T) {
+	t.Setenv(anthropicKeyVar, "env-key")
+	out := filepath.Join(t.TempDir(), "run")
+	script := writeScript(t, "mock-claude.sh",
+		"echo \"key=$ANTHROPIC_API_KEY\" > "+out+"\n"+
+			"for a in \"$@\"; do printf '%s\\n' \"$a\"; done >> "+out+"\n"+
+			"echo '{\"type\":\"result\",\"is_error\":false}'\n")
+	agentSvc := &agentServer{}
+	agentSvc.applyConfig(map[string]string{"apiKey": "host-key", "model": "m1"})
+	client := startAgent(t, agentSvc)
+
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Prompt: "q", Command: []string{script},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	collectSteps(t, stream)
+
+	raw, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	argv := strings.Split(strings.TrimSpace(string(raw)), "\n")
+	if argv[0] != "key=host-key" {
+		t.Errorf("the program saw %q", argv[0])
+	}
+	assertPair(t, argv, "--model", "m1")
 }
 
 func TestAskAgentAppendsSystemPrompt(t *testing.T) {
@@ -689,6 +733,7 @@ func TestAskAgentFailsWhenMcpConfigCannotBeWritten(t *testing.T) {
 	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
 		Prompt:     "q",
 		Command:    []string{script},
+		Tools:      []string{"note_read"},
 		ToolsUrl:   "http://127.0.0.1:1/mcp",
 		ToolsToken: "tok",
 	}))

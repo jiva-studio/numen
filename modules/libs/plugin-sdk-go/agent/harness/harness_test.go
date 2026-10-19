@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -677,5 +678,30 @@ func TestCompleteIsUnavailableWhenTheModelSaysNothing(t *testing.T) {
 	}
 	if res.Msg.GetError() != numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE {
 		t.Errorf("got %+v", res.Msg)
+	}
+}
+
+// A task that names no tool is one answer: the model is offered no tool, and the vault is not
+// connected to, whatever endpoint the task holds.
+func TestATaskNamingNoToolOffersTheModelNoTool(t *testing.T) {
+	model := &fakeChat{replies: []message{newTextReply("the answer")}}
+	var connected atomic.Bool
+	vault := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { connected.Store(true) }))
+	t.Cleanup(vault.Close)
+	s := newServer(model.serve(t).URL)
+	task := newTask(vault.URL, "why?")
+	task.Tools, task.ToolDeclarations = nil, nil
+
+	steps := ask(t, s, task)
+
+	if got := strings.Join(getSaid(steps), ""); got != "the answer" {
+		t.Errorf("the answer is %q", got)
+	}
+	if connected.Load() {
+		t.Error("the vault was connected to")
+	}
+	requests := model.getRequests()
+	if len(requests) != 1 || len(requests[0].Tools) != 0 {
+		t.Errorf("the model was asked %+v", requests)
 	}
 }

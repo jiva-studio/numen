@@ -266,6 +266,12 @@ func (r *pluginRun) readSteps() {
 			return
 		}
 	}
+	if err := r.stream.Err(); err != nil && r.ctx.Err() == nil {
+		select {
+		case <-r.ctx.Done():
+		case r.steps <- port.Step{Kind: domain.StepStop, Detail: err.Error()}:
+		}
+	}
 }
 
 func convertResponseStep(msg *v1.AskAgentResponse) port.Step {

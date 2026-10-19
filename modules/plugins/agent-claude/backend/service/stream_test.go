@@ -193,9 +193,9 @@ func TestTheFirstReasonHolds(t *testing.T) {
 }
 
 func TestTheAgentReadsNothingThisMachineHoldsForItByDefault(t *testing.T) {
-	args := buildClaudeArguments(claudeArguments{configuration: "cfg.json"})
+	args := buildClaudeArguments(claudeArguments{configuration: "cfg.json", tools: []string{"note_read"}})
 	assertPair(t, args, "--setting-sources", "")
-	args = buildClaudeArguments(claudeArguments{configuration: "cfg.json", mayReadHooks: true})
+	args = buildClaudeArguments(claudeArguments{configuration: "cfg.json", tools: []string{"note_read"}, mayReadHooks: true})
 	assertPair(t, args, "--setting-sources", "user")
 }
 
@@ -206,8 +206,8 @@ func TestTheAllowanceNamesTheSearchAndTheTasksTools(t *testing.T) {
 }
 
 func TestTheDefaultNumberOfTurnsIsOneHundred(t *testing.T) {
-	assertPair(t, buildClaudeArguments(claudeArguments{}), "--max-turns", "100")
-	assertPair(t, buildClaudeArguments(claudeArguments{turns: 7}), "--max-turns", "7")
+	assertPair(t, buildClaudeArguments(claudeArguments{tools: []string{"note_read"}}), "--max-turns", "100")
+	assertPair(t, buildClaudeArguments(claudeArguments{turns: 7, tools: []string{"note_read"}}), "--max-turns", "7")
 }
 
 func assertPair(t *testing.T, args []string, flag, want string) {
