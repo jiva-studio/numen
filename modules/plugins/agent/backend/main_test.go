@@ -1271,3 +1271,122 @@ func TestSplitChunks(t *testing.T) {
 		t.Errorf("splitChunks(\"12345678901\", 5) = %v, want [\"12345\", \"67890\", \"1\"]", got)
 	}
 }
+
+type failStreamInterceptor struct {
+	failPredicate func(any) bool
+	sendErr       error
+}
+
+func (i *failStreamInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
+	return next
+}
+
+func (i *failStreamInterceptor) WrapStreamingClient(next connect.StreamingClientFunc) connect.StreamingClientFunc {
+	return next
+}
+
+func (i *failStreamInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
+	return func(ctx context.Context, conn connect.StreamingHandlerConn) error {
+		return next(ctx, &failingStreamingHandlerConn{
+			StreamingHandlerConn: conn,
+			interceptor:          i,
+		})
+	}
+}
+
+type failingStreamingHandlerConn struct {
+	connect.StreamingHandlerConn
+	interceptor *failStreamInterceptor
+}
+
+func (c *failingStreamingHandlerConn) Send(msg any) error {
+	if c.interceptor.failPredicate != nil && c.interceptor.failPredicate(msg) {
+		return c.interceptor.sendErr
+	}
+	return c.StreamingHandlerConn.Send(msg)
+}
+
+func TestAskAgentStreamSendFailure(t *testing.T) {
+	mockLLM := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		resp := chatResponse{
+			Choices: []struct {
+				Message      chatMessage `json:"message"`
+				FinishReason string      `json:"finish_reason"`
+			}{
+				{
+					FinishReason: "tool_calls",
+					Message: chatMessage{
+						Role: "assistant",
+						ToolCalls: []toolCall{
+							{
+								ID:   "call_err_1",
+								Type: "function",
+								Function: toolCallFunction{
+									Name:      "test_tool",
+									Arguments: `{"query":"test"}`,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	}))
+	defer mockLLM.Close()
+
+	var executorCalled bool
+	agentSvc := &agentServer{
+		systemPrompt: "You are a test assistant.",
+		baseURL:      mockLLM.URL,
+		apiKey:       "test-key",
+		tools: []*numenv1.AgentToolDefinition{
+			{
+				Name:        "test_tool",
+				Description: "Test tool description",
+			},
+		},
+		executor: func(ctx context.Context, name string, args string) (string, error) {
+			executorCalled = true
+			return "executed", nil
+		},
+	}
+
+	expectedErr := errors.New("simulated stream failure")
+	interceptor := &failStreamInterceptor{
+		failPredicate: func(msg any) bool {
+			resp, ok := msg.(*numenv1.AskAgentResponse)
+			if !ok {
+				return false
+			}
+			_, ok = resp.GetStep().(*numenv1.AskAgentResponse_ToolCall)
+			return ok
+		},
+		sendErr: expectedErr,
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewAgentServiceHandler(agentSvc, connect.WithInterceptors(interceptor)))
+
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	client := numenv1connect.NewAgentServiceClient(http.DefaultClient, server.URL)
+	stream, err := client.AskAgent(context.Background(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Prompt: "Trigger tool call",
+	}))
+	if err != nil {
+		t.Fatalf("AskAgent request failed: %v", err)
+	}
+
+	for stream.Receive() {
+	}
+
+	if executorCalled {
+		t.Fatal("executor was invoked after tool call send failure")
+	}
+	if streamErr := stream.Err(); streamErr == nil {
+		t.Fatal("expected stream error, got nil")
+	}
+}

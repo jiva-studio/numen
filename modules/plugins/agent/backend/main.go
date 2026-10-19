@@ -171,13 +171,11 @@ func (s *agentServer) AskAgent(
 					reply = *msg.Content
 				}
 				for _, chunk := range splitChunks(reply, 64) {
-					err := stream.Send(&numenv1.AskAgentResponse{
+					if err := stream.Send(&numenv1.AskAgentResponse{
 						Step: &numenv1.AskAgentResponse_Said{
 							Said: chunk,
 						},
-					})
-					// gomutants:disable-next-line BRANCH_IF reason="stream send failure aborts the handler"
-					if err != nil {
+					}); err != nil {
 						return err
 					}
 				}
@@ -189,7 +187,7 @@ func (s *agentServer) AskAgent(
 
 			for _, tc := range msg.ToolCalls {
 				about, path := extractToolMeta(tc.Function.Arguments)
-				err := stream.Send(&numenv1.AskAgentResponse{
+				if err := stream.Send(&numenv1.AskAgentResponse{
 					Step: &numenv1.AskAgentResponse_ToolCall{
 						ToolCall: &numenv1.ToolCall{
 							Tool:    tc.Function.Name,
@@ -198,9 +196,7 @@ func (s *agentServer) AskAgent(
 							Path:    path,
 						},
 					},
-				})
-				// gomutants:disable-next-line BRANCH_IF reason="stream send failure aborts the handler"
-				if err != nil {
+				}); err != nil {
 					return err
 				}
 
@@ -209,13 +205,11 @@ func (s *agentServer) AskAgent(
 					result = fmt.Sprintf("error executing tool %s: %v", tc.Function.Name, err)
 				}
 
-				err = stream.Send(&numenv1.AskAgentResponse{
+				if err := stream.Send(&numenv1.AskAgentResponse{
 					Step: &numenv1.AskAgentResponse_ToolFinished{
 						ToolFinished: &numenv1.ToolFinished{},
 					},
-				})
-				// gomutants:disable-next-line BRANCH_IF reason="stream send failure aborts the handler"
-				if err != nil {
+				}); err != nil {
 					return err
 				}
 
@@ -226,26 +220,22 @@ func (s *agentServer) AskAgent(
 				})
 			}
 
-			err = stream.Send(&numenv1.AskAgentResponse{
+			if err := stream.Send(&numenv1.AskAgentResponse{
 				Step: &numenv1.AskAgentResponse_ModelStarted{
 					ModelStarted: &numenv1.ModelStarted{},
 				},
-			})
-			// gomutants:disable-next-line BRANCH_IF reason="stream send failure aborts the handler"
-			if err != nil {
+			}); err != nil {
 				return err
 			}
 		}
 
 		if !completedNormally {
 			warning := "Agent reached maximum tool call iterations without concluding."
-			err := stream.Send(&numenv1.AskAgentResponse{
+			if err := stream.Send(&numenv1.AskAgentResponse{
 				Step: &numenv1.AskAgentResponse_Said{
 					Said: warning,
 				},
-			})
-			// gomutants:disable-next-line BRANCH_IF reason="stream send failure aborts the handler"
-			if err != nil {
+			}); err != nil {
 				return err
 			}
 			return stream.Send(&numenv1.AskAgentResponse{
@@ -262,13 +252,11 @@ func (s *agentServer) AskAgent(
 		reply := fmt.Sprintf("Agent received prompt %q%s.", req.Msg.GetPrompt(), toolSummary)
 
 		for _, chunk := range splitChunks(reply, 64) {
-			err := stream.Send(&numenv1.AskAgentResponse{
+			if err := stream.Send(&numenv1.AskAgentResponse{
 				Step: &numenv1.AskAgentResponse_Said{
 					Said: chunk,
 				},
-			})
-			// gomutants:disable-next-line BRANCH_IF reason="stream send failure aborts the handler"
-			if err != nil {
+			}); err != nil {
 				return err
 			}
 		}
