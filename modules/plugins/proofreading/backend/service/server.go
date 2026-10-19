@@ -122,8 +122,8 @@ func (s *proofreadingServer) proofread(ctx context.Context, msg *numenv1.Proofre
 }
 
 var (
-	errScanOptions   = errors.New("a scan request carries scan options")
-	errSpeechOptions = errors.New("a speech request carries speech options")
+	errScanOptions   = errors.New("a scan request has scan options")
+	errSpeechOptions = errors.New("a speech request has speech options")
 	errSpeechSize    = errors.New("a speech request holds at least one line to a model request")
 )
 
@@ -144,7 +144,7 @@ func readModelError(ctx context.Context, err error) error {
 	return connect.NewError(connect.CodeInternal, err)
 }
 
-// readGroups returns the batches a request carries.
+// readGroups returns the batches a request contains.
 func readGroups(groups []*numenv1.ProofreadGroup) []Batch {
 	out := make([]Batch, len(groups))
 	for i, group := range groups {

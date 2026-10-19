@@ -61,6 +61,9 @@ const (
 	// SettingsServiceDeletePluginSecretProcedure is the fully-qualified name of the SettingsService's
 	// DeletePluginSecret RPC.
 	SettingsServiceDeletePluginSecretProcedure = "/numen.v1.SettingsService/DeletePluginSecret"
+	// SettingsServiceRetryPluginProcedure is the fully-qualified name of the SettingsService's
+	// RetryPlugin RPC.
+	SettingsServiceRetryPluginProcedure = "/numen.v1.SettingsService/RetryPlugin"
 )
 
 // SettingsServiceClient is a client for the numen.v1.SettingsService service.
@@ -88,6 +91,10 @@ type SettingsServiceClient interface {
 	// and clears the record that it is stored. The plugin is handed its secrets
 	// again.
 	DeletePluginSecret(context.Context, *connect.Request[v1.DeletePluginSecretRequest]) (*connect.Response[v1.DeletePluginSecretResponse], error)
+	// RetryPlugin forgets the failures of a plugin the host suspends, and starts
+	// it once. A plugin that fails again is suspended again, and the call answers
+	// the reason.
+	RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error)
 }
 
 // NewSettingsServiceClient constructs a client for the numen.v1.SettingsService service. By
@@ -137,6 +144,12 @@ func NewSettingsServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(settingsServiceMethods.ByName("DeletePluginSecret")),
 			connect.WithClientOptions(opts...),
 		),
+		retryPlugin: connect.NewClient[v1.RetryPluginRequest, v1.RetryPluginResponse](
+			httpClient,
+			baseURL+SettingsServiceRetryPluginProcedure,
+			connect.WithSchema(settingsServiceMethods.ByName("RetryPlugin")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -148,6 +161,7 @@ type settingsServiceClient struct {
 	writeSettingsFile  *connect.Client[v1.WriteSettingsFileRequest, v1.WriteSettingsFileResponse]
 	writePluginSecret  *connect.Client[v1.WritePluginSecretRequest, v1.WritePluginSecretResponse]
 	deletePluginSecret *connect.Client[v1.DeletePluginSecretRequest, v1.DeletePluginSecretResponse]
+	retryPlugin        *connect.Client[v1.RetryPluginRequest, v1.RetryPluginResponse]
 }
 
 // GetSettings calls numen.v1.SettingsService.GetSettings.
@@ -180,6 +194,11 @@ func (c *settingsServiceClient) DeletePluginSecret(ctx context.Context, req *con
 	return c.deletePluginSecret.CallUnary(ctx, req)
 }
 
+// RetryPlugin calls numen.v1.SettingsService.RetryPlugin.
+func (c *settingsServiceClient) RetryPlugin(ctx context.Context, req *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error) {
+	return c.retryPlugin.CallUnary(ctx, req)
+}
+
 // SettingsServiceHandler is an implementation of the numen.v1.SettingsService service.
 type SettingsServiceHandler interface {
 	// GetSettings is every setting of the file, and the models the settings that
@@ -205,6 +224,10 @@ type SettingsServiceHandler interface {
 	// and clears the record that it is stored. The plugin is handed its secrets
 	// again.
 	DeletePluginSecret(context.Context, *connect.Request[v1.DeletePluginSecretRequest]) (*connect.Response[v1.DeletePluginSecretResponse], error)
+	// RetryPlugin forgets the failures of a plugin the host suspends, and starts
+	// it once. A plugin that fails again is suspended again, and the call answers
+	// the reason.
+	RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error)
 }
 
 // NewSettingsServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -250,6 +273,12 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 		connect.WithSchema(settingsServiceMethods.ByName("DeletePluginSecret")),
 		connect.WithHandlerOptions(opts...),
 	)
+	settingsServiceRetryPluginHandler := connect.NewUnaryHandler(
+		SettingsServiceRetryPluginProcedure,
+		svc.RetryPlugin,
+		connect.WithSchema(settingsServiceMethods.ByName("RetryPlugin")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.SettingsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case SettingsServiceGetSettingsProcedure:
@@ -264,6 +293,8 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 			settingsServiceWritePluginSecretHandler.ServeHTTP(w, r)
 		case SettingsServiceDeletePluginSecretProcedure:
 			settingsServiceDeletePluginSecretHandler.ServeHTTP(w, r)
+		case SettingsServiceRetryPluginProcedure:
+			settingsServiceRetryPluginHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -295,4 +326,8 @@ func (UnimplementedSettingsServiceHandler) WritePluginSecret(context.Context, *c
 
 func (UnimplementedSettingsServiceHandler) DeletePluginSecret(context.Context, *connect.Request[v1.DeletePluginSecretRequest]) (*connect.Response[v1.DeletePluginSecretResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.DeletePluginSecret is not implemented"))
+}
+
+func (UnimplementedSettingsServiceHandler) RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.RetryPlugin is not implemented"))
 }

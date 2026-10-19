@@ -12,6 +12,7 @@ const asked = vi.hoisted(() => ({
   writeSettingsFile: vi.fn(),
   writePluginSecret: vi.fn(),
   deletePluginSecret: vi.fn(),
+  retryPlugin: vi.fn(),
 }))
 
 vi.mock('@/shared/clients', () => ({ settingsService: asked }))
@@ -289,5 +290,55 @@ describe('the key of a secret', () => {
   it('refused reaches the caller', async () => {
     asked.writePluginSecret.mockRejectedValue(new Error('no keychain'))
     await expect(core.writePluginSecret('sample.plugin', 'apiKey', 'k')).rejects.toThrow()
+  })
+})
+
+describe('a plugin the host holds off', () => {
+  it('comes with the reason and the time it was given up', async () => {
+    asked.getSettings.mockResolvedValue(
+      answer(
+        {},
+        {
+          plugins: [
+            {
+              id: 'sample.plugin',
+              name: 'Sample',
+              capabilities: [],
+              secrets: [],
+              storedSecrets: [],
+              models: [],
+              completionConsent: CompletionConsent.UNSPECIFIED,
+              settings: [],
+              failure: {
+                reason: 'The plugin did not finish starting in time.',
+                failedAtUnixMs: 1_700_000_000_123n,
+              },
+            },
+          ],
+        },
+      ),
+    )
+
+    const got = await core.getSettings()
+
+    expect(got.plugins?.[0]?.failure).toStrictEqual({
+      reason: 'The plugin did not finish starting in time.',
+      failedAt: 1_700_000_000_123,
+    })
+  })
+
+  it('is started again by its id, and the answer is why it failed again', async () => {
+    asked.retryPlugin.mockResolvedValue({ failure: 'The plugin did not finish starting in time.' })
+
+    const failure = await core.retryPlugin('sample.plugin')
+
+    expect(asked.retryPlugin).toHaveBeenLastCalledWith({ pluginId: 'sample.plugin' })
+    expect(failure).toBe('The plugin did not finish starting in time.')
+  })
+
+  it('is answered with nothing where it started', async () => {
+    asked.retryPlugin.mockResolvedValue({ failure: '' })
+
+    expect(await core.retryPlugin('sample.plugin')).toBe('')
   })
 })

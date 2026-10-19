@@ -43,6 +43,7 @@ type Supervisor struct {
 	failures       int
 	failure        error
 	failed         bool
+	failedAt       time.Time
 	retryAt        time.Time
 	lastActiveTime time.Time
 	activeRefCount int
@@ -74,6 +75,7 @@ func NewSupervisor() *Supervisor {
 		failures:          0,
 		failure:           nil,
 		failed:            false,
+		failedAt:          time.Time{},
 		retryAt:           time.Time{},
 		lastActiveTime:    time.Time{},
 		activeRefCount:    0,

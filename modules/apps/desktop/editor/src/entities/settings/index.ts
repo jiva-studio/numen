@@ -14,6 +14,7 @@ export type {
   Presence,
   SettingEdit,
   PluginInfo,
+  PluginFailure,
   PluginModel,
   PluginSettingInfo,
   Consent,
@@ -30,4 +31,6 @@ export { createSettingFields } from './lib/fields'
 export type { SettingFields, SettingSource } from './lib/fields'
 export { write } from './lib/write'
 export { createSecretStore } from './model/secrets'
+export { createPluginRetry } from './model/retry'
+export type { RetryDeps, RetryOptions, RetryWords } from './model/retry'
 export type { SecretDeps, SecretOptions, SecretWords } from './model/secrets'

@@ -89,6 +89,7 @@ const createSection = (
     latestDayStartTime: ref('12:00'),
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
+    retryPlugin: vi.fn(),
     chooseDayStartTime: vi.fn(),
   }
   const state: SettingsTabState = { installation }

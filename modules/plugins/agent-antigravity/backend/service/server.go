@@ -32,7 +32,7 @@ func (s *agentServer) AskAgent(
 			Step: &numenv1.AskAgentResponse_Stopped{Stopped: err.Error()},
 		})
 	}
-	return agentrun.Relay(ctx, work, stream)
+	return agentrun.ForwardResponses(ctx, work, stream)
 }
 
 func (s *agentServer) GetAgentState(

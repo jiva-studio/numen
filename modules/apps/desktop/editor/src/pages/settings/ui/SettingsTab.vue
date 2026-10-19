@@ -12,6 +12,7 @@ import PerformanceSettingsSection from './PerformanceSettingsSection.vue'
 import AgentSettingsSection from './AgentSettingsSection.vue'
 import AiSettingsSection from './AiSettingsSection.vue'
 import PluginSettingsSection from './PluginSettingsSection.vue'
+import PluginFailureSection from './PluginFailureSection.vue'
 import { WORDS as words } from '../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -37,6 +38,7 @@ function onOpenFile() {
       </div>
 
       <WindowSettingsSection :state="props.state" />
+      <PluginFailureSection :state="props.state" />
       <MediaSettingsSection :state="props.state" />
       <PerformanceSettingsSection :state="props.state" />
       <AgentSettingsSection :state="props.state" />

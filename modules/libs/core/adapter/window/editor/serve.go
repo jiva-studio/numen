@@ -108,6 +108,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	// is one piece of work however they asked for it. It is made before
 	// anything that reports itself into it.
 	tasks := run.NewTasks()
+	made.ReportPluginFailures(tasks)
 
 	// Opened once, for as long as the window is. A local model is fetched and
 	// compiled behind this, so the window is drawn while it arrives.
@@ -412,6 +413,7 @@ func (o *Installation) wireUseCases(ctx context.Context) {
 	services.Settings.writeFile = made.OpenWriteSettingsFile()
 	services.Settings.writeSecret = made.OpenWritePluginSecret()
 	services.Settings.deleteSecret = made.OpenDeletePluginSecret()
+	services.Settings.retryPlugin = made.OpenRetryPlugin()
 
 	held := &o.vaults
 	services.File.move = &held.Move

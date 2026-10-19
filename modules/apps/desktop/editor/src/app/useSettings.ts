@@ -19,7 +19,7 @@ import {
   createWindowAppearance,
 } from '@/features/settings-commands'
 import { createReviewSetting, type PluginInfo, type SettingEdit } from '@/entities/settings'
-import { createSecretStore, createSettingsStore } from '@/entities/settings'
+import { createPluginRetry, createSecretStore, createSettingsStore } from '@/entities/settings'
 import { useSettingsTab, paths, createChoices } from '@/pages/settings'
 import type { SelectChoice } from '@numen/ui'
 import type { Command, PaletteLists } from '@/features/command-palette'
@@ -177,11 +177,12 @@ interface SettingsTabConfigDeps {
   dayBegins: ReturnType<typeof createReviewSetting>
   rest: ReturnType<typeof createSettingsStore>
   secrets: ReturnType<typeof createSecretStore>
+  retry: ReturnType<typeof createPluginRetry>
   file: { openSettingsFile: () => void }
 }
 
 function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
-  const { dressed, sync, nesting, dayBegins, rest, secrets, file } = deps
+  const { dressed, sync, nesting, dayBegins, rest, secrets, retry, file } = deps
   return {
     themes: dressed.list,
     applied: dressed.applied,
@@ -210,6 +211,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     writeSecret: (pluginId: string, name: string, key: string) =>
       secrets.writeSecret(pluginId, name, key),
     deleteSecret: (pluginId: string, name: string) => secrets.deleteSecret(pluginId, name),
+    retryPlugin: (pluginId: string) => retry.retryPlugin(pluginId),
     plugins: rest.plugins,
     file: rest.path,
     openFile: () => file.openSettingsFile(),
@@ -267,6 +269,11 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
     notify: log.getWriter('keys'),
     refresh: rest.start,
   })
+  const retry = createPluginRetry(core, {
+    words: { failedAgain: words.pluginFailedAgain, refused: words.pluginRetryRefused },
+    notify: log.getWriter('plugins'),
+    refresh: rest.start,
+  })
 
   const file = {
     openSettingsFile: () => {
@@ -278,7 +285,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
 
   const configured = useSettingsTab(
     windowTabs.handle,
-    createSettingsTabConfig({ dressed, sync, nesting, dayBegins, rest, secrets, file }),
+    createSettingsTabConfig({ dressed, sync, nesting, dayBegins, rest, secrets, retry, file }),
   )
 
   watch(dressed.sized, () => onSizeChanged())

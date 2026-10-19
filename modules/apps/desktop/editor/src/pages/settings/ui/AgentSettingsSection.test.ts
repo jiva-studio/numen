@@ -96,6 +96,7 @@ const createSection = (file: Record<string, unknown> = {}, defaultUse = 'claude'
     latestDayStartTime: ref('12:00'),
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
+    retryPlugin: vi.fn(),
     chooseDayStartTime: vi.fn(),
     file: ref('/test/settings.json'),
     openFile: vi.fn(),
