@@ -122,8 +122,10 @@ func (*PingRequest) Descriptor() ([]byte, []int) {
 }
 
 type PingResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Status string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	// The plugin protocol version the plugin speaks. Zero means the plugin did not report one.
+	Protocol      int32 `protobuf:"varint,2,opt,name=protocol,proto3" json:"protocol,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -163,6 +165,13 @@ func (x *PingResponse) GetStatus() string {
 		return x.Status
 	}
 	return ""
+}
+
+func (x *PingResponse) GetProtocol() int32 {
+	if x != nil {
+		return x.Protocol
+	}
+	return 0
 }
 
 type ShutdownRequest struct {
@@ -770,9 +779,10 @@ var File_numen_v1_plugin_proto protoreflect.FileDescriptor
 const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\n" +
 	"\x15numen/v1/plugin.proto\x12\bnumen.v1\"\r\n" +
-	"\vPingRequest\"&\n" +
+	"\vPingRequest\"B\n" +
 	"\fPingResponse\x12\x16\n" +
-	"\x06status\x18\x01 \x01(\tR\x06status\":\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\x12\x1a\n" +
+	"\bprotocol\x18\x02 \x01(\x05R\bprotocol\":\n" +
 	"\x0fShutdownRequest\x12'\n" +
 	"\x0ftimeout_seconds\x18\x01 \x01(\x05R\x0etimeoutSeconds\",\n" +
 	"\x10ShutdownResponse\x12\x18\n" +

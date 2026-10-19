@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 var (
@@ -46,13 +48,14 @@ func (p ActivationPolicy) getBackoff(failures int) time.Duration {
 }
 
 // RecordActivationFailure counts a failed activation and reports whether the plugin has now failed for good.
+// A plugin that speaks an unsupported protocol fails for good at once.
 func (s *Supervisor) RecordActivationFailure(now time.Time, policy ActivationPolicy, cause error) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.failures++
 	s.failure = cause
 	s.retryAt = now.Add(policy.getBackoff(s.failures))
-	if policy.MaxFailures > 0 && s.failures >= policy.MaxFailures {
+	if (policy.MaxFailures > 0 && s.failures >= policy.MaxFailures) || errors.Is(cause, port.ErrUnsupportedProtocol) {
 		s.failed = true
 	}
 	return s.failed

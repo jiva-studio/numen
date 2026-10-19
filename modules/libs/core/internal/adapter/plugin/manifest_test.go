@@ -268,8 +268,12 @@ func TestManifestAcceptsCurrentProtocolAndAbsentProtocol(t *testing.T) {
 		`{"id":"a.b","name":"A","version":"1.0.0"}`,
 		`{"id":"a.b","name":"A","version":"1.0.0","protocol":1}`,
 	} {
-		if _, err := ReadManifest(strings.NewReader(raw)); err != nil {
+		m, err := ReadManifest(strings.NewReader(raw))
+		if err != nil {
 			t.Errorf("%s: unexpected error: %v", raw, err)
+		}
+		if got := m.GetProtocol(); got != 1 {
+			t.Errorf("%s: GetProtocol() = %d, want 1", raw, got)
 		}
 	}
 }

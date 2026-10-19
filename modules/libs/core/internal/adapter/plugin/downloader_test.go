@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -123,6 +124,7 @@ func createTestDownloaderPluginTree(t *testing.T, dir string) {
 
 func TestDownloaderBridge(t *testing.T) {
 	mux := http.NewServeMux()
+	testsupport.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewDownloadServiceHandler(&mockDownloadServer{}))
 
 	server := httptest.NewServer(mux)

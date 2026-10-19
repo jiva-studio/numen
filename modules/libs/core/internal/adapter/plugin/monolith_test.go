@@ -5,6 +5,7 @@ package plugin_test
 import (
 	"context"
 	"errors"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
@@ -15,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 type mockDocumentServer struct {
@@ -322,5 +324,59 @@ func TestMonolithInProcessPluginIsNotActivatedWithoutItsRuntime(t *testing.T) {
 	}
 	if got := os.Getenv(plugin.EnvONNXRuntimeLib); got != "" {
 		t.Errorf("%s = %q after a failed provisioning", plugin.EnvONNXRuntimeLib, got)
+	}
+}
+
+type newerProtocolLifecycle struct {
+	numenv1connect.UnimplementedPluginLifecycleServiceHandler
+}
+
+func (newerProtocolLifecycle) Ping(
+	_ context.Context,
+	_ *connect.Request[v1.PingRequest],
+) (*connect.Response[v1.PingResponse], error) {
+	return connect.NewResponse(&v1.PingResponse{Status: "ok", Protocol: port.PluginProtocolVersion + 1}), nil
+}
+
+// The host's in-process lifecycle reports the protocol the host speaks.
+func TestMonolithInProcessPluginReportsTheHostsProtocol(t *testing.T) {
+	plugin.ClearMonolithHandlers()
+	defer plugin.ClearMonolithHandlers()
+
+	host := plugin.NewHost("desktop.editor")
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+	endpoint, err := host.EnsureActive(t.Context(), "md.numen.pdf")
+	if err != nil {
+		t.Fatalf("EnsureActive(pdf) failed: %v", err)
+	}
+	defer host.Release("md.numen.pdf")
+
+	client := numenv1connect.NewPluginLifecycleServiceClient(plugin.EndpointClient(endpoint), endpoint.BaseURL())
+	resp, err := client.Ping(t.Context(), connect.NewRequest(&v1.PingRequest{}))
+	if err != nil {
+		t.Fatalf("Ping failed: %v", err)
+	}
+	if got := resp.Msg.GetProtocol(); got != port.PluginProtocolVersion {
+		t.Fatalf("Ping protocol = %d, want %d", got, port.PluginProtocolVersion)
+	}
+}
+
+// An in-process plugin that reports another protocol is refused.
+func TestMonolithInProcessPluginThatSpeaksAnotherProtocolIsRefused(t *testing.T) {
+	plugin.ClearMonolithHandlers()
+	defer plugin.ClearMonolithHandlers()
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(newerProtocolLifecycle{}))
+	plugin.RegisterMonolithPluginHandler("md.numen.pdf", mux)
+
+	host := plugin.NewHost("desktop.editor")
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+	_, err := host.EnsureActive(t.Context(), "md.numen.pdf")
+	if !errors.Is(err, port.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), "md.numen.pdf speaks protocol 2") {
+		t.Fatalf("EnsureActive(pdf) = %v, want %v naming the plugin", err, port.ErrUnsupportedProtocol)
 	}
 }

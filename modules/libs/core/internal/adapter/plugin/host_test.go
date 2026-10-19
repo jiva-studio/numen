@@ -24,6 +24,8 @@ import (
 	"connectrpc.com/connect"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 )
 
 func createNamedTestPlugin(t *testing.T, dir, id string) {
@@ -124,6 +126,7 @@ func TestHostDiscoveryAndLookup(t *testing.T) {
 
 func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	tmp := t.TempDir()
+	pingPort := serveHostPing(t)
 	createTestPluginTree(t, tmp)
 
 	host := NewHost("desktop.editor", tmp)
@@ -143,7 +146,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		actualPort := port
 		if actualPort == 0 {
-			actualPort = 54321
+			actualPort = pingPort
 		}
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", actualPort))
 		return cmd.Process, io.NopCloser(r), nil
@@ -252,6 +255,7 @@ func TestIsWhitelistedEnv(t *testing.T) {
 
 func TestHostEmitEventActivation(t *testing.T) {
 	tmp := t.TempDir()
+	pingPort := serveHostPing(t)
 	createTestPluginTree(t, tmp)
 
 	host := NewHost("desktop.editor", tmp)
@@ -271,7 +275,7 @@ func TestHostEmitEventActivation(t *testing.T) {
 	host.SetLauncher(func(_ context.Context, _ DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		actualPort := port
 		if actualPort == 0 {
-			actualPort = 54321
+			actualPort = pingPort
 		}
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", actualPort))
 		return cmd.Process, io.NopCloser(r), nil
@@ -302,6 +306,7 @@ func TestHostEmitEventActivation(t *testing.T) {
 
 func TestHostDrainsStdoutAfterHandshake(t *testing.T) {
 	tmp := t.TempDir()
+	pingPort := serveHostPing(t)
 	createTestPluginTree(t, tmp)
 
 	host := NewHost("desktop.editor", tmp)
@@ -330,7 +335,7 @@ func TestHostDrainsStdoutAfterHandshake(t *testing.T) {
 	writeDone := make(chan error, 1)
 	go func() {
 		defer pw.Close()
-		if _, err := pw.Write([]byte("NUMEN_READY port=54321\n")); err != nil {
+		if _, err := pw.Write([]byte(fmt.Sprintf("NUMEN_READY port=%d\n", pingPort))); err != nil {
 			writeDone <- err
 			return
 		}
@@ -348,8 +353,8 @@ func TestHostDrainsStdoutAfterHandshake(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	if endpoint.Port != 54321 {
-		t.Fatalf("expected port 54321, got %d", endpoint.Port)
+	if endpoint.Port != pingPort {
+		t.Fatalf("expected port %d, got %d", pingPort, endpoint.Port)
 	}
 
 	select {
@@ -369,6 +374,7 @@ func TestHostDrainsStdoutAfterHandshake(t *testing.T) {
 
 func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 	tmp := t.TempDir()
+	pingPort := serveHostPing(t)
 	createNamedTestPlugin(t, tmp, "test.concurrent")
 
 	host := NewHost("desktop.editor", tmp)
@@ -398,7 +404,7 @@ func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 		<-allowHandshake
 		actualPort := port
 		if actualPort == 0 {
-			actualPort = 54321
+			actualPort = pingPort
 		}
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", actualPort))
 		return cmd.Process, io.NopCloser(r), nil
@@ -432,8 +438,8 @@ func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 		if errs[i] != nil {
 			t.Fatalf("goroutine %d returned error: %v", i, errs[i])
 		}
-		if endpoints[i].Port != 54321 {
-			t.Fatalf("goroutine %d port = %d, want 54321", i, endpoints[i].Port)
+		if endpoints[i].Port != pingPort {
+			t.Fatalf("goroutine %d port = %d, want %d", i, endpoints[i].Port, pingPort)
 		}
 		if endpoints[i].Token != endpoints[0].Token {
 			t.Fatalf("goroutine %d token mismatch: %s vs %s", i, endpoints[i].Token, endpoints[0].Token)
@@ -454,6 +460,8 @@ func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 
 func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
 	tmp := t.TempDir()
+	slowPort := serveHostPing(t)
+	fastPort := serveHostPing(t)
 	createNamedTestPlugin(t, tmp, "plugin.slow")
 	createNamedTestPlugin(t, tmp, "plugin.fast")
 
@@ -489,13 +497,13 @@ func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
 			<-slowAllowHandshake
 			actualPort := port
 			if actualPort == 0 {
-				actualPort = 11111
+				actualPort = slowPort
 			}
 			return cmdSlow.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", actualPort))), nil
 		}
 		actualPort := port
 		if actualPort == 0 {
-			actualPort = 22222
+			actualPort = fastPort
 		}
 		return cmdFast.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", actualPort))), nil
 	})
@@ -516,8 +524,8 @@ func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive on fast plugin failed while slow plugin was handshaking: %v", err)
 	}
-	if fastEndpoint.Port != 22222 {
-		t.Fatalf("fast plugin expected port 22222, got %d", fastEndpoint.Port)
+	if fastEndpoint.Port != fastPort {
+		t.Fatalf("fast plugin expected port %d, got %d", fastPort, fastEndpoint.Port)
 	}
 
 	plugins := host.GetPlugins()
@@ -535,8 +543,8 @@ func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
 	if slowErr != nil {
 		t.Fatalf("slow plugin EnsureActive failed: %v", slowErr)
 	}
-	if slowEndpoint.Port != 11111 {
-		t.Fatalf("slow plugin expected port 11111, got %d", slowEndpoint.Port)
+	if slowEndpoint.Port != slowPort {
+		t.Fatalf("slow plugin expected port %d, got %d", slowPort, slowEndpoint.Port)
 	}
 
 	host.Release("plugin.slow")
@@ -608,6 +616,7 @@ func TestHostEnsureActiveConcurrentFailure(t *testing.T) {
 
 func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
 	tmp := t.TempDir()
+	pingPort := serveHostPing(t)
 	createNamedTestPlugin(t, tmp, "test.cancel")
 
 	host := NewHost("desktop.editor", tmp)
@@ -632,7 +641,7 @@ func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
 		<-allowHandshake
 		actualPort := port
 		if actualPort == 0 {
-			actualPort = 54321
+			actualPort = pingPort
 		}
 		return cmd.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", actualPort))), nil
 	})
@@ -673,8 +682,8 @@ func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
 	if activeErr != nil {
 		t.Fatalf("primary activation failed: %v", activeErr)
 	}
-	if activeEp.Port != 54321 {
-		t.Fatalf("expected port 54321, got %d", activeEp.Port)
+	if activeEp.Port != pingPort {
+		t.Fatalf("expected port %d, got %d", pingPort, activeEp.Port)
 	}
 
 	host.Release("test.cancel")
@@ -702,7 +711,7 @@ func (c *testCloser) isClosed() bool {
 }
 
 type testLifecycleHandler struct {
-	numenv1connect.UnimplementedPluginLifecycleServiceHandler
+	testsupport.PluginLifecycle
 	mu             sync.Mutex
 	shutdownCalled bool
 	timeoutSecs    int32
@@ -1102,6 +1111,7 @@ func getExitSignal(sup *Supervisor) <-chan struct{} {
 
 func startSleepLauncher(t *testing.T, started *atomic.Int32, procs *[]*os.Process) Launcher {
 	t.Helper()
+	pingPort := serveHostPing(t)
 	var mu sync.Mutex
 	return func(_ context.Context, _ DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		cmd := newIdleCommand()
@@ -1115,7 +1125,7 @@ func startSleepLauncher(t *testing.T, started *atomic.Int32, procs *[]*os.Proces
 		}
 		mu.Unlock()
 		started.Add(1)
-		return cmd.Process, io.NopCloser(strings.NewReader("NUMEN_READY port=54321\n")), nil
+		return cmd.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", pingPort))), nil
 	}
 }
 

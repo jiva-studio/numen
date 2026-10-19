@@ -18,6 +18,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -87,7 +88,7 @@ func (k *keys) hold(name string) (string, bool) {
 
 // configured records the Configure calls a plugin receives.
 type configured struct {
-	numenv1connect.UnimplementedPluginLifecycleServiceHandler
+	testsupport.PluginLifecycle
 	mu            sync.Mutex
 	calls         []*v1.ConfigureRequest
 	unimplemented bool

@@ -19,6 +19,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -127,6 +128,7 @@ func createTestTranscriptionPluginTree(t *testing.T, dir string) {
 
 func TestTranscriberBridge(t *testing.T) {
 	mux := http.NewServeMux()
+	testsupport.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewTranscriptionServiceHandler(&mockTranscriptionServer{}))
 
 	server := httptest.NewServer(mux)
@@ -225,6 +227,7 @@ func (s testNamedSource) Name() string {
 
 func TestTranscriberBridgeOpenPathAndNamed(t *testing.T) {
 	mux := http.NewServeMux()
+	testsupport.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewTranscriptionServiceHandler(&mockTranscriptionServer{}))
 
 	server := httptest.NewServer(mux)

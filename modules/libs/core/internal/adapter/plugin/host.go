@@ -683,6 +683,16 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 		_, _ = io.Copy(io.Discard, stdout)
 	}()
 
+	endpoint := Endpoint{
+		Host:  "127.0.0.1",
+		Port:  actualPort,
+		Token: token,
+	}
+	if err := checkPluginProtocol(ctx, p.Manifest, endpoint); err != nil {
+		h.cleanupAbortedProcess(proc, stdout, p.Manifest.ID)
+		return emptyEndpoint(), err
+	}
+
 	now := time.Now()
 	h.mu.Lock()
 	if sup.GetState() != StateActivating {
@@ -703,11 +713,6 @@ func (h *Host) startPluginProcess(ctx context.Context, p DiscoveredPlugin, sup *
 	})
 	sup.Acquire(now)
 
-	endpoint := Endpoint{
-		Host:  "127.0.0.1",
-		Port:  actualPort,
-		Token: token,
-	}
 	h.endpoints[p.Manifest.ID] = endpoint
 	sup.SetRPCShutdown(h.createRPCShutdown(endpoint, 2*time.Second))
 	sup.FinishActivating()

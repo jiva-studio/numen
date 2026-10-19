@@ -17,6 +17,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -96,6 +97,7 @@ func TestBookBridgeWithoutPlugin(t *testing.T) {
 
 func TestBookBridgeWithFakePlugin(t *testing.T) {
 	mux := http.NewServeMux()
+	testsupport.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewBookServiceHandler(&fakeBookServer{}))
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -161,6 +163,7 @@ func TestBookBridgeWithFakePlugin(t *testing.T) {
 func openFakeBookBridge(t *testing.T, permissions ...string) *BookBridge {
 	t.Helper()
 	mux := http.NewServeMux()
+	testsupport.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewBookServiceHandler(&fakeBookServer{}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)

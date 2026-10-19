@@ -15,6 +15,8 @@ message PingRequest {}
 
 message PingResponse {
   string status = 1;
+  // The plugin protocol version the plugin speaks. Zero means the plugin did not report one.
+  int32 protocol = 2;
 }
 
 message ShutdownRequest {

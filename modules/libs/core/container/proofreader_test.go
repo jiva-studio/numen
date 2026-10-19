@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 )
 
 // makeConfig is a container carrying one profile under a name.
@@ -96,6 +97,7 @@ func TestAProfileDegradesWhenPluginAbsent(t *testing.T) {
 
 func TestTheProofreadingPluginWiredViaHostAnswersProofreader(t *testing.T) {
 	mux := http.NewServeMux()
+	testsupport.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewProofreadingServiceHandler(&mockProofreadService{}))
 	server := httptest.NewServer(mux)
 	defer server.Close()
