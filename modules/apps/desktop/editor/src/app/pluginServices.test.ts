@@ -1,7 +1,12 @@
 /** The window and the notes of the vault, as a plugin's tabs are handed them. */
 import { describe, expect, it, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
-import { createVaultNotes, createWorkspaceHost, type WorkspaceHostDeps } from './pluginServices'
+import {
+  createAgentHost,
+  createVaultNotes,
+  createWorkspaceHost,
+  type WorkspaceHostDeps,
+} from './pluginServices'
 import type { CommandTarget } from '@/features/command-palette'
 import type { NoteCreator } from '@/entities/note'
 
@@ -15,11 +20,15 @@ const createWorkspace = (over: Partial<WorkspaceHostDeps> = {}) => {
     },
     nesting: { isNesting: ref(true), headings: ref(3) },
     dragged: shallowRef<readonly string[]>([]),
-    tabOpeners: { openFile: vi.fn(() => Promise.resolve()) },
+    tabOpeners: {
+      openFile: vi.fn(() => Promise.resolve()),
+      openFileAt: vi.fn(() => Promise.resolve()),
+    },
     tabSync: { syncPathFromTab: vi.fn(() => true) },
     getTarget: () => ({ tab: 'plex:1', kind: 'plex', path: 'Here.md' }) as unknown as CommandTarget,
     runCommand: vi.fn(),
     ask: vi.fn(),
+    getNoteInFocus: () => ({ path: 'Focus.md', title: 'Focus' }),
     writeMessage: vi.fn(),
     runs: { canRun: (run: string) => run !== 'transcribe' },
     vaults: { makes: { value: new Map([['Lecture.mp3', { transcript: 'done' as const }]]) } },
@@ -93,6 +102,92 @@ describe('the window a plugin is handed', () => {
     expect(await workspace.readOpeningPath()).toBe('Root.md')
     expect(workspace.headingDisplay.isNesting.value).toBe(true)
     expect(workspace.headingDisplay.count.value).toBe(3)
+  })
+})
+
+describe('the window a plugin opens files and reads the note in focus through', () => {
+  it('opens a file with the runs of its text marked', () => {
+    const { workspace, deps } = createWorkspace()
+
+    workspace.openFileAt('Source.pdf', [{ from: 3, to: 9 }])
+
+    expect(deps.tabOpeners.openFileAt).toHaveBeenCalledWith('Source.pdf', [{ from: 3, to: 9 }])
+  })
+
+  it('says why a file could not be opened with its runs marked', async () => {
+    const { workspace, deps } = createWorkspace({
+      tabOpeners: {
+        openFile: vi.fn(() => Promise.resolve()),
+        openFileAt: vi.fn(() => Promise.reject(new Error('no such file'))),
+      },
+    })
+
+    workspace.openFileAt('Gone.pdf', [])
+    await new Promise((done) => setTimeout(done, 0))
+
+    expect(deps.writeMessage).toHaveBeenCalledWith(expect.any(String), 'error')
+  })
+
+  it('names the note the window stands on', () => {
+    const { workspace } = createWorkspace()
+
+    expect(workspace.getNoteInFocus()).toStrictEqual({ path: 'Focus.md', title: 'Focus' })
+  })
+})
+
+describe('the agent a plugin is handed', () => {
+  const create = () => {
+    const port = { ask: vi.fn(), finish: vi.fn(() => Promise.resolve()) }
+    const core = { resolve: vi.fn(() => Promise.resolve(new Map([['name://A', 'A.md']]))) }
+    const rest = {
+      getSetting: vi.fn(() => 'zeta'),
+      writeSetting: vi.fn(() => Promise.resolve()),
+      getModelsAt: vi.fn(() => []),
+    }
+    const unreachable = ref('')
+    const agent = createAgentHost({ port, core, window: { unreachable }, settings: { rest } })
+    return { agent, port, core, rest, unreachable }
+  }
+
+  it('asks and ends a conversation through the port', async () => {
+    const { agent, port } = create()
+    const query = {
+      question: 'q',
+      focus: '',
+      conversation: 'c:1',
+      signal: new AbortController().signal,
+    }
+
+    agent.ask(query)
+    await agent.finish('c:1')
+
+    expect(port.ask).toHaveBeenCalledWith(query)
+    expect(port.finish).toHaveBeenCalledWith('c:1')
+  })
+
+  it('resolves the names an answer writes from the top of the vault', async () => {
+    const { agent, core } = create()
+
+    expect([...(await agent.resolve(['name://A']))]).toStrictEqual([['name://A', 'A.md']])
+    expect(core.resolve).toHaveBeenCalledWith('', ['name://A'])
+  })
+
+  it('says why the agent cannot be reached while the window says it', () => {
+    const { agent, unreachable } = create()
+
+    expect(agent.getUnreachable()).toBe('')
+    unreachable.value = 'down'
+    expect(agent.getUnreachable()).toBe('down')
+  })
+
+  it('reads and writes settings and lists models through the settings of the window', async () => {
+    const { agent, rest } = create()
+
+    await agent.writeSetting(['agent', 'use'], 'omega')
+
+    expect(agent.getSetting(['agent', 'use'])).toBe('zeta')
+    expect(agent.getModelsAt(['agent', 'zeta', 'model'])).toStrictEqual([])
+    expect(rest.writeSetting).toHaveBeenCalledWith(['agent', 'use'], 'omega')
   })
 })
 

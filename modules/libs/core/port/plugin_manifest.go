@@ -43,7 +43,7 @@ var (
 	ErrEmptyID             = errors.New("plugin id cannot be empty")
 	ErrEmptyName           = errors.New("plugin name cannot be empty")
 	ErrEmptyVersion        = errors.New("plugin version cannot be empty")
-	ErrInvalidID           = errors.New("plugin id must be reverse-DNS: two or more dot-separated segments of letters, digits, _ or - (e.g. md.numen.sample)")
+	ErrInvalidID           = errors.New("plugin id must be reverse-DNS: two or more dot-separated segments of letters, digits, _ or - (e.g. org.example.sample)")
 	ErrInvalidVersion      = errors.New("plugin version is not valid semver (e.g. 1.0.0)")
 	ErrUnsupportedProtocol = errors.New("unsupported plugin protocol")
 	ErrInvalidLifecycle    = errors.New("invalid lifecycle")

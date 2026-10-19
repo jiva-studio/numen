@@ -47,6 +47,8 @@ export interface TabKind<TabState, K extends string = string> {
   identity?(at: string): string
   /** The tab came on screen, where what it holds has room to measure. */
   onShow?(state: TabState, id: string): void
+  /** The tab is handed text meant for it, such as a question the window puts to it. */
+  receiveText?(state: TabState, text: string): void
   /**
    * A key struck while one of its tabs is the one the person is in, answered
    * with whether the tab took it. Several panes are drawn at once, so the tab

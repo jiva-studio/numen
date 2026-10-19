@@ -157,14 +157,7 @@ vi.mock('@/entities/deck', async (original) => ({
   ...cardsSaid,
 }))
 
-const agentSaid = { core: { ask: held, finish: async () => {} } }
-
-vi.mock('@/pages/agent-chat/api/core', () => agentSaid)
-
-vi.mock('@/pages/agent-chat', async (original) => ({
-  ...(await original<typeof import('@/pages/agent-chat')>()),
-  ...agentSaid,
-}))
+vi.mock('@/app/agentPort', () => ({ agentPort: { ask: held, finish: () => Promise.resolve() } }))
 
 const themesSaid = {
   themes: {

@@ -43,9 +43,9 @@ func (b bearer) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 // openToolbox connects to the tool server at url and lists the tools of it the task names. An
-// empty url is a run with no tools.
+// empty url, or a task naming no tool, is a run with no tools, and no connection is made.
 func openToolbox(ctx context.Context, url, token string, named []string) (*toolbox, error) {
-	if url == "" {
+	if url == "" || len(named) == 0 {
 		return &toolbox{}, nil
 	}
 	if address, err := neturl.Parse(url); err != nil || !isPrivate(address) {

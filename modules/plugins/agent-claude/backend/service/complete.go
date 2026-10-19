@@ -40,7 +40,7 @@ func (s *agentServer) Complete(
 			return "", errNoCommand
 		}
 		args = append(args, buildCompletionArguments(request.System, model)...)
-		return completion.RunCommand(ctx, name, args, buildCompletionEnvironment(s.getEnvironment(), key, base), request.Prompt)
+		return completion.RunCommand(ctx, name, args, buildKeyEnvironment(s.getEnvironment(), key, base), request.Prompt)
 	})
 }
 
@@ -65,9 +65,12 @@ func buildCompletionArguments(system, model string) []string {
 	return args
 }
 
-// buildCompletionEnvironment is the environment of the command with the configured key and base
-// URL in place of any the process holds.
-func buildCompletionEnvironment(held []string, key, base string) []string {
+// buildKeyEnvironment is the environment of the command with the configured key and base URL in
+// place of any the process holds. With no key configured it is the environment as it stands.
+func buildKeyEnvironment(held []string, key, base string) []string {
+	if key == "" {
+		return buildEnvironment(held)
+	}
 	out := make([]string, 0, len(held)+2)
 	for _, entry := range buildEnvironment(held) {
 		name, _, _ := strings.Cut(entry, "=")

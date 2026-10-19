@@ -49,6 +49,7 @@ export function createMockPluginContext(
     ...(initialValues?.workspace ? { workspace: initialValues.workspace } : {}),
     ...(initialValues?.notes ? { notes: initialValues.notes } : {}),
     ...(initialValues?.files ? { files: initialValues.files } : {}),
+    ...(initialValues?.agent ? { agent: initialValues.agent } : {}),
 
     registerReader(registration: ReaderRegistration): Disposable {
       readers.push(registration)

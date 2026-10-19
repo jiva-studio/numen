@@ -2,6 +2,7 @@
  * Types and interfaces for the plugin subsystem.
  */
 import type {
+  AgentHost,
   AgentProviderRegistration,
   CommandRegistration,
   Disposable,
@@ -73,6 +74,8 @@ export interface PluginHostDeps {
   readonly getNotes?: () => VaultNotes | undefined
   /** The files of the vault, once the window has made them. */
   readonly getFiles?: () => VaultFiles | undefined
+  /** The agent the window asks, once the window has made it. */
+  readonly getAgent?: () => AgentHost | undefined
 }
 
 export interface PluginContextHost {
@@ -101,4 +104,5 @@ export interface PluginContextHost {
   getWorkspace?(): WorkspaceHost | undefined
   getNotes?(): VaultNotes | undefined
   getFiles?(): VaultFiles | undefined
+  getAgent?(): AgentHost | undefined
 }

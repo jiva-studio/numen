@@ -293,7 +293,7 @@ describe('the key of a secret', () => {
   })
 })
 
-describe('a plugin the host holds off', () => {
+describe('a plugin the host suspends', () => {
   it('comes with the reason and the time it was given up', async () => {
     asked.getSettings.mockResolvedValue(
       answer(

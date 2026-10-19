@@ -58,7 +58,12 @@ export function useWindowTabs() {
   const navigation = createTabNavigation(open, openers)
   /** A kind whose tab fails to open is told to `onError` and left out of the layout. */
   const openPlacedTabs = async (onError: PlacementError) => {
+    const earlier = getPanes(layout.value.root).flatMap((one) => one.tabs)
     layout.value = await createPlacedWorkspace([...byKind.values()], openers.createTab, onError)
+    const placed = new Set(getPanes(layout.value.root).flatMap((one) => one.tabs))
+    for (const id of earlier) {
+      if (open.value.has(id) && !placed.has(id)) layout.value = openTab(layout.value, id)
+    }
   }
   const onKeyPress = (event: KeyboardEvent): boolean =>
     dispatchTabKeyPress(layout.value, open.value, event)
@@ -73,6 +78,7 @@ export function useWindowTabs() {
     openPlacedTabs,
     navigateTab: navigation.navigateTab,
     navigateTabsAt: navigation.navigateTabsAt,
+    sendText: navigation.sendText,
     getTab: queries.getTab,
     getTabStateIn: queries.getTabStateIn,
     createTab: openers.createTab,
@@ -305,7 +311,20 @@ function createTabNavigation(
     )
   }
 
-  return { navigateTab, navigateTabsAt }
+  /**
+   * Text put in the tab of a kind the person was last in, and put in front; a
+   * tab of the kind opened to take it where the window holds none.
+   */
+  const sendText = async (kind: string, text: string): Promise<string> => {
+    const last = [...open.value].filter(([, one]) => one.kind.kind === kind).at(-1)
+    const id = last?.[0] ?? (await openers.openTabOfKind(kind))
+    const one = open.value.get(id)
+    one?.kind.receiveText?.(one.state, text)
+    openers.show(id)
+    return id
+  }
+
+  return { navigateTab, navigateTabsAt, sendText }
 }
 
 interface WindowHandleDeps {

@@ -12,8 +12,9 @@ type Endpoint struct {
 	Token string
 }
 
-// setupAntigravityHome creates a temporary HOME folder with symlinked configs and Numen MCP.
-func setupAntigravityHome(tools Endpoint) (string, func(), error) {
+// setupAntigravityHome creates a temporary HOME folder with symlinked configs. Its MCP servers are the
+// vault's tools and those the user configured, or none at all where there are no tools.
+func setupAntigravityHome(tools *Endpoint) (string, func(), error) {
 	tempHome, err := os.MkdirTemp("", "numen-antigravity-*")
 	if err != nil {
 		return "", func() {}, err
@@ -32,7 +33,10 @@ func setupAntigravityHome(tools Endpoint) (string, func(), error) {
 	_ = os.MkdirAll(filepath.Join(tempGemini, "config"), 0o700)
 	linkEntries(realGemini, tempGemini, "config")
 
-	mcpConfig := makeMCPConfig(tools, filepath.Join(realGemini, "config", "mcp_config.json"))
+	mcpConfig := map[string]any{"mcpServers": map[string]any{}}
+	if tools != nil {
+		mcpConfig = makeMCPConfig(*tools, filepath.Join(realGemini, "config", "mcp_config.json"))
+	}
 	if encoded, err := json.MarshalIndent(mcpConfig, "", "  "); err == nil {
 		_ = os.WriteFile(filepath.Join(tempGemini, "config", "mcp_config.json"), append(encoded, '\n'), 0o600)
 	}

@@ -7,4 +7,4 @@
 import { createAgentPort } from '@numen/wire'
 import { agentService } from '@/shared/clients'
 
-export const core = createAgentPort(agentService)
+export const agentPort = createAgentPort(agentService)

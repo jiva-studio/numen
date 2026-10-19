@@ -38,15 +38,7 @@ func (s *agentServer) Complete(
 		if err != nil {
 			return "", err
 		}
-		session, err := openACPSession(ctx, agent)
-		if err != nil {
-			return "", err
-		}
-		defer session.close()
-		if err := session.setModel(modelID); err != nil {
-			return "", err
-		}
-		return session.ask(request.System, request.Prompt)
+		return s.answer(ctx, agent, modelID, request.System, request.Prompt)
 	})
 }
 

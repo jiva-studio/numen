@@ -2,6 +2,7 @@
  * Host implementation of PluginContext conforming to @numen/plugin-sdk.
  */
 import type {
+  AgentHost,
   AgentProviderRegistration,
   CommandRegistration,
   Disposable,
@@ -112,6 +113,44 @@ function guardFiles(files: VaultFiles, requireWrite: (operation: string) => void
   }
 }
 
+/** Whether a setting path lies in the agent subtree of the settings. */
+const isAgentPath = (path: readonly string[]): boolean => path[0] === 'agent'
+
+/**
+ * The agent of the window: asking it and naming vault files need vault:read, and
+ * the settings it reads and writes are the ones under `agent`.
+ */
+function guardAgent(
+  agent: AgentHost,
+  requirePerm: (permission: string, operation: string) => void,
+): AgentHost {
+  return {
+    ...agent,
+    getSetting: (path) => (isAgentPath(path) ? agent.getSetting(path) : undefined),
+    writeSetting: async (path, value) => {
+      if (!isAgentPath(path)) {
+        throw new Error(
+          `agent.writeSetting is limited to the agent settings, not "${path.join('.')}"`,
+        )
+      }
+      await agent.writeSetting(path, value)
+    },
+    getModelsAt: (path) => (isAgentPath(path) ? agent.getModelsAt(path) : []),
+    ask: (query) => {
+      requirePerm('vault:read', 'agent.ask')
+      return agent.ask(query)
+    },
+    finish: (conversation) => {
+      requirePerm('vault:read', 'agent.finish')
+      return agent.finish(conversation)
+    },
+    resolve: (written) => {
+      requirePerm('vault:read', 'agent.resolve')
+      return agent.resolve(written)
+    },
+  }
+}
+
 /** The window, its commands that change the vault held to `vault:write`. */
 function guardWorkspace(
   workspace: WorkspaceHost,
@@ -143,6 +182,7 @@ export function createPluginContext(
   const workspace = host.getWorkspace?.()
   const notes = host.getNotes?.()
   const files = host.getFiles?.()
+  const agent = host.getAgent?.()
 
   return {
     pluginId,
@@ -150,6 +190,7 @@ export function createPluginContext(
     ...(workspace ? { workspace: guardWorkspace(workspace, requireWrite) } : {}),
     ...(notes ? { notes: guardNotes(notes, requireWrite) } : {}),
     ...(files ? { files: guardFiles(files, requireWrite) } : {}),
+    ...(agent ? { agent: guardAgent(agent, requirePerm) } : {}),
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
     registerTabKind: <State>(reg: TabKindRegistration<State>) =>

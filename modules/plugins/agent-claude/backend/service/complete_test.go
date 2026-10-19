@@ -111,7 +111,7 @@ func TestConfigureKeepsTheKeyTheHostSends(t *testing.T) {
 }
 
 func TestCompletionEnvironmentReplacesTheHeldKey(t *testing.T) {
-	got := buildCompletionEnvironment([]string{"A=1", "ANTHROPIC_API_KEY=old", "ANTHROPIC_BASE_URL=old", "CLAUDECODE=1"}, "new", "")
+	got := buildKeyEnvironment([]string{"A=1", "ANTHROPIC_API_KEY=old", "ANTHROPIC_BASE_URL=old", "CLAUDECODE=1"}, "new", "")
 	want := []string{"A=1", "ANTHROPIC_API_KEY=new"}
 	if strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Errorf("got %v", got)

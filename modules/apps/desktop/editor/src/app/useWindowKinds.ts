@@ -3,14 +3,38 @@
  */
 import { shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
+import type { MessageWriter } from '@/shared/notices/messages'
 import type { DestinationDeps } from '@/features/command-palette'
-import { FILES, PLEX } from '@/entities/tab'
-import { createAgentKind } from './kinds/agent'
+import { AGENT, FILES, PLEX } from '@/entities/tab'
+import { agentPort } from './agentPort'
 import type { WindowKindsDeps } from './kinds/deps'
-import { createVaultNotes, createWorkspaceHost, type PluginServices } from './pluginServices'
+import {
+  createAgentHost,
+  createVaultNotes,
+  createWorkspaceHost,
+  type PluginServices,
+} from './pluginServices'
 import { createFileMakers, createVaultFiles } from './fileServices'
 
 export type { WindowKindsDeps } from './kinds/deps'
+
+/** Something to ask, put in the agent the person was last in and put in front. */
+function createAgentAsker(held: WindowKindsDeps['held'], writeMessage: MessageWriter) {
+  return {
+    askQuestion: (text: string): void => {
+      if (!held.hasKind(AGENT)) {
+        writeMessage(
+          'The agent chat is not available: its plugin is off or did not start.',
+          'error',
+        )
+        return
+      }
+      held
+        .sendText(AGENT, text)
+        .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
+    },
+  }
+}
 
 /**
  * Initializes and registers view kinds for the desktop window.
@@ -33,7 +57,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     return { path: target?.path ?? '', title: target?.title ?? '' }
   }
 
-  const agents = createAgentKind({ ...deps, about: getPlexTarget })
+  const agents = createAgentAsker(held, writeMessage)
 
   const destinations: DestinationDeps = {
     travel: (path) => travel(path),
@@ -43,22 +67,20 @@ export function useWindowKinds(deps: WindowKindsDeps) {
 
   const made = createFileMakers({ core, tabOpeners, notes: editing.notes, writeMessage })
 
-  held.registerKinds([...editing.kinds, ...settings.kinds, agents.kind])
+  held.registerKinds([...editing.kinds, ...settings.kinds])
 
   const services: PluginServices = {
     workspace: createWorkspaceHost({
       ...deps,
       nesting: settings.nesting,
       dragged,
-      ask: (text) => {
-        agents
-          .askQuestion(text)
-          .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
-      },
+      getNoteInFocus: getPlexTarget,
+      ask: (text) => agents.askQuestion(text),
       writeMessage,
     }),
     notes: createVaultNotes({ core, search: core, making: editing.making }),
     files: createVaultFiles({ ...deps, made, making: editing.making }),
+    agent: createAgentHost({ port: agentPort, ...deps }),
   }
 
   return {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createMockPluginContext } from '../src/testing/mockContext'
+import type { PluginContext } from '../src/types'
 
 describe('mock plugin context', () => {
   it('manages tab kind registrations', () => {
@@ -136,5 +137,12 @@ describe('mock plugin context', () => {
     const ctx = createMockPluginContext()
     const result = await ctx.openTab?.('url', 'https://example.com')
     expect(result).toBe('url:https://example.com')
+  })
+
+  it('hands over the agent it is given, and none where it is given none', () => {
+    const agent = { name: 'agent' } as unknown as NonNullable<PluginContext['agent']>
+
+    expect(createMockPluginContext({ agent }).agent).toBe(agent)
+    expect(createMockPluginContext()).not.toHaveProperty('agent')
   })
 })

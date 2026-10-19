@@ -137,9 +137,9 @@ describe('the active tab', () => {
 
 describe('the tab icon', () => {
   it('is the icon of the kind of the tab', () => {
-    const held = create([{ id: 'a', title: 'A', kind: 'agent' }])
+    const held = create([{ id: 'a', title: 'A', kind: 'note' }])
 
-    expect(held.getTabIcon('a')).toBe(findTabKindIcon('agent'))
+    expect(held.getTabIcon('a')).toBe(findTabKindIcon('note'))
     expect(held.getTabIcon('a')).not.toBe(findTabKindIcon(''))
   })
 
