@@ -25,7 +25,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/settings.proto.
  */
 export const file_numen_v1_settings: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0It8BChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBI1ChtuZXN0ZWRfaGVhZGluZ19saW1pdF9ib3VuZHMYBCABKAsyEC5udW1lbi52MS5Cb3VuZHMSHQoVbGF0ZXN0X2RheV9zdGFydF90aW1lGAUgASgJEgsKA2RheRgGIAEoCRIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbyKiAQoFTW9kZWwSEAoIbmFtZWRfYXQYASADKAkSDAoEbmFtZRgCIAEoCRINCgV0aXRsZRgDIAEoCRINCgVncm91cBgEIAEoCRISCgppc19kZWZhdWx0GAUgASgIEiEKBndyaXRlcxgGIAMoCzIRLm51bWVuLnYxLlNldHRpbmcSJAoIcHJlc2VuY2UYByABKA4yEi5udW1lbi52MS5QcmVzZW5jZSIkCgdTZXR0aW5nEgoKAmF0GAEgAygJEg0KBXZhbHVlGAIgASgJIjsKFFdyaXRlU2V0dGluZ3NSZXF1ZXN0EiMKCHNldHRpbmdzGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyIXChVXcml0ZVNldHRpbmdzUmVzcG9uc2UiGQoXUmVhZFNldHRpbmdzRmlsZVJlcXVlc3QiOQoYUmVhZFNldHRpbmdzRmlsZVJlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCSJPChhXcml0ZVNldHRpbmdzRmlsZVJlcXVlc3QSDwoHd3JpdHRlbhgBIAEoCRIVCghiYXNlbGluZRgCIAEoCUgAiAEBQgsKCV9iYXNlbGluZSJOChlXcml0ZVNldHRpbmdzRmlsZVJlc3BvbnNlEicKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSACIAQFCCAoGX2Vycm9yKnMKCFByZXNlbmNlEhgKFFBSRVNFTkNFX1VOU1BFQ0lGSUVEEAASFAoQUFJFU0VOQ0VfUFJFU0VOVBABEhgKFFBSRVNFTkNFX05PVF9GRVRDSEVEEAISHQoZUFJFU0VOQ0VfTk9USElOR19UT19GRVRDSBADMugCCg9TZXR0aW5nc1NlcnZpY2USSgoLR2V0U2V0dGluZ3MSHC5udW1lbi52MS5HZXRTZXR0aW5nc1JlcXVlc3QaHS5udW1lbi52MS5HZXRTZXR0aW5nc1Jlc3BvbnNlElAKDVdyaXRlU2V0dGluZ3MSHi5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlU2V0dGluZ3NSZXNwb25zZRJZChBSZWFkU2V0dGluZ3NGaWxlEiEubnVtZW4udjEuUmVhZFNldHRpbmdzRmlsZVJlcXVlc3QaIi5udW1lbi52MS5SZWFkU2V0dGluZ3NGaWxlUmVzcG9uc2USXAoRV3JpdGVTZXR0aW5nc0ZpbGUSIi5udW1lbi52MS5Xcml0ZVNldHRpbmdzRmlsZVJlcXVlc3QaIy5udW1lbi52MS5Xcml0ZVNldHRpbmdzRmlsZVJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_plugin, file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0It8BChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBI1ChtuZXN0ZWRfaGVhZGluZ19saW1pdF9ib3VuZHMYBCABKAsyEC5udW1lbi52MS5Cb3VuZHMSHQoVbGF0ZXN0X2RheV9zdGFydF90aW1lGAUgASgJEgsKA2RheRgGIAEoCRIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbyKiAQoFTW9kZWwSEAoIbmFtZWRfYXQYASADKAkSDAoEbmFtZRgCIAEoCRINCgV0aXRsZRgDIAEoCRINCgVncm91cBgEIAEoCRISCgppc19kZWZhdWx0GAUgASgIEiEKBndyaXRlcxgGIAMoCzIRLm51bWVuLnYxLlNldHRpbmcSJAoIcHJlc2VuY2UYByABKA4yEi5udW1lbi52MS5QcmVzZW5jZSIkCgdTZXR0aW5nEgoKAmF0GAEgAygJEg0KBXZhbHVlGAIgASgJIjsKFFdyaXRlU2V0dGluZ3NSZXF1ZXN0EiMKCHNldHRpbmdzGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyIXChVXcml0ZVNldHRpbmdzUmVzcG9uc2UiGQoXUmVhZFNldHRpbmdzRmlsZVJlcXVlc3QiOQoYUmVhZFNldHRpbmdzRmlsZVJlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCSJPChhXcml0ZVNldHRpbmdzRmlsZVJlcXVlc3QSDwoHd3JpdHRlbhgBIAEoCRIVCghiYXNlbGluZRgCIAEoCUgAiAEBQgsKCV9iYXNlbGluZSJOChlXcml0ZVNldHRpbmdzRmlsZVJlc3BvbnNlEicKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSACIAQFCCAoGX2Vycm9yIkgKGFdyaXRlUGx1Z2luU2VjcmV0UmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDAoEbmFtZRgCIAEoCRILCgNrZXkYAyABKAkiGwoZV3JpdGVQbHVnaW5TZWNyZXRSZXNwb25zZSI8ChlEZWxldGVQbHVnaW5TZWNyZXRSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIMCgRuYW1lGAIgASgJIhwKGkRlbGV0ZVBsdWdpblNlY3JldFJlc3BvbnNlKnMKCFByZXNlbmNlEhgKFFBSRVNFTkNFX1VOU1BFQ0lGSUVEEAASFAoQUFJFU0VOQ0VfUFJFU0VOVBABEhgKFFBSRVNFTkNFX05PVF9GRVRDSEVEEAISHQoZUFJFU0VOQ0VfTk9USElOR19UT19GRVRDSBADMqcECg9TZXR0aW5nc1NlcnZpY2USSgoLR2V0U2V0dGluZ3MSHC5udW1lbi52MS5HZXRTZXR0aW5nc1JlcXVlc3QaHS5udW1lbi52MS5HZXRTZXR0aW5nc1Jlc3BvbnNlElAKDVdyaXRlU2V0dGluZ3MSHi5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlU2V0dGluZ3NSZXNwb25zZRJZChBSZWFkU2V0dGluZ3NGaWxlEiEubnVtZW4udjEuUmVhZFNldHRpbmdzRmlsZVJlcXVlc3QaIi5udW1lbi52MS5SZWFkU2V0dGluZ3NGaWxlUmVzcG9uc2USXAoRV3JpdGVTZXR0aW5nc0ZpbGUSIi5udW1lbi52MS5Xcml0ZVNldHRpbmdzRmlsZVJlcXVlc3QaIy5udW1lbi52MS5Xcml0ZVNldHRpbmdzRmlsZVJlc3BvbnNlElwKEVdyaXRlUGx1Z2luU2VjcmV0EiIubnVtZW4udjEuV3JpdGVQbHVnaW5TZWNyZXRSZXF1ZXN0GiMubnVtZW4udjEuV3JpdGVQbHVnaW5TZWNyZXRSZXNwb25zZRJfChJEZWxldGVQbHVnaW5TZWNyZXQSIy5udW1lbi52MS5EZWxldGVQbHVnaW5TZWNyZXRSZXF1ZXN0GiQubnVtZW4udjEuRGVsZXRlUGx1Z2luU2VjcmV0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_plugin, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetSettingsRequest
@@ -320,6 +320,91 @@ export const WriteSettingsFileResponseSchema: GenMessage<WriteSettingsFileRespon
   messageDesc(file_numen_v1_settings, 9);
 
 /**
+ * @generated from message numen.v1.WritePluginSecretRequest
+ */
+export type WritePluginSecretRequest = Message<"numen.v1.WritePluginSecretRequest"> & {
+  /**
+   * The plugin, by its id.
+   *
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+
+  /**
+   * The secret, by the name the plugin's manifest declares it under.
+   *
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * The key to keep. It is never answered back.
+   *
+   * @generated from field: string key = 3;
+   */
+  key: string;
+};
+
+/**
+ * Describes the message numen.v1.WritePluginSecretRequest.
+ * Use `create(WritePluginSecretRequestSchema)` to create a new message.
+ */
+export const WritePluginSecretRequestSchema: GenMessage<WritePluginSecretRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 10);
+
+/**
+ * @generated from message numen.v1.WritePluginSecretResponse
+ */
+export type WritePluginSecretResponse = Message<"numen.v1.WritePluginSecretResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.WritePluginSecretResponse.
+ * Use `create(WritePluginSecretResponseSchema)` to create a new message.
+ */
+export const WritePluginSecretResponseSchema: GenMessage<WritePluginSecretResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 11);
+
+/**
+ * @generated from message numen.v1.DeletePluginSecretRequest
+ */
+export type DeletePluginSecretRequest = Message<"numen.v1.DeletePluginSecretRequest"> & {
+  /**
+   * The plugin, by its id.
+   *
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+
+  /**
+   * The secret, by the name the plugin's manifest declares it under.
+   *
+   * @generated from field: string name = 2;
+   */
+  name: string;
+};
+
+/**
+ * Describes the message numen.v1.DeletePluginSecretRequest.
+ * Use `create(DeletePluginSecretRequestSchema)` to create a new message.
+ */
+export const DeletePluginSecretRequestSchema: GenMessage<DeletePluginSecretRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 12);
+
+/**
+ * @generated from message numen.v1.DeletePluginSecretResponse
+ */
+export type DeletePluginSecretResponse = Message<"numen.v1.DeletePluginSecretResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.DeletePluginSecretResponse.
+ * Use `create(DeletePluginSecretResponseSchema)` to create a new message.
+ */
+export const DeletePluginSecretResponseSchema: GenMessage<DeletePluginSecretResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 13);
+
+/**
  * Presence is what a model's files are on this machine. It says where files
  * stand and nothing else: it is no reason to prefer one model to another.
  *
@@ -414,6 +499,30 @@ export const SettingsService: GenService<{
     methodKind: "unary";
     input: typeof WriteSettingsFileRequestSchema;
     output: typeof WriteSettingsFileResponseSchema;
+  },
+  /**
+   * WritePluginSecret stores the key of a secret a plugin declares, in the
+   * system keychain and never in the file, and records that the secret is
+   * stored. The plugin is handed its secrets again.
+   *
+   * @generated from rpc numen.v1.SettingsService.WritePluginSecret
+   */
+  writePluginSecret: {
+    methodKind: "unary";
+    input: typeof WritePluginSecretRequestSchema;
+    output: typeof WritePluginSecretResponseSchema;
+  },
+  /**
+   * DeletePluginSecret removes the key, if any, of a secret a plugin declares,
+   * and clears the record that it is stored. The plugin is handed its secrets
+   * again.
+   *
+   * @generated from rpc numen.v1.SettingsService.DeletePluginSecret
+   */
+  deletePluginSecret: {
+    methodKind: "unary";
+    input: typeof DeletePluginSecretRequestSchema;
+    output: typeof DeletePluginSecretResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_settings, 0);

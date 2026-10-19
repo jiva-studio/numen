@@ -111,6 +111,7 @@ type PluginEventEmitter interface {
 // PluginManager coordinates process lifecycle, discovery, settings, and RPC routing for modular extensions.
 type PluginManager interface {
 	PluginDiscoverer
+	CompletionChoices
 	PluginResolver
 	PluginActivator
 	PluginAcquirer

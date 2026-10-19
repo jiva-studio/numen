@@ -55,6 +55,12 @@ const (
 	// SettingsServiceWriteSettingsFileProcedure is the fully-qualified name of the SettingsService's
 	// WriteSettingsFile RPC.
 	SettingsServiceWriteSettingsFileProcedure = "/numen.v1.SettingsService/WriteSettingsFile"
+	// SettingsServiceWritePluginSecretProcedure is the fully-qualified name of the SettingsService's
+	// WritePluginSecret RPC.
+	SettingsServiceWritePluginSecretProcedure = "/numen.v1.SettingsService/WritePluginSecret"
+	// SettingsServiceDeletePluginSecretProcedure is the fully-qualified name of the SettingsService's
+	// DeletePluginSecret RPC.
+	SettingsServiceDeletePluginSecretProcedure = "/numen.v1.SettingsService/DeletePluginSecret"
 )
 
 // SettingsServiceClient is a client for the numen.v1.SettingsService service.
@@ -74,6 +80,14 @@ type SettingsServiceClient interface {
 	// standing at anything other than what the caller presents is left alone and
 	// refused `stale`.
 	WriteSettingsFile(context.Context, *connect.Request[v1.WriteSettingsFileRequest]) (*connect.Response[v1.WriteSettingsFileResponse], error)
+	// WritePluginSecret stores the key of a secret a plugin declares, in the
+	// system keychain and never in the file, and records that the secret is
+	// stored. The plugin is handed its secrets again.
+	WritePluginSecret(context.Context, *connect.Request[v1.WritePluginSecretRequest]) (*connect.Response[v1.WritePluginSecretResponse], error)
+	// DeletePluginSecret removes the key, if any, of a secret a plugin declares,
+	// and clears the record that it is stored. The plugin is handed its secrets
+	// again.
+	DeletePluginSecret(context.Context, *connect.Request[v1.DeletePluginSecretRequest]) (*connect.Response[v1.DeletePluginSecretResponse], error)
 }
 
 // NewSettingsServiceClient constructs a client for the numen.v1.SettingsService service. By
@@ -111,15 +125,29 @@ func NewSettingsServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(settingsServiceMethods.ByName("WriteSettingsFile")),
 			connect.WithClientOptions(opts...),
 		),
+		writePluginSecret: connect.NewClient[v1.WritePluginSecretRequest, v1.WritePluginSecretResponse](
+			httpClient,
+			baseURL+SettingsServiceWritePluginSecretProcedure,
+			connect.WithSchema(settingsServiceMethods.ByName("WritePluginSecret")),
+			connect.WithClientOptions(opts...),
+		),
+		deletePluginSecret: connect.NewClient[v1.DeletePluginSecretRequest, v1.DeletePluginSecretResponse](
+			httpClient,
+			baseURL+SettingsServiceDeletePluginSecretProcedure,
+			connect.WithSchema(settingsServiceMethods.ByName("DeletePluginSecret")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // settingsServiceClient implements SettingsServiceClient.
 type settingsServiceClient struct {
-	getSettings       *connect.Client[v1.GetSettingsRequest, v1.GetSettingsResponse]
-	writeSettings     *connect.Client[v1.WriteSettingsRequest, v1.WriteSettingsResponse]
-	readSettingsFile  *connect.Client[v1.ReadSettingsFileRequest, v1.ReadSettingsFileResponse]
-	writeSettingsFile *connect.Client[v1.WriteSettingsFileRequest, v1.WriteSettingsFileResponse]
+	getSettings        *connect.Client[v1.GetSettingsRequest, v1.GetSettingsResponse]
+	writeSettings      *connect.Client[v1.WriteSettingsRequest, v1.WriteSettingsResponse]
+	readSettingsFile   *connect.Client[v1.ReadSettingsFileRequest, v1.ReadSettingsFileResponse]
+	writeSettingsFile  *connect.Client[v1.WriteSettingsFileRequest, v1.WriteSettingsFileResponse]
+	writePluginSecret  *connect.Client[v1.WritePluginSecretRequest, v1.WritePluginSecretResponse]
+	deletePluginSecret *connect.Client[v1.DeletePluginSecretRequest, v1.DeletePluginSecretResponse]
 }
 
 // GetSettings calls numen.v1.SettingsService.GetSettings.
@@ -142,6 +170,16 @@ func (c *settingsServiceClient) WriteSettingsFile(ctx context.Context, req *conn
 	return c.writeSettingsFile.CallUnary(ctx, req)
 }
 
+// WritePluginSecret calls numen.v1.SettingsService.WritePluginSecret.
+func (c *settingsServiceClient) WritePluginSecret(ctx context.Context, req *connect.Request[v1.WritePluginSecretRequest]) (*connect.Response[v1.WritePluginSecretResponse], error) {
+	return c.writePluginSecret.CallUnary(ctx, req)
+}
+
+// DeletePluginSecret calls numen.v1.SettingsService.DeletePluginSecret.
+func (c *settingsServiceClient) DeletePluginSecret(ctx context.Context, req *connect.Request[v1.DeletePluginSecretRequest]) (*connect.Response[v1.DeletePluginSecretResponse], error) {
+	return c.deletePluginSecret.CallUnary(ctx, req)
+}
+
 // SettingsServiceHandler is an implementation of the numen.v1.SettingsService service.
 type SettingsServiceHandler interface {
 	// GetSettings is every setting of the file, and the models the settings that
@@ -159,6 +197,14 @@ type SettingsServiceHandler interface {
 	// standing at anything other than what the caller presents is left alone and
 	// refused `stale`.
 	WriteSettingsFile(context.Context, *connect.Request[v1.WriteSettingsFileRequest]) (*connect.Response[v1.WriteSettingsFileResponse], error)
+	// WritePluginSecret stores the key of a secret a plugin declares, in the
+	// system keychain and never in the file, and records that the secret is
+	// stored. The plugin is handed its secrets again.
+	WritePluginSecret(context.Context, *connect.Request[v1.WritePluginSecretRequest]) (*connect.Response[v1.WritePluginSecretResponse], error)
+	// DeletePluginSecret removes the key, if any, of a secret a plugin declares,
+	// and clears the record that it is stored. The plugin is handed its secrets
+	// again.
+	DeletePluginSecret(context.Context, *connect.Request[v1.DeletePluginSecretRequest]) (*connect.Response[v1.DeletePluginSecretResponse], error)
 }
 
 // NewSettingsServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -192,6 +238,18 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 		connect.WithSchema(settingsServiceMethods.ByName("WriteSettingsFile")),
 		connect.WithHandlerOptions(opts...),
 	)
+	settingsServiceWritePluginSecretHandler := connect.NewUnaryHandler(
+		SettingsServiceWritePluginSecretProcedure,
+		svc.WritePluginSecret,
+		connect.WithSchema(settingsServiceMethods.ByName("WritePluginSecret")),
+		connect.WithHandlerOptions(opts...),
+	)
+	settingsServiceDeletePluginSecretHandler := connect.NewUnaryHandler(
+		SettingsServiceDeletePluginSecretProcedure,
+		svc.DeletePluginSecret,
+		connect.WithSchema(settingsServiceMethods.ByName("DeletePluginSecret")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.SettingsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case SettingsServiceGetSettingsProcedure:
@@ -202,6 +260,10 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 			settingsServiceReadSettingsFileHandler.ServeHTTP(w, r)
 		case SettingsServiceWriteSettingsFileProcedure:
 			settingsServiceWriteSettingsFileHandler.ServeHTTP(w, r)
+		case SettingsServiceWritePluginSecretProcedure:
+			settingsServiceWritePluginSecretHandler.ServeHTTP(w, r)
+		case SettingsServiceDeletePluginSecretProcedure:
+			settingsServiceDeletePluginSecretHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -225,4 +287,12 @@ func (UnimplementedSettingsServiceHandler) ReadSettingsFile(context.Context, *co
 
 func (UnimplementedSettingsServiceHandler) WriteSettingsFile(context.Context, *connect.Request[v1.WriteSettingsFileRequest]) (*connect.Response[v1.WriteSettingsFileResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.WriteSettingsFile is not implemented"))
+}
+
+func (UnimplementedSettingsServiceHandler) WritePluginSecret(context.Context, *connect.Request[v1.WritePluginSecretRequest]) (*connect.Response[v1.WritePluginSecretResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.WritePluginSecret is not implemented"))
+}
+
+func (UnimplementedSettingsServiceHandler) DeletePluginSecret(context.Context, *connect.Request[v1.DeletePluginSecretRequest]) (*connect.Response[v1.DeletePluginSecretResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.DeletePluginSecret is not implemented"))
 }

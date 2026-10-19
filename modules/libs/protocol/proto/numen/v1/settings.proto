@@ -37,6 +37,16 @@ service SettingsService {
   // standing at anything other than what the caller presents is left alone and
   // refused `stale`.
   rpc WriteSettingsFile(WriteSettingsFileRequest) returns (WriteSettingsFileResponse);
+
+  // WritePluginSecret stores the key of a secret a plugin declares, in the
+  // system keychain and never in the file, and records that the secret is
+  // stored. The plugin is handed its secrets again.
+  rpc WritePluginSecret(WritePluginSecretRequest) returns (WritePluginSecretResponse);
+
+  // DeletePluginSecret removes the key, if any, of a secret a plugin declares,
+  // and clears the record that it is stored. The plugin is handed its secrets
+  // again.
+  rpc DeletePluginSecret(DeletePluginSecretRequest) returns (DeletePluginSecretResponse);
 }
 
 message GetSettingsRequest {}
@@ -154,3 +164,23 @@ message WriteSettingsFileResponse {
   // their text.
   optional ErrorCode error = 1;
 }
+
+message WritePluginSecretRequest {
+  // The plugin, by its id.
+  string plugin_id = 1;
+  // The secret, by the name the plugin's manifest declares it under.
+  string name = 2;
+  // The key to keep. It is never answered back.
+  string key = 3;
+}
+
+message WritePluginSecretResponse {}
+
+message DeletePluginSecretRequest {
+  // The plugin, by its id.
+  string plugin_id = 1;
+  // The secret, by the name the plugin's manifest declares it under.
+  string name = 2;
+}
+
+message DeletePluginSecretResponse {}

@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
 const (
@@ -93,4 +95,14 @@ func ClaudeArguments(system, model string) []string {
 		args = append(args, "--model", model)
 	}
 	return args
+}
+
+// ListClaudeModels returns the model aliases the Claude Code CLI takes after --model. None is
+// marked default: without --model the CLI answers with the model its installation names.
+func ListClaudeModels() []*numenv1.CompletionModel {
+	return []*numenv1.CompletionModel{
+		{Name: "sonnet", Title: "Sonnet"},
+		{Name: "opus", Title: "Opus"},
+		{Name: "haiku", Title: "Haiku"},
+	}
 }

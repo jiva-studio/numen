@@ -59,7 +59,8 @@ type Settings struct {
 	// Plugins is the configuration for modular plugins, keyed by plugin ID.
 	Plugins map[string]map[string]any `json:"plugins,omitempty"`
 
-	// AI is where the questions plugins ask of a model are answered.
+	// AI is the agent and the model that answer the questions of a plugin whose
+	// own setting names no agent.
 	AI completion.Config `json:"ai"`
 
 	// Notices is what reading the file leaves a person something to do about: a
@@ -186,14 +187,17 @@ func (c Config) SetSettings(said Settings) Config {
 	return c
 }
 
-// Plugins reads, as the window asks, the discovered plugins and their settings schemas.
+// Plugins reads, as the window asks, the discovered plugins and their settings
+// schemas, each plugin that answers completions with the models it answers with.
 func (c Config) Plugins() func() []port.PluginInfo {
 	return func() []port.PluginInfo {
 		if c.PluginHost == nil {
 			return nil
 		}
 		var discoverer port.PluginDiscoverer = c.PluginHost
-		return discoverer.GetPluginInfos()
+		infos := discoverer.GetPluginInfos()
+		c.setCompletionModels(infos)
+		return infos
 	}
 }
 

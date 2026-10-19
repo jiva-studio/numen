@@ -59,6 +59,48 @@ message PluginInfo {
   repeated string capabilities = 5;
   repeated PluginSetting settings = 6;
   bool is_active = 7;
+  // The permissions the manifest declares.
+  repeated string permissions = 8;
+  // The names of the secrets the manifest declares.
+  repeated string secrets = 9;
+  // The names of the secrets that have a key stored. A key never travels here.
+  repeated string stored_secrets = 10;
+  // The models the plugin answers completions with, as its
+  // CompletionService.ListCompletionModels lists them. Empty where it lists none.
+  repeated PluginModel models = 11;
+  // Whether the person lets the plugin ask for model completions.
+  CompletionConsent completion_consent = 12;
+}
+
+// PluginModel is one model a plugin that answers completions offers.
+message PluginModel {
+  // What a setting names the model by.
+  string name = 1;
+  // What the model is called when shown to a person.
+  string title = 2;
+  // Set on the model the plugin answers with when it is named none.
+  bool is_default = 3;
+}
+
+// CompletionConsent is whether the person lets a plugin ask for model
+// completions. The zero value is a plugin that does not hold the ai:complete
+// permission.
+enum CompletionConsent {
+  COMPLETION_CONSENT_UNSPECIFIED = 0;
+
+  // The person has not answered, and the plugin has not asked since the host
+  // started.
+  COMPLETION_CONSENT_UNANSWERED = 1;
+
+  // The plugin has asked since the host started, was refused for it, and the
+  // person has not answered.
+  COMPLETION_CONSENT_ASKED = 2;
+
+  // The person lets the plugin ask.
+  COMPLETION_CONSENT_ALLOWED = 3;
+
+  // The person refused it.
+  COMPLETION_CONSENT_REFUSED = 4;
 }
 
 // PluginService allows querying discovered plugins and their settings schemas.

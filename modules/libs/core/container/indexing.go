@@ -178,7 +178,7 @@ const (
 )
 
 // Profile is one proofreading profile: how a text is cut into requests. Which
-// model answers them is decided by the route of the proofreading purpose.
+// model answers them is decided by the agent setting of the proofreading plugin.
 type Profile struct {
 	// BatchSize is how many lines one request carries.
 	BatchSize int `json:"batch_size"`

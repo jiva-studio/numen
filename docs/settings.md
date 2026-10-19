@@ -452,7 +452,7 @@ Every recording handed over ends in an answer, and only one of them is "later". 
 
 An installation naming no profile proofreads nothing, and nothing asks for a key or a network.
 
-A profile says how a text is cut into requests. Which model answers them is not a profile's to say: the proofreading plugin asks the host with the purpose `proofreading`, and the route of that purpose under [`ai.routes`](#where-a-plugins-questions-to-a-model-are-answered) names the agent plugin, the model and the number of questions answered at once. Without a route, proofreading fails with "unavailable" and nothing is corrected.
+A profile says how a text is cut into requests. Which model answers them is not a profile's to say: the proofreading plugin asks the host, and the host answers from the plugin's own `agent` setting, else from [`ai.default`](#where-a-plugins-questions-to-a-model-are-answered), which names the agent plugin, the model and the number of questions answered at once. With no agent to answer, proofreading fails with "unavailable"; before the person lets the plugin ask, it fails with "AI access not allowed — allow it in Settings → AI". Either way nothing is corrected.
 
 ```json
 {
@@ -479,9 +479,9 @@ A profile is flat: every key sits at the profile's own level.
 | --- | --- |
 | `batch_size` | how many lines one speech request carries, or how many pages one scan call carries. 40. |
 | `overlap` | how many lines neighbouring batches share, so a phrase torn at a batch boundary is still seen whole by one of them. A line two batches both answered about is taken from the later of the two, which is the batch that saw more of what follows it. |
-| `in_flight` | how many batches one call answers. Left out, it is the performance profile's LLM concurrency; with no performance profile, 4. How many questions reach the model at once is the concurrency of the route. |
+| `in_flight` | how many batches one call answers. Left out, it is the performance profile's LLM concurrency; with no performance profile, 4. How many questions reach the model at once is `ai.default.concurrency`. |
 
-A profile of an older file that names `use`, `name`, `base_url`, `batch_url`, `key`, `key_env`, `model`, `command`, `attempts`, `delay_ms` or `max_delay_ms` is read for its sizes alone. The command line a person has installed is one agent plugin behind a route, and a key belongs to the agent that holds it.
+A profile of an older file that names `use`, `name`, `base_url`, `batch_url`, `key`, `key_env`, `model`, `command`, `attempts`, `delay_ms` or `max_delay_ms` is read for its sizes alone. The command line a person has installed is one agent plugin, and a key belongs to the agent that holds it.
 
 `max_edit_distance` is 0.30 because the measured distribution has a hole there. Over 931 corrections of one book, every correction standing further apart than 0.30 was damage — text dragged in from the next line, or one corrected word in place of a whole line — and every one below it was a correction. It is a setting because the next book is not that book; the figures are in [Performance](performance.md).
 
@@ -492,9 +492,10 @@ Scans and transcripts through the `claude` command line on this machine, two que
 ```json
 {
   "ai": {
-    "routes": {
-      "proofreading": { "agent": "md.numen.agent-claude", "model": "haiku", "concurrency": 2 }
-    }
+    "default": { "agent": "md.numen.agent-claude", "model": "haiku", "concurrency": 2 }
+  },
+  "plugins": {
+    "md.numen.proofreading": { "aiConsent": true }
   },
   "indexing": {
     "proofreading": {
@@ -582,14 +583,17 @@ An installation naming no agent and asking for no tools opens no port and writes
 
 ## Where a plugin's questions to a model are answered
 
-`ai.routes` is where a plugin that holds the `ai:complete` permission has its questions answered. A plugin names a purpose (`proofreading`) and never a model, an agent or a key; the route of that purpose says which agent plugin answers, with which model, and how many questions it answers at once. A purpose without a route of its own is answered by the route named `default`. With neither, the plugin is told there is no route, and nothing is asked of any model.
+A plugin that holds the `ai:complete` permission asks the host for a completion and names neither a model, an agent nor a key. The host knows which plugin asks by the token it gave that plugin at launch, and answers from that plugin's own agent setting, else from `ai.default`. Nothing in a question chooses where it goes.
 
 ```json
 {
   "ai": {
-    "routes": {
-      "default": { "agent": "", "model": "", "concurrency": 1 },
-      "proofreading": { "agent": "md.numen.agent-claude", "model": "sonnet", "concurrency": 2 }
+    "default": { "agent": "md.numen.agent-claude", "model": "haiku", "concurrency": 2 }
+  },
+  "plugins": {
+    "md.numen.proofreading": {
+      "agent": { "agent": "md.numen.agent-acp", "model": "" },
+      "aiConsent": true
     }
   }
 }
@@ -597,10 +601,20 @@ An installation naming no agent and asking for no tools opens no port and writes
 
 | | |
 | --- | --- |
-| `agent` | the id of the agent plugin that answers. Empty is the plugin the installation provides for the `ai.completion.provider` capability. A plugin that is not installed, or does not declare the capability, leaves the plugin told that the agent is unavailable. |
-| `model` | the model the agent answers with. Empty leaves the choice to the agent. |
-| `concurrency` | how many questions the route answers at once; the others wait for a place, and a question whose plugin gave up leaves the wait. Below one is one. |
+| `ai.default.agent` | the id of the agent plugin that answers a plugin whose own setting names none. Empty is the installed plugin with the lowest id that declares the `ai.completion.provider` capability. |
+| `ai.default.model` | the model that agent answers with. Empty leaves the choice to the agent. It goes with the default agent alone. |
+| `ai.default.concurrency` | how many questions one agent answers at once; the others wait for a place, and a question whose plugin gave up leaves the wait. Below one is one. |
+| `plugins.<id>.<key>` | a plugin's own choice, under the key of the setting of type `agent` its manifest declares: `agent` and `model`. An empty `agent` is `ai.default`, agent and model both; an empty `model` is the chosen agent's own. |
+| `plugins.<id>.aiConsent` | whether the person lets the plugin ask a model: `true` or `false`. Left out, the person has not answered. |
 
-The file is read at every question, so a route written while the application runs applies to the next one.
+An agent that is not installed, is disabled or does not declare `ai.completion.provider` is answered `NO_ROUTE`, and so is a question when no plugin declares the capability; no other agent answers in its place. An agent that is installed and cannot be started or reached is answered `UNAVAILABLE`. A model the agent does not offer is the agent's own error, and reaches the plugin as it said it.
 
-No key is written in this file. An agent plugin that needs one declares it under `secrets` in its manifest; the host keeps it in the system keychain and hands it to the plugin in `Configure`, so it is in neither the plugin's environment nor its command line. Under `plugins.<id>.storedSecrets` the host records only the names of the secrets that have a key, and reads the keychain for those alone. Storing a key on a machine without a keychain fails with an error saying so and keeps the key nowhere else; the plugin is then configured without it.
+The file is read at every question, so a choice written while the application runs applies to the next one.
+
+The first question of a plugin the person has not answered for is refused with `NO_CONSENT`, and the settings page puts it to the person: the AI section names the plugin that asked, with Allow and Refuse. Refused, every question of that plugin is answered `NO_CONSENT`, which the plugin shows as the reason nothing was answered; the proofreading plugin answers it as permission denied, and the proofreading stands in the list of what is being done with "AI access not allowed — allow it in Settings → AI".
+
+The settings page writes all of these. Its AI section holds the default agent and its model, a switch for each plugin that may ask, and the keys of the secrets plugins declare; a plugin's own section draws its setting of type `agent` as two lists, the agent first, "Default (<the agent answering it now>)" at its head, then the model, "Agent default" at its head. The models a list offers are the ones the agent lists through `CompletionService.ListCompletionModels`: the models its `Complete` answers with.
+
+A file of an older shape, holding `ai.routes`, still loads: its `routes.default` is read as `ai.default` where the file names no `ai.default`, and the routes of single purposes are not read.
+
+No key is written in this file. An agent plugin that needs one declares it under `secrets` in its manifest; the person enters, replaces and deletes it in the AI section, and the host keeps it in the system keychain and hands it to the plugin in `Configure`, so it is in neither the plugin's environment nor its command line. The page shows whether a key is set and never shows the key. Under `plugins.<id>.storedSecrets` the host records only the names of the secrets that have a key, and reads the keychain for those alone. Storing a key on a machine without a keychain fails with an error saying so and keeps the key nowhere else; the plugin is then configured without it.

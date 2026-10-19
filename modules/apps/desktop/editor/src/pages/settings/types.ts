@@ -46,6 +46,12 @@ export interface Installation {
   getSetting(at: readonly string[]): unknown
   getModels(at: readonly string[]): readonly Model[]
   write(written: readonly SettingEdit[]): void
+  /**
+   * The key of a secret a plugin declares, stored or removed. The window is
+   * told only which secrets have a key, under each plugin's `storedSecrets`.
+   */
+  writeSecret(pluginId: string, name: string, key: string): void
+  deleteSecret(pluginId: string, name: string): void
   readonly plugins?: Readonly<Ref<readonly PluginInfo[]>>
   /** The file the settings stand in, absolute on this machine. */
   readonly file: Readonly<Ref<string>>

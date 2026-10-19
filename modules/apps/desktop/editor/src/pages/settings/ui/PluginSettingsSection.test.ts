@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
 
@@ -6,6 +6,7 @@ import type { PluginInfo, SettingEdit } from '@/entities/settings'
 import { getSettingAt as at } from '@/entities/settings'
 import PluginSettingsSection from './PluginSettingsSection.vue'
 import type { Installation, SettingsTabState } from '../types'
+import { pick } from '@/testing/pick'
 
 const SAMPLE_PLUGIN: PluginInfo = {
   id: 'test.transcription',
@@ -13,6 +14,11 @@ const SAMPLE_PLUGIN: PluginInfo = {
   version: '1.0.0',
   description: 'Speech recognition engine',
   isActive: true,
+  capabilities: [],
+  secrets: [],
+  storedSecrets: [],
+  models: [],
+  consent: 'none',
   settings: [
     {
       key: 'autoRun',
@@ -58,10 +64,12 @@ const createSection = (
   const installation: Installation = {
     getSetting: (path) => at(file, path),
     getModels: () => [],
-    write: (said) => void written.push(...said),
+    write: (said) => {
+      written.push(...said)
+    },
     plugins: ref(plugins),
     file: ref('/numen.json'),
-    openFile: () => {},
+    openFile: vi.fn(),
     themes: ref([]),
     applied: ref('preset:numen'),
     mode: ref('system'),
@@ -71,15 +79,17 @@ const createSection = (
       interfaceScale: { least: 0.8, most: 2 },
       textScale: { least: 0.8, most: 1.75 },
     }),
-    choose: () => {},
+    choose: vi.fn(),
     isSyncing: ref(true),
     isNesting: ref(true),
     headings: ref(6),
     headingsBounds: ref({ least: 2, most: 9 }),
-    chooseHeadings: () => {},
+    chooseHeadings: vi.fn(),
     dayStartTime: ref('04:00'),
     latestDayStartTime: ref('12:00'),
-    chooseDayStartTime: () => {},
+    writeSecret: vi.fn(),
+    deleteSecret: vi.fn(),
+    chooseDayStartTime: vi.fn(),
   }
   const state: SettingsTabState = { installation }
   const wrapper = mount(PluginSettingsSection, {
@@ -158,5 +168,75 @@ describe('PluginSettingsSection', () => {
     expect(written).toStrictEqual([
       { at: ['plugins', 'test.transcription', 'promptPrefix'], value: '"Prefix: "' },
     ])
+  })
+})
+
+const AGENT: PluginInfo = {
+  ...SAMPLE_PLUGIN,
+  id: 'test.agent',
+  name: 'Test Agent',
+  settings: [],
+  capabilities: ['ai.completion.provider'],
+  models: [{ name: 'quick', title: 'Quick', isDefault: true }],
+}
+
+const ASKING: PluginInfo = {
+  ...SAMPLE_PLUGIN,
+  id: 'test.asking',
+  name: 'Asking Plugin',
+  consent: 'allowed',
+  settings: [
+    { key: 'agent', type: 'agent', title: 'Agent', description: 'Who answers', default: undefined },
+  ],
+}
+
+describe('a setting of type agent', () => {
+  it('offers the default, said with the agent that answers it, then the installed agents', () => {
+    const { wrapper } = createSection({}, [ASKING, AGENT])
+    const selects = wrapper.findAllComponents({ name: 'Select' })
+    expect(selects).toHaveLength(1)
+    expect(pick(selects, 0).props('choices')).toStrictEqual([
+      { id: '', text: 'Default (Test Agent)' },
+      { id: 'test.agent', text: 'Test Agent' },
+    ])
+    expect(wrapper.find('.settings__text-input').exists()).toBe(false)
+  })
+
+  it('offers the models of the agent it names, the agent default first', () => {
+    const { wrapper } = createSection(
+      { plugins: { 'test.asking': { agent: { agent: 'test.agent', model: 'quick' } } } },
+      [ASKING, AGENT],
+    )
+    const selects = wrapper.findAllComponents({ name: 'Select' })
+    expect(selects).toHaveLength(2)
+    expect(pick(selects, 0).props('modelValue')).toBe('test.agent')
+    expect(pick(selects, 1).props('modelValue')).toBe('quick')
+    expect(pick(selects, 1).props('choices')).toStrictEqual([
+      { id: '', text: 'Agent default' },
+      { id: 'quick', text: 'Quick' },
+    ])
+  })
+
+  it('is written as the agent and the model, under the plugin', () => {
+    const { wrapper, written } = createSection({}, [ASKING, AGENT])
+    wrapper.findComponent({ name: 'Select' }).vm.$emit('update:modelValue', 'test.agent')
+    expect(written).toStrictEqual([
+      {
+        at: ['plugins', 'test.asking', 'agent'],
+        value: JSON.stringify({ agent: 'test.agent', model: '' }, null, 2),
+      },
+    ])
+  })
+
+  it('keeps an agent that is not installed, said so', () => {
+    const { wrapper } = createSection(
+      { plugins: { 'test.asking': { agent: { agent: 'test.gone' } } } },
+      [ASKING, AGENT],
+    )
+    const choices = pick(wrapper.findAllComponents({ name: 'Select' }), 0).props('choices')
+    expect(choices.at(-1)).toMatchObject({
+      id: 'test.gone',
+      detail: expect.stringContaining('not installed'),
+    })
   })
 })

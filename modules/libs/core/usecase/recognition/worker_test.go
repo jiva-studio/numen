@@ -378,3 +378,22 @@ func TestAProofreaderThatFailedToOpenIsSaid(t *testing.T) {
 		t.Errorf("got %+v", at)
 	}
 }
+
+// A proofreading the person has not let ask a model says what allows it, in the
+// list of what is being done.
+func TestAProofreadingWithoutConsentSaysWhereToAllowIt(t *testing.T) {
+	w := newWatched(t, nil)
+	w.Worker.with.Proofreading = run.ProofreadingConfig{
+		IsNamed: true, IsAutomatic: true,
+		By: func() (port.Proofreader, error) {
+			return nil, errors.Join(errors.New("proofread rpc"), port.ErrNoConsent)
+		},
+	}
+
+	w.proofread(t.Context(), somewhere, "a.pdf")
+
+	at, held := w.getTask(t)
+	if !held || at.Error != "AI access not allowed — allow it in Settings → AI" {
+		t.Errorf("got %+v", at)
+	}
+}

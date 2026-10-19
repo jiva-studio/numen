@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -110,5 +112,46 @@ func TestCompletionEnvironmentReplacesTheHeldKey(t *testing.T) {
 	want := []string{"A=1", "ANTHROPIC_API_KEY=new"}
 	if strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Errorf("got %v", got)
+	}
+}
+
+func TestCompleteAnswersWithTheModelTheHostNames(t *testing.T) {
+	record := filepath.Join(t.TempDir(), "record")
+	script := writeFakeClaude(t, `{ echo "args=$*"; cat; } > '`+record+`'; echo "the answer"`)
+	t.Setenv("NUMEN_CLAUDE_COMMAND", script)
+	svc := &agentServer{}
+	svc.applyConfig(map[string]string{"apiKey": "host-key", "model": "m1"})
+	request := askCompletion("why?")
+	request.Msg.Model = "m2"
+
+	if _, err := svc.Complete(context.Background(), request); err != nil {
+		t.Fatal(err)
+	}
+	seen, err := os.ReadFile(record)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(seen), "--model m2") || strings.Contains(string(seen), "--model m1") {
+		t.Errorf("command did not see the host's model in:\n%s", seen)
+	}
+}
+
+// The models Complete answers with are those the endpoint lists, the configured one the default.
+func TestTheCompletionModelsAreTheEndpoints(t *testing.T) {
+	endpoint := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"data": [{"id": "opus", "display_name": "Opus"}, {"id": "haiku", "display_name": "Haiku"}]}`))
+	}))
+	defer endpoint.Close()
+	svc := &agentServer{}
+	svc.applyConfig(map[string]string{"apiKey": "host-key", "baseUrl": endpoint.URL, "model": "haiku"})
+
+	res, err := svc.ListCompletionModels(context.Background(), connect.NewRequest(&numenv1.ListCompletionModelsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	models := res.Msg.GetModels()
+	if len(models) != 2 || models[0].GetName() != "opus" || models[0].GetIsDefault() ||
+		models[1].GetName() != "haiku" || !models[1].GetIsDefault() {
+		t.Errorf("listed %v", models)
 	}
 }

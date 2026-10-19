@@ -9,6 +9,7 @@
  */
 import { StopReason } from '@numen/protocol'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { fn } from 'storybook/test'
 import { WorkspaceLayout, branch, pane } from '@numen/ui'
 import type { Tab, Workspace } from '@numen/ui'
 import { computed, nextTick, onMounted, ref, shallowRef, type Component } from 'vue'
@@ -148,6 +149,12 @@ const INSTALLATION: Installation = {
   },
   dayStartTime: ref('04:00'),
   latestDayStartTime: ref('12:00'),
+  writeSecret: () => {
+    DONE.push('key')
+  },
+  deleteSecret: () => {
+    DONE.push('key gone')
+  },
   chooseDayStartTime: (time) => {
     DONE.push(`day ${time}`)
   },
@@ -252,12 +259,12 @@ const PRESET_STATE: PresetTabState = {
   stopped: ref(StopReason.NOTHING),
   errorMessage: ref(''),
   hasExternalChange: ref(false),
-  reload: () => {},
-  chooseGoal: () => {},
-  moveSlider: () => {},
-  flushPending: () => {},
-  updateSetting: () => {},
-  close: () => {},
+  reload: fn(),
+  chooseGoal: fn(),
+  moveSlider: fn(),
+  flushPending: fn(),
+  updateSetting: fn(),
+  close: fn(),
 }
 
 /** The one control a preset is steered by, and the settings under it. */
@@ -356,17 +363,17 @@ const DECK_STATE: DeckTabState = {
     { path: 'Sanskrit.md', name: 'Sanskrit' },
     { path: 'Anatomy.md', name: 'Anatomy' },
   ]),
-  setSchedule: () => {},
-  addCard: () => {},
-  removeCard: () => {},
-  moveCard: () => {},
-  writeCardField: () => {},
-  addSection: () => {},
-  renameSection: () => {},
-  removeSection: () => {},
-  keepMine: () => {},
-  takeFile: () => {},
-  close: () => {},
+  setSchedule: fn(),
+  addCard: fn(),
+  removeCard: fn(),
+  moveCard: fn(),
+  writeCardField: fn(),
+  addSection: fn(),
+  renameSection: fn(),
+  removeSection: fn(),
+  keepMine: fn(),
+  takeFile: fn(),
+  close: fn(),
 }
 
 /** The cards of a deck, under the sections they stand in. */
@@ -407,18 +414,18 @@ const STENCIL_STATE: StencilTabState = {
   })),
   marks: computed(() => NO_MARKS),
   errorMessage: computed(() => ''),
-  addField: () => {},
-  renameField: () => {},
-  removeField: () => {},
-  moveField: () => {},
-  addFace: () => {},
-  renameFace: () => {},
-  removeFace: () => {},
-  moveFace: () => {},
-  writeFaceHalf: () => {},
-  keepMine: () => {},
-  takeFile: () => {},
-  close: () => {},
+  addField: fn(),
+  renameField: fn(),
+  removeField: fn(),
+  moveField: fn(),
+  addFace: fn(),
+  renameFace: fn(),
+  removeFace: fn(),
+  moveFace: fn(),
+  writeFaceHalf: fn(),
+  keepMine: fn(),
+  takeFile: fn(),
+  close: fn(),
 }
 
 /** The fields a stencil names, and the faces that show them. */
@@ -504,24 +511,25 @@ const PLAYER: Player = {
   duration: ref(RUNS),
   isPlaying: ref(true),
   error: ref(''),
-  load: () => {},
-  play: () => {},
-  pause: () => {},
-  seek: () => {},
+  load: fn(),
+  play: fn(),
+  pause: fn(),
+  seek: fn(),
 }
 
 const createRecordings = (cues: readonly Cue[]): Recordings => ({
-  getSummary: async () => ({
-    duration: RUNS,
-    mediaUrl: MEDIA,
-    mediaType: 'audio/mpeg',
-    url: '',
-  }),
-  getTaskStates: async () => ({ transcript: 'done' }),
-  readTranscript: async () => ({ cues, isEditable: true, prose: '' }),
-  readArticle: async () => ({ cues: [], isEditable: true, prose: '' }),
-  writeTranscript: async () => {},
-  findCueTime: async () => null,
+  getSummary: () =>
+    Promise.resolve({
+      duration: RUNS,
+      mediaUrl: MEDIA,
+      mediaType: 'audio/mpeg',
+      url: '',
+    }),
+  getTaskStates: () => Promise.resolve({ transcript: 'done' }),
+  readTranscript: () => Promise.resolve({ cues, isEditable: true, prose: '' }),
+  readArticle: () => Promise.resolve({ cues: [], isEditable: true, prose: '' }),
+  writeTranscript: fn(() => Promise.resolve()),
+  findCueTime: () => Promise.resolve(null),
 })
 
 /** The words heard in a recording, against the moment each was said. */
@@ -533,7 +541,7 @@ export const Recording: Story = {
       AudioPlayerTab,
       useTranscriptTab(
         useTranscript(createRecordings(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }),
-        { runCommand: () => {} },
+        { runCommand: fn() },
       ),
     ),
 }
@@ -546,7 +554,7 @@ export const NoTranscript: Story = {
       AudioPlayerTab,
       useTranscriptTab(
         useTranscript(createRecordings([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }),
-        { runCommand: () => {} },
+        { runCommand: fn() },
       ),
     ),
 }
@@ -560,7 +568,7 @@ export const Transcribing: Story = {
     const state = useTranscriptTab(
       useTranscript(createRecordings([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }),
       {
-        runCommand: () => {},
+        runCommand: fn(),
       },
     )
     state.setWorking(true)
@@ -627,20 +635,20 @@ const VAULT: Record<string, readonly Entry[]> = {
 
 /** A files tab over that vault, and the reading of the folders named in it. */
 const files = (open: readonly string[]) => {
-  const list = useFileTree({ list: async (at: string) => VAULT[at] ?? [] })
+  const list = useFileTree({ list: (at: string) => Promise.resolve(VAULT[at] ?? []) })
   const state = useFilesTab(list, {
-    openDestination: () => {},
-    runCommand: () => {},
-    movePath: async () => {},
-    setDraggedPaths: () => {},
-    createFolder: async () => {},
-    createNote: async () => '',
-    createDeck: async () => '',
-    createStencil: async () => '',
-    createPreset: async () => '',
-    importUrl: async () => '',
-    importUrls: async () => [],
-    showError: () => {},
+    openDestination: fn(),
+    runCommand: fn(),
+    movePath: fn(() => Promise.resolve()),
+    setDraggedPaths: fn(),
+    createFolder: fn(() => Promise.resolve()),
+    createNote: () => Promise.resolve(''),
+    createDeck: () => Promise.resolve(''),
+    createStencil: () => Promise.resolve(''),
+    createPreset: () => Promise.resolve(''),
+    importUrl: () => Promise.resolve(''),
+    importUrls: () => Promise.resolve([]),
+    showError: fn(),
   })
   const read = (async () => {
     await list.openFolder(ROOT)
@@ -737,12 +745,13 @@ const overLine = (at: number, ends: number) => ({
 const HIGHLIGHTS = [overLine(10, 396), overLine(11, 412), overLine(12, 372)]
 
 const BOOK: Documents = {
-  getDocumentLayout: async () => ({
-    pages: Array.from({ length: LEAVES }, () => PAGE),
-    fingerprint: '1024 1700000000000000000 book.pdf',
-  }),
+  getDocumentLayout: () =>
+    Promise.resolve({
+      pages: Array.from({ length: LEAVES }, () => PAGE),
+      fingerprint: '1024 1700000000000000000 book.pdf',
+    }),
   getPageUrl: (_path, at) => createPage(at),
-  getHighlights: async () => [[{ page: OPENS_AT, rects: HIGHLIGHTS }]],
+  getHighlights: () => Promise.resolve([[{ page: OPENS_AT, rects: HIGHLIGHTS }]]),
 }
 
 /**
@@ -809,7 +818,7 @@ export const Transcribed: Story = {
       state: useTranscriptTab(
         useTranscript(createRecordings(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }),
         {
-          runCommand: () => {},
+          runCommand: fn(),
         },
       ),
     }),

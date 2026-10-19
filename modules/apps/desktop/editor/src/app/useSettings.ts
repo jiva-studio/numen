@@ -19,7 +19,7 @@ import {
   createWindowAppearance,
 } from '@/features/settings-commands'
 import { createReviewSetting, type PluginInfo, type SettingEdit } from '@/entities/settings'
-import { createSettingsStore } from '@/entities/settings'
+import { createSecretStore, createSettingsStore } from '@/entities/settings'
 import { useSettingsTab, paths, createChoices } from '@/pages/settings'
 import type { SelectChoice } from '@numen/ui'
 import type { Command, PaletteLists } from '@/features/command-palette'
@@ -176,11 +176,12 @@ interface SettingsTabConfigDeps {
   nesting: ReturnType<typeof useNestingSetting>
   dayBegins: ReturnType<typeof createReviewSetting>
   rest: ReturnType<typeof createSettingsStore>
+  secrets: ReturnType<typeof createSecretStore>
   file: { openSettingsFile: () => void }
 }
 
 function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
-  const { dressed, sync, nesting, dayBegins, rest, file } = deps
+  const { dressed, sync, nesting, dayBegins, rest, secrets, file } = deps
   return {
     themes: dressed.list,
     applied: dressed.applied,
@@ -188,7 +189,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     isPinned: dressed.isPinned,
     sizes: dressed.sized,
     bounds: dressed.bounds,
-    choose: (item: string) => void dressed.chooseItem(item),
+    choose: (item: string) => dressed.chooseItem(item),
     isSyncing: computed({
       get: () => sync.isEnabled.value,
       set: (on: boolean) => void sync.choose(on ? ON : OFF),
@@ -199,13 +200,16 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     }),
     headings: nesting.headings,
     headingsBounds: nesting.ends,
-    chooseHeadings: (count: number) => void nesting.chooseCount(`${count}`),
+    chooseHeadings: (count: number) => nesting.chooseCount(`${count}`),
     dayStartTime: dayBegins.starts,
     latestDayStartTime: dayBegins.latest,
-    chooseDayStartTime: (hour: string) => void dayBegins.choose(hour),
+    chooseDayStartTime: (hour: string) => dayBegins.choose(hour),
     getSetting: (at: readonly string[]) => rest.getSetting(at),
     getModels: (at: readonly string[]) => rest.getModelsAt(at),
-    write: (written: readonly SettingEdit[]) => void rest.writeSettings(written),
+    write: (written: readonly SettingEdit[]) => rest.writeSettings(written),
+    writeSecret: (pluginId: string, name: string, key: string) =>
+      secrets.writeSecret(pluginId, name, key),
+    deleteSecret: (pluginId: string, name: string) => secrets.deleteSecret(pluginId, name),
     plugins: rest.plugins,
     file: rest.path,
     openFile: () => file.openSettingsFile(),
@@ -258,6 +262,11 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
   const dressed = createWindowAppearance({ core: themes, words, write: log.getWriter('worn') })
   const sync = syncSetting(core, words, log.getWriter('named'))
   const rest = createSettingsStore(core, words, log.getWriter('configured'))
+  const secrets = createSecretStore(core, {
+    words,
+    say: log.getWriter('keys'),
+    refresh: rest.start,
+  })
 
   const file = {
     openSettingsFile: () => {
@@ -269,7 +278,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
 
   const configured = useSettingsTab(
     windowTabs.handle,
-    createSettingsTabConfig({ dressed, sync, nesting, dayBegins, rest, file }),
+    createSettingsTabConfig({ dressed, sync, nesting, dayBegins, rest, secrets, file }),
   )
 
   watch(dressed.sized, () => onSizeChanged())

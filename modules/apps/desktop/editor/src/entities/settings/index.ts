@@ -14,7 +14,10 @@ export type {
   Presence,
   SettingEdit,
   PluginInfo,
+  PluginModel,
   PluginSettingInfo,
+  Consent,
+  CompletionChoice,
 } from './lib/configuration'
 export { DEFAULT_HEADINGS, ladder as nestingLadder } from './lib/nesting'
 export type { NestingSettings } from './lib/nesting'
@@ -26,3 +29,5 @@ export type { Appearance, Bounds, Mode, Ranges, Scales, Sizes, Theme, Themes } f
 export { createSettingFields } from './lib/fields'
 export type { SettingFields, SettingSource } from './lib/fields'
 export { write } from './lib/write'
+export { createSecretStore } from './model/secrets'
+export type { SecretDeps, SecretOptions, SecretWords } from './model/secrets'

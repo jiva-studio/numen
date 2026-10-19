@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -80,6 +81,15 @@ func TestEveryPresenceIsWrittenFromOne(t *testing.T) {
 		v1.Presence_PRESENCE_NOT_FETCHED:      port.NotFetched,
 		v1.Presence_PRESENCE_NOTHING_TO_FETCH: port.NothingToFetch,
 	}, func(is port.Presence) v1.Presence { return presences[is] })
+}
+
+func TestEveryCompletionConsentIsWrittenFromOne(t *testing.T) {
+	testsupport.CheckProduced(t, map[v1.CompletionConsent]settings.Consent{
+		v1.CompletionConsent_COMPLETION_CONSENT_UNANSWERED: settings.ConsentUnanswered,
+		v1.CompletionConsent_COMPLETION_CONSENT_ASKED:      settings.ConsentAsked,
+		v1.CompletionConsent_COMPLETION_CONSENT_ALLOWED:    settings.ConsentAllowed,
+		v1.CompletionConsent_COMPLETION_CONSENT_REFUSED:    settings.ConsentRefused,
+	}, func(is settings.Consent) v1.CompletionConsent { return consents[is] })
 }
 
 func TestEveryVaultsErrorCodeIsWrittenFromOne(t *testing.T) {

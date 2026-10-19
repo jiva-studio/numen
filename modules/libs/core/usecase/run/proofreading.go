@@ -65,3 +65,13 @@ func OpenProofreader(open func() (port.Proofreader, error)) (port.Proofreader, e
 // is shown. One file is one line, and it replaces itself as the text is put
 // right.
 func GetProofreadID(path string) string { return "proofreading-" + path }
+
+// GetProofreadError is why a proofreading stopped, in the words the list of
+// what is being done shows. A proofreader the person has not let ask a model is
+// told by what allows it.
+func GetProofreadError(err error) string {
+	if errors.Is(err, port.ErrNoConsent) {
+		return port.ErrNoConsent.Error()
+	}
+	return err.Error()
+}

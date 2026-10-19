@@ -79,4 +79,33 @@ type PluginInfo struct {
 	Capabilities []string
 	Settings     []PluginSetting
 	IsActive     bool
+	// Permissions are the permissions the manifest declares.
+	Permissions []string
+	// Secrets are the names of the secrets the manifest declares, and
+	// StoredSecrets those of them that have a key stored. No key is held here.
+	Secrets       []string
+	StoredSecrets []string
+	// Models are the models the plugin answers completions with, as it lists them.
+	Models []AgentModel
+	// Consent is whether the person lets the plugin ask for model completions.
+	Consent CompletionConsent
 }
+
+// CompletionConsent is whether the person lets a plugin ask for model
+// completions.
+type CompletionConsent int
+
+const (
+	// ConsentNone is a plugin that does not hold the ai:complete permission.
+	ConsentNone CompletionConsent = iota
+	// ConsentUnanswered is a plugin the person has not answered for, and that
+	// has not asked since the host started.
+	ConsentUnanswered
+	// ConsentAsked is a plugin that has asked since the host started, was
+	// refused for want of an answer, and the person has not answered for.
+	ConsentAsked
+	// ConsentAllowed is a plugin the person lets ask.
+	ConsentAllowed
+	// ConsentRefused is a plugin the person refused.
+	ConsentRefused
+)

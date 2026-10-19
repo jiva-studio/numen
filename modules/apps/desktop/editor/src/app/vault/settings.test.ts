@@ -3,13 +3,15 @@
  * hands the vault to write.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ErrorCode, Presence } from '@numen/protocol'
+import { CompletionConsent, ErrorCode, Presence } from '@numen/protocol'
 import { settingsCore as core } from './settings'
 
 const asked = vi.hoisted(() => ({
   getSettings: vi.fn(),
   writeSettings: vi.fn(),
   writeSettingsFile: vi.fn(),
+  writePluginSecret: vi.fn(),
+  deletePluginSecret: vi.fn(),
 }))
 
 vi.mock('@/shared/clients', () => ({ settingsService: asked }))
@@ -182,6 +184,11 @@ describe('every setting', () => {
               version: '1.0.0',
               description: 'Sample plugin',
               isActive: true,
+              capabilities: ['ai.completion.provider'],
+              secrets: ['apiKey'],
+              storedSecrets: ['apiKey'],
+              models: [{ name: 'quick', title: 'Quick', isDefault: true }],
+              completionConsent: CompletionConsent.ASKED,
               settings: [
                 {
                   key: 'autoRun',
@@ -207,6 +214,11 @@ describe('every setting', () => {
         version: '1.0.0',
         description: 'Sample plugin',
         isActive: true,
+        capabilities: ['ai.completion.provider'],
+        secrets: ['apiKey'],
+        storedSecrets: ['apiKey'],
+        models: [{ name: 'quick', title: 'Quick', isDefault: true }],
+        consent: 'asked',
         settings: [
           {
             key: 'autoRun',
@@ -251,5 +263,31 @@ describe('the settings file written whole', () => {
     asked.writeSettingsFile.mockResolvedValue({ error: ErrorCode.STALE })
 
     expect(await core.saveSettingsFile('{}', 'fingerprint')).toStrictEqual({ isChanged: true })
+  })
+})
+
+describe('the key of a secret', () => {
+  it('is handed to the vault with the plugin and the name it is kept under', async () => {
+    asked.writePluginSecret.mockResolvedValue({})
+    await core.writePluginSecret('sample.plugin', 'apiKey', 'made-up-key')
+    expect(asked.writePluginSecret).toHaveBeenLastCalledWith({
+      pluginId: 'sample.plugin',
+      name: 'apiKey',
+      key: 'made-up-key',
+    })
+  })
+
+  it('is removed by the plugin and the name', async () => {
+    asked.deletePluginSecret.mockResolvedValue({})
+    await core.deletePluginSecret('sample.plugin', 'apiKey')
+    expect(asked.deletePluginSecret).toHaveBeenLastCalledWith({
+      pluginId: 'sample.plugin',
+      name: 'apiKey',
+    })
+  })
+
+  it('refused reaches the caller', async () => {
+    asked.writePluginSecret.mockRejectedValue(new Error('no keychain'))
+    await expect(core.writePluginSecret('sample.plugin', 'apiKey', 'k')).rejects.toThrow()
   })
 })

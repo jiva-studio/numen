@@ -120,3 +120,41 @@ func TestADefaultToolThatCannotRunIsAnError(t *testing.T) {
 		}
 	}
 }
+
+func TestCompleteAnswersWithTheModelTheHostNames(t *testing.T) {
+	var got chatRequest
+	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&got)
+		content := "the answer"
+		_ = json.NewEncoder(w).Encode(chatResponse{Choices: []struct {
+			Message      chatMessage `json:"message"`
+			FinishReason string      `json:"finish_reason"`
+		}{{Message: chatMessage{Role: "assistant", Content: &content}}}})
+	}))
+	defer chat.Close()
+	svc := &agentServer{}
+	svc.updateConfig(map[string]string{"apiKey": "host-key", "baseUrl": chat.URL, "model": "m1"})
+	request := askCompletion("why?")
+	request.Msg.Model = "m2"
+
+	if _, err := svc.Complete(context.Background(), request); err != nil {
+		t.Fatal(err)
+	}
+	if got.Model != "m2" {
+		t.Errorf("asked model %q, want m2", got.Model)
+	}
+}
+
+func TestTheCompletionModelIsTheConfiguredOne(t *testing.T) {
+	svc := &agentServer{}
+	svc.updateConfig(map[string]string{"model": "m1"})
+
+	res, err := svc.ListCompletionModels(context.Background(), connect.NewRequest(&numenv1.ListCompletionModelsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	models := res.Msg.GetModels()
+	if len(models) != 1 || models[0].GetName() != "m1" || !models[0].GetIsDefault() {
+		t.Errorf("listed %v", models)
+	}
+}

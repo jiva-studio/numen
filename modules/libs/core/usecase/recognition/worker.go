@@ -251,7 +251,7 @@ func (r *Worker) proofreadRecognition(
 	proofreading := r.with.Proofreading
 	right, held, err := CreateProofread(proofreading, r.with.Readers, r.with.Derived)
 	if err != nil {
-		r.reportTask(run.Task{ID: run.GetProofreadID(path), Title: "Proofreading a recognition", About: path, Error: err.Error()})
+		r.reportTask(run.Task{ID: run.GetProofreadID(path), Title: "Proofreading a recognition", About: path, Error: run.GetProofreadError(err)})
 		return ProofreadResult{Path: path}, err
 	}
 	if !held {
@@ -283,7 +283,7 @@ func (r *Worker) proofreadRecognition(
 	case err == nil, errors.Is(err, context.Canceled):
 		r.finishTask(id)
 	default:
-		r.reportTask(run.Task{ID: id, Title: "Proofreading a recognition", About: path, Error: err.Error()})
+		r.reportTask(run.Task{ID: id, Title: "Proofreading a recognition", About: path, Error: run.GetProofreadError(err)})
 	}
 	return res, err
 }

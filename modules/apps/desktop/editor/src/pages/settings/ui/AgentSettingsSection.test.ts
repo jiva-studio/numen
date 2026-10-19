@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
 
@@ -86,17 +86,19 @@ const createSection = (file: Record<string, unknown> = {}, defaultUse = 'claude'
       interfaceScale: { least: 0.8, most: 2 },
       textScale: { least: 0.8, most: 1.75 },
     }),
-    choose: () => {},
+    choose: vi.fn(),
     isSyncing: ref(false),
     isNesting: ref(false),
     headings: ref(1),
     headingsBounds: ref({ least: 1, most: 6 }),
-    chooseHeadings: () => {},
+    chooseHeadings: vi.fn(),
     dayStartTime: ref('04:00'),
     latestDayStartTime: ref('12:00'),
-    chooseDayStartTime: () => {},
+    writeSecret: vi.fn(),
+    deleteSecret: vi.fn(),
+    chooseDayStartTime: vi.fn(),
     file: ref('/test/settings.json'),
-    openFile: () => {},
+    openFile: vi.fn(),
   }
   const state: SettingsTabState = { installation }
   const wrapper = mount(AgentSettingsSection, { props: { state } })

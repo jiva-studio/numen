@@ -11,13 +11,16 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 )
 
-// settingsHandler answers every setting read and written, and the settings file
-// read and replaced whole.
+// settingsHandler answers every setting read and written, the settings file
+// read and replaced whole, and the keys of the secrets plugins declare, stored
+// and removed.
 type settingsHandler struct {
-	get       *settings.Get
-	write     *settings.Write
-	getFile   *settings.GetFile
-	writeFile *settings.WriteFile
+	get          *settings.Get
+	write        *settings.Write
+	getFile      *settings.GetFile
+	writeFile    *settings.WriteFile
+	writeSecret  *settings.WriteSecret
+	deleteSecret *settings.DeleteSecret
 }
 
 // errNoSettings is what a build that serves no settings answers.
@@ -171,7 +174,59 @@ func newWirePluginInfos(held []settings.PluginInfo) []*v1.PluginInfo {
 			Capabilities: one.Capabilities,
 			Settings:     pluginSettings,
 			IsActive:     one.IsActive,
+			Permissions:  one.Permissions,
+			Secrets:      one.Secrets,
+			// The names of the stored secrets travel, and a key never does.
+			StoredSecrets:     one.StoredSecrets,
+			Models:            newWirePluginModels(one.Models),
+			CompletionConsent: consents[one.Consent],
 		})
 	}
 	return infos
+}
+
+// newWirePluginModels is the models a plugin answers completions with, as the wire carries them.
+func newWirePluginModels(held []settings.AgentModel) []*v1.PluginModel {
+	models := make([]*v1.PluginModel, 0, len(held))
+	for _, one := range held {
+		models = append(models, &v1.PluginModel{Name: one.Name, Title: one.Title, IsDefault: one.IsDefault})
+	}
+	return models
+}
+
+// consents is whether the person lets a plugin ask a model, as the wire carries it.
+var consents = map[settings.Consent]v1.CompletionConsent{
+	settings.ConsentNone:       v1.CompletionConsent_COMPLETION_CONSENT_UNSPECIFIED,
+	settings.ConsentUnanswered: v1.CompletionConsent_COMPLETION_CONSENT_UNANSWERED,
+	settings.ConsentAsked:      v1.CompletionConsent_COMPLETION_CONSENT_ASKED,
+	settings.ConsentAllowed:    v1.CompletionConsent_COMPLETION_CONSENT_ALLOWED,
+	settings.ConsentRefused:    v1.CompletionConsent_COMPLETION_CONSENT_REFUSED,
+}
+
+// WritePluginSecret stores the key of a secret a plugin declares. A secret the
+// plugin does not declare, and a machine without a key store, are the client's
+// to be told of.
+func (h *settingsHandler) WritePluginSecret(
+	ctx context.Context, r *connect.Request[v1.WritePluginSecretRequest],
+) (*connect.Response[v1.WritePluginSecretResponse], error) {
+	if h.writeSecret == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
+	}
+	if err := h.writeSecret.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetName(), r.Msg.GetKey()); err != nil {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
+	}
+	return connect.NewResponse(&v1.WritePluginSecretResponse{}), nil
+}
+
+// DeletePluginSecret removes the key, if any, of a secret a plugin declares.
+func (h *settingsHandler) DeletePluginSecret(
+	ctx context.Context, r *connect.Request[v1.DeletePluginSecretRequest],
+) (*connect.Response[v1.DeletePluginSecretResponse], error) {
+	if h.deleteSecret == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
+	}
+	if err := h.deleteSecret.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetName()); err != nil {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
+	}
+	return connect.NewResponse(&v1.DeletePluginSecretResponse{}), nil
 }

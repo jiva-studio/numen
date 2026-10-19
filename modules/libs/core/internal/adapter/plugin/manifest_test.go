@@ -361,8 +361,8 @@ func TestAManifestDeclaresItsSecretsByPlainDistinctNames(t *testing.T) {
 	}
 }
 
-// The name under which the host records the stored secrets is neither a setting
-// nor a secret of a manifest.
+// The names under which the host records the stored secrets and the consent are
+// neither a setting nor a secret of a manifest.
 func TestAManifestDoesNotTakeTheNameOfTheStoredSecrets(t *testing.T) {
 	for _, one := range []struct {
 		name  string
@@ -370,11 +370,44 @@ func TestAManifestDoesNotTakeTheNameOfTheStoredSecrets(t *testing.T) {
 	}{
 		{"a setting", `"settings":[{"key":"storedSecrets","type":"string","title":"Stored"}]`},
 		{"a secret", `"secrets":["storedSecrets"]`},
+		{"the consent as a setting", `"settings":[{"key":"aiConsent","type":"boolean","title":"Allowed","default":true}]`},
+		{"the consent as a secret", `"secrets":["aiConsent"]`},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			_, err := ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0",` + one.field + `}`))
 			if !errors.Is(err, port.ErrReservedSettingKey) {
 				t.Errorf("error = %v, want port.ErrReservedSettingKey", err)
+			}
+		})
+	}
+}
+
+// A setting of type agent is one at most, declared by a plugin that may ask a
+// model, and leaves the choice to the person.
+func TestAManifestDeclaresTheAgentSettingOnceWithoutADefault(t *testing.T) {
+	const agent = `{"key":"model","type":"agent","title":"Model"}`
+	for _, one := range []struct {
+		name, fields string
+		wrong        bool
+	}{
+		{"one", `"permissions":["ai:complete"],"settings":[` + agent + `]`, false},
+		{"none", `"permissions":["ai:complete"]`, false},
+		{"without the permission", `"settings":[` + agent + `]`, true},
+		{"two", `"permissions":["ai:complete"],"settings":[` + agent + `,{"key":"other","type":"agent","title":"Other"}]`, true},
+		{"a default", `"permissions":["ai:complete"],"settings":[{"key":"model","type":"agent","title":"Model","default":{"agent":"md.numen.agent"}}]`, true},
+	} {
+		t.Run(one.name, func(t *testing.T) {
+			text := `{"id":"a.b","name":"A","version":"1.0.0",` + one.fields + `}`
+			m, err := ReadManifest(strings.NewReader(text))
+			if one.wrong != errors.Is(err, port.ErrInvalidAgentSetting) {
+				t.Fatalf("error = %v, want invalid agent setting: %v", err, one.wrong)
+			}
+			if one.wrong {
+				return
+			}
+			key, found := m.GetAgentSettingKey()
+			if found != strings.Contains(one.fields, `"type":"agent"`) || (found && key != "model") {
+				t.Errorf("the agent setting is %q, %v", key, found)
 			}
 		})
 	}

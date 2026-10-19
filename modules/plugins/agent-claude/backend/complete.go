@@ -17,15 +17,19 @@ var (
 	errNoCommand = errors.New("the Claude Code CLI is not installed")
 )
 
-// Complete answers one question from the model with no tools, no vault and no conversation.
+// Complete answers one question from the model the host names, else the configured one, with no
+// tools, no vault and no conversation.
 // The key is the one the host configured.
 func (s *agentServer) Complete(
 	ctx context.Context,
 	req *connect.Request[numenv1.CompleteRequest],
 ) (*connect.Response[numenv1.CompleteResponse], error) {
-	s.mu.RLock()
-	model := s.completionModel
-	s.mu.RUnlock()
+	model := req.Msg.GetModel()
+	if model == "" {
+		s.mu.RLock()
+		model = s.completionModel
+		s.mu.RUnlock()
+	}
 	key, base := s.catalogue.credentials()
 
 	return completion.Answer(ctx, req.Msg.GetQuestion(), func(ctx context.Context, request completion.Request) (string, error) {
@@ -57,4 +61,22 @@ func buildCompletionEnvironment(held []string, key, base string) []string {
 		out = append(out, anthropicBaseVar+"="+base)
 	}
 	return out
+}
+
+// ListCompletionModels lists the models Complete answers with: those the endpoint lists, the
+// configured one marked as the default.
+func (s *agentServer) ListCompletionModels(
+	ctx context.Context,
+	_ *connect.Request[numenv1.ListCompletionModelsRequest],
+) (*connect.Response[numenv1.ListCompletionModelsResponse], error) {
+	s.mu.RLock()
+	configured := s.completionModel
+	s.mu.RUnlock()
+	res := &numenv1.ListCompletionModelsResponse{}
+	for _, one := range s.catalogue.get(ctx) {
+		res.Models = append(res.Models, &numenv1.CompletionModel{
+			Name: one.Name, Title: one.Title, IsDefault: one.Name == configured,
+		})
+	}
+	return connect.NewResponse(res), nil
 }

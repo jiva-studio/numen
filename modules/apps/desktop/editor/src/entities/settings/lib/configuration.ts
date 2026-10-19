@@ -39,7 +39,7 @@ export interface Model {
 /** Declarative setting schema and metadata exposed by a plugin. */
 export interface PluginSettingInfo {
   readonly key: string
-  readonly type: 'boolean' | 'string' | 'number' | 'enum' | 'range'
+  readonly type: 'boolean' | 'string' | 'number' | 'enum' | 'range' | 'agent'
   readonly title: string
   readonly description: string
   readonly default: unknown
@@ -50,6 +50,20 @@ export interface PluginSettingInfo {
   readonly step?: number | undefined
 }
 
+/**
+ * Whether the person lets a plugin ask a model: `none` is a plugin that does
+ * not hold the ai:complete permission, `asked` one that asked since the host
+ * started and has had no answer.
+ */
+export type Consent = 'none' | 'unanswered' | 'asked' | 'allowed' | 'refused'
+
+/** One model a plugin that answers completions offers. */
+export interface PluginModel {
+  readonly name: string
+  readonly title: string
+  readonly isDefault: boolean
+}
+
 /** Information about an installed and active plugin, including declarative settings. */
 export interface PluginInfo {
   readonly id: string
@@ -58,6 +72,19 @@ export interface PluginInfo {
   readonly description: string
   readonly isActive: boolean
   readonly settings: readonly PluginSettingInfo[]
+  readonly capabilities: readonly string[]
+  /** The names of the secrets the plugin declares, and those that have a key stored. */
+  readonly secrets: readonly string[]
+  readonly storedSecrets: readonly string[]
+  /** The models it answers completions with, none where it lists none. */
+  readonly models: readonly PluginModel[]
+  readonly consent: Consent
+}
+
+/** The agent and the model a setting of type `agent` holds. Empty is the default. */
+export interface CompletionChoice {
+  readonly agent: string
+  readonly model: string
 }
 
 /** Every setting as it stands, where they stand, and the models offered. */

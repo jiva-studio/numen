@@ -112,3 +112,55 @@ func TestCompleteUsesTheInstalledClaudeCodeWhenNoCommandIsSet(t *testing.T) {
 		t.Errorf("got %+v", res.Msg)
 	}
 }
+
+func TestCompleteAnswersWithTheModelTheHostNames(t *testing.T) {
+	record := filepath.Join(t.TempDir(), "record")
+	script := writeFakeAgent(t, `{ echo "args=$*"; cat; } > '`+record+`'; echo "the answer"`)
+	svc := &agentServer{command: []string{script}}
+	request := askCompletion("why?")
+	request.Msg.Model = "m2"
+
+	if _, err := svc.Complete(context.Background(), request); err != nil {
+		t.Fatal(err)
+	}
+	seen, err := os.ReadFile(record)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(seen), "--model m2") {
+		t.Errorf("command did not see the host's model in:\n%s", seen)
+	}
+}
+
+// Complete runs the Claude Code CLI, so the models it lists are the CLI's, and none of those of
+// the programs it runs for tasks.
+func TestTheCompletionModelsAreTheClaudeCLIs(t *testing.T) {
+	script := writeFakeAgent(t, `echo "the answer"`)
+	svc := &agentServer{command: []string{script}}
+
+	res, err := svc.ListCompletionModels(context.Background(), connect.NewRequest(&numenv1.ListCompletionModelsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, one := range res.Msg.GetModels() {
+		names = append(names, one.GetName())
+	}
+	if strings.Join(names, ",") != "sonnet,opus,haiku" {
+		t.Errorf("listed %v", names)
+	}
+}
+
+// With nothing to give a single answer, no model is listed.
+func TestNoCompletionModelIsListedWithoutTheCLI(t *testing.T) {
+	withoutAgentsAnywhere(t)
+	svc := &agentServer{}
+
+	res, err := svc.ListCompletionModels(context.Background(), connect.NewRequest(&numenv1.ListCompletionModelsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Msg.GetModels()) != 0 {
+		t.Errorf("listed %v", res.Msg.GetModels())
+	}
+}

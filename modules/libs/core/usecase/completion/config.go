@@ -1,34 +1,32 @@
 package completion
 
-// DefaultRoute is the name of the route a purpose without a route of its own
-// is answered by.
-const DefaultRoute = "default"
+import "encoding/json"
 
-// DefaultConcurrency is how many questions a route answers at once when it
-// names no limit.
+// DefaultConcurrency is how many questions an agent answers at once when the
+// settings name no limit.
 const DefaultConcurrency = 1
 
-// Config is the section of the settings file that says where each purpose is
-// answered.
+// Config is the section of the settings file that says which agent answers the
+// questions of a plugin whose own setting names none.
 type Config struct {
-	// Routes are, by purpose and by default for the rest, the agent, the model
-	// and the number of questions answered at once.
-	Routes map[string]Route `json:"routes,omitempty"`
+	// Default is the agent and the model a plugin naming no agent is answered
+	// by, and how many questions one agent answers at once.
+	Default Route `json:"default"`
 }
 
-// Route is where the questions of one purpose go.
+// Route is an agent, the model it answers with, and the limit of its questions.
 type Route struct {
 	// Agent is the id of the agent plugin that answers. Empty is the provider
 	// with the lowest id.
 	Agent string `json:"agent,omitempty"`
 	// Model is the model the agent answers with. Empty leaves it to the agent.
 	Model string `json:"model,omitempty"`
-	// Concurrency is how many questions the route answers at once. Below one is
+	// Concurrency is how many questions one agent answers at once. Below one is
 	// DefaultConcurrency.
 	Concurrency int `json:"concurrency,omitempty"`
 }
 
-// GetLimit is how many questions the route answers at once.
+// GetLimit is how many questions one agent answers at once.
 func (r Route) GetLimit() int {
 	if r.Concurrency < 1 {
 		return DefaultConcurrency
@@ -36,13 +34,21 @@ func (r Route) GetLimit() int {
 	return r.Concurrency
 }
 
-// GetRoute returns the route that answers the purpose, and the name it is
-// held under: the purpose's own, else DefaultRoute. It reports false when
-// neither is configured.
-func (c Config) GetRoute(purpose string) (string, Route, bool) {
-	if route, found := c.Routes[purpose]; found && purpose != "" {
-		return purpose, route, true
+// UnmarshalJSON reads the section. A file of an older shape holds its default
+// under routes.default, which is read where the section names no default; the
+// routes of single purposes are not read.
+func (c *Config) UnmarshalJSON(data []byte) error {
+	var held struct {
+		Default *Route           `json:"default"`
+		Routes  map[string]Route `json:"routes"`
 	}
-	route, found := c.Routes[DefaultRoute]
-	return DefaultRoute, route, found
+	if err := json.Unmarshal(data, &held); err != nil {
+		return err
+	}
+	if held.Default != nil {
+		c.Default = *held.Default
+		return nil
+	}
+	c.Default = held.Routes["default"]
+	return nil
 }

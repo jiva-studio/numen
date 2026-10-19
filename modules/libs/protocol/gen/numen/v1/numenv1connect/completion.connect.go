@@ -43,6 +43,9 @@ const (
 	// CompletionServiceCompleteProcedure is the fully-qualified name of the CompletionService's
 	// Complete RPC.
 	CompletionServiceCompleteProcedure = "/numen.v1.CompletionService/Complete"
+	// CompletionServiceListCompletionModelsProcedure is the fully-qualified name of the
+	// CompletionService's ListCompletionModels RPC.
+	CompletionServiceListCompletionModelsProcedure = "/numen.v1.CompletionService/ListCompletionModels"
 	// HostServiceCompleteProcedure is the fully-qualified name of the HostService's Complete RPC.
 	HostServiceCompleteProcedure = "/numen.v1.HostService/Complete"
 )
@@ -51,6 +54,9 @@ const (
 type CompletionServiceClient interface {
 	// Complete answers the question with text.
 	Complete(context.Context, *connect.Request[v1.CompleteRequest]) (*connect.Response[v1.CompleteResponse], error)
+	// ListCompletionModels lists the models Complete answers with: a model named
+	// here is one Complete accepts. None leaves the model to the agent alone.
+	ListCompletionModels(context.Context, *connect.Request[v1.ListCompletionModelsRequest]) (*connect.Response[v1.ListCompletionModelsResponse], error)
 }
 
 // NewCompletionServiceClient constructs a client for the numen.v1.CompletionService service. By
@@ -70,12 +76,19 @@ func NewCompletionServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(completionServiceMethods.ByName("Complete")),
 			connect.WithClientOptions(opts...),
 		),
+		listCompletionModels: connect.NewClient[v1.ListCompletionModelsRequest, v1.ListCompletionModelsResponse](
+			httpClient,
+			baseURL+CompletionServiceListCompletionModelsProcedure,
+			connect.WithSchema(completionServiceMethods.ByName("ListCompletionModels")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // completionServiceClient implements CompletionServiceClient.
 type completionServiceClient struct {
-	complete *connect.Client[v1.CompleteRequest, v1.CompleteResponse]
+	complete             *connect.Client[v1.CompleteRequest, v1.CompleteResponse]
+	listCompletionModels *connect.Client[v1.ListCompletionModelsRequest, v1.ListCompletionModelsResponse]
 }
 
 // Complete calls numen.v1.CompletionService.Complete.
@@ -83,10 +96,18 @@ func (c *completionServiceClient) Complete(ctx context.Context, req *connect.Req
 	return c.complete.CallUnary(ctx, req)
 }
 
+// ListCompletionModels calls numen.v1.CompletionService.ListCompletionModels.
+func (c *completionServiceClient) ListCompletionModels(ctx context.Context, req *connect.Request[v1.ListCompletionModelsRequest]) (*connect.Response[v1.ListCompletionModelsResponse], error) {
+	return c.listCompletionModels.CallUnary(ctx, req)
+}
+
 // CompletionServiceHandler is an implementation of the numen.v1.CompletionService service.
 type CompletionServiceHandler interface {
 	// Complete answers the question with text.
 	Complete(context.Context, *connect.Request[v1.CompleteRequest]) (*connect.Response[v1.CompleteResponse], error)
+	// ListCompletionModels lists the models Complete answers with: a model named
+	// here is one Complete accepts. None leaves the model to the agent alone.
+	ListCompletionModels(context.Context, *connect.Request[v1.ListCompletionModelsRequest]) (*connect.Response[v1.ListCompletionModelsResponse], error)
 }
 
 // NewCompletionServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -102,10 +123,18 @@ func NewCompletionServiceHandler(svc CompletionServiceHandler, opts ...connect.H
 		connect.WithSchema(completionServiceMethods.ByName("Complete")),
 		connect.WithHandlerOptions(opts...),
 	)
+	completionServiceListCompletionModelsHandler := connect.NewUnaryHandler(
+		CompletionServiceListCompletionModelsProcedure,
+		svc.ListCompletionModels,
+		connect.WithSchema(completionServiceMethods.ByName("ListCompletionModels")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.CompletionService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case CompletionServiceCompleteProcedure:
 			completionServiceCompleteHandler.ServeHTTP(w, r)
+		case CompletionServiceListCompletionModelsProcedure:
+			completionServiceListCompletionModelsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -119,10 +148,16 @@ func (UnimplementedCompletionServiceHandler) Complete(context.Context, *connect.
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.CompletionService.Complete is not implemented"))
 }
 
+func (UnimplementedCompletionServiceHandler) ListCompletionModels(context.Context, *connect.Request[v1.ListCompletionModelsRequest]) (*connect.Response[v1.ListCompletionModelsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.CompletionService.ListCompletionModels is not implemented"))
+}
+
 // HostServiceClient is a client for the numen.v1.HostService service.
 type HostServiceClient interface {
-	// Complete answers the question with text from whichever model the host
-	// routes the purpose to.
+	// Complete answers the question with text from the agent and the model the
+	// calling plugin's setting names, else from the default of the settings. The
+	// host knows the caller by its token, and nothing in the request chooses the
+	// agent.
 	Complete(context.Context, *connect.Request[v1.HostServiceCompleteRequest]) (*connect.Response[v1.HostServiceCompleteResponse], error)
 }
 
@@ -158,8 +193,10 @@ func (c *hostServiceClient) Complete(ctx context.Context, req *connect.Request[v
 
 // HostServiceHandler is an implementation of the numen.v1.HostService service.
 type HostServiceHandler interface {
-	// Complete answers the question with text from whichever model the host
-	// routes the purpose to.
+	// Complete answers the question with text from the agent and the model the
+	// calling plugin's setting names, else from the default of the settings. The
+	// host knows the caller by its token, and nothing in the request chooses the
+	// agent.
 	Complete(context.Context, *connect.Request[v1.HostServiceCompleteRequest]) (*connect.Response[v1.HostServiceCompleteResponse], error)
 }
 

@@ -5,8 +5,22 @@
 import { computed } from 'vue'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from './setting-row/SettingRow.vue'
+import { AgentChoice } from './agent-choice'
 import type { SettingsTabState } from '../types'
-import { createSettingFields, type PluginInfo } from '@/entities/settings'
+import {
+  createSettingFields,
+  type CompletionChoice,
+  type PluginInfo,
+  type PluginSettingInfo,
+} from '@/entities/settings'
+import {
+  DEFAULT_AGENT_AT,
+  createAgentModelChoices,
+  createPluginAgentChoices,
+  findAgent,
+  readChoice,
+} from '../lib/agents'
+import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ state: SettingsTabState }>()
@@ -20,12 +34,48 @@ const plugins = computed<readonly PluginInfo[]>(() => {
   return list.filter((one) => one.settings.length > 0)
 })
 
+const installed = computed<readonly PluginInfo[]>(() => installation.value.plugins?.value ?? [])
+const defaultAgent = computed(() => fields.getString(DEFAULT_AGENT_AT))
+
 /* -------------------------------- Handlers -------------------------------- */
 function onSettingChange(pluginId: string, key: string, value: unknown): void {
   fields.setValue(['plugins', pluginId, key], value)
 }
 
+function onAgentChoose(pluginId: string, key: string, choice: CompletionChoice): void {
+  fields.setValue(['plugins', pluginId, key], choice)
+}
+
 /* -------------------------------- Helpers --------------------------------- */
+/** What the agent setting of a plugin holds. */
+function getChoice(pluginId: string, key: string): CompletionChoice {
+  return readChoice(installation.value.getSetting(['plugins', pluginId, key]))
+}
+
+/** The agents the setting can name, the default first. */
+function getAgentChoices(choice: CompletionChoice) {
+  return createPluginAgentChoices(
+    installed.value,
+    { defaultAgent: defaultAgent.value, chosen: choice.agent },
+    words,
+  )
+}
+
+/** The models of the agent the setting names, and none while it names the default. */
+function getModelChoices(choice: CompletionChoice) {
+  if (choice.agent === '') return null
+  return createAgentModelChoices(findAgent(installed.value, choice.agent), choice.model, words)
+}
+
+/** The setting of a plugin that chooses its agent, drawn first, and the rest. */
+function getAgentSettings(plugin: PluginInfo): readonly PluginSettingInfo[] {
+  return plugin.settings.filter((one) => one.type === 'agent')
+}
+
+function getOtherSettings(plugin: PluginInfo): readonly PluginSettingInfo[] {
+  return plugin.settings.filter((one) => one.type !== 'agent')
+}
+
 function getSetting(pluginId: string, key: string, fallback: unknown): unknown {
   const val = installation.value.getSetting(['plugins', pluginId, key])
   return val !== undefined ? val : fallback
@@ -57,8 +107,21 @@ function getStringSetting(pluginId: string, key: string, fallback: unknown): str
     >
       <h2 class="settings__heading">{{ plugin.name }}</h2>
 
+      <AgentChoice
+        v-for="setting in getAgentSettings(plugin)"
+        :key="setting.key"
+        :at="`${plugin.id}-${setting.key}`"
+        :agent-name="setting.title"
+        :agent-detail="setting.description"
+        :model-name="words.pluginModel"
+        :model-detail="words.defaultModelDetail"
+        :agents="getAgentChoices(getChoice(plugin.id, setting.key))"
+        :models="getModelChoices(getChoice(plugin.id, setting.key))"
+        :choice="getChoice(plugin.id, setting.key)"
+        @choose="(choice) => onAgentChoose(plugin.id, setting.key, choice)"
+      />
       <SettingRow
-        v-for="setting in plugin.settings"
+        v-for="setting in getOtherSettings(plugin)"
         :key="setting.key"
         v-slot="{ labelledBy }"
         :at="`${plugin.id}-${setting.key}`"

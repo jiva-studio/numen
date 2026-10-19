@@ -57,16 +57,16 @@ func (a *CompletionAgents) getAgentID(agent string) (string, error) {
 	if agent == "" {
 		found, ok := a.host.FindPluginByCapability(CapabilityAgentProvider)
 		if !ok {
-			return "", fmt.Errorf("%w: no plugin provides %s", port.ErrUnavailable, CapabilityAgentProvider)
+			return "", fmt.Errorf("%w: no plugin provides %s", port.ErrNoRoute, CapabilityAgentProvider)
 		}
 		return found.Manifest.ID, nil
 	}
 	found, ok := a.host.GetPlugin(agent)
 	if !ok {
-		return "", fmt.Errorf("%w: no plugin %q", port.ErrUnavailable, agent)
+		return "", fmt.Errorf("%w: no enabled plugin %q", port.ErrNoRoute, agent)
 	}
 	if !found.Manifest.HasCapability(CapabilityAgentProvider) {
-		return "", fmt.Errorf("%w: %q: %w", port.ErrUnavailable, agent, errNotAnAgent)
+		return "", fmt.Errorf("%w: %q: %w", port.ErrNoRoute, agent, errNotAnAgent)
 	}
 	return found.Manifest.ID, nil
 }
@@ -138,6 +138,8 @@ func readRefusal(code v1.CompletionErrorCode) error {
 		return port.ErrNoRoute
 	case v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE:
 		return port.ErrUnavailable
+	case v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT:
+		return port.ErrNoConsent
 	}
 	return fmt.Errorf("%w: %d", errUnknownRefusal, code)
 }
@@ -146,6 +148,8 @@ func readRefusal(code v1.CompletionErrorCode) error {
 // with. It reports false for an error that is no refusal.
 func writeRefusal(err error) (v1.CompletionErrorCode, bool) {
 	switch {
+	case errors.Is(err, port.ErrNoConsent):
+		return v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT, true
 	case errors.Is(err, port.ErrNoRoute):
 		return v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE, true
 	case errors.Is(err, port.ErrUnavailable):
@@ -194,4 +198,18 @@ func readWireQuestion(wire *v1.CompletionQuestion) port.Question {
 			Temperature:     temperature,
 		},
 	}
+}
+
+// ListModels returns the models the agent plugin answers completions with, in
+// the order it lists them.
+func (b *CompletionBridge) ListModels(ctx context.Context) ([]port.AgentModel, error) {
+	res, err := b.client.ListCompletionModels(ctx, connect.NewRequest(&v1.ListCompletionModelsRequest{}))
+	if err != nil {
+		return nil, readCompletionError(ctx, err)
+	}
+	models := make([]port.AgentModel, 0, len(res.Msg.GetModels()))
+	for _, one := range res.Msg.GetModels() {
+		models = append(models, port.AgentModel{Name: one.GetName(), Title: one.GetTitle(), IsDefault: one.GetIsDefault()})
+	}
+	return models, nil
 }

@@ -10,6 +10,17 @@ type (
 	Presence      = port.Presence
 	PluginSetting = port.PluginSetting
 	PluginInfo    = port.PluginInfo
+	AgentModel    = port.AgentModel
+	Consent       = port.CompletionConsent
+)
+
+// Whether the person lets a plugin ask for model completions.
+const (
+	ConsentNone       = port.ConsentNone
+	ConsentUnanswered = port.ConsentUnanswered
+	ConsentAsked      = port.ConsentAsked
+	ConsentAllowed    = port.ConsentAllowed
+	ConsentRefused    = port.ConsentRefused
 )
 
 // What a model's files are on this machine.

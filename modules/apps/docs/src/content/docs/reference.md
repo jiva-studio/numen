@@ -167,11 +167,13 @@ The workload and resource calibration profile.
 | `custom.ocr_sessions` | a number |  |
 | `custom.llm_concurrency` | a number |  |
 
-### `ai`
+### `ai.default`
 
-Where the questions plugins ask of a model are answered.
+The agent and the model a plugin naming no agent is answered by, and how many questions one agent answers at once.
 
 | | | |
 | --- | --- | --- |
-| `routes` |  | are, by purpose and by default for the rest, the agent, the model and the number of questions answered at once. |
+| `agent` | text | the id of the agent plugin that answers. Empty is the provider with the lowest id. |
+| `model` | text | the model the agent answers with. Empty leaves it to the agent. |
+| `concurrency` | a number | how many questions one agent answers at once. |
 <!-- END AUTOGEN -->

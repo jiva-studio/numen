@@ -79,9 +79,12 @@ type Host struct {
 	failedPlugins  []pluginFailure
 	problems       []DiscoveryProblem
 	completer      port.Completer
-	secretLocksMu  sync.Mutex
-	secretLocks    map[string]*sync.Mutex
-	keyStore       port.KeyStore
+	// consentAsks holds the plugins that asked for a completion the person has
+	// not answered for, since the host started.
+	consentAsks   map[string]bool
+	secretLocksMu sync.Mutex
+	secretLocks   map[string]*sync.Mutex
+	keyStore      port.KeyStore
 	// noKeyStoreOnce reports once that a recorded secret cannot be read on a
 	// machine without a key store.
 	noKeyStoreOnce sync.Once
@@ -118,6 +121,7 @@ func NewHost(target string, dirs ...string) *Host {
 		failedPlugins:  nil,
 		problems:       nil,
 		completer:      nil,
+		consentAsks:    make(map[string]bool),
 		keyStore:       nil,
 		hostEndpoint:   nil,
 		hostAddress:    hostEndpointAddress,
@@ -1134,6 +1138,7 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 		}
 	}
 	delete(result, port.SettingStoredSecrets)
+	delete(result, port.SettingAIConsent)
 	if p, ok := h.plugins[pluginID]; ok {
 		for _, name := range p.Manifest.Secrets {
 			delete(result, name)
@@ -1375,13 +1380,17 @@ func (h *Host) GetPluginInfos() []port.PluginInfo {
 		}
 
 		result = append(result, port.PluginInfo{
-			ID:           p.Manifest.ID,
-			Name:         p.Manifest.Name,
-			Version:      p.Manifest.Version,
-			Description:  p.Manifest.Description,
-			Capabilities: p.Manifest.Capabilities,
-			Settings:     settings,
-			IsActive:     isActive,
+			ID:            p.Manifest.ID,
+			Name:          p.Manifest.Name,
+			Version:       p.Manifest.Version,
+			Description:   p.Manifest.Description,
+			Capabilities:  p.Manifest.Capabilities,
+			Settings:      settings,
+			IsActive:      isActive,
+			Permissions:   p.Manifest.Permissions,
+			Secrets:       p.Manifest.Secrets,
+			StoredSecrets: h.getStoredSecretsLocked(p.Manifest.ID),
+			Consent:       h.getCompletionConsentLocked(p.Manifest),
 		})
 	}
 	return result
@@ -1430,6 +1439,8 @@ func (h *Host) GetWirePluginInfos() []*v1.PluginInfo {
 			Capabilities: p.Manifest.Capabilities,
 			Settings:     settings,
 			IsActive:     isActive,
+			Permissions:  p.Manifest.Permissions,
+			Secrets:      p.Manifest.Secrets,
 		})
 	}
 	return result

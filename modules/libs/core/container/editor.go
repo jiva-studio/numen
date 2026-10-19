@@ -123,6 +123,14 @@ func (e EditorAssembly) OpenWriteSettingsFile() *settings.WriteFile {
 	return settings.NewWriteFile(e.cfg.WriteConfiguredFile())
 }
 
+func (e EditorAssembly) OpenWritePluginSecret() *settings.WriteSecret {
+	return settings.NewWriteSecret(e.cfg.GetPluginSecretWriter())
+}
+
+func (e EditorAssembly) OpenDeletePluginSecret() *settings.DeleteSecret {
+	return settings.NewDeleteSecret(e.cfg.GetPluginSecretDeleter())
+}
+
 func (e EditorAssembly) IsRebuildingIndex() bool     { return e.cfg.ShouldRebuildIndex }
 func (e EditorAssembly) IsTranscribingUnasked() bool { return e.cfg.ShouldTranscribe }
 

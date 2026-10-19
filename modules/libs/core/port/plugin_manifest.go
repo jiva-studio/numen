@@ -54,6 +54,7 @@ var (
 	ErrRangeInvalidBounds  = errors.New("range min cannot exceed max")
 	ErrInvalidSecret       = errors.New("invalid secret")
 	ErrReservedSettingKey  = errors.New("the setting key is kept by the host")
+	ErrInvalidAgentSetting = errors.New("invalid agent setting")
 )
 
 // SettingStoredSecrets is the setting under which the host records, for a plugin,
@@ -61,13 +62,26 @@ var (
 // never a key, and neither a setting nor a secret of a manifest takes the name.
 const SettingStoredSecrets = "storedSecrets"
 
+// SettingAIConsent is the setting under which the host records whether the
+// person lets a plugin ask for model completions: true allowed, false refused,
+// absent not asked yet. The window writes it, and no manifest takes the name.
+const SettingAIConsent = "aiConsent"
+
+// SettingTypeAgent is the type of the setting that holds the agent and the model
+// answering the completions of a plugin. Its value is a CompletionChoice, and
+// the person sets it: the setting declares no default.
+const SettingTypeAgent = "agent"
+
+// reservedSettingKeys are the settings of a plugin the host keeps for itself.
+var reservedSettingKeys = []string{SettingStoredSecrets, SettingAIConsent}
+
 var (
 	manifestIDPattern      = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
 	manifestSecretPattern  = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 	manifestVersionPattern = regexp.MustCompile(`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`)
 )
 
-var validSettingTypes = []string{"boolean", "string", "number", "enum", "select", "range"}
+var validSettingTypes = []string{"boolean", "string", "number", "enum", "select", "range", SettingTypeAgent}
 
 // PluginLifecycle defines when the host evicts an idle plugin from memory.
 type PluginLifecycle struct {
@@ -220,7 +234,42 @@ func (m PluginManifest) ListIssues() []error {
 	issues = append(issues, m.listPermissionIssues()...)
 	issues = append(issues, m.listRuntimeIssues()...)
 	issues = append(issues, m.listSecretIssues()...)
+	issues = append(issues, m.listAgentSettingIssues()...)
 	return append(issues, listManifestSettingIssues(m.Settings)...)
+}
+
+// listAgentSettingIssues checks the setting that chooses the agent: one at most,
+// declared by a plugin that holds the ai:complete permission, with no default.
+func (m PluginManifest) listAgentSettingIssues() []error {
+	var issues []error
+	count := 0
+	for _, s := range m.Settings {
+		if s.Type != SettingTypeAgent {
+			continue
+		}
+		count++
+		if s.Default != nil {
+			issues = append(issues, fmt.Errorf("%w: %s declares a default", ErrInvalidAgentSetting, s.Key))
+		}
+	}
+	if count > 1 {
+		issues = append(issues, fmt.Errorf("%w: %d are declared, and a plugin has one at most", ErrInvalidAgentSetting, count))
+	}
+	if count > 0 && !m.HasPermission(PermissionAIComplete) {
+		issues = append(issues, fmt.Errorf("%w: the plugin does not hold %s", ErrInvalidAgentSetting, PermissionAIComplete))
+	}
+	return issues
+}
+
+// GetAgentSettingKey returns the key of the setting that chooses the agent of the
+// plugin's completions, and false when the manifest declares none.
+func (m PluginManifest) GetAgentSettingKey() (string, bool) {
+	for _, s := range m.Settings {
+		if s.Type == SettingTypeAgent {
+			return s.Key, true
+		}
+	}
+	return "", false
 }
 
 func (m PluginManifest) listIdentityIssues() []error {
@@ -306,7 +355,7 @@ func (m PluginManifest) listSecretIssues() []error {
 		switch {
 		case !manifestSecretPattern.MatchString(name):
 			issues = append(issues, fmt.Errorf("%w: %q is not letters, digits, _ or -", ErrInvalidSecret, name))
-		case name == SettingStoredSecrets:
+		case slices.Contains(reservedSettingKeys, name):
 			issues = append(issues, fmt.Errorf("%w: secret %q", ErrReservedSettingKey, name))
 		case seen[name]:
 			issues = append(issues, fmt.Errorf("%w: %q is declared twice", ErrInvalidSecret, name))
@@ -327,7 +376,7 @@ func listManifestSettingIssues(settings []PluginManifestSetting) []error {
 			issues = append(issues, ErrEmptySettingKey)
 			continue
 		}
-		if key == SettingStoredSecrets {
+		if slices.Contains(reservedSettingKeys, key) {
 			issues = append(issues, fmt.Errorf("%w: %s", ErrReservedSettingKey, key))
 			continue
 		}

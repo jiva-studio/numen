@@ -17,7 +17,7 @@ import (
 // proofreaderName is the name the proofreader goes under.
 const proofreaderName = "llm-proofreader"
 
-// purpose is what every question to the model is for. The host routes by it.
+// purpose is what every question to the model is for. It routes nothing.
 const purpose = "proofreading"
 
 // completer asks the host for the answer to a question.
@@ -127,11 +127,15 @@ var (
 )
 
 // readModelError maps a failure to reach the model to the code the caller reads
-// it by: a model nothing is routed to answer for is unavailable, and the end of
-// the caller's context is its own.
+// it by: a model nothing is routed to is unavailable, one the person has not let
+// this plugin ask is permission denied, and the end of the caller's context is
+// its own.
 func readModelError(ctx context.Context, err error) error {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return connect.NewError(connect.CodeCanceled, ctxErr)
+	}
+	if errors.Is(err, ai.ErrNoConsent) {
+		return connect.NewError(connect.CodePermissionDenied, err)
 	}
 	if errors.Is(err, ai.ErrNoRoute) || errors.Is(err, ai.ErrUnavailable) || errors.Is(err, ai.ErrNoHost) {
 		return connect.NewError(connect.CodeUnavailable, err)

@@ -32,9 +32,7 @@ The text OCR read off the pages can be corrected afterwards by a model, through 
 ```json
 {
   "ai": {
-    "routes": {
-      "proofreading": { "agent": "md.numen.agent-claude", "model": "haiku" }
-    }
+    "default": { "agent": "md.numen.agent-claude", "model": "haiku" }
   },
   "indexing": {
     "proofreading": {
@@ -50,7 +48,7 @@ The text OCR read off the pages can be corrected afterwards by a model, through 
 
 A profile is the size a text is cut into requests at, under a name you choose, and `recognition.proofread.with` names the one that corrects a recognition. `automatically` off leaves it to the hand: you ask for it on the book in front of you.
 
-The model that answers is the one the route of the `proofreading` purpose names under `ai.routes`: the agent, the model, and how many questions it answers at once. The `claude` command line you already have installed is one agent behind a route; a key belongs to the agent that holds it. With no route, proofreading says that nothing is available and the text stays as it was read.
+The model that answers is the one the proofreading plugin's own **Agent** setting names, in its section of the settings page; left at "Default", it is the one under `ai.default`: the agent, the model, and how many questions it answers at once. The `claude` command line you already have installed is one agent; a key belongs to the agent that holds it, and you enter it in the AI section of the settings page. The first time proofreading asks a model, the AI section asks you whether it may. With no agent to answer, proofreading says that nothing is available; while you have not allowed it, the proofreading in the list of what is being done says "AI access not allowed — allow it in Settings → AI". Either way the text stays as it was read.
 
 `max_edit_distance` is the safety catch: how far a correction may move a line's letters and still count as a correction, taken as the Levenshtein distance between them as a share of the longer of the two. Over 931 corrections of one book, every correction further apart than 0.30 was damage — text dragged in from the next line, or one corrected word standing in for a whole line — and everything below it was a genuine fix. A correction further apart than this is dropped, and that line is left as it was read. It stands above the profiles because it is one threshold for the whole installation, and it is 0.30 where you name nothing.
 
