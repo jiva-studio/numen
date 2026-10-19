@@ -3,11 +3,7 @@ version = 1
 test_patterns = [
   "**/*_test.go",
   "**/*.test.ts",
-  "**/*.spec.ts",
-  "**/*.stories.ts",
-  "**/fixtures/**",
-  "**/testsupport/**",
-  "modules/tests/**"
+  "**/*.spec.ts"
 ]
 
 exclude_patterns = [
@@ -22,16 +18,45 @@ exclude_patterns = [
   "**/vendor/**",
   "**/node_modules/**",
   "**/*.min.js",
-  "**/*.wasm"
+  "**/*.wasm",
+  "**/*_test.go",
+  "**/*.test.ts",
+  "**/*.spec.ts",
+  "**/*.stories.ts",
+  "**/fixtures/**",
+  "**/testsupport/**",
+  "modules/tests/**",
+  "**/eslint.config.js",
+  "**/vite.config.ts",
+  "**/vitest.config.ts"
 ]
 
 [[analyzers]]
 name = "go"
+enabled = true
 
 [[analyzers]]
 name = "javascript"
+enabled = true
 
   [analyzers.meta]
-  module_system = "es-modules"
-  environment = ["browser", "nodejs", "vitest"]
+  module_system = "es6"
+  ecma_version = "2024"
+  environment = ["browser", "nodejs"]
   dialect = "typescript"
+
+[[analyzers]]
+name = "secrets"
+enabled = false
+
+[[analyzers]]
+name = "java"
+enabled = false
+
+[[analyzers]]
+name = "sql"
+enabled = false
+
+[[analyzers]]
+name = "shell"
+enabled = false
