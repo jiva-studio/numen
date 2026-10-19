@@ -245,3 +245,144 @@ func TestAChangeIsLocatedByThePathArgumentAlone(t *testing.T) {
 		t.Fatalf("a title was reported as a path: %+v", editProgress(got))
 	}
 }
+
+func TestStreamParserPreviewIntervalPacing(t *testing.T) {
+	var got []*numenv1.AskAgentResponse
+	send := func(r *numenv1.AskAgentResponse) error {
+		got = append(got, r)
+		return nil
+	}
+	tick := time.Unix(0, 0)
+	words := map[string]toolcall.Words{
+		"note_edit": {About: "Edit a note", Match: "path", Text: "text"},
+	}
+	r := strings.NewReader(strings.Join([]string{
+		startEdit,
+		delta(`{"path":"a.md","text":"first"}`),
+		delta(`{"path":"a.md","text":"second"}`),
+		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
+	}, "\n") + "\n")
+
+	parseStreamWithClock(context.Background(), r, send, words, nil, func() time.Time {
+		tick = tick.Add(50 * time.Millisecond)
+		return tick
+	})
+
+	edits := editProgress(got)
+	if len(edits) != 2 {
+		t.Fatalf("expected 2 edit progress steps spaced by 50ms, got %d", len(edits))
+	}
+}
+
+func TestStreamParserInitSessionRecord(t *testing.T) {
+	send := func(r *numenv1.AskAgentResponse) error {
+		return nil
+	}
+	var recorded []string
+	record := func(sess string) { recorded = append(recorded, sess) }
+
+	r := strings.NewReader(`{"type":"system","subtype":"init","session_id":"sess-123"}` + "\n")
+	parseStreamWithClock(context.Background(), r, send, nil, record, time.Now)
+	if len(recorded) != 1 || recorded[0] != "sess-123" {
+		t.Fatalf("expected one recorded session %q, got %v", "sess-123", recorded)
+	}
+
+	r2 := strings.NewReader(`{"type":"system","subtype":"init","session_id":""}` + "\n")
+	parseStreamWithClock(context.Background(), r2, send, nil, record, time.Now)
+	if len(recorded) != 1 {
+		t.Fatalf("expected empty session to not be recorded, got %v", recorded)
+	}
+}
+
+func TestStreamParserToolCallChunkAndReset(t *testing.T) {
+	var got []*numenv1.AskAgentResponse
+	send := func(r *numenv1.AskAgentResponse) error {
+		got = append(got, r)
+		return nil
+	}
+	chunk200 := strings.Repeat("x", 200)
+	r := strings.NewReader(strings.Join([]string{
+		`{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"c1","name":"mcp__numen__t1"}}}`,
+		delta(`old_args`),
+		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
+		`{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"c2","name":"mcp__numen__t2"}}}`,
+		delta(chunk200),
+		delta("1234567890"),
+		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
+		`{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"","name":"mcp__numen__t3"}}}`,
+		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
+	}, "\n") + "\n")
+
+	parseStreamWithClock(context.Background(), r, send, nil, nil, time.Now)
+
+	calls := toolCalls(got)
+	var t2Calls []*numenv1.ToolCall
+	for _, c := range calls {
+		if c.GetTool() == "t2" {
+			t2Calls = append(t2Calls, c)
+		}
+	}
+	if len(t2Calls) != 3 {
+		t.Fatalf("expected exactly 3 calls for t2, got %d (%+v)", len(t2Calls), t2Calls)
+	}
+	if t2Calls[1].GetWritten() != 200 {
+		t.Errorf("expected written 200 for chunk, got %d", t2Calls[1].GetWritten())
+	}
+	var t3Calls []*numenv1.ToolCall
+	for _, c := range calls {
+		if c.GetTool() == "t3" {
+			t3Calls = append(t3Calls, c)
+		}
+	}
+	if len(t3Calls) == 0 || t3Calls[0].GetCall() != "" {
+		t.Fatalf("expected empty call id for t3, got %+v", t3Calls)
+	}
+}
+
+func TestStreamParserAssistantMessageIgnoredWhenStreaming(t *testing.T) {
+	var got []*numenv1.AskAgentResponse
+	send := func(r *numenv1.AskAgentResponse) error {
+		got = append(got, r)
+		return nil
+	}
+	r := strings.NewReader(strings.Join([]string{
+		`{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"hello"}}}`,
+		`{"type":"assistant","message":{"content":[{"type":"text","text":"hello"}]}}`,
+	}, "\n") + "\n")
+
+	parseStreamWithClock(context.Background(), r, send, nil, nil, time.Now)
+
+	saids := 0
+	for _, s := range got {
+		if s.GetSaid() != "" {
+			saids++
+		}
+	}
+	if saids != 1 {
+		t.Fatalf("expected assistant message to be ignored while streaming, got %d said steps", saids)
+	}
+}
+
+func TestReportEditIgnoredWhenToolHasNoTextDeclaration(t *testing.T) {
+	var got []*numenv1.AskAgentResponse
+	send := func(r *numenv1.AskAgentResponse) error {
+		got = append(got, r)
+		return nil
+	}
+	words := map[string]toolcall.Words{
+		"note_read": {About: "Read notes", Match: "path", Text: ""},
+	}
+	r := strings.NewReader(strings.Join([]string{
+		`{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"c1","name":"mcp__numen__note_read"}}}`,
+		delta(`{"path":"a.md"}`),
+		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
+	}, "\n") + "\n")
+
+	parseStreamWithClock(context.Background(), r, send, words, nil, time.Now)
+
+	for _, s := range got {
+		if ep := s.GetEditProgress(); ep != nil {
+			t.Fatalf("expected no edit progress when tool text is empty, got %+v", ep)
+		}
+	}
+}

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -173,5 +175,27 @@ func TestCompletionArgumentsGiveNoToolsAndOneTurn(t *testing.T) {
 	bare := buildCompletionArguments("", "")
 	if slices.Contains(bare, "--append-system-prompt") || slices.Contains(bare, "--model") {
 		t.Errorf("got %q", bare)
+	}
+}
+
+func TestCompleteIsUnavailableWithoutACommand(t *testing.T) {
+	withoutClaudeAnywhere(t)
+	t.Setenv(anthropicKeyVar, "env-key")
+	svc := &agentServer{}
+	svc.applyConfig(map[string]string{"apiKey": "host-key"})
+
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	defer log.SetOutput(os.Stderr)
+
+	res, err := svc.Complete(context.Background(), askCompletion("why?"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Msg.GetError() != numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE || res.Msg.GetAnswer() != nil {
+		t.Errorf("got %+v", res.Msg)
+	}
+	if !strings.Contains(buf.String(), errNoCommand.Error()) {
+		t.Errorf("expected %q in log, got: %s", errNoCommand.Error(), buf.String())
 	}
 }

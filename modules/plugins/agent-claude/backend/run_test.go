@@ -365,3 +365,13 @@ func writeRunnable(t *testing.T, at string) {
 		t.Fatal(err)
 	}
 }
+
+func TestWriteMcpConfigRequiresBothUrlAndToken(t *testing.T) {
+	file, err := writeMcpConfig("http://127.0.0.1", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if file != "" {
+		t.Errorf("expected no config file when token is empty, got %q", file)
+	}
+}
