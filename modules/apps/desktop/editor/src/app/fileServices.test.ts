@@ -23,7 +23,7 @@ vi.mock('@/entities/artifact', async (importOriginal) => ({
 }))
 vi.mock('@/features/command-palette', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/features/command-palette')>()),
-  runInvocation: vi.fn(() => Promise.resolve(undefined)),
+  runInvocation: vi.fn(() => Promise.resolve()),
 }))
 
 const target = {

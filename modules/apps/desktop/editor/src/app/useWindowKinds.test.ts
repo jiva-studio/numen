@@ -12,20 +12,20 @@ type MockSeen = {
   about: () => unknown
 }
 
-const h = vi.hoisted(() => ({
+const hoisted = vi.hoisted(() => ({
   seen: {} as Record<'agent' | 'files', MockSeen>,
   agents: {} as Record<string, unknown>,
 }))
 
 vi.mock('./kinds/agent', () => ({
   createAgentKind: (args: unknown) => {
-    h.seen.agent = args as MockSeen
-    return h.agents
+    hoisted.seen.agent = args as MockSeen
+    return hoisted.agents
   },
 }))
 vi.mock('./fileServices', () => ({
   createFileMakers: (args: unknown) => {
-    h.seen.files = args as MockSeen
+    hoisted.seen.files = args as MockSeen
     return 'made'
   },
   createVaultFiles: () => ({ name: 'files' }),
@@ -61,8 +61,8 @@ const create = ({ plex, hasPlexKind = true }: { plex?: Plex; hasPlexKind?: boole
 }
 
 beforeEach(() => {
-  h.seen = {} as Record<'agent' | 'files', MockSeen>
-  h.agents = { kind: 'agent', askQuestion: vi.fn(() => Promise.resolve()) }
+  hoisted.seen = {} as Record<'agent' | 'files', MockSeen>
+  hoisted.agents = { kind: 'agent', askQuestion: vi.fn(() => Promise.resolve()) }
 })
 
 describe('the window kinds', () => {
@@ -70,7 +70,7 @@ describe('the window kinds', () => {
     const { deps, writer } = create()
 
     expect(deps.log.getWriter).toHaveBeenCalledWith('command')
-    expect(h.seen.files.writeMessage).toBe(writer)
+    expect(hoisted.seen.files.writeMessage).toBe(writer)
   })
 
   it('starts with nothing dragged', () => {
@@ -99,15 +99,15 @@ describe('what the agent is about', () => {
   it('is what the plex the person was last in is over', () => {
     create({ plex: { target: { path: 'Ideas/Plan.md', title: 'The plan' } } })
 
-    expect(h.seen.agent.about()).toEqual({ path: 'Ideas/Plan.md', title: 'The plan' })
+    expect(hoisted.seen.agent.about()).toEqual({ path: 'Ideas/Plan.md', title: 'The plan' })
   })
 
   it('is no note at all in a window holding no plex, or one over nothing', () => {
     create()
-    expect(h.seen.agent.about()).toEqual({ path: '', title: '' })
+    expect(hoisted.seen.agent.about()).toEqual({ path: '', title: '' })
 
     create({ plex: {} })
-    expect(h.seen.agent.about()).toEqual({ path: '', title: '' })
+    expect(hoisted.seen.agent.about()).toEqual({ path: '', title: '' })
   })
 })
 
@@ -167,7 +167,7 @@ describe('the services the window gives a plugin', () => {
     workspace?.setDraggedPaths(['a.md'])
     workspace?.showError('the link was not written')
 
-    expect(h.agents.askQuestion).toHaveBeenCalledWith('what is this?')
+    expect(hoisted.agents.askQuestion).toHaveBeenCalledWith('what is this?')
     expect(window.dragged.value).toStrictEqual(['a.md'])
     expect(writer).toHaveBeenCalledWith('the link was not written', 'error')
     expect(workspace?.openingPath.value).toBe('Root.md')
