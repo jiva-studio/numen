@@ -1,0 +1,129 @@
+/**
+ * The files of the vault as a plugin's tabs are given them: the folders listed,
+ * the files made and moved, and the window's commands over a row.
+ */
+import { formatErrorMessage } from '@numen/wire'
+import type { VaultFiles, WorkspaceHost } from '@numen/plugin-sdk'
+import { cards, presets, WORDS as cardWords } from '@/entities/deck'
+import { running, type ArtifactStates } from '@/entities/artifact'
+import { createFileCreators, type FileOpeners } from '@/entities/tab'
+import {
+  ANSWER_WORDS,
+  createInvocation,
+  createPathCommands,
+  runInvocation,
+  type CommandDeps,
+  type CommandTarget,
+  type RunSupport,
+} from '@/features/command-palette'
+import type { NoteCreator } from '@/entities/note'
+import { WORDS as words } from '@/shared/words'
+import { findIcon } from '@/shared/icons'
+import type { MessageWriter } from '@/shared/notices/messages'
+import type { FilePort } from '@/app/ports/files'
+import { getEntryIcon } from './entryIcon'
+
+/** What making a file asks of the window. */
+export interface FileMakersDeps {
+  readonly core: Pick<FilePort, 'createUrl'>
+  readonly tabOpeners: FileOpeners
+  readonly notes: { applyPathChanges(paths: readonly string[]): void }
+  readonly writeMessage: MessageWriter
+}
+
+/** The decks, stencils, presets and urls the window makes, each put in front of the person. */
+export function createFileMakers({ core, tabOpeners, notes, writeMessage }: FileMakersDeps) {
+  const fetchArtifact = async (path: string): Promise<void> => {
+    try {
+      await running.fetchArtifact(path)
+    } catch (error) {
+      writeMessage(formatErrorMessage(error), 'error')
+      return
+    }
+    notes.applyPathChanges([path])
+  }
+
+  return createFileCreators(
+    {
+      createDeck: (title, folder) => cards.createDeck(title, folder),
+      createStencil: (title, folder, fields) => cards.createStencil(title, folder, fields),
+      createPreset: (title, folder) => presets.createPreset(title, folder),
+      createUrl: async (address, folder) => {
+        const made = await core.createUrl(address, folder)
+        if (made.ok) void fetchArtifact(made.value.path)
+        return made
+      },
+    },
+    tabOpeners,
+    { words: { errors: words.errors }, write: writeMessage },
+  )
+}
+
+/** What the files of the vault are listed, made and moved through. */
+export interface VaultFilesDeps {
+  readonly core: Pick<FilePort, 'list'>
+  readonly made: ReturnType<typeof createFileMakers>
+  readonly making: NoteCreator
+  readonly getTarget: () => CommandTarget
+  readonly commandDeps: () => CommandDeps
+}
+
+export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
+  const { core, made, making, getTarget, commandDeps } = deps
+  const run = (id: string, target: CommandTarget, name: string) =>
+    runInvocation(createInvocation(id, target, name), commandDeps(), ANSWER_WORDS)
+  return {
+    list: (folder) => core.list(folder),
+    move: (from, to) => run('move', { ...getTarget(), path: from }, to),
+    createFolder: (path) => run('createFolder', getTarget(), path),
+    createNote: async (folder) => (await making.createUntitled(folder, []))?.path ?? '',
+    createDeck: (folder, name) => made.createFile('deck', folder, name),
+    createStencil: (folder, name) =>
+      made.createFile('stencil', folder, { name, fields: [cardWords.newField] }),
+    createPreset: (folder, name) => made.createFile('preset', folder, name),
+    importUrl: (folder, url) => made.createUrl(folder, url),
+    importUrls: (folder, urls) => made.createUrls(folder, urls),
+  }
+}
+
+/** What the window's commands over a row are offered and run with. */
+export interface PathCommandDeps {
+  readonly runs: Pick<RunSupport, 'canRun'>
+  readonly vaults: { readonly makes: { readonly value: ReadonlyMap<string, ArtifactStates> } }
+  readonly getTarget: () => CommandTarget
+  readonly runCommand: (id: string, target: CommandTarget) => void
+}
+
+/** The window's commands over a row of the vault, and the icons it draws them and its entries with. */
+export function createPathCommandHost(
+  deps: PathCommandDeps,
+): Pick<WorkspaceHost, 'getPathCommands' | 'runPathCommand' | 'getCommandIcon' | 'getEntryIcon'> {
+  const { runs, vaults, getTarget, runCommand } = deps
+  return {
+    getPathCommands: ({ entry, isSeveral }) =>
+      createPathCommands(
+        {
+          source: entry.kind,
+          isFolder: entry.isFolder,
+          format: entry.path.endsWith('.epub') ? 'epub' : 'pdf',
+          made: vaults.makes.value.get(entry.path),
+        },
+        isSeveral,
+        (id) => runs.canRun(id),
+      ),
+    runPathCommand: (id, { paths, name, source }) => {
+      const path = paths[0] ?? ''
+      runCommand(id, {
+        ...getTarget(),
+        path,
+        title: name,
+        file: path,
+        source,
+        made: vaults.makes.value.get(path) ?? {},
+        others: paths.slice(1),
+      })
+    },
+    getCommandIcon: (id) => findIcon(id),
+    getEntryIcon: (entry, isOpen) => getEntryIcon(entry, isOpen),
+  }
+}

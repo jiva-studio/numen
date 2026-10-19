@@ -2,17 +2,13 @@
 /**
  * Displays the vault file tree and handles file navigation and organisation gestures.
  */
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, type Component } from 'vue'
 import { Menu, Tree } from '@numen/ui'
 import type { Position, RowMarker } from '@numen/ui'
-import type { LucideIcon } from '@lucide/vue'
 
-import { findIcon } from '@/shared/icons'
-import { getEntryIcon } from '../lib/icons'
 import type { DropPosition, FilesTabState } from '../types'
 import { getRows } from '../lib/rows'
 import { getDroppedUrls, hasUrl } from '../lib/drag'
-import { createMenuItems } from '../lib/menu'
 import { WORDS as words } from '../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -37,25 +33,7 @@ const renamingPath = computed({
 })
 
 /** What the menu offers: on the row it was asked for on, or off every row. */
-const items = computed(() => {
-  const menuTarget = props.state.menu.value
-  if (!menuTarget || menuTarget.path === null) {
-    return createMenuItems(null, false, props.state.canRun)
-  }
-
-  const entry = props.state.list.getEntryAt(menuTarget.path)
-  const on = {
-    source: entry?.kind ?? 'other',
-    isFolder: entry?.isFolder ?? false,
-    format: entry?.path.endsWith('.epub') ? ('epub' as const) : ('pdf' as const),
-    made: props.state.getArtifactStates?.(menuTarget.path),
-  }
-  return createMenuItems(
-    on,
-    props.state.getOverPaths(menuTarget.path).length > 1,
-    props.state.canRun,
-  )
-})
+const items = computed(() => props.state.getMenuItems(props.state.menu.value?.path ?? null))
 
 /* --------------------------------- Hooks ---------------------------------- */
 const refreshTree = () => void props.state.list.refresh()
@@ -123,8 +101,12 @@ function onDismissMenu() {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-function getRowIcon(id: string, open: boolean): LucideIcon {
-  return getEntryIcon(props.state.list.getEntryAt(id), open)
+function getRowIcon(id: string, open: boolean): Component {
+  return props.state.getEntryIcon(props.state.list.getEntryAt(id), open)
+}
+
+function getItemIcon(id: string): Component | null {
+  return props.state.getCommandIcon(id)
 }
 </script>
 
@@ -170,7 +152,12 @@ function getRowIcon(id: string, open: boolean): LucideIcon {
       @dismiss="onDismissMenu"
     >
       <template #icon="{ id }">
-        <component :is="findIcon(id)" v-if="findIcon(id)" class="files__icon" aria-hidden="true" />
+        <component
+          :is="getItemIcon(id)"
+          v-if="getItemIcon(id)"
+          class="files__icon"
+          aria-hidden="true"
+        />
       </template>
     </Menu>
   </div>

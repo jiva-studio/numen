@@ -1,4 +1,4 @@
-import type { VaultNotes, WorkspaceHost } from './workspace'
+import type { VaultFiles, VaultNotes, WorkspaceHost } from './workspace'
 
 // Disposable is a handle released on teardown.
 export interface Disposable {
@@ -157,6 +157,8 @@ export interface PluginContext {
   readonly workspace?: WorkspaceHost
   // The notes of the vault, where the host offers them.
   readonly notes?: VaultNotes
+  // The folders and files of the vault, where the host offers them.
+  readonly files?: VaultFiles
 }
 
 // PluginManifest describes the metadata in manifest.json.

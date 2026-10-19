@@ -1,4 +1,4 @@
-import type { Ref } from 'vue'
+import type { Component, Ref } from 'vue'
 
 // NoteRef is one note of the vault: where it is filed, and what it is called.
 export interface NoteRef {
@@ -98,6 +98,78 @@ export interface WorkspaceHost {
   // A question for the agent, put in front of the person.
   ask(text: string): void
   showError(text: string): void
+  // The window's commands over one row of the vault, in the order a menu draws them.
+  getPathCommands(row: PathMenuRow): readonly MenuEntry[]
+  // A command of the window, run over a file and the others selected with it.
+  runPathCommand(id: string, target: PathCommandTarget): void
+  // The icon the window draws a command with, and nothing for a command it draws none for.
+  getCommandIcon(id: string): Component | null
+  // The icon the window draws an entry of the vault with: a folder open or shut, a note by its type.
+  getEntryIcon(entry: VaultEntry | null, isOpen: boolean): Component
+}
+
+// FileSource is what the vault holds at a path. A file it holds no source for is other.
+export type FileSource = 'note' | 'book' | 'recording' | 'url' | 'other'
+
+// VaultEntry is one file or folder, as a listing of the folder it sits in reports it.
+export interface VaultEntry {
+  readonly path: string
+  readonly name: string
+  readonly isFolder: boolean
+  readonly kind: FileSource
+  readonly type: NoteType
+}
+
+// MenuEntry is one item a menu offers, in the group it is drawn in.
+export interface MenuEntry {
+  readonly id: string
+  readonly text: string
+  readonly group: string
+  readonly disabled?: boolean
+}
+
+// PathMenuRow is the row of the vault a menu is asked for on.
+export interface PathMenuRow {
+  readonly entry: VaultEntry
+  // Whether the row is one of several selected, which the menu is over together.
+  readonly isSeveral: boolean
+}
+
+// PathCommandTarget is the file a command runs over, and the others selected with it.
+export interface PathCommandTarget {
+  readonly paths: readonly string[]
+  readonly name: string
+  readonly source: FileSource
+}
+
+// VaultFiles is what a plugin lists of the folders of the vault, and makes and moves in them.
+export interface VaultFiles {
+  list(folder: string): Promise<readonly VaultEntry[]>
+  move(from: string, to: string): Promise<void>
+  createFolder(path: string): Promise<void>
+  // Each answers with the path of what was made, and empty where nothing was.
+  createNote(folder: string): Promise<string>
+  createDeck(folder: string, name: string): Promise<string>
+  createStencil(folder: string, name: string): Promise<string>
+  createPreset(folder: string, name: string): Promise<string>
+  importUrl(folder: string, url: string): Promise<string>
+  importUrls(folder: string, urls: readonly string[]): Promise<readonly string[]>
+}
+
+// PathRename is a file that is no longer where it was, and where it now is.
+export interface PathRename {
+  readonly from: string
+  readonly to: string
+}
+
+// getFileName says what a file is filed as: the last segment of its vault path.
+export function getFileName(path: string): string {
+  return path.split('/').pop() ?? path
+}
+
+// getRenamedPath says where a file went, and empty where none of the renames moved it.
+export function getRenamedPath(renames: readonly PathRename[], path: string): string {
+  return renames.find((one) => one.from === path)?.to ?? ''
 }
 
 // isNotePath says whether a vault path is a note: a markdown file, or a path without an extension.

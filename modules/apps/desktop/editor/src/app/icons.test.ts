@@ -10,8 +10,8 @@ import { findIcon } from '@/shared/icons'
 import { getNoteIcon } from '@/entities/note'
 import { findTabKindIcon } from '@/entities/tab'
 import { PRESET } from '@/entities/tab'
-import { createCommands } from '@/features/command-palette'
-import { createMenuItems } from '@/pages/file-manager'
+import { createCommands, createPathCommands } from '@/features/command-palette'
+import { createMenuItems } from '@plugins/view-file-tree/frontend'
 import { ITEMS, NONE } from '@plugins/view-plex-graph/frontend'
 import { createWelcomeActions } from '@/pages/welcome'
 import { WORDS as words } from '@/shared/words'
@@ -20,14 +20,18 @@ import type { NoteType, Source } from '@/entities/file'
 /** A window that has been told nothing, which can do every run. */
 const canRunAnything = () => true
 
+/** The menu the tree draws on a row: what the tab does, among the window's commands. */
+const getTreeMenu = (source: Source, isFolder: boolean, isSeveral = false) =>
+  createMenuItems(createPathCommands({ source, isFolder }, isSeveral, canRunAnything), isSeveral)
+
 /** Every menu the tree draws: off every row, and on a row of each kind. */
 const inTheTree = [
-  createMenuItems(null, false, canRunAnything),
-  ...(['note', 'book', 'recording', 'other'] as Source[]).flatMap((source) => [
-    createMenuItems({ source, isFolder: false }, false, canRunAnything),
-    createMenuItems({ source, isFolder: true }, false, canRunAnything),
+  createMenuItems(null, false),
+  ...(['note', 'book', 'recording', 'url', 'other'] as Source[]).flatMap((source) => [
+    getTreeMenu(source, false),
+    getTreeMenu(source, true),
   ]),
-  createMenuItems({ source: 'note', isFolder: false }, true, canRunAnything),
+  getTreeMenu('note', false, true),
 ].flat()
 
 describe('the icon a command is drawn with', () => {

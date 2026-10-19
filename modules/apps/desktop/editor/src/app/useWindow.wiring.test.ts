@@ -165,7 +165,7 @@ beforeEach(() => {
     },
     pluginHost: { notifyVaultChange: vi.fn() },
     kinds: {
-      files: { name: 'files', refreshChangedPaths: vi.fn() },
+      files: { name: 'files' },
       travel: vi.fn(),
       leavePath: vi.fn(),
       dragged: ref([]),
@@ -277,7 +277,6 @@ describe('the parts of the window', () => {
 
     expect(h.f.editing.notes.applyPathChanges).toHaveBeenCalledWith(paths, renamed)
     expect(h.f.commands.commands.applyRenames).toHaveBeenCalledWith(renamed)
-    expect(h.f.kinds.files.refreshChangedPaths).toHaveBeenCalledWith(paths, renamed)
     expect(h.f.pluginHost.notifyVaultChange).toHaveBeenCalledWith({ paths, renamed })
   })
 

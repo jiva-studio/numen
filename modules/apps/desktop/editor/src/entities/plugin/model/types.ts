@@ -11,6 +11,7 @@ import type {
   ReaderRegistration,
   TabKindRegistration,
   VaultChangeEvent,
+  VaultFiles,
   VaultNotes,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
@@ -70,6 +71,8 @@ export interface PluginHostDeps {
   readonly getWorkspace?: () => WorkspaceHost | undefined
   /** The notes of the vault, once the window has made them. */
   readonly getNotes?: () => VaultNotes | undefined
+  /** The files of the vault, once the window has made them. */
+  readonly getFiles?: () => VaultFiles | undefined
 }
 
 export interface PluginContextHost {
@@ -97,4 +100,5 @@ export interface PluginContextHost {
   closeTab?(id: string): void
   getWorkspace?(): WorkspaceHost | undefined
   getNotes?(): VaultNotes | undefined
+  getFiles?(): VaultFiles | undefined
 }

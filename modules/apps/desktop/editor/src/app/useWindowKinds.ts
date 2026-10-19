@@ -3,11 +3,11 @@
  */
 import { shallowRef } from 'vue'
 import type { DestinationDeps } from '@/features/command-palette'
-import { PLEX } from '@/entities/tab'
+import { FILES, PLEX } from '@/entities/tab'
 import { createAgentKind } from './kinds/agent'
-import { createFilesKind } from './kinds/files'
 import type { WindowKindsDeps } from './kinds/deps'
 import { createVaultNotes, createWorkspaceHost, type PluginServices } from './pluginServices'
+import { createFileMakers, createVaultFiles } from './fileServices'
 
 export type { WindowKindsDeps } from './kinds/deps'
 
@@ -15,7 +15,7 @@ export type { WindowKindsDeps } from './kinds/deps'
  * Initializes and registers view kinds for the desktop window.
  */
 export function useWindowKinds(deps: WindowKindsDeps) {
-  const { log, tabOpeners, held, editing, settings } = deps
+  const { core, log, tabOpeners, held, editing, settings } = deps
   const writeMessage = log.getWriter('command')
   const dragged = shallowRef<readonly string[]>([])
 
@@ -40,9 +40,9 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     openFile: (path, title, line) => void tabOpeners.openFile(path, title, { where: 'here', line }),
   }
 
-  const { files, made } = createFilesKind({ ...deps, dragged, writeMessage, destinations })
+  const made = createFileMakers({ core, tabOpeners, notes: editing.notes, writeMessage })
 
-  held.registerKinds([...editing.kinds, ...settings.kinds, agents.kind, files.kind])
+  held.registerKinds([...editing.kinds, ...settings.kinds, agents.kind])
 
   const services: PluginServices = {
     workspace: createWorkspaceHost({
@@ -52,12 +52,13 @@ export function useWindowKinds(deps: WindowKindsDeps) {
       ask: (text) => void agents.askQuestion(text),
       writeMessage,
     }),
-    notes: createVaultNotes({ core: deps.core, search: deps.core, making: editing.making }),
+    notes: createVaultNotes({ core, search: core, making: editing.making }),
+    files: createVaultFiles({ ...deps, made, making: editing.making }),
   }
 
   return {
     agents,
-    files,
+    files: { revealPath: (path: string) => held.navigateTab(FILES, path) },
     made,
     destinations,
     dragged,

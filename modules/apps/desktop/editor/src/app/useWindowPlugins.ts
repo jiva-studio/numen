@@ -113,6 +113,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     ...(deps.writeNote !== undefined ? { writeNote: deps.writeNote } : {}),
     getWorkspace: () => deps.services?.workspace,
     getNotes: () => deps.services?.notes,
+    getFiles: () => deps.services?.files,
   })
   const pluginLoader = createPluginLoader({
     host: pluginHost,

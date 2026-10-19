@@ -21,10 +21,9 @@ export interface DisplayWiring {
 export function createDisplayOptions(deps: DisplayWiring) {
   const { editing, getCommands, getKinds, tabOpeners, getVaults, notifyPlugins } = deps
   return {
-    onVaultChanged: async (paths: readonly string[], renamed: readonly PathRename[]) => {
+    onVaultChanged: (paths: readonly string[], renamed: readonly PathRename[]) => {
       editing.notes.applyPathChanges(paths, renamed)
       getCommands().commands.applyRenames(renamed)
-      await getKinds().files.refreshChangedPaths(paths, renamed)
       notifyPlugins({ paths, renamed })
     },
     reportChange: editing.changes.reportChange,

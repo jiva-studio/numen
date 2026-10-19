@@ -46,6 +46,10 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     runCommand: (id, target) => void said.commands.push([id, target]),
     ask: (text) => void said.questions.push(text),
     showError: (text) => void said.errors.push(text),
+    getPathCommands: () => [],
+    runPathCommand: () => {},
+    getCommandIcon: () => null,
+    getEntryIcon: () => ({}),
   }
 
   const notes: VaultNotes = {

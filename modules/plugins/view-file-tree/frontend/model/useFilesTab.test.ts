@@ -2,8 +2,8 @@
  * Unit tests for useFilesTab composable and file interactions.
  */
 import { describe, expect, it } from 'vitest'
-import type { Entry } from '@/entities/file'
-import { getLandingDestination, useFilesTab, type FilesTabState } from './useFilesTab'
+import type { Entry } from '../types'
+import { useFilesTab } from './useFilesTab'
 import { getFolderPath, ROOT, useFileTree } from './useFileTree'
 import { NEW_DECK, NEW_FOLDER, NEW_NOTE, NEW_PRESET, NEW_STENCIL, RENAME } from '../lib/menu'
 import { WORDS as words } from '../words'
@@ -34,6 +34,18 @@ const held: Record<string, readonly Entry[]> = {
   heat: [file('heat/Entropy.md')],
 }
 
+/** The window's commands over a row: every one the menu can offer, on any row, and no icons. */
+const windowCommands = {
+  getPathCommands: () =>
+    ['remove', 'transcribe', 'recognise', 'proofread', 'copy'].map((id) => ({
+      id,
+      text: id,
+      group: 'run',
+    })),
+  getCommandIcon: () => null,
+  getEntryIcon: () => ({}),
+}
+
 /** A moment for whatever a gesture asked the vault for to come back. */
 const settle = () => new Promise((done) => setTimeout(done, 0))
 
@@ -49,12 +61,9 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
       return vault[at] ?? []
     },
   })
-  let receivedState: FilesTabState | undefined = undefined
   const gestures = useFilesTab(list, {
-    openDestination: (landing, state) => {
-      receivedState = state
-      done.push(`lands ${landing ? `${landing.at} ${landing.path}` : '—'}`)
-    },
+    ...windowCommands,
+    openEntry: (entry) => void done.push(`lands file ${entry.path}`),
     runCommand: (id, paths, target) => {
       done.push(`runs ${id} ${paths.join(' ')} ${target.name}`)
       sources.push(target.source)
@@ -105,64 +114,17 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
     },
     showError: (text) => void done.push(`says ${text}`),
   })
-  return { done, list, one: gestures, asked, sources, getState: () => receivedState }
+  return { done, list, one: gestures, asked, sources }
 }
-
-describe('where a row activated takes the person', () => {
-  it('is the note it stands for, in a tab of its own', () => {
-    expect(getLandingDestination(file('Entropy.md'))).toStrictEqual({
-      at: 'file',
-      path: 'Entropy.md',
-      title: 'Entropy.md',
-    })
-  })
-
-  it('is the deck it stands for, named and no more', () => {
-    expect(getLandingDestination(file('Animals.md', { type: 'deck' }))).toStrictEqual({
-      at: 'file',
-      path: 'Animals.md',
-      title: 'Animals.md',
-    })
-  })
-
-  it('is the stencil it stands for, named and no more', () => {
-    expect(getLandingDestination(file('Animal.md', { type: 'stencil' }))).toStrictEqual({
-      at: 'file',
-      path: 'Animal.md',
-      title: 'Animal.md',
-    })
-  })
-
-  it('is the book it stands for, named and no more', () => {
-    expect(getLandingDestination(file('Heat.pdf', { kind: 'book' }))).toStrictEqual({
-      at: 'file',
-      path: 'Heat.pdf',
-      title: 'Heat.pdf',
-    })
-  })
-
-  it('is the file it stands for even where the vault holds no source there', () => {
-    expect(getLandingDestination(file('Cover.png', { kind: 'other' }))).toStrictEqual({
-      at: 'file',
-      path: 'Cover.png',
-      title: 'Cover.png',
-    })
-  })
-
-  it('is nowhere for a folder, which opens where it stands', () => {
-    expect(getLandingDestination(folder('physics'))).toBeNull()
-  })
-})
 
 describe('a row activated', () => {
   it('takes the person to the note it stands for', async () => {
-    const { done, list, one, getState } = tab()
+    const { done, list, one } = tab()
     await list.openFolder(ROOT)
 
     one.activate('Entropy.md')
 
     expect(done).toStrictEqual(['lands file Entropy.md'])
-    expect(getState()).toBe(one)
   })
 
   it('takes the person to the book it stands for', async () => {
@@ -199,6 +161,41 @@ describe('a row activated', () => {
     one.activate('physics/Kelvin.md')
 
     expect(done).toStrictEqual([])
+  })
+
+  it('opens nothing for a folder, and selects it', async () => {
+    const { done, list, one } = tab()
+    await list.openFolder(ROOT)
+
+    one.activate('physics')
+
+    expect(done).toStrictEqual([])
+    expect(list.selectedPaths.value).toStrictEqual(['physics'])
+  })
+})
+
+describe('what the menu offers', () => {
+  it('is what the tab makes off every row', () => {
+    expect(
+      tab()
+        .one.getMenuItems(null)
+        .map((one) => one.id),
+    ).toStrictEqual(['newNote', 'newDeck', 'newStencil', 'newPreset', 'newFolder'])
+  })
+
+  it('is the window’s commands alone over a selection of several', async () => {
+    const { list, one } = tab()
+    await list.openFolder(ROOT)
+    list.selectPaths(['Entropy.md', 'Cover.png'])
+
+    expect(one.getMenuItems('Entropy.md').map((item) => item.id)).not.toContain('rename')
+  })
+
+  it('draws a command and an entry with the icons the window gives', () => {
+    const { one } = tab()
+
+    expect(one.getCommandIcon('remove')).toBeNull()
+    expect(one.getEntryIcon(null, false)).toStrictEqual({})
   })
 })
 
@@ -310,7 +307,8 @@ describe('rows let go of', () => {
       },
     })
     const one = useFilesTab(list, {
-      openDestination: () => {},
+      ...windowCommands,
+      openEntry: () => {},
       runCommand: () => {},
       movePath: async () => {},
       setDraggedPaths: () => {},
@@ -662,7 +660,6 @@ describe('useFilesTab helper and interaction methods', () => {
 
     expect(one.getNameOf('Entropy.md')).toBe('Entropy.md')
     expect(one.getNameOf('nonexistent/file.txt')).toBe('file.txt')
-    expect(one.canRun({} as never)).toBe(true)
     expect(one.getFolderFor(null)).toBe(ROOT)
   })
 })

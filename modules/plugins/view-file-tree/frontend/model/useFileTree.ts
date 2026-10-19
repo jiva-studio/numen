@@ -3,9 +3,8 @@
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import type { Entry } from '@/entities/file'
-import { getRenamedPath, type PathRename } from '@/shared/paths'
-import type { FileTree, Folders, ListingRow } from '../types'
+import { getRenamedPath, type PathRename } from '@numen/plugin-sdk'
+import type { Entry, FileTree, Folders, ListingRow } from '../types'
 
 export const ROOT = ''
 

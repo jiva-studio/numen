@@ -15,7 +15,7 @@ import {
   LayoutTemplate,
 } from '@lucide/vue'
 import type { Entry } from '@/entities/file'
-import { getEntryIcon } from './icons'
+import { getEntryIcon } from './entryIcon'
 
 const entry = (over: Partial<Entry> = {}): Entry => ({
   path: 'a',
