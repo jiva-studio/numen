@@ -1,12 +1,6 @@
 package main
 
-import (
-	"os"
-	"os/exec"
-	"path/filepath"
-	"slices"
-	"strings"
-)
+import "github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
 
 var claudeSearchPlaces = []string{
 	"~/.local/bin/claude",
@@ -65,21 +59,21 @@ var cursorSearchPlaces = []string{
 }
 
 // IsClaudeInstalled checks whether Claude Code CLI is available on this machine; it answers completions.
-func IsClaudeInstalled() bool { return locate([]string{"claude"}, claudeSearchPlaces) != "" }
+func IsClaudeInstalled() bool { return agentrun.Locate([]string{"claude"}, claudeSearchPlaces) != "" }
 
 // FindClaude returns the path of the Claude Code CLI, or the bare name where not found.
 func FindClaude() string { return findCommand("claude", []string{"claude"}, claudeSearchPlaces) }
 
 // IsAntigravityInstalled checks whether Antigravity CLI is available on this machine.
 func IsAntigravityInstalled() bool {
-	return locate([]string{"agy", "antigravity"}, antigravitySearchPlaces) != ""
+	return agentrun.Locate([]string{"agy", "antigravity"}, antigravitySearchPlaces) != ""
 }
 
 // IsCodexInstalled checks whether OpenAI Codex CLI is available on this machine.
-func IsCodexInstalled() bool { return locate([]string{"codex"}, codexSearchPlaces) != "" }
+func IsCodexInstalled() bool { return agentrun.Locate([]string{"codex"}, codexSearchPlaces) != "" }
 
 // IsCursorInstalled checks whether Cursor CLI is available on this machine.
-func IsCursorInstalled() bool { return locate([]string{"cursor"}, cursorSearchPlaces) != "" }
+func IsCursorInstalled() bool { return agentrun.Locate([]string{"cursor"}, cursorSearchPlaces) != "" }
 
 // FindAntigravity returns the path of the Antigravity CLI, or the bare name where not found.
 func FindAntigravity() string {
@@ -107,56 +101,10 @@ func GetInstalledAgents() []string {
 	return agents
 }
 
+// findCommand returns the located program, or the bare name that says it is not installed.
 func findCommand(bare string, names, places []string) string {
-	if found := locate(names, places); found != "" {
+	if found := agentrun.Locate(names, places); found != "" {
 		return found
 	}
 	return bare
-}
-
-func locate(names, places []string) string {
-	for _, name := range names {
-		if found, err := exec.LookPath(name); err == nil {
-			return found
-		}
-	}
-	return findInSearchPlaces(places)
-}
-
-func findInSearchPlaces(places []string) string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		home = ""
-	}
-	for _, place := range places {
-		if strings.HasPrefix(place, "~/") {
-			if home == "" {
-				continue
-			}
-			place = filepath.Join(home, place[2:])
-		}
-		matches, err := filepath.Glob(place)
-		if err != nil {
-			continue
-		}
-		for _, match := range matches {
-			if isRunnable(match) {
-				return match
-			}
-		}
-	}
-	return ""
-}
-
-func isRunnable(path string) bool {
-	about, err := os.Stat(path)
-	if err != nil || !about.Mode().IsRegular() || about.Mode().Perm()&0o111 == 0 {
-		return false
-	}
-	entries, err := os.ReadDir(filepath.Dir(path))
-	if err != nil {
-		return false
-	}
-	name := filepath.Base(path)
-	return slices.ContainsFunc(entries, func(e os.DirEntry) bool { return e.Name() == name })
 }

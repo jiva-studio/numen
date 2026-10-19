@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
 )
 
 var claudeSearchPlaces = []string{
@@ -26,6 +26,8 @@ var claudeSearchPlaces = []string{
 	"/nix/var/nix/profiles/default/bin/claude",
 }
 
+// findClaude returns the command the environment names, else the Claude Code CLI where it is
+// installed. Empty is a program nowhere to be found.
 func findClaude() string {
 	if cmd := os.Getenv("NUMEN_CLAUDE_COMMAND"); cmd != "" {
 		return cmd
@@ -33,43 +35,7 @@ func findClaude() string {
 	if cmd := os.Getenv("CLAUDE_COMMAND"); cmd != "" {
 		return cmd
 	}
-	if found, err := exec.LookPath("claude"); err == nil {
-		return found
-	}
-	return findInSearchPlaces(claudeSearchPlaces)
-}
-
-func findInSearchPlaces(places []string) string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		home = ""
-	}
-	for _, place := range places {
-		if strings.HasPrefix(place, "~/") {
-			if home == "" {
-				continue
-			}
-			place = filepath.Join(home, place[2:])
-		}
-		matches, err := filepath.Glob(place)
-		if err != nil {
-			continue
-		}
-		for _, match := range matches {
-			if isRunnable(match) {
-				return match
-			}
-		}
-	}
-	return ""
-}
-
-func isRunnable(path string) bool {
-	info, err := os.Stat(path)
-	if err != nil || !info.Mode().IsRegular() || info.Mode().Perm()&0o111 == 0 {
-		return false
-	}
-	return true
+	return agentrun.Locate([]string{"claude"}, claudeSearchPlaces)
 }
 
 func writeMcpConfig(url, token string) (string, error) {
