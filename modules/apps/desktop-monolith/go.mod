@@ -11,7 +11,15 @@ require (
 )
 
 require (
-	connectrpc.com/connect v1.21.1 // indirect
+	github.com/andybalholm/cascadia v1.3.3 // indirect
+	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de // indirect
+	github.com/go-shiori/dom v0.0.0-20230515143342-73569d674e1c // indirect
+	github.com/go-shiori/go-readability v0.0.0-20251205110129-5db1dc9836f0 // indirect
+	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
+)
+
+require (
+	connectrpc.com/connect v1.21.1
 	github.com/adrg/xdg v0.5.3 // indirect
 	github.com/coder/websocket v1.8.14 // indirect
 	github.com/danieljoos/wincred v1.2.3 // indirect
@@ -22,8 +30,13 @@ require (
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go v0.0.0 // indirect
+	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent v0.0.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault v0.0.0 // indirect
-	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0 // indirect
+	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/agent v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/agent-claude v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/downloader v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/proofreading v0.0.0
 	github.com/jolestar/go-commons-pool/v2 v2.1.2 // indirect
 	github.com/klippa-app/go-pdfium v1.21.3 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -67,3 +80,13 @@ replace github.com/jiva-studio/numen/modules/plugins/reader-pdf => ../../plugins
 replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault => ../../libs/plugin-sdk-go/vault
 
 replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go => ../../libs/plugin-sdk-go
+
+replace github.com/jiva-studio/numen/modules/plugins/agent => ../../plugins/agent
+
+replace github.com/jiva-studio/numen/modules/plugins/agent-claude => ../../plugins/agent-claude
+
+replace github.com/jiva-studio/numen/modules/plugins/proofreading => ../../plugins/proofreading
+
+replace github.com/jiva-studio/numen/modules/plugins/downloader => ../../plugins/downloader
+
+replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent => ../../libs/plugin-sdk-go/agent
