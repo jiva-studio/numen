@@ -5,7 +5,13 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
-import type { PluginContext, VaultFiles, VaultNotes, WorkspaceHost } from '@numen/plugin-sdk'
+import type {
+  AgentHost,
+  PluginContext,
+  VaultFiles,
+  VaultNotes,
+  WorkspaceHost,
+} from '@numen/plugin-sdk'
 import { createPluginContext } from './context'
 import type { PluginContextHost } from './types'
 
@@ -35,12 +41,19 @@ const createServices = () => {
     importUrl: vi.fn(() => Promise.resolve('u.md')),
     importUrls: vi.fn(() => Promise.resolve(['u.md'])),
   } as unknown as VaultFiles
+  const agent = {
+    ask: vi.fn(),
+    finish: vi.fn(() => Promise.resolve()),
+    resolve: vi.fn(() => Promise.resolve(new Map())),
+    getUnreachable: vi.fn(() => ''),
+  } as unknown as AgentHost
   const host = {
+    getAgent: () => agent,
     getWorkspace: () => workspace,
     getNotes: () => notes,
     getFiles: () => files,
   } as unknown as PluginContextHost
-  return { host, workspace, notes, files }
+  return { host, workspace, notes, files, agent }
 }
 
 const createContext = (permissions: readonly string[]) => {
@@ -176,6 +189,51 @@ describe('a command a plugin runs over the vault', () => {
   })
 })
 
+const ASKING: Record<string, [string, Call]> = {
+  ask: [
+    'ai:complete',
+    (c) =>
+      c.agent!.ask({
+        question: 'q',
+        focus: '',
+        conversation: 'c',
+        signal: new AbortController().signal,
+      }),
+  ],
+  finish: ['ai:complete', (c) => c.agent!.finish('c')],
+  resolve: ['vault:read', (c) => c.agent!.resolve(['name://A'])],
+}
+
+describe('the agent a plugin asks', () => {
+  it.each(Object.entries(ASKING))(
+    'is refused through %s without its permission',
+    async (_, [permission, call]) => {
+      const { context } = createContext([])
+
+      await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(
+        new RegExp(permission),
+      )
+    },
+  )
+
+  it.each(Object.entries(ASKING))(
+    'is reached through %s with its permission',
+    async (name, [permission, call]) => {
+      const { context, agent } = createContext([permission])
+
+      await call(context)
+
+      expect(agent[name as 'ask' | 'finish' | 'resolve']).toHaveBeenCalled()
+    },
+  )
+
+  it('reads why it cannot be reached without a permission', () => {
+    const { context } = createContext([])
+
+    expect(context.agent!.getUnreachable()).toBe('')
+  })
+})
+
 const PLUGINS = resolve(import.meta.dirname, '../../../../../../../plugins')
 
 const readPermissions = (plugin: string): readonly string[] =>
@@ -191,6 +249,12 @@ describe('the manifest of a plugin that writes through the window', () => {
       name: 'a',
       source: 'note',
     })
+  })
+
+  it('view-agent-chat declares what the agent it asks needs', async () => {
+    const { context } = createContext(readPermissions('view-agent-chat'))
+
+    await Promise.all(Object.values(ASKING).map(([, call]) => call(context)))
   })
 
   it('view-plex-graph declares what the notes it joins and makes need', async () => {

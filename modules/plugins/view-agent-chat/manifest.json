@@ -1,0 +1,15 @@
+{
+  "id": "md.numen.view-agent-chat",
+  "name": "Agent Chat",
+  "version": "1.0.0",
+  "protocol": 1,
+  "description": "The conversation tab where the person asks the agent about the vault",
+  "capabilities": ["view.agent-chat", "ui.view"],
+  "targets": ["desktop.editor"],
+  "activationEvents": ["onStartupFinished", "onView:agent"],
+  "permissions": ["ai:complete", "vault:read"],
+  "frontend": {
+    "entrypoint": "dist/index.js",
+    "styles": "dist/styles.css"
+  }
+}

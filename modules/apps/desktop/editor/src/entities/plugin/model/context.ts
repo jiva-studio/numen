@@ -2,6 +2,7 @@
  * Host implementation of PluginContext conforming to @numen/plugin-sdk.
  */
 import type {
+  AgentHost,
   AgentProviderRegistration,
   CommandRegistration,
   Disposable,
@@ -112,6 +113,28 @@ function guardFiles(files: VaultFiles, requireWrite: (operation: string) => void
   }
 }
 
+/** The agent of the window: asking it needs ai:complete, and naming vault files needs vault:read. */
+function guardAgent(
+  agent: AgentHost,
+  requirePerm: (permission: string, operation: string) => void,
+): AgentHost {
+  return {
+    ...agent,
+    ask: (query) => {
+      requirePerm('ai:complete', 'agent.ask')
+      return agent.ask(query)
+    },
+    finish: async (conversation) => {
+      requirePerm('ai:complete', 'agent.finish')
+      return agent.finish(conversation)
+    },
+    resolve: async (written) => {
+      requirePerm('vault:read', 'agent.resolve')
+      return agent.resolve(written)
+    },
+  }
+}
+
 /** The window, its commands that change the vault held to `vault:write`. */
 function guardWorkspace(
   workspace: WorkspaceHost,
@@ -143,6 +166,7 @@ export function createPluginContext(
   const workspace = host.getWorkspace?.()
   const notes = host.getNotes?.()
   const files = host.getFiles?.()
+  const agent = host.getAgent?.()
 
   return {
     pluginId,
@@ -150,6 +174,7 @@ export function createPluginContext(
     ...(workspace ? { workspace: guardWorkspace(workspace, requireWrite) } : {}),
     ...(notes ? { notes: guardNotes(notes, requireWrite) } : {}),
     ...(files ? { files: guardFiles(files, requireWrite) } : {}),
+    ...(agent ? { agent: guardAgent(agent, requirePerm) } : {}),
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
     registerTabKind: <State>(reg: TabKindRegistration<State>) =>

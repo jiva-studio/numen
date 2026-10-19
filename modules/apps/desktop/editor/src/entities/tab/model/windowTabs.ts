@@ -73,6 +73,7 @@ export function useWindowTabs() {
     openPlacedTabs,
     navigateTab: navigation.navigateTab,
     navigateTabsAt: navigation.navigateTabsAt,
+    sendText: navigation.sendText,
     getTab: queries.getTab,
     getTabStateIn: queries.getTabStateIn,
     createTab: openers.createTab,
@@ -305,7 +306,20 @@ function createTabNavigation(
     )
   }
 
-  return { navigateTab, navigateTabsAt }
+  /**
+   * Text put in the tab of a kind the person was last in, and put in front; a
+   * tab of the kind opened to take it where the window holds none.
+   */
+  const sendText = async (kind: string, text: string): Promise<string> => {
+    const last = [...open.value].filter(([, one]) => one.kind.kind === kind).at(-1)
+    const id = last?.[0] ?? (await openers.openTabOfKind(kind))
+    const one = open.value.get(id)
+    one?.kind.receiveText?.(one.state, text)
+    openers.show(id)
+    return id
+  }
+
+  return { navigateTab, navigateTabsAt, sendText }
 }
 
 interface WindowHandleDeps {

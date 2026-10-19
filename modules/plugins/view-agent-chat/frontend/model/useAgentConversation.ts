@@ -9,11 +9,11 @@ import {
   type Turn,
   type AgentModelOption,
 } from '@numen/ui'
-import { areLinkTargetsEqual, parseLinkTarget, extractLinkTargets } from '@/entities/note'
+import { areLinkTargetsEqual, parseLinkTarget, extractLinkTargets } from '../lib/links'
 import type { AgentTabDeps } from '../types'
 
 export { createTabTitle } from '../lib/title'
-export type { AgentTabDeps, NoteRef } from '../types'
+export type { AgentTabDeps } from '../types'
 
 /** What one agent tab holds. */
 export type AgentTabState = ReturnType<typeof useAgentConversation>

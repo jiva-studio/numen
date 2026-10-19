@@ -9,19 +9,14 @@ type MockSeen = {
   writeMessage: unknown
   dragged: unknown
   destinations: unknown
-  about: () => unknown
 }
 
 const hoisted = vi.hoisted(() => ({
-  built: {} as Record<'agent' | 'files', MockSeen>,
-  agents: {} as Record<string, unknown>,
+  built: {} as Record<'files', MockSeen>,
 }))
 
-vi.mock('./kinds/agent', () => ({
-  createAgentKind: (args: unknown) => {
-    hoisted.built.agent = args as MockSeen
-    return hoisted.agents
-  },
+vi.mock('./agentPort', () => ({
+  agentPort: { ask: vi.fn(), finish: vi.fn(() => Promise.resolve()) },
 }))
 vi.mock('./fileServices', () => ({
   createFileMakers: (args: unknown) => {
@@ -44,6 +39,7 @@ const create = ({ plex, hasPlexKind = true }: { plex?: Plex; hasPlexKind?: boole
     tabOpeners: { openFileAt: vi.fn(), openFile: vi.fn(() => Promise.resolve()) },
     held: {
       registerKinds: vi.fn(),
+      sendText: vi.fn(() => Promise.resolve('agent:1')),
       hasKind: vi.fn(() => hasPlexKind),
       navigateTab: vi.fn(() => Promise.resolve('plex:1')),
       navigateTabsAt: vi.fn(() => Promise.resolve()),
@@ -61,8 +57,7 @@ const create = ({ plex, hasPlexKind = true }: { plex?: Plex; hasPlexKind?: boole
 }
 
 beforeEach(() => {
-  hoisted.built = {} as Record<'agent' | 'files', MockSeen>
-  hoisted.agents = { kind: 'agent', askQuestion: vi.fn(() => Promise.resolve()) }
+  hoisted.built = {} as Record<'files', MockSeen>
 })
 
 describe('the window kinds', () => {
@@ -79,10 +74,10 @@ describe('the window kinds', () => {
     expect(window.dragged.value).toEqual([])
   })
 
-  it('registers the kinds of the editors, the settings and each window kind, in that order', () => {
+  it('registers the kinds of the editors and the settings, in that order', () => {
     const { deps } = create()
 
-    expect(deps.held.registerKinds).toHaveBeenCalledWith(['note', 'deck', 'settings', 'agent'])
+    expect(deps.held.registerKinds).toHaveBeenCalledWith(['note', 'deck', 'settings'])
   })
 
   it('makes files through the makers it hands the commands, and reveals a path in the files tab', async () => {
@@ -103,19 +98,22 @@ describe('the window kinds', () => {
   })
 })
 
-describe('what the agent is about', () => {
+describe('the note the window stands on', () => {
   it('is what the plex the person was last in is over', () => {
-    create({ plex: { target: { path: 'Ideas/Plan.md', title: 'The plan' } } })
+    const { window } = create({ plex: { target: { path: 'Ideas/Plan.md', title: 'The plan' } } })
 
-    expect(hoisted.built.agent.about()).toEqual({ path: 'Ideas/Plan.md', title: 'The plan' })
+    expect(window.services.workspace?.getNoteInFocus()).toEqual({
+      path: 'Ideas/Plan.md',
+      title: 'The plan',
+    })
   })
 
   it('is no note at all in a window holding no plex, or one over nothing', () => {
-    create()
-    expect(hoisted.built.agent.about()).toEqual({ path: '', title: '' })
-
-    create({ plex: {} })
-    expect(hoisted.built.agent.about()).toEqual({ path: '', title: '' })
+    expect(create().window.services.workspace?.getNoteInFocus()).toEqual({ path: '', title: '' })
+    expect(create({ plex: {} }).window.services.workspace?.getNoteInFocus()).toEqual({
+      path: '',
+      title: '',
+    })
   })
 })
 
@@ -168,18 +166,36 @@ describe('the destinations', () => {
 
 describe('the services the window gives a plugin', () => {
   it('ask the agent, share what is dragged and stand on the note the vault opens with', () => {
-    const { window, writer } = create()
+    const { deps, window, writer } = create()
     const { workspace, notes } = window.services
 
     workspace?.ask('what is this?')
     workspace?.setDraggedPaths(['a.md'])
     workspace?.showError('the link was not written')
 
-    expect(hoisted.agents.askQuestion).toHaveBeenCalledWith('what is this?')
+    expect(deps.held.sendText).toHaveBeenCalledWith('agent', 'what is this?')
     expect(window.dragged.value).toStrictEqual(['a.md'])
     expect(writer).toHaveBeenCalledWith('the link was not written', 'error')
     expect(workspace?.openingPath.value).toBe('Root.md')
     expect(workspace?.headingDisplay.count.value).toBe(2)
     expect(notes?.creatableRelations).toStrictEqual(['parent', 'child', 'jump'])
+  })
+
+  it('tell the person why a question could not be put to the agent', async () => {
+    const { deps, window, writer } = create()
+    vi.mocked(deps.held.sendText).mockRejectedValueOnce(new Error('no agent tab'))
+
+    window.services.workspace?.ask('what is this?')
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(writer).toHaveBeenCalledWith(expect.any(String), 'error')
+  })
+
+  it('offer the agent the window asks, over the port it talks on', async () => {
+    const { window } = create()
+
+    expect(window.services.agent).toBeDefined()
+    await expect(window.services.agent?.finish('conversation:1')).resolves.toBeUndefined()
   })
 })
