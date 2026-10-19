@@ -56,8 +56,8 @@ func TestQuoteShellEscapesSingleQuotes(t *testing.T) {
 func runSpec(req *numenv1.AskAgentRequest) agentrun.Spec {
 	return agentrun.Spec{
 		Root: req.GetRoot(),
-		Build: func(ctx context.Context) (*exec.Cmd, func()) {
-			return exec.CommandContext(ctx, req.GetCommand()[0], req.GetCommand()[1:]...), nil
+		Build: func(ctx context.Context) (*exec.Cmd, func(), error) {
+			return exec.CommandContext(ctx, req.GetCommand()[0], req.GetCommand()[1:]...), nil, nil
 		},
 		NewHandler: func(*agentrun.Reader) func(map[string]any) { return func(map[string]any) {} },
 	}

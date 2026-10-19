@@ -1,11 +1,13 @@
 package main
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/agenttest"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/agenttest"
 
 	"connectrpc.com/connect"
 
@@ -103,5 +105,26 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 	}
 	if !agenttest.IsDir(dir, root) {
 		t.Errorf("started in %q, want %q", dir, root)
+	}
+}
+
+// A home that cannot be set up is reported to the stream as the reason the run stopped.
+func TestAskAgentReportsAHomeThatCannotBeSetUp(t *testing.T) {
+	t.Setenv("TMPDIR", "/nonexistent/tmp")
+	stream, err := agenttest.Serve(t, &agentServer{}).AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Command:  []string{"agy"},
+		ToolsUrl: "http://127.0.0.1:1/mcp",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stopped string
+	for stream.Receive() {
+		if reason := stream.Msg().GetStopped(); reason != "" {
+			stopped = reason
+		}
+	}
+	if !strings.Contains(stopped, "set up the Antigravity home") {
+		t.Errorf("the run stopped with %q", stopped)
 	}
 }

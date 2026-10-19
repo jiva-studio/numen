@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/agenttest"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -14,6 +13,8 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/agenttest"
 )
 
 func TestCodexModelCacheClearsFailedKeyOnSuccess(t *testing.T) {

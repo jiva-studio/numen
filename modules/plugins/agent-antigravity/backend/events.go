@@ -73,6 +73,7 @@ func (r *eventReader) handleStreamEvent(rawMap map[string]any) {
 					},
 				},
 			})
+			r.reader.CountStep()
 			r.currentTool = ""
 			r.currentArgs.Reset()
 		}
@@ -131,6 +132,7 @@ func (r *eventReader) handleToolCalls(rawMap map[string]any) {
 				},
 			},
 		})
+		r.reader.CountStep()
 	}
 }
 

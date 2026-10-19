@@ -4,6 +4,7 @@ package agentrun_test
 
 import (
 	"context"
+	"errors"
 	"os/exec"
 	"strings"
 	"testing"
@@ -15,8 +16,8 @@ import (
 // shell makes a spec that runs the script and hands each event to handle.
 func shell(script string, handle func(r *agentrun.Reader, event map[string]any)) agentrun.Spec {
 	return agentrun.Spec{
-		Build: func(ctx context.Context) (*exec.Cmd, func()) {
-			return exec.CommandContext(ctx, "sh", "-c", script), nil
+		Build: func(ctx context.Context) (*exec.Cmd, func(), error) {
+			return exec.CommandContext(ctx, "sh", "-c", script), nil, nil
 		},
 		NewHandler: func(r *agentrun.Reader) func(map[string]any) {
 			return func(event map[string]any) { handle(r, event) }
@@ -150,9 +151,9 @@ func TestStartCleansUpWhenTheRunIsOver(t *testing.T) {
 	cleaned := make(chan struct{})
 	spec := shell("exit 0", nil)
 	build := spec.Build
-	spec.Build = func(ctx context.Context) (*exec.Cmd, func()) {
-		cmd, _ := build(ctx)
-		return cmd, func() { close(cleaned) }
+	spec.Build = func(ctx context.Context) (*exec.Cmd, func(), error) {
+		cmd, _, _ := build(ctx)
+		return cmd, func() { close(cleaned) }, nil
 	}
 	var reg agentrun.Registry
 
@@ -168,8 +169,8 @@ func TestStartCleansUpWhenTheRunIsOver(t *testing.T) {
 func TestStartCleansUpAndFailsWhenTheProgramIsMissing(t *testing.T) {
 	cleaned := false
 	spec := agentrun.Spec{
-		Build: func(ctx context.Context) (*exec.Cmd, func()) {
-			return exec.CommandContext(ctx, "/nonexistent/program"), func() { cleaned = true }
+		Build: func(ctx context.Context) (*exec.Cmd, func(), error) {
+			return exec.CommandContext(ctx, "/nonexistent/program"), func() { cleaned = true }, nil
 		},
 	}
 	var reg agentrun.Registry
@@ -259,6 +260,71 @@ func TestStartKillsTheChildThatIgnoresTheClosedOutputAtTheStepLimit(t *testing.T
 	got := drain(work)
 
 	if len(got) != 2 || got[1].GetStopped() == "" {
+		t.Errorf("got %v", got)
+	}
+}
+
+func TestStartReportsTheErrorOfTheBuild(t *testing.T) {
+	spec := agentrun.Spec{
+		Build: func(context.Context) (*exec.Cmd, func(), error) { return nil, nil, errors.New("no home") },
+	}
+	var reg agentrun.Registry
+
+	if _, err := agentrun.Start(t.Context(), &reg, spec); err == nil || err.Error() != "no home" {
+		t.Errorf("got %v", err)
+	}
+}
+
+func TestStartReportsAFailedRunAsTheReasonItStopped(t *testing.T) {
+	var reg agentrun.Registry
+	work, err := agentrun.Start(t.Context(), &reg, shell(`echo one; echo "not signed in" >&2; exit 3`, nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := drain(work)
+
+	if len(got) != 2 || got[1].GetStopped() != "not signed in" {
+		t.Errorf("got %v", got)
+	}
+}
+
+func TestStartReportsALineTooLongAsTheReasonItStopped(t *testing.T) {
+	var reg agentrun.Registry
+	work, err := agentrun.Start(t.Context(), &reg, shell(`head -c 5000000 /dev/zero | tr '\0' x; echo`, nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := drain(work)
+
+	if len(got) != 1 || got[0].GetStopped() == "" {
+		t.Errorf("got %v", got)
+	}
+}
+
+func TestStartReportsNothingForARunThatEndedWell(t *testing.T) {
+	var reg agentrun.Registry
+	work, err := agentrun.Start(t.Context(), &reg, shell(`echo one`, nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := drain(work); len(got) != 1 {
+		t.Errorf("got %v", got)
+	}
+}
+
+func TestStartStopsAtTheStepLimitOfCountedSteps(t *testing.T) {
+	spec := shell(`while true; do echo '{}'; done`,
+		func(r *agentrun.Reader, _ map[string]any) { r.CountStep() })
+	spec.MaxSteps = 3
+	var reg agentrun.Registry
+
+	work, err := agentrun.Start(t.Context(), &reg, spec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := drain(work)
+
+	if len(got) != 1 || got[0].GetStopped() != "reached maximum limit of 3 steps" {
 		t.Errorf("got %v", got)
 	}
 }

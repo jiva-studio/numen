@@ -1,9 +1,11 @@
 package main
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/agenttest"
 	"slices"
+	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/agenttest"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
@@ -22,7 +24,7 @@ func TestTheSessionOfTheConversationIsHandedToTheNextRun(t *testing.T) {
 	var reg agentrun.Registry
 	reg.SetSession("c-1", "s-1")
 
-	cmd, _ := makeAntigravityCommand(t.Context(), &numenv1.AskAgentRequest{Conversation: "c-1", Prompt: "q"}, &reg)
+	cmd, _, _ := makeAntigravityCommand(t.Context(), &numenv1.AskAgentRequest{Conversation: "c-1", Prompt: "q"}, &reg)
 
 	if !slices.Contains(cmd.Args, "--conversation") || !slices.Contains(cmd.Args, "s-1") {
 		t.Errorf("the arguments are %v", cmd.Args)
@@ -51,5 +53,58 @@ func TestTheSessionAndTheContentOfAntigravityAreReported(t *testing.T) {
 	}
 	if session := reg.GetSession("c-1"); session != "s-1" {
 		t.Errorf("expected session s-1, got %q", session)
+	}
+}
+
+func TestAFailedHomeSetupEndsTheRunBeforeItStarts(t *testing.T) {
+	t.Setenv("TMPDIR", "/nonexistent/tmp")
+	var reg agentrun.Registry
+
+	_, err := agentrun.Start(t.Context(), &reg, newSpec(
+		&numenv1.AskAgentRequest{Command: []string{"agy"}, ToolsUrl: "http://127.0.0.1:1/mcp"}, &reg))
+
+	if err == nil || !strings.Contains(err.Error(), "set up the Antigravity home") {
+		t.Errorf("got %v", err)
+	}
+}
+
+func TestTheToolCallsOfAntigravityAreCountedAgainstTheStepLimit(t *testing.T) {
+	script := agenttest.WriteScript(t, "agy",
+		`while true; do echo '{"tool_calls":[{"name":"read_note","arguments":{}}]}'; done`+"\n")
+	var reg agentrun.Registry
+
+	w, err := agentrun.Start(t.Context(), &reg, newSpec(
+		&numenv1.AskAgentRequest{Command: []string{script}, MaxSteps: 2}, &reg))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []*numenv1.AskAgentResponse
+	for resp := range w.Output {
+		got = append(got, resp)
+	}
+	if last := got[len(got)-1]; last.GetStopped() != "reached maximum limit of 2 steps" {
+		t.Errorf("the last step is %v", last)
+	}
+}
+
+func TestAStreamedToolCallIsCountedAgainstTheStepLimit(t *testing.T) {
+	script := agenttest.WriteScript(t, "agy",
+		`while true; do
+echo '{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","name":"read_note"}}}'
+echo '{"type":"stream_event","event":{"type":"content_block_stop"}}'
+done`+"\n")
+	var reg agentrun.Registry
+
+	w, err := agentrun.Start(t.Context(), &reg, newSpec(
+		&numenv1.AskAgentRequest{Command: []string{script}, MaxSteps: 1}, &reg))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []*numenv1.AskAgentResponse
+	for resp := range w.Output {
+		got = append(got, resp)
+	}
+	if last := got[len(got)-1]; last.GetStopped() != "reached maximum limit of 1 steps" {
+		t.Errorf("the last step is %v", last)
 	}
 }

@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/agenttest"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/agenttest"
 
 	"connectrpc.com/connect"
 
@@ -198,5 +199,25 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 	}
 	if !agenttest.IsDir(dir, root) {
 		t.Errorf("started in %q, want %q", dir, root)
+	}
+}
+
+// A program that fails is reported to the stream as the reason the run stopped.
+func TestAskAgentReportsAFailedRun(t *testing.T) {
+	script := agenttest.WriteScript(t, "codex", "echo 'not signed in' >&2\nexit 2\n")
+	stream, err := agenttest.Serve(t, &agentServer{}).AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Command: []string{script},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stopped string
+	for stream.Receive() {
+		if reason := stream.Msg().GetStopped(); reason != "" {
+			stopped = reason
+		}
+	}
+	if stopped != "not signed in" {
+		t.Errorf("the run stopped with %q", stopped)
 	}
 }

@@ -30,7 +30,9 @@ func (s *agentServer) AskAgent(
 
 	work, err := agentrun.Start(ctx, &s.Registry, newSpec(req.Msg, &s.Registry))
 	if err != nil {
-		return fmt.Errorf("start agent run: %w", err)
+		return stream.Send(&numenv1.AskAgentResponse{
+			Step: &numenv1.AskAgentResponse_Stopped{Stopped: err.Error()},
+		})
 	}
 	return agentrun.Relay(ctx, work, stream)
 }

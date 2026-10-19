@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 
@@ -16,7 +17,7 @@ func newSpec(req *numenv1.AskAgentRequest, reg *agentrun.Registry) agentrun.Spec
 		MaxSteps:     int(req.GetMaxSteps()),
 		Root:         req.GetRoot(),
 		Token:        req.GetToolsToken(),
-		Build: func(ctx context.Context) (*exec.Cmd, func()) {
+		Build: func(ctx context.Context) (*exec.Cmd, func(), error) {
 			return makeAntigravityCommand(ctx, req, reg)
 		},
 		NewHandler: newEventHandler,
@@ -32,7 +33,7 @@ func resolveCommand(command []string) (string, []string) {
 
 func makeAntigravityCommand(
 	running context.Context, req *numenv1.AskAgentRequest, reg *agentrun.Registry,
-) (*exec.Cmd, func()) {
+) (*exec.Cmd, func(), error) {
 	binName, baseArgs := resolveCommand(req.GetCommand())
 	args := append([]string{}, baseArgs...)
 	args = append(args,
@@ -50,10 +51,11 @@ func makeAntigravityCommand(
 	cmd := exec.CommandContext(running, binName, args...)
 	if req.GetToolsUrl() != "" {
 		tempHome, clean, err := setupAntigravityHome(Endpoint{URL: req.GetToolsUrl(), Token: req.GetToolsToken()})
-		if err == nil {
-			cmd.Env = append(os.Environ(), "HOME="+tempHome)
-			return cmd, clean
+		if err != nil {
+			return nil, nil, fmt.Errorf("set up the Antigravity home: %w", err)
 		}
+		cmd.Env = append(os.Environ(), "HOME="+tempHome)
+		return cmd, clean, nil
 	}
-	return cmd, nil
+	return cmd, nil, nil
 }

@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/agenttest"
 	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/agenttest"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
@@ -47,5 +48,43 @@ func TestTheToolCallsOfCodexAreReported(t *testing.T) {
 	}
 	if got[2].GetSaid() != "plain text\n" {
 		t.Errorf("expected the plain line said, got %v", got[2])
+	}
+}
+
+func TestTheMessagesOfCodexAreSaid(t *testing.T) {
+	script := agenttest.WriteScript(t, "codex",
+		`echo '{"type":"item.completed","item":{"id":"i0","type":"agent_message","text":"The answer."}}'`+"\n"+
+			`echo '{"type":"item.completed","item":{"type":"agent_message","text":""}}'`+"\n"+
+			`echo '{"type":"item.completed","item":{"type":"reasoning","text":"hidden"}}'`+"\n")
+	var reg agentrun.Registry
+
+	w, err := agentrun.Start(t.Context(), &reg, newSpec(&numenv1.AskAgentRequest{Command: []string{script}}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []*numenv1.AskAgentResponse
+	for resp := range w.Output {
+		got = append(got, resp)
+	}
+	if len(got) != 1 || got[0].GetSaid() != "The answer." {
+		t.Errorf("got %v", got)
+	}
+}
+
+func TestACodexToolCallNamesItsToolByTheToolField(t *testing.T) {
+	script := agenttest.WriteScript(t, "codex",
+		`echo '{"type":"item.started","item":{"type":"mcp_tool_call","server":"numen","tool":"search_notes","arguments":{"q":"x"}}}'`+"\n")
+	var reg agentrun.Registry
+
+	w, err := agentrun.Start(t.Context(), &reg, newSpec(&numenv1.AskAgentRequest{Command: []string{script}}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []*numenv1.AskAgentResponse
+	for resp := range w.Output {
+		got = append(got, resp)
+	}
+	if len(got) != 1 || got[0].GetToolCall().GetTool() != "search_notes" {
+		t.Errorf("got %v", got)
 	}
 }

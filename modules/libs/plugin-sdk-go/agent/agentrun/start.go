@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/completion"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -29,8 +30,8 @@ type Spec struct {
 	// Token is handed to the child as NUMEN_TOKEN. Empty hands none.
 	Token string
 	// Build makes the command under ctx, not started, and the function that cleans up after it. A
-	// nil cleanup is none. A command with no Env runs with the environment of the plugin.
-	Build func(ctx context.Context) (*exec.Cmd, func())
+	// nil cleanup is none. An error ends the run before it starts. A command with no Env runs with the environment of the plugin.
+	Build func(ctx context.Context) (*exec.Cmd, func(), error)
 	// NewHandler is called once for the run and returns what is called with each event of the
 	// output.
 	NewHandler func(r *Reader) func(event map[string]any)
@@ -59,6 +60,10 @@ func (r *Reader) Send(resp *numenv1.AskAgentResponse) {
 
 // SetSession keeps the session the next task of the conversation is asked in. A run in no
 // conversation keeps none.
+// CountStep counts one step of the run, for a program whose stream does not say when a tool
+// finished.
+func (r *Reader) CountStep() { r.done++ }
+
 func (r *Reader) SetSession(session string) {
 	if r.conversation != "" && session != "" {
 		r.registry.SetSession(r.conversation, session)
@@ -68,18 +73,22 @@ func (r *Reader) SetSession(session string) {
 func (r *Reader) isOverLimit() bool { return r.limit > 0 && r.done >= r.limit }
 
 func (r *Reader) reportLimit() {
-	r.Send(&numenv1.AskAgentResponse{
-		Step: &numenv1.AskAgentResponse_Stopped{
-			Stopped: fmt.Sprintf("reached maximum limit of %d steps", r.limit),
-		},
-	})
+	r.reportStop(fmt.Sprintf("reached maximum limit of %d steps", r.limit))
+}
+
+func (r *Reader) reportStop(reason string) {
+	r.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Stopped{Stopped: reason}})
 }
 
 // Start starts the child of the spec and returns the work that reads its output. A line that is
 // a JSON object goes to the handler; any other line is said as it is.
 func Start(ctx context.Context, reg *Registry, spec Spec) (*Work, error) {
 	running, stop := context.WithCancel(ctx)
-	cmd, cleanup := spec.Build(running)
+	cmd, cleanup, err := spec.Build(running)
+	if err != nil {
+		stop()
+		return nil, err
+	}
 	if cleanup == nil {
 		cleanup = func() {}
 	}
@@ -91,6 +100,10 @@ func Start(ctx context.Context, reg *Registry, spec Spec) (*Work, error) {
 	}
 	if spec.Token != "" {
 		cmd.Env = append(cmd.Env, "NUMEN_TOKEN="+spec.Token)
+	}
+	var stderr strings.Builder
+	if cmd.Stderr == nil {
+		cmd.Stderr = &stderr
 	}
 	Supervise(cmd)
 
@@ -127,6 +140,7 @@ func Start(ctx context.Context, reg *Registry, spec Spec) (*Work, error) {
 		}()
 		scanner := bufio.NewScanner(stdout)
 		scanner.Buffer(nil, maxLine)
+		isLimited := false
 		for scanner.Scan() {
 			line := scanner.Bytes()
 			var event map[string]any
@@ -137,6 +151,7 @@ func Start(ctx context.Context, reg *Registry, spec Spec) (*Work, error) {
 			}
 			if reader.isOverLimit() {
 				reader.reportLimit()
+				isLimited = true
 				stop()
 				break
 			}
@@ -148,8 +163,18 @@ func Start(ctx context.Context, reg *Registry, spec Spec) (*Work, error) {
 			default:
 			}
 		}
+		scanErr := scanner.Err()
 		_ = stdout.Close()
-		_ = cmd.Wait()
+		waitErr := cmd.Wait()
+		if isLimited || running.Err() != nil {
+			return
+		}
+		switch {
+		case scanErr != nil:
+			reader.reportStop(scanErr.Error())
+		case waitErr != nil:
+			reader.reportStop(completion.FailureMessage(waitErr, stderr.String()))
+		}
 	}()
 	return w, nil
 }

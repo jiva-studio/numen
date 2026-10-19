@@ -16,8 +16,8 @@ func newSpec(req *numenv1.AskAgentRequest) agentrun.Spec {
 		MaxSteps:     int(req.GetMaxSteps()),
 		Root:         req.GetRoot(),
 		Token:        req.GetToolsToken(),
-		Build: func(ctx context.Context) (*exec.Cmd, func()) {
-			return makeCodexCommand(ctx, req), nil
+		Build: func(ctx context.Context) (*exec.Cmd, func(), error) {
+			return makeCodexCommand(ctx, req), nil, nil
 		},
 		NewHandler: newEventHandler,
 	}

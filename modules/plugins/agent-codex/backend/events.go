@@ -15,27 +15,43 @@ func newEventHandler(r *agentrun.Reader) func(map[string]any) {
 func handleCodexEvent(r *agentrun.Reader, rawMap map[string]any) {
 	evType, _ := rawMap["type"].(string)
 	item, _ := rawMap["item"].(map[string]any)
-	if item == nil || item["type"] != "mcp_tool_call" {
+	if item == nil {
 		return
 	}
 
-	switch evType {
-	case "item.started":
-		name, _ := item["name"].(string)
-		args, _ := json.Marshal(item["arguments"])
+	switch {
+	case evType == "item.completed" && item["type"] == "agent_message":
+		if text, _ := item["text"].(string); text != "" {
+			r.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Said{Said: text}})
+		}
+	case evType == "item.started" && item["type"] == "mcp_tool_call":
 		r.Send(&numenv1.AskAgentResponse{
 			Step: &numenv1.AskAgentResponse_ToolCall{
 				ToolCall: &numenv1.ToolCall{
-					Tool:  name,
-					About: string(args),
+					Tool:  getToolName(item),
+					About: getToolArguments(item),
 				},
 			},
 		})
-	case "item.completed":
+	case evType == "item.completed" && item["type"] == "mcp_tool_call":
 		r.Send(&numenv1.AskAgentResponse{
 			Step: &numenv1.AskAgentResponse_ToolFinished{
 				ToolFinished: &numenv1.ToolFinished{},
 			},
 		})
 	}
+}
+
+// getToolName is the tool an mcp_tool_call item names: its tool, else its name.
+func getToolName(item map[string]any) string {
+	if tool, _ := item["tool"].(string); tool != "" {
+		return tool
+	}
+	name, _ := item["name"].(string)
+	return name
+}
+
+func getToolArguments(item map[string]any) string {
+	args, _ := json.Marshal(item["arguments"])
+	return string(args)
 }

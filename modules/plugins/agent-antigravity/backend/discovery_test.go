@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/agenttest"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/agenttest"
 )
 
 func TestDiscoveryWithMockBins(t *testing.T) {
