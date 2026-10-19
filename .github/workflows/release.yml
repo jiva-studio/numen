@@ -174,7 +174,7 @@ jobs:
           fi
           cat "$RUNNER_TEMP/notes.md"
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: notes
           path: ${{ runner.temp }}/notes.md
@@ -199,7 +199,7 @@ jobs:
             modules/apps/desktop/go.sum
             modules/libs/core/go.sum
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
@@ -421,7 +421,7 @@ jobs:
 
           tar czf "$RUNNER_TEMP/numen-nix.tar.gz" -C "$flake" .
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: numen-linux-amd64
           path: |
@@ -432,7 +432,7 @@ jobs:
 
       # The two recipes stand on their own: they are read rather than run, and
       # they go on the shelf under names with no version in them.
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: numen-linux-recipes
           path: |
@@ -456,7 +456,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: numen-linux-amd64
           path: ${{ runner.temp }}/built
@@ -517,7 +517,7 @@ jobs:
             *) echo "::error::the sandboxed window calls itself $said"; exit 1 ;;
           esac
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: numen-linux-amd64-flatpak
           path: ${{ runner.temp }}/numen_*_linux_amd64.flatpak
@@ -537,7 +537,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: numen-linux-amd64
           path: ${{ runner.temp }}/built
@@ -581,7 +581,7 @@ jobs:
           mv "$built" "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.snap"
           ls -la "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.snap"
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: numen-linux-amd64-snap
           path: ${{ runner.temp }}/numen_*_linux_amd64.snap
@@ -608,7 +608,7 @@ jobs:
             modules/apps/desktop/go.sum
             modules/libs/core/go.sum
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
@@ -695,7 +695,7 @@ jobs:
             modules/apps/desktop/build/windows/installer.nsi
           ls -la "$RUNNER_TEMP"/Numen-*.exe
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: numen-windows-amd64
           path: |
@@ -722,7 +722,7 @@ jobs:
             modules/apps/desktop/go.sum
             modules/libs/core/go.sum
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
@@ -899,7 +899,7 @@ jobs:
           spctl --assess --type execute -vv "$RUNNER_TEMP/mounted/Numen Flashcards.app"
           hdiutil detach "$RUNNER_TEMP/mounted" -quiet
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: numen-macos-universal
           path: ${{ runner.temp }}/Numen-*.dmg
@@ -945,12 +945,12 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: ${{ runner.temp }}/built
           pattern: numen-*
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: notes
           path: ${{ runner.temp }}
@@ -1174,7 +1174,7 @@ jobs:
           done
 
       - name: Save staged release artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-staged
           path: ${{ runner.temp }}/upload
@@ -1199,12 +1199,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-staged
           path: ${{ runner.temp }}/upload
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: notes
           path: ${{ runner.temp }}
