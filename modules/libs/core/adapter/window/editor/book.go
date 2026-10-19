@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
@@ -154,15 +153,15 @@ func isMisnamed(err error) bool {
 func convertBookError(err error) error {
 	var coded *connect.Error
 	switch {
-	case errors.Is(err, port.ErrUnavailable):
+	case errors.Is(err, document.ErrUnavailable):
 		return connect.NewError(connect.CodeUnimplemented, err)
-	case errors.Is(err, port.ErrNoBook), errors.Is(err, port.ErrNoBookEntry):
+	case errors.Is(err, document.ErrNoBook), errors.Is(err, document.ErrNoEntry):
 		return connect.NewError(connect.CodeNotFound, err)
-	case errors.Is(err, port.ErrNotADocument):
+	case errors.Is(err, document.ErrNotADocument):
 		return connect.NewError(connect.CodeInvalidArgument, err)
-	case errors.Is(err, port.ErrEncrypted):
+	case errors.Is(err, document.ErrEncrypted):
 		return connect.NewError(connect.CodeFailedPrecondition, err)
-	case errors.Is(err, port.ErrBookChanged):
+	case errors.Is(err, document.ErrBookChanged):
 		return connect.NewError(connect.CodeAborted, err)
 	case errors.As(err, &coded):
 		return err
