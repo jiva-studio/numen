@@ -270,6 +270,8 @@ var codingAgentIDs = []string{"md.numen.agent-acp", "md.numen.agent-antigravity"
 // program is listed whether or not its command is installed on the machine.
 func listCodingAgentPrograms(t *testing.T, host port.PluginManager) map[string][]string {
 	t.Helper()
+	// Codex is asked for its models through a command that does not exist, so no installed CLI is started.
+	absentCodex := []*numenv1.AgentProgramCommand{{Program: "codex", Command: []string{filepath.Join(t.TempDir(), "absent")}}}
 	listed := make(map[string][]string, len(codingAgentIDs))
 	for _, id := range codingAgentIDs {
 		endpoint, err := host.EnsureActive(t.Context(), id)
@@ -277,7 +279,7 @@ func listCodingAgentPrograms(t *testing.T, host port.PluginManager) map[string][
 			t.Fatalf("activate %s: %v", id, err)
 		}
 		res, err := numenv1connect.NewAgentServiceClient(newClient(endpoint), endpoint.BaseURL(), withToken(endpoint.Token)).
-			GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
+			GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{Commands: absentCodex}))
 		if err != nil {
 			t.Fatalf("GetAgentPrograms of %s: %v", id, err)
 		}
