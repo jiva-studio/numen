@@ -161,7 +161,7 @@ func TestFindPluginByFileExtensionHonoursEnabledAndSafeMode(t *testing.T) {
 }
 
 // ResolveCapability says why no plugin answers: none declares the capability,
-// or the ones that do are disabled or held off by safe mode.
+// or the ones that do are disabled or switched off by safe mode.
 func TestResolveCapabilitySaysWhyNoPluginAnswers(t *testing.T) {
 	host := NewHost("desktop.editor")
 	for _, id := range []string{"md.numen.b", "md.numen.a"} {

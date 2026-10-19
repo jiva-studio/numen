@@ -29,21 +29,21 @@ func RunCommand(ctx context.Context, name string, args, env []string, stdin stri
 	}
 	running, stop := context.WithCancel(ctx)
 	defer stop()
-	out, said := &limitedBuffer{stop: stop}, &limitedBuffer{stop: stop}
+	out, stderr := &limitedBuffer{stop: stop}, &limitedBuffer{stop: stop}
 	cmd := exec.CommandContext(running, name, args...)
 	cmd.Env = env
 	cmd.Stdin = strings.NewReader(stdin)
 	cmd.Stdout = out
-	cmd.Stderr = said
+	cmd.Stderr = stderr
 	cmd.WaitDelay = commandWaitDelay
 	if err := cmd.Run(); err != nil {
-		if out.exceeded || said.exceeded {
+		if out.exceeded || stderr.exceeded {
 			return "", ErrOutputTooLarge
 		}
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return "", ctxErr
 		}
-		return "", errors.New(FailureMessage(err, said.buf.String()))
+		return "", errors.New(FailureMessage(err, stderr.buf.String()))
 	}
 	return strings.TrimSpace(out.buf.String()), nil
 }
@@ -66,8 +66,8 @@ func (l *limitedBuffer) Write(p []byte) (int, error) {
 
 // FailureMessage is what to tell the person when a command stopped with an error: the last line of
 // its error output, or the error itself when it wrote none.
-func FailureMessage(err error, said string) string {
-	if trimmed := strings.TrimSpace(said); trimmed != "" {
+func FailureMessage(err error, stderr string) string {
+	if trimmed := strings.TrimSpace(stderr); trimmed != "" {
 		lines := strings.Split(trimmed, "\n")
 		return strings.TrimSpace(lines[len(lines)-1])
 	}

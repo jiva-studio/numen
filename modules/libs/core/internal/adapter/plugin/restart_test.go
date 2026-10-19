@@ -234,8 +234,8 @@ func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 			waitUntil(t, "the stopped plugin to lose its endpoint", func() bool {
 				host.mu.RLock()
 				defer host.mu.RUnlock()
-				_, held := host.endpoints[contractPluginID]
-				return !held
+				_, isRegistered := host.endpoints[contractPluginID]
+				return !isRegistered
 			})
 			firstServer.Close()
 

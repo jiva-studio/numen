@@ -38,17 +38,17 @@ func (r Route) GetLimit() int {
 // under routes.default, which is read where the section names no default; the
 // routes of single purposes are not read.
 func (c *Config) UnmarshalJSON(data []byte) error {
-	var held struct {
+	var stored struct {
 		Default *Route           `json:"default"`
 		Routes  map[string]Route `json:"routes"`
 	}
-	if err := json.Unmarshal(data, &held); err != nil {
+	if err := json.Unmarshal(data, &stored); err != nil {
 		return err
 	}
-	if held.Default != nil {
-		c.Default = *held.Default
+	if stored.Default != nil {
+		c.Default = *stored.Default
 		return nil
 	}
-	c.Default = held.Routes["default"]
+	c.Default = stored.Routes["default"]
 	return nil
 }

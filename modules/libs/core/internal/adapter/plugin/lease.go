@@ -27,8 +27,8 @@ func (l *pluginLease) Close() error {
 }
 
 // openPlugin activates the plugin and returns a client for one of its services
-// together with the reference held on the plugin. A plugin that cannot be
-// activated is a *port.UnavailableError, and the end of the context is kept as
+// together with the reference taken on the plugin. A plugin that cannot be
+// activated is a *port.UnavailableError, and the end of the context is returned as
 // it is.
 func openPlugin[C any](
 	ctx context.Context,
@@ -39,17 +39,17 @@ func openPlugin[C any](
 	var none C
 	endpoint, err := host.EnsureActive(ctx, pluginID)
 	if err != nil {
-		return none, nil, readEnsureActiveError(pluginID, err)
+		return none, nil, convertActivationError(pluginID, err)
 	}
 	interceptor := connect.WithInterceptors(authInterceptor(endpoint.Token))
 	client := newClient(EndpointClient(endpoint), endpoint.BaseURL(), interceptor)
 	return client, &pluginLease{host: host, pluginID: pluginID}, nil
 }
 
-// readEnsureActiveError is the failure to activate a plugin: the end of a
-// context and a *port.UnavailableError are kept as they are, and anything else
+// convertActivationError is the failure to activate a plugin: the end of a
+// context and a *port.UnavailableError are returned unchanged, and anything else
 // is a plugin that failed.
-func readEnsureActiveError(pluginID string, err error) error {
+func convertActivationError(pluginID string, err error) error {
 	var unavailable *port.UnavailableError
 	if errors.As(err, &unavailable) || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return err

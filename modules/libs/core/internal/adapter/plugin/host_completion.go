@@ -27,9 +27,9 @@ func (h *Host) GetCompletionChoice(pluginID string) port.CompletionChoice {
 func (h *Host) CheckCompletionConsent(pluginID string) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	held, isAnswered := h.settings[pluginID][port.SettingAIConsent].(bool)
+	allowed, isAnswered := h.settings[pluginID][port.SettingAIConsent].(bool)
 	switch {
-	case isAnswered && held:
+	case isAnswered && allowed:
 		return nil
 	case !isAnswered:
 		h.consentAsks[pluginID] = true
@@ -43,9 +43,9 @@ func (h *Host) getCompletionConsentLocked(manifest port.PluginManifest) port.Com
 	if !manifest.HasPermission(port.PermissionAIComplete) {
 		return port.ConsentNone
 	}
-	held, isAnswered := h.settings[manifest.ID][port.SettingAIConsent].(bool)
+	allowed, isAnswered := h.settings[manifest.ID][port.SettingAIConsent].(bool)
 	switch {
-	case isAnswered && held:
+	case isAnswered && allowed:
 		return port.ConsentAllowed
 	case isAnswered:
 		return port.ConsentRefused

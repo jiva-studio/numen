@@ -485,7 +485,7 @@ func TestABuiltInPluginRemovedFromDiskIsHeldToItsOwnPermissions(t *testing.T) {
 		t.Errorf("the built-in's own permission: %v", err)
 	}
 	if err := host.CheckPluginPermission("md.numen.ocr", PermissionVaultRead); err == nil {
-		t.Error("the permission of the copy that left is still held")
+		t.Error("the permission of the copy that left is still granted")
 	}
 }
 

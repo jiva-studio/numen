@@ -11,16 +11,17 @@ import (
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
-// Words is how one vault tool is spoken about and read while a call of it is written.
-type Words struct {
+// Declaration is what the host declares about one vault tool: its title, its effect, and the
+// argument a call is about.
+type Declaration struct {
 	Title, Kind, About, Element, Match, Text string
 }
 
-// ReadWords indexes the declarations of the vault's tools by tool name.
-func ReadWords(declarations []*numenv1.ToolDeclaration) map[string]Words {
-	words := make(map[string]Words, len(declarations))
+// IndexDeclarations indexes the declarations of the vault's tools by tool name.
+func IndexDeclarations(declarations []*numenv1.ToolDeclaration) map[string]Declaration {
+	words := make(map[string]Declaration, len(declarations))
 	for _, d := range declarations {
-		words[d.GetName()] = Words{
+		words[d.GetName()] = Declaration{
 			Title:   d.GetTitle(),
 			Kind:    d.GetKind(),
 			About:   d.GetAbout(),
@@ -35,7 +36,7 @@ func ReadWords(declarations []*numenv1.ToolDeclaration) map[string]Words {
 // Describe is a call of the tool the vault serves under name, as the person is told about it. A
 // tool the vault declared is shown by its title, with its effect and what the call is about read by
 // the arguments it declared. The arguments may not have finished arriving.
-func Describe(words map[string]Words, name, call, args string) *numenv1.ToolCall {
+func Describe(words map[string]Declaration, name, call, args string) *numenv1.ToolCall {
 	declared, isDeclared := words[name]
 	described := &numenv1.ToolCall{Tool: name, Call: call, Written: int32(len([]rune(args)))}
 	if !isDeclared {
@@ -59,12 +60,12 @@ func Describe(words map[string]Words, name, call, args string) *numenv1.ToolCall
 
 // readSpan is the run of a source's text a call names, read once the arguments parse whole.
 func readSpan(args string) *numenv1.Span {
-	var made map[string]any
-	if err := json.Unmarshal([]byte(args), &made); err != nil {
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(args), &parsed); err != nil {
 		return nil
 	}
-	start, _ := made["start"].(float64)
-	length, _ := made["length"].(float64)
+	start, _ := parsed["start"].(float64)
+	length, _ := parsed["length"].(float64)
 	if length <= 0 || start < 0 || start > math.MaxInt32-length {
 		return nil
 	}
@@ -72,15 +73,15 @@ func readSpan(args string) *numenv1.Span {
 }
 
 // readAbout is what a call is about, read from the arguments as far as they have arrived.
-func readAbout(words Words, args string) string {
-	var made map[string]any
-	if err := json.Unmarshal([]byte(args), &made); err != nil {
-		if seen := ReadPartialField(args, words.Element); seen != "" {
-			return seen
+func readAbout(words Declaration, args string) string {
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(args), &parsed); err != nil {
+		if partial := ReadPartialField(args, words.Element); partial != "" {
+			return partial
 		}
 		return ReadPartialField(args, words.About)
 	}
-	switch value := made[words.About].(type) {
+	switch value := parsed[words.About].(type) {
 	case string:
 		return value
 	case []any:
@@ -89,7 +90,7 @@ func readAbout(words Words, args string) string {
 	return ""
 }
 
-// describeCollection is the first element of a collection by the name it carries, and how many
+// describeCollection is the first element of a collection by the name it holds, and how many
 // others there are.
 func describeCollection(value []any, inside string) string {
 	if len(value) == 0 {

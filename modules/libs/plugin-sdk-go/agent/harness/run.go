@@ -36,7 +36,7 @@ type run struct {
 	chat    chat
 	model   string
 	tools   *toolbox
-	words   map[string]toolcall.Words
+	words   map[string]toolcall.Declaration
 	turns   int
 	send    func(*numenv1.AskAgentResponse) error
 	isPlain bool
@@ -58,11 +58,11 @@ func (r *run) answer(ctx context.Context, messages []message) ([]message, string
 			return messages, "", err
 		}
 		var unsent error
-		say := func(text string) error {
+		emit := func(text string) error {
 			unsent = r.send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Said{Said: text}})
 			return unsent
 		}
-		reply, finished, err := r.ask(ctx, messages, say)
+		reply, finished, err := r.ask(ctx, messages, emit)
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return messages, "", ctxErr
 		}
@@ -120,13 +120,13 @@ func (r *run) callTool(ctx context.Context, call toolCall) (string, error) {
 	return result, nil
 }
 
-// ask asks the model for the next message with its text streamed to say. A chat API that refuses
+// ask asks the model for the next message with its text streamed to emit. A chat API that refuses
 // to stream and answers the same request unstreamed is logged as such, and the run asks it
-// unstreamed from then on, with the whole text going to say at once.
-func (r *run) ask(ctx context.Context, messages []message, say func(string) error) (message, string, error) {
+// unstreamed from then on, with the whole text going to emit at once.
+func (r *run) ask(ctx context.Context, messages []message, emit func(string) error) (message, string, error) {
 	var refusal error
 	if !r.isPlain {
-		reply, finished, err := r.chat.stream(ctx, r.model, messages, r.tools.offered, say)
+		reply, finished, err := r.chat.stream(ctx, r.model, messages, r.tools.offered, emit)
 		if !errors.Is(err, errStreamRefused) {
 			return reply, finished, err
 		}
@@ -141,7 +141,7 @@ func (r *run) ask(ctx context.Context, messages []message, say func(string) erro
 		log.Printf("harness: %v; it answered unstreamed, and this run goes on unstreamed", refusal)
 	}
 	if text := reply.Content; text != nil && *text != "" {
-		if err := say(*text); err != nil {
+		if err := emit(*text); err != nil {
 			return message{}, "", err
 		}
 	}

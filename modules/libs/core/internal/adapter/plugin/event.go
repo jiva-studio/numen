@@ -35,11 +35,11 @@ func deliverPluginEvent(ctx context.Context, endpoint Endpoint, event string) er
 		}
 		return err
 	}
-	return readEventRefusal(resp.Msg.GetError(), resp.Msg.GetReason())
+	return convertEventRefusal(resp.Msg.GetError(), resp.Msg.GetReason())
 }
 
-// readEventRefusal returns the error a plugin's answer to an event stands for, nil when it took the event.
-func readEventRefusal(code v1.PluginEventErrorCode, reason string) error {
+// convertEventRefusal returns the error a plugin's answer to an event stands for, nil when it took the event.
+func convertEventRefusal(code v1.PluginEventErrorCode, reason string) error {
 	switch code {
 	case v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED:
 		return nil
