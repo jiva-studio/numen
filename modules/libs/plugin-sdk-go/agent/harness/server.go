@@ -274,9 +274,12 @@ func (s *Server) Complete(
 			messages = append(messages, message{Role: "system", Content: newText(request.System)})
 		}
 		messages = append(messages, message{Role: "user", Content: newText(request.Prompt)})
-		reply, _, err := asked.send(ctx, name, messages, nil)
+		reply, finished, err := asked.send(ctx, name, messages, nil)
 		if err != nil || reply.Content == nil {
 			return "", err
+		}
+		if finished == "length" {
+			return "", errCutOff
 		}
 		return *reply.Content, nil
 	})

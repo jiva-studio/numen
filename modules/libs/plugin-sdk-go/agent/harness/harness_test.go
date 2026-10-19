@@ -495,3 +495,46 @@ func TestCompleteAsksTheModelTheHostNames(t *testing.T) {
 		t.Errorf("the model asked was %q", got)
 	}
 }
+
+func TestACutOffReplyCallsNoTool(t *testing.T) {
+	model := &fakeChat{replies: []message{newCallReply("c", "note_read", "")}, finish: "length"}
+	vault := &fakeVault{}
+	s := newServer(model.serve(t).URL)
+
+	steps := ask(t, s, newTask(vault.serve(t), "Read."))
+
+	if got := describeSteps(steps); got != "model stopped" || steps[1].GetStopped() != reasonCut {
+		t.Errorf("steps are %q", got)
+	}
+	if calls := vault.getCalls(); len(calls) != 0 {
+		t.Errorf("the vault was called with %v", calls)
+	}
+}
+
+func TestCompleteRefusesACutOffAnswer(t *testing.T) {
+	model := &fakeChat{replies: []message{newTextReply("The answer is")}, finish: "length"}
+	s := newServer(model.serve(t).URL)
+
+	res, err := s.Complete(t.Context(), connect.NewRequest(&numenv1.CompleteRequest{Question: &numenv1.CompletionQuestion{
+		Messages: []*numenv1.CompletionMessage{{Role: "user", Text: "why?"}},
+	}}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Msg.GetError() != numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE {
+		t.Errorf("got %+v", res.Msg)
+	}
+}
+
+func TestTheVaultTokenIsNotFollowedToPlainHTTP(t *testing.T) {
+	redirecting := httptest.NewServer(http.RedirectHandler("http://192.0.2.1/mcp", http.StatusTemporaryRedirect))
+	defer redirecting.Close()
+	model := &fakeChat{replies: []message{newTextReply("hi")}}
+	s := newServer(model.serve(t).URL)
+
+	steps := ask(t, s, newTask(redirecting.URL, "Hello?"))
+
+	if len(steps) != 1 || !strings.Contains(steps[0].GetStopped(), errDowngrade.Error()) {
+		t.Errorf("steps are %v", steps)
+	}
+}

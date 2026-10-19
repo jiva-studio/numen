@@ -26,7 +26,8 @@ const requestLimit = 2 * time.Minute
 var (
 	errNoChoice  = errors.New("the chat API returned no message")
 	errPlainKey  = errors.New("a key is sent only over https, or over http to this machine")
-	errDowngrade = errors.New("the chat API redirected a request that carries a key to http")
+	errDowngrade = errors.New("a redirect would send a key over plain http")
+	errCutOff    = errors.New(reasonCut)
 )
 
 // message is one message of a conversation with the chat API.
@@ -193,7 +194,7 @@ func refuseDowngrade(req *http.Request, via []*http.Request) error {
 		return errDowngrade
 	}
 	if len(via) >= 10 {
-		return errors.New("the chat API redirected ten times")
+		return errors.New("stopped after ten redirects")
 	}
 	return nil
 }

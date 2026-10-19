@@ -53,7 +53,7 @@ func openToolbox(ctx context.Context, url, token string, named []string) (*toolb
 	}
 	transport := &mcp.StreamableClientTransport{
 		Endpoint:             url,
-		HTTPClient:           &http.Client{Transport: bearer{token: token, base: http.DefaultTransport}},
+		HTTPClient:           &http.Client{Transport: bearer{token: token, base: http.DefaultTransport}, CheckRedirect: refuseDowngrade},
 		DisableStandaloneSSE: true,
 	}
 	client := mcp.NewClient(&mcp.Implementation{Name: "numen-agent", Version: "1.0.0"}, nil)

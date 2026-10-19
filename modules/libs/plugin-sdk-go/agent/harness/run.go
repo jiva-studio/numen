@@ -60,6 +60,10 @@ func (r *run) answer(ctx context.Context, messages []message) ([]message, string
 		if err != nil {
 			return messages, "", &chatFailure{err: err}
 		}
+		// A reply cut off at its length limit calls no tool, since its calls may not have been written whole.
+		if finished == "length" {
+			reply.ToolCalls = nil
+		}
 		for i := range reply.ToolCalls {
 			if strings.TrimSpace(reply.ToolCalls[i].Function.Arguments) == "" {
 				reply.ToolCalls[i].Function.Arguments = "{}"
@@ -72,7 +76,7 @@ func (r *run) answer(ctx context.Context, messages []message) ([]message, string
 				return messages, "", err
 			}
 		}
-		if len(reply.ToolCalls) == 0 && finished == "length" {
+		if finished == "length" {
 			return messages, reasonCut, nil
 		}
 		if len(reply.ToolCalls) == 0 {
