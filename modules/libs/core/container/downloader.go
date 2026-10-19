@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"errors"
 	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -11,37 +10,21 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
-var (
-	errDownloaderUnavailable = errors.New("downloader plugin is unavailable or not installed")
-)
-
 var _ port.Downloader = (*hostDownloaderPort)(nil)
 var _ port.Downloader = (*unavailableDownloader)(nil)
 
-// DownloaderReady says whether a downloader plugin is active or present.
+// DownloaderReady says whether a downloader plugin is enabled.
 func (c Config) DownloaderReady() bool {
-	if c.PluginHost != nil && !c.SafeMode {
-		if _, ok := c.PluginHost.FindPluginByCapability("downloader"); ok {
-			return true
-		}
-		if _, ok := c.PluginHost.FindPluginByCapability("media.download"); ok {
-			return true
-		}
-	}
-	return false
+	return c.hasPlugin(plugin.CapabilityDownloader)
 }
 
 // Downloader is what reaches an address on this machine.
-func (c Config) Downloader(ctx context.Context) port.Downloader {
-	if c.PluginHost != nil && !c.SafeMode {
-		if _, ok := c.PluginHost.FindPluginByCapability("downloader"); ok {
-			return hostDownloaderPort{host: c.PluginHost}
-		}
-		if _, ok := c.PluginHost.FindPluginByCapability("media.download"); ok {
-			return hostDownloaderPort{host: c.PluginHost}
-		}
+func (c Config) Downloader(_ context.Context) port.Downloader {
+	host, err := c.resolvePlugin(plugin.CapabilityDownloader)
+	if err != nil {
+		return unavailableDownloader{why: err}
 	}
-	return unavailableDownloader{}
+	return hostDownloaderPort{host: host}
 }
 
 // ImportURL is one link note's address, downloaded into the vault, with the
@@ -74,9 +57,6 @@ type hostDownloaderPort struct {
 }
 
 func (h hostDownloaderPort) openBridge(ctx context.Context) (*plugin.DownloaderBridge, error) {
-	if h.host == nil {
-		return nil, errDownloaderUnavailable
-	}
 	return plugin.OpenDownloaderBridge(ctx, h.host)
 }
 
@@ -116,20 +96,23 @@ func (h hostDownloaderPort) Download(ctx context.Context, at domain.URL, into io
 	return bridge.Download(ctx, at, into)
 }
 
-type unavailableDownloader struct{}
-
-func (unavailableDownloader) GetDownloadModel(_ context.Context, _ domain.URL) (port.DownloadModel, error) {
-	return port.DownloadModel{}, errDownloaderUnavailable
+// unavailableDownloader answers every ask with why no downloader plugin is there.
+type unavailableDownloader struct {
+	why error
 }
 
-func (unavailableDownloader) GetMetadata(_ context.Context, _ domain.URL) (port.Metadata, error) {
-	return port.Metadata{}, errDownloaderUnavailable
+func (u unavailableDownloader) GetDownloadModel(_ context.Context, _ domain.URL) (port.DownloadModel, error) {
+	return port.DownloadModel{}, u.why
 }
 
-func (unavailableDownloader) GetText(_ context.Context, _ domain.URL, _ port.PreferredCaptions) (port.Text, error) {
-	return port.Text{}, errDownloaderUnavailable
+func (u unavailableDownloader) GetMetadata(_ context.Context, _ domain.URL) (port.Metadata, error) {
+	return port.Metadata{}, u.why
 }
 
-func (unavailableDownloader) Download(_ context.Context, _ domain.URL, _ io.Writer) (port.Copy, error) {
-	return port.Copy{}, errDownloaderUnavailable
+func (u unavailableDownloader) GetText(_ context.Context, _ domain.URL, _ port.PreferredCaptions) (port.Text, error) {
+	return port.Text{}, u.why
+}
+
+func (u unavailableDownloader) Download(_ context.Context, _ domain.URL, _ io.Writer) (port.Copy, error) {
+	return port.Copy{}, u.why
 }

@@ -24,6 +24,10 @@ func (h *downEmbeddingHost) FindPluginByCapability(string) (port.DiscoveredPlugi
 	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.embeddings"}}, true
 }
 
+func (h *downEmbeddingHost) ResolveCapability(string) (port.DiscoveredPlugin, error) {
+	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.embeddings"}}, nil
+}
+
 func (h *downEmbeddingHost) EnsureActive(context.Context, string) (port.Endpoint, error) {
 	h.acquired.Add(1)
 	return h.endpoint, nil

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"slices"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
@@ -190,6 +192,92 @@ func TestABookIsNotAnsweredWithoutAPlugin(t *testing.T) {
 				t.Error("a picture was served")
 			}
 		})
+	}
+}
+
+// A book plugin that is not there, for any reason, is a build that cannot read
+// books, and every ask of a book says so with the one code.
+func TestAnAbsentBookPluginIsAnsweredAsUnimplemented(t *testing.T) {
+	for name, why := range map[string]error{
+		"not installed": &port.UnavailableError{Capability: "book", Reason: port.PluginNotInstalled},
+		"disabled":      &port.UnavailableError{Capability: "book", Reason: port.PluginDisabled},
+		"failed":        &port.UnavailableError{PluginID: "md.numen.epub", Reason: port.PluginFailed, Err: errors.New("exit 1")},
+		"no program": &port.UnavailableError{
+			PluginID: "md.numen.epub", Reason: port.PluginFailed, Err: fmt.Errorf("start bin/epub: %w", fs.ErrNotExist),
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			api, handler, _ := readFrom(t, newBookClient())
+			api.Book.openClient = func(context.Context) (any, func(), error) { return nil, nil, why }
+			mark := printOf(t, api, reflowed)
+
+			_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: reflowed}))
+			if code := connect.CodeOf(err); code != connect.CodeUnimplemented {
+				t.Errorf("a book was answered %v, want unimplemented", code)
+			}
+			_, err = api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{Path: reflowed}))
+			if code := connect.CodeOf(err); code != connect.CodeUnimplemented {
+				t.Errorf("a document of a book was answered %v, want unimplemented", code)
+			}
+			if out := ask(handler, pictureOf(reflowed, "OEBPS/pictures/plate.png", mark)); out.Code != http.StatusNotImplemented {
+				t.Errorf("a picture was answered %d, want not implemented", out.Code)
+			}
+		})
+	}
+}
+
+// A plugin that goes away once its client is open is answered the same way,
+// a code it gives is kept, and an uncoded failure is internal.
+func TestABookPluginThatGoesAwayIsAnsweredAsUnimplemented(t *testing.T) {
+	for why, want := range map[error]connect.Code{
+		&port.UnavailableError{PluginID: "md.numen.epub", Reason: port.PluginFailed}: connect.CodeUnimplemented,
+		connect.NewError(connect.CodeNotFound, errors.New("no such book")):           connect.CodeNotFound,
+		errors.New("the plugin broke"):                                               connect.CodeInternal,
+	} {
+		client := newBookClient()
+		client.failure = why
+		api, _, _ := readFrom(t, client)
+
+		_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: reflowed}))
+		if code := connect.CodeOf(err); code != want {
+			t.Errorf("%v was answered %v, want %v", why, code, want)
+		}
+	}
+}
+
+// A failure to open the plugin that carries a code, or ends the caller's
+// context, is answered with that code.
+func TestAFailureToOpenTheBookPluginKeepsItsCode(t *testing.T) {
+	for why, want := range map[error]connect.Code{
+		connect.NewError(connect.CodePermissionDenied, errors.New("no")): connect.CodePermissionDenied,
+		context.DeadlineExceeded: connect.CodeDeadlineExceeded,
+	} {
+		api, _, _ := readFrom(t, newBookClient())
+		api.Book.openClient = func(context.Context) (any, func(), error) { return nil, nil, why }
+
+		_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: reflowed}))
+		if code := connect.CodeOf(err); code != want {
+			t.Errorf("%v was answered %v, want %v", why, code, want)
+		}
+		_, err = api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{Path: reflowed}))
+		if code := connect.CodeOf(err); code != want {
+			t.Errorf("%v was answered %v for markup, want %v", why, code, want)
+		}
+	}
+}
+
+// A client that is no book reader is no book plugin, and the client is let go.
+func TestAClientThatReadsNoBooksIsAnsweredAsUnimplemented(t *testing.T) {
+	api, _, _ := readFrom(t, newBookClient())
+	closed := 0
+	api.Book.openClient = func(context.Context) (any, func(), error) { return struct{}{}, func() { closed++ }, nil }
+
+	_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: reflowed}))
+	if code := connect.CodeOf(err); code != connect.CodeUnimplemented {
+		t.Errorf("a book was answered %v, want unimplemented", code)
+	}
+	if closed != 1 {
+		t.Errorf("the client was let go %d times, want once", closed)
 	}
 }
 

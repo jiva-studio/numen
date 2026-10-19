@@ -25,8 +25,8 @@ func (h *stubModelHost) FindPluginByCapability(string) (port.DiscoveredPlugin, b
 	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.stub"}}, true
 }
 
-func (h *stubModelHost) FindPluginByFileExtension(string) (port.DiscoveredPlugin, bool) {
-	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.stub"}}, true
+func (h *stubModelHost) ResolveCapability(string) (port.DiscoveredPlugin, error) {
+	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.stub"}}, nil
 }
 
 func (h *stubModelHost) GetPlugin(string) (port.DiscoveredPlugin, bool) {

@@ -14,10 +14,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-var (
-	errNoTranscriptionPlugin = errors.New("no active audio/video transcription plugin found")
-)
-
 // TranscriberPluginHost provides resolution, activation, reference tracking, permissions, and path validation.
 type TranscriberPluginHost interface {
 	port.PluginResolver
@@ -31,16 +27,16 @@ type TranscriberPluginHost interface {
 type TranscriberBridge struct {
 	host     TranscriberPluginHost
 	pluginID string
-	client   numenv1connect.TranscriptionServiceClient
+	service  pluginService[numenv1connect.TranscriptionServiceClient]
 	lease    *pluginLease
 	model    port.TranscriptionModel
 }
 
 // OpenTranscriberBridge activates or connects to the transcription plugin and returns a port.Transcriber.
 func OpenTranscriberBridge(ctx context.Context, host TranscriberPluginHost) (*TranscriberBridge, error) {
-	plugin, ok := host.FindPluginByCapability("transcription")
-	if !ok {
-		return nil, errNoTranscriptionPlugin
+	plugin, err := host.ResolveCapability(CapabilityTranscription)
+	if err != nil {
+		return nil, err
 	}
 
 	client, lease, err := openPlugin(ctx, host, plugin.Manifest.ID, numenv1connect.NewTranscriptionServiceClient)
@@ -66,7 +62,7 @@ func OpenTranscriberBridge(ctx context.Context, host TranscriberPluginHost) (*Tr
 	return &TranscriberBridge{
 		host:     host,
 		pluginID: plugin.Manifest.ID,
-		client:   client,
+		service:  pluginService[numenv1connect.TranscriptionServiceClient]{host: host, pluginID: plugin.Manifest.ID, newClient: numenv1connect.NewTranscriptionServiceClient},
 		lease:    lease,
 		model:    model,
 	}, nil
@@ -130,7 +126,13 @@ func (b *TranscriberBridge) OpenSource(ctx context.Context, source any) (port.Re
 		return nil, errors.New("unsupported audio source type")
 	}
 
-	resp, err := b.client.OpenRecording(ctx, req)
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = call.Close() }()
+
+	resp, err := client.OpenRecording(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("rpc open recording: %w", err)
 	}
@@ -140,7 +142,7 @@ func (b *TranscriberBridge) OpenSource(ctx context.Context, source any) (port.Re
 	}
 
 	return &pluginRecording{
-		client:      b.client,
+		client:      client,
 		recordingID: resp.Msg.GetRecordingId(),
 		durationMs:  int(resp.Msg.GetDurationMs()),
 		host:        b.host,
@@ -168,7 +170,13 @@ func (b *TranscriberBridge) Transcribe(ctx context.Context, audio port.Audio) (s
 		FromMs:  int32(audio.From),
 		ToMs:    int32(audio.To),
 	})
-	resp, err := b.client.Transcribe(ctx, req)
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = call.Close() }()
+
+	resp, err := client.Transcribe(ctx, req)
 	if err != nil {
 		return "", fmt.Errorf("rpc transcribe: %w", err)
 	}

@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"errors"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -10,19 +9,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
 
-var (
-	errRecognitionUnavailable = errors.New("recognition plugin is unavailable or not installed")
-)
-
 // RecogniserReady says whether a document could be read now without waiting for
 // anything to arrive.
 func (c Config) RecogniserReady() bool {
-	if c.PluginHost != nil && !c.SafeMode {
-		if _, ok := c.PluginHost.FindPluginByCapability("recognition"); ok {
-			return true
-		}
-	}
-	return false
+	return c.hasPlugin(plugin.CapabilityRecognition)
 }
 
 // PrepareRecogniser makes the runtime this process reads a page through.
@@ -32,14 +22,15 @@ func (c Config) PrepareRecogniser(_ context.Context) error {
 
 // Recogniser is what reads a scanned page on this machine, opened now.
 func (c Config) Recogniser(ctx context.Context) (recogniser port.Recogniser, closer func() error, why error) {
-	if host, ok := c.findPluginHost("recognition"); ok {
-		bridge, err := plugin.OpenRecogniserBridge(ctx, host)
-		if err != nil {
-			return nil, nil, err
-		}
-		return bridge, bridge.Close, nil
+	host, err := c.resolvePlugin(plugin.CapabilityRecognition)
+	if err != nil {
+		return nil, nil, err
 	}
-	return nil, nil, errRecognitionUnavailable
+	bridge, err := plugin.OpenRecogniserBridge(ctx, host)
+	if err != nil {
+		return nil, nil, err
+	}
+	return bridge, bridge.Close, nil
 }
 
 // Recognise is one document read with the recogniser given.
@@ -62,32 +53,12 @@ func (c Config) OpenRecognitionWorker(
 		Tasks:     tasks,
 		Models:    models,
 		Runtime: recognition.Runtime{
-			Open:     c.openRecognitionRuntime,
+			Open: func(ctx context.Context, _ func(what string, done, total int64)) (port.Recogniser, func() error, error) {
+				return c.Recogniser(ctx)
+			},
 			Ready:    c.RecogniserReady,
-			Prepared: c.isRecognitionPrepared,
+			Prepared: c.RecogniserReady,
 		},
 		Proofreading: c.getProofreading(c.ScanProofreading),
 	})
-}
-
-func (c Config) openRecognitionRuntime(
-	ctx context.Context, _ func(what string, done, total int64),
-) (port.Recogniser, func() error, error) {
-	if host, ok := c.findPluginHost("recognition"); ok {
-		bridge, err := plugin.OpenRecogniserBridge(ctx, host)
-		if err != nil {
-			return nil, nil, err
-		}
-		return bridge, bridge.Close, nil
-	}
-	return nil, nil, errRecognitionUnavailable
-}
-
-func (c Config) isRecognitionPrepared() bool {
-	if c.PluginHost != nil && !c.SafeMode {
-		if _, ok := c.PluginHost.FindPluginByCapability("recognition"); ok {
-			return true
-		}
-	}
-	return false
 }

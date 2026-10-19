@@ -343,25 +343,36 @@ func (h *Host) GetPlugin(id string) (DiscoveredPlugin, bool) {
 	return p, true
 }
 
-// FindPluginByCapability finds the enabled plugin with the lowest id among those declaring the
-// given capability.
-func (h *Host) FindPluginByCapability(capability string) (DiscoveredPlugin, bool) {
+// ResolveCapability finds the enabled plugin with the lowest id among those declaring the given
+// capability. Where none is enabled, the error is a *port.UnavailableError: PluginDisabled when a
+// plugin declares it and it is switched off or the host is in safe mode, PluginNotInstalled when
+// none declares it.
+func (h *Host) ResolveCapability(capability string) (DiscoveredPlugin, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	if h.safeMode {
-		return emptyDiscoveredPlugin(), false
-	}
-
+	reason := port.PluginNotInstalled
 	for _, p := range h.getPluginsInOrderLocked() {
-		if !h.isPluginEnabledLocked(p.Manifest.ID) {
+		if !p.Manifest.HasCapability(capability) {
 			continue
 		}
-		if p.Manifest.HasCapability(capability) {
-			return p, true
+		if h.safeMode || !h.isPluginEnabledLocked(p.Manifest.ID) {
+			reason = port.PluginDisabled
+			continue
 		}
+		return p, nil
 	}
-	return emptyDiscoveredPlugin(), false
+	missing := &port.UnavailableError{Capability: capability, Reason: reason}
+	if h.safeMode {
+		missing.Err = errSafeModeActive
+	}
+	return emptyDiscoveredPlugin(), missing
+}
+
+// FindPluginByCapability finds the plugin ResolveCapability finds, and whether there is one.
+func (h *Host) FindPluginByCapability(capability string) (DiscoveredPlugin, bool) {
+	p, err := h.ResolveCapability(capability)
+	return p, err == nil
 }
 
 // FindPluginByFileExtension finds the enabled plugin with the lowest id among those declaring
@@ -427,14 +438,16 @@ func (h *Host) prepareSupervisorLocked(pluginID string) (DiscoveredPlugin, *Supe
 		return DiscoveredPlugin{}, nil, errHostClosed
 	}
 	if h.safeMode {
-		return DiscoveredPlugin{}, nil, errSafeModeActive
+		return DiscoveredPlugin{}, nil, &port.UnavailableError{PluginID: pluginID, Reason: port.PluginDisabled, Err: errSafeModeActive}
 	}
 
 	p, ok := h.plugins[pluginID]
 	if !ok {
 		p, ok = h.resolveMonolithPlugin(pluginID)
 		if !ok {
-			return DiscoveredPlugin{}, nil, errPluginNotFound
+			return DiscoveredPlugin{}, nil, &port.UnavailableError{
+				PluginID: pluginID, Reason: port.PluginNotInstalled, Err: errPluginNotFound,
+			}
 		}
 		h.plugins[pluginID] = p
 	}
@@ -454,7 +467,7 @@ func (h *Host) prepareSupervisorLocked(pluginID string) (DiscoveredPlugin, *Supe
 	sup.SetMemoryLimit(memLimit)
 
 	if !h.isPluginEnabledLocked(pluginID) {
-		return DiscoveredPlugin{}, nil, fmt.Errorf("plugin %s is disabled", pluginID)
+		return DiscoveredPlugin{}, nil, &port.UnavailableError{PluginID: pluginID, Reason: port.PluginDisabled}
 	}
 
 	return p, sup, nil

@@ -30,8 +30,8 @@ func (h *leaseHost) FindPluginByCapability(string) (port.DiscoveredPlugin, bool)
 	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.stub"}}, true
 }
 
-func (h *leaseHost) FindPluginByFileExtension(string) (port.DiscoveredPlugin, bool) {
-	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.stub"}}, true
+func (h *leaseHost) ResolveCapability(string) (port.DiscoveredPlugin, error) {
+	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.stub"}}, nil
 }
 
 func (h *leaseHost) GetPlugin(string) (port.DiscoveredPlugin, bool) {

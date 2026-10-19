@@ -19,28 +19,25 @@ import (
 type AgentPluginHost interface {
 	port.PluginResolver
 	port.PluginActivator
-	port.PluginAcquirer
 }
 
 // AgentBridge connects port.Agent calls to an out-of-process agent plugin via Connect-RPC.
 type AgentBridge struct {
-	host     AgentPluginHost
 	pluginID string
-	client   numenv1connect.AgentServiceClient
+	service  pluginService[numenv1connect.AgentServiceClient]
 	lease    *pluginLease
 }
 
 // OpenAgentBridgeForPlugin activates or connects to a specific agent plugin and returns an AgentBridge.
 func OpenAgentBridgeForPlugin(ctx context.Context, host AgentPluginHost, pluginID string) (*AgentBridge, error) {
-	client, lease, err := openPlugin(ctx, host, pluginID, numenv1connect.NewAgentServiceClient)
+	_, lease, err := openPlugin(ctx, host, pluginID, numenv1connect.NewAgentServiceClient)
 	if err != nil {
 		return nil, err
 	}
 
 	return &AgentBridge{
-		host:     host,
 		pluginID: pluginID,
-		client:   client,
+		service:  pluginService[numenv1connect.AgentServiceClient]{host: host, pluginID: pluginID, newClient: numenv1connect.NewAgentServiceClient},
 		lease:    lease,
 	}, nil
 }
@@ -77,25 +74,30 @@ func newAskRequest(task port.Task) *v1.AskAgentRequest {
 	}
 }
 
-// StartRun starts execution of the given task through the agent plugin. The run holds its own reference on the plugin until it stops.
+// StartRun starts execution of the given task through the agent plugin, at the endpoint it is at
+// now. The run holds its own reference on the plugin until it stops.
 func (b *AgentBridge) StartRun(ctx context.Context, task port.Task) (port.Run, error) {
 	req := connect.NewRequest(newAskRequest(task))
 
+	client, held, err := b.service.open(ctx)
+	if err != nil {
+		return nil, err
+	}
 	runCtx, cancel := context.WithCancel(ctx)
-	stream, err := b.client.AskAgent(runCtx, req)
+	stream, err := client.AskAgent(runCtx, req)
 	if err != nil {
 		cancel()
+		_ = held.Close()
 		return nil, fmt.Errorf("rpc ask agent: %w", err)
 	}
 
-	b.host.Acquire(b.pluginID)
 	run := &pluginRun{
 		ctx:    runCtx,
 		stream: stream,
 		cancel: cancel,
 		steps:  make(chan port.Step, 16),
 		onClose: func() {
-			b.host.Release(b.pluginID)
+			_ = held.Close()
 		},
 	}
 	go run.readSteps()
@@ -107,7 +109,13 @@ func (b *AgentBridge) EndConversation(ctx context.Context, conversation string) 
 	req := connect.NewRequest(&v1.FinishConversationRequest{
 		Conversation: conversation,
 	})
-	_, err := b.client.FinishConversation(ctx, req)
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = call.Close() }()
+
+	_, err = client.FinishConversation(ctx, req)
 	if err != nil {
 		return fmt.Errorf("rpc finish conversation: %w", err)
 	}
@@ -121,7 +129,13 @@ func (b *AgentBridge) GetPrograms(ctx context.Context, commands map[string][]str
 	for program, command := range commands {
 		asked = append(asked, &v1.AgentProgramCommand{Program: program, Command: command})
 	}
-	resp, err := b.client.GetAgentPrograms(ctx, connect.NewRequest(&v1.GetAgentProgramsRequest{Commands: asked}))
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = call.Close() }()
+
+	resp, err := client.GetAgentPrograms(ctx, connect.NewRequest(&v1.GetAgentProgramsRequest{Commands: asked}))
 	if err != nil {
 		return nil, fmt.Errorf("rpc get agent programs: %w", err)
 	}
@@ -156,7 +170,13 @@ func (b *AgentBridge) RegisterTool(ctx context.Context, name, description, schem
 			ParametersJsonSchema: schema,
 		},
 	})
-	_, err := b.client.RegisterTool(ctx, req)
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = call.Close() }()
+
+	_, err = client.RegisterTool(ctx, req)
 	if err != nil {
 		return fmt.Errorf("rpc register tool: %w", err)
 	}
@@ -168,7 +188,13 @@ func (b *AgentBridge) ExtendSystemPrompt(ctx context.Context, extension string) 
 	req := connect.NewRequest(&v1.ExtendSystemPromptRequest{
 		Extension: extension,
 	})
-	resp, err := b.client.ExtendSystemPrompt(ctx, req)
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = call.Close() }()
+
+	resp, err := client.ExtendSystemPrompt(ctx, req)
 	if err != nil {
 		return "", fmt.Errorf("rpc extend prompt: %w", err)
 	}
@@ -178,7 +204,13 @@ func (b *AgentBridge) ExtendSystemPrompt(ctx context.Context, extension string) 
 // GetAgentTools retrieves the current tools and prompt extension from the agent plugin.
 func (b *AgentBridge) GetAgentTools(ctx context.Context) ([]*v1.AgentToolDefinition, string, error) {
 	req := connect.NewRequest(&v1.GetAgentToolsRequest{})
-	resp, err := b.client.GetAgentTools(ctx, req)
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return nil, "", err
+	}
+	defer func() { _ = call.Close() }()
+
+	resp, err := client.GetAgentTools(ctx, req)
 	if err != nil {
 		return nil, "", fmt.Errorf("rpc get agent tools: %w", err)
 	}

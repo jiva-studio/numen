@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"connectrpc.com/connect"
@@ -12,10 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-)
-
-var (
-	ErrNoBookPlugin = errors.New("no active book reader plugin found")
 )
 
 // BookPluginHost provides plugin resolution and activation for the book bridge.
@@ -29,21 +24,18 @@ type BookPluginHost interface {
 type BookBridge struct {
 	host     BookPluginHost
 	pluginID string
-	client   numenv1connect.BookServiceClient
+	service  pluginService[numenv1connect.BookServiceClient]
 	lease    *pluginLease
 }
 
 // OpenBookBridge activates or connects to the book plugin and returns a BookBridge.
 func OpenBookBridge(ctx context.Context, host BookPluginHost) (*BookBridge, error) {
-	p, ok := host.FindPluginByCapability("book")
-	if !ok {
-		p, ok = host.FindPluginByFileExtension(".epub")
-		if !ok {
-			return nil, ErrNoBookPlugin
-		}
+	p, err := host.ResolveCapability(CapabilityBook)
+	if err != nil {
+		return nil, err
 	}
 
-	client, lease, err := openPlugin(ctx, host, p.Manifest.ID, numenv1connect.NewBookServiceClient)
+	_, lease, err := openPlugin(ctx, host, p.Manifest.ID, numenv1connect.NewBookServiceClient)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +43,7 @@ func OpenBookBridge(ctx context.Context, host BookPluginHost) (*BookBridge, erro
 	return &BookBridge{
 		host:     host,
 		pluginID: p.Manifest.ID,
-		client:   client,
+		service:  pluginService[numenv1connect.BookServiceClient]{host: host, pluginID: p.Manifest.ID, newClient: numenv1connect.NewBookServiceClient},
 		lease:    lease,
 	}, nil
 }
@@ -61,7 +53,12 @@ func (b *BookBridge) GetBook(
 	ctx context.Context,
 	req *connect.Request[v1.GetBookRequest],
 ) (*connect.Response[v1.GetBookResponse], error) {
-	return b.client.GetBook(ctx, req)
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = call.Close() }()
+	return client.GetBook(ctx, req)
 }
 
 // ReadBookMarkup forwards the ReadBookMarkup RPC to the plugin process.
@@ -69,7 +66,12 @@ func (b *BookBridge) ReadBookMarkup(
 	ctx context.Context,
 	req *connect.Request[v1.ReadBookMarkupRequest],
 ) (*connect.Response[v1.ReadBookMarkupResponse], error) {
-	return b.client.ReadBookMarkup(ctx, req)
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = call.Close() }()
+	return client.ReadBookMarkup(ctx, req)
 }
 
 // Close releases the active reference count for the book plugin in the host supervisor.
@@ -84,7 +86,13 @@ func (b *BookBridge) ReadBook(ctx context.Context, raw []byte) (domain.BookText,
 	if err := b.host.CheckPluginPermission(b.pluginID, PermissionVaultRead); err != nil {
 		return domain.BookText{}, err
 	}
-	resp, err := b.client.ExtractBookText(ctx, connect.NewRequest(&v1.ExtractBookTextRequest{Data: raw}))
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return domain.BookText{}, err
+	}
+	defer func() { _ = call.Close() }()
+
+	resp, err := client.ExtractBookText(ctx, connect.NewRequest(&v1.ExtractBookTextRequest{Data: raw}))
 	if err != nil {
 		return domain.BookText{}, getBookError(err)
 	}
@@ -121,7 +129,13 @@ func (b *BookBridge) ReadEntry(ctx context.Context, baseline *v1.Fingerprint, en
 	if err := b.host.CheckPluginPermission(b.pluginID, PermissionVaultRead); err != nil {
 		return nil, err
 	}
-	resp, err := b.client.ReadBookEntry(ctx, connect.NewRequest(&v1.ReadBookEntryRequest{
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = call.Close() }()
+
+	resp, err := client.ReadBookEntry(ctx, connect.NewRequest(&v1.ReadBookEntryRequest{
 		Path:     baseline.GetPath(),
 		Entry:    entry,
 		Baseline: baseline,

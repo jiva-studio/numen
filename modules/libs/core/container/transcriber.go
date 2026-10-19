@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"errors"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -10,22 +9,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
 
-var (
-	errTranscriptionUnavailable = errors.New("transcription plugin is unavailable or not installed")
-)
-
 // TranscriberReady says whether a recording could be listened to now without
 // waiting for anything to arrive.
 func (c Config) TranscriberReady() bool {
-	if c.IsMockML {
-		return true
-	}
-	if c.PluginHost != nil && !c.SafeMode {
-		if _, ok := c.PluginHost.FindPluginByCapability("transcription"); ok {
-			return true
-		}
-	}
-	return false
+	return c.IsMockML || c.hasPlugin(plugin.CapabilityTranscription)
 }
 
 // Transcriber is what listens to a recording on this machine, opened now.
@@ -34,14 +21,15 @@ func (c Config) Transcriber(ctx context.Context) (transcriber port.Transcriber, 
 		mock := NewMockTranscriber()
 		return mock, mock.Close, nil
 	}
-	if host, ok := c.findPluginHost("transcription"); ok {
-		bridge, err := plugin.OpenTranscriberBridge(ctx, host)
-		if err != nil {
-			return nil, nil, err
-		}
-		return bridge, bridge.Close, nil
+	host, err := c.resolvePlugin(plugin.CapabilityTranscription)
+	if err != nil {
+		return nil, nil, err
 	}
-	return nil, nil, errTranscriptionUnavailable
+	bridge, err := plugin.OpenTranscriberBridge(ctx, host)
+	if err != nil {
+		return nil, nil, err
+	}
+	return bridge, bridge.Close, nil
 }
 
 // Transcribe is one recording listened to with the transcriber given.
@@ -63,7 +51,9 @@ func (c Config) OpenTranscriptionWorker(
 		Tasks:   tasks,
 		Models:  models,
 		Runtime: transcription.Runtime{
-			Open:    c.openTranscriptionRuntime,
+			Open: func(ctx context.Context, _ func(what string, done, total int64)) (port.Transcriber, func() error, error) {
+				return c.Transcriber(ctx)
+			},
 			Ready:   c.TranscriberReady,
 			CanKeep: func() bool { return false },
 		},
@@ -72,21 +62,4 @@ func (c Config) OpenTranscriptionWorker(
 		Wait:         c.GetWait(),
 		Delay:        c.GetDelay(),
 	})
-}
-
-func (c Config) openTranscriptionRuntime(
-	ctx context.Context, _ func(what string, done, total int64),
-) (port.Transcriber, func() error, error) {
-	if c.IsMockML {
-		mock := NewMockTranscriber()
-		return mock, mock.Close, nil
-	}
-	if host, ok := c.findPluginHost("transcription"); ok {
-		bridge, err := plugin.OpenTranscriberBridge(ctx, host)
-		if err != nil {
-			return nil, nil, err
-		}
-		return bridge, bridge.Close, nil
-	}
-	return nil, nil, errTranscriptionUnavailable
 }

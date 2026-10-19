@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/plugincli"
@@ -23,19 +22,19 @@ func main() {
 	os.Exit(run())
 }
 
-func run() int {
+func run() (code int) {
 	// The settings are read here and nowhere below: an entry point says what it
 	// found, and nothing further down can reach the machine's own file.
 	cfg := platform.GetConfig()
-	if cfg.PluginHost != nil {
-		defer func() {
-			if host, ok := cfg.PluginHost.(interface {
-				TeardownAll(context.Context, time.Duration) error
-			}); ok {
-				_ = host.TeardownAll(context.Background(), 2*time.Second)
+	// A run whose plugins did not stop says so, and fails if nothing else did.
+	defer func() {
+		if err := cfg.StopPlugins(context.Background()); err != nil {
+			fmt.Fprintln(os.Stderr, "numen-cli: stop plugins:", err)
+			if code == 0 {
+				code = 1
 			}
-		}()
-	}
+		}
+	}()
 
 	chosen, err := cfg.Settings()
 	if err != nil {

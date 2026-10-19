@@ -160,6 +160,75 @@ func TestFindPluginByFileExtensionHonoursEnabledAndSafeMode(t *testing.T) {
 	}
 }
 
+// ResolveCapability says why no plugin answers: none declares the capability,
+// or the ones that do are disabled or held off by safe mode.
+func TestResolveCapabilitySaysWhyNoPluginAnswers(t *testing.T) {
+	host := NewHost("desktop.editor")
+	for _, id := range []string{"md.numen.b", "md.numen.a"} {
+		host.plugins[id] = DiscoveredPlugin{Manifest: port.PluginManifest{ID: id, Capabilities: []string{CapabilityBook}}}
+	}
+	getReason := func(capability string) port.UnavailableReason {
+		t.Helper()
+		_, err := host.ResolveCapability(capability)
+		var missing *port.UnavailableError
+		if !errors.As(err, &missing) || !errors.Is(err, port.ErrUnavailable) || missing.Capability != capability {
+			t.Fatalf("ResolveCapability(%q) = %v, want an UnavailableError for it", capability, err)
+		}
+		return missing.Reason
+	}
+
+	if found, err := host.ResolveCapability(CapabilityBook); err != nil || found.Manifest.ID != "md.numen.a" {
+		t.Fatalf("ResolveCapability = %q, %v, want the lowest id", found.Manifest.ID, err)
+	}
+	if got := getReason(CapabilityDocument); got != port.PluginNotInstalled {
+		t.Errorf("a capability nothing declares is %v, want not installed", got)
+	}
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.a", false); err != nil {
+		t.Fatal(err)
+	}
+	if found, err := host.ResolveCapability(CapabilityBook); err != nil || found.Manifest.ID != "md.numen.b" {
+		t.Fatalf("ResolveCapability = %q, %v, want the enabled one", found.Manifest.ID, err)
+	}
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.b", false); err != nil {
+		t.Fatal(err)
+	}
+	if got := getReason(CapabilityBook); got != port.PluginDisabled {
+		t.Errorf("a capability every declaring plugin of is disabled is %v, want disabled", got)
+	}
+	for _, id := range []string{"md.numen.a", "md.numen.b"} {
+		if err := host.SetPluginEnabled(t.Context(), id, true); err != nil {
+			t.Fatal(err)
+		}
+	}
+	host.SetSafeMode(true)
+	if got := getReason(CapabilityBook); got != port.PluginDisabled {
+		t.Errorf("a capability in safe mode is %v, want disabled", got)
+	}
+	if _, ok := host.FindPluginByCapability(CapabilityBook); ok {
+		t.Error("FindPluginByCapability found a plugin ResolveCapability does not")
+	}
+}
+
+// A plugin EnsureActive cannot start is told apart from one that is not there
+// or is switched off.
+func TestEnsureActiveSaysWhyAPluginIsUnavailable(t *testing.T) {
+	host := NewHost("desktop.editor")
+	host.plugins["md.numen.a"] = DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.a"}}
+	if err := host.SetPluginEnabled(t.Context(), "md.numen.a", false); err != nil {
+		t.Fatal(err)
+	}
+	for id, want := range map[string]port.UnavailableReason{
+		"md.numen.absent": port.PluginNotInstalled,
+		"md.numen.a":      port.PluginDisabled,
+	} {
+		_, err := host.EnsureActive(t.Context(), id)
+		var missing *port.UnavailableError
+		if !errors.As(err, &missing) || missing.Reason != want || missing.PluginID != id {
+			t.Errorf("EnsureActive(%q) = %v, want reason %v", id, err, want)
+		}
+	}
+}
+
 func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
 	host := NewHost("desktop.editor")
 	for _, id := range []string{"a.failing", "b.working"} {

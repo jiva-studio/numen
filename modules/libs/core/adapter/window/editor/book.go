@@ -50,15 +50,14 @@ func (h *bookHandler) GetBook(
 ) (*connect.Response[v1.GetBookResponse], error) {
 	client, closeClient, err := h.getClient(ctx)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, readPluginError(err)
 	}
-	if client == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
+	defer closeClient()
+	res, err := client.GetBook(ctx, r)
+	if err != nil {
+		return nil, readPluginError(err)
 	}
-	if closeClient != nil {
-		defer closeClient()
-	}
-	return client.GetBook(ctx, r)
+	return res, nil
 }
 
 // ReadBookMarkup answers with one document of a book, as the markup a window
@@ -72,15 +71,14 @@ func (h *bookHandler) ReadBookMarkup(
 ) (*connect.Response[v1.ReadBookMarkupResponse], error) {
 	client, closeClient, err := h.getClient(ctx)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, readPluginError(err)
 	}
-	if client == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
+	defer closeClient()
+	res, err := client.ReadBookMarkup(ctx, r)
+	if err != nil {
+		return nil, readPluginError(err)
 	}
-	if closeClient != nil {
-		defer closeClient()
-	}
-	return client.ReadBookMarkup(ctx, r)
+	return res, nil
 }
 
 // Entry answers with the bytes of one entry of a book's archive, which is how a
@@ -128,12 +126,7 @@ func (h *bookHandler) ReadEntry(ctx context.Context, mark document.Fingerprint, 
 	if err != nil {
 		return nil, fmt.Errorf("open the book plugin: %w", err)
 	}
-	if client == nil {
-		return nil, errNoDocuments
-	}
-	if closeClient != nil {
-		defer closeClient()
-	}
+	defer closeClient()
 	return client.ReadEntry(ctx, newWireFingerprint(mark), entry)
 }
 
@@ -146,20 +139,42 @@ func isMisnamed(err error) bool {
 		errors.Is(err, document.ErrNotAPicture)
 }
 
+// getClient opens the book plugin's client, with the close that lets it go. A
+// build with no book plugin, or one whose client answers none of a book's asks,
+// is errNoDocuments.
 func (h *bookHandler) getClient(ctx context.Context) (bookClient, func(), error) {
 	if h.openClient == nil {
-		return nil, nil, nil
+		return nil, nil, errNoDocuments
 	}
 	raw, closer, err := h.openClient(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
+	if closer == nil {
+		closer = func() {}
+	}
 	client, ok := raw.(bookClient)
 	if !ok {
-		if closer != nil {
-			closer()
-		}
-		return nil, nil, nil
+		closer()
+		return nil, nil, fmt.Errorf("%w: the book plugin answers with %T", errNoDocuments, raw)
 	}
 	return client, closer, nil
+}
+
+// readPluginError is what a failure to open the book plugin, or of an ask of
+// it, is answered with: a code the failure carries is kept, the end of the
+// caller's context is coded as such, and anything else is coded as a file that
+// could not be reached.
+func readPluginError(err error) error {
+	var coded *connect.Error
+	switch {
+	case errors.As(err, &coded):
+		return err
+	case errors.Is(err, context.Canceled):
+		return connect.NewError(connect.CodeCanceled, err)
+	case errors.Is(err, context.DeadlineExceeded):
+		return connect.NewError(connect.CodeDeadlineExceeded, err)
+	default:
+		return connect.NewError(getReachCode(err), err)
+	}
 }

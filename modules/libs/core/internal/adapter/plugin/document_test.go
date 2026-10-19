@@ -3,6 +3,7 @@ package plugin
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -22,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 type mockDocumentServer struct {
@@ -184,13 +186,14 @@ func TestDocumentBridgeNoPlugin(t *testing.T) {
 	_ = host.Discover()
 
 	_, err := OpenDocumentBridge(t.Context(), host)
-	if err != ErrNoDocumentPlugin {
-		t.Fatalf("got err = %v, want ErrNoDocumentPlugin", err)
+	var missing *port.UnavailableError
+	if !errors.As(err, &missing) || missing.Reason != port.PluginNotInstalled || missing.Capability != CapabilityDocument {
+		t.Fatalf("got %v, want the document plugin not installed", err)
 	}
 }
 
 func TestRemoteDocumentRenderPageRejectsOutOfRangeInputs(t *testing.T) {
-	// The nil client panics on any call, so a rejected input never reaches it.
+	// The zero service panics on any call, so a rejected input never reaches it.
 	doc := &remoteDocument{}
 	beyond := int64(math.MaxInt32) + 1
 	cases := []struct {

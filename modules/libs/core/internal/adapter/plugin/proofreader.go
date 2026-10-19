@@ -14,10 +14,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-var (
-	errNoProofreaderPlugin = errors.New("no active proofreading plugin found")
-)
-
 // ProofreaderPluginHost provides plugin resolution and activation for proofreading.
 type ProofreaderPluginHost interface {
 	port.PluginResolver
@@ -33,9 +29,9 @@ type ProofreaderBridge struct {
 
 // OpenProofreaderBridge activates or connects to the proofreading plugin and returns a port.Proofreader.
 func OpenProofreaderBridge(host ProofreaderPluginHost) (*ProofreaderBridge, error) {
-	plugin, ok := host.FindPluginByCapability("proofreading")
-	if !ok {
-		return nil, errNoProofreaderPlugin
+	plugin, err := host.ResolveCapability(CapabilityProofreading)
+	if err != nil {
+		return nil, err
 	}
 
 	return &ProofreaderBridge{

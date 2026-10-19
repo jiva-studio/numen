@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"connectrpc.com/connect"
@@ -11,10 +10,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-)
-
-var (
-	errNoEmbedderPlugin = errors.New("no active embedding plugin found")
 )
 
 // EmbedderPluginHost provides plugin resolution and activation for embeddings.
@@ -27,7 +22,7 @@ type EmbedderPluginHost interface {
 type EmbedderBridge struct {
 	host        port.PluginActivator
 	pluginID    string
-	client      numenv1connect.EmbeddingServiceClient
+	service     pluginService[numenv1connect.EmbeddingServiceClient]
 	lease       *pluginLease
 	model       port.EmbeddingModel
 	concurrency int
@@ -35,9 +30,9 @@ type EmbedderBridge struct {
 
 // OpenEmbedderBridge activates or connects to the embedding plugin and returns a port.Embedder.
 func OpenEmbedderBridge(ctx context.Context, host EmbedderPluginHost) (*EmbedderBridge, error) {
-	plugin, ok := host.FindPluginByCapability("embedding")
-	if !ok {
-		return nil, errNoEmbedderPlugin
+	plugin, err := host.ResolveCapability(CapabilityEmbedding)
+	if err != nil {
+		return nil, err
 	}
 
 	client, lease, err := openPlugin(ctx, host, plugin.Manifest.ID, numenv1connect.NewEmbeddingServiceClient)
@@ -68,7 +63,7 @@ func OpenEmbedderBridge(ctx context.Context, host EmbedderPluginHost) (*Embedder
 	return &EmbedderBridge{
 		host:        host,
 		pluginID:    plugin.Manifest.ID,
-		client:      client,
+		service:     pluginService[numenv1connect.EmbeddingServiceClient]{host: host, pluginID: plugin.Manifest.ID, newClient: numenv1connect.NewEmbeddingServiceClient},
 		lease:       lease,
 		model:       model,
 		concurrency: concurrency,
@@ -89,7 +84,13 @@ func (b *EmbedderBridge) Embed(ctx context.Context, texts []string) ([][]float32
 	req := connect.NewRequest(&v1.EmbedBatchRequest{
 		Texts: texts,
 	})
-	resp, err := b.client.EmbedBatch(ctx, req)
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = call.Close() }()
+
+	resp, err := client.EmbedBatch(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("embed batch rpc: %w", err)
 	}

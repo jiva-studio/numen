@@ -3,7 +3,6 @@ package plugin
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"image"
 	"image/png"
@@ -17,10 +16,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-var (
-	errNoRecogniserPlugin = errors.New("no active OCR recognition plugin found")
-)
-
 // RecogniserPluginHost provides plugin resolution, activation, and permission checking for OCR.
 type RecogniserPluginHost interface {
 	port.PluginResolver
@@ -32,16 +27,16 @@ type RecogniserPluginHost interface {
 type RecogniserBridge struct {
 	host     RecogniserPluginHost
 	pluginID string
-	client   numenv1connect.RecognitionServiceClient
+	service  pluginService[numenv1connect.RecognitionServiceClient]
 	lease    *pluginLease
 	model    port.RecognitionModel
 }
 
 // OpenRecogniserBridge activates or connects to the OCR plugin and returns a port.Recogniser.
 func OpenRecogniserBridge(ctx context.Context, host RecogniserPluginHost) (*RecogniserBridge, error) {
-	plugin, ok := host.FindPluginByCapability("recognition")
-	if !ok {
-		return nil, errNoRecogniserPlugin
+	plugin, err := host.ResolveCapability(CapabilityRecognition)
+	if err != nil {
+		return nil, err
 	}
 
 	client, lease, err := openPlugin(ctx, host, plugin.Manifest.ID, numenv1connect.NewRecognitionServiceClient)
@@ -67,7 +62,7 @@ func OpenRecogniserBridge(ctx context.Context, host RecogniserPluginHost) (*Reco
 	return &RecogniserBridge{
 		host:     host,
 		pluginID: plugin.Manifest.ID,
-		client:   client,
+		service:  pluginService[numenv1connect.RecognitionServiceClient]{host: host, pluginID: plugin.Manifest.ID, newClient: numenv1connect.NewRecognitionServiceClient},
 		lease:    lease,
 		model:    model,
 	}, nil
@@ -95,7 +90,13 @@ func (b *RecogniserBridge) Recognise(ctx context.Context, page image.Image) ([]d
 	req := connect.NewRequest(&v1.RecognisePageRequest{
 		ImageData: buf.Bytes(),
 	})
-	resp, err := b.client.RecognisePage(ctx, req)
+	client, call, err := b.service.open(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = call.Close() }()
+
+	resp, err := client.RecognisePage(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("rpc recognise page: %w", err)
 	}

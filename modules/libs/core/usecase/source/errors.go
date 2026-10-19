@@ -18,6 +18,10 @@ var (
 
 	// ErrOutside is a path that does not stay in the vault.
 	ErrOutside = port.ErrOutside
+
+	// ErrUnavailable is a plugin that is not there to answer: not installed, disabled
+	// or failed to start.
+	ErrUnavailable = port.ErrUnavailable
 )
 
 // IsNoNote reports whether an error says there is no note at the path.

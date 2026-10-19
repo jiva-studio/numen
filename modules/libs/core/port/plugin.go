@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 )
 
 var (
@@ -13,6 +14,61 @@ var (
 	// ErrPermissionDenied is returned when a plugin lacks the required permission.
 	ErrPermissionDenied = errors.New("plugin permission denied")
 )
+
+// UnavailableReason is why no plugin answers.
+type UnavailableReason int
+
+const (
+	// PluginNotInstalled is no installed plugin to answer.
+	PluginNotInstalled UnavailableReason = iota + 1
+	// PluginDisabled is every plugin that would answer switched off, by its setting or by safe mode.
+	PluginDisabled
+	// PluginFailed is a plugin that could not be started or reached.
+	PluginFailed
+)
+
+// UnavailableError is a plugin, or a capability, that no plugin answers for, and why. It is
+// ErrUnavailable.
+type UnavailableError struct {
+	// Capability is what was asked for. Empty where a plugin was asked for by its id.
+	Capability string
+	// PluginID is the plugin asked for or found. Empty where none was found.
+	PluginID string
+	Reason   UnavailableReason
+	// Err is the cause the host gave.
+	Err error
+}
+
+// Error says what is unavailable and why.
+func (e *UnavailableError) Error() string {
+	subject := "plugin " + e.PluginID
+	if e.PluginID == "" {
+		subject = "the plugin for " + e.Capability
+	}
+	var said string
+	switch e.Reason {
+	case PluginNotInstalled:
+		said = subject + " is not installed"
+	case PluginDisabled:
+		said = subject + " is disabled"
+	default:
+		said = subject + " failed to start"
+	}
+	if e.Err != nil {
+		return said + ": " + e.Err.Error()
+	}
+	return said
+}
+
+// Is reports that the error is ErrUnavailable.
+func (e *UnavailableError) Is(target error) bool {
+	return target == ErrUnavailable
+}
+
+// Unwrap returns the cause the host gave.
+func (e *UnavailableError) Unwrap() error {
+	return e.Err
+}
 
 // PluginPersistHandler is called when a plugin modifies its own settings.
 type PluginPersistHandler func(pluginID string, key string, value any) error
@@ -55,11 +111,13 @@ func (e Endpoint) BaseURL() string {
 	return fmt.Sprintf("http://%s:%d", e.Host, e.Port)
 }
 
-// PluginResolver locates plugins by capability, file extension, or identifier. Of several enabled
-// plugins that match a capability or an extension, the one with the lowest id is found.
+// PluginResolver locates plugins by capability or identifier. Of several enabled plugins that
+// declare a capability, the one with the lowest id is found.
 type PluginResolver interface {
+	// ResolveCapability returns the plugin for the capability. Where none answers, the error is an
+	// *UnavailableError saying whether none is installed or every one is disabled.
+	ResolveCapability(capability string) (DiscoveredPlugin, error)
 	FindPluginByCapability(capability string) (DiscoveredPlugin, bool)
-	FindPluginByFileExtension(ext string) (DiscoveredPlugin, bool)
 	GetPlugin(id string) (DiscoveredPlugin, bool)
 }
 
@@ -119,4 +177,10 @@ type PluginManager interface {
 	PluginEventEmitter
 	PluginAuthorizer
 	PluginPathValidator
+	// SetSafeMode stops every running plugin when enabled, and starts none until it is disabled.
+	SetSafeMode(enabled bool)
+	// SetVaultPath is the vault the plugins' paths are held inside.
+	SetVaultPath(path string)
+	// TeardownAll stops every plugin, giving each the grace period to exit.
+	TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 }
