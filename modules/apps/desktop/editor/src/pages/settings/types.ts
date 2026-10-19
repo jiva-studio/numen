@@ -52,7 +52,7 @@ export interface Installation {
    */
   writeSecret(pluginId: string, name: string, key: string): void
   deleteSecret(pluginId: string, name: string): void
-  /** A plugin the host holds off, started once more. */
+  /** A plugin the host suspends, started once more. */
   retryPlugin(pluginId: string): void
   readonly plugins?: Readonly<Ref<readonly PluginInfo[]>>
   /** The file the settings stand in, absolute on this machine. */

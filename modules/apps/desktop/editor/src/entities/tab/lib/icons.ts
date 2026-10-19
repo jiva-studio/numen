@@ -1,7 +1,6 @@
 /** What each kind of tab is drawn as, before the name it carries. */
 import {
   AudioLines,
-  Bot,
   BookOpen,
   BookText,
   Braces,
@@ -14,7 +13,6 @@ import {
   type LucideIcon,
 } from '@lucide/vue'
 import {
-  AGENT,
   BOOK,
   DECK,
   DOCUMENT,
@@ -28,7 +26,6 @@ import {
 } from './workspace'
 
 const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
-  [AGENT, Bot],
   [NOTE, FileText],
   [DOCUMENT, BookOpen],
   [BOOK, BookText],

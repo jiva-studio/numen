@@ -3,12 +3,14 @@
  */
 import { computed, type Ref, type ShallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import type { VaultFiles, VaultNotes, WorkspaceHost } from '@numen/plugin-sdk'
+import type { AgentHost, NoteRef, VaultFiles, VaultNotes, WorkspaceHost } from '@numen/plugin-sdk'
 import type { SearchDeps } from '@/features/command-palette'
 import type { FileOpeners } from '@/entities/tab'
 import { CREATABLE, type NoteCreator } from '@/entities/note'
 import type { MessageWriter } from '@/shared/notices/messages'
+import type { AgentPort } from '@numen/ui'
 import type { NotePort } from '@/app/ports/notes'
+import type { useSettings } from './useSettings'
 import { createPathCommandHost, type PathCommandDeps } from './fileServices'
 
 /** The window and the notes a plugin is given, once the window has made them. */
@@ -16,6 +18,7 @@ export interface PluginServices {
   workspace?: WorkspaceHost
   notes?: VaultNotes
   files?: VaultFiles
+  agent?: AgentHost
 }
 
 /** What the window hands a plugin's tabs. */
@@ -30,9 +33,11 @@ export interface WorkspaceHostDeps extends PathCommandDeps {
     readonly headings: Readonly<Ref<number>>
   }
   readonly dragged: ShallowRef<readonly string[]>
-  readonly tabOpeners: Pick<FileOpeners, 'openFile'>
+  readonly tabOpeners: Pick<FileOpeners, 'openFile' | 'openFileAt'>
   readonly tabSync?: { syncPathFromTab(tabId: string, path: string, title?: string): boolean }
   readonly ask: (text: string) => void
+  /** The note the tool tab the person was last in stands on. */
+  readonly getNoteInFocus: () => NoteRef
   readonly writeMessage: MessageWriter
 }
 
@@ -55,6 +60,12 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
         })
         .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
     },
+    openFileAt: (path, spans) => {
+      tabOpeners
+        .openFileAt(path, spans)
+        .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
+    },
+    getNoteInFocus: () => deps.getNoteInFocus(),
     syncPath: (tabId, path, title) => deps.tabSync?.syncPathFromTab(tabId, path, title) ?? false,
     runCommand: (id, { path, title }) => deps.runCommand(id, { ...deps.getTarget(), path, title }),
     ask: (text) => deps.ask(text),
@@ -85,5 +96,30 @@ export function createVaultNotes({ core, search, making }: VaultNotesDeps): Vaul
     join: (...link) => making.join(...link),
     replaceLinks: (first, second, links) => making.replaceLinks(first, second, links),
     creatableRelations: CREATABLE,
+  }
+}
+
+/** What the agent a plugin's tabs ask is made from. */
+export interface AgentHostDeps {
+  readonly port: AgentPort
+  readonly core: Pick<NotePort, 'resolve'>
+  readonly window: { readonly unreachable: Readonly<Ref<string>> }
+  readonly settings: {
+    readonly rest: Pick<
+      ReturnType<typeof useSettings>['rest'],
+      'getSetting' | 'writeSetting' | 'getModelsAt'
+    >
+  }
+}
+
+export function createAgentHost({ port, core, window, settings }: AgentHostDeps): AgentHost {
+  return {
+    ask: (query) => port.ask(query),
+    finish: (conversation) => port.finish(conversation),
+    resolve: (written) => core.resolve('', written),
+    getUnreachable: () => window.unreachable.value,
+    getSetting: (path) => settings.rest.getSetting(path),
+    writeSetting: (path, value) => settings.rest.writeSetting(path, value),
+    getModelsAt: (path) => settings.rest.getModelsAt(path),
   }
 }

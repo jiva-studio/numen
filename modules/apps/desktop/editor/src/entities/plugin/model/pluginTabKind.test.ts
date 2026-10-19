@@ -63,10 +63,15 @@ describe('a registration that says what its tabs hold', () => {
 
   it('hands the window every hook it declares, and no other', () => {
     const navigate = vi.fn()
+    const receiveText = vi.fn()
     const placement = { pane: 'main', order: 0 } as const
-    const kind = createDeclaredTabKind('p', declare({ navigate, isTool: true, placement }))
+    const kind = createDeclaredTabKind(
+      'p',
+      declare({ navigate, receiveText, isTool: true, placement }),
+    )
 
     expect(kind.navigate).toBe(navigate)
+    expect(kind.receiveText).toBe(receiveText)
     expect(kind.isTool).toBe(true)
     expect(kind.placement).toBe(placement)
     expect(kind).not.toHaveProperty('identity')

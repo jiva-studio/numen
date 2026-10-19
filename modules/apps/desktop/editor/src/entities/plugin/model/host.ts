@@ -287,11 +287,12 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
 /** The host services a plugin context is given, as the window has made them. */
 function createServiceBridge(
   deps: PluginHostDeps,
-): Pick<PluginContextHost, 'getWorkspace' | 'getNotes' | 'getFiles'> {
+): Pick<PluginContextHost, 'getWorkspace' | 'getNotes' | 'getFiles' | 'getAgent'> {
   return {
     getWorkspace: () => deps.getWorkspace?.(),
     getNotes: () => deps.getNotes?.(),
     getFiles: () => deps.getFiles?.(),
+    getAgent: () => deps.getAgent?.(),
   }
 }
 

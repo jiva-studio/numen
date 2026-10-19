@@ -32,7 +32,7 @@ func TestTheTokenTravelsInAFileOfThisUserAlone(t *testing.T) {
 
 	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
 		Prompt: "what is here?", Command: []string{script},
-		ToolsUrl: "http://127.0.0.1:7717/mcp", ToolsToken: "let-me-in",
+		Tools: []string{"note_read"}, ToolsUrl: "http://127.0.0.1:7717/mcp", ToolsToken: "let-me-in",
 	}))
 	if err != nil {
 		t.Fatal(err)

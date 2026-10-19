@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { useWindowTabs } from '@/entities/tab'
 import type { AnyTabKind } from '@/entities/tab'
+import type { AgentHost, WorkspaceHost } from '@numen/plugin-sdk'
+import { activate } from '@plugins/view-agent-chat/frontend'
+import manifest from '@plugins/view-agent-chat/manifest.json'
 import { createPluginSupport } from './useWindowPlugins'
 
 const createSupport = () => {
@@ -14,6 +17,10 @@ const createSupport = () => {
       registerEditor: vi.fn(() => () => undefined),
     } as never,
     settingsHolder: {},
+    services: {
+      workspace: { getNoteInFocus: () => ({ path: '', title: '' }) } as unknown as WorkspaceHost,
+      agent: { finish: () => Promise.resolve(), getModelsAt: () => [] } as unknown as AgentHost,
+    },
   })
   return { held, support, removeClosedTab }
 }
@@ -59,5 +66,30 @@ describe('closing the tabs of a plugin', () => {
     support.pluginHost.disposePlugin('md.numen.a')
 
     expect(held.getTab(id)).not.toBeNull()
+  })
+})
+
+describe('the agent chat tab', () => {
+  const activateChat = async () => {
+    const { held, support } = createSupport()
+    await activate(support.pluginHost.createContext(manifest.id, manifest))
+    return { held, support }
+  }
+
+  it('is a kind of the window while the plugin is active', async () => {
+    const { held } = await activateChat()
+
+    expect(held.hasKind('agent')).toBe(true)
+    expect(held.getTab(await held.createTab('agent', ''))).not.toBeNull()
+  })
+
+  it('goes, with its open tabs, when the plugin is disabled', async () => {
+    const { held, support } = await activateChat()
+    const id = await held.createTab('agent', '')
+
+    support.pluginHost.disposePlugin(manifest.id)
+
+    expect(held.hasKind('agent')).toBe(false)
+    expect(held.getTab(id)).toBeNull()
   })
 })

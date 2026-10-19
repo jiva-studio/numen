@@ -233,7 +233,7 @@ func (h *settingsHandler) DeletePluginSecret(
 	return connect.NewResponse(&v1.DeletePluginSecretResponse{}), nil
 }
 
-// newWirePluginFailure is why the host holds a plugin off, as the wire carries it, and nil for a plugin it does not.
+// newWirePluginFailure is why the host suspends a plugin, as the wire carries it, and nil for a plugin it does not.
 func newWirePluginFailure(failure *settings.PluginFailure) *v1.PluginFailure {
 	if failure == nil {
 		return nil

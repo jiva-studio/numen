@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import type { Conversation } from '@numen/ui'
-import type { Model } from '@/entities/settings'
+import type { AgentModel } from '@numen/plugin-sdk'
 import { useAgentConversation } from './useAgentConversation'
 
 /** A conversation with nothing said in it. */
@@ -17,6 +17,9 @@ const createConversation = (): Conversation => ({
   finish: () => {},
 })
 
+/** A model the window lists, found at the place given. */
+type Model = AgentModel & { readonly namedAt: readonly string[] }
+
 /** A setting the window lists, found at the place given. */
 const model = (
   namedAt: readonly string[],
@@ -27,9 +30,7 @@ const model = (
   namedAt,
   name,
   title: name.toUpperCase(),
-  group: '',
   isDefault,
-  writes: [],
   presence,
 })
 
@@ -105,7 +106,7 @@ describe('the models an agent tab offers', () => {
   it('include the model the settings name where the core lists that one alone', () => {
     const state = open([
       model(['agent', 'use'], 'zeta'),
-      { ...model(['agent', 'zeta', 'model'], 'my-zeta'), group: 'Named in the settings' },
+      model(['agent', 'zeta', 'model'], 'my-zeta'),
     ])
 
     expect(state.modelOptions.value.map((one) => one.modelId)).toEqual(['my-zeta'])

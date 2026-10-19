@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
 import { branch, pane, Palette, Tree, WorkspaceLayout, type PaletteGroup } from '@numen/ui'
-import { AgentTab } from '@/pages/agent-chat'
+import { AgentTab } from '@plugins/view-agent-chat/frontend'
 import { DeckTab } from '@/pages/deck-editor'
 import { FilesTab, NEW_DECK, NEW_STENCIL } from '@plugins/view-file-tree/frontend'
 import { PlexTab, WORDS as plexWords } from '@plugins/view-plex-graph/frontend'

@@ -21,6 +21,7 @@ export const isDeclaredTabKind = (
 const OPTIONAL_HOOKS = [
   'identity',
   'onShow',
+  'receiveText',
   'onKeyPress',
   'getTarget',
   'getOpenTab',

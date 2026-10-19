@@ -904,6 +904,20 @@ describe('a window opened with nothing to restore', () => {
     ])
   })
 
+  it('keeps a tab the person opened before the placed tabs were laid out, in front', async () => {
+    const window = useWindowTabs()
+    window.registerKinds([placed('plex', 'main', 0), kind({ kind: 'settings' }).one])
+    const early = await window.openTabOfKind('settings')
+
+    await window.openPlacedTabs(() => {
+      throw new Error('no placed tab fails here')
+    })
+
+    const [main] = getPanes(window.layout.value.root)
+    expect(main?.tabs.map((id) => id.split(':')[0])).toStrictEqual(['plex', 'settings'])
+    expect(main?.active).toBe(early)
+  })
+
   it('gives the whole window to the aside kinds where no kind is placed in the main pane', async () => {
     const window = useWindowTabs()
     window.registerKinds([placed('agent', 'aside', 0)])
@@ -1009,5 +1023,50 @@ describe('the tabs standing on a path that went', () => {
     expect(window.getTab(gone)?.state).toMatchObject({ at: 'Root.md' })
     expect(window.getTab(survivor)?.state).toMatchObject({ at: 'Elsewhere.md' })
     expect(window.getTab(still)?.state).toMatchObject({ at: 'Gone.md' })
+  })
+})
+
+describe('text put to the tabs of a kind', () => {
+  /** A kind whose tabs keep the text they were handed. */
+  const listener = () =>
+    kind({
+      kind: 'listener',
+      open: () => ({ heard: [] as string[], title: '' }),
+      receiveText: (state: { heard: string[] }, text: string) => {
+        state.heard.push(text)
+      },
+    })
+
+  it('goes to the tab the person was last in, which is put in front', async () => {
+    const window = useWindowTabs()
+    window.registerKinds([listener().one])
+    const first = await window.openTabOfKind('listener')
+    const second = await window.openTabOfKind('listener')
+    window.onTabShown(first)
+    window.onTabShown(second)
+
+    const sent = await window.sendText('listener', 'what is this?')
+
+    expect(sent).toBe(second)
+    expect(window.getTab(first)?.state).toMatchObject({ heard: [] })
+    expect(window.getTab(second)?.state).toMatchObject({ heard: ['what is this?'] })
+    expect(paneById(window.layout.value.root, window.layout.value.focus)?.active).toBe(second)
+  })
+
+  it('opens a tab to take it where the window holds none', async () => {
+    const window = useWindowTabs()
+    window.registerKinds([listener().one])
+
+    const id = await window.sendText('listener', 'what is this?')
+
+    expect(window.getTab(id)?.state).toMatchObject({ heard: ['what is this?'] })
+  })
+
+  it('is left unheard by a tab of a kind that takes no text', async () => {
+    const window = useWindowTabs()
+    window.registerKinds([kind().one])
+    const id = await window.openTabOfKind('thing')
+
+    await expect(window.sendText('thing', 'hello')).resolves.toBe(id)
   })
 })
