@@ -38,7 +38,7 @@
     }
   },
   "dependencies": {
-    "typescript": "^6.0.3",
-    "vue-router": "^4.6.4"
+    "typescript": "^7.0.2",
+    "vue-router": "^5.4.0"
   }
 }
