@@ -22,6 +22,7 @@ import {
   resolvePluginComponent,
   stripMarkdownExtension,
 } from './styles'
+import { createNoteWriter, startNoteRead } from './customTabNote'
 import type { PluginHostDeps } from './types'
 import { pickDeclaredHooks } from './pluginTabKind'
 
@@ -246,47 +247,15 @@ function createCustomTabState(at: string, deps: CustomTabStateDeps) {
   const errorMessageRef = ref('')
   const isLoading = ref(deps.hostDeps?.readNote !== undefined)
   let hasEdited = false
-  let writes = 0
-  let hasWriteError = false
-  const write = (body: string): void => {
-    const writeNote = deps.hostDeps?.writeNote
-    if (!writeNote) return
-    const turn = ++writes
-    writeNote(at, body).then(
-      () => {
-        if (turn !== writes || !hasWriteError) return
-        hasWriteError = false
-        errorMessageRef.value = ''
-      },
-      (err) => {
-        if (turn !== writes) return
-        hasWriteError = true
-        errorMessageRef.value = err instanceof Error ? err.message : String(err)
-      },
-    )
-  }
+  const write = createNoteWriter(at, deps.hostDeps?.writeNote, errorMessageRef)
 
   if (deps.hostDeps?.readNote) {
-    deps.hostDeps
-      .readNote(at)
-      .then((result) => {
-        isLoading.value = false
-        if (hasEdited) return
-        if (typeof result === 'string') {
-          noteRef.value = { path: at, body: result }
-        } else if (result && typeof result === 'object') {
-          if (result.body !== undefined) {
-            noteRef.value = { path: at, body: result.body }
-          }
-          if (result.error) {
-            errorMessageRef.value = result.error
-          }
-        }
-      })
-      .catch((err) => {
-        isLoading.value = false
-        errorMessageRef.value = err instanceof Error ? err.message : String(err)
-      })
+    startNoteRead(at, deps.hostDeps.readNote, {
+      note: noteRef,
+      errorMessage: errorMessageRef,
+      isLoading,
+      hasEdited: () => hasEdited,
+    })
   }
   return {
     at,
