@@ -1,10 +1,10 @@
 /**
- * The files the window's tabs hold open, as a plugin is given the means to see them written out.
+ * The files open in a plugin's tabs, as a plugin is given the means to see them written out.
  */
 import type { BufferHost } from '@numen/plugin-sdk'
 import { raiseConflicts, type useFileFlush } from '@/features/file-conflict'
 
-/** What the files held open are written out and asked about through. */
+/** What the open files are written out and asked about through. */
 export interface BufferHostDeps {
   readonly fileFlush: Pick<ReturnType<typeof useFileFlush>, 'addHandler' | 'raise'>
 }
@@ -23,7 +23,11 @@ export function createBufferHost({ fileFlush }: BufferHostDeps): BufferHost {
     },
     addFlushHandler: (handler) => {
       const remove = fileFlush.addHandler(handler)
-      return { dispose: () => void remove() }
+      return {
+        dispose: () => {
+          remove()
+        },
+      }
     },
   }
 }

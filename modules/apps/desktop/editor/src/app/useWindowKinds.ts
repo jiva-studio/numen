@@ -66,7 +66,13 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     openFile: (path, title, line) => void tabOpeners.openFile(path, title, { where: 'here', line }),
   }
 
-  const made = createFileMakers({ core, tabOpeners, held, notes: editing.notes, writeMessage })
+  const made = createFileMakers({
+    core,
+    tabOpeners,
+    windowTabs: held,
+    notes: editing.notes,
+    writeMessage,
+  })
 
   held.registerKinds(settings.kinds)
 

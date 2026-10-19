@@ -71,7 +71,8 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     reload: vaultsModule.reload,
     loadArtifactStates: vaultsModule.loadArtifactStates,
     reached: editing.reached,
-    openPreset: (path) => openCommandTab({ vaultCore: core, held, writeMessage }, path, 'preset'),
+    openPreset: (path) =>
+      openCommandTab({ vaultCore: core, windowTabs: held, writeMessage }, path, 'preset'),
     dressed: settings.dressed,
     oneName: settings.oneName,
     nesting: settings.nesting,

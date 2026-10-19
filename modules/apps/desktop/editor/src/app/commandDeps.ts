@@ -163,23 +163,23 @@ function findHeldTabAt(held: ReturnType<typeof useWindowTabs>, path: string): st
  * kind of tab answers for.
  */
 export function createCommandNotes(reached: Notes, held: ReturnType<typeof useWindowTabs>): Notes {
-  const getHeld = (id: string) => held?.getTab?.(id) ?? null
+  const getTab = (id: string) => held?.getTab?.(id) ?? null
   return {
     ...reached,
     getTabAt: (path: string) => reached?.getTabAt?.(path) ?? findHeldTabAt(held, path),
     getPath: (id: string) => {
       const path = reached.getPath(id)
       if (path !== id) return path
-      const tab = getHeld(id)
+      const tab = getTab(id)
       return tab?.kind.getOpenTab?.(tab.state)?.path ?? id
     },
     asking: (id: string) => {
-      const tab = getHeld(id)
+      const tab = getTab(id)
       return reached.asking(id) || (tab?.kind.isAsking?.(tab.state) ?? false)
     },
     flushPending: async (id: string) => {
       await reached.flushPending(id)
-      const tab = getHeld(id)
+      const tab = getTab(id)
       await tab?.kind.flushPending?.(tab.state)
     },
     close: (id: string) => {

@@ -43,7 +43,7 @@ const setup = () => {
   const made = createFileMakers({
     core: { createUrl },
     tabOpeners: { openNewFile } as never,
-    held: { createFileOfKind },
+    windowTabs: { createFileOfKind },
     notes: { applyPathChanges },
     writeMessage,
   })
@@ -112,10 +112,9 @@ describe('the files of the vault a plugin is handed', () => {
 
   it('make a deck, a stencil and a preset through the kinds that edit them, under the names given', async () => {
     const { files, openNewFile, createFileOfKind } = setup()
-    createFileOfKind.mockImplementation(async (kind: string) => ({
-      ok: true,
-      value: { path: `dir/${kind}.md` },
-    }))
+    createFileOfKind.mockImplementation((kind: string) =>
+      Promise.resolve({ ok: true, value: { path: `dir/${kind}.md` } }),
+    )
 
     expect(await files.createDeck('dir', 'D')).toBe('dir/deck.md')
     expect(await files.createStencil('dir', 'S')).toBe('dir/stencil.md')
@@ -130,8 +129,7 @@ describe('the files of the vault a plugin is handed', () => {
   })
 
   it('make no deck, and say so, where no kind of tab makes one', async () => {
-    const { files, createFileOfKind, writeMessage } = setup()
-    createFileOfKind.mockReturnValue(undefined)
+    const { files, writeMessage } = setup()
 
     expect(await files.createDeck('dir', 'D')).toBe('')
 

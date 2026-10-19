@@ -59,15 +59,15 @@ const mountStencil = async (problems: readonly DeckProblem[] = []) => {
     writeStencil: async () => asValue({ at: 'written' }),
   }
 
-  const held = createMockTabWindow()
+  const windowTabs = createMockTabWindow()
   const stencils = useStencilTabs(core, {
     buffers: createMockBufferHost(),
-    closeTab: held.finishClose,
+    closeTab: windowTabs.finishClose,
   })
-  held.register(stencils.kind)
-  const id = await held.openTab(STENCIL, 'Animal.md')
+  windowTabs.register(stencils.kind)
+  const id = await windowTabs.openTab(STENCIL, 'Animal.md')
   await settle()
-  const tab = held.getTabState<StencilTabState>(id) as StencilTabState
+  const tab = windowTabs.getTabState<StencilTabState>(id) as StencilTabState
   // A mark is teleported into the face or the row it is about, so the editor
   // has to stand in the document for those to be found.
   const window = mount(StencilTab, { props: { state: tab }, attachTo: document.body })

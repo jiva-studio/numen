@@ -156,15 +156,15 @@ const mountDeck = async (
     }),
   }
 
-  const held = createMockTabWindow()
+  const windowTabs = createMockTabWindow()
   const decks = useDeckTabs(core, presets, {
     buffers: createMockBufferHost(),
-    closeTab: held.finishClose,
+    closeTab: windowTabs.finishClose,
   })
-  held.register(decks.kind)
-  const id = await held.openTab(DECK, 'Animals.md')
+  windowTabs.register(decks.kind)
+  const id = await windowTabs.openTab(DECK, 'Animals.md')
   await settle()
-  const tab = held.getTabState<DeckTabState>(id) as DeckTabState
+  const tab = windowTabs.getTabState<DeckTabState>(id) as DeckTabState
   // A mark is teleported into the tile it is about, so the grid has to stand in
   // the document for the tile to be found.
   const window = mount(DeckTab, { props: { state: tab }, attachTo: document.body })

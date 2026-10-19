@@ -18,8 +18,8 @@ const createFlush = () => {
 
 const createBuffers = () =>
   openNotes({
-    read: async () => ({ ok: true, value: { body: 'text', at: '1' } }),
-    write: async () => ({ ok: true, value: { body: '', at: '2' } }),
+    read: () => Promise.resolve({ ok: true, value: { body: 'text', at: '1' } }),
+    write: () => Promise.resolve({ ok: true, value: { body: '', at: '2' } }),
   })
 
 describe('the files a plugin has open', () => {

@@ -86,7 +86,7 @@ describe('the icon of a kind of note', () => {
   it('draws a preset as the tab that opens it does', () => {
     const context = createMockPluginContext({
       workspace: {
-        getMessageWriter: () => () => {},
+        getMessageWriter: () => () => undefined,
         getToday: () => '2026-09-04',
       } as unknown as WorkspaceHost,
       buffers: createMockBufferHost(),

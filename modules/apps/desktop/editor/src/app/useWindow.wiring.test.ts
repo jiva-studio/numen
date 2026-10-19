@@ -344,7 +344,7 @@ describe('what the window knows of a note', () => {
       h.f.held.tabs.value = [{ id: 'deck:a', title: 'Animals' }]
       h.f.held.getTab.mockReturnValue({
         state: { path: 'a.md' },
-        kind: { flushPending: async () => {}, getOpenTab: () => ({ path: 'a.md' }) },
+        kind: { flushPending: () => Promise.resolve(), getOpenTab: () => ({ path: 'a.md' }) },
       })
     }
 

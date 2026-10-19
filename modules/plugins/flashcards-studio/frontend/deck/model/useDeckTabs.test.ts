@@ -15,11 +15,11 @@ import { WORDS as words } from '../../cards'
 
 /** The deck tabs of a window that holds them in memory, and the buffers they are written out through. */
 const useDeckTabs = (cards: Cards, presets: Presets) => {
-  const held = createMockTabWindow()
+  const windowTabs = createMockTabWindow()
   const buffers = createMockBufferHost()
-  const decks = useDeckTabsOriginal(cards, presets, { buffers, closeTab: held.finishClose })
-  held.register(decks.kind)
-  return { held, buffers, decks }
+  const decks = useDeckTabsOriginal(cards, presets, { buffers, closeTab: windowTabs.finishClose })
+  windowTabs.register(decks.kind)
+  return { windowTabs, buffers, decks }
 }
 
 /** A preset that schedules, which is what every preset here is. */
@@ -216,11 +216,11 @@ const vault = (
 /** A window with one deck open on a file, and what that tab holds. */
 const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animals.md') => {
   const one = vault(answers)
-  const { held, buffers, decks } = useDeckTabs(one.core, one.presets)
-  const id = await held.openTab(DECK, path)
+  const { windowTabs, buffers, decks } = useDeckTabs(one.core, one.presets)
+  const id = await windowTabs.openTab(DECK, path)
   await settle()
-  const tab = held.getTabState<DeckTabState>(id) as DeckTabState
-  return { ...one, held, buffers, decks, id, tab }
+  const tab = windowTabs.getTabState<DeckTabState>(id) as DeckTabState
+  return { ...one, windowTabs, buffers, decks, id, tab }
 }
 
 describe('a deck opened', () => {
@@ -245,9 +245,9 @@ describe('a deck opened', () => {
   })
 
   it('is called what the file is called', async () => {
-    const { decks, id, held } = await open()
+    const { decks, id, windowTabs } = await open()
 
-    expect(decks.kind.getTitle?.(held.getTabState<DeckTabState>(id) as DeckTabState)).toBe(
+    expect(decks.kind.getTitle?.(windowTabs.getTabState<DeckTabState>(id) as DeckTabState)).toBe(
       'Animals',
     )
   })
@@ -265,9 +265,9 @@ describe('a deck opened', () => {
   })
 
   it('is one tab per file, so the same deck asked for twice is the tab it has', async () => {
-    const { held, id } = await open()
+    const { windowTabs, id } = await open()
 
-    const again = await held.openTab(DECK, 'Animals.md')
+    const again = await windowTabs.openTab(DECK, 'Animals.md')
 
     expect(again).toBe(id)
   })
@@ -721,7 +721,7 @@ describe('a deck read again under the window', () => {
   })
 
   /* A write takes a moment, and a person typing does not stop for it. The card
-     that comes back named carries what it held when it was sent, and what is
+     that comes back named carries what it windowTabs when it was sent, and what is
      being typed into is the same card. */
   it('keeps it where the typing went on while the write was away', async () => {
     const one = await open()
@@ -782,11 +782,11 @@ describe('a deck renamed under the window', () => {
 
     renameDeck(one)
     await settle()
-    await one.held.openTab(DECK, 'Beasts.md')
+    await one.windowTabs.openTab(DECK, 'Beasts.md')
     await settle()
 
     expect(one.decks.store.getOpenIds()).toHaveLength(1)
-    expect(one.held.each(DECK)).toHaveLength(1)
+    expect(one.windowTabs.each(DECK)).toHaveLength(1)
   })
 
   it('keeps what the vault said about it, which stands at the name it went to', async () => {
@@ -822,7 +822,7 @@ describe('a deck whose tab has gone', () => {
     const one = await open()
     expect(one.decks.getTitle('Animals.md')).toBe('Animals')
 
-    one.held.requestClose(one.id)
+    one.windowTabs.requestClose(one.id)
     await settle()
 
     expect(one.decks.getTitle('Animals.md')).toBe('Animals.md')
@@ -986,13 +986,13 @@ describe('a deck tab closed', () => {
     one.tab.close(one.id)
     await settle()
 
-    expect(one.held.each(DECK)).toHaveLength(0)
+    expect(one.windowTabs.each(DECK)).toHaveLength(0)
     expect(one.decks.getTitle('Animals.md')).toBe('Animals.md')
   })
 
   it('forgets what was said about its file while a tab at another file stays', async () => {
     const one = await open()
-    await one.held.openTab(DECK, 'Beasts.md')
+    await one.windowTabs.openTab(DECK, 'Beasts.md')
     await settle()
 
     one.tab.close(one.id)
@@ -1010,13 +1010,13 @@ describe('a deck tab closed', () => {
     one.tab.close(one.id)
     await settle()
 
-    expect(one.held.each(DECK)).toHaveLength(1)
+    expect(one.windowTabs.each(DECK)).toHaveLength(1)
     expect(one.decks.getTitle('Animals.md')).toBe('Animals')
   })
 
   it('keeps what was said about a file another tab still stands at', async () => {
     const one = await open()
-    await one.held.openTab(DECK, 'Beasts.md')
+    await one.windowTabs.openTab(DECK, 'Beasts.md')
     await settle()
     one.decks.applyPathChanges(['Animals.md'], [{ from: 'Beasts.md', to: 'Animals.md' }])
     await settle()
@@ -1035,9 +1035,9 @@ describe('a deck tab closed', () => {
     await settle()
     one.presets.getDeckPreset = () => new Promise(() => {})
 
-    const again = await one.held.openTab(DECK, 'Animals.md')
+    const again = await one.windowTabs.openTab(DECK, 'Animals.md')
 
-    const state = one.held.getTabState<DeckTabState>(again) as DeckTabState
+    const state = one.windowTabs.getTabState<DeckTabState>(again) as DeckTabState
     expect(state.scheduled.value.path).toBe('')
   })
 
@@ -1049,10 +1049,10 @@ describe('a deck tab closed', () => {
     one.tab.close(one.id)
     await settle()
 
-    const again = await one.held.openTab(DECK, 'Animals.md')
+    const again = await one.windowTabs.openTab(DECK, 'Animals.md')
     await settle()
 
-    const state = one.held.getTabState<DeckTabState>(again) as DeckTabState
+    const state = one.windowTabs.getTabState<DeckTabState>(again) as DeckTabState
     expect(state.scheduled.value.errorMessage).toBe('')
   })
 
@@ -1063,10 +1063,10 @@ describe('a deck tab closed', () => {
     one.tab.close(one.id)
     await settle()
 
-    const again = await one.held.openTab(DECK, 'Animals.md')
+    const again = await one.windowTabs.openTab(DECK, 'Animals.md')
     await settle()
 
-    const state = one.held.getTabState<DeckTabState>(again) as DeckTabState
+    const state = one.windowTabs.getTabState<DeckTabState>(again) as DeckTabState
     const after = state.deck.value.cards.map((card) => card.id)
     expect(after).toHaveLength(2)
     expect(after).not.toStrictEqual(before)
@@ -1080,10 +1080,10 @@ describe('a deck tab closed', () => {
     one.tab.close(one.id)
     await settle()
 
-    const again = await one.held.openTab(DECK, 'Animals.md')
+    const again = await one.windowTabs.openTab(DECK, 'Animals.md')
     await settle()
 
-    const state = one.held.getTabState<DeckTabState>(again) as DeckTabState
+    const state = one.windowTabs.getTabState<DeckTabState>(again) as DeckTabState
     expect(state.marks.value.at.size).toBe(1)
     expect(state.marks.value).not.toBe(before)
   })

@@ -101,20 +101,20 @@ const vault = (
 /** A window with one stencil open on a file, and what that tab holds. */
 const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animal.md') => {
   const one = vault(answers)
-  const held = createMockTabWindow()
+  const windowTabs = createMockTabWindow()
   const buffers = createMockBufferHost()
   /** Everything the window was given to say about this stencil. */
   const messages: string[] = []
   const stencils = useStencilTabs(one.core, {
     buffers,
-    closeTab: held.finishClose,
+    closeTab: windowTabs.finishClose,
     writeMessage: (text) => void messages.push(text),
   })
-  held.register(stencils.kind)
-  const id = await held.openTab(STENCIL, path)
+  windowTabs.register(stencils.kind)
+  const id = await windowTabs.openTab(STENCIL, path)
   await settle()
-  const tab = held.getTabState<StencilTabState>(id) as StencilTabState
-  return { ...one, held, buffers, stencils, id, tab, messages }
+  const tab = windowTabs.getTabState<StencilTabState>(id) as StencilTabState
+  return { ...one, windowTabs, buffers, stencils, id, tab, messages }
 }
 
 describe('a stencil opened', () => {
@@ -411,11 +411,11 @@ describe('a stencil renamed under the window', () => {
 
     one.stencils.applyPathChanges(['Beast.md'], [{ from: 'Animal.md', to: 'Beast.md' }])
     await settle()
-    await one.held.openTab(STENCIL, 'Beast.md')
+    await one.windowTabs.openTab(STENCIL, 'Beast.md')
     await settle()
 
     expect(one.stencils.store.getOpenIds()).toHaveLength(1)
-    expect(one.held.each(STENCIL)).toHaveLength(1)
+    expect(one.windowTabs.each(STENCIL)).toHaveLength(1)
   })
 
   it('is called what the file was called, before the name it went to is read', async () => {
@@ -432,7 +432,7 @@ describe('a stencil whose tab has gone', () => {
     const one = await open()
     expect(one.stencils.getTitle('Animal.md')).toBe('Animal')
 
-    one.held.requestClose(one.id)
+    one.windowTabs.requestClose(one.id)
     await settle()
 
     expect(one.stencils.getTitle('Animal.md')).toBe('Animal.md')
@@ -529,7 +529,7 @@ describe('a stencil tab closed', () => {
     one.tab.close(one.id)
     await settle()
 
-    expect(one.held.each(STENCIL)).toHaveLength(1)
+    expect(one.windowTabs.each(STENCIL)).toHaveLength(1)
     expect(one.stencils.store.getOpenIds()).toStrictEqual([one.tab.id])
     expect(one.stencils.getTitle('Animal.md')).toBe('Animal')
   })
@@ -540,19 +540,19 @@ describe('a stencil tab closed', () => {
 
     one.tab.close(one.id)
     await settle()
-    const id = await one.held.openTab(STENCIL, 'Animal.md')
+    const id = await one.windowTabs.openTab(STENCIL, 'Animal.md')
     await settle()
-    const tab = one.held.getTabState<StencilTabState>(id) as StencilTabState
+    const tab = one.windowTabs.getTabState<StencilTabState>(id) as StencilTabState
 
     expect(tab.stencil.value.faces[0]?.id).not.toBe(was)
   })
 
   it('lets go of its title while a tab stands on another file', async () => {
     const one = await open()
-    await one.held.openTab(STENCIL, 'Plant.md')
+    await one.windowTabs.openTab(STENCIL, 'Plant.md')
     await settle()
 
-    one.held.requestClose('stencil:Animal.md')
+    one.windowTabs.requestClose('stencil:Animal.md')
     await settle()
 
     expect(one.stencils.getTitle('Animal.md')).toBe('Animal.md')
@@ -560,7 +560,7 @@ describe('a stencil tab closed', () => {
 
   it('leaves the title with the other tab standing on the same file', async () => {
     const one = await open()
-    await one.held.openTab(STENCIL, 'Beast.md')
+    await one.windowTabs.openTab(STENCIL, 'Beast.md')
     await settle()
     one.stencils.applyPathChanges(['Animal.md'], [{ from: 'Beast.md', to: 'Animal.md' }])
     await settle()
@@ -588,22 +588,22 @@ describe('a stencil opened from a file', () => {
   it('stands at one tab however many times it is asked for before it is open', async () => {
     const one = await open()
 
-    await one.held.openTab(STENCIL, 'Plant.md')
-    await one.held.openTab(STENCIL, 'Plant.md')
+    await one.windowTabs.openTab(STENCIL, 'Plant.md')
+    await one.windowTabs.openTab(STENCIL, 'Plant.md')
     await settle()
 
     expect(one.stencils.store.getOpenIds()).toHaveLength(2)
-    expect(one.held.each(STENCIL)).toHaveLength(2)
+    expect(one.windowTabs.each(STENCIL)).toHaveLength(2)
   })
 
   it('stands at the file again once its tab was closed and it is opened again', async () => {
     const one = await open()
-    const first = await one.held.openTab(STENCIL, 'Plant.md')
+    const first = await one.windowTabs.openTab(STENCIL, 'Plant.md')
     await settle()
-    one.held.requestClose(first)
+    one.windowTabs.requestClose(first)
     await settle()
 
-    const again = await one.held.openTab(STENCIL, 'Plant.md')
+    const again = await one.windowTabs.openTab(STENCIL, 'Plant.md')
     await settle()
 
     expect(one.stencils.store.getPath(again)).toBe('Plant.md')

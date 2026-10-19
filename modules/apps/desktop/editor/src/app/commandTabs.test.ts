@@ -9,38 +9,38 @@ import type { VaultCore } from './vault'
 
 const createDeps = (resolved: TabResolution | null, type?: string) => {
   const told: [string, string | undefined][] = []
-  const held = {
-    resolveCommand: vi.fn(async () => resolved),
-    openTabOfKind: vi.fn(async () => 'tab'),
+  const windowTabs = {
+    resolveCommand: vi.fn(() => Promise.resolve(resolved)),
+    openTabOfKind: vi.fn(() => Promise.resolve('tab')),
   }
   const vaultCore = {
-    fileKinds: async (paths: readonly string[]) =>
-      new Map(type === undefined ? [] : paths.map((one) => [one, { type }])),
+    fileKinds: (paths: readonly string[]) =>
+      Promise.resolve(new Map(type === undefined ? [] : paths.map((one) => [one, { type }]))),
   } as unknown as VaultCore
   const writeMessage = (text: string, kind?: string) => told.push([text, kind])
-  return { held, told, deps: { vaultCore, held, writeMessage } }
+  return { windowTabs, told, deps: { vaultCore, windowTabs, writeMessage } }
 }
 
 describe('the tab a command over a file leads to', () => {
   it('is opened on the path the kind that answers names', async () => {
-    const { deps, held } = createDeps({ ok: true, kind: 'preset', at: 'Slow.md' }, 'deck')
+    const { deps, windowTabs } = createDeps({ ok: true, kind: 'preset', at: 'Slow.md' }, 'deck')
 
     await openCommandTab(deps, 'Animals.md', 'preset')
 
-    expect(held.resolveCommand).toHaveBeenCalledWith('Animals.md', 'preset', 'deck')
-    expect(held.openTabOfKind).toHaveBeenCalledWith('preset', 'Slow.md')
+    expect(windowTabs.resolveCommand).toHaveBeenCalledWith('Animals.md', 'preset', 'deck')
+    expect(windowTabs.openTabOfKind).toHaveBeenCalledWith('preset', 'Slow.md')
   })
 
   it('is asked of a file the vault names no type for as a note', async () => {
-    const { deps, held } = createDeps({ ok: true, kind: 'preset', at: 'a.md' })
+    const { deps, windowTabs } = createDeps({ ok: true, kind: 'preset', at: 'a.md' })
 
     await openCommandTab(deps, 'a.md', 'preset')
 
-    expect(held.resolveCommand).toHaveBeenCalledWith('a.md', 'preset', 'note')
+    expect(windowTabs.resolveCommand).toHaveBeenCalledWith('a.md', 'preset', 'note')
   })
 
   it('says why it leads nowhere, and opens nothing', async () => {
-    const { deps, held, told } = createDeps(
+    const { deps, windowTabs, told } = createDeps(
       { ok: false, text: 'no preset', severity: 'caution' },
       'deck',
     )
@@ -48,15 +48,15 @@ describe('the tab a command over a file leads to', () => {
     await openCommandTab(deps, 'Animals.md', 'preset')
 
     expect(told).toStrictEqual([['no preset', 'caution']])
-    expect(held.openTabOfKind).not.toHaveBeenCalled()
+    expect(windowTabs.openTabOfKind).not.toHaveBeenCalled()
   })
 
   it('says that nothing offers it where no kind answers', async () => {
-    const { deps, held, told } = createDeps(null, 'deck')
+    const { deps, windowTabs, told } = createDeps(null, 'deck')
 
     await openCommandTab(deps, 'Animals.md', 'preset')
 
     expect(told).toStrictEqual([[words.notOffered, 'error']])
-    expect(held.openTabOfKind).not.toHaveBeenCalled()
+    expect(windowTabs.openTabOfKind).not.toHaveBeenCalled()
   })
 })

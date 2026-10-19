@@ -27,13 +27,19 @@ import { getEntryIcon } from './entryIcon'
 export interface FileMakersDeps {
   readonly core: Pick<FilePort, 'createUrl'>
   readonly tabOpeners: FileOpeners
-  readonly held: Pick<ReturnType<typeof useWindowTabs>, 'createFileOfKind'>
+  readonly windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'createFileOfKind'>
   readonly notes: { applyPathChanges(paths: readonly string[]): void }
   readonly writeMessage: MessageWriter
 }
 
 /** The decks, stencils, presets and urls the window makes, each put in front of the person. */
-export function createFileMakers({ core, tabOpeners, held, notes, writeMessage }: FileMakersDeps) {
+export function createFileMakers({
+  core,
+  tabOpeners,
+  windowTabs,
+  notes,
+  writeMessage,
+}: FileMakersDeps) {
   const fetchArtifact = (path: string): void => {
     running.fetchArtifact(path).then(
       () => notes.applyPathChanges([path]),
@@ -46,7 +52,7 @@ export function createFileMakers({ core, tabOpeners, held, notes, writeMessage }
     title: string,
     folder: string,
   ): Promise<CreateResult | null> => {
-    const made = await held.createFileOfKind(kind, folder, title)
+    const made = await windowTabs.createFileOfKind(kind, folder, title)
     if (made === undefined) {
       writeMessage(words.notOffered, 'error')
       return null

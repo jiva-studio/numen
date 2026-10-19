@@ -7,16 +7,20 @@ import type { VaultCore } from './vault'
 export async function openCommandTab(
   deps: {
     readonly vaultCore: VaultCore
-    readonly held: Pick<ReturnType<typeof useWindowTabs>, 'resolveCommand' | 'openTabOfKind'>
+    readonly windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'resolveCommand' | 'openTabOfKind'>
     readonly writeMessage: MessageWriter
   },
   path: string,
   command: string,
 ): Promise<void> {
-  const { vaultCore, held, writeMessage } = deps
+  const { vaultCore, windowTabs, writeMessage } = deps
   const type = (await vaultCore.fileKinds([path])).get(path)?.type ?? 'note'
-  const resolved = await held.resolveCommand(path, command, type)
-  if (resolved === null) return writeMessage(words.notOffered, 'error')
-  if (!resolved.ok) return writeMessage(resolved.text, resolved.severity)
-  await held.openTabOfKind(resolved.kind, resolved.at)
+  const resolved = await windowTabs.resolveCommand(path, command, type)
+  if (resolved === null) {
+    writeMessage(words.notOffered, 'error')
+  } else if (resolved.ok) {
+    await windowTabs.openTabOfKind(resolved.kind, resolved.at)
+  } else {
+    writeMessage(resolved.text, resolved.severity)
+  }
 }

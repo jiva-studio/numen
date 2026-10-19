@@ -4,11 +4,11 @@
 import { describe, expect, it } from 'vitest'
 import { createNoteLookup, findEditorTabAt } from './editorTabs'
 
-type Held = Parameters<typeof findEditorTabAt>[0]
+type WindowTabs = Parameters<typeof findEditorTabAt>[0]
 
-const createHeld = (
+const createWindowTabs = (
   tabs: Record<string, { editsFiles: boolean; path: string } | undefined>,
-): Held =>
+): WindowTabs =>
   ({
     tabs: { value: Object.keys(tabs).map((id) => ({ id, title: id })) },
     getTab: (id: string) => {
@@ -18,38 +18,38 @@ const createHeld = (
         state: tab,
         kind: {
           getOpenTab: (state: { path: string }) => ({ path: state.path }),
-          ...(tab.editsFiles ? { flushPending: async () => {} } : {}),
+          ...(tab.editsFiles ? { flushPending: () => Promise.resolve() } : {}),
         },
       }
     },
-  }) as unknown as Held
+  }) as unknown as WindowTabs
 
 describe('the tab that edits the file at a path', () => {
   it('is the tab of a kind that writes files out, standing at the path', () => {
-    const held = createHeld({
+    const windowTabs = createWindowTabs({
       'document:a': { editsFiles: false, path: 'a.md' },
       'deck:a': { editsFiles: true, path: 'a.md' },
     })
 
-    expect(findEditorTabAt(held, 'a.md')).toBe('deck:a')
+    expect(findEditorTabAt(windowTabs, 'a.md')).toBe('deck:a')
   })
 
   it('is none where only a tab that edits nothing stands at the path', () => {
-    const held = createHeld({ 'document:a': { editsFiles: false, path: 'a.md' } })
+    const windowTabs = createWindowTabs({ 'document:a': { editsFiles: false, path: 'a.md' } })
 
-    expect(findEditorTabAt(held, 'a.md')).toBeNull()
+    expect(findEditorTabAt(windowTabs, 'a.md')).toBeNull()
   })
 
   it('is none where no tab stands at the path', () => {
-    const held = createHeld({ 'deck:a': { editsFiles: true, path: 'a.md' } })
+    const windowTabs = createWindowTabs({ 'deck:a': { editsFiles: true, path: 'a.md' } })
 
-    expect(findEditorTabAt(held, 'b.md')).toBeNull()
+    expect(findEditorTabAt(windowTabs, 'b.md')).toBeNull()
   })
 
   it('is none for a tab the window no longer holds', () => {
-    const held = createHeld({ 'deck:a': undefined })
+    const windowTabs = createWindowTabs({ 'deck:a': undefined })
 
-    expect(findEditorTabAt(held, 'a.md')).toBeNull()
+    expect(findEditorTabAt(windowTabs, 'a.md')).toBeNull()
   })
 })
 
@@ -60,7 +60,7 @@ describe('what the window knows of the note open at a path', () => {
         reached: { getTabAt: () => reachedTab },
         getTitle: (id) => (id === 'note:a' ? 'Alpha' : ''),
       },
-      createHeld({ 'deck:a': { editsFiles: true, path: 'a.md' } }),
+      createWindowTabs({ 'deck:a': { editsFiles: true, path: 'a.md' } }),
     )
 
   it('is the tab of a note editor, called what that editor calls it', () => {
