@@ -145,9 +145,9 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 	if err := debugOpts.ensureVault(cfg, vault); err != nil {
 		return err
 	}
-	defer func() {
-		_ = cfg.StopPlugins(context.Background())
-	}()
+	defer shutdown.Report("numen", os.Stderr, "plugins", func() error {
+		return cfg.StopPlugins(context.Background())
+	})()
 	if err := scaleFlags.validate(); err != nil {
 		return err
 	}

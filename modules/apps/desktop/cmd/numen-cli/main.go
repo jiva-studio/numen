@@ -22,12 +22,18 @@ func main() {
 	os.Exit(run())
 }
 
-func run() int {
+func run() (code int) {
 	// The settings are read here and nowhere below: an entry point says what it
 	// found, and nothing further down can reach the machine's own file.
 	cfg := platform.GetConfig()
+	// A run whose plugins did not stop says so, and fails if nothing else did.
 	defer func() {
-		_ = cfg.StopPlugins(context.Background())
+		if err := cfg.StopPlugins(context.Background()); err != nil {
+			fmt.Fprintln(os.Stderr, "numen-cli: stop plugins:", err)
+			if code == 0 {
+				code = 1
+			}
+		}
 	}()
 
 	chosen, err := cfg.Settings()
