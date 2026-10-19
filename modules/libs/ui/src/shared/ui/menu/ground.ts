@@ -48,7 +48,6 @@ export function useMenuGround(
 
   const listen = (): void => {
     window.addEventListener('pointerdown', dismissOutside, true)
-    gate.arm()
     MENU_INPUT_EVENTS.forEach((name) =>
       window.addEventListener(name, noteInput, { capture: true, passive: true }),
     )
@@ -58,6 +57,7 @@ export function useMenuGround(
   }
 
   const release = (): void => {
+    gate.reset()
     window.removeEventListener('pointerdown', dismissOutside, true)
     MENU_INPUT_EVENTS.forEach((name) =>
       window.removeEventListener(name, noteInput, { capture: true }),

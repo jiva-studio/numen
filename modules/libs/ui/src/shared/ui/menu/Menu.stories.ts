@@ -557,8 +557,11 @@ const renderScrollingOpening = (args: Knobs) => ({
   `,
 })
 
-const scrollerOf = (canvasElement: HTMLElement) =>
-  canvasElement.querySelector<HTMLElement>('[data-scroller]')!
+const scrollerOf = (canvasElement: HTMLElement): HTMLElement => {
+  const scroller = canvasElement.querySelector<HTMLElement>('[data-scroller]')
+  if (!scroller) throw new Error('The story draws no scrolling container')
+  return scroller
+}
 
 export const OpenedWhileTheContainerScrolls: Story = {
   render: renderScrollingOpening,

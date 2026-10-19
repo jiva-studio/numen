@@ -152,3 +152,14 @@ describe('letting go of the window', () => {
     expect(dismiss).not.toHaveBeenCalled()
   })
 })
+
+describe('listening twice in one opening', () => {
+  it('keeps the input already seen', () => {
+    const { dismiss, ground } = setup()
+    ground.listen()
+    window.dispatchEvent(new Event('wheel'))
+    ground.listen()
+    createElement().dispatchEvent(new Event('scroll'))
+    expect(dismiss).toHaveBeenCalledTimes(1)
+  })
+})
