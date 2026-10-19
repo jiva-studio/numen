@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"context"
@@ -93,7 +93,6 @@ func TestCompleteOffersTheAgentNoTools(t *testing.T) {
 }
 
 func TestCompleteIsUnavailableWhenNoACPAgentIsInstalled(t *testing.T) {
-	withoutAgentsAnywhere(t)
 	svc := &agentServer{}
 
 	res, err := svc.Complete(t.Context(), askCompletion("why?"))
@@ -103,7 +102,7 @@ func TestCompleteIsUnavailableWhenNoACPAgentIsInstalled(t *testing.T) {
 	if res.Msg.GetError() != numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE || res.Msg.GetAnswer() != nil {
 		t.Errorf("got %+v, want UNAVAILABLE", res.Msg)
 	}
-	if _, _, err := findCompletionAgent(GetACPAgents(), ""); !errors.Is(err, errNoCompletionAgent) {
+	if _, _, err := findCompletionAgent(getACPAgentsFromCommands(nil), ""); !errors.Is(err, errNoCompletionAgent) {
 		t.Errorf("got %v, want %v", err, errNoCompletionAgent)
 	}
 }
@@ -275,7 +274,6 @@ func TestTheCompletionModelsAreKept(t *testing.T) {
 }
 
 func TestNoCompletionModelIsListedWithoutAnACPAgent(t *testing.T) {
-	withoutAgentsAnywhere(t)
 
 	if got := listCompletionModels(t, &agentServer{}); len(got) != 0 {
 		t.Errorf("listed %v", got)

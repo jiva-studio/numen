@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"bufio"
@@ -13,12 +13,14 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/agenttest"
 )
 
 func TestCodexModelCacheClearsFailedKeyOnSuccess(t *testing.T) {
-	needsShell(t)
+	agenttest.NeedsShell(t)
 	t.Setenv("HOME", t.TempDir())
-	failing := writeScript(t, "codex", "exit 1\n")
+	failing := agenttest.WriteScript(t, "codex", "exit 1\n")
 	now := time.Unix(1000, 0)
 	cache := codexModelCache{now: func() time.Time { return now }}
 
@@ -76,10 +78,10 @@ func TestAskCodexModelsWithEmptyCommand(t *testing.T) {
 }
 
 func TestAskCodexModelsCommandArguments(t *testing.T) {
-	needsShell(t)
+	agenttest.NeedsShell(t)
 	out := filepath.Join(t.TempDir(), "args")
-	script := writeScript(t, "codex",
-		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+quoteShell(out)+"\n"+
+	script := agenttest.WriteScript(t, "codex",
+		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+agenttest.QuoteShell(out)+"\n"+
 			`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"m1"}]}}'`+"\n"+
 			"while read -r _; do :; done\n")
@@ -109,10 +111,10 @@ func TestAskCodexModelsStartFailure(t *testing.T) {
 }
 
 func TestAskCodexModelsStopsCommand(t *testing.T) {
-	needsShell(t)
+	agenttest.NeedsShell(t)
 	pidFile := filepath.Join(t.TempDir(), "pid")
-	script := writeScript(t, "codex",
-		fmt.Sprintf("echo $$ > %s\n", quoteShell(pidFile))+
+	script := agenttest.WriteScript(t, "codex",
+		fmt.Sprintf("echo $$ > %s\n", agenttest.QuoteShell(pidFile))+
 			`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"m1"}]}}'`+"\n"+
 			"while :; do sleep 0.05; done\n")

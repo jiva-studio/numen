@@ -1,8 +1,7 @@
-package main
+package service
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
@@ -10,29 +9,15 @@ import (
 )
 
 type eventReader struct {
-	registry     *agentrun.Registry
-	work         *agentrun.Work
-	limit        int
-	done         int
-	conversation string
+	reader *agentrun.Reader
 
 	currentTool string
 	currentArgs strings.Builder
 }
 
-func (r *eventReader) send(resp *numenv1.AskAgentResponse) {
-	select {
-	case r.work.Output <- resp:
-	case <-r.work.Stopped():
-		return
-	}
-	if resp.GetToolFinished() != nil {
-		r.done++
-	}
-}
-
-func (r *eventReader) isOverLimit() bool {
-	return r.limit > 0 && r.done >= r.limit
+// newEventHandler is what the run calls with each event of the Antigravity output.
+func newEventHandler(r *agentrun.Reader) func(map[string]any) {
+	return (&eventReader{reader: r}).handle
 }
 
 func (r *eventReader) handle(rawMap map[string]any) {
@@ -41,39 +26,30 @@ func (r *eventReader) handle(rawMap map[string]any) {
 		return
 	}
 
-	r.rememberSession(rawMap)
+	for _, key := range []string{"conversation_id", "session_id"} {
+		if session, ok := rawMap[key].(string); ok {
+			r.reader.SetSession(session)
+		}
+	}
 
 	if thinking, ok := rawMap["thinking"].(string); ok && thinking != "" {
-		r.send(&numenv1.AskAgentResponse{
+		r.reader.Send(&numenv1.AskAgentResponse{
 			Step: &numenv1.AskAgentResponse_ModelStarted{
 				ModelStarted: &numenv1.ModelStarted{},
 			},
 		})
 	}
-	r.handleCodexEvent(rawMap)
 	r.handleToolCalls(rawMap)
 
 	if content, ok := rawMap["content"].(string); ok && content != "" {
-		r.send(&numenv1.AskAgentResponse{
+		r.reader.Send(&numenv1.AskAgentResponse{
 			Step: &numenv1.AskAgentResponse_Said{
 				Said: content,
 			},
 		})
 	}
 	r.handleStepUpdate(rawMap)
-	r.handleSessionUpdate(rawMap)
 	r.handleResult(rawMap)
-}
-
-func (r *eventReader) rememberSession(rawMap map[string]any) {
-	if r.conversation == "" {
-		return
-	}
-	for _, key := range []string{"conversation_id", "session_id"} {
-		if sessID, ok := rawMap[key].(string); ok && sessID != "" {
-			r.registry.SetSession(r.conversation, sessID)
-		}
-	}
 }
 
 func (r *eventReader) handleStreamEvent(rawMap map[string]any) {
@@ -89,7 +65,7 @@ func (r *eventReader) handleStreamEvent(rawMap map[string]any) {
 		r.continueBlock(evObj)
 	case "content_block_stop":
 		if r.currentTool != "" {
-			r.send(&numenv1.AskAgentResponse{
+			r.reader.Send(&numenv1.AskAgentResponse{
 				Step: &numenv1.AskAgentResponse_ToolCall{
 					ToolCall: &numenv1.ToolCall{
 						Tool:  r.currentTool,
@@ -97,6 +73,7 @@ func (r *eventReader) handleStreamEvent(rawMap map[string]any) {
 					},
 				},
 			})
+			r.reader.CountStep()
 			r.currentTool = ""
 			r.currentArgs.Reset()
 		}
@@ -124,7 +101,7 @@ func (r *eventReader) continueBlock(evObj map[string]any) {
 		return
 	}
 	if text, ok := delta["text"].(string); ok && text != "" {
-		r.send(&numenv1.AskAgentResponse{
+		r.reader.Send(&numenv1.AskAgentResponse{
 			Step: &numenv1.AskAgentResponse_Said{
 				Said: text,
 			},
@@ -132,35 +109,6 @@ func (r *eventReader) continueBlock(evObj map[string]any) {
 	}
 	if partial, ok := delta["partial_json"].(string); ok {
 		r.currentArgs.WriteString(partial)
-	}
-}
-
-func (r *eventReader) handleCodexEvent(rawMap map[string]any) {
-	evType, _ := rawMap["type"].(string)
-	item, _ := rawMap["item"].(map[string]any)
-
-	switch evType {
-	case "item.started":
-		if item != nil && item["type"] == "mcp_tool_call" {
-			name, _ := item["name"].(string)
-			args, _ := json.Marshal(item["arguments"])
-			r.send(&numenv1.AskAgentResponse{
-				Step: &numenv1.AskAgentResponse_ToolCall{
-					ToolCall: &numenv1.ToolCall{
-						Tool:  name,
-						About: string(args),
-					},
-				},
-			})
-		}
-	case "item.completed":
-		if item != nil && item["type"] == "mcp_tool_call" {
-			r.send(&numenv1.AskAgentResponse{
-				Step: &numenv1.AskAgentResponse_ToolFinished{
-					ToolFinished: &numenv1.ToolFinished{},
-				},
-			})
-		}
 	}
 }
 
@@ -176,7 +124,7 @@ func (r *eventReader) handleToolCalls(rawMap map[string]any) {
 		}
 		name, _ := tc["name"].(string)
 		args, _ := json.Marshal(tc["arguments"])
-		r.send(&numenv1.AskAgentResponse{
+		r.reader.Send(&numenv1.AskAgentResponse{
 			Step: &numenv1.AskAgentResponse_ToolCall{
 				ToolCall: &numenv1.ToolCall{
 					Tool:  name,
@@ -184,6 +132,7 @@ func (r *eventReader) handleToolCalls(rawMap map[string]any) {
 				},
 			},
 		})
+		r.reader.CountStep()
 	}
 }
 
@@ -193,7 +142,7 @@ func (r *eventReader) handleStepUpdate(rawMap map[string]any) {
 		return
 	}
 	if text, ok := delta["text"].(string); ok && text != "" {
-		r.send(&numenv1.AskAgentResponse{
+		r.reader.Send(&numenv1.AskAgentResponse{
 			Step: &numenv1.AskAgentResponse_Said{
 				Said: text,
 			},
@@ -201,35 +150,19 @@ func (r *eventReader) handleStepUpdate(rawMap map[string]any) {
 	}
 }
 
-func (r *eventReader) handleSessionUpdate(rawMap map[string]any) {
-	if rawMap["type"] == "session.updated" {
-		if sessID, ok := rawMap["session_id"].(string); ok && r.conversation != "" {
-			r.registry.SetSession(r.conversation, sessID)
-		}
-	}
-}
-
 func (r *eventReader) handleResult(rawMap map[string]any) {
 	if text, ok := rawMap["result"].(string); ok && text != "" {
-		r.send(&numenv1.AskAgentResponse{
+		r.reader.Send(&numenv1.AskAgentResponse{
 			Step: &numenv1.AskAgentResponse_Said{
 				Said: text,
 			},
 		})
 	}
 	if reason, ok := rawMap["stopped"].(string); ok && reason != "" {
-		r.send(&numenv1.AskAgentResponse{
+		r.reader.Send(&numenv1.AskAgentResponse{
 			Step: &numenv1.AskAgentResponse_Stopped{
 				Stopped: reason,
 			},
 		})
 	}
-}
-
-func (r *eventReader) reportLimit() {
-	r.send(&numenv1.AskAgentResponse{
-		Step: &numenv1.AskAgentResponse_Stopped{
-			Stopped: fmt.Sprintf("reached maximum limit of %d steps", r.limit),
-		},
-	})
 }

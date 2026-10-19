@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"os"
@@ -6,11 +6,10 @@ import (
 	"testing"
 )
 
-func TestReadConfigurations(t *testing.T) {
+func TestReadCodexConfig(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 
-	// Codex toml config
 	codexDir := filepath.Join(home, ".codex")
 	if err := os.MkdirAll(codexDir, 0o700); err != nil {
 		t.Fatal(err)
@@ -25,23 +24,6 @@ func TestReadConfigurations(t *testing.T) {
 	}
 	if codexCfg.Model != "o3-mini" {
 		t.Errorf("expected model o3-mini, got %s", codexCfg.Model)
-	}
-
-	// Antigravity config
-	geminiDir := filepath.Join(home, ".gemini", "antigravity-cli")
-	if err := os.MkdirAll(geminiDir, 0o700); err != nil {
-		t.Fatal(err)
-	}
-	geminiData := `{"model": "gemini-2.5-pro"}`
-	if err := os.WriteFile(filepath.Join(geminiDir, "config.json"), []byte(geminiData), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	agyCfg, err := ReadAntigravityConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if agyCfg.Model != "gemini-2.5-pro" {
-		t.Errorf("expected model gemini-2.5-pro, got %s", agyCfg.Model)
 	}
 }
 
@@ -70,12 +52,3 @@ func TestReadCodexConfigFailsWithoutHome(t *testing.T) {
 		t.Fatalf("expected error reading codex config without home directory, got %v", cfg)
 	}
 }
-
-func TestReadAntigravityConfigFailsWithoutHome(t *testing.T) {
-	isolateWithoutHome(t)
-	cfg, err := ReadAntigravityConfig()
-	if err == nil {
-		t.Fatalf("expected error reading antigravity config without home directory, got %v", cfg)
-	}
-}
-
