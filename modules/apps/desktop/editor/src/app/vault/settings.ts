@@ -83,10 +83,10 @@ export const settingsCore: SettingsPort = {
         version: p.version,
         description: p.description,
         isActive: p.isActive,
-        capabilities: p.capabilities ?? [],
-        secrets: p.secrets ?? [],
-        storedSecrets: p.storedSecrets ?? [],
-        models: (p.models ?? []).map((m) => ({
+        capabilities: p.capabilities,
+        secrets: p.secrets,
+        storedSecrets: p.storedSecrets,
+        models: p.models.map((m) => ({
           name: m.name,
           title: m.title,
           isDefault: m.isDefault,
