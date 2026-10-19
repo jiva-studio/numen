@@ -10,7 +10,7 @@ describe('createFilesKind with linked tabs', () => {
     const tabLinks = useTabLinks()
     const held = useWindowTabs()
 
-    const loadInTabMock = vi.fn()
+    const navigateNote = vi.fn()
     const editingMock = {
       notes: { applyPathChanges: vi.fn() },
       making: { createUntitled: vi.fn() },
@@ -57,7 +57,7 @@ describe('createFilesKind with linked tabs', () => {
       open: () => ({}),
       getTitle: () => 'My Note',
       pane: {},
-      navigate: loadInTabMock,
+      navigate: navigateNote,
     } as never
 
     held.registerKinds([filesKind.files.kind, noteKind])
@@ -79,7 +79,7 @@ describe('createFilesKind with linked tabs', () => {
 
     filesState.activate('folder/target.md')
 
-    expect(loadInTabMock).toHaveBeenCalledWith(
+    expect(navigateNote).toHaveBeenCalledWith(
       held.getTab(noteTabId)?.state,
       'folder/target.md',
       'target.md',
