@@ -17,9 +17,11 @@ import (
 type agentServer struct {
 	numenv1connect.UnimplementedAgentServiceHandler
 	numenv1connect.UnimplementedCompletionServiceHandler
-	runner       *AgentRunner
-	codexModels  codexModelCache
-	command      []string
+	runner      *AgentRunner
+	codexModels codexModelCache
+	// acpAgents returns the agents completions are answered by. Nil is those installed.
+	acpAgents    func() []acpAgent
+	acpModels    acpModelCache
 	mu           sync.RWMutex
 	systemPrompt string
 	tools        []*numenv1.AgentToolDefinition

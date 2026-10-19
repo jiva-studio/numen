@@ -357,9 +357,9 @@ func withoutAgentsAnywhere(t *testing.T) {
 	t.Helper()
 	t.Setenv("PATH", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	was := [][]string{antigravitySearchPlaces, codexSearchPlaces, cursorSearchPlaces, claudeSearchPlaces}
-	antigravitySearchPlaces, codexSearchPlaces, cursorSearchPlaces, claudeSearchPlaces = nil, nil, nil, nil
+	was := [][]string{antigravitySearchPlaces, codexSearchPlaces, cursorSearchPlaces, codexACPSearchPlaces, cursorAgentSearchPlaces}
+	antigravitySearchPlaces, codexSearchPlaces, cursorSearchPlaces, codexACPSearchPlaces, cursorAgentSearchPlaces = nil, nil, nil, nil, nil
 	t.Cleanup(func() {
-		antigravitySearchPlaces, codexSearchPlaces, cursorSearchPlaces, claudeSearchPlaces = was[0], was[1], was[2], was[3]
+		antigravitySearchPlaces, codexSearchPlaces, cursorSearchPlaces, codexACPSearchPlaces, cursorAgentSearchPlaces = was[0], was[1], was[2], was[3], was[4]
 	})
 }

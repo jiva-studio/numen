@@ -155,3 +155,16 @@ func TestTheCompletionModelsAreTheEndpoints(t *testing.T) {
 		t.Errorf("listed %v", models)
 	}
 }
+
+func TestCompletionArgumentsGiveNoToolsAndOneTurn(t *testing.T) {
+	got := strings.Join(buildCompletionArguments("be brief", "m1"), " ")
+	for _, want := range []string{"-p", "--output-format text", "--max-turns 1", "--tools  ", "--strict-mcp-config", "--append-system-prompt be brief", "--model m1"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in %q", want, got)
+		}
+	}
+	bare := strings.Join(buildCompletionArguments("", ""), " ")
+	if strings.Contains(bare, "--append-system-prompt") || strings.Contains(bare, "--model") {
+		t.Errorf("got %q", bare)
+	}
+}

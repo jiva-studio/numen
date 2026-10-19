@@ -40,9 +40,30 @@ func (s *agentServer) Complete(
 		if name == "" {
 			return "", errNoCommand
 		}
-		args = append(args, completion.ClaudeArguments(request.System, model)...)
+		args = append(args, buildCompletionArguments(request.System, model)...)
 		return completion.RunCommand(ctx, name, args, buildCompletionEnvironment(os.Environ(), key, base), request.Prompt)
 	})
+}
+
+// buildCompletionArguments returns the arguments with which the Claude Code CLI gives one answer as
+// plain text: no tools, no MCP servers, no settings and one turn.
+func buildCompletionArguments(system, model string) []string {
+	args := []string{
+		"-p",
+		"--output-format", "text",
+		"--permission-mode", "dontAsk",
+		"--max-turns", "1",
+		"--tools", "",
+		"--strict-mcp-config",
+		"--setting-sources", "",
+	}
+	if system != "" {
+		args = append(args, "--append-system-prompt", system)
+	}
+	if model != "" {
+		args = append(args, "--model", model)
+	}
+	return args
 }
 
 // buildCompletionEnvironment is the environment of the command with the configured key and base

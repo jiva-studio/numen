@@ -5,7 +5,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 )
@@ -60,19 +59,6 @@ func TestFailureMessageFallsBackToTheError(t *testing.T) {
 	}
 }
 
-func TestClaudeArgumentsGiveNoToolsAndOneTurn(t *testing.T) {
-	got := strings.Join(ClaudeArguments("be brief", "m1"), " ")
-	for _, want := range []string{"-p", "--output-format text", "--max-turns 1", "--tools  ", "--strict-mcp-config", "--append-system-prompt be brief", "--model m1"} {
-		if !strings.Contains(got, want) {
-			t.Errorf("missing %q in %q", want, got)
-		}
-	}
-	bare := strings.Join(ClaudeArguments("", ""), " ")
-	if strings.Contains(bare, "--append-system-prompt") || strings.Contains(bare, "--model") {
-		t.Errorf("got %q", bare)
-	}
-}
-
 func TestRunCommandStopsACommandThatWritesTooMuch(t *testing.T) {
 	for _, stream := range []string{"", ">&2"} {
 		script := writeScript(t, "yes | head -c 5000000 "+stream)
@@ -80,19 +66,5 @@ func TestRunCommandStopsACommandThatWritesTooMuch(t *testing.T) {
 		if !errors.Is(err, ErrOutputTooLarge) {
 			t.Errorf("stream %q: got %v", stream, err)
 		}
-	}
-}
-
-// The Claude Code CLI is offered by the aliases its --model takes, none of them as its default.
-func TestTheClaudeModelsAreTheAliasesOfItsModelFlag(t *testing.T) {
-	var names []string
-	for _, one := range ListClaudeModels() {
-		names = append(names, one.GetName())
-		if one.GetIsDefault() || one.GetTitle() == "" {
-			t.Errorf("%v is listed as a default or without a title", one)
-		}
-	}
-	if strings.Join(names, ",") != "sonnet,opus,haiku" {
-		t.Errorf("listed %v", names)
 	}
 }

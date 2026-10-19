@@ -7,8 +7,6 @@ import (
 	"os/exec"
 	"strings"
 	"time"
-
-	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
 const (
@@ -74,35 +72,4 @@ func FailureMessage(err error, said string) string {
 		return strings.TrimSpace(lines[len(lines)-1])
 	}
 	return err.Error()
-}
-
-// ClaudeArguments are the arguments with which the Claude Code CLI gives one answer as plain text:
-// no tools, no MCP servers, no settings and one turn.
-func ClaudeArguments(system, model string) []string {
-	args := []string{
-		"-p",
-		"--output-format", "text",
-		"--permission-mode", "dontAsk",
-		"--max-turns", "1",
-		"--tools", "",
-		"--strict-mcp-config",
-		"--setting-sources", "",
-	}
-	if system != "" {
-		args = append(args, "--append-system-prompt", system)
-	}
-	if model != "" {
-		args = append(args, "--model", model)
-	}
-	return args
-}
-
-// ListClaudeModels returns the model aliases the Claude Code CLI takes after --model. None is
-// marked default: without --model the CLI answers with the model its installation names.
-func ListClaudeModels() []*numenv1.CompletionModel {
-	return []*numenv1.CompletionModel{
-		{Name: "sonnet", Title: "Sonnet"},
-		{Name: "opus", Title: "Opus"},
-		{Name: "haiku", Title: "Haiku"},
-	}
 }
