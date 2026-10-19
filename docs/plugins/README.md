@@ -98,7 +98,7 @@ The manifest declares identity, activation rules, required permissions, and serv
 - **`protocol`**: The plugin protocol version the plugin was written against. The host speaks protocol 1 and rejects a manifest that names a newer one. Absent means 1.
 - **`capabilities`**: Core capabilities provided (`document`, `compute`, `agent`, `recognition`, `transcription`, `proofreading`, and the markers `ai.agent.provider` and `ai.completion.provider`, which name an agent plugin that serves tasks and one that answers `CompletionService.Complete`).
 - **`targets`**: Allowed client environments (`desktop.editor`, `desktop.flashcards`).
-- **`activationEvents`**: Triggers for host activation:
+- **`activationEvents`**: The events the plugin subscribes to. On one of them the host activates the plugin and, when it serves `numen.v1.PluginEventService`, hands it the event through `DeliverEvent`; a plugin built on the Go SDK serves it when it passes `server.WithEventHandler`. A plugin that refuses an event answers with `error` set to `PLUGIN_EVENT_ERROR_CODE_REFUSED` and its `reason`, and the host reports the refusal with the event and the plugin id. A plugin is handed only the events it subscribes to:
   - `onFile:<glob>` (e.g. `onFile:*.pdf`, `onFile:*.epub`)
   - `onCommand:<id>` (e.g. `onCommand:ocr.scan`)
   - `*` (always activated on startup)

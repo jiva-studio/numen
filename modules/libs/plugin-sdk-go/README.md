@@ -23,6 +23,7 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 - Connect-RPC Bearer token authentication interceptor for unary and streaming RPCs.
 - Graceful lifecycle management (`Ping`, `Configure`, `Shutdown`) without unowned goroutines or sleep synchronization.
 - `Configure` is how a plugin receives its settings and its secrets. `ReadSecret(values, name)` returns the key the host handed over for a secret the manifest declares and whether the call carries it; an empty key means the host holds none. `SecretAPIKey` is the name of the `apiKey` secret.
+- `WithEventHandler(fn)` mounts `PluginEventService`, so the host hands the plugin each event its manifest's `activationEvents` subscribe to. An error the handler returns is answered as the plugin's refusal of the event, with its text as the reason. A server without one takes no events.
 - Process supervision hooks (stdin EOF detection, OS signals).
 - `agentrun`: `Locate` finds an agent program on the path or in the places it is installed to; the registry of the runs an agent plugin has started and the session each conversation is on, and the supervision that ends a child and everything it started.
 - `ai.Complete(ctx, question)` asks the host for a model completion (needs the `ai:complete` permission); the host answers from the agent the plugin's `agent` setting names, else the default, and returns `ai.ErrNoConsent` until the person lets the plugin ask. The host endpoint comes from `NUMEN_HOST_PORT` and the token from `NUMEN_PLUGIN_TOKEN`.

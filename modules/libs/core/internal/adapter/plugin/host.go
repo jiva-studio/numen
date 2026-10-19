@@ -385,7 +385,7 @@ func (h *Host) FindPluginByFileExtension(ext string) (DiscoveredPlugin, bool) {
 	return emptyDiscoveredPlugin(), false
 }
 
-// TriggerEvent activates all dormant or idle plugins registered for the given event.
+// TriggerEvent activates every enabled plugin whose activationEvents match the event and delivers the event to it.
 func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error) {
 	h.mu.RLock()
 	if h.safeMode {
@@ -407,12 +407,17 @@ func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error)
 	activated := make([]string, 0, len(candidates))
 	var errs []error
 	for _, id := range candidates {
-		if _, err := h.EnsureActive(ctx, id); err != nil {
+		endpoint, err := h.EnsureActive(ctx, id)
+		if err != nil {
 			errs = append(errs, fmt.Errorf("activate plugin %s on %s: %w", id, event, err))
 			continue
 		}
+		deliverErr := deliverPluginEvent(ctx, endpoint, event)
 		h.Release(id)
 		activated = append(activated, id)
+		if deliverErr != nil {
+			errs = append(errs, fmt.Errorf("deliver %s to plugin %s: %w", event, id, deliverErr))
+		}
 	}
 	return activated, errors.Join(errs...)
 }

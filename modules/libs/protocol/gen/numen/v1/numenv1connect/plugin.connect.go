@@ -25,6 +25,8 @@ const (
 	PluginLifecycleServiceName = "numen.v1.PluginLifecycleService"
 	// PluginServiceName is the fully-qualified name of the PluginService service.
 	PluginServiceName = "numen.v1.PluginService"
+	// PluginEventServiceName is the fully-qualified name of the PluginEventService service.
+	PluginEventServiceName = "numen.v1.PluginEventService"
 )
 
 // These constants are the fully-qualified names of the RPCs defined in this package. They're
@@ -47,6 +49,9 @@ const (
 	// PluginServiceGetPluginsProcedure is the fully-qualified name of the PluginService's GetPlugins
 	// RPC.
 	PluginServiceGetPluginsProcedure = "/numen.v1.PluginService/GetPlugins"
+	// PluginEventServiceDeliverEventProcedure is the fully-qualified name of the PluginEventService's
+	// DeliverEvent RPC.
+	PluginEventServiceDeliverEventProcedure = "/numen.v1.PluginEventService/DeliverEvent"
 )
 
 // PluginLifecycleServiceClient is a client for the numen.v1.PluginLifecycleService service.
@@ -240,4 +245,74 @@ type UnimplementedPluginServiceHandler struct{}
 
 func (UnimplementedPluginServiceHandler) GetPlugins(context.Context, *connect.Request[v1.GetPluginsRequest]) (*connect.Response[v1.GetPluginsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginService.GetPlugins is not implemented"))
+}
+
+// PluginEventServiceClient is a client for the numen.v1.PluginEventService service.
+type PluginEventServiceClient interface {
+	DeliverEvent(context.Context, *connect.Request[v1.DeliverEventRequest]) (*connect.Response[v1.DeliverEventResponse], error)
+}
+
+// NewPluginEventServiceClient constructs a client for the numen.v1.PluginEventService service. By
+// default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses,
+// and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
+// connect.WithGRPC() or connect.WithGRPCWeb() options.
+//
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
+// http://api.acme.com or https://acme.com/grpc).
+func NewPluginEventServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) PluginEventServiceClient {
+	baseURL = strings.TrimRight(baseURL, "/")
+	pluginEventServiceMethods := v1.File_numen_v1_plugin_proto.Services().ByName("PluginEventService").Methods()
+	return &pluginEventServiceClient{
+		deliverEvent: connect.NewClient[v1.DeliverEventRequest, v1.DeliverEventResponse](
+			httpClient,
+			baseURL+PluginEventServiceDeliverEventProcedure,
+			connect.WithSchema(pluginEventServiceMethods.ByName("DeliverEvent")),
+			connect.WithClientOptions(opts...),
+		),
+	}
+}
+
+// pluginEventServiceClient implements PluginEventServiceClient.
+type pluginEventServiceClient struct {
+	deliverEvent *connect.Client[v1.DeliverEventRequest, v1.DeliverEventResponse]
+}
+
+// DeliverEvent calls numen.v1.PluginEventService.DeliverEvent.
+func (c *pluginEventServiceClient) DeliverEvent(ctx context.Context, req *connect.Request[v1.DeliverEventRequest]) (*connect.Response[v1.DeliverEventResponse], error) {
+	return c.deliverEvent.CallUnary(ctx, req)
+}
+
+// PluginEventServiceHandler is an implementation of the numen.v1.PluginEventService service.
+type PluginEventServiceHandler interface {
+	DeliverEvent(context.Context, *connect.Request[v1.DeliverEventRequest]) (*connect.Response[v1.DeliverEventResponse], error)
+}
+
+// NewPluginEventServiceHandler builds an HTTP handler from the service implementation. It returns
+// the path on which to mount the handler and the handler itself.
+//
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
+func NewPluginEventServiceHandler(svc PluginEventServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	pluginEventServiceMethods := v1.File_numen_v1_plugin_proto.Services().ByName("PluginEventService").Methods()
+	pluginEventServiceDeliverEventHandler := connect.NewUnaryHandler(
+		PluginEventServiceDeliverEventProcedure,
+		svc.DeliverEvent,
+		connect.WithSchema(pluginEventServiceMethods.ByName("DeliverEvent")),
+		connect.WithHandlerOptions(opts...),
+	)
+	return "/numen.v1.PluginEventService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case PluginEventServiceDeliverEventProcedure:
+			pluginEventServiceDeliverEventHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
+}
+
+// UnimplementedPluginEventServiceHandler returns CodeUnimplemented from all methods.
+type UnimplementedPluginEventServiceHandler struct{}
+
+func (UnimplementedPluginEventServiceHandler) DeliverEvent(context.Context, *connect.Request[v1.DeliverEventRequest]) (*connect.Response[v1.DeliverEventResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginEventService.DeliverEvent is not implemented"))
 }
