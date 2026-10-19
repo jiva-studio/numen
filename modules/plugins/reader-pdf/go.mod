@@ -7,7 +7,7 @@ require (
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go v0.0.0
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault v0.0.0
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
-	github.com/klippa-app/go-pdfium v1.19.8
+	github.com/klippa-app/go-pdfium v1.21.3
 )
 
 require (
