@@ -6,7 +6,6 @@ import {
   BookText,
   Braces,
   FileText,
-  FolderTree,
   Gauge,
   Globe,
   Layers,
@@ -19,7 +18,6 @@ import {
   BOOK,
   DECK,
   DOCUMENT,
-  FILES,
   NOTE,
   PRESET,
   RECORDING,
@@ -31,7 +29,6 @@ import {
 
 const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
   [AGENT, Bot],
-  [FILES, FolderTree],
   [NOTE, FileText],
   [DOCUMENT, BookOpen],
   [BOOK, BookText],

@@ -2,21 +2,23 @@
  * The window and the notes of the vault, as a plugin's tabs are given them.
  */
 import { computed, type Ref, type ShallowRef } from 'vue'
-import type { VaultNotes, WorkspaceHost } from '@numen/plugin-sdk'
-import type { CommandTarget, SearchDeps } from '@/features/command-palette'
+import type { VaultFiles, VaultNotes, WorkspaceHost } from '@numen/plugin-sdk'
+import type { SearchDeps } from '@/features/command-palette'
 import type { FileOpeners } from '@/entities/tab'
 import { CREATABLE, type NoteCreator } from '@/entities/note'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { NotePort } from '@/app/ports/notes'
+import { createPathCommandHost, type PathCommandDeps } from './fileServices'
 
 /** The window and the notes a plugin is given, once the window has made them. */
 export interface PluginServices {
   workspace?: WorkspaceHost
   notes?: VaultNotes
+  files?: VaultFiles
 }
 
 /** What the window hands a plugin's tabs. */
-export interface WorkspaceHostDeps {
+export interface WorkspaceHostDeps extends PathCommandDeps {
   readonly window: {
     readonly failure: Readonly<Ref<string>>
     readonly opening: Readonly<Ref<string>>
@@ -29,8 +31,6 @@ export interface WorkspaceHostDeps {
   readonly dragged: ShallowRef<readonly string[]>
   readonly tabOpeners: Pick<FileOpeners, 'openFile'>
   readonly tabSync?: { syncPathFromTab(tabId: string, path: string, title?: string): boolean }
-  readonly getTarget: () => CommandTarget
-  readonly runCommand: (id: string, target: CommandTarget) => void
   readonly ask: (text: string) => void
   readonly writeMessage: MessageWriter
 }
@@ -55,6 +55,7 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
     runCommand: (id, { path, title }) => deps.runCommand(id, { ...deps.getTarget(), path, title }),
     ask: (text) => deps.ask(text),
     showError: (text) => writeMessage(text, 'error'),
+    ...createPathCommandHost(deps),
   }
 }
 

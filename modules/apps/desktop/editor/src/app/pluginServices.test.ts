@@ -17,6 +17,8 @@ const createWorkspace = (over: Partial<WorkspaceHostDeps> = {}) => {
     runCommand: vi.fn(),
     ask: vi.fn(),
     writeMessage: vi.fn(),
+    runs: { canRun: (run: string) => run !== 'transcribe' },
+    vaults: { makes: { value: new Map([['Lecture.mp3', { transcript: 'done' as const }]]) } },
     ...over,
   } satisfies WorkspaceHostDeps
   return { deps, failure, workspace: createWorkspaceHost(deps) }

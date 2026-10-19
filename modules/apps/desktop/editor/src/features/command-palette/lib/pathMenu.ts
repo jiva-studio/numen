@@ -1,26 +1,21 @@
 /**
- * The menu on a row: what it offers, and what choosing an item comes to.
+ * The window's commands over one row of the vault, as the menu on a row of the
+ * files tree offers them.
  *
  * A row standing for a note offers every command over a note that has a row of
- * its own in the palette, beside the three the tab does itself; any other row
- * offers what can be done to a file, and a recording or a scanned document the
- * run over it.
+ * its own in the palette; any other row offers what can be done to a file, and
+ * a recording or a scanned document the run over it.
  */
 import type { MenuItem } from '@numen/ui'
-import { createCommands, getNoteCommands } from '@/features/command-palette'
 import type { ArtifactState, ArtifactStates } from '@/entities/artifact'
 import type { BookFormat, DocumentFormat, Source } from '@/entities/file'
 import { WORDS as words } from '@/shared/words'
-import { WORDS as own } from '../words'
+import { getNoteCommands } from './commands'
+import { createCommands } from './table'
+import { PATH_WORDS as own } from '../words'
 
-/** What the tab does itself: the files it makes, and a name put in a field. */
-export const NEW_NOTE = 'newNote'
-export const NEW_DECK = 'newDeck'
-export const NEW_STENCIL = 'newStencil'
-export const NEW_PRESET = 'newPreset'
-export const NEW_FOLDER = 'newFolder'
-export const RENAME = 'rename'
-export const PROOFREAD = 'proofread'
+/** One command the menu offers, in the group it is drawn in. */
+export type PathItem = MenuItem & { readonly group: string }
 
 /** The groups the items stand in, in the order they are drawn. */
 const GROUP = {
@@ -38,27 +33,14 @@ const NOTED: ReadonlyMap<string, string> = new Map(
 )
 
 /** One command over a note, in the group it stands in. */
-const getNoteCommand = (id: string, group: string): readonly MenuItem[] => {
+const getNoteCommand = (id: string, group: string): readonly PathItem[] => {
   return [{ id, text: NOTED.get(id)!, group }]
 }
 
-/** What the tab makes, offered wherever the menu was asked for. */
-const MADE: readonly MenuItem[] = [
-  { id: NEW_NOTE, text: own.newNote, group: GROUP.file },
-  { id: NEW_DECK, text: own.newDeck, group: GROUP.file },
-  { id: NEW_STENCIL, text: own.newStencil, group: GROUP.file },
-  { id: NEW_PRESET, text: own.newPreset, group: GROUP.file },
-  { id: NEW_FOLDER, text: own.newFolder, group: GROUP.file },
-]
-
-/** What the tab does itself, offered on every row. */
-const OWN: readonly MenuItem[] = [...MADE, { id: RENAME, text: own.rename, group: GROUP.file }]
-
 /** What a row standing for a note offers. */
-const NOTE: readonly MenuItem[] = [
+const NOTE: readonly PathItem[] = [
   ...getNoteCommand('read', GROUP.open),
   ...getNoteCommand('travel', GROUP.open),
-  ...OWN,
   ...getNoteCommand('copy', GROUP.file),
   ...getNoteCommand('child', GROUP.plex),
   ...getNoteCommand('parent', GROUP.plex),
@@ -68,33 +50,35 @@ const NOTE: readonly MenuItem[] = [
   ...getNoteCommand('remove', GROUP.remove),
 ]
 
+/** The removal of a file or of several. */
+const REMOVE: PathItem = { id: 'remove', text: own.remove, group: GROUP.remove }
+
 /**
  * What a row standing for anything but a note offers, with the runs its kind
  * can be put through.
  */
-const getFileMenu = (...runs: readonly MenuItem[]): readonly MenuItem[] => [
-  ...OWN,
+const getFileMenu = (...runs: readonly PathItem[]): readonly PathItem[] => [
   ...getNoteCommand('copy', GROUP.file),
   ...runs,
-  { id: 'remove', text: own.remove, group: GROUP.remove },
+  REMOVE,
 ]
 
 const FILED = getFileMenu()
 
 /** The runs a recording or a scan can be put through. */
-const TRANSCRIBE: MenuItem = { id: 'transcribe', text: own.transcribe, group: GROUP.run }
-const RECOGNISE: MenuItem = { id: 'recognise', text: own.recognise, group: GROUP.run }
-const PROOFREAD_ITEM: MenuItem = { id: PROOFREAD, text: own.proofread, group: GROUP.run }
+const TRANSCRIBE: PathItem = { id: 'transcribe', text: own.transcribe, group: GROUP.run }
+const RECOGNISE: PathItem = { id: 'recognise', text: own.recognise, group: GROUP.run }
+const PROOFREAD: PathItem = { id: 'proofread', text: own.proofread, group: GROUP.run }
 
 /**
  * The runs a url can be put through. It carries two things — the text at its
  * address and a copy of what is there — and each is downloaded and deleted on its
  * own.
  */
-const DOWNLOAD_TEXT: MenuItem = { id: 'downloadText', text: own.downloadText, group: GROUP.run }
-const DOWNLOAD_COPY: MenuItem = { id: 'downloadCopy', text: own.downloadCopy, group: GROUP.run }
-const DELETE_TEXT: MenuItem = { id: 'deleteText', text: own.deleteText, group: GROUP.run }
-const DELETE_COPY: MenuItem = { id: 'deleteCopy', text: own.deleteCopy, group: GROUP.run }
+const DOWNLOAD_TEXT: PathItem = { id: 'downloadText', text: own.downloadText, group: GROUP.run }
+const DOWNLOAD_COPY: PathItem = { id: 'downloadCopy', text: own.downloadCopy, group: GROUP.run }
+const DELETE_TEXT: PathItem = { id: 'deleteText', text: own.deleteText, group: GROUP.run }
+const DELETE_COPY: PathItem = { id: 'deleteCopy', text: own.deleteCopy, group: GROUP.run }
 
 const isBusyOrDone = (state: ArtifactState | undefined): boolean =>
   state === 'done' || state === 'running' || state === 'queued'
@@ -108,14 +92,14 @@ const isProofreadDisabled = (
 const getRecordingRuns = (
   made: ArtifactStates | undefined,
   canRun: RunGuard,
-): readonly MenuItem[] => {
-  const runs: MenuItem[] = []
+): readonly PathItem[] => {
+  const runs: PathItem[] = []
   if (canRun(TRANSCRIBE.id)) {
     runs.push({ ...TRANSCRIBE, disabled: isBusyOrDone(made?.transcript) })
   }
-  if (canRun(PROOFREAD_ITEM.id)) {
+  if (canRun(PROOFREAD.id)) {
     runs.push({
-      ...PROOFREAD_ITEM,
+      ...PROOFREAD,
       disabled: isProofreadDisabled(made?.transcript, made?.['transcript.corrected']),
     })
   }
@@ -127,15 +111,15 @@ const getBookRuns = (
   format: DocumentFormat | BookFormat | undefined,
   made: ArtifactStates | undefined,
   canRun: RunGuard,
-): readonly MenuItem[] => {
+): readonly PathItem[] => {
   if (format === 'epub') return []
-  const runs: MenuItem[] = []
+  const runs: PathItem[] = []
   if (canRun(RECOGNISE.id)) {
     runs.push({ ...RECOGNISE, disabled: isBusyOrDone(made?.ocr) })
   }
-  if (canRun(PROOFREAD_ITEM.id)) {
+  if (canRun(PROOFREAD.id)) {
     runs.push({
-      ...PROOFREAD_ITEM,
+      ...PROOFREAD,
       disabled: isProofreadDisabled(made?.ocr, made?.['ocr.corrected']),
     })
   }
@@ -147,16 +131,13 @@ const getBookRuns = (
  * address. A build that cannot reach one offers none of them, which is how a
  * person is told this build does not do it.
  */
-const urls = (canRun: RunGuard): readonly MenuItem[] =>
+const urls = (canRun: RunGuard): readonly PathItem[] =>
   getFileMenu(
     ...(canRun(DOWNLOAD_TEXT.id) ? [DOWNLOAD_TEXT] : []),
     ...(canRun(DOWNLOAD_COPY.id) ? [DOWNLOAD_COPY] : []),
     ...(canRun(DELETE_TEXT.id) ? [DELETE_TEXT] : []),
     ...(canRun(DELETE_COPY.id) ? [DELETE_COPY] : []),
   )
-
-/** What a selection of several offers, which is what means something for all of them. */
-const SEVERAL: readonly MenuItem[] = [{ id: 'remove', text: own.remove, group: GROUP.remove }]
 
 /** The row a menu was asked for on: what the vault holds there. */
 export interface MenuRow {
@@ -170,17 +151,15 @@ export interface MenuRow {
 export type RunGuard = (run: string) => boolean
 
 /**
- * What the menu offers, in the order it is drawn: something to make where it
- * was asked off every row, removal over a selection of several, and everything
- * that can be done to the one row it was asked for on.
+ * The window's commands over a row, in the order they are drawn: removal over a
+ * selection of several, and everything that can be done to the one row.
  */
-export const createMenuItems = (
-  on: MenuRow | null,
+export const createPathCommands = (
+  on: MenuRow,
   hasSeveral: boolean,
   canRun: RunGuard,
-): readonly MenuItem[] => {
-  if (!on) return MADE
-  if (hasSeveral) return SEVERAL
+): readonly PathItem[] => {
+  if (hasSeveral) return [REMOVE]
   if (on.isFolder) return FILED
   if (on.source === 'note') return NOTE
   if (on.source === 'url') return urls(canRun)
@@ -188,16 +167,3 @@ export const createMenuItems = (
   if (on.source === 'book') return getFileMenu(...getBookRuns(on.format, on.made, canRun))
   return FILED
 }
-
-/** What the menu offers anywhere. A choice outside this is not the menu's. */
-export const OFFERED: ReadonlySet<string> = new Set(
-  [
-    ...NOTE,
-    ...getFileMenu(TRANSCRIBE, RECOGNISE, PROOFREAD_ITEM),
-    ...MADE,
-    DOWNLOAD_TEXT,
-    DOWNLOAD_COPY,
-    DELETE_TEXT,
-    DELETE_COPY,
-  ].map((one) => one.id),
-)

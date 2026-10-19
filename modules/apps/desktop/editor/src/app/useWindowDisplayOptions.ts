@@ -24,7 +24,6 @@ export function createDisplayOptions(deps: DisplayWiring) {
     onVaultChanged: async (paths: readonly string[], renamed: readonly PathRename[]) => {
       editing.notes.applyPathChanges(paths, renamed)
       getCommands().commands.applyRenames(renamed)
-      await getKinds().files.refreshChangedPaths(paths, renamed)
       notifyPlugins({ paths, renamed })
     },
     reportChange: editing.changes.reportChange,

@@ -23,11 +23,13 @@ vi.mock('./kinds/agent', () => ({
     return h.agents
   },
 }))
-vi.mock('./kinds/files', () => ({
-  createFilesKind: (args: unknown) => {
+vi.mock('./fileServices', () => ({
+  createFileMakers: (args: unknown) => {
     h.seen.files = args as MockSeen
-    return { files: { kind: 'files' }, made: 'made' }
+    return 'made'
   },
+  createVaultFiles: () => ({ name: 'files' }),
+  createPathCommandHost: () => ({}),
 }))
 
 /** The plex tab the window holds, and what its kind says it is over. */
@@ -71,30 +73,25 @@ describe('the window kinds', () => {
     expect(h.seen.files.writeMessage).toBe(writer)
   })
 
-  it('starts with nothing dragged, shared with the files kind', () => {
+  it('starts with nothing dragged', () => {
     const { window } = create()
 
     expect(window.dragged.value).toEqual([])
-    expect(h.seen.files.dragged).toBe(window.dragged)
   })
 
   it('registers the kinds of the editors, the settings and each window kind, in that order', () => {
     const { deps } = create()
 
-    expect(deps.held.registerKinds).toHaveBeenCalledWith([
-      'note',
-      'deck',
-      'settings',
-      'agent',
-      'files',
-    ])
+    expect(deps.held.registerKinds).toHaveBeenCalledWith(['note', 'deck', 'settings', 'agent'])
   })
 
-  it('hands the files kind the destinations it returns', () => {
-    const { window } = create()
+  it('makes files through the makers it hands the commands, and reveals a path in the files tab', async () => {
+    const { deps, window } = create()
 
-    expect(h.seen.files.destinations).toBe(window.destinations)
     expect(window.made).toBe('made')
+    expect(window.services.files).toStrictEqual({ name: 'files' })
+    await window.files.revealPath('notes/a.md')
+    expect(deps.held.navigateTab).toHaveBeenCalledWith('files', 'notes/a.md')
   })
 })
 

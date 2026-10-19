@@ -51,12 +51,14 @@ export function createPluginContext(
   const requirePerm = (p: string, op: string) => checkPermission(target, p, op)
   const workspace = host.getWorkspace?.()
   const notes = host.getNotes?.()
+  const files = host.getFiles?.()
 
   return {
     pluginId,
     subscriptions,
     ...(workspace ? { workspace } : {}),
     ...(notes ? { notes } : {}),
+    ...(files ? { files } : {}),
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
     registerTabKind: <State>(reg: TabKindRegistration<State>) =>

@@ -221,3 +221,17 @@ export interface Words extends EmptyWords {
   readonly asParent: string
   readonly asJump: string
 }
+
+/** What the menu on a row of the files tree offers besides the commands over a note. */
+export const PATH_WORDS = {
+  /** The runs a row can be put through: a recording transcribed, a scan recognised. */
+  transcribe: 'Transcribe',
+  recognise: 'Recognise',
+  proofread: 'Proofread',
+  /** The runs over a url: the text at its address, and a copy of what is there. */
+  downloadText: 'Download the text again',
+  downloadCopy: 'Download a copy',
+  deleteText: 'Delete the text',
+  deleteCopy: 'Delete the copy',
+  remove: 'Remove',
+}

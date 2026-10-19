@@ -1,9 +1,22 @@
+/** What a files tab says: what it is called, and what it offers on a row. */
+// Stryker disable StringLiteral: interface copy
 export const WORDS = {
-  tree: 'Vault files',
-  empty: 'No files in vault',
-  open: 'Open',
+  files: 'Files',
+  /** The tree, said aloud to whoever is not looking at it. */
+  tree: 'The folders and files of the vault',
+  /** What stands in place of the tree where the vault holds nothing. */
+  empty: 'This vault holds no files',
+  /** What the tab itself offers in the menu on a row. */
   rename: 'Rename',
-  delete: 'Delete',
-  newFolder: 'New folder',
   newNote: 'New note',
-} as const
+  newDeck: 'New deck',
+  newStencil: 'New stencil',
+  newPreset: 'New preset',
+  newFolder: 'New folder',
+  /** The name a folder is made under, which renaming it is what changes. */
+  folder: 'New folder',
+  /** How many rows are being dragged, said at the pointer while they are. */
+  dragging: (files: number) => `${files} files`,
+  /** The rows that stayed where they were, because the folder holds those names. */
+  taken: 'These are filed there already:',
+}

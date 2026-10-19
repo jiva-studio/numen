@@ -5,6 +5,8 @@
 export { default as CommandPalette } from './ui/CommandPalette.vue'
 export { isChord, findChordCommand, findChordKeys, createRowKeys } from './lib/chords'
 export { createCommands } from './lib/table'
+export { createPathCommands } from './lib/pathMenu'
+export type { MenuRow, PathItem, RunGuard } from './lib/pathMenu'
 export { getNoteCommands } from './lib/commands'
 export { createInvocation } from './lib/invocation'
 export { createNotes } from './lib/notes'

@@ -4,10 +4,11 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { Menu, Tree } from '@numen/ui'
-import type { Entry } from '@/entities/file'
+import type { Entry } from '../types'
 import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
 import { useFileTree, ROOT } from '../model/useFileTree'
+import { drawing } from '../fixtures/host'
 
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,
@@ -33,8 +34,8 @@ const mountFiles = async (open: readonly string[] = []) => {
   const done: string[] = []
   const list = useFileTree({ list: async (at: string) => held[at] ?? [] })
   const tab: FilesTabState = useFilesTab(list, {
-    openDestination: (landing) =>
-      void done.push(`lands ${landing ? `${landing.at} ${landing.path}` : '—'}`),
+    ...drawing,
+    openEntry: (entry) => void done.push(`lands file ${entry.path}`),
     runCommand: (id, paths, details) =>
       void done.push(`runs ${id} ${paths.join(' ')} ${details.name}`),
     movePath: async (from, to) => void done.push(`moves ${from} ${to}`),
@@ -286,7 +287,8 @@ describe('a folder that could not be read', () => {
       },
     })
     const tab: FilesTabState = useFilesTab(list, {
-      openDestination: () => {},
+      ...drawing,
+      openEntry: () => {},
       runCommand: () => {},
       movePath: async () => {},
       setDraggedPaths: () => {},

@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { watch } from 'vue'
-import type { Entry } from '@/entities/file'
+import type { Entry } from '../types'
 import type { ListingRow } from '../types'
 import {
   generateUniqueName,

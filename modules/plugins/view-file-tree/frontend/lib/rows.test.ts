@@ -3,7 +3,7 @@
  * and a folder holding nothing still opens onto nothing.
  */
 import { describe, expect, it } from 'vitest'
-import type { Entry } from '@/entities/file'
+import type { Entry } from '../types'
 import type { ListingRow } from '../types'
 import { getRows } from './rows'
 

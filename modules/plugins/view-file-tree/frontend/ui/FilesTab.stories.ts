@@ -10,7 +10,8 @@ import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
 import { useFileTree, ROOT } from '../model/useFileTree'
-import type { Entry } from '@/entities/file'
+import type { Entry } from '../types'
+import { drawing } from '../fixtures/host'
 
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,
@@ -38,7 +39,8 @@ const VAULT: Record<string, readonly Entry[]> = {
 const createFilesTab = (open: readonly string[]): FilesTabState => {
   const list = useFileTree({ list: async (at: string) => VAULT[at] ?? [] })
   const state: FilesTabState = useFilesTab(list, {
-    openDestination: () => {},
+    ...drawing,
+    openEntry: () => {},
     runCommand: () => {},
     movePath: async () => {},
     setDraggedPaths: () => {},
@@ -74,7 +76,7 @@ const room =
   () => ({
     components: { FilesTab },
     setup: () => ({ state: createFilesTab(open) }),
-    template: `<div class="numen h-screen w-80 bg-surface"><FilesTab :state="state" /></div>`,
+    template: `<div class="numen h-screen bg-surface" style="inline-size: 20rem"><FilesTab :state="state" /></div>`,
   })
 
 const rows = (canvas: HTMLElement) => [...canvas.querySelectorAll<HTMLElement>('[role="treeitem"]')]

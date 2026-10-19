@@ -2,37 +2,33 @@
  * Tab state, tree interactions, and window tab registration for the files tab.
  */
 import { ref } from 'vue'
-import type { Entry, Source } from '@/entities/file'
-import type { SearchDestination } from '@/features/command-palette'
-import { getFileName } from '@/shared/paths'
+import { getFileName, type MenuEntry } from '@numen/plugin-sdk'
 import { resolveDropFolder, ROOT } from './useFileTree'
 import {
+  createMenuItems,
   NEW_DECK,
   NEW_FOLDER,
   NEW_NOTE,
   NEW_PRESET,
   NEW_STENCIL,
-  OFFERED,
+  OWN_IDS,
   RENAME,
-  type RunGuard,
 } from '../lib/menu'
 import { resolveRenamePath } from './rename'
 import { WORDS as words } from '../words'
 import type {
   DropPosition,
+  Entry,
   FileMaker,
   FilesTabDeps,
   FilesTabState,
   FileTree,
   MenuRequest,
+  Source,
 } from '../types'
 import * as create from './create'
 
 export type { DropPosition, FileMaker, FilesTabDeps, FilesTabState, MenuRequest }
-
-/** Where a row activated takes the person: the file the row stands for. */
-export const getLandingDestination = (entry: Entry): SearchDestination | null =>
-  entry.isFolder ? null : { at: 'file', path: entry.path, title: entry.name }
 
 function useFileCreation(
   list: FileTree,
@@ -94,6 +90,16 @@ interface FileMenuDeps {
   getSourceOf: (path: string) => Source
 }
 
+/** The entry a menu asked for on a path stands for, and a file of no source where the tree holds none. */
+const getMenuEntry = (list: FileTree, path: string): Entry =>
+  list.getEntryAt(path) ?? {
+    path,
+    name: getFileName(path),
+    isFolder: false,
+    kind: 'other',
+    type: 'note',
+  }
+
 function useFileMenu(options: FileMenuDeps) {
   const { list, deps, renamingPath, creators, getNameOf, getSourceOf } = options
   const menu = ref<MenuRequest | null>(null)
@@ -109,10 +115,22 @@ function useFileMenu(options: FileMenuDeps) {
   const getOverPaths = (path: string): readonly string[] =>
     list.selectedPaths.value.includes(path) ? list.selectedPaths.value : [path]
 
+  const getMenuItems = (path: string | null): readonly MenuEntry[] => {
+    if (path === null) return createMenuItems(null, false)
+    const isSeveral = getOverPaths(path).length > 1
+    return createMenuItems(
+      deps.getPathCommands({ entry: getMenuEntry(list, path), isSeveral }),
+      isSeveral,
+    )
+  }
+
+  const isOffered = (id: string, path: string | null): boolean =>
+    OWN_IDS.has(id) || getMenuItems(path).some((one) => one.id === id)
+
   const chooseMenuItem = (id: string) => {
     const request = menu.value
     menu.value = null
-    if (!request || !OFFERED.has(id)) return
+    if (!request || !isOffered(id, request.path)) return
     if (id === NEW_NOTE) return void creators.createNote(request.path)
     if (id === NEW_DECK)
       return void creators.createOne(request.path, deps.createDeck, words.newDeck)
@@ -131,10 +149,10 @@ function useFileMenu(options: FileMenuDeps) {
     deps.runCommand(id, getOverPaths(path), { name: getNameOf(path), source: getSourceOf(path) })
   }
 
-  return { menu, openMenu, dismissMenu, chooseMenuItem, getOverPaths }
+  return { menu, openMenu, dismissMenu, chooseMenuItem, getOverPaths, getMenuItems }
 }
 
-function createFileActions(list: FileTree, deps: FilesTabDeps, tabState: () => FilesTabState) {
+function createFileActions(list: FileTree, deps: FilesTabDeps) {
   const getNameOf = (path: string): string => list.getEntryAt(path)?.name ?? getFileName(path)
   const getSourceOf = (path: string): Source => list.getEntryAt(path)?.kind ?? 'other'
 
@@ -142,7 +160,7 @@ function createFileActions(list: FileTree, deps: FilesTabDeps, tabState: () => F
     const entry = list.getEntryAt(path)
     if (!entry) return
     list.selectPaths([path])
-    deps.openDestination(getLandingDestination(entry), tabState())
+    if (!entry.isFolder) deps.openEntry(entry)
   }
 
   const rename = async (path: string, name: string) => {
@@ -176,8 +194,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     renamingPath.value = path
   }
 
-  const stateHolder: { current?: FilesTabState } = {}
-  const actions = createFileActions(list, deps, () => stateHolder.current!)
+  const actions = createFileActions(list, deps)
   const creators = useFileCreation(list, deps, renamingPath)
   const { move } = useFileMoves(list, deps)
   const fileMenu = useFileMenu({
@@ -188,8 +205,6 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     getNameOf: actions.getNameOf,
     getSourceOf: actions.getSourceOf,
   })
-
-  const canRun: RunGuard = (run) => deps.canRun?.(run) ?? true
 
   const tabState: FilesTabState = {
     ...actions,
@@ -214,10 +229,10 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     openMenu: fileMenu.openMenu,
     dismissMenu: fileMenu.dismissMenu,
     chooseMenuItem: fileMenu.chooseMenuItem,
-    canRun,
-    getArtifactStates: deps.getArtifactStates,
+    getMenuItems: fileMenu.getMenuItems,
+    getCommandIcon: (id) => deps.getCommandIcon(id),
+    getEntryIcon: (entry, isOpen) => deps.getEntryIcon(entry, isOpen),
   }
-  stateHolder.current = tabState
 
   return tabState
 }
