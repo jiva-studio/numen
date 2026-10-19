@@ -10,7 +10,7 @@ import (
 
 // absentPlugins are the ids of the plugins with a backend that this binary does
 // not link in.
-var absentPlugins = []string{"md.numen.agent-acp", "md.numen.agent-antigravity", "md.numen.agent-codex"}
+var absentPlugins = []string{}
 
 // getUnaccountedPlugins lists the plugins with a backend that are neither
 // registered nor listed as absent, and the absent ones that are registered or
