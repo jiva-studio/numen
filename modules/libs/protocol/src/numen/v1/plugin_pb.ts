@@ -520,7 +520,7 @@ export const PluginService: GenService<{
 /**
  * PluginEventService hands a running plugin an event its manifest's activationEvents subscribe to.
  * A plugin serves it only when it takes events. A plugin that takes the event and refuses it answers
- * with error set; a status code means the call was not served.
+ * with error set; a status code means the call was not served or failed.
  *
  * @generated from service numen.v1.PluginEventService
  */
