@@ -294,3 +294,22 @@ func TestCompleteIsUnavailableWhenTheAgentRefuses(t *testing.T) {
 		t.Errorf("got %+v, want UNAVAILABLE", res.Msg)
 	}
 }
+
+// An agent that failed to list is not asked again until the backoff has passed.
+func TestAnAgentThatFailedToListIsLeftAlone(t *testing.T) {
+	agent, record := fakeACPAgent(t, "failing", "fail")
+	now := time.Unix(1000, 0)
+	svc := serveAgents(agent)
+	svc.acpModels.now = func() time.Time { return now }
+
+	listCompletionModels(t, svc)
+	listCompletionModels(t, svc)
+	if started := readRecord(t, record)["started"]; len(started) != 1 {
+		t.Fatalf("the agent was started %d times within the backoff, want 1", len(started))
+	}
+	now = now.Add(acpFailureBackoff)
+	listCompletionModels(t, svc)
+	if started := readRecord(t, record)["started"]; len(started) != 2 {
+		t.Errorf("the agent was started %d times after the backoff, want 2", len(started))
+	}
+}

@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -157,14 +158,20 @@ func TestTheCompletionModelsAreTheEndpoints(t *testing.T) {
 }
 
 func TestCompletionArgumentsGiveNoToolsAndOneTurn(t *testing.T) {
-	got := strings.Join(buildCompletionArguments("be brief", "m1"), " ")
-	for _, want := range []string{"-p", "--output-format text", "--max-turns 1", "--tools  ", "--strict-mcp-config", "--append-system-prompt be brief", "--model m1"} {
-		if !strings.Contains(got, want) {
-			t.Errorf("missing %q in %q", want, got)
+	got := buildCompletionArguments("be brief", "m1")
+	for _, pair := range [][2]string{
+		{"--output-format", "text"}, {"--max-turns", "1"}, {"--tools", ""}, {"--setting-sources", ""},
+		{"--append-system-prompt", "be brief"}, {"--model", "m1"},
+	} {
+		assertPair(t, got, pair[0], pair[1])
+	}
+	for _, flag := range []string{"-p", "--strict-mcp-config"} {
+		if !slices.Contains(got, flag) {
+			t.Errorf("%s absent from %q", flag, got)
 		}
 	}
-	bare := strings.Join(buildCompletionArguments("", ""), " ")
-	if strings.Contains(bare, "--append-system-prompt") || strings.Contains(bare, "--model") {
+	bare := buildCompletionArguments("", "")
+	if slices.Contains(bare, "--append-system-prompt") || slices.Contains(bare, "--model") {
 		t.Errorf("got %q", bare)
 	}
 }

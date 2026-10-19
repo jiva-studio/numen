@@ -17,6 +17,9 @@ import (
 // acpListLimit is how long an agent has to open the session its models are read from.
 const acpListLimit = 15 * time.Second
 
+// acpFailureBackoff is how long an agent that failed to list is left alone.
+const acpFailureBackoff = 30 * time.Second
+
 var (
 	errNoCompletionAgent = errors.New("no ACP agent is installed")
 	errAgentNotInstalled = errors.New("the ACP agent is not installed")
@@ -110,28 +113,52 @@ type acpListing struct {
 }
 
 // acpModelCache keeps what each agent listed, for as long as the command that starts it stays the
-// same. A failure keeps nothing.
+// same. A failure keeps nothing, and the agent that failed is left alone for a while.
 type acpModelCache struct {
-	mu   sync.Mutex
-	kept map[string]acpListing
+	mu       sync.Mutex
+	kept     map[string]acpListing
+	failedAt map[string]time.Time
+	// now is the clock the backoff is kept by. Nil is the system clock.
+	now func() time.Time
 }
 
-// get returns the agent's listing: the one kept, or the one it reports now.
+// getNow returns the time by the clock of the cache.
+func (c *acpModelCache) getNow() time.Time {
+	if c.now == nil {
+		return time.Now()
+	}
+	return c.now()
+}
+
+// get returns the agent's listing: the one kept, or the one it reports now. The agent is asked
+// without the lock held.
 func (c *acpModelCache) get(ctx context.Context, agent acpAgent) acpListing {
 	key := agent.Program + "\x00" + strings.Join(agent.Command, "\x00")
 	c.mu.Lock()
-	defer c.mu.Unlock()
-	if listing, ok := c.kept[key]; ok {
+	listing, isKept := c.kept[key]
+	failedAt, hasFailed := c.failedAt[key]
+	isBackingOff := hasFailed && c.getNow().Sub(failedAt) < acpFailureBackoff
+	c.mu.Unlock()
+	if isKept || isBackingOff {
 		return listing
 	}
 	listing, err := readACPListing(ctx, agent)
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if err != nil {
+		if ctx.Err() == nil {
+			if c.failedAt == nil {
+				c.failedAt = make(map[string]time.Time)
+			}
+			c.failedAt[key] = c.getNow()
+		}
 		return acpListing{}
 	}
 	if c.kept == nil {
 		c.kept = make(map[string]acpListing)
 	}
 	c.kept[key] = listing
+	delete(c.failedAt, key)
 	return listing
 }
 

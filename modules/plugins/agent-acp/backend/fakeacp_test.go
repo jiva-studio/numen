@@ -59,6 +59,10 @@ func readRecord(t *testing.T, record string) map[string][]map[string]any {
 func runFakeACPAgent(args []string, in io.Reader, out io.Writer) int {
 	behaviour, record := args[0], args[1]
 	if behaviour == "fail" {
+		if started, err := os.OpenFile(record, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600); err == nil {
+			fmt.Fprintln(started, `{"method":"started"}`)
+			_ = started.Close()
+		}
 		fmt.Fprintln(os.Stderr, "not signed in")
 		return 1
 	}
