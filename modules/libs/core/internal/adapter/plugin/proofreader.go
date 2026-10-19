@@ -124,7 +124,7 @@ func (b *ProofreaderBridge) Close() error {
 // readProofreadError sorts the failure of a call to the proofreading plugin: the
 // end of the caller's context is the caller's own, a plugin that cannot be
 // reached or has no model to ask is port.ErrUnavailable, one the person has not
-// let ask a model is port.ErrNoConsent, and anything else it said is kept as it
+// let ask a model is port.ErrNoConsent, and anything else it said is returned as it
 // is.
 func readProofreadError(ctx context.Context, err error) error {
 	if ctxErr := ctx.Err(); ctxErr != nil {
@@ -145,7 +145,7 @@ func readProofreadError(ctx context.Context, err error) error {
 }
 
 // readActivationError sorts the failure to start the proofreading plugin: the
-// end of a context is kept as it is, and any other failure is
+// end of a context is returned as it is, and any other failure is
 // port.ErrUnavailable.
 func readActivationError(err error) error {
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {

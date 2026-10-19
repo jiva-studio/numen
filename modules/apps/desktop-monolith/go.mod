@@ -49,7 +49,10 @@ require (
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault v0.0.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/agent v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/agent-acp v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/agent-antigravity v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/agent-claude v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/agent-codex v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/downloader v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/embeddings v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/ocr v0.0.0
@@ -102,6 +105,12 @@ replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go => ../../libs/pl
 replace github.com/jiva-studio/numen/modules/plugins/agent => ../../plugins/agent
 
 replace github.com/jiva-studio/numen/modules/plugins/agent-claude => ../../plugins/agent-claude
+
+replace github.com/jiva-studio/numen/modules/plugins/agent-codex => ../../plugins/agent-codex
+
+replace github.com/jiva-studio/numen/modules/plugins/agent-antigravity => ../../plugins/agent-antigravity
+
+replace github.com/jiva-studio/numen/modules/plugins/agent-acp => ../../plugins/agent-acp
 
 replace github.com/jiva-studio/numen/modules/plugins/proofreading => ../../plugins/proofreading
 

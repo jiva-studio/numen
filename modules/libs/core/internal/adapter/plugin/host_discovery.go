@@ -54,16 +54,16 @@ func (h *Host) registerDiscoveredLocked(discovered []DiscoveredPlugin) []string 
 	}
 	for id := range h.onDisk {
 		if !present[id] && !h.isCoveredByProblemLocked(id) {
-			h.forgetDiskPluginLocked(id)
+			h.removeDiskPluginLocked(id)
 			stale = append(stale, id)
 		}
 	}
 	return stale
 }
 
-// forgetDiskPluginLocked unregisters a plugin that left the disk. A built-in plugin of the same id
+// removeDiskPluginLocked unregisters a plugin that left the disk. A built-in plugin of the same id
 // takes its place.
-func (h *Host) forgetDiskPluginLocked(pluginID string) {
+func (h *Host) removeDiskPluginLocked(pluginID string) {
 	delete(h.onDisk, pluginID)
 	if builtIn, ok := h.getBuiltInLocked(pluginID); ok {
 		h.plugins[pluginID] = builtIn.plugin

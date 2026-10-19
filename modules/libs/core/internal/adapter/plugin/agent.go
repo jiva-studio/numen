@@ -79,7 +79,7 @@ func newAskRequest(task port.Task) *v1.AskAgentRequest {
 func (b *AgentBridge) StartRun(ctx context.Context, task port.Task) (port.Run, error) {
 	req := connect.NewRequest(newAskRequest(task))
 
-	client, held, err := b.service.open(ctx)
+	client, lease, err := b.service.open(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (b *AgentBridge) StartRun(ctx context.Context, task port.Task) (port.Run, e
 	stream, err := client.AskAgent(runCtx, req)
 	if err != nil {
 		cancel()
-		_ = held.Close()
+		_ = lease.Close()
 		return nil, fmt.Errorf("rpc ask agent: %w", err)
 	}
 
@@ -97,7 +97,7 @@ func (b *AgentBridge) StartRun(ctx context.Context, task port.Task) (port.Run, e
 		cancel: cancel,
 		steps:  make(chan port.Step, 16),
 		onClose: func() {
-			_ = held.Close()
+			_ = lease.Close()
 		},
 	}
 	go run.readSteps()

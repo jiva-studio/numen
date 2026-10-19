@@ -248,7 +248,7 @@ func (b *DocumentBridge) OpenDocument(ctx context.Context, file io.ReadSeekClose
 	req := connect.NewRequest(&v1.GetDocumentRequest{
 		Path: path,
 	})
-	client, held, err := b.service.open(ctx)
+	client, lease, err := b.service.open(ctx)
 	if err != nil {
 		if cleanup != nil {
 			cleanup()
@@ -258,7 +258,7 @@ func (b *DocumentBridge) OpenDocument(ctx context.Context, file io.ReadSeekClose
 
 	resp, err := client.GetDocument(ctx, req)
 	if err != nil {
-		_ = held.Close()
+		_ = lease.Close()
 		if cleanup != nil {
 			cleanup()
 		}
@@ -266,7 +266,7 @@ func (b *DocumentBridge) OpenDocument(ctx context.Context, file io.ReadSeekClose
 	}
 
 	return &remoteDocument{
-		held:    held,
+		lease:   lease,
 		service: b.service,
 		path:    path,
 		pages:   resp.Msg.GetPages(),
@@ -277,7 +277,7 @@ func (b *DocumentBridge) OpenDocument(ctx context.Context, file io.ReadSeekClose
 // remoteDocument is a document the plugin holds open. It holds its own reference on the plugin
 // until it is closed, and draws each page at the endpoint the plugin is at then.
 type remoteDocument struct {
-	held      *pluginLease
+	lease     *pluginLease
 	service   pluginService[numenv1connect.DocumentServiceClient]
 	path      string
 	pages     []*v1.Page
@@ -330,7 +330,7 @@ func (d *remoteDocument) Close() {
 			d.cleanup()
 			d.cleanup = nil
 		}
-		_ = d.held.Close()
+		_ = d.lease.Close()
 	})
 }
 

@@ -41,10 +41,10 @@ func (l *limits) acquire(ctx context.Context, agent string, size int) (func(), e
 func (l *limits) getGate(agent string, size int) *gate {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	held, found := l.gates[agent]
-	if !found || held.size != size {
-		held = &gate{size: size, slots: make(chan struct{}, size)}
-		l.gates[agent] = held
+	current, found := l.gates[agent]
+	if !found || current.size != size {
+		current = &gate{size: size, slots: make(chan struct{}, size)}
+		l.gates[agent] = current
 	}
-	return held
+	return current
 }

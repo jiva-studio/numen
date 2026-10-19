@@ -46,7 +46,7 @@ func (c Config) SetSafeMode(enabled bool) Config {
 	return c
 }
 
-// SetPluginVaultPath is the vault the plugins' paths are held inside.
+// SetPluginVaultPath is the vault the plugins' paths are inside.
 func (c Config) SetPluginVaultPath(path string) {
 	if c.PluginHost != nil {
 		c.PluginHost.SetVaultPath(path)

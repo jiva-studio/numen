@@ -1,51 +1,55 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createSecretStore, type SecretDeps } from './secrets'
 
-const words = { unkept: 'The key was not kept.' }
+const words = { secretFailed: 'The key was not stored.' }
 
 const createStore = (refuses: string | null = null) => {
-  const asked: string[] = []
+  const calls: string[] = []
   const core: SecretDeps = {
     writePluginSecret: (pluginId, name, key) => {
-      asked.push(`write ${pluginId} ${name} ${key}`)
+      calls.push(`write ${pluginId} ${name} ${key}`)
       return refuses ? Promise.reject(new Error(refuses)) : Promise.resolve()
     },
     deletePluginSecret: (pluginId, name) => {
-      asked.push(`delete ${pluginId} ${name}`)
+      calls.push(`delete ${pluginId} ${name}`)
       return refuses ? Promise.reject(new Error(refuses)) : Promise.resolve()
     },
   }
-  const said = vi.fn()
+  const notified = vi.fn()
   const refresh = vi.fn(() => Promise.resolve())
-  return { asked, said, refresh, kept: createSecretStore(core, { words, say: said, refresh }) }
+  const store = createSecretStore(core, { words, notify: notified, refresh })
+  return { calls, notified, refresh, store }
 }
 
 describe('a key of a secret', () => {
   it('is handed to the vault and the settings are read again', async () => {
-    const { asked, refresh, kept } = createStore()
-    await kept.writeSecret('md.numen.sample', 'apiKey', 'made-up-key')
-    expect(asked).toStrictEqual(['write md.numen.sample apiKey made-up-key'])
+    const { calls, refresh, store } = createStore()
+    await store.writeSecret('md.numen.sample', 'apiKey', 'made-up-key')
+    expect(calls).toStrictEqual(['write md.numen.sample apiKey made-up-key'])
     expect(refresh).toHaveBeenCalledOnce()
   })
 
   it('is removed through the vault', async () => {
-    const { asked, refresh, kept } = createStore()
-    await kept.deleteSecret('md.numen.sample', 'apiKey')
-    expect(asked).toStrictEqual(['delete md.numen.sample apiKey'])
+    const { calls, refresh, store } = createStore()
+    await store.deleteSecret('md.numen.sample', 'apiKey')
+    expect(calls).toStrictEqual(['delete md.numen.sample apiKey'])
     expect(refresh).toHaveBeenCalledOnce()
   })
 
   it('is not stored when empty', async () => {
-    const { asked, refresh, kept } = createStore()
-    await kept.writeSecret('md.numen.sample', 'apiKey', '')
-    expect(asked).toStrictEqual([])
+    const { calls, refresh, store } = createStore()
+    await store.writeSecret('md.numen.sample', 'apiKey', '')
+    expect(calls).toStrictEqual([])
     expect(refresh).not.toHaveBeenCalled()
   })
 
-  it('refused is said, and the settings are read again', async () => {
-    const { said, refresh, kept } = createStore('no keychain on this machine')
-    await kept.writeSecret('md.numen.sample', 'apiKey', 'made-up-key')
-    expect(said).toHaveBeenLastCalledWith(expect.stringContaining('The key was not kept.'), 'error')
+  it('refused is notified, and the settings are read again', async () => {
+    const { notified, refresh, store } = createStore('no keychain on this machine')
+    await store.writeSecret('md.numen.sample', 'apiKey', 'made-up-key')
+    expect(notified).toHaveBeenLastCalledWith(
+      expect.stringContaining('The key was not stored.'),
+      'error',
+    )
     expect(refresh).toHaveBeenCalledOnce()
   })
 })

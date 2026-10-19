@@ -392,8 +392,8 @@ func TestAProofreadingWithoutConsentSaysWhereToAllowIt(t *testing.T) {
 
 	w.proofread(t.Context(), somewhere, "a.pdf")
 
-	at, held := w.getTask(t)
-	if !held || at.Error != "AI access not allowed — allow it in Settings → AI" {
+	at, isFound := w.getTask(t)
+	if !isFound || at.Error != "AI access not allowed — allow it in Settings → AI" {
 		t.Errorf("got %+v", at)
 	}
 }
