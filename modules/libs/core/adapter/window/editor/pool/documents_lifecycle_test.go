@@ -618,3 +618,23 @@ func TestRetiringClosesOnlyTheDocumentNobodyHolds(t *testing.T) {
 		t.Error("an idle document was not retired")
 	}
 }
+
+func TestADocumentGivenBackAfterItWasReplacedLeavesTheReplacementHeld(t *testing.T) {
+	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
+	mark := markOf("a")
+	failed := &Document{uses: 1}
+	replacement := &Document{uses: 1}
+	docs.open[mark] = replacement
+	docs.isClosing = true
+
+	docs.Release(mark, failed)
+
+	if docs.open[mark] != replacement {
+		t.Error("giving back the document that failed removed the one that replaced it")
+	}
+	select {
+	case <-docs.empty:
+		t.Error("the window was told nothing is open while the replacement is held")
+	default:
+	}
+}

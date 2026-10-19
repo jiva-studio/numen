@@ -209,7 +209,9 @@ func (d *Documents) Release(mark document.Fingerprint, doc *Document) {
 		return
 	}
 	if d.isClosing {
-		delete(d.open, mark)
+		if d.open[mark] == doc {
+			delete(d.open, mark)
+		}
 		doc.Close()
 		if len(d.open) == 0 {
 			d.done.Do(func() { close(d.empty) })
