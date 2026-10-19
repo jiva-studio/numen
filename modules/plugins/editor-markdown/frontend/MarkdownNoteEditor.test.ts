@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import MarkdownNoteEditor from './MarkdownNoteEditor.vue'
 
@@ -38,5 +39,31 @@ describe('MarkdownNoteEditor', () => {
     expect(wrapper.vm.isDirty).toBe(false)
     wrapper.vm.setContent('modified')
     expect(wrapper.vm.getContent()).toBe('modified')
+  })
+})
+
+describe('MarkdownNoteEditor while the note is read', () => {
+  const getEditable = (wrapper: ReturnType<typeof mount>): string | undefined =>
+    wrapper.find('.cm-content').attributes('contenteditable')
+
+  it('refuses typing until the tab has read the note', async () => {
+    const isLoading = ref(true)
+    const wrapper = mount(MarkdownNoteEditor, {
+      props: { filePath: 'test.md', state: { isLoading } },
+    })
+    await nextTick()
+    expect(getEditable(wrapper)).toBe('false')
+
+    isLoading.value = false
+    await nextTick()
+    expect(getEditable(wrapper)).toBe('true')
+  })
+
+  it('accepts typing when the tab reports no read in progress', async () => {
+    const wrapper = mount(MarkdownNoteEditor, {
+      props: { filePath: 'test.md', state: {} },
+    })
+    await nextTick()
+    expect(getEditable(wrapper)).toBe('true')
   })
 })

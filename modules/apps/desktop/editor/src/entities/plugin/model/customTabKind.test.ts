@@ -184,6 +184,43 @@ describe('createCustomTabKind', () => {
   })
 })
 
+describe('createCustomTabKind (loading)', () => {
+  const registration = { kind: 'note', component: null, title: 'Markdown Note' }
+  const createHost = (readNote?: (path: string) => Promise<string | undefined>) => ({
+    registerKind: () => () => {},
+    registerExtensionReader: () => () => {},
+    openTab: async () => '',
+    ...(readNote ? { readNote } : {}),
+  })
+  const open = (readNote?: (path: string) => Promise<string | undefined>) =>
+    createCustomTabKind('md.numen.editor-markdown', registration, createHost(readNote)).open(
+      'notes/test.md',
+      'tab',
+    ) as { isLoading: { value: boolean } }
+
+  it('is loading until the note has been read', async () => {
+    let finish: (body: string) => void = () => {}
+    const state = open(() => new Promise<string>((resolve) => (finish = resolve)))
+    expect(state.isLoading.value).toBe(true)
+
+    finish('# Body')
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.isLoading.value).toBe(false)
+  })
+
+  it('stops loading when the read fails', async () => {
+    const state = open(() => Promise.reject(new Error('unreachable')))
+    expect(state.isLoading.value).toBe(true)
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.isLoading.value).toBe(false)
+  })
+
+  it('is not loading when the host reads no notes', () => {
+    expect(open().isLoading.value).toBe(false)
+  })
+})
+
 describe('createReaderTabKind (source resolution)', () => {
   it('identifies source via registration source property', () => {
     const kind = createReaderTabKind('audio-plugin', {

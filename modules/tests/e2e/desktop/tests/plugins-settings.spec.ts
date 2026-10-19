@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test'
+import { openWorkspace, runPaletteCommand } from './support/workspace.js'
 
 test.describe('Plugin Settings and Configuration', () => {
   test('opens command palette and navigates to Settings tab', async ({ page }) => {
@@ -89,16 +90,9 @@ test.describe('Plugin Settings and Configuration', () => {
   })
 
   test('persists modified plugin settings across tab re-opening', async ({ page }) => {
-    await page.goto('/')
+    await openWorkspace(page)
 
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-
-    await paletteInput.fill('Settings')
-    await page.keyboard.press('Enter')
+    await runPaletteCommand(page, 'Settings', 'Settings')
 
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
 
@@ -116,11 +110,7 @@ test.describe('Plugin Settings and Configuration', () => {
     await expect(page.locator('.settings__plugins')).not.toBeVisible({ timeout: 5_000 })
 
     // Reopen Settings tab via command palette
-    await page.keyboard.press('Control+p')
-    const reopenInput = page.locator('input[data-palette="field"]').first()
-    await expect(reopenInput).toBeVisible({ timeout: 5_000 })
-    await reopenInput.fill('Settings')
-    await page.keyboard.press('Enter')
+    await runPaletteCommand(page, 'Settings', 'Settings')
 
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
 
@@ -132,17 +122,9 @@ test.describe('Plugin Settings and Configuration', () => {
   })
 
   test('searches palette and executes Files navigation command', async ({ page }) => {
-    await page.goto('/')
+    await openWorkspace(page)
 
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    // Trigger palette and search Files
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-
-    await paletteInput.fill('Files')
-    await page.keyboard.press('Enter')
+    await runPaletteCommand(page, 'Files', 'Files')
 
     // Verify file tree is open and assets folder is visible
     await expect(page.locator('[data-tree-row="assets"]').first()).toBeVisible({ timeout: 10_000 })

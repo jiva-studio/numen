@@ -174,6 +174,7 @@ const FORBIDDEN_ACTION_NAMES = new Set([
   'title',
   'note',
   'errorMessage',
+  'isLoading',
   'body',
   'updateBody',
   'save',
@@ -243,14 +244,13 @@ function createCustomTabState(at: string, deps: CustomTabStateDeps) {
   const defaultName = stripMarkdownExtension(extractFilename(at))
   const noteRef = ref({ path: at, body: '' })
   const errorMessageRef = ref('')
+  const isLoading = ref(deps.hostDeps?.readNote !== undefined)
   let hasEdited = false
-  let isInitialReadComplete = false
 
   if (deps.hostDeps?.readNote) {
     void deps.hostDeps
       .readNote(at)
       .then((result) => {
-        isInitialReadComplete = true
         if (hasEdited) return
         if (typeof result === 'string') {
           noteRef.value = { path: at, body: result }
@@ -264,11 +264,11 @@ function createCustomTabState(at: string, deps: CustomTabStateDeps) {
         }
       })
       .catch((err) => {
-        isInitialReadComplete = true
         errorMessageRef.value = err instanceof Error ? err.message : String(err)
       })
-  } else {
-    isInitialReadComplete = true
+      .finally(() => {
+        isLoading.value = false
+      })
   }
   return {
     at,
@@ -277,6 +277,7 @@ function createCustomTabState(at: string, deps: CustomTabStateDeps) {
     title: defaultName,
     note: noteRef,
     errorMessage: errorMessageRef,
+    isLoading,
     body: computed(() => noteRef.value.body),
     updateBody: (body: string) => {
       hasEdited = true
@@ -284,7 +285,7 @@ function createCustomTabState(at: string, deps: CustomTabStateDeps) {
       void deps.hostDeps?.writeNote?.(at, body)
     },
     save: () => {
-      if (!isInitialReadComplete && !hasEdited) return
+      if (isLoading.value && !hasEdited) return
       void deps.hostDeps?.writeNote?.(at, noteRef.value.body)
     },
     ...createTabActions(at, deps.registration, deps.hostDeps),

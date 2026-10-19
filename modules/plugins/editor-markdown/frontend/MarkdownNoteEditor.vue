@@ -91,6 +91,14 @@ const frontmatterError = computed(() => {
   return ''
 })
 
+const isLoading = computed(() => {
+  const loading = props.state?.isLoading
+  if (typeof loading === 'object' && loading !== null && 'value' in loading) {
+    return (loading as { value?: unknown }).value === true
+  }
+  return loading === true
+})
+
 const displayErrorMessage = computed(() => {
   if (props.errorMessage) return props.errorMessage
   const stateErr = props.state?.errorMessage
@@ -216,6 +224,7 @@ defineExpose({
       :model-value="docContent"
       :language="editorLanguage"
       :is-live="true"
+      :readonly="isReadOnly || isLoading"
       v-bind="props.extensions ? { extensions: props.extensions as Extension } : {}"
       class="markdown-note-editor__pane note__text"
       @update:model-value="onUpdateModelValue"
