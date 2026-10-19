@@ -137,6 +137,7 @@ func Start(ctx context.Context, reg *Registry, spec Spec) (*Work, error) {
 			}
 			if reader.isOverLimit() {
 				reader.reportLimit()
+				stop()
 				break
 			}
 			select {

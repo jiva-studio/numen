@@ -243,3 +243,22 @@ func TestRelayStopsTheWorkWhenTheCallEnds(t *testing.T) {
 		t.Errorf("got %v", err)
 	}
 }
+
+func TestStartKillsTheChildThatIgnoresTheClosedOutputAtTheStepLimit(t *testing.T) {
+	spec := shell(`trap '' PIPE; echo '{"finished":true}'; sleep 30`,
+		func(r *agentrun.Reader, _ map[string]any) {
+			r.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_ToolFinished{ToolFinished: &numenv1.ToolFinished{}}})
+		})
+	spec.MaxSteps = 1
+	var reg agentrun.Registry
+
+	work, err := agentrun.Start(t.Context(), &reg, spec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := drain(work)
+
+	if len(got) != 2 || got[1].GetStopped() == "" {
+		t.Errorf("got %v", got)
+	}
+}
