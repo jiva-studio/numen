@@ -246,6 +246,37 @@ describe('createCustomTabKind (failed writes)', () => {
     expect(state.errorMessage.value).toBe('the note could not be written')
   })
 
+  it('clears the message once a newer write succeeds', async () => {
+    const answers = [Promise.reject(new Error('unreachable')), Promise.resolve()]
+    const state = open(() => answers.shift() ?? Promise.resolve())
+    state.updateBody('one')
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.errorMessage.value).toBe('unreachable')
+
+    state.updateBody('two')
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.errorMessage.value).toBe('')
+  })
+
+  it('keeps the message of a read when a write succeeds', async () => {
+    const state = open(() => Promise.resolve())
+    state.errorMessage.value = 'the frontmatter of this note cannot be read'
+    state.updateBody('one')
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.errorMessage.value).toBe('the frontmatter of this note cannot be read')
+  })
+
+  it('ignores the failure of a write that a newer write replaced', async () => {
+    let fail: (reason: Error) => void = () => undefined
+    const answers = [new Promise<void>((_, reject) => (fail = reject)), Promise.resolve()]
+    const state = open(() => answers.shift() ?? Promise.resolve())
+    state.updateBody('one')
+    state.updateBody('two')
+    fail(new Error('stale'))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.errorMessage.value).toBe('')
+  })
+
   it('shows the message of a save that was rejected', async () => {
     const state = open(() => Promise.reject(new Error('unreachable')))
     state.save()

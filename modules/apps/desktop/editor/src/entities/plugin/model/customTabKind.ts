@@ -246,12 +246,24 @@ function createCustomTabState(at: string, deps: CustomTabStateDeps) {
   const errorMessageRef = ref('')
   const isLoading = ref(deps.hostDeps?.readNote !== undefined)
   let hasEdited = false
+  let writes = 0
+  let hasWriteError = false
   const write = (body: string): void => {
     const writeNote = deps.hostDeps?.writeNote
     if (!writeNote) return
-    writeNote(at, body).catch((err) => {
-      errorMessageRef.value = err instanceof Error ? err.message : String(err)
-    })
+    const turn = ++writes
+    writeNote(at, body).then(
+      () => {
+        if (turn !== writes || !hasWriteError) return
+        hasWriteError = false
+        errorMessageRef.value = ''
+      },
+      (err) => {
+        if (turn !== writes) return
+        hasWriteError = true
+        errorMessageRef.value = err instanceof Error ? err.message : String(err)
+      },
+    )
   }
 
   if (deps.hostDeps?.readNote) {
