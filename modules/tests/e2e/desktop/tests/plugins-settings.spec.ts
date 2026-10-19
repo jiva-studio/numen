@@ -82,7 +82,7 @@ test.describe('Plugin Settings and Configuration', () => {
     await expect(choiceEl).toBeVisible({ timeout: 5_000 })
   })
 
-  test('keeps the transcription language across tab re-opening', async ({ page }) => {
+  test('persists a changed transcription language across tab re-opening', async ({ page }) => {
     await page.goto('/')
 
     await expect(page.locator('text=Ready')).toBeVisible()
@@ -101,7 +101,10 @@ test.describe('Plugin Settings and Configuration', () => {
       .locator('.settings__choice')
       .first()
     await expect(language).toBeVisible()
-    const chosen = await language.innerText()
+    await expect(language).toHaveText('auto')
+    await language.click()
+    await page.getByRole('menuitemradio', { name: 'es', exact: true }).click()
+    await expect(language).toHaveText('es')
 
     // Close Settings tab
     const closeBtn = page.getByRole('button', { name: /Close Settings/i }).first()
@@ -118,13 +121,13 @@ test.describe('Plugin Settings and Configuration', () => {
 
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
 
-    // Verify the language kept its value
+    // Verify the changed language persisted
     await expect(
       page
         .getByRole('region', { name: 'Audio/Video Transcription' })
         .locator('.settings__choice')
         .first(),
-    ).toHaveText(chosen)
+    ).toHaveText('es')
   })
 
   test('searches palette and executes Files navigation command', async ({ page }) => {
