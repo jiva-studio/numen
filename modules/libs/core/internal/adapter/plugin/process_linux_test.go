@@ -3,6 +3,8 @@
 package plugin
 
 import (
+	"errors"
+	"os"
 	"os/exec"
 	"syscall"
 	"testing"
@@ -95,8 +97,12 @@ func TestLinuxADefaultProcessHasNoCPULimit(t *testing.T) {
 				t.Fatalf("failed to start mock process: %v", err)
 			}
 			defer func() {
-				_ = cmd.Process.Kill()
-				_, _ = cmd.Process.Wait()
+				if err := cmd.Process.Kill(); err != nil && !errors.Is(err, os.ErrProcessDone) {
+					t.Errorf("kill the mock process: %v", err)
+				}
+				if _, err := cmd.Process.Wait(); err != nil {
+					t.Errorf("wait for the mock process: %v", err)
+				}
 			}()
 			if err := applyProcessLimits(cmd.Process.Pid, tc.limits); err != nil {
 				t.Fatalf("applyProcessLimits failed: %v", err)

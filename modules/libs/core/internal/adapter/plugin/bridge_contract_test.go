@@ -38,6 +38,9 @@ type bridgeContract struct {
 	open func(ctx context.Context, host bridgeHost) (io.Closer, bridgeCall, error)
 }
 
+// isLeased says whether opening the bridge takes a reference on its plugin. A proofreader takes one only for the length of a call.
+func (c bridgeContract) isLeased() bool { return c.name != "proofreader" }
+
 // isZeroResult reports whether a call returned the zero value of its type.
 func isZeroResult[T any](value T, err error) (bool, error) {
 	return reflect.ValueOf(&value).Elem().IsZero(), err
@@ -247,6 +250,9 @@ func TestADoubleCloseGivesTheReferenceBackOnce(t *testing.T) {
 				t.Fatal(err)
 			}
 			held := host.acquired.Load()
+			if tc.isLeased() && held == 0 {
+				t.Fatal("opening the bridge acquired no reference")
+			}
 			if got := host.released.Load(); got != 0 {
 				t.Fatalf("%d references were given back before Close", got)
 			}

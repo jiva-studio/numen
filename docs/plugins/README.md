@@ -68,7 +68,8 @@ The manifest declares identity, activation rules, required permissions, and serv
   "permissions": ["vault:read"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
-    "keepAliveWhileVisible": true
+    "keepAliveWhileVisible": true,
+    "memoryLimitBytes": 2147483648
   },
   "backend": {
     "type": "process",
