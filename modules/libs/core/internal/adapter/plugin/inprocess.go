@@ -146,6 +146,7 @@ func (h *Host) activatePlugin(ctx context.Context, p DiscoveredPlugin, sup *Supe
 	h.mu.RLock()
 	launcher := h.launcher
 	builtIn, isBuiltIn := h.getBuiltInLocked(p.Manifest.ID)
+	isBuiltIn = isBuiltIn && !h.onDisk[p.Manifest.ID]
 	h.mu.RUnlock()
 	if launcher != nil || !isBuiltIn {
 		return h.startPluginProcess(ctx, p, sup)
@@ -180,18 +181,29 @@ func (h *Host) startBuiltIn(ctx context.Context, p DiscoveredPlugin, builtIn bui
 		Transport: NewInProcessTransport(handler),
 	}
 	if err := checkPluginProtocol(ctx, p.Manifest, endpoint); err != nil {
+		h.shutdownBuiltIn(ctx, endpoint)
 		return emptyEndpoint(), err
 	}
 
 	now := time.Now()
 	h.mu.Lock()
-	defer h.mu.Unlock()
 	if sup.GetState() != StateActivating {
+		h.mu.Unlock()
+		h.shutdownBuiltIn(ctx, endpoint)
 		return emptyEndpoint(), errActivationAborted
 	}
 	h.endpoints[p.Manifest.ID] = endpoint
 	sup.ActivateInProcess(now)
+	h.mu.Unlock()
 	return endpoint, nil
+}
+
+// shutdownBuiltIn shuts down the handler of a built-in plugin that was made and not activated, so
+// what it holds open is closed.
+func (h *Host) shutdownBuiltIn(ctx context.Context, endpoint Endpoint) {
+	if shutdown := h.createRPCShutdown(endpoint, time.Second); shutdown != nil {
+		_ = shutdown(context.WithoutCancel(ctx))
+	}
 }
 
 // exportRuntimeVars provisions the runtimes an in-process plugin declares, sets their variables in

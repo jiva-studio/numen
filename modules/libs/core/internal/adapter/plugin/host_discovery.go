@@ -67,6 +67,7 @@ func (h *Host) forgetDiskPluginLocked(pluginID string) {
 	delete(h.onDisk, pluginID)
 	if builtIn, ok := h.getBuiltInLocked(pluginID); ok {
 		h.plugins[pluginID] = builtIn.plugin
+		h.registerSupervisorLocked(builtIn.plugin)
 		return
 	}
 	delete(h.plugins, pluginID)

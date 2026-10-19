@@ -434,3 +434,78 @@ func TestACallWhoseContextEndsAfterTheHeaderEndsWithThatError(t *testing.T) {
 		t.Fatal("the body was not ended by the cancellation")
 	}
 }
+
+// A handler whose activation does not complete is shut down.
+func TestABuiltInHandlerWhoseActivationFailsIsShutDown(t *testing.T) {
+	host := newBuiltInHost(t)
+	backend := newBuiltInBackend()
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first agent"))
+	p, _ := host.GetPlugin(firstBuiltInID)
+	host.mu.RLock()
+	sup := host.supervisors[firstBuiltInID]
+	host.mu.RUnlock()
+
+	if _, err := host.activatePlugin(t.Context(), p, sup); !errors.Is(err, errActivationAborted) {
+		t.Fatalf("activatePlugin = %v, want errActivationAborted", err)
+	}
+
+	backend.probe.mu.Lock()
+	defer backend.probe.mu.Unlock()
+	if backend.probe.shutdowns != 1 {
+		t.Fatalf("the handler was shut down %d times, want once", backend.probe.shutdowns)
+	}
+}
+
+// A built-in plugin's permissions are the built-in's again when its copy on disk leaves.
+func TestABuiltInPluginRemovedFromDiskIsHeldToItsOwnPermissions(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+	host := newBuiltInHost(t, tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover: %v", err)
+	}
+	manifest, err := os.ReadFile(filepath.Join(tmp, "ocr", "manifest.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	builtIn := strings.Replace(string(manifest), `"permissions": ["vault:read"]`, `"permissions": ["vault:write"]`, 1)
+	if builtIn == string(manifest) {
+		t.Fatal("the fixture's permissions are not the ones replaced")
+	}
+	registerBuiltIn(t, host, []byte(builtIn), newBuiltInBackend().serve("built-in ocr"))
+
+	if err := os.RemoveAll(filepath.Join(tmp, "ocr")); err != nil {
+		t.Fatal(err)
+	}
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover: %v", err)
+	}
+
+	if err := host.CheckPluginPermission("md.numen.ocr", PermissionVaultWrite); err != nil {
+		t.Errorf("the built-in's own permission: %v", err)
+	}
+	if err := host.CheckPluginPermission("md.numen.ocr", PermissionVaultRead); err == nil {
+		t.Error("the permission of the copy that left is still held")
+	}
+}
+
+// A copy on disk is launched as a process, whatever built-in shares its id.
+func TestAPluginOnDiskIsLaunchedWhereABuiltInSharesItsId(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+	host := newBuiltInHost(t, tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover: %v", err)
+	}
+	manifest, err := os.ReadFile(filepath.Join(tmp, "ocr", "manifest.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	registerBuiltIn(t, host, manifest, newBuiltInBackend().serve("built-in ocr"))
+
+	endpoint, err := host.EnsureActive(t.Context(), "md.numen.ocr")
+
+	if err == nil {
+		t.Fatalf("the copy on disk was served by the built-in: %+v", endpoint)
+	}
+}
