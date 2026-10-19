@@ -64,9 +64,9 @@ const codexFailureBackoff = 30 * time.Second
 // codexModelCache caches what Codex listed, for as long as the command line asked stays the same. A
 // failure caches nothing, and the command line that failed is not asked again for a while.
 type codexModelCache struct {
-	mu     sync.Mutex
-	key    string
-	models []AgentModel
+	mu       sync.Mutex
+	key      string
+	models   []AgentModel
 	isCached bool
 	// failedKey and failedAt are the command line Codex last failed to list under, and when.
 	failedKey string

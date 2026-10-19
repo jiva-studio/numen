@@ -116,7 +116,7 @@ type acpListing struct {
 // same. A failure caches nothing, and the agent that failed is not asked again for a while.
 type acpModelCache struct {
 	mu       sync.Mutex
-	entries     map[string]acpListing
+	entries  map[string]acpListing
 	failedAt map[string]time.Time
 	// now is the clock the backoff uses. Nil is the system clock.
 	now func() time.Time
