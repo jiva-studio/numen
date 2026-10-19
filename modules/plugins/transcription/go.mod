@@ -3,7 +3,7 @@ module github.com/jiva-studio/numen/modules/plugins/transcription
 go 1.26.9
 
 require (
-	connectrpc.com/connect v1.21.0
+	connectrpc.com/connect v1.21.1
 	github.com/ebitengine/purego v0.11.1
 	github.com/getcharzp/onnxruntime_purego v1.24.0
 	github.com/hajimehoshi/go-mp3 v0.3.4

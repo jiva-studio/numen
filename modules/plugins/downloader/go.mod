@@ -3,7 +3,7 @@ module github.com/jiva-studio/numen/modules/plugins/downloader
 go 1.26.9
 
 require (
-	connectrpc.com/connect v1.21.0
+	connectrpc.com/connect v1.21.1
 	github.com/go-shiori/go-readability v0.0.0-20251205110129-5db1dc9836f0
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go v0.0.0
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
