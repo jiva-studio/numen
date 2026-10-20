@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -284,4 +285,8 @@ func TestACallTheToolRefusesAsMalformedOrUnknownIsAnErrorOfTheBridge(t *testing.
 			t.Errorf("code %v was answered with %v, want %v", code, err, want)
 		}
 	}
+}
+
+func (h *toolsHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
+	return domain.NoteProfile{}, false
 }

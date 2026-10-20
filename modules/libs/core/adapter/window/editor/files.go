@@ -215,19 +215,13 @@ func getListCode(err error) connect.Code {
 	}
 }
 
-// convertNoteTypeToWire is what a note is, as the schema carries it. A note carrying
-// no type of its own is an ordinary note.
-func convertNoteTypeToWire(noteType domain.NoteType) v1.NoteType {
-	switch noteType {
-	case domain.TypeDeck:
-		return v1.NoteType_NOTE_TYPE_DECK
-	case domain.TypeStencil:
-		return v1.NoteType_NOTE_TYPE_STENCIL
-	case domain.TypePreset:
-		return v1.NoteType_NOTE_TYPE_PRESET
-	default:
-		return v1.NoteType_NOTE_TYPE_UNSPECIFIED
+// convertNoteTypeToWire is what a note is, as the schema carries it: the word its frontmatter
+// holds. A note carrying no type of its own is an ordinary note, and is carried as no word.
+func convertNoteTypeToWire(noteType domain.NoteType) string {
+	if noteType == domain.TypeNote {
+		return ""
 	}
+	return string(noteType)
 }
 
 // convertBookFormatToWire is which sort of book stands at a path, as the schema carries it.

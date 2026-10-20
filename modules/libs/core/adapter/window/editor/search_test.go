@@ -82,13 +82,13 @@ func TestANameSaysWhichOfFourTheNoteIs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	types := map[string]v1.NoteType{}
+	types := map[string]string{}
 	for _, one := range answer.Msg.GetFound() {
 		types[one.GetNote().GetPath()] = one.GetType()
 	}
-	want := map[string]v1.NoteType{
-		"Entropy.md": v1.NoteType_NOTE_TYPE_UNSPECIFIED,
-		"Animals.md": v1.NoteType_NOTE_TYPE_DECK,
+	want := map[string]string{
+		"Entropy.md": "",
+		"Animals.md": "deck",
 	}
 	for path, is := range want {
 		if got, held := types[path]; !held || got != is {
@@ -115,7 +115,7 @@ func TestAPassageSaysWhichOfFourItsNoteIs(t *testing.T) {
 	if len(found) == 0 {
 		t.Fatal("nothing found")
 	}
-	if is := found[0].GetType(); is != v1.NoteType_NOTE_TYPE_PRESET {
+	if is := found[0].GetType(); is != "preset" {
 		t.Errorf("the passage is drawn as %v, want the preset it was read out of", is)
 	}
 }
@@ -327,16 +327,16 @@ func TestANeighbourhoodSaysWhichOfThreeEachNoteIs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if is := around.Msg.GetFocusType(); is != v1.NoteType_NOTE_TYPE_UNSPECIFIED {
+	if is := around.Msg.GetFocusType(); is != "" {
 		t.Errorf("the note in focus is drawn as %v", is)
 	}
-	types := map[string]v1.NoteType{}
+	types := map[string]string{}
 	for _, one := range around.Msg.GetRelated() {
 		types[one.GetNote().GetPath()] = one.GetType()
 	}
-	want := map[string]v1.NoteType{
-		"Animals.md": v1.NoteType_NOTE_TYPE_DECK,
-		"Animal.md":  v1.NoteType_NOTE_TYPE_STENCIL,
+	want := map[string]string{
+		"Animals.md": "deck",
+		"Animal.md":  "stencil",
 	}
 	for path, is := range want {
 		if got, held := types[path]; !held || got != is {
@@ -350,7 +350,7 @@ func TestANeighbourhoodSaysWhichOfThreeEachNoteIs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if is := near.Msg.GetFocusType(); is != v1.NoteType_NOTE_TYPE_DECK {
+	if is := near.Msg.GetFocusType(); is != "deck" {
 		t.Errorf("the deck in focus is drawn as %v", is)
 	}
 }

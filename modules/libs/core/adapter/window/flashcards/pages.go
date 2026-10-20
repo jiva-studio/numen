@@ -26,11 +26,10 @@ var policy = csp.Sources{Images: []string{"data:"}}.Policy()
 // the binary. A binary built without it says so.
 func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 
-// NewHandler is the whole of what this window answers: the flashcards service,
-// the agent a card is asked about through, the window itself, the themes it is
-// dressed from, and the files the page is made of.
+// NewHandler is the whole of what this window answers: the agent a card is asked about through,
+// the window itself, the themes it is dressed from, the services the plugins serve, which it
+// forwards, and the files the page is made of.
 func (a *API) NewHandler(files http.Handler) http.Handler {
-	route, questions := numenv1connect.NewFlashcardsServiceHandler(a)
 	asking, agent := numenv1connect.NewAgentServiceHandler(a)
 	drawn, itself := numenv1connect.NewWindowServiceHandler(a.Window)
 	var dressing string
@@ -42,14 +41,14 @@ func (a *API) NewHandler(files http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", policy)
 		switch {
-		case strings.HasPrefix(r.URL.Path, route):
-			questions.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.Path, asking):
 			agent.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.Path, drawn):
 			itself.ServeHTTP(w, r)
 		case themes != nil && strings.HasPrefix(r.URL.Path, dressing):
 			themes.ServeHTTP(w, r)
+		case a.PluginServices != nil && a.PluginServices.Serves(r.URL.Path):
+			a.PluginServices.ServeHTTP(w, r)
 		case slices.Contains(wire.OpenedAt, r.URL.Path):
 			wire.WritePage(w, r, pages, a.Themes, files)
 		default:

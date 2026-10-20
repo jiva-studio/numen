@@ -1,7 +1,5 @@
 package domain
 
-import "slices"
-
 // Note is a parsed markdown file. Frontmatter is kept as it was found: the
 // application owns a closed set of keys and preserves everything else verbatim,
 // so the parser is not allowed to normalise or drop what it does not recognise.
@@ -35,29 +33,14 @@ type Note struct {
 	FrontmatterErr string
 }
 
-// NoteType is what a note is. The list is closed: a value outside it
-// is shown as a problem and the file is read as an ordinary note.
+// NoteType is what a note is: the `type` key of its frontmatter. A note carrying
+// none is an ordinary note. The application knows one type; a plugin gives a
+// note any other, and says in its manifest how the index keeps notes of it.
 type NoteType string
 
-const (
-	TypeNote    NoteType = "note"
-	TypeDeck    NoteType = "deck"
-	TypeStencil NoteType = "stencil"
-	// TypePreset is a note saying how the decks pointing at it are scheduled.
-	TypePreset NoteType = "preset"
-)
-
-// NoteTypes is every type a note may carry. Whatever says a type is unknown
-// and whatever names the known ones read this, so a type added here is added
-// to both at once.
-func NoteTypes() []NoteType {
-	return []NoteType{TypeNote, TypeDeck, TypeStencil, TypePreset}
-}
-
-// IsKnownNoteType reports whether a type is one this application has a word for.
-func IsKnownNoteType(t NoteType) bool {
-	return slices.Contains(NoteTypes(), t)
-}
+// TypeNote is an ordinary note, which is a note carrying no `type` at all and
+// so nearly every note in a vault.
+const TypeNote NoteType = "note"
 
 // Heading is one ATX heading of a note, in document order.
 //

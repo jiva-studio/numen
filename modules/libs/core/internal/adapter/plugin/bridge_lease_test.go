@@ -186,3 +186,7 @@ func TestEveryOpenDocumentHoldsAndGivesBackItsOwnReference(t *testing.T) {
 			host.acquired.Load(), host.released.Load(), 1+documents, 1+documents)
 	}
 }
+
+func (h *leaseHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
+	return domain.NoteProfile{}, false
+}

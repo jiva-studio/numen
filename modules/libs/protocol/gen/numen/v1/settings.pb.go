@@ -139,14 +139,6 @@ type GetSettingsResponse struct {
 	// How many headings may nest under a note, at each end. A number outside
 	// it is refused. A client asking a person for one says these.
 	NestedHeadingLimitBounds *Bounds `protobuf:"bytes,4,opt,name=nested_heading_limit_bounds,json=nestedHeadingLimitBounds,proto3" json:"nested_heading_limit_bounds,omitempty"`
-	// How late in the day a day of review may be made to begin, on the clock on
-	// the wall as `HH:MM`. An hour past it is refused. A client asking a person
-	// for one says this.
-	LatestDayStartTime string `protobuf:"bytes,5,opt,name=latest_day_start_time,json=latestDayStartTime,proto3" json:"latest_day_start_time,omitempty"`
-	// Day is the review day now standing, written as the year, the month and the
-	// day. A day of review begins at the hour the settings name, so an hour past
-	// midnight is still the day before.
-	Day string `protobuf:"bytes,6,opt,name=day,proto3" json:"day,omitempty"`
 	// Active plugins and their declarative settings schema.
 	Plugins       []*PluginInfo `protobuf:"bytes,7,rep,name=plugins,proto3" json:"plugins,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -209,20 +201,6 @@ func (x *GetSettingsResponse) GetNestedHeadingLimitBounds() *Bounds {
 		return x.NestedHeadingLimitBounds
 	}
 	return nil
-}
-
-func (x *GetSettingsResponse) GetLatestDayStartTime() string {
-	if x != nil {
-		return x.LatestDayStartTime
-	}
-	return ""
-}
-
-func (x *GetSettingsResponse) GetDay() string {
-	if x != nil {
-		return x.Day
-	}
-	return ""
 }
 
 func (x *GetSettingsResponse) GetPlugins() []*PluginInfo {
@@ -947,15 +925,13 @@ var File_numen_v1_settings_proto protoreflect.FileDescriptor
 const file_numen_v1_settings_proto_rawDesc = "" +
 	"\n" +
 	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/plugin.proto\x1a\x15numen/v1/shared.proto\"\x14\n" +
-	"\x12GetSettingsRequest\"\xb2\x02\n" +
+	"\x12GetSettingsRequest\"\xf9\x01\n" +
 	"\x13GetSettingsResponse\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12'\n" +
 	"\x06models\x18\x03 \x03(\v2\x0f.numen.v1.ModelR\x06models\x12O\n" +
-	"\x1bnested_heading_limit_bounds\x18\x04 \x01(\v2\x10.numen.v1.BoundsR\x18nestedHeadingLimitBounds\x121\n" +
-	"\x15latest_day_start_time\x18\x05 \x01(\tR\x12latestDayStartTime\x12\x10\n" +
-	"\x03day\x18\x06 \x01(\tR\x03day\x12.\n" +
-	"\aplugins\x18\a \x03(\v2\x14.numen.v1.PluginInfoR\aplugins\"\xdc\x01\n" +
+	"\x1bnested_heading_limit_bounds\x18\x04 \x01(\v2\x10.numen.v1.BoundsR\x18nestedHeadingLimitBounds\x12.\n" +
+	"\aplugins\x18\a \x03(\v2\x14.numen.v1.PluginInfoR\apluginsJ\x04\b\x05\x10\x06J\x04\b\x06\x10\a\"\xdc\x01\n" +
 	"\x05Model\x12\x19\n" +
 	"\bnamed_at\x18\x01 \x03(\tR\anamedAt\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +

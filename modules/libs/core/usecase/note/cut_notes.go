@@ -1,7 +1,10 @@
 package note
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
+	"regexp"
+	"slices"
+	"strings"
+
 	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
@@ -11,6 +14,19 @@ import (
 type CutNotes struct {
 	Sizes      chunking.Sizes
 	Legibility chunking.Legibility
+	// Profiles says how the notes of a type a plugin declares are kept. Nil keeps every note as an
+	// ordinary note is kept.
+	Profiles func(domain.NoteType) (domain.NoteProfile, bool)
+}
+
+// getProfile is how the notes of the type are kept.
+func (u CutNotes) getProfile(noteType domain.NoteType) domain.NoteProfile {
+	if u.Profiles != nil {
+		if profile, declared := u.Profiles(noteType); declared {
+			return profile
+		}
+	}
+	return domain.OrdinaryProfile()
 }
 
 // NewCutNotes cuts at the bound a model reading maxTokens tokens allows when the
@@ -26,8 +42,9 @@ func NewCutNotes(isEmbedding bool, maxTokens int) CutNotes {
 func (u CutNotes) Execute(notes []domain.Note) []domain.NoteChunks {
 	out := make([]domain.NoteChunks, 0, len(notes))
 	for _, n := range notes {
-		headings := getIndexedHeadings(n)
-		out = append(out, domain.NoteChunks{Note: n, Headings: headings, Chunks: u.cut(n, headings)})
+		profile := u.getProfile(n.Type)
+		headings := getIndexedHeadings(n, profile)
+		out = append(out, domain.NoteChunks{Note: n, Headings: headings, Chunks: u.cut(n, headings, profile)})
 	}
 	return out
 }
@@ -35,10 +52,10 @@ func (u CutNotes) Execute(notes []domain.Note) []domain.NoteChunks {
 // cut is one large chunk over the whole note, holding the small chunks that
 // carry the vectors. Each section the headings name is tiled on its own, and
 // offsets are into the file, so the body's start after the frontmatter is added
-// to every chunk. A deck and a stencil have no chunks: a card is found by its
-// heading and a stencil by its title.
-func (u CutNotes) cut(n domain.Note, headings []domain.Heading) []domain.Chunk {
-	if n.Type == domain.TypeDeck || n.Type == domain.TypeStencil {
+// to every chunk. A note whose type has no chunks is found by its headings and its
+// title.
+func (u CutNotes) cut(n domain.Note, headings []domain.Heading, profile domain.NoteProfile) []domain.Chunk {
+	if !profile.HasChunks {
 		return nil
 	}
 
@@ -75,38 +92,56 @@ func getPartStarts(headings []domain.Heading) []domain.PartStart {
 	return out
 }
 
-// The two levels a deck spends on what a person writes: a section, and a card
-// under it.
-const (
-	sectionLevel = 1
-	cardLevel    = 2
-)
-
 // getIndexedHeadings is the headings of a note as the index keeps them.
 //
-// A deck keeps its sections and its cards, and a card's heading is kept without
-// the mark it ends in; a heading of no text is not kept. A stencil keeps none.
-// Every other note keeps every heading it has.
-func getIndexedHeadings(n domain.Note) []domain.Heading {
-	switch n.Type {
-	case domain.TypeStencil:
-		return nil
-	case domain.TypeDeck:
-		out := make([]domain.Heading, 0, len(n.Headings))
-		for _, h := range n.Headings {
-			switch h.Level {
-			case sectionLevel:
-				out = append(out, h)
-			case cardLevel:
-				h.Text, _ = format.ReadHeading(h.Text)
-				if h.Text == "" {
-					continue
-				}
-				out = append(out, h)
-			}
-		}
-		return out
-	default:
+// A type a plugin declares keeps the levels of heading its profile names, and a heading of a level
+// that ends in a mark is kept without it; a heading of no text is not kept. Every other note keeps
+// every heading it has.
+func getIndexedHeadings(n domain.Note, profile domain.NoteProfile) []domain.Heading {
+	if profile.HeadingLevels == nil && len(profile.MarkedLevels) == 0 {
 		return n.Headings
 	}
+	out := make([]domain.Heading, 0, len(n.Headings))
+	for _, h := range n.Headings {
+		if profile.HeadingLevels != nil && !slices.Contains(profile.HeadingLevels, h.Level) {
+			continue
+		}
+		if slices.Contains(profile.MarkedLevels, h.Level) {
+			h.Text = withoutMark(h.Text, profile.Mark)
+			if h.Text == "" {
+				continue
+			}
+		}
+		out = append(out, h)
+	}
+	return out
+}
+
+// withoutMark is a heading without the mark it ends in: a space, a caret and a word of letters,
+// digits and hyphens. A heading that is only a mark has no text.
+func withoutMark(heading string, mark *regexp.Regexp) string {
+	at := strings.LastIndex(heading, " ")
+	last := heading
+	if at >= 0 {
+		last = heading[at+1:]
+	}
+	word, found := strings.CutPrefix(last, "^")
+	if !found || word == "" || !isMarkWord(word, mark) {
+		return heading
+	}
+	if at < 0 {
+		return ""
+	}
+	return heading[:at]
+}
+
+// isMarkWord says whether a word is the word of a mark: one the pattern matches whole, else any word
+// of letters, digits and hyphens.
+func isMarkWord(word string, mark *regexp.Regexp) bool {
+	if mark != nil {
+		return mark.MatchString(word)
+	}
+	return !strings.ContainsFunc(word, func(r rune) bool {
+		return !(r >= '0' && r <= '9' || r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r == '-')
+	})
 }

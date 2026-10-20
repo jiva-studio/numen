@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
@@ -33,6 +31,10 @@ type Assembly interface {
 
 	// GetPluginDir returns the root directory of an installed plugin by ID, or false if not found.
 	GetPluginDir(id string) (string, bool)
+
+	// GetPluginServices is where this window forwards the calls it receives for the services plugins
+	// serve.
+	GetPluginServices() PluginServices
 
 	// EmitEvent sends an event notification to listeners and registered plugins.
 	EmitEvent(event string)
@@ -67,8 +69,7 @@ type Assembly interface {
 	CloseIndex() error
 
 	// The use cases that read and write the settings and the file they stand in.
-	// The day is where one day of review gives way to the next.
-	OpenGetSettings(day flashcards.Day) *settings.Get
+	OpenGetSettings() *settings.Get
 	OpenWriteSettings() *settings.Write
 	OpenGetSettingsFile() *settings.GetFile
 	OpenWriteSettingsFile() *settings.WriteFile
@@ -100,13 +101,10 @@ type Assembly interface {
 	// holds. handleError is where a half that could not run is said.
 	NewSearch(asking port.Embedder, handleError func(error)) search.Search
 
-	// OpenNotes, OpenCards, OpenVaults and OpenFlashcards are this
-	// installation's scenarios, built against the cache above. index brings
+	// OpenNotes and OpenVaults are this installation's scenarios, built against the cache above. index brings
 	// what a write touched up to date before the write answers.
 	OpenNotes(index note.Levels) note.Scenarios
-	OpenCards(index note.Levels) cards.Scenarios
 	OpenVaults(moves note.Move) vaults.Scenarios
-	OpenFlashcards(index note.Levels) flashcards.Scenarios
 
 	// OpenSourceTexts reads and writes the text made from a file of the vault.
 	OpenSourceTexts() source.Texts

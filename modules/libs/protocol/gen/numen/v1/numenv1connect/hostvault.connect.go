@@ -102,6 +102,9 @@ const (
 	// HostVaultServiceWriteCacheProcedure is the fully-qualified name of the HostVaultService's
 	// WriteCache RPC.
 	HostVaultServiceWriteCacheProcedure = "/numen.v1.HostVaultService/WriteCache"
+	// HostVaultServiceSetVaultInUseProcedure is the fully-qualified name of the HostVaultService's
+	// SetVaultInUse RPC.
+	HostVaultServiceSetVaultInUseProcedure = "/numen.v1.HostVaultService/SetVaultInUse"
 	// HostVaultServiceWatchMovesProcedure is the fully-qualified name of the HostVaultService's
 	// WatchMoves RPC.
 	HostVaultServiceWatchMovesProcedure = "/numen.v1.HostVaultService/WatchMoves"
@@ -171,6 +174,9 @@ type HostVaultServiceClient interface {
 	ReadCache(context.Context, *connect.Request[v1.ReadCacheRequest]) (*connect.Response[v1.ReadCacheResponse], error)
 	// WriteCache replaces what the plugin keeps for this vault under a name.
 	WriteCache(context.Context, *connect.Request[v1.WriteCacheRequest]) (*connect.Response[v1.WriteCacheResponse], error)
+	// SetVaultInUse tells the window that the plugin is working the vault for the person: a session
+	// of review has begun on it. The window may act on it, as by pointing an agent at the vault.
+	SetVaultInUse(context.Context, *connect.Request[v1.SetVaultInUseRequest]) (*connect.Response[v1.SetVaultInUseResponse], error)
 	// WatchMoves tells that something moved in some vault of the installation,
 	// until the caller goes. It says nothing of what moved. The first message is
 	// sent at once, so that the caller knows the watch is on.
@@ -330,6 +336,12 @@ func NewHostVaultServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(hostVaultServiceMethods.ByName("WriteCache")),
 			connect.WithClientOptions(opts...),
 		),
+		setVaultInUse: connect.NewClient[v1.SetVaultInUseRequest, v1.SetVaultInUseResponse](
+			httpClient,
+			baseURL+HostVaultServiceSetVaultInUseProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("SetVaultInUse")),
+			connect.WithClientOptions(opts...),
+		),
 		watchMoves: connect.NewClient[v1.WatchMovesRequest, v1.WatchMovesResponse](
 			httpClient,
 			baseURL+HostVaultServiceWatchMovesProcedure,
@@ -370,6 +382,7 @@ type hostVaultServiceClient struct {
 	listData           *connect.Client[v1.ListDataRequest, v1.ListDataResponse]
 	readCache          *connect.Client[v1.ReadCacheRequest, v1.ReadCacheResponse]
 	writeCache         *connect.Client[v1.WriteCacheRequest, v1.WriteCacheResponse]
+	setVaultInUse      *connect.Client[v1.SetVaultInUseRequest, v1.SetVaultInUseResponse]
 	watchMoves         *connect.Client[v1.WatchMovesRequest, v1.WatchMovesResponse]
 	watchVault         *connect.Client[v1.WatchVaultRequest, v1.WatchVaultResponse]
 }
@@ -489,6 +502,11 @@ func (c *hostVaultServiceClient) WriteCache(ctx context.Context, req *connect.Re
 	return c.writeCache.CallUnary(ctx, req)
 }
 
+// SetVaultInUse calls numen.v1.HostVaultService.SetVaultInUse.
+func (c *hostVaultServiceClient) SetVaultInUse(ctx context.Context, req *connect.Request[v1.SetVaultInUseRequest]) (*connect.Response[v1.SetVaultInUseResponse], error) {
+	return c.setVaultInUse.CallUnary(ctx, req)
+}
+
 // WatchMoves calls numen.v1.HostVaultService.WatchMoves.
 func (c *hostVaultServiceClient) WatchMoves(ctx context.Context, req *connect.Request[v1.WatchMovesRequest]) (*connect.ServerStreamForClient[v1.WatchMovesResponse], error) {
 	return c.watchMoves.CallServerStream(ctx, req)
@@ -560,6 +578,9 @@ type HostVaultServiceHandler interface {
 	ReadCache(context.Context, *connect.Request[v1.ReadCacheRequest]) (*connect.Response[v1.ReadCacheResponse], error)
 	// WriteCache replaces what the plugin keeps for this vault under a name.
 	WriteCache(context.Context, *connect.Request[v1.WriteCacheRequest]) (*connect.Response[v1.WriteCacheResponse], error)
+	// SetVaultInUse tells the window that the plugin is working the vault for the person: a session
+	// of review has begun on it. The window may act on it, as by pointing an agent at the vault.
+	SetVaultInUse(context.Context, *connect.Request[v1.SetVaultInUseRequest]) (*connect.Response[v1.SetVaultInUseResponse], error)
 	// WatchMoves tells that something moved in some vault of the installation,
 	// until the caller goes. It says nothing of what moved. The first message is
 	// sent at once, so that the caller knows the watch is on.
@@ -715,6 +736,12 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 		connect.WithSchema(hostVaultServiceMethods.ByName("WriteCache")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostVaultServiceSetVaultInUseHandler := connect.NewUnaryHandler(
+		HostVaultServiceSetVaultInUseProcedure,
+		svc.SetVaultInUse,
+		connect.WithSchema(hostVaultServiceMethods.ByName("SetVaultInUse")),
+		connect.WithHandlerOptions(opts...),
+	)
 	hostVaultServiceWatchMovesHandler := connect.NewServerStreamHandler(
 		HostVaultServiceWatchMovesProcedure,
 		svc.WatchMoves,
@@ -775,6 +802,8 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 			hostVaultServiceReadCacheHandler.ServeHTTP(w, r)
 		case HostVaultServiceWriteCacheProcedure:
 			hostVaultServiceWriteCacheHandler.ServeHTTP(w, r)
+		case HostVaultServiceSetVaultInUseProcedure:
+			hostVaultServiceSetVaultInUseHandler.ServeHTTP(w, r)
 		case HostVaultServiceWatchMovesProcedure:
 			hostVaultServiceWatchMovesHandler.ServeHTTP(w, r)
 		case HostVaultServiceWatchVaultProcedure:
@@ -878,6 +907,10 @@ func (UnimplementedHostVaultServiceHandler) ReadCache(context.Context, *connect.
 
 func (UnimplementedHostVaultServiceHandler) WriteCache(context.Context, *connect.Request[v1.WriteCacheRequest]) (*connect.Response[v1.WriteCacheResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.WriteCache is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) SetVaultInUse(context.Context, *connect.Request[v1.SetVaultInUseRequest]) (*connect.Response[v1.SetVaultInUseResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.SetVaultInUse is not implemented"))
 }
 
 func (UnimplementedHostVaultServiceHandler) WatchMoves(context.Context, *connect.Request[v1.WatchMovesRequest], *connect.ServerStream[v1.WatchMovesResponse]) error {

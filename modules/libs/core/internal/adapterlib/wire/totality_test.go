@@ -5,7 +5,6 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 )
@@ -17,30 +16,6 @@ import (
 
 func TestEveryModeCrossesBothWays(t *testing.T) {
 	testsupport.RoundTrip(t, ConvertModeFromWire, ConvertModeToWire)
-}
-
-func TestEveryGoalCrossesBothWays(t *testing.T) {
-	testsupport.RoundTrip(t, ConvertGoalFromWire, ConvertGoalToWire)
-}
-
-func TestEveryRuleCrossesBothWays(t *testing.T) {
-	testsupport.RoundTrip(t, ConvertRuleFromWire, ConvertRuleToWire)
-}
-
-func TestEveryBudgetUnitCrossesBothWays(t *testing.T) {
-	testsupport.RoundTrip(t, ConvertBudgetUnitFromWire, ConvertBudgetUnitToWire)
-}
-
-func TestEveryVerdictIsWrittenFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.StopReason]review.StopReason{
-		v1.StopReason_STOP_REASON_NOTHING:    review.StoppedNothing,
-		v1.StopReason_STOP_REASON_NO_MINUTES: review.StoppedNoMinutes,
-		v1.StopReason_STOP_REASON_NO_CARDS:   review.StoppedNoCards,
-		v1.StopReason_STOP_REASON_NO_DAY:     review.StoppedNoDay,
-		v1.StopReason_STOP_REASON_PAST_DAY:   review.StoppedPastDay,
-		v1.StopReason_STOP_REASON_NO_LOAD:    review.StoppedNoLoad,
-		v1.StopReason_STOP_REASON_NO_WEEK:    review.StoppedNoWeek,
-	}, ConvertStopReasonToWire)
 }
 
 func TestEveryUnitIsWrittenFromOne(t *testing.T) {

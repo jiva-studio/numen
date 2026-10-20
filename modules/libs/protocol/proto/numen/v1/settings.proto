@@ -71,18 +71,10 @@ message GetSettingsResponse {
   // it is refused. A client asking a person for one says these.
   Bounds nested_heading_limit_bounds = 4;
 
-  // How late in the day a day of review may be made to begin, on the clock on
-  // the wall as `HH:MM`. An hour past it is refused. A client asking a person
-  // for one says this.
-  string latest_day_start_time = 5;
-
-  // Day is the review day now standing, written as the year, the month and the
-  // day. A day of review begins at the hour the settings name, so an hour past
-  // midnight is still the day before.
-  string day = 6;
-
   // Active plugins and their declarative settings schema.
   repeated PluginInfo plugins = 7;
+
+  reserved 5, 6;
 }
 
 // Model is one model a setting that names a model can be set to.

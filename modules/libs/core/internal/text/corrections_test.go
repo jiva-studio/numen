@@ -10,7 +10,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
@@ -67,8 +66,6 @@ func (b shelf) RemoveArtifact(_ context.Context, name domain.ArtifactName) error
 	delete(b, name)
 	return nil
 }
-
-func (b shelf) ListReviewLogs(context.Context) ([]port.Entry, error) { return nil, nil }
 
 func (b shelf) ClaimArtifact(context.Context, domain.ArtifactName) (func() error, error) {
 	return func() error { return nil }, nil

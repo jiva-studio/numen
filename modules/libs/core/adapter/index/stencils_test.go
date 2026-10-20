@@ -21,48 +21,11 @@ func saveTypedNote(t *testing.T, db *DB, vault domain.Vault, path, title string,
 	}
 }
 
-// stencils is the stencils one vault answers with.
-func stencils(t *testing.T, db *DB, vault domain.Vault) []domain.Stencil {
-	t.Helper()
-
-	found, err := db.NoteQueries().GetStencils(t.Context(), vault.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return found
-}
-
-// A stencil is found by what the index holds, and a note beside it is not.
-func TestTheStencilsOfAVaultAreTheNotesThatSaySoAndNoOthers(t *testing.T) {
-	db := openDB(t)
-	saveTypedNote(t, db, first, "stencils/animal.md", "Animal", domain.TypeStencil)
-	saveTypedNote(t, db, first, "stencils/verb.md", "Verb", domain.TypeStencil)
-	saveTypedNote(t, db, first, "decks/mammals.md", "Mammals", domain.TypeDeck)
-	saveTypedNote(t, db, first, "notes/entropy.md", "Entropy", domain.TypeNote)
-
-	found := stencils(t, db, first)
-
-	if len(found) != 2 {
-		t.Fatalf("found %d stencils, want 2: %+v", len(found), found)
-	}
-	// By path, so that two runs over one vault answer in one order.
-	if found[0].Path != "stencils/animal.md" || found[1].Path != "stencils/verb.md" {
-		t.Errorf("found %+v, want them by path", found)
-	}
-	if found[0].Title != "Animal" || found[1].Title != "Verb" {
-		t.Errorf("found %+v, want the titles the files carry", found)
-	}
-}
-
-// A note carrying no type is a note, and the stencils of a vault do not include
-// it.
+// A note carrying no type is a note.
 func TestANoteWhoseFileSaysNothingIsANote(t *testing.T) {
 	db := openDB(t)
 	saveNamedNote(t, db, first, "notes/entropy.md", "Entropy")
 
-	if found := stencils(t, db, first); len(found) != 0 {
-		t.Errorf("a note that says nothing about itself answered as %+v", found)
-	}
 	held, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{"notes/entropy.md"})
 	if err != nil {
 		t.Fatal(err)
@@ -72,31 +35,31 @@ func TestANoteWhoseFileSaysNothingIsANote(t *testing.T) {
 	}
 }
 
-// One database holds every vault, so a question that forgets its vault answers
-// with another vault's stencils and reports nothing wrong.
+// One database holds every vault, so a question that forgets its vault answers with another vault's
+// notes of a type and reports nothing wrong.
 //
-// The two vaults share no word, and both directions are asserted: a leak in
-// either is a stencil whose title cannot be mistaken for one of this vault's.
-func TestTheStencilsOfOneVaultAreNotAnotherVaultsStencils(t *testing.T) {
+// The two vaults share no word, and both directions are asserted: a leak in either is a note whose
+// path cannot be mistaken for one of this vault's.
+func TestTheNotesOfATypeInOneVaultAreNotAnotherVaultsNotes(t *testing.T) {
 	db := openDB(t)
-	saveTypedNote(t, db, first, "stencils/animal.md", "Animal", domain.TypeStencil)
-	saveTypedNote(t, db, first, "decks/mammals.md", "Mammals", domain.TypeDeck)
-	saveTypedNote(t, db, second, "patterns/quasar.md", "Quasar", domain.TypeStencil)
-	saveTypedNote(t, db, second, "collections/pulsars.md", "Pulsars", domain.TypeDeck)
+	saveTypedNote(t, db, first, "sheets/animal.md", "Animal", stencilType)
+	saveTypedNote(t, db, first, "decks/mammals.md", "Mammals", deckType)
+	saveTypedNote(t, db, second, "patterns/quasar.md", "Quasar", stencilType)
+	saveTypedNote(t, db, second, "collections/pulsars.md", "Pulsars", deckType)
 
 	for _, held := range []struct {
 		vault domain.Vault
 		want  string
 	}{
-		{first, "stencils/animal.md"},
+		{first, "sheets/animal.md"},
 		{second, "patterns/quasar.md"},
 	} {
-		found := stencils(t, db, held.vault)
-		if len(found) != 1 {
-			t.Fatalf("%s answered with %d stencils, want 1: %+v", held.vault.Name, len(found), found)
+		found, err := db.NoteQueries().GetPathsOfType(t.Context(), held.vault.ID, stencilType)
+		if err != nil {
+			t.Fatal(err)
 		}
-		if found[0].Path != held.want {
-			t.Errorf("%s answered with %s, and it holds %s", held.vault.Name, found[0].Path, held.want)
+		if len(found) != 1 || found[0] != held.want {
+			t.Errorf("%s answered with %v, and it holds %s", held.vault.Name, found, held.want)
 		}
 	}
 }
@@ -105,10 +68,10 @@ func TestTheStencilsOfOneVaultAreNotAnotherVaultsStencils(t *testing.T) {
 // deck from a note without opening either.
 func TestTheTypeOfEveryEntryOfAFolderIsOneQuestion(t *testing.T) {
 	db := openDB(t)
-	saveTypedNote(t, db, first, "cards/mammals.md", "Mammals", domain.TypeDeck)
-	saveTypedNote(t, db, first, "cards/animal.md", "Animal", domain.TypeStencil)
+	saveTypedNote(t, db, first, "cards/mammals.md", "Mammals", deckType)
+	saveTypedNote(t, db, first, "cards/animal.md", "Animal", stencilType)
 	saveTypedNote(t, db, first, "cards/reading.md", "Reading", domain.TypeNote)
-	saveTypedNote(t, db, second, "cards/quasars.md", "Quasars", domain.TypeDeck)
+	saveTypedNote(t, db, second, "cards/quasars.md", "Quasars", deckType)
 
 	held, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{
 		"cards/mammals.md", "cards/animal.md", "cards/reading.md",
@@ -119,8 +82,8 @@ func TestTheTypeOfEveryEntryOfAFolderIsOneQuestion(t *testing.T) {
 	}
 
 	for path, want := range map[string]domain.NoteType{
-		"cards/mammals.md": domain.TypeDeck,
-		"cards/animal.md":  domain.TypeStencil,
+		"cards/mammals.md": deckType,
+		"cards/animal.md":  stencilType,
 		"cards/reading.md": domain.TypeNote,
 	} {
 		if held[path] != want {
@@ -141,13 +104,13 @@ func TestTheTypeOfEveryEntryOfAFolderIsOneQuestion(t *testing.T) {
 func TestSavingANoteAgainWritesTheTypeItNowCarries(t *testing.T) {
 	db := openDB(t)
 	saveTypedNote(t, db, first, "cards/mammals.md", "Mammals", domain.TypeNote)
-	saveTypedNote(t, db, first, "cards/mammals.md", "Mammals", domain.TypeDeck)
+	saveTypedNote(t, db, first, "cards/mammals.md", "Mammals", deckType)
 
 	held, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{"cards/mammals.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held["cards/mammals.md"] != domain.TypeDeck {
-		t.Errorf("the index calls it %q, want %q", held["cards/mammals.md"], domain.TypeDeck)
+	if held["cards/mammals.md"] != deckType {
+		t.Errorf("the index calls it %q, want %q", held["cards/mammals.md"], deckType)
 	}
 }

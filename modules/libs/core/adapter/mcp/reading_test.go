@@ -1,7 +1,6 @@
 package mcp_test
 
 import (
-	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -25,15 +24,11 @@ import (
 var reads = []string{
 	"note_search", "note_titles", "note_read", "note_neighbourhood",
 	"link_list", "source_list", "source_read",
-	"card_stencil_list", "card_stencil_read", "card_read", "vault_get",
+	"vault_get",
 }
 
 // The reading server stands on what it does not serve, so the list is exact:
 // one writing tool reaching it fails this.
-// levelNothing brings nothing level. It stands where a use case that never
-// writes is built, so nothing ever calls it.
-func levelNothing(context.Context, domain.Vault, []string) error { return nil }
-
 func TestTheReadingServerServesTheToolsThatRead(t *testing.T) {
 	cfg, db := openIndex(t)
 	v := testsupport.NewVault(t, kinetics())
@@ -74,9 +69,6 @@ func TestEveryReadingToolAnswersWithoutAWriter(t *testing.T) {
 		{"link_list", map[string]any{"path": "Entropy.md"}},
 		{"source_list", map[string]any{}},
 		{"source_read", map[string]any{"path": "Entropy.md", "start": 0, "length": 200}},
-		{"card_stencil_list", map[string]any{}},
-		{"card_stencil_read", map[string]any{"path": "Physics.md"}},
-		{"card_read", map[string]any{"path": "Kinetics.md"}},
 		{"vault_get", map[string]any{}},
 	}
 	called := make([]string, 0, len(asked))
@@ -95,17 +87,17 @@ func TestEveryReadingToolAnswersWithoutAWriter(t *testing.T) {
 func TestTheReadingToolsAnswerAboutOneVaultOnly(t *testing.T) {
 	cfg, db := openIndex(t)
 	physics := side{
-		what:  "physics",
-		vault: testsupport.NewVault(t, kinetics()),
-		note:  "Entropy.md", deck: "Kinetics.md",
+		what:   "physics",
+		vault:  testsupport.NewVault(t, kinetics()),
+		note:   "Entropy.md",
 		called: "Randomness",
 		own:    "microstates",
 		hers:   []string{"microstates", "Randomness", "Thermodynamics", "engines"},
 	}
 	garden := side{
-		what:  "garden",
-		vault: testsupport.NewVault(t, beds()),
-		note:  "Compost.md", deck: "Borders.md",
+		what:   "garden",
+		vault:  testsupport.NewVault(t, beds()),
+		note:   "Compost.md",
 		called: "Heap",
 		own:    "peelings",
 		hers:   []string{"peelings", "Heap", "Mulch", "brambles"},
@@ -128,7 +120,6 @@ type side struct {
 	vault   domain.Vault
 	session *sdk.ClientSession
 	note    string
-	deck    string
 	// called is what that note is called, which is the whole of what note_titles
 	// carries beside the path it was asked by.
 	called string
@@ -185,10 +176,6 @@ func (s side) answers(t *testing.T) {
 		t.Errorf("%s reads its own note as a source without %q: %q", s.what, s.own, run.Text)
 	}
 
-	hand := readCards(t, s.session, map[string]any{"path": s.deck})
-	if hand.Total == 0 {
-		t.Errorf("%s reads no card out of its own deck", s.what)
-	}
 }
 
 // checkHoldsNothingOf asks this vault's session about the other vault's notes,
@@ -206,7 +193,6 @@ func (s side) checkHoldsNothingOf(t *testing.T, other side) {
 		{"note_neighbourhood", map[string]any{"path": other.note}},
 		{"link_list", map[string]any{"path": other.note}},
 		{"source_read", map[string]any{"path": other.note, "start": 0, "length": 400}},
-		{"card_read", map[string]any{"path": other.deck}},
 	} {
 		said := getAnswer(t, s.session, asked.name, asked.args)
 		for _, word := range other.hers {
@@ -256,9 +242,6 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 		t.Fatal(err)
 	}
 	queries := db.Queries()
-	// Only the tools that read are served here, and none of them writes, so
-	// nothing is ever brought level.
-	cards := cfg.Cards(queries, db.Links(), levelNothing)
 
 	return mcp.Core{
 		Showing:     mcp.ShowOneVault(v, v.Path),
@@ -273,7 +256,6 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 			GetTitles:     note.NewGetTitles(queries),
 			Links:         note.NewShowLinks(db.Links()),
 		},
-		Cards:   mcp.Cards{Read: cards.Read, GetCardPage: cards.GetCardPage, List: cards.List},
 		Sources: mcp.Sources{GetDocumentList: source.NewGetDocumentList(db.SourcesKnown()), GetDocumentText: source.NewGetDocumentText(readers, db.SourcesKnown(), nil, nil)},
 	}
 }
@@ -285,11 +267,6 @@ func kinetics() map[string]string {
 		"Entropy.md": "---\ntitle: Randomness\nlinks:\n  - to: Thermodynamics\n    role: parent\n---\n\n" +
 			"Disorder counted across microstates.\n",
 		"Thermodynamics.md": "# Thermodynamics\n\nHeat moving through engines.\n",
-		"Physics.md": "---\ntype: stencil\nfields:\n  - Term\n  - Meaning\n---\n\n" +
-			"## Recognise\n\n### Front\n\n{{Term}}\n\n### Back\n\n{{Meaning}}\n",
-		"Kinetics.md": "---\ntype: deck\n---\n\n# Kinetics\n\n" +
-			"## Entropy ^k7m2xq9fzp\n\n[[Physics]]\n\n### Term\n\nEntropy\n\n" +
-			"### Meaning\n\nDisorder counted across microstates\n",
 	}
 }
 
@@ -298,10 +275,5 @@ func beds() map[string]string {
 		"Compost.md": "---\ntitle: Heap\nlinks:\n  - to: Mulch\n    role: parent\n---\n\n" +
 			"Kitchen peelings rotting beneath straw.\n",
 		"Mulch.md": "# Mulch\n\nBark laid over brambles.\n",
-		"Garden.md": "---\ntype: stencil\nfields:\n  - Plant\n  - Habit\n---\n\n" +
-			"## Recognise\n\n### Front\n\n{{Plant}}\n\n### Back\n\n{{Habit}}\n",
-		"Borders.md": "---\ntype: deck\n---\n\n# Borders\n\n" +
-			"## Compost ^3n8vr4tqch\n\n[[Garden]]\n\n### Plant\n\nCompost\n\n" +
-			"### Habit\n\nKitchen peelings rotting beneath straw\n",
 	}
 }

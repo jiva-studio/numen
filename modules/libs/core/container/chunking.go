@@ -14,7 +14,11 @@ import (
 // CutNotes is how a source's text and a note are cut into the chunks the index
 // keeps: at this installation's sizes, keeping what reads as text.
 func (c Config) CutNotes() note.CutNotes {
-	return note.NewCutNotes(c.Embedding.Indexing.Use != "", c.Embedding.Model.MaxTokens)
+	cut := note.NewCutNotes(c.Embedding.Indexing.Use != "", c.Embedding.Model.MaxTokens)
+	if c.PluginHost != nil {
+		cut.Profiles = c.PluginHost.ResolveNoteProfile
+	}
+	return cut
 }
 
 // Scan is the walk that reads a vault's notes into the index, cut at this

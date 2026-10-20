@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 const (
@@ -53,6 +55,7 @@ var (
 	ErrInvalidPermission   = errors.New("invalid permission")
 	ErrInvalidRuntime      = errors.New("invalid runtime")
 	ErrEmptySettingKey     = errors.New("setting key cannot be empty")
+	ErrInvalidSettingKey   = errors.New("invalid setting key")
 	ErrDuplicateSettingKey = errors.New("duplicate setting key")
 	ErrInvalidSettingType  = errors.New("invalid setting type")
 	ErrEnumMissingOptions  = errors.New("enum setting must define options")
@@ -62,6 +65,7 @@ var (
 	ErrInvalidAgentSetting = errors.New("invalid agent setting")
 	ErrInvalidData         = errors.New("invalid data folder")
 	ErrInvalidService      = errors.New("invalid service name")
+	ErrInvalidNoteType     = errors.New("invalid note type")
 )
 
 // SettingStoredSecrets is the setting under which the host records, for a plugin,
@@ -83,10 +87,11 @@ const SettingTypeAgent = "agent"
 var reservedSettingKeys = []string{SettingStoredSecrets, SettingAIConsent}
 
 var (
-	manifestIDPattern      = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
-	manifestServicePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$`)
-	manifestSecretPattern  = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
-	manifestVersionPattern = regexp.MustCompile(`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`)
+	manifestIDPattern       = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
+	manifestServicePattern  = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$`)
+	manifestReplacesPattern = regexp.MustCompile(`^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$`)
+	manifestSecretPattern   = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+	manifestVersionPattern  = regexp.MustCompile(`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`)
 )
 
 var validSettingTypes = []string{"boolean", "string", "number", "enum", "select", "range", SettingTypeAgent}
@@ -173,6 +178,10 @@ type PluginManifestSetting struct {
 	Min         float64              `json:"min,omitempty"`
 	Max         float64              `json:"max,omitempty"`
 	Step        float64              `json:"step,omitempty"`
+	// Replaces are the places in the settings file a person kept this setting before the plugin took
+	// it over, each written as the keys that lead to it joined by dots, the newest first. The first of
+	// them the file holds gives the value to a person whose file has none for the plugin yet.
+	Replaces []string `json:"replaces,omitempty"`
 }
 
 // PluginManifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.
@@ -203,6 +212,26 @@ type PluginManifest struct {
 	// receives a call for one forwards it to the plugin; a service the host serves itself is never
 	// forwarded.
 	Services []string `json:"services,omitempty"`
+	// NoteTypes are the types of note the plugin gives meaning to, and how the index keeps the notes of
+	// each. A note of a type no plugin declares is kept as an ordinary note is.
+	NoteTypes []PluginNoteType `json:"noteTypes,omitempty"`
+}
+
+// PluginNoteType declares one type of note and how the index keeps the notes of it.
+type PluginNoteType struct {
+	// Type is the word the `type` key of a note's frontmatter holds.
+	Type string `json:"type"`
+	// Chunks says whether the prose of the note is cut into chunks and searched by meaning. Left out,
+	// it is.
+	Chunks *bool `json:"chunks,omitempty"`
+	// Headings are the levels of heading the index keeps. Left out, every heading is kept; an empty
+	// list keeps none.
+	Headings *[]int `json:"headings,omitempty"`
+	// MarkedHeadings are the levels whose headings end in a mark that is no part of their text.
+	MarkedHeadings []int `json:"markedHeadings,omitempty"`
+	// MarkPattern is a regular expression the word of a mark must match whole. Left out, any word of
+	// letters, digits and hyphens is a mark.
+	MarkPattern string `json:"markPattern,omitempty"`
 }
 
 // ReadManifest decodes and validates a manifest from JSON input.
@@ -246,6 +275,7 @@ func (m PluginManifest) ListIssues() []error {
 	issues = append(issues, m.listSecretIssues()...)
 	issues = append(issues, m.listDataIssues()...)
 	issues = append(issues, m.listServiceIssues()...)
+	issues = append(issues, m.listNoteTypeIssues()...)
 	issues = append(issues, m.listAgentSettingIssues()...)
 	return append(issues, listManifestSettingIssues(m.Settings)...)
 }
@@ -264,6 +294,64 @@ func (m PluginManifest) listServiceIssues() []error {
 		seen[name] = true
 	}
 	return issues
+}
+
+// listNoteTypeIssues checks that each type is a word the frontmatter can hold, is declared once, and
+// that the levels it names are those of headings.
+func (m PluginManifest) listNoteTypeIssues() []error {
+	var issues []error
+	seen := map[string]bool{}
+	for _, declared := range m.NoteTypes {
+		switch {
+		case !manifestSecretPattern.MatchString(declared.Type):
+			issues = append(issues, fmt.Errorf("%w: %q", ErrInvalidNoteType, declared.Type))
+		case seen[declared.Type]:
+			issues = append(issues, fmt.Errorf("%w: %q is declared twice", ErrInvalidNoteType, declared.Type))
+		}
+		seen[declared.Type] = true
+		if _, err := regexp.Compile(declared.MarkPattern); err != nil {
+			issues = append(issues, fmt.Errorf("%w: %q has a mark pattern that is no pattern: %w", ErrInvalidNoteType, declared.Type, err))
+		}
+		levels := declared.MarkedHeadings
+		if declared.Headings != nil {
+			levels = append(slices.Clone(*declared.Headings), levels...)
+		}
+		for _, level := range levels {
+			if level < 1 || level > 6 {
+				issues = append(issues, fmt.Errorf("%w: %q names heading level %d", ErrInvalidNoteType, declared.Type, level))
+			}
+		}
+	}
+	return issues
+}
+
+// GetProfile is how the index keeps the notes of the type.
+func (t PluginNoteType) GetProfile() domain.NoteProfile {
+	profile := domain.OrdinaryProfile()
+	if t.Chunks != nil {
+		profile.HasChunks = *t.Chunks
+	}
+	if t.Headings != nil {
+		profile.HeadingLevels = slices.Clone(*t.Headings)
+		if profile.HeadingLevels == nil {
+			profile.HeadingLevels = []int{}
+		}
+	}
+	profile.MarkedLevels = slices.Clone(t.MarkedHeadings)
+	if t.MarkPattern != "" {
+		profile.Mark, _ = regexp.Compile("^(?:" + t.MarkPattern + ")$")
+	}
+	return profile
+}
+
+// GetNoteType is the declaration of a type of note the plugin gives meaning to.
+func (m PluginManifest) GetNoteType(noteType string) (PluginNoteType, bool) {
+	for _, declared := range m.NoteTypes {
+		if declared.Type == noteType {
+			return declared, true
+		}
+	}
+	return PluginNoteType{}, false
 }
 
 // listDataIssues checks that the folder the plugin keeps its data in is a name of letters, digits,
@@ -421,6 +509,11 @@ func listManifestSettingIssues(settings []PluginManifestSetting) []error {
 		}
 		seenKeys[key] = true
 		issues = append(issues, listManifestSettingIssue(s, key)...)
+		for _, place := range s.Replaces {
+			if !manifestReplacesPattern.MatchString(place) {
+				issues = append(issues, fmt.Errorf("%w: %s replaces %q", ErrInvalidSettingKey, key, place))
+			}
+		}
 	}
 	return issues
 }

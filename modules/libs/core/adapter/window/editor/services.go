@@ -29,8 +29,6 @@ type Services struct {
 	Search     *searchHandler
 	Agent      *agentHandler
 	Vaults     *vaultsHandler
-	Cards      *cardsHandler
-	Presets    *presetsHandler
 	Settings   *settingsHandler
 	Artifact   *artifactHandler
 	Transcript *transcriptHandler
@@ -47,6 +45,9 @@ type Services struct {
 	// the installation, so they arrive here from whatever put the window
 	// together. A build put together without a catalogue serves no ThemeService.
 	Themes numenv1connect.ThemeServiceHandler
+
+	// PluginServices answers the calls for the services plugins serve to the windows.
+	PluginServices PluginServices
 
 	// Plugin answers questions about the plugins installed in the application.
 	Plugin numenv1connect.PluginServiceHandler
@@ -80,8 +81,6 @@ func createServices(state *State) *Services {
 		Search:     &searchHandler{state: state},
 		Agent:      &agentHandler{state: state},
 		Vaults:     &vaultsHandler{state: state},
-		Cards:      &cardsHandler{state: state},
-		Presets:    &presetsHandler{state: state},
 		Settings:   &settingsHandler{},
 		Artifact:   &artifactHandler{state: state, files: files},
 		Transcript: &transcriptHandler{state: state, files: files},

@@ -99,9 +99,9 @@ message GetNeighbourhoodResponse {
   Note focus = 1;
   repeated Neighbour related = 2;
 
-  // Which of three the note in focus is, so a client draws a deck and a stencil
-  // as what they are.
-  NoteType focus_type = 3;
+  // The `type` key of the frontmatter of the note in focus, so a client draws a note as
+  // what it is. Empty for an ordinary note.
+  string focus_type = 3;
 }
 
 // Relation is where a note sits relative to the one in focus. A sibling is written
@@ -130,9 +130,9 @@ message Neighbour {
   // line points at the note it was written about.
   bool is_mutual = 5;
 
-  // Which of three the note is, so a client draws a deck and a stencil as what
-  // they are.
-  NoteType type = 6;
+  // The `type` key of the note's frontmatter, so a client draws a note as what it is.
+  // Empty for an ordinary note.
+  string type = 6;
 
   // What the other note wrote on its link back to this one, when is_mutual is true.
   string reverse_label = 7;

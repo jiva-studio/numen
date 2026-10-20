@@ -18,10 +18,10 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
@@ -55,29 +55,28 @@ func main() {
 // wrong at and carried on past, which is the same place everything else this
 // binary could not do is said.
 func makeConfig(out io.Writer) container.Config {
-	return container.Config{
-		ErrorHandler: func(err error) { fmt.Fprintln(out, "numen-flashcards:", err) },
-	}
+	cfg := platform.GetConfigFor(platform.TargetFlashcards)
+	cfg.ErrorHandler = func(err error) { fmt.Fprintln(out, "numen-flashcards:", err) }
+	return cfg
 }
 
-// makeNotesAndCards is everything that acts on the vault's notes and cards,
-// built once and in one place. The page and the tools an agent calls are served
-// these and build none of their own, so a dependency named here is named for
-// both.
+// makeNotes is everything that acts on the vault's notes, built once and in one place. The page and
+// the tools an agent calls are served these and build none of their own, so a dependency named here
+// is named for both.
 //
-// What a write touched is levelled through the opening the vault was opened
-// with, which is what the walk and the watch also go through.
-func makeNotesAndCards(
-	cfg container.Config, db *container.Index, vaults *container.OpenVaults,
-) (container.Notes, container.Cards) {
-	return cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), vaults.UpdateIndex),
-		cfg.Cards(db.Queries(), db.Links(), vaults.UpdateIndex)
+// What a write touched is levelled through the opening the vault was opened with, which is what the
+// walk and the watch also go through.
+func makeNotes(cfg container.Config, db *container.Index, vaults *container.OpenVaults) container.Notes {
+	return cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), vaults.UpdateIndex)
 }
 
 func run(cfg container.Config, noAgent bool) error {
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 
+	if err := cfg.MigratePluginSettings(); err != nil {
+		return err
+	}
 	chosen, err := cfg.Settings()
 	if err != nil {
 		return err
@@ -104,13 +103,18 @@ func run(cfg container.Config, noAgent bool) error {
 		Config: cfg, Index: db, Lifetime: ctx, Out: os.Stderr, Label: "numen-flashcards",
 	}
 
-	notes, cards := makeNotesAndCards(cfg, db, vaults)
-	api := makeWindowAPI(cfg, registry, db, notes, vaults)
+	notes := makeNotes(cfg, db, vaults)
+	api := makeWindowAPI(cfg, notes)
 	bindVaultIndexer(ctx, api, vaults)
+	lent, err := openPluginVault(cfg, registry, db, api)
+	if err != nil {
+		return err
+	}
+	cfg.SetPluginVault(lent)
 
 	// The agent reaches the cards through tools on a port this window opens, and
 	// is started and stopped around a session.
-	away := serveAgents(ctx, cfg, db, notes, cards, api, noAgent, os.Stderr)
+	away := serveAgents(ctx, cfg, db, notes, api, noAgent, os.Stderr)
 
 	// The agents stop, then the walk and the watch, then the index they write to closes.
 	held := shutdown.NewSequence(
@@ -131,29 +135,32 @@ func run(cfg container.Config, noAgent bool) error {
 	return runApplication(api, pages, held)
 }
 
-// makeWindowAPI is the page's API over the cards, the notes and the registry.
-func makeWindowAPI(
-	cfg container.Config, registry port.VaultRegistry, db *container.Index,
-	notes container.Notes, vaults *container.OpenVaults,
-) *window.API {
-	running := cfg.Flashcards(db.Queries(), db.Links(), db.Problems(), vaults.UpdateIndex)
+// makeWindowAPI is the window's API: the notes it answers about and the plugins' services it forwards.
+func makeWindowAPI(cfg container.Config, notes container.Notes) *window.API {
 	return &window.API{
-		Find:           cfg.Vaults(registry, db, notes.Move).Find,
-		GetKnownVaults: cfg.GetKnownVaults(registry),
-		CardsDue:       running.CardsDue,
-		Session:        running.Session,
-		Schedules:      running.Schedules,
-		Log:            running.Log,
-		Record:         running.Record,
-		GetReviewDays:  running.GetReviewDays,
-		Neighbourhood:  cfg.ShowNeighbourhood(notes.Links, db.Queries(), notes.Read),
-		Presets:        running.Presets,
-		GetTitle:       notes.GetTitle,
 		IsVaultIndexed: notes.IsVaultIndexed,
 		Window:         window.NewWindow(nil),
-		Day:            running.Day,
-		Now:            time.Now,
+		PluginServices: cfg.GetPluginServices(),
 	}
+}
+
+// openPluginVault is the vault the plugins work through the host. The window shows none of its own,
+// so a plugin names the vault of each call; the host reads a vault into the index when it is asked
+// about one the index does not carry, and tells the plugin when something moved.
+func openPluginVault(
+	cfg container.Config, registry port.VaultRegistry, db *container.Index, api *window.API,
+) (port.PluginVault, error) {
+	return cfg.OpenPluginVault(registry, db,
+		func() (domain.Vault, bool) { return domain.Vault{}, false },
+		container.PluginVaultHooks{
+			IndexState: api.EnsureIndexed,
+			Moved:      api.WatchMoves,
+			InUse: func(ctx context.Context, v domain.Vault) {
+				if opened := api.Opened; opened != nil {
+					opened(ctx, v)
+				}
+			},
+		})
 }
 
 // bindVaultIndexer connects the walk of a vault into the index to the API.

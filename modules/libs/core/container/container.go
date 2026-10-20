@@ -37,13 +37,9 @@ type Config struct {
 	SettingsPath string
 	// ThemesPath is the folder the person's own themes are read from.
 	ThemesPath string
-	// SchedulesPath is the folder the schedules worked out from a vault's
-	// answers are cached in. It is a cache and belongs to the installation, so
-	// a test names one of its own rather than filling the machine's.
-	SchedulesPath string
-
-	// Scheduler is the algorithm that spaces flashcard reviews. Empty uses FSRS.
-	Scheduler port.ScheduleAlgorithm
+	// PluginCachePath is the folder what the plugins worked out for a vault is cached in. It is a cache
+	// and belongs to the installation, so a test names one of its own.
+	PluginCachePath string
 
 	// InterfaceScale is how large the window is drawn and TextScale how large the
 	// text a person reads is set, said for this launch alone. Each stands over
@@ -235,12 +231,6 @@ func (c Config) WriteConfiguredFile() func(written string, baseline *string) err
 // told them.
 func (Config) NestedHeadingLimitBounds() settings.Bounds {
 	return settings.NestedHeadingLimitBounds
-}
-
-// GetLatestDayStart is how late in the day a day of review may be made to begin,
-// on the clock on the wall. An hour past it is refused.
-func (Config) GetLatestDayStart() string {
-	return settings.LatestDayStartTime
 }
 
 // GetSettingsWriter writes settings into the file. The file is patched as an object,

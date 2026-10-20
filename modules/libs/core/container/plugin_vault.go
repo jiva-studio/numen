@@ -24,8 +24,8 @@ func (c Config) SetPluginVault(vault port.PluginVault) {
 // OpenPluginCache is where a plugin keeps what it worked out for a vault: the folder the
 // configuration names for schedules, else the platform's cache location.
 func (c Config) OpenPluginCache() (port.PluginCache, error) {
-	if c.SchedulesPath != "" {
-		return appstate.PluginCachesAt(filepath.Join(c.SchedulesPath, "plugins")), nil
+	if c.PluginCachePath != "" {
+		return appstate.PluginCachesAt(filepath.Join(c.PluginCachePath, "plugins")), nil
 	}
 	kept, err := appstate.OpenPluginCaches()
 	if err != nil {
@@ -41,6 +41,8 @@ type PluginVaultHooks struct {
 	// IndexState starts reading a vault into the index when it is not there and says where that
 	// stands. Left nil, a vault the index carries is indexed and any other is being indexed.
 	IndexState func(ctx context.Context, v domain.Vault) (port.PluginIndexState, error)
+	// InUse is told that a plugin is working a vault for the person.
+	InUse func(ctx context.Context, v domain.Vault)
 	// Moved tells that something moved in some vault. Left nil, it is the index file changing.
 	Moved func(ctx context.Context) (<-chan struct{}, error)
 }
@@ -50,26 +52,34 @@ type PluginVaultHooks struct {
 func (e EditorAssembly) OpenPluginVault(
 	current func() (domain.Vault, bool), hooks PluginVaultHooks,
 ) (port.PluginVault, error) {
-	cache, err := e.cfg.OpenPluginCache()
+	return e.cfg.OpenPluginVault(e.registry, e.db, current, hooks)
+}
+
+// OpenPluginVault is the vault the plugins work through the host over the vaults of a list and the
+// index that holds them: the one current names, else the one a call names by identity.
+func (c Config) OpenPluginVault(
+	registry port.VaultRegistry, db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
+) (port.PluginVault, error) {
+	cache, err := c.OpenPluginCache()
 	if err != nil {
 		return nil, err
 	}
-	refresh := e.GetRefresh()
-	queries := e.db.Queries()
+	refresh := makeRefresh(c, db, db.Notes())
+	queries := db.Queries()
 	vaults := plugin.Vault{
 		Current:  current,
-		Readers:  e.cfg.VaultReaders(),
-		Writers:  e.cfg.VaultWriters(),
+		Readers:  c.VaultReaders(),
+		Writers:  c.VaultWriters(),
 		Notes:    queries,
-		Links:    e.db.Links(),
-		Problems: e.db.Problems(),
-		Data:     filesystem.PluginData{Options: e.cfg.vaultOptions()},
+		Links:    db.Links(),
+		Problems: db.Problems(),
+		Data:     filesystem.PluginData{Options: c.vaultOptions()},
 		Cache:    cache,
-		Watcher:  e.cfg.VaultWatcher(),
+		Watcher:  c.VaultWatcher(),
 		Written:  hooks.Written,
-		Vaults:   e.registry.List,
+		Vaults:   registry.List,
 		Find: func(id domain.VaultID) (domain.Vault, error) {
-			found, isFound, err := e.registry.FindVault(string(id))
+			found, isFound, err := registry.FindVault(string(id))
 			if err != nil {
 				return domain.Vault{}, err
 			}
@@ -78,6 +88,7 @@ func (e EditorAssembly) OpenPluginVault(
 			}
 			return found, nil
 		},
+		InUse:      hooks.InUse,
 		IndexState: hooks.IndexState,
 		Moved:      hooks.Moved,
 		Index: func(ctx context.Context, v domain.Vault, paths []string) error {
@@ -98,7 +109,7 @@ func (e EditorAssembly) OpenPluginVault(
 		}
 	}
 	if vaults.Moved == nil {
-		vaults.Moved = e.cfg.Moves
+		vaults.Moved = c.Moves
 	}
 	return vaults, nil
 }

@@ -30,6 +30,13 @@ var errShut = errors.New("this window is shut")
 // the binary. A binary built without it says so.
 func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 
+// PluginServices is where the calls for the services plugins serve are forwarded.
+type PluginServices = interface {
+	http.Handler
+	// Serves reports whether an enabled plugin serves the service the path names.
+	Serves(urlPath string) bool
+}
+
 // served is one service this build answers: where its calls arrive, and what
 // answers them.
 type served struct {
@@ -78,6 +85,12 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 				one.to.ServeHTTP(w, r)
 				return
 			}
+		}
+		// A service no handler of the window answers is the plugins' to answer, in a build that
+		// answers the whole schema.
+		if len(named) == 0 && s.PluginServices != nil && s.PluginServices.Serves(r.URL.Path) {
+			s.PluginServices.ServeHTTP(w, r)
+			return
 		}
 		s.serveBeside(w, r, hasAssets, files)
 	})
@@ -137,12 +150,6 @@ func (s *Services) newServices() []service {
 		}},
 		{numenv1connect.VaultsServiceName, func(c connect.HandlerOption) (string, http.Handler) {
 			return numenv1connect.NewVaultsServiceHandler(s.Vaults, c)
-		}},
-		{numenv1connect.CardsServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewCardsServiceHandler(s.Cards, c)
-		}},
-		{numenv1connect.PresetsServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewPresetsServiceHandler(s.Presets, c)
 		}},
 		{numenv1connect.SettingsServiceName, func(c connect.HandlerOption) (string, http.Handler) {
 			return numenv1connect.NewSettingsServiceHandler(s.Settings, c)

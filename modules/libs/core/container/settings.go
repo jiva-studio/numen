@@ -2,7 +2,6 @@ package container
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
@@ -49,10 +48,6 @@ type Settings struct {
 	// Titles is how a note's title and the name of its file are held together.
 	Titles settings.Titles `json:"naming"`
 
-	// Review is what a day of review is, on this person's clock. How a deck is
-	// scheduled is in the vault, in the preset it points at.
-	Review settings.Review `json:"review"`
-
 	// Performance is the workload and resource calibration profile.
 	Performance settings.Performance `json:"performance"`
 
@@ -73,7 +68,6 @@ type Settings struct {
 // The sections the settings adapter reads and puts right as it reads the file.
 func (s *Settings) GetVersion() *int                    { return &s.Version }
 func (s *Settings) GetAppearance() *settings.Appearance { return &s.Appearance }
-func (s *Settings) GetReview() *settings.Review         { return &s.Review }
 
 // AddNotice leaves a person one line about what the file holds.
 func (s *Settings) AddNotice(said string) { s.Notices = append(s.Notices, said) }
@@ -85,12 +79,6 @@ func (s Settings) Sync() bool { return s.Titles.Sync() }
 // how many of those headings stand under it at once.
 func (s Settings) HasNestedHeadings() bool    { return s.Appearance.HasNestedHeadings() }
 func (s Settings) GetNestedHeadingLimit() int { return s.Appearance.NestedHeadingLimit }
-
-// GetDayStartTime is how long past midnight a day of review begins.
-func (s Settings) GetDayStartTime() time.Duration {
-	starts, _ := s.Review.DayStart()
-	return starts
-}
 
 // Settings reads the file a person configures this installation in. An
 // installation nobody has configured is written down as what it is doing.
@@ -119,7 +107,6 @@ func DefaultSettings() Settings {
 		Indexing:    DefaultIndexing(),
 		Importing:   download.Defaults(),
 		Titles:      settings.DefaultTitles(),
-		Review:      settings.DefaultReview(),
 		Performance: settings.DefaultPerformance(),
 	}
 }

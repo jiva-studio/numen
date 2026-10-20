@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -82,4 +83,8 @@ func TestAnOpenedDocumentGivesBackEveryReference(t *testing.T) {
 	if host.acquired.Load() != host.released.Load() {
 		t.Errorf("acquired %d, released %d", host.acquired.Load(), host.released.Load())
 	}
+}
+
+func (h *countingDocumentHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
+	return domain.NoteProfile{}, false
 }

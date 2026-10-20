@@ -47,9 +47,7 @@ func (h *settingsHandler) GetSettings(
 			Least: got.NestedHeadingLimitBounds.Least,
 			Most:  got.NestedHeadingLimitBounds.Most,
 		},
-		LatestDayStartTime: got.LatestDayStartTime,
-		Day:                got.Day,
-		Plugins:            newWirePluginInfos(got.Plugins),
+		Plugins: newWirePluginInfos(got.Plugins),
 	}), nil
 }
 

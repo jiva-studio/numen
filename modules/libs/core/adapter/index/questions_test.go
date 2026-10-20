@@ -136,7 +136,7 @@ func TestWhatEveryNoteOfAFolderIsCostsTheSameHoweverManyThereAre(t *testing.T) {
 	paths := make([]string, 0, 6)
 	for i := range 6 {
 		path := fmt.Sprintf("cards/deck-%d.md", i)
-		saveTypedNote(t, db, first, path, fmt.Sprintf("Deck %d", i), domain.TypeDeck)
+		saveTypedNote(t, db, first, path, fmt.Sprintf("Deck %d", i), deckType)
 		paths = append(paths, path)
 	}
 
@@ -164,23 +164,23 @@ func TestTheNotesOfOneTypeAreOneQuestion(t *testing.T) {
 	db, queries := openCountedDB(t)
 	ctx := t.Context()
 
-	saveTypedNote(t, db, first, "decks/mammals.md", "Mammals", domain.TypeDeck)
-	saveTypedNote(t, db, first, "decks/birds.md", "Birds", domain.TypeDeck)
-	saveTypedNote(t, db, first, "stencils/animal.md", "Animal", domain.TypeStencil)
+	saveTypedNote(t, db, first, "decks/mammals.md", "Mammals", deckType)
+	saveTypedNote(t, db, first, "decks/birds.md", "Birds", deckType)
+	saveTypedNote(t, db, first, "stencils/animal.md", "Animal", stencilType)
 	saveTypedNote(t, db, first, "notes/entropy.md", "Entropy", domain.TypeNote)
-	saveTypedNote(t, db, second, "decks/quasars.md", "Quasars", domain.TypeDeck)
+	saveTypedNote(t, db, second, "decks/quasars.md", "Quasars", deckType)
 
-	if _, err := queries.GetPathsOfType(ctx, first.ID, domain.TypeDeck); err != nil {
+	if _, err := queries.GetPathsOfType(ctx, first.ID, deckType); err != nil {
 		t.Fatal(err)
 	}
 	if ran := questions(t, func() error {
-		_, err := queries.GetPathsOfType(ctx, first.ID, domain.TypeDeck)
+		_, err := queries.GetPathsOfType(ctx, first.ID, deckType)
 		return err
 	}); ran > 2 {
 		t.Errorf("the decks of a vault cost %d questions", ran)
 	}
 
-	found, err := queries.GetPathsOfType(ctx, first.ID, domain.TypeDeck)
+	found, err := queries.GetPathsOfType(ctx, first.ID, deckType)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +190,7 @@ func TestTheNotesOfOneTypeAreOneQuestion(t *testing.T) {
 	}
 	// One database holds every vault, and the second vault's deck is not this
 	// vault's.
-	other, err := queries.GetPathsOfType(ctx, second.ID, domain.TypeDeck)
+	other, err := queries.GetPathsOfType(ctx, second.ID, deckType)
 	if err != nil {
 		t.Fatal(err)
 	}

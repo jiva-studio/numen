@@ -368,12 +368,12 @@ func TestAListingSaysWhichOfFourEachNoteIs(t *testing.T) {
 		held[entry.GetName()] = entry
 	}
 
-	want := map[string]v1.NoteType{
-		"Animals.md":  v1.NoteType_NOTE_TYPE_DECK,
-		"Animal.md":   v1.NoteType_NOTE_TYPE_STENCIL,
-		"Sanskrit.md": v1.NoteType_NOTE_TYPE_PRESET,
-		"Entropy.md":  v1.NoteType_NOTE_TYPE_UNSPECIFIED,
-		"Notes.txt":   v1.NoteType_NOTE_TYPE_UNSPECIFIED,
+	want := map[string]string{
+		"Animals.md":  "deck",
+		"Animal.md":   "stencil",
+		"Sanskrit.md": "preset",
+		"Entropy.md":  "",
+		"Notes.txt":   "",
 	}
 	for name, one := range want {
 		if got := held[name].GetType(); got != one {
@@ -438,16 +438,16 @@ func TestAPathSaysWhatStandsThere(t *testing.T) {
 	// each in the reader made for it.
 	want := map[string]struct {
 		kind   v1.SourceKind
-		is     v1.NoteType
+		is     string
 		format v1.BookFormat
 	}{
-		"Animals.md":   {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_DECK, v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
-		"Animal.md":    {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_STENCIL, v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
-		"Sanskrit.md":  {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_PRESET, v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
-		"Entropy.md":   {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_UNSPECIFIED, v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
-		"Physics.epub": {v1.SourceKind_SOURCE_KIND_BOOK, v1.NoteType_NOTE_TYPE_UNSPECIFIED, v1.BookFormat_BOOK_FORMAT_EPUB},
-		"Scan.pdf":     {v1.SourceKind_SOURCE_KIND_BOOK, v1.NoteType_NOTE_TYPE_UNSPECIFIED, v1.BookFormat_BOOK_FORMAT_PDF},
-		"Notes.txt":    {v1.SourceKind_SOURCE_KIND_UNSPECIFIED, v1.NoteType_NOTE_TYPE_UNSPECIFIED, v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
+		"Animals.md":   {v1.SourceKind_SOURCE_KIND_NOTE, "deck", v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
+		"Animal.md":    {v1.SourceKind_SOURCE_KIND_NOTE, "stencil", v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
+		"Sanskrit.md":  {v1.SourceKind_SOURCE_KIND_NOTE, "preset", v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
+		"Entropy.md":   {v1.SourceKind_SOURCE_KIND_NOTE, "", v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
+		"Physics.epub": {v1.SourceKind_SOURCE_KIND_BOOK, "", v1.BookFormat_BOOK_FORMAT_EPUB},
+		"Scan.pdf":     {v1.SourceKind_SOURCE_KIND_BOOK, "", v1.BookFormat_BOOK_FORMAT_PDF},
+		"Notes.txt":    {v1.SourceKind_SOURCE_KIND_UNSPECIFIED, "", v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
 	}
 	for path, one := range want {
 		stood, answered := held[path]

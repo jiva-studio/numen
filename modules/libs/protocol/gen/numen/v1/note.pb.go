@@ -394,9 +394,9 @@ type GetNeighbourhoodResponse struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Focus   *Note                  `protobuf:"bytes,1,opt,name=focus,proto3" json:"focus,omitempty"`
 	Related []*Neighbour           `protobuf:"bytes,2,rep,name=related,proto3" json:"related,omitempty"`
-	// Which of three the note in focus is, so a client draws a deck and a stencil
-	// as what they are.
-	FocusType     NoteType `protobuf:"varint,3,opt,name=focus_type,json=focusType,proto3,enum=numen.v1.NoteType" json:"focus_type,omitempty"`
+	// The `type` key of the frontmatter of the note in focus, so a client draws a note as
+	// what it is. Empty for an ordinary note.
+	FocusType     string `protobuf:"bytes,3,opt,name=focus_type,json=focusType,proto3" json:"focus_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -445,11 +445,11 @@ func (x *GetNeighbourhoodResponse) GetRelated() []*Neighbour {
 	return nil
 }
 
-func (x *GetNeighbourhoodResponse) GetFocusType() NoteType {
+func (x *GetNeighbourhoodResponse) GetFocusType() string {
 	if x != nil {
 		return x.FocusType
 	}
-	return NoteType_NOTE_TYPE_UNSPECIFIED
+	return ""
 }
 
 // Neighbour is one note joined to the one in focus, and what joins them.
@@ -466,9 +466,9 @@ type Neighbour struct {
 	// label is then the one the note in focus wrote, and the arrow drawn on the
 	// line points at the note it was written about.
 	IsMutual bool `protobuf:"varint,5,opt,name=is_mutual,json=isMutual,proto3" json:"is_mutual,omitempty"`
-	// Which of three the note is, so a client draws a deck and a stencil as what
-	// they are.
-	Type NoteType `protobuf:"varint,6,opt,name=type,proto3,enum=numen.v1.NoteType" json:"type,omitempty"`
+	// The `type` key of the note's frontmatter, so a client draws a note as what it is.
+	// Empty for an ordinary note.
+	Type string `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
 	// What the other note wrote on its link back to this one, when is_mutual is true.
 	ReverseLabel  string `protobuf:"bytes,7,opt,name=reverse_label,json=reverseLabel,proto3" json:"reverse_label,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -540,11 +540,11 @@ func (x *Neighbour) GetIsMutual() bool {
 	return false
 }
 
-func (x *Neighbour) GetType() NoteType {
+func (x *Neighbour) GetType() string {
 	if x != nil {
 		return x.Type
 	}
-	return NoteType_NOTE_TYPE_UNSPECIFIED
+	return ""
 }
 
 func (x *Neighbour) GetReverseLabel() string {
@@ -2109,19 +2109,19 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01B\a\n" +
 	"\x05_note\"-\n" +
 	"\x17GetNeighbourhoodRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xa2\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x8e\x01\n" +
 	"\x18GetNeighbourhoodResponse\x12$\n" +
 	"\x05focus\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x05focus\x12-\n" +
-	"\arelated\x18\x02 \x03(\v2\x13.numen.v1.NeighbourR\arelated\x121\n" +
+	"\arelated\x18\x02 \x03(\v2\x13.numen.v1.NeighbourR\arelated\x12\x1d\n" +
 	"\n" +
-	"focus_type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\tfocusType\"\xf9\x01\n" +
+	"focus_type\x18\x03 \x01(\tR\tfocusType\"\xe5\x01\n" +
 	"\tNeighbour\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x12.\n" +
 	"\brelation\x18\x02 \x01(\x0e2\x12.numen.v1.RelationR\brelation\x12\x14\n" +
 	"\x05label\x18\x03 \x01(\tR\x05label\x12\x18\n" +
 	"\athrough\x18\x04 \x01(\tR\athrough\x12\x1b\n" +
-	"\tis_mutual\x18\x05 \x01(\bR\bisMutual\x12&\n" +
-	"\x04type\x18\x06 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\x12#\n" +
+	"\tis_mutual\x18\x05 \x01(\bR\bisMutual\x12\x12\n" +
+	"\x04type\x18\x06 \x01(\tR\x04type\x12#\n" +
 	"\rreverse_label\x18\a \x01(\tR\freverseLabel\"G\n" +
 	"\x17ResolveAddressesRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x18\n" +
@@ -2313,72 +2313,69 @@ var file_numen_v1_note_proto_goTypes = []any{
 	(*RenameNoteResponse)(nil),       // 32: numen.v1.RenameNoteResponse
 	(*WatchEditsRequest)(nil),        // 33: numen.v1.WatchEditsRequest
 	(*WatchEditsResponse)(nil),       // 34: numen.v1.WatchEditsResponse
-	(NoteType)(0),                    // 35: numen.v1.NoteType
-	(ErrorCode)(0),                   // 36: numen.v1.ErrorCode
-	(*Fingerprint)(nil),              // 37: numen.v1.Fingerprint
-	(*MoveResult)(nil),               // 38: numen.v1.MoveResult
-	(*Span)(nil),                     // 39: numen.v1.Span
+	(ErrorCode)(0),                   // 35: numen.v1.ErrorCode
+	(*Fingerprint)(nil),              // 36: numen.v1.Fingerprint
+	(*MoveResult)(nil),               // 37: numen.v1.MoveResult
+	(*Span)(nil),                     // 38: numen.v1.Span
 }
 var file_numen_v1_note_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.GetOpeningNoteResponse.note:type_name -> numen.v1.Note
 	3,  // 1: numen.v1.GetNeighbourhoodResponse.focus:type_name -> numen.v1.Note
 	8,  // 2: numen.v1.GetNeighbourhoodResponse.related:type_name -> numen.v1.Neighbour
-	35, // 3: numen.v1.GetNeighbourhoodResponse.focus_type:type_name -> numen.v1.NoteType
-	3,  // 4: numen.v1.Neighbour.note:type_name -> numen.v1.Note
-	0,  // 5: numen.v1.Neighbour.relation:type_name -> numen.v1.Relation
-	35, // 6: numen.v1.Neighbour.type:type_name -> numen.v1.NoteType
-	11, // 7: numen.v1.ResolveAddressesResponse.resolved:type_name -> numen.v1.ResolvedAddress
-	14, // 8: numen.v1.ListHeadingsResponse.headings:type_name -> numen.v1.NoteHeadings
-	15, // 9: numen.v1.NoteHeadings.headings:type_name -> numen.v1.Heading
-	36, // 10: numen.v1.ReadNoteResponse.error:type_name -> numen.v1.ErrorCode
-	37, // 11: numen.v1.ReadNoteResponse.at:type_name -> numen.v1.Fingerprint
-	37, // 12: numen.v1.ReadBaseline.at:type_name -> numen.v1.Fingerprint
-	18, // 13: numen.v1.WriteNoteRequest.baseline:type_name -> numen.v1.ReadBaseline
-	36, // 14: numen.v1.WriteNoteResponse.error:type_name -> numen.v1.ErrorCode
-	37, // 15: numen.v1.WriteNoteResponse.at:type_name -> numen.v1.Fingerprint
-	1,  // 16: numen.v1.Link.role:type_name -> numen.v1.Role
-	21, // 17: numen.v1.CreateNoteRequest.links:type_name -> numen.v1.Link
-	36, // 18: numen.v1.CreateNoteResponse.error:type_name -> numen.v1.ErrorCode
-	21, // 19: numen.v1.WriteLinkRequest.link:type_name -> numen.v1.Link
-	36, // 20: numen.v1.WriteLinkResponse.error:type_name -> numen.v1.ErrorCode
-	1,  // 21: numen.v1.RemoveLinkRequest.role:type_name -> numen.v1.Role
-	36, // 22: numen.v1.RemoveLinkResponse.error:type_name -> numen.v1.ErrorCode
-	1,  // 23: numen.v1.PairLink.role:type_name -> numen.v1.Role
-	28, // 24: numen.v1.ReplaceLinksRequest.links:type_name -> numen.v1.PairLink
-	36, // 25: numen.v1.ReplaceLinksResponse.error:type_name -> numen.v1.ErrorCode
-	2,  // 26: numen.v1.RenameNoteResponse.name_source:type_name -> numen.v1.NameSource
-	38, // 27: numen.v1.RenameNoteResponse.moved:type_name -> numen.v1.MoveResult
-	36, // 28: numen.v1.RenameNoteResponse.error:type_name -> numen.v1.ErrorCode
-	39, // 29: numen.v1.WatchEditsResponse.span:type_name -> numen.v1.Span
-	4,  // 30: numen.v1.NoteService.GetOpeningNote:input_type -> numen.v1.GetOpeningNoteRequest
-	6,  // 31: numen.v1.NoteService.GetNeighbourhood:input_type -> numen.v1.GetNeighbourhoodRequest
-	9,  // 32: numen.v1.NoteService.ResolveAddresses:input_type -> numen.v1.ResolveAddressesRequest
-	12, // 33: numen.v1.NoteService.ListHeadings:input_type -> numen.v1.ListHeadingsRequest
-	16, // 34: numen.v1.NoteService.ReadNote:input_type -> numen.v1.ReadNoteRequest
-	19, // 35: numen.v1.NoteService.WriteNote:input_type -> numen.v1.WriteNoteRequest
-	22, // 36: numen.v1.NoteService.CreateNote:input_type -> numen.v1.CreateNoteRequest
-	24, // 37: numen.v1.NoteService.WriteLink:input_type -> numen.v1.WriteLinkRequest
-	26, // 38: numen.v1.NoteService.RemoveLink:input_type -> numen.v1.RemoveLinkRequest
-	29, // 39: numen.v1.NoteService.ReplaceLinks:input_type -> numen.v1.ReplaceLinksRequest
-	31, // 40: numen.v1.NoteService.RenameNote:input_type -> numen.v1.RenameNoteRequest
-	33, // 41: numen.v1.NoteService.WatchEdits:input_type -> numen.v1.WatchEditsRequest
-	5,  // 42: numen.v1.NoteService.GetOpeningNote:output_type -> numen.v1.GetOpeningNoteResponse
-	7,  // 43: numen.v1.NoteService.GetNeighbourhood:output_type -> numen.v1.GetNeighbourhoodResponse
-	10, // 44: numen.v1.NoteService.ResolveAddresses:output_type -> numen.v1.ResolveAddressesResponse
-	13, // 45: numen.v1.NoteService.ListHeadings:output_type -> numen.v1.ListHeadingsResponse
-	17, // 46: numen.v1.NoteService.ReadNote:output_type -> numen.v1.ReadNoteResponse
-	20, // 47: numen.v1.NoteService.WriteNote:output_type -> numen.v1.WriteNoteResponse
-	23, // 48: numen.v1.NoteService.CreateNote:output_type -> numen.v1.CreateNoteResponse
-	25, // 49: numen.v1.NoteService.WriteLink:output_type -> numen.v1.WriteLinkResponse
-	27, // 50: numen.v1.NoteService.RemoveLink:output_type -> numen.v1.RemoveLinkResponse
-	30, // 51: numen.v1.NoteService.ReplaceLinks:output_type -> numen.v1.ReplaceLinksResponse
-	32, // 52: numen.v1.NoteService.RenameNote:output_type -> numen.v1.RenameNoteResponse
-	34, // 53: numen.v1.NoteService.WatchEdits:output_type -> numen.v1.WatchEditsResponse
-	42, // [42:54] is the sub-list for method output_type
-	30, // [30:42] is the sub-list for method input_type
-	30, // [30:30] is the sub-list for extension type_name
-	30, // [30:30] is the sub-list for extension extendee
-	0,  // [0:30] is the sub-list for field type_name
+	3,  // 3: numen.v1.Neighbour.note:type_name -> numen.v1.Note
+	0,  // 4: numen.v1.Neighbour.relation:type_name -> numen.v1.Relation
+	11, // 5: numen.v1.ResolveAddressesResponse.resolved:type_name -> numen.v1.ResolvedAddress
+	14, // 6: numen.v1.ListHeadingsResponse.headings:type_name -> numen.v1.NoteHeadings
+	15, // 7: numen.v1.NoteHeadings.headings:type_name -> numen.v1.Heading
+	35, // 8: numen.v1.ReadNoteResponse.error:type_name -> numen.v1.ErrorCode
+	36, // 9: numen.v1.ReadNoteResponse.at:type_name -> numen.v1.Fingerprint
+	36, // 10: numen.v1.ReadBaseline.at:type_name -> numen.v1.Fingerprint
+	18, // 11: numen.v1.WriteNoteRequest.baseline:type_name -> numen.v1.ReadBaseline
+	35, // 12: numen.v1.WriteNoteResponse.error:type_name -> numen.v1.ErrorCode
+	36, // 13: numen.v1.WriteNoteResponse.at:type_name -> numen.v1.Fingerprint
+	1,  // 14: numen.v1.Link.role:type_name -> numen.v1.Role
+	21, // 15: numen.v1.CreateNoteRequest.links:type_name -> numen.v1.Link
+	35, // 16: numen.v1.CreateNoteResponse.error:type_name -> numen.v1.ErrorCode
+	21, // 17: numen.v1.WriteLinkRequest.link:type_name -> numen.v1.Link
+	35, // 18: numen.v1.WriteLinkResponse.error:type_name -> numen.v1.ErrorCode
+	1,  // 19: numen.v1.RemoveLinkRequest.role:type_name -> numen.v1.Role
+	35, // 20: numen.v1.RemoveLinkResponse.error:type_name -> numen.v1.ErrorCode
+	1,  // 21: numen.v1.PairLink.role:type_name -> numen.v1.Role
+	28, // 22: numen.v1.ReplaceLinksRequest.links:type_name -> numen.v1.PairLink
+	35, // 23: numen.v1.ReplaceLinksResponse.error:type_name -> numen.v1.ErrorCode
+	2,  // 24: numen.v1.RenameNoteResponse.name_source:type_name -> numen.v1.NameSource
+	37, // 25: numen.v1.RenameNoteResponse.moved:type_name -> numen.v1.MoveResult
+	35, // 26: numen.v1.RenameNoteResponse.error:type_name -> numen.v1.ErrorCode
+	38, // 27: numen.v1.WatchEditsResponse.span:type_name -> numen.v1.Span
+	4,  // 28: numen.v1.NoteService.GetOpeningNote:input_type -> numen.v1.GetOpeningNoteRequest
+	6,  // 29: numen.v1.NoteService.GetNeighbourhood:input_type -> numen.v1.GetNeighbourhoodRequest
+	9,  // 30: numen.v1.NoteService.ResolveAddresses:input_type -> numen.v1.ResolveAddressesRequest
+	12, // 31: numen.v1.NoteService.ListHeadings:input_type -> numen.v1.ListHeadingsRequest
+	16, // 32: numen.v1.NoteService.ReadNote:input_type -> numen.v1.ReadNoteRequest
+	19, // 33: numen.v1.NoteService.WriteNote:input_type -> numen.v1.WriteNoteRequest
+	22, // 34: numen.v1.NoteService.CreateNote:input_type -> numen.v1.CreateNoteRequest
+	24, // 35: numen.v1.NoteService.WriteLink:input_type -> numen.v1.WriteLinkRequest
+	26, // 36: numen.v1.NoteService.RemoveLink:input_type -> numen.v1.RemoveLinkRequest
+	29, // 37: numen.v1.NoteService.ReplaceLinks:input_type -> numen.v1.ReplaceLinksRequest
+	31, // 38: numen.v1.NoteService.RenameNote:input_type -> numen.v1.RenameNoteRequest
+	33, // 39: numen.v1.NoteService.WatchEdits:input_type -> numen.v1.WatchEditsRequest
+	5,  // 40: numen.v1.NoteService.GetOpeningNote:output_type -> numen.v1.GetOpeningNoteResponse
+	7,  // 41: numen.v1.NoteService.GetNeighbourhood:output_type -> numen.v1.GetNeighbourhoodResponse
+	10, // 42: numen.v1.NoteService.ResolveAddresses:output_type -> numen.v1.ResolveAddressesResponse
+	13, // 43: numen.v1.NoteService.ListHeadings:output_type -> numen.v1.ListHeadingsResponse
+	17, // 44: numen.v1.NoteService.ReadNote:output_type -> numen.v1.ReadNoteResponse
+	20, // 45: numen.v1.NoteService.WriteNote:output_type -> numen.v1.WriteNoteResponse
+	23, // 46: numen.v1.NoteService.CreateNote:output_type -> numen.v1.CreateNoteResponse
+	25, // 47: numen.v1.NoteService.WriteLink:output_type -> numen.v1.WriteLinkResponse
+	27, // 48: numen.v1.NoteService.RemoveLink:output_type -> numen.v1.RemoveLinkResponse
+	30, // 49: numen.v1.NoteService.ReplaceLinks:output_type -> numen.v1.ReplaceLinksResponse
+	32, // 50: numen.v1.NoteService.RenameNote:output_type -> numen.v1.RenameNoteResponse
+	34, // 51: numen.v1.NoteService.WatchEdits:output_type -> numen.v1.WatchEditsResponse
+	40, // [40:52] is the sub-list for method output_type
+	28, // [28:40] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_note_proto_init() }

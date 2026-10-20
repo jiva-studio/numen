@@ -8,13 +8,14 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
 )
 
-// One key says what a note is, out of a closed list of five.
+// One key says what a note is, and any word will do: a plugin gives a note the type it works
+// with.
 func TestOneKeySaysWhatANoteIs(t *testing.T) {
 	for written, want := range map[string]domain.NoteType{
-		"---\ntype: note\n---\n":    domain.TypeNote,
-		"---\ntype: deck\n---\n":    domain.TypeDeck,
-		"---\ntype: stencil\n---\n": domain.TypeStencil,
-		"---\ntype: preset\n---\n":  domain.TypePreset,
+		"---\ntype: note\n---\n":     domain.TypeNote,
+		"---\ntype: deck\n---\n":     "deck",
+		"---\ntype: Deck\n---\n":     "Deck",
+		"---\ntype: sprocket\n---\n": "sprocket",
 
 		"---\ntitle: Entropy\n---\n": domain.TypeNote,
 		"---\ntype:\n---\n":          domain.TypeNote,
@@ -31,12 +32,10 @@ func TestOneKeySaysWhatANoteIs(t *testing.T) {
 	}
 }
 
-// A value outside the list is a problem against the note, and the note is read
-// as an ordinary note.
-func TestATypeOutsideTheList(t *testing.T) {
+// A value that is not text is a problem against the note, and the note is read as an ordinary
+// note.
+func TestATypeThatIsNotText(t *testing.T) {
 	for _, written := range []string{
-		"---\ntype: something-else\ntitle: Entropy\n---\n\n# Entropy\n",
-		"---\ntype: Deck\n---\n",
 		"---\ntype: 12\n---\n",
 		"---\ntype:\n  - deck\n---\n",
 	} {
@@ -56,7 +55,7 @@ func TestALinksTypeIsNotTheNotesType(t *testing.T) {
 	n := markdown.Parse(domain.Fingerprint{Path: "Entropy.md"}, []byte(
 		"---\ntype: deck\nlinks:\n  - to: Thermodynamics\n    role: parent\n    type: source\n---\n"))
 
-	if n.Type != domain.TypeDeck {
+	if n.Type != "deck" {
 		t.Errorf("type = %q", n.Type)
 	}
 	if len(n.Links) != 1 || n.Links[0].Type != "source" {

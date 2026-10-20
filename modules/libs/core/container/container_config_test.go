@@ -326,12 +326,6 @@ func TestTheBoundsOnNestedHeadingLimitAreTheSettingsOwn(t *testing.T) {
 	}
 }
 
-func TestTheLatestStartOfADayIsSaidAsAClockTime(t *testing.T) {
-	if got, want := (Config{}).GetLatestDayStart(), settings.LatestDayStartTime; got == "" || got != want {
-		t.Errorf("got %q, want %q", got, want)
-	}
-}
-
 func TestTheRegistryIsWhereTheInstallationPointedItAndOtherwiseInTheConfigFolder(t *testing.T) {
 	isolate(t)
 	named := filepath.Join(t.TempDir(), "vaults.json")

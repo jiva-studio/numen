@@ -68,6 +68,9 @@ type PluginSetting struct {
 	Min         *float64
 	Max         *float64
 	Step        *float64
+	// Replaces are the places in the settings file the setting was kept before the plugin took it
+	// over, as the keys that lead to each joined by dots.
+	Replaces []string
 }
 
 // PluginInfo describes a discovered plugin and its declarative settings.

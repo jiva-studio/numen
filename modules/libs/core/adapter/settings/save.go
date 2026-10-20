@@ -96,19 +96,8 @@ func writeSettings(raw []byte, wrote []Setting, into Document) error {
 			}
 		}
 	}
-	for _, setting := range wrote {
-		if !isFieldCovered(setting.At, dayStartTimeAt) {
-			continue
-		}
-		if _, err := ReadDayStart(into.GetReview().DayStartTime); err != nil {
-			return err
-		}
-	}
 	return nil
 }
-
-// dayStartTimeAt is where the hour a day of review begins at sits in the file.
-const dayStartTimeAt = "review.day_start_time"
 
 // isFieldCovered is whether a setting handed in at one name wrote the field at
 // another: the field itself, or a field inside the section named.

@@ -40,10 +40,6 @@ type NoteQueries interface {
 	// one is what makes a link written by that name ambiguous.
 	GetNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
 
-	// GetStencils is every stencil one vault holds, by path. A card names the
-	// stencil it is cut by, and this is the list those names are picked from.
-	GetStencils(ctx context.Context, vaultID domain.VaultID) ([]domain.Stencil, error)
-
 	// GetTypes is what each of the notes asked about is, keyed by path. A path
 	// naming a file the index holds no note at is absent from the answer, and a
 	// listing draws such an entry as the file it is.

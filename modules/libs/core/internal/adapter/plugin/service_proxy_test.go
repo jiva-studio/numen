@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"io"
 	"net"
 	"net/http"
@@ -168,4 +169,8 @@ func TestAPluginThatCannotBeStartedIsAnUnavailableService(t *testing.T) {
 	if host.released != 0 {
 		t.Errorf("a plugin that never started was released %d times", host.released)
 	}
+}
+
+func (h *servingHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
+	return domain.NoteProfile{}, false
 }

@@ -69,6 +69,11 @@ linters:
               desc: "a plugin names no other plugin"
             - pkg: "github.com/jiva-studio/numen/modules/plugins/transcription/"
               desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio/"
+              desc: "a plugin names no other plugin"
+
         agent_claude:
           list-mode: lax
           files:
@@ -120,6 +125,11 @@ linters:
               desc: "a plugin names no other plugin"
             - pkg: "github.com/jiva-studio/numen/modules/plugins/transcription/"
               desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio/"
+              desc: "a plugin names no other plugin"
+
         agent_codex:
           list-mode: lax
           files:
@@ -171,6 +181,11 @@ linters:
               desc: "a plugin names no other plugin"
             - pkg: "github.com/jiva-studio/numen/modules/plugins/transcription/"
               desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio/"
+              desc: "a plugin names no other plugin"
+
         agent_antigravity:
           list-mode: lax
           files:
@@ -222,6 +237,11 @@ linters:
               desc: "a plugin names no other plugin"
             - pkg: "github.com/jiva-studio/numen/modules/plugins/transcription/"
               desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio/"
+              desc: "a plugin names no other plugin"
+
         agent:
           list-mode: lax
           files:
@@ -273,6 +293,11 @@ linters:
               desc: "a plugin names no other plugin"
             - pkg: "github.com/jiva-studio/numen/modules/plugins/transcription/"
               desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio/"
+              desc: "a plugin names no other plugin"
+
         downloader:
           list-mode: lax
           files:
@@ -324,6 +349,11 @@ linters:
               desc: "a plugin names no other plugin"
             - pkg: "github.com/jiva-studio/numen/modules/plugins/transcription/"
               desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio/"
+              desc: "a plugin names no other plugin"
+
         embeddings:
           list-mode: lax
           files:
@@ -375,6 +405,11 @@ linters:
               desc: "a plugin names no other plugin"
             - pkg: "github.com/jiva-studio/numen/modules/plugins/transcription/"
               desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio/"
+              desc: "a plugin names no other plugin"
+
         ocr:
           list-mode: lax
           files:
@@ -426,6 +461,11 @@ linters:
               desc: "a plugin names no other plugin"
             - pkg: "github.com/jiva-studio/numen/modules/plugins/transcription/"
               desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio/"
+              desc: "a plugin names no other plugin"
+
         proofreading:
           list-mode: lax
           files:
@@ -477,6 +517,11 @@ linters:
               desc: "a plugin names no other plugin"
             - pkg: "github.com/jiva-studio/numen/modules/plugins/transcription/"
               desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio/"
+              desc: "a plugin names no other plugin"
+
         reader_epub:
           list-mode: lax
           files:
@@ -528,6 +573,11 @@ linters:
               desc: "a plugin names no other plugin"
             - pkg: "github.com/jiva-studio/numen/modules/plugins/transcription/"
               desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio/"
+              desc: "a plugin names no other plugin"
+
         reader_pdf:
           list-mode: lax
           files:
@@ -579,6 +629,11 @@ linters:
               desc: "a plugin names no other plugin"
             - pkg: "github.com/jiva-studio/numen/modules/plugins/transcription/"
               desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio/"
+              desc: "a plugin names no other plugin"
+
         transcription:
           list-mode: lax
           files:
@@ -629,6 +684,66 @@ linters:
             - pkg: "github.com/jiva-studio/numen/modules/plugins/reader-pdf$"
               desc: "a plugin names no other plugin"
             - pkg: "github.com/jiva-studio/numen/modules/plugins/reader-pdf/"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/flashcards-studio/"
+              desc: "a plugin names no other plugin"
+
+        flashcards_studio:
+          list-mode: lax
+          files:
+            - "**/modules/plugins/flashcards-studio/**"
+          deny:
+            - pkg: "github.com/jiva-studio/numen/modules/libs/core"
+              desc: "a plugin names the plugin contract and no core package"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/agent$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/agent/"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/agent-acp$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/agent-acp/"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/agent-antigravity$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/agent-antigravity/"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/agent-claude$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/agent-claude/"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/agent-codex$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/agent-codex/"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/downloader$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/downloader/"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/embeddings$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/embeddings/"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/ocr$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/ocr/"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/proofreading$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/proofreading/"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/reader-epub$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/reader-epub/"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/reader-pdf$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/reader-pdf/"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/transcription$"
+              desc: "a plugin names no other plugin"
+            - pkg: "github.com/jiva-studio/numen/modules/plugins/transcription/"
               desc: "a plugin names no other plugin"
 
   exclusions:

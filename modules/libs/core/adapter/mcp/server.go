@@ -11,7 +11,6 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/plugintool"
@@ -49,18 +48,12 @@ type Core struct {
 	// of what is in front of anybody.
 	Attending func() domain.OpenTabs
 
-	// GetCurrentCard returns the card the person is looking at, asked at every call for
-	// the same reason. Without it an agent is told nothing of what card anybody
-	// is on.
-	GetCurrentCard func() CurrentCard
-
 	// GetAsked is what the person is looking at in the window the agent was started from, as that
 	// window names it, asked at every call. It is handed to every tool a plugin offers.
 	GetAsked func() map[string]string
 
 	Notes   Notes
 	Vaults  Vaults
-	Cards   Cards
 	Sources Sources
 
 	// Plugins are the tools the plugins offer. Without them only the tools above are served.
@@ -114,23 +107,6 @@ type Vaults struct {
 	Opens func(context.Context, domain.Vault) error
 }
 
-// Cards is the use cases that read and change the decks and stencils of a vault.
-type Cards struct {
-	Read            cards.Read
-	Write           cards.Write
-	GetCardPage     cards.GetCardPage
-	AddCard         cards.AddCard
-	EditCard        cards.EditCard
-	RemoveCardValue cards.RemoveCardValue
-	RemoveCard      cards.RemoveCard
-	AddSection      cards.AddSection
-	RenameSection   cards.RenameSection
-	RemoveSection   cards.RemoveSection
-	List            cards.List
-	Create          cards.Create
-	RenameField     cards.RenameField
-}
-
 // Sources holds the use cases of the tools for the documents a vault keeps beside its
 // notes. A tool whose use case is left out answers that the vault cannot do it, except
 // the artifact and import tools, which are not added.
@@ -178,7 +154,6 @@ func newFull(ctx context.Context, core Core) *sdk.Server {
 	addPluginTools(ctx, server, core, plugintool.ServerFull)
 	addNoteTools(server, core)
 	addFileReadingTools(server, core)
-	addCardTools(server, core)
 	addLinkTools(server, core)
 	addVaultTools(server, core)
 	addVaultsTools(server, core)
@@ -210,7 +185,6 @@ func newReading(ctx context.Context, core Core) *sdk.Server {
 
 	addPluginTools(ctx, server, core, plugintool.ServerReading)
 	addNoteReadTools(server, core)
-	addCardReadTools(server, core)
 	addLinkReadTools(server, core)
 	addSourceReadTools(server, core)
 	addVaultGet(server, core)
@@ -218,10 +192,9 @@ func newReading(ctx context.Context, core Core) *sdk.Server {
 }
 
 // NewReviewServer builds the server the window a person runs their cards in
-// serves: everything that reads, and the cards of a deck.
+// serves: everything that reads, and what the plugins offer there.
 //
-// A deck and a stencil are what a vault is arranged into, and nothing here
-// makes one. Nothing here writes a note, a link or a document either.
+// Nothing of the core writes a note, a link or a document here.
 func NewReviewServer(core Core) *sdk.Server {
 	return newReview(context.Background(), core)
 }
@@ -240,9 +213,6 @@ func newReview(ctx context.Context, core Core) *sdk.Server {
 
 	addPluginTools(ctx, server, core, plugintool.ServerReview)
 	addNoteReadTools(server, core)
-	addCardReadTools(server, core)
-	addCardEditTools(server, core)
-	addCardFocus(server, core)
 	addLinkReadTools(server, core)
 	addSourceReadTools(server, core)
 	addVaultGet(server, core)

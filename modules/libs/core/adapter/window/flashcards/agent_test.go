@@ -302,27 +302,6 @@ func TestTheAgentIsServedBesideTheCards(t *testing.T) {
 	}
 }
 
-// The agent works the vault the person's session is on, and it is told which
-// when the session opens.
-func TestTheAgentIsToldWhichVaultTheSessionIsOn(t *testing.T) {
-	api, vaults := newAPI(t, deck, other)
-	var told []string
-	api.Opened = func(_ context.Context, v domain.Vault) { told = append(told, string(v.ID)) }
-
-	var opened []string
-	for _, v := range vaults {
-		if _, err := api.StartSession(t.Context(),
-			connect.NewRequest(&v1.StartSessionRequest{Vault: string(v.ID)})); err != nil {
-			t.Fatal(err)
-		}
-		opened = append(opened, string(v.ID))
-	}
-
-	if strings.Join(told, "|") != strings.Join(opened, "|") {
-		t.Errorf("sessions opened on %v and the agent was told %v", opened, told)
-	}
-}
-
 // refusingAgent is an agent that cannot end a conversation.
 type refusingAgent struct{ port.Agent }
 

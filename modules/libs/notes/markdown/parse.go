@@ -89,11 +89,7 @@ func parseNoteType(fm map[string]any) (domain.NoteType, string) {
 	if strings.TrimSpace(name) == "" {
 		return domain.TypeNote, ""
 	}
-	t := domain.NoteType(name)
-	if domain.IsKnownNoteType(t) {
-		return t, ""
-	}
-	return domain.TypeNote, "type " + name + " is not one of " + describeNoteTypes()
+	return domain.NoteType(name), ""
 }
 
 // splitFrontmatter returns the YAML block and the body. The opening delimiter
@@ -270,17 +266,3 @@ func (f *Fence) IsCrossedByBytes(line []byte) bool {
 
 // IsInside reports whether the walk stands within a fence.
 func (f *Fence) IsInside() bool { return f.mark != 0 }
-
-// describeNoteTypes names every type a note may carry, as a person reads them.
-// It is built from the types themselves, so a type added to the domain is named
-// here without anything being edited.
-func describeNoteTypes() string {
-	names := make([]string, 0, len(domain.NoteTypes()))
-	for _, one := range domain.NoteTypes() {
-		names = append(names, string(one))
-	}
-	if len(names) < 2 {
-		return strings.Join(names, "")
-	}
-	return strings.Join(names[:len(names)-1], ", ") + " or " + names[len(names)-1]
-}

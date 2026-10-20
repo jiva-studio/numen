@@ -140,66 +140,6 @@ func (ErrorCode) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_shared_proto_rawDescGZIP(), []int{0}
 }
 
-// NoteType is what a note is: the `type` key of its frontmatter. It
-// says what the note is; whether the application reads text out of the file is
-// SourceKind.
-type NoteType int32
-
-const (
-	// An ordinary note, which is a note carrying no `type` at all and so nearly
-	// every note in a vault.
-	NoteType_NOTE_TYPE_UNSPECIFIED NoteType = 0
-	// A note whose body is cards.
-	NoteType_NOTE_TYPE_DECK NoteType = 1
-	// A note declaring the fields a card has and the faces it is shown by.
-	NoteType_NOTE_TYPE_STENCIL NoteType = 2
-	// A note saying how the decks pointing at it are scheduled.
-	NoteType_NOTE_TYPE_PRESET NoteType = 3
-)
-
-// Enum value maps for NoteType.
-var (
-	NoteType_name = map[int32]string{
-		0: "NOTE_TYPE_UNSPECIFIED",
-		1: "NOTE_TYPE_DECK",
-		2: "NOTE_TYPE_STENCIL",
-		3: "NOTE_TYPE_PRESET",
-	}
-	NoteType_value = map[string]int32{
-		"NOTE_TYPE_UNSPECIFIED": 0,
-		"NOTE_TYPE_DECK":        1,
-		"NOTE_TYPE_STENCIL":     2,
-		"NOTE_TYPE_PRESET":      3,
-	}
-)
-
-func (x NoteType) Enum() *NoteType {
-	p := new(NoteType)
-	*p = x
-	return p
-}
-
-func (x NoteType) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (NoteType) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_shared_proto_enumTypes[1].Descriptor()
-}
-
-func (NoteType) Type() protoreflect.EnumType {
-	return &file_numen_v1_shared_proto_enumTypes[1]
-}
-
-func (x NoteType) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use NoteType.Descriptor instead.
-func (NoteType) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_shared_proto_rawDescGZIP(), []int{1}
-}
-
 // Fingerprint is which file this is: where it is filed, how big it is, and when
 // it last changed.
 type Fingerprint struct {
@@ -401,12 +341,7 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x12\x1d\n" +
 	"\x19ERROR_CODE_DECK_TOO_LARGE\x10\v\x12\x1b\n" +
 	"\x17ERROR_CODE_NOT_A_PRESET\x10\f\x12\x14\n" +
-	"\x10ERROR_CODE_STALE\x10\r*f\n" +
-	"\bNoteType\x12\x19\n" +
-	"\x15NOTE_TYPE_UNSPECIFIED\x10\x00\x12\x12\n" +
-	"\x0eNOTE_TYPE_DECK\x10\x01\x12\x15\n" +
-	"\x11NOTE_TYPE_STENCIL\x10\x02\x12\x14\n" +
-	"\x10NOTE_TYPE_PRESET\x10\x03BIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x10ERROR_CODE_STALE\x10\rBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_shared_proto_rawDescOnce sync.Once
@@ -420,14 +355,13 @@ func file_numen_v1_shared_proto_rawDescGZIP() []byte {
 	return file_numen_v1_shared_proto_rawDescData
 }
 
-var file_numen_v1_shared_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_numen_v1_shared_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_shared_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_numen_v1_shared_proto_goTypes = []any{
 	(ErrorCode)(0),      // 0: numen.v1.ErrorCode
-	(NoteType)(0),       // 1: numen.v1.NoteType
-	(*Fingerprint)(nil), // 2: numen.v1.Fingerprint
-	(*Span)(nil),        // 3: numen.v1.Span
-	(*Bounds)(nil),      // 4: numen.v1.Bounds
+	(*Fingerprint)(nil), // 1: numen.v1.Fingerprint
+	(*Span)(nil),        // 2: numen.v1.Span
+	(*Bounds)(nil),      // 3: numen.v1.Bounds
 }
 var file_numen_v1_shared_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -447,7 +381,7 @@ func file_numen_v1_shared_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_shared_proto_rawDesc), len(file_numen_v1_shared_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      1,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,

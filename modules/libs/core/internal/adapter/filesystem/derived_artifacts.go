@@ -3,9 +3,7 @@ package filesystem
 import (
 	"context"
 	"io"
-	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
@@ -80,22 +78,4 @@ func (d *DerivedStore) RemoveArtifact(ctx context.Context, name domain.ArtifactN
 // ClaimArtifact holds a name until the returned function is called.
 func (d *DerivedStore) ClaimArtifact(ctx context.Context, name domain.ArtifactName) (func() error, error) {
 	return d.ClaimName(ctx, getKey(name))
-}
-
-// ListReviewLogs reports the files of review answers, sorted by name.
-func (d *DerivedStore) ListReviewLogs(ctx context.Context) ([]port.Entry, error) {
-	held, err := d.List(ctx, FlashcardsDir)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]port.Entry, 0, len(held))
-	for _, one := range held {
-		file := strings.TrimPrefix(one.Name, FlashcardsDir+"/")
-		id, isLog := strings.CutSuffix(file, reviewLogSuffix)
-		if !isLog {
-			continue
-		}
-		out = append(out, port.Entry{Name: domain.NewReviewLogName(id), Size: one.Size})
-	}
-	return out, nil
 }

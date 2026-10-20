@@ -110,7 +110,6 @@ func makeEditPreview(opened *editor.Installation) agents.EditPreview {
 // they are looking at the text they typed.
 func makeAgentCore(cfg container.Config, opened *editor.Installation, root string, out io.Writer) mcp.Core {
 	notes := opened.Notes().ShowEdits(opened.State.GetWindow())
-	cards := opened.Cards()
 
 	return mcp.Core{
 		Showing:     mcp.ShowOneVault(opened.GetCurrentVault(), root),
@@ -145,22 +144,6 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 			GetArtifactText:           cfg.GetArtifactText(opened.SourcesKnown()),
 			WriteCorrections:          cfg.WriteCorrections(opened.SourcesKnown(), opened.Services.Artifact.ReportArtifactChange),
 			FocusPassage:              cfg.FocusPassage(opened.State.GetWindow()),
-		},
-
-		Cards: mcp.Cards{
-			Read:            cards.Read,
-			Write:           cards.Write,
-			GetCardPage:     cards.GetCardPage,
-			AddCard:         cards.AddCard,
-			EditCard:        cards.EditCard,
-			RemoveCardValue: cards.RemoveCardValue,
-			RemoveCard:      cards.RemoveCard,
-			AddSection:      cards.AddSection,
-			RenameSection:   cards.RenameSection,
-			RemoveSection:   cards.RemoveSection,
-			List:            cards.List,
-			Create:          cards.Create,
-			RenameField:     cards.BoundedRenameField,
 		},
 
 		Notes: mcp.Notes{

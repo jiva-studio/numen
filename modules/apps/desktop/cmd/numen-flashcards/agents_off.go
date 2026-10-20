@@ -21,7 +21,6 @@ func serveAgents(
 	_ container.Config,
 	_ *container.Index,
 	_ container.Notes,
-	_ container.Cards,
 	api *window.API,
 	_ bool,
 	_ io.Writer,

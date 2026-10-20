@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
@@ -91,11 +89,11 @@ func (e EditorAssembly) GetPassageQueries() port.PassageQueries     { return e.d
 
 func (e EditorAssembly) CloseIndex() error { return e.db.Close() }
 
-func (e EditorAssembly) OpenGetSettings(day flashcards.Day) *settings.Get {
+func (e EditorAssembly) OpenGetSettings() *settings.Get {
 	held := e.cfg.NestedHeadingLimitBounds()
 	return settings.NewGet(
 		e.cfg.ReadSettings(), e.cfg.Models(), settings.Bounds{Least: held.Least, Most: held.Most},
-		e.cfg.GetLatestDayStart(), day, e.cfg.Clock(), e.cfg.Plugins(),
+		e.cfg.Plugins(),
 	)
 }
 
@@ -151,16 +149,8 @@ func (e EditorAssembly) OpenNotes(index note.Levels) note.Scenarios {
 	return e.cfg.Notes(e.db.Queries(), e.db.Links(), e.db.Sources(), e.db.SourcesKnown(), index)
 }
 
-func (e EditorAssembly) OpenCards(index note.Levels) cards.Scenarios {
-	return e.cfg.Cards(e.db.Queries(), e.db.Links(), index)
-}
-
 func (e EditorAssembly) OpenVaults(moves note.Move) vault.Scenarios {
 	return e.cfg.Vaults(e.registry, e.db, moves)
-}
-
-func (e EditorAssembly) OpenFlashcards(index note.Levels) flashcards.Scenarios {
-	return e.cfg.Flashcards(e.db.Queries(), e.db.Links(), e.db.Problems(), index)
 }
 
 func (e EditorAssembly) OpenSourceTexts() source.Texts {
@@ -228,3 +218,7 @@ func (e EditorAssembly) StartVault(
 	open := opening.Begin(ctx, v)
 	return open.Read, open.Run, opening.GetRefresh(), open.GetUnwatchedReason()
 }
+
+// GetPluginServices is where the window forwards the calls it receives for the services plugins
+// serve.
+func (e EditorAssembly) GetPluginServices() PluginServices { return e.cfg.GetPluginServices() }

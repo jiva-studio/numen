@@ -42,23 +42,49 @@ func TestASmallChunkIsCutUnderTheLimitGiven(t *testing.T) {
 	}
 }
 
-// A deck keeps its sections and its cards without the mark they end in, and
-// has no chunks; a stencil has neither.
-func TestADeckIsKeptByItsHeadingsAndNotCut(t *testing.T) {
-	deck := domain.Note{
-		Type: domain.TypeDeck, Title: "Deck", Body: "# Part\n## Q?? \n",
-		Headings: []domain.Heading{{Level: 1, Text: "Part"}, {Level: 2, Text: "Q"}, {Level: 3, Text: "Front"}},
+// A type a plugin declares is kept as its profile says: here only the headings of two levels, the
+// second without the mark it ends in, and no chunks; a type with no headings keeps none.
+func TestANoteOfADeclaredTypeIsKeptAsItsProfileSays(t *testing.T) {
+	profiles := map[domain.NoteType]domain.NoteProfile{
+		"sheet": {HasChunks: true, HeadingLevels: []int{1, 2}, MarkedLevels: []int{2}},
+		"bare":  {HeadingLevels: []int{}},
 	}
-	stencil := domain.Note{Type: domain.TypeStencil, Title: "S", Headings: []domain.Heading{{Level: 1, Text: "Face"}}}
+	cuts := note.CutNotes{Profiles: func(t domain.NoteType) (domain.NoteProfile, bool) {
+		profile, declared := profiles[t]
+		return profile, declared
+	}}
+	sheet := domain.Note{
+		Type: "sheet", Title: "Sheet", Body: "# Part\n## Q ^k7m2xq9fzp\n",
+		Headings: []domain.Heading{{Level: 1, Text: "Part"}, {Level: 2, Text: "Q ^k7m2xq9fzp"}, {Level: 2, Text: "^zzzz"}, {Level: 3, Text: "Front"}},
+	}
+	bare := domain.Note{Type: "bare", Title: "B", Headings: []domain.Heading{{Level: 1, Text: "Face"}}}
+	ordinary := domain.Note{Type: domain.TypeNote, Title: "O", Body: "# One\n", Headings: []domain.Heading{{Level: 1, Text: "One ^kept"}}}
 
-	cut := note.CutNotes{}.Execute([]domain.Note{deck, stencil})
-	if len(cut[0].Chunks) != 0 || len(cut[1].Chunks) != 0 {
-		t.Errorf("a deck or a stencil was cut: %+v", cut)
+	cut := cuts.Execute([]domain.Note{sheet, bare, ordinary})
+
+	if len(cut[0].Chunks) == 0 {
+		t.Errorf("a profile that says nothing of chunks has the note cut: %+v", cut[0])
 	}
-	if len(cut[0].Headings) != 2 {
-		t.Errorf("a deck keeps its section and its card, got %+v", cut[0].Headings)
+	if got := cut[0].Headings; len(got) != 2 || got[0].Text != "Part" || got[1].Text != "Q" {
+		t.Errorf("the sheet keeps its section and its card without the mark, got %+v", got)
 	}
 	if len(cut[1].Headings) != 0 {
-		t.Errorf("a stencil keeps no heading, got %+v", cut[1].Headings)
+		t.Errorf("a type with no headings keeps %+v", cut[1].Headings)
+	}
+	if got := cut[2].Headings; len(got) != 1 || got[0].Text != "One ^kept" {
+		t.Errorf("an ordinary note keeps every heading as it is, got %+v", got)
+	}
+}
+
+func TestANoteOfATypeWithNoChunksIsNotCut(t *testing.T) {
+	cuts := note.CutNotes{Profiles: func(domain.NoteType) (domain.NoteProfile, bool) {
+		return domain.NoteProfile{HasChunks: false}, true
+	}}
+	deck := domain.Note{Type: "deck", Title: "Deck", Body: "# Part\n"}
+
+	cut := cuts.Execute([]domain.Note{deck})
+
+	if len(cut[0].Chunks) != 0 {
+		t.Errorf("a note whose type has no chunks was cut: %+v", cut[0].Chunks)
 	}
 }

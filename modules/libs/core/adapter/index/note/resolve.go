@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"path"
-	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
@@ -142,7 +140,7 @@ func (q *Queries) resolve(ctx context.Context, vault int64, vaultID domain.Vault
 		if err != nil {
 			return err
 		}
-		r.To, r.IsAmbiguous = chooseMatch(from, r.Target.Value, candidates)
+		r.To, r.IsAmbiguous = domain.ChooseMatch(from, r.Target.Value, candidates)
 		if r.To != "" {
 			// A name means something only inside the vault it was written in.
 			r.ToVault = vaultID
@@ -176,73 +174,6 @@ func (q *Queries) candidates(ctx context.Context, vault int64, name string) ([]s
 		out = append(out, p)
 	}
 	return out, rows.Err()
-}
-
-// chooseMatch applies the priority a name resolves by: an exact path from the root,
-// then a path relative to the note the link is written in, then a single match
-// by name. Several matches are ambiguous: the link resolves to the nearest one
-// in the tree, and the ambiguity is shown.
-//
-// A path is matched under domain.FoldName: every folder on the way to a note
-// answers the way the note's own name does.
-func chooseMatch(from, name string, candidates []string) (chosen string, ambiguous bool) {
-	if len(candidates) == 0 {
-		return "", false
-	}
-
-	folded := make([]string, len(candidates))
-	for i, c := range candidates {
-		folded[i] = domain.FoldName(c)
-	}
-
-	// A name is written with an extension or without one, and both spellings
-	// name the same file.
-	wanted := []string{name, name + domain.NoteExtension}
-	for _, w := range wanted {
-		if at := findIndex(folded, domain.FoldName(w)); at >= 0 {
-			return candidates[at], false
-		}
-	}
-
-	for _, w := range wanted {
-		relative := domain.FoldName(path.Join(path.Dir(from), w))
-		if at := findIndex(folded, relative); at >= 0 {
-			return candidates[at], false
-		}
-	}
-
-	if len(candidates) == 1 {
-		return candidates[0], false
-	}
-
-	// Nearest by how much of the path they have in common with the note the
-	// link was written in — the neighbour is likelier than the stranger.
-	best, bestShared := candidates[0], -1
-	for _, c := range candidates {
-		if shared := countSharedPrefix(from, c); shared > bestShared {
-			best, bestShared = c, shared
-		}
-	}
-	return best, true
-}
-
-// findIndex one key stands among many, and -1 when none of them is it.
-func findIndex(keys []string, want string) int {
-	for i, key := range keys {
-		if key == want {
-			return i
-		}
-	}
-	return -1
-}
-
-func countSharedPrefix(a, b string) int {
-	as, bs := strings.Split(path.Dir(a), "/"), strings.Split(path.Dir(b), "/")
-	n := 0
-	for n < len(as) && n < len(bs) && as[n] == bs[n] {
-		n++
-	}
-	return n
 }
 
 // GetBacklinks returns the notes that point at one note.

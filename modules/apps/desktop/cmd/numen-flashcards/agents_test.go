@@ -111,8 +111,8 @@ func TestAnInstallationNamingNoAgentAsksNothingAboutACard(t *testing.T) {
 	cfg, db, opening, api, _ := makeWindow(t)
 	cfg.Agent = settings.Agent{Use: settings.UseProgram("")}
 
-	notes, cards := makeNotesAndCards(cfg, db, opening)
-	away := serveAgents(t.Context(), cfg, db, notes, cards, api, false, io.Discard)
+	notes := makeNotes(cfg, db, opening)
+	away := serveAgents(t.Context(), cfg, db, notes, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	if api.GetAgent() != nil {
@@ -128,8 +128,8 @@ func TestTheFlagShutsTheAgentForOneLaunch(t *testing.T) {
 	cfg, db, opening, api, _ := makeWindow(t)
 	cfg.Agent = settings.Agent{}
 
-	notes, cards := makeNotesAndCards(cfg, db, opening)
-	away := serveAgents(t.Context(), cfg, db, notes, cards, api, true, io.Discard)
+	notes := makeNotes(cfg, db, opening)
+	away := serveAgents(t.Context(), cfg, db, notes, api, true, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	if api.GetAgent() != nil {
@@ -150,8 +150,8 @@ func TestTheReviewerWritesDownNoAddressAndNoToken(t *testing.T) {
 	cfg, db, opening, api, vaults := makeWindow(t)
 	cfg.Agent = settings.Agent{}
 
-	notes, cards := makeNotesAndCards(cfg, db, opening)
-	away := serveAgents(t.Context(), cfg, db, notes, cards, api, false, io.Discard)
+	notes := makeNotes(cfg, db, opening)
+	away := serveAgents(t.Context(), cfg, db, notes, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	api.Opened(t.Context(), vaults[0])
@@ -171,8 +171,8 @@ func TestTheAgentFollowsTheVaultTheSessionIsOn(t *testing.T) {
 	cfg, db, opening, api, vaults := makeWindow(t)
 	cfg.Agent = settings.Agent{}
 
-	notes, cards := makeNotesAndCards(cfg, db, opening)
-	away := serveAgents(t.Context(), cfg, db, notes, cards, api, false, io.Discard)
+	notes := makeNotes(cfg, db, opening)
+	away := serveAgents(t.Context(), cfg, db, notes, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	if api.GetAgent() != nil {
@@ -203,8 +203,8 @@ func TestAReachableAgentClearsWhyItWasUnreachable(t *testing.T) {
 	cfg.Agent = settings.Agent{}
 	api.Unreachable.Store("an earlier reason")
 
-	notes, cards := makeNotesAndCards(cfg, db, opening)
-	away := serveAgents(t.Context(), cfg, db, notes, cards, api, false, io.Discard)
+	notes := makeNotes(cfg, db, opening)
+	away := serveAgents(t.Context(), cfg, db, notes, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	if why := api.Unreachable.Why(); why != "" {
@@ -218,8 +218,8 @@ func TestTakingTheAgentsAwayStopsTheEndpoint(t *testing.T) {
 	cfg, db, opening, api, vaults := makeWindow(t)
 	cfg.Agent = settings.Agent{}
 
-	notes, cards := makeNotesAndCards(cfg, db, opening)
-	away := serveAgents(t.Context(), cfg, db, notes, cards, api, false, io.Discard)
+	notes := makeNotes(cfg, db, opening)
+	away := serveAgents(t.Context(), cfg, db, notes, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	api.Opened(t.Context(), vaults[0])
@@ -253,14 +253,14 @@ func (listening) StartRun(context.Context, port.Task) (port.Run, error) { return
 
 func (listening) EndConversation(context.Context, string) error { return nil }
 
-// The tools the review window serves answer from this window's own vault, notes
-// and cards, and name the card the person last asked about.
+// The tools the review window serves answer from this window's own vault and notes, and the plugins
+// are told what the person last asked about.
 func TestTheReviewToolsAreWiredToTheWindow(t *testing.T) {
 	cfg, db, opening, api, vaults := makeWindow(t)
-	notes, cards := makeNotesAndCards(cfg, db, opening)
+	notes := makeNotes(cfg, db, opening)
 	v := vaults[0]
 
-	core := makeReviewCore(cfg, db, notes, cards, api, v, v.Path, io.Discard)
+	core := makeReviewCore(cfg, db, notes, api, v, v.Path, io.Discard)
 
 	if core.Showing == nil {
 		t.Fatal("the tools are not told which vault they work")
@@ -271,12 +271,9 @@ func TestTheReviewToolsAreWiredToTheWindow(t *testing.T) {
 	wired := map[string]bool{
 		"problems":    !reflect.ValueOf(core.GetProblems).IsZero(),
 		"summary":     !reflect.ValueOf(core.GetSummary).IsZero(),
-		"current":     !reflect.ValueOf(core.GetCurrentCard).IsZero(),
+		"asked":       !reflect.ValueOf(core.GetAsked).IsZero(),
 		"read notes":  !reflect.ValueOf(core.Notes.Read).IsZero(),
 		"titles":      !reflect.ValueOf(core.Notes.GetTitles).IsZero(),
-		"card page":   !reflect.ValueOf(core.Cards.GetCardPage).IsZero(),
-		"add card":    !reflect.ValueOf(core.Cards.AddCard).IsZero(),
-		"list cards":  !reflect.ValueOf(core.Cards.List).IsZero(),
 		"sources":     !reflect.ValueOf(core.Sources.GetDocumentList).IsZero(),
 		"named paths": !reflect.ValueOf(core.Notes.GetNamedPaths).IsZero(),
 	}
@@ -312,9 +309,9 @@ func TestTheReviewToolsAreWiredToTheWindow(t *testing.T) {
 	for stream.Receive() {
 	}
 
-	want := "decks/Words.md 3f4g5h6j7k Back"
-	on := core.GetCurrentCard()
-	if got := on.Deck + " " + on.Card + " " + on.Face; got != want {
-		t.Errorf("the tools say the person is on %q", got)
+	asked := core.GetAsked()
+	want := map[string]string{"focus": "decks/Words.md", "mark": "3f4g5h6j7k", "face": "Back"}
+	if !reflect.DeepEqual(asked, want) {
+		t.Errorf("the tools are told the person is on %v", asked)
 	}
 }
