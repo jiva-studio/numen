@@ -19,6 +19,9 @@ const outputBuffer = 64
 // maxLine is the longest line of output the reader takes.
 const maxLine = 4 << 20
 
+// errNoOutput is the failure of a child that ended without error and wrote nothing to say.
+var errNoOutput = errors.New("the program ended without output")
+
 // Spec describes a child that writes one JSON event on each line of its output.
 type Spec struct {
 	Conversation string
@@ -43,6 +46,8 @@ type Reader struct {
 	conversation string
 	limit        int
 	done         int
+	// sent is how many responses the run has written to the work.
+	sent int
 }
 
 // Send writes the response to the work, unless the work was asked to stop.
@@ -52,6 +57,7 @@ func (r *Reader) Send(resp *numenv1.AskAgentResponse) {
 	case <-r.work.Stopped():
 		return
 	}
+	r.sent++
 	if resp.GetToolFinished() != nil {
 		r.done++
 	}
@@ -177,6 +183,8 @@ func Start(ctx context.Context, reg *Registry, spec Spec) (*Work, error) {
 			reader.reportStop(scanErr.Error())
 		case waitErr != nil:
 			reader.reportStop(FailureMessage(waitErr, stderr.String()))
+		case reader.sent == 0 && strings.TrimSpace(stderr.String()) != "":
+			reader.reportStop(FailureMessage(errNoOutput, stderr.String()))
 		}
 	}()
 	return w, nil

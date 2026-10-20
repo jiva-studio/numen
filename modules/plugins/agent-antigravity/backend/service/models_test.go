@@ -91,3 +91,78 @@ func TestTheLevelOfARequestChoosesTheListedModel(t *testing.T) {
 		}
 	}
 }
+
+// stubCli is a program that lists the models of the folded family "m" and answers a run only for the
+// model it lists, the way the real CLI refuses a model it does not list.
+func stubCli(t *testing.T, listing string) string {
+	t.Helper()
+	return agenttest.WriteScript(t, "agy",
+		`if [ "$1" = models ]; then printf '`+listing+`'; exit 0; fi
+model=
+while [ $# -gt 0 ]; do if [ "$1" = --model ]; then model=$2; fi; shift; done
+case "$model" in
+  m-medium|m-low|m-high|solo)
+    echo '{"event":"step_update","step_update":{"step_type":"agent_response","text_delta":"ran '$model'"}}' ;;
+  *)
+    echo 'error: invalid model selection (--model "'$model'"): not recognized' >&2
+    exit 1 ;;
+esac
+`)
+}
+
+// askStub runs a request with no tool against the stub and returns what the run said and why it stopped.
+func askStub(t *testing.T, script, model, level string) (said, stopped string) {
+	t.Helper()
+	stream, err := agenttest.Serve(t, &agentServer{}).AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Command: []string{script}, Model: model, Reasoning: level, Prompt: "q",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for stream.Receive() {
+		said += stream.Msg().GetSaid()
+		stopped += stream.Msg().GetStopped()
+	}
+	return said, stopped
+}
+
+func TestAFamilyAskedWithoutALevelRunsTheModelOfItsDefaultLevel(t *testing.T) {
+	agenttest.NeedsShell(t)
+	t.Setenv("HOME", t.TempDir())
+	cases := []struct{ name, listing, level, want string }{
+		{"medium is the default", "m-high\\tModel (High)\\nm-medium\\tModel (Medium)\\nm-low\\tModel (Low)\\n", "", "ran m-medium"},
+		{"a level that is not listed gives the default", "m-high\\tModel (High)\\nm-medium\\tModel (Medium)\\n", "ultra", "ran m-medium"},
+		{"the lowest where there is no medium", "m-high\\tModel (High)\\nm-low\\tModel (Low)\\n", "", "ran m-low"},
+		{"the chosen level is kept", "m-high\\tModel (High)\\nm-medium\\tModel (Medium)\\n", "high", "ran m-high"},
+	}
+	for _, one := range cases {
+		t.Run(one.name, func(t *testing.T) {
+			said, stopped := askStub(t, stubCli(t, one.listing), "m", one.level)
+			if said != one.want || stopped != "" {
+				t.Errorf("said %q and stopped %q, want %q", said, stopped, one.want)
+			}
+		})
+	}
+}
+
+func TestAModelTheCliDoesNotListStopsTheRunWithTheReasonOfTheCli(t *testing.T) {
+	agenttest.NeedsShell(t)
+	t.Setenv("HOME", t.TempDir())
+
+	_, stopped := askStub(t, stubCli(t, "m-medium\\tModel (Medium)\\n"), "gone", "")
+
+	if want := `invalid model selection (--model "gone"): not recognized`; stopped != want {
+		t.Errorf("stopped with %q, want %q", stopped, want)
+	}
+}
+
+func TestAFamilyOfOneListedModelRunsThatModel(t *testing.T) {
+	agenttest.NeedsShell(t)
+	t.Setenv("HOME", t.TempDir())
+
+	said, stopped := askStub(t, stubCli(t, "solo\\tSolo\\n"), "solo", "")
+
+	if said != "ran solo" || stopped != "" {
+		t.Errorf("said %q and stopped %q", said, stopped)
+	}
+}

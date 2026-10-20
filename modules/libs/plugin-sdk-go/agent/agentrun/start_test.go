@@ -349,3 +349,28 @@ func TestStartEndsTheChildThatIgnoresTheClosedOutputAfterALineTooLong(t *testing
 		t.Fatal("the child was left running")
 	}
 }
+
+func TestStartReportsTheErrorLineOfAChildThatEndedWellWithoutOutput(t *testing.T) {
+	var reg agentrun.Registry
+	work, err := agentrun.Start(t.Context(), &reg, shell(`echo "usage: prog" >&2; echo "error: unknown model" >&2`, nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := drain(work)
+
+	if len(got) != 1 || got[0].GetStopped() != "unknown model" {
+		t.Errorf("got %v", got)
+	}
+}
+
+func TestStartReportsNothingForAChildThatEndedWellWithoutOutputOrErrors(t *testing.T) {
+	var reg agentrun.Registry
+	work, err := agentrun.Start(t.Context(), &reg, shell(`true`, nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := drain(work); len(got) != 0 {
+		t.Errorf("got %v", got)
+	}
+}
