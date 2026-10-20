@@ -150,6 +150,7 @@ func makeReviewCore(
 		GetProblems: cfg.GetProblems(db.Problems()),
 		GetSummary:  cfg.GetSummary(db.Queries()),
 		Read:        cfg.Read(),
+		Plugins:     cfg.GetPluginTools(),
 		// Which card the person is on is a tool's answer and never part of the
 		// question, so a deck named by whoever synced it is data and not
 		// instruction.

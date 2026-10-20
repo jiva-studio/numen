@@ -154,6 +154,7 @@ func newRestartedPlugin(t *testing.T) (*restartedPlugin, *httptest.Server) {
 	mux.Handle(numenv1connect.NewDownloadServiceHandler(restartedDownload{plugin: plugin}))
 	mux.Handle(numenv1connect.NewAgentServiceHandler(restartedAgent{plugin: plugin}))
 	mux.Handle(numenv1connect.NewProofreadingServiceHandler(restartedProofreading{plugin: plugin}))
+	mux.Handle(numenv1connect.NewPluginToolServiceHandler(restartedTools{plugin: plugin}))
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(testsupport.PluginLifecycle{}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
@@ -210,7 +211,7 @@ func writeRestartedPlugin(t *testing.T) string {
 		"id": "md.numen.stub",
 		"name": "All",
 		"version": "1.0.0",
-		"capabilities": ["embedding", "recognition", "transcription", "document", "book", "downloader", "proofreading"],
+		"capabilities": ["embedding", "recognition", "transcription", "document", "book", "downloader", "proofreading", "tools"],
 		"targets": ["desktop.editor"],
 		"permissions": ["vault:read", "network:outbound"],
 		"backend": {"type": "process", "entrypoint": "bin/stub"}
@@ -278,4 +279,18 @@ func (r restartedProofreading) ProofreadText(
 ) (*connect.Response[v1.ProofreadTextResponse], error) {
 	r.plugin.asked.Add(1)
 	return connect.NewResponse(&v1.ProofreadTextResponse{Corrections: []*v1.ProofreadCorrection{{}}}), nil
+}
+
+type restartedTools struct {
+	numenv1connect.UnimplementedPluginToolServiceHandler
+	plugin *restartedPlugin
+}
+
+func (r restartedTools) ListTools(
+	context.Context, *connect.Request[v1.ListToolsRequest],
+) (*connect.Response[v1.ListToolsResponse], error) {
+	r.plugin.asked.Add(1)
+	return connect.NewResponse(&v1.ListToolsResponse{Tools: []*v1.PluginTool{{
+		Name: "stub_read", InputSchema: []byte("{}"), Effect: v1.ToolEffect_TOOL_EFFECT_READS,
+	}}}), nil
 }

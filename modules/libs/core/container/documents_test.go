@@ -30,6 +30,8 @@ func (h *countingDocumentHost) ResolveCapability(string) (port.DiscoveredPlugin,
 	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.pdf"}}, nil
 }
 
+func (h *countingDocumentHost) ResolveCapabilities(string) []port.DiscoveredPlugin { return nil }
+
 func (h *countingDocumentHost) EnsureActive(context.Context, string) (port.Endpoint, error) {
 	h.acquired.Add(1)
 	return h.endpoint, nil

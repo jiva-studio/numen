@@ -4,6 +4,7 @@ go 1.26.9
 
 require (
 	connectrpc.com/connect v1.21.1
+	github.com/google/jsonschema-go v0.4.3
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
 )
 
