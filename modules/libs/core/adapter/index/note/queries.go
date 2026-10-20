@@ -104,33 +104,6 @@ func (q *Queries) GetNamedPaths(ctx context.Context, vaultID domain.VaultID, nam
 	return out, rows.Err()
 }
 
-// GetStencils is every stencil one vault holds, by path.
-func (q *Queries) GetStencils(ctx context.Context, vaultID domain.VaultID) ([]domain.Stencil, error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
-	if errors.Is(err, errNoVault) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := q.db.QueryContext(ctx, stmt.Get("stencils"), vault, string(domain.TypeStencil))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var out []domain.Stencil
-	for rows.Next() {
-		var s domain.Stencil
-		if err := rows.Scan(&s.Path, &s.Title); err != nil {
-			return nil, err
-		}
-		out = append(out, s)
-	}
-	return out, rows.Err()
-}
-
 // mostPerNote is how many headings of one note an answer carries.
 const mostPerNote = 2
 

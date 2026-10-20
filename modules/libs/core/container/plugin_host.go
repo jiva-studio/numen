@@ -75,7 +75,7 @@ func (c Config) GetPluginTools() plugintool.Tools {
 }
 
 // PluginServices is where a window forwards the calls it receives for the services plugins serve.
-type PluginServices interface {
+type PluginServices = interface {
 	http.Handler
 	// Serves reports whether an enabled plugin serves the service the path names.
 	Serves(urlPath string) bool

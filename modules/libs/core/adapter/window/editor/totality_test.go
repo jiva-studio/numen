@@ -44,12 +44,16 @@ func TestEveryRelationIsWrittenFromOne(t *testing.T) {
 	}, convertRelationToWire)
 }
 
-func TestEveryNoteTypeIsWrittenFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.NoteType]domain.NoteType{
-		v1.NoteType_NOTE_TYPE_DECK:    domain.TypeDeck,
-		v1.NoteType_NOTE_TYPE_STENCIL: domain.TypeStencil,
-		v1.NoteType_NOTE_TYPE_PRESET:  domain.TypePreset,
-	}, convertNoteTypeToWire)
+func TestANoteTypeIsWrittenAsTheWordItHoldsAndAnOrdinaryNoteAsNone(t *testing.T) {
+	for typed, want := range map[domain.NoteType]string{
+		domain.TypeNote: "",
+		"deck":          "deck",
+		"sheet":         "sheet",
+	} {
+		if got := convertNoteTypeToWire(typed); got != want {
+			t.Errorf("%q is written as %q, want %q", typed, got, want)
+		}
+	}
 }
 
 func TestEverySourceKindIsWrittenFromOne(t *testing.T) {

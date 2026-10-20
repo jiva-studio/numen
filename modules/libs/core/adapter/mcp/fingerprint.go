@@ -26,7 +26,7 @@ func fingerprintOf(ref domain.Fingerprint) string {
 func parseFingerprint(s string) (domain.Fingerprint, error) {
 	if s == "" {
 		return domain.Fingerprint{}, errors.New(
-			"present the fingerprint the read gave you: note_read for a note, card_read for a deck")
+			"present the fingerprint the read gave you: note_read for a note")
 	}
 	size, mtime, found := strings.Cut(s, "-")
 	if !found {

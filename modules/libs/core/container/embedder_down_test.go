@@ -2,6 +2,7 @@ package container_test
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -81,4 +82,8 @@ func TestAnEmbeddingPluginThatIsDownLeavesTheVectorsOfTheIndex(t *testing.T) {
 	if got := owingTo(t, db, v, unit{"first"}); got != 0 {
 		t.Errorf("%d chunks lost the vector of the first model", got)
 	}
+}
+
+func (h *downEmbeddingHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
+	return domain.NoteProfile{}, false
 }

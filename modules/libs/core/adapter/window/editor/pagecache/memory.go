@@ -6,9 +6,10 @@ package pagecache
 import (
 	"container/list"
 	"context"
+	"sync"
+
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
-	"sync"
 )
 
 // renderedPage is one page drawn and encoded, or the drawing of it under way.

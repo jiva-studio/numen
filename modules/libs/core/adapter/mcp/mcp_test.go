@@ -92,26 +92,9 @@ func newCoreWithQueries(t *testing.T, notes map[string]string) (domain.Vault, mc
 		return err
 	}
 	queries := db.Queries()
-	cards := cfg.Cards(queries, db.Links(), index)
 	moving := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index, time.Now)
 
 	core := mcp.Core{
-		Cards: mcp.Cards{
-			Read:            cards.Read,
-			Write:           cards.Write,
-			GetCardPage:     cards.GetCardPage,
-			List:            cards.List,
-			Create:          cards.Create,
-			RenameField:     cards.BoundedRenameField,
-			AddCard:         cards.AddCard,
-			EditCard:        cards.EditCard,
-			RemoveCardValue: cards.RemoveCardValue,
-			RemoveCard:      cards.RemoveCard,
-			AddSection:      cards.AddSection,
-			RenameSection:   cards.RenameSection,
-			RemoveSection:   cards.RemoveSection,
-		},
-
 		Showing:     mcp.ShowOneVault(v, v.Path),
 		Read:        file.Read{Readers: readers},
 		GetProblems: cfg.GetProblems(db.Problems()),
@@ -170,15 +153,6 @@ func fingerprint(t *testing.T, s *sdk.ClientSession, path string) string {
 		t.Fatalf("note_read answered with %d notes for %s", len(read.Notes), path)
 	}
 	return read.Notes[0].Fingerprint
-}
-
-// deckFingerprint is what a deck is at this moment, as card_read gives it.
-// Every tool that writes a deck takes one.
-func deckFingerprint(t *testing.T, s *sdk.ClientSession, path string) string {
-	t.Helper()
-	return call[struct {
-		Fingerprint string `json:"fingerprint"`
-	}](t, s, "card_read", map[string]any{"path": path}).Fingerprint
 }
 
 func getRefusal(t *testing.T, s *sdk.ClientSession, name string, args any) string {
@@ -242,10 +216,6 @@ func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 		"note_create", "note_rewrite", "note_edit", "note_rename", "note_move", "note_remove",
 		"file_read",
 		"link_add", "link_update", "link_remove", "link_list",
-		"card_stencil_list", "card_stencil_read", "card_read", "card_add", "card_edit",
-		"card_value_remove", "card_remove",
-		"card_section_add", "card_section_rename", "card_section_remove",
-		"card_deck_create", "card_stencil_create", "card_stencil_edit", "card_field_rename",
 		"vault_get", "vault_problems",
 		"source_list", "source_read", "source_recognise", "source_transcribe",
 	})
@@ -271,10 +241,6 @@ func TestTheWindowAPersonWritesInServesEveryToolTheVaultHas(t *testing.T) {
 		"note_focus",
 		"file_read",
 		"link_add", "link_update", "link_remove", "link_list",
-		"card_stencil_list", "card_stencil_read", "card_read", "card_add", "card_edit",
-		"card_value_remove", "card_remove",
-		"card_section_add", "card_section_rename", "card_section_remove",
-		"card_deck_create", "card_stencil_create", "card_stencil_edit", "card_field_rename",
 		"vault_get", "vault_problems",
 		"vault_list", "vault_add", "vault_rename", "vault_remove", "vault_open",
 		"source_list", "source_read", "source_recognise", "source_transcribe",

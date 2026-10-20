@@ -181,7 +181,19 @@ func (r *Registry) CallTool(
 	if arguments := req.Msg.GetArguments(); len(arguments) > 0 && !isObject(arguments) {
 		return connect.NewResponse(&numenv1.CallToolResponse{Error: numenv1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS}), nil
 	}
+	ctx = context.WithValue(ctx, askedKey{}, req.Msg.GetAsked())
 	return connect.NewResponse(&numenv1.CallToolResponse{Result: one.run(ctx, req.Msg.GetArguments())}), nil
+}
+
+type askedKey struct{}
+
+// Asked is what the person is looking at in the window the agent was started from, as the host names
+// it: focus, mark and face for the window cards are reviewed in. It is empty for a call made from a
+// window that shows the person nothing in particular. A tool reads it as data about the call, and it
+// is no part of the arguments.
+func Asked(ctx context.Context) map[string]string {
+	asked, _ := ctx.Value(askedKey{}).(map[string]string)
+	return asked
 }
 
 func isObject(raw []byte) bool {

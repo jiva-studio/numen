@@ -73,9 +73,9 @@ message Entry {
   SourceKind kind = 4;
 
 
-  // Which of three the note is. It says nothing about an entry that is not a
-  // note.
-  NoteType type = 5;
+  // The `type` key of the note's frontmatter, which says what the note is. Empty for an
+  // ordinary note. It says nothing about an entry that is not a note.
+  string type = 5;
 }
 
 // SourceKind is what the vault holds at a path. A file the index holds no text
@@ -119,8 +119,9 @@ message FileKind {
   // archive — is unspecified.
   SourceKind kind = 2;
 
-  // Which of three the note is. It says nothing about a path holding no note.
-  NoteType type = 3;
+  // The `type` key of the note's frontmatter, which says what the note is. Empty for an
+  // ordinary note. It says nothing about a path holding no note.
+  string type = 3;
 
   // Which sort of book it is. It says nothing about a path holding no book.
   BookFormat format = 4;

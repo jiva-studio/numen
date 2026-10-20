@@ -33,7 +33,7 @@ func TestAFolderListsItsEntriesAndAsksTheIndexAboutTheNotes(t *testing.T) {
 		"decks/talk.mp3":   "sound",
 		"decks/inner/a.md": "# a\n",
 	})
-	index := &typed{types: map[string]domain.NoteType{"decks/spanish.md": domain.TypeDeck}}
+	index := &typed{types: map[string]domain.NoteType{"decks/spanish.md": "deck"}}
 
 	listing, err := file.NewGetFolderEntries(filesystem.VaultReaders{}, index).Execute(t.Context(), v, "decks")
 	if err != nil {
@@ -43,7 +43,7 @@ func TestAFolderListsItsEntriesAndAsksTheIndexAboutTheNotes(t *testing.T) {
 	if len(listing.Entries) != 4 {
 		t.Fatalf("the folder came back as %d entries", len(listing.Entries))
 	}
-	if listing.Types["decks/spanish.md"] != domain.TypeDeck {
+	if listing.Types["decks/spanish.md"] != "deck" {
 		t.Errorf("the deck is %v", listing.Types["decks/spanish.md"])
 	}
 	if len(index.asked) != 1 || len(index.asked[0]) != 2 {

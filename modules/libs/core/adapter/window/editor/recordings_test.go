@@ -85,8 +85,6 @@ func (s stored) RemoveArtifact(_ context.Context, name domain.ArtifactName) erro
 	return nil
 }
 
-func (s stored) ListReviewLogs(context.Context) ([]port.Entry, error) { return nil, nil }
-
 func (s stored) ClaimArtifact(context.Context, domain.ArtifactName) (func() error, error) {
 	return func() error { return nil }, nil
 }

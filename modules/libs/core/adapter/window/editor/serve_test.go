@@ -41,8 +41,6 @@ func bindNotes(services *Services, db *container.Index) {
 	services.Search.getNameMatches = search.NewGetNameMatches(queries)
 	services.Search.getTitles = note.NewGetTitles(queries)
 	services.Search.getTypes = services.Note.getTypes
-	services.Cards.getTitle = note.NewGetTitle(queries)
-	services.Presets.getTitle = services.Cards.getTitle
 }
 
 // hand is a watch a test drives itself, so what a window is told while a vault

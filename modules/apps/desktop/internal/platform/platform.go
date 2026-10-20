@@ -12,11 +12,23 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
+// The windows a plugin names as the places it works in.
+const (
+	// TargetEditor is the window a person writes in.
+	TargetEditor = "desktop.editor"
+	// TargetFlashcards is the window a person runs their cards in.
+	TargetFlashcards = "desktop.flashcards"
+)
+
 // GetConfig is the core's configuration with what this machine supplies already in
 // it. What a settings file says is read over it.
-func GetConfig() container.Config {
+func GetConfig() container.Config { return GetConfigFor(TargetEditor) }
+
+// GetConfigFor is GetConfig for the window of a target, whose plugin host runs the plugins that name
+// that target.
+func GetConfigFor(target string) container.Config {
 	return container.Config{
-		PluginHost: newPluginHost("desktop.editor", getPluginsDirs()...),
+		PluginHost: newPluginHost(target, getPluginsDirs()...),
 	}
 }
 

@@ -34,14 +34,13 @@ var driving = map[string]bool{
 	"internal/adapterlib/wire":  true,
 }
 
-// pure are the packages holding what is true of a note or a card, of a
+// pure are the packages holding what is true of a note, of a
 // highlight, a recognised page, a transcript or a proofread line, and the
 // arithmetic over them. Nothing they answer waits on a disk, a database or a
 // clock, and the way that is held is that a pure package reaches only another
 // pure one: naming no port and no scenario is not enough on its own, because a
 // sibling of the core carries goroutines, channels and a schema.
 var pure = []string{
-	"flashcards", "internal/cardid",
 	"internal/highlight", "internal/ocr", "internal/transcript",
 }
 
@@ -145,7 +144,7 @@ func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
 	// nothing, and it passes. A count cannot say which of them it read, and
 	// four of the five would clear any floor the fifth is left out of, so each
 	// is named: a package that moved is a package this rule stopped at.
-	if read < 20 {
+	if read < 5 {
 		t.Fatalf("%d tests of the pure packages read: the walk is not reading them", read)
 	}
 	for _, one := range pure {
@@ -1326,8 +1325,6 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"internal/testonly", "container", false},
 
 		// What is true of a note is worked out from what is true of a note.
-		{"flashcards/review", "port", true},
-		{"flashcards/review", "internal/chunking", true},
 		{"internal/highlight", "internal/epub", true},
 		{"internal/ocr", "internal/highlight", false},
 		{"internal/transcript", "port", true},
@@ -1337,7 +1334,6 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"container", "internal/text", true},
 		{"container", "adapter/index", false},
 		{"container", "usecase/run", false},
-		{"container", "flashcards/review", true},
 	} {
 		why := getRefusal(one.from, one.to)
 		if one.isRefused && why == "" {

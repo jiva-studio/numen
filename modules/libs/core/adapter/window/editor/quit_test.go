@@ -103,9 +103,9 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	}
 
 	cfg := container.Config{
-		IndexPath:     filepath.Join(t.TempDir(), "index.db"),
-		RegistryPath:  filepath.Join(t.TempDir(), "vaults.json"),
-		SchedulesPath: filepath.Join(t.TempDir(), "flashcards"),
+		IndexPath:       filepath.Join(t.TempDir(), "index.db"),
+		RegistryPath:    filepath.Join(t.TempDir(), "vaults.json"),
+		PluginCachePath: filepath.Join(t.TempDir(), "flashcards"),
 	}
 	writeNamingSettings(t, cfg.RegistryPath, sync)
 	registry, err := cfg.Registry()

@@ -36,6 +36,7 @@ type memoryVault struct {
 	// others are the vaults beside the shown one, by identity.
 	others map[domain.VaultID]*memoryVault
 	state  port.PluginIndexState
+	inUse  int
 	moves  chan struct{}
 }
 
@@ -76,6 +77,13 @@ func (m *memoryVault) With(id domain.VaultID) (port.PluginVault, error) {
 
 func (m *memoryVault) EnsureIndexed(context.Context) (port.PluginIndexState, error) {
 	return m.state, nil
+}
+
+func (m *memoryVault) SetInUse(context.Context) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.inUse++
+	return nil
 }
 
 func (m *memoryVault) WatchMoves(context.Context) (<-chan struct{}, error) {

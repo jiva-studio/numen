@@ -59,9 +59,9 @@ message NameMatch {
   // A word reached by its prefix is marked whole.
   repeated Span spans = 3;
 
-  // Which of three the note is, so a client draws a deck and a stencil as what
-  // they are. A heading carries the type of the note it stands in.
-  NoteType type = 4;
+  // The `type` key of the note's frontmatter, so a client draws a note as what it is.
+  // Empty for an ordinary note. A heading carries the type of the note it stands in.
+  string type = 4;
 }
 
 // SearchMode is how a search is asked. Each mode is an order of its own, and a
@@ -133,9 +133,9 @@ message Passage {
   // source's prose. It is the line a note opens on, and the caret stands there.
   int32 line = 7;
 
-  // Which of three the note is, so a client draws a deck and a stencil as what
-  // they are. It says nothing about a source that is not a note.
-  NoteType type = 8;
+  // The `type` key of the note's frontmatter, so a client draws a note as what it is.
+  // Empty for an ordinary note. It says nothing about a source that is not a note.
+  string type = 8;
 
   // What the vault holds at that path, so a client draws a book and a
   // recording as what they are.

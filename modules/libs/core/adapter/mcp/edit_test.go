@@ -235,8 +235,6 @@ func TestTheSpanIsCountedTheWayAClientCountsText(t *testing.T) {
 // presenting none is refused with the read that gives it named.
 func TestAWriteWithNoFingerprintIsRefused(t *testing.T) {
 	session, _ := newSession(t, map[string]string{
-		"Animal.md":    stencil,
-		"Animals.md":   deck,
 		"Aggressor.md": "A hedgehog is named.\n",
 	})
 
@@ -248,22 +246,12 @@ func TestAWriteWithNoFingerprintIsRefused(t *testing.T) {
 		{"note_edit", map[string]any{
 			"path": "Aggressor.md", "match": "A hedgehog", "text": "An axe",
 		}},
-		{"card_add", map[string]any{
-			"path": "Animals.md", "stencil": "Animal",
-			"values": []map[string]string{{"field": "Name", "text": "Vicuña"}},
-		}},
-		{"card_edit", map[string]any{
-			"path": "Animals.md", "mark": llama,
-			"values": []map[string]string{{"field": "Height", "text": "about 46\""}},
-		}},
-		{"card_remove", map[string]any{"path": "Animals.md", "mark": llama}},
-		{"card_section_add", map[string]any{"path": "Animals.md", "name": "Others"}},
 	}
 	for _, w := range writes {
 		t.Run(w.tool, func(t *testing.T) {
 			w.args["fingerprint"] = ""
 			said := getRefusal(t, session, w.tool, w.args)
-			if !strings.Contains(said, "note_read") || !strings.Contains(said, "card_read") {
+			if !strings.Contains(said, "note_read") {
 				t.Errorf("the refusal does not say where a fingerprint comes from: %s", said)
 			}
 		})

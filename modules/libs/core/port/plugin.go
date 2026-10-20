@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 var (
@@ -134,6 +136,9 @@ type PluginResolver interface {
 	// ResolveService returns the enabled plugin with the lowest id among those that serve the service
 	// to the windows, and false where none does.
 	ResolveService(service string) (DiscoveredPlugin, bool)
+	// ResolveNoteProfile returns how the index keeps the notes of a type, as the enabled plugin that
+	// declares the type says, and false where none does.
+	ResolveNoteProfile(noteType domain.NoteType) (domain.NoteProfile, bool)
 	GetPlugin(id string) (DiscoveredPlugin, bool)
 }
 

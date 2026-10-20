@@ -1,7 +1,6 @@
 package container
 
 import (
-	"runtime"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
@@ -79,17 +78,5 @@ func TestASearchOfAContainerWithoutAPlanExtractsTheDefaultNumberOfSources(t *tes
 	want := search.New(nil, nil, nil, nil, nil, 0, nil).GetExtractors()
 	if got := (Config{}).NewSearchOver(nil, nil, nil).GetExtractors(); got != want {
 		t.Errorf("a search extracts %d sources at once, want %d", got, want)
-	}
-}
-
-func TestTheCardPoolsRunAsManyPlacesAsThePlanHasWorkers(t *testing.T) {
-	if got := (Config{ResolvedCompute: makePlan(6, 2)}).getCores(); got != 6 {
-		t.Errorf("cards are parsed on %d places, want the 6 planned", got)
-	}
-}
-
-func TestTheCardPoolsOfAContainerWithoutAPlanRunOnePlacePerCPU(t *testing.T) {
-	if got, want := (Config{}).getCores(), runtime.GOMAXPROCS(0); got != want {
-		t.Errorf("cards are parsed on %d places, want %d", got, want)
 	}
 }

@@ -5,8 +5,6 @@ import (
 	"context"
 	"io"
 	"io/fs"
-	"slices"
-	"strings"
 	"sync"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -86,19 +84,6 @@ func (s *shelf) AppendArtifact(_ context.Context, name domain.ArtifactName, cont
 	defer s.mu.Unlock()
 	s.files[name] = append(s.files[name], content...)
 	return nil
-}
-
-func (s *shelf) ListReviewLogs(context.Context) ([]port.Entry, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	var out []port.Entry
-	for held, content := range s.files {
-		if held.File == domain.ArtifactReviewLog {
-			out = append(out, port.Entry{Name: held, Size: len(content)})
-		}
-	}
-	slices.SortFunc(out, func(a, b port.Entry) int { return strings.Compare(a.Name.Hash, b.Name.Hash) })
-	return out, nil
 }
 
 // Remove takes a name out of the store, along with the claim on it: a claim is

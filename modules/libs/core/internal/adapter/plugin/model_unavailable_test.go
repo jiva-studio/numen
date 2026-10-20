@@ -142,3 +142,7 @@ func TestADownloaderThatIsDownNamesNoModel(t *testing.T) {
 		t.Fatalf("a model was returned with the error: %+v", model)
 	}
 }
+
+func (h *stubModelHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
+	return domain.NoteProfile{}, false
+}

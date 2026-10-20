@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 var (
@@ -416,6 +417,28 @@ func (h *Host) ResolveService(service string) (DiscoveredPlugin, bool) {
 		}
 	}
 	return emptyDiscoveredPlugin(), false
+}
+
+// ResolveNoteProfile finds how the index keeps the notes of a type, as the enabled plugin with the
+// lowest id among those declaring the type says.
+func (h *Host) ResolveNoteProfile(noteType domain.NoteType) (domain.NoteProfile, bool) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	if h.safeMode {
+		return domain.NoteProfile{}, false
+	}
+	for _, p := range h.getPluginsInOrderLocked() {
+		if declared, found := p.Manifest.GetNoteType(string(noteType)); found && h.isPluginEnabledLocked(p.Manifest.ID) {
+			return getProfileOf(declared), true
+		}
+	}
+	return domain.NoteProfile{}, false
+}
+
+// getProfileOf is how the index keeps the notes of a declared type.
+func getProfileOf(declared port.PluginNoteType) domain.NoteProfile {
+	return declared.GetProfile()
 }
 
 // FindPluginByCapability finds the plugin ResolveCapability finds, and whether there is one.
@@ -1450,6 +1473,7 @@ func (h *Host) GetPluginInfos() []port.PluginInfo {
 				Min:         &minVal,
 				Max:         &maxVal,
 				Step:        &stepVal,
+				Replaces:    s.Replaces,
 			})
 		}
 

@@ -3,15 +3,12 @@ package editor_test
 import (
 	"context"
 	"errors"
-	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -27,34 +24,19 @@ func refuseToLevel(context.Context, domain.Vault, []string) error {
 	return errors.New("the index is held open elsewhere")
 }
 
-// unwritten is a vault with those notes in it and an index that will not come
-// level with anything written to it: a client asking the way the editor's
-// window does, and a client asking the way its card editor does.
-func unwritten(t *testing.T, notes map[string]string) (*going, *cutting) {
+// unwritten is a vault with those notes in it and an index that will not come level with anything
+// written to it, asked the way the editor's window does.
+func unwritten(t *testing.T, notes map[string]string) *going {
 	t.Helper()
 
 	f := openWindow(t, nil, notes)
 	waitForScan(t, f)
 	*f.installation.Services.NoteWrite() = f.installation.Services.NoteWrite().WithIndex(refuseToLevel)
-	*f.installation.Services.CardsWrite() = f.installation.Services.CardsWrite().WithIndex(refuseToLevel)
-
-	route, handler := numenv1connect.NewCardsServiceHandler(f.installation.Services.Cards)
-	mux := http.NewServeMux()
-	mux.Handle(route, handler)
-	server := httptest.NewUnstartedServer(mux)
-	server.EnableHTTP2 = true
-	server.StartTLS()
-	t.Cleanup(server.CloseClientConnections)
-	t.Cleanup(server.Close)
-
-	return f, &cutting{
-		client: numenv1connect.NewCardsServiceClient(server.Client(), server.URL),
-		root:   f.root,
-	}
+	return f
 }
 
 func TestASaveTheIndexWouldNotComeLevelWithIsAnswered(t *testing.T) {
-	f, _ := unwritten(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
+	f := unwritten(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 
 	answer, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Note.md",
@@ -76,70 +58,6 @@ func TestASaveTheIndexWouldNotComeLevelWithIsAnswered(t *testing.T) {
 	}
 	if held := onDisk(t, f.root, "Note.md"); !strings.Contains(held, "what the person typed") {
 		t.Errorf("the note on disk is %q", held)
-	}
-}
-
-func TestADeckWrittenWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
-	_, f := unwritten(t, map[string]string{
-		"Animal.md":  animal,
-		"Animals.md": threeCards,
-	})
-
-	read := deck(t, f, "Animals.md")
-	answer, err := f.client.WriteDeck(t.Context(), connect.NewRequest(&v1.WriteDeckRequest{
-		Path:     "Animals.md",
-		Preamble: read.GetDeck().GetPreamble(),
-		Sections: read.GetDeck().GetSections(),
-		Cards:    read.GetDeck().GetCards()[:1],
-		Tail:     read.GetDeck().GetTail(),
-		Baseline: read.GetAt(),
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("writing the deck answered %+v", answer.Msg)
-	}
-	if answer.Msg.GetAt() == nil {
-		t.Error("the deck was written and the client was handed no fingerprint")
-	}
-	if !answer.Msg.GetIsUnlevelled() {
-		t.Error("the deck is answered as findable and search does not hold it")
-	}
-	if held := onDisk(t, f.root, "Animals.md"); strings.Contains(held, "Alpaca") {
-		t.Errorf("the deck on disk is %q", held)
-	}
-}
-
-func TestAStencilWrittenWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
-	_, f := unwritten(t, map[string]string{"cards/Animal.md": animal})
-
-	read := stencil(t, f, "cards/Animal.md")
-	faces := read.GetStencil().GetFaces()
-	faces[0].Back = "{{Height}} at the shoulder"
-
-	answer, err := f.client.WriteStencil(t.Context(), connect.NewRequest(&v1.WriteStencilRequest{
-		Path:     "cards/Animal.md",
-		Fields:   read.GetStencil().GetFields(),
-		Faces:    faces,
-		Preamble: read.GetStencil().GetPreamble(),
-		Tail:     read.GetStencil().GetTail(),
-		Baseline: read.GetAt(),
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("writing the stencil answered %+v", answer.Msg)
-	}
-	if answer.Msg.GetAt() == nil {
-		t.Error("the stencil was written and the client was handed no fingerprint")
-	}
-	if !answer.Msg.GetIsUnlevelled() {
-		t.Error("the stencil is answered as findable and search does not hold it")
-	}
-	if held := onDisk(t, f.root, "cards/Animal.md"); !strings.Contains(held, "at the shoulder") {
-		t.Errorf("the stencil on disk is %q", held)
 	}
 }
 
@@ -169,7 +87,7 @@ func TestASaveTheIndexCameLevelWithSaysNothingIsBehind(t *testing.T) {
 // second note has no reason to look at what the first one answered, and the
 // list of what is being done is where they are.
 func TestASaveTheIndexWouldNotComeLevelWithStandsInTheList(t *testing.T) {
-	f, _ := unwritten(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
+	f := unwritten(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 
 	save := func() {
 		t.Helper()

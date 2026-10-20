@@ -79,6 +79,9 @@ type Vault interface {
 	// EnsureIndexed starts reading the vault into the index when it is not there, and says where
 	// that stands. The work goes on after it returns.
 	EnsureIndexed(ctx context.Context) (IndexState, error)
+	// SetInUse tells the window that the plugin is working the vault for the person: a session has
+	// begun on it.
+	SetInUse(ctx context.Context) error
 	// WatchMoves tells that something moved in some vault, until ctx is done. It returns once the
 	// watch is on, and the channel closes when the watch ends.
 	WatchMoves(ctx context.Context) (<-chan struct{}, error)

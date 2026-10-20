@@ -3,6 +3,8 @@ package editor_test
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -67,4 +69,14 @@ func TestARenameThatCameApartAfterTheFileLandedSaysWhatTheNoteIsCalled(t *testin
 	if path := answer.Msg.GetPath(); path != "Enthalpy.md" {
 		t.Errorf("the note is filed at %q", path)
 	}
+}
+
+// onDisk is what the vault holds at a path.
+func onDisk(t *testing.T, root, path string) string {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(path)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(raw)
 }

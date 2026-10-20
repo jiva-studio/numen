@@ -26,11 +26,12 @@ func addPluginTools(ctx context.Context, server *sdk.Server, core Core, which pl
 		if !tool.IsOn(which) || (which == plugintool.ServerReading && tool.Effect != plugintool.EffectReads) {
 			continue
 		}
-		addPluginTool(server, core.Plugins.Call, core.GetAsked, tool)
+		addPluginTool(server, core, tool)
 	}
 }
 
-func addPluginTool(server *sdk.Server, call plugintool.Call, getAsked func() map[string]string, tool plugintool.Tool) {
+func addPluginTool(server *sdk.Server, core Core, tool plugintool.Tool) {
+	call := core.Plugins.Call
 	canonMap := buildSchemaCanonicalMap(tool.InputSchema)
 	declared := &sdk.Tool{
 		Name:        tool.Name,
@@ -52,11 +53,7 @@ func addPluginTool(server *sdk.Server, call plugintool.Call, getAsked func() map
 		if err != nil {
 			return newErrorResult(err), nil
 		}
-		var asked map[string]string
-		if getAsked != nil {
-			asked = getAsked()
-		}
-		answer, err := call.Execute(ctx, tool.PluginID, tool.Name, normalized, asked)
+		answer, err := call.Execute(ctx, tool.PluginID, tool.Name, normalized, getAsked(core))
 		if err != nil {
 			return newErrorResult(err), nil
 		}
@@ -110,4 +107,25 @@ func buildSchemaCanonicalMap(schema []byte) map[string]string {
 		canon[canonicalKey(name)] = name
 	}
 	return canon
+}
+
+// askedVault is the key of the vault an agent works, among what the plugins are told of the window
+// the agent was started from.
+const askedVault = "vault"
+
+// getAsked is what the plugins are told of the window the agent was started from: the vault the
+// agent works, and what the person is looking at there.
+func getAsked(core Core) map[string]string {
+	asked := map[string]string{}
+	if core.Showing != nil {
+		if showing := core.Showing().Vault; showing.ID != "" {
+			asked[askedVault] = string(showing.ID)
+		}
+	}
+	if core.GetAsked != nil {
+		for key, value := range core.GetAsked() {
+			asked[key] = value
+		}
+	}
+	return asked
 }

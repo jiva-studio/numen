@@ -19,8 +19,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
 
 // Document is the settings file as whoever composed the installation declares
@@ -34,11 +32,9 @@ import (
 // come back whole.
 type Document interface {
 	// GetVersion is the shape the file was written at, GetAppearance how the
-	// window is drawn, and GetReview where a day of review begins. Each is read
-	// and put right as the file is read.
+	// window is drawn. Each is read and put right as the file is read.
 	GetVersion() *int
 	GetAppearance() *Appearance
-	GetReview() *Review
 
 	// AddNotice leaves a person one line about what the file holds.
 	AddNotice(said string)
@@ -67,8 +63,7 @@ func newTrue() *bool {
 // DefaultVersion is the shape a file this build writes is written at.
 const DefaultVersion = 1
 
-// DefaultAppearance, DefaultTitles and DefaultReview are what an installation
-// nobody has configured draws, names and reviews by.
+// DefaultAppearance and DefaultTitles are what an installation nobody has configured draws and names by.
 func DefaultAppearance() Appearance {
 	return Appearance{
 		InterfaceScale:         AsDesigned,
@@ -81,8 +76,6 @@ func DefaultAppearance() Appearance {
 }
 
 func DefaultTitles() Titles { return Titles{SyncTitleAndFilename: newTrue()} }
-
-func DefaultReview() Review { return Review{DayStartTime: review.Clock(DefaultDayStart())} }
 
 // Path is where the settings live.
 func Path() (string, error) {
@@ -122,15 +115,10 @@ func OpenAt(path string, into Document) error {
 		*version = DefaultVersion
 	}
 	readInterfaceScale(into, path, raw)
-	readDayStartTime(into, path, raw)
 	if err := into.GetAppearance().Check(); err != nil {
 		return err
 	}
 	checkMode(into)
-	if _, hour := into.GetReview().DayStart(); !hour {
-		warn(into, "review.day_start_time is an hour of the day, 00:00 to %s, and %s stands",
-			LatestDayStartTime, review.Clock(DefaultDayStart()))
-	}
 	return nil
 }
 
@@ -188,29 +176,6 @@ func readInterfaceScale(into Document, path string, raw []byte) {
 		warn(into, "appearance.zoom is outside interface_scale, %v to %v",
 			InterfaceScaleBounds.Least, InterfaceScaleBounds.Most)
 	}
-}
-
-// readDayStartTime reads `review.day_starts` as the setting that replaced it,
-// and gives the field that name in the file. Both are the hour a day of review
-// begins at, so the hour stands as it was written.
-//
-// A file naming the new field keeps the names it holds: one section holds one
-// of a name.
-func readDayStartTime(into Document, path string, raw []byte) {
-	var file struct {
-		Review struct {
-			DayStarts    *string `json:"day_starts"`
-			DayStartTime *string `json:"day_start_time"`
-		} `json:"review"`
-	}
-	if err := json.Unmarshal(raw, &file); err != nil {
-		return
-	}
-	if file.Review.DayStartTime != nil || file.Review.DayStarts == nil {
-		return
-	}
-	into.GetReview().DayStartTime = *file.Review.DayStarts
-	_ = renameField(path, []string{"review", "day_starts"}, "day_start_time")
 }
 
 func warn(into Document, said string, about ...any) {

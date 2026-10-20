@@ -53,37 +53,3 @@ func TestEveryArtifactIsKeptWhereExistingVaultsKeepIt(t *testing.T) {
 		})
 	}
 }
-
-// The files of review answers are listed by the run that wrote each, and a file
-// of another kind in the folder is not one.
-func TestReviewLogsAreListedByRun(t *testing.T) {
-	_, root := store(t)
-	derived, err := filesystem.OpenDerived(root, filesystem.Options{}, filesystem.FlashcardsDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	ctx := t.Context()
-	for _, id := range []string{"02B", "01A"} {
-		if err := derived.AppendArtifact(ctx, domain.NewReviewLogName(id), []byte("answer")); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := derived.WriteArtifact(ctx, domain.NewReviewLogName("03C"), []byte("x")); err != nil {
-		t.Fatal(err)
-	}
-	other := filepath.Join(root, filesystem.DefaultServiceDir, filesystem.FlashcardsDir, "notes.txt")
-	if err := os.WriteFile(other, []byte("not an answer"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	got, err := derived.ListReviewLogs(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(got) != 3 || got[0].Name.Hash != "01A" || got[1].Name.Hash != "02B" || got[2].Name.Hash != "03C" {
-		t.Fatalf("listed %v, want the three runs in order", got)
-	}
-	if got[0].Size != len("answer") {
-		t.Errorf("the first run is %d bytes, want %d", got[0].Size, len("answer"))
-	}
-}

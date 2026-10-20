@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -134,5 +135,26 @@ func TestTwoToolsOfOneNameAreRefused(t *testing.T) {
 
 	if !errors.Is(err, tools.ErrDuplicate) {
 		t.Errorf("the second tool was added with %v", err)
+	}
+}
+
+func TestATokenCallKnowsWhatThePersonIsLookingAt(t *testing.T) {
+	registry := tools.New()
+	type in struct{}
+	type out struct {
+		Mark string `json:"mark"`
+	}
+	if err := tools.Add(registry, tools.Spec{Name: "current", Effect: tools.Reads}, func(ctx context.Context, _ in) (out, error) {
+		return out{Mark: tools.Asked(ctx)["mark"]}, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := registry.CallTool(t.Context(), connect.NewRequest(&numenv1.CallToolRequest{
+		Name: "current", Arguments: []byte(`{}`), Asked: map[string]string{"mark": "k7"},
+	}))
+
+	if err != nil || !strings.Contains(string(res.Msg.GetResult().GetStructured()), "k7") {
+		t.Errorf("got %v (%v)", res.Msg.GetResult(), err)
 	}
 }

@@ -67,7 +67,6 @@ func serveAgents(
 	cfg container.Config,
 	db *container.Index,
 	notes container.Notes,
-	cards container.Cards,
 	api *window.API,
 	off bool,
 	out io.Writer,
@@ -99,7 +98,7 @@ func serveAgents(
 			}
 			served, err := agents.Serve(ctx, agents.Options{
 				Config:           cfg,
-				Core:             makeReviewCore(cfg, db, notes, cards, api, v, root, out),
+				Core:             makeReviewCore(cfg, db, notes, api, v, root, out),
 				ShouldReview:     true,
 				LimitedToolsOnly: true,
 				Token:            secret,
@@ -125,12 +124,7 @@ func serveAgents(
 	}
 }
 
-// reviewing is the tools this window serves: everything that reads, and the
-// cards of the deck of a person's session.
-//
-// A card is written here because that is what a person is doing. A deck and a
-// stencil are not made here: they are what a vault is arranged into, and
-// arranging one is done in the editor.
+// reviewing is the tools this window serves: everything that reads, and what the plugins offer here.
 //
 // Nothing embeds behind this window, so a search answers by the words the vault
 // holds. Nothing scans either: a card the agent writes is levelled in the index
@@ -139,7 +133,6 @@ func makeReviewCore(
 	cfg container.Config,
 	db *container.Index,
 	notes container.Notes,
-	cards container.Cards,
 	api *window.API,
 	v domain.Vault,
 	root string,
@@ -151,13 +144,9 @@ func makeReviewCore(
 		GetSummary:  cfg.GetSummary(db.Queries()),
 		Read:        cfg.Read(),
 		Plugins:     cfg.GetPluginTools(),
-		// Which card the person is on is a tool's answer and never part of the
-		// question, so a deck named by whoever synced it is data and not
-		// instruction.
-		GetCurrentCard: func() mcp.CurrentCard {
-			on := api.GetCurrentCard()
-			return mcp.CurrentCard{Deck: on.Deck, Card: on.Card, Face: on.Face}
-		},
+		// What the person is looking at is data the plugins are told with each call and never part of the
+		// question, so a deck named by whoever synced it is data and not instruction.
+		GetAsked: api.GetAsked,
 
 		Notes: mcp.Notes{
 			GetNamedPaths: cfg.GetNamedPaths(db.Queries()),
@@ -172,20 +161,6 @@ func makeReviewCore(
 		Sources: mcp.Sources{
 			GetDocumentList: cfg.GetDocumentList(db.SourcesKnown()),
 			GetDocumentText: cfg.GetDocumentText(db.SourcesKnown()),
-		},
-
-		Cards: mcp.Cards{
-			Read:            cards.Read,
-			Write:           cards.Write,
-			GetCardPage:     cards.GetCardPage,
-			AddCard:         cards.AddCard,
-			EditCard:        cards.EditCard,
-			RemoveCardValue: cards.RemoveCardValue,
-			RemoveCard:      cards.RemoveCard,
-			AddSection:      cards.AddSection,
-			RenameSection:   cards.RenameSection,
-			RemoveSection:   cards.RemoveSection,
-			List:            cards.List,
 		},
 	}
 }

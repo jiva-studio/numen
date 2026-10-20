@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
@@ -145,4 +146,23 @@ func (a *API) runIndexing(ctx context.Context, read IndexVault, v domain.Vault, 
 // underneath the window is indexed again.
 func (a *API) ClearIndexFailure(vaultID domain.VaultID) {
 	a.indexRuns.clear(vaultID)
+}
+
+// EnsureIndexed brings a vault into the index when it is not there and says where that stands, which
+// is what a plugin counting the vault is told. A window that reads no vault says that the index does
+// not carry the ones it does not.
+func (a *API) EnsureIndexed(ctx context.Context, v domain.Vault) (port.PluginIndexState, error) {
+	underway, reason := a.startIndexing(ctx, v)
+	switch {
+	case underway:
+		return port.PluginIndexState{Status: port.PluginIndexing}, nil
+	case reason != "":
+		return port.PluginIndexState{Status: port.PluginIndexFailed, Reason: reason}, nil
+	}
+	if !a.IsVaultIndexed.Execute(ctx, v) {
+		return port.PluginIndexState{
+			Status: port.PluginIndexFailed, Reason: "the index does not carry this vault",
+		}, nil
+	}
+	return port.PluginIndexState{Status: port.PluginIndexed}, nil
 }

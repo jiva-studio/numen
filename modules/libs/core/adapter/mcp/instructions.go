@@ -97,21 +97,10 @@ func getReviewInstructions(core Core) string {
 	var b strings.Builder
 	opening(&b, core)
 
-	b.WriteString("The person is running their cards. Everything else you can do here ")
-	b.WriteString("reads: you write the cards of a deck, and nothing you can call writes a ")
-	b.WriteString("note, a link or a document, makes a deck or a stencil, or moves the ")
-	b.WriteString("person's window.\n\n")
-
-	if core.GetCurrentCard != nil {
-		b.WriteString("Which card they are on is `card_current`: the deck, the card's mark ")
-		b.WriteString("and the face it is shown through. A question that says \"this card\" ")
-		b.WriteString("means the one it names, and nothing else here says which that is.\n\n")
-	}
-
-	b.WriteString("A card is written into a deck that is already there, cut by a stencil ")
-	b.WriteString("that already exists. Read the deck with `card_read` before changing it, ")
-	b.WriteString("and hand its fingerprint back so a write over an edit you did not see is ")
-	b.WriteString("refused.\n\n")
+	b.WriteString("The person is running their cards. Nothing the application serves here writes a ")
+	b.WriteString("note, a link or a document, makes a note, or moves the person's window; the ")
+	b.WriteString("tools the plugins offer say what else can be done, and which card the person ")
+	b.WriteString("is on when a question says \"this card\".\n\n")
 
 	sayWhereFrom(&b)
 

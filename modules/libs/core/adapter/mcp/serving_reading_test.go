@@ -27,13 +27,12 @@ func TestAPortServingTheReadingToolsOffersNoOther(t *testing.T) {
 
 	onlyOffers(t, tools.Tools, "the reading port", []string{
 		"note_search", "note_titles", "note_read", "note_neighbourhood", "link_list",
-		"source_list", "source_read", "card_stencil_list", "card_stencil_read", "card_read", "vault_get",
+		"source_list", "source_read", "vault_get",
 	})
 }
 
-// The window a person runs their cards in serves this endpoint. A card is
-// written from there because that is what a person is doing; a deck and a
-// stencil are what a vault is arranged into, and nothing there makes one.
+// The window a person runs their cards in serves this endpoint. The application serves the tools that
+// read there, and the plugins add their own.
 func TestAPortServingTheReviewingToolsOffersNoOther(t *testing.T) {
 	_, core := newCore(t)
 	endpoint, err := mcp.ServeReviewHTTP(t.Context(), "127.0.0.1:0", "the-token", core, nil)
@@ -49,9 +48,7 @@ func TestAPortServingTheReviewingToolsOffersNoOther(t *testing.T) {
 
 	onlyOffers(t, tools.Tools, "the reviewing port", []string{
 		"note_search", "note_titles", "note_read", "note_neighbourhood", "link_list",
-		"source_list", "source_read", "card_stencil_list", "card_stencil_read", "card_read", "vault_get",
-		"card_add", "card_edit", "card_value_remove", "card_remove",
-		"card_section_add", "card_section_rename", "card_section_remove",
+		"source_list", "source_read", "vault_get",
 	})
 }
 

@@ -8,7 +8,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/indexing"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -48,7 +47,6 @@ type Installation struct {
 	// Everything else working the same vault is served these, so a dependency
 	// named here is named for all of them.
 	notes  note.Scenarios
-	cards  cards.Scenarios
 	vaults vaults.Scenarios
 
 	made  Assembly
@@ -214,7 +212,7 @@ func (o *Installation) SourcesKnown() port.SourceQueries {
 // GetCurrentVault is the vault the window has open.
 func (o *Installation) GetCurrentVault() domain.Vault { return o.State.GetCurrentVault() }
 
-// Notes and Cards are the use cases this window works its vault through.
+// Notes is the use cases this window works its vault through.
 // Whatever else works the same vault in the same process is served these, so
 // what one of them refuses the other refuses and neither is built short of
 // something the other has. What a person does to the list of vaults is
@@ -222,8 +220,7 @@ func (o *Installation) GetCurrentVault() domain.Vault { return o.State.GetCurren
 //
 // A caller that is not the person draws what it is doing over the note, which
 // is Notes.Drawing and is asked for there.
-func (o *Installation) Notes() note.Scenarios  { return o.notes }
-func (o *Installation) Cards() cards.Scenarios { return o.cards }
+func (o *Installation) Notes() note.Scenarios { return o.notes }
 
 // DraftingLocation locates where a stretch stands in a note as UTF-16 count offsets.
 func (o *Installation) DraftingLocation(ctx context.Context, path, stood string) (int, int, bool) {
@@ -378,7 +375,6 @@ func (o *Installation) wireUseCases(ctx context.Context) {
 	// A note the person saves is level before the save is answered, so the vault
 	// finds what it now holds without waiting on the watch.
 	o.notes = made.OpenNotes(o.level).FollowMoves(o.State.GetWindow())
-	o.cards = made.OpenCards(o.level)
 	o.vaults = made.OpenVaults(o.notes.Move)
 
 	notes := &o.notes
@@ -392,21 +388,8 @@ func (o *Installation) wireUseCases(ctx context.Context) {
 	services.Note.getLinkAddress = notes.GetLinkAddress
 	services.File.remove = &notes.Remove
 
-	cutting := &o.cards
-	services.Cards.read = &cutting.Read
-	services.Cards.list = &cutting.List
-	services.Cards.write = &cutting.Write
-	services.Cards.create = &cutting.Create
-	services.Cards.renameField = &cutting.RenameField
-	services.Cards.getTitle = notes.GetTitle
-	// A preset is a note the editor writes key by key, and the curve beside its
-	// one control is the same simulator the flashcards window runs on.
-	running := made.OpenFlashcards(o.level)
-	services.Presets.presets = &running.Presets
-	services.Presets.curves = &running.Curves
-	services.Presets.create = &cutting.Create
-	services.Presets.getTitle = notes.GetTitle
-	services.Settings.get = made.OpenGetSettings(running.Day)
+	services.Settings.get = made.OpenGetSettings()
+	services.PluginServices = made.GetPluginServices()
 	services.Settings.write = made.OpenWriteSettings()
 	services.Settings.getFile = made.OpenGetSettingsFile()
 	services.Settings.writeFile = made.OpenWriteSettingsFile()

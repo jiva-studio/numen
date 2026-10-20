@@ -206,9 +206,9 @@ type NameMatch struct {
 	// in UTF-16 code units.
 	// A word reached by its prefix is marked whole.
 	Spans []*Span `protobuf:"bytes,3,rep,name=spans,proto3" json:"spans,omitempty"`
-	// Which of three the note is, so a client draws a deck and a stencil as what
-	// they are. A heading carries the type of the note it stands in.
-	Type          NoteType `protobuf:"varint,4,opt,name=type,proto3,enum=numen.v1.NoteType" json:"type,omitempty"`
+	// The `type` key of the note's frontmatter, so a client draws a note as what it is.
+	// Empty for an ordinary note. A heading carries the type of the note it stands in.
+	Type          string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -264,11 +264,11 @@ func (x *NameMatch) GetSpans() []*Span {
 	return nil
 }
 
-func (x *NameMatch) GetType() NoteType {
+func (x *NameMatch) GetType() string {
 	if x != nil {
 		return x.Type
 	}
-	return NoteType_NOTE_TYPE_UNSPECIFIED
+	return ""
 }
 
 type SearchPassagesRequest struct {
@@ -403,9 +403,9 @@ type Passage struct {
 	// Where the chunk that matched stands, counted from the first line of the
 	// source's prose. It is the line a note opens on, and the caret stands there.
 	Line int32 `protobuf:"varint,7,opt,name=line,proto3" json:"line,omitempty"`
-	// Which of three the note is, so a client draws a deck and a stencil as what
-	// they are. It says nothing about a source that is not a note.
-	Type NoteType `protobuf:"varint,8,opt,name=type,proto3,enum=numen.v1.NoteType" json:"type,omitempty"`
+	// The `type` key of the note's frontmatter, so a client draws a note as what it is.
+	// Empty for an ordinary note. It says nothing about a source that is not a note.
+	Type string `protobuf:"bytes,8,opt,name=type,proto3" json:"type,omitempty"`
 	// What the vault holds at that path, so a client draws a book and a
 	// recording as what they are.
 	Kind          SourceKind `protobuf:"varint,9,opt,name=kind,proto3,enum=numen.v1.SourceKind" json:"kind,omitempty"`
@@ -492,11 +492,11 @@ func (x *Passage) GetLine() int32 {
 	return 0
 }
 
-func (x *Passage) GetType() NoteType {
+func (x *Passage) GetType() string {
 	if x != nil {
 		return x.Type
 	}
-	return NoteType_NOTE_TYPE_UNSPECIFIED
+	return ""
 }
 
 func (x *Passage) GetKind() SourceKind {
@@ -515,12 +515,12 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\"@\n" +
 	"\x13SearchNamesResponse\x12)\n" +
-	"\x05found\x18\x01 \x03(\v2\x13.numen.v1.NameMatchR\x05found\"\xbb\x01\n" +
+	"\x05found\x18\x01 \x03(\v2\x13.numen.v1.NameMatchR\x05found\"\xa7\x01\n" +
 	"\tNameMatch\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x120\n" +
 	"\aheading\x18\x02 \x01(\v2\x11.numen.v1.HeadingH\x00R\aheading\x88\x01\x01\x12$\n" +
-	"\x05spans\x18\x03 \x03(\v2\x0e.numen.v1.SpanR\x05spans\x12&\n" +
-	"\x04type\x18\x04 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04typeB\n" +
+	"\x05spans\x18\x03 \x03(\v2\x0e.numen.v1.SpanR\x05spans\x12\x12\n" +
+	"\x04type\x18\x04 \x01(\tR\x04typeB\n" +
 	"\n" +
 	"\b_heading\"m\n" +
 	"\x15SearchPassagesRequest\x12\x14\n" +
@@ -528,7 +528,7 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12(\n" +
 	"\x04mode\x18\x03 \x01(\x0e2\x14.numen.v1.SearchModeR\x04mode\"A\n" +
 	"\x16SearchPassagesResponse\x12'\n" +
-	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\xaf\x02\n" +
+	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\x9b\x02\n" +
 	"\aPassage\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
 	"\x04note\x18\x02 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01\x12\x12\n" +
@@ -536,8 +536,8 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x05spans\x18\x04 \x03(\v2\x0e.numen.v1.SpanR\x05spans\x12\x1a\n" +
 	"\blocation\x18\x05 \x01(\tR\blocation\x12\"\n" +
 	"\x04span\x18\x06 \x01(\v2\x0e.numen.v1.SpanR\x04span\x12\x12\n" +
-	"\x04line\x18\a \x01(\x05R\x04line\x12&\n" +
-	"\x04type\x18\b \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\x12(\n" +
+	"\x04line\x18\a \x01(\x05R\x04line\x12\x12\n" +
+	"\x04type\x18\b \x01(\tR\x04type\x12(\n" +
 	"\x04kind\x18\t \x01(\x0e2\x14.numen.v1.SourceKindR\x04kindB\a\n" +
 	"\x05_note*\x88\x01\n" +
 	"\n" +
@@ -576,31 +576,28 @@ var file_numen_v1_search_proto_goTypes = []any{
 	(*Note)(nil),                   // 7: numen.v1.Note
 	(*Heading)(nil),                // 8: numen.v1.Heading
 	(*Span)(nil),                   // 9: numen.v1.Span
-	(NoteType)(0),                  // 10: numen.v1.NoteType
-	(SourceKind)(0),                // 11: numen.v1.SourceKind
+	(SourceKind)(0),                // 10: numen.v1.SourceKind
 }
 var file_numen_v1_search_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.SearchNamesResponse.found:type_name -> numen.v1.NameMatch
 	7,  // 1: numen.v1.NameMatch.note:type_name -> numen.v1.Note
 	8,  // 2: numen.v1.NameMatch.heading:type_name -> numen.v1.Heading
 	9,  // 3: numen.v1.NameMatch.spans:type_name -> numen.v1.Span
-	10, // 4: numen.v1.NameMatch.type:type_name -> numen.v1.NoteType
-	0,  // 5: numen.v1.SearchPassagesRequest.mode:type_name -> numen.v1.SearchMode
-	6,  // 6: numen.v1.SearchPassagesResponse.found:type_name -> numen.v1.Passage
-	7,  // 7: numen.v1.Passage.note:type_name -> numen.v1.Note
-	9,  // 8: numen.v1.Passage.spans:type_name -> numen.v1.Span
-	9,  // 9: numen.v1.Passage.span:type_name -> numen.v1.Span
-	10, // 10: numen.v1.Passage.type:type_name -> numen.v1.NoteType
-	11, // 11: numen.v1.Passage.kind:type_name -> numen.v1.SourceKind
-	1,  // 12: numen.v1.SearchService.SearchNames:input_type -> numen.v1.SearchNamesRequest
-	4,  // 13: numen.v1.SearchService.SearchPassages:input_type -> numen.v1.SearchPassagesRequest
-	2,  // 14: numen.v1.SearchService.SearchNames:output_type -> numen.v1.SearchNamesResponse
-	5,  // 15: numen.v1.SearchService.SearchPassages:output_type -> numen.v1.SearchPassagesResponse
-	14, // [14:16] is the sub-list for method output_type
-	12, // [12:14] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	0,  // 4: numen.v1.SearchPassagesRequest.mode:type_name -> numen.v1.SearchMode
+	6,  // 5: numen.v1.SearchPassagesResponse.found:type_name -> numen.v1.Passage
+	7,  // 6: numen.v1.Passage.note:type_name -> numen.v1.Note
+	9,  // 7: numen.v1.Passage.spans:type_name -> numen.v1.Span
+	9,  // 8: numen.v1.Passage.span:type_name -> numen.v1.Span
+	10, // 9: numen.v1.Passage.kind:type_name -> numen.v1.SourceKind
+	1,  // 10: numen.v1.SearchService.SearchNames:input_type -> numen.v1.SearchNamesRequest
+	4,  // 11: numen.v1.SearchService.SearchPassages:input_type -> numen.v1.SearchPassagesRequest
+	2,  // 12: numen.v1.SearchService.SearchNames:output_type -> numen.v1.SearchNamesResponse
+	5,  // 13: numen.v1.SearchService.SearchPassages:output_type -> numen.v1.SearchPassagesResponse
+	12, // [12:14] is the sub-list for method output_type
+	10, // [10:12] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_search_proto_init() }

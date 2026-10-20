@@ -125,7 +125,7 @@ func (q *Queries) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID)
 			}
 			answers[l.Target.Value] = answering
 		}
-		l.To, l.IsAmbiguous = chooseMatch(l.From, l.Target.Value, answering)
+		l.To, l.IsAmbiguous = domain.ChooseMatch(l.From, l.Target.Value, answering)
 		if !l.IsAmbiguous {
 			continue
 		}

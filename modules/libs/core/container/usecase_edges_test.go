@@ -24,8 +24,6 @@ var useCaseEdges = map[string][]string{
 	"embedding":     {"run"},
 	"file":          nil,
 	"search":        nil,
-	"cards":         {"note"},
-	"flashcards":    {"cards", "note"},
 	"vault":         {"embedding", "note", "source"},
 	"indexing":      {"embedding", "run", "source", "vault"},
 	"completion":    {"agent"},
@@ -122,9 +120,6 @@ func TestUseCaseEdgeRuleRefusesUndeclaredEdges(t *testing.T) {
 		isRefused bool
 	}{
 		// The declared edges.
-		{"usecase/cards", "usecase/note", false},
-		{"usecase/flashcards", "usecase/cards", false},
-		{"usecase/flashcards", "usecase/note", false},
 		{"usecase/vault", "usecase/note", false},
 		{"usecase/vault", "usecase/source", false},
 		{"usecase/vault", "usecase/embedding", false},
@@ -132,8 +127,6 @@ func TestUseCaseEdgeRuleRefusesUndeclaredEdges(t *testing.T) {
 		{"usecase/transcription", "usecase/run", false},
 
 		// The same edges reversed, and the edges skipping the declaration.
-		{"usecase/note", "usecase/cards", true},
-		{"usecase/cards", "usecase/flashcards", true},
 		{"usecase/note", "usecase/vault", true},
 		{"usecase/source", "usecase/vault", true},
 		{"usecase/run", "usecase/recognition", true},
@@ -141,8 +134,6 @@ func TestUseCaseEdgeRuleRefusesUndeclaredEdges(t *testing.T) {
 		{"usecase/transcription", "usecase/recognition", true},
 		{"usecase/source", "usecase/run", true},
 		{"usecase/embedding", "usecase/vault", true},
-		{"usecase/cards", "usecase/vault", true},
-		{"usecase/cards", "usecase/source", true},
 
 		// A use case that builds on none.
 		{"usecase/embedding", "usecase/note", true},

@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/shared.proto.
  */
 export const file_numen_v1_shared: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjgKC0ZpbmdlcnByaW50EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIgCgRTcGFuEgwKBGZyb20YASABKAUSCgoCdG8YAiABKAUiJQoGQm91bmRzEg0KBWxlYXN0GAEgASgBEgwKBG1vc3QYAiABKAEqhwMKCUVycm9yQ29kZRIaChZFUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASFgoSRVJST1JfQ09ERV9NSVNTSU5HEAESGQoVRVJST1JfQ09ERV9OT1RfQV9OT1RFEAISFwoTRVJST1JfQ09ERV9OT1RfVEVYVBADEhgKFEVSUk9SX0NPREVfVE9PX0xBUkdFEAQSHgoaRVJST1JfQ09ERV9CT0RZX1VOV1JJVEFCTEUQBRIZChVFUlJPUl9DT0RFX1VOUkVBREFCTEUQBhIXChNFUlJPUl9DT0RFX09DQ1VQSUVEEAcSGQoVRVJST1JfQ09ERV9VTk5BTUVBQkxFEAgSHAoYRVJST1JfQ09ERV9OT1RfQV9TVEVOQ0lMEAkSGQoVRVJST1JfQ09ERV9OT1RfQV9ERUNLEAoSHQoZRVJST1JfQ09ERV9ERUNLX1RPT19MQVJHRRALEhsKF0VSUk9SX0NPREVfTk9UX0FfUFJFU0VUEAwSFAoQRVJST1JfQ09ERV9TVEFMRRANKmYKCE5vdGVUeXBlEhkKFU5PVEVfVFlQRV9VTlNQRUNJRklFRBAAEhIKDk5PVEVfVFlQRV9ERUNLEAESFQoRTk9URV9UWVBFX1NURU5DSUwQAhIUChBOT1RFX1RZUEVfUFJFU0VUEANCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjgKC0ZpbmdlcnByaW50EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIgCgRTcGFuEgwKBGZyb20YASABKAUSCgoCdG8YAiABKAUiJQoGQm91bmRzEg0KBWxlYXN0GAEgASgBEgwKBG1vc3QYAiABKAEqhwMKCUVycm9yQ29kZRIaChZFUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASFgoSRVJST1JfQ09ERV9NSVNTSU5HEAESGQoVRVJST1JfQ09ERV9OT1RfQV9OT1RFEAISFwoTRVJST1JfQ09ERV9OT1RfVEVYVBADEhgKFEVSUk9SX0NPREVfVE9PX0xBUkdFEAQSHgoaRVJST1JfQ09ERV9CT0RZX1VOV1JJVEFCTEUQBRIZChVFUlJPUl9DT0RFX1VOUkVBREFCTEUQBhIXChNFUlJPUl9DT0RFX09DQ1VQSUVEEAcSGQoVRVJST1JfQ09ERV9VTk5BTUVBQkxFEAgSHAoYRVJST1JfQ09ERV9OT1RfQV9TVEVOQ0lMEAkSGQoVRVJST1JfQ09ERV9OT1RfQV9ERUNLEAoSHQoZRVJST1JfQ09ERV9ERUNLX1RPT19MQVJHRRALEhsKF0VSUk9SX0NPREVfTk9UX0FfUFJFU0VUEAwSFAoQRVJST1JfQ09ERV9TVEFMRRANQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * Fingerprint is which file this is: where it is filed, how big it is, and when
@@ -225,48 +225,4 @@ export enum ErrorCode {
  */
 export const ErrorCodeSchema: GenEnum<ErrorCode> = /*@__PURE__*/
   enumDesc(file_numen_v1_shared, 0);
-
-/**
- * NoteType is what a note is: the `type` key of its frontmatter. It
- * says what the note is; whether the application reads text out of the file is
- * SourceKind.
- *
- * @generated from enum numen.v1.NoteType
- */
-export enum NoteType {
-  /**
-   * An ordinary note, which is a note carrying no `type` at all and so nearly
-   * every note in a vault.
-   *
-   * @generated from enum value: NOTE_TYPE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * A note whose body is cards.
-   *
-   * @generated from enum value: NOTE_TYPE_DECK = 1;
-   */
-  DECK = 1,
-
-  /**
-   * A note declaring the fields a card has and the faces it is shown by.
-   *
-   * @generated from enum value: NOTE_TYPE_STENCIL = 2;
-   */
-  STENCIL = 2,
-
-  /**
-   * A note saying how the decks pointing at it are scheduled.
-   *
-   * @generated from enum value: NOTE_TYPE_PRESET = 3;
-   */
-  PRESET = 3,
-}
-
-/**
- * Describes the enum numen.v1.NoteType.
- */
-export const NoteTypeSchema: GenEnum<NoteType> = /*@__PURE__*/
-  enumDesc(file_numen_v1_shared, 1);
 

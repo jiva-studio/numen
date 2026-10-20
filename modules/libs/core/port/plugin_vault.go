@@ -69,6 +69,8 @@ type PluginVault interface {
 	// EnsureIndexed brings the vault into the index when it is not there, and says where that
 	// stands. The work goes on after it returns.
 	EnsureIndexed(ctx context.Context) (PluginIndexState, error)
+	// SetInUse tells the window that the plugin is working the vault for the person.
+	SetInUse(ctx context.Context) error
 	// WatchMoves tells that something moved in some vault, until ctx is done.
 	WatchMoves(ctx context.Context) (<-chan struct{}, error)
 

@@ -22,6 +22,9 @@ import (
 // numenRoot is what every module of this repository is named under.
 const numenRoot = "github.com/jiva-studio/numen/"
 
+// notesModule is the module of the note model, which plugins may name.
+const notesModule = numenRoot + "modules/libs/notes"
+
 // numenModulesDir is the folder the modules live in, relative to this package.
 var numenModulesDir = filepath.Join("..", "..", "..")
 
@@ -34,12 +37,14 @@ func getPluginDependencyRefusal(mod, dep string) string {
 		return ""
 	case isSDK(dep), dep == wire, strings.HasPrefix(dep, wire+"/"):
 		return ""
+	case dep == notesModule, strings.HasPrefix(dep, notesModule+"/"):
+		return ""
 	case isPlugin(dep):
 		return "a plugin names no other plugin"
 	case dep == strings.TrimSuffix(module, "/"), strings.HasPrefix(dep, module):
 		return "a plugin names no package of the core"
 	}
-	return "a plugin names only the plugin SDK, the protocol and third-party code"
+	return "a plugin names only the plugin SDK, the protocol, the notes and third-party code"
 }
 
 // What getPluginDependencyRefusal says is the whole of the rule, so it is asked
@@ -61,6 +66,8 @@ func TestWhatThePluginDependencyRuleRefuses(t *testing.T) {
 		{sdkModule + "/vault", false},
 		{sdkModule + "/server", false},
 		{wire, false},
+		{notesModule, false},
+		{notesModule + "/domain", false},
 		{wire + "/gen/numen/v1", false},
 		{"connectrpc.com/connect", false},
 		{"github.com/jiva-studio/other", false},

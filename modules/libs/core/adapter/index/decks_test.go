@@ -62,7 +62,7 @@ func headingTexts(t *testing.T, db *DB, vault domain.Vault, path string) []strin
 // a time, and nothing searches inside a card.
 func TestADeckContributesNoChunkAndNoVector(t *testing.T) {
 	db := openDB(t)
-	saveTypedNoteWithHeadings(t, db, first, "decks/mammals.md", domain.TypeDeck,
+	saveTypedNoteWithHeadings(t, db, first, "decks/mammals.md", deckType,
 		domain.Heading{Level: 1, Text: "Roots"},
 		domain.Heading{Level: 2, Text: "Compost, what is it made of ^k7m2xq9fzp"},
 		domain.Heading{Level: 3, Text: "Question"},
@@ -84,7 +84,7 @@ func TestADeckContributesNoChunkAndNoVector(t *testing.T) {
 // A stencil holds templates full of {{Field}}, and is found by its title.
 func TestAStencilContributesNoChunkAndNoVector(t *testing.T) {
 	db := openDB(t)
-	saveTypedNoteWithHeadings(t, db, first, "stencils/term.md", domain.TypeStencil,
+	saveTypedNoteWithHeadings(t, db, first, "stencils/term.md", stencilType,
 		domain.Heading{Level: 1, Text: "Question"},
 		domain.Heading{Level: 2, Text: "Front"},
 	)
@@ -124,7 +124,7 @@ func TestANoteThatBecomesADeckLosesItsChunks(t *testing.T) {
 		t.Fatal("the note held no chunk to begin with")
 	}
 
-	saveTypedNoteWithHeadings(t, db, first, "decks/mammals.md", domain.TypeDeck,
+	saveTypedNoteWithHeadings(t, db, first, "decks/mammals.md", deckType,
 		domain.Heading{Level: 1, Text: "Roots"},
 	)
 	if got := chunksOfNote(t, db, first, "decks/mammals.md"); got != 0 {
@@ -136,7 +136,7 @@ func TestANoteThatBecomesADeckLosesItsChunks(t *testing.T) {
 // field names written out under every card.
 func TestADeckKeepsTheHeadingsAPersonWroteAndNoOthers(t *testing.T) {
 	db := openDB(t)
-	saveTypedNoteWithHeadings(t, db, first, "decks/mammals.md", domain.TypeDeck,
+	saveTypedNoteWithHeadings(t, db, first, "decks/mammals.md", deckType,
 		domain.Heading{Level: 1, Text: "Roots"},
 		domain.Heading{Level: 2, Text: "Compost, what is it made of ^k7m2xq9fzp"},
 		domain.Heading{Level: 3, Text: "Question"},
@@ -166,7 +166,7 @@ func TestADeckKeepsTheHeadingsAPersonWroteAndNoOthers(t *testing.T) {
 // A stencil's headings are its faces and their two sides.
 func TestAStencilContributesNoHeading(t *testing.T) {
 	db := openDB(t)
-	saveTypedNoteWithHeadings(t, db, first, "stencils/term.md", domain.TypeStencil,
+	saveTypedNoteWithHeadings(t, db, first, "stencils/term.md", stencilType,
 		domain.Heading{Level: 1, Text: "Question"},
 		domain.Heading{Level: 1, Text: "Recognise"},
 		domain.Heading{Level: 2, Text: "Front"},
@@ -184,7 +184,7 @@ func TestAStencilContributesNoHeading(t *testing.T) {
 // The mark is written for the file, not for a person reading a list.
 func TestACardsHeadingIsStoredWithoutItsMark(t *testing.T) {
 	db := openDB(t)
-	saveTypedNoteWithHeadings(t, db, first, "decks/mammals.md", domain.TypeDeck,
+	saveTypedNoteWithHeadings(t, db, first, "decks/mammals.md", deckType,
 		// A mark, and four endings that are not one: too short, too long, an
 		// alphabet the mark does not use, and no space before the caret.
 		domain.Heading{Level: 2, Text: "Compost, what is it made of ^k7m2xq9fzp"},
@@ -220,7 +220,7 @@ func TestACardsHeadingIsStoredWithoutItsMark(t *testing.T) {
 // what a heading is kept for.
 func TestACardOfAnEmptyFirstFieldContributesNoHeading(t *testing.T) {
 	db := openDB(t)
-	saveTypedNoteWithHeadings(t, db, first, "decks/mammals.md", domain.TypeDeck,
+	saveTypedNoteWithHeadings(t, db, first, "decks/mammals.md", deckType,
 		domain.Heading{Level: 1, Text: "Roots"},
 		domain.Heading{Level: 2, Text: "^k7m2xq9fzp"},
 		domain.Heading{Level: 3, Text: "Question"},
@@ -274,7 +274,7 @@ func TestADeckIsANoteInEveryOtherWay(t *testing.T) {
 	n := domain.Note{
 		Fingerprint: domain.Fingerprint{Path: "decks/mammals.md", Kind: domain.KindNote, Size: 100, ModTime: walked},
 		Title:       "Mammals",
-		Type:        domain.TypeDeck,
+		Type:        deckType,
 		ID:          "01HQXMAMMALS",
 		Body:        "## Compost ^k7m2xq9fzp\n",
 		Links: []domain.Link{{
@@ -291,8 +291,8 @@ func TestADeckIsANoteInEveryOtherWay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held["decks/mammals.md"] != domain.TypeDeck {
-		t.Errorf("the index calls it %q, want %q", held["decks/mammals.md"], domain.TypeDeck)
+	if held["decks/mammals.md"] != deckType {
+		t.Errorf("the index calls it %q, want %q", held["decks/mammals.md"], deckType)
 	}
 	if got := countRows(t, db, `SELECT COUNT(*) FROM notes n JOIN vaults v ON v.id = n.vault_id
 	                          WHERE v.identifier = ? AND n.title = 'Mammals'
