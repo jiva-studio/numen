@@ -25,6 +25,7 @@ type bridgeHost interface {
 	BookPluginHost
 	AgentPluginHost
 	ProofreaderPluginHost
+	ToolsPluginHost
 }
 
 // bridgeCall makes one call through an open bridge and says whether the value it
@@ -37,8 +38,8 @@ type bridgeContract struct {
 	open func(ctx context.Context, host bridgeHost) (io.Closer, bridgeCall, error)
 }
 
-// isLeased says whether opening the bridge takes a reference on its plugin. A proofreader takes one only for the length of a call.
-func (c bridgeContract) isLeased() bool { return c.name != "proofreader" }
+// isLeased says whether opening the bridge takes a reference on its plugin. A proofreader and the tools take one only for the length of a call.
+func (c bridgeContract) isLeased() bool { return c.name != "proofreader" && c.name != "tools" }
 
 // isZeroResult reports whether a call returned the zero value of its type.
 func isZeroResult[T any](value T, err error) (bool, error) {
@@ -115,6 +116,12 @@ var bridgeContracts = []bridgeContract{
 		b, err := OpenProofreaderBridge(h)
 		return createContract(b, err, func(b *ProofreaderBridge, ctx context.Context) (bool, error) {
 			return isZeroResult(b.ProofreadScan(ctx, []domain.ProofreadPage{{Number: 1}}, 0))
+		})
+	}},
+	{"tools", func(_ context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
+		b := OpenToolsBridge(h)
+		return createContract(b, nil, func(b *ToolsBridge, ctx context.Context) (bool, error) {
+			return isZeroResult(b.ListPluginTools(ctx, contractPluginID))
 		})
 	}},
 }

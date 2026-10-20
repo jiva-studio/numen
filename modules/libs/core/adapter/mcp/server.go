@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/plugintool"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
@@ -57,6 +58,9 @@ type Core struct {
 	Vaults  Vaults
 	Cards   Cards
 	Sources Sources
+
+	// Plugins are the tools the plugins offer. Without them only the tools above are served.
+	Plugins plugintool.Tools
 }
 
 // Notes is a vault's notes: what is asked of them, and what changes them.
@@ -152,6 +156,11 @@ type Sources struct {
 
 // New builds the server an agent connects to.
 func New(core Core) *sdk.Server {
+	return newFull(context.Background(), core)
+}
+
+// newFull is New, asking the plugins for their tools under ctx.
+func newFull(ctx context.Context, core Core) *sdk.Server {
 	server := sdk.NewServer(
 		&sdk.Implementation{
 			Name:        "numen",
@@ -162,6 +171,7 @@ func New(core Core) *sdk.Server {
 		&sdk.ServerOptions{Instructions: instructions(core)},
 	)
 
+	addPluginTools(ctx, server, core, plugintool.ServerFull)
 	addNoteTools(server, core)
 	addFileReadingTools(server, core)
 	addCardTools(server, core)
@@ -179,6 +189,11 @@ func New(core Core) *sdk.Server {
 // NewReading builds a server whose every tool reads. Nothing it serves
 // reaches a writer, so an agent answering from it changes nothing.
 func NewReading(core Core) *sdk.Server {
+	return newReading(context.Background(), core)
+}
+
+// newReading is NewReading, asking the plugins for their tools under ctx.
+func newReading(ctx context.Context, core Core) *sdk.Server {
 	server := sdk.NewServer(
 		&sdk.Implementation{
 			Name:        "numen",
@@ -189,6 +204,7 @@ func NewReading(core Core) *sdk.Server {
 		&sdk.ServerOptions{Instructions: readingInstructions(core)},
 	)
 
+	addPluginTools(ctx, server, core, plugintool.ServerReading)
 	addNoteReadTools(server, core)
 	addCardReadTools(server, core)
 	addLinkReadTools(server, core)
@@ -203,6 +219,11 @@ func NewReading(core Core) *sdk.Server {
 // A deck and a stencil are what a vault is arranged into, and nothing here
 // makes one. Nothing here writes a note, a link or a document either.
 func NewReviewServer(core Core) *sdk.Server {
+	return newReview(context.Background(), core)
+}
+
+// newReview is NewReviewServer, asking the plugins for their tools under ctx.
+func newReview(ctx context.Context, core Core) *sdk.Server {
 	server := sdk.NewServer(
 		&sdk.Implementation{
 			Name:        "numen",
@@ -213,6 +234,7 @@ func NewReviewServer(core Core) *sdk.Server {
 		&sdk.ServerOptions{Instructions: getReviewInstructions(core)},
 	)
 
+	addPluginTools(ctx, server, core, plugintool.ServerReview)
 	addNoteReadTools(server, core)
 	addCardReadTools(server, core)
 	addCardEditTools(server, core)

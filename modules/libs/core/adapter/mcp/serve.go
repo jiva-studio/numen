@@ -115,19 +115,19 @@ func (c *calls) reckon() {
 // errorHandler, if it is given, is called with whatever stops the server later.
 // It is how the person hears that it stopped.
 func ServeHTTP(ctx context.Context, addr, token string, core Core, errorHandler func(error)) (*Endpoint, error) {
-	return serve(ctx, addr, token, New(core), errorHandler)
+	return serve(ctx, addr, token, newFull(ctx, core), errorHandler)
 }
 
 // ServeReadingHTTP starts a server whose every tool reads. An agent answering
 // through it changes nothing.
 func ServeReadingHTTP(ctx context.Context, addr, token string, core Core, errorHandler func(error)) (*Endpoint, error) {
-	return serve(ctx, addr, token, NewReading(core), errorHandler)
+	return serve(ctx, addr, token, newReading(ctx, core), errorHandler)
 }
 
 // ServeReviewHTTP starts the server the window a person runs their cards in
 // serves: everything that reads, and the cards of a deck.
 func ServeReviewHTTP(ctx context.Context, addr, token string, core Core, errorHandler func(error)) (*Endpoint, error) {
-	return serve(ctx, addr, token, NewReviewServer(core), errorHandler)
+	return serve(ctx, addr, token, newReview(ctx, core), errorHandler)
 }
 
 func serve(ctx context.Context, addr, token string, server *sdk.Server, errorHandler func(error)) (*Endpoint, error) {

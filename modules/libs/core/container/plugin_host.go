@@ -5,7 +5,9 @@ import (
 	"errors"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/plugintool"
 )
 
 // pluginGracePeriod is how long a plugin has to exit once it is told to stop.
@@ -59,4 +61,14 @@ func (c Config) StopPlugins(ctx context.Context) error {
 		return nil
 	}
 	return c.PluginHost.TeardownAll(ctx, pluginGracePeriod)
+}
+
+// GetPluginTools is the use cases that offer an agent the tools the plugins serve. Where there is
+// no plugin host they offer none.
+func (c Config) GetPluginTools() plugintool.Tools {
+	var tools port.PluginTools
+	if c.PluginHost != nil {
+		tools = plugin.OpenToolsBridge(c.PluginHost)
+	}
+	return plugintool.NewTools(tools)
 }

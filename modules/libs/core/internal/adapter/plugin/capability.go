@@ -9,4 +9,6 @@ const (
 	CapabilityEmbedding     = "embedding"
 	CapabilityDownloader    = "downloader"
 	CapabilityProofreading  = "proofreading"
+	// CapabilityTools marks a plugin that serves PluginToolService: the tools it offers an agent.
+	CapabilityTools = "tools"
 )

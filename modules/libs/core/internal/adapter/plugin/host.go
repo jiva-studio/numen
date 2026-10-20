@@ -381,6 +381,24 @@ func (h *Host) ResolveCapability(capability string) (DiscoveredPlugin, error) {
 	return emptyDiscoveredPlugin(), missing
 }
 
+// ResolveCapabilities returns every enabled plugin that declares the capability, in the order of
+// their ids. In safe mode it returns none.
+func (h *Host) ResolveCapabilities(capability string) []DiscoveredPlugin {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	var found []DiscoveredPlugin
+	if h.safeMode {
+		return found
+	}
+	for _, p := range h.getPluginsInOrderLocked() {
+		if p.Manifest.HasCapability(capability) && h.isPluginEnabledLocked(p.Manifest.ID) {
+			found = append(found, p)
+		}
+	}
+	return found
+}
+
 // FindPluginByCapability finds the plugin ResolveCapability finds, and whether there is one.
 func (h *Host) FindPluginByCapability(capability string) (DiscoveredPlugin, bool) {
 	p, err := h.ResolveCapability(capability)

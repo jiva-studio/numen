@@ -95,18 +95,18 @@ var doing = map[string]Tool{
 //
 // What the window says about a call is what an agent was told about it.
 func Vocabulary(ctx context.Context, core Core) (map[string]Tool, error) {
-	return vocabulary(ctx, New(core))
+	return vocabulary(ctx, newFull(ctx, core))
 }
 
 // ReadingVocabulary is the same, for a window served the tools that read. A
 // window is told about the tools it serves and no others.
 func ReadingVocabulary(ctx context.Context, core Core) (map[string]Tool, error) {
-	return vocabulary(ctx, NewReading(core))
+	return vocabulary(ctx, newReading(ctx, core))
 }
 
 // GetReviewVocabulary is the same, for the window a person runs their cards in.
 func GetReviewVocabulary(ctx context.Context, core Core) (map[string]Tool, error) {
-	return vocabulary(ctx, NewReviewServer(core))
+	return vocabulary(ctx, newReview(ctx, core))
 }
 
 func vocabulary(ctx context.Context, server *sdk.Server) (map[string]Tool, error) {
@@ -133,7 +133,7 @@ func vocabulary(ctx context.Context, server *sdk.Server) (map[string]Tool, error
 			Title:  titleOf(tool),
 			About:  about,
 			Inside: firstRequiredInside(tool.InputSchema, about),
-			Kind:   doing[tool.Name].Kind,
+			Kind:   getVocabularyKind(tool),
 			Match:  doing[tool.Name].Match,
 			Text:   doing[tool.Name].Text,
 		}
@@ -204,4 +204,14 @@ func firstRequiredInside(schema any, field string) string {
 		return ""
 	}
 	return firstRequired(argument["items"])
+}
+
+// getVocabularyKind is how a call of the tool is shown: as the tool itself declares it where it is
+// a plugin's, else as the core's own table has it.
+func getVocabularyKind(tool *sdk.Tool) domain.StepKind {
+	// A number that crossed a transport as JSON is a float.
+	if declared, isDeclared := tool.Meta[stepMeta].(float64); isDeclared {
+		return domain.StepKind(int(declared))
+	}
+	return doing[tool.Name].Kind
 }
