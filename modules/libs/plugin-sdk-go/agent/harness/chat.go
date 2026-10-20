@@ -27,6 +27,7 @@ var (
 	errNoChoice  = errors.New("the chat API returned no message")
 	errPlainKey  = errors.New("a key is sent only over https, or over http to this machine")
 	errDowngrade = errors.New("a redirect would send a key over plain http")
+	errNoKey     = errors.New("API key is not set: add it in Settings → Keys")
 )
 
 // message is one message of a conversation with the chat API.
@@ -85,6 +86,9 @@ func newText(text string) *string { return &text }
 // send asks the model for the next message of the conversation, offering it the tools. It returns
 // the message and why the model stopped writing it, 'length' for a message cut off at its limit.
 func (c chat) send(ctx context.Context, model string, messages []message, tools []functionTool) (message, string, error) {
+	if err := c.checkKey(); err != nil {
+		return message{}, "", err
+	}
 	body, err := json.Marshal(chatRequest{Model: model, Messages: messages, Tools: tools})
 	if err != nil {
 		return message{}, "", fmt.Errorf("marshal chat request: %w", err)
@@ -152,7 +156,7 @@ func (c chat) do(ctx context.Context, method, path string, body []byte) ([]byte,
 		return nil, fmt.Errorf("read chat response: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, newStatusError(resp.Status, answer)
+		return nil, newStatusError(resp, answer)
 	}
 	return answer, nil
 }
@@ -195,9 +199,40 @@ func (c chat) open(ctx context.Context, method, path string, body []byte) (*http
 	return resp, nil
 }
 
-// newStatusError is an answer of the chat API other than 200 OK: its status and what it said.
-func newStatusError(status string, answer []byte) error {
-	return fmt.Errorf("the chat API answered %s: %s", status, strings.TrimSpace(string(answer)))
+// newStatusError is an answer of the chat API other than 200 OK: its status and what it said. A
+// refusal of the key adds where the key is set.
+func newStatusError(resp *http.Response, answer []byte) error {
+	text := fmt.Sprintf("the chat API answered %s: %s", resp.Status, strings.TrimSpace(string(answer)))
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+		text += " (check the API key in Settings → Keys)"
+	}
+	return errors.New(text)
+}
+
+// checkKey is errNoKey for a chat API that asks for a key when none is set. An endpoint on this
+// machine asks for none.
+func (c chat) checkKey() error {
+	if c.key != "" {
+		return nil
+	}
+	base := strings.TrimSuffix(c.baseURL, "/")
+	if base == "" {
+		base = DefaultBaseURL
+	}
+	address, err := url.Parse(base)
+	if err != nil || isLocalHost(address.Hostname()) {
+		return nil
+	}
+	return errNoKey
+}
+
+// isLocalHost reports whether the host name is this machine.
+func isLocalHost(host string) bool {
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 // isPrivate reports whether what is sent to the address stays private: over https, or over http to
@@ -209,12 +244,7 @@ func isPrivate(address *url.URL) bool {
 	if address.Scheme != "http" {
 		return false
 	}
-	host := address.Hostname()
-	if host == "localhost" {
-		return true
-	}
-	ip := net.ParseIP(host)
-	return ip != nil && ip.IsLoopback()
+	return isLocalHost(address.Hostname())
 }
 
 // refuseDowngrade follows a redirect only while what is sent stays private, and at most ten times.

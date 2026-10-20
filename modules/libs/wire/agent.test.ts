@@ -116,6 +116,11 @@ describe('createAgentPort', () => {
     expect(await steps([stopped])).toEqual([{ kind: 'stopped', error: 'no key' }])
   })
 
+  it('reads a finished answer as stopped with no error', async () => {
+    const stopped = create(AskAgentResponseSchema, { step: { case: 'stopped', value: 'done' } })
+    expect(await steps([stopped])).toEqual([{ kind: 'stopped', error: '' }])
+  })
+
   it('says nothing for a step it does not know', async () => {
     expect(await steps([create(AskAgentResponseSchema, {})])).toEqual([])
   })

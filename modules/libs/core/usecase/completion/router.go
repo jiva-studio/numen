@@ -45,8 +45,10 @@ func NewRouter(config func() Config, choices port.CompletionChoices, programs po
 // setting names an agent is answered by that agent alone, with the model the
 // setting names; one naming none is answered by the default agent and model.
 // The question goes to the agent as a task that names no tool and no
-// conversation. A program that is not there fails with port.ErrNoRoute. The wait
-// for a place under the agent's limit, and the answer, end with the context.
+// conversation. A model the program does not list is replaced by the one it answers with unasked,
+// else its first; a failure then states the replacement. A program that is not there fails with
+// port.ErrNoRoute. The wait for a place under the agent's limit, and the answer, end with the
+// context.
 func (r *Router) Complete(ctx context.Context, pluginID string, question port.Question) (string, error) {
 	task, err := newTask(question)
 	if err != nil {
@@ -66,7 +68,35 @@ func (r *Router) Complete(ctx context.Context, pluginID string, question port.Qu
 	}
 	task.Agent = program.Name
 	task.Model = route.Model
-	return agent.Answer(ctx, r.programs, task)
+	model, isReplaced := getReplacementModel(program, route.Model)
+	if isReplaced {
+		task.Model = model
+	}
+	text, err := agent.Answer(ctx, r.programs, task)
+	if err != nil && isReplaced {
+		return "", fmt.Errorf("%w (the model %q is not offered by %s; asked %q)", err, route.Model, program.Name, model)
+	}
+	return text, err
+}
+
+// getReplacementModel is the model to ask the program when the model chosen is not among those it lists: the
+// one it answers with unasked, else the first. It reports false where the model is offered, none is
+// chosen, or the program lists none.
+func getReplacementModel(program port.AgentProgram, chosen string) (string, bool) {
+	if chosen == "" || len(program.Models) == 0 {
+		return "", false
+	}
+	for _, one := range program.Models {
+		if one.Name == chosen {
+			return "", false
+		}
+	}
+	for _, one := range program.Models {
+		if one.IsDefault {
+			return one.Name, true
+		}
+	}
+	return program.Models[0].Name, true
 }
 
 // getRoute is the agent and the model of the choice, or the default where the

@@ -56,6 +56,9 @@ type streamedReply struct {
 func (c chat) stream(
 	ctx context.Context, model string, messages []message, tools []functionTool, emit func(string) error,
 ) (message, string, error) {
+	if err := c.checkKey(); err != nil {
+		return message{}, "", err
+	}
 	body, err := json.Marshal(chatRequest{Model: model, Messages: messages, Tools: tools, Stream: true})
 	if err != nil {
 		return message{}, "", fmt.Errorf("marshal chat request: %w", err)
@@ -71,7 +74,7 @@ func (c chat) stream(
 		if err != nil {
 			return message{}, "", fmt.Errorf("read chat response: %w", err)
 		}
-		refusal := newStatusError(resp.Status, answer)
+		refusal := newStatusError(resp, answer)
 		if resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusUnprocessableEntity {
 			return message{}, "", fmt.Errorf("%w: %w", errStreamRefused, refusal)
 		}

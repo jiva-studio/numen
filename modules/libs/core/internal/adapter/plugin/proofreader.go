@@ -124,8 +124,8 @@ func (b *ProofreaderBridge) Close() error {
 // readProofreadError sorts the failure of a call to the proofreading plugin: the
 // end of the caller's context is the caller's own, a plugin that cannot be
 // reached or has no model to ask is port.ErrUnavailable, one the person has not
-// let ask a model is port.ErrNoConsent, and anything else it said is returned as it
-// is.
+// let ask a model is port.ErrNoConsent, each stating the message the plugin gave,
+// and anything else it said is returned as it is.
 func readProofreadError(ctx context.Context, err error) error {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return ctxErr
@@ -136,9 +136,9 @@ func readProofreadError(ctx context.Context, err error) error {
 	}
 	switch failure.Code() {
 	case connect.CodeUnavailable, connect.CodeUnimplemented:
-		return fmt.Errorf("%w: %w", port.ErrUnavailable, err)
+		return fmt.Errorf("%w: %s", port.ErrUnavailable, failure.Message())
 	case connect.CodePermissionDenied:
-		return fmt.Errorf("%w: %w", port.ErrNoConsent, err)
+		return fmt.Errorf("%w: %s", port.ErrNoConsent, failure.Message())
 	default:
 		return fmt.Errorf("proofread rpc: %w", err)
 	}

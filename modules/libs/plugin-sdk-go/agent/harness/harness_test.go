@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -617,5 +618,71 @@ func TestATaskNamingNoToolOffersTheModelNoTool(t *testing.T) {
 	requests := model.getRequests()
 	if len(requests) != 1 || len(requests[0].Tools) != 0 {
 		t.Errorf("the model was asked %+v", requests)
+	}
+}
+
+// refusingTransport fails the test when a request is sent.
+type refusingTransport struct{ t *testing.T }
+
+func (r refusingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	r.t.Errorf("a request was sent to %s", req.URL)
+	return nil, errors.New("no network in this test")
+}
+
+func TestARemoteChatAPIWithNoKeyStopsTheRunBeforeAnyRequest(t *testing.T) {
+	for _, base := range []string{"", "https://api.example.com/v1"} {
+		s := &Server{Client: &http.Client{Transport: refusingTransport{t}}}
+		s.Configure(map[string]string{SettingBaseURL: base})
+
+		steps := ask(t, s, newTask("", "Hello?"))
+
+		if reason := steps[len(steps)-1].GetStopped(); reason != "API key is not set: add it in Settings → Keys" {
+			t.Errorf("base %q stopped %q", base, reason)
+		}
+	}
+}
+
+func TestALocalChatAPIWithNoKeyIsAsked(t *testing.T) {
+	model := &fakeChat{replies: []message{newTextReply("hi")}}
+	s := &Server{}
+	s.Configure(map[string]string{SettingBaseURL: model.serve(t).URL})
+
+	steps := ask(t, s, newTask("", "Hello?"))
+
+	if reason := steps[len(steps)-1].GetStopped(); reason != reasonDone {
+		t.Errorf("stopped %q", reason)
+	}
+	for _, host := range []string{"localhost", "127.0.0.1", "::1"} {
+		if !isLocalHost(host) {
+			t.Errorf("%s is not local", host)
+		}
+	}
+	if isLocalHost("api.example.com") {
+		t.Error("a remote host is local")
+	}
+}
+
+func TestARefusedKeyIsReportedWithWhereToSetIt(t *testing.T) {
+	for _, status := range []int{http.StatusUnauthorized, http.StatusForbidden} {
+		model := &fakeChat{status: status}
+		s := newServer(model.serve(t).URL)
+
+		steps := ask(t, s, newTask("", "Hello?"))
+
+		reason := steps[len(steps)-1].GetStopped()
+		if !strings.Contains(reason, strconv.Itoa(status)) || !strings.HasSuffix(reason, "(check the API key in Settings → Keys)") {
+			t.Errorf("status %d stopped %q", status, reason)
+		}
+	}
+}
+
+func TestAnAnswerOtherThanARefusedKeyAddsNoHint(t *testing.T) {
+	model := &fakeChat{status: http.StatusInternalServerError}
+	s := newServer(model.serve(t).URL)
+
+	steps := ask(t, s, newTask("", "Hello?"))
+
+	if reason := steps[len(steps)-1].GetStopped(); strings.Contains(reason, "Settings") {
+		t.Errorf("stopped %q", reason)
 	}
 }

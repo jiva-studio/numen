@@ -18,6 +18,7 @@ import (
 type fakeHost struct {
 	numenv1connect.UnimplementedHostServiceHandler
 	code   numenv1.CompletionErrorCode
+	detail string
 	answer *numenv1.CompletionAnswer
 	got    *numenv1.CompletionQuestion
 	auth   string
@@ -26,7 +27,7 @@ type fakeHost struct {
 func (f *fakeHost) Complete(_ context.Context, req *connect.Request[numenv1.HostServiceCompleteRequest]) (*connect.Response[numenv1.HostServiceCompleteResponse], error) {
 	f.got = req.Msg.GetQuestion()
 	f.auth = req.Header().Get("Authorization")
-	return connect.NewResponse(&numenv1.HostServiceCompleteResponse{Answer: f.answer, Error: f.code}), nil
+	return connect.NewResponse(&numenv1.HostServiceCompleteResponse{Answer: f.answer, Error: f.code, Detail: f.detail}), nil
 }
 
 func startHost(t *testing.T, h *fakeHost) *httptest.Server {
@@ -148,7 +149,7 @@ func TestReadRefusalWalksEveryCode(t *testing.T) {
 	seen := map[error]numenv1.CompletionErrorCode{}
 	for value := range numenv1.CompletionErrorCode_name {
 		code := numenv1.CompletionErrorCode(value)
-		err := readRefusal(code)
+		err := readRefusal(code, "")
 		if code == numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED {
 			if err != nil {
 				t.Errorf("unspecified must be no refusal, got %v", err)
@@ -163,7 +164,7 @@ func TestReadRefusalWalksEveryCode(t *testing.T) {
 		}
 		seen[err] = code
 	}
-	if err := readRefusal(numenv1.CompletionErrorCode(99)); err == nil {
+	if err := readRefusal(numenv1.CompletionErrorCode(99), ""); err == nil {
 		t.Error("an unknown code must be an error")
 	}
 }
@@ -195,5 +196,22 @@ func TestClientFromVarsReadsTheHostFromItsVariables(t *testing.T) {
 func TestClientFromVarsFailsWithoutHostPort(t *testing.T) {
 	if _, err := NewClientFromVars(map[string]string{PluginTokenEnv: "tok"}); !errors.Is(err, ErrNoHost) {
 		t.Fatalf("got %v, want ErrNoHost", err)
+	}
+}
+
+// The detail the host gives stands after the refusal, and the refusal is still the one the code names.
+func TestClientCompleteStatesTheDetailOfTheHost(t *testing.T) {
+	srv := startHost(t, &fakeHost{
+		code:   numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE,
+		detail: "the agent stopped: invalid model selection",
+	})
+
+	_, err := NewClient(srv.Client(), srv.URL, "t").Complete(context.Background(), newQuestion())
+
+	if !errors.Is(err, ErrUnavailable) {
+		t.Fatalf("got %v, want ErrUnavailable", err)
+	}
+	if want := "ai: routed agent did not answer: the agent stopped: invalid model selection"; err.Error() != want {
+		t.Errorf("got %q, want %q", err.Error(), want)
 	}
 }
