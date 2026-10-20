@@ -75,6 +75,9 @@ export function useBookColumns(options: BookColumnsOptions) {
    */
   const isMeasured = computed(() => viewport.value.width > 0 && viewport.value.height > 0)
 
+  /** Whether the spread in front of the drawn document has been stood. */
+  const isStood = ref(false)
+
   const columns = computed(() => countColumns(viewport.value.width, textSize.value))
 
   const flow = computed<Flow>(() => ({
@@ -108,6 +111,7 @@ export function useBookColumns(options: BookColumnsOptions) {
     textSize,
     viewport,
     isMeasured,
+    isStood,
     flow,
     spreadCount,
     setting,

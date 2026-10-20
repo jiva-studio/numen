@@ -112,3 +112,9 @@
 :global(::highlight(numen-book-other-highlight)) {
   background-color: color-mix(in srgb, var(--numen-highlight) 35%, transparent);
 }
+
+/* A document just drawn is carried to its spread on the next frame, and is not
+   shown before it stands there. */
+.book__paper--unset {
+  visibility: hidden;
+}
