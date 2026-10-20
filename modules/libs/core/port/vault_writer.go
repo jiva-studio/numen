@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // ErrStale is what a write says when the file it was about to replace is no

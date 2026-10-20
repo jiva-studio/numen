@@ -6,8 +6,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // EditPreview is how a change is drawn while the call making it is still being written. Nothing

@@ -5,9 +5,9 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault/check"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 type fixed struct {

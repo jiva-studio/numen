@@ -1,0 +1,252 @@
+package domain_test
+
+import (
+	"errors"
+	"strings"
+	"testing"
+	"unicode/utf8"
+
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+)
+
+func TestATitleThatIsAlreadyAFilenameIsFiledUnderItself(t *testing.T) {
+	for _, title := range []string{
+		"Entropy",
+		"Zoë Brontë Mårtensson",
+		"Холм у реки",
+		"Lecture 3 — entropy, and what it is not",
+	} {
+		name, exact := domain.GetReducedFilename(title)
+		if name != title || !exact {
+			t.Errorf("%q was filed as %q, exact %v", title, name, exact)
+		}
+	}
+}
+
+func TestACharacterAFilesystemReservesBecomesADash(t *testing.T) {
+	// A slash would file the note in a folder, and the rest are reserved
+	// somewhere that matters.
+	name, exact := domain.GetReducedFilename(`a/b\c:d*e?f"g<h>i|j`)
+	if name != "a-b-c-d-e-f-g-h-i-j" {
+		t.Errorf("got %q", name)
+	}
+	if exact {
+		t.Error("the title survived the trip")
+	}
+}
+
+func TestATitleIsFiledUnderNoLeadingDot(t *testing.T) {
+	// A leading dot files the note where nothing looks.
+	name, exact := domain.GetReducedFilename(".hidden")
+	if name != "hidden" || exact {
+		t.Errorf("got %q, exact %v", name, exact)
+	}
+}
+
+func TestATrailingDotOrSpaceIsDropped(t *testing.T) {
+	for _, title := range []string{"Entropy.", "Entropy ", "Entropy. ."} {
+		name, exact := domain.GetReducedFilename(title)
+		if name != "Entropy" {
+			t.Errorf("%q was filed as %q", title, name)
+		}
+		if exact != (title == "Entropy ") {
+			t.Errorf("%q: exact %v", title, exact)
+		}
+	}
+}
+
+func TestAControlCharacterIsNotInTheName(t *testing.T) {
+	name, exact := domain.GetReducedFilename("En\x00tro\npy")
+	if name != "Entropy" || exact {
+		t.Errorf("got %q, exact %v", name, exact)
+	}
+}
+
+func TestATitleTooLongIsCutBetweenCharacters(t *testing.T) {
+	// Most filesystems stop at 255 bytes for one component, and the cut lands
+	// between characters: half a character is not a character.
+	long := strings.Repeat("ṛ", 200)
+	name, exact := domain.GetReducedFilename(long)
+	if exact {
+		t.Error("a title that was cut says it survived")
+	}
+	if len(name) > 120 {
+		t.Errorf("%d bytes", len(name))
+	}
+	if !utf8.ValidString(name) {
+		t.Errorf("a character was cut in half: %q", name)
+	}
+}
+
+func TestATitleThatCannotBeAFilenameIsNoFilename(t *testing.T) {
+	for _, title := range []string{"", "   ", "...", "\x00", ". ."} {
+		if name, exact := domain.GetReducedFilename(title); name != "" || exact {
+			t.Errorf("%q was filed as %q, exact %v", title, name, exact)
+		}
+	}
+}
+
+// Windows keeps a handful of names for its devices, and a file carrying one
+// cannot be created there. The desktop client ships on Windows.
+func TestATitleThatNamesAWindowsDeviceIsFiledBeside(t *testing.T) {
+	for _, title := range []string{
+		"CON", "PRN", "AUX", "NUL", "COM1", "COM9", "LPT1", "LPT9",
+		"con", "Nul", "lpt4",
+		// The name is the device whatever follows the first dot.
+		"CON.txt", "aux.notes.md",
+	} {
+		name, exact := domain.GetReducedFilename(title)
+		if name == title || exact {
+			t.Errorf("%q was filed as %q, exact %v", title, name, exact)
+		}
+		if !strings.HasPrefix(name, title) {
+			t.Errorf("%q was filed as %q, which is not the title with a suffix", title, name)
+		}
+		if !domain.IsNameable(name) {
+			t.Errorf("%q is filed as %q, and no link can be written by that", title, name)
+		}
+	}
+}
+
+// A name that only begins like a device is a name.
+func TestATitleThatMerelyLooksLikeADeviceIsFiledUnderItself(t *testing.T) {
+	for _, title := range []string{
+		"CONSOLE", "Conference", "COM", "COM0", "COM10", "LPT", "NULL", "AUXILIARY",
+	} {
+		if name, exact := domain.GetReducedFilename(title); name != title || !exact {
+			t.Errorf("%q was filed as %q, exact %v", title, name, exact)
+		}
+	}
+}
+
+// A note is reached by a link written by its name, so every filename a title
+// reduces to is one a link can be written by.
+func TestEveryFilenameATitleReducesToCanBeWrittenAsALink(t *testing.T) {
+	for _, title := range []string{
+		"C#", "F# and C#", "#tag", "###",
+		"Notes [[draft]]", "[[", "]]", "[[[deep]]]", "a [1980] note",
+		"Either|Or", "TCP/IP", "note://01J8", "a:b", "a\\b",
+		"  Entropy  ", " Entropy ", ".hidden", "trailing.",
+		"a .", "x" + strings.Repeat("é", 200) + "#",
+		"ordinary", "Ṛtu and the seasons",
+		"Lecture 1.2", "Seminar 1.2–1.3 — Lisbon, 9 July 1973",
+	} {
+		name, _ := domain.GetReducedFilename(title)
+		if name == "" {
+			continue
+		}
+		if !domain.IsNameable(name) {
+			t.Errorf("%q is filed as %q, and no link can be written by that", title, name)
+		}
+		if domain.Basename(name+".md") != name {
+			t.Errorf("%q is filed as %q, which is not the name a link resolves by", title, name)
+		}
+		if domain.LinkName(name) != name {
+			t.Errorf("%q is filed as %q, and a link written by it is stored as %q",
+				title, name, domain.LinkName(name))
+		}
+	}
+}
+
+// The characters a name cannot carry are reduced, and the ones it can are left
+// where the person put them.
+func TestAFilenameKeepsWhatALinkCanBeWrittenWith(t *testing.T) {
+	for title, want := range map[string]string{
+		"C#":              "C-",
+		"Issue #42":       "Issue -42",
+		"Notes [[draft]]": "Notes [draft]",
+		"a [1980] note":   "a [1980] note",
+		"Either|Or":       "Either-Or",
+		"TCP/IP":          "TCP-IP",
+		"Ṛtu":             "Ṛtu",
+	} {
+		if name, _ := domain.GetReducedFilename(title); name != want {
+			t.Errorf("%q is filed as %q, want %q", title, name, want)
+		}
+	}
+}
+
+func TestFilenameAnswersForATitleThatCanBeFiled(t *testing.T) {
+	name, exact, err := domain.Filename("Entropy")
+	if err != nil || name != "Entropy" || !exact {
+		t.Errorf("got %q, exact %v, err %v", name, exact, err)
+	}
+
+	name, exact, err = domain.Filename("a/b")
+	if err != nil || name != "a-b" || exact {
+		t.Errorf("got %q, exact %v, err %v", name, exact, err)
+	}
+}
+
+func TestFilenameRefusesATitleThatLeavesNoFilename(t *testing.T) {
+	for _, title := range []string{"", "   ", "...", "\x00"} {
+		name, exact, err := domain.Filename(title)
+		if !errors.Is(err, domain.ErrUnnameable) {
+			t.Errorf("%q: err %v", title, err)
+		}
+		if name != "" || exact {
+			t.Errorf("%q was filed as %q, exact %v", title, name, exact)
+		}
+		if err != nil && !strings.Contains(err.Error(), "nothing a file can be named after") {
+			t.Errorf("%q: the reason is lost: %v", title, err)
+		}
+	}
+}
+
+func TestFilenameRefusesATitleOfMoreThanOneLine(t *testing.T) {
+	for _, title := range []string{"first\nsecond", "first\rsecond", "first\r\nsecond"} {
+		name, exact, err := domain.Filename(title)
+		if !errors.Is(err, domain.ErrUnnameable) {
+			t.Errorf("%q: err %v", title, err)
+		}
+		if name != "" || exact {
+			t.Errorf("%q was filed as %q, exact %v", title, name, exact)
+		}
+		if err != nil && !strings.Contains(err.Error(), "more than one line") {
+			t.Errorf("%q: the reason is lost: %v", title, err)
+		}
+	}
+}
+
+func TestATitleOfTheLongestLengthIsFiledUnderItself(t *testing.T) {
+	longest := strings.Repeat("x", 120)
+	name, exact := domain.GetReducedFilename(longest)
+	if name != longest || !exact {
+		t.Errorf("%d bytes were filed as %d bytes, exact %v", len(longest), len(name), exact)
+	}
+
+	name, exact = domain.GetReducedFilename(longest + "x")
+	if name != longest || exact {
+		t.Errorf("121 bytes were filed as %d bytes, exact %v", len(name), exact)
+	}
+}
+
+// The cut lands after the last character that fits whole, whatever width the
+// characters are and wherever in one the limit falls.
+func TestATitleTooLongIsCutAfterTheLastCharacterThatFits(t *testing.T) {
+	for _, char := range []string{"é", "ṛ", "😀"} {
+		for pad := 0; pad < 4; pad++ {
+			title := strings.Repeat("a", pad) + strings.Repeat(char, 150)
+			name, exact := domain.GetReducedFilename(title)
+			if exact || !utf8.ValidString(name) || !strings.HasPrefix(title, name) {
+				t.Fatalf("%d+%q: got %d bytes, exact %v", pad, char, len(name), exact)
+			}
+			if len(name) > 120 || len(name)+len(char) <= 120 {
+				t.Errorf("pad %d, %q: cut at %d bytes", pad, char, len(name))
+			}
+		}
+	}
+}
+
+func TestOnlyTheFourCharacterDeviceNamesAreDevices(t *testing.T) {
+	for title, device := range map[string]bool{
+		"COM1": true, "COM9": true, "LPT1": true, "LPT9": true,
+		"COM0": false, "LPT0": false, "COM!": false, "COMA": false,
+		"COM12": false, "COM": false, "XYZ1": false, "CO1": false,
+	} {
+		name, _ := domain.GetReducedFilename(title)
+		if got := name != title; got != device {
+			t.Errorf("%q: filed as %q, device %v", title, name, got)
+		}
+	}
+}

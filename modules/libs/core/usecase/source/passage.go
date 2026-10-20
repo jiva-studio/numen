@@ -1,6 +1,6 @@
 package source
 
-import "github.com/jiva-studio/numen/modules/libs/core/domain"
+import "github.com/jiva-studio/numen/modules/libs/notes/domain"
 
 // Passage is where in a document to look. A Length of zero opens the document
 // at its beginning, and Also is the other passages of the document to light.

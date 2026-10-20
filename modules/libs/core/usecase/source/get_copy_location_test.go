@@ -3,8 +3,8 @@ package source
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 func TestACopyInTheStoreIsLocatedByItsAddress(t *testing.T) {

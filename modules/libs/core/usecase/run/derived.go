@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // GetHash is the fingerprint of a source's bytes: known when it is set, read

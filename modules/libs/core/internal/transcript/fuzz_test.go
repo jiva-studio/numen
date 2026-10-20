@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // vttSeeds are the shapes a transcript arrives in: what the transcriber writes,

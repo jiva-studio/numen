@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testonly"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // walked is when a walk said every file these tests put in last changed.

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"image/jpeg"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // ErrNoPage is a page the document does not have.

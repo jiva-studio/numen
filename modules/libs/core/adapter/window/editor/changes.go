@@ -1,6 +1,6 @@
 package editor
 
-import "github.com/jiva-studio/numen/modules/libs/core/domain"
+import "github.com/jiva-studio/numen/modules/libs/notes/domain"
 
 // change is what a client is told: the files that are different now, notes
 // and assets alike, or that the vault has to be read again.

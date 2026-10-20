@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 func readExistingDeck(ctx context.Context, read Read, v domain.Vault, path string) (DeckContents, error) {

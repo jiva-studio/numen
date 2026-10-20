@@ -9,9 +9,9 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // proofreads is the proofreading a test hands the window: whether this

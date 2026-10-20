@@ -105,7 +105,7 @@ func TestWhatTheLoggingRuleRefuses(t *testing.T) {
 	for _, to := range []string{
 		"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog",
 		"logic", "text/template",
-		"github.com/jiva-studio/numen/modules/libs/core/domain",
+		"github.com/jiva-studio/numen/modules/libs/notes/domain",
 	} {
 		if logs(to) {
 			refused = append(refused, to)

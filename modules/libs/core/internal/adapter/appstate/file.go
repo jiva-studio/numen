@@ -1,6 +1,6 @@
 package appstate
 
-import "github.com/jiva-studio/numen/modules/libs/core/domain"
+import "github.com/jiva-studio/numen/modules/libs/notes/domain"
 
 // registryFile is the shape on disk. It carries a version because a human may
 // have to read it years from now, and a file that does not say what it is is

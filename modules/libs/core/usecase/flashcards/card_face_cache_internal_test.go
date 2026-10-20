@@ -3,7 +3,7 @@ package flashcards
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 func deckOf(n int) deckFaces { return deckFaces{faces: make([]CardFace, n)} }

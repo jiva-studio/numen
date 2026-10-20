@@ -20,7 +20,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlwrite"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 //go:embed sql/*.sql

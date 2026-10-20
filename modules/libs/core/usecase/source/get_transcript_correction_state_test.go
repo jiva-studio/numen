@@ -3,7 +3,7 @@ package source
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 func TestTranscriptCorrectionsAreCompleteWhenWrittenAndActiveWhileARunHoldsTheName(t *testing.T) {

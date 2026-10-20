@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/ulid"
 )
 
 // ErrNoRating is what an answer outside the four gets. Nothing here guesses

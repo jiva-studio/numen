@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
+	"github.com/jiva-studio/numen/modules/libs/notes/ulid"
 )
 
 // DefaultServiceDir is where the application keeps a vault's own state. The

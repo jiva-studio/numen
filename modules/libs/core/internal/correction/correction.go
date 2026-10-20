@@ -7,7 +7,7 @@ package correction
 import (
 	"encoding/binary"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // A record is one corrected line: its number, the bytes of its text, and the

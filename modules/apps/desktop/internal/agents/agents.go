@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // Endpoint is the agents' endpoint on the vault a window is showing.

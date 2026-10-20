@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io/fs"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // GetRecognitionCorrectionState says whether the corrections of a scan's recognition are RunComplete, RunActive or RunNone.

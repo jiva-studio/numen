@@ -6,11 +6,11 @@ import (
 	"io/fs"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // typed is the index, answering what each note is from a fixed table.

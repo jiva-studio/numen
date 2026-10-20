@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // ErrClaimed is what a name another caller holds gets. Work whose whole output

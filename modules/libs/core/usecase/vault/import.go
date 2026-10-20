@@ -5,8 +5,8 @@ import (
 	"errors"
 	"path"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // ImportFailure is one file that stayed outside the vault, by the name it

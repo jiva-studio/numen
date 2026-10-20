@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io/fs"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // GetTranscriptCorrectionState says whether the corrections of a recording's transcript are RunComplete, RunActive or RunNone.

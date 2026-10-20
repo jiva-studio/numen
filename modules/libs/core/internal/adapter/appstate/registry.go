@@ -10,7 +10,7 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // VaultRegistry is the list of vaults, kept in one file that every write

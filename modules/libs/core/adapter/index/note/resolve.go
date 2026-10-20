@@ -7,7 +7,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // GetLinks returns the links written in one note, resolved.

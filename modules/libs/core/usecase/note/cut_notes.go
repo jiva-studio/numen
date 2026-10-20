@@ -1,9 +1,9 @@
 package note
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // CutNotes cuts notes into the headings and chunks the index keeps. A zero

@@ -12,10 +12,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	setting "github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // One in the morning, with a day that begins at four: the calendar says the

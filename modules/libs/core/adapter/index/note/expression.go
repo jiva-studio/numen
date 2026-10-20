@@ -3,7 +3,7 @@ package note
 import (
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // The two characters the index is asked to wrap a run that matched in. They are

@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // getPathsUnder is the paths one vault holds at a path and beneath it.

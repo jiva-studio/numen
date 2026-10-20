@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // chunksOf is the rows the chunks of one source sit on, in order. A source

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 func TestTranscriptWriteKeepsWhatWasHeard(t *testing.T) {

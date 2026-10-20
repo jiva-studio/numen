@@ -1,6 +1,6 @@
 package format
 
-import "github.com/jiva-studio/numen/modules/libs/core/markdown"
+import "github.com/jiva-studio/numen/modules/libs/notes/markdown"
 
 // writeIdentifier writes an identifier into a file that carries none.
 func writeIdentifier(doc *markdown.Document, identifier string) (bool, error) {

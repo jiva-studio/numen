@@ -3,7 +3,7 @@ package index
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // saveTypedNote puts one note in, of the kind its file says it is.

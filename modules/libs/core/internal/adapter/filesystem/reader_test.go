@@ -12,10 +12,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/ulid"
 )
 
 func walkPaths(t *testing.T, root string) []string {

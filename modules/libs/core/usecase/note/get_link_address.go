@@ -3,7 +3,7 @@ package note
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // GetLinkAddress finds how a link names the note at a path.

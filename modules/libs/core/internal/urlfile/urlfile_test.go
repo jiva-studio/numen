@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/urlfile"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // A `.url` file is what every system writes, and what one wrote is read back.

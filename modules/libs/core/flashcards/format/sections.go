@@ -3,7 +3,7 @@ package format
 import (
 	"bytes"
 
-	"github.com/jiva-studio/numen/modules/libs/core/markdown"
+	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
 )
 
 // section is one heading of the levels a file spends, and the bytes under it.

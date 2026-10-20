@@ -42,6 +42,7 @@ require (
 	github.com/godbus/dbus/v5 v5.2.2 // indirect
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/jiva-studio/numen/modules/libs/notes v0.0.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go v0.0.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent v0.0.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models v0.0.0 // indirect
@@ -127,3 +128,5 @@ replace github.com/jiva-studio/numen/modules/plugins/transcription => ../../plug
 replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models => ../../libs/plugin-sdk-go/models
 
 replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx => ../../libs/plugin-sdk-go/onnx
+
+replace github.com/jiva-studio/numen/modules/libs/notes => ../../libs/notes

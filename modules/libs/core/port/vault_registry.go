@@ -1,6 +1,6 @@
 package port
 
-import "github.com/jiva-studio/numen/modules/libs/core/domain"
+import "github.com/jiva-studio/numen/modules/libs/notes/domain"
 
 // VaultRegistry is the list of vaults the user has added. It is application
 // state: not derivable from any vault, and not stored in one.

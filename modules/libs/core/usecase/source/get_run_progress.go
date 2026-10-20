@@ -3,8 +3,8 @@ package source
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // GetRunProgress says how far the run over the source at a path has got.

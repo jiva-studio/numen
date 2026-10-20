@@ -10,7 +10,7 @@ package cardid
 import (
 	"crypto/rand"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // Crockford base32 in lower case: no i, l, o or u, so that an identifier read

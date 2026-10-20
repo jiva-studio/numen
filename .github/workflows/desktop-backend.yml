@@ -13,6 +13,8 @@ on:
       - "!modules/apps/desktop/**/*.md"
       - "modules/libs/core/**"
       - "!modules/libs/core/**/*.md"
+      - "modules/libs/notes/**"
+      - "!modules/libs/notes/**/*.md"
       - "modules/libs/plugin-sdk-go/**"
       - "!modules/libs/plugin-sdk-go/**/*.md"
       - "modules/libs/protocol/**"

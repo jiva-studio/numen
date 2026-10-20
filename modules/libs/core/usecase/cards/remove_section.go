@@ -3,8 +3,8 @@ package cards
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // RemoveSection takes the heading of the section standing at a place, counted from the first, away. No card is removed.

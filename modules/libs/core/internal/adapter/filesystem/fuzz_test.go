@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
+	"github.com/jiva-studio/numen/modules/libs/notes/ulid"
 )
 
 // vault is a root the rules can be asked about: a folder of notes, the

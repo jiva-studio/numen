@@ -1,6 +1,6 @@
 package source
 
-import "github.com/jiva-studio/numen/modules/libs/core/domain"
+import "github.com/jiva-studio/numen/modules/libs/notes/domain"
 
 // The kinds an artifact is asked for by, which are the kinds the store files
 // them under.

@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // reader is a GetDocumentText over a vault whose one document has been read by a model.

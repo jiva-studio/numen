@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/cardid"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // deckSeeds are the shapes a deck's body arrives in: cards under a section and

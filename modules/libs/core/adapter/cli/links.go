@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 func runLinksCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {

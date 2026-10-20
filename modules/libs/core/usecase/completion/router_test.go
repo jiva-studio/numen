@@ -7,9 +7,9 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/completion"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // defaultProgram is the program the programs name for an empty name.

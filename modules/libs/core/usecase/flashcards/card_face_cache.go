@@ -5,7 +5,7 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // defaultCachedFaces is how many card faces a window keeps parsed when

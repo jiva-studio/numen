@@ -13,7 +13,7 @@ package highlight
 import (
 	"sort"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // GetBoxesOver is the boxes covering a run of the prose, in the order they were

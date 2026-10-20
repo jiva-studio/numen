@@ -1,8 +1,8 @@
 package recognition
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // NewMemoryRecognise is a Recognise over the given vault readers and page

@@ -1,8 +1,8 @@
 package vault
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // GetVaultToShow returns the vault named, which must be on the list; with none named, the last shown, else the first on the list, else none.

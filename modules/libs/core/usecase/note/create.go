@@ -5,10 +5,10 @@ import (
 	pathpkg "path"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
-	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+	"github.com/jiva-studio/numen/modules/libs/notes/ulid"
 )
 
 // Create makes a note.

@@ -1,7 +1,7 @@
 package testsupport
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // Box is one run of prose on a page: where it stands in the text, and the

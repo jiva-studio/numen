@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // proofreadCommand puts one file right with a model, by what the file is: a

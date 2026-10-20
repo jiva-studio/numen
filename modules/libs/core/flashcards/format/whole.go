@@ -3,7 +3,7 @@ package format
 import (
 	"slices"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // CardMark is a mark given to a card that carried none, and where that card
