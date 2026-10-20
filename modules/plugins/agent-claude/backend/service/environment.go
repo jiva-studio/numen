@@ -38,24 +38,3 @@ func getVariables(vars map[string]string) []string {
 	}
 	return out
 }
-
-// buildKeyEnvironment is the environment of the command with the configured key and base URL in
-// place of any the process holds. With no key configured it is the environment as it stands.
-func buildKeyEnvironment(held []string, key, base string) []string {
-	if key == "" {
-		return buildEnvironment(held)
-	}
-	out := make([]string, 0, len(held)+2)
-	for _, entry := range buildEnvironment(held) {
-		name, _, _ := strings.Cut(entry, "=")
-		if name == anthropicKeyVar || name == anthropicBaseVar {
-			continue
-		}
-		out = append(out, entry)
-	}
-	out = append(out, anthropicKeyVar+"="+key)
-	if base != "" {
-		out = append(out, anthropicBaseVar+"="+base)
-	}
-	return out
-}

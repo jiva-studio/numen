@@ -202,3 +202,37 @@ describe('how wide the choices are drawn', () => {
     ).toBe('288px')
   })
 })
+
+describe('searching the choices', () => {
+  const getSearch = () => document.body.querySelector<HTMLInputElement>('.menu__search')
+
+  it('carries no search line unless it is asked for', async () => {
+    const control = mountSelect()
+    await openSelect(control)
+    expect(getSearch()).toBeNull()
+  })
+
+  it('leaves the choices that name the words typed, and hands back the one chosen', async () => {
+    const control = mountSelect({ searchable: true })
+    await openSelect(control)
+    const search = getSearch()!
+    search.value = 'lar'
+    search.dispatchEvent(new Event('input'))
+    await nextTick()
+    expect(rows().map((one) => one.textContent?.trim())).toStrictEqual(['Large'])
+    rows()[0]!.click()
+    await nextTick()
+    expect(control.emitted('update:modelValue')).toStrictEqual([['large']])
+  })
+})
+
+describe('the value written on the line', () => {
+  it('is kept to one line and read whole from its title', () => {
+    const control = mountSelect({
+      choices: [{ id: 'long', text: 'Agent of the panel (OpenAI Codex) with a long tail' }],
+      modelValue: 'long',
+    })
+    const reading = control.get('.select__reading')
+    expect(reading.attributes('title')).toBe('Agent of the panel (OpenAI Codex) with a long tail')
+  })
+})

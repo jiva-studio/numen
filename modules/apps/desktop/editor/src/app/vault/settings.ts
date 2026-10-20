@@ -106,6 +106,7 @@ export const settingsCore: SettingsPort = {
             min: s.min,
             max: s.max,
             step: s.step,
+            modelsOf: s.modelsOf,
           }
         }),
       })),

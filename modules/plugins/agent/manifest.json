@@ -31,6 +31,7 @@
       "key": "model",
       "type": "string",
       "title": "Model",
+      "modelsOf": "numen",
       "description": "The model asked where a task names none",
       "default": "openai/gpt-4o-mini"
     }

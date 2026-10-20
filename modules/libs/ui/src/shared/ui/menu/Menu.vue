@@ -7,9 +7,10 @@
  * point and says which item was chosen; what the items are and what choosing
  * one does are the caller's.
  */
-import { computed, nextTick, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import MenuRow from './MenuRow.vue'
-import { groupItems, getInitialIndex, type MenuItem, type MenuTrigger } from './item'
+import { filterItems, groupItems, getInitialIndex, type MenuItem, type MenuTrigger } from './item'
+import { isLetter } from './typeahead'
 import { useMenuGround } from './ground'
 import { useMenuKeys } from './keys'
 import { useMenuOpen } from './open'
@@ -54,6 +55,13 @@ const props = withDefaults(
     clock?: () => number
     /** What it is announced as. */
     name?: string
+    /**
+     * Whether a line to search the items by stands above them. The items shown
+     * are those that name every word typed in their text, detail or group.
+     */
+    searchable?: boolean
+    /** What the search line is announced as. */
+    searchName?: string
   }>(),
   {
     open: false,
@@ -66,6 +74,8 @@ const props = withDefaults(
     margin: 8,
     to: 'body',
     name: 'Menu',
+    searchable: false,
+    searchName: 'Search',
     clock: () => Date.now(),
   },
 )
@@ -90,8 +100,16 @@ defineSlots<{
 
 const menu = useTemplateRef<HTMLElement>('menu')
 
-/** The items with the rules that stand between their groups. */
-const rows = computed(() => groupItems(props.items))
+const search = useTemplateRef<HTMLInputElement>('search')
+const query = ref('')
+
+/** The items the search leaves, and all of them where there is none. */
+const shown = computed(() =>
+  props.searchable ? filterItems(props.items, query.value) : props.items,
+)
+
+/** The items shown, with the rules that stand between their groups. */
+const rows = computed(() => groupItems(shown.value))
 
 const { placed, setSize } = useMenuPlacement({
   at: () => props.at,
@@ -107,7 +125,7 @@ const measure = () => {
 
 const { listen, release } = useMenuGround(menu, () => emit('dismiss'))
 
-const { here, holdRow, goTo, onKey } = useMenuKeys(() => props.items, menu, props.clock)
+const { here, holdRow, goTo, onKey: onRowKey } = useMenuKeys(() => shown.value, menu, props.clock)
 
 const choose = (item: MenuItem) => {
   if (item.disabled) return
@@ -115,19 +133,57 @@ const choose = (item: MenuItem) => {
   emit('dismiss')
 }
 
+/**
+ * A key pressed inside the menu. On the search line the arrows and Tab step
+ * into the items and Enter chooses the first one; every other key is the line's
+ * own. A letter struck on an item goes to the line.
+ */
+const onKey = (event: KeyboardEvent): void => {
+  if (!props.searchable) return onRowKey(event)
+  if (event.target === search.value) {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      const first = shown.value.find((one) => !one.disabled)
+      if (first && query.value) choose(first)
+    } else if (['ArrowDown', 'ArrowUp', 'Tab'].includes(event.key)) {
+      here.value = -1
+      onRowKey(event)
+    }
+    return
+  }
+  if (isLetter(event)) search.value?.focus()
+  else onRowKey(event)
+}
+
 useMenuOpen({
   isOpen: () => props.open,
   listen,
   release,
   measure,
-  focusInitial: () => goTo(getInitialIndex(props.trigger, props.items, props.current)),
-  reset: () => (here.value = -1),
+  focusInitial,
+  reset: () => {
+    here.value = -1
+    query.value = ''
+  },
   getFrom: () => props.from,
 })
 
+/** The keyboard onto the search line where there is one, else onto the item in force. */
+function focusInitial(): void {
+  if (!props.searchable) {
+    goTo(getInitialIndex(props.trigger, props.items, props.current))
+    return
+  }
+  search.value?.focus()
+  menu.value?.querySelector('[aria-checked="true"]')?.scrollIntoView?.({ block: 'nearest' })
+}
+
+/** The keyboard is on no item once the search changes. */
+watch(query, () => (here.value = -1))
+
 /** Measured again when what it holds changes, and when the point does. */
 watch(
-  () => [props.items, props.at],
+  () => [shown.value, props.at],
   async () => {
     if (!props.open) return
     await nextTick()
@@ -154,6 +210,18 @@ const menuStyle = computed(() => ({
       :style="menuStyle"
       @keydown="onKey"
     >
+      <input
+        v-if="searchable"
+        ref="search"
+        v-model="query"
+        class="menu__search text-ink"
+        type="search"
+        autocomplete="off"
+        spellcheck="false"
+        :aria-label="searchName"
+        :placeholder="searchName"
+      />
+
       <MenuRow
         v-for="(item, index) in rows"
         :ref="(row) => holdRow(item.id, row)"
@@ -168,7 +236,7 @@ const menuStyle = computed(() => ({
         <slot name="icon" :id="item.id" />
       </MenuRow>
 
-      <p v-if="!items.length" class="menu__silence text-hushed px-2 py-1.5">
+      <p v-if="!shown.length" class="menu__silence text-hushed px-2 py-1.5">
         <slot name="silence">Nothing to do</slot>
       </p>
     </div>
@@ -213,5 +281,25 @@ const menuStyle = computed(() => ({
 
 .menu__silence {
   margin: 0;
+}
+
+/* The line stays on top while the list under it scrolls. */
+.menu__search {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  flex-shrink: 0;
+  inline-size: 100%;
+  margin-block-end: 0.25rem;
+  padding: 0.375rem 0.5rem;
+  font: inherit;
+  background-color: var(--numen-raised, #27221d);
+  border: 1px solid var(--numen-field-rule, var(--numen-rule, rgba(255, 255, 255, 0.15)));
+  border-radius: var(--numen-radius-small, 4px);
+  outline: none;
+}
+
+.menu__search:focus-visible {
+  border-color: var(--numen-accent, currentColor);
 }
 </style>

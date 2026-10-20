@@ -22,9 +22,13 @@ const props = withDefaults(
     /** What the list of choices is announced as. */
     name?: string
     disabled?: boolean
+    /** Whether the choices carry a line to search them by. */
+    searchable?: boolean
+    /** What the search line is announced as. */
+    searchName?: string
     class?: HTMLAttributes['class']
   }>(),
-  { placeholder: '', name: 'Choices', disabled: false },
+  { placeholder: '', name: 'Choices', disabled: false, searchable: false, searchName: 'Search' },
 )
 
 /** Which choice is in force, by the identifier the caller gave it. */
@@ -95,7 +99,7 @@ defineExpose({
     :disabled="disabled"
     :class="
       cn(
-        'flex w-full items-center justify-between gap-2',
+        'flex w-full max-w-full min-w-0 items-center justify-between gap-2',
         'h-action rounded-tight border-field-rule bg-field border px-2',
         'text-ink text-left font-sans text-base leading-none',
         'ease-numen cursor-pointer transition-colors duration-100 outline-none',
@@ -108,7 +112,11 @@ defineExpose({
     @click="openChoices"
     @keydown="onKey"
   >
-    <span class="select__reading min-w-0" :class="{ 'text-hushed': !chosen && !model }">
+    <span
+      class="select__reading min-w-0"
+      :class="{ 'text-hushed': !chosen && !model }"
+      :title="reading"
+    >
       {{ reading }}
     </span>
     <ChevronDown class="select__mark shrink-0" aria-hidden="true" />
@@ -123,6 +131,8 @@ defineExpose({
     :current="model"
     :name="name"
     has-groups
+    :searchable="searchable"
+    :search-name="searchName"
     open
     trigger="keyboard"
     @choose="onChoose"
@@ -136,6 +146,9 @@ defineExpose({
 /* One line, then an ellipsis. A model is named by a word and addressed by a
    line too long to read, and the name is what the line carries. */
 .select__reading {
+  /* The line box is taller than the text, so overflow clips no descender. */
+  padding-block: 0.125rem;
+  line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

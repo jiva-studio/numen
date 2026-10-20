@@ -108,6 +108,8 @@ export const WORDS = {
   agentNone: 'No agent answers',
   agentMissing: 'not installed: questions are refused, and no other agent answers',
   modelByAgent: 'Agent default',
+  /** What the search line of a long list of models is announced as. */
+  searchModels: 'Search models',
   /** Whether a plugin may ask a model at all. */
   consentAllowed: 'May ask a model',
   consentDetail: {

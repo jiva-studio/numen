@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 
 	"connectrpc.com/connect"
 
@@ -11,6 +12,7 @@ import (
 
 type agentServer struct {
 	agentrun.Service
+	models agentrun.ModelCache[antigravityModel]
 }
 
 func (s *agentServer) AskAgent(
@@ -47,18 +49,26 @@ func (s *agentServer) GetAgentState(
 	return connect.NewResponse(&numenv1.GetAgentStateResponse{}), nil
 }
 
-// GetAgentPrograms lists Antigravity and whether it is installed. It lists no models.
+// GetAgentPrograms lists Antigravity, whether it is installed, and the models it lists.
 func (s *agentServer) GetAgentPrograms(
-	_ context.Context,
+	ctx context.Context,
 	req *connect.Request[numenv1.GetAgentProgramsRequest],
 ) (*connect.Response[numenv1.GetAgentProgramsResponse], error) {
-	isSet := false
+	var command []string
 	for _, one := range req.Msg.GetCommands() {
-		if one.GetProgram() == "antigravity" && len(one.GetCommand()) > 0 {
-			isSet = true
+		if one.GetProgram() == "antigravity" {
+			command = one.GetCommand()
 		}
 	}
-	antigravity := &numenv1.AgentProgram{Name: "antigravity", Title: "Antigravity", IsInstalled: IsAntigravityInstalled() || isSet}
+	antigravity := &numenv1.AgentProgram{
+		Name: "antigravity", Title: "Antigravity", IsInstalled: IsAntigravityInstalled() || len(command) > 0,
+	}
+	if antigravity.GetIsInstalled() {
+		list := func(ctx context.Context) ([]antigravityModel, error) { return listAntigravityModels(ctx, command) }
+		for _, one := range s.models.Get(ctx, strings.Join(command, " "), list) {
+			antigravity.Models = append(antigravity.Models, &numenv1.AgentModel{Name: one.Name, Title: one.Title})
+		}
+	}
 	return connect.NewResponse(&numenv1.GetAgentProgramsResponse{
 		Programs: []*numenv1.AgentProgram{antigravity},
 	}), nil

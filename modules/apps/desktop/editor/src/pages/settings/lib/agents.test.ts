@@ -5,6 +5,7 @@ import { createPluginInfo, createProgramModels } from '@/testing/installation'
 import {
   createAgentModelChoices,
   createDefaultAgentChoices,
+  createProgramModelChoices,
   createPluginAgentChoices,
   findAgent,
   getAgents,
@@ -161,5 +162,47 @@ describe('the plugins drawn in the AI section', () => {
   it('are those with secrets, and those that may ask a model', () => {
     expect(getPluginsWithSecrets(PLUGINS)).toStrictEqual([ASKING])
     expect(getAskingPlugins(PLUGINS)).toStrictEqual([ASKING])
+  })
+})
+
+describe('the models of a program a setting is chosen from', () => {
+  const models = (names: readonly string[]) =>
+    createProgramModels([
+      { name: 'p', title: 'P', models: names.map((name) => ({ name, title: '' })) },
+    ])(['agent', 'p', 'model'])
+
+  it('are the models the program lists, each addressed by its name', () => {
+    const rows = createProgramModelChoices(
+      createProgramModels([
+        {
+          name: 'p',
+          title: 'P',
+          models: [
+            { name: 'v/m-1', title: 'Model one' },
+            { name: 'm-2', title: '' },
+          ],
+        },
+      ])(['agent', 'p', 'model']),
+      'm-2',
+    )
+    expect(rows).toStrictEqual([
+      { id: 'v/m-1', text: 'Model one', detail: 'v/m-1' },
+      { id: 'm-2', text: 'm-2' },
+    ])
+  })
+
+  it('leave out the row that names no model', () => {
+    const rows = createProgramModelChoices(models(['a', '']), '')
+    expect(rows.map((one) => one.id)).toStrictEqual(['a'])
+  })
+
+  it('hold, first, a value the program does not list', () => {
+    const rows = createProgramModelChoices(models(['a']), 'typed-by-hand')
+    expect(rows.map((one) => one.id)).toStrictEqual(['typed-by-hand', 'a'])
+  })
+
+  it('are none where the program lists none', () => {
+    expect(createProgramModelChoices(models([]), '')).toStrictEqual([])
+    expect(createProgramModelChoices(models([]), 'typed')).toStrictEqual([])
   })
 })

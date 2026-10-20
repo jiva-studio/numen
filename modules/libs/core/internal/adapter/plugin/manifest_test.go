@@ -134,6 +134,10 @@ func TestReadManifestSettingsValidation(t *testing.T) {
 			json: `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"select","title":"T"}]}`,
 		},
 		{
+			name: "models of a program on a setting that is not a string",
+			json: `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"number","title":"T","modelsOf":"p"}]}`,
+		},
+		{
 			name: "range min greater than max",
 			json: `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"range","title":"T","min":100,"max":50}]}`,
 		},
@@ -477,5 +481,16 @@ func TestTheServicesAPluginServesAreFullNamesListedOnce(t *testing.T) {
 				t.Errorf("the services came out as %v", manifest.Services)
 			}
 		})
+	}
+}
+
+func TestReadManifestKeepsTheProgramWhoseModelsASettingIsOffered(t *testing.T) {
+	m, err := ReadManifest(strings.NewReader(
+		`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"model","type":"string","title":"Model","modelsOf":"prog"}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := m.Settings[0].ModelsOf; got != "prog" {
+		t.Errorf("ModelsOf = %q, want prog", got)
 	}
 }

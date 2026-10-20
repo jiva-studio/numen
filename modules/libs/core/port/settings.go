@@ -68,6 +68,8 @@ type PluginSetting struct {
 	Min         *float64
 	Max         *float64
 	Step        *float64
+	// ModelsOf is the agent program whose models the setting is offered. Empty is a setting offered none.
+	ModelsOf string
 	// Replaces are the places in the settings file the setting was kept before the plugin took it
 	// over, as the keys that lead to each joined by dots.
 	Replaces []string

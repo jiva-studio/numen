@@ -50,6 +50,9 @@ message PluginSetting {
   optional double min = 8;
   optional double max = 9;
   optional double step = 10;
+  // The agent program whose models the setting is offered, as the program names itself. Empty is a
+  // setting offered none, and a person types its value.
+  string models_of = 11;
 }
 
 // PluginInfo describes a discovered plugin and its declarative settings.

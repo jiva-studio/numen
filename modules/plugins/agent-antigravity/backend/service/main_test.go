@@ -24,7 +24,7 @@ func withoutAgentsAnywhere(t *testing.T) {
 	t.Cleanup(func() { antigravitySearchPlaces = was })
 }
 
-// The program list names Antigravity, installed where it is found, and lists no models.
+// The program list names Antigravity, installed where it is found, with the models the program lists: none here.
 func TestTheProgramListNamesAntigravityWithoutModels(t *testing.T) {
 	agenttest.NeedsShell(t)
 	t.Setenv("HOME", t.TempDir())
