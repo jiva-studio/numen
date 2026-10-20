@@ -296,33 +296,7 @@ func newVaultClient(t *testing.T, fakeCallers *callers, token string) numenv1con
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(streamingToken{token: token}))
-}
-
-// streamingToken presents the token on a call of any kind, which authInterceptor does for a unary one.
-type streamingToken struct{ token string }
-
-func (b streamingToken) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
-	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		if b.token != "" {
-			req.Header().Set("Authorization", "Bearer "+b.token)
-		}
-		return next(ctx, req)
-	}
-}
-
-func (b streamingToken) WrapStreamingClient(next connect.StreamingClientFunc) connect.StreamingClientFunc {
-	return func(ctx context.Context, spec connect.Spec) connect.StreamingClientConn {
-		conn := next(ctx, spec)
-		if b.token != "" {
-			conn.RequestHeader().Set("Authorization", "Bearer "+b.token)
-		}
-		return conn
-	}
-}
-
-func (b streamingToken) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
-	return next
+	return numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(authInterceptor(token)))
 }
 
 func newVaultFixture(t *testing.T) (numenv1connect.HostVaultServiceClient, *memoryVault) {
