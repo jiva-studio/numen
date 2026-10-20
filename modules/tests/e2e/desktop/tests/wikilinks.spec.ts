@@ -1,32 +1,24 @@
 import { test, expect } from 'playwright/test'
+import { openWorkspace, runPaletteCommand } from './support/workspace.js'
 
 test.describe('Note Creation and Wikilinks', () => {
   test('creates new note via command palette naming flow', async ({ page }) => {
-    await page.goto('/')
-
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    // Trigger command palette
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
+    await openWorkspace(page)
 
     // Choose New note command
-    await paletteInput.fill('New note')
+    await runPaletteCommand(page, 'New note', 'New note')
+
+    // The naming step is drawn, and the name is offered back once typed
+    await expect(page.locator('[data-palette="crumb"]')).toBeVisible()
+    await page.locator('input[data-palette="field"]').first().fill('Quantum')
+    await expect(page.locator('[role="option"][aria-selected="true"]')).toContainText('Quantum')
     await page.keyboard.press('Enter')
 
-    // In naming step, enter note name
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-    await paletteInput.fill('Quantum')
-    await page.keyboard.press('Enter')
-
-    // Verify new note tab opened
-    await expect(
-      page
-        .getByRole('tab', { name: /Quantum/i })
-        .or(page.locator('.note'))
-        .first(),
-    ).toBeVisible({ timeout: 10_000 })
+    // Verify new note tab opened and is the one shown
+    await expect(page.getByRole('tab', { name: /Quantum/i }).first()).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
   })
 
   test('renders wikilink syntax in markdown editor', async ({ page }) => {

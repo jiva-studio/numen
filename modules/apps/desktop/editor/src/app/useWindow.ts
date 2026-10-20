@@ -11,7 +11,6 @@ import { fileOpeners, useWindowTabs } from '@/entities/tab'
 import { createMessageLog } from '@/shared/notices/messages'
 import { createMediaTypeProbe } from '@/entities/media'
 import { WORDS as words } from '@/shared/words'
-import { convertErrorCode, ERROR_MESSAGES } from '@/entities/note'
 import { useTabLinks } from '@/features/tab-linking'
 import { useTabSync } from './useTabSync'
 import { useCrossWindowTabs } from './useCrossWindowTabs'
@@ -28,6 +27,7 @@ import { useWindowStatusBar } from './useWindowStatusBar'
 import { useAppHotkeys } from './useAppHotkeys'
 import { useAppBootstrap } from './useAppBootstrap'
 import { createPluginSupport, watchPluginSettings } from './useWindowPlugins'
+import { createPluginNotes } from './pluginNotes'
 
 import { createDisplayOptions, createTargetResolver } from './useWindowDisplayOptions'
 import type { PluginServices } from './pluginServices'
@@ -166,20 +166,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
         `Plugin ${pluginId} failed: ${error instanceof Error ? error.message : String(error)}`,
         'error',
       ),
-    readNote: async (path: string) => {
-      const res = await core.read(path)
-      if (res.ok) {
-        return { body: res.value.body }
-      }
-      const errCode = convertErrorCode(res.error)
-      return {
-        body: '',
-        error: ERROR_MESSAGES[errCode] || 'the frontmatter of this note cannot be read',
-      }
-    },
-    writeNote: async (path: string, body: string) => {
-      await core.write(path, body, null)
-    },
+    ...createPluginNotes(core),
   })
   return {
     log,

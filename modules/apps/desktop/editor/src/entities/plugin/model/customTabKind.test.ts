@@ -184,6 +184,107 @@ describe('createCustomTabKind', () => {
   })
 })
 
+describe('createCustomTabKind (loading)', () => {
+  const registration = { kind: 'note', component: null, title: 'Markdown Note' }
+  const createHost = (readNote?: (path: string) => Promise<string | undefined>) => ({
+    registerKind: () => vi.fn(),
+    registerExtensionReader: () => vi.fn(),
+    openTab: () => Promise.resolve(''),
+    ...(readNote ? { readNote } : {}),
+  })
+  const open = (readNote?: (path: string) => Promise<string | undefined>) =>
+    createCustomTabKind('md.numen.editor-markdown', registration, createHost(readNote)).open(
+      'notes/test.md',
+      'tab',
+    ) as { isLoading: { value: boolean } }
+
+  it('is loading until the note has been read', async () => {
+    const reads: ((body: string) => void)[] = []
+    const state = open(() => new Promise<string>((resolve) => reads.push(resolve)))
+    expect(state.isLoading.value).toBe(true)
+
+    reads[0]?.('# Body')
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.isLoading.value).toBe(false)
+  })
+
+  it('stops loading when the read fails', async () => {
+    const state = open(() => Promise.reject(new Error('unreachable')))
+    expect(state.isLoading.value).toBe(true)
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.isLoading.value).toBe(false)
+  })
+
+  it('is not loading when the host reads no notes', () => {
+    expect(open().isLoading.value).toBe(false)
+  })
+})
+
+describe('createCustomTabKind (failed writes)', () => {
+  const host = (writeNote: (path: string, body: string) => Promise<void>) => ({
+    registerKind: () => vi.fn(),
+    registerExtensionReader: () => vi.fn(),
+    openTab: () => Promise.resolve(''),
+    writeNote,
+  })
+  const open = (writeNote: (path: string, body: string) => Promise<void>) =>
+    createCustomTabKind(
+      'md.numen.editor-markdown',
+      { kind: 'note', component: null, title: 'Markdown Note' },
+      host(writeNote),
+    ).open('notes/test.md', 'tab') as {
+      errorMessage: { value: string }
+      updateBody: (body: string) => void
+      save: () => void
+    }
+
+  it('shows the message of a write that was rejected', async () => {
+    const state = open(() => Promise.reject(new Error('the note could not be written')))
+    state.updateBody('edited')
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.errorMessage.value).toBe('the note could not be written')
+  })
+
+  it('clears the message once a newer write succeeds', async () => {
+    const answers = [Promise.reject(new Error('unreachable')), Promise.resolve()]
+    const state = open(() => answers.shift() ?? Promise.resolve())
+    state.updateBody('one')
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.errorMessage.value).toBe('unreachable')
+
+    state.updateBody('two')
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.errorMessage.value).toBe('')
+  })
+
+  it('keeps the message of a read when a write succeeds', async () => {
+    const state = open(() => Promise.resolve())
+    state.errorMessage.value = 'the frontmatter of this note cannot be read'
+    state.updateBody('one')
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.errorMessage.value).toBe('the frontmatter of this note cannot be read')
+  })
+
+  it('ignores the failure of a write that a newer write replaced', async () => {
+    let fail: (reason: Error) => void = () => undefined
+    const answers = [new Promise<void>((_, reject) => (fail = reject)), Promise.resolve()]
+    const state = open(() => answers.shift() ?? Promise.resolve())
+    state.updateBody('one')
+    state.updateBody('two')
+    fail(new Error('stale'))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.errorMessage.value).toBe('')
+  })
+
+  it('shows the message of a save that was rejected', async () => {
+    const state = open(() => Promise.reject(new Error('unreachable')))
+    state.save()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.errorMessage.value).toBe('unreachable')
+  })
+})
+
 describe('createReaderTabKind (source resolution)', () => {
   it('identifies source via registration source property', () => {
     const kind = createReaderTabKind('audio-plugin', {

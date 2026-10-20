@@ -22,6 +22,7 @@ import {
   resolvePluginComponent,
   stripMarkdownExtension,
 } from './styles'
+import { createNoteWriter, startNoteRead } from './customTabNote'
 import type { PluginHostDeps } from './types'
 import { pickDeclaredHooks } from './pluginTabKind'
 
@@ -174,6 +175,7 @@ const FORBIDDEN_ACTION_NAMES = new Set([
   'title',
   'note',
   'errorMessage',
+  'isLoading',
   'body',
   'updateBody',
   'save',
@@ -243,32 +245,17 @@ function createCustomTabState(at: string, deps: CustomTabStateDeps) {
   const defaultName = stripMarkdownExtension(extractFilename(at))
   const noteRef = ref({ path: at, body: '' })
   const errorMessageRef = ref('')
+  const isLoading = ref(deps.hostDeps?.readNote !== undefined)
   let hasEdited = false
-  let isInitialReadComplete = false
+  const write = createNoteWriter(at, deps.hostDeps?.writeNote, errorMessageRef)
 
   if (deps.hostDeps?.readNote) {
-    void deps.hostDeps
-      .readNote(at)
-      .then((result) => {
-        isInitialReadComplete = true
-        if (hasEdited) return
-        if (typeof result === 'string') {
-          noteRef.value = { path: at, body: result }
-        } else if (result && typeof result === 'object') {
-          if (result.body !== undefined) {
-            noteRef.value = { path: at, body: result.body }
-          }
-          if (result.error) {
-            errorMessageRef.value = result.error
-          }
-        }
-      })
-      .catch((err) => {
-        isInitialReadComplete = true
-        errorMessageRef.value = err instanceof Error ? err.message : String(err)
-      })
-  } else {
-    isInitialReadComplete = true
+    startNoteRead(at, deps.hostDeps.readNote, {
+      note: noteRef,
+      errorMessage: errorMessageRef,
+      isLoading,
+      hasEdited: () => hasEdited,
+    })
   }
   return {
     at,
@@ -277,15 +264,16 @@ function createCustomTabState(at: string, deps: CustomTabStateDeps) {
     title: defaultName,
     note: noteRef,
     errorMessage: errorMessageRef,
+    isLoading,
     body: computed(() => noteRef.value.body),
     updateBody: (body: string) => {
       hasEdited = true
       noteRef.value = { path: at, body }
-      void deps.hostDeps?.writeNote?.(at, body)
+      write(body)
     },
     save: () => {
-      if (!isInitialReadComplete && !hasEdited) return
-      void deps.hostDeps?.writeNote?.(at, noteRef.value.body)
+      if (isLoading.value && !hasEdited) return
+      write(noteRef.value.body)
     },
     ...createTabActions(at, deps.registration, deps.hostDeps),
   }

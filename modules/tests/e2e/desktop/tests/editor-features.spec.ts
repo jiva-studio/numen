@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test'
+import { openWorkspace } from './support/workspace.js'
 
 test.describe('Markdown Editor Features and Editing', () => {
   test('triggers wikilink autocomplete dropdown on bracket input', async ({ page }) => {
@@ -66,11 +67,7 @@ test.describe('Markdown Editor Features and Editing', () => {
   })
 
   test('saves note edits with keyboard shortcut control s', async ({ page }) => {
-    await page.goto('/')
-
-    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
-      timeout: 15_000,
-    })
+    await openWorkspace(page)
 
     await page.getByText('Files').first().click()
     const notesRow = page.locator('[data-tree-row="notes"]')
@@ -81,8 +78,11 @@ test.describe('Markdown Editor Features and Editing', () => {
     await expect(entropyRow).toBeVisible()
     await entropyRow.press('Enter')
 
+    // The note is typed into once it is read and the editor accepts input
     const cmContent = page.locator('.cm-content').first()
     await expect(cmContent).toBeVisible({ timeout: 10_000 })
+    await expect(cmContent).toContainText('A measure of uncertainty')
+    await expect(cmContent).toHaveAttribute('contenteditable', 'true')
 
     // Edit content and press Control+s
     await cmContent.click()
@@ -90,10 +90,6 @@ test.describe('Markdown Editor Features and Editing', () => {
     await page.keyboard.type(' Saved verification stamp.')
     await page.keyboard.press('Control+s')
 
-    // Verify workspace status and content persisted
-    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
-      timeout: 15_000,
-    })
     await expect(cmContent).toContainText('Saved verification stamp.')
 
     // Close note tab and reopen to verify persisted content from disk
