@@ -20,7 +20,8 @@ func TestMain(m *testing.M) {
 }
 
 // fakeACPAgent returns an agent served by this test binary. The behaviour is one of: "config"
-// reports models m1 and m2 as a config option, "legacy" reports them the older way, "plain"
+// reports models m1 and m2 as a config option, "thought" does so and adds the depths low, medium and high of
+// the category thought_level, "legacy" reports them the older way, "plain"
 // reports none, "fail" exits at once, "refuse" ends its turn refusing, and "hang" never ends it.
 // Every line the agent reads is appended to the record.
 func fakeACPAgent(t *testing.T, program, behaviour string) (acpAgent, string) {
@@ -129,12 +130,19 @@ func (a *fakeAgent) getSession() map[string]any {
 	session := map[string]any{"sessionId": "s1"}
 	models := []map[string]any{{"value": "m1", "name": "Model One"}, {"value": "m2", "name": "Model Two"}}
 	switch a.behaviour {
-	case "config":
+	case "config", "thought":
 		session["configOptions"] = []map[string]any{
 			{"id": "mode", "category": "mode", "type": "select", "currentValue": "ask", "options": []map[string]any{{"value": "ask"}}},
 			{"id": "model", "category": "model", "type": "select", "currentValue": "m1", "options": []map[string]any{
 				{"group": "g", "name": "Group", "options": models},
 			}},
+		}
+		if a.behaviour == "thought" {
+			session["configOptions"] = append(session["configOptions"].([]map[string]any), map[string]any{
+				"id": "effort", "category": "thought_level", "type": "select", "currentValue": "medium", "options": []map[string]any{
+					{"value": "low", "name": "Low"}, {"value": "medium", "name": "Medium"}, {"value": "high", "name": "High"},
+				},
+			})
 		}
 	case "legacy":
 		session["models"] = map[string]any{"currentModelId": "m1", "availableModels": []map[string]any{

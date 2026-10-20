@@ -14,6 +14,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/reasoning"
 )
 
 const (
@@ -55,6 +56,12 @@ type acpSession struct {
 	models      []acpModel
 	current     string
 	modelOption string
+	// thoughtOption is the id of the config option of the category thought_level, empty where the agent
+	// reports none; thoughtLevels are its values and thoughtCurrent the one the session works at. They
+	// hold for the current model.
+	thoughtOption  string
+	thoughtLevels  []reasoning.Level
+	thoughtCurrent string
 	// answer is the text of the agent's message chunks.
 	answer strings.Builder
 }
@@ -161,12 +168,14 @@ func (s *acpSession) create() error {
 	}
 	s.id = reply.SessionID
 	for _, option := range reply.ConfigOptions {
+		if option.Category == "thought_level" && option.Type == "select" {
+			s.thoughtOption, s.thoughtCurrent, s.thoughtLevels = option.ID, option.CurrentValue, option.getLevels()
+		}
 		if option.Category == "model" && option.Type == "select" {
 			s.modelOption, s.current, s.models = option.ID, option.CurrentValue, option.getModels()
-			return nil
 		}
 	}
-	if reply.Models != nil {
+	if s.modelOption == "" && reply.Models != nil {
 		s.current = reply.Models.CurrentModelID
 		for _, one := range reply.Models.AvailableModels {
 			s.models = append(s.models, acpModel{ID: one.ModelID, Name: one.Name})
@@ -198,6 +207,21 @@ func (s *acpSession) setModel(model string) error {
 		return err
 	}
 	s.current = model
+	return nil
+}
+
+// setReasoning makes the session work at the level, one the agent reports for its current model. A level
+// the agent does not report is not set.
+func (s *acpSession) setReasoning(level string) error {
+	if level == "" || level == s.thoughtCurrent || !reasoning.Contains(s.thoughtLevels, level) {
+		return nil
+	}
+	if _, err := s.call("session/set_config_option", map[string]any{
+		"sessionId": s.id, "configId": s.thoughtOption, "value": level,
+	}); err != nil {
+		return err
+	}
+	s.thoughtCurrent = level
 	return nil
 }
 
@@ -404,6 +428,19 @@ func (o acpConfigOption) getModels() []acpModel {
 	}
 	walk(o.Options)
 	return models
+}
+
+// getLevels returns the values of the option as levels of reasoning, in the order the agent lists them.
+func (o acpConfigOption) getLevels() []reasoning.Level {
+	var levels []reasoning.Level
+	for _, one := range o.getModels() {
+		title := one.Name
+		if title == "" {
+			title = one.ID
+		}
+		levels = append(levels, reasoning.Level{Name: one.ID, Title: title})
+	}
+	return levels
 }
 
 // tailBuffer retains the last bytes written to it.

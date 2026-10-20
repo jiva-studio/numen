@@ -5,6 +5,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/reasoning"
 )
 
 // acpListLimit is how long an agent has to open the session its models are read from.
@@ -27,6 +29,10 @@ func (s *agentServer) getACPAgents() []acpAgent {
 type acpListing struct {
 	models  []acpModel
 	current string
+	// levels are the depths of reasoning the agent reports for the current model, and level the one it
+	// works at.
+	levels []reasoning.Level
+	level  string
 }
 
 // acpModelCache keeps what each agent listed, for as long as the command that starts it stays the
@@ -88,5 +94,7 @@ func readACPListing(ctx context.Context, agent acpAgent) (acpListing, error) {
 		return acpListing{}, err
 	}
 	defer session.close()
-	return acpListing{models: session.models, current: session.current}, nil
+	return acpListing{
+		models: session.models, current: session.current, levels: session.thoughtLevels, level: session.thoughtCurrent,
+	}, nil
 }
