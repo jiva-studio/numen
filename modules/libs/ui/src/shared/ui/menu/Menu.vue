@@ -296,7 +296,7 @@ const menuStyle = computed(() => ({
   --inset: 0.375rem;
 
   position: sticky;
-  inset-block-start: 0;
+  inset-block-start: calc(-1 * var(--inset));
   z-index: 1;
   flex-shrink: 0;
   margin: calc(-1 * var(--inset)) calc(-1 * var(--inset)) 0.25rem;
