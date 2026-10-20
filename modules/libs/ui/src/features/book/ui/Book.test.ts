@@ -324,3 +324,28 @@ describe('a document the browser has laid out', () => {
     held.unmount()
   })
 })
+
+/** A second document of the book, which a turn past the end of the first opens. */
+const NEXT = createChapter([{ tag: 'p', text: 'Следующая глава.' }], LAID.span.to)
+
+describe('a document replaced while a later spread of the one before is in front', () => {
+  it('stays out of sight until its spread is stood', async () => {
+    const held = await mountBook()
+    pressKey(held, 'ArrowRight')
+    expect(getTranslate(held)).toBe('-1100px 0')
+
+    await held.setProps({ markup: NEXT.markup, span: NEXT.span, at: NEXT.span.from })
+
+    // The frame that stands the new document has not come yet, and the text
+    // carried to the old spread is not shown in the meantime.
+    expect(held.find('.book__paper').classes()).toContain('book__paper--unset')
+
+    await new Promise((wake) => setTimeout(wake, 50))
+    await held.vm.$nextTick()
+
+    expect(held.find('.book__paper').classes()).not.toContain('book__paper--unset')
+    expect(getTranslate(held)).toBe('0px 0')
+
+    held.unmount()
+  })
+})

@@ -36,6 +36,7 @@ interface BookWatchContext {
   readonly standing: { value: number }
   readonly getSpreadOf: (at: number) => number
   readonly stand: (spread: number, how: 'smooth' | 'auto') => void
+  readonly isStood: { value: boolean }
 }
 
 function watchBookLayout(
@@ -58,6 +59,7 @@ function watchBookLayout(
     () => props.markup,
     () => {
       const place = context.takeLed()
+      context.isStood.value = false
       context.standing.value = 0
       context.settle(props.at, place)
     },
@@ -85,12 +87,7 @@ function watchBookLayout(
  */
 export function useBookLayout(options: BookLayoutOptions) {
   const { textSize, viewport, isMeasured, flow, spreadCount, setting, marks, ...column } =
-    useBookColumns({
-      area: options.area,
-      paper: options.paper,
-      props: options.props,
-      getEdge: options.getEdge,
-    })
+    useBookColumns(options)
 
   const { front, leftInChapter, stand, getKeptOffset, getSpreadOf, turn, standing } = useBookTurns({
     paper: options.paper,
@@ -116,6 +113,7 @@ export function useBookLayout(options: BookLayoutOptions) {
       stand(getSpreadOf(landed ?? keep), 'auto')
       if (landed !== undefined) options.onMove(landed)
       column.markRuns()
+      column.isStood.value = true
     })
   }
 
@@ -129,12 +127,14 @@ export function useBookLayout(options: BookLayoutOptions) {
       standing,
       getSpreadOf,
       stand,
+      isStood: column.isStood,
     },
   )
 
   return {
     textSize,
     isMeasured,
+    isStood: column.isStood,
     flow,
     spreadCount,
     front,

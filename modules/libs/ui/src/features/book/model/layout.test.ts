@@ -36,6 +36,7 @@ const setUp = () => {
     textSize: ref(1),
     viewport: ref({ width: 300, height: 200 }),
     isMeasured: ref(true),
+    isStood: ref(false),
     flow: ref({}),
     spreadCount: ref(5),
     setting: ref({}),
@@ -61,6 +62,7 @@ const columns = () =>
     viewport: { value: { width: number; height: number } }
     textSize: { value: number }
     isMeasured: { value: boolean }
+    isStood: { value: boolean }
     measure: ReturnType<typeof vi.fn>
     readColumns: ReturnType<typeof vi.fn>
     findFragmentOffset: ReturnType<typeof vi.fn>
@@ -316,6 +318,29 @@ describe('another document being opened', () => {
     expect(columns().measure).toHaveBeenCalledTimes(1)
     flushFrames()
     expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(90), 'auto')
+  })
+
+  it('is not stood until the frame that sets it, and is stood after it', async () => {
+    const { props } = room()
+    flushFrames()
+    expect(columns().isStood.value).toBe(true)
+
+    props.markup = '<p>two</p>'
+    await nextTick()
+    expect(columns().isStood.value).toBe(false)
+
+    flushFrames()
+    expect(columns().isStood.value).toBe(true)
+  })
+
+  it('stays as it is while the room changes size', async () => {
+    room()
+    flushFrames()
+
+    columns().viewport.value = { width: 400, height: 200 }
+    await nextTick()
+
+    expect(columns().isStood.value).toBe(true)
   })
 
   it('lands on the place the link led to', async () => {

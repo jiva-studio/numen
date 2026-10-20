@@ -64,7 +64,7 @@ const layout = useBookLayout({
   takeLed: links.takeLed,
   getEdge,
 })
-const { isMeasured, setting, spreadCount, front, leftInChapter } = layout
+const { isMeasured, isStood, setting, spreadCount, front, leftInChapter } = layout
 
 const hand = useBookHand({
   area,
@@ -119,6 +119,7 @@ defineExpose({
           v-show="isMeasured"
           ref="paper"
           class="book__paper prose prose-sm prose-numen max-w-none"
+          :class="{ 'book__paper--unset': !isStood }"
           :style="setting"
           @click="follow"
           @auxclick="follow"
