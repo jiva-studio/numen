@@ -110,3 +110,14 @@ func TestLevelHelpers(t *testing.T) {
 		t.Error("empty input")
 	}
 }
+
+func TestAFamilyNameWithoutALevelResolvesToTheModelOfItsDefaultLevel(t *testing.T) {
+	families := Fold([]Listed{
+		{"gemini-3.8-flash-high", "Gemini 3.8 Flash (High)"},
+		{"gemini-3.8-flash-medium", "Gemini 3.8 Flash (Medium)"},
+		{"gemini-3.8-flash-low", "Gemini 3.8 Flash (Low)"},
+	})
+	if got := ResolveModel(families, "gemini-3.8-flash", ""); got != "gemini-3.8-flash-medium" {
+		t.Errorf("resolved to %q", got)
+	}
+}
