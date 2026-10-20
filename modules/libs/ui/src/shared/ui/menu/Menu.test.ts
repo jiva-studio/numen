@@ -488,3 +488,65 @@ describe('searching the items', () => {
     expect(choices()).toHaveLength(3)
   })
 })
+
+describe('how tall it grows', () => {
+  const getRoom = () => getDrawnMenu()?.style.getPropertyValue('--room')
+
+  it('leaves the area its margin on both sides', async () => {
+    mountMenu({ viewport: { width: 900, height: 300 }, margin: 10 })
+    await settle()
+    expect(getRoom()).toBe('280px')
+  })
+
+  it('reads the room off the browser window where no area is given', async () => {
+    mountMenu({ margin: 8 })
+    await settle()
+    expect(getRoom()).toBe('calc(100dvh - 16px)')
+  })
+
+  it('never leaves a negative room', async () => {
+    mountMenu({ viewport: { width: 900, height: 10 }, margin: 8 })
+    await settle()
+    expect(getRoom()).toBe('0px')
+  })
+})
+
+describe('the search line and the items', () => {
+  const getBar = () => document.body.querySelector<HTMLElement>('.menu__bar')
+
+  it('draws the search line in a bar of its own, before every item', async () => {
+    mountMenu({ searchable: true })
+    await settle()
+    const bar = getBar()!
+    expect(bar.contains(document.body.querySelector('.menu__search'))).toBe(true)
+    expect(choices().some((one) => bar.contains(one))).toBe(false)
+    expect(
+      choices().every((one) => bar.compareDocumentPosition(one) & Node.DOCUMENT_POSITION_FOLLOWING),
+    ).toBe(true)
+  })
+
+  it('draws no bar where there is no search', async () => {
+    mountMenu()
+    await settle()
+    expect(getBar()).toBeNull()
+  })
+
+  it('draws the names of groups after the bar', async () => {
+    mountMenu({
+      searchable: true,
+      hasGroups: true,
+      items: [
+        { id: 'a', text: 'A', group: 'First' },
+        { id: 'b', text: 'B', group: 'Second' },
+      ],
+    })
+    await settle()
+    const names = document.body.querySelectorAll('.menu__group-name')
+    expect(names).toHaveLength(2)
+    expect(
+      Array.from(names).every(
+        (one) => getBar()!.compareDocumentPosition(one) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+    ).toBe(true)
+  })
+})

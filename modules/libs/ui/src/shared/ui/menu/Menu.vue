@@ -195,6 +195,9 @@ const menuStyle = computed(() => ({
   left: `${placed.value.x}px`,
   top: `${placed.value.y}px`,
   '--asking': `${props.asking}px`,
+  '--room': props.viewport
+    ? `${Math.max(props.viewport.height - 2 * props.margin, 0)}px`
+    : `calc(100dvh - ${2 * props.margin}px)`,
 }))
 </script>
 
@@ -210,17 +213,18 @@ const menuStyle = computed(() => ({
       :style="menuStyle"
       @keydown="onKey"
     >
-      <input
-        v-if="searchable"
-        ref="search"
-        v-model="query"
-        class="menu__search text-ink"
-        type="search"
-        autocomplete="off"
-        spellcheck="false"
-        :aria-label="searchName"
-        :placeholder="searchName"
-      />
+      <div v-if="searchable" class="menu__bar">
+        <input
+          ref="search"
+          v-model="query"
+          class="menu__search text-ink"
+          type="search"
+          autocomplete="off"
+          spellcheck="false"
+          :aria-label="searchName"
+          :placeholder="searchName"
+        />
+      </div>
 
       <MenuRow
         v-for="(item, index) in rows"
@@ -254,9 +258,11 @@ const menuStyle = computed(() => ({
   --widest: 20rem;
   /* What asked for it, which it is never narrower than. */
   --asking: 0px;
-  /* A menu is as long as what it offers, and it scrolls only where the screen
-     itself cannot hold it. */
-  --tallest: calc(100vh - 1rem);
+  /* The room the area leaves it, set by the component. */
+  --room: calc(100dvh - 1rem);
+  /* A menu is as long as what it offers up to this, and its items scroll
+     beyond it. */
+  --tallest: min(24rem, var(--room));
   --lift: var(--numen-lift-menu, 99999);
 
   position: fixed;
@@ -283,14 +289,25 @@ const menuStyle = computed(() => ({
   margin: 0;
 }
 
-/* The line stays on top while the list under it scrolls. */
-.menu__search {
+/* The search line is a row of its own at the top of the menu: it stays there
+   while the items scroll beneath, and no item shows above or beside it. */
+.menu__bar {
+  /* The room the menu keeps around what it holds. */
+  --inset: 0.375rem;
+
   position: sticky;
   inset-block-start: 0;
   z-index: 1;
   flex-shrink: 0;
+  margin: calc(-1 * var(--inset)) calc(-1 * var(--inset)) 0.25rem;
+  padding: var(--inset);
+  background-color: var(--numen-raised, #27221d);
+  border-block-end: 1px solid
+    var(--numen-panel-border, var(--numen-rule, rgba(255, 255, 255, 0.15)));
+}
+
+.menu__search {
   inline-size: 100%;
-  margin-block-end: 0.25rem;
   padding: 0.375rem 0.5rem;
   font: inherit;
   background-color: var(--numen-raised, #27221d);
