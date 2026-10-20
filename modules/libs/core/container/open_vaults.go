@@ -7,7 +7,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // ErrClosing is work asked for once the window has begun closing.

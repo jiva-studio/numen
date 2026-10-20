@@ -7,9 +7,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // proofreadRecognitionCommand puts one document's recognition right with a model.

@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // This file is the only one that knows a card can be asked about. Built with

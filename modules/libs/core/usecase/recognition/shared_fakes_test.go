@@ -11,8 +11,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // puts is a proofreader answering with the correction it was told to make on a

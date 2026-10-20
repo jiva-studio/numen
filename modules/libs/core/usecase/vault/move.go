@@ -6,9 +6,9 @@ import (
 	"io/fs"
 	pathpkg "path"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // Move files anything the vault holds somewhere else inside it: one file of any

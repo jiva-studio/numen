@@ -3,7 +3,7 @@ package ocr
 import (
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // The artifact is plain text with the pages marked in it:

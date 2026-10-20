@@ -5,8 +5,8 @@ import (
 	"errors"
 	"io/fs"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // isUnclaimed says whether nobody holds a name, by taking it and letting it go.

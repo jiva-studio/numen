@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/markdown"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
 )
 
 // ReadDeck reads the body of a note as a deck. Which notes are decks is what

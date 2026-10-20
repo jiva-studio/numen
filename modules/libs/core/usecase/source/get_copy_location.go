@@ -3,8 +3,8 @@ package source
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // CopyLocation is where a copy stands: VaultPath is its path when it sits in the vault beside its note, empty when it sits in the store.

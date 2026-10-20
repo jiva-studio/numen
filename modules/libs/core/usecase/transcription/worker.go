@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // errNothingTranscribes is a run that reached nothing: what transcribes a

@@ -3,10 +3,10 @@ package container
 import (
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // Vaults is what everything that acts on the vault list and vaults is called.

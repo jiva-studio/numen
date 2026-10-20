@@ -1,6 +1,6 @@
 package recognition
 
-import "github.com/jiva-studio/numen/modules/libs/core/domain"
+import "github.com/jiva-studio/numen/modules/libs/notes/domain"
 
 // getProofreadPages is the printed lines of a recognition, gathered by the page
 // they were read from.

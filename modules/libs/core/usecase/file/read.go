@@ -12,9 +12,9 @@ import (
 	"path/filepath"
 	"unicode/utf8"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // MostRead is how much of a file one read carries.

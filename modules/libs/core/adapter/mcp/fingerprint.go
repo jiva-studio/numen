@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // What a note, a deck and the note a link is written in were when they were

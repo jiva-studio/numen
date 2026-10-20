@@ -3,8 +3,8 @@ package format_test
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 func wholeAnimals() map[string]format.Stencil {

@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // deaf is a transcriber that hears whatever it was told to hear: a file it

@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 func TestCorrectionsComeBackAsTheyWereWritten(t *testing.T) {

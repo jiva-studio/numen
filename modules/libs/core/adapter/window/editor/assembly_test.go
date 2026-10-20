@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // NewAssembly is the window's assembly over a configuration, bound the way an

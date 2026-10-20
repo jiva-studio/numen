@@ -13,12 +13,15 @@ numen/
 └── modules/
     ├── libs/
     │   ├── core/                 # Go: the hexagon
-    │   │   ├── domain/           # entities, value objects, identifiers, invariants
     │   │   ├── port/             # interfaces the use cases require
     │   │   ├── usecase/          # one business scenario each, orchestrating ports
     │   │   ├── adapter/          # filesystem, index, agent, cli, mcp, window, settings
     │   │   ├── container/        # the composition root
     │   │   └── internal/         # what nothing outside core may name
+    │   ├── notes/                # Go: what a note is and how it is written, shared with the plugins
+    │   │   ├── domain/           # entities, value objects, identifiers, invariants
+    │   │   ├── markdown/         # reading and editing a note's file
+    │   │   └── ulid/             # the identifiers a note is given
     │   ├── protocol/             # the schema, and the Go and TypeScript generated from it
     │   ├── wire/                 # TypeScript: what a window says to the core
     │   └── ui/                   # Vue 3: components that know nothing about the domain

@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 const scanPath = "library/scan.pdf"

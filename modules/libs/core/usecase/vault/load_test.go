@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // The load test runs at the size the product is designed for, which no

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 func toName(value string, role domain.LinkRole) domain.Link {

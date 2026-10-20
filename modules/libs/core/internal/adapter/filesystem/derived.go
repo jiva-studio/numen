@@ -13,8 +13,8 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // The folders a vault's own store keeps what was made from its files in. Each

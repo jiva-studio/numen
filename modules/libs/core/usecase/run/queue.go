@@ -1,6 +1,6 @@
 package run
 
-import "github.com/jiva-studio/numen/modules/libs/core/domain"
+import "github.com/jiva-studio/numen/modules/libs/notes/domain"
 
 // queue is the sources a person named, in the order they named them. A source
 // named twice waits in it once.

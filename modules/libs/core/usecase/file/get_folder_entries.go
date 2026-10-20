@@ -3,8 +3,8 @@ package file
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // GetFolderEntries returns what a folder holds, with the type of each note in it where an index exists.

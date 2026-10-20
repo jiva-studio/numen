@@ -6,7 +6,7 @@ import (
 
 	ignore "github.com/sabhiram/go-gitignore"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // Options are what a vault on disk may be configured with.

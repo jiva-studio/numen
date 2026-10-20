@@ -3,7 +3,7 @@ package port
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // Every half takes the kinds of source a question is about. None of them is

@@ -12,7 +12,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // VaultReader reads one vault from disk.

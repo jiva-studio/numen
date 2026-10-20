@@ -3,8 +3,8 @@ package cards
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // RemoveCardValue takes one field off the card of a mark.

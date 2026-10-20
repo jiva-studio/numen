@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // busy is an index that cannot be brought level, which is what a second writer

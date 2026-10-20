@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // scriptedRows is a result set that ends with the error given, or cleanly.

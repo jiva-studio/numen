@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 func runProblemsCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {

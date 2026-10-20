@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/markdown"
+	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
 )
 
 // ErrNoSuchField is what changing a field says when the stencil declares no

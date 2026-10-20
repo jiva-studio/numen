@@ -3,7 +3,7 @@ package note
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // TellMove is told where a note went, for whoever is showing it.

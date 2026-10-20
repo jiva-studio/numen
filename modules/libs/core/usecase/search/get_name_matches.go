@@ -3,8 +3,8 @@ package search
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // GetNameMatches finds the names in a vault that match the words typed: a note's own title and the headings inside notes.

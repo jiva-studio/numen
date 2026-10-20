@@ -4,8 +4,8 @@ import (
 	"context"
 	"io"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // Document is what GetDocument reads: which bytes it came from, and the size of

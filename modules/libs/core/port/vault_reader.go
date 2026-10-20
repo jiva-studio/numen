@@ -6,7 +6,7 @@ import (
 	"io"
 	"io/fs"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // ErrNotANote is what a path gets when there is a file at it and the vault does

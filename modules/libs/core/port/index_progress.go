@@ -3,7 +3,7 @@ package port
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // IndexProgress is how far indexing a vault for meaning has got.

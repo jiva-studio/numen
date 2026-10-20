@@ -8,7 +8,7 @@ import (
 
 	"github.com/rjeczalik/notify"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // Backlog is how many events are held while they are being debounced. Past it the

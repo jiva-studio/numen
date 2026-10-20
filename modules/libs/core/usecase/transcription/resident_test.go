@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // counted is a runtime that counts how many times the models were opened and

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // stencilsOf is an index that names the stencils of a vault from a list, or fails.

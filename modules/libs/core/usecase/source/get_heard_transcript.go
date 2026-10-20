@@ -3,7 +3,7 @@ package source
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // GetHeardTranscript reads the text a model wrote from the file at a path.

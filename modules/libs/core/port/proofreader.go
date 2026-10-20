@@ -3,7 +3,7 @@ package port
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // Proofreader puts numbered lines of text right. The core asks for one and does

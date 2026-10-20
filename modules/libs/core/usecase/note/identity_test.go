@@ -10,8 +10,8 @@ import (
 
 	"pgregory.net/rapid"
 
-	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
 )
 
 // started are the notes a run begins from: one this application made, one it

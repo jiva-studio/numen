@@ -4,8 +4,8 @@ import (
 	"context"
 	"slices"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // GetCardPage reads a run of the cards of one deck, or one card of it.

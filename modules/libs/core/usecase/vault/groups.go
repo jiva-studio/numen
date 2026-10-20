@@ -3,7 +3,7 @@ package vault
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // A group of notes is one write. The count is where the gain flattens out; the

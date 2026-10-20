@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // budgets is what today leaves each preset a vault's decks are scheduled by,

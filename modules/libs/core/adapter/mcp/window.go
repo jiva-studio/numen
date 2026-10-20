@@ -6,8 +6,8 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // A Tab is one tab of the person's window, as an agent is told about it.

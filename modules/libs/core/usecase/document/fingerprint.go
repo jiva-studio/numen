@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // Fingerprint is which bytes a document is: where it sits in the vault, and

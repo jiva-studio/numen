@@ -7,8 +7,8 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // maxMatches is how many passages one call may ask for. A call asking for more

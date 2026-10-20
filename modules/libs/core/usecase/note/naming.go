@@ -1,6 +1,6 @@
 package note
 
-import "github.com/jiva-studio/numen/modules/libs/core/domain"
+import "github.com/jiva-studio/numen/modules/libs/notes/domain"
 
 // NameSource is which of the two a note is shown by, and so which one naming it
 // writes.

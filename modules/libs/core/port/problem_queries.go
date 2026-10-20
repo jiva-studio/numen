@@ -3,7 +3,7 @@ package port
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // ProblemQueries answers the questions a check cannot answer from one file.

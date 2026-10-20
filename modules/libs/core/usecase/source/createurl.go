@@ -4,9 +4,9 @@ import (
 	"context"
 	pathpkg "path"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/urlfile"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // CreateURL makes the file a web address is kept in.

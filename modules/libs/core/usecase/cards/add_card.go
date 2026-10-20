@@ -3,8 +3,8 @@ package cards
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // AddCard writes a card at the end of a deck, or at the end of one of its sections.

@@ -7,12 +7,12 @@ import (
 	pathpkg "path"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
-	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+	"github.com/jiva-studio/numen/modules/libs/notes/ulid"
 )
 
 // The two frontmatter keys a deck and a stencil are made with: what the note

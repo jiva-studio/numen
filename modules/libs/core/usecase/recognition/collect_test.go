@@ -3,7 +3,7 @@ package recognition
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // makeBox is one printed line on a page, over a run of the prose.

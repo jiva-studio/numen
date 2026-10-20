@@ -7,8 +7,8 @@ import (
 	"slices"
 	"strconv"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // coarseCandidates is how many chunks the coarse pass keeps for each answer

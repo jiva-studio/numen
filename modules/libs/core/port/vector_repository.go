@@ -3,7 +3,7 @@ package port
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // QuantisedInt8 names the quantisation of a stored vector's bytes: one signed

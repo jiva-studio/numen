@@ -7,9 +7,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // proofreadTranscriptCommand puts one recording's transcript right with a model.

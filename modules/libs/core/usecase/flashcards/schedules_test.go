@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // A build that keeps nothing works the schedules out from the answers at every

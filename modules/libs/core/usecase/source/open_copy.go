@@ -4,8 +4,8 @@ import (
 	"context"
 	"io"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // CopyFile is an open copy of a video; whoever opens it closes it.

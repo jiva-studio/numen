@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/cardid"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 func TestAnIdentifierIsTenCharactersOfTheAlphabet(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // ErrNotAPicture is an entry of an archive that is not one of the pictures a

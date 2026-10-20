@@ -7,7 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // windowOn is a window open on a vault of this test's own.

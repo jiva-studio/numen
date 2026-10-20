@@ -1,8 +1,8 @@
 package vault
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // FolderCheck answers whether a vault's folder is no longer where the list

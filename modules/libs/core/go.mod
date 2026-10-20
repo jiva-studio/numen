@@ -38,6 +38,7 @@ require (
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/jiva-studio/numen/modules/libs/notes v0.0.0
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
@@ -49,3 +50,5 @@ require (
 )
 
 replace github.com/jiva-studio/numen/modules/libs/protocol => ../protocol
+
+replace github.com/jiva-studio/numen/modules/libs/notes => ../notes

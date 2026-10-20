@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 func TestBoxesComeBackAsTheyWereWritten(t *testing.T) {

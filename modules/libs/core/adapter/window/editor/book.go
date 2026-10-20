@@ -11,8 +11,8 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // bookHandler answers what a book that reflows is, and the pictures it carries.

@@ -12,9 +12,9 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // openInstallation is a window put together the way a person's window is:

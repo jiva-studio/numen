@@ -41,7 +41,7 @@ var driving = map[string]bool{
 // pure one: naming no port and no scenario is not enough on its own, because a
 // sibling of the core carries goroutines, channels and a schema.
 var pure = []string{
-	"domain", "flashcards", "markdown", "internal/cardid", "internal/ulid",
+	"flashcards", "internal/cardid",
 	"internal/highlight", "internal/ocr", "internal/transcript",
 }
 
@@ -575,7 +575,7 @@ func TestTheCoresIdentitiesAreItsOwn(t *testing.T) {
 	var wrong []string
 	var read int
 	for _, at := range []string{"domain", "port"} {
-		dir := filepath.Join("..", at)
+		dir := getPackageDir(at)
 		held, err := os.ReadDir(dir)
 		if err != nil {
 			t.Fatal(err)
@@ -1326,14 +1326,11 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"internal/testonly", "container", false},
 
 		// What is true of a note is worked out from what is true of a note.
-		{"domain", "usecase/run", true},
 		{"flashcards/review", "port", true},
 		{"flashcards/review", "internal/chunking", true},
-		{"domain", "markdown", false},
 		{"internal/highlight", "internal/epub", true},
 		{"internal/ocr", "internal/highlight", false},
 		{"internal/transcript", "port", true},
-		{"flashcards/format", "domain", false},
 
 		// The composition root does none of the core's work.
 		{"container", "internal/adapterlib/wire", true},
@@ -1356,7 +1353,7 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 // where this expects it.
 func TestTheTreeIsWhereTheLayersAreRead(t *testing.T) {
 	for _, at := range []string{"domain", "port", "usecase", "adapter", "internal/adapter", "internal/adapterlib"} {
-		if _, err := os.Stat(filepath.Join("..", at)); err != nil {
+		if _, err := os.Stat(getPackageDir(at)); err != nil {
 			t.Fatalf("%s: %v", at, err)
 		}
 	}
@@ -1398,7 +1395,7 @@ func TestEveryInstantTheCoreCarriesIsATime(t *testing.T) {
 	var wrong []string
 	var read int
 	for _, at := range []string{"domain", "port"} {
-		dir := filepath.Join("..", at)
+		dir := getPackageDir(at)
 		held, err := os.ReadDir(dir)
 		if err != nil {
 			t.Fatal(err)
@@ -1645,4 +1642,13 @@ func TestContainerDoesNotDowncastPluginHost(t *testing.T) {
 			return true
 		})
 	}
+}
+
+// getPackageDir is where the package the rules call at is read from. The domain is the vocabulary the
+// core and the plugins share, and stands in a module of its own beside the core.
+func getPackageDir(at string) string {
+	if at == "domain" {
+		return filepath.Join("..", "..", "notes", "domain")
+	}
+	return filepath.Join("..", at)
 }

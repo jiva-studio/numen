@@ -20,8 +20,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // ErrUnreadable is a file that is there and says nothing this can use. It is

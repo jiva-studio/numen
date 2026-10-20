@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 func makeBenchmarkVault(b *testing.B, depth, filesPerDir int) (string, *filesystem.VaultReader) {

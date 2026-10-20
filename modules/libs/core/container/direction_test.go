@@ -66,8 +66,6 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 		{"usecase/note", module + "internal/adapter/theme", true},
 		{"usecase/note", module + "container", true},
 		{"usecase/note", wire + "/gen/numen/v1", true},
-		{"usecase/note", module + "domain", false},
-		{"domain", module + "adapter/index", true},
 		{"text", module + "internal/adapter/filesystem", true},
 
 		// The composition root is built from the adapters and answers for what

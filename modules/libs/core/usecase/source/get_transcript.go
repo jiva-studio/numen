@@ -3,7 +3,7 @@ package source
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // Transcript is the words made from a file, and whether anything was made.

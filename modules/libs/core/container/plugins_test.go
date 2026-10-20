@@ -18,6 +18,7 @@ const numenModules = "github.com/jiva-studio/numen/modules/"
 var pluginContract = []string{
 	numenModules + "libs/plugin-sdk-go",
 	numenModules + "libs/protocol",
+	numenModules + "libs/notes",
 }
 
 // getPluginRefusal says why a plugin module may not name dep, or "" when it may.
@@ -47,7 +48,8 @@ func TestWhatThePluginRulesRefuse(t *testing.T) {
 		plugin, dep string
 		isRefused   bool
 	}{
-		{"ocr", numenModules + "libs/core/domain", true},
+		{"ocr", numenModules + "libs/core/port", true},
+		{"ocr", numenModules + "libs/notes/domain", false},
 		{"ocr", numenModules + "libs/core", true},
 		{"ocr", numenModules + "libs/ui", true},
 		{"ocr", numenModules + "plugins/embeddings/backend/engine", true},

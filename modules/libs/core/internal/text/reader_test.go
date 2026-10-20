@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // The talk is what a model heard, an hour and a half into a recording.

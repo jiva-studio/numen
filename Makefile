@@ -1,6 +1,7 @@
 # ---------------------------------- Modules -----------------------------------
 MODULES  := modules
 CORE     := modules/libs/core
+NOTES    := modules/libs/notes
 UI       := modules/libs/ui
 WIRE     := modules/libs/wire
 PROTOCOL := modules/libs/protocol
@@ -38,7 +39,7 @@ install: ## fetch all workspace dependencies
 	cd $(MODULES) && $(INSTALL)
 
 .PHONY: compile
-compile: lib_core_compile lib_protocol_compile lib_ui_compile lib_wire_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
+compile: lib_core_compile lib_notes_compile lib_protocol_compile lib_ui_compile lib_wire_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
 
 .PHONY: build
 build: interface lib_core_build app_desktop_build ## build all application artifacts
@@ -127,6 +128,23 @@ lib_core_lint: ## run linters for core
 .PHONY: lib_core_vulncheck
 lib_core_vulncheck: ## scan core dependencies for vulnerabilities
 	cd $(CORE) && go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+# -------------------------------- Lib: Notes ---------------------------------
+.PHONY: lib_notes_build
+lib_notes_build: ## build the Go library of what a note is and how it is written
+	cd $(NOTES) && go build ./...
+
+.PHONY: lib_notes_compile
+lib_notes_compile: lib_notes_build
+
+.PHONY: lib_notes_test
+lib_notes_test: ## run notes tests with race detector
+	cd $(NOTES) && go test ./... -race
+
+.PHONY: lib_notes_lint
+lib_notes_lint: ## run linters for notes
+	cd $(NOTES) && go vet ./...
+	cd $(NOTES) && golangci-lint run ./...
 
 # ------------------------------- Lib: Protocol --------------------------------
 .PHONY: lib_protocol_generate

@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // A container nobody configured builds no embedder, and the machine's own

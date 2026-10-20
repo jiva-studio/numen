@@ -9,9 +9,9 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/plugintool"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // offeredTools is the tools some plugins offer, and the calls an agent made of them.

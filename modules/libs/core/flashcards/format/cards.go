@@ -10,7 +10,7 @@ package format
 import (
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // The three heading levels a deck spends. A value may hold a heading below

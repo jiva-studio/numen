@@ -7,10 +7,10 @@ import (
 	"io/fs"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
-	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+	"github.com/jiva-studio/numen/modules/libs/notes/ulid"
 )
 
 // ErrNoNote is what an operation gets when the vault holds no note at the path

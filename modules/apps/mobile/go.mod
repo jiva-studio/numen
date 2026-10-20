@@ -16,6 +16,7 @@ require (
 	github.com/ebitengine/purego v0.11.2 // indirect
 	github.com/godbus/dbus/v5 v5.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/jiva-studio/numen/modules/libs/notes v0.0.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
@@ -40,3 +41,5 @@ require (
 replace github.com/jiva-studio/numen/modules/libs/core => ../../libs/core
 
 replace github.com/jiva-studio/numen/modules/libs/protocol => ../../libs/protocol
+
+replace github.com/jiva-studio/numen/modules/libs/notes => ../../libs/notes

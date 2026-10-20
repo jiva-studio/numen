@@ -50,8 +50,11 @@ replace github.com/jiva-studio/numen/modules/libs/protocol => ../../libs/protoco
 
 require (
 	github.com/jiva-studio/numen/modules/libs/core v0.0.0
+	github.com/jiva-studio/numen/modules/libs/notes v0.0.0
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
 	github.com/quasilyte/go-ruleguard/dsl v0.3.23
 )
 
 replace github.com/jiva-studio/numen/modules/libs/core => ../../libs/core
+
+replace github.com/jiva-studio/numen/modules/libs/notes => ../../libs/notes

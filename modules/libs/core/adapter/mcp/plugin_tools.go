@@ -7,8 +7,8 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/plugintool"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // pluginToolsTimeout is how long the plugins have to list their tools when a server is built.

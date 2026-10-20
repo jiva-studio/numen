@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // The column is an INTEGER of nanoseconds since the epoch, and it holds that

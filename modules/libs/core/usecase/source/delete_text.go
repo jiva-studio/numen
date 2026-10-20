@@ -5,9 +5,9 @@ import (
 	"errors"
 	"io/fs"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // DeleteText throws away the text downloaded from a url's address. The url stands

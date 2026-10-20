@@ -10,8 +10,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 func newRegistry(t *testing.T) *appstate.VaultRegistry {

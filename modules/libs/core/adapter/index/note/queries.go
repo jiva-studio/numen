@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // Queries answers questions about notes in shapes that are not notes: what the

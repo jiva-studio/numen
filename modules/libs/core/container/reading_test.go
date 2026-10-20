@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // entropy is the whole of the note the vault below holds.
