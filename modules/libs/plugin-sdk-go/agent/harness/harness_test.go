@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -753,5 +754,49 @@ func TestTheLevelOfATaskGoesInTheFieldTheModelListsOrNowhere(t *testing.T) {
 			t.Errorf("model %q at %q was sent %q and %q, want %q and %q",
 				one.model, one.level, got.ReasoningEffort, gotReasoning, one.effort, one.reasoning)
 		}
+	}
+}
+
+// openrouter-models.json holds three entries of the listing OpenRouter serves without a key: a model
+// that names its depths, one that lists the fields and no depths, and one that lists neither.
+func TestTheDepthsAModelTakesAreReadFromTheListingOfTheChatAPI(t *testing.T) {
+	raw, err := os.ReadFile("testdata/openrouter-models.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write(raw) }))
+	t.Cleanup(srv.Close)
+
+	models, err := chat{baseURL: srv.URL, client: srv.Client()}.listModels(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	byName := map[string]model{}
+	for _, one := range models {
+		byName[one.Name] = one
+	}
+	luna := byName["openai/gpt-5.6-luna"]
+	var names []string
+	for _, one := range luna.ReasoningLevels {
+		names = append(names, one.Name)
+	}
+	if !slices.Equal(names, []string{"low", "medium", "high", "xhigh", "max"}) || luna.DefaultReasoning != "medium" {
+		t.Errorf("the model names %v and %q", names, luna.DefaultReasoning)
+	}
+	if luna.ReasoningField != fieldReasoningEffort {
+		t.Errorf("the field is %q", luna.ReasoningField)
+	}
+	router := byName["typesafe/jev-router"]
+	if len(router.ReasoningLevels) != len(commonLevels) || router.DefaultReasoning != "" {
+		t.Errorf("a model of fields and no depths offers %v", router.ReasoningLevels)
+	}
+	if plain := byName["unbiased/pareto-26.10"]; len(plain.ReasoningLevels) != 0 || plain.ReasoningField != "" {
+		t.Errorf("a model of no reasoning offers %v", plain)
+	}
+	if asked := newEffort(luna, "max"); asked.level != "max" {
+		t.Errorf("a depth the model names was refused")
+	}
+	if asked := newEffort(router, "max"); asked.level != "" {
+		t.Errorf("a depth the model does not name was asked")
 	}
 }

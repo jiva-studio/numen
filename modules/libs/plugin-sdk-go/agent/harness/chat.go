@@ -12,6 +12,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/reasoning"
 )
 
 // DefaultBaseURL is the chat API asked where the settings name none.
@@ -65,6 +67,11 @@ type model struct {
 	// ReasoningField is the field of a request through which the chat API takes the depth of reasoning
 	// for the model, empty where the API does not list one.
 	ReasoningField string
+	// ReasoningLevels are the depths the chat API lists for the model: those of its reasoning object,
+	// else the common ones where it lists only the field.
+	ReasoningLevels []reasoning.Level
+	// DefaultReasoning is the depth the chat API lists the model working at unasked, empty where it lists none.
+	DefaultReasoning string
 }
 
 // chatRequest is what the chat API is asked for the next message of a conversation.
@@ -132,9 +139,10 @@ func (c chat) listModels(ctx context.Context) ([]model, error) {
 	}
 	var listing struct {
 		Data []struct {
-			ID        string   `json:"id"`
-			Name      string   `json:"name"`
-			Supported []string `json:"supported_parameters"`
+			ID        string            `json:"id"`
+			Name      string            `json:"name"`
+			Supported []string          `json:"supported_parameters"`
+			Reasoning *reasoningListing `json:"reasoning"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(answer, &listing); err != nil {
@@ -143,7 +151,7 @@ func (c chat) listModels(ctx context.Context) ([]model, error) {
 	models := make([]model, 0, len(listing.Data))
 	for _, one := range listing.Data {
 		if one.ID != "" {
-			models = append(models, model{Name: one.ID, Title: one.Name, ReasoningField: getReasoningField(one.Supported)})
+			models = append(models, newModel(one.ID, one.Name, one.Supported, one.Reasoning))
 		}
 	}
 	return models, nil
