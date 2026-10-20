@@ -54,12 +54,12 @@ type streamedReply struct {
 // and is returned as it is. A chat API that answers the stream with one whole JSON reply has its
 // text go to emit at once. A 400 or 422 answer is errStreamRefused.
 func (c chat) stream(
-	ctx context.Context, model string, messages []message, tools []functionTool, emit func(string) error,
+	ctx context.Context, model string, effort effort, messages []message, tools []functionTool, emit func(string) error,
 ) (message, string, error) {
 	if err := c.checkKey(); err != nil {
 		return message{}, "", err
 	}
-	body, err := json.Marshal(chatRequest{Model: model, Messages: messages, Tools: tools, Stream: true})
+	body, err := json.Marshal(newChatRequest(model, effort, messages, tools, true))
 	if err != nil {
 		return message{}, "", fmt.Errorf("marshal chat request: %w", err)
 	}

@@ -23,6 +23,7 @@ export interface AgentClient {
       conversation: string
       agent?: string
       model?: string
+      reasoning?: string
     },
     options: { signal: AbortSignal },
   ): AsyncIterable<AskAgentResponse>
@@ -32,7 +33,7 @@ export interface AgentClient {
 /** The agent port, over the client the window talks on. */
 export const createAgentPort = (agent: AgentClient): AgentPort => ({
   async *ask(query: Parameters<AgentPort['ask']>[0]) {
-    const { question: prompt, focus, conversation, signal, agentId, modelId } = query
+    const { question: prompt, focus, conversation, signal, agentId, modelId, reasoning } = query
     for await (const step of agent.askAgent(
       {
         prompt,
@@ -40,6 +41,7 @@ export const createAgentPort = (agent: AgentClient): AgentPort => ({
         conversation,
         ...(agentId ? { agent: agentId } : {}),
         ...(modelId ? { model: modelId } : {}),
+        ...(reasoning ? { reasoning } : {}),
       },
       { signal },
     )) {

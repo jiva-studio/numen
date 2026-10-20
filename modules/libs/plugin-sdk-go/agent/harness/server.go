@@ -11,6 +11,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/toolcall"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
@@ -135,13 +136,15 @@ func (s *Server) Ask(ctx context.Context, task *numenv1.AskAgentRequest, send fu
 	messages = append(messages, history...)
 	messages = append(messages, message{Role: "user", Content: newText(task.GetPrompt())})
 
+	modelName := s.getModel(task.GetModel())
 	taskRun := &run{
-		chat:  s.getChat(),
-		model: s.getModel(task.GetModel()),
-		tools: tools,
-		words: toolcall.IndexDeclarations(task.GetToolDeclarations()),
-		turns: int(task.GetMaxSteps()),
-		send:  send,
+		chat:   s.getChat(),
+		model:  modelName,
+		effort: s.getEffort(taskCtx, modelName, task.GetReasoning()),
+		tools:  tools,
+		words:  toolcall.IndexDeclarations(task.GetToolDeclarations()),
+		turns:  int(task.GetMaxSteps()),
+		send:   send,
 	}
 	transcript, reason, err := taskRun.answer(taskCtx, messages)
 	if taskCtx.Err() != nil {
@@ -226,8 +229,13 @@ func (s *Server) GetAgentPrograms(
 		LimitsTools: true,
 	}
 	for _, one := range models {
+		levels := []reasoning.Level(nil)
+		if one.ReasoningField != "" {
+			levels = effortLevels
+		}
 		program.Models = append(program.Models, &numenv1.AgentModel{
 			Name: one.Name, Title: one.Title, IsDefault: one.Name == configured,
+			ReasoningLevels: reasoning.ToProto(levels),
 		})
 	}
 	return connect.NewResponse(&numenv1.GetAgentProgramsResponse{Programs: []*numenv1.AgentProgram{program}}), nil
@@ -263,4 +271,19 @@ func (s *Server) listModels(ctx context.Context) ([]model, error) {
 // Close stops every task still being worked and refuses new ones.
 func (s *Server) Close() error {
 	return s.registry.Close()
+}
+
+// getEffort is the depth of reasoning asked of the model the chat API lists: none where the task asks
+// for none, the API does not list the model, or the model takes no depth.
+func (s *Server) getEffort(ctx context.Context, name, level string) effort {
+	if level == "" {
+		return effort{}
+	}
+	models, _ := s.listModels(ctx)
+	for _, one := range models {
+		if one.Name == name {
+			return newEffort(one, level)
+		}
+	}
+	return effort{}
 }

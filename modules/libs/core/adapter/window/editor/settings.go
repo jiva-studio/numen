@@ -117,13 +117,15 @@ func newWireModels(held []settings.Model) []*v1.Model {
 	models := make([]*v1.Model, 0, len(held))
 	for _, one := range held {
 		models = append(models, &v1.Model{
-			NamedAt:   one.Path,
-			Name:      one.Name,
-			Title:     one.Title,
-			Group:     one.Group,
-			IsDefault: one.IsDefault,
-			Writes:    newWireSettings(one.Writes),
-			Presence:  presences[one.Presence],
+			NamedAt:          one.Path,
+			Name:             one.Name,
+			Title:            one.Title,
+			Group:            one.Group,
+			IsDefault:        one.IsDefault,
+			Writes:           newWireSettings(one.Writes),
+			Presence:         presences[one.Presence],
+			ReasoningLevels:  newWireReasoningLevels(one.ReasoningLevels),
+			DefaultReasoning: one.DefaultReasoning,
 		})
 	}
 	return models
@@ -251,4 +253,16 @@ func (h *settingsHandler) RetryPlugin(
 		reply.Failure = failure.Reason
 	}
 	return connect.NewResponse(reply), nil
+}
+
+// newWireReasoningLevels is the levels of reasoning as the wire carries them.
+func newWireReasoningLevels(held []settings.ReasoningLevel) []*v1.ReasoningLevel {
+	if len(held) == 0 {
+		return nil
+	}
+	levels := make([]*v1.ReasoningLevel, 0, len(held))
+	for _, one := range held {
+		levels = append(levels, &v1.ReasoningLevel{Name: one.Name, Title: one.Title})
+	}
+	return levels
 }

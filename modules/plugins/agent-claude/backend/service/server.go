@@ -16,6 +16,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/toolcall"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
@@ -112,6 +113,7 @@ func (s *agentServer) AskAgent(
 	claudeArgs := buildClaudeArguments(claudeArguments{
 		instructions:  instructions,
 		model:         model,
+		reasoning:     reasoning.Pick(claudeReasoning, msg.GetReasoning()),
 		configuration: configFile,
 		session:       s.registry.GetSession(conversation),
 		turns:         int(msg.GetMaxSteps()),
@@ -242,7 +244,7 @@ func (s *agentServer) GetAgentPrograms(
 		LimitsTools: true,
 	}
 	for _, one := range claudeModels {
-		program.Models = append(program.Models, &numenv1.AgentModel{Name: one.Name, Title: one.Title})
+		program.Models = append(program.Models, reasoning.NewModel(one.Name, one.Title, claudeReasoning, ""))
 	}
 	return connect.NewResponse(&numenv1.GetAgentProgramsResponse{
 		Programs: []*numenv1.AgentProgram{program},

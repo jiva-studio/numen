@@ -84,6 +84,7 @@ func writeMcpConfig(url, token string) (string, error) {
 type claudeArguments struct {
 	instructions  string
 	model         string
+	reasoning     string
 	configuration string
 	session       string
 	turns         int
@@ -147,6 +148,9 @@ func buildClaudeArguments(in claudeArguments) []string {
 	if in.model != "" {
 		args = append(args, "--model", in.model)
 	}
+	if in.reasoning != "" {
+		args = append(args, "--effort", in.reasoning)
+	}
 	if in.session != "" {
 		args = append(args, "--resume", in.session)
 	}
@@ -172,6 +176,9 @@ func buildAnswerArguments(in claudeArguments) []string {
 	}
 	if in.model != "" {
 		args = append(args, "--model", in.model)
+	}
+	if in.reasoning != "" {
+		args = append(args, "--effort", in.reasoning)
 	}
 	if in.session != "" {
 		args = append(args, "--resume", in.session)

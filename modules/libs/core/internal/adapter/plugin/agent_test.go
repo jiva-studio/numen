@@ -327,7 +327,10 @@ func (s *programsServer) GetAgentPrograms(
 	s.asked = req.Msg.GetCommands()
 	return connect.NewResponse(&v1.GetAgentProgramsResponse{Programs: []*v1.AgentProgram{{
 		Name: "one", Title: "One", IsInstalled: true, IsDefault: true, LimitsTools: true,
-		Models: []*v1.AgentModel{{Name: "m1", Title: "M one", IsDefault: true}, {Name: "m2"}},
+		Models: []*v1.AgentModel{{
+		Name: "m1", Title: "M one", IsDefault: true, DefaultReasoning: "low",
+		ReasoningLevels: []*v1.ReasoningLevel{{Name: "low", Title: "Low"}, {Name: "high", Title: "High"}},
+	}, {Name: "m2"}},
 	}}}), nil
 }
 
@@ -344,7 +347,10 @@ func TestTheBridgeListsTheProgramsAPluginRuns(t *testing.T) {
 
 	want := []port.AgentProgram{{
 		Provider: "md.numen.agent", Name: "one", Title: "One", IsInstalled: true, IsDefault: true, LimitsTools: true,
-		Models: []port.AgentModel{{Name: "m1", Title: "M one", IsDefault: true}, {Name: "m2"}},
+		Models: []port.AgentModel{{
+			Name: "m1", Title: "M one", IsDefault: true, DefaultReasoning: "low",
+			ReasoningLevels: []port.ReasoningLevel{{Name: "low", Title: "Low"}, {Name: "high", Title: "High"}},
+		}, {Name: "m2"}},
 	}}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %+v, want %+v", got, want)
@@ -383,7 +389,7 @@ func TestALimitOnStepsIsKeptWithinWhatTheRequestCarries(t *testing.T) {
 // word the plugins read it in.
 func TestTheRequestCarriesWhatTheTaskGivesTheAgent(t *testing.T) {
 	got := newAskRequest(port.Task{
-		Question: "q", Focus: "f", Conversation: "c", Agent: "one", Model: "m", Instructions: "i",
+		Question: "q", Focus: "f", Conversation: "c", Agent: "one", Model: "m", Reasoning: "high", Instructions: "i",
 		Tools: []string{"note_edit"}, MaxSteps: 7, Root: "/vault", Command: []string{"/bin/one"},
 		Options:  map[string]string{"k": "true"},
 		Endpoint: port.ToolEndpoint{URL: "http://127.0.0.1:1/mcp", Token: "t"},
@@ -394,7 +400,7 @@ func TestTheRequestCarriesWhatTheTaskGivesTheAgent(t *testing.T) {
 	})
 
 	if got.GetPrompt() != "q" || got.GetFocus() != "f" || got.GetConversation() != "c" || got.GetAgent() != "one" ||
-		got.GetModel() != "m" || got.GetInstructions() != "i" || got.GetMaxSteps() != 7 ||
+		got.GetModel() != "m" || got.GetReasoning() != "high" || got.GetInstructions() != "i" || got.GetMaxSteps() != 7 ||
 		!slices.Equal(got.GetTools(), []string{"note_edit"}) {
 		t.Errorf("the question is %v", got)
 	}

@@ -99,6 +99,13 @@ message Model {
 
   // What this model's files are on this machine.
   Presence presence = 7;
+
+  // The depths of reasoning the model can be asked to work at, from the least to the most. Empty
+  // where the model offers no choice.
+  repeated ReasoningLevel reasoning_levels = 8;
+
+  // The level the model works at unasked. Empty where it names none.
+  string default_reasoning = 9;
 }
 
 // Presence is what a model's files are on this machine. It says where files

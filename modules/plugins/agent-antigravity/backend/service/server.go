@@ -7,6 +7,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/reasoning"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -28,6 +29,7 @@ func (s *agentServer) AskAgent(
 		return err
 	}
 
+	s.resolveModel(ctx, req.Msg)
 	work, err := agentrun.Start(ctx, &s.Registry, newSpec(req.Msg, &s.Registry))
 	if err != nil {
 		return stream.Send(&numenv1.AskAgentResponse{
@@ -64,12 +66,31 @@ func (s *agentServer) GetAgentPrograms(
 		Name: "antigravity", Title: "Antigravity", IsInstalled: IsAntigravityInstalled() || len(command) > 0,
 	}
 	if antigravity.GetIsInstalled() {
-		list := func(ctx context.Context) ([]antigravityModel, error) { return listAntigravityModels(ctx, command) }
-		for _, one := range s.models.Get(ctx, strings.Join(command, " "), list) {
-			antigravity.Models = append(antigravity.Models, &numenv1.AgentModel{Name: one.Name, Title: one.Title})
+		for _, one := range s.getFamilies(ctx, command) {
+			antigravity.Models = append(antigravity.Models, one.ToProto())
 		}
 	}
 	return connect.NewResponse(&numenv1.GetAgentProgramsResponse{
 		Programs: []*numenv1.AgentProgram{antigravity},
 	}), nil
+}
+
+// getFamilies are the models the program lists, the ones that differ by level folded into one.
+func (s *agentServer) getFamilies(ctx context.Context, command []string) []reasoning.Family {
+	list := func(ctx context.Context) ([]antigravityModel, error) { return listAntigravityModels(ctx, command) }
+	listed := s.models.Get(ctx, strings.Join(command, " "), list)
+	models := make([]reasoning.Listed, 0, len(listed))
+	for _, one := range listed {
+		models = append(models, reasoning.Listed{Name: one.Name, Title: one.Title})
+	}
+	return reasoning.Fold(models)
+}
+
+// resolveModel sets the model of the request to the one the program lists for the model and the level
+// the request names.
+func (s *agentServer) resolveModel(ctx context.Context, req *numenv1.AskAgentRequest) {
+	if req.GetModel() == "" || req.GetModel() == "default" {
+		return
+	}
+	req.Model = reasoning.ResolveModel(s.getFamilies(ctx, req.GetCommand()), req.GetModel(), req.GetReasoning())
 }

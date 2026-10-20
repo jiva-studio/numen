@@ -42,6 +42,7 @@ func (h *agentHandler) AskAgent(
 		Conversation: r.Msg.GetConversation(),
 		Agent:        r.Msg.GetAgent(),
 		Model:        r.Msg.GetModel(),
+		Reasoning:    r.Msg.GetReasoning(),
 	}
 	task.Instructions = agent.GetInstructions(task)
 	return wire.StreamAgentTask(ctx, taking, task, stream)

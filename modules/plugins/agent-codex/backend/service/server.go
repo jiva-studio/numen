@@ -6,6 +6,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/reasoning"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -65,6 +66,7 @@ func (s *agentServer) GetAgentPrograms(
 		for _, one := range s.codexModels.get(ctx, command) {
 			codex.Models = append(codex.Models, &numenv1.AgentModel{
 				Name: one.Name, Title: one.Title, IsDefault: one.IsDefault,
+				ReasoningLevels: reasoning.ToProto(one.Reasoning), DefaultReasoning: one.DefaultReasoning,
 			})
 		}
 	}

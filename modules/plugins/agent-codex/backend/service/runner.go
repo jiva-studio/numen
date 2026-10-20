@@ -7,6 +7,7 @@ import (
 	"os/exec"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/reasoning"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -57,9 +58,7 @@ func makeCodexCommand(runCtx context.Context, req *numenv1.AskAgentRequest) *exe
 		mcpHeader := fmt.Sprintf(`mcp_servers.numen.http_headers={"Authorization"="Bearer %s"}`, req.GetToolsToken())
 		args = append(args, "-c", mcpURL, "-c", mcpHeader)
 	}
-	if model := req.GetModel(); model != "" && model != "default" {
-		args = append(args, "--model", model)
-	}
+	args = appendModelArguments(args, req)
 	args = append(args, req.GetPrompt())
 	return exec.CommandContext(runCtx, binName, args...)
 }
@@ -86,11 +85,20 @@ func makeAnswerCommand(runCtx context.Context, req *numenv1.AskAgentRequest) (*e
 	for _, feature := range disabledFeatures {
 		args = append(args, "--disable", feature)
 	}
-	if model := req.GetModel(); model != "" && model != "default" {
-		args = append(args, "--model", model)
-	}
+	args = appendModelArguments(args, req)
 	args = append(args, "--", agentrun.WritePrompt(req.GetInstructions(), req.GetPrompt()))
 	cmd := exec.CommandContext(runCtx, binName, args...)
 	cmd.Dir = dir
 	return cmd, func() { _ = os.RemoveAll(dir) }, nil
+}
+
+// appendModelArguments adds the model the request names and the level of reasoning it asks for.
+func appendModelArguments(args []string, req *numenv1.AskAgentRequest) []string {
+	if model := req.GetModel(); model != "" && model != "default" {
+		args = append(args, "--model", model)
+	}
+	if level := req.GetReasoning(); reasoning.IsKnown(level) {
+		args = append(args, "-c", fmt.Sprintf("model_reasoning_effort=%q", level))
+	}
+	return args
 }

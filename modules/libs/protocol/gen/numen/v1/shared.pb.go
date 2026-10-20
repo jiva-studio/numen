@@ -311,6 +311,61 @@ func (x *Bounds) GetMost() float64 {
 	return 0
 }
 
+// ReasoningLevel is one depth of reasoning a model can be asked to work at.
+type ReasoningLevel struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// What a task asks for the level by (e.g. "low", "high").
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// What the level is called when shown to a person.
+	Title         string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReasoningLevel) Reset() {
+	*x = ReasoningLevel{}
+	mi := &file_numen_v1_shared_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReasoningLevel) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReasoningLevel) ProtoMessage() {}
+
+func (x *ReasoningLevel) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_shared_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReasoningLevel.ProtoReflect.Descriptor instead.
+func (*ReasoningLevel) Descriptor() ([]byte, []int) {
+	return file_numen_v1_shared_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ReasoningLevel) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ReasoningLevel) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
 var File_numen_v1_shared_proto protoreflect.FileDescriptor
 
 const file_numen_v1_shared_proto_rawDesc = "" +
@@ -325,7 +380,10 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x02to\x18\x02 \x01(\x05R\x02to\"2\n" +
 	"\x06Bounds\x12\x14\n" +
 	"\x05least\x18\x01 \x01(\x01R\x05least\x12\x12\n" +
-	"\x04most\x18\x02 \x01(\x01R\x04most*\x87\x03\n" +
+	"\x04most\x18\x02 \x01(\x01R\x04most\":\n" +
+	"\x0eReasoningLevel\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title*\x87\x03\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12ERROR_CODE_MISSING\x10\x01\x12\x19\n" +
@@ -356,12 +414,13 @@ func file_numen_v1_shared_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_shared_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_shared_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_numen_v1_shared_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_numen_v1_shared_proto_goTypes = []any{
-	(ErrorCode)(0),      // 0: numen.v1.ErrorCode
-	(*Fingerprint)(nil), // 1: numen.v1.Fingerprint
-	(*Span)(nil),        // 2: numen.v1.Span
-	(*Bounds)(nil),      // 3: numen.v1.Bounds
+	(ErrorCode)(0),         // 0: numen.v1.ErrorCode
+	(*Fingerprint)(nil),    // 1: numen.v1.Fingerprint
+	(*Span)(nil),           // 2: numen.v1.Span
+	(*Bounds)(nil),         // 3: numen.v1.Bounds
+	(*ReasoningLevel)(nil), // 4: numen.v1.ReasoningLevel
 }
 var file_numen_v1_shared_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -382,7 +441,7 @@ func file_numen_v1_shared_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_shared_proto_rawDesc), len(file_numen_v1_shared_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

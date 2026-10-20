@@ -93,6 +93,7 @@ func getReportedModels(at []string, set string, offered []port.AgentModel) []por
 		}
 		models = append(models, port.Model{
 			Path: at, Name: one.Name, Title: title, Group: groupInFull, IsDefault: isDefault,
+			ReasoningLevels: one.ReasoningLevels, DefaultReasoning: one.DefaultReasoning,
 		})
 	}
 	if set != "" && !isSet {

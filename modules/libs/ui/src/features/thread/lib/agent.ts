@@ -42,6 +42,7 @@ export interface AgentQuery {
   readonly signal: AbortSignal
   readonly agentId?: string | undefined
   readonly modelId?: string | undefined
+  readonly reasoning?: string | undefined
 }
 
 export interface AgentPort {

@@ -38,6 +38,9 @@ type Task struct {
 	Agent string
 	// Model is which model answers for this task. Empty uses default.
 	Model string
+	// Reasoning is the depth of reasoning the model works at, by the name of one of the levels it offers.
+	// Empty leaves the depth to the program.
+	Reasoning string
 	// Instructions is what the agent is told about the person it answers.
 	Instructions string
 	// Tools are the vault tools the agent may call, by the name the vault serves them under.
@@ -122,12 +125,25 @@ type Step struct {
 	Detail string
 }
 
+// ReasoningLevel is one depth of reasoning a model can be asked to work at.
+type ReasoningLevel struct {
+	// Name is what a task asks for the level by.
+	Name string
+	// Title is what the level is called when shown to a person.
+	Title string
+}
+
 // AgentModel is one model a program offers.
 type AgentModel struct {
 	Name  string
 	Title string
 	// IsDefault is set where the program names the model it answers with unasked.
 	IsDefault bool
+	// ReasoningLevels are the depths of reasoning the model can be asked to work at, from the least to
+	// the most. None where it offers no choice.
+	ReasoningLevels []ReasoningLevel
+	// DefaultReasoning is the level the model works at unasked, empty where it names none.
+	DefaultReasoning string
 }
 
 // AgentProgram is one program a provider runs.

@@ -72,6 +72,8 @@ export const settingsCore: SettingsPort = {
         isDefault: one.isDefault,
         writes: one.writes.map((w) => ({ at: w.at, value: w.value })),
         presence: fetched[one.presence],
+        reasoningLevels: (one.reasoningLevels ?? []).map((l) => ({ name: l.name, title: l.title })),
+        defaultReasoning: one.defaultReasoning,
       })),
       plugins: (answer.plugins ?? []).map((p) => ({
         id: p.id,

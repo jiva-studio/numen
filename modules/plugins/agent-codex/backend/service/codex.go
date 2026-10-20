@@ -14,6 +14,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/reasoning"
 )
 
 // AgentModel represents an AI model available from an external agent CLI.
@@ -21,6 +23,9 @@ type AgentModel struct {
 	Name      string `json:"name"`
 	Title     string `json:"title"`
 	IsDefault bool   `json:"isDefault,omitempty"`
+	// Reasoning are the depths the model can be asked to work at, from the least to the most.
+	Reasoning        []reasoning.Level `json:"-"`
+	DefaultReasoning string            `json:"-"`
 }
 
 type codexCache struct {
@@ -28,6 +33,10 @@ type codexCache struct {
 		Slug        string `json:"slug"`
 		DisplayName string `json:"display_name"`
 		Visibility  string `json:"visibility"`
+		Default     string `json:"default_reasoning_level"`
+		Supported   []struct {
+			Effort string `json:"effort"`
+		} `json:"supported_reasoning_levels"`
 	} `json:"models"`
 }
 
@@ -50,7 +59,11 @@ func readCodexCache() []AgentModel {
 		if m.Visibility == "hide" || m.Slug == "" {
 			continue
 		}
-		models = append(models, AgentModel{Name: m.Slug, Title: m.DisplayName})
+		levels := make([]string, 0, len(m.Supported))
+		for _, one := range m.Supported {
+			levels = append(levels, one.Effort)
+		}
+		models = append(models, newAgentModel(m.Slug, m.DisplayName, false, levels, m.Default))
 	}
 	return models
 }
@@ -172,11 +185,15 @@ func listCodexModels(in io.Writer, out io.Reader) ([]AgentModel, error) {
 	}
 	var listing struct {
 		Data []struct {
-			ID          string `json:"id"`
-			Model       string `json:"model"`
-			DisplayName string `json:"displayName"`
-			Hidden      bool   `json:"hidden"`
-			IsDefault   bool   `json:"isDefault"`
+			ID            string `json:"id"`
+			Model         string `json:"model"`
+			DisplayName   string `json:"displayName"`
+			Hidden        bool   `json:"hidden"`
+			IsDefault     bool   `json:"isDefault"`
+			DefaultEffort string `json:"defaultReasoningEffort"`
+			Efforts       []struct {
+				Effort string `json:"reasoningEffort"`
+			} `json:"supportedReasoningEfforts"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(result, &listing); err != nil {
@@ -191,7 +208,11 @@ func listCodexModels(in io.Writer, out io.Reader) ([]AgentModel, error) {
 		if one.Hidden || name == "" {
 			continue
 		}
-		models = append(models, AgentModel{Name: name, Title: one.DisplayName, IsDefault: one.IsDefault})
+		levels := make([]string, 0, len(one.Efforts))
+		for _, effort := range one.Efforts {
+			levels = append(levels, effort.Effort)
+		}
+		models = append(models, newAgentModel(name, one.DisplayName, one.IsDefault, levels, one.DefaultEffort))
 	}
 	return models, nil
 }
@@ -226,4 +247,20 @@ func readCodexAnswer(lines *bufio.Scanner, id int) (json.RawMessage, error) {
 		return nil, err
 	}
 	return nil, fmt.Errorf("codex exited before answering message %d", id)
+}
+
+// newAgentModel is a model with the levels of reasoning it lists, the empty names left out and the
+// default kept where it is one of them.
+func newAgentModel(name, title string, isDefault bool, efforts []string, byDefault string) AgentModel {
+	var levels []reasoning.Level
+	for _, effort := range efforts {
+		if level := reasoning.NewLevel(effort); level.Name != "" && !reasoning.Contains(levels, level.Name) {
+			levels = append(levels, level)
+		}
+	}
+	reasoning.Sort(levels)
+	return AgentModel{
+		Name: name, Title: title, IsDefault: isDefault,
+		Reasoning: levels, DefaultReasoning: reasoning.Pick(levels, byDefault),
+	}
 }

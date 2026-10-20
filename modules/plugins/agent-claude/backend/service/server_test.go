@@ -641,4 +641,9 @@ func TestTheProgramListNeedsNoKey(t *testing.T) {
 	if models := got.Msg.GetPrograms()[0].GetModels(); len(models) != len(claudeModels) {
 		t.Errorf("the models are %v", models)
 	}
+	for _, one := range got.Msg.GetPrograms()[0].GetModels() {
+		if len(one.GetReasoningLevels()) != len(claudeReasoning) || one.GetDefaultReasoning() != "" {
+			t.Errorf("the model %v offers the wrong levels", one)
+		}
+	}
 }

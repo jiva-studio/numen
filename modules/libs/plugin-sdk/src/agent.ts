@@ -29,6 +29,14 @@ export interface AgentQuery {
   readonly signal: AbortSignal
   readonly agentId?: string | undefined
   readonly modelId?: string | undefined
+  // The depth of reasoning, by the name of one of the levels the model offers.
+  readonly reasoning?: string | undefined
+}
+
+// ReasoningLevel is one depth of reasoning a model can be asked to work at.
+export interface ReasoningLevel {
+  readonly name: string
+  readonly title: string
 }
 
 // AgentModel is one agent or one model of an agent, as the settings list it.
@@ -37,6 +45,10 @@ export interface AgentModel {
   readonly title: string
   readonly isDefault: boolean
   readonly presence: 'present' | 'not fetched' | 'nothing to fetch'
+  // The depths of reasoning the model can be asked to work at, from the least to the most. None where it offers no choice.
+  readonly reasoningLevels?: readonly ReasoningLevel[] | undefined
+  // The level the model works at unasked, empty where it names none.
+  readonly defaultReasoning?: string | undefined
 }
 
 // AgentHost is the agent a window asks, the agents and models it offers, and the one the person chose.

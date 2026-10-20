@@ -25,7 +25,7 @@ func TestTheModelsAreTheLinesThatHoldANameAndATitle(t *testing.T) {
 
 // The program list holds the models the installed program lists with "models", whatever the
 // settings once named.
-func TestTheProgramListHoldsTheModelsTheProgramLists(t *testing.T) {
+func TestTheProgramListHoldsTheModelsTheProgramListsFoldedByLevel(t *testing.T) {
 	agenttest.NeedsShell(t)
 	t.Setenv("HOME", t.TempDir())
 	script := agenttest.WriteScript(t, "agy",
@@ -38,12 +38,16 @@ func TestTheProgramListHoldsTheModelsTheProgramLists(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var names, titles []string
-	for _, one := range got.Msg.GetPrograms()[0].GetModels() {
-		names, titles = append(names, one.GetName()), append(titles, one.GetTitle())
+	models := got.Msg.GetPrograms()[0].GetModels()
+	if len(models) != 1 || models[0].GetName() != "m" || models[0].GetTitle() != "Model" {
+		t.Fatalf("the models are %v", models)
 	}
-	if !slices.Equal(names, []string{"m-high", "m-low"}) || !slices.Equal(titles, []string{"Model (High)", "Model (Low)"}) {
-		t.Errorf("the models are %v %v", names, titles)
+	var levels []string
+	for _, one := range models[0].GetReasoningLevels() {
+		levels = append(levels, one.GetName())
+	}
+	if !slices.Equal(levels, []string{"low", "high"}) || models[0].GetDefaultReasoning() != "low" {
+		t.Errorf("the levels are %v, the default %q", levels, models[0].GetDefaultReasoning())
 	}
 }
 
@@ -62,5 +66,28 @@ func TestTheProgramListHoldsNoModelWhereTheProgramCannotListThem(t *testing.T) {
 	program := got.Msg.GetPrograms()[0]
 	if !program.GetIsInstalled() || len(program.GetModels()) != 0 {
 		t.Errorf("the program is %v", program)
+	}
+}
+
+func TestTheLevelOfARequestChoosesTheListedModel(t *testing.T) {
+	agenttest.NeedsShell(t)
+	t.Setenv("HOME", t.TempDir())
+	script := agenttest.WriteScript(t, "agy",
+		`if [ "$1" = models ]; then printf 'm-high\tModel (High)\nm-low\tModel (Low)\nsolo\tSolo\n'; fi`+"\n")
+	cases := []struct{ model, reasoning, want string }{
+		{"m", "high", "m-high"},
+		{"m", "low", "m-low"},
+		{"m", "", "m-low"},
+		{"m-high", "low", "m-high"},
+		{"solo", "high", "solo"},
+		{"", "high", ""},
+		{"default", "high", "default"},
+	}
+	for _, one := range cases {
+		req := &numenv1.AskAgentRequest{Model: one.model, Reasoning: one.reasoning, Command: []string{script}}
+		(&agentServer{}).resolveModel(t.Context(), req)
+		if req.GetModel() != one.want {
+			t.Errorf("model %q at %q became %q, want %q", one.model, one.reasoning, req.GetModel(), one.want)
+		}
 	}
 }

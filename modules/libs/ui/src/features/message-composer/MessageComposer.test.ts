@@ -127,3 +127,48 @@ describe('what the field is called', () => {
     expect(wrapper.get('textarea').attributes('aria-label')).toBe('Ask about this note')
   })
 })
+
+describe('the depth of reasoning', () => {
+  const levels = [
+    { id: 'low', title: 'Low' },
+    { id: 'high', title: 'High' },
+  ]
+
+  it('shows no selector while the model offers no level', () => {
+    const wrapper = composer({ reasoningLevels: [] })
+    expect(wrapper.findComponent({ name: 'ReasoningSelector' }).exists()).toBe(false)
+  })
+
+  it('shows a selector beside the model selector while the model offers levels', () => {
+    const wrapper = composer({
+      options: [
+        {
+          agentId: 'a',
+          agentTitle: 'A',
+          modelId: 'm',
+          modelTitle: 'M',
+          isAvailable: true,
+        },
+      ],
+      selectedAgentId: 'a',
+      selectedModelId: 'm',
+      reasoningLevels: levels,
+      selectedReasoningId: 'high',
+    })
+    const selector = wrapper.findComponent({ name: 'ReasoningSelector' })
+    expect(selector.exists()).toBe(true)
+    expect(selector.text()).toContain('High')
+    expect(wrapper.findComponent({ name: 'AgentModelSelector' }).exists()).toBe(true)
+  })
+
+  it('says the level that was chosen', async () => {
+    const wrapper = composer({ reasoningLevels: levels, selectedReasoningId: 'low' })
+    await wrapper.findComponent({ name: 'ReasoningSelector' }).vm.$emit('select', 'high')
+    expect(wrapper.emitted('select-reasoning')).toStrictEqual([['high']])
+  })
+
+  it('cannot be changed while an answer is on its way', () => {
+    const wrapper = composer({ reasoningLevels: levels, isWorking: true })
+    expect(wrapper.findComponent({ name: 'ReasoningSelector' }).props('disabled')).toBe(true)
+  })
+})

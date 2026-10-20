@@ -1,7 +1,7 @@
 /**
  * Conversation state for agent tabs.
  */
-import { computed, ref, shallowRef, watch } from 'vue'
+import { computed, ref, shallowRef, watch, type ComputedRef, type Ref } from 'vue'
 import {
   isNoteAddress,
   getWikilinks,
@@ -24,6 +24,9 @@ const AGENT_USE_AT = ['agent', 'use'] as const
 
 /** The path the models of one agent are named at. */
 const getModelAt = (agent: string): readonly string[] => ['agent', agent, 'model']
+
+/** The path the depth of reasoning chosen for one agent is kept at. */
+const getReasoningAt = (agent: string): readonly string[] => ['agent', agent, 'reasoning']
 
 /** The setting kept at a path, as text. */
 const getKept = (deps: AgentTabDeps, path: readonly string[]): string =>
@@ -62,6 +65,11 @@ function useAgentSelection(deps: AgentTabDeps) {
           modelTitle: one.title,
           isAvailable: true,
           isDefault: one.isDefault,
+          reasoningLevels: (one.reasoningLevels ?? []).map((level) => ({
+            id: level.name,
+            title: level.title,
+          })),
+          defaultReasoning: one.defaultReasoning ?? '',
         })),
     ),
   )
@@ -97,7 +105,50 @@ function useAgentSelection(deps: AgentTabDeps) {
     }
   }
 
-  return { selectedAgentId, selectedModelId, modelOptions, selectModel }
+  const selection = { selectedAgentId, selectedModelId, modelOptions, selectModel }
+  return { ...selection, ...useReasoningSelection(deps, selection) }
+}
+
+/** The depth of reasoning chosen for the agent, as far as the selected model offers it. */
+function useReasoningSelection(
+  deps: AgentTabDeps,
+  selection: {
+    readonly selectedAgentId: Ref<string>
+    readonly selectedModelId: Ref<string>
+    readonly modelOptions: ComputedRef<readonly AgentModelOption[]>
+  },
+) {
+  const chosen = ref({ agentId: '', id: '' })
+
+  const selectedOption = computed(() =>
+    selection.modelOptions.value.find(
+      (one) =>
+        one.agentId === selection.selectedAgentId.value &&
+        one.modelId === selection.selectedModelId.value,
+    ),
+  )
+
+  const reasoningLevels = computed(() => selectedOption.value?.reasoningLevels ?? [])
+
+  /** The level chosen or kept, else the default of the model; empty where the model offers none. */
+  const selectedReasoningId = computed(() => {
+    const agentId = selection.selectedAgentId.value
+    const kept =
+      (chosen.value.agentId === agentId ? chosen.value.id : '') ||
+      getKept(deps, getReasoningAt(agentId))
+    const offers = (id: string) => reasoningLevels.value.some((level) => level.id === id)
+    if (offers(kept)) return kept
+    const byDefault = selectedOption.value?.defaultReasoning ?? ''
+    return offers(byDefault) ? byDefault : ''
+  })
+
+  const selectReasoning = (id: string) => {
+    const agentId = selection.selectedAgentId.value
+    chosen.value = { agentId, id }
+    if (deps.writeSetting) void deps.writeSetting(getReasoningAt(agentId), id)
+  }
+
+  return { reasoningLevels, selectedReasoningId, selectReasoning }
 }
 
 const isSameList = (a: readonly string[], b: readonly string[]) =>
@@ -195,6 +246,7 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
     void conversation.ask(text, '', {
       agentId: selection.selectedAgentId.value,
       modelId: selection.selectedModelId.value,
+      reasoning: selection.selectedReasoningId.value,
     })
   }
 

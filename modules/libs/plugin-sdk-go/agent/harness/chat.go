@@ -62,6 +62,9 @@ type functionTool struct {
 type model struct {
 	Name  string
 	Title string
+	// ReasoningField is the field of a request through which the chat API takes the depth of reasoning
+	// for the model, empty where the API does not list one.
+	ReasoningField string
 }
 
 // chatRequest is what the chat API is asked for the next message of a conversation.
@@ -70,6 +73,9 @@ type chatRequest struct {
 	Messages []message      `json:"messages"`
 	Tools    []functionTool `json:"tools,omitempty"`
 	Stream   bool           `json:"stream,omitempty"`
+	// ReasoningEffort and Reasoning are the two forms in which a chat API takes the depth of reasoning.
+	ReasoningEffort string            `json:"reasoning_effort,omitempty"`
+	Reasoning       *reasoningRequest `json:"reasoning,omitempty"`
 }
 
 // chat is an OpenAI-compatible chat API: its base URL and the key presented to it, empty for an
@@ -85,11 +91,11 @@ func newText(text string) *string { return &text }
 
 // send asks the model for the next message of the conversation, offering it the tools. It returns
 // the message and why the model stopped writing it, 'length' for a message cut off at its limit.
-func (c chat) send(ctx context.Context, model string, messages []message, tools []functionTool) (message, string, error) {
+func (c chat) send(ctx context.Context, model string, effort effort, messages []message, tools []functionTool) (message, string, error) {
 	if err := c.checkKey(); err != nil {
 		return message{}, "", err
 	}
-	body, err := json.Marshal(chatRequest{Model: model, Messages: messages, Tools: tools})
+	body, err := json.Marshal(newChatRequest(model, effort, messages, tools, false))
 	if err != nil {
 		return message{}, "", fmt.Errorf("marshal chat request: %w", err)
 	}
@@ -126,8 +132,9 @@ func (c chat) listModels(ctx context.Context) ([]model, error) {
 	}
 	var listing struct {
 		Data []struct {
-			ID   string `json:"id"`
-			Name string `json:"name"`
+			ID        string   `json:"id"`
+			Name      string   `json:"name"`
+			Supported []string `json:"supported_parameters"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(answer, &listing); err != nil {
@@ -136,7 +143,7 @@ func (c chat) listModels(ctx context.Context) ([]model, error) {
 	models := make([]model, 0, len(listing.Data))
 	for _, one := range listing.Data {
 		if one.ID != "" {
-			models = append(models, model{Name: one.ID, Title: one.Name})
+			models = append(models, model{Name: one.ID, Title: one.Name, ReasoningField: getReasoningField(one.Supported)})
 		}
 	}
 	return models, nil

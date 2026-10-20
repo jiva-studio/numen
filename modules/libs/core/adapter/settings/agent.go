@@ -33,6 +33,10 @@ type AgentProgram struct {
 	// Model is which of its models answers, by the name the program knows it as.
 	Model string `json:"model"`
 
+	// Reasoning is the depth of reasoning the person last chose for the program, by the name of one of
+	// the levels a model offers. The panel offers it again; a task names the depth it asks for.
+	Reasoning string `json:"reasoning"`
+
 	// MaxSteps is how many times it may go to the model before it is stopped.
 	MaxSteps int `json:"max_steps"`
 
@@ -152,6 +156,8 @@ func (p *AgentProgram) readField(key string, value json.RawMessage) error {
 		return json.Unmarshal(value, &p.Command)
 	case "model":
 		return json.Unmarshal(value, &p.Model)
+	case "reasoning":
+		return json.Unmarshal(value, &p.Reasoning)
 	case "max_steps":
 		return json.Unmarshal(value, &p.MaxSteps)
 	}
@@ -164,12 +170,13 @@ func (p *AgentProgram) readField(key string, value json.RawMessage) error {
 
 // MarshalJSON writes the section of a program with its options beside its own keys.
 func (p AgentProgram) MarshalJSON() ([]byte, error) {
-	written := make(map[string]any, len(p.Options)+3)
+	written := make(map[string]any, len(p.Options)+4)
 	for key, value := range p.Options {
 		written[key] = json.RawMessage(value)
 	}
 	written["command"] = p.Command
 	written["model"] = p.Model
+	written["reasoning"] = p.Reasoning
 	written["max_steps"] = p.MaxSteps
 	return json.Marshal(written)
 }

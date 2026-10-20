@@ -4,6 +4,7 @@ import { computed, useTemplateRef } from 'vue'
 import { Textarea } from '@/shared/ui/textarea'
 import { Disc } from './disc'
 import { AgentModelSelector, type AgentModelOption } from './model-selector'
+import { ReasoningSelector, type ReasoningLevelOption } from './reasoning-selector'
 import { COMPOSER_STATES, composerState, keyIntent, getMessage } from './state'
 
 const props = withDefaults(
@@ -19,6 +20,11 @@ const props = withDefaults(
     options?: readonly AgentModelOption[]
     selectedAgentId?: string
     selectedModelId?: string
+    /** The depths of reasoning the chosen model offers. The selector shows only where there are some. */
+    reasoningLevels?: readonly ReasoningLevelOption[]
+    selectedReasoningId?: string
+    /** What the reasoning selector is called. */
+    reasoningName?: string
   }>(),
   {
     placeholder: 'Write a message',
@@ -29,6 +35,9 @@ const props = withDefaults(
     options: () => [],
     selectedAgentId: '',
     selectedModelId: '',
+    reasoningLevels: () => [],
+    selectedReasoningId: '',
+    reasoningName: 'Reasoning',
   },
 )
 
@@ -42,6 +51,8 @@ const emit = defineEmits<{
   (event: 'stop'): void
   /** A model/agent was selected from the dropdown. */
   (event: 'select-model', option: AgentModelOption): void
+  /** A depth of reasoning was chosen from the dropdown, by the name of the level. */
+  (event: 'select-reasoning', id: string): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -71,6 +82,10 @@ function onSelectModel(option: AgentModelOption) {
   emit('select-model', option)
 }
 
+function onSelectReasoning(id: string) {
+  emit('select-reasoning', id)
+}
+
 defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
 </script>
 
@@ -96,15 +111,24 @@ defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
 
     <!-- Integrated controls row: flat model selector pill on bottom-left, send/stop disc on bottom-right -->
     <div class="composer__toolbar flex min-w-0 items-center justify-between gap-2 pt-2">
-      <AgentModelSelector
-        v-if="options && options.length > 0"
-        :options="options"
-        :selected-agent-id="selectedAgentId"
-        :selected-model-id="selectedModelId"
-        :disabled="disabled || isWorking"
-        @select="onSelectModel"
-      />
-      <div v-else class="min-w-0 flex-1" />
+      <div class="composer__selectors flex min-w-0 flex-1 items-center gap-1.5">
+        <AgentModelSelector
+          v-if="options && options.length > 0"
+          :options="options"
+          :selected-agent-id="selectedAgentId"
+          :selected-model-id="selectedModelId"
+          :disabled="disabled || isWorking"
+          @select="onSelectModel"
+        />
+        <ReasoningSelector
+          v-if="reasoningLevels.length > 0"
+          :levels="reasoningLevels"
+          :selected-id="selectedReasoningId"
+          :name="reasoningName"
+          :disabled="disabled || isWorking"
+          @select="onSelectReasoning"
+        />
+      </div>
 
       <Disc
         class="composer__action shrink-0"

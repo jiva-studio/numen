@@ -89,6 +89,9 @@ message AskAgentRequest {
   // program no tools.
   string tools_url = 15;
   string tools_token = 16;
+  // The depth of reasoning the model works at, by the name of one of the levels the model offers.
+  // Empty leaves the depth to the program.
+  string reasoning = 17;
 }
 
 message GetAgentProgramsRequest {
@@ -131,6 +134,11 @@ message AgentModel {
   string title = 2;
   // Set where the program names the model it answers with unasked.
   bool is_default = 3;
+  // The depths of reasoning the model can be asked to work at, from the least to the most. Empty
+  // where the model offers no choice.
+  repeated ReasoningLevel reasoning_levels = 4;
+  // The level the model works at unasked. Empty where it names none.
+  string default_reasoning = 5;
 }
 
 // ToolDeclaration is how one vault tool is spoken about to a person and how a call of it is read

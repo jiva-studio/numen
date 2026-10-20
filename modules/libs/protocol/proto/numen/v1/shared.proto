@@ -93,3 +93,11 @@ message Bounds {
   double least = 1;
   double most = 2;
 }
+
+// ReasoningLevel is one depth of reasoning a model can be asked to work at.
+message ReasoningLevel {
+  // What a task asks for the level by (e.g. "low", "high").
+  string name = 1;
+  // What the level is called when shown to a person.
+  string title = 2;
+}
