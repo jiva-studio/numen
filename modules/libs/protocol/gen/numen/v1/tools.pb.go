@@ -437,7 +437,12 @@ type CallToolRequest struct {
 	// The name the plugin listed the tool under.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The arguments, as a JSON object that meets the tool's input schema.
-	Arguments     []byte `protobuf:"bytes,2,opt,name=arguments,proto3" json:"arguments,omitempty"`
+	Arguments []byte `protobuf:"bytes,2,opt,name=arguments,proto3" json:"arguments,omitempty"`
+	// What the person is looking at in the window the agent was started from, as
+	// that window names it: focus, mark and face for the window cards are reviewed
+	// in. It is data about the call and no part of the arguments, and it is empty
+	// for a call made from a window that shows the person nothing in particular.
+	Asked         map[string]string `protobuf:"bytes,3,rep,name=asked,proto3" json:"asked,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -482,6 +487,13 @@ func (x *CallToolRequest) GetName() string {
 func (x *CallToolRequest) GetArguments() []byte {
 	if x != nil {
 		return x.Arguments
+	}
+	return nil
+}
+
+func (x *CallToolRequest) GetAsked() map[string]string {
+	if x != nil {
+		return x.Asked
 	}
 	return nil
 }
@@ -623,10 +635,15 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"\routput_schema\x18\x05 \x01(\fR\foutputSchema\x12,\n" +
 	"\x06effect\x18\x06 \x01(\x0e2\x14.numen.v1.ToolEffectR\x06effect\x12.\n" +
 	"\aservers\x18\a \x03(\x0e2\x14.numen.v1.ToolServerR\aservers\x12&\n" +
-	"\x04step\x18\b \x01(\x0e2\x12.numen.v1.ToolStepR\x04step\"C\n" +
+	"\x04step\x18\b \x01(\x0e2\x12.numen.v1.ToolStepR\x04step\"\xb9\x01\n" +
 	"\x0fCallToolRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1c\n" +
-	"\targuments\x18\x02 \x01(\fR\targuments\"o\n" +
+	"\targuments\x18\x02 \x01(\fR\targuments\x12:\n" +
+	"\x05asked\x18\x03 \x03(\v2$.numen.v1.CallToolRequest.AskedEntryR\x05asked\x1a8\n" +
+	"\n" +
+	"AskedEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"o\n" +
 	"\x10CallToolResponse\x12-\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x17.numen.v1.ToolErrorCodeR\x05error\x12,\n" +
 	"\x06result\x18\x02 \x01(\v2\x14.numen.v1.ToolResultR\x06result\"_\n" +
@@ -675,7 +692,7 @@ func file_numen_v1_tools_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_tools_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_numen_v1_tools_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_numen_v1_tools_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_numen_v1_tools_proto_goTypes = []any{
 	(ToolEffect)(0),           // 0: numen.v1.ToolEffect
 	(ToolStep)(0),             // 1: numen.v1.ToolStep
@@ -687,23 +704,25 @@ var file_numen_v1_tools_proto_goTypes = []any{
 	(*CallToolRequest)(nil),   // 7: numen.v1.CallToolRequest
 	(*CallToolResponse)(nil),  // 8: numen.v1.CallToolResponse
 	(*ToolResult)(nil),        // 9: numen.v1.ToolResult
+	nil,                       // 10: numen.v1.CallToolRequest.AskedEntry
 }
 var file_numen_v1_tools_proto_depIdxs = []int32{
-	6, // 0: numen.v1.ListToolsResponse.tools:type_name -> numen.v1.PluginTool
-	0, // 1: numen.v1.PluginTool.effect:type_name -> numen.v1.ToolEffect
-	2, // 2: numen.v1.PluginTool.servers:type_name -> numen.v1.ToolServer
-	1, // 3: numen.v1.PluginTool.step:type_name -> numen.v1.ToolStep
-	3, // 4: numen.v1.CallToolResponse.error:type_name -> numen.v1.ToolErrorCode
-	9, // 5: numen.v1.CallToolResponse.result:type_name -> numen.v1.ToolResult
-	4, // 6: numen.v1.PluginToolService.ListTools:input_type -> numen.v1.ListToolsRequest
-	7, // 7: numen.v1.PluginToolService.CallTool:input_type -> numen.v1.CallToolRequest
-	5, // 8: numen.v1.PluginToolService.ListTools:output_type -> numen.v1.ListToolsResponse
-	8, // 9: numen.v1.PluginToolService.CallTool:output_type -> numen.v1.CallToolResponse
-	8, // [8:10] is the sub-list for method output_type
-	6, // [6:8] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	6,  // 0: numen.v1.ListToolsResponse.tools:type_name -> numen.v1.PluginTool
+	0,  // 1: numen.v1.PluginTool.effect:type_name -> numen.v1.ToolEffect
+	2,  // 2: numen.v1.PluginTool.servers:type_name -> numen.v1.ToolServer
+	1,  // 3: numen.v1.PluginTool.step:type_name -> numen.v1.ToolStep
+	10, // 4: numen.v1.CallToolRequest.asked:type_name -> numen.v1.CallToolRequest.AskedEntry
+	3,  // 5: numen.v1.CallToolResponse.error:type_name -> numen.v1.ToolErrorCode
+	9,  // 6: numen.v1.CallToolResponse.result:type_name -> numen.v1.ToolResult
+	4,  // 7: numen.v1.PluginToolService.ListTools:input_type -> numen.v1.ListToolsRequest
+	7,  // 8: numen.v1.PluginToolService.CallTool:input_type -> numen.v1.CallToolRequest
+	5,  // 9: numen.v1.PluginToolService.ListTools:output_type -> numen.v1.ListToolsResponse
+	8,  // 10: numen.v1.PluginToolService.CallTool:output_type -> numen.v1.CallToolResponse
+	9,  // [9:11] is the sub-list for method output_type
+	7,  // [7:9] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_tools_proto_init() }
@@ -717,7 +736,7 @@ func file_numen_v1_tools_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_tools_proto_rawDesc), len(file_numen_v1_tools_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

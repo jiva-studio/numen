@@ -17,7 +17,7 @@ func (o *offered) ListTools(context.Context) []port.PluginTool {
 	return []port.PluginTool{{PluginID: "md.numen.sample", Name: "sample_read"}}
 }
 
-func (o *offered) CallTool(_ context.Context, pluginID, name string, arguments []byte) (port.PluginToolResult, error) {
+func (o *offered) CallTool(_ context.Context, pluginID, name string, arguments []byte, _ map[string]string) (port.PluginToolResult, error) {
 	o.called = pluginID + " " + name + " " + string(arguments)
 	return port.PluginToolResult{Text: "done"}, nil
 }
@@ -39,7 +39,7 @@ func TestNoPluginsOfferNoTools(t *testing.T) {
 func TestACallIsHandedToThePluginThatListedTheTool(t *testing.T) {
 	plugins := &offered{}
 
-	result, err := plugintool.NewCall(plugins).Execute(t.Context(), "md.numen.sample", "sample_read", []byte(`{}`))
+	result, err := plugintool.NewCall(plugins).Execute(t.Context(), "md.numen.sample", "sample_read", []byte(`{}`), nil)
 
 	if err != nil || result.Text != "done" || plugins.called != "md.numen.sample sample_read {}" {
 		t.Errorf("got %+v, %v after calling %q", result, err, plugins.called)
@@ -47,7 +47,7 @@ func TestACallIsHandedToThePluginThatListedTheTool(t *testing.T) {
 }
 
 func TestACallWithNoPluginsToAskIsUnavailable(t *testing.T) {
-	_, err := plugintool.NewCall(nil).Execute(t.Context(), "md.numen.sample", "sample_read", nil)
+	_, err := plugintool.NewCall(nil).Execute(t.Context(), "md.numen.sample", "sample_read", nil, nil)
 
 	if !errors.Is(err, port.ErrUnavailable) {
 		t.Errorf("the call was answered with %v", err)

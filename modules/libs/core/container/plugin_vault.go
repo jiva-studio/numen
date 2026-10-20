@@ -2,6 +2,8 @@ package container
 
 import (
 	"context"
+	"fmt"
+	"io/fs"
 	"path/filepath"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
@@ -32,27 +34,71 @@ func (c Config) OpenPluginCache() (port.PluginCache, error) {
 	return kept, nil
 }
 
+// PluginVaultHooks is what a window adds to the vault it lets the plugins work.
+type PluginVaultHooks struct {
+	// Written is told after a plugin changed the vault.
+	Written func()
+	// IndexState starts reading a vault into the index when it is not there and says where that
+	// stands. Left nil, a vault the index carries is indexed and any other is being indexed.
+	IndexState func(ctx context.Context, v domain.Vault) (port.PluginIndexState, error)
+	// Moved tells that something moved in some vault. Left nil, it is the index file changing.
+	Moved func(ctx context.Context) (<-chan struct{}, error)
+}
+
 // OpenPluginVault is the vault the plugins work through the host: the one current names, over the
 // files, the index and the stores of this installation.
-func (e EditorAssembly) OpenPluginVault(current func() (domain.Vault, bool)) (port.PluginVault, error) {
+func (e EditorAssembly) OpenPluginVault(
+	current func() (domain.Vault, bool), hooks PluginVaultHooks,
+) (port.PluginVault, error) {
 	cache, err := e.cfg.OpenPluginCache()
 	if err != nil {
 		return nil, err
 	}
 	refresh := e.GetRefresh()
-	return plugin.Vault{
+	queries := e.db.Queries()
+	vaults := plugin.Vault{
 		Current:  current,
 		Readers:  e.cfg.VaultReaders(),
 		Writers:  e.cfg.VaultWriters(),
-		Notes:    e.db.Queries(),
+		Notes:    queries,
 		Links:    e.db.Links(),
 		Problems: e.db.Problems(),
 		Data:     filesystem.PluginData{Options: e.cfg.vaultOptions()},
 		Cache:    cache,
 		Watcher:  e.cfg.VaultWatcher(),
+		Written:  hooks.Written,
+		Vaults:   e.registry.List,
+		Find: func(id domain.VaultID) (domain.Vault, error) {
+			found, isFound, err := e.registry.FindVault(string(id))
+			if err != nil {
+				return domain.Vault{}, err
+			}
+			if !isFound {
+				return domain.Vault{}, fmt.Errorf("vault %q: %w", id, fs.ErrNotExist)
+			}
+			return found, nil
+		},
+		IndexState: hooks.IndexState,
+		Moved:      hooks.Moved,
 		Index: func(ctx context.Context, v domain.Vault, paths []string) error {
 			_, err := refresh.Execute(ctx, v, paths)
 			return err
 		},
-	}, nil
+	}
+	if vaults.IndexState == nil {
+		vaults.IndexState = func(ctx context.Context, v domain.Vault) (port.PluginIndexState, error) {
+			has, err := queries.Has(ctx, v.ID)
+			if err != nil {
+				return port.PluginIndexState{}, err
+			}
+			if has {
+				return port.PluginIndexState{Status: port.PluginIndexed}, nil
+			}
+			return port.PluginIndexState{Status: port.PluginIndexing}, nil
+		}
+	}
+	if vaults.Moved == nil {
+		vaults.Moved = e.cfg.Moves
+	}
+	return vaults, nil
 }

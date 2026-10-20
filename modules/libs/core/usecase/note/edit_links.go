@@ -126,17 +126,9 @@ func (u EditLinks) PointAt(
 	ctx context.Context, v domain.Vault, from, of string,
 	to domain.Address, role domain.LinkRole, fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
-	if of == "" {
-		return domain.Fingerprint{}, errors.New("a link is pointed at under a type")
-	}
-	if to.Value != "" && !domain.IsKnownRole(role) {
-		return domain.Fingerprint{}, fmt.Errorf("%q is not a role a link can carry", role)
-	}
 	e := u.newEdit()
 	e.Fingerprint = fingerprint
-	return e.Apply(ctx, v, from, func(doc *markdown.Document) error {
-		return doc.SetLinkOfType(of, to, role)
-	})
+	return e.shared().PointAt(ctx, v, from, of, to, role)
 }
 
 // Remove takes a relationship out. The note at the other end is untouched: what

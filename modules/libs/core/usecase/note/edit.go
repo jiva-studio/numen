@@ -2,44 +2,41 @@ package note
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"io/fs"
-	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/edit"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
-	"github.com/jiva-studio/numen/modules/libs/notes/ulid"
 )
 
 // ErrNoNote is what an operation gets when the vault holds no note at the path
 // it was given. A vault that cannot be reached at all comes back as it arrived.
-var ErrNoNote = errors.New("the vault holds no note at this path")
+var ErrNoNote = edit.ErrNoNote
 
 // ErrUnlevelled is a file that was written and an index that could not be
 // brought up to date with it. The vault holds what the write put there, and the
 // path is levelled again at the next scan.
-var ErrUnlevelled = errors.New("the vault was written and the index was not brought level with it")
+var ErrUnlevelled = edit.ErrUnlevelled
 
 // WrapUnlevelled is what bringing the index up to date came to, said so that a
 // caller can tell it from a write that never landed. The paths are the ones the
 // index was asked about.
 func WrapUnlevelled(err error, paths ...string) error {
-	if err == nil {
-		return nil
-	}
-	return fmt.Errorf("%w: %s: %w", ErrUnlevelled, strings.Join(paths, ", "), err)
+	return edit.WrapUnlevelled(err, paths...)
 }
 
 // mapMissingNote is ErrNoNote where the vault holds no note at the path, and
 // the error as it arrived otherwise.
 func mapMissingNote(err error) error {
-	if errors.Is(err, fs.ErrNotExist) {
-		return ErrNoNote
-	}
-	return err
+	return edit.MapMissingNote(err)
 }
+
+// Baseline is what a caller last saw of the note it is saving.
+type Baseline = edit.Baseline
+
+// Levels brings the named notes up to date in the index, so that what a write
+// changed is findable before the write is reported done.
+type Levels = edit.Levels
 
 // Edit is what every change to the contents of an existing note needs.
 //
@@ -79,119 +76,56 @@ func NewEdit(
 
 // Apply makes one change to the note at path and puts it back.
 func (e Edit) Apply(ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error) (domain.Fingerprint, error) {
-	written, err := e.splice(ctx, v, path, change)
-	if err != nil {
-		return domain.Fingerprint{}, err
-	}
-	// The file is on disk, so the fingerprint stands beside whatever the
-	// levelling came to and a caller can tell the two apart.
-	if e.index == nil {
-		return written, nil
-	}
-	return written, WrapUnlevelled(e.index(ctx, v, []string{path}), path)
+	return e.shared().Apply(ctx, v, path, change)
 }
 
-// splice is the read, the change and the write, under this vault's write lock
-// from before the read until after the file is replaced.
-func (e Edit) splice(
-	ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error,
-) (domain.Fingerprint, error) {
-	release, err := e.writers.Lock(ctx, v)
-	if err != nil {
-		return domain.Fingerprint{}, err
+// shared is the edit as the notes module makes it, over the files of a vault.
+func (e Edit) shared() edit.Edit {
+	return edit.Edit{
+		Open:            e.openFiles,
+		Index:           e.index,
+		Now:             e.now,
+		Fingerprint:     e.Fingerprint,
+		ShouldOverwrite: e.ShouldOverwrite,
+		Bound:           e.Bound,
+		Baseline:        e.Baseline,
 	}
-	defer release()
+}
 
+func (e Edit) openFiles(v domain.Vault) (edit.Files, error) {
 	reader, err := e.readers.Open(v)
 	if err != nil {
-		return domain.Fingerprint{}, err
+		return nil, err
 	}
-
-	// What the file is, asked before its bytes are read, which is the order a
-	// read hands its fingerprint over in.
-	on, looked := e.statNote(ctx, reader, path)
-	raw, err := e.readNote(ctx, reader, path)
-	if err != nil {
-		return domain.Fingerprint{}, err
-	}
-	against, err := e.getExpected(path, on, looked)
-	if err != nil {
-		return domain.Fingerprint{}, err
-	}
-	doc, err := markdown.Open(raw)
-	if err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("%s: %w", path, err)
-	}
-
-	// A note that is not there cannot hold anything the caller has not read, so
-	// it is made.
-	if looked == nil && e.Baseline.isStale(on, markdown.Normalise(doc.Body())) {
-		return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, port.ErrStale)
-	}
-
-	if err := change(doc); err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("%s: %w", path, err)
-	}
-	if err := e.addIdentifier(doc); err != nil {
-		return domain.Fingerprint{}, err
-	}
-
-	// Every change to a note's contents comes through here, so the size it is
-	// written within is asked once, of the file the change came to.
-	content := doc.Bytes()
-	if err := CheckSize(path, len(content), e.Bound); err != nil {
-		return domain.Fingerprint{}, err
-	}
-
 	writer, err := e.writers.Open(v)
 	if err != nil {
-		return domain.Fingerprint{}, err
+		return nil, err
 	}
-	return writer.Write(ctx, path, content, against)
+	return vaultFiles{reader: reader, writer: writer, writers: e.writers, vault: v}, nil
 }
 
-// statNote is the fingerprint of the file on disk, and the error of asking, for
-// a caller that holds the note to what it last saw or to what is there now.
-func (e Edit) statNote(ctx context.Context, reader port.VaultReader, path string) (domain.Fingerprint, error) {
-	if e.Baseline != nil || (e.Fingerprint.IsZero() && !e.ShouldOverwrite) {
-		return reader.GetFingerprint(ctx, path)
-	}
-	return domain.Fingerprint{}, nil
+// vaultFiles are the files of one vault, read and written through the ports.
+type vaultFiles struct {
+	reader  port.VaultReader
+	writer  port.VaultWriter
+	writers port.VaultWriters
+	vault   domain.Vault
 }
 
-// readNote is the bytes of the note at path. A caller overwriting a note that
-// is not there gets no bytes: the write makes the note out of the person's own
-// text, with no frontmatter and no identifier.
-func (e Edit) readNote(ctx context.Context, reader port.VaultReader, path string) ([]byte, error) {
-	raw, err := reader.Read(ctx, path)
-	switch {
-	case err == nil:
-		return raw, nil
-	case e.ShouldOverwrite && errors.Is(err, fs.ErrNotExist):
-		return nil, nil
-	default:
-		return nil, fmt.Errorf("read %s: %w", path, mapMissingNote(err))
-	}
+func (f vaultFiles) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
+	return f.reader.GetFingerprint(ctx, path)
 }
 
-// getExpected is the fingerprint the write is held to: the one the caller gave,
-// else the one read just now. A caller writing over what is there is held to
-// neither.
-func (e Edit) getExpected(path string, on domain.Fingerprint, looked error) (domain.Fingerprint, error) {
-	if !e.Fingerprint.IsZero() || e.ShouldOverwrite {
-		return e.Fingerprint, nil
-	}
-	if looked != nil {
-		return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", path, mapMissingNote(looked))
-	}
-	return on, nil
+func (f vaultFiles) Read(ctx context.Context, path string) ([]byte, error) {
+	return f.reader.Read(ctx, path)
 }
 
-// addIdentifier writes the identifier a note arrived without. A caller
-// writing over what is there leaves the frontmatter as the person wrote it.
-func (e Edit) addIdentifier(doc *markdown.Document) error {
-	if _, carried := doc.Identifier(); carried || e.ShouldOverwrite {
-		return nil
-	}
-	return doc.SetIdentifier(ulid.New(e.now()))
+func (f vaultFiles) Write(
+	ctx context.Context, path string, content []byte, fingerprint domain.Fingerprint,
+) (domain.Fingerprint, error) {
+	return f.writer.Write(ctx, path, content, fingerprint)
+}
+
+func (f vaultFiles) Lock(ctx context.Context) (func(), error) {
+	return f.writers.Lock(ctx, f.vault)
 }

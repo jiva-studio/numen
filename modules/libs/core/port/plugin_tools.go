@@ -87,5 +87,5 @@ type PluginTools interface {
 	ListTools(ctx context.Context) []PluginTool
 	// CallTool runs the tool the plugin listed. A plugin that no longer holds the permission, or
 	// cannot be reached, is an *UnavailableError or ErrPermissionDenied.
-	CallTool(ctx context.Context, pluginID, name string, arguments []byte) (PluginToolResult, error)
+	CallTool(ctx context.Context, pluginID, name string, arguments []byte, asked map[string]string) (PluginToolResult, error)
 }

@@ -30,7 +30,7 @@ type offeredCall struct {
 func (o *offeredTools) ListTools(context.Context) []plugintool.Tool { return o.tools }
 
 func (o *offeredTools) CallTool(
-	_ context.Context, pluginID, name string, arguments []byte,
+	_ context.Context, pluginID, name string, arguments []byte, _ map[string]string,
 ) (plugintool.Result, error) {
 	o.calls = append(o.calls, offeredCall{pluginID, name, string(arguments)})
 	return o.reply, o.err

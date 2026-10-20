@@ -37,12 +37,40 @@ type PluginCache interface {
 	Write(ctx context.Context, pluginID string, vaultID domain.VaultID, name string, content []byte) error
 }
 
+// PluginIndexStatus is where a vault stands in the index.
+type PluginIndexStatus int
+
+const (
+	// PluginIndexed is a vault the index carries.
+	PluginIndexed PluginIndexStatus = iota + 1
+	// PluginIndexing is a vault being read into the index.
+	PluginIndexing
+	// PluginIndexFailed is a vault that could not be read into the index.
+	PluginIndexFailed
+)
+
+// PluginIndexState is where a vault stands in the index, and why it failed when it did.
+type PluginIndexState struct {
+	Status PluginIndexStatus
+	Reason string
+}
+
 // PluginVault is the vault the window is showing, as the host works it for a plugin: its files,
 // what the index says of its notes and links, the folder of its store a plugin keeps data in, and
 // the cache the installation keeps for a plugin.
 type PluginVault interface {
 	// GetVault is the vault the window is showing, and false while it shows none.
 	GetVault() (domain.Vault, bool)
+	// GetVaults lists every vault the installation knows.
+	GetVaults() ([]domain.Vault, error)
+	// With is the vault of the identity, worked the way the shown vault is. It returns
+	// fs.ErrNotExist for an identity the installation does not know.
+	With(id domain.VaultID) (PluginVault, error)
+	// EnsureIndexed brings the vault into the index when it is not there, and says where that
+	// stands. The work goes on after it returns.
+	EnsureIndexed(ctx context.Context) (PluginIndexState, error)
+	// WatchMoves tells that something moved in some vault, until ctx is done.
+	WatchMoves(ctx context.Context) (<-chan struct{}, error)
 
 	GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error)
 	// Read returns the file and what it was when it was asked about, before its bytes were read.
@@ -57,6 +85,7 @@ type PluginVault interface {
 
 	GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error)
 	GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error)
+	GetNamedPaths(ctx context.Context, name string) ([]string, error)
 	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 	GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error)
 	GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)
@@ -71,4 +100,3 @@ type PluginVault interface {
 	// Watch tells of the files of the vault that changed, until ctx is done or the watch is lost.
 	Watch(ctx context.Context) (changes <-chan []string, lost <-chan struct{}, err error)
 }
-

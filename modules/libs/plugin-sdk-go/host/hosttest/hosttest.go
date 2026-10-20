@@ -32,6 +32,11 @@ type Vault struct {
 	locked  chan struct{}
 	scanned [][]string
 	watches []chan host.Change
+	// others are the vaults beside this one, by identity.
+	others  map[domain.VaultID]*Vault
+	unknown bool
+	state   host.IndexState
+	moves   []chan struct{}
 }
 
 var _ host.Vault = (*Vault)(nil)
@@ -50,7 +55,44 @@ func New(name string) *Vault {
 		cache:  map[string][]byte{},
 		clock:  time.Unix(1_700_000_000, 0),
 		locked: make(chan struct{}, 1),
+		others: map[domain.VaultID]*Vault{},
+		state:  host.IndexState{Status: host.Indexed},
 	}
+}
+
+// Beside makes the vault known to this one, so that it lists it and works it by identity.
+func (v *Vault) Beside(other *Vault) {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	v.others[other.vault.ID] = other
+}
+
+// SetIndexState sets where the vault stands in the index.
+func (v *Vault) SetIndexState(state host.IndexState) {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	v.state = state
+}
+
+// Move tells the watches of moves that something moved.
+func (v *Vault) Move() {
+	v.mu.Lock()
+	watches := append([]chan struct{}(nil), v.moves...)
+	v.mu.Unlock()
+	for _, w := range watches {
+		w <- struct{}{}
+	}
+}
+
+// gate refuses a call on a vault the host does not show, or does not know.
+func (v *Vault) gate() error {
+	if v.unknown {
+		return host.ErrUnknownVault
+	}
+	if !v.shown {
+		return host.ErrNoVault
+	}
+	return nil
 }
 
 // Hide makes the host show no vault.
@@ -121,14 +163,14 @@ func (v *Vault) Touch(paths ...string) {
 func (v *Vault) put(filePath string, content []byte) domain.Fingerprint {
 	v.clock = v.clock.Add(time.Second)
 	v.files[filePath] = content
-	at := domain.Fingerprint{Path: filePath, Size: int64(len(content)), ModTime: v.clock}
+	at := domain.Fingerprint{Path: filePath, Kind: domain.KindNote, Size: int64(len(content)), ModTime: v.clock}
 	v.at[filePath] = at
 	return at
 }
 
 func (v *Vault) check(filePath string) error {
-	if !v.shown {
-		return host.ErrNoVault
+	if err := v.gate(); err != nil {
+		return err
 	}
 	if filePath == "" || strings.HasPrefix(filePath, "/") || path.Clean(filePath) != filePath || strings.HasPrefix(filePath, "..") {
 		return host.ErrOutside
@@ -139,8 +181,8 @@ func (v *Vault) check(filePath string) error {
 func (v *Vault) GetVault(context.Context) (domain.Vault, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	if !v.shown {
-		return domain.Vault{}, host.ErrNoVault
+	if err := v.gate(); err != nil {
+		return domain.Vault{}, err
 	}
 	return v.vault, nil
 }
@@ -212,8 +254,8 @@ func (v *Vault) Lock(ctx context.Context) (func(), error) {
 func (v *Vault) Scan(_ context.Context, paths []string) error {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	if !v.shown {
-		return host.ErrNoVault
+	if err := v.gate(); err != nil {
+		return err
 	}
 	v.scanned = append(v.scanned, append([]string(nil), paths...))
 	return nil
@@ -222,8 +264,8 @@ func (v *Vault) Scan(_ context.Context, paths []string) error {
 func (v *Vault) GetNotes(_ context.Context, paths []string) (map[string]domain.NoteRef, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	if !v.shown {
-		return nil, host.ErrNoVault
+	if err := v.gate(); err != nil {
+		return nil, err
 	}
 	out := map[string]domain.NoteRef{}
 	for _, p := range paths {
@@ -237,8 +279,8 @@ func (v *Vault) GetNotes(_ context.Context, paths []string) (map[string]domain.N
 func (v *Vault) GetTypes(_ context.Context, paths []string) (map[string]domain.NoteType, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	if !v.shown {
-		return nil, host.ErrNoVault
+	if err := v.gate(); err != nil {
+		return nil, err
 	}
 	out := map[string]domain.NoteType{}
 	for _, p := range paths {
@@ -249,11 +291,27 @@ func (v *Vault) GetTypes(_ context.Context, paths []string) (map[string]domain.N
 	return out, nil
 }
 
+func (v *Vault) GetNamedPaths(_ context.Context, name string) ([]string, error) {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	if err := v.gate(); err != nil {
+		return nil, err
+	}
+	var out []string
+	for p := range v.notes {
+		if domain.Basename(p) == name {
+			out = append(out, p)
+		}
+	}
+	sort.Strings(out)
+	return out, nil
+}
+
 func (v *Vault) GetPathsOfType(_ context.Context, noteType domain.NoteType) ([]string, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	if !v.shown {
-		return nil, host.ErrNoVault
+	if err := v.gate(); err != nil {
+		return nil, err
 	}
 	var out []string
 	for p, t := range v.types {
@@ -268,8 +326,8 @@ func (v *Vault) GetPathsOfType(_ context.Context, noteType domain.NoteType) ([]s
 func (v *Vault) GetLinks(_ context.Context, from string) ([]domain.ResolvedLink, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	if !v.shown {
-		return nil, host.ErrNoVault
+	if err := v.gate(); err != nil {
+		return nil, err
 	}
 	return append([]domain.ResolvedLink(nil), v.links[from]...), nil
 }
@@ -277,8 +335,8 @@ func (v *Vault) GetLinks(_ context.Context, from string) ([]domain.ResolvedLink,
 func (v *Vault) GetBacklinks(_ context.Context, to string) ([]domain.ResolvedLink, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	if !v.shown {
-		return nil, host.ErrNoVault
+	if err := v.gate(); err != nil {
+		return nil, err
 	}
 	var out []domain.ResolvedLink
 	for _, links := range v.links {
@@ -296,8 +354,8 @@ func (v *Vault) GetBacklinks(_ context.Context, to string) ([]domain.ResolvedLin
 func (v *Vault) ResolveLinks(_ context.Context, from string, written []string) (map[string]domain.ResolvedLink, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	if !v.shown {
-		return nil, host.ErrNoVault
+	if err := v.gate(); err != nil {
+		return nil, err
 	}
 	out := map[string]domain.ResolvedLink{}
 	for _, w := range written {
@@ -314,8 +372,8 @@ func (v *Vault) ResolveLinks(_ context.Context, from string, written []string) (
 func (v *Vault) GetParseProblems(context.Context) ([]domain.VaultProblem, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	if !v.shown {
-		return nil, host.ErrNoVault
+	if err := v.gate(); err != nil {
+		return nil, err
 	}
 	return append([]domain.VaultProblem(nil), v.problem...), nil
 }
@@ -323,8 +381,8 @@ func (v *Vault) GetParseProblems(context.Context) ([]domain.VaultProblem, error)
 func (v *Vault) ReadData(_ context.Context, name string) ([]byte, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	if !v.shown {
-		return nil, host.ErrNoVault
+	if err := v.gate(); err != nil {
+		return nil, err
 	}
 	content, ok := v.data[name]
 	if !ok {
@@ -336,8 +394,8 @@ func (v *Vault) ReadData(_ context.Context, name string) ([]byte, error) {
 func (v *Vault) AppendData(_ context.Context, name string, content []byte) error {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	if !v.shown {
-		return host.ErrNoVault
+	if err := v.gate(); err != nil {
+		return err
 	}
 	v.data[name] = append(v.data[name], content...)
 	return nil
@@ -346,8 +404,8 @@ func (v *Vault) AppendData(_ context.Context, name string, content []byte) error
 func (v *Vault) ListData(context.Context) ([]host.DataFile, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	if !v.shown {
-		return nil, host.ErrNoVault
+	if err := v.gate(); err != nil {
+		return nil, err
 	}
 	out := make([]host.DataFile, 0, len(v.data))
 	for name, content := range v.data {
@@ -360,8 +418,8 @@ func (v *Vault) ListData(context.Context) ([]host.DataFile, error) {
 func (v *Vault) ReadCache(_ context.Context, name string) ([]byte, bool, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	if !v.shown {
-		return nil, false, host.ErrNoVault
+	if err := v.gate(); err != nil {
+		return nil, false, err
 	}
 	content, ok := v.cache[name]
 	return append([]byte(nil), content...), ok, nil
@@ -370,8 +428,8 @@ func (v *Vault) ReadCache(_ context.Context, name string) ([]byte, bool, error) 
 func (v *Vault) WriteCache(_ context.Context, name string, content []byte) error {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	if !v.shown {
-		return host.ErrNoVault
+	if err := v.gate(); err != nil {
+		return err
 	}
 	v.cache[name] = append([]byte(nil), content...)
 	return nil
@@ -380,8 +438,8 @@ func (v *Vault) WriteCache(_ context.Context, name string, content []byte) error
 func (v *Vault) Watch(ctx context.Context) (<-chan host.Change, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	if !v.shown {
-		return nil, host.ErrNoVault
+	if err := v.gate(); err != nil {
+		return nil, err
 	}
 	in := make(chan host.Change, 16)
 	out := make(chan host.Change)
@@ -393,6 +451,68 @@ func (v *Vault) Watch(ctx context.Context) (<-chan host.Change, error) {
 			case c := <-in:
 				select {
 				case out <- c:
+				case <-ctx.Done():
+					return
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return out, nil
+}
+
+func (v *Vault) GetVaults(context.Context) ([]domain.Vault, error) {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	out := []domain.Vault{}
+	if v.shown {
+		out = append(out, v.vault)
+	}
+	for _, other := range v.others {
+		out = append(out, other.vault)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out, nil
+}
+
+func (v *Vault) With(id domain.VaultID) host.Vault {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	if v.vault.ID == id {
+		return v
+	}
+	if other, there := v.others[id]; there {
+		return other
+	}
+	return &Vault{unknown: true, others: map[domain.VaultID]*Vault{}}
+}
+
+func (v *Vault) EnsureIndexed(context.Context) (host.IndexState, error) {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	if err := v.gate(); err != nil {
+		return host.IndexState{}, err
+	}
+	return v.state, nil
+}
+
+func (v *Vault) WatchMoves(ctx context.Context) (<-chan struct{}, error) {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	if err := v.gate(); err != nil {
+		return nil, err
+	}
+	in := make(chan struct{}, 16)
+	out := make(chan struct{})
+	v.moves = append(v.moves, in)
+	go func() {
+		defer close(out)
+		for {
+			select {
+			case <-in:
+				select {
+				case out <- struct{}{}:
 				case <-ctx.Done():
 					return
 				}

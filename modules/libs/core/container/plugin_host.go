@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
@@ -71,4 +72,29 @@ func (c Config) GetPluginTools() plugintool.Tools {
 		tools = plugin.OpenToolsBridge(c.PluginHost)
 	}
 	return plugintool.NewTools(tools)
+}
+
+// PluginServices is where a window forwards the calls it receives for the services plugins serve.
+type PluginServices interface {
+	http.Handler
+	// Serves reports whether an enabled plugin serves the service the path names.
+	Serves(urlPath string) bool
+}
+
+// GetPluginServices is the forwarding of the services plugins serve to the windows. Where there is
+// no plugin host it serves none.
+func (c Config) GetPluginServices() PluginServices {
+	if c.PluginHost == nil {
+		return noPluginServices{}
+	}
+	return plugin.OpenServiceProxy(c.PluginHost)
+}
+
+// noPluginServices is the forwarding of an installation with no plugin host.
+type noPluginServices struct{}
+
+func (noPluginServices) Serves(string) bool { return false }
+
+func (noPluginServices) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
+	http.Error(w, "no plugin serves this service", http.StatusNotFound)
 }

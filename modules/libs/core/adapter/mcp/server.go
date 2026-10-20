@@ -54,6 +54,10 @@ type Core struct {
 	// is on.
 	GetCurrentCard func() CurrentCard
 
+	// GetAsked is what the person is looking at in the window the agent was started from, as that
+	// window names it, asked at every call. It is handed to every tool a plugin offers.
+	GetAsked func() map[string]string
+
 	Notes   Notes
 	Vaults  Vaults
 	Cards   Cards

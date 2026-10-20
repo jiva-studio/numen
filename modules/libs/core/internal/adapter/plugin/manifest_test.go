@@ -449,3 +449,33 @@ func TestAManifestNamingNoDataFolderKeepsNoData(t *testing.T) {
 		t.Errorf("got %q (%v)", manifest.Data, err)
 	}
 }
+
+// A service a plugin serves to the windows is a full name of dot-separated words, listed once.
+func TestTheServicesAPluginServesAreFullNamesListedOnce(t *testing.T) {
+	cases := []struct {
+		name     string
+		services string
+		wrong    bool
+	}{
+		{"a full name", `["numen.v1.CardsService"]`, false},
+		{"two names", `["numen.v1.CardsService","numen.v1.PresetsService"]`, false},
+		{"a bare name", `["CardsService"]`, true},
+		{"a path", `["/numen.v1.CardsService"]`, true},
+		{"a name listed twice", `["numen.v1.CardsService","numen.v1.CardsService"]`, true},
+		{"an empty name", `[""]`, true},
+	}
+	for _, one := range cases {
+		t.Run(one.name, func(t *testing.T) {
+			text := `{"id":"a.b","name":"A","version":"1.0.0","services":` + one.services + `}`
+
+			manifest, err := port.ReadManifest(strings.NewReader(text))
+
+			if one.wrong != errors.Is(err, port.ErrInvalidService) {
+				t.Errorf("error = %v, want invalid service: %v", err, one.wrong)
+			}
+			if !one.wrong && !manifest.HasService("numen.v1.CardsService") {
+				t.Errorf("the services came out as %v", manifest.Services)
+			}
+		})
+	}
+}

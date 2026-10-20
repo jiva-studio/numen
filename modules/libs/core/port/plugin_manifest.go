@@ -61,6 +61,7 @@ var (
 	ErrReservedSettingKey  = errors.New("the setting key is kept by the host")
 	ErrInvalidAgentSetting = errors.New("invalid agent setting")
 	ErrInvalidData         = errors.New("invalid data folder")
+	ErrInvalidService      = errors.New("invalid service name")
 )
 
 // SettingStoredSecrets is the setting under which the host records, for a plugin,
@@ -83,6 +84,7 @@ var reservedSettingKeys = []string{SettingStoredSecrets, SettingAIConsent}
 
 var (
 	manifestIDPattern      = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
+	manifestServicePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$`)
 	manifestSecretPattern  = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 	manifestVersionPattern = regexp.MustCompile(`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`)
 )
@@ -197,6 +199,10 @@ type PluginManifest struct {
 	// Data is the folder, inside the store the host keeps in each vault, where the plugin keeps what
 	// it cannot make again. The host answers for that folder and no other.
 	Data string `json:"data,omitempty"`
+	// Services are the services the plugin serves to the windows, by their full names. A window that
+	// receives a call for one forwards it to the plugin; a service the host serves itself is never
+	// forwarded.
+	Services []string `json:"services,omitempty"`
 }
 
 // ReadManifest decodes and validates a manifest from JSON input.
@@ -239,8 +245,25 @@ func (m PluginManifest) ListIssues() []error {
 	issues = append(issues, m.listRuntimeIssues()...)
 	issues = append(issues, m.listSecretIssues()...)
 	issues = append(issues, m.listDataIssues()...)
+	issues = append(issues, m.listServiceIssues()...)
 	issues = append(issues, m.listAgentSettingIssues()...)
 	return append(issues, listManifestSettingIssues(m.Settings)...)
+}
+
+// listServiceIssues checks that each service is a full name of dot-separated words, and is listed once.
+func (m PluginManifest) listServiceIssues() []error {
+	var issues []error
+	seen := map[string]bool{}
+	for _, name := range m.Services {
+		switch {
+		case !manifestServicePattern.MatchString(name):
+			issues = append(issues, fmt.Errorf("%w: %q", ErrInvalidService, name))
+		case seen[name]:
+			issues = append(issues, fmt.Errorf("%w: %q is listed twice", ErrInvalidService, name))
+		}
+		seen[name] = true
+	}
+	return issues
 }
 
 // listDataIssues checks that the folder the plugin keeps its data in is a name of letters, digits,
@@ -436,6 +459,11 @@ func (m PluginManifest) CanTarget(target string) bool {
 // HasCapability reports whether this plugin provides the given capability.
 func (m PluginManifest) HasCapability(capability string) bool {
 	return slices.Contains(m.Capabilities, capability)
+}
+
+// HasService reports whether this plugin serves the service to the windows.
+func (m PluginManifest) HasService(service string) bool {
+	return slices.Contains(m.Services, service)
 }
 
 // HasFileExtension reports whether this plugin supports the given file extension.

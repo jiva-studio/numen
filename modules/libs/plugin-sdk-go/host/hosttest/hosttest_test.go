@@ -58,3 +58,34 @@ func TestADataFileGrowsByAppending(t *testing.T) {
 		t.Errorf("got %q (%v)", got, err)
 	}
 }
+
+func TestAnotherVaultIsWorkedByItsIdentity(t *testing.T) {
+	ctx := context.Background()
+	physics, chemistry := hosttest.New("Physics"), hosttest.New("Chemistry")
+	chemistry.File("a.md", "x")
+	physics.Beside(chemistry)
+
+	known, _ := physics.GetVaults(ctx)
+	_, _, readErr := physics.With("Chemistry").Read(ctx, "a.md")
+	_, _, unknown := physics.With("Biology").Read(ctx, "a.md")
+
+	if len(known) != 2 || readErr != nil || !errors.Is(unknown, host.ErrUnknownVault) {
+		t.Errorf("the vaults were %v, the read gave %v, an unknown vault gave %v", known, readErr, unknown)
+	}
+}
+
+func TestAMoveIsToldToTheWatch(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	v := hosttest.New("Physics")
+	moves, err := v.WatchMoves(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	v.Move()
+
+	if _, open := <-moves; !open {
+		t.Error("the watch closed")
+	}
+}

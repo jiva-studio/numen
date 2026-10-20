@@ -26,6 +26,9 @@ func (h *stubModelHost) ResolveCapability(string) (port.DiscoveredPlugin, error)
 }
 
 func (h *stubModelHost) ResolveCapabilities(string) []port.DiscoveredPlugin { return nil }
+func (h *stubModelHost) ResolveService(string) (port.DiscoveredPlugin, bool) {
+	return port.DiscoveredPlugin{}, false
+}
 
 func (h *stubModelHost) GetPlugin(string) (port.DiscoveredPlugin, bool) {
 	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.stub"}}, true

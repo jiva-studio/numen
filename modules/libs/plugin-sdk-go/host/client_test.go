@@ -22,6 +22,7 @@ type answering struct {
 	code      v1.HostVaultErrorCode
 	asked     string
 	unlocked  string
+	named     string
 	baselines []*v1.HostFingerprint
 }
 
@@ -31,6 +32,29 @@ func (a *answering) GetFileFingerprint(_ context.Context, req *connect.Request[v
 		Error:       a.code,
 		Fingerprint: &v1.HostFingerprint{Path: req.Msg.GetPath(), Size: 7, ModTime: 1_700_000_000_123_456_789},
 	}), nil
+}
+
+func (a *answering) GetHostVault(_ context.Context, req *connect.Request[v1.GetHostVaultRequest]) (*connect.Response[v1.GetHostVaultResponse], error) {
+	a.named = req.Header().Get("Numen-Vault")
+	if a.named == "nobody" {
+		return nil, connect.NewError(connect.CodeNotFound, errors.New("no such vault"))
+	}
+	return connect.NewResponse(&v1.GetHostVaultResponse{Id: a.named, Name: "N", Path: "/p"}), nil
+}
+
+func (a *answering) ListHostVaults(context.Context, *connect.Request[v1.ListHostVaultsRequest]) (*connect.Response[v1.ListHostVaultsResponse], error) {
+	return connect.NewResponse(&v1.ListHostVaultsResponse{Vaults: []*v1.HostVaultInfo{{Id: "a", Name: "A", Path: "/a"}, {Id: "b", Name: "B", Path: "/b"}}}), nil
+}
+
+func (a *answering) EnsureVaultIndexed(context.Context, *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error) {
+	return connect.NewResponse(&v1.EnsureVaultIndexedResponse{State: v1.HostIndexState_HOST_INDEX_STATE_FAILED, Reason: "disk"}), nil
+}
+
+func (a *answering) WatchMoves(ctx context.Context, _ *connect.Request[v1.WatchMovesRequest], stream *connect.ServerStream[v1.WatchMovesResponse]) error {
+	_ = stream.Send(&v1.WatchMovesResponse{})
+	_ = stream.Send(&v1.WatchMovesResponse{})
+	<-ctx.Done()
+	return nil
 }
 
 func (a *answering) WriteFile(_ context.Context, req *connect.Request[v1.WriteFileRequest]) (*connect.Response[v1.WriteFileResponse], error) {
@@ -154,5 +178,68 @@ func TestAWatchBeginsAfterTheFirstMessageAndTellsTheChanges(t *testing.T) {
 	}
 	cancel()
 	for range changes {
+	}
+}
+
+func TestAVaultNamedByIdentityIsAskedForByHeader(t *testing.T) {
+	a := &answering{}
+	client := clientTo(t, a)
+
+	got, err := client.With("v2").GetVault(context.Background())
+	_, unknown := client.With("nobody").GetVault(context.Background())
+
+	if err != nil || got.ID != "v2" || a.named != "nobody" {
+		t.Errorf("got %+v (%v), the header was %q", got, err, a.named)
+	}
+	if !errors.Is(unknown, host.ErrUnknownVault) {
+		t.Errorf("an unknown vault was answered %v", unknown)
+	}
+	shown, err := client.GetVault(context.Background())
+	if err != nil || a.named != "" || shown.ID != "" {
+		t.Errorf("the shown vault was asked for with the header %q (%+v, %v)", a.named, shown, err)
+	}
+}
+
+func TestEveryKnownVaultIsListed(t *testing.T) {
+	vaults, err := clientTo(t, &answering{}).GetVaults(context.Background())
+
+	if err != nil || len(vaults) != 2 || vaults[1] != (domain.Vault{ID: "b", Name: "B", Path: "/b"}) {
+		t.Errorf("got %+v (%v)", vaults, err)
+	}
+}
+
+func TestWhereTheIndexStandsComesWithItsReason(t *testing.T) {
+	state, err := clientTo(t, &answering{}).EnsureIndexed(context.Background())
+
+	if err != nil || state != (host.IndexState{Status: host.IndexFailed, Reason: "disk"}) {
+		t.Errorf("got %+v (%v)", state, err)
+	}
+}
+
+func TestAWatchOfMovesBeginsAfterTheFirstMessage(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	moves, err := clientTo(t, &answering{}).WatchMoves(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, open := <-moves; !open {
+		t.Error("the watch closed before it told anything")
+	}
+	cancel()
+	for range moves {
+	}
+}
+
+func TestAFingerprintKeepsWhatSortOfSourceTheFileIs(t *testing.T) {
+	a := &answering{}
+	baseline := domain.Fingerprint{Path: "n.md", Kind: domain.KindNote, Size: 3, ModTime: time.Unix(5, 6)}
+
+	_, _ = clientTo(t, a).Write(context.Background(), "n.md", []byte("abc"), baseline)
+
+	if len(a.baselines) != 1 || a.baselines[0].GetKind() != "note" {
+		t.Errorf("the host was sent %v", a.baselines)
 	}
 }

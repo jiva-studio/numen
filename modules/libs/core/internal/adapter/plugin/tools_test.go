@@ -56,6 +56,10 @@ func (h *toolsHost) ResolveCapability(string) (port.DiscoveredPlugin, error) {
 	return port.DiscoveredPlugin{}, &port.UnavailableError{Reason: port.PluginNotInstalled}
 }
 
+func (h *toolsHost) ResolveService(string) (port.DiscoveredPlugin, bool) {
+	return port.DiscoveredPlugin{}, false
+}
+
 func (h *toolsHost) ResolveCapabilities(capability string) []port.DiscoveredPlugin {
 	if capability != CapabilityTools {
 		return nil
@@ -200,7 +204,7 @@ func TestACallReachesThePluginThatListedTheToolAndReturnsWhatItAnswered(t *testi
 	bridge := OpenToolsBridge(host)
 	bridge.ListTools(t.Context())
 
-	result, err := bridge.CallTool(t.Context(), "md.numen.a", "reads", []byte(`{"x":1}`))
+	result, err := bridge.CallTool(t.Context(), "md.numen.a", "reads", []byte(`{"x":1}`), map[string]string{"mark": "k7"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,7 +212,8 @@ func TestACallReachesThePluginThatListedTheToolAndReturnsWhatItAnswered(t *testi
 	if result.Text != "done" || string(result.Structured) != `{"n":1}` || !result.IsRefusal {
 		t.Errorf("the result was %+v", result)
 	}
-	if len(plugin.called) != 1 || plugin.called[0].GetName() != "reads" || string(plugin.called[0].GetArguments()) != `{"x":1}` {
+	if len(plugin.called) != 1 || plugin.called[0].GetName() != "reads" || string(plugin.called[0].GetArguments()) != `{"x":1}` ||
+		plugin.called[0].GetAsked()["mark"] != "k7" {
 		t.Errorf("the plugin was asked %v", plugin.called)
 	}
 }
@@ -222,10 +227,10 @@ func TestACallForAToolNoPluginListedIsRefusedWithoutReachingAPlugin(t *testing.T
 	}
 	bridge := OpenToolsBridge(host)
 
-	_, beforeListing := bridge.CallTool(t.Context(), "md.numen.a", "reads", nil)
+	_, beforeListing := bridge.CallTool(t.Context(), "md.numen.a", "reads", nil, nil)
 	bridge.ListTools(t.Context())
-	_, wrongPlugin := bridge.CallTool(t.Context(), "md.numen.b", "reads", nil)
-	_, wrongName := bridge.CallTool(t.Context(), "md.numen.a", "other", nil)
+	_, wrongPlugin := bridge.CallTool(t.Context(), "md.numen.b", "reads", nil, nil)
+	_, wrongName := bridge.CallTool(t.Context(), "md.numen.a", "other", nil, nil)
 
 	for name, err := range map[string]error{"before": beforeListing, "plugin": wrongPlugin, "name": wrongName} {
 		if !errors.Is(err, ErrUnknownTool) {
@@ -248,7 +253,7 @@ func TestACallIsRefusedOnceThePluginNoLongerHoldsThePermission(t *testing.T) {
 	bridge.ListTools(t.Context())
 	host.holds["md.numen.a"] = nil
 
-	_, err := bridge.CallTool(t.Context(), "md.numen.a", "writes", nil)
+	_, err := bridge.CallTool(t.Context(), "md.numen.a", "writes", nil, nil)
 
 	if !errors.Is(err, port.ErrPermissionDenied) {
 		t.Errorf("the call was answered with %v", err)
@@ -275,7 +280,7 @@ func TestACallTheToolRefusesAsMalformedOrUnknownIsAnErrorOfTheBridge(t *testing.
 		bridge := OpenToolsBridge(host)
 		bridge.ListTools(t.Context())
 
-		if _, err := bridge.CallTool(t.Context(), "md.numen.a", "reads", nil); !errors.Is(err, want) {
+		if _, err := bridge.CallTool(t.Context(), "md.numen.a", "reads", nil, nil); !errors.Is(err, want) {
 			t.Errorf("code %v was answered with %v, want %v", code, err, want)
 		}
 	}

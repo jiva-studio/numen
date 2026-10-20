@@ -83,12 +83,13 @@ func NewCall(tools port.PluginTools) Call {
 	return Call{tools: tools}
 }
 
-// Execute runs the tool the plugin listed with the arguments, a JSON object.
+// Execute runs the tool the plugin listed with the arguments, a JSON object, and what the person
+// is looking at in the window the agent was started from.
 func (u Call) Execute(
-	ctx context.Context, pluginID, name string, arguments []byte,
+	ctx context.Context, pluginID, name string, arguments []byte, asked map[string]string,
 ) (port.PluginToolResult, error) {
 	if u.tools == nil {
 		return port.PluginToolResult{}, port.ErrUnavailable
 	}
-	return u.tools.CallTool(ctx, pluginID, name, arguments)
+	return u.tools.CallTool(ctx, pluginID, name, arguments, asked)
 }

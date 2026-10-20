@@ -80,7 +80,7 @@ func (b *ToolsBridge) ListTools(ctx context.Context) []port.PluginTool {
 // CallTool runs the tool the plugin listed, once the plugin is known to hold the permission its
 // effect needs.
 func (b *ToolsBridge) CallTool(
-	ctx context.Context, pluginID, name string, arguments []byte,
+	ctx context.Context, pluginID, name string, arguments []byte, asked map[string]string,
 ) (port.PluginToolResult, error) {
 	b.mu.Lock()
 	effect, known := b.listed[toolKey{pluginID, name}]
@@ -97,7 +97,7 @@ func (b *ToolsBridge) CallTool(
 	}
 	defer func() { _ = lease.Close() }()
 
-	res, err := client.CallTool(ctx, connect.NewRequest(&v1.CallToolRequest{Name: name, Arguments: arguments}))
+	res, err := client.CallTool(ctx, connect.NewRequest(&v1.CallToolRequest{Name: name, Arguments: arguments, Asked: asked}))
 	if err != nil {
 		return port.PluginToolResult{}, readToolError(ctx, err)
 	}

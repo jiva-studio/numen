@@ -10,6 +10,10 @@ option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/nume
 // anything needs vault:write. Every path is relative to the vault root and
 // written with forward slashes.
 //
+// A call works the vault the window is showing. A call that carries the header
+// Numen-Vault works the vault of that identity instead, which is how a window
+// that shows no vault of its own, or a plugin counting every vault, reaches them.
+//
 // The vault is the host's own: the plugin reads and writes its files through
 // the host, so the index, the watcher, the fingerprints and the trash all stay
 // level with what the plugin did.
@@ -17,6 +21,14 @@ service HostVaultService {
   // GetHostVault names the vault the host is showing. A host showing none answers
   // with the vault unset.
   rpc GetHostVault(GetHostVaultRequest) returns (GetHostVaultResponse);
+
+  // ListHostVaults lists every vault the installation knows.
+  rpc ListHostVaults(ListHostVaultsRequest) returns (ListHostVaultsResponse);
+
+  // EnsureVaultIndexed brings the vault into the index when it is not there yet,
+  // and says where that stands. The work goes on after the call returns, and the
+  // caller asks again once WatchMoves tells it something moved.
+  rpc EnsureVaultIndexed(EnsureVaultIndexedRequest) returns (EnsureVaultIndexedResponse);
 
   // GetFileFingerprint says what a file is now. A file that is not there is
   // answered with the error code MISSING.
@@ -52,6 +64,9 @@ service HostVaultService {
   // GetNoteTypes says what type each note at the paths given is.
   rpc GetNoteTypes(GetNoteTypesRequest) returns (GetNoteTypesResponse);
 
+  // GetNamedPaths lists the notes filed under a name.
+  rpc GetNamedPaths(GetNamedPathsRequest) returns (GetNamedPathsResponse);
+
   // GetPathsOfType lists the notes of a type.
   rpc GetPathsOfType(GetPathsOfTypeRequest) returns (GetPathsOfTypeResponse);
 
@@ -84,6 +99,11 @@ service HostVaultService {
 
   // WriteCache replaces what the plugin keeps for this vault under a name.
   rpc WriteCache(WriteCacheRequest) returns (WriteCacheResponse);
+
+  // WatchMoves tells that something moved in some vault of the installation,
+  // until the caller goes. It says nothing of what moved. The first message is
+  // sent at once, so that the caller knows the watch is on.
+  rpc WatchMoves(WatchMovesRequest) returns (stream WatchMovesResponse);
 
   // WatchVault tells of the files of the vault that changed, until the caller
   // goes. The first message is sent at once, with no paths, so that the caller
@@ -128,7 +148,45 @@ message HostFingerprint {
   int64 size = 2;
   // Nanoseconds since the epoch.
   int64 mod_time = 3;
+  // What sort of source the file is: note, book, recording or url.
+  string kind = 4;
 }
+
+message ListHostVaultsRequest {}
+
+message HostVaultInfo {
+  string id = 1;
+  string name = 2;
+  string path = 3;
+}
+
+message ListHostVaultsResponse {
+  HostVaultErrorCode error = 1;
+  repeated HostVaultInfo vaults = 2;
+}
+
+// HostIndexState is where a vault stands in the index.
+enum HostIndexState {
+  HOST_INDEX_STATE_UNSPECIFIED = 0;
+  // The index carries the vault.
+  HOST_INDEX_STATE_INDEXED = 1;
+  // The vault is being read into the index.
+  HOST_INDEX_STATE_INDEXING = 2;
+  // Reading the vault into the index failed, and the reason is on the response.
+  HOST_INDEX_STATE_FAILED = 3;
+}
+
+message EnsureVaultIndexedRequest {}
+
+message EnsureVaultIndexedResponse {
+  HostVaultErrorCode error = 1;
+  HostIndexState state = 2;
+  string reason = 3;
+}
+
+message WatchMovesRequest {}
+
+message WatchMovesResponse {}
 
 message GetHostVaultRequest {}
 
@@ -226,6 +284,15 @@ message GetNoteTypesResponse {
   HostVaultErrorCode error = 1;
   // The type of each note, by its path. A path with no note is left out.
   map<string, string> types = 2;
+}
+
+message GetNamedPathsRequest {
+  string name = 1;
+}
+
+message GetNamedPathsResponse {
+  HostVaultErrorCode error = 1;
+  repeated string paths = 2;
 }
 
 message GetPathsOfTypeRequest {

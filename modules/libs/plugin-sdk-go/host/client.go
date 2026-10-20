@@ -16,6 +16,19 @@ import (
 // Client works the vault through HostVaultService.
 type Client struct {
 	rpc numenv1connect.HostVaultServiceClient
+	// vault is the identity of the vault the client works. Empty is the vault the window shows.
+	vault string
+}
+
+// vaultHeader names the vault a call works.
+const vaultHeader = "Numen-Vault"
+
+func request[T any](c *Client, msg *T) *connect.Request[T] {
+	req := connect.NewRequest(msg)
+	if c.vault != "" {
+		req.Header().Set(vaultHeader, c.vault)
+	}
+	return req
 }
 
 var _ Vault = (*Client)(nil)
@@ -50,6 +63,14 @@ func NewClientOver(httpClient connect.HTTPClient, at hostcall.Endpoint) *Client 
 }
 
 // fail turns the code of an answer into the error it stands for.
+// readError is the failure of a call: a vault the host does not know is ErrUnknownVault.
+func readError(err error) error {
+	if connect.CodeOf(err) == connect.CodeNotFound {
+		return ErrUnknownVault
+	}
+	return err
+}
+
 func fail(code v1.HostVaultErrorCode) error {
 	switch code {
 	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED:
@@ -78,11 +99,13 @@ func readFingerprint(f *v1.HostFingerprint) domain.Fingerprint {
 	if f == nil {
 		return domain.Fingerprint{}
 	}
-	return domain.Fingerprint{Path: f.GetPath(), Size: f.GetSize(), ModTime: time.Unix(0, f.GetModTime())}
+	return domain.Fingerprint{
+		Path: f.GetPath(), Kind: domain.SourceKind(f.GetKind()), Size: f.GetSize(), ModTime: time.Unix(0, f.GetModTime()),
+	}
 }
 
 func writeFingerprint(f domain.Fingerprint) *v1.HostFingerprint {
-	return &v1.HostFingerprint{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano()}
+	return &v1.HostFingerprint{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), Kind: string(f.Kind)}
 }
 
 func readLink(l *v1.HostLink) domain.ResolvedLink {
@@ -108,9 +131,9 @@ func readLinks(links []*v1.HostLink) []domain.ResolvedLink {
 }
 
 func (c *Client) GetVault(ctx context.Context) (domain.Vault, error) {
-	res, err := c.rpc.GetHostVault(ctx, connect.NewRequest(&v1.GetHostVaultRequest{}))
+	res, err := c.rpc.GetHostVault(ctx, request(c, &v1.GetHostVaultRequest{}))
 	if err != nil {
-		return domain.Vault{}, err
+		return domain.Vault{}, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
 		return domain.Vault{}, err
@@ -119,9 +142,9 @@ func (c *Client) GetVault(ctx context.Context) (domain.Vault, error) {
 }
 
 func (c *Client) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
-	res, err := c.rpc.GetFileFingerprint(ctx, connect.NewRequest(&v1.GetFileFingerprintRequest{Path: path}))
+	res, err := c.rpc.GetFileFingerprint(ctx, request(c, &v1.GetFileFingerprintRequest{Path: path}))
 	if err != nil {
-		return domain.Fingerprint{}, err
+		return domain.Fingerprint{}, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
 		return domain.Fingerprint{}, err
@@ -130,9 +153,9 @@ func (c *Client) GetFingerprint(ctx context.Context, path string) (domain.Finger
 }
 
 func (c *Client) Read(ctx context.Context, path string) ([]byte, domain.Fingerprint, error) {
-	res, err := c.rpc.ReadFile(ctx, connect.NewRequest(&v1.ReadFileRequest{Path: path}))
+	res, err := c.rpc.ReadFile(ctx, request(c, &v1.ReadFileRequest{Path: path}))
 	if err != nil {
-		return nil, domain.Fingerprint{}, err
+		return nil, domain.Fingerprint{}, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, domain.Fingerprint{}, err
@@ -141,11 +164,11 @@ func (c *Client) Read(ctx context.Context, path string) ([]byte, domain.Fingerpr
 }
 
 func (c *Client) Write(ctx context.Context, path string, content []byte, baseline domain.Fingerprint) (domain.Fingerprint, error) {
-	res, err := c.rpc.WriteFile(ctx, connect.NewRequest(&v1.WriteFileRequest{
+	res, err := c.rpc.WriteFile(ctx, request(c, &v1.WriteFileRequest{
 		Path: path, Content: content, Baseline: writeFingerprint(baseline),
 	}))
 	if err != nil {
-		return domain.Fingerprint{}, err
+		return domain.Fingerprint{}, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
 		return domain.Fingerprint{}, err
@@ -154,17 +177,17 @@ func (c *Client) Write(ctx context.Context, path string, content []byte, baselin
 }
 
 func (c *Client) Create(ctx context.Context, path string, content []byte) error {
-	res, err := c.rpc.CreateFile(ctx, connect.NewRequest(&v1.CreateFileRequest{Path: path, Content: content}))
+	res, err := c.rpc.CreateFile(ctx, request(c, &v1.CreateFileRequest{Path: path, Content: content}))
 	if err != nil {
-		return err
+		return readError(err)
 	}
 	return fail(res.Msg.GetError())
 }
 
 func (c *Client) Lock(ctx context.Context) (func(), error) {
-	res, err := c.rpc.LockVault(ctx, connect.NewRequest(&v1.LockVaultRequest{}))
+	res, err := c.rpc.LockVault(ctx, request(c, &v1.LockVaultRequest{}))
 	if err != nil {
-		return nil, err
+		return nil, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, err
@@ -173,22 +196,22 @@ func (c *Client) Lock(ctx context.Context) (func(), error) {
 	return func() {
 		// The host lets a lock go by itself after a while, so a release that cannot reach it is not
 		// a failure the caller can act on.
-		_, _ = c.rpc.UnlockVault(context.WithoutCancel(ctx), connect.NewRequest(&v1.UnlockVaultRequest{Lock: lock}))
+		_, _ = c.rpc.UnlockVault(context.WithoutCancel(ctx), request(c, &v1.UnlockVaultRequest{Lock: lock}))
 	}, nil
 }
 
 func (c *Client) Scan(ctx context.Context, paths []string) error {
-	res, err := c.rpc.ScanFiles(ctx, connect.NewRequest(&v1.ScanFilesRequest{Paths: paths}))
+	res, err := c.rpc.ScanFiles(ctx, request(c, &v1.ScanFilesRequest{Paths: paths}))
 	if err != nil {
-		return err
+		return readError(err)
 	}
 	return fail(res.Msg.GetError())
 }
 
 func (c *Client) GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error) {
-	res, err := c.rpc.GetNoteRefs(ctx, connect.NewRequest(&v1.GetNoteRefsRequest{Paths: paths}))
+	res, err := c.rpc.GetNoteRefs(ctx, request(c, &v1.GetNoteRefsRequest{Paths: paths}))
 	if err != nil {
-		return nil, err
+		return nil, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, err
@@ -201,9 +224,9 @@ func (c *Client) GetNotes(ctx context.Context, paths []string) (map[string]domai
 }
 
 func (c *Client) GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error) {
-	res, err := c.rpc.GetNoteTypes(ctx, connect.NewRequest(&v1.GetNoteTypesRequest{Paths: paths}))
+	res, err := c.rpc.GetNoteTypes(ctx, request(c, &v1.GetNoteTypesRequest{Paths: paths}))
 	if err != nil {
-		return nil, err
+		return nil, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, err
@@ -215,10 +238,21 @@ func (c *Client) GetTypes(ctx context.Context, paths []string) (map[string]domai
 	return out, nil
 }
 
-func (c *Client) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
-	res, err := c.rpc.GetPathsOfType(ctx, connect.NewRequest(&v1.GetPathsOfTypeRequest{Type: string(noteType)}))
+func (c *Client) GetNamedPaths(ctx context.Context, name string) ([]string, error) {
+	res, err := c.rpc.GetNamedPaths(ctx, request(c, &v1.GetNamedPathsRequest{Name: name}))
 	if err != nil {
+		return nil, readError(err)
+	}
+	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, err
+	}
+	return res.Msg.GetPaths(), nil
+}
+
+func (c *Client) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+	res, err := c.rpc.GetPathsOfType(ctx, request(c, &v1.GetPathsOfTypeRequest{Type: string(noteType)}))
+	if err != nil {
+		return nil, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, err
@@ -227,9 +261,9 @@ func (c *Client) GetPathsOfType(ctx context.Context, noteType domain.NoteType) (
 }
 
 func (c *Client) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
-	res, err := c.rpc.GetLinks(ctx, connect.NewRequest(&v1.GetLinksRequest{Path: from}))
+	res, err := c.rpc.GetLinks(ctx, request(c, &v1.GetLinksRequest{Path: from}))
 	if err != nil {
-		return nil, err
+		return nil, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, err
@@ -238,9 +272,9 @@ func (c *Client) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLi
 }
 
 func (c *Client) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error) {
-	res, err := c.rpc.GetBacklinks(ctx, connect.NewRequest(&v1.GetBacklinksRequest{Path: to}))
+	res, err := c.rpc.GetBacklinks(ctx, request(c, &v1.GetBacklinksRequest{Path: to}))
 	if err != nil {
-		return nil, err
+		return nil, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, err
@@ -249,9 +283,9 @@ func (c *Client) GetBacklinks(ctx context.Context, to string) ([]domain.Resolved
 }
 
 func (c *Client) ResolveLinks(ctx context.Context, from string, written []string) (map[string]domain.ResolvedLink, error) {
-	res, err := c.rpc.ResolveLinks(ctx, connect.NewRequest(&v1.ResolveLinksRequest{Path: from, Written: written}))
+	res, err := c.rpc.ResolveLinks(ctx, request(c, &v1.ResolveLinksRequest{Path: from, Written: written}))
 	if err != nil {
-		return nil, err
+		return nil, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, err
@@ -264,9 +298,9 @@ func (c *Client) ResolveLinks(ctx context.Context, from string, written []string
 }
 
 func (c *Client) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error) {
-	res, err := c.rpc.GetParseProblems(ctx, connect.NewRequest(&v1.GetParseProblemsRequest{}))
+	res, err := c.rpc.GetParseProblems(ctx, request(c, &v1.GetParseProblemsRequest{}))
 	if err != nil {
-		return nil, err
+		return nil, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, err
@@ -279,9 +313,9 @@ func (c *Client) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, e
 }
 
 func (c *Client) ReadData(ctx context.Context, name string) ([]byte, error) {
-	res, err := c.rpc.ReadData(ctx, connect.NewRequest(&v1.ReadDataRequest{Name: name}))
+	res, err := c.rpc.ReadData(ctx, request(c, &v1.ReadDataRequest{Name: name}))
 	if err != nil {
-		return nil, err
+		return nil, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, err
@@ -290,17 +324,17 @@ func (c *Client) ReadData(ctx context.Context, name string) ([]byte, error) {
 }
 
 func (c *Client) AppendData(ctx context.Context, name string, content []byte) error {
-	res, err := c.rpc.AppendData(ctx, connect.NewRequest(&v1.AppendDataRequest{Name: name, Content: content}))
+	res, err := c.rpc.AppendData(ctx, request(c, &v1.AppendDataRequest{Name: name, Content: content}))
 	if err != nil {
-		return err
+		return readError(err)
 	}
 	return fail(res.Msg.GetError())
 }
 
 func (c *Client) ListData(ctx context.Context) ([]DataFile, error) {
-	res, err := c.rpc.ListData(ctx, connect.NewRequest(&v1.ListDataRequest{}))
+	res, err := c.rpc.ListData(ctx, request(c, &v1.ListDataRequest{}))
 	if err != nil {
-		return nil, err
+		return nil, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, err
@@ -313,9 +347,9 @@ func (c *Client) ListData(ctx context.Context) ([]DataFile, error) {
 }
 
 func (c *Client) ReadCache(ctx context.Context, name string) ([]byte, bool, error) {
-	res, err := c.rpc.ReadCache(ctx, connect.NewRequest(&v1.ReadCacheRequest{Name: name}))
+	res, err := c.rpc.ReadCache(ctx, request(c, &v1.ReadCacheRequest{Name: name}))
 	if err != nil {
-		return nil, false, err
+		return nil, false, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, false, err
@@ -324,22 +358,22 @@ func (c *Client) ReadCache(ctx context.Context, name string) ([]byte, bool, erro
 }
 
 func (c *Client) WriteCache(ctx context.Context, name string, content []byte) error {
-	res, err := c.rpc.WriteCache(ctx, connect.NewRequest(&v1.WriteCacheRequest{Name: name, Content: content}))
+	res, err := c.rpc.WriteCache(ctx, request(c, &v1.WriteCacheRequest{Name: name, Content: content}))
 	if err != nil {
-		return err
+		return readError(err)
 	}
 	return fail(res.Msg.GetError())
 }
 
 func (c *Client) Watch(ctx context.Context) (<-chan Change, error) {
-	stream, err := c.rpc.WatchVault(ctx, connect.NewRequest(&v1.WatchVaultRequest{}))
+	stream, err := c.rpc.WatchVault(ctx, request(c, &v1.WatchVaultRequest{}))
 	if err != nil {
-		return nil, err
+		return nil, readError(err)
 	}
 	if !stream.Receive() {
 		_ = stream.Close()
 		if err := stream.Err(); err != nil {
-			return nil, err
+			return nil, readError(err)
 		}
 		return nil, fmt.Errorf("host: the watch ended before it began")
 	}
@@ -357,4 +391,73 @@ func (c *Client) Watch(ctx context.Context) (<-chan Change, error) {
 		}
 	}()
 	return changes, nil
+}
+
+func (c *Client) With(id domain.VaultID) Vault {
+	bound := *c
+	bound.vault = string(id)
+	return &bound
+}
+
+func (c *Client) GetVaults(ctx context.Context) ([]domain.Vault, error) {
+	res, err := c.rpc.ListHostVaults(ctx, request(c, &v1.ListHostVaultsRequest{}))
+	if err != nil {
+		return nil, readError(err)
+	}
+	if err := fail(res.Msg.GetError()); err != nil {
+		return nil, err
+	}
+	out := make([]domain.Vault, 0, len(res.Msg.GetVaults()))
+	for _, one := range res.Msg.GetVaults() {
+		out = append(out, domain.Vault{ID: domain.VaultID(one.GetId()), Name: one.GetName(), Path: one.GetPath()})
+	}
+	return out, nil
+}
+
+func (c *Client) EnsureIndexed(ctx context.Context) (IndexState, error) {
+	res, err := c.rpc.EnsureVaultIndexed(ctx, request(c, &v1.EnsureVaultIndexedRequest{}))
+	if err != nil {
+		return IndexState{}, readError(err)
+	}
+	if err := fail(res.Msg.GetError()); err != nil {
+		return IndexState{}, err
+	}
+	out := IndexState{Reason: res.Msg.GetReason()}
+	switch res.Msg.GetState() {
+	case v1.HostIndexState_HOST_INDEX_STATE_INDEXED:
+		out.Status = Indexed
+	case v1.HostIndexState_HOST_INDEX_STATE_INDEXING:
+		out.Status = Indexing
+	case v1.HostIndexState_HOST_INDEX_STATE_FAILED:
+		out.Status = IndexFailed
+	case v1.HostIndexState_HOST_INDEX_STATE_UNSPECIFIED:
+	}
+	return out, nil
+}
+
+func (c *Client) WatchMoves(ctx context.Context) (<-chan struct{}, error) {
+	stream, err := c.rpc.WatchMoves(ctx, request(c, &v1.WatchMovesRequest{}))
+	if err != nil {
+		return nil, readError(err)
+	}
+	if !stream.Receive() {
+		_ = stream.Close()
+		if err := stream.Err(); err != nil {
+			return nil, readError(err)
+		}
+		return nil, fmt.Errorf("host: the watch ended before it began")
+	}
+	moves := make(chan struct{})
+	go func() {
+		defer close(moves)
+		defer stream.Close()
+		for stream.Receive() {
+			select {
+			case moves <- struct{}{}:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return moves, nil
 }

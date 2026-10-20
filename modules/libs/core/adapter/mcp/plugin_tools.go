@@ -26,11 +26,11 @@ func addPluginTools(ctx context.Context, server *sdk.Server, core Core, which pl
 		if !tool.IsOn(which) || (which == plugintool.ServerReading && tool.Effect != plugintool.EffectReads) {
 			continue
 		}
-		addPluginTool(server, core.Plugins.Call, tool)
+		addPluginTool(server, core.Plugins.Call, core.GetAsked, tool)
 	}
 }
 
-func addPluginTool(server *sdk.Server, call plugintool.Call, tool plugintool.Tool) {
+func addPluginTool(server *sdk.Server, call plugintool.Call, getAsked func() map[string]string, tool plugintool.Tool) {
 	canonMap := buildSchemaCanonicalMap(tool.InputSchema)
 	declared := &sdk.Tool{
 		Name:        tool.Name,
@@ -52,7 +52,11 @@ func addPluginTool(server *sdk.Server, call plugintool.Call, tool plugintool.Too
 		if err != nil {
 			return newErrorResult(err), nil
 		}
-		answer, err := call.Execute(ctx, tool.PluginID, tool.Name, normalized)
+		var asked map[string]string
+		if getAsked != nil {
+			asked = getAsked()
+		}
+		answer, err := call.Execute(ctx, tool.PluginID, tool.Name, normalized, asked)
 		if err != nil {
 			return newErrorResult(err), nil
 		}

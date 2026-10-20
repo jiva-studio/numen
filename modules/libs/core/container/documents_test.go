@@ -31,6 +31,9 @@ func (h *countingDocumentHost) ResolveCapability(string) (port.DiscoveredPlugin,
 }
 
 func (h *countingDocumentHost) ResolveCapabilities(string) []port.DiscoveredPlugin { return nil }
+func (h *countingDocumentHost) ResolveService(string) (port.DiscoveredPlugin, bool) {
+	return port.DiscoveredPlugin{}, false
+}
 
 func (h *countingDocumentHost) EnsureActive(context.Context, string) (port.Endpoint, error) {
 	h.acquired.Add(1)
