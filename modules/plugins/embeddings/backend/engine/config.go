@@ -134,12 +134,13 @@ func DefaultBGEM3Config() (ModelInfo, LocalModel) {
 		MaxTokens:   8192,
 		Pooling:     PoolHead,
 		From:        "plugin:md.numen.embeddings",
-		Concurrency: 4,
+		Concurrency: bgeM3Passes,
 	}
 	local := LocalModel{
 		Name:           "Xenova/bge-m3",
 		File:           "model_int8.onnx",
-		BatchTexts:     32,
+		BatchTexts:     bgeM3BatchTexts,
+		PassBudget:     bgeM3Passes,
 		ShouldDownload: true,
 		Revision:       bgeM3Revision,
 		Sums: map[string]string{
@@ -149,6 +150,13 @@ func DefaultBGEM3Config() (ModelInfo, LocalModel) {
 	}
 	return info, local
 }
+
+// bgeM3BatchTexts and bgeM3Passes are the most texts in a pass, and the most passes at once, that
+// keep the resident memory of the plugin under the limit its manifest sets.
+const (
+	bgeM3BatchTexts = 8
+	bgeM3Passes     = 1
+)
 
 // bgeM3Revision is the commit of Xenova/bge-m3 the pinned sums belong to.
 const bgeM3Revision = "4de13258303883538bd53b696b452bf8099f0858"

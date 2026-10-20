@@ -21,8 +21,8 @@ func TestDefaultBGEM3Config(t *testing.T) {
 	if info.Pooling != PoolHead {
 		t.Errorf("expected head pooling, got %s", info.Pooling)
 	}
-	if info.Concurrency != 4 {
-		t.Errorf("expected 4 concurrency, got %d", info.Concurrency)
+	if info.Concurrency != 1 {
+		t.Errorf("expected 1 concurrency, got %d", info.Concurrency)
 	}
 	if local.Name != "Xenova/bge-m3" {
 		t.Errorf("expected Xenova/bge-m3, got %s", local.Name)
@@ -30,8 +30,8 @@ func TestDefaultBGEM3Config(t *testing.T) {
 	if local.File != "model_int8.onnx" {
 		t.Errorf("expected model_int8.onnx, got %s", local.File)
 	}
-	if local.BatchTexts != 32 {
-		t.Errorf("expected 32 batch texts, got %d", local.BatchTexts)
+	if local.BatchTexts != 8 {
+		t.Errorf("expected 8 batch texts, got %d", local.BatchTexts)
 	}
 	if !local.ShouldDownload {
 		t.Errorf("expected download enabled by default")
@@ -204,5 +204,17 @@ func TestLocalModelGetProviderFollowsTheHostUnlessTheModelNamesOne(t *testing.T)
 	}
 	if p := (LocalModel{}).GetProvider(); p != onnx.ProviderCUDA {
 		t.Errorf("expected the host's ProviderCUDA, got %v", p)
+	}
+}
+
+func TestDefaultBGEM3ConfigRunsOnePassWhateverTheCPUCount(t *testing.T) {
+	prev := runtime.GOMAXPROCS(0)
+	defer runtime.GOMAXPROCS(prev)
+	runtime.GOMAXPROCS(16)
+
+	info, local := DefaultBGEM3Config()
+
+	if got := resolvePasses(local, onnx.ProviderCPU, info); got != 1 {
+		t.Errorf("expected one pass at a time, got %d", got)
 	}
 }
