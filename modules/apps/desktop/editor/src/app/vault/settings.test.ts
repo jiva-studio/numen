@@ -23,8 +23,6 @@ const answer = (written: unknown, over: Record<string, unknown> = {}) => ({
   path: '/vault/.numen/settings.json',
   models: [],
   nestedHeadingLimitBounds: { least: 2, most: 9 },
-  latestDayStartTime: '06:00',
-  day: '2026-03-14',
   ...over,
 })
 
@@ -109,34 +107,6 @@ describe('the headings a node nests', () => {
         { at: ['appearance', 'nest_headings_under_notes'], value: 'false' },
         { at: ['appearance', 'nested_heading_limit'], value: '4' },
       ],
-    })
-  })
-})
-
-describe('the hour a day of review begins', () => {
-  it('reads the hour the file holds, and how late one may be', async () => {
-    asked.getSettings.mockResolvedValue(answer({ review: { day_start_time: '05:30' } }))
-
-    expect(await core.getReviewSettings()).toStrictEqual({
-      starts: '05:30',
-      latest: '06:00',
-      day: '2026-03-14',
-    })
-  })
-
-  it('begins at the default where the file holds no hour written as one', async () => {
-    asked.getSettings.mockResolvedValue(answer({}))
-    expect((await core.getReviewSettings()).starts).toBe('04:00')
-
-    asked.getSettings.mockResolvedValue(answer({ review: { day_start_time: 5 } }))
-    expect((await core.getReviewSettings()).starts).toBe('04:00')
-  })
-
-  it('is written under review', async () => {
-    expect(await core.setReviewSettings('05:30')).toBeNull()
-
-    expect(writtenLast()).toStrictEqual({
-      settings: [{ at: ['review', 'day_start_time'], value: '"05:30"' }],
     })
   })
 })

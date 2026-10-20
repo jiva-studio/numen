@@ -134,7 +134,6 @@ beforeEach(() => {
       close: vi.fn(),
     },
     settings: {
-      dayBegins: { day: { value: 'monday' } },
       kept: {},
       dressed: {},
       oneName: {},

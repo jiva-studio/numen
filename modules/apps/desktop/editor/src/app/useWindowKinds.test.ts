@@ -1,7 +1,7 @@
 /**
  * The kinds a window registers, and what each is handed of the others.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { useWindowKinds } from './useWindowKinds'
 
@@ -50,7 +50,6 @@ const create = ({ plex, hasPlexKind = true }: { plex?: Plex; hasPlexKind?: boole
     settings: {
       kinds: ['settings'],
       nesting: { isNesting: ref(true), headings: ref(2) },
-      dayBegins: { day: ref('2026-09-04') },
     },
     window: { failure: ref(''), opening: ref('Root.md'), readInitialNote: vi.fn() },
     core: {},
@@ -169,7 +168,13 @@ describe('the destinations', () => {
 })
 
 describe('the services the window gives a plugin', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('ask the agent, share what is dragged and stand on the note the vault opens with', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 8, 4, 3, 30))
     const { deps, window, writer } = create()
     const { workspace, notes } = window.services
 

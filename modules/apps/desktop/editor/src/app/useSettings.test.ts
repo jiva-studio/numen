@@ -48,7 +48,6 @@ describe('the settings as they are put together', () => {
     const { writers } = createSettings()
 
     expect(writers).toStrictEqual([
-      'reviewed',
       'nesting',
       'worn',
       'named',
@@ -218,17 +217,14 @@ describe('the settings tab', () => {
     expect(nest.mock.calls).toStrictEqual([['on'], ['off']])
   })
 
-  it('chooses a count of headings and the hour a day begins through the palette’s own choices', () => {
+  it('chooses a count of headings through the palette’s own choices', () => {
     const { settings } = createSettings()
     const { installation } = settings.configured.state
     const count = vi.spyOn(settings.nesting, 'chooseCount').mockResolvedValue()
-    const hour = vi.spyOn(settings.dayBegins, 'choose').mockResolvedValue()
 
     installation.chooseHeadings(4)
-    installation.chooseDayStartTime('05:30')
 
     expect(count).toHaveBeenCalledWith('4')
-    expect(hour).toHaveBeenCalledWith('05:30')
   })
 
   it('reads and writes the rest of the file through the settings the window holds', () => {

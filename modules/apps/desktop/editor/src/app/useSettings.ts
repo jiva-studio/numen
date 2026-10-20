@@ -18,7 +18,7 @@ import {
   useNestingSetting,
   createWindowAppearance,
 } from '@/features/settings-commands'
-import { createReviewSetting, type PluginInfo, type SettingEdit } from '@/entities/settings'
+import { type PluginInfo, type SettingEdit } from '@/entities/settings'
 import { createPluginRetry, createSecretStore, createSettingsStore } from '@/entities/settings'
 import { useSettingsTab, paths, createChoices } from '@/pages/settings'
 import type { SelectChoice } from '@numen/ui'
@@ -174,7 +174,6 @@ interface SettingsTabConfigDeps {
   dressed: ReturnType<typeof createWindowAppearance>
   sync: ReturnType<typeof syncSetting>
   nesting: ReturnType<typeof useNestingSetting>
-  dayBegins: ReturnType<typeof createReviewSetting>
   rest: ReturnType<typeof createSettingsStore>
   secrets: ReturnType<typeof createSecretStore>
   retry: ReturnType<typeof createPluginRetry>
@@ -182,7 +181,7 @@ interface SettingsTabConfigDeps {
 }
 
 function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
-  const { dressed, sync, nesting, dayBegins, rest, secrets, retry, file } = deps
+  const { dressed, sync, nesting, rest, secrets, retry, file } = deps
   return {
     themes: dressed.list,
     applied: dressed.applied,
@@ -202,9 +201,6 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     headings: nesting.headings,
     headingsBounds: nesting.ends,
     chooseHeadings: (count: number) => nesting.chooseCount(`${count}`),
-    dayStartTime: dayBegins.starts,
-    latestDayStartTime: dayBegins.latest,
-    chooseDayStartTime: (hour: string) => dayBegins.choose(hour),
     getSetting: (at: readonly string[]) => rest.getSetting(at),
     getModels: (at: readonly string[]) => rest.getModelsAt(at),
     write: (written: readonly SettingEdit[]) => rest.writeSettings(written),
@@ -259,7 +255,6 @@ function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
 }
 
 export function useSettings({ core, words, log, windowTabs, onSizeChanged }: SettingsDeps) {
-  const dayBegins = createReviewSetting(core, words, log.getWriter('reviewed'))
   const nesting = useNestingSetting(core, words, log.getWriter('nesting'))
   const dressed = createWindowAppearance({ core: themes, words, write: log.getWriter('worn') })
   const sync = syncSetting(core, words, log.getWriter('named'))
@@ -285,7 +280,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
 
   const configured = useSettingsTab(
     windowTabs.handle,
-    createSettingsTabConfig({ dressed, sync, nesting, dayBegins, rest, secrets, retry, file }),
+    createSettingsTabConfig({ dressed, sync, nesting, rest, secrets, retry, file }),
   )
 
   watch(dressed.sized, () => onSizeChanged())
@@ -295,7 +290,6 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
   const kinds = [configured.kind]
 
   const start = async () => {
-    await dayBegins.start()
     void dressed.start()
     void sync.start()
     void nesting.start()
@@ -307,7 +301,6 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
   }
 
   return {
-    dayBegins,
     nesting,
     dressed,
     sync,

@@ -2,7 +2,7 @@
  * A listing row and a move result, read into the window's own words.
  */
 import { describe, expect, it } from 'vitest'
-import { NoteType, SourceKind, type Entry, type MoveResult } from '@numen/protocol'
+import { SourceKind, type Entry, type MoveResult } from '@numen/protocol'
 import { mapEntry, mapMoveResult } from './fileWords'
 
 describe('a row of a listing', () => {
@@ -12,7 +12,7 @@ describe('a row of a listing', () => {
       name: 'Animals',
       isFolder: false,
       kind: SourceKind.NOTE,
-      type: NoteType.DECK,
+      type: 'deck',
     } as Entry
 
     expect(mapEntry(row)).toStrictEqual({
@@ -30,7 +30,7 @@ describe('a row of a listing', () => {
       name: 'Decks',
       isFolder: true,
       kind: SourceKind.UNSPECIFIED,
-      type: NoteType.UNSPECIFIED,
+      type: '',
     } as Entry
 
     expect(mapEntry(row)).toStrictEqual({

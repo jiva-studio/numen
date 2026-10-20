@@ -1,14 +1,12 @@
 <script setup lang="ts">
 /**
- * Settings for the window appearance, the naming of notes, and the day a
- * review stands in.
+ * Settings for the window appearance and the naming of notes.
  */
 import { computed } from 'vue'
 import { NumberField, SegmentedControl, Select, Switch } from '@numen/ui'
 import type { SelectChoice } from '@numen/ui'
 import SettingRow from './setting-row/SettingRow.vue'
 import { NamingSettings } from './naming-settings'
-import { ReviewSettings } from './review-settings'
 import type { SettingsTabState } from '../types'
 import type { Mode } from '@/entities/settings'
 import { INTERFACE_SCALE, MODE, TEXT_SCALE } from '@/features/settings-commands'
@@ -162,8 +160,6 @@ function onPartsChange(count: number | null) {
   </section>
 
   <NamingSettings :state="props.state" />
-
-  <ReviewSettings :state="props.state" />
 </template>
 
 <style scoped>

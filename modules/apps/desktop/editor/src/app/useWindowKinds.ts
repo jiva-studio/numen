@@ -19,6 +19,13 @@ import { createBufferHost } from './bufferHost'
 
 export type { WindowKindsDeps } from './kinds/deps'
 
+/** A date as `YYYY-MM-DD` on the clock on the wall. */
+function formatLocalDate(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${date.getFullYear()}-${month}-${day}`
+}
+
 /** Something to ask, put in the agent the person was last in and put in front. */
 function createAgentAsker(held: WindowKindsDeps['held'], writeMessage: MessageWriter) {
   return {
@@ -85,7 +92,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
       ask: (text) => agents.askQuestion(text),
       writeMessage,
       getMessageWriter: (name) => log.getWriter(name),
-      today: () => settings.dayBegins.day.value,
+      today: () => formatLocalDate(new Date()),
     }),
     notes: createVaultNotes({ core, search: core, making: editing.making }),
     files: createVaultFiles({ ...deps, made, making: editing.making }),

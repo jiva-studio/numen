@@ -4,19 +4,16 @@
 import { settingsService } from '@/shared/clients'
 import { consented, fetched } from './words'
 import { DEFAULT_HEADINGS } from '@/entities/settings'
-import { DEFAULT_STARTS } from '@/entities/settings'
 import { getSettingAt } from '@/entities/settings'
 import { write } from '@/entities/settings'
 import { formatErrorMessage, isStaleAnswer } from '@numen/wire'
 import type { Configuration, PluginSettingInfo } from '@/entities/settings'
 import type { NestingSettings } from '@/entities/settings'
-import type { ReviewSettings } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
 
 const SYNCS = ['naming', 'sync_title_and_filename']
 const NESTING = ['appearance', 'nest_headings_under_notes']
 const HEADINGS = ['appearance', 'nested_heading_limit']
-const STARTS = ['review', 'day_start_time']
 
 /** Every setting as it stands, with the defaults under what the file leaves out. */
 const readSettings = async (): Promise<unknown> =>
@@ -130,16 +127,6 @@ export const settingsCore: SettingsPort = {
     })
     return { isChanged: isStaleAnswer(answer) }
   },
-  getReviewSettings: async () => {
-    const answer = await settingsService.getSettings({})
-    const hour = getSettingAt(JSON.parse(answer.written), STARTS)
-    return {
-      starts: typeof hour === 'string' ? hour : DEFAULT_STARTS,
-      latest: answer.latestDayStartTime,
-      day: answer.day,
-    } satisfies ReviewSettings
-  },
-  setReviewSettings: (starts) => writeSettings([{ at: STARTS, value: starts }]),
   writePluginSecret: async (pluginId, name, key) => {
     await settingsService.writePluginSecret({ pluginId, name, key })
   },

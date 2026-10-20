@@ -33,12 +33,6 @@ export interface Installation {
   /** How many the vault takes, which it says when it is asked what it holds. */
   readonly headingsBounds: Readonly<Ref<Bounds>>
   chooseHeadings(count: number): void
-  /** The hour a day of review begins at, written as `04:00`. */
-  readonly dayStartTime: Readonly<Ref<string>>
-  /** The latest hour the vault takes. One past it is refused. */
-  readonly latestDayStartTime: Readonly<Ref<string>>
-  /** Written once the field settles, not on every hour typed through. */
-  chooseDayStartTime(hour: string): void
   /**
    * The rest of the file: what stands at a setting, the models a setting that
    * names one can be set to, and settings written where they stand.
