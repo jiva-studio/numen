@@ -43,11 +43,12 @@ function onDismiss() {
 <template>
   <div class="task-item" :class="`task-item--${task.state}`" :data-task-id="task.id">
     <div class="task-item__content">
-      <span class="task-item__label">{{ task.label }}</span>
+      <span class="task-item__label" :title="task.label">{{ task.label }}</span>
       <span
         v-if="subtext"
         class="task-item__detail"
-        :class="{ 'text-alarm': task.state === 'failed' }"
+        :class="{ 'text-alarm task-item__detail--wrapped': task.state === 'failed' }"
+        :title="subtext"
       >
         {{ subtext }}
       </span>

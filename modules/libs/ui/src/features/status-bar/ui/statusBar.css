@@ -120,6 +120,13 @@
   white-space: nowrap;
 }
 
+.task-item__detail--wrapped {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
 .task-item__action {
   position: relative;
   display: inline-flex;

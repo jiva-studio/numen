@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"testing"
 )
 
@@ -58,5 +59,22 @@ func TestFindInstalledFindsTheFilesOnTheLoaderPath(t *testing.T) {
 	got := FindInstalled("libnumenfixture.so", "numenfixture-*")
 	if len(got) != 1 || got[0] != lib {
 		t.Errorf("FindInstalled() = %v, want [%s]", got, lib)
+	}
+}
+
+func TestSortNewestFirstPutsTheHighestVersionFirst(t *testing.T) {
+	paths := []string{
+		"/nix/store/aaaa-gcc-15.2.0-lib/lib/libstdc++.so.6",
+		"/nix/store/bbbb-gcc-16.2.0-lib/lib/libstdc++.so.6",
+		"/nix/store/cccc-gcc-9.5.0-lib/lib/libstdc++.so.6",
+	}
+	sortNewestFirst(paths)
+	want := []string{
+		"/nix/store/bbbb-gcc-16.2.0-lib/lib/libstdc++.so.6",
+		"/nix/store/aaaa-gcc-15.2.0-lib/lib/libstdc++.so.6",
+		"/nix/store/cccc-gcc-9.5.0-lib/lib/libstdc++.so.6",
+	}
+	if !slices.Equal(paths, want) {
+		t.Errorf("sortNewestFirst() = %v, want %v", paths, want)
 	}
 }

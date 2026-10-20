@@ -36,7 +36,9 @@ var preloadCppRuntime = sync.OnceFunc(func() {
 	}
 	dirs := append(getMachineDirs(), filepath.Join("/nix/store", "*-gcc-*-lib", "lib"))
 	for _, dir := range dirs {
-		for _, at := range findMatching(filepath.Join(dir, name+"*")) {
+		matches := findMatching(filepath.Join(dir, name+"*"))
+		sortNewestFirst(matches)
+		for _, at := range matches {
 			if _, err := purego.Dlopen(at, purego.RTLD_NOW|purego.RTLD_GLOBAL); err == nil {
 				return
 			}
