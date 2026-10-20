@@ -8,7 +8,8 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 
 | Module | Packages | Used by |
 |---|---|---|
-| `plugin-sdk-go` | `server`, `ai`, `tools` | every native plugin; `ai` by proofreading; `tools` by a plugin that offers an agent tools |
+| `plugin-sdk-go` | `server`, `ai`, `tools`, `hostcall` | every native plugin; `ai` by proofreading; `tools` by a plugin that offers an agent tools; `hostcall` by the clients of the host |
+| `plugin-sdk-go/host` | `host`, `host/hosttest` | a plugin that works the vault through the host |
 | `plugin-sdk-go/agent` | `agent/agentrun`, `agent/harness`, `agent/toolcall` | agent, agent-acp, agent-antigravity, agent-claude, agent-codex |
 | `plugin-sdk-go/models` | `models` | embeddings, ocr, transcription |
 | `plugin-sdk-go/onnx` | `onnx` | embeddings, ocr, transcription |
@@ -31,6 +32,7 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 - `agentrun.HasTools(req)` is whether a task names a tool of the vault: a task naming none is a single answer, and the program is given no tool. `agentrun.WritePrompt(instructions, prompt)` puts the instructions before the prompt for a program that takes no system prompt.
 - `harness.Server` is numen's own agent, served by the agent plugin and linkable into any process that hosts a vault: it answers `AgentService` from an OpenAI-compatible chat API whose base URL (OpenRouter by default), key and model `Configure` hands over. A task lists the vault's tools over MCP at `tools_url` with `tools_token`, offers the model the ones the task names as function tools, calls each one the model asks for through MCP and feeds the result back, for `max_steps` requests to the model (25 by default). It starts no process and builds for android and ios.
 - `tools.Registry` is the tools a plugin offers an agent, served as `PluginToolService` once `Mount`ed (the manifest declares the `tools` capability). `tools.Add(registry, spec, run)` adds a tool from a function of a struct of arguments that answers with a struct: the schemas an agent is told come from the two structs, an error the function returns is a tool that ran and refused, and `spec` names the tool, its effect (`Reads` needs `vault:read`, `Writes` needs `vault:write`), the servers it is offered on and how a call is shown. The host lists the tools of every running plugin that declares the capability and holds each to the permission its effect needs.
+- `host.Client` works the vault the window is showing through `HostVaultService`: files with fingerprints (`Write` returns `ErrStale` for a file that moved past its baseline), the notes, types and links the index holds, the plugin's data folder, its cache and a watch. It returns the `notes/domain` types. `hosttest.Vault` is a vault in memory that answers the same `host.Vault` interface for tests. `hostcall` reads the host endpoint and the token from the environment and presents the token on unary and streaming calls.
 - `toolcall.Describe(words, name, call, args)` is a call of a vault tool as a person is told about it, read by the `ToolDeclaration`s of the task; `toolcall.ReadPartialField` reads a field of arguments still arriving.
 
 ## Models

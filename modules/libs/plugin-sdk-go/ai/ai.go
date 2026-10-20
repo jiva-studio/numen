@@ -8,11 +8,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
-	"os"
-	"strings"
 
 	"connectrpc.com/connect"
+
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/hostcall"
 
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
@@ -20,14 +19,14 @@ import (
 
 const (
 	// HostPortEnv names the environment variable holding the host endpoint port.
-	HostPortEnv = "NUMEN_HOST_PORT"
+	HostPortEnv = hostcall.HostPortEnv
 	// PluginTokenEnv names the environment variable holding the plugin launch token.
-	PluginTokenEnv = "NUMEN_PLUGIN_TOKEN"
+	PluginTokenEnv = hostcall.PluginTokenEnv
 )
 
 var (
 	// ErrNoHost means the environment names no host endpoint.
-	ErrNoHost = errors.New("ai: " + HostPortEnv + " is not set")
+	ErrNoHost = hostcall.ErrNoHost
 	// ErrNoRoute means no agent answers the plugin: the program the settings name
 	// is not installed or no plugin lists it, or no program is installed.
 	ErrNoRoute = errors.New("ai: no agent answers")
@@ -49,28 +48,33 @@ type Client struct {
 // NewClient creates a client for the host at baseURL, authenticating with token.
 func NewClient(httpClient connect.HTTPClient, baseURL, token string) *Client {
 	return &Client{host: numenv1connect.NewHostServiceClient(
-		httpClient, baseURL, connect.WithInterceptors(newBearerInterceptor(token)),
+		httpClient, baseURL, connect.WithInterceptors(hostcall.Bearer(token)),
 	)}
 }
 
 // NewClientFromEnv creates a client for the host named by NUMEN_HOST_PORT,
 // authenticating with NUMEN_PLUGIN_TOKEN.
 func NewClientFromEnv() (*Client, error) {
-	return NewClientFromVars(map[string]string{
-		HostPortEnv:    os.Getenv(HostPortEnv),
-		PluginTokenEnv: os.Getenv(PluginTokenEnv),
-	})
+	endpoint, err := hostcall.FromEnv()
+	if err != nil {
+		return nil, err
+	}
+	return newClientAt(endpoint), nil
 }
 
 // NewClientFromVars creates a client for the host named by the NUMEN_HOST_PORT entry of vars,
 // authenticating with its NUMEN_PLUGIN_TOKEN entry. They are the variables a host gives a plugin
 // it links into its own process.
 func NewClientFromVars(vars map[string]string) (*Client, error) {
-	port := strings.TrimSpace(vars[HostPortEnv])
-	if port == "" {
-		return nil, ErrNoHost
+	endpoint, err := hostcall.FromVars(vars)
+	if err != nil {
+		return nil, err
 	}
-	return NewClient(http.DefaultClient, "http://127.0.0.1:"+port, vars[PluginTokenEnv]), nil
+	return newClientAt(endpoint), nil
+}
+
+func newClientAt(endpoint hostcall.Endpoint) *Client {
+	return NewClient(hostcall.HTTPClient(), endpoint.BaseURL, endpoint.Token)
 }
 
 // Complete asks the host to answer the question and returns the text.
@@ -111,35 +115,4 @@ func Complete(ctx context.Context, question *numenv1.CompletionQuestion) (string
 		return "", err
 	}
 	return c.Complete(ctx, question)
-}
-
-type bearerInterceptor struct {
-	token string
-}
-
-func newBearerInterceptor(token string) connect.Interceptor {
-	return &bearerInterceptor{token: token}
-}
-
-func (b *bearerInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
-	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		if b.token != "" {
-			req.Header().Set("Authorization", "Bearer "+b.token)
-		}
-		return next(ctx, req)
-	}
-}
-
-func (b *bearerInterceptor) WrapStreamingClient(next connect.StreamingClientFunc) connect.StreamingClientFunc {
-	return func(ctx context.Context, spec connect.Spec) connect.StreamingClientConn {
-		conn := next(ctx, spec)
-		if b.token != "" {
-			conn.RequestHeader().Set("Authorization", "Bearer "+b.token)
-		}
-		return conn
-	}
-}
-
-func (b *bearerInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
-	return next
 }
