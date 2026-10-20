@@ -3,6 +3,7 @@ package completion_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -21,6 +22,7 @@ type programs struct {
 	asked    []string
 	tasks    []port.Task
 	getErr   error
+	models   []port.AgentModel
 	startErr error
 	answer   func(ctx context.Context, task port.Task) (string, error)
 }
@@ -35,7 +37,7 @@ func (p *programs) GetProgram(_ context.Context, name string) (port.AgentProgram
 	if name == "" {
 		name = defaultProgram
 	}
-	return port.AgentProgram{Name: name, IsInstalled: true}, nil
+	return port.AgentProgram{Name: name, IsInstalled: true, Models: p.models}, nil
 }
 
 func (p *programs) StartRun(ctx context.Context, task port.Task) (port.Run, error) {
@@ -440,4 +442,60 @@ func TestAChangedLimitAppliesToTheNextQuestions(t *testing.T) {
 	}
 	close(block.release)
 	wg.Wait()
+}
+
+// A model the program does not list is replaced by the one it answers with unasked, else by its first.
+func TestAModelTheProgramDoesNotListIsReplaced(t *testing.T) {
+	for name, test := range map[string]struct {
+		models []port.AgentModel
+		want   string
+	}{
+		"its own default": {[]port.AgentModel{{Name: "m-1"}, {Name: "m-2", IsDefault: true}}, "m-2"},
+		"its first":       {[]port.AgentModel{{Name: "m-1"}, {Name: "m-2"}}, "m-1"},
+	} {
+		fake := &programs{models: test.models}
+		router := newRouter(t, completion.Config{}, choices{"plugin.a": {Agent: "agent-a", Model: "m-old"}}, fake)
+
+		if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if got := fake.tasks[0].Model; got != test.want {
+			t.Errorf("%s: asked model %q, want %q", name, got, test.want)
+		}
+	}
+}
+
+// A model the program lists, and a program that lists none, leave the chosen model as it is.
+func TestAModelTheProgramListsIsKept(t *testing.T) {
+	for name, models := range map[string][]port.AgentModel{
+		"listed": {{Name: "m-old"}, {Name: "m-2", IsDefault: true}},
+		"none":   nil,
+	} {
+		fake := &programs{models: models}
+		router := newRouter(t, completion.Config{}, choices{"plugin.a": {Agent: "agent-a", Model: "m-old"}}, fake)
+
+		if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if got := fake.tasks[0].Model; got != "m-old" {
+			t.Errorf("%s: asked model %q, want m-old", name, got)
+		}
+	}
+}
+
+// A failure after a replacement states the model asked and the one asked instead.
+func TestAFailureAfterAReplacementStatesIt(t *testing.T) {
+	fake := &programs{models: []port.AgentModel{{Name: "m-1"}}, startErr: errors.New("the agent stopped: boom")}
+	router := newRouter(t, completion.Config{}, choices{"plugin.a": {Agent: "agent-a", Model: "m-old"}}, fake)
+
+	_, err := router.Complete(t.Context(), "plugin.a", ask("why?"))
+
+	if !errors.Is(err, port.ErrUnavailable) {
+		t.Fatalf("error = %v, want port.ErrUnavailable", err)
+	}
+	for _, want := range []string{"boom", `"m-old"`, "agent-a", `"m-1"`} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %q lacks %q", err, want)
+		}
+	}
 }

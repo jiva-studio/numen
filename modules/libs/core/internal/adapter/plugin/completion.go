@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"errors"
+	"strings"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
@@ -31,4 +32,16 @@ func readWireQuestion(wire *v1.CompletionQuestion) port.Question {
 		Messages: messages,
 		Purpose:  wire.GetPurpose(),
 	}
+}
+
+// readRefusalDetail is the text of a refusal without the sentinel that names its code, which the code
+// already states.
+func readRefusalDetail(err error) string {
+	text := err.Error()
+	for _, sentinel := range []error{port.ErrNoRoute, port.ErrUnavailable, port.ErrNoConsent} {
+		if rest, found := strings.CutPrefix(text, sentinel.Error()); found {
+			return strings.TrimPrefix(rest, ": ")
+		}
+	}
+	return text
 }

@@ -349,3 +349,17 @@ func TestProofreaderBridgeReadsAModelThePersonHasNotAllowedAsNoConsent(t *testin
 		t.Errorf("got %v, want %v", err, port.ErrNoConsent)
 	}
 }
+
+// An unavailable plugin is stated once, with the message the plugin gave.
+func TestProofreaderBridgeStatesAnUnavailablePluginOnce(t *testing.T) {
+	mock := &mockProofreadingServer{failure: connect.NewError(connect.CodeUnavailable, errors.New("ai: routed agent did not answer: boom"))}
+	bridge, _ := openTestProofreader(t, mock)
+
+	_, err := bridge.ProofreadScan(t.Context(), []domain.ProofreadPage{{Number: 1}}, 0)
+	if !errors.Is(err, port.ErrUnavailable) {
+		t.Fatalf("got %v, want %v", err, port.ErrUnavailable)
+	}
+	if want := "unavailable: ai: routed agent did not answer: boom"; err.Error() != want {
+		t.Errorf("got %q, want %q", err.Error(), want)
+	}
+}

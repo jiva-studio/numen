@@ -136,7 +136,9 @@ type HostServiceCompleteResponse struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	Answer *CompletionAnswer      `protobuf:"bytes,1,opt,name=answer,proto3" json:"answer,omitempty"`
 	// Set when the call was served and refused. The answer is then unset.
-	Error         CompletionErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.CompletionErrorCode" json:"error,omitempty"`
+	Error CompletionErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.CompletionErrorCode" json:"error,omitempty"`
+	// Why the call was refused, as the host states it. Empty where the host has nothing to add.
+	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -183,6 +185,13 @@ func (x *HostServiceCompleteResponse) GetError() CompletionErrorCode {
 		return x.Error
 	}
 	return CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *HostServiceCompleteResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
 }
 
 // CompletionQuestion is what a plugin asks of a model.
@@ -345,10 +354,11 @@ const file_numen_v1_completion_proto_rawDesc = "" +
 	"\n" +
 	"\x19numen/v1/completion.proto\x12\bnumen.v1\"V\n" +
 	"\x1aHostServiceCompleteRequest\x128\n" +
-	"\bquestion\x18\x01 \x01(\v2\x1c.numen.v1.CompletionQuestionR\bquestion\"\x86\x01\n" +
+	"\bquestion\x18\x01 \x01(\v2\x1c.numen.v1.CompletionQuestionR\bquestion\"\x9e\x01\n" +
 	"\x1bHostServiceCompleteResponse\x122\n" +
 	"\x06answer\x18\x01 \x01(\v2\x1a.numen.v1.CompletionAnswerR\x06answer\x123\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1d.numen.v1.CompletionErrorCodeR\x05error\"t\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x1d.numen.v1.CompletionErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"t\n" +
 	"\x12CompletionQuestion\x127\n" +
 	"\bmessages\x18\x01 \x03(\v2\x1b.numen.v1.CompletionMessageR\bmessages\x12\x18\n" +
 	"\apurpose\x18\x02 \x01(\tR\apurposeJ\x04\b\x03\x10\x04R\x05hints\";\n" +

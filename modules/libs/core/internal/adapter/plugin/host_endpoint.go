@@ -119,7 +119,7 @@ func (e *HostEndpoint) Complete(
 	}
 	completer := e.callers.GetCompleter()
 	if completer == nil {
-		return refuseCompletion(v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE), nil
+		return refuseCompletion(v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE, ""), nil
 	}
 	text, err := completer.Complete(ctx, pluginID, readWireQuestion(req.Msg.GetQuestion()))
 	if err != nil {
@@ -155,13 +155,13 @@ func answerFailure(ctx context.Context, err error) (*connect.Response[v1.HostSer
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	if code, isRefusal := writeRefusal(err); isRefusal {
-		return refuseCompletion(code), nil
+		return refuseCompletion(code, readRefusalDetail(err)), nil
 	}
 	return nil, connect.NewError(connect.CodeInternal, err)
 }
 
-func refuseCompletion(code v1.CompletionErrorCode) *connect.Response[v1.HostServiceCompleteResponse] {
-	return connect.NewResponse(&v1.HostServiceCompleteResponse{Error: code})
+func refuseCompletion(code v1.CompletionErrorCode, detail string) *connect.Response[v1.HostServiceCompleteResponse] {
+	return connect.NewResponse(&v1.HostServiceCompleteResponse{Error: code, Detail: detail})
 }
 
 // GetPluginIDByToken returns the id of the running plugin the token was given

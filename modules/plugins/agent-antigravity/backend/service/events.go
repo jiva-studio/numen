@@ -11,6 +11,9 @@ import (
 type eventReader struct {
 	reader *agentrun.Reader
 
+	// isTextStreamed is set once the agent has said any of its answer in step updates.
+	isTextStreamed bool
+
 	currentTool string
 	currentArgs strings.Builder
 }
@@ -21,6 +24,10 @@ func newEventHandler(r *agentrun.Reader) func(map[string]any) {
 }
 
 func (r *eventReader) handle(rawMap map[string]any) {
+	if kind, _ := rawMap["event"].(string); kind != "" {
+		r.handleCliEvent(kind, rawMap)
+		return
+	}
 	if evType, ok := rawMap["type"].(string); ok && evType == "stream_event" {
 		r.handleStreamEvent(rawMap)
 		return
@@ -164,5 +171,54 @@ func (r *eventReader) handleResult(rawMap map[string]any) {
 				Stopped: reason,
 			},
 		})
+	}
+}
+
+// handleCliEvent reads an event of the stream the CLI writes: "init", "step_update" and "result".
+// What the agent says arrives as the text deltas of its response steps, and a run that ends in
+// error does so in its result.
+func (r *eventReader) handleCliEvent(kind string, rawMap map[string]any) {
+	switch kind {
+	case "step_update":
+		step, _ := rawMap["step_update"].(map[string]any)
+		r.handleCliStep(step)
+	case "result":
+		result, _ := rawMap["result"].(map[string]any)
+		r.handleCliResult(result)
+	default:
+		if session, ok := rawMap["conversation_id"].(string); ok {
+			r.reader.SetSession(session)
+		}
+	}
+}
+
+func (r *eventReader) handleCliStep(step map[string]any) {
+	if session, ok := step["conversation_id"].(string); ok {
+		r.reader.SetSession(session)
+	}
+	text, _ := step["text_delta"].(string)
+	if kind, _ := step["step_type"].(string); kind != "agent_response" || text == "" {
+		return
+	}
+	r.isTextStreamed = true
+	r.reader.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Said{Said: text}})
+}
+
+// handleCliResult says the response of a run that streamed none, and stops a run whose status is
+// not success with the error the CLI gave.
+func (r *eventReader) handleCliResult(result map[string]any) {
+	if session, ok := result["conversation_id"].(string); ok {
+		r.reader.SetSession(session)
+	}
+	if status, _ := result["status"].(string); status != "" && !strings.EqualFold(status, "success") {
+		reason, _ := result["error"].(string)
+		if reason == "" {
+			reason = "the run ended with status " + status
+		}
+		r.reader.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Stopped{Stopped: reason}})
+		return
+	}
+	if response, _ := result["response"].(string); response != "" && !r.isTextStreamed {
+		r.reader.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Said{Said: response}})
 	}
 }

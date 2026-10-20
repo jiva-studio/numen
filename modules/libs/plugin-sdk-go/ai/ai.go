@@ -32,7 +32,7 @@ var (
 	ErrNoRoute = errors.New("ai: no agent answers")
 	// ErrUnavailable means the agent the plugin is routed to cannot be reached or
 	// stopped without an answer.
-	ErrUnavailable = errors.New("ai: routed agent unavailable")
+	ErrUnavailable = errors.New("ai: routed agent did not answer")
 	// ErrNoConsent means the person has not let the plugin ask a model, or has
 	// refused it. The window asks them in the settings.
 	ErrNoConsent = errors.New("ai: the person has not let this plugin ask a model")
@@ -83,7 +83,7 @@ func (c *Client) Complete(ctx context.Context, question *numenv1.CompletionQuest
 	if err != nil {
 		return "", fmt.Errorf("ai: complete: %w", err)
 	}
-	if err := readRefusal(res.Msg.GetError()); err != nil {
+	if err := readRefusal(res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
 		return "", err
 	}
 	answer := res.Msg.GetAnswer()
@@ -93,17 +93,18 @@ func (c *Client) Complete(ctx context.Context, question *numenv1.CompletionQuest
 	return answer.GetText(), nil
 }
 
-// readRefusal maps the code of a refused call to its error. Unspecified is no refusal.
-func readRefusal(code numenv1.CompletionErrorCode) error {
+// readRefusal maps the code of a refused call to its error, followed by the detail the host gave.
+// Unspecified is no refusal.
+func readRefusal(code numenv1.CompletionErrorCode, detail string) error {
 	switch code {
 	case numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED:
 		return nil
 	case numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE:
-		return ErrNoRoute
+		return addDetail(ErrNoRoute, detail)
 	case numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE:
-		return ErrUnavailable
+		return addDetail(ErrUnavailable, detail)
 	case numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT:
-		return ErrNoConsent
+		return addDetail(ErrNoConsent, detail)
 	}
 	return fmt.Errorf("ai: unknown refusal code %d", code)
 }
@@ -115,4 +116,12 @@ func Complete(ctx context.Context, question *numenv1.CompletionQuestion) (string
 		return "", err
 	}
 	return c.Complete(ctx, question)
+}
+
+// addDetail is the refusal followed by the detail the host gave, or the refusal alone where it gave none.
+func addDetail(refusal error, detail string) error {
+	if detail == "" {
+		return refusal
+	}
+	return fmt.Errorf("%w: %s", refusal, detail)
 }
