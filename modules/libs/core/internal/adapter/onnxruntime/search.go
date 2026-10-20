@@ -3,7 +3,10 @@ package onnxruntime
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -229,4 +232,32 @@ func isFile(at string) bool {
 // normalize lower-cases a name and trims the space around it.
 func normalize(name string) string {
 	return strings.ToLower(strings.TrimSpace(name))
+}
+
+var versionPart = regexp.MustCompile(`[0-9]+`)
+
+// sortNewestFirst orders package store paths by the numbers in the package name
+// that follows the store hash, highest first. The newest package links the
+// newest C library, and the library loaded first fixes the C library every
+// later one resolves against.
+func sortNewestFirst(paths []string) {
+	slices.SortStableFunc(paths, func(a, b string) int {
+		return -slices.Compare(getVersion(a), getVersion(b))
+	})
+}
+
+// getVersion returns the numbers in the store package name of a path.
+func getVersion(path string) []int {
+	rel, err := filepath.Rel("/nix/store", path)
+	if err != nil {
+		return nil
+	}
+	pkg, _, _ := strings.Cut(rel, string(filepath.Separator))
+	_, name, _ := strings.Cut(pkg, "-")
+	var out []int
+	for _, digits := range versionPart.FindAllString(name, -1) {
+		n, _ := strconv.Atoi(digits)
+		out = append(out, n)
+	}
+	return out
 }
