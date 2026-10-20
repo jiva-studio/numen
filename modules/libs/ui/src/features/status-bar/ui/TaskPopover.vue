@@ -63,26 +63,25 @@ function onClose() {
       {{ emptyLabel }}
     </div>
 
-    <div v-else-if="groups.length > 1" class="task-popover__body">
-      <TaskGroup
-        v-for="group in groups"
-        :key="group.name"
-        :group="group"
-        @cancel="onCancel"
-        @retry="onRetry"
-        @dismiss="onDismiss"
-      />
-    </div>
-
     <div v-else class="task-popover__body">
-      <TaskItem
-        v-for="task in taskList"
-        :key="task.id"
-        :task="task"
-        @cancel="onCancel"
-        @retry="onRetry"
-        @dismiss="onDismiss"
-      />
+      <template v-for="group in groups" :key="group.name">
+        <TaskGroup
+          v-if="group.tasks.length > 1"
+          :group="group"
+          @cancel="onCancel"
+          @retry="onRetry"
+          @dismiss="onDismiss"
+        />
+        <TaskItem
+          v-for="task in group.tasks"
+          v-else
+          :key="task.id"
+          :task="task"
+          @cancel="onCancel"
+          @retry="onRetry"
+          @dismiss="onDismiss"
+        />
+      </template>
     </div>
   </div>
 </template>
