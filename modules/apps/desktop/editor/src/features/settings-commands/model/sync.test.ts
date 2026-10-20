@@ -131,3 +131,44 @@ describe('whether a title and a filename are one name', () => {
     })
   })
 })
+
+describe('a switch turned twice in quick succession', () => {
+  const slowVault = () => {
+    const answers: ((failure: string | null) => void)[] = []
+    return {
+      answers,
+      getSyncEnabled: async () => true,
+      setSyncEnabled: () =>
+        new Promise<string | null>((resolve) => {
+          answers.push(resolve)
+        }),
+    }
+  }
+
+  it('stands on the last choice while the first write is refused', async () => {
+    const core = slowVault()
+    const held = syncSetting(core, words, writer().write)
+    await held.start()
+
+    const first = held.choose(OFF)
+    const second = held.choose(ON)
+    core.answers[0]?.('unreadable')
+    await first
+    expect(held.isEnabled.value).toBe(true)
+    core.answers[1]?.(null)
+    await second
+    expect(held.isEnabled.value).toBe(true)
+  })
+
+  it('is not moved by a read of the settings made while a write is in flight', async () => {
+    const core = slowVault()
+    const held = syncSetting(core, words, writer().write)
+    await held.start()
+
+    const first = held.choose(OFF)
+    await held.start()
+    expect(held.isEnabled.value).toBe(false)
+    core.answers[0]?.(null)
+    await first
+  })
+})

@@ -10,6 +10,7 @@ import { ref } from 'vue'
 import type { StepGroup } from '@/features/command-palette/@x/settings-commands'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { SyncWords } from '../words'
+import { createWriteGuard } from '../lib/writeGuard'
 
 /** The command whose step offers the two. */
 export const SYNCING = 'syncing'
@@ -32,11 +33,13 @@ export function syncSetting(core: SyncDeps, words: SyncWords, write: MessageWrit
    * configured does, and is asked of the vault as the window opens.
    */
   const isEnabled = ref(true)
+  const guard = createWriteGuard()
 
   /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
     try {
-      isEnabled.value = await core.getSyncEnabled()
+      const held = await core.getSyncEnabled()
+      if (guard.isIdle()) isEnabled.value = held
     } catch {
       // A vault that cannot be asked leaves the setting where it stands.
     }
@@ -69,11 +72,10 @@ export function syncSetting(core: SyncDeps, words: SyncWords, write: MessageWrit
     if (now === was) return
     write('')
     isEnabled.value = now
-
-    const failed = await core.setSyncEnabled(now)
+    const { failed, isLatest } = await guard.run(guard.beginChoice(), () => core.setSyncEnabled(now))
     if (!failed) return
     write(`${words.unturned} ${failed}`, 'error')
-    isEnabled.value = was
+    if (isLatest) isEnabled.value = was
   }
 
   return { isEnabled, kept: isEnabled, start, getSyncingGroups, choose }
