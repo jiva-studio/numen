@@ -28,6 +28,8 @@ var (
 	ErrNoDataFolder = errors.New("host: the manifest names no data folder")
 	// ErrNotANote is what a path gets when the file is not a note the vault holds.
 	ErrNotANote = errors.New("host: not a note this vault holds")
+	// ErrUnknownVault is what a call gets when it names a vault the installation does not know.
+	ErrUnknownVault = errors.New("host: no such vault")
 	// ErrNotExist is fs.ErrNotExist: a file, a note or a name that is not there.
 	ErrNotExist = fs.ErrNotExist
 )
@@ -36,6 +38,24 @@ var (
 type DataFile struct {
 	Name string
 	Size int64
+}
+
+// IndexStatus is where a vault stands in the index.
+type IndexStatus int
+
+const (
+	// Indexed is a vault the index carries.
+	Indexed IndexStatus = iota + 1
+	// Indexing is a vault being read into the index.
+	Indexing
+	// IndexFailed is a vault that could not be read into the index.
+	IndexFailed
+)
+
+// IndexState is where a vault stands in the index, and why it failed when it did.
+type IndexState struct {
+	Status IndexStatus
+	Reason string
 }
 
 // Change is what a watch tells: the files that changed, or that the host now shows another vault and
@@ -50,6 +70,17 @@ type Change struct {
 type Vault interface {
 	// GetVault names the vault, or returns ErrNoVault.
 	GetVault(ctx context.Context) (domain.Vault, error)
+	// GetVaults lists every vault the installation knows.
+	GetVaults(ctx context.Context) ([]domain.Vault, error)
+	// With is the vault of the identity, worked as the shown vault is. A call on it returns
+	// ErrUnknownVault when the installation knows no such vault.
+	With(id domain.VaultID) Vault
+	// EnsureIndexed starts reading the vault into the index when it is not there, and says where
+	// that stands. The work goes on after it returns.
+	EnsureIndexed(ctx context.Context) (IndexState, error)
+	// WatchMoves tells that something moved in some vault, until ctx is done. It returns once the
+	// watch is on, and the channel closes when the watch ends.
+	WatchMoves(ctx context.Context) (<-chan struct{}, error)
 
 	GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error)
 	// Read returns the file with the fingerprint it had when it was read.

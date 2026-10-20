@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -25,6 +26,17 @@ type Vault struct {
 	Data     port.PluginDataStores
 	Cache    port.PluginCache
 	Watcher  port.VaultWatcher
+	// Vaults lists every vault the installation knows, and Find returns the vault of an identity or
+	// fs.ErrNotExist. Without them the installation knows the vault Current names and no other.
+	Vaults func() ([]domain.Vault, error)
+	Find   func(id domain.VaultID) (domain.Vault, error)
+	// IndexState starts reading a vault into the index when it is not there and says where that
+	// stands. Without it every vault is taken to be in the index.
+	IndexState func(ctx context.Context, v domain.Vault) (port.PluginIndexState, error)
+	// Moved tells that something moved in some vault. Without it nothing is told.
+	Moved func(ctx context.Context) (<-chan struct{}, error)
+	// Written is told after a plugin has changed the vault.
+	Written func()
 	// Index brings the index level with the paths a plugin changed. Without it nothing is done.
 	Index func(ctx context.Context, v domain.Vault, paths []string) error
 }
@@ -34,6 +46,52 @@ func (a Vault) GetVault() (domain.Vault, bool) {
 		return domain.Vault{}, false
 	}
 	return a.Current()
+}
+
+func (a Vault) GetVaults() ([]domain.Vault, error) {
+	if a.Vaults != nil {
+		return a.Vaults()
+	}
+	if v, showing := a.GetVault(); showing {
+		return []domain.Vault{v}, nil
+	}
+	return nil, nil
+}
+
+func (a Vault) With(id domain.VaultID) (port.PluginVault, error) {
+	var found domain.Vault
+	if a.Find != nil {
+		v, err := a.Find(id)
+		if err != nil {
+			return nil, err
+		}
+		found = v
+	} else if v, showing := a.GetVault(); showing && v.ID == id {
+		found = v
+	} else {
+		return nil, fmt.Errorf("vault %q: %w", id, fs.ErrNotExist)
+	}
+	bound := a
+	bound.Current = func() (domain.Vault, bool) { return found, true }
+	return bound, nil
+}
+
+func (a Vault) EnsureIndexed(ctx context.Context) (port.PluginIndexState, error) {
+	v, err := a.open()
+	if err != nil {
+		return port.PluginIndexState{}, err
+	}
+	if a.IndexState == nil {
+		return port.PluginIndexState{Status: port.PluginIndexed}, nil
+	}
+	return a.IndexState(ctx, v)
+}
+
+func (a Vault) WatchMoves(ctx context.Context) (<-chan struct{}, error) {
+	if a.Moved == nil {
+		return nil, fmt.Errorf("watch moves: %w", port.ErrUnavailable)
+	}
+	return a.Moved(ctx)
 }
 
 func (a Vault) open() (domain.Vault, error) {
@@ -93,7 +151,17 @@ func (a Vault) Write(
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
-	return writer.Write(ctx, path, content, baseline)
+	at, err := writer.Write(ctx, path, content, baseline)
+	if err == nil {
+		a.tellWritten()
+	}
+	return at, err
+}
+
+func (a Vault) tellWritten() {
+	if a.Written != nil {
+		a.Written()
+	}
 }
 
 func (a Vault) Create(ctx context.Context, path string, content []byte) error {
@@ -101,7 +169,11 @@ func (a Vault) Create(ctx context.Context, path string, content []byte) error {
 	if err != nil {
 		return err
 	}
-	return writer.Create(ctx, path, content)
+	if err := writer.Create(ctx, path, content); err != nil {
+		return err
+	}
+	a.tellWritten()
+	return nil
 }
 
 func (a Vault) Lock(ctx context.Context) (func(), error) {
@@ -117,6 +189,7 @@ func (a Vault) Scan(ctx context.Context, paths []string) error {
 	if err != nil || a.Index == nil {
 		return err
 	}
+	a.tellWritten()
 	return a.Index(ctx, v, paths)
 }
 

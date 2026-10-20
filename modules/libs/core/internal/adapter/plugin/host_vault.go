@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"net/http"
 	"sync"
 	"time"
 
@@ -24,6 +25,9 @@ const vaultLockHold = 2 * time.Minute
 // vaultWatchPoll is how often a watch looks at which vault the window is showing.
 const vaultWatchPoll = time.Second
 
+// vaultHeader is the header of a call that names the vault it works, by identity.
+const vaultHeader = "Numen-Vault"
+
 // vaultEndpoint answers HostVaultService for the plugins that call the host.
 type vaultEndpoint struct {
 	endpoint *HostEndpoint
@@ -41,12 +45,21 @@ var _ numenv1connect.HostVaultServiceHandler = (*vaultEndpoint)(nil)
 
 // begin authorizes a call and returns the plugin that made it and the vault it works. A plugin that
 // lacks the permission is refused; a host showing no vault leaves the vault nil.
-func (e *vaultEndpoint) begin(header, permission string) (string, port.PluginVault, error) {
-	pluginID, err := e.endpoint.authorize(header, permission)
+func (e *vaultEndpoint) begin(header http.Header, permission string) (string, port.PluginVault, error) {
+	pluginID, err := e.endpoint.authorize(header.Get("Authorization"), permission)
 	if err != nil {
 		return "", nil, err
 	}
-	return pluginID, e.endpoint.callers.GetPluginVault(), nil
+	vault := e.endpoint.callers.GetPluginVault()
+	named := header.Get(vaultHeader)
+	if vault == nil || named == "" {
+		return pluginID, vault, nil
+	}
+	bound, err := vault.With(domain.VaultID(named))
+	if err != nil {
+		return "", nil, connect.NewError(connect.CodeNotFound, err)
+	}
+	return pluginID, bound, nil
 }
 
 // answer sorts the failure of a call to the vault: a refusal the host can name is the code of the
@@ -114,7 +127,7 @@ func writeLinks(links []domain.ResolvedLink) []*v1.HostLink {
 func (e *vaultEndpoint) GetHostVault(
 	ctx context.Context, req *connect.Request[v1.GetHostVaultRequest],
 ) (*connect.Response[v1.GetHostVaultResponse], error) {
-	_, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -128,10 +141,90 @@ func (e *vaultEndpoint) GetHostVault(
 	return connect.NewResponse(&v1.GetHostVaultResponse{Path: v.Path, Id: string(v.ID), Name: v.Name}), nil
 }
 
+func (e *vaultEndpoint) ListHostVaults(
+	_ context.Context, req *connect.Request[v1.ListHostVaultsRequest],
+) (*connect.Response[v1.ListHostVaultsResponse], error) {
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	if err != nil {
+		return nil, err
+	}
+	if vault == nil {
+		return connect.NewResponse(&v1.ListHostVaultsResponse{}), nil
+	}
+	known, err := vault.GetVaults()
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	out := make([]*v1.HostVaultInfo, 0, len(known))
+	for _, one := range known {
+		out = append(out, &v1.HostVaultInfo{Id: string(one.ID), Name: one.Name, Path: one.Path})
+	}
+	return connect.NewResponse(&v1.ListHostVaultsResponse{Vaults: out}), nil
+}
+
+func (e *vaultEndpoint) EnsureVaultIndexed(
+	ctx context.Context, req *connect.Request[v1.EnsureVaultIndexedRequest],
+) (*connect.Response[v1.EnsureVaultIndexedResponse], error) {
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	if err != nil {
+		return nil, err
+	}
+	if vault == nil {
+		return connect.NewResponse(&v1.EnsureVaultIndexedResponse{Error: noVault}), nil
+	}
+	state, err := vault.EnsureIndexed(ctx)
+	code, err := answer(ctx, err)
+	if err != nil || code != 0 {
+		return connect.NewResponse(&v1.EnsureVaultIndexedResponse{Error: code}), err
+	}
+	out := &v1.EnsureVaultIndexedResponse{Reason: state.Reason}
+	switch state.Status {
+	case port.PluginIndexed:
+		out.State = v1.HostIndexState_HOST_INDEX_STATE_INDEXED
+	case port.PluginIndexing:
+		out.State = v1.HostIndexState_HOST_INDEX_STATE_INDEXING
+	case port.PluginIndexFailed:
+		out.State = v1.HostIndexState_HOST_INDEX_STATE_FAILED
+	}
+	return connect.NewResponse(out), nil
+}
+
+func (e *vaultEndpoint) WatchMoves(
+	ctx context.Context, req *connect.Request[v1.WatchMovesRequest], stream *connect.ServerStream[v1.WatchMovesResponse],
+) error {
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	if err != nil {
+		return err
+	}
+	if vault == nil {
+		return connect.NewError(connect.CodeFailedPrecondition, ErrNoVault)
+	}
+	moves, err := vault.WatchMoves(ctx)
+	if err != nil {
+		return connect.NewError(connect.CodeUnavailable, err)
+	}
+	if err := stream.Send(&v1.WatchMovesResponse{}); err != nil {
+		return err
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case _, open := <-moves:
+			if !open {
+				return nil
+			}
+			if err := stream.Send(&v1.WatchMovesResponse{}); err != nil {
+				return err
+			}
+		}
+	}
+}
+
 func (e *vaultEndpoint) GetFileFingerprint(
 	ctx context.Context, req *connect.Request[v1.GetFileFingerprintRequest],
 ) (*connect.Response[v1.GetFileFingerprintResponse], error) {
-	_, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +242,7 @@ func (e *vaultEndpoint) GetFileFingerprint(
 func (e *vaultEndpoint) ReadFile(
 	ctx context.Context, req *connect.Request[v1.ReadFileRequest],
 ) (*connect.Response[v1.ReadFileResponse], error) {
-	_, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +260,7 @@ func (e *vaultEndpoint) ReadFile(
 func (e *vaultEndpoint) WriteFile(
 	ctx context.Context, req *connect.Request[v1.WriteFileRequest],
 ) (*connect.Response[v1.WriteFileResponse], error) {
-	_, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +278,7 @@ func (e *vaultEndpoint) WriteFile(
 func (e *vaultEndpoint) CreateFile(
 	ctx context.Context, req *connect.Request[v1.CreateFileRequest],
 ) (*connect.Response[v1.CreateFileResponse], error) {
-	_, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +292,7 @@ func (e *vaultEndpoint) CreateFile(
 func (e *vaultEndpoint) LockVault(
 	ctx context.Context, req *connect.Request[v1.LockVaultRequest],
 ) (*connect.Response[v1.LockVaultResponse], error) {
-	_, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +327,7 @@ func (e *vaultEndpoint) unlock(id string) {
 func (e *vaultEndpoint) UnlockVault(
 	_ context.Context, req *connect.Request[v1.UnlockVaultRequest],
 ) (*connect.Response[v1.UnlockVaultResponse], error) {
-	if _, _, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultWrite); err != nil {
+	if _, _, err := e.begin(req.Header(), port.PermissionVaultWrite); err != nil {
 		return nil, err
 	}
 	e.unlock(req.Msg.GetLock())
@@ -244,7 +337,7 @@ func (e *vaultEndpoint) UnlockVault(
 func (e *vaultEndpoint) ScanFiles(
 	ctx context.Context, req *connect.Request[v1.ScanFilesRequest],
 ) (*connect.Response[v1.ScanFilesResponse], error) {
-	_, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +351,7 @@ func (e *vaultEndpoint) ScanFiles(
 func (e *vaultEndpoint) GetNoteRefs(
 	ctx context.Context, req *connect.Request[v1.GetNoteRefsRequest],
 ) (*connect.Response[v1.GetNoteRefsResponse], error) {
-	_, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -282,7 +375,7 @@ func (e *vaultEndpoint) GetNoteRefs(
 func (e *vaultEndpoint) GetNoteTypes(
 	ctx context.Context, req *connect.Request[v1.GetNoteTypesRequest],
 ) (*connect.Response[v1.GetNoteTypesResponse], error) {
-	_, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -304,7 +397,7 @@ func (e *vaultEndpoint) GetNoteTypes(
 func (e *vaultEndpoint) GetPathsOfType(
 	ctx context.Context, req *connect.Request[v1.GetPathsOfTypeRequest],
 ) (*connect.Response[v1.GetPathsOfTypeResponse], error) {
-	_, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -322,7 +415,7 @@ func (e *vaultEndpoint) GetPathsOfType(
 func (e *vaultEndpoint) GetLinks(
 	ctx context.Context, req *connect.Request[v1.GetLinksRequest],
 ) (*connect.Response[v1.GetLinksResponse], error) {
-	_, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -340,7 +433,7 @@ func (e *vaultEndpoint) GetLinks(
 func (e *vaultEndpoint) GetBacklinks(
 	ctx context.Context, req *connect.Request[v1.GetBacklinksRequest],
 ) (*connect.Response[v1.GetBacklinksResponse], error) {
-	_, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -358,7 +451,7 @@ func (e *vaultEndpoint) GetBacklinks(
 func (e *vaultEndpoint) ResolveLinks(
 	ctx context.Context, req *connect.Request[v1.ResolveLinksRequest],
 ) (*connect.Response[v1.ResolveLinksResponse], error) {
-	_, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -380,7 +473,7 @@ func (e *vaultEndpoint) ResolveLinks(
 func (e *vaultEndpoint) GetParseProblems(
 	ctx context.Context, req *connect.Request[v1.GetParseProblemsRequest],
 ) (*connect.Response[v1.GetParseProblemsResponse], error) {
-	_, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -419,7 +512,7 @@ func (e *vaultEndpoint) openData(ctx context.Context, pluginID string, vault por
 func (e *vaultEndpoint) ReadData(
 	ctx context.Context, req *connect.Request[v1.ReadDataRequest],
 ) (*connect.Response[v1.ReadDataResponse], error) {
-	pluginID, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultRead)
+	pluginID, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -438,7 +531,7 @@ func (e *vaultEndpoint) ReadData(
 func (e *vaultEndpoint) AppendData(
 	ctx context.Context, req *connect.Request[v1.AppendDataRequest],
 ) (*connect.Response[v1.AppendDataResponse], error) {
-	pluginID, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultWrite)
+	pluginID, vault, err := e.begin(req.Header(), port.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -453,7 +546,7 @@ func (e *vaultEndpoint) AppendData(
 func (e *vaultEndpoint) ListData(
 	ctx context.Context, req *connect.Request[v1.ListDataRequest],
 ) (*connect.Response[v1.ListDataResponse], error) {
-	pluginID, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultRead)
+	pluginID, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -476,7 +569,7 @@ func (e *vaultEndpoint) ListData(
 func (e *vaultEndpoint) ReadCache(
 	ctx context.Context, req *connect.Request[v1.ReadCacheRequest],
 ) (*connect.Response[v1.ReadCacheResponse], error) {
-	pluginID, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultRead)
+	pluginID, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -494,7 +587,7 @@ func (e *vaultEndpoint) ReadCache(
 func (e *vaultEndpoint) WriteCache(
 	ctx context.Context, req *connect.Request[v1.WriteCacheRequest],
 ) (*connect.Response[v1.WriteCacheResponse], error) {
-	pluginID, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultWrite)
+	pluginID, vault, err := e.begin(req.Header(), port.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -508,7 +601,7 @@ func (e *vaultEndpoint) WriteCache(
 func (e *vaultEndpoint) WatchVault(
 	ctx context.Context, req *connect.Request[v1.WatchVaultRequest], stream *connect.ServerStream[v1.WatchVaultResponse],
 ) error {
-	_, vault, err := e.begin(req.Header().Get("Authorization"), port.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
 	if err != nil {
 		return err
 	}

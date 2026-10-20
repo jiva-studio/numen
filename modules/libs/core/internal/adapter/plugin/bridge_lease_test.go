@@ -32,6 +32,9 @@ func (h *leaseHost) ResolveCapability(string) (port.DiscoveredPlugin, error) {
 }
 
 func (h *leaseHost) ResolveCapabilities(string) []port.DiscoveredPlugin { return nil }
+func (h *leaseHost) ResolveService(string) (port.DiscoveredPlugin, bool) {
+	return port.DiscoveredPlugin{}, false
+}
 
 func (h *leaseHost) GetPlugin(string) (port.DiscoveredPlugin, bool) {
 	return port.DiscoveredPlugin{Manifest: port.PluginManifest{ID: "md.numen.stub"}}, true

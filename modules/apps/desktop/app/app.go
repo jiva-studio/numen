@@ -243,7 +243,11 @@ func openInstallation(
 	shared, err := made.OpenPluginVault(func() (domain.Vault, bool) {
 		current := opened.GetCurrentVault()
 		return current, current.Path != ""
-	})
+	}, container.PluginVaultHooks{Written: func() {
+		if wake := opened.State.NotifyNoteWritten; wake != nil {
+			wake()
+		}
+	}})
 	if err != nil {
 		return shownInstallation{}, err
 	}

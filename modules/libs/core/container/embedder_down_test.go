@@ -29,6 +29,9 @@ func (h *downEmbeddingHost) ResolveCapability(string) (port.DiscoveredPlugin, er
 }
 
 func (h *downEmbeddingHost) ResolveCapabilities(string) []port.DiscoveredPlugin { return nil }
+func (h *downEmbeddingHost) ResolveService(string) (port.DiscoveredPlugin, bool) {
+	return port.DiscoveredPlugin{}, false
+}
 
 func (h *downEmbeddingHost) EnsureActive(context.Context, string) (port.Endpoint, error) {
 	h.acquired.Add(1)

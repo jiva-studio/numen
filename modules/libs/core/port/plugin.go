@@ -131,6 +131,9 @@ type PluginResolver interface {
 	// ResolveCapabilities returns every enabled plugin that declares the capability, in the order
 	// of their ids. Where none does, it returns none.
 	ResolveCapabilities(capability string) []DiscoveredPlugin
+	// ResolveService returns the enabled plugin with the lowest id among those that serve the service
+	// to the windows, and false where none does.
+	ResolveService(service string) (DiscoveredPlugin, bool)
 	GetPlugin(id string) (DiscoveredPlugin, bool)
 }
 

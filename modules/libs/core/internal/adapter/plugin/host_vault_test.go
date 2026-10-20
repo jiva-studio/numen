@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -32,6 +33,10 @@ type memoryVault struct {
 	locks   int
 	changes chan []string
 	lost    chan struct{}
+	// others are the vaults beside the shown one, by identity.
+	others map[domain.VaultID]*memoryVault
+	state  port.PluginIndexState
+	moves  chan struct{}
 }
 
 func newMemoryVault(files map[string]string) *memoryVault {
@@ -42,7 +47,39 @@ func newMemoryVault(files map[string]string) *memoryVault {
 		cache:   map[string][]byte{},
 		changes: make(chan []string, 4),
 		lost:    make(chan struct{}),
+		moves:   make(chan struct{}, 4),
+		state:   port.PluginIndexState{Status: port.PluginIndexed},
 	}
+}
+
+func (m *memoryVault) GetVaults() ([]domain.Vault, error) {
+	out := []domain.Vault{}
+	if m.vault != nil {
+		out = append(out, *m.vault)
+	}
+	for _, other := range m.others {
+		out = append(out, *other.vault)
+	}
+	slices.SortFunc(out, func(a, b domain.Vault) int { return strings.Compare(string(a.ID), string(b.ID)) })
+	return out, nil
+}
+
+func (m *memoryVault) With(id domain.VaultID) (port.PluginVault, error) {
+	if m.vault != nil && m.vault.ID == id {
+		return m, nil
+	}
+	if other, there := m.others[id]; there {
+		return other, nil
+	}
+	return nil, fs.ErrNotExist
+}
+
+func (m *memoryVault) EnsureIndexed(context.Context) (port.PluginIndexState, error) {
+	return m.state, nil
+}
+
+func (m *memoryVault) WatchMoves(context.Context) (<-chan struct{}, error) {
+	return m.moves, nil
 }
 
 func (m *memoryVault) GetVault() (domain.Vault, bool) {
@@ -559,5 +596,82 @@ func TestACallIsRefusedWithoutThePermissionItNeeds(t *testing.T) {
 func TestAnErrorTheHostCannotNameIsInternal(t *testing.T) {
 	if _, err := answer(t.Context(), errors.New("the disk is gone")); readCode(t, err) != connect.CodeInternal {
 		t.Errorf("the failure was %v", err)
+	}
+}
+
+func TestAHeaderNamesTheVaultACallWorks(t *testing.T) {
+	client, vault := newVaultFixture(t)
+	vault.others = map[domain.VaultID]*memoryVault{
+		"v2": {vault: &domain.Vault{ID: "v2", Name: "Chemistry", Path: "/vaults/Chemistry"}},
+	}
+	req := connect.NewRequest(&v1.GetHostVaultRequest{})
+	req.Header().Set("Numen-Vault", "v2")
+
+	res, err := client.GetHostVault(t.Context(), req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	unknown := connect.NewRequest(&v1.GetHostVaultRequest{})
+	unknown.Header().Set("Numen-Vault", "v9")
+	_, refused := client.GetHostVault(t.Context(), unknown)
+
+	if res.Msg.GetName() != "Chemistry" || connect.CodeOf(refused) != connect.CodeNotFound {
+		t.Errorf("the vault was %v, and an unknown one was answered %v", res.Msg, refused)
+	}
+}
+
+func TestEveryVaultTheInstallationKnowsIsListed(t *testing.T) {
+	client, vault := newVaultFixture(t)
+	vault.others = map[domain.VaultID]*memoryVault{
+		"v2": {vault: &domain.Vault{ID: "v2", Name: "Chemistry", Path: "/vaults/Chemistry"}},
+	}
+
+	res, err := client.ListHostVaults(t.Context(), connect.NewRequest(&v1.ListHostVaultsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := []string{}
+	for _, one := range res.Msg.GetVaults() {
+		got = append(got, one.GetId()+" "+one.GetName())
+	}
+	if !slices.Equal(got, []string{"v1 Physics", "v2 Chemistry"}) {
+		t.Errorf("the vaults were %v", got)
+	}
+}
+
+func TestWhereTheIndexStandsIsSaid(t *testing.T) {
+	client, vault := newVaultFixture(t)
+	cases := map[port.PluginIndexStatus]v1.HostIndexState{
+		port.PluginIndexed:     v1.HostIndexState_HOST_INDEX_STATE_INDEXED,
+		port.PluginIndexing:    v1.HostIndexState_HOST_INDEX_STATE_INDEXING,
+		port.PluginIndexFailed: v1.HostIndexState_HOST_INDEX_STATE_FAILED,
+	}
+	for status, want := range cases {
+		vault.state = port.PluginIndexState{Status: status, Reason: "why"}
+
+		res, err := client.EnsureVaultIndexed(t.Context(), connect.NewRequest(&v1.EnsureVaultIndexedRequest{}))
+
+		if err != nil || res.Msg.GetState() != want || res.Msg.GetReason() != "why" {
+			t.Errorf("status %v was answered %v (%v)", status, res.Msg, err)
+		}
+	}
+}
+
+func TestAWatchOfMovesTellsThatSomethingMoved(t *testing.T) {
+	client, vault := newVaultFixture(t)
+	stream, err := client.WatchMoves(t.Context(), connect.NewRequest(&v1.WatchMovesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer stream.Close()
+	if !stream.Receive() {
+		t.Fatalf("the watch began with %v", stream.Err())
+	}
+
+	vault.moves <- struct{}{}
+
+	if !stream.Receive() {
+		t.Errorf("nothing was told of the move: %v", stream.Err())
 	}
 }

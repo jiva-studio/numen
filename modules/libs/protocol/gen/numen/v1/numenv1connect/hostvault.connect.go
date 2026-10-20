@@ -36,6 +36,12 @@ const (
 	// HostVaultServiceGetHostVaultProcedure is the fully-qualified name of the HostVaultService's
 	// GetHostVault RPC.
 	HostVaultServiceGetHostVaultProcedure = "/numen.v1.HostVaultService/GetHostVault"
+	// HostVaultServiceListHostVaultsProcedure is the fully-qualified name of the HostVaultService's
+	// ListHostVaults RPC.
+	HostVaultServiceListHostVaultsProcedure = "/numen.v1.HostVaultService/ListHostVaults"
+	// HostVaultServiceEnsureVaultIndexedProcedure is the fully-qualified name of the HostVaultService's
+	// EnsureVaultIndexed RPC.
+	HostVaultServiceEnsureVaultIndexedProcedure = "/numen.v1.HostVaultService/EnsureVaultIndexed"
 	// HostVaultServiceGetFileFingerprintProcedure is the fully-qualified name of the HostVaultService's
 	// GetFileFingerprint RPC.
 	HostVaultServiceGetFileFingerprintProcedure = "/numen.v1.HostVaultService/GetFileFingerprint"
@@ -93,6 +99,9 @@ const (
 	// HostVaultServiceWriteCacheProcedure is the fully-qualified name of the HostVaultService's
 	// WriteCache RPC.
 	HostVaultServiceWriteCacheProcedure = "/numen.v1.HostVaultService/WriteCache"
+	// HostVaultServiceWatchMovesProcedure is the fully-qualified name of the HostVaultService's
+	// WatchMoves RPC.
+	HostVaultServiceWatchMovesProcedure = "/numen.v1.HostVaultService/WatchMoves"
 	// HostVaultServiceWatchVaultProcedure is the fully-qualified name of the HostVaultService's
 	// WatchVault RPC.
 	HostVaultServiceWatchVaultProcedure = "/numen.v1.HostVaultService/WatchVault"
@@ -103,6 +112,12 @@ type HostVaultServiceClient interface {
 	// GetHostVault names the vault the host is showing. A host showing none answers
 	// with the vault unset.
 	GetHostVault(context.Context, *connect.Request[v1.GetHostVaultRequest]) (*connect.Response[v1.GetHostVaultResponse], error)
+	// ListHostVaults lists every vault the installation knows.
+	ListHostVaults(context.Context, *connect.Request[v1.ListHostVaultsRequest]) (*connect.Response[v1.ListHostVaultsResponse], error)
+	// EnsureVaultIndexed brings the vault into the index when it is not there yet,
+	// and says where that stands. The work goes on after the call returns, and the
+	// caller asks again once WatchMoves tells it something moved.
+	EnsureVaultIndexed(context.Context, *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error)
 	// GetFileFingerprint says what a file is now. A file that is not there is
 	// answered with the error code MISSING.
 	GetFileFingerprint(context.Context, *connect.Request[v1.GetFileFingerprintRequest]) (*connect.Response[v1.GetFileFingerprintResponse], error)
@@ -151,6 +166,10 @@ type HostVaultServiceClient interface {
 	ReadCache(context.Context, *connect.Request[v1.ReadCacheRequest]) (*connect.Response[v1.ReadCacheResponse], error)
 	// WriteCache replaces what the plugin keeps for this vault under a name.
 	WriteCache(context.Context, *connect.Request[v1.WriteCacheRequest]) (*connect.Response[v1.WriteCacheResponse], error)
+	// WatchMoves tells that something moved in some vault of the installation,
+	// until the caller goes. It says nothing of what moved. The first message is
+	// sent at once, so that the caller knows the watch is on.
+	WatchMoves(context.Context, *connect.Request[v1.WatchMovesRequest]) (*connect.ServerStreamForClient[v1.WatchMovesResponse], error)
 	// WatchVault tells of the files of the vault that changed, until the caller
 	// goes. The first message is sent at once, with no paths, so that the caller
 	// knows the watch is on.
@@ -172,6 +191,18 @@ func NewHostVaultServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			httpClient,
 			baseURL+HostVaultServiceGetHostVaultProcedure,
 			connect.WithSchema(hostVaultServiceMethods.ByName("GetHostVault")),
+			connect.WithClientOptions(opts...),
+		),
+		listHostVaults: connect.NewClient[v1.ListHostVaultsRequest, v1.ListHostVaultsResponse](
+			httpClient,
+			baseURL+HostVaultServiceListHostVaultsProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("ListHostVaults")),
+			connect.WithClientOptions(opts...),
+		),
+		ensureVaultIndexed: connect.NewClient[v1.EnsureVaultIndexedRequest, v1.EnsureVaultIndexedResponse](
+			httpClient,
+			baseURL+HostVaultServiceEnsureVaultIndexedProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("EnsureVaultIndexed")),
 			connect.WithClientOptions(opts...),
 		),
 		getFileFingerprint: connect.NewClient[v1.GetFileFingerprintRequest, v1.GetFileFingerprintResponse](
@@ -288,6 +319,12 @@ func NewHostVaultServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(hostVaultServiceMethods.ByName("WriteCache")),
 			connect.WithClientOptions(opts...),
 		),
+		watchMoves: connect.NewClient[v1.WatchMovesRequest, v1.WatchMovesResponse](
+			httpClient,
+			baseURL+HostVaultServiceWatchMovesProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("WatchMoves")),
+			connect.WithClientOptions(opts...),
+		),
 		watchVault: connect.NewClient[v1.WatchVaultRequest, v1.WatchVaultResponse](
 			httpClient,
 			baseURL+HostVaultServiceWatchVaultProcedure,
@@ -300,6 +337,8 @@ func NewHostVaultServiceClient(httpClient connect.HTTPClient, baseURL string, op
 // hostVaultServiceClient implements HostVaultServiceClient.
 type hostVaultServiceClient struct {
 	getHostVault       *connect.Client[v1.GetHostVaultRequest, v1.GetHostVaultResponse]
+	listHostVaults     *connect.Client[v1.ListHostVaultsRequest, v1.ListHostVaultsResponse]
+	ensureVaultIndexed *connect.Client[v1.EnsureVaultIndexedRequest, v1.EnsureVaultIndexedResponse]
 	getFileFingerprint *connect.Client[v1.GetFileFingerprintRequest, v1.GetFileFingerprintResponse]
 	readFile           *connect.Client[v1.ReadFileRequest, v1.ReadFileResponse]
 	writeFile          *connect.Client[v1.WriteFileRequest, v1.WriteFileResponse]
@@ -319,12 +358,23 @@ type hostVaultServiceClient struct {
 	listData           *connect.Client[v1.ListDataRequest, v1.ListDataResponse]
 	readCache          *connect.Client[v1.ReadCacheRequest, v1.ReadCacheResponse]
 	writeCache         *connect.Client[v1.WriteCacheRequest, v1.WriteCacheResponse]
+	watchMoves         *connect.Client[v1.WatchMovesRequest, v1.WatchMovesResponse]
 	watchVault         *connect.Client[v1.WatchVaultRequest, v1.WatchVaultResponse]
 }
 
 // GetHostVault calls numen.v1.HostVaultService.GetHostVault.
 func (c *hostVaultServiceClient) GetHostVault(ctx context.Context, req *connect.Request[v1.GetHostVaultRequest]) (*connect.Response[v1.GetHostVaultResponse], error) {
 	return c.getHostVault.CallUnary(ctx, req)
+}
+
+// ListHostVaults calls numen.v1.HostVaultService.ListHostVaults.
+func (c *hostVaultServiceClient) ListHostVaults(ctx context.Context, req *connect.Request[v1.ListHostVaultsRequest]) (*connect.Response[v1.ListHostVaultsResponse], error) {
+	return c.listHostVaults.CallUnary(ctx, req)
+}
+
+// EnsureVaultIndexed calls numen.v1.HostVaultService.EnsureVaultIndexed.
+func (c *hostVaultServiceClient) EnsureVaultIndexed(ctx context.Context, req *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error) {
+	return c.ensureVaultIndexed.CallUnary(ctx, req)
 }
 
 // GetFileFingerprint calls numen.v1.HostVaultService.GetFileFingerprint.
@@ -422,6 +472,11 @@ func (c *hostVaultServiceClient) WriteCache(ctx context.Context, req *connect.Re
 	return c.writeCache.CallUnary(ctx, req)
 }
 
+// WatchMoves calls numen.v1.HostVaultService.WatchMoves.
+func (c *hostVaultServiceClient) WatchMoves(ctx context.Context, req *connect.Request[v1.WatchMovesRequest]) (*connect.ServerStreamForClient[v1.WatchMovesResponse], error) {
+	return c.watchMoves.CallServerStream(ctx, req)
+}
+
 // WatchVault calls numen.v1.HostVaultService.WatchVault.
 func (c *hostVaultServiceClient) WatchVault(ctx context.Context, req *connect.Request[v1.WatchVaultRequest]) (*connect.ServerStreamForClient[v1.WatchVaultResponse], error) {
 	return c.watchVault.CallServerStream(ctx, req)
@@ -432,6 +487,12 @@ type HostVaultServiceHandler interface {
 	// GetHostVault names the vault the host is showing. A host showing none answers
 	// with the vault unset.
 	GetHostVault(context.Context, *connect.Request[v1.GetHostVaultRequest]) (*connect.Response[v1.GetHostVaultResponse], error)
+	// ListHostVaults lists every vault the installation knows.
+	ListHostVaults(context.Context, *connect.Request[v1.ListHostVaultsRequest]) (*connect.Response[v1.ListHostVaultsResponse], error)
+	// EnsureVaultIndexed brings the vault into the index when it is not there yet,
+	// and says where that stands. The work goes on after the call returns, and the
+	// caller asks again once WatchMoves tells it something moved.
+	EnsureVaultIndexed(context.Context, *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error)
 	// GetFileFingerprint says what a file is now. A file that is not there is
 	// answered with the error code MISSING.
 	GetFileFingerprint(context.Context, *connect.Request[v1.GetFileFingerprintRequest]) (*connect.Response[v1.GetFileFingerprintResponse], error)
@@ -480,6 +541,10 @@ type HostVaultServiceHandler interface {
 	ReadCache(context.Context, *connect.Request[v1.ReadCacheRequest]) (*connect.Response[v1.ReadCacheResponse], error)
 	// WriteCache replaces what the plugin keeps for this vault under a name.
 	WriteCache(context.Context, *connect.Request[v1.WriteCacheRequest]) (*connect.Response[v1.WriteCacheResponse], error)
+	// WatchMoves tells that something moved in some vault of the installation,
+	// until the caller goes. It says nothing of what moved. The first message is
+	// sent at once, so that the caller knows the watch is on.
+	WatchMoves(context.Context, *connect.Request[v1.WatchMovesRequest], *connect.ServerStream[v1.WatchMovesResponse]) error
 	// WatchVault tells of the files of the vault that changed, until the caller
 	// goes. The first message is sent at once, with no paths, so that the caller
 	// knows the watch is on.
@@ -497,6 +562,18 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 		HostVaultServiceGetHostVaultProcedure,
 		svc.GetHostVault,
 		connect.WithSchema(hostVaultServiceMethods.ByName("GetHostVault")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceListHostVaultsHandler := connect.NewUnaryHandler(
+		HostVaultServiceListHostVaultsProcedure,
+		svc.ListHostVaults,
+		connect.WithSchema(hostVaultServiceMethods.ByName("ListHostVaults")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceEnsureVaultIndexedHandler := connect.NewUnaryHandler(
+		HostVaultServiceEnsureVaultIndexedProcedure,
+		svc.EnsureVaultIndexed,
+		connect.WithSchema(hostVaultServiceMethods.ByName("EnsureVaultIndexed")),
 		connect.WithHandlerOptions(opts...),
 	)
 	hostVaultServiceGetFileFingerprintHandler := connect.NewUnaryHandler(
@@ -613,6 +690,12 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 		connect.WithSchema(hostVaultServiceMethods.ByName("WriteCache")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostVaultServiceWatchMovesHandler := connect.NewServerStreamHandler(
+		HostVaultServiceWatchMovesProcedure,
+		svc.WatchMoves,
+		connect.WithSchema(hostVaultServiceMethods.ByName("WatchMoves")),
+		connect.WithHandlerOptions(opts...),
+	)
 	hostVaultServiceWatchVaultHandler := connect.NewServerStreamHandler(
 		HostVaultServiceWatchVaultProcedure,
 		svc.WatchVault,
@@ -623,6 +706,10 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 		switch r.URL.Path {
 		case HostVaultServiceGetHostVaultProcedure:
 			hostVaultServiceGetHostVaultHandler.ServeHTTP(w, r)
+		case HostVaultServiceListHostVaultsProcedure:
+			hostVaultServiceListHostVaultsHandler.ServeHTTP(w, r)
+		case HostVaultServiceEnsureVaultIndexedProcedure:
+			hostVaultServiceEnsureVaultIndexedHandler.ServeHTTP(w, r)
 		case HostVaultServiceGetFileFingerprintProcedure:
 			hostVaultServiceGetFileFingerprintHandler.ServeHTTP(w, r)
 		case HostVaultServiceReadFileProcedure:
@@ -661,6 +748,8 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 			hostVaultServiceReadCacheHandler.ServeHTTP(w, r)
 		case HostVaultServiceWriteCacheProcedure:
 			hostVaultServiceWriteCacheHandler.ServeHTTP(w, r)
+		case HostVaultServiceWatchMovesProcedure:
+			hostVaultServiceWatchMovesHandler.ServeHTTP(w, r)
 		case HostVaultServiceWatchVaultProcedure:
 			hostVaultServiceWatchVaultHandler.ServeHTTP(w, r)
 		default:
@@ -674,6 +763,14 @@ type UnimplementedHostVaultServiceHandler struct{}
 
 func (UnimplementedHostVaultServiceHandler) GetHostVault(context.Context, *connect.Request[v1.GetHostVaultRequest]) (*connect.Response[v1.GetHostVaultResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.GetHostVault is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) ListHostVaults(context.Context, *connect.Request[v1.ListHostVaultsRequest]) (*connect.Response[v1.ListHostVaultsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.ListHostVaults is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) EnsureVaultIndexed(context.Context, *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.EnsureVaultIndexed is not implemented"))
 }
 
 func (UnimplementedHostVaultServiceHandler) GetFileFingerprint(context.Context, *connect.Request[v1.GetFileFingerprintRequest]) (*connect.Response[v1.GetFileFingerprintResponse], error) {
@@ -750,6 +847,10 @@ func (UnimplementedHostVaultServiceHandler) ReadCache(context.Context, *connect.
 
 func (UnimplementedHostVaultServiceHandler) WriteCache(context.Context, *connect.Request[v1.WriteCacheRequest]) (*connect.Response[v1.WriteCacheResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.WriteCache is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) WatchMoves(context.Context, *connect.Request[v1.WatchMovesRequest], *connect.ServerStream[v1.WatchMovesResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.WatchMoves is not implemented"))
 }
 
 func (UnimplementedHostVaultServiceHandler) WatchVault(context.Context, *connect.Request[v1.WatchVaultRequest], *connect.ServerStream[v1.WatchVaultResponse]) error {
