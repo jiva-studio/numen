@@ -2,11 +2,11 @@
  * The files of the vault as a plugin's tabs are given them: the folders listed,
  * the files made and moved, and the window's commands over a row.
  */
-import { formatErrorMessage } from '@numen/wire'
+import { asFailure, formatErrorMessage, getKnownErrorCode } from '@numen/wire'
 import type { VaultFiles, WorkspaceHost } from '@numen/plugin-sdk'
-import { cards, presets, WORDS as cardWords } from '@/entities/deck'
 import { running, type ArtifactStates } from '@/entities/artifact'
-import { createFileCreators, type FileOpeners } from '@/entities/tab'
+import { createFileCreators, type FileOpeners, type useWindowTabs } from '@/entities/tab'
+import type { CreateResult } from '@/entities/file'
 import {
   ANSWER_WORDS,
   createInvocation,
@@ -27,12 +27,19 @@ import { getEntryIcon } from './entryIcon'
 export interface FileMakersDeps {
   readonly core: Pick<FilePort, 'createUrl'>
   readonly tabOpeners: FileOpeners
+  readonly windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'createFileOfKind'>
   readonly notes: { applyPathChanges(paths: readonly string[]): void }
   readonly writeMessage: MessageWriter
 }
 
 /** The decks, stencils, presets and urls the window makes, each put in front of the person. */
-export function createFileMakers({ core, tabOpeners, notes, writeMessage }: FileMakersDeps) {
+export function createFileMakers({
+  core,
+  tabOpeners,
+  windowTabs,
+  notes,
+  writeMessage,
+}: FileMakersDeps) {
   const fetchArtifact = (path: string): void => {
     running.fetchArtifact(path).then(
       () => notes.applyPathChanges([path]),
@@ -40,11 +47,24 @@ export function createFileMakers({ core, tabOpeners, notes, writeMessage }: File
     )
   }
 
+  const createOfKind = async (
+    kind: string,
+    title: string,
+    folder: string,
+  ): Promise<CreateResult | null> => {
+    const made = await windowTabs.createFileOfKind(kind, folder, title)
+    if (made === undefined) {
+      writeMessage(words.notOffered, 'error')
+      return null
+    }
+    return made.ok ? made : asFailure(getKnownErrorCode(made.error))
+  }
+
   return createFileCreators(
     {
-      createDeck: (title, folder) => cards.createDeck(title, folder),
-      createStencil: (title, folder, fields) => cards.createStencil(title, folder, fields),
-      createPreset: (title, folder) => presets.createPreset(title, folder),
+      createDeck: (title, folder) => createOfKind('deck', title, folder),
+      createStencil: (title, folder) => createOfKind('stencil', title, folder),
+      createPreset: (title, folder) => createOfKind('preset', title, folder),
       createUrl: async (address, folder) => {
         const made = await core.createUrl(address, folder)
         if (made.ok) fetchArtifact(made.value.path)
@@ -75,8 +95,7 @@ export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
     createFolder: (path) => run('createFolder', getTarget(), path),
     createNote: async (folder) => (await making.createUntitled(folder, []))?.path ?? '',
     createDeck: (folder, name) => made.createFile('deck', folder, name),
-    createStencil: (folder, name) =>
-      made.createFile('stencil', folder, { name, fields: [cardWords.newField] }),
+    createStencil: (folder, name) => made.createFile('stencil', folder, name),
     createPreset: (folder, name) => made.createFile('preset', folder, name),
     importUrl: (folder, url) => made.createUrl(folder, url),
     importUrls: (folder, urls) => made.createUrls(folder, urls),

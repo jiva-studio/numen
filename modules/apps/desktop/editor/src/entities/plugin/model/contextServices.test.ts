@@ -7,6 +7,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import type {
   AgentHost,
+  BufferHost,
   PluginContext,
   VaultFiles,
   VaultNotes,
@@ -50,13 +51,18 @@ const createServices = () => {
     writeSetting: vi.fn(() => Promise.resolve()),
     getModelsAt: vi.fn(() => []),
   } as unknown as AgentHost
+  const buffers = {
+    track: vi.fn(() => ({ dispose: vi.fn() })),
+    addFlushHandler: vi.fn(() => ({ dispose: vi.fn() })),
+  } as unknown as BufferHost
   const host = {
     getAgent: () => agent,
+    getBuffers: () => buffers,
     getWorkspace: () => workspace,
     getNotes: () => notes,
     getFiles: () => files,
   } as unknown as PluginContextHost
-  return { host, workspace, notes, files, agent }
+  return { host, workspace, notes, files, agent, buffers }
 }
 
 const createContext = (permissions: readonly string[]) => {
@@ -116,6 +122,59 @@ describe('a note a plugin writes', () => {
     await context.notes!.getHeadings(['a.md'])
 
     expect(notes.getHeadings).toHaveBeenCalledWith(['a.md'])
+  })
+})
+
+const BUFFER_WRITES: Record<string, Call> = {
+  track: (c) => c.buffers!.track({} as never),
+  addFlushHandler: (c) => c.buffers!.addFlushHandler(async () => {}),
+}
+
+describe('the open files a plugin hands the window', () => {
+  it.each(Object.entries(BUFFER_WRITES))(
+    'are refused through %s without vault:write',
+    async (_, call) => {
+      const { context } = createContext(['vault:read'])
+
+      await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(/vault:write/)
+    },
+  )
+
+  it.each(Object.entries(BUFFER_WRITES))(
+    'are taken through %s with vault:write',
+    async (_, call) => {
+      const { context } = createContext(['vault:write'])
+
+      await expect(Promise.resolve().then(() => call(context))).resolves.not.toThrow()
+    },
+  )
+
+  it('are handed over to the window the plugin runs in, and to none where the window made none', () => {
+    const { context, buffers } = createContext(['vault:write'])
+    context.buffers!.track({} as never)
+
+    expect(buffers.track).toHaveBeenCalledOnce()
+    expect(
+      createPluginContext('md.numen.sample', {} as unknown as PluginContextHost, {
+        permissions: ['vault:write'],
+      }),
+    ).not.toHaveProperty('buffers')
+  })
+})
+
+describe('the registrations of a plugin in the open files', () => {
+  it('are released when the plugin is disposed', () => {
+    const { context, buffers } = createContext(['vault:write'])
+    const released = vi.fn()
+    vi.mocked(buffers.track).mockReturnValue({ dispose: released })
+    vi.mocked(buffers.addFlushHandler).mockReturnValue({ dispose: released })
+
+    context.buffers!.track({} as never)
+    context.buffers!.addFlushHandler(async () => {})
+    expect(context.subscriptions).toHaveLength(2)
+    for (const one of [...context.subscriptions]) one.dispose()
+
+    expect(released).toHaveBeenCalledTimes(2)
   })
 })
 

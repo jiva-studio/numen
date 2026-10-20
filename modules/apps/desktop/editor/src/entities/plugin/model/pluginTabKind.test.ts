@@ -91,6 +91,18 @@ describe('the hooks a registration hands over', () => {
     })
     expect(pickDeclaredHooks({ kind: 'k', component: null })).toStrictEqual({})
   })
+
+  it('include what the window asks of the kind that edits a file', () => {
+    const hooks = {
+      getMark: () => 'unsaved',
+      isAsking: () => true,
+      flushPending: async () => {},
+      createFile: async () => ({ ok: true as const, value: { path: 'a.md' } }),
+      resolveCommand: async () => null,
+    }
+
+    expect(pickDeclaredHooks({ kind: 'k', component: null, ...hooks })).toStrictEqual(hooks)
+  })
 })
 
 describe('the pane of a declared kind', () => {

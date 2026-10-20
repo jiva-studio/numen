@@ -6,17 +6,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatErrorMessage } from '@numen/wire'
 import { Folder, FolderOpen } from '@lucide/vue'
 import { WORDS as words } from '@/shared/words'
-import { cards, presets, WORDS as cardWords } from '@/entities/deck'
 import { ANSWER_WORDS, createInvocation, runInvocation } from '@/features/command-palette'
 import { running } from '@/entities/artifact'
 import { findIcon } from '@/shared/icons'
 import { createFileMakers, createPathCommandHost, createVaultFiles } from './fileServices'
 
-vi.mock('@/entities/deck', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/entities/deck')>()),
-  cards: { createDeck: vi.fn(), createStencil: vi.fn() },
-  presets: { createPreset: vi.fn() },
-}))
 vi.mock('@/entities/artifact', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/entities/artifact')>()),
   running: { fetchArtifact: vi.fn(() => Promise.resolve()) },
@@ -42,12 +36,14 @@ const setup = () => {
   const writeMessage = vi.fn()
   const openNewFile = vi.fn()
   const createUrl = vi.fn()
+  const createFileOfKind = vi.fn()
   const applyPathChanges = vi.fn()
   const createUntitled = vi.fn()
   const commandDeps = vi.fn(() => ({ marker: 'deps' }))
   const made = createFileMakers({
     core: { createUrl },
     tabOpeners: { openNewFile } as never,
+    windowTabs: { createFileOfKind },
     notes: { applyPathChanges },
     writeMessage,
   })
@@ -63,6 +59,7 @@ const setup = () => {
     writeMessage,
     openNewFile,
     createUrl,
+    createFileOfKind,
     applyPathChanges,
     createUntitled,
     commandDeps,
@@ -113,29 +110,39 @@ describe('the files of the vault a plugin is handed', () => {
     expect(createUntitled).toHaveBeenCalledWith('dir', [])
   })
 
-  it('make a deck, a stencil with a first field and a preset under the names given', async () => {
-    const { files, openNewFile } = setup()
-    vi.mocked(cards.createDeck).mockResolvedValue({
-      ok: true,
-      value: { path: 'dir/D.md' },
-    } as never)
-    vi.mocked(cards.createStencil).mockResolvedValue({
-      ok: true,
-      value: { path: 'dir/S.md' },
-    } as never)
-    vi.mocked(presets.createPreset).mockResolvedValue({
-      ok: true,
-      value: { path: 'dir/P.md' },
-    } as never)
+  it('make a deck, a stencil and a preset through the kinds that edit them, under the names given', async () => {
+    const { files, openNewFile, createFileOfKind } = setup()
+    createFileOfKind.mockImplementation((kind: string) =>
+      Promise.resolve({ ok: true, value: { path: `dir/${kind}.md` } }),
+    )
 
-    expect(await files.createDeck('dir', 'D')).toBe('dir/D.md')
-    expect(await files.createStencil('dir', 'S')).toBe('dir/S.md')
-    expect(await files.createPreset('dir', 'P')).toBe('dir/P.md')
+    expect(await files.createDeck('dir', 'D')).toBe('dir/deck.md')
+    expect(await files.createStencil('dir', 'S')).toBe('dir/stencil.md')
+    expect(await files.createPreset('dir', 'P')).toBe('dir/preset.md')
 
-    expect(cards.createDeck).toHaveBeenCalledWith('D', 'dir')
-    expect(cards.createStencil).toHaveBeenCalledWith('S', 'dir', [cardWords.newField])
-    expect(presets.createPreset).toHaveBeenCalledWith('P', 'dir')
+    expect(createFileOfKind.mock.calls).toStrictEqual([
+      ['deck', 'dir', 'D'],
+      ['stencil', 'dir', 'S'],
+      ['preset', 'dir', 'P'],
+    ])
     expect(openNewFile).not.toHaveBeenCalled()
+  })
+
+  it('make no deck, and say so, where no kind of tab makes one', async () => {
+    const { files, writeMessage } = setup()
+
+    expect(await files.createDeck('dir', 'D')).toBe('')
+
+    expect(writeMessage.mock.calls).toEqual([[words.notOffered, 'error']])
+  })
+
+  it('say why the vault refused a stencil, in the words of the window', async () => {
+    const { files, createFileOfKind, writeMessage } = setup()
+    createFileOfKind.mockResolvedValue({ ok: false, error: 'occupied' })
+
+    expect(await files.createStencil('dir', 'S')).toBe('')
+
+    expect(writeMessage.mock.calls).toEqual([[words.errors.occupied, 'error']])
   })
 
   it('import several addresses without opening tabs, and one into a tab of its own', async () => {

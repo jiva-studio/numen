@@ -165,17 +165,12 @@ function extractWhere(options?: unknown): unknown {
   return undefined
 }
 
-const BUILTIN_TAB_KINDS = new Set(['deck', 'stencil', 'preset'])
-
 function registerTabKindEntry(
   deps: PluginHostDeps,
   tabKinds: Map<string, RegisteredTabKind>,
   item: PluginItemRegistration<TabKindRegistration>,
 ): Disposable {
   const { pluginId, registration, getContext } = item
-  if (BUILTIN_TAB_KINDS.has(registration.kind)) {
-    return { dispose: () => {} }
-  }
   const kind = isDeclaredTabKind(registration)
     ? createDeclaredTabKind(pluginId, registration)
     : createCustomTabKind(pluginId, registration, { ...deps, getContext })
@@ -287,12 +282,13 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
 /** The host services a plugin context is given, as the window has made them. */
 function createServiceBridge(
   deps: PluginHostDeps,
-): Pick<PluginContextHost, 'getWorkspace' | 'getNotes' | 'getFiles' | 'getAgent'> {
+): Pick<PluginContextHost, 'getWorkspace' | 'getNotes' | 'getFiles' | 'getAgent' | 'getBuffers'> {
   return {
     getWorkspace: () => deps.getWorkspace?.(),
     getNotes: () => deps.getNotes?.(),
     getFiles: () => deps.getFiles?.(),
     getAgent: () => deps.getAgent?.(),
+    getBuffers: () => deps.getBuffers?.(),
   }
 }
 

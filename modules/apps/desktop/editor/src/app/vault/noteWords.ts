@@ -11,8 +11,15 @@ import type {
   ErrorCode as ProtoErrorCode,
   GetNeighbourhoodResponse as NeighbourhoodMessage,
 } from '@numen/protocol'
-import { asFailure, asValue, getNames } from '@numen/wire'
-import { parseFingerprint, findErrorCode, isStaleAnswer, formatFingerprint } from '@/shared/answers'
+import {
+  asFailure,
+  asValue,
+  findErrorCode,
+  formatFingerprint,
+  getNames,
+  isStaleAnswer,
+  parseFingerprint,
+} from '@numen/wire'
 import type {
   Link,
   Neighbourhood,

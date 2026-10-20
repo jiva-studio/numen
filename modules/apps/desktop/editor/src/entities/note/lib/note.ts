@@ -3,9 +3,12 @@
  * them.
  */
 import type { Result } from '@numen/wire'
+import type { LinkAddress, NoteContents } from '@numen/plugin-sdk'
 import type { ErrorCode } from '@/shared/errors'
 import type { Span } from '@/shared/span'
 import type { MoveResult, NoteType } from '@/entities/file/@x/note'
+
+export type { LinkAddress, NoteContents }
 
 /**
  * One report of a change being made to the prose of a note, while it is being
@@ -66,15 +69,6 @@ export interface NoteHeading {
   readonly line: number
 }
 
-/** The prose a read gave back, and what the vault says came with it. */
-export interface NoteContents {
-  readonly body: string
-  /** Where a link note points, and nothing on every other note. */
-  readonly link?: LinkAddress
-  /** The file the prose came out of, as the next write presents it again. */
-  readonly at?: string
-}
-
 /**
  * Why a note was not read or not written. Changed is the file holding prose
  * nobody here has seen, which stops a write.
@@ -89,14 +83,6 @@ export type NoteResult = Result<NoteContents, ErrorCode>
 
 /** What a write came back with. A file that changed is one nothing was written to. */
 export type WriteResult = Result<NoteContents, NoteFailure>
-
-/**
- * Where a link note points: the web address (URL) and embed player URL.
- */
-export interface LinkAddress {
-  readonly url: string
-  readonly embed: string
-}
 
 /** A note to make: what it is called, where it goes, and what it arrives joined to. */
 export interface NewNote {

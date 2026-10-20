@@ -1,5 +1,6 @@
 import type { AgentHost } from './agent'
-import type { VaultFiles, VaultNotes, WorkspaceHost } from './workspace'
+import type { BufferHost } from './buffers'
+import type { NoteType, VaultFiles, VaultNotes, WorkspaceHost } from './workspace'
 
 // Disposable is a handle released on teardown.
 export interface Disposable {
@@ -70,6 +71,11 @@ export interface TabPlacement {
   readonly order: number
 }
 
+// TabResolution is where a command over a file leads: a tab of a kind opened on a path, or why it leads nowhere.
+export type TabResolution =
+  | { readonly ok: true; readonly kind: string; readonly at: string }
+  | { readonly ok: false; readonly text: string; readonly severity: 'error' | 'caution' }
+
 // TabKindRegistration registers a kind of workspace tab. A registration that
 // declares open owns what its tabs hold; one that does not holds the note at
 // the path its tab opens on.
@@ -98,6 +104,16 @@ export interface TabKindRegistration<State = unknown> {
   navigate?(state: State, path: string, title: string): void | Promise<void>
   // Its tabs stand beside files, and a file opened on a path never closes one of them.
   isTool?: boolean
+  // The one word its tabs carry beside their title, and nothing where a tab carries none.
+  getMark?(state: State): string | undefined
+  // Whether the tab owes the person an answer about what its file now holds.
+  isAsking?(state: State): boolean
+  // Writes what the tab holds out to its file, and answers once nothing is on its way.
+  flushPending?(state: State): Promise<void>
+  // A file made in a folder under a name, as the file this kind edits.
+  createFile?(folder: string, name: string): Promise<Result<{ path: string }, string>>
+  // Where a command named `command` over the file at `at`, of the type given, leads, and nothing where this kind has none.
+  resolveCommand?(at: string, command: string, type: NoteType): Promise<TabResolution | null>
   // The icon its tabs carry before their title.
   icon?: unknown
   placement?: TabPlacement
@@ -164,6 +180,8 @@ export interface PluginContext {
   readonly files?: VaultFiles
   // The agent the window asks, where the host offers one.
   readonly agent?: AgentHost
+  // The open files of the window, where the host offers them.
+  readonly buffers?: BufferHost
 }
 
 // PluginManifest describes the metadata in manifest.json.

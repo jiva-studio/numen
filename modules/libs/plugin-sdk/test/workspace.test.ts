@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getFileName, getRenamedPath, isNotePath } from '../src/workspace'
+import { getFileName, getFileStem, getRenamedPath, isNotePath } from '../src/workspace'
 
 describe('a note path', () => {
   it('is a markdown file, or a path without an extension', () => {
@@ -20,6 +20,12 @@ describe('a vault path taken apart', () => {
   it('is filed under its last segment', () => {
     expect(getFileName('physics/Kelvin.md')).toBe('Kelvin.md')
     expect(getFileName('Root.md')).toBe('Root.md')
+  })
+
+  it('is named without its ending', () => {
+    expect(getFileStem('physics/Kelvin.md')).toBe('Kelvin')
+    expect(getFileStem('.archive')).toBe('.archive')
+    expect(getFileStem('Root')).toBe('Root')
   })
 
   it('went where a rename took it, and nowhere where none did', () => {

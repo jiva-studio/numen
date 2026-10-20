@@ -30,6 +30,8 @@ const createWorkspace = (over: Partial<WorkspaceHostDeps> = {}) => {
     ask: vi.fn(),
     getNoteInFocus: () => ({ path: 'Focus.md', title: 'Focus' }),
     writeMessage: vi.fn(),
+    getMessageWriter: () => vi.fn(),
+    today: () => '2026-09-04',
     runs: { canRun: (run: string) => run !== 'transcribe' },
     vaults: { makes: { value: new Map([['Lecture.mp3', { transcript: 'done' as const }]]) } },
     ...over,
@@ -88,6 +90,7 @@ describe('the window a plugin is handed', () => {
     workspace.setDraggedPaths(['One.md'])
     workspace.ask('what is One?')
     workspace.showError('the link was not written')
+    expect(workspace.getToday()).toBe('2026-09-04')
 
     expect(deps.dragged.value).toStrictEqual(['One.md'])
     expect(workspace.draggedPaths.value).toStrictEqual(['One.md'])

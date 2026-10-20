@@ -7,7 +7,7 @@
  */
 import { vi } from 'vitest'
 import { asValue } from '@numen/wire'
-import type { Cards } from '@/entities/deck'
+import type { Cards } from '@plugins/flashcards-studio/frontend/cards'
 import type { Documents } from '@plugins/reader-pdf/frontend'
 import { requests } from './requests'
 import { held, maker, said } from './answers'
@@ -150,10 +150,10 @@ const cardsSaid = {
   } satisfies Partial<Cards>,
 }
 
-vi.mock('@/entities/deck/api/cards', () => cardsSaid)
+vi.mock('@plugins/flashcards-studio/frontend/cards/api/cards', () => cardsSaid)
 
-vi.mock('@/entities/deck', async (original) => ({
-  ...(await original<typeof import('@/entities/deck')>()),
+vi.mock('@plugins/flashcards-studio/frontend/cards', async (original) => ({
+  ...(await original<typeof import('@plugins/flashcards-studio/frontend/cards')>()),
   ...cardsSaid,
 }))
 

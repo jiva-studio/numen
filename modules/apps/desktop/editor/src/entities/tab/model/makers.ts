@@ -12,12 +12,15 @@ import type { FileOpeners } from './openers'
 /** Which of the four a file is created as. */
 export type CreateKind = 'deck' | 'stencil' | 'preset' | 'url'
 
-/** What the window asks the vault to create from nothing. */
+/**
+ * What the window asks the vault to create from nothing. A creator that answers
+ * nothing has already told the person why none was made.
+ */
 export interface VaultCreator {
-  createDeck?(title: string, folder: string): Promise<CreateResult>
-  createStencil?(title: string, folder: string, fields: readonly string[]): Promise<CreateResult>
-  createPreset?(title: string, folder: string): Promise<CreateResult>
-  createUrl?(address: string, folder: string): Promise<CreateResult>
+  createDeck?(title: string, folder: string): Promise<CreateResult | null>
+  createStencil?(title: string, folder: string): Promise<CreateResult | null>
+  createPreset?(title: string, folder: string): Promise<CreateResult | null>
+  createUrl?(address: string, folder: string): Promise<CreateResult | null>
 }
 
 /** What creating one of the four says in the window's voice. */
@@ -26,27 +29,17 @@ export interface CreateWords {
   readonly errors: Record<ErrorCode, string>
 }
 
-export interface CreateEntryOptions {
-  name: string
-  fields?: readonly string[]
-}
-
-export type CreateTarget = string | CreateEntryOptions
-
-function parseTarget(target: CreateTarget): CreateEntryOptions {
-  return typeof target === 'string' ? { name: target } : target
-}
+export type CreateTarget = string
 
 /** What creating each of the four asks of the vault, each entry naming its own. */
 const createByKind: Record<
   CreateKind,
-  (vault: VaultCreator, folder: string, target: CreateEntryOptions) => Promise<CreateResult>
+  (vault: VaultCreator, folder: string, name: string) => Promise<CreateResult | null>
 > = {
-  deck: (vault, folder, target) => vault.createDeck!.call(vault, target.name, folder),
-  stencil: (vault, folder, target) =>
-    vault.createStencil!.call(vault, target.name, folder, target.fields ?? []),
-  preset: (vault, folder, target) => vault.createPreset!.call(vault, target.name, folder),
-  url: (vault, folder, target) => vault.createUrl!.call(vault, target.name, folder),
+  deck: (vault, folder, name) => vault.createDeck!.call(vault, name, folder),
+  stencil: (vault, folder, name) => vault.createStencil!.call(vault, name, folder),
+  preset: (vault, folder, name) => vault.createPreset!.call(vault, name, folder),
+  url: (vault, folder, name) => vault.createUrl!.call(vault, name, folder),
 }
 
 export interface FileCreatorsOptions {
@@ -70,11 +63,11 @@ export function createFileCreators(
   const createFile = async (
     what: CreateKind,
     folder: string,
-    target: CreateTarget,
+    name: CreateTarget,
   ): Promise<string> => {
     try {
-      const entry = parseTarget(target)
-      const answer = await createByKind[what](vault, folder, entry)
+      const answer = await createByKind[what](vault, folder, name)
+      if (answer === null) return ''
       if (!answer.ok) {
         write(words.errors[answer.error], 'error')
         return ''
@@ -90,9 +83,9 @@ export function createFileCreators(
   const createAndOpenFile = async (
     what: CreateKind,
     folder: string,
-    target: CreateTarget,
+    name: CreateTarget,
   ): Promise<string> => {
-    const path = await createFile(what, folder, target)
+    const path = await createFile(what, folder, name)
     if (!path) return ''
     tabOpeners.openNewFile(path, '', what)
     return path
@@ -101,8 +94,7 @@ export function createFileCreators(
   return {
     createFile,
     createDeck: (folder: string, name: string) => createAndOpenFile('deck', folder, name),
-    createStencil: (folder: string, name: string, fields: readonly string[]) =>
-      createAndOpenFile('stencil', folder, { name, fields }),
+    createStencil: (folder: string, name: string) => createAndOpenFile('stencil', folder, name),
     createPreset: (folder: string, name: string) => createAndOpenFile('preset', folder, name),
     createUrl: (folder: string, address: string) => createAndOpenFile('url', folder, address),
     createUrls: async (

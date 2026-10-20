@@ -16,3 +16,15 @@ export { DEFAULT_SETTINGS, formatSettings, parseSettings } from './settings'
 export type { BudgetUnit, Load, Rule, Settings, SettingsMessage } from './settings'
 export { formatStopReasonMessage } from './stop'
 export type { StopDetail } from './stop'
+export {
+  ERROR_CODE,
+  findErrorCode,
+  formatFingerprint,
+  getAssetUrl,
+  getBytesQuery,
+  isStaleAnswer,
+  parseFingerprint,
+  retryWhileBusy,
+} from './answers'
+export type { ErrorCode } from './errorCode'
+export { ERRORS, getErrorWords, getKnownErrorCode } from './codes'

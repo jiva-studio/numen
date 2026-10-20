@@ -1,6 +1,5 @@
 import { vaults, type VaultCore } from './vault'
 import { running } from '@/entities/artifact'
-import { WORDS as cardWords } from '@/entities/deck'
 import type { CommandDeps, Notes, RunSupport, VaultRef } from '@/features/command-palette'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { createFileCreators } from '@/entities/tab'
@@ -159,10 +158,30 @@ function findHeldTabAt(held: ReturnType<typeof useWindowTabs>, path: string): st
   return null
 }
 
-function createCommandNotes(reached: Notes, held: ReturnType<typeof useWindowTabs>): Notes {
+/**
+ * The open files a command reaches: those the note editors hold, and those a
+ * kind of tab answers for.
+ */
+export function createCommandNotes(reached: Notes, held: ReturnType<typeof useWindowTabs>): Notes {
+  const getTab = (id: string) => held?.getTab?.(id) ?? null
   return {
     ...reached,
     getTabAt: (path: string) => reached?.getTabAt?.(path) ?? findHeldTabAt(held, path),
+    getPath: (id: string) => {
+      const path = reached.getPath(id)
+      if (path !== id) return path
+      const tab = getTab(id)
+      return tab?.kind.getOpenTab?.(tab.state)?.path ?? id
+    },
+    asking: (id: string) => {
+      const tab = getTab(id)
+      return reached.asking(id) || (tab?.kind.isAsking?.(tab.state) ?? false)
+    },
+    flushPending: async (id: string) => {
+      await reached.flushPending(id)
+      const tab = getTab(id)
+      await tab?.kind.flushPending?.(tab.state)
+    },
     close: (id: string) => {
       reached?.close?.(id)
       held?.requestClose?.(id)
@@ -176,10 +195,7 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
   return {
     files: createFileCommands(core, making),
     runs: createRunCommands(options),
-    makers: {
-      ...made,
-      createStencil: (folder, name) => made.createStencil(folder, name, [cardWords.newField]),
-    },
+    makers: made,
     vaults: {
       ...vaults,
       setVaultName,

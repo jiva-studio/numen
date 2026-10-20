@@ -4,6 +4,7 @@
 import type {
   AgentHost,
   AgentProviderRegistration,
+  BufferHost,
   CommandRegistration,
   Disposable,
   FileSelectEvent,
@@ -151,6 +152,24 @@ function guardAgent(
   }
 }
 
+/** The open files of the window, their being written out held to `vault:write`. */
+function guardBuffers(
+  buffers: BufferHost,
+  requireWrite: (operation: string) => void,
+  add: (disposable: Disposable) => Disposable,
+): BufferHost {
+  return {
+    track: (open) => {
+      requireWrite('buffers.track')
+      return add(buffers.track(open))
+    },
+    addFlushHandler: (handler) => {
+      requireWrite('buffers.addFlushHandler')
+      return add(buffers.addFlushHandler(handler))
+    },
+  }
+}
+
 /** The window, its commands that change the vault held to `vault:write`. */
 function guardWorkspace(
   workspace: WorkspaceHost,
@@ -169,6 +188,33 @@ function guardWorkspace(
   }
 }
 
+type Services = Pick<PluginContext, 'workspace' | 'notes' | 'files' | 'agent' | 'buffers'>
+
+/** A service the window made, guarded; nothing where the window made none. */
+function guardService<K extends keyof Services, S>(
+  key: K,
+  service: S | undefined,
+  guard: (service: S) => NonNullable<Services[K]>,
+): Pick<Services, K> | Record<never, never> {
+  return service === undefined ? {} : ({ [key]: guard(service) } as Pick<Services, K>)
+}
+
+/** The services the window made for a plugin, each held to the permissions the plugin declares. */
+function guardServices(
+  host: PluginContextHost,
+  requirePerm: (permission: string, operation: string) => void,
+  add: (disposable: Disposable) => Disposable,
+): Services {
+  const requireWrite = (operation: string) => requirePerm('vault:write', operation)
+  return {
+    ...guardService('workspace', host.getWorkspace?.(), (one) => guardWorkspace(one, requireWrite)),
+    ...guardService('notes', host.getNotes?.(), (one) => guardNotes(one, requireWrite)),
+    ...guardService('files', host.getFiles?.(), (one) => guardFiles(one, requireWrite)),
+    ...guardService('agent', host.getAgent?.(), (one) => guardAgent(one, requirePerm)),
+    ...guardService('buffers', host.getBuffers?.(), (one) => guardBuffers(one, requireWrite, add)),
+  }
+}
+
 export function createPluginContext(
   pluginId: string,
   host: PluginContextHost,
@@ -178,19 +224,11 @@ export function createPluginContext(
   const add = (d: Disposable) => trackSubscription(subscriptions, d)
   const target: PermissionTarget = { pluginId, manifest }
   const requirePerm = (p: string, op: string) => checkPermission(target, p, op)
-  const requireWrite = (operation: string) => requirePerm('vault:write', operation)
-  const workspace = host.getWorkspace?.()
-  const notes = host.getNotes?.()
-  const files = host.getFiles?.()
-  const agent = host.getAgent?.()
 
   return {
     pluginId,
     subscriptions,
-    ...(workspace ? { workspace: guardWorkspace(workspace, requireWrite) } : {}),
-    ...(notes ? { notes: guardNotes(notes, requireWrite) } : {}),
-    ...(files ? { files: guardFiles(files, requireWrite) } : {}),
-    ...(agent ? { agent: guardAgent(agent, requirePerm) } : {}),
+    ...guardServices(host, requirePerm, add),
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
     registerTabKind: <State>(reg: TabKindRegistration<State>) =>

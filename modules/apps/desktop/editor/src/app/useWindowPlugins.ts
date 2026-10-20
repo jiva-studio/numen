@@ -7,7 +7,6 @@ import {
   type PluginLoader,
 } from '@/features/plugin-loader'
 import { pluginCatalog } from './pluginCatalog'
-import { cards } from '@/entities/deck'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { useTabLinks } from '@/features/tab-linking'
 import type { useSettings } from './useSettings'
@@ -52,29 +51,6 @@ function createPluginSettingsAccessor(settingsHolder: {
   return { getSetting, onSettingChange }
 }
 
-function writeCustomCard(at: string, values: readonly { field: string; text: string }[]) {
-  void cards.writeDeck(
-    at,
-    {
-      preamble: '',
-      cards: [{ values }] as unknown as Parameters<typeof cards.writeDeck>[1]['cards'],
-      sections: [],
-      tail: '',
-    },
-    null,
-  )
-}
-
-function extractCardValues(args: unknown[]): readonly { field: string; text: string }[] {
-  if (Array.isArray(args[1])) {
-    return args[1] as readonly { field: string; text: string }[]
-  }
-  if (Array.isArray(args[0])) {
-    return args[0] as readonly { field: string; text: string }[]
-  }
-  return []
-}
-
 export function createPluginSupport(deps: PluginSupportDeps) {
   const { held, tabLinks, tabOpeners, settingsHolder } = deps
   const { getSetting, onSettingChange } = createPluginSettingsAccessor(settingsHolder)
@@ -102,19 +78,13 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     getSetting,
     onSettingChange,
     closeTabsForPlugin,
-    tabActionHandlers: {
-      addCard: (at: string, ...args: unknown[]) => {
-        if (!Array.isArray(args[1]) && !Array.isArray(args[0])) return
-        writeCustomCard(at, extractCardValues(args))
-      },
-    },
-    onCustomCardAdded: writeCustomCard,
     ...(deps.readNote !== undefined ? { readNote: deps.readNote } : {}),
     ...(deps.writeNote !== undefined ? { writeNote: deps.writeNote } : {}),
     getWorkspace: () => deps.services?.workspace,
     getNotes: () => deps.services?.notes,
     getFiles: () => deps.services?.files,
     getAgent: () => deps.services?.agent,
+    getBuffers: () => deps.services?.buffers,
   })
   const pluginLoader = createPluginLoader({
     host: pluginHost,

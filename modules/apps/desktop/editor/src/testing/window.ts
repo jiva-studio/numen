@@ -87,6 +87,7 @@ async function mountWindow() {
  * the end of the document, and is read off the document.
  */
 async function mountWindowWithPalette() {
+  await pluginsImported
   const window = mount(App, {
     global: {
       stubs: { Plex: true, Editor: editor, Agent: true, Reader: reader, Book: book, Tree: true },

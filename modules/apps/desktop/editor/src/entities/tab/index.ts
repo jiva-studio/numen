@@ -2,7 +2,13 @@
 export { findTabKindIcon } from './lib/icons'
 export { createFileCreators } from './model/makers'
 export { fileOpeners } from './model/openers'
-export type { EditorKind, FileOpener, FileOpeners, OpenPlacement, SourceReader } from './model/openers'
+export type {
+  EditorKind,
+  FileOpener,
+  FileOpeners,
+  OpenPlacement,
+  SourceReader,
+} from './model/openers'
 export type { OpenTabs, Tab } from './lib/tab'
 export type { AnyTabKind, OpenTab, TabKind, WindowHandle } from './lib/kinds'
 export { useWindowTabs } from './model/windowTabs'
@@ -11,16 +17,13 @@ export {
   BOOK,
   CONVERSATION,
   createWorkspace,
-  DECK,
   DOCUMENT,
   FILES,
   generateId,
   NOTE,
   PLEX,
-  PRESET,
   RECORDING,
   SETTINGS,
   SETTINGS_FILE,
-  STENCIL,
   URL,
 } from './lib/workspace'

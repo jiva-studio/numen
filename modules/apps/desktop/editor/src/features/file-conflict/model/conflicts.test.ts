@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { raiseConflicts, type Notes } from './conflicts'
 import { asFailure, asValue } from '@numen/wire'
-import { openNotes, type Notes as NotesCore } from '@/entities/note/model/notes'
+import { openNotes, type NoteCore as NotesCore } from '@numen/plugin-sdk'
 import type { Conflict } from './flush'
 
 /** The words this test puts its notes in. A screen has more; these are enough. */

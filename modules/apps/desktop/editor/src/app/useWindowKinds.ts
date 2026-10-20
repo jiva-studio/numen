@@ -15,6 +15,7 @@ import {
   type PluginServices,
 } from './pluginServices'
 import { createFileMakers, createVaultFiles } from './fileServices'
+import { createBufferHost } from './bufferHost'
 
 export type { WindowKindsDeps } from './kinds/deps'
 
@@ -65,9 +66,15 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     openFile: (path, title, line) => void tabOpeners.openFile(path, title, { where: 'here', line }),
   }
 
-  const made = createFileMakers({ core, tabOpeners, notes: editing.notes, writeMessage })
+  const made = createFileMakers({
+    core,
+    tabOpeners,
+    windowTabs: held,
+    notes: editing.notes,
+    writeMessage,
+  })
 
-  held.registerKinds([...editing.kinds, ...settings.kinds])
+  held.registerKinds(settings.kinds)
 
   const services: PluginServices = {
     workspace: createWorkspaceHost({
@@ -77,10 +84,13 @@ export function useWindowKinds(deps: WindowKindsDeps) {
       getNoteInFocus: getPlexTarget,
       ask: (text) => agents.askQuestion(text),
       writeMessage,
+      getMessageWriter: (name) => log.getWriter(name),
+      today: () => settings.dayBegins.day.value,
     }),
     notes: createVaultNotes({ core, search: core, making: editing.making }),
     files: createVaultFiles({ ...deps, made, making: editing.making }),
     agent: createAgentHost({ port: agentPort, ...deps }),
+    buffers: createBufferHost({ fileFlush: editing.fileFlush }),
   }
 
   return {

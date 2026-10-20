@@ -6,12 +6,7 @@
  * asked of the window drawn, since the palette is where a person meets it.
  */
 import { describe, expect, it } from 'vitest'
-import { type VueWrapper } from '@vue/test-utils'
-import { branch, pane, Palette, Tree, WorkspaceLayout, type PaletteGroup } from '@numen/ui'
-import { AgentTab } from '@plugins/view-agent-chat/frontend'
-import { DeckTab } from '@/pages/deck-editor'
-import { FilesTab, NEW_DECK, NEW_STENCIL } from '@plugins/view-file-tree/frontend'
-import { PlexTab, WORDS as plexWords } from '@plugins/view-plex-graph/frontend'
+// The mocked modules stand before the plugins that reach them are imported.
 import {
   requests,
   cards,
@@ -27,6 +22,12 @@ import {
   settle,
   sourceAnswer,
 } from '@/testing/window'
+import { type VueWrapper } from '@vue/test-utils'
+import { branch, pane, Palette, Tree, WorkspaceLayout, type PaletteGroup } from '@numen/ui'
+import { AgentTab } from '@plugins/view-agent-chat/frontend'
+import { DeckTab } from '@plugins/flashcards-studio/frontend'
+import { FilesTab, NEW_DECK, NEW_STENCIL } from '@plugins/view-file-tree/frontend'
+import { PlexTab, WORDS as plexWords } from '@plugins/view-plex-graph/frontend'
 import { ERRORS, WORDS } from '@/shared/words'
 
 describe('the palette', () => {

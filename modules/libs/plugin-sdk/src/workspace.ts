@@ -76,6 +76,12 @@ export interface OpenFileOptions {
 }
 
 // WorkspaceHost is the window a plugin's tabs are drawn in.
+// MessageKind is what a message of the window says: what did not happen, what is worth reading, what a command did, or what is so until something else makes it not so.
+export type MessageKind = 'error' | 'caution' | 'report' | 'state'
+
+// MessageWriter writes one message under a name of its own, replacing what that name wrote last.
+export type MessageWriter = (text: string, kind?: MessageKind) => void
+
 export interface WorkspaceHost {
   // Whether the vault can be read; false while the window says it cannot.
   readonly isReady: Readonly<Ref<boolean>>
@@ -103,6 +109,10 @@ export interface WorkspaceHost {
   // A question for the agent, put in front of the person.
   ask(text: string): void
   showError(text: string): void
+  // A writer of messages under the name given.
+  getMessageWriter(name: string): MessageWriter
+  // The day it is for the person now, as the hour their day begins at puts it.
+  getToday(): string
   // The window's commands over one row of the vault, in the order a menu draws them.
   getPathCommands(row: PathMenuRow): readonly MenuEntry[]
   // A command of the window, run over a file and the others selected with it.
@@ -170,6 +180,13 @@ export interface PathRename {
 // getFileName says what a file is filed as: the last segment of its vault path.
 export function getFileName(path: string): string {
   return path.split('/').pop() ?? path
+}
+
+// getFileStem says what a file is called without its ending, which is what a link writes.
+export function getFileStem(path: string): string {
+  const file = getFileName(path)
+  const dot = file.lastIndexOf('.')
+  return dot > 0 ? file.slice(0, dot) : file
 }
 
 // getRenamedPath says where a file went, and empty where none of the renames moved it.

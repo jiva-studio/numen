@@ -8,12 +8,10 @@ import {
   ArticleService,
   ArtifactService,
   BookService,
-  CardsService,
   DocumentService,
   FileService,
   NoteService,
   OcrService,
-  PresetsService,
   RecordingService,
   SearchService,
   SettingsService,
@@ -53,12 +51,6 @@ export const windowService = createClient(WindowService, transport)
 
 /** What a model has made from the files of the vault. */
 export const artifacts = createClient(ArtifactService, transport)
-
-/** The decks, the cards and the stencils a vault holds. */
-export const cardsService = createClient(CardsService, transport)
-
-/** The presets a review is run under. */
-export const presetsService = createClient(PresetsService, transport)
 
 /** The recordings the vault holds, by their address and their duration. */
 export const recordings = createClient(RecordingService, transport)

@@ -48,6 +48,8 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     runCommand: (id, target) => void recorded.commands.push([id, target]),
     ask: (text) => void recorded.questions.push(text),
     showError: (text) => void recorded.errors.push(text),
+    getMessageWriter: () => () => {},
+    getToday: () => '2026-01-01',
     getPathCommands: () => [],
     runPathCommand: () => {},
     getCommandIcon: () => null,

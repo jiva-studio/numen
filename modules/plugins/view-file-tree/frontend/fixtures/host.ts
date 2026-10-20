@@ -90,6 +90,8 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
     runCommand: () => {},
     ask: () => {},
     showError: (text) => void recorded.errors.push(text),
+    getMessageWriter: () => () => {},
+    getToday: () => '2026-01-01',
     runPathCommand: (id, target) => void recorded.commands.push([id, target]),
     ...drawing,
   }

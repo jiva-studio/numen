@@ -1,10 +1,9 @@
 /**
  * File tree and filesystem domain methods for the window core.
  */
-import { asFailure, asValue } from '@numen/wire'
+import { asFailure, asValue, findErrorCode } from '@numen/wire'
 import { files } from '@/shared/clients'
 import { mapBookFormat, mapEntry, mapMoveResult, mapNoteType, mapSourceKind } from './words'
-import { findErrorCode } from '@/shared/answers'
 import type { FilePort } from '@/app/ports/files'
 import type { NotePort } from '@/app/ports/notes'
 

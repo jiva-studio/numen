@@ -3,7 +3,7 @@
  * answer to the latest question alone.
  */
 import { getCurrentScope, onScopeDispose, ref, shallowRef } from 'vue'
-import { createAnswerGuard, type AnswerGuard, type Question } from './questions'
+import { createAnswerGuard, type AnswerGuard, type Question } from '@numen/plugin-sdk'
 
 /** How long a keystroke waits before anything is asked. */
 export const SEARCH_DEBOUNCE_MS = 120

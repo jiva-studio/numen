@@ -5,7 +5,7 @@
  * stops, so the window waits on exactly what is still to be settled.
  */
 import { watch } from 'vue'
-import { parseFileConflict } from '../lib/states'
+import { parseFileConflict } from '@numen/plugin-sdk'
 import type { Conflict } from './flush'
 
 /** The notes of a window, each under the identity its tab opened under. */
@@ -22,10 +22,11 @@ export interface ConflictRaiser {
   raise(one: Conflict): () => void
 }
 
-export function raiseConflicts(notes: Notes, raiser: ConflictRaiser) {
+/** Raises the conflicts of the notes, and answers what stops raising them and drops those still raised. */
+export function raiseConflicts(notes: Notes, raiser: ConflictRaiser): () => void {
   const raised = new Map<string, () => void>()
 
-  watch(
+  const stopWatching = watch(
     () =>
       notes.getOpenIds().filter((id) => {
         const c = parseFileConflict(notes.getOpenNote(id).state)
@@ -50,4 +51,10 @@ export function raiseConflicts(notes: Notes, raiser: ConflictRaiser) {
       }
     },
   )
+
+  return () => {
+    stopWatching()
+    for (const drop of raised.values()) drop()
+    raised.clear()
+  }
 }

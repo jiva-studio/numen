@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createCommandDeps, type CommandDepsOptions } from './commandDeps'
 import { running } from '@/entities/artifact'
-import { WORDS as cardWords } from '@/entities/deck'
 import { useSettings } from './useSettings'
 import { WORDS } from '@/shared/words'
 import type { Model } from '@/entities/settings'
@@ -232,13 +231,13 @@ describe('the commands reach the window', () => {
     expect(loaded).toStrictEqual(['video.md'])
   })
 
-  it('makes a stencil with one field, and every other file as the makers make it', async () => {
+  it('makes every file as the makers make it', async () => {
     const { deps, calls } = createOptions()
 
     expect(await deps.makers.createStencil('stencils', 'Animal')).toBe('stencilled')
     expect(await deps.makers.createDeck('decks', 'Animals')).toBe('decked')
     expect(calls).toStrictEqual([
-      ['createStencil', 'stencils', 'Animal', [cardWords.newField]],
+      ['createStencil', 'stencils', 'Animal'],
       ['createDeck', 'decks', 'Animals'],
     ])
   })

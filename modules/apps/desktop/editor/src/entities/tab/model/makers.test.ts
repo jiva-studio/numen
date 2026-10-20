@@ -27,8 +27,8 @@ const maker = (
       asked.push(`deck ${folder || '—'} ${title}`)
       return answer(`${folder}/${title}.md`)
     },
-    createStencil: (title, folder, fields) => {
-      asked.push(`stencil ${folder || '—'} ${title} ${fields.join(',')}`)
+    createStencil: (title, folder) => {
+      asked.push(`stencil ${folder || '—'} ${title}`)
       return answer(`${folder}/${title}.md`)
     },
     createPreset: (title, folder) => {
@@ -57,12 +57,12 @@ describe('a deck, a stencil or a preset made', () => {
     const made = createCreators(vault)
 
     await made.createFile('deck', 'zoology', 'Animals')
-    await made.createFile('stencil', 'zoology', { name: 'Words', fields: ['Front'] })
+    await made.createFile('stencil', 'zoology', 'Words')
     await made.createFile('preset', '', 'Slow')
 
     expect(vault.asked).toStrictEqual([
       'deck zoology Animals',
-      'stencil zoology Words Front',
+      'stencil zoology Words',
       'preset — Slow',
     ])
   })
@@ -82,7 +82,7 @@ describe('a deck, a stencil or a preset made', () => {
     const made = createCreators(maker(), tabOpeners)
 
     await made.createDeck('zoology', 'Animals')
-    await made.createStencil('zoology', 'Words', ['Front'])
+    await made.createStencil('zoology', 'Words')
     await made.createPreset('', 'Slow')
 
     expect(opened).toStrictEqual([
@@ -110,15 +110,6 @@ describe('a deck, a stencil or a preset made', () => {
     expect(told.said.join(' ')).toContain('numen did not answer')
   })
 
-  it('is asked of the vault with no fields where none were given', async () => {
-    const vault = maker()
-    const made = createCreators(vault)
-
-    await made.createFile('stencil', 'zoology', 'Words')
-
-    expect(vault.asked).toStrictEqual(['stencil zoology Words '])
-  })
-
   it('says what the vault refused as an error', async () => {
     const told = writer()
     const made = createCreators(maker('occupied'), undefined, told.write)
@@ -135,6 +126,20 @@ describe('a deck, a stencil or a preset made', () => {
     await made.createFile('deck', 'zoology', 'Animals')
 
     expect(told.told.map((one) => one.kind)).toStrictEqual(['error'])
+  })
+})
+
+describe('a file nothing offers to make', () => {
+  it('answers nothing, opens nothing and writes nothing of its own, the creator having said why', async () => {
+    const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
+    const opened: string[] = []
+    tabOpeners.registerEditor('deck', (path) => opened.push(path))
+    const told = writer()
+    const made = createCreators({ createDeck: async () => null }, tabOpeners, told.write)
+
+    expect(await made.createDeck('zoology', 'Animals')).toBe('')
+    expect(opened).toStrictEqual([])
+    expect(told.said).toStrictEqual([])
   })
 })
 

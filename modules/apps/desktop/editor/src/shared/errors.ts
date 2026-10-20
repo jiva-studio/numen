@@ -1,15 +1,2 @@
 /** The error code a vault operation answers with. */
-export type ErrorCode =
-  | 'missing'
-  | 'notANote'
-  | 'notText'
-  | 'tooLarge'
-  | 'bodyUnwritable'
-  | 'unreadable'
-  | 'occupied'
-  | 'unnameable'
-  | 'notAStencil'
-  | 'notADeck'
-  | 'deckTooLarge'
-  | 'notAPreset'
-  | 'unreachable'
+export type { ErrorCode } from '@numen/wire'
