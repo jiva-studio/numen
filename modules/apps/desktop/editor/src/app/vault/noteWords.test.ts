@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
-import { ErrorCode, GetNeighbourhoodResponseSchema, NoteType, Relation } from '@numen/protocol'
+import { ErrorCode, GetNeighbourhoodResponseSchema, Relation } from '@numen/protocol'
 import { asFailure, asValue } from '@numen/wire'
 import { mapNeighbourhood, mapNoteResult, mapWriteResult } from './noteWords'
 
@@ -59,11 +59,11 @@ describe('mapNeighbourhood', () => {
   it('carries the focus, and every neighbour that has a relation and a note', () => {
     const answer = create(GetNeighbourhoodResponseSchema, {
       focus: { path: 'Here.md', title: 'Here' },
-      focusType: NoteType.DECK,
+      focusType: 'deck',
       related: [
         {
           note: { path: 'Up.md', title: 'Up' },
-          type: NoteType.PRESET,
+          type: 'preset',
           relation: Relation.PARENT,
           label: 'part of',
           reverseLabel: 'holds',

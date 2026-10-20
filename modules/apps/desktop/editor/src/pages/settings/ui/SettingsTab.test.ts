@@ -123,14 +123,9 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
     chooseHeadings: (count) => {
       done.push(`headings ${count}`)
     },
-    dayStartTime: ref('04:00'),
-    latestDayStartTime: ref('12:00'),
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
     retryPlugin: vi.fn(),
-    chooseDayStartTime: (hour) => {
-      done.push(`day starts ${hour}`)
-    },
   }
   const tab = mount(SettingsTab, {
     props: { state: { installation } },
@@ -183,7 +178,6 @@ describe('the settings tab', () => {
     expect(headings).toStrictEqual([
       words.window,
       words.naming,
-      words.review,
       words.transcription,
       words.ocr,
       words.performance,
@@ -368,19 +362,6 @@ describe('the settings tab', () => {
     })
     await openMenu(tab, 'settings-ocr-proofread')
     expect(getMenuItems()).toStrictEqual([words.proofreadingNone, 'careful', 'quick'])
-  })
-
-  it('opens on the hour the settings begin a day of review at', () => {
-    const { tab } = createTab()
-    const hour = tab.get('[data-slot="time-field"]').element as HTMLInputElement
-    expect(hour.value).toBe('04:00')
-    expect(tab.text()).toContain(words.dayStartTime)
-  })
-
-  it('writes the hour a day of review begins at', async () => {
-    const { tab, done } = createTab()
-    await tab.get('[data-slot="time-field"]').setValue('06:30')
-    expect(done).toStrictEqual(['day starts 06:30'])
   })
 
   it('names every row by what it is, without leaning on the row above', () => {

@@ -21,8 +21,6 @@ export type {
 } from './lib/configuration'
 export { DEFAULT_HEADINGS, ladder as nestingLadder } from './lib/nesting'
 export type { NestingSettings } from './lib/nesting'
-export { DEFAULT_STARTS, createReviewSetting } from './model/review'
-export type { ReviewSettings } from './model/review'
 export { getSettingAt, createSettingsStore } from './model/store'
 export { themes } from './api/theme'
 export type { Appearance, Bounds, Mode, Ranges, Scales, Sizes, Theme, Themes } from './api/theme'

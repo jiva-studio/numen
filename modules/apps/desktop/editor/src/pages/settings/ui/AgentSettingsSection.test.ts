@@ -92,12 +92,9 @@ const createSection = (file: Record<string, unknown> = {}, defaultUse = 'claude'
     headings: ref(1),
     headingsBounds: ref({ least: 1, most: 6 }),
     chooseHeadings: vi.fn(),
-    dayStartTime: ref('04:00'),
-    latestDayStartTime: ref('12:00'),
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
     retryPlugin: vi.fn(),
-    chooseDayStartTime: vi.fn(),
     file: ref('/test/settings.json'),
     openFile: vi.fn(),
   }

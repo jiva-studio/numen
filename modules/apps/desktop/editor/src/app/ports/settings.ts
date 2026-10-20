@@ -1,7 +1,6 @@
 /** What the window asks of the vault about its settings. */
 import type { Configuration, SettingEdit } from '@/entities/settings'
 import type { NestingSettings } from '@/entities/settings'
-import type { ReviewSettings } from '@/entities/settings'
 
 export interface SettingsPort {
   /**
@@ -24,17 +23,6 @@ export interface SettingsPort {
    * and nothing where it was. A count left out stands as it is.
    */
   setNestingSettings(isNesting: boolean, headings?: number): Promise<string | null>
-  /**
-   * The hour a day of review begins at, on the clock on the wall, written as
-   * `04:00`, and how late in the day the vault takes one. An hour past that is
-   * refused.
-   */
-  getReviewSettings(): Promise<ReviewSettings>
-  /**
-   * That hour written into the settings file. What could not be written, and
-   * nothing where it was.
-   */
-  setReviewSettings(starts: string): Promise<string | null>
   /** Every setting as it stands, and the models the settings offer. */
   getSettings(): Promise<Configuration>
   /**

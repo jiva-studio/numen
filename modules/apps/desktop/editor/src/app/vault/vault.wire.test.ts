@@ -32,10 +32,10 @@ describe('a name the vault answers with', () => {
   it('is drawn as whichever of four the answer names', async () => {
     answerWith({
       found: [
-        { note: { path: 'Ants.md', title: 'Ants' }, at: [], type: 'NOTE_TYPE_UNSPECIFIED' },
-        { note: { path: 'Animals.md', title: 'Animals' }, at: [], type: 'NOTE_TYPE_DECK' },
-        { note: { path: 'Animal.md', title: 'Animal' }, at: [], type: 'NOTE_TYPE_STENCIL' },
-        { note: { path: 'Daily.md', title: 'Daily' }, at: [], type: 'NOTE_TYPE_PRESET' },
+        { note: { path: 'Ants.md', title: 'Ants' }, at: [], type: '' },
+        { note: { path: 'Animals.md', title: 'Animals' }, at: [], type: 'deck' },
+        { note: { path: 'Animal.md', title: 'Animal' }, at: [], type: 'stencil' },
+        { note: { path: 'Daily.md', title: 'Daily' }, at: [], type: 'preset' },
       ],
     })
 
@@ -48,7 +48,7 @@ describe('a name the vault answers with', () => {
   })
 
   it('is an ordinary note where the answer names a kind this window has no word for', async () => {
-    answerWith({ found: [{ note: { path: 'Later.md', title: 'Later' }, at: [], type: 9 }] })
+    answerWith({ found: [{ note: { path: 'Later.md', title: 'Later' }, at: [], type: 'later' }] })
 
     expect((await core.names('la', 8))[0]?.type).toBe('note')
   })
@@ -62,7 +62,7 @@ describe('a passage the vault answers with', () => {
           path: 'Daily.md',
           note: { path: 'Daily.md', title: 'Daily' },
           at: [],
-          type: 'NOTE_TYPE_PRESET',
+          type: 'preset',
         },
         { path: 'Ants.md', note: { path: 'Ants.md', title: 'Ants' }, at: [] },
       ],
@@ -116,7 +116,7 @@ describe('a neighbourhood the vault answers with', () => {
   it('is drawn around the note in focus, with each note in the relation it holds', async () => {
     answerWith({
       focus: { path: 'Rota.md', title: 'The rota' },
-      focusType: 'NOTE_TYPE_DECK',
+      focusType: 'deck',
       related: [
         {
           note: { path: 'Allotments.md', title: 'Allotments' },

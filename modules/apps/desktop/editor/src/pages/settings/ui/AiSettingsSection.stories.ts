@@ -93,9 +93,6 @@ const installation: Installation = {
   headings: ref(6),
   headingsBounds: ref({ least: 1, most: 12 }),
   chooseHeadings: fn(),
-  dayStartTime: ref('04:00'),
-  latestDayStartTime: ref('12:00'),
-  chooseDayStartTime: fn(),
 }
 
 /** The AI section and a plugin's own settings, at the width a story gives. */

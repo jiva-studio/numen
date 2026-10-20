@@ -133,7 +133,7 @@ describe('files domain', () => {
     expect(removed.ok && removed.value.trashed).toBe(true)
 
     asked.listFiles.mockResolvedValue({
-      entries: [{ path: 'test.md', name: 'test.md', isFolder: false, kind: 1, type: 1 }],
+      entries: [{ path: 'test.md', name: 'test.md', isFolder: false, kind: 1, type: 'note' }],
     })
     const listing = await core.list('')
     expect(listing.length).toBe(1)
@@ -150,7 +150,7 @@ describe('files domain', () => {
     expect(url.ok ? url.value.path : null).toBe('url.md')
 
     asked.listFileKinds.mockResolvedValue({
-      kinds: [{ path: 'book.epub', kind: 2, type: 1, format: 2 }],
+      kinds: [{ path: 'book.epub', kind: 2, type: 'note', format: 2 }],
     })
     const kinds = await core.fileKinds(['book.epub'])
     expect(kinds.get('book.epub')?.format).toBe('epub')
@@ -158,18 +158,15 @@ describe('files domain', () => {
 })
 
 describe('settings domain', () => {
-  it('handles the sync, nesting, settings, settings-file and review settings', async () => {
+  it('handles the sync, nesting, settings, and settings-file', async () => {
     const writtenSettings = JSON.stringify({
       naming: { sync_title_and_filename: true },
       appearance: { nest_headings_under_notes: true, nested_heading_limit: 3 },
-      review: { day_start_time: '04:00' },
     })
     asked.getSettings.mockResolvedValue({
       written: writtenSettings,
       models: [],
       nestedHeadingLimitBounds: { least: 1, most: 5 },
-      latestDayStartTime: '06:00',
-      day: '2026-09-10',
       path: 'settings.json',
     })
     asked.writeSettings.mockResolvedValue({})
@@ -192,10 +189,6 @@ describe('settings domain', () => {
     expect(file.written).toBe('raw')
     const saved = await core.saveSettingsFile('raw2', null)
     expect(saved.isChanged).toBe(false)
-
-    const rev = await core.getReviewSettings()
-    expect(rev.starts).toBe('04:00')
-    expect(await core.setReviewSettings('05:00')).toBeNull()
   })
 })
 

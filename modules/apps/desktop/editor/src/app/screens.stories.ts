@@ -159,8 +159,6 @@ const INSTALLATION: Installation = {
   chooseHeadings: () => {
     DONE.push('headings')
   },
-  dayStartTime: ref('04:00'),
-  latestDayStartTime: ref('12:00'),
   writeSecret: () => {
     DONE.push('key')
   },
@@ -169,9 +167,6 @@ const INSTALLATION: Installation = {
   },
   retryPlugin: () => {
     DONE.push('plugin retried')
-  },
-  chooseDayStartTime: (time) => {
-    DONE.push(`day ${time}`)
   },
   getSetting: () => undefined,
   getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),

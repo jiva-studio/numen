@@ -3,7 +3,6 @@
  */
 import {
   NameSource,
-  NoteType as NoteTypes,
   Role as Roles,
   Relation as Relations,
 } from '@numen/protocol'
@@ -62,15 +61,11 @@ export const relationByWire: Record<Relations, NoteRelation | null> = {
   [Relations.SIBLING]: 'sibling',
 }
 
-/** Which of four a note is, in the words the window uses. */
-const typed: Record<NoteTypes, NoteType> = {
-  [NoteTypes.UNSPECIFIED]: 'note',
-  [NoteTypes.DECK]: 'deck',
-  [NoteTypes.STENCIL]: 'stencil',
-  [NoteTypes.PRESET]: 'preset',
-}
+const noteTypes: readonly NoteType[] = ['note', 'deck', 'stencil', 'preset']
 
-export const mapNoteType = (of: NoteTypes): NoteType => typed[of] ?? 'note'
+/** Which of four a note is, in the words the window uses. */
+export const mapNoteType = (of: string): NoteType =>
+  noteTypes.find((one) => one === of) ?? 'note'
 
 /** A run of text, kept as the plain pair the window carries it as. */
 export const run = (span: { from: number; to: number }) => ({ from: span.from, to: span.to })
