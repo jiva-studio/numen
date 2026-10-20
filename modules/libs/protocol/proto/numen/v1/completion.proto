@@ -27,6 +27,8 @@ message HostServiceCompleteResponse {
   CompletionAnswer answer = 1;
   // Set when the call was served and refused. The answer is then unset.
   CompletionErrorCode error = 2;
+  // Why the call was refused, as the host states it. Empty where the host has nothing to add.
+  string detail = 3;
 }
 
 // CompletionQuestion is what a plugin asks of a model.

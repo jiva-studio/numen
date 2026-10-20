@@ -194,12 +194,14 @@ func TestAHeaderThatIsNoBearerTokenIsRefused(t *testing.T) {
 // A call that was served and refused answers with the code, not with a status.
 func TestARefusedCompletionAnswersWithItsCode(t *testing.T) {
 	for _, one := range []struct {
-		name string
-		err  error
-		want v1.CompletionErrorCode
+		name   string
+		err    error
+		want   v1.CompletionErrorCode
+		detail string
 	}{
-		{"no route", fmt.Errorf("%w %q", port.ErrNoRoute, "p"), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE},
-		{"unreachable", fmt.Errorf("agent: %w", port.ErrUnavailable), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE},
+		{"no route", fmt.Errorf("%w: the program %q is not installed", port.ErrNoRoute, "p"), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE, `the program "p" is not installed`},
+		{"unreachable", fmt.Errorf("agent: %w", port.ErrUnavailable), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE, "agent: unavailable"},
+		{"stopped", fmt.Errorf("%w: the agent stopped: bad model", port.ErrUnavailable), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE, "the agent stopped: bad model"},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			fakeCallers := newCallers(completerFunc(func(context.Context, port.Question) (string, error) { return "", one.err }))
@@ -209,6 +211,9 @@ func TestARefusedCompletionAnswersWithItsCode(t *testing.T) {
 			}
 			if res.Msg.GetError() != one.want || res.Msg.GetAnswer() != nil {
 				t.Errorf("answered %v, want code %v and no answer", res.Msg, one.want)
+			}
+			if res.Msg.GetDetail() != one.detail {
+				t.Errorf("detail %q, want %q", res.Msg.GetDetail(), one.detail)
 			}
 		})
 	}

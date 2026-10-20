@@ -72,7 +72,7 @@ func TestTheRouteModelStandsOverTheSectionAndAnEmptyDefaultIsTheProgramsDefault(
 	host, one, _ := twoProviders(t)
 	completer, _ := serveCompletions(t, host, `{
 		"agent": {"alpha": {"model": "section-model"}},
-		"ai": {"default": {"model": "route-model"}}
+		"ai": {"default": {"model": "big"}}
 	}`)
 
 	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); err != nil {
@@ -80,7 +80,7 @@ func TestTheRouteModelStandsOverTheSectionAndAnEmptyDefaultIsTheProgramsDefault(
 	}
 
 	asked := one.getAsked()
-	if len(asked) != 1 || asked[0].GetAgent() != "alpha" || asked[0].GetModel() != "route-model" {
+	if len(asked) != 1 || asked[0].GetAgent() != "alpha" || asked[0].GetModel() != "big" {
 		t.Errorf("the tasks are %v", asked)
 	}
 }
@@ -146,13 +146,27 @@ func TestADefaultWrittenToTheSettingsAppliesToTheNextQuestion(t *testing.T) {
 		t.Fatalf("with a default that is not there: error = %v, want port.ErrNoRoute", err)
 	}
 
-	if err := os.WriteFile(path, []byte(`{"ai": {"default": {"agent": "alpha", "model": "m"}}}`), 0o600); err != nil {
+	if err := os.WriteFile(path, []byte(`{"ai": {"default": {"agent": "alpha", "model": "big"}}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); err != nil {
 		t.Fatal(err)
 	}
-	if asked := one.getAsked(); len(asked) != 1 || asked[0].GetModel() != "m" {
+	if asked := one.getAsked(); len(asked) != 1 || asked[0].GetModel() != "big" {
+		t.Errorf("the tasks are %v", asked)
+	}
+}
+
+// A model the program no longer lists is replaced by the one it answers with unasked.
+func TestAModelTheProgramNoLongerListsIsReplacedByItsDefault(t *testing.T) {
+	host, one, _ := twoProviders(t)
+	completer, _ := serveCompletions(t, host, `{"ai": {"default": {"agent": "alpha", "model": "retired"}}}`)
+
+	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); err != nil {
+		t.Fatal(err)
+	}
+
+	if asked := one.getAsked(); len(asked) != 1 || asked[0].GetModel() != "big" {
 		t.Errorf("the tasks are %v", asked)
 	}
 }
