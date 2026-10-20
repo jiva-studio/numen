@@ -92,7 +92,7 @@ func (b *EmbedderBridge) Embed(ctx context.Context, texts []string) ([][]float32
 
 	resp, err := client.EmbedBatch(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("embed batch rpc: %w", err)
+		return nil, readRPCError("embed batch rpc", err)
 	}
 
 	protoVectors := resp.Msg.GetVectors()

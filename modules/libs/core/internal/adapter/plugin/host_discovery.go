@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"reflect"
 )
@@ -98,6 +99,9 @@ func (h *Host) registerSupervisorLocked(p DiscoveredPlugin) {
 		memLimit = p.Manifest.Lifecycle.MemoryLimitBytes
 	}
 	sup.SetMemoryLimit(memLimit)
+	sup.SetOnMemoryExceeded(func() {
+		h.reportError(fmt.Errorf("plugin %s was stopped: it used more than %d bytes of memory", id, memLimit))
+	})
 }
 
 // retirePlugin stops a plugin whose manifest changed or vanished and forgets its supervisor once it is unregistered.
