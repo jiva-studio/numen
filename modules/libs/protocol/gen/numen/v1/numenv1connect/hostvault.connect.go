@@ -69,6 +69,9 @@ const (
 	// HostVaultServiceGetNoteTypesProcedure is the fully-qualified name of the HostVaultService's
 	// GetNoteTypes RPC.
 	HostVaultServiceGetNoteTypesProcedure = "/numen.v1.HostVaultService/GetNoteTypes"
+	// HostVaultServiceGetNamedPathsProcedure is the fully-qualified name of the HostVaultService's
+	// GetNamedPaths RPC.
+	HostVaultServiceGetNamedPathsProcedure = "/numen.v1.HostVaultService/GetNamedPaths"
 	// HostVaultServiceGetPathsOfTypeProcedure is the fully-qualified name of the HostVaultService's
 	// GetPathsOfType RPC.
 	HostVaultServiceGetPathsOfTypeProcedure = "/numen.v1.HostVaultService/GetPathsOfType"
@@ -143,6 +146,8 @@ type HostVaultServiceClient interface {
 	GetNoteRefs(context.Context, *connect.Request[v1.GetNoteRefsRequest]) (*connect.Response[v1.GetNoteRefsResponse], error)
 	// GetNoteTypes says what type each note at the paths given is.
 	GetNoteTypes(context.Context, *connect.Request[v1.GetNoteTypesRequest]) (*connect.Response[v1.GetNoteTypesResponse], error)
+	// GetNamedPaths lists the notes filed under a name.
+	GetNamedPaths(context.Context, *connect.Request[v1.GetNamedPathsRequest]) (*connect.Response[v1.GetNamedPathsResponse], error)
 	// GetPathsOfType lists the notes of a type.
 	GetPathsOfType(context.Context, *connect.Request[v1.GetPathsOfTypeRequest]) (*connect.Response[v1.GetPathsOfTypeResponse], error)
 	// GetLinks lists the links written in a note, with what each reaches now.
@@ -259,6 +264,12 @@ func NewHostVaultServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(hostVaultServiceMethods.ByName("GetNoteTypes")),
 			connect.WithClientOptions(opts...),
 		),
+		getNamedPaths: connect.NewClient[v1.GetNamedPathsRequest, v1.GetNamedPathsResponse](
+			httpClient,
+			baseURL+HostVaultServiceGetNamedPathsProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("GetNamedPaths")),
+			connect.WithClientOptions(opts...),
+		),
 		getPathsOfType: connect.NewClient[v1.GetPathsOfTypeRequest, v1.GetPathsOfTypeResponse](
 			httpClient,
 			baseURL+HostVaultServiceGetPathsOfTypeProcedure,
@@ -348,6 +359,7 @@ type hostVaultServiceClient struct {
 	scanFiles          *connect.Client[v1.ScanFilesRequest, v1.ScanFilesResponse]
 	getNoteRefs        *connect.Client[v1.GetNoteRefsRequest, v1.GetNoteRefsResponse]
 	getNoteTypes       *connect.Client[v1.GetNoteTypesRequest, v1.GetNoteTypesResponse]
+	getNamedPaths      *connect.Client[v1.GetNamedPathsRequest, v1.GetNamedPathsResponse]
 	getPathsOfType     *connect.Client[v1.GetPathsOfTypeRequest, v1.GetPathsOfTypeResponse]
 	getLinks           *connect.Client[v1.GetLinksRequest, v1.GetLinksResponse]
 	getBacklinks       *connect.Client[v1.GetBacklinksRequest, v1.GetBacklinksResponse]
@@ -420,6 +432,11 @@ func (c *hostVaultServiceClient) GetNoteRefs(ctx context.Context, req *connect.R
 // GetNoteTypes calls numen.v1.HostVaultService.GetNoteTypes.
 func (c *hostVaultServiceClient) GetNoteTypes(ctx context.Context, req *connect.Request[v1.GetNoteTypesRequest]) (*connect.Response[v1.GetNoteTypesResponse], error) {
 	return c.getNoteTypes.CallUnary(ctx, req)
+}
+
+// GetNamedPaths calls numen.v1.HostVaultService.GetNamedPaths.
+func (c *hostVaultServiceClient) GetNamedPaths(ctx context.Context, req *connect.Request[v1.GetNamedPathsRequest]) (*connect.Response[v1.GetNamedPathsResponse], error) {
+	return c.getNamedPaths.CallUnary(ctx, req)
 }
 
 // GetPathsOfType calls numen.v1.HostVaultService.GetPathsOfType.
@@ -518,6 +535,8 @@ type HostVaultServiceHandler interface {
 	GetNoteRefs(context.Context, *connect.Request[v1.GetNoteRefsRequest]) (*connect.Response[v1.GetNoteRefsResponse], error)
 	// GetNoteTypes says what type each note at the paths given is.
 	GetNoteTypes(context.Context, *connect.Request[v1.GetNoteTypesRequest]) (*connect.Response[v1.GetNoteTypesResponse], error)
+	// GetNamedPaths lists the notes filed under a name.
+	GetNamedPaths(context.Context, *connect.Request[v1.GetNamedPathsRequest]) (*connect.Response[v1.GetNamedPathsResponse], error)
 	// GetPathsOfType lists the notes of a type.
 	GetPathsOfType(context.Context, *connect.Request[v1.GetPathsOfTypeRequest]) (*connect.Response[v1.GetPathsOfTypeResponse], error)
 	// GetLinks lists the links written in a note, with what each reaches now.
@@ -630,6 +649,12 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 		connect.WithSchema(hostVaultServiceMethods.ByName("GetNoteTypes")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostVaultServiceGetNamedPathsHandler := connect.NewUnaryHandler(
+		HostVaultServiceGetNamedPathsProcedure,
+		svc.GetNamedPaths,
+		connect.WithSchema(hostVaultServiceMethods.ByName("GetNamedPaths")),
+		connect.WithHandlerOptions(opts...),
+	)
 	hostVaultServiceGetPathsOfTypeHandler := connect.NewUnaryHandler(
 		HostVaultServiceGetPathsOfTypeProcedure,
 		svc.GetPathsOfType,
@@ -728,6 +753,8 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 			hostVaultServiceGetNoteRefsHandler.ServeHTTP(w, r)
 		case HostVaultServiceGetNoteTypesProcedure:
 			hostVaultServiceGetNoteTypesHandler.ServeHTTP(w, r)
+		case HostVaultServiceGetNamedPathsProcedure:
+			hostVaultServiceGetNamedPathsHandler.ServeHTTP(w, r)
 		case HostVaultServiceGetPathsOfTypeProcedure:
 			hostVaultServiceGetPathsOfTypeHandler.ServeHTTP(w, r)
 		case HostVaultServiceGetLinksProcedure:
@@ -807,6 +834,10 @@ func (UnimplementedHostVaultServiceHandler) GetNoteRefs(context.Context, *connec
 
 func (UnimplementedHostVaultServiceHandler) GetNoteTypes(context.Context, *connect.Request[v1.GetNoteTypesRequest]) (*connect.Response[v1.GetNoteTypesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.GetNoteTypes is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) GetNamedPaths(context.Context, *connect.Request[v1.GetNamedPathsRequest]) (*connect.Response[v1.GetNamedPathsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.GetNamedPaths is not implemented"))
 }
 
 func (UnimplementedHostVaultServiceHandler) GetPathsOfType(context.Context, *connect.Request[v1.GetPathsOfTypeRequest]) (*connect.Response[v1.GetPathsOfTypeResponse], error) {

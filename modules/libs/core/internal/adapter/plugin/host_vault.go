@@ -93,14 +93,16 @@ func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 const noVault = v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT
 
 func writeFingerprint(f domain.Fingerprint) *v1.HostFingerprint {
-	return &v1.HostFingerprint{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano()}
+	return &v1.HostFingerprint{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), Kind: string(f.Kind)}
 }
 
 func readFingerprint(f *v1.HostFingerprint) domain.Fingerprint {
 	if f == nil {
 		return domain.Fingerprint{}
 	}
-	return domain.Fingerprint{Path: f.GetPath(), Size: f.GetSize(), ModTime: time.Unix(0, f.GetModTime())}
+	return domain.Fingerprint{
+		Path: f.GetPath(), Kind: domain.SourceKind(f.GetKind()), Size: f.GetSize(), ModTime: time.Unix(0, f.GetModTime()),
+	}
 }
 
 func writeLink(l domain.ResolvedLink) *v1.HostLink {
@@ -392,6 +394,24 @@ func (e *vaultEndpoint) GetNoteTypes(
 		types[path] = string(one)
 	}
 	return connect.NewResponse(&v1.GetNoteTypesResponse{Types: types}), nil
+}
+
+func (e *vaultEndpoint) GetNamedPaths(
+	ctx context.Context, req *connect.Request[v1.GetNamedPathsRequest],
+) (*connect.Response[v1.GetNamedPathsResponse], error) {
+	_, vault, err := e.begin(req.Header(), port.PermissionVaultRead)
+	if err != nil {
+		return nil, err
+	}
+	if vault == nil {
+		return connect.NewResponse(&v1.GetNamedPathsResponse{Error: noVault}), nil
+	}
+	paths, err := vault.GetNamedPaths(ctx, req.Msg.GetName())
+	code, err := answer(ctx, err)
+	if err != nil || code != 0 {
+		return connect.NewResponse(&v1.GetNamedPathsResponse{Error: code}), err
+	}
+	return connect.NewResponse(&v1.GetNamedPathsResponse{Paths: paths}), nil
 }
 
 func (e *vaultEndpoint) GetPathsOfType(

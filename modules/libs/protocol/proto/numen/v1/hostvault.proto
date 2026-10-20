@@ -64,6 +64,9 @@ service HostVaultService {
   // GetNoteTypes says what type each note at the paths given is.
   rpc GetNoteTypes(GetNoteTypesRequest) returns (GetNoteTypesResponse);
 
+  // GetNamedPaths lists the notes filed under a name.
+  rpc GetNamedPaths(GetNamedPathsRequest) returns (GetNamedPathsResponse);
+
   // GetPathsOfType lists the notes of a type.
   rpc GetPathsOfType(GetPathsOfTypeRequest) returns (GetPathsOfTypeResponse);
 
@@ -145,6 +148,8 @@ message HostFingerprint {
   int64 size = 2;
   // Nanoseconds since the epoch.
   int64 mod_time = 3;
+  // What sort of source the file is: note, book, recording or url.
+  string kind = 4;
 }
 
 message ListHostVaultsRequest {}
@@ -279,6 +284,15 @@ message GetNoteTypesResponse {
   HostVaultErrorCode error = 1;
   // The type of each note, by its path. A path with no note is left out.
   map<string, string> types = 2;
+}
+
+message GetNamedPathsRequest {
+  string name = 1;
+}
+
+message GetNamedPathsResponse {
+  HostVaultErrorCode error = 1;
+  repeated string paths = 2;
 }
 
 message GetPathsOfTypeRequest {

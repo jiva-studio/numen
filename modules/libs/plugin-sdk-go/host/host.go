@@ -11,6 +11,7 @@ import (
 	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/edit"
 )
 
 var (
@@ -19,7 +20,7 @@ var (
 	// ErrOutside is what a path that does not stay in the vault gets.
 	ErrOutside = errors.New("host: not a path inside the vault")
 	// ErrStale is what a write gets when the file changed since the baseline.
-	ErrStale = errors.New("host: the file changed since it was read")
+	ErrStale = edit.ErrStale
 	// ErrOccupied is what a create gets when a file is already there.
 	ErrOccupied = errors.New("host: a file is already there")
 	// ErrHeldByAnother is what a name gets when another program holds the file.
@@ -27,7 +28,7 @@ var (
 	// ErrNoDataFolder is what a data call gets when the manifest names no data folder.
 	ErrNoDataFolder = errors.New("host: the manifest names no data folder")
 	// ErrNotANote is what a path gets when the file is not a note the vault holds.
-	ErrNotANote = errors.New("host: not a note this vault holds")
+	ErrNotANote = edit.ErrNotANote
 	// ErrUnknownVault is what a call gets when it names a vault the installation does not know.
 	ErrUnknownVault = errors.New("host: no such vault")
 	// ErrNotExist is fs.ErrNotExist: a file, a note or a name that is not there.
@@ -96,6 +97,7 @@ type Vault interface {
 
 	GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error)
 	GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error)
+	GetNamedPaths(ctx context.Context, name string) ([]string, error)
 	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 	GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error)
 	GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)

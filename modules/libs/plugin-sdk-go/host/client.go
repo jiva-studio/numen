@@ -99,11 +99,13 @@ func readFingerprint(f *v1.HostFingerprint) domain.Fingerprint {
 	if f == nil {
 		return domain.Fingerprint{}
 	}
-	return domain.Fingerprint{Path: f.GetPath(), Size: f.GetSize(), ModTime: time.Unix(0, f.GetModTime())}
+	return domain.Fingerprint{
+		Path: f.GetPath(), Kind: domain.SourceKind(f.GetKind()), Size: f.GetSize(), ModTime: time.Unix(0, f.GetModTime()),
+	}
 }
 
 func writeFingerprint(f domain.Fingerprint) *v1.HostFingerprint {
-	return &v1.HostFingerprint{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano()}
+	return &v1.HostFingerprint{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), Kind: string(f.Kind)}
 }
 
 func readLink(l *v1.HostLink) domain.ResolvedLink {
@@ -234,6 +236,17 @@ func (c *Client) GetTypes(ctx context.Context, paths []string) (map[string]domai
 		out[path] = domain.NoteType(noteType)
 	}
 	return out, nil
+}
+
+func (c *Client) GetNamedPaths(ctx context.Context, name string) ([]string, error) {
+	res, err := c.rpc.GetNamedPaths(ctx, request(c, &v1.GetNamedPathsRequest{Name: name}))
+	if err != nil {
+		return nil, readError(err)
+	}
+	if err := fail(res.Msg.GetError()); err != nil {
+		return nil, err
+	}
+	return res.Msg.GetPaths(), nil
 }
 
 func (c *Client) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {

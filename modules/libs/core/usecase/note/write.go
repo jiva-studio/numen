@@ -2,44 +2,39 @@ package note
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/edit"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
 )
 
 // ErrTooLarge is what a note over MaxBytes gets. Nothing is written. The bound
 // is measured against the whole file about to be stored, which is what a read
 // measures.
-var ErrTooLarge = errors.New("this is more text than a note is written with")
+var ErrTooLarge = edit.ErrTooLarge
 
 // CheckSize holds a file to the most it may be: its frontmatter and its prose
 // together, as they are about to go to disk. Zero holds it to nothing.
 func CheckSize(path string, size, bound int) error {
-	if bound <= 0 || size <= bound {
-		return nil
-	}
-	return fmt.Errorf("write %s: %w: %d bytes, and %d is the most",
-		path, ErrTooLarge, size, bound)
+	return edit.CheckSize(path, size, bound)
 }
 
 // ErrBodyUnwritable is a body that opens with the frontmatter delimiter.
-var ErrBodyUnwritable = markdown.ErrBodyUnwritable
+var ErrBodyUnwritable = edit.ErrBodyUnwritable
 
 // ErrUnreadable is a note whose frontmatter is not YAML. A write discovers it
 // on the way past and leaves the file alone: repairing the block means guessing
 // at what the person wrote.
-var ErrUnreadable = markdown.ErrUnreadable
+var ErrUnreadable = edit.ErrUnreadable
 
 // ErrInline, ErrUnterminated and ErrAnchored are frontmatter one key cannot be
 // changed in: a block written on one line, a block that is never closed, and a
 // block carrying a YAML anchor. Such a note is left alone.
 var (
-	ErrInline       = markdown.ErrInline
-	ErrUnterminated = markdown.ErrUnterminated
-	ErrAnchored     = markdown.ErrAnchored
+	ErrInline       = edit.ErrInline
+	ErrUnterminated = edit.ErrUnterminated
+	ErrAnchored     = edit.ErrAnchored
 )
 
 // Write replaces the prose of a note and leaves its frontmatter alone.
@@ -60,10 +55,6 @@ type Write struct {
 	// told where nobody is drawing the note.
 	Drawing TellEdit
 }
-
-// Levels brings the named notes up to date in the index, so that what a write
-// changed is findable before the write is reported done.
-type Levels func(ctx context.Context, v domain.Vault, paths []string) error
 
 // NewWrite is the writer a note somebody is saving goes to disk through: the
 // vault it is read and written through, what brings it level in the index, and
@@ -134,32 +125,6 @@ func (u Write) Execute(
 		}
 		return nil
 	})
-}
-
-// Baseline is what a caller last saw of the note it is saving.
-//
-// Prose answers first: text that is still what the caller was given is the text
-// it read, whatever the file's size and time say. A synchroniser, a checkout
-// and a touch all move those over text that did not change, and comparing them
-// alone is what asks a person about a file nobody edited.
-//
-// Fingerprint answers for text that did move, and is what makes a save that
-// follows a save land: the note is at the fingerprint the last write produced,
-// so it is the note this caller put there.
-type Baseline struct {
-	// Prose is what a read gave this caller, with every line break as one \n.
-	Prose string
-	// Fingerprint is the file that read came out of.
-	Fingerprint domain.Fingerprint
-}
-
-// isStale reports whether the note in front of the writer holds prose this caller
-// has not read.
-func (s *Baseline) isStale(on domain.Fingerprint, prose string) bool {
-	if s == nil {
-		return false
-	}
-	return prose != s.Prose && !on.IsUnchanged(s.Fingerprint)
 }
 
 // Save puts body in the note at path, and makes the note where there is none.

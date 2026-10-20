@@ -6,12 +6,13 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/edit"
 )
 
 // ErrStale is what a write says when the file it was about to replace is no
 // longer the one the caller read. Nothing is written: a person editing their
 // own note outranks whatever was going to be put on top of it.
-var ErrStale = errors.New("the note changed since it was read")
+var ErrStale = edit.ErrStale
 
 // ErrOccupied is what a move says when something already sits where a note was
 // going. Nothing is moved.

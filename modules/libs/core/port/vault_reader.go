@@ -7,6 +7,7 @@ import (
 	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+	"github.com/jiva-studio/numen/modules/libs/notes/edit"
 )
 
 // ErrNotANote is what a path gets when there is a file at it and the vault does
@@ -16,7 +17,7 @@ import (
 // It is its own answer and not fs.ErrNotExist. A file that is there and a path
 // with nothing at it are different facts, and a caller acts on them
 // differently.
-var ErrNotANote = errors.New("not a note this vault holds")
+var ErrNotANote = edit.ErrNotANote
 
 // ErrOutside is what a path that does not stay in the vault gets. It is not
 // "no note": a caller asking for something outside has made a mistake worth

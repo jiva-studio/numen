@@ -163,7 +163,7 @@ func (v *Vault) Touch(paths ...string) {
 func (v *Vault) put(filePath string, content []byte) domain.Fingerprint {
 	v.clock = v.clock.Add(time.Second)
 	v.files[filePath] = content
-	at := domain.Fingerprint{Path: filePath, Size: int64(len(content)), ModTime: v.clock}
+	at := domain.Fingerprint{Path: filePath, Kind: domain.KindNote, Size: int64(len(content)), ModTime: v.clock}
 	v.at[filePath] = at
 	return at
 }
@@ -288,6 +288,22 @@ func (v *Vault) GetTypes(_ context.Context, paths []string) (map[string]domain.N
 			out[p] = t
 		}
 	}
+	return out, nil
+}
+
+func (v *Vault) GetNamedPaths(_ context.Context, name string) ([]string, error) {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	if err := v.gate(); err != nil {
+		return nil, err
+	}
+	var out []string
+	for p := range v.notes {
+		if domain.Basename(p) == name {
+			out = append(out, p)
+		}
+	}
+	sort.Strings(out)
 	return out, nil
 }
 

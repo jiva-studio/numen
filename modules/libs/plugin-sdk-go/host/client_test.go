@@ -232,3 +232,14 @@ func TestAWatchOfMovesBeginsAfterTheFirstMessage(t *testing.T) {
 	for range moves {
 	}
 }
+
+func TestAFingerprintKeepsWhatSortOfSourceTheFileIs(t *testing.T) {
+	a := &answering{}
+	baseline := domain.Fingerprint{Path: "n.md", Kind: domain.KindNote, Size: 3, ModTime: time.Unix(5, 6)}
+
+	_, _ = clientTo(t, a).Write(context.Background(), "n.md", []byte("abc"), baseline)
+
+	if len(a.baselines) != 1 || a.baselines[0].GetKind() != "note" {
+		t.Errorf("the host was sent %v", a.baselines)
+	}
+}

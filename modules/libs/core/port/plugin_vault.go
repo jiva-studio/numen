@@ -85,6 +85,7 @@ type PluginVault interface {
 
 	GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error)
 	GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error)
+	GetNamedPaths(ctx context.Context, name string) ([]string, error)
 	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 	GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error)
 	GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)

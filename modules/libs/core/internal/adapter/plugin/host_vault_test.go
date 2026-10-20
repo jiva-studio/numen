@@ -178,6 +178,17 @@ func (m *memoryVault) GetTypes(_ context.Context, paths []string) (map[string]do
 	return out, nil
 }
 
+func (m *memoryVault) GetNamedPaths(_ context.Context, name string) ([]string, error) {
+	var out []string
+	for path := range m.files {
+		if domain.Basename(path) == name {
+			out = append(out, path)
+		}
+	}
+	slices.Sort(out)
+	return out, nil
+}
+
 func (m *memoryVault) GetPathsOfType(_ context.Context, noteType domain.NoteType) ([]string, error) {
 	if noteType != "deck" {
 		return nil, nil
@@ -673,5 +684,25 @@ func TestAWatchOfMovesTellsThatSomethingMoved(t *testing.T) {
 
 	if !stream.Receive() {
 		t.Errorf("nothing was told of the move: %v", stream.Err())
+	}
+}
+
+func TestTheNotesFiledUnderANameAreListed(t *testing.T) {
+	client, _ := newVaultFixture(t)
+
+	res, err := client.GetNamedPaths(t.Context(), connect.NewRequest(&v1.GetNamedPathsRequest{Name: "Animal"}))
+
+	if err != nil || !slices.Equal(res.Msg.GetPaths(), []string{"Animal.md"}) {
+		t.Errorf("the paths were %v (%v)", res.Msg.GetPaths(), err)
+	}
+}
+
+func TestAFingerprintCarriesWhatSortOfSourceTheFileIs(t *testing.T) {
+	endpoint := writeFingerprint(domain.Fingerprint{Path: "B.epub", Kind: domain.KindBook, Size: 3, ModTime: time.Unix(5, 6)})
+
+	got := readFingerprint(endpoint)
+
+	if got.Kind != domain.KindBook || got.Path != "B.epub" || !got.ModTime.Equal(time.Unix(5, 6)) {
+		t.Errorf("got %+v", got)
 	}
 }

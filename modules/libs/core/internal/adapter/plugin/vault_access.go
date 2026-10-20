@@ -209,6 +209,14 @@ func (a Vault) GetTypes(ctx context.Context, paths []string) (map[string]domain.
 	return a.Notes.GetTypes(ctx, v.ID, paths)
 }
 
+func (a Vault) GetNamedPaths(ctx context.Context, name string) ([]string, error) {
+	v, err := a.open()
+	if err != nil {
+		return nil, err
+	}
+	return a.Notes.GetNamedPaths(ctx, v.ID, name)
+}
+
 func (a Vault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
 	v, err := a.open()
 	if err != nil {
