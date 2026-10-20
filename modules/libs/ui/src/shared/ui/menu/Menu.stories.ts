@@ -32,6 +32,7 @@ interface Knobs {
   hasGroups: boolean
   margin: number
   name: string
+  searchable?: boolean
   onChoose: (id: string) => void
   onDismiss: () => void
 }
@@ -89,6 +90,7 @@ const renderMenu = (args: Knobs) => ({
         :has-groups="args.hasGroups"
         :margin="args.margin"
         :name="args.name"
+        :searchable="args.searchable"
         @choose="args.onChoose"
         @dismiss="open = false; args.onDismiss()"
       >
@@ -335,7 +337,34 @@ export const FarTooMany: Story = {
   play: async () => {
     const menu = menuElement()!
     await expect(menu.getBoundingClientRect().bottom).toBeLessThanOrEqual(window.innerHeight)
+    await expect(menu.getBoundingClientRect().height).toBeLessThanOrEqual(24 * 16)
     await expect(menu.scrollHeight).toBeGreaterThan(menu.clientHeight)
+  },
+}
+
+/** The search line is a row of its own: the items scroll under it and never into it. */
+export const SearchStaysAboveTheList: Story = {
+  args: {
+    searchable: true,
+    hasGroups: true,
+    items: Array.from({ length: 60 }, (_, at) => ({
+      id: `item-${at}`,
+      text: `Something to do (${at + 1})`,
+      group: at < 30 ? 'First' : 'Second',
+    })),
+  },
+  play: async () => {
+    const menu = menuElement()!
+    const bar = menu.querySelector<HTMLElement>('.menu__bar')!
+    const first = menu.querySelector<HTMLElement>('.menu__group-name')!
+    await expect(first.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+      bar.getBoundingClientRect().bottom,
+    )
+    menu.scrollTop = 200
+    await expect(bar.getBoundingClientRect().top).toBeLessThanOrEqual(
+      menu.getBoundingClientRect().top + 8,
+    )
+    await expect(menu.getBoundingClientRect().height).toBeLessThanOrEqual(24 * 16)
   },
 }
 
