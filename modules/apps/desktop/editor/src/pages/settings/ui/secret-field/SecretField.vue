@@ -81,11 +81,16 @@ function onDelete() {
   display: flex;
   align-items: center;
   gap: var(--settings-near, 0.375rem);
+  min-inline-size: 0;
+  max-inline-size: 100%;
 }
 
 .settings__secret-input {
   box-sizing: border-box;
   inline-size: var(--settings-choice, 18rem);
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  max-inline-size: 24rem;
   padding: 0.25rem 0.5rem;
   background-color: var(--numen-surface, transparent);
   border: var(--numen-stroke, 1px) solid var(--numen-rule);

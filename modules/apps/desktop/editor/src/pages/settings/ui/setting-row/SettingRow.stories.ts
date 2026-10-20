@@ -100,3 +100,47 @@ export const TheNameStandsOutFromWhatItMeans: Story = {
     await expect(getComputedStyle(name).color).not.toBe(getComputedStyle(detail).color)
   },
 }
+
+/** A row whose control is wide, drawn at the width of a narrow window and of a wide one. */
+const wideControl = (width: string) => () => ({
+  components: { SettingRow },
+  template: `
+    <div class="numen" style="inline-size:${width};padding:1rem;background:var(--numen-surface)">
+      <SettingRow
+        v-slot="{ labelledBy }"
+        at="key"
+        name="Sample Agent: apiKey"
+        detail="Set. Stored in the system keychain and never shown again"
+      >
+        <input :aria-labelledby="labelledBy" style="inline-size:24rem;max-inline-size:100%" />
+      </SettingRow>
+    </div>
+  `,
+})
+
+/** Beside the text when there is room, and the text keeps its width. */
+export const WideControlBesideTheText: Story = {
+  render: wideControl('56rem'),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const name = canvas.getByText('Sample Agent: apiKey').getBoundingClientRect()
+    const control = canvas.getByRole('textbox').getBoundingClientRect()
+
+    await expect(control.left).toBeGreaterThanOrEqual(name.right)
+    await expect(control.width).toBeLessThanOrEqual(24 * 16 + 1)
+    await expect(name.width).toBeGreaterThanOrEqual(18 * 16 - 1)
+  },
+}
+
+/** Under the text when there is not, and the text keeps its width. */
+export const WideControlUnderTheText: Story = {
+  render: wideControl('26rem'),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const name = canvas.getByText('Sample Agent: apiKey').getBoundingClientRect()
+    const control = canvas.getByRole('textbox').getBoundingClientRect()
+
+    await expect(control.top).toBeGreaterThanOrEqual(name.bottom)
+    await expect(name.width).toBeGreaterThanOrEqual(18 * 16 - 1)
+  },
+}
