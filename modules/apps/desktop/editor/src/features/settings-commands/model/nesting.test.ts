@@ -262,3 +262,59 @@ describe('how many headings stand under a node', () => {
     })
   })
 })
+
+describe('a switch turned twice in quick succession', () => {
+  /** A vault whose writes are answered by hand, in the order a test chooses. */
+  const slowVault = () => {
+    const answers: ((failure: string | null) => void)[] = []
+    return {
+      answers,
+      getNestingSettings: async () => ({ isNesting: true, headings: 6, least: 1, most: 12 }),
+      setNestingSettings: () =>
+        new Promise<string | null>((resolve) => {
+          answers.push(resolve)
+        }),
+    }
+  }
+
+  it('stands on the last choice while the first write is still answered', async () => {
+    const core = slowVault()
+    const held = useNestingSetting(core, words, writer().write)
+    await held.start()
+
+    const first = held.choose(OFF)
+    const second = held.choose(ON)
+    core.answers[0]?.(null)
+    await first
+    expect(held.isNesting.value).toBe(true)
+    core.answers[1]?.(null)
+    await second
+    expect(held.isNesting.value).toBe(true)
+  })
+
+  it('is not moved by a read of the settings made while a write is in flight', async () => {
+    const core = slowVault()
+    const held = useNestingSetting(core, words, writer().write)
+    await held.start()
+
+    const first = held.choose(OFF)
+    await held.start()
+    expect(held.isNesting.value).toBe(false)
+    core.answers[0]?.(null)
+    await first
+  })
+
+  it('keeps the last choice where an earlier write was refused', async () => {
+    const core = slowVault()
+    const held = useNestingSetting(core, words, writer().write)
+    await held.start()
+
+    const first = held.choose(OFF)
+    const second = held.choose(ON)
+    core.answers[0]?.('unreadable')
+    await first
+    expect(held.isNesting.value).toBe(true)
+    core.answers[1]?.(null)
+    await second
+  })
+})

@@ -11,6 +11,7 @@ import { formatErrorMessage } from '@numen/wire'
 import type { Model, PluginInfo, SettingEdit } from '../lib/configuration'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { write } from '../lib/write'
+import { createPendingWrites } from '../lib/pending'
 
 /** Everything this says in the window's voice. */
 export interface Words {
@@ -43,6 +44,13 @@ export const getSettingAt = (settings: unknown, at: readonly string[]): unknown 
   return value
 }
 
+/** The default a plugin declares for the setting at a path, and nothing where it declares none. */
+const getPluginDefault = (plugins: readonly PluginInfo[], path: readonly string[]): unknown => {
+  if (path.length !== 3 || path[0] !== 'plugins') return undefined
+  const plugin = plugins.find((one) => one.id === path[1])
+  return plugin?.settings.find((one) => one.key === path[2])?.default
+}
+
 export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: MessageWriter) {
   /** Every setting as it stands. It holds nothing until the vault has answered. */
   const held = shallowRef<unknown>({})
@@ -52,8 +60,10 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   const models = shallowRef<readonly Model[]>([])
   const plugins = shallowRef<readonly PluginInfo[]>([])
 
+  const pending = createPendingWrites()
   /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
+    const place = pending.beginRead()
     let answer: Awaited<ReturnType<SettingsStoreDeps['getSettings']>>
     try {
       answer = await core.getSettings()
@@ -62,6 +72,7 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
       // the window already says it lost touch with the vault.
       return
     }
+    if (!pending.takeRead(place)) return
     try {
       held.value = JSON.parse(answer.written)
     } catch {
@@ -78,14 +89,8 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
 
   /** What stands at a setting, and fallback plugin default where unset. */
   const getSetting = (path: readonly string[]): unknown => {
-    const value = getSettingAt(held.value, path)
-    if (value !== undefined) return value
-    if (path.length === 3 && path[0] === 'plugins') {
-      const p = plugins.value.find((one) => one.id === path[1])
-      const s = p?.settings.find((one) => one.key === path[2])
-      if (s) return s.default
-    }
-    return undefined
+    const value = pending.getPending(path)?.value ?? getSettingAt(held.value, path)
+    return value !== undefined ? value : getPluginDefault(plugins.value, path)
   }
 
   /** The models one setting can be set to, in the order they are offered. */
@@ -95,18 +100,24 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   /**
    * Settings written into the file, together or not at all. A write that was
    * refused is said, and the window reads the file again either way, so what is
-   * drawn is what the settings hold.
+   * drawn is what the settings hold. Until then a setting stands at the value
+   * last written to it, and a read that answers late does not move it.
    */
   const writeSettings = async (edits: readonly SettingEdit[]): Promise<void> => {
     if (edits.length === 0) return
     say('')
 
+    const token = pending.add(edits)
     try {
       await core.updateSettings(edits)
     } catch (thrown) {
       say(`${words.unturned} ${formatErrorMessage(thrown)}`, 'error')
     }
-    await start()
+    try {
+      await start()
+    } finally {
+      pending.release(edits, token)
+    }
   }
 
   /** One setting written, by what is to stand there. */

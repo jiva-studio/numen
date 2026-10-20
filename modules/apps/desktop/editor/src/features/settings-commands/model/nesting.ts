@@ -11,6 +11,7 @@ import type { MessageWriter } from '@/shared/notices/messages'
 import { DEFAULT_HEADINGS, nestingLadder as ladder } from '@/entities/settings'
 import type { NestingSettings } from '@/entities/settings'
 import type { NestingWords } from '../words'
+import { createWriteGuard } from '../lib/writeGuard'
 
 /** The command whose step offers the two, and the one that offers the counts. */
 export const NESTING = 'nesting'
@@ -77,6 +78,8 @@ export function useNestingSetting(core: NestingDeps, words: NestingWords, write:
   const headings = ref(DEFAULT_HEADINGS)
   const ends = ref({ least: DEFAULT_HEADINGS, most: DEFAULT_HEADINGS })
 
+  const guard = createWriteGuard()
+
   const start = async (): Promise<void> => {
     let settings: NestingSettings
     try {
@@ -84,8 +87,10 @@ export function useNestingSetting(core: NestingDeps, words: NestingWords, write:
     } catch {
       return
     }
-    isNesting.value = settings.isNesting
-    headings.value = settings.headings
+    if (guard.isIdle()) {
+      isNesting.value = settings.isNesting
+      headings.value = settings.headings
+    }
     ends.value = { least: settings.least, most: settings.most }
   }
 
@@ -104,11 +109,10 @@ export function useNestingSetting(core: NestingDeps, words: NestingWords, write:
     if (now === was) return
     write('')
     isNesting.value = now
-
-    const failed = await core.setNestingSettings(now)
+    const { failed, isLatest } = await guard.run(guard.beginChoice(), () => core.setNestingSettings(now))
     if (!failed) return
     write(`${words.unturned} ${failed}`, 'error')
-    isNesting.value = was
+    if (isLatest) isNesting.value = was
   }
 
   /**
@@ -123,11 +127,12 @@ export function useNestingSetting(core: NestingDeps, words: NestingWords, write:
     if (!Number.isInteger(now) || now < least || now > most || now === was) return
     write('')
     headings.value = now
-
-    const failed = await core.setNestingSettings(isNesting.value, now)
+    const { failed, isLatest } = await guard.run(guard.beginChoice(), () =>
+      core.setNestingSettings(isNesting.value, now),
+    )
     if (!failed) return
     write(`${words.unturned} ${failed}`, 'error')
-    headings.value = was
+    if (isLatest) headings.value = was
   }
 
   return {

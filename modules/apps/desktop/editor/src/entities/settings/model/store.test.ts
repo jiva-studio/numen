@@ -197,6 +197,87 @@ describe('a setting written', () => {
   })
 })
 
+/** A promise settled by hand. */
+const defer = <T>() => {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((done) => {
+    resolve = done
+  })
+  return { promise, resolve }
+}
+
+describe('a setting written twice in quick succession', () => {
+  const at = ['appearance', 'nest_headings_under_notes']
+
+  /** A file whose text a test sets, with every write and every read held until it is let through. */
+  const createHeldVault = () => {
+    let file = '{"appearance":{"nest_headings_under_notes":true}}'
+    const writes: ReturnType<typeof defer<void>>[] = []
+    const reads: ReturnType<typeof defer<string>>[] = []
+    const core: SettingsStoreDeps = {
+      getSettings: async () => {
+        const read = defer<string>()
+        reads.push(read)
+        return { written: await read.promise, path: '/numen.json', models: [] }
+      },
+      updateSettings: async (edits) => {
+        const done = defer<void>()
+        writes.push(done)
+        await done.promise
+        file = `{"appearance":{"nest_headings_under_notes":${edits[0]?.value}}}`
+      },
+    }
+    return { core, writes, reads, getFile: () => file }
+  }
+
+  it('stands at the last value through the answer of the first write and a read between', async () => {
+    const vault = createHeldVault()
+    const kept = createSettingsStore(vault.core, words, vi.fn())
+
+    const first = kept.writeSetting(at, false)
+    const second = kept.writeSetting(at, true)
+    expect(kept.getSetting(at)).toBe(true)
+
+    vault.writes[0]?.resolve()
+    await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
+    vault.reads[0]?.resolve('{"appearance":{"nest_headings_under_notes":false}}')
+    await first
+    expect(kept.getSetting(at)).toBe(true)
+
+    vault.writes[1]?.resolve()
+    await vi.waitFor(() => expect(vault.reads).toHaveLength(2))
+    vault.reads[1]?.resolve(vault.getFile())
+    await second
+    expect(kept.getSetting(at)).toBe(true)
+  })
+
+  it('does not take a read that answers after a newer one', async () => {
+    const vault = createHeldVault()
+    const kept = createSettingsStore(vault.core, words, vi.fn())
+
+    const older = kept.start()
+    const newer = kept.start()
+    vault.reads[1]?.resolve('{"a":2}')
+    await newer
+    vault.reads[0]?.resolve('{"a":1}')
+    await older
+    expect(kept.getSetting(['a'])).toBe(2)
+  })
+
+  it('goes back to the file where the write was refused', async () => {
+    const vault = createHeldVault()
+    vault.core.updateSettings = () => Promise.reject(new Error('refused'))
+    const kept = createSettingsStore(vault.core, words, vi.fn())
+
+    const written = kept.writeSetting(at, false)
+    expect(kept.getSetting(at)).toBe(false)
+    await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
+    vault.reads[0]?.resolve(vault.getFile())
+    await written
+    expect(kept.getSetting(at)).toBe(true)
+  })
+})
+
 describe('what stands at a path through a tree', () => {
   it('is the value the path leads to', () => {
     expect(getSettingAt({ a: { b: [1, 2] } }, ['a', 'b'])).toStrictEqual([1, 2])
