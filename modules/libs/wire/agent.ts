@@ -11,6 +11,9 @@ import type { AgentPort } from '@numen/ui'
 /** The span a call named, and one naming no place inside the source. */
 const normalizeSpan = (span: Span | undefined) => ({ from: span?.from ?? 0, to: span?.to ?? 0 })
 
+/** The reason a stopped step gives when the agent stopped because it was done. */
+const STOPPED_DONE = 'done'
+
 /** As much of the agent service as the port asks of it. */
 export interface AgentClient {
   askAgent(
@@ -64,7 +67,7 @@ export const createAgentPort = (agent: AgentClient): AgentPort => ({
           yield { kind: 'thinking' }
           break
         case 'stopped':
-          yield { kind: 'stopped', error: step.step.value }
+          yield { kind: 'stopped', error: step.step.value === STOPPED_DONE ? '' : step.step.value }
           break
       }
     }
