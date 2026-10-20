@@ -71,6 +71,9 @@ plugins: plugins_build ## build all native plugins
 .PHONY: plugins_build
 plugins_build: $(addprefix plugin_,$(addsuffix _build,$(PLUGIN_NAMES))) ## build all native plugins
 
+.PHONY: plugins_frontend_build
+plugins_frontend_build: $(addprefix plugin_,$(addsuffix _frontend_build,$(PLUGIN_NAMES))) ## build the frontend of every plugin
+
 .PHONY: plugins_lint
 plugins_lint: $(addprefix plugin_,$(addsuffix _lint,$(PLUGIN_NAMES))) ## lint all native plugins
 
