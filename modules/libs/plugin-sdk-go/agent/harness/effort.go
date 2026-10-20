@@ -13,8 +13,20 @@ const (
 	fieldReasoning       = "reasoning"
 )
 
-// effortLevels are the depths of reasoning a chat API takes for a model that lists the field.
-var effortLevels = reasoning.NewLevels("low", "medium", "high")
+// effortNone is the entry of a list of depths that stands for reasoning switched off.
+const effortNone = "none"
+
+// commonLevels are the depths offered for a model whose listing names the field that takes the depth and
+// no depths. OpenAI-compatible servers list the field and nothing more, so these are the depths the
+// field is documented to take.
+var commonLevels = reasoning.NewLevels("low", "medium", "high")
+
+// reasoningListing is the reasoning object a chat API lists for a model: OpenRouter names the depths the
+// model takes and the one it works at unasked.
+type reasoningListing struct {
+	SupportedEfforts []string `json:"supported_efforts"`
+	DefaultEffort    string   `json:"default_effort"`
+}
 
 // reasoningRequest is the reasoning object of a request.
 type reasoningRequest struct {
@@ -40,10 +52,33 @@ func getReasoningField(supported []string) string {
 	return ""
 }
 
+// newModel is the model a chat API lists, with the depths of reasoning it names for the model.
+func newModel(name, title string, supported []string, listed *reasoningListing) model {
+	one := model{Name: name, Title: title, ReasoningField: getReasoningField(supported)}
+	if listed != nil {
+		names := slices.DeleteFunc(slices.Clone(listed.SupportedEfforts), func(level string) bool { return level == effortNone })
+		if len(names) > 0 {
+			one.ReasoningLevels = reasoning.NewLevels(names...)
+			reasoning.Sort(one.ReasoningLevels)
+			if reasoning.Contains(one.ReasoningLevels, listed.DefaultEffort) {
+				one.DefaultReasoning = listed.DefaultEffort
+			}
+			if one.ReasoningField == "" {
+				one.ReasoningField = fieldReasoning
+			}
+			return one
+		}
+	}
+	if one.ReasoningField != "" {
+		one.ReasoningLevels = commonLevels
+	}
+	return one
+}
+
 // newEffort is the depth of reasoning asked of the model: the level if the model lists a field to take
 // it and the level is one it offers, else none.
 func newEffort(listed model, level string) effort {
-	if listed.ReasoningField == "" || reasoning.Pick(effortLevels, level) == "" {
+	if listed.ReasoningField == "" || reasoning.Pick(listed.ReasoningLevels, level) == "" {
 		return effort{}
 	}
 	return effort{field: listed.ReasoningField, level: level}

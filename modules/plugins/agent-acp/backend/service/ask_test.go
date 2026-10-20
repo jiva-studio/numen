@@ -338,3 +338,43 @@ func TestAnAgentThatFailedToListIsLeftAlone(t *testing.T) {
 func serveAgents(agents ...acpAgent) *agentServer {
 	return &agentServer{acpAgents: func() []acpAgent { return agents }}
 }
+
+// The depths of the category thought_level an agent reports belong to the model of its session.
+func TestTheDepthsAnAgentReportsAreOfferedForItsCurrentModel(t *testing.T) {
+	agent, _ := fakeACPAgent(t, "fake", "thought")
+
+	got, err := agenttest.Serve(t, serveAgents(agent)).GetAgentPrograms(t.Context(),
+		connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range got.Msg.GetPrograms()[0].GetModels() {
+		want := 0
+		if one.GetName() == "m1" {
+			want = 3
+		}
+		if len(one.GetReasoningLevels()) != want || (want > 0 && one.GetDefaultReasoning() != "medium") {
+			t.Errorf("the model %v offers the wrong levels", one)
+		}
+	}
+}
+
+func TestAskAgentSetsTheDepthTheTaskNamesWhereTheAgentReportsIt(t *testing.T) {
+	agent, record := fakeACPAgent(t, "fake", "thought")
+
+	askAgent(t, serveAgents(agent), &numenv1.AskAgentRequest{
+		Agent: "acp:fake", Reasoning: "high", Prompt: "why?",
+	})
+
+	set := readRecord(t, record)["session/set_config_option"]
+	if len(set) != 1 || set[0]["params"].(map[string]any)["configId"] != "effort" ||
+		set[0]["params"].(map[string]any)["value"] != "high" {
+		t.Errorf("the agent was sent %v, want high", set)
+	}
+
+	other, otherRecord := fakeACPAgent(t, "other", "thought")
+	askAgent(t, serveAgents(other), &numenv1.AskAgentRequest{Agent: "acp:other", Reasoning: "max", Prompt: "why?"})
+	if set := readRecord(t, otherRecord)["session/set_config_option"]; len(set) != 0 {
+		t.Errorf("a depth the agent does not report was sent: %v", set)
+	}
+}

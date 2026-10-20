@@ -8,6 +8,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/reasoning"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -22,13 +23,16 @@ var (
 
 // answer asks the agent one question in a session of its own, with the model the agent reports by
 // the id, and returns the text of its answer.
-func (s *agentServer) answer(ctx context.Context, agent acpAgent, modelID, system, prompt string) (string, error) {
+func (s *agentServer) answer(ctx context.Context, agent acpAgent, modelID, level, system, prompt string) (string, error) {
 	session, err := openACPSession(ctx, agent)
 	if err != nil {
 		return "", err
 	}
 	defer session.close()
 	if err := session.setModel(modelID); err != nil {
+		return "", err
+	}
+	if err := session.setReasoning(level); err != nil {
 		return "", err
 	}
 	return session.ask(system, prompt)
@@ -55,7 +59,7 @@ func (s *agentServer) AskAgent(
 	if err != nil {
 		return sendStopped(stream, err.Error())
 	}
-	text, err := s.answer(ctx, agent, msg.GetModel(), msg.GetInstructions(), msg.GetPrompt())
+	text, err := s.answer(ctx, agent, msg.GetModel(), msg.GetReasoning(), msg.GetInstructions(), msg.GetPrompt())
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return ctxErr
@@ -118,9 +122,12 @@ func (s *agentServer) GetAgentPrograms(
 			if title == "" {
 				title = one.ID
 			}
-			program.Models = append(program.Models, &numenv1.AgentModel{
-				Name: one.ID, Title: title, IsDefault: one.ID == listing.current,
-			})
+			model := &numenv1.AgentModel{Name: one.ID, Title: title, IsDefault: one.ID == listing.current}
+			if one.ID == listing.current {
+				model.ReasoningLevels = reasoning.ToProto(listing.levels)
+				model.DefaultReasoning = listing.level
+			}
+			program.Models = append(program.Models, model)
 		}
 		res.Programs = append(res.Programs, program)
 	}

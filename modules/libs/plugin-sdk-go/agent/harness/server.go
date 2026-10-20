@@ -229,13 +229,9 @@ func (s *Server) GetAgentPrograms(
 		LimitsTools: true,
 	}
 	for _, one := range models {
-		levels := []reasoning.Level(nil)
-		if one.ReasoningField != "" {
-			levels = effortLevels
-		}
 		program.Models = append(program.Models, &numenv1.AgentModel{
 			Name: one.Name, Title: one.Title, IsDefault: one.Name == configured,
-			ReasoningLevels: reasoning.ToProto(levels),
+			ReasoningLevels: reasoning.ToProto(one.ReasoningLevels), DefaultReasoning: one.DefaultReasoning,
 		})
 	}
 	return connect.NewResponse(&numenv1.GetAgentProgramsResponse{Programs: []*numenv1.AgentProgram{program}}), nil

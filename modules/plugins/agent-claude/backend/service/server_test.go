@@ -171,7 +171,7 @@ func TestTheProgramListNamesClaudeWithItsModels(t *testing.T) {
 	for _, one := range program.GetModels() {
 		names = append(names, one.GetName())
 	}
-	if !slices.Equal(names, []string{"sonnet", "opus", "haiku", "opusplan"}) {
+	if !slices.Equal(names, []string{"sonnet", "opus", "haiku"}) {
 		t.Errorf("the models are %v", names)
 	}
 }
@@ -638,12 +638,7 @@ func TestTheProgramListNeedsNoKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if models := got.Msg.GetPrograms()[0].GetModels(); len(models) != len(claudeModels) {
+	if models := got.Msg.GetPrograms()[0].GetModels(); len(models) != len(fallbackModels) {
 		t.Errorf("the models are %v", models)
-	}
-	for _, one := range got.Msg.GetPrograms()[0].GetModels() {
-		if len(one.GetReasoningLevels()) != len(claudeReasoning) || one.GetDefaultReasoning() != "" {
-			t.Errorf("the model %v offers the wrong levels", one)
-		}
 	}
 }

@@ -43,6 +43,9 @@ type agentServer struct {
 
 	// environ is the variables a program of the agent is started with; nil is those of this process.
 	environ []string
+
+	// models are the models the program listed.
+	models modelCache
 }
 
 // getEnvironment returns the variables a program of the agent is started with.
@@ -109,11 +112,16 @@ func (s *agentServer) AskAgent(
 		model = defaultModel
 	}
 
+	level := s.getReasoning(model, msg.GetReasoning())
+	if model == defaultModelName {
+		model = ""
+	}
+
 	conversation := msg.GetConversation()
 	claudeArgs := buildClaudeArguments(claudeArguments{
 		instructions:  instructions,
 		model:         model,
-		reasoning:     reasoning.Pick(claudeReasoning, msg.GetReasoning()),
+		reasoning:     level,
 		configuration: configFile,
 		session:       s.registry.GetSession(conversation),
 		turns:         int(msg.GetMaxSteps()),
@@ -226,7 +234,7 @@ func (s *agentServer) GetAgentState(
 // GetAgentPrograms lists Claude Code, whether it is installed under the command line the installation
 // set or where it is found, and the models it accepts.
 func (s *agentServer) GetAgentPrograms(
-	_ context.Context,
+	ctx context.Context,
 	req *connect.Request[numenv1.GetAgentProgramsRequest],
 ) (*connect.Response[numenv1.GetAgentProgramsResponse], error) {
 	var configured []string
@@ -235,7 +243,7 @@ func (s *agentServer) GetAgentPrograms(
 			configured = one.GetCommand()
 		}
 	}
-	command, _ := getCommand(configured)
+	command, extra := getCommand(configured)
 	program := &numenv1.AgentProgram{
 		Name:        programName,
 		Title:       programTitle,
@@ -243,9 +251,7 @@ func (s *agentServer) GetAgentPrograms(
 		IsDefault:   true,
 		LimitsTools: true,
 	}
-	for _, one := range claudeModels {
-		program.Models = append(program.Models, reasoning.NewModel(one.Name, one.Title, claudeReasoning, ""))
-	}
+	program.Models = s.listModels(ctx, command, extra)
 	return connect.NewResponse(&numenv1.GetAgentProgramsResponse{
 		Programs: []*numenv1.AgentProgram{program},
 	}), nil
@@ -324,4 +330,41 @@ func removeFile(path string) {
 	if err := os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		fmt.Fprintf(os.Stderr, "remove %s: %v\n", path, err)
 	}
+}
+
+// listModels returns the models the program offers, as it lists them. The aliases of the fallback
+// stand where it is not installed or does not answer.
+func (s *agentServer) listModels(ctx context.Context, command string, extra []string) []*numenv1.AgentModel {
+	var models []claudeModel
+	var err error
+	if command == "" {
+		err = errors.New("the program is not installed")
+	} else {
+		models, err = s.models.get(ctx, slices.Concat([]string{command}, extra), s.getEnvironment())
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "list models of claude: %v\n", err)
+		models = fallbackModels
+	}
+	out := make([]*numenv1.AgentModel, 0, len(models))
+	for _, one := range models {
+		out = append(out, one.toProto())
+	}
+	return out
+}
+
+// getReasoning returns the depth the program is started with: the one asked for, where the model
+// supports it. A model the program did not list takes the depth as asked.
+func (s *agentServer) getReasoning(model, asked string) string {
+	if model == "" {
+		model = defaultModelName
+	}
+	levels, listed := s.models.find(model)
+	if listed {
+		return reasoning.Pick(levels, asked)
+	}
+	if reasoning.IsKnown(asked) {
+		return asked
+	}
+	return ""
 }
