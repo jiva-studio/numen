@@ -120,3 +120,16 @@ export const getInitialIndex = (
 
 /** Whether the keyboard may land on the item. */
 export const canLandOn = (item: MenuItem): boolean => !item.disabled
+
+/**
+ * The items a search words name. Every word has to be found in an item's text,
+ * detail or group, in any case; no words name every item.
+ */
+export const filterItems = (items: readonly MenuItem[], query: string): readonly MenuItem[] => {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean)
+  if (words.length === 0) return items
+  return items.filter((item) => {
+    const haystack = [item.text, item.detail ?? '', item.group ?? ''].join('\n').toLowerCase()
+    return words.every((word) => haystack.includes(word))
+  })
+}

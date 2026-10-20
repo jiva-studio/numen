@@ -38,7 +38,6 @@ type agentServer struct {
 	systemPrompt string
 	tools        []*numenv1.AgentToolDefinition
 	registry     agentrun.Registry
-	catalogue    modelCatalogue
 	defaultModel string
 
 	// environ is the variables a program of the agent is started with; nil is those of this process.
@@ -53,15 +52,13 @@ func (s *agentServer) getEnvironment() []string {
 	return os.Environ()
 }
 
-// applyConfig keeps the key and the endpoint the models are asked with, dropping the models asked
-// with the ones before, and the model that answers a completion.
+// applyConfig keeps the model that answers a task naming none.
 func (s *agentServer) applyConfig(values map[string]string) {
 	if model, ok := values["model"]; ok && model != "" {
 		s.mu.Lock()
 		s.defaultModel = model
 		s.mu.Unlock()
 	}
-	s.catalogue.update(values)
 }
 
 func (s *agentServer) AskAgent(
@@ -144,8 +141,7 @@ func (s *agentServer) AskAgent(
 
 	cmd := exec.CommandContext(runCtx, cmdName, slices.Concat(cmdArgs, claudeArgs)...)
 	cmd.Dir = msg.GetRoot()
-	key, base := s.catalogue.credentials()
-	cmd.Env = buildKeyEnvironment(s.getEnvironment(), key, base)
+	cmd.Env = buildEnvironment(s.getEnvironment())
 	cmd.Stdin = strings.NewReader(msg.GetPrompt())
 	agentrun.Supervise(cmd)
 
@@ -226,9 +222,9 @@ func (s *agentServer) GetAgentState(
 }
 
 // GetAgentPrograms lists Claude Code, whether it is installed under the command line the installation
-// set or where it is found, and the models the endpoint lists.
+// set or where it is found, and the models it accepts.
 func (s *agentServer) GetAgentPrograms(
-	ctx context.Context,
+	_ context.Context,
 	req *connect.Request[numenv1.GetAgentProgramsRequest],
 ) (*connect.Response[numenv1.GetAgentProgramsResponse], error) {
 	var configured []string
@@ -245,7 +241,7 @@ func (s *agentServer) GetAgentPrograms(
 		IsDefault:   true,
 		LimitsTools: true,
 	}
-	for _, one := range s.catalogue.get(ctx) {
+	for _, one := range claudeModels {
 		program.Models = append(program.Models, &numenv1.AgentModel{Name: one.Name, Title: one.Title})
 	}
 	return connect.NewResponse(&numenv1.GetAgentProgramsResponse{
@@ -296,7 +292,7 @@ func (s *agentServer) GetAgentTools(
 	}), nil
 }
 
-// Mount registers the agent's services on s and hands Configure's settings to the model catalogue.
+// Mount registers the agent's services on s and hands Configure's settings to the agent.
 // The runs the agent started end when s closes.
 func Mount(s *server.Server) error {
 	return mount(s, &agentServer{})

@@ -425,17 +425,20 @@ func (x *ConfigureResponse) GetError() string {
 
 // PluginSetting declares one setting in the plugin's declarative settings schema.
 type PluginSetting struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Type          string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
-	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	DefaultJson   string                 `protobuf:"bytes,5,opt,name=default_json,json=defaultJson,proto3" json:"default_json,omitempty"`
-	Palette       bool                   `protobuf:"varint,6,opt,name=palette,proto3" json:"palette,omitempty"`
-	Options       []string               `protobuf:"bytes,7,rep,name=options,proto3" json:"options,omitempty"`
-	Min           *float64               `protobuf:"fixed64,8,opt,name=min,proto3,oneof" json:"min,omitempty"`
-	Max           *float64               `protobuf:"fixed64,9,opt,name=max,proto3,oneof" json:"max,omitempty"`
-	Step          *float64               `protobuf:"fixed64,10,opt,name=step,proto3,oneof" json:"step,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Key         string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Type        string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	Title       string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Description string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	DefaultJson string                 `protobuf:"bytes,5,opt,name=default_json,json=defaultJson,proto3" json:"default_json,omitempty"`
+	Palette     bool                   `protobuf:"varint,6,opt,name=palette,proto3" json:"palette,omitempty"`
+	Options     []string               `protobuf:"bytes,7,rep,name=options,proto3" json:"options,omitempty"`
+	Min         *float64               `protobuf:"fixed64,8,opt,name=min,proto3,oneof" json:"min,omitempty"`
+	Max         *float64               `protobuf:"fixed64,9,opt,name=max,proto3,oneof" json:"max,omitempty"`
+	Step        *float64               `protobuf:"fixed64,10,opt,name=step,proto3,oneof" json:"step,omitempty"`
+	// The agent program whose models the setting is offered, as the program names itself. Empty is a
+	// setting offered none, and a person types its value.
+	ModelsOf      string `protobuf:"bytes,11,opt,name=models_of,json=modelsOf,proto3" json:"models_of,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -538,6 +541,13 @@ func (x *PluginSetting) GetStep() float64 {
 		return *x.Step
 	}
 	return 0
+}
+
+func (x *PluginSetting) GetModelsOf() string {
+	if x != nil {
+		return x.ModelsOf
+	}
+	return ""
 }
 
 // PluginInfo describes a discovered plugin and its declarative settings.
@@ -934,7 +944,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"C\n" +
 	"\x11ConfigureResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"\xa4\x02\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\"\xc1\x02\n" +
 	"\rPluginSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -946,7 +956,8 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x03min\x18\b \x01(\x01H\x00R\x03min\x88\x01\x01\x12\x15\n" +
 	"\x03max\x18\t \x01(\x01H\x01R\x03max\x88\x01\x01\x12\x17\n" +
 	"\x04step\x18\n" +
-	" \x01(\x01H\x02R\x04step\x88\x01\x01B\x06\n" +
+	" \x01(\x01H\x02R\x04step\x88\x01\x01\x12\x1b\n" +
+	"\tmodels_of\x18\v \x01(\tR\bmodelsOfB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
 	"\x05_step\"\xd2\x03\n" +

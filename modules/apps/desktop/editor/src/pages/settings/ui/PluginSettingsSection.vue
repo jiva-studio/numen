@@ -17,6 +17,8 @@ import {
   DEFAULT_AGENT_AT,
   createAgentModelChoices,
   createPluginAgentChoices,
+  createProgramModelChoices,
+  getProgramModelsAt,
   findAgent,
   getAgents,
   readChoice,
@@ -74,6 +76,16 @@ function getAgentSettings(plugin: PluginInfo): readonly PluginSettingInfo[] {
 
 function getOtherSettings(plugin: PluginInfo): readonly PluginSettingInfo[] {
   return plugin.settings.filter((one) => one.type !== 'agent')
+}
+
+/** The models a string setting is chosen from, and none where it is typed or the program lists none. */
+function getProgramChoices(plugin: PluginInfo, setting: PluginSettingInfo) {
+  if (!setting.modelsOf) return []
+  const models = installation.value.getModels(getProgramModelsAt(setting.modelsOf))
+  return createProgramModelChoices(
+    models,
+    getStringSetting(plugin.id, setting.key, setting.default),
+  )
 }
 
 function getSetting(pluginId: string, key: string, fallback: unknown): unknown {
@@ -167,6 +179,19 @@ function getStringSetting(pluginId: string, key: string, fallback: unknown): str
           :choices="setting.options.map((opt) => ({ id: opt, text: opt }))"
           :name="setting.title"
           :aria-labelledby="labelledBy"
+          class="settings__choice"
+          @update:model-value="(val) => onSettingChange(plugin.id, setting.key, val)"
+        />
+
+        <!-- string whose values are the models of a program: searchable Select -->
+        <Select
+          v-else-if="getProgramChoices(plugin, setting).length > 0"
+          :model-value="getStringSetting(plugin.id, setting.key, setting.default)"
+          :choices="getProgramChoices(plugin, setting)"
+          :name="setting.title"
+          :aria-labelledby="labelledBy"
+          searchable
+          :search-name="words.searchModels"
           class="settings__choice"
           @update:model-value="(val) => onSettingChange(plugin.id, setting.key, val)"
         />

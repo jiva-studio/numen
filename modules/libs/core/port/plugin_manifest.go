@@ -63,6 +63,7 @@ var (
 	ErrInvalidSecret       = errors.New("invalid secret")
 	ErrReservedSettingKey  = errors.New("the setting key is kept by the host")
 	ErrInvalidAgentSetting = errors.New("invalid agent setting")
+	ErrInvalidModelsOf     = errors.New("only a string setting is offered the models of a program")
 	ErrInvalidData         = errors.New("invalid data folder")
 	ErrInvalidService      = errors.New("invalid service name")
 	ErrInvalidNoteType     = errors.New("invalid note type")
@@ -178,6 +179,9 @@ type PluginManifestSetting struct {
 	Min         float64              `json:"min,omitempty"`
 	Max         float64              `json:"max,omitempty"`
 	Step        float64              `json:"step,omitempty"`
+	// ModelsOf is the agent program whose models a string setting is offered, as the program names
+	// itself. The models are those the plugins list for it.
+	ModelsOf string `json:"modelsOf,omitempty"`
 	// Replaces are the places in the settings file a person kept this setting before the plugin took
 	// it over, each written as the keys that lead to it joined by dots, the newest first. The first of
 	// them the file holds gives the value to a person whose file has none for the plugin yet.
@@ -531,6 +535,9 @@ func listManifestSettingIssue(s PluginManifestSetting, key string) []error {
 	}
 	if s.Type == "range" && (s.Min != 0 || s.Max != 0) && s.Min > s.Max {
 		issues = append(issues, fmt.Errorf("%w: %s", ErrRangeInvalidBounds, key))
+	}
+	if s.ModelsOf != "" && s.Type != "string" {
+		issues = append(issues, fmt.Errorf("%w: %s", ErrInvalidModelsOf, key))
 	}
 	return issues
 }

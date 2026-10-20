@@ -163,6 +163,7 @@ func newWirePluginInfos(held []settings.PluginInfo) []*v1.PluginInfo {
 				Min:         s.Min,
 				Max:         s.Max,
 				Step:        s.Step,
+				ModelsOf:    s.ModelsOf,
 			})
 		}
 		infos = append(infos, &v1.PluginInfo{

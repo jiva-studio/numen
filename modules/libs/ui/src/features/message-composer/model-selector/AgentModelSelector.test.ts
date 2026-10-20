@@ -110,4 +110,35 @@ describe('AgentModelSelector', () => {
     expect(wrapper.text()).toContain('No agent installed')
     expect(wrapper.find('button').attributes('disabled')).toBeDefined()
   })
+
+  it('carries no search line for a short list', async () => {
+    const wrapper = mount(AgentModelSelector, {
+      props: { options: OPTIONS, selectedAgentId: 'claude', selectedModelId: 'sonnet' },
+      attachTo: document.body,
+    })
+    await wrapper.find('button').trigger('click')
+    expect(wrapper.findComponent({ name: 'Menu' }).props('searchable')).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('carries a search line for a long list', async () => {
+    const many: AgentModelOption[] = Array.from({ length: 40 }, (_, place) => ({
+      agentId: 'numen',
+      agentTitle: 'Numen Agent',
+      modelId: `vendor/model-${place}`,
+      modelTitle: `Model ${place}`,
+      isAvailable: true,
+    }))
+    const wrapper = mount(AgentModelSelector, {
+      props: {
+        options: [...OPTIONS, ...many],
+        selectedAgentId: 'claude',
+        selectedModelId: 'sonnet',
+      },
+      attachTo: document.body,
+    })
+    await wrapper.find('button').trigger('click')
+    expect(wrapper.findComponent({ name: 'Menu' }).props('searchable')).toBe(true)
+    wrapper.unmount()
+  })
 })

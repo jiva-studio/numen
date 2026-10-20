@@ -4,7 +4,7 @@
  * area it has to fit in.
  */
 import { describe, expect, it } from 'vitest'
-import { groupItems, getInitialIndex, placeMenu, type MenuItem } from './item'
+import { filterItems, groupItems, getInitialIndex, placeMenu, type MenuItem } from './item'
 
 const VIEWPORT = { width: 1000, height: 800 }
 const SIZE = { width: 200, height: 300 }
@@ -144,5 +144,32 @@ describe('the rules a menu draws between its groups', () => {
 
   it('has nothing to draw for a menu holding nothing', () => {
     expect(groupItems([])).toStrictEqual([])
+  })
+})
+
+describe('which items a search names', () => {
+  const models: MenuItem[] = [
+    { id: 'a', text: 'Opus 4', group: 'Claude Code' },
+    { id: 'b', text: 'gpt-5 mini', detail: 'openai/gpt-5-mini', group: 'Numen Agent' },
+    { id: 'c', text: 'Sonnet', group: 'Claude Code' },
+  ]
+
+  it('names every item where there are no words', () => {
+    expect(filterItems(models, '')).toStrictEqual(models)
+    expect(filterItems(models, '   ')).toStrictEqual(models)
+  })
+
+  it('finds a word in the text, in any case', () => {
+    expect(filterItems(models, 'OPUS').map((one) => one.id)).toStrictEqual(['a'])
+  })
+
+  it('finds a word in the detail and in the group', () => {
+    expect(filterItems(models, 'openai').map((one) => one.id)).toStrictEqual(['b'])
+    expect(filterItems(models, 'claude').map((one) => one.id)).toStrictEqual(['a', 'c'])
+  })
+
+  it('wants every word found', () => {
+    expect(filterItems(models, 'claude son').map((one) => one.id)).toStrictEqual(['c'])
+    expect(filterItems(models, 'claude gpt')).toStrictEqual([])
   })
 })

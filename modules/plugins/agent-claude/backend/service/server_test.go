@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -10,7 +9,6 @@ import (
 	"runtime"
 	"slices"
 	"strings"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -69,151 +67,13 @@ func TestLifecycleServer(t *testing.T) {
 	}
 
 	_, err = client.Configure(ctx, connect.NewRequest(&numenv1.ConfigureRequest{
-		Values: map[string]string{"apiKey": "k", "baseUrl": "http://models.test"},
+		Values: map[string]string{"model": "m1"},
 	}))
 	if err != nil {
 		t.Fatalf("Configure failed: %v", err)
 	}
-	if key, base := agentSvc.catalogue.credentials(); key != "k" || base != "http://models.test" {
-		t.Errorf("the models are asked with %q at %q", key, base)
-	}
-}
-
-func TestFetchAnthropicModels(t *testing.T) {
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("x-api-key") != "test-key" || r.Header.Get("anthropic-version") != "2023-06-01" || r.URL.Path != "/v1/models" {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{
-			"data": [
-				{"id": "claude-3-5-sonnet", "display_name": "Claude 3.5 Sonnet"}
-			]
-		}`))
-	}))
-	defer mockServer.Close()
-
-	ctx := context.Background()
-	models, err := fetchAnthropicModels(ctx, "test-key", mockServer.URL+"/")
-	if err != nil {
-		t.Fatalf("fetchAnthropicModels failed: %v", err)
-	}
-	if len(models) != 1 || models[0].Name != "claude-3-5-sonnet" {
-		t.Errorf("unexpected models: %+v", models)
-	}
-
-	canceledCtx, cancel := context.WithCancel(ctx)
-	cancel()
-	_, err = fetchAnthropicModels(canceledCtx, "test-key", mockServer.URL)
-	if !errors.Is(err, context.Canceled) {
-		t.Errorf("expected wrapped context.Canceled, got %v", err)
-	}
-
-	errServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(`{"data":[{"id":"m"}]}`))
-	}))
-	defer errServer.Close()
-	if _, err := fetchAnthropicModels(ctx, "test-key", errServer.URL); err == nil {
-		t.Error("expected error on 500 status code")
-	}
-}
-
-// The models are asked for once and kept until the key or the endpoint changes.
-func TestTheModelsAreKeptUntilTheKeyChanges(t *testing.T) {
-	var asked atomic.Int32
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		asked.Add(1)
-		_, _ = w.Write([]byte(`{"data": [{"id": "opus", "display_name": "Opus"}]}`))
-	}))
-	defer mockServer.Close()
-
-	var catalogue modelCatalogue
-	catalogue.update(map[string]string{"apiKey": "k", "baseUrl": mockServer.URL})
-	for range 2 {
-		if got := catalogue.get(t.Context()); len(got) != 1 || got[0].Name != "opus" {
-			t.Fatalf("the models are %+v", got)
-		}
-	}
-	if got := asked.Load(); got != 1 {
-		t.Errorf("the endpoint was asked %d times, want 1", got)
-	}
-
-	catalogue.update(map[string]string{"apiKey": "other", "baseUrl": mockServer.URL})
-	catalogue.get(t.Context())
-	if got := asked.Load(); got != 2 {
-		t.Errorf("a new key asked the endpoint %d times in all, want 2", got)
-	}
-}
-
-// A request that ends before the endpoint answers keeps nothing, so the next one asks again.
-func TestAnEndedRequestKeepsNoModels(t *testing.T) {
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = w.Write([]byte(`{"data": [{"id": "opus"}]}`))
-	}))
-	defer mockServer.Close()
-
-	var catalogue modelCatalogue
-	catalogue.update(map[string]string{"apiKey": "k", "baseUrl": mockServer.URL})
-	ended, cancel := context.WithCancel(t.Context())
-	cancel()
-	if got := catalogue.get(ended); got != nil {
-		t.Errorf("an ended request got %+v", got)
-	}
-	if got := catalogue.get(t.Context()); len(got) != 1 {
-		t.Errorf("the next request got %+v", got)
-	}
-}
-
-func TestCatalogueDropsKeptModelsWhenBaseUrlChangesConcurrently(t *testing.T) {
-	entered := make(chan struct{})
-	proceed := make(chan struct{})
-	releaseProceed := func() {
-		select {
-		case <-proceed:
-		default:
-			close(proceed)
-		}
-	}
-	t.Cleanup(releaseProceed)
-
-	srv1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		close(entered)
-		<-proceed
-		_, _ = w.Write([]byte(`{"data": [{"id": "m1"}]}`))
-	}))
-	defer srv1.Close()
-	defer releaseProceed()
-
-	srv2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = w.Write([]byte(`{"data": [{"id": "m2"}]}`))
-	}))
-	defer srv2.Close()
-
-	var catalogue modelCatalogue
-	catalogue.update(map[string]string{"apiKey": "k", "baseUrl": srv1.URL})
-
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		catalogue.get(t.Context())
-	}()
-
-	select {
-	case <-entered:
-	case <-done:
-		t.Fatal("catalogue.get returned before contacting the first server")
-	case <-time.After(5 * time.Second):
-		t.Fatal("timed out waiting for catalogue.get to contact the first server")
-	}
-	catalogue.update(map[string]string{"apiKey": "k", "baseUrl": srv2.URL})
-	releaseProceed()
-	<-done
-
-	got := catalogue.get(t.Context())
-	if len(got) != 1 || got[0].Name != "m2" {
-		t.Fatalf("expected models from srv2, got %+v", got)
+	if agentSvc.defaultModel != "m1" {
+		t.Errorf("the model that answers a task naming none is %q", agentSvc.defaultModel)
 	}
 }
 
@@ -269,7 +129,6 @@ func TestAgentServiceRPC(t *testing.T) {
 // says it is not installed.
 func TestTheProgramIsUnreachableWhereItIsNotInstalled(t *testing.T) {
 	withoutClaudeAnywhere(t)
-	t.Setenv(anthropicKeyVar, "")
 	client := startAgent(t, &agentServer{})
 
 	state, err := client.GetAgentState(t.Context(), connect.NewRequest(&numenv1.GetAgentStateRequest{}))
@@ -290,17 +149,10 @@ func TestTheProgramIsUnreachableWhereItIsNotInstalled(t *testing.T) {
 }
 
 // The program list names Claude Code as the default program, installed where it is found, with the
-// models the endpoint lists.
+// models the program accepts, listed with no key and no network.
 func TestTheProgramListNamesClaudeWithItsModels(t *testing.T) {
 	t.Setenv("NUMEN_CLAUDE_COMMAND", writeScript(t, "claude", ""))
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = w.Write([]byte(`{"data": [{"id": "opus", "display_name": "Opus"}, {"id": "haiku"}]}`))
-	}))
-	defer mockServer.Close()
-
-	agentSvc := &agentServer{}
-	agentSvc.applyConfig(map[string]string{"apiKey": "k", "baseUrl": mockServer.URL})
-	client := startAgent(t, agentSvc)
+	client := startAgent(t, &agentServer{})
 
 	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
 	if err != nil {
@@ -319,7 +171,7 @@ func TestTheProgramListNamesClaudeWithItsModels(t *testing.T) {
 	for _, one := range program.GetModels() {
 		names = append(names, one.GetName())
 	}
-	if !slices.Equal(names, []string{"opus", "haiku"}) {
+	if !slices.Equal(names, []string{"sonnet", "opus", "haiku", "opusplan"}) {
 		t.Errorf("the models are %v", names)
 	}
 }
@@ -574,7 +426,7 @@ func TestAClosedAgentTakesNoTask(t *testing.T) {
 // stands on this machine.
 func TestTheProgramIsInstalledUnderTheCommandLineTheInstallationSet(t *testing.T) {
 	withoutClaudeAnywhere(t)
-	t.Setenv(anthropicKeyVar, "")
+	t.Setenv("ANTHROPIC_API_KEY", "")
 	client := startAgent(t, &agentServer{})
 
 	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{
@@ -606,7 +458,7 @@ func withoutClaudeAnywhere(t *testing.T) {
 
 func TestGetAgentProgramsIgnoresCommandsForOtherPrograms(t *testing.T) {
 	withoutClaudeAnywhere(t)
-	t.Setenv(anthropicKeyVar, "")
+	t.Setenv("ANTHROPIC_API_KEY", "")
 	client := startAgent(t, &agentServer{})
 
 	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{
@@ -667,10 +519,10 @@ func TestAskAgentOffersNoToolWhenRequestToolsEmpty(t *testing.T) {
 	}
 }
 
-// The key the host configured is the program's key for a run, and the model the host configured
-// answers a task that names none.
-func TestAskAgentRunsWithTheConfiguredKeyAndModel(t *testing.T) {
-	t.Setenv(anthropicKeyVar, "env-key")
+// The program runs with the environment of the plugin as it stands, and the model the host
+// configured answers a task that names none.
+func TestAskAgentRunsWithTheEnvironmentAndTheConfiguredModel(t *testing.T) {
+	t.Setenv("ANTHROPIC_API_KEY", "env-key")
 	out := filepath.Join(t.TempDir(), "run")
 	script := writeScript(t, "mock-claude.sh",
 		"echo \"key=$ANTHROPIC_API_KEY\" > "+out+"\n"+
@@ -693,7 +545,7 @@ func TestAskAgentRunsWithTheConfiguredKeyAndModel(t *testing.T) {
 		t.Fatal(err)
 	}
 	argv := strings.Split(strings.TrimSpace(string(raw)), "\n")
-	if argv[0] != "key=host-key" {
+	if argv[0] != "key=env-key" {
 		t.Errorf("the program saw %q", argv[0])
 	}
 	assertPair(t, argv, "--model", "m1")
@@ -770,5 +622,23 @@ func TestAskAgentDropsInternalClaudeEnvironmentVariables(t *testing.T) {
 	}
 	if strings.Contains(string(raw), "CLAUDECODE") {
 		t.Fatalf("environment contains CLAUDECODE:\n%s", raw)
+	}
+}
+
+// A Claude Code installation needs no key of the plugin: the models are listed with none, and a key
+// handed to the plugin is not the program's key.
+func TestTheProgramListNeedsNoKey(t *testing.T) {
+	t.Setenv("NUMEN_CLAUDE_COMMAND", writeScript(t, "claude", ""))
+	t.Setenv("ANTHROPIC_API_KEY", "")
+	agentSvc := &agentServer{}
+	agentSvc.applyConfig(map[string]string{})
+	client := startAgent(t, agentSvc)
+
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if models := got.Msg.GetPrograms()[0].GetModels(); len(models) != len(claudeModels) {
+		t.Errorf("the models are %v", models)
 	}
 }

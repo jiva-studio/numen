@@ -241,3 +241,60 @@ describe('a setting of type agent', () => {
     })
   })
 })
+
+describe('a string setting offered the models of a program', () => {
+  const MODEL_PLUGIN: PluginInfo = {
+    ...SAMPLE_PLUGIN,
+    id: 'test.agent',
+    name: 'Test Agent',
+    settings: [
+      {
+        key: 'model',
+        type: 'string',
+        title: 'Model',
+        description: 'The model asked',
+        default: 'v/default',
+        modelsOf: 'prog',
+      },
+    ],
+  }
+  const LISTING: readonly ProgramFixture[] = [
+    {
+      name: 'prog',
+      title: 'Prog',
+      models: [
+        { name: 'v/default', title: 'Default model' },
+        { name: 'v/other', title: 'Other model' },
+      ],
+    },
+  ]
+
+  it('is a searchable choice among the models the program lists', () => {
+    const { wrapper } = createSection({}, [MODEL_PLUGIN], LISTING)
+    const select = wrapper.findComponent({ name: 'Select' })
+    expect(select.props('searchable')).toBe(true)
+    expect(select.props('modelValue')).toBe('v/default')
+    expect(select.props('choices').map((one: { id: string }) => one.id)).toStrictEqual([
+      'v/default',
+      'v/other',
+    ])
+    expect(wrapper.find('.settings__text-input').exists()).toBe(false)
+  })
+
+  it('writes the model chosen', () => {
+    const { wrapper, written } = createSection({}, [MODEL_PLUGIN], LISTING)
+    wrapper.findComponent({ name: 'Select' }).vm.$emit('update:modelValue', 'v/other')
+    expect(written).toStrictEqual([{ at: ['plugins', 'test.agent', 'model'], value: '"v/other"' }])
+  })
+
+  it('is typed by hand where the program lists no model', () => {
+    const { wrapper } = createSection({}, [MODEL_PLUGIN], [{ name: 'prog', title: 'Prog' }])
+    expect(wrapper.findComponent({ name: 'Select' }).exists()).toBe(false)
+    expect(wrapper.find('.settings__text-input').exists()).toBe(true)
+  })
+
+  it('is typed by hand where the program is not listed at all', () => {
+    const { wrapper } = createSection({}, [MODEL_PLUGIN], [])
+    expect(wrapper.find('.settings__text-input').exists()).toBe(true)
+  })
+})

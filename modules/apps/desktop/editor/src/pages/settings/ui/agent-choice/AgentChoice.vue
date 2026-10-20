@@ -26,6 +26,10 @@ const emit = defineEmits<{
   choose: [choice: CompletionChoice]
 }>()
 
+/* --------------------------------- State ---------------------------------- */
+/** From this many models on, the list carries a line to search it by. */
+const SEARCH_FROM = 8
+
 /* -------------------------------- Handlers -------------------------------- */
 function onAgentChange(agent: string) {
   if (agent === props.choice.agent) return
@@ -60,6 +64,8 @@ function onModelChange(model: string) {
       :model-value="choice.model"
       :choices="models"
       :name="modelName"
+      :searchable="models.length >= SEARCH_FROM"
+      search-name="Search models"
       :aria-labelledby="labelledBy"
       class="settings__choice"
       @update:model-value="onModelChange"

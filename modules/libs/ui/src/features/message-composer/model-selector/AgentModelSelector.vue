@@ -38,6 +38,11 @@ const isOpen = ref(false)
 const trigger = useTemplateRef<HTMLButtonElement>('trigger')
 const menuPosition = ref<Position>({ x: 0, y: 0 })
 
+/** From this many options on, the list carries a line to search it by. */
+const SEARCH_FROM = 8
+
+const isSearchable = computed(() => props.options.length >= SEARCH_FROM)
+
 const currentKey = computed(() => `${props.selectedAgentId}:${props.selectedModelId}`)
 
 const currentOption = computed(() => {
@@ -118,6 +123,8 @@ function onDismiss() {
       :current="currentKey"
       :from="trigger"
       :has-groups="true"
+      :searchable="isSearchable"
+      search-name="Search models"
       name="Model"
       @choose="onChoose"
       @dismiss="onDismiss"

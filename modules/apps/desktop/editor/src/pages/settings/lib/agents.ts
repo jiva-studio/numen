@@ -9,7 +9,11 @@ import type { SelectChoice } from '@numen/ui'
 
 /** Where the program that answers stands in the settings file, and where each program's model does. */
 const USE_AT = ['agent', 'use'] as const
-const modelAt = (program: string): readonly string[] => ['agent', program, 'model']
+export const getProgramModelsAt = (program: string): readonly string[] => [
+  'agent',
+  program,
+  'model',
+]
 
 /** Where the default agent and its model stand in the settings file. */
 export const DEFAULT_AGENT_AT = ['ai', 'default', 'agent'] as const
@@ -65,7 +69,7 @@ export const getAgents = (source: AgentSource): readonly Agent[] => {
       name: one.title || one.name,
       isDefault: typeof use === 'string' ? one.name === use : one.isDefault,
       models: source
-        .getModels(modelAt(one.name))
+        .getModels(getProgramModelsAt(one.name))
         .filter((model) => model.name !== '')
         .map(toAgentModel),
     }))
@@ -92,6 +96,7 @@ const getAgentRows = (
   words: AgentWords,
 ): readonly SelectChoice[] => {
   const rows = agents.map((one) => ({ id: one.id, text: one.name }))
+  if (rows.length === 0) return []
   if (chosen === '' || rows.some((one) => one.id === chosen)) return rows
   return [...rows, { id: chosen, text: chosen, detail: words.agentMissing }]
 }
@@ -148,3 +153,22 @@ export const getPluginsWithSecrets = (plugins: readonly PluginInfo[]): readonly 
 /** The plugins that may ask a model, in the order they are listed. */
 export const getAskingPlugins = (plugins: readonly PluginInfo[]): readonly PluginInfo[] =>
   plugins.filter((one) => one.consent !== 'none')
+
+/**
+ * The models of a program as rows a setting is chosen from, each addressed by its name. A value the
+ * program does not list stands among them. A program that lists none gives no row at all.
+ */
+export const createProgramModelChoices = (
+  models: readonly Model[],
+  chosen: string,
+): readonly SelectChoice[] => {
+  const rows = models
+    .filter((one) => one.name !== '')
+    .map((one) => ({
+      id: one.name,
+      text: one.title || one.name,
+      ...(one.title && one.title !== one.name ? { detail: one.name } : {}),
+    }))
+  if (rows.length === 0 || chosen === '' || rows.some((one) => one.id === chosen)) return rows
+  return [{ id: chosen, text: chosen }, ...rows]
+}

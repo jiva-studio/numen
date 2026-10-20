@@ -416,3 +416,75 @@ describe('the width it is told to keep to', () => {
     expect(getDrawnMenu()?.style.getPropertyValue('--asking')).toBe('0px')
   })
 })
+
+describe('searching the items', () => {
+  const getSearch = () => document.body.querySelector<HTMLInputElement>('.menu__search')
+  const texts = () => choices().map((one) => one.textContent?.trim())
+
+  const type = async (value: string) => {
+    const line = getSearch()!
+    line.value = value
+    line.dispatchEvent(new Event('input'))
+    await nextTick()
+  }
+
+  it('draws no search line unless it is asked for', async () => {
+    mountMenu()
+    await settle()
+    expect(getSearch()).toBeNull()
+  })
+
+  it('puts the keyboard on the search line as it opens', async () => {
+    mountMenu({ searchable: true })
+    await settle()
+    expect(document.activeElement).toBe(getSearch())
+  })
+
+  it('leaves the items that name every word typed', async () => {
+    mountMenu({ searchable: true })
+    await settle()
+    await type('new child')
+    expect(texts()).toStrictEqual(['New child note'])
+  })
+
+  it('says so where the words name no item', async () => {
+    mountMenu({ searchable: true })
+    await settle()
+    await type('zzz')
+    expect(choices()).toHaveLength(0)
+    expect(getDrawnMenu()?.querySelector('.menu__silence')).not.toBeNull()
+  })
+
+  it('chooses the first item left on Enter', async () => {
+    const menu = mountMenu({ searchable: true })
+    await settle()
+    await type('copy')
+    getSearch()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    expect(menu.emitted('choose')).toStrictEqual([['copy']])
+  })
+
+  it('does not take letters for a jump to an item while they are typed in the line', async () => {
+    mountMenu({ searchable: true })
+    await settle()
+    getSearch()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true }))
+    expect(document.activeElement).toBe(getSearch())
+  })
+
+  it('steps from the search line into the items on the arrow down', async () => {
+    mountMenu({ searchable: true })
+    await settle()
+    getSearch()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+    expect(document.activeElement).toBe(choices()[0])
+  })
+
+  it('shows every item again after it is opened once more', async () => {
+    const menu = mountMenu({ searchable: true })
+    await settle()
+    await type('copy')
+    await menu.setProps({ open: false })
+    await menu.setProps({ open: true })
+    await settle()
+    expect(getSearch()!.value).toBe('')
+    expect(choices()).toHaveLength(3)
+  })
+})

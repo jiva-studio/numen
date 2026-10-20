@@ -1473,6 +1473,7 @@ func (h *Host) GetPluginInfos() []port.PluginInfo {
 				Min:         &minVal,
 				Max:         &maxVal,
 				Step:        &stepVal,
+				ModelsOf:    s.ModelsOf,
 				Replaces:    s.Replaces,
 			})
 		}
