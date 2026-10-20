@@ -80,6 +80,8 @@ type Host struct {
 	failedPlugins    []port.PluginFailure
 	problems         []DiscoveryProblem
 	completer        port.Completer
+	// vault is the vault the window is showing, as plugins work it through the host endpoint.
+	vault port.PluginVault
 	// consentAsks holds the plugins that asked for a completion the person has
 	// not answered for, since the host started.
 	consentAsks   map[string]bool

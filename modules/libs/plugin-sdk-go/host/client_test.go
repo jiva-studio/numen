@@ -1,0 +1,158 @@
+package host_test
+
+import (
+	"context"
+	"errors"
+	"net/http/httptest"
+	"testing"
+	"time"
+
+	"connectrpc.com/connect"
+
+	"github.com/jiva-studio/numen/modules/libs/notes/domain"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/hostcall"
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+)
+
+// answering is a host that answers a few calls, and records who asked.
+type answering struct {
+	numenv1connect.UnimplementedHostVaultServiceHandler
+	code      v1.HostVaultErrorCode
+	asked     string
+	unlocked  string
+	baselines []*v1.HostFingerprint
+}
+
+func (a *answering) GetFileFingerprint(_ context.Context, req *connect.Request[v1.GetFileFingerprintRequest]) (*connect.Response[v1.GetFileFingerprintResponse], error) {
+	a.asked = req.Header().Get("Authorization")
+	return connect.NewResponse(&v1.GetFileFingerprintResponse{
+		Error:       a.code,
+		Fingerprint: &v1.HostFingerprint{Path: req.Msg.GetPath(), Size: 7, ModTime: 1_700_000_000_123_456_789},
+	}), nil
+}
+
+func (a *answering) WriteFile(_ context.Context, req *connect.Request[v1.WriteFileRequest]) (*connect.Response[v1.WriteFileResponse], error) {
+	a.baselines = append(a.baselines, req.Msg.GetBaseline())
+	return connect.NewResponse(&v1.WriteFileResponse{Error: a.code}), nil
+}
+
+func (a *answering) GetLinks(context.Context, *connect.Request[v1.GetLinksRequest]) (*connect.Response[v1.GetLinksResponse], error) {
+	return connect.NewResponse(&v1.GetLinksResponse{Links: []*v1.HostLink{{
+		From: "a.md", To: "b.md", ToVault: "v", LinkType: "cites", TargetScheme: "name", TargetValue: "B", Label: "see", IsAmbiguous: true,
+	}}}), nil
+}
+
+func (a *answering) LockVault(context.Context, *connect.Request[v1.LockVaultRequest]) (*connect.Response[v1.LockVaultResponse], error) {
+	return connect.NewResponse(&v1.LockVaultResponse{Lock: "L1"}), nil
+}
+
+func (a *answering) UnlockVault(_ context.Context, req *connect.Request[v1.UnlockVaultRequest]) (*connect.Response[v1.UnlockVaultResponse], error) {
+	a.unlocked = req.Msg.GetLock()
+	return connect.NewResponse(&v1.UnlockVaultResponse{}), nil
+}
+
+func (a *answering) WatchVault(ctx context.Context, _ *connect.Request[v1.WatchVaultRequest], stream *connect.ServerStream[v1.WatchVaultResponse]) error {
+	_ = stream.Send(&v1.WatchVaultResponse{})
+	_ = stream.Send(&v1.WatchVaultResponse{Paths: []string{"x.md"}})
+	_ = stream.Send(&v1.WatchVaultResponse{IsVaultChanged: true})
+	<-ctx.Done()
+	return nil
+}
+
+func clientTo(t *testing.T, a *answering) *host.Client {
+	t.Helper()
+	mux := httptest.NewServer(handler(a))
+	t.Cleanup(mux.Close)
+	return host.NewClient(hostcall.Endpoint{BaseURL: mux.URL, Token: "tok"})
+}
+
+func TestTheClientPresentsItsTokenAndReadsTheFingerprint(t *testing.T) {
+	a := &answering{}
+
+	at, err := clientTo(t, a).GetFingerprint(context.Background(), "n.md")
+
+	want := domain.Fingerprint{Path: "n.md", Size: 7, ModTime: time.Unix(0, 1_700_000_000_123_456_789)}
+	if err != nil || at != want || a.asked != "Bearer tok" {
+		t.Errorf("got %+v (%v) asked as %q", at, err, a.asked)
+	}
+}
+
+func TestEachCodeOfTheHostIsItsOwnError(t *testing.T) {
+	cases := map[v1.HostVaultErrorCode]error{
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT:        host.ErrNoVault,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_MISSING:         host.ErrNotExist,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE:         host.ErrOutside,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE:           host.ErrStale,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OCCUPIED:        host.ErrOccupied,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER: host.ErrHeldByAnother,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_DATA_FOLDER:  host.ErrNoDataFolder,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:      host.ErrNotANote,
+	}
+	for code, want := range cases {
+		_, err := clientTo(t, &answering{code: code}).GetFingerprint(context.Background(), "n.md")
+		if !errors.Is(err, want) {
+			t.Errorf("code %s: got %v, want %v", code, err, want)
+		}
+	}
+}
+
+func TestAWriteSendsTheBaselineAndReportsStale(t *testing.T) {
+	a := &answering{code: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE}
+	baseline := domain.Fingerprint{Path: "n.md", Size: 3, ModTime: time.Unix(5, 6)}
+
+	_, err := clientTo(t, a).Write(context.Background(), "n.md", []byte("abc"), baseline)
+
+	if !errors.Is(err, host.ErrStale) || len(a.baselines) != 1 || a.baselines[0].GetModTime() != baseline.ModTime.UnixNano() {
+		t.Errorf("got %v and %v", err, a.baselines)
+	}
+}
+
+func TestALinkKeepsEverythingTheHostSaidOfIt(t *testing.T) {
+	links, err := clientTo(t, &answering{}).GetLinks(context.Background(), "a.md")
+
+	want := domain.ResolvedLink{
+		Link:        domain.Link{Target: domain.Address{Scheme: "name", Value: "B"}, Type: "cites", Label: "see"},
+		From:        "a.md",
+		To:          "b.md",
+		ToVault:     "v",
+		IsAmbiguous: true,
+	}
+	if err != nil || len(links) != 1 || links[0] != want {
+		t.Errorf("got %+v (%v)", links, err)
+	}
+}
+
+func TestReleasingTheLockHandsItBack(t *testing.T) {
+	a := &answering{}
+
+	release, err := clientTo(t, a).Lock(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	release()
+
+	if a.unlocked != "L1" {
+		t.Errorf("unlocked %q", a.unlocked)
+	}
+}
+
+func TestAWatchBeginsAfterTheFirstMessageAndTellsTheChanges(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	changes, err := clientTo(t, &answering{}).Watch(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	first := <-changes
+	second := <-changes
+	if len(first.Paths) != 1 || first.Paths[0] != "x.md" || !second.IsVaultChanged {
+		t.Errorf("got %+v then %+v", first, second)
+	}
+	cancel()
+	for range changes {
+	}
+}

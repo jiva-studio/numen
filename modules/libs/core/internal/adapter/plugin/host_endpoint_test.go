@@ -28,6 +28,8 @@ type callers struct {
 	consented map[string]bool
 	completer port.Completer
 	checked   []string
+	vault     port.PluginVault
+	data      map[string]string
 }
 
 func (c *callers) GetPluginIDByToken(token string) (string, bool) {
@@ -56,6 +58,10 @@ func (c *callers) CheckCompletionConsent(pluginID string) error {
 }
 
 func (c *callers) GetCompleter() port.Completer { return c.completer }
+
+func (c *callers) GetPluginVault() port.PluginVault { return c.vault }
+
+func (c *callers) GetPluginData(pluginID string) string { return c.data[pluginID] }
 
 type completerFunc func(ctx context.Context, question port.Question) (string, error)
 

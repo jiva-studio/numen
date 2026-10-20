@@ -1,0 +1,365 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// HostVaultService is what the host answers for a plugin that works the vault
+// the window is showing. The host knows the caller by its token and holds each
+// call to a permission: a call that reads needs vault:read and one that changes
+// anything needs vault:write. Every path is relative to the vault root and
+// written with forward slashes.
+//
+// The vault is the host's own: the plugin reads and writes its files through
+// the host, so the index, the watcher, the fingerprints and the trash all stay
+// level with what the plugin did.
+service HostVaultService {
+  // GetHostVault names the vault the host is showing. A host showing none answers
+  // with the vault unset.
+  rpc GetHostVault(GetHostVaultRequest) returns (GetHostVaultResponse);
+
+  // GetFileFingerprint says what a file is now. A file that is not there is
+  // answered with the error code MISSING.
+  rpc GetFileFingerprint(GetFileFingerprintRequest) returns (GetFileFingerprintResponse);
+
+  // ReadFile reads a whole file, with the fingerprint it had when it was read.
+  rpc ReadFile(ReadFileRequest) returns (ReadFileResponse);
+
+  // WriteFile replaces a file that has not changed since the fingerprint given.
+  // A file that moved past it is answered with the error code STALE and
+  // nothing is written.
+  rpc WriteFile(WriteFileRequest) returns (WriteFileResponse);
+
+  // CreateFile makes a file that is not there yet. A file that is there is
+  // answered with the error code OCCUPIED.
+  rpc CreateFile(CreateFileRequest) returns (CreateFileResponse);
+
+  // LockVault holds the vault's writers to one caller until UnlockVault, or
+  // until the plugin goes. A caller that finds it held waits for it.
+  rpc LockVault(LockVaultRequest) returns (LockVaultResponse);
+
+  // UnlockVault lets the writers go.
+  rpc UnlockVault(UnlockVaultRequest) returns (UnlockVaultResponse);
+
+  // ScanFiles brings the index level with the files named, after the plugin
+  // changed them.
+  rpc ScanFiles(ScanFilesRequest) returns (ScanFilesResponse);
+
+  // GetNoteRefs names the notes at the paths given, and leaves out a path with
+  // no note.
+  rpc GetNoteRefs(GetNoteRefsRequest) returns (GetNoteRefsResponse);
+
+  // GetNoteTypes says what type each note at the paths given is.
+  rpc GetNoteTypes(GetNoteTypesRequest) returns (GetNoteTypesResponse);
+
+  // GetPathsOfType lists the notes of a type.
+  rpc GetPathsOfType(GetPathsOfTypeRequest) returns (GetPathsOfTypeResponse);
+
+  // GetLinks lists the links written in a note, with what each reaches now.
+  rpc GetLinks(GetLinksRequest) returns (GetLinksResponse);
+
+  // GetBacklinks lists the links that reach a note.
+  rpc GetBacklinks(GetBacklinksRequest) returns (GetBacklinksResponse);
+
+  // ResolveLinks says what each link written in a note reaches now.
+  rpc ResolveLinks(ResolveLinksRequest) returns (ResolveLinksResponse);
+
+  // GetParseProblems lists what parsing each file of the vault turned up.
+  rpc GetParseProblems(GetParseProblemsRequest) returns (GetParseProblemsResponse);
+
+  // ReadData reads a file of the folder the plugin's manifest names in the
+  // vault's own store. The store keeps what the plugin made and cannot make
+  // again; the host answers for no other folder.
+  rpc ReadData(ReadDataRequest) returns (ReadDataResponse);
+
+  // AppendData adds to a file of that folder, making it if it is not there.
+  rpc AppendData(AppendDataRequest) returns (AppendDataResponse);
+
+  // ListData lists the files of that folder.
+  rpc ListData(ListDataRequest) returns (ListDataResponse);
+
+  // ReadCache reads what the plugin kept for this vault under a name. The cache
+  // belongs to the installation and not to the vault, and can be made again.
+  rpc ReadCache(ReadCacheRequest) returns (ReadCacheResponse);
+
+  // WriteCache replaces what the plugin keeps for this vault under a name.
+  rpc WriteCache(WriteCacheRequest) returns (WriteCacheResponse);
+
+  // WatchVault tells of the files of the vault that changed, until the caller
+  // goes. The first message is sent at once, with no paths, so that the caller
+  // knows the watch is on.
+  rpc WatchVault(WatchVaultRequest) returns (stream WatchVaultResponse);
+}
+
+// HostVaultErrorCode is why a call was served and refused. The zero value
+// means it was not.
+enum HostVaultErrorCode {
+  HOST_VAULT_ERROR_CODE_UNSPECIFIED = 0;
+
+  // The host is showing no vault.
+  HOST_VAULT_ERROR_CODE_NO_VAULT = 1;
+
+  // The file or the note is not there.
+  HOST_VAULT_ERROR_CODE_MISSING = 2;
+
+  // The path is outside the vault or names no file.
+  HOST_VAULT_ERROR_CODE_OUTSIDE = 3;
+
+  // The file changed since the fingerprint given.
+  HOST_VAULT_ERROR_CODE_STALE = 4;
+
+  // A file is already there.
+  HOST_VAULT_ERROR_CODE_OCCUPIED = 5;
+
+  // Another program holds the file.
+  HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER = 6;
+
+  // The plugin's manifest names no folder in the vault's store.
+  HOST_VAULT_ERROR_CODE_NO_DATA_FOLDER = 7;
+
+  // The path is not a note this vault holds.
+  HOST_VAULT_ERROR_CODE_NOT_A_NOTE = 8;
+}
+
+// HostFingerprint is what a file was at a moment: where it stands, how large it
+// was and when it last changed.
+message HostFingerprint {
+  string path = 1;
+  int64 size = 2;
+  // Nanoseconds since the epoch.
+  int64 mod_time = 3;
+}
+
+message GetHostVaultRequest {}
+
+message GetHostVaultResponse {
+  HostVaultErrorCode error = 1;
+  // The folder the vault is, on this machine.
+  string path = 2;
+  string id = 3;
+  string name = 4;
+}
+
+message GetFileFingerprintRequest {
+  string path = 1;
+}
+
+message GetFileFingerprintResponse {
+  HostVaultErrorCode error = 1;
+  HostFingerprint fingerprint = 2;
+}
+
+message ReadFileRequest {
+  string path = 1;
+}
+
+message ReadFileResponse {
+  HostVaultErrorCode error = 1;
+  bytes content = 2;
+  HostFingerprint fingerprint = 3;
+}
+
+message WriteFileRequest {
+  string path = 1;
+  bytes content = 2;
+  // What the file was when the caller read it.
+  HostFingerprint baseline = 3;
+}
+
+message WriteFileResponse {
+  HostVaultErrorCode error = 1;
+  // What the file is now.
+  HostFingerprint fingerprint = 2;
+}
+
+message CreateFileRequest {
+  string path = 1;
+  bytes content = 2;
+}
+
+message CreateFileResponse {
+  HostVaultErrorCode error = 1;
+}
+
+message LockVaultRequest {}
+
+message LockVaultResponse {
+  HostVaultErrorCode error = 1;
+  // The lock to hand back to UnlockVault.
+  string lock = 2;
+}
+
+message UnlockVaultRequest {
+  string lock = 1;
+}
+
+message UnlockVaultResponse {}
+
+message ScanFilesRequest {
+  repeated string paths = 1;
+}
+
+message ScanFilesResponse {
+  HostVaultErrorCode error = 1;
+}
+
+// HostNoteRef is a note: where it stands and what it is called.
+message HostNoteRef {
+  string path = 1;
+  string title = 2;
+}
+
+message GetNoteRefsRequest {
+  repeated string paths = 1;
+}
+
+message GetNoteRefsResponse {
+  HostVaultErrorCode error = 1;
+  repeated HostNoteRef notes = 2;
+}
+
+message GetNoteTypesRequest {
+  repeated string paths = 1;
+}
+
+message GetNoteTypesResponse {
+  HostVaultErrorCode error = 1;
+  // The type of each note, by its path. A path with no note is left out.
+  map<string, string> types = 2;
+}
+
+message GetPathsOfTypeRequest {
+  string type = 1;
+}
+
+message GetPathsOfTypeResponse {
+  HostVaultErrorCode error = 1;
+  repeated string paths = 2;
+}
+
+// HostLink is a link written in a note, and what it reaches now.
+message HostLink {
+  // The note the link is written in, and the note it reaches. The second is
+  // empty when nothing is there.
+  string from = 1;
+  string to = 2;
+  // The vault the target is in, which is the vault the link is written in for
+  // an ordinary link.
+  string to_vault = 3;
+  // What the author calls the kind of link.
+  string link_type = 4;
+  // How the target is written: its scheme and its value.
+  string target_scheme = 5;
+  string target_value = 6;
+  string label = 7;
+  // Set when several notes answer to the name.
+  bool is_ambiguous = 8;
+}
+
+message GetLinksRequest {
+  string path = 1;
+}
+
+message GetLinksResponse {
+  HostVaultErrorCode error = 1;
+  repeated HostLink links = 2;
+}
+
+message GetBacklinksRequest {
+  string path = 1;
+}
+
+message GetBacklinksResponse {
+  HostVaultErrorCode error = 1;
+  repeated HostLink links = 2;
+}
+
+message ResolveLinksRequest {
+  // The note the links are written in.
+  string path = 1;
+  // How each link is written between its brackets.
+  repeated string written = 2;
+}
+
+message ResolveLinksResponse {
+  HostVaultErrorCode error = 1;
+  // What each link reaches, by how it was written.
+  map<string, HostLink> links = 2;
+}
+
+message GetParseProblemsRequest {}
+
+// HostParseProblem is something parsing a file turned up.
+message HostParseProblem {
+  string path = 1;
+  string detail = 2;
+}
+
+message GetParseProblemsResponse {
+  HostVaultErrorCode error = 1;
+  repeated HostParseProblem problems = 2;
+}
+
+message ReadDataRequest {
+  // The name of a file inside the folder.
+  string name = 1;
+}
+
+message ReadDataResponse {
+  HostVaultErrorCode error = 1;
+  bytes content = 2;
+}
+
+message AppendDataRequest {
+  string name = 1;
+  bytes content = 2;
+}
+
+message AppendDataResponse {
+  HostVaultErrorCode error = 1;
+}
+
+message ListDataRequest {}
+
+// HostDataFile is a file of the plugin's folder in the vault's store.
+message HostDataFile {
+  string name = 1;
+  int64 size = 2;
+}
+
+message ListDataResponse {
+  HostVaultErrorCode error = 1;
+  repeated HostDataFile files = 2;
+}
+
+message ReadCacheRequest {
+  string name = 1;
+}
+
+message ReadCacheResponse {
+  HostVaultErrorCode error = 1;
+  // Whether anything is kept under the name. A cache with nothing in it is the
+  // answer that nothing has been worked out yet.
+  bool found = 2;
+  bytes content = 3;
+}
+
+message WriteCacheRequest {
+  string name = 1;
+  bytes content = 2;
+}
+
+message WriteCacheResponse {
+  HostVaultErrorCode error = 1;
+}
+
+message WatchVaultRequest {}
+
+message WatchVaultResponse {
+  // The files that changed, and the vault they are in. None for the first
+  // message of a watch.
+  repeated string paths = 1;
+  // Set when the host is showing another vault than the one the watch began
+  // on, and the caller starts again.
+  bool is_vault_changed = 2;
+}

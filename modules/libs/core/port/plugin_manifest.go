@@ -60,6 +60,7 @@ var (
 	ErrInvalidSecret       = errors.New("invalid secret")
 	ErrReservedSettingKey  = errors.New("the setting key is kept by the host")
 	ErrInvalidAgentSetting = errors.New("invalid agent setting")
+	ErrInvalidData         = errors.New("invalid data folder")
 )
 
 // SettingStoredSecrets is the setting under which the host records, for a plugin,
@@ -193,6 +194,9 @@ type PluginManifest struct {
 	// host to keep. The host hands them over as Configure values, empty while a
 	// secret has no key, and never puts one in the environment or on the command line.
 	Secrets []string `json:"secrets,omitempty"`
+	// Data is the folder, inside the store the host keeps in each vault, where the plugin keeps what
+	// it cannot make again. The host answers for that folder and no other.
+	Data string `json:"data,omitempty"`
 }
 
 // ReadManifest decodes and validates a manifest from JSON input.
@@ -234,8 +238,18 @@ func (m PluginManifest) ListIssues() []error {
 	issues = append(issues, m.listPermissionIssues()...)
 	issues = append(issues, m.listRuntimeIssues()...)
 	issues = append(issues, m.listSecretIssues()...)
+	issues = append(issues, m.listDataIssues()...)
 	issues = append(issues, m.listAgentSettingIssues()...)
 	return append(issues, listManifestSettingIssues(m.Settings)...)
+}
+
+// listDataIssues checks that the folder the plugin keeps its data in is a name of letters, digits,
+// _ and -.
+func (m PluginManifest) listDataIssues() []error {
+	if m.Data != "" && !manifestSecretPattern.MatchString(m.Data) {
+		return []error{fmt.Errorf("%w: %q", ErrInvalidData, m.Data)}
+	}
+	return nil
 }
 
 // listAgentSettingIssues checks the setting that chooses the agent: one at most,

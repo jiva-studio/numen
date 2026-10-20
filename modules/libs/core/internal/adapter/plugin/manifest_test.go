@@ -416,3 +416,36 @@ func TestAManifestDeclaresTheAgentSettingOnceWithoutADefault(t *testing.T) {
 		})
 	}
 }
+
+// The folder a plugin keeps its data in is a name of letters, digits, _ and -, since the host joins it into a path.
+func TestTheFolderAManifestKeepsItsDataInIsAPlainName(t *testing.T) {
+	for _, one := range []struct {
+		folder string
+		wrong  bool
+	}{
+		{"flashcards", false},
+		{"card-answers_2", false},
+		{"../flashcards", true},
+		{"a/b", true},
+		{"a.b", true},
+		{"two words", true},
+	} {
+		t.Run(one.folder, func(t *testing.T) {
+			text := `{"id":"a.b","name":"A","version":"1.0.0","data":"` + one.folder + `"}`
+			manifest, err := ReadManifest(strings.NewReader(text))
+			if one.wrong != errors.Is(err, port.ErrInvalidData) {
+				t.Errorf("error = %v, want invalid data folder: %v", err, one.wrong)
+			}
+			if !one.wrong && manifest.Data != one.folder {
+				t.Errorf("the folder came out as %q", manifest.Data)
+			}
+		})
+	}
+}
+
+func TestAManifestNamingNoDataFolderKeepsNoData(t *testing.T) {
+	manifest, err := ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0"}`))
+	if err != nil || manifest.Data != "" {
+		t.Errorf("got %q (%v)", manifest.Data, err)
+	}
+}

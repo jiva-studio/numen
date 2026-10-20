@@ -40,6 +40,12 @@ type HostCallers interface {
 	CheckPluginPermission(pluginID, permission string) error
 	CheckCompletionConsent(pluginID string) error
 	GetCompleter() port.Completer
+	// GetPluginVault is the vault the window is showing, as a plugin works it. Where the host has
+	// none to offer it returns nil.
+	GetPluginVault() port.PluginVault
+	// GetPluginData is the folder, inside the store of a vault, that the plugin's manifest keeps its
+	// data in. It is empty where the manifest names none.
+	GetPluginData(pluginID string) string
 }
 
 // HostEndpoint answers the calls plugins make to the host. It listens on the
@@ -70,6 +76,7 @@ func OpenHostEndpoint(ctx context.Context, address string, callers HostCallers) 
 
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostServiceHandler(endpoint))
+	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 	endpoint.server = &http.Server{Handler: mux, ReadHeaderTimeout: hostEndpointHeaderTimeout}
 	go func() {
 		// Serve returns http.ErrServerClosed after Close.
@@ -175,6 +182,27 @@ func (h *Host) GetPluginIDByToken(token string) (string, bool) {
 	return pluginID, found
 }
 
+// SetPluginVault sets the vault the window is showing, as plugins work it through the host.
+func (h *Host) SetPluginVault(vault port.PluginVault) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.vault = vault
+}
+
+// GetPluginVault is the vault the window is showing, and nil where none was set.
+func (h *Host) GetPluginVault() port.PluginVault {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.vault
+}
+
+// GetPluginData is the folder of the store of a vault that the plugin keeps its data in.
+func (h *Host) GetPluginData(pluginID string) string {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.plugins[pluginID].Manifest.Data
+}
+
 // SetCompleter sets what answers the completions plugins ask for. The host
 // endpoint starts serving when the first plugin launches after it is set.
 func (h *Host) SetCompleter(completer port.Completer) {
@@ -190,14 +218,15 @@ func (h *Host) GetCompleter() port.Completer {
 }
 
 // openHostEndpoint returns the port the host endpoint listens on, starting it
-// on the first call after a completer is set. It returns zero while none is set.
+// on the first call after a completer or a vault is set. It returns zero while
+// neither is set.
 func (h *Host) openHostEndpoint(ctx context.Context) (int, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if h.hostEndpoint != nil {
 		return h.hostEndpoint.GetPort(), nil
 	}
-	if h.completer == nil || h.isClosed {
+	if (h.completer == nil && h.vault == nil) || h.isClosed {
 		return 0, nil
 	}
 	endpoint, err := OpenHostEndpoint(ctx, h.hostAddress, h)

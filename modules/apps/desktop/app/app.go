@@ -240,6 +240,14 @@ func openInstallation(
 		return shownInstallation{}, err
 	}
 	cfg.SetPluginVaultPath(opened.GetCurrentVault().Path)
+	shared, err := made.OpenPluginVault(func() (domain.Vault, bool) {
+		current := opened.GetCurrentVault()
+		return current, current.Path != ""
+	})
+	if err != nil {
+		return shownInstallation{}, err
+	}
+	cfg.SetPluginVault(shared)
 	return shownInstallation{pages: pages, opened: opened}, nil
 }
 

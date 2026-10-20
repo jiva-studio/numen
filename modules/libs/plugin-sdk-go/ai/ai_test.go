@@ -127,35 +127,6 @@ func TestCompleteFailsWithoutHostPort(t *testing.T) {
 	}
 }
 
-func TestBearerInterceptorSetsHeaderOnStreamingClient(t *testing.T) {
-	conn := &fakeStreamConn{header: http.Header{}}
-	wrapped := newBearerInterceptor("s").WrapStreamingClient(func(context.Context, connect.Spec) connect.StreamingClientConn { return conn })
-
-	wrapped(context.Background(), connect.Spec{})
-
-	if got := conn.header.Get("Authorization"); got != "Bearer s" {
-		t.Errorf("got %q", got)
-	}
-}
-
-func TestBearerInterceptorPassesStreamingHandlerThrough(t *testing.T) {
-	called := false
-	next := func(context.Context, connect.StreamingHandlerConn) error { called = true; return nil }
-
-	_ = newBearerInterceptor("s").WrapStreamingHandler(next)(context.Background(), nil)
-
-	if !called {
-		t.Error("handler not called")
-	}
-}
-
-type fakeStreamConn struct {
-	connect.StreamingClientConn
-	header http.Header
-}
-
-func (f *fakeStreamConn) RequestHeader() http.Header { return f.header }
-
 func TestClientCompleteReturnsRefusalOfHost(t *testing.T) {
 	cases := map[numenv1.CompletionErrorCode]error{
 		numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE:    ErrNoRoute,
