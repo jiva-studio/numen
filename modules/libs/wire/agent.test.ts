@@ -131,3 +131,30 @@ describe('createAgentPort', () => {
     expect(over).toEqual(['one'])
   })
 })
+
+describe('the depth of reasoning', () => {
+  const ask = async (reasoning?: string) => {
+    const { agent, requests } = service([])
+    const port = createAgentPort(agent)
+    for await (const step of port.ask({
+      question: 'why?',
+      focus: '',
+      conversation: 'one',
+      signal: new AbortController().signal,
+      agentId: 'alpha',
+      modelId: 'deep',
+      ...(reasoning === undefined ? {} : { reasoning }),
+    }))
+      void step
+    return requests[0]?.request
+  }
+
+  it('is handed to the service where one is named', async () => {
+    expect(await ask('high')).toMatchObject({ model: 'deep', reasoning: 'high' })
+  })
+
+  it('is left out where none is named', async () => {
+    expect(await ask('')).not.toHaveProperty('reasoning')
+    expect(await ask()).not.toHaveProperty('reasoning')
+  })
+})

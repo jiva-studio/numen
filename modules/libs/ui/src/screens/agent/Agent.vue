@@ -3,7 +3,11 @@
 import { computed, useTemplateRef, watch } from 'vue'
 import { useWholeViewport } from '@/shared/lib/viewport'
 import { Thread } from '@/features/thread'
-import { MessageComposer, type AgentModelOption } from '@/features/message-composer'
+import {
+  MessageComposer,
+  type AgentModelOption,
+  type ReasoningLevelOption,
+} from '@/features/message-composer'
 import type { Turn } from '@/features/thread'
 
 withDefaults(
@@ -20,6 +24,9 @@ withDefaults(
     options?: readonly AgentModelOption[]
     selectedAgentId?: string
     selectedModelId?: string
+    reasoningLevels?: readonly ReasoningLevelOption[]
+    selectedReasoningId?: string
+    reasoningName?: string
   }>(),
   {
     isWorking: false,
@@ -30,6 +37,9 @@ withDefaults(
     options: () => [],
     selectedAgentId: '',
     selectedModelId: '',
+    reasoningLevels: () => [],
+    selectedReasoningId: '',
+    reasoningName: 'Reasoning',
   },
 )
 
@@ -46,6 +56,8 @@ const emit = defineEmits<{
   (event: 'follow', turn: Turn, href: string, press: MouseEvent): void
   /** A model/agent was selected from the dropdown. */
   (event: 'select-model', option: AgentModelOption): void
+  /** A depth of reasoning was chosen from the dropdown, by the name of the level. */
+  (event: 'select-reasoning', id: string): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -73,6 +85,10 @@ function onSubmit(text: string) {
 
 function onSelectModel(option: AgentModelOption) {
   emit('select-model', option)
+}
+
+function onSelectReasoning(id: string) {
+  emit('select-reasoning', id)
 }
 
 /* -------------------------------- Helpers --------------------------------- */
@@ -107,9 +123,13 @@ const agentStyle = computed(() => ({ '--agent-room': room.value }))
       :options="options"
       :selected-agent-id="selectedAgentId"
       :selected-model-id="selectedModelId"
+      :reasoning-levels="reasoningLevels"
+      :selected-reasoning-id="selectedReasoningId"
+      :reasoning-name="reasoningName"
       @submit="onSubmit"
       @stop="emit('stop')"
       @select-model="onSelectModel"
+      @select-reasoning="onSelectReasoning"
     >
       <template v-if="$slots.selector" #selector><slot name="selector" /></template>
       <template v-if="$slots.glyph" #glyph><slot name="glyph" /></template>

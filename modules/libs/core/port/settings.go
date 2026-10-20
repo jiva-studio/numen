@@ -39,6 +39,13 @@ type Model struct {
 
 	// Presence is what this model's files are on this machine.
 	Presence Presence
+
+	// ReasoningLevels are the depths of reasoning the model can be asked to work at, from the least to
+	// the most. None where it offers no choice.
+	ReasoningLevels []ReasoningLevel
+
+	// DefaultReasoning is the level the model works at unasked, empty where it names none.
+	DefaultReasoning string
 }
 
 // Presence is what a model's files are on this machine. It says where files

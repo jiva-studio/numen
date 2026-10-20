@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -24,11 +25,15 @@ const testToken = "vault-token"
 
 // sentRequest is what the fake chat API was sent.
 type sentRequest struct {
-	Auth     string
-	Model    string         `json:"model"`
-	Messages []message      `json:"messages"`
-	Tools    []functionTool `json:"tools"`
-	Stream   bool           `json:"stream"`
+	Auth            string
+	Model           string         `json:"model"`
+	Messages        []message      `json:"messages"`
+	Tools           []functionTool `json:"tools"`
+	Stream          bool           `json:"stream"`
+	ReasoningEffort string         `json:"reasoning_effort"`
+	Reasoning       *struct {
+		Effort string `json:"effort"`
+	} `json:"reasoning"`
 }
 
 // fakeChat is an OpenAI-compatible chat API that answers each request with the next reply it holds,
@@ -37,12 +42,14 @@ type sentRequest struct {
 // where it is set, is the data of the events that answer the first request. refusesStream answers
 // a streaming request 400 Bad Request, and ignoresStream answers it with the whole reply.
 type fakeChat struct {
-	mu            sync.Mutex
-	replies       []message
-	script        []string
-	status        int
-	finish        string
-	models        []string
+	mu      sync.Mutex
+	replies []message
+	script  []string
+	status  int
+	finish  string
+	models  []string
+	// parameters are the parameters each model lists as supported, by model.
+	parameters    map[string][]string
 	refusesStream bool
 	ignoresStream bool
 	requests      []sentRequest
@@ -60,10 +67,14 @@ func (f *fakeChat) serve(t *testing.T) *httptest.Server {
 		}
 		if r.URL.Path == "/models" {
 			var listing struct {
-				Data []map[string]string `json:"data"`
+				Data []map[string]any `json:"data"`
 			}
 			for _, one := range f.models {
-				listing.Data = append(listing.Data, map[string]string{"id": one, "name": strings.ToUpper(one)})
+				entry := map[string]any{"id": one, "name": strings.ToUpper(one)}
+				if supported, found := f.parameters[one]; found {
+					entry["supported_parameters"] = supported
+				}
+				listing.Data = append(listing.Data, entry)
 			}
 			_ = json.NewEncoder(w).Encode(listing)
 			return
@@ -684,5 +695,63 @@ func TestAnAnswerOtherThanARefusedKeyAddsNoHint(t *testing.T) {
 
 	if reason := steps[len(steps)-1].GetStopped(); strings.Contains(reason, "Settings") {
 		t.Errorf("stopped %q", reason)
+	}
+}
+
+func TestAModelThatListsAReasoningParameterOffersLevels(t *testing.T) {
+	model := &fakeChat{
+		models:     []string{"thinker", "router", "plain"},
+		parameters: map[string][]string{"thinker": {"temperature", "reasoning_effort"}, "router": {"reasoning"}},
+	}
+	s := newServer(model.serve(t).URL)
+
+	res, err := s.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var offered []int
+	for _, one := range res.Msg.GetPrograms()[0].GetModels() {
+		offered = append(offered, len(one.GetReasoningLevels()))
+	}
+	if !slices.Equal(offered, []int{3, 3, 0}) {
+		t.Errorf("the levels offered are %v", offered)
+	}
+}
+
+func TestTheLevelOfATaskGoesInTheFieldTheModelListsOrNowhere(t *testing.T) {
+	cases := []struct {
+		model, level string
+		effort       string
+		reasoning    string
+	}{
+		{"thinker", "high", "high", ""},
+		{"router", "low", "", "low"},
+		{"plain", "high", "", ""},
+		{"thinker", "extreme", "", ""},
+		{"thinker", "", "", ""},
+		{"unlisted", "high", "", ""},
+	}
+	for _, one := range cases {
+		model := &fakeChat{
+			replies:    []message{newTextReply("hi")},
+			models:     []string{"thinker", "router", "plain"},
+			parameters: map[string][]string{"thinker": {"reasoning_effort"}, "router": {"reasoning"}},
+		}
+		s := newServer(model.serve(t).URL)
+		task := newTask("", "Hello?")
+		task.Model, task.Reasoning = one.model, one.level
+		task.Tools, task.ToolsUrl = nil, ""
+
+		ask(t, s, task)
+
+		got := model.getRequests()[0]
+		gotReasoning := ""
+		if got.Reasoning != nil {
+			gotReasoning = got.Reasoning.Effort
+		}
+		if got.ReasoningEffort != one.effort || gotReasoning != one.reasoning {
+			t.Errorf("model %q at %q was sent %q and %q, want %q and %q",
+				one.model, one.level, got.ReasoningEffort, gotReasoning, one.effort, one.reasoning)
+		}
 	}
 }

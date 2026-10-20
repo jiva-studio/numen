@@ -7,6 +7,8 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -327,5 +329,20 @@ func TestAFileStandingAtWhatTheClientReadIsWritten(t *testing.T) {
 	}
 	if now.Msg.GetWritten() != written {
 		t.Errorf("the file reads as %q, wanted %q", now.Msg.GetWritten(), written)
+	}
+}
+
+// The levels of reasoning a model offers reach the window with the model.
+func TestTheLevelsOfAModelReachTheWindow(t *testing.T) {
+	got := editor.NewWireModels([]settings.Model{{
+		Name: "deep", ReasoningLevels: []settings.ReasoningLevel{{Name: "low", Title: "Low"}}, DefaultReasoning: "low",
+	}, {Name: "plain"}})
+
+	if levels := got[0].GetReasoningLevels(); len(levels) != 1 || levels[0].GetName() != "low" || levels[0].GetTitle() != "Low" ||
+		got[0].GetDefaultReasoning() != "low" {
+		t.Errorf("the model is %v", got[0])
+	}
+	if len(got[1].GetReasoningLevels()) != 0 {
+		t.Errorf("a model offering none is %v", got[1])
 	}
 }

@@ -62,6 +62,7 @@ func newAskRequest(task port.Task) *v1.AskAgentRequest {
 		Conversation:     task.Conversation,
 		Agent:            task.Agent,
 		Model:            task.Model,
+		Reasoning:        task.Reasoning,
 		Instructions:     task.Instructions,
 		Tools:            task.Tools,
 		MaxSteps:         int32(min(max(task.MaxSteps, 0), math.MaxInt32)),
@@ -146,6 +147,7 @@ func (b *AgentBridge) GetPrograms(ctx context.Context, commands map[string][]str
 		for _, model := range one.GetModels() {
 			models = append(models, port.AgentModel{
 				Name: model.GetName(), Title: model.GetTitle(), IsDefault: model.GetIsDefault(),
+				ReasoningLevels: newReasoningLevels(model.GetReasoningLevels()), DefaultReasoning: model.GetDefaultReasoning(),
 			})
 		}
 		programs = append(programs, port.AgentProgram{
@@ -352,4 +354,16 @@ func getStepKind(kind string) domain.StepKind {
 		}
 	}
 	return domain.StepToolCall
+}
+
+// newReasoningLevels is the levels of reasoning a plugin reports, as the port holds them.
+func newReasoningLevels(reported []*v1.ReasoningLevel) []port.ReasoningLevel {
+	if len(reported) == 0 {
+		return nil
+	}
+	levels := make([]port.ReasoningLevel, 0, len(reported))
+	for _, one := range reported {
+		levels = append(levels, port.ReasoningLevel{Name: one.GetName(), Title: one.GetTitle()})
+	}
+	return levels
 }

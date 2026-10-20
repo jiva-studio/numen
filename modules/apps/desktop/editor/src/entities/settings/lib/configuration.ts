@@ -34,6 +34,10 @@ export interface Model {
   readonly writes: readonly SettingEdit[]
   /** Availability of model files on the local machine. */
   readonly presence: Presence
+  /** The depths of reasoning the model can be asked to work at, from the least to the most. */
+  readonly reasoningLevels?: readonly { readonly name: string; readonly title: string }[]
+  /** The level the model works at unasked, empty where it names none. */
+  readonly defaultReasoning?: string
 }
 
 /** Declarative setting schema and metadata exposed by a plugin. */

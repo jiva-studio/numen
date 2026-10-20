@@ -13,6 +13,7 @@ type (
 	PluginFailure    = port.PluginFailure
 	UnavailableError = port.UnavailableError
 	AgentModel       = port.AgentModel
+	ReasoningLevel   = port.ReasoningLevel
 	Consent          = port.CompletionConsent
 )
 

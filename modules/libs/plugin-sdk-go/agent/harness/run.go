@@ -35,6 +35,7 @@ func (f *chatFailure) Unwrap() error { return f.err }
 type run struct {
 	chat    chat
 	model   string
+	effort  effort
 	tools   *toolbox
 	words   map[string]toolcall.Declaration
 	turns   int
@@ -126,13 +127,13 @@ func (r *run) callTool(ctx context.Context, call toolCall) (string, error) {
 func (r *run) ask(ctx context.Context, messages []message, emit func(string) error) (message, string, error) {
 	var refusal error
 	if !r.isPlain {
-		reply, finished, err := r.chat.stream(ctx, r.model, messages, r.tools.offered, emit)
+		reply, finished, err := r.chat.stream(ctx, r.model, r.effort, messages, r.tools.offered, emit)
 		if !errors.Is(err, errStreamRefused) {
 			return reply, finished, err
 		}
 		refusal = err
 	}
-	reply, finished, err := r.chat.send(ctx, r.model, messages, r.tools.offered)
+	reply, finished, err := r.chat.send(ctx, r.model, r.effort, messages, r.tools.offered)
 	if err != nil {
 		return message{}, "", err
 	}

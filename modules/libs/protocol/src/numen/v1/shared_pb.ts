@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/shared.proto.
  */
 export const file_numen_v1_shared: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjgKC0ZpbmdlcnByaW50EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIgCgRTcGFuEgwKBGZyb20YASABKAUSCgoCdG8YAiABKAUiJQoGQm91bmRzEg0KBWxlYXN0GAEgASgBEgwKBG1vc3QYAiABKAEqhwMKCUVycm9yQ29kZRIaChZFUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASFgoSRVJST1JfQ09ERV9NSVNTSU5HEAESGQoVRVJST1JfQ09ERV9OT1RfQV9OT1RFEAISFwoTRVJST1JfQ09ERV9OT1RfVEVYVBADEhgKFEVSUk9SX0NPREVfVE9PX0xBUkdFEAQSHgoaRVJST1JfQ09ERV9CT0RZX1VOV1JJVEFCTEUQBRIZChVFUlJPUl9DT0RFX1VOUkVBREFCTEUQBhIXChNFUlJPUl9DT0RFX09DQ1VQSUVEEAcSGQoVRVJST1JfQ09ERV9VTk5BTUVBQkxFEAgSHAoYRVJST1JfQ09ERV9OT1RfQV9TVEVOQ0lMEAkSGQoVRVJST1JfQ09ERV9OT1RfQV9ERUNLEAoSHQoZRVJST1JfQ09ERV9ERUNLX1RPT19MQVJHRRALEhsKF0VSUk9SX0NPREVfTk9UX0FfUFJFU0VUEAwSFAoQRVJST1JfQ09ERV9TVEFMRRANQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjgKC0ZpbmdlcnByaW50EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIgCgRTcGFuEgwKBGZyb20YASABKAUSCgoCdG8YAiABKAUiJQoGQm91bmRzEg0KBWxlYXN0GAEgASgBEgwKBG1vc3QYAiABKAEiLQoOUmVhc29uaW5nTGV2ZWwSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCSqHAwoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIWChJFUlJPUl9DT0RFX01JU1NJTkcQARIZChVFUlJPUl9DT0RFX05PVF9BX05PVEUQAhIXChNFUlJPUl9DT0RFX05PVF9URVhUEAMSGAoURVJST1JfQ09ERV9UT09fTEFSR0UQBBIeChpFUlJPUl9DT0RFX0JPRFlfVU5XUklUQUJMRRAFEhkKFUVSUk9SX0NPREVfVU5SRUFEQUJMRRAGEhcKE0VSUk9SX0NPREVfT0NDVVBJRUQQBxIZChVFUlJPUl9DT0RFX1VOTkFNRUFCTEUQCBIcChhFUlJPUl9DT0RFX05PVF9BX1NURU5DSUwQCRIZChVFUlJPUl9DT0RFX05PVF9BX0RFQ0sQChIdChlFUlJPUl9DT0RFX0RFQ0tfVE9PX0xBUkdFEAsSGwoXRVJST1JfQ09ERV9OT1RfQV9QUkVTRVQQDBIUChBFUlJPUl9DT0RFX1NUQUxFEA1CSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * Fingerprint is which file this is: where it is filed, how big it is, and when
@@ -104,6 +104,34 @@ export type Bounds = Message<"numen.v1.Bounds"> & {
  */
 export const BoundsSchema: GenMessage<Bounds> = /*@__PURE__*/
   messageDesc(file_numen_v1_shared, 2);
+
+/**
+ * ReasoningLevel is one depth of reasoning a model can be asked to work at.
+ *
+ * @generated from message numen.v1.ReasoningLevel
+ */
+export type ReasoningLevel = Message<"numen.v1.ReasoningLevel"> & {
+  /**
+   * What a task asks for the level by (e.g. "low", "high").
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * What the level is called when shown to a person.
+   *
+   * @generated from field: string title = 2;
+   */
+  title: string;
+};
+
+/**
+ * Describes the message numen.v1.ReasoningLevel.
+ * Use `create(ReasoningLevelSchema)` to create a new message.
+ */
+export const ReasoningLevelSchema: GenMessage<ReasoningLevel> = /*@__PURE__*/
+  messageDesc(file_numen_v1_shared, 3);
 
 /**
  * ErrorCode is why a note could not be read or written.

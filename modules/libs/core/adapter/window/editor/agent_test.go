@@ -104,6 +104,7 @@ func TestWhatTheClientAsksReachesTheAgent(t *testing.T) {
 		Prompt:       "rewrite this note",
 		Focus:        "notes/Fugue.md",
 		Conversation: "8f2c1e",
+		Reasoning:    "high",
 	})
 
 	task := <-taking.took
@@ -115,6 +116,9 @@ func TestWhatTheClientAsksReachesTheAgent(t *testing.T) {
 	}
 	if task.Conversation != "8f2c1e" {
 		t.Errorf("the conversation is %q, want %q", task.Conversation, "8f2c1e")
+	}
+	if task.Reasoning != "high" {
+		t.Errorf("the depth of reasoning is %q, want %q", task.Reasoning, "high")
 	}
 }
 

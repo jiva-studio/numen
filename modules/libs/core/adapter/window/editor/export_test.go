@@ -15,3 +15,6 @@ func (s *Services) FileMove() *vaults.Move   { return s.File.move }
 
 func (s *Services) SetFileMove(move *vaults.Move)  { s.File.move = move }
 func (s *Services) SetNoteWrite(write *note.Write) { s.Note.write = write }
+
+// NewWireModels is the models as the wire carries them.
+var NewWireModels = newWireModels

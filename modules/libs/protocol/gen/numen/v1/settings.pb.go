@@ -227,9 +227,14 @@ type Model struct {
 	// more than its own name.
 	Writes []*Setting `protobuf:"bytes,6,rep,name=writes,proto3" json:"writes,omitempty"`
 	// What this model's files are on this machine.
-	Presence      Presence `protobuf:"varint,7,opt,name=presence,proto3,enum=numen.v1.Presence" json:"presence,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Presence Presence `protobuf:"varint,7,opt,name=presence,proto3,enum=numen.v1.Presence" json:"presence,omitempty"`
+	// The depths of reasoning the model can be asked to work at, from the least to the most. Empty
+	// where the model offers no choice.
+	ReasoningLevels []*ReasoningLevel `protobuf:"bytes,8,rep,name=reasoning_levels,json=reasoningLevels,proto3" json:"reasoning_levels,omitempty"`
+	// The level the model works at unasked. Empty where it names none.
+	DefaultReasoning string `protobuf:"bytes,9,opt,name=default_reasoning,json=defaultReasoning,proto3" json:"default_reasoning,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Model) Reset() {
@@ -309,6 +314,20 @@ func (x *Model) GetPresence() Presence {
 		return x.Presence
 	}
 	return Presence_PRESENCE_UNSPECIFIED
+}
+
+func (x *Model) GetReasoningLevels() []*ReasoningLevel {
+	if x != nil {
+		return x.ReasoningLevels
+	}
+	return nil
+}
+
+func (x *Model) GetDefaultReasoning() string {
+	if x != nil {
+		return x.DefaultReasoning
+	}
+	return ""
 }
 
 // Setting is one setting of the file and what to put there.
@@ -931,7 +950,7 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12'\n" +
 	"\x06models\x18\x03 \x03(\v2\x0f.numen.v1.ModelR\x06models\x12O\n" +
 	"\x1bnested_heading_limit_bounds\x18\x04 \x01(\v2\x10.numen.v1.BoundsR\x18nestedHeadingLimitBounds\x12.\n" +
-	"\aplugins\x18\a \x03(\v2\x14.numen.v1.PluginInfoR\apluginsJ\x04\b\x05\x10\x06J\x04\b\x06\x10\a\"\xdc\x01\n" +
+	"\aplugins\x18\a \x03(\v2\x14.numen.v1.PluginInfoR\apluginsJ\x04\b\x05\x10\x06J\x04\b\x06\x10\a\"\xce\x02\n" +
 	"\x05Model\x12\x19\n" +
 	"\bnamed_at\x18\x01 \x03(\tR\anamedAt\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -940,7 +959,9 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\n" +
 	"is_default\x18\x05 \x01(\bR\tisDefault\x12)\n" +
 	"\x06writes\x18\x06 \x03(\v2\x11.numen.v1.SettingR\x06writes\x12.\n" +
-	"\bpresence\x18\a \x01(\x0e2\x12.numen.v1.PresenceR\bpresence\"/\n" +
+	"\bpresence\x18\a \x01(\x0e2\x12.numen.v1.PresenceR\bpresence\x12C\n" +
+	"\x10reasoning_levels\x18\b \x03(\v2\x18.numen.v1.ReasoningLevelR\x0freasoningLevels\x12+\n" +
+	"\x11default_reasoning\x18\t \x01(\tR\x10defaultReasoning\"/\n" +
 	"\aSetting\x12\x0e\n" +
 	"\x02at\x18\x01 \x03(\tR\x02at\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value\"E\n" +
@@ -1019,7 +1040,8 @@ var file_numen_v1_settings_proto_goTypes = []any{
 	(*RetryPluginResponse)(nil),        // 16: numen.v1.RetryPluginResponse
 	(*Bounds)(nil),                     // 17: numen.v1.Bounds
 	(*PluginInfo)(nil),                 // 18: numen.v1.PluginInfo
-	(ErrorCode)(0),                     // 19: numen.v1.ErrorCode
+	(*ReasoningLevel)(nil),             // 19: numen.v1.ReasoningLevel
+	(ErrorCode)(0),                     // 20: numen.v1.ErrorCode
 }
 var file_numen_v1_settings_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.GetSettingsResponse.models:type_name -> numen.v1.Model
@@ -1027,27 +1049,28 @@ var file_numen_v1_settings_proto_depIdxs = []int32{
 	18, // 2: numen.v1.GetSettingsResponse.plugins:type_name -> numen.v1.PluginInfo
 	4,  // 3: numen.v1.Model.writes:type_name -> numen.v1.Setting
 	0,  // 4: numen.v1.Model.presence:type_name -> numen.v1.Presence
-	4,  // 5: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
-	19, // 6: numen.v1.WriteSettingsFileResponse.error:type_name -> numen.v1.ErrorCode
-	1,  // 7: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
-	5,  // 8: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
-	7,  // 9: numen.v1.SettingsService.ReadSettingsFile:input_type -> numen.v1.ReadSettingsFileRequest
-	9,  // 10: numen.v1.SettingsService.WriteSettingsFile:input_type -> numen.v1.WriteSettingsFileRequest
-	11, // 11: numen.v1.SettingsService.WritePluginSecret:input_type -> numen.v1.WritePluginSecretRequest
-	13, // 12: numen.v1.SettingsService.DeletePluginSecret:input_type -> numen.v1.DeletePluginSecretRequest
-	15, // 13: numen.v1.SettingsService.RetryPlugin:input_type -> numen.v1.RetryPluginRequest
-	2,  // 14: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
-	6,  // 15: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
-	8,  // 16: numen.v1.SettingsService.ReadSettingsFile:output_type -> numen.v1.ReadSettingsFileResponse
-	10, // 17: numen.v1.SettingsService.WriteSettingsFile:output_type -> numen.v1.WriteSettingsFileResponse
-	12, // 18: numen.v1.SettingsService.WritePluginSecret:output_type -> numen.v1.WritePluginSecretResponse
-	14, // 19: numen.v1.SettingsService.DeletePluginSecret:output_type -> numen.v1.DeletePluginSecretResponse
-	16, // 20: numen.v1.SettingsService.RetryPlugin:output_type -> numen.v1.RetryPluginResponse
-	14, // [14:21] is the sub-list for method output_type
-	7,  // [7:14] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	19, // 5: numen.v1.Model.reasoning_levels:type_name -> numen.v1.ReasoningLevel
+	4,  // 6: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
+	20, // 7: numen.v1.WriteSettingsFileResponse.error:type_name -> numen.v1.ErrorCode
+	1,  // 8: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
+	5,  // 9: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
+	7,  // 10: numen.v1.SettingsService.ReadSettingsFile:input_type -> numen.v1.ReadSettingsFileRequest
+	9,  // 11: numen.v1.SettingsService.WriteSettingsFile:input_type -> numen.v1.WriteSettingsFileRequest
+	11, // 12: numen.v1.SettingsService.WritePluginSecret:input_type -> numen.v1.WritePluginSecretRequest
+	13, // 13: numen.v1.SettingsService.DeletePluginSecret:input_type -> numen.v1.DeletePluginSecretRequest
+	15, // 14: numen.v1.SettingsService.RetryPlugin:input_type -> numen.v1.RetryPluginRequest
+	2,  // 15: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
+	6,  // 16: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
+	8,  // 17: numen.v1.SettingsService.ReadSettingsFile:output_type -> numen.v1.ReadSettingsFileResponse
+	10, // 18: numen.v1.SettingsService.WriteSettingsFile:output_type -> numen.v1.WriteSettingsFileResponse
+	12, // 19: numen.v1.SettingsService.WritePluginSecret:output_type -> numen.v1.WritePluginSecretResponse
+	14, // 20: numen.v1.SettingsService.DeletePluginSecret:output_type -> numen.v1.DeletePluginSecretResponse
+	16, // 21: numen.v1.SettingsService.RetryPlugin:output_type -> numen.v1.RetryPluginResponse
+	15, // [15:22] is the sub-list for method output_type
+	8,  // [8:15] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_settings_proto_init() }

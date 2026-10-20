@@ -27,6 +27,8 @@ export interface ConversationStrings {
 export interface AskOptions {
   readonly agentId?: string
   readonly modelId?: string
+  /** The depth of reasoning, by the name of the level. */
+  readonly reasoning?: string
 }
 
 export interface Conversation {
@@ -81,6 +83,7 @@ export function useConversation(options: ConversationOptions): Conversation {
           signal: flight.signal,
           agentId: askOptions?.agentId,
           modelId: askOptions?.modelId,
+          reasoning: askOptions?.reasoning,
         },
         { answer, work },
       )

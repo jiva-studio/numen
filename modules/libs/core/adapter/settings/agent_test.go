@@ -143,7 +143,7 @@ func TestTheCommandsAreThoseTheSettingsSet(t *testing.T) {
 // The section is written with the programs beside the two keys of it, and a choice left to the
 // default is written as null, so that it reads back the same.
 func TestTheSectionIsWrittenAsItIsRead(t *testing.T) {
-	file := `{"use":"claude","serve_tools":true,"claude":{"command":["/c"],"model":"opus","max_steps":7,"reads_hooks_and_skills":true}}`
+	file := `{"use":"claude","serve_tools":true,"claude":{"command":["/c"],"model":"opus","reasoning":"high","max_steps":7,"reads_hooks_and_skills":true}}`
 	written, err := json.Marshal(read(t, file))
 	if err != nil {
 		t.Fatal(err)

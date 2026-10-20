@@ -3,6 +3,7 @@
 import { computed, ref, useTemplateRef } from 'vue'
 import { Menu, type MenuItem } from '@/shared/ui/menu'
 import type { Position } from '@/shared/lib/geometry'
+import type { ReasoningLevelOption } from '../reasoning-selector/ReasoningSelector.vue'
 
 export interface AgentModelOption {
   readonly agentId: string
@@ -11,6 +12,10 @@ export interface AgentModelOption {
   readonly modelTitle: string
   readonly isAvailable: boolean
   readonly isDefault?: boolean
+  /** The depths of reasoning the model can be asked to work at. None where it offers no choice. */
+  readonly reasoningLevels?: readonly ReasoningLevelOption[]
+  /** The level the model works at unasked, empty where it names none. */
+  readonly defaultReasoning?: string
 }
 
 const props = withDefaults(

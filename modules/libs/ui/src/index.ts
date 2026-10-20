@@ -155,7 +155,7 @@ export type { PlexRelation } from './features/plex'
 export type { PlexDestination } from './features/plex'
 export { createThreadPath } from './features/plex'
 
-export type { AgentModelOption } from './features/message-composer'
+export type { AgentModelOption, ReasoningLevelOption } from './features/message-composer'
 
 export { StatusBar } from './features/status-bar'
 export type { StatusBarTask, TaskState } from './features/status-bar'

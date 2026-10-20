@@ -30,6 +30,10 @@ function onFollowLink(turn: Turn, href: string, press: MouseEvent) {
 function onSelectModel(option: AgentModelOption) {
   props.state.selectModel(option)
 }
+
+function onSelectReasoning(id: string) {
+  props.state.selectReasoning(id)
+}
 </script>
 
 <template>
@@ -43,12 +47,16 @@ function onSelectModel(option: AgentModelOption) {
     :options="props.state.modelOptions.value"
     :selected-agent-id="props.state.selectedAgentId.value"
     :selected-model-id="props.state.selectedModelId.value"
+    :reasoning-levels="props.state.reasoningLevels.value"
+    :selected-reasoning-id="props.state.selectedReasoningId.value"
+    :reasoning-name="words.reasoning"
     @update:model-value="onUpdateQuestion"
     @submit="onSubmit"
     @stop="onStop"
     @open="onOpenTurn"
     @follow="onFollowLink"
     @select-model="onSelectModel"
+    @select-reasoning="onSelectReasoning"
   >
     <template #silence>{{ props.state.unreachable() || words.nothingSaid }}</template>
     <template #failure="{ turn }">

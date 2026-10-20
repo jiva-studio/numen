@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -383,6 +384,16 @@ func TestReportEditIgnoredWhenToolHasNoTextDeclaration(t *testing.T) {
 	for _, s := range got {
 		if ep := s.GetEditProgress(); ep != nil {
 			t.Fatalf("expected no edit progress when tool text is empty, got %+v", ep)
+		}
+	}
+}
+
+func TestTheLevelOfReasoningIsHandedToTheProgramAsItsEffort(t *testing.T) {
+	for _, tools := range [][]string{{"note_read"}, nil} {
+		args := buildClaudeArguments(claudeArguments{reasoning: "high", tools: tools})
+		assertPair(t, args, "--effort", "high")
+		if slices.Contains(buildClaudeArguments(claudeArguments{tools: tools}), "--effort") {
+			t.Error("a run that names no level is given an effort")
 		}
 	}
 }
