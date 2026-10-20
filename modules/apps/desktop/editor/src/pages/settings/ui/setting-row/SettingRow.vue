@@ -50,11 +50,13 @@ const nameId = computed(() => `settings-${props.at}`)
 .settings__row {
   --settings-row-air: 0.5rem;
   --settings-label-gap: 0.125rem;
-  /* The name and what it means on the left, the control at the end of the row. */
-  display: grid;
-  grid-template-columns: 1fr max-content;
+  --settings-label-floor: max(18rem, 40%);
+  /* The name and what it means on the left, the control at the end of the row;
+     a control that does not fit beside the text wraps under it. */
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0 var(--numen-panel-gap);
+  gap: var(--settings-row-air) var(--numen-panel-gap);
   padding-block: var(--settings-row-air);
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }
@@ -64,7 +66,8 @@ const nameId = computed(() => `settings-${props.at}`)
   display: flex;
   flex-direction: column;
   gap: var(--settings-label-gap);
-  min-inline-size: 0;
+  flex: 1 1 var(--settings-label-floor);
+  min-inline-size: min(100%, var(--settings-label-floor));
 }
 
 /* The name of a row and what it means are one size, and the name carries the
@@ -77,6 +80,10 @@ const nameId = computed(() => `settings-${props.at}`)
 /* Controls of every width end at the one edge. */
 .settings__value {
   display: flex;
+  flex: 0 1 auto;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  margin-inline-start: auto;
   align-items: center;
   justify-content: end;
 }
