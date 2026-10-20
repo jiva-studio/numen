@@ -6,6 +6,7 @@ import type { PluginInfo, SettingEdit } from '@/entities/settings'
 import { getSettingAt as at } from '@/entities/settings'
 import AiSettingsSection from './AiSettingsSection.vue'
 import type { Installation, SettingsTabState } from '../types'
+import { createProgramModels, type ProgramFixture } from '@/testing/installation'
 import { pick } from '@/testing/pick'
 
 const createPlugin = (id: string, name: string, over: Partial<PluginInfo> = {}): PluginInfo => ({
@@ -18,21 +19,19 @@ const createPlugin = (id: string, name: string, over: Partial<PluginInfo> = {}):
   capabilities: [],
   secrets: [],
   storedSecrets: [],
-  models: [],
   consent: 'none',
   ...over,
 })
 
 const AGENT_B = createPlugin('test.agent-b', 'Agent B', {
-  capabilities: ['ai.completion.provider'],
   secrets: ['apiKey'],
   storedSecrets: ['apiKey'],
-  models: [{ name: 'b-fast', title: 'B fast', isDefault: true }],
 })
-const AGENT_A = createPlugin('test.agent-a', 'Agent A', {
-  capabilities: ['ai.completion.provider'],
-  secrets: ['apiKey'],
-})
+const AGENT_A = createPlugin('test.agent-a', 'Agent A', { secrets: ['apiKey'] })
+const PROGRAMS: readonly ProgramFixture[] = [
+  { name: 'agent-a', title: 'Agent A', isDefault: true },
+  { name: 'agent-b', title: 'Agent B', models: [{ name: 'b-fast', title: 'B fast' }] },
+]
 const ASKING = createPlugin('test.asking', 'Asking Plugin', { consent: 'asked' })
 const ALLOWED = createPlugin('test.allowed', 'Allowed Plugin', { consent: 'allowed' })
 
@@ -44,7 +43,7 @@ const createSection = (
   const secrets: string[] = []
   const installation: Installation = {
     getSetting: (path) => at(file, path),
-    getModels: () => [],
+    getModels: createProgramModels(PROGRAMS),
     write: (said) => {
       written.push(...said)
     },
@@ -89,39 +88,36 @@ const getChoices = (wrapper: ReturnType<typeof createSection>['wrapper'], at: nu
   }[]
 
 describe('the default agent', () => {
-  it('offers the installed agents, said with the one that answers while none is named', () => {
+  it('offers the agents the plugins list, said with the one that answers while none is named', () => {
     const { wrapper } = createSection()
     expect(getChoices(wrapper, 0).map((one) => one.text)).toStrictEqual([
-      'First installed (Agent A)',
+      'Agent of the panel (Agent A)',
       'Agent A',
       'Agent B',
     ])
   })
 
   it('offers the models of the agent that answers, the agent default first', () => {
-    const { wrapper } = createSection({ ai: { default: { agent: 'test.agent-b' } } })
+    const { wrapper } = createSection({ ai: { default: { agent: 'agent-b' } } })
     expect(getChoices(wrapper, 1).map((one) => one.id)).toStrictEqual(['', 'b-fast'])
   })
 
   it('is written with its model under ai.default, and another agent leaves the model to it', () => {
     const { wrapper, written } = createSection({
-      ai: { default: { agent: 'test.agent-b', model: 'b-fast' } },
+      ai: { default: { agent: 'agent-b', model: 'b-fast' } },
     })
-    pick(wrapper.findAllComponents({ name: 'Select' }), 0).vm.$emit(
-      'update:modelValue',
-      'test.agent-a',
-    )
+    pick(wrapper.findAllComponents({ name: 'Select' }), 0).vm.$emit('update:modelValue', 'agent-a')
     expect(written).toStrictEqual([
-      { at: ['ai', 'default', 'agent'], value: '"test.agent-a"' },
+      { at: ['ai', 'default', 'agent'], value: '"agent-a"' },
       { at: ['ai', 'default', 'model'], value: '""' },
     ])
   })
 
   it('writes the model chosen beside the agent', () => {
-    const { wrapper, written } = createSection({ ai: { default: { agent: 'test.agent-b' } } })
+    const { wrapper, written } = createSection({ ai: { default: { agent: 'agent-b' } } })
     pick(wrapper.findAllComponents({ name: 'Select' }), 1).vm.$emit('update:modelValue', 'b-fast')
     expect(written).toStrictEqual([
-      { at: ['ai', 'default', 'agent'], value: '"test.agent-b"' },
+      { at: ['ai', 'default', 'agent'], value: '"agent-b"' },
       { at: ['ai', 'default', 'model'], value: '"b-fast"' },
     ])
   })

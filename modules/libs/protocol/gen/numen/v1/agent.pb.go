@@ -901,8 +901,8 @@ type AskAgentResponse_ToolCall struct {
 }
 
 type AskAgentResponse_Stopped struct {
-	// The agent has finished, and this is why it stopped. Empty when it
-	// stopped because it was done.
+	// The agent has finished, and this is why it stopped. Empty, or "done", when
+	// it stopped because it was done.
 	Stopped string `protobuf:"bytes,3,opt,name=stopped,proto3,oneof"`
 }
 

@@ -15,7 +15,6 @@ export type {
   SettingEdit,
   PluginInfo,
   PluginFailure,
-  PluginModel,
   PluginSettingInfo,
   Consent,
   CompletionChoice,

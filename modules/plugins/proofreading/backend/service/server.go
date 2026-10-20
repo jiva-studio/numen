@@ -37,14 +37,12 @@ func newProofreadingServer(complete completer) *proofreadingServer {
 // newAskModel returns the model as a system instruction and a prompt are put to it.
 func newAskModel(complete completer) askModel {
 	return func(ctx context.Context, instruction, prompt string) (string, error) {
-		temperature := 0.0
 		return complete(ctx, &numenv1.CompletionQuestion{
 			Purpose: purpose,
 			Messages: []*numenv1.CompletionMessage{
 				{Role: "system", Text: instruction},
 				{Role: "user", Text: prompt},
 			},
-			Hints: &numenv1.CompletionHints{Temperature: &temperature},
 		})
 	}
 }

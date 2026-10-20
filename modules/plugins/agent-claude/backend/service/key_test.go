@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -37,5 +38,29 @@ func TestTheModelsAreAskedForOnlyWithTheKeyConfigureHandsOver(t *testing.T) {
 	defer mu.Unlock()
 	if len(seen) != 1 || seen[0] != "host-key" {
 		t.Errorf("the endpoint was asked with %v, want only the key Configure handed over", seen)
+	}
+}
+
+func TestConfigureKeepsTheKeyTheHostSends(t *testing.T) {
+	svc := &agentServer{}
+	svc.applyConfig(map[string]string{"apiKey": "k1", "baseUrl": "http://127.0.0.1:1"})
+	if key, base := svc.catalogue.credentials(); key != "k1" || base != "http://127.0.0.1:1" {
+		t.Errorf("got %q %q", key, base)
+	}
+	svc.applyConfig(map[string]string{"apiKey": ""})
+	if key, _ := svc.catalogue.credentials(); key != "" {
+		t.Errorf("the key was kept after the host cleared it: %q", key)
+	}
+}
+
+func TestTheConfiguredKeyReplacesTheHeldKeyInTheEnvironment(t *testing.T) {
+	got := buildKeyEnvironment([]string{"A=1", "ANTHROPIC_API_KEY=old", "ANTHROPIC_BASE_URL=old", "CLAUDECODE=1"}, "new", "")
+	want := []string{"A=1", "ANTHROPIC_API_KEY=new"}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Errorf("got %v", got)
+	}
+	held := buildKeyEnvironment([]string{"A=1", "ANTHROPIC_API_KEY=old", "CLAUDECODE=1"}, "", "")
+	if strings.Join(held, ",") != "A=1,ANTHROPIC_API_KEY=old" {
+		t.Errorf("with no key configured, got %v", held)
 	}
 }

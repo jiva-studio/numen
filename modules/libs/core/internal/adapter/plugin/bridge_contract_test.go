@@ -25,7 +25,6 @@ type bridgeHost interface {
 	BookPluginHost
 	AgentPluginHost
 	ProofreaderPluginHost
-	CompletionPluginHost
 }
 
 // bridgeCall makes one call through an open bridge and says whether the value it
@@ -116,12 +115,6 @@ var bridgeContracts = []bridgeContract{
 		b, err := OpenProofreaderBridge(h)
 		return createContract(b, err, func(b *ProofreaderBridge, ctx context.Context) (bool, error) {
 			return isZeroResult(b.ProofreadScan(ctx, []domain.ProofreadPage{{Number: 1}}, 0))
-		})
-	}},
-	{"completion", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
-		b, err := OpenCompletionBridge(ctx, h, contractPluginID)
-		return createContract(b, err, func(b *CompletionBridge, ctx context.Context) (bool, error) {
-			return isZeroResult(b.Complete(ctx, "", port.Question{}))
 		})
 	}},
 }

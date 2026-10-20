@@ -86,11 +86,6 @@ export const settingsCore: SettingsPort = {
         capabilities: p.capabilities,
         secrets: p.secrets,
         storedSecrets: p.storedSecrets,
-        models: p.models.map((m) => ({
-          name: m.name,
-          title: m.title,
-          isDefault: m.isDefault,
-        })),
         consent: consented[p.completionConsent],
         ...(p.failure
           ? { failure: { reason: p.failure.reason, failedAt: Number(p.failure.failedAtUnixMs) } }

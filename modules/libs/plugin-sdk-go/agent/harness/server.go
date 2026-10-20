@@ -11,7 +11,6 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/completion"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/toolcall"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
@@ -36,12 +35,11 @@ const modelsLimit = 15 * time.Second
 var errClosing = errors.New("this agent is closing")
 
 // Server is numen's own agent: it works a task by asking an OpenAI-compatible chat API and calling
-// the vault's tools over MCP on the model's behalf. It answers AgentService and CompletionService,
-// in a plugin's process or linked into the one that hosts the vault. The zero value asks the
-// default chat API with no key.
+// the vault's tools over MCP on the model's behalf. It answers AgentService, in a plugin's process
+// or linked into the one that hosts the vault. The zero value asks the default chat API with no
+// key.
 type Server struct {
 	numenv1connect.UnimplementedAgentServiceHandler
-	numenv1connect.UnimplementedCompletionServiceHandler
 
 	// Client sends the requests to the chat API. Nil sends them with a client of its own.
 	Client *http.Client
@@ -262,56 +260,7 @@ func (s *Server) listModels(ctx context.Context) ([]model, error) {
 	return models, err
 }
 
-// Complete answers one question from the model the host names, else the configured one, with no tools, no vault and no conversation.
-func (s *Server) Complete(
-	ctx context.Context,
-	req *connect.Request[numenv1.CompleteRequest],
-) (*connect.Response[numenv1.CompleteResponse], error) {
-	asked, name := s.getChat(), s.getModel(req.Msg.GetModel())
-	return completion.Answer(ctx, req.Msg.GetQuestion(), func(ctx context.Context, request completion.Request) (string, error) {
-		var messages []message
-		if request.System != "" {
-			messages = append(messages, message{Role: "system", Content: newText(request.System)})
-		}
-		messages = append(messages, message{Role: "user", Content: newText(request.Prompt)})
-		reply, finished, err := asked.send(ctx, name, messages, nil)
-		if err != nil || reply.Content == nil {
-			return "", err
-		}
-		if finished == "length" {
-			return "", errCutOff
-		}
-		return *reply.Content, nil
-	})
-}
-
 // Close stops every task still being worked and refuses new ones.
 func (s *Server) Close() error {
 	return s.registry.Close()
-}
-
-// ListCompletionModels lists the models Complete answers with: those the chat API lists, the
-// configured one marked as the default. Where the chat API lists none, it is the configured one
-// alone.
-func (s *Server) ListCompletionModels(
-	ctx context.Context,
-	_ *connect.Request[numenv1.ListCompletionModelsRequest],
-) (*connect.Response[numenv1.ListCompletionModelsResponse], error) {
-	configured := s.getModel("")
-	var listed []model
-	if models, err := s.listModels(ctx); err == nil {
-		listed = models
-	}
-	if ctxErr := ctx.Err(); ctxErr != nil {
-		return nil, connect.NewError(connect.CodeCanceled, ctxErr)
-	}
-	res := &numenv1.ListCompletionModelsResponse{}
-	if len(listed) == 0 {
-		res.Models = []*numenv1.CompletionModel{{Name: configured, Title: configured, IsDefault: true}}
-		return connect.NewResponse(res), nil
-	}
-	for _, one := range listed {
-		res.Models = append(res.Models, &numenv1.CompletionModel{Name: one.Name, Title: one.Title, IsDefault: one.Name == configured})
-	}
-	return connect.NewResponse(res), nil
 }

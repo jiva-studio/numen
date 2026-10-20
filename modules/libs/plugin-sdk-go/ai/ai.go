@@ -28,10 +28,11 @@ const (
 var (
 	// ErrNoHost means the environment names no host endpoint.
 	ErrNoHost = errors.New("ai: " + HostPortEnv + " is not set")
-	// ErrNoRoute means no agent answers the plugin: the agent the settings name is
-	// not installed, or no plugin answers completions.
+	// ErrNoRoute means no agent answers the plugin: the program the settings name
+	// is not installed or no plugin lists it, or no program is installed.
 	ErrNoRoute = errors.New("ai: no agent answers")
-	// ErrUnavailable means the agent the plugin is routed to cannot be reached.
+	// ErrUnavailable means the agent the plugin is routed to cannot be reached or
+	// stopped without an answer.
 	ErrUnavailable = errors.New("ai: routed agent unavailable")
 	// ErrNoConsent means the person has not let the plugin ask a model, or has
 	// refused it. The window asks them in the settings.

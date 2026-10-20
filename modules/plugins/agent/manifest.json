@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "Numen's own agent: a harness over an OpenAI-compatible chat API (OpenRouter, OpenAI, Ollama, LM Studio) that works with the vault's tools over MCP",
-  "capabilities": ["ai.agent.provider", "ai.completion.provider"],
+  "capabilities": ["ai.agent.provider"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onView:agent"],
   "permissions": ["network:outbound", "vault:read", "vault:write"],

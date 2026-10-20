@@ -16,7 +16,6 @@ func Mount(s *server.Server) error {
 	agent := &harness.Server{}
 	s.SetUpdateConfig(agent.Configure)
 	s.Register(numenv1connect.NewAgentServiceHandler(agent, s.HandlerOptions()...))
-	s.Register(numenv1connect.NewCompletionServiceHandler(agent, s.HandlerOptions()...))
 	s.OnClose(func() { _ = agent.Close() })
 	return nil
 }

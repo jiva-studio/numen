@@ -18,6 +18,7 @@ import {
   createAgentModelChoices,
   createPluginAgentChoices,
   findAgent,
+  getAgents,
   readChoice,
 } from '../lib/agents'
 import { WORDS as words } from '../words'
@@ -34,7 +35,7 @@ const plugins = computed<readonly PluginInfo[]>(() => {
   return list.filter((one) => one.settings.length > 0)
 })
 
-const installed = computed<readonly PluginInfo[]>(() => installation.value.plugins?.value ?? [])
+const agents = computed(() => getAgents(installation.value))
 const defaultAgent = computed(() => fields.getString(DEFAULT_AGENT_AT))
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -53,18 +54,17 @@ function getChoice(pluginId: string, key: string): CompletionChoice {
 }
 
 /** The agents the setting can name, the default first. */
-function getAgentChoices(choice: CompletionChoice) {
-  return createPluginAgentChoices(
-    installed.value,
+const getAgentChoices = (choice: CompletionChoice) =>
+  createPluginAgentChoices(
+    agents.value,
     { defaultAgent: defaultAgent.value, chosen: choice.agent },
     words,
   )
-}
 
 /** The models of the agent the setting names, and none while it names the default. */
-function getModelChoices(choice: CompletionChoice) {
+const getModelChoices = (choice: CompletionChoice) => {
   if (choice.agent === '') return null
-  return createAgentModelChoices(findAgent(installed.value, choice.agent), choice.model, words)
+  return createAgentModelChoices(findAgent(agents.value, choice.agent), choice.model, words)
 }
 
 /** The setting of a plugin that chooses its agent, drawn first, and the rest. */

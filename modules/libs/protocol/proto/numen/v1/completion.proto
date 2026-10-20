@@ -1,24 +1,13 @@
 syntax = "proto3";
 
-// A one-shot model completion: messages in, text out.
+// A plugin's question to a model: messages in, text out.
 //
 // A plugin that needs a language model states what it needs and the host
-// decides which model answers. The question carries no tools, no vault and no
-// conversation.
+// decides which agent and model answer. The question carries no tools, no
+// vault and no conversation.
 package numen.v1;
 
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
-
-// CompletionService is what an agent plugin answers: one completion for the
-// host.
-service CompletionService {
-  // Complete answers the question with text.
-  rpc Complete(CompleteRequest) returns (CompleteResponse);
-
-  // ListCompletionModels lists the models Complete answers with: a model named
-  // here is one Complete accepts. None leaves the model to the agent alone.
-  rpc ListCompletionModels(ListCompletionModelsRequest) returns (ListCompletionModelsResponse);
-}
 
 // HostService is what the host answers for a plugin that holds the ai:complete
 // permission.
@@ -28,19 +17,6 @@ service HostService {
   // host knows the caller by its token, and nothing in the request chooses the
   // agent.
   rpc Complete(HostServiceCompleteRequest) returns (HostServiceCompleteResponse);
-}
-
-message CompleteRequest {
-  CompletionQuestion question = 1;
-  // The model the host routed the question to. Empty leaves the choice to the
-  // agent; a model the agent does not offer is the agent's error.
-  string model = 2;
-}
-
-message CompleteResponse {
-  CompletionAnswer answer = 1;
-  // Set when the call was served and refused. The answer is then unset.
-  CompletionErrorCode error = 2;
 }
 
 message HostServiceCompleteRequest {
@@ -57,11 +33,12 @@ message HostServiceCompleteResponse {
 message CompletionQuestion {
   // The conversation so far, oldest first.
   repeated CompletionMessage messages = 1;
-  // What the answer is for (e.g. "proofreading"). It is handed to the agent and
-  // routes nothing; a purpose names neither a model, an agent nor a key.
+  // What the answer is for (e.g. "proofreading"). It routes nothing; a purpose
+  // names neither a model, an agent nor a key.
   string purpose = 2;
-  // What the answer should favour. Unset hints leave the choice to the host.
-  CompletionHints hints = 3;
+
+  reserved 3;
+  reserved "hints";
 }
 
 message CompletionMessage {
@@ -70,32 +47,17 @@ message CompletionMessage {
   string text = 2;
 }
 
-// CompletionHints are priorities in the range 0 to 1 and are requests, not
-// guarantees.
-message CompletionHints {
-  // How much answer quality matters.
-  double quality_priority = 1;
-  // How much a quick answer matters.
-  double speed_priority = 2;
-  // How much a cheap answer matters.
-  double cost_priority = 3;
-  // The most tokens the answer may hold. Zero leaves the limit to the host.
-  int32 max_tokens = 4;
-  // Sampling temperature. Unset leaves it to the host.
-  optional double temperature = 5;
-}
-
 // CompletionErrorCode is why a served completion call was refused. The zero
 // value means it was not.
 enum CompletionErrorCode {
   COMPLETION_ERROR_CODE_UNSPECIFIED = 0;
 
-  // No agent answers the question: the agent the settings name is not
-  // installed, is disabled or answers no completions, or no plugin answers
-  // completions at all.
+  // No agent answers the question: the program the settings name is not
+  // installed or no plugin lists it, or no program is installed at all.
   COMPLETION_ERROR_CODE_NO_ROUTE = 1;
 
-  // The agent the question is routed to cannot be reached.
+  // The program the question is routed to cannot be reached or stopped without
+  // an answer.
   COMPLETION_ERROR_CODE_UNAVAILABLE = 2;
 
   // The person has not let the calling plugin ask a model, or has refused it.
@@ -107,20 +69,4 @@ enum CompletionErrorCode {
 // CompletionAnswer is what a model said.
 message CompletionAnswer {
   string text = 1;
-}
-
-message ListCompletionModelsRequest {}
-
-message ListCompletionModelsResponse {
-  repeated CompletionModel models = 1;
-}
-
-// CompletionModel is one model an agent answers completions with.
-message CompletionModel {
-  // What CompleteRequest.model names it by.
-  string name = 1;
-  // What it is called when shown to a person.
-  string title = 2;
-  // Set on the model the agent answers with when CompleteRequest.model is empty.
-  bool is_default = 3;
 }

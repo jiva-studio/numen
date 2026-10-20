@@ -424,40 +424,6 @@ func TestTheProgramIsNotInstalledWhileTheChatAPIRefuses(t *testing.T) {
 	}
 }
 
-func TestCompleteAnswersWithNoTools(t *testing.T) {
-	model := &fakeChat{replies: []message{newTextReply("the answer")}}
-	s := newServer(model.serve(t).URL)
-
-	res, err := s.Complete(t.Context(), connect.NewRequest(&numenv1.CompleteRequest{Question: &numenv1.CompletionQuestion{
-		Messages: []*numenv1.CompletionMessage{{Role: "system", Text: "be brief"}, {Role: "user", Text: "why?"}},
-	}}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.Msg.GetAnswer().GetText() != "the answer" {
-		t.Fatalf("got %+v", res.Msg)
-	}
-	got := model.getRequests()[0]
-	if got.Auth != "Bearer host-key" || got.Model != "m1" || len(got.Tools) != 0 || len(got.Messages) != 2 || got.Stream {
-		t.Errorf("the request was %+v", got)
-	}
-}
-
-func TestCompleteIsUnavailableWhenTheChatAPIFails(t *testing.T) {
-	model := &fakeChat{status: http.StatusUnauthorized}
-	s := newServer(model.serve(t).URL)
-
-	res, err := s.Complete(t.Context(), connect.NewRequest(&numenv1.CompleteRequest{Question: &numenv1.CompletionQuestion{
-		Messages: []*numenv1.CompletionMessage{{Role: "user", Text: "why?"}},
-	}}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.Msg.GetError() != numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE {
-		t.Errorf("got %+v", res.Msg)
-	}
-}
-
 func TestAskAgentStreamsTheStepsOverConnect(t *testing.T) {
 	model := &fakeChat{replies: []message{newCallReply("call-1", "note_read", `{"path":"Plan.md"}`), newTextReply("Done.")}}
 	vault := &fakeVault{}
@@ -558,17 +524,23 @@ func TestAFailedListingIsAskedAgain(t *testing.T) {
 	}
 }
 
-func TestCompleteAsksTheModelTheHostNames(t *testing.T) {
+// A task names the model it is answered by, else the configured one answers.
+func TestATaskNamesTheModelThatAnswersIt(t *testing.T) {
 	model := &fakeChat{replies: []message{newTextReply("the answer")}}
 	s := newServer(model.serve(t).URL)
 
-	if _, err := s.Complete(t.Context(), connect.NewRequest(&numenv1.CompleteRequest{Model: "routed", Question: &numenv1.CompletionQuestion{
-		Messages: []*numenv1.CompletionMessage{{Role: "user", Text: "why?"}},
-	}})); err != nil {
-		t.Fatal(err)
+	task := newTask("", "why?")
+	task.Tools, task.ToolDeclarations, task.Model = nil, nil, "routed"
+	ask(t, s, task)
+	task.Model = ""
+	ask(t, s, task)
+
+	requests := model.getRequests()
+	if len(requests) != 2 || requests[0].Model != "routed" || requests[1].Model != "m1" {
+		t.Errorf("the models asked were %+v", requests)
 	}
-	if got := model.getRequests()[0].Model; got != "routed" {
-		t.Errorf("the model asked was %q", got)
+	if requests[0].Auth != "Bearer host-key" || len(requests[0].Messages) != 2 || requests[0].Messages[0].Role != "system" {
+		t.Errorf("the first request was %+v", requests[0])
 	}
 }
 
@@ -587,21 +559,6 @@ func TestACutOffReplyCallsNoTool(t *testing.T) {
 	}
 }
 
-func TestCompleteRefusesACutOffAnswer(t *testing.T) {
-	model := &fakeChat{replies: []message{newTextReply("The answer is")}, finish: "length"}
-	s := newServer(model.serve(t).URL)
-
-	res, err := s.Complete(t.Context(), connect.NewRequest(&numenv1.CompleteRequest{Question: &numenv1.CompletionQuestion{
-		Messages: []*numenv1.CompletionMessage{{Role: "user", Text: "why?"}},
-	}}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.Msg.GetError() != numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE {
-		t.Errorf("got %+v", res.Msg)
-	}
-}
-
 func TestTheVaultTokenIsNotFollowedToPlainHTTP(t *testing.T) {
 	redirecting := httptest.NewServer(http.RedirectHandler("http://192.0.2.1/mcp", http.StatusTemporaryRedirect))
 	defer redirecting.Close()
@@ -612,34 +569,6 @@ func TestTheVaultTokenIsNotFollowedToPlainHTTP(t *testing.T) {
 
 	if len(steps) != 1 || !strings.Contains(steps[0].GetStopped(), errDowngrade.Error()) {
 		t.Errorf("steps are %v", steps)
-	}
-}
-
-func TestTheCompletionModelsAreTheListedOnesWithTheConfiguredOneAsDefault(t *testing.T) {
-	model := &fakeChat{models: []string{"m0", "m1"}}
-	s := newServer(model.serve(t).URL)
-
-	res, err := s.ListCompletionModels(t.Context(), connect.NewRequest(&numenv1.ListCompletionModelsRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	got := res.Msg.GetModels()
-	if len(got) != 2 || got[0].GetIsDefault() || !got[1].GetIsDefault() || got[1].GetName() != "m1" {
-		t.Errorf("the models are %+v", got)
-	}
-}
-
-func TestTheCompletionModelIsTheConfiguredOneWhereNoneIsListed(t *testing.T) {
-	model := &fakeChat{status: http.StatusUnauthorized}
-	s := newServer(model.serve(t).URL)
-
-	res, err := s.ListCompletionModels(t.Context(), connect.NewRequest(&numenv1.ListCompletionModelsRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	got := res.Msg.GetModels()
-	if len(got) != 1 || got[0].GetName() != "m1" || !got[0].GetIsDefault() {
-		t.Errorf("the models are %+v", got)
 	}
 }
 
@@ -663,21 +592,6 @@ func TestAStepThatCannotBeSentEndsTheRunWithItsError(t *testing.T) {
 	}
 	if calls := vault.getCalls(); len(calls) != 0 {
 		t.Errorf("the vault was called after the call could not be told: %v", calls)
-	}
-}
-
-func TestCompleteIsUnavailableWhenTheModelSaysNothing(t *testing.T) {
-	model := &fakeChat{replies: []message{{Role: "assistant"}}}
-	s := newServer(model.serve(t).URL)
-
-	res, err := s.Complete(t.Context(), connect.NewRequest(&numenv1.CompleteRequest{Question: &numenv1.CompletionQuestion{
-		Messages: []*numenv1.CompletionMessage{{Role: "user", Text: "why?"}},
-	}}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.Msg.GetError() != numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE {
-		t.Errorf("got %+v", res.Msg)
 	}
 }
 

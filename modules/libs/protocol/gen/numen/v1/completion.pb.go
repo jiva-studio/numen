@@ -4,11 +4,11 @@
 // 	protoc        (unknown)
 // source: numen/v1/completion.proto
 
-// A one-shot model completion: messages in, text out.
+// A plugin's question to a model: messages in, text out.
 //
 // A plugin that needs a language model states what it needs and the host
-// decides which model answers. The question carries no tools, no vault and no
-// conversation.
+// decides which agent and model answer. The question carries no tools, no
+// vault and no conversation.
 
 package numenv1
 
@@ -33,11 +33,11 @@ type CompletionErrorCode int32
 
 const (
 	CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED CompletionErrorCode = 0
-	// No agent answers the question: the agent the settings name is not
-	// installed, is disabled or answers no completions, or no plugin answers
-	// completions at all.
+	// No agent answers the question: the program the settings name is not
+	// installed or no plugin lists it, or no program is installed at all.
 	CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE CompletionErrorCode = 1
-	// The agent the question is routed to cannot be reached.
+	// The program the question is routed to cannot be reached or stopped without
+	// an answer.
 	CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE CompletionErrorCode = 2
 	// The person has not let the calling plugin ask a model, or has refused it.
 	// The window asks the person, and a plugin shows this as the reason nothing
@@ -88,113 +88,6 @@ func (CompletionErrorCode) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_completion_proto_rawDescGZIP(), []int{0}
 }
 
-type CompleteRequest struct {
-	state    protoimpl.MessageState `protogen:"open.v1"`
-	Question *CompletionQuestion    `protobuf:"bytes,1,opt,name=question,proto3" json:"question,omitempty"`
-	// The model the host routed the question to. Empty leaves the choice to the
-	// agent; a model the agent does not offer is the agent's error.
-	Model         string `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CompleteRequest) Reset() {
-	*x = CompleteRequest{}
-	mi := &file_numen_v1_completion_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CompleteRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CompleteRequest) ProtoMessage() {}
-
-func (x *CompleteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_completion_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CompleteRequest.ProtoReflect.Descriptor instead.
-func (*CompleteRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_completion_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *CompleteRequest) GetQuestion() *CompletionQuestion {
-	if x != nil {
-		return x.Question
-	}
-	return nil
-}
-
-func (x *CompleteRequest) GetModel() string {
-	if x != nil {
-		return x.Model
-	}
-	return ""
-}
-
-type CompleteResponse struct {
-	state  protoimpl.MessageState `protogen:"open.v1"`
-	Answer *CompletionAnswer      `protobuf:"bytes,1,opt,name=answer,proto3" json:"answer,omitempty"`
-	// Set when the call was served and refused. The answer is then unset.
-	Error         CompletionErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.CompletionErrorCode" json:"error,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CompleteResponse) Reset() {
-	*x = CompleteResponse{}
-	mi := &file_numen_v1_completion_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CompleteResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CompleteResponse) ProtoMessage() {}
-
-func (x *CompleteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_completion_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CompleteResponse.ProtoReflect.Descriptor instead.
-func (*CompleteResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_completion_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *CompleteResponse) GetAnswer() *CompletionAnswer {
-	if x != nil {
-		return x.Answer
-	}
-	return nil
-}
-
-func (x *CompleteResponse) GetError() CompletionErrorCode {
-	if x != nil {
-		return x.Error
-	}
-	return CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED
-}
-
 type HostServiceCompleteRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Question      *CompletionQuestion    `protobuf:"bytes,1,opt,name=question,proto3" json:"question,omitempty"`
@@ -204,7 +97,7 @@ type HostServiceCompleteRequest struct {
 
 func (x *HostServiceCompleteRequest) Reset() {
 	*x = HostServiceCompleteRequest{}
-	mi := &file_numen_v1_completion_proto_msgTypes[2]
+	mi := &file_numen_v1_completion_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -216,7 +109,7 @@ func (x *HostServiceCompleteRequest) String() string {
 func (*HostServiceCompleteRequest) ProtoMessage() {}
 
 func (x *HostServiceCompleteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_completion_proto_msgTypes[2]
+	mi := &file_numen_v1_completion_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -229,7 +122,7 @@ func (x *HostServiceCompleteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostServiceCompleteRequest.ProtoReflect.Descriptor instead.
 func (*HostServiceCompleteRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_completion_proto_rawDescGZIP(), []int{2}
+	return file_numen_v1_completion_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *HostServiceCompleteRequest) GetQuestion() *CompletionQuestion {
@@ -250,7 +143,7 @@ type HostServiceCompleteResponse struct {
 
 func (x *HostServiceCompleteResponse) Reset() {
 	*x = HostServiceCompleteResponse{}
-	mi := &file_numen_v1_completion_proto_msgTypes[3]
+	mi := &file_numen_v1_completion_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -262,7 +155,7 @@ func (x *HostServiceCompleteResponse) String() string {
 func (*HostServiceCompleteResponse) ProtoMessage() {}
 
 func (x *HostServiceCompleteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_completion_proto_msgTypes[3]
+	mi := &file_numen_v1_completion_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -275,7 +168,7 @@ func (x *HostServiceCompleteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostServiceCompleteResponse.ProtoReflect.Descriptor instead.
 func (*HostServiceCompleteResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_completion_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_completion_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *HostServiceCompleteResponse) GetAnswer() *CompletionAnswer {
@@ -297,18 +190,16 @@ type CompletionQuestion struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The conversation so far, oldest first.
 	Messages []*CompletionMessage `protobuf:"bytes,1,rep,name=messages,proto3" json:"messages,omitempty"`
-	// What the answer is for (e.g. "proofreading"). It is handed to the agent and
-	// routes nothing; a purpose names neither a model, an agent nor a key.
-	Purpose string `protobuf:"bytes,2,opt,name=purpose,proto3" json:"purpose,omitempty"`
-	// What the answer should favour. Unset hints leave the choice to the host.
-	Hints         *CompletionHints `protobuf:"bytes,3,opt,name=hints,proto3" json:"hints,omitempty"`
+	// What the answer is for (e.g. "proofreading"). It routes nothing; a purpose
+	// names neither a model, an agent nor a key.
+	Purpose       string `protobuf:"bytes,2,opt,name=purpose,proto3" json:"purpose,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CompletionQuestion) Reset() {
 	*x = CompletionQuestion{}
-	mi := &file_numen_v1_completion_proto_msgTypes[4]
+	mi := &file_numen_v1_completion_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -320,7 +211,7 @@ func (x *CompletionQuestion) String() string {
 func (*CompletionQuestion) ProtoMessage() {}
 
 func (x *CompletionQuestion) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_completion_proto_msgTypes[4]
+	mi := &file_numen_v1_completion_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -333,7 +224,7 @@ func (x *CompletionQuestion) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompletionQuestion.ProtoReflect.Descriptor instead.
 func (*CompletionQuestion) Descriptor() ([]byte, []int) {
-	return file_numen_v1_completion_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_completion_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CompletionQuestion) GetMessages() []*CompletionMessage {
@@ -350,13 +241,6 @@ func (x *CompletionQuestion) GetPurpose() string {
 	return ""
 }
 
-func (x *CompletionQuestion) GetHints() *CompletionHints {
-	if x != nil {
-		return x.Hints
-	}
-	return nil
-}
-
 type CompletionMessage struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Who wrote the text: "system", "user" or "assistant". Empty is read as "user".
@@ -368,7 +252,7 @@ type CompletionMessage struct {
 
 func (x *CompletionMessage) Reset() {
 	*x = CompletionMessage{}
-	mi := &file_numen_v1_completion_proto_msgTypes[5]
+	mi := &file_numen_v1_completion_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -380,7 +264,7 @@ func (x *CompletionMessage) String() string {
 func (*CompletionMessage) ProtoMessage() {}
 
 func (x *CompletionMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_completion_proto_msgTypes[5]
+	mi := &file_numen_v1_completion_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -393,7 +277,7 @@ func (x *CompletionMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompletionMessage.ProtoReflect.Descriptor instead.
 func (*CompletionMessage) Descriptor() ([]byte, []int) {
-	return file_numen_v1_completion_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_completion_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CompletionMessage) GetRole() string {
@@ -410,89 +294,6 @@ func (x *CompletionMessage) GetText() string {
 	return ""
 }
 
-// CompletionHints are priorities in the range 0 to 1 and are requests, not
-// guarantees.
-type CompletionHints struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// How much answer quality matters.
-	QualityPriority float64 `protobuf:"fixed64,1,opt,name=quality_priority,json=qualityPriority,proto3" json:"quality_priority,omitempty"`
-	// How much a quick answer matters.
-	SpeedPriority float64 `protobuf:"fixed64,2,opt,name=speed_priority,json=speedPriority,proto3" json:"speed_priority,omitempty"`
-	// How much a cheap answer matters.
-	CostPriority float64 `protobuf:"fixed64,3,opt,name=cost_priority,json=costPriority,proto3" json:"cost_priority,omitempty"`
-	// The most tokens the answer may hold. Zero leaves the limit to the host.
-	MaxTokens int32 `protobuf:"varint,4,opt,name=max_tokens,json=maxTokens,proto3" json:"max_tokens,omitempty"`
-	// Sampling temperature. Unset leaves it to the host.
-	Temperature   *float64 `protobuf:"fixed64,5,opt,name=temperature,proto3,oneof" json:"temperature,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CompletionHints) Reset() {
-	*x = CompletionHints{}
-	mi := &file_numen_v1_completion_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CompletionHints) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CompletionHints) ProtoMessage() {}
-
-func (x *CompletionHints) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_completion_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CompletionHints.ProtoReflect.Descriptor instead.
-func (*CompletionHints) Descriptor() ([]byte, []int) {
-	return file_numen_v1_completion_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *CompletionHints) GetQualityPriority() float64 {
-	if x != nil {
-		return x.QualityPriority
-	}
-	return 0
-}
-
-func (x *CompletionHints) GetSpeedPriority() float64 {
-	if x != nil {
-		return x.SpeedPriority
-	}
-	return 0
-}
-
-func (x *CompletionHints) GetCostPriority() float64 {
-	if x != nil {
-		return x.CostPriority
-	}
-	return 0
-}
-
-func (x *CompletionHints) GetMaxTokens() int32 {
-	if x != nil {
-		return x.MaxTokens
-	}
-	return 0
-}
-
-func (x *CompletionHints) GetTemperature() float64 {
-	if x != nil && x.Temperature != nil {
-		return *x.Temperature
-	}
-	return 0
-}
-
 // CompletionAnswer is what a model said.
 type CompletionAnswer struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -503,7 +304,7 @@ type CompletionAnswer struct {
 
 func (x *CompletionAnswer) Reset() {
 	*x = CompletionAnswer{}
-	mi := &file_numen_v1_completion_proto_msgTypes[7]
+	mi := &file_numen_v1_completion_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -515,7 +316,7 @@ func (x *CompletionAnswer) String() string {
 func (*CompletionAnswer) ProtoMessage() {}
 
 func (x *CompletionAnswer) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_completion_proto_msgTypes[7]
+	mi := &file_numen_v1_completion_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -528,7 +329,7 @@ func (x *CompletionAnswer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompletionAnswer.ProtoReflect.Descriptor instead.
 func (*CompletionAnswer) Descriptor() ([]byte, []int) {
-	return file_numen_v1_completion_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_completion_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CompletionAnswer) GetText() string {
@@ -538,199 +339,29 @@ func (x *CompletionAnswer) GetText() string {
 	return ""
 }
 
-type ListCompletionModelsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListCompletionModelsRequest) Reset() {
-	*x = ListCompletionModelsRequest{}
-	mi := &file_numen_v1_completion_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListCompletionModelsRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListCompletionModelsRequest) ProtoMessage() {}
-
-func (x *ListCompletionModelsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_completion_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListCompletionModelsRequest.ProtoReflect.Descriptor instead.
-func (*ListCompletionModelsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_completion_proto_rawDescGZIP(), []int{8}
-}
-
-type ListCompletionModelsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Models        []*CompletionModel     `protobuf:"bytes,1,rep,name=models,proto3" json:"models,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListCompletionModelsResponse) Reset() {
-	*x = ListCompletionModelsResponse{}
-	mi := &file_numen_v1_completion_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListCompletionModelsResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListCompletionModelsResponse) ProtoMessage() {}
-
-func (x *ListCompletionModelsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_completion_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListCompletionModelsResponse.ProtoReflect.Descriptor instead.
-func (*ListCompletionModelsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_completion_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *ListCompletionModelsResponse) GetModels() []*CompletionModel {
-	if x != nil {
-		return x.Models
-	}
-	return nil
-}
-
-// CompletionModel is one model an agent answers completions with.
-type CompletionModel struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// What CompleteRequest.model names it by.
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// What it is called when shown to a person.
-	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	// Set on the model the agent answers with when CompleteRequest.model is empty.
-	IsDefault     bool `protobuf:"varint,3,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CompletionModel) Reset() {
-	*x = CompletionModel{}
-	mi := &file_numen_v1_completion_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CompletionModel) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CompletionModel) ProtoMessage() {}
-
-func (x *CompletionModel) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_completion_proto_msgTypes[10]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CompletionModel.ProtoReflect.Descriptor instead.
-func (*CompletionModel) Descriptor() ([]byte, []int) {
-	return file_numen_v1_completion_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *CompletionModel) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *CompletionModel) GetTitle() string {
-	if x != nil {
-		return x.Title
-	}
-	return ""
-}
-
-func (x *CompletionModel) GetIsDefault() bool {
-	if x != nil {
-		return x.IsDefault
-	}
-	return false
-}
-
 var File_numen_v1_completion_proto protoreflect.FileDescriptor
 
 const file_numen_v1_completion_proto_rawDesc = "" +
 	"\n" +
-	"\x19numen/v1/completion.proto\x12\bnumen.v1\"a\n" +
-	"\x0fCompleteRequest\x128\n" +
-	"\bquestion\x18\x01 \x01(\v2\x1c.numen.v1.CompletionQuestionR\bquestion\x12\x14\n" +
-	"\x05model\x18\x02 \x01(\tR\x05model\"{\n" +
-	"\x10CompleteResponse\x122\n" +
-	"\x06answer\x18\x01 \x01(\v2\x1a.numen.v1.CompletionAnswerR\x06answer\x123\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1d.numen.v1.CompletionErrorCodeR\x05error\"V\n" +
+	"\x19numen/v1/completion.proto\x12\bnumen.v1\"V\n" +
 	"\x1aHostServiceCompleteRequest\x128\n" +
 	"\bquestion\x18\x01 \x01(\v2\x1c.numen.v1.CompletionQuestionR\bquestion\"\x86\x01\n" +
 	"\x1bHostServiceCompleteResponse\x122\n" +
 	"\x06answer\x18\x01 \x01(\v2\x1a.numen.v1.CompletionAnswerR\x06answer\x123\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1d.numen.v1.CompletionErrorCodeR\x05error\"\x98\x01\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x1d.numen.v1.CompletionErrorCodeR\x05error\"t\n" +
 	"\x12CompletionQuestion\x127\n" +
 	"\bmessages\x18\x01 \x03(\v2\x1b.numen.v1.CompletionMessageR\bmessages\x12\x18\n" +
-	"\apurpose\x18\x02 \x01(\tR\apurpose\x12/\n" +
-	"\x05hints\x18\x03 \x01(\v2\x19.numen.v1.CompletionHintsR\x05hints\";\n" +
+	"\apurpose\x18\x02 \x01(\tR\apurposeJ\x04\b\x03\x10\x04R\x05hints\";\n" +
 	"\x11CompletionMessage\x12\x12\n" +
 	"\x04role\x18\x01 \x01(\tR\x04role\x12\x12\n" +
-	"\x04text\x18\x02 \x01(\tR\x04text\"\xde\x01\n" +
-	"\x0fCompletionHints\x12)\n" +
-	"\x10quality_priority\x18\x01 \x01(\x01R\x0fqualityPriority\x12%\n" +
-	"\x0espeed_priority\x18\x02 \x01(\x01R\rspeedPriority\x12#\n" +
-	"\rcost_priority\x18\x03 \x01(\x01R\fcostPriority\x12\x1d\n" +
-	"\n" +
-	"max_tokens\x18\x04 \x01(\x05R\tmaxTokens\x12%\n" +
-	"\vtemperature\x18\x05 \x01(\x01H\x00R\vtemperature\x88\x01\x01B\x0e\n" +
-	"\f_temperature\"&\n" +
+	"\x04text\x18\x02 \x01(\tR\x04text\"&\n" +
 	"\x10CompletionAnswer\x12\x12\n" +
-	"\x04text\x18\x01 \x01(\tR\x04text\"\x1d\n" +
-	"\x1bListCompletionModelsRequest\"Q\n" +
-	"\x1cListCompletionModelsResponse\x121\n" +
-	"\x06models\x18\x01 \x03(\v2\x19.numen.v1.CompletionModelR\x06models\"Z\n" +
-	"\x0fCompletionModel\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1d\n" +
-	"\n" +
-	"is_default\x18\x03 \x01(\bR\tisDefault*\xad\x01\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text*\xad\x01\n" +
 	"\x13CompletionErrorCode\x12%\n" +
 	"!COMPLETION_ERROR_CODE_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eCOMPLETION_ERROR_CODE_NO_ROUTE\x10\x01\x12%\n" +
 	"!COMPLETION_ERROR_CODE_UNAVAILABLE\x10\x02\x12$\n" +
-	" COMPLETION_ERROR_CODE_NO_CONSENT\x10\x032\xbd\x01\n" +
-	"\x11CompletionService\x12A\n" +
-	"\bComplete\x12\x19.numen.v1.CompleteRequest\x1a\x1a.numen.v1.CompleteResponse\x12e\n" +
-	"\x14ListCompletionModels\x12%.numen.v1.ListCompletionModelsRequest\x1a&.numen.v1.ListCompletionModelsResponse2f\n" +
+	" COMPLETION_ERROR_CODE_NO_CONSENT\x10\x032f\n" +
 	"\vHostService\x12W\n" +
 	"\bComplete\x12$.numen.v1.HostServiceCompleteRequest\x1a%.numen.v1.HostServiceCompleteResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
@@ -747,42 +378,27 @@ func file_numen_v1_completion_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_completion_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_completion_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_numen_v1_completion_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_numen_v1_completion_proto_goTypes = []any{
-	(CompletionErrorCode)(0),             // 0: numen.v1.CompletionErrorCode
-	(*CompleteRequest)(nil),              // 1: numen.v1.CompleteRequest
-	(*CompleteResponse)(nil),             // 2: numen.v1.CompleteResponse
-	(*HostServiceCompleteRequest)(nil),   // 3: numen.v1.HostServiceCompleteRequest
-	(*HostServiceCompleteResponse)(nil),  // 4: numen.v1.HostServiceCompleteResponse
-	(*CompletionQuestion)(nil),           // 5: numen.v1.CompletionQuestion
-	(*CompletionMessage)(nil),            // 6: numen.v1.CompletionMessage
-	(*CompletionHints)(nil),              // 7: numen.v1.CompletionHints
-	(*CompletionAnswer)(nil),             // 8: numen.v1.CompletionAnswer
-	(*ListCompletionModelsRequest)(nil),  // 9: numen.v1.ListCompletionModelsRequest
-	(*ListCompletionModelsResponse)(nil), // 10: numen.v1.ListCompletionModelsResponse
-	(*CompletionModel)(nil),              // 11: numen.v1.CompletionModel
+	(CompletionErrorCode)(0),            // 0: numen.v1.CompletionErrorCode
+	(*HostServiceCompleteRequest)(nil),  // 1: numen.v1.HostServiceCompleteRequest
+	(*HostServiceCompleteResponse)(nil), // 2: numen.v1.HostServiceCompleteResponse
+	(*CompletionQuestion)(nil),          // 3: numen.v1.CompletionQuestion
+	(*CompletionMessage)(nil),           // 4: numen.v1.CompletionMessage
+	(*CompletionAnswer)(nil),            // 5: numen.v1.CompletionAnswer
 }
 var file_numen_v1_completion_proto_depIdxs = []int32{
-	5,  // 0: numen.v1.CompleteRequest.question:type_name -> numen.v1.CompletionQuestion
-	8,  // 1: numen.v1.CompleteResponse.answer:type_name -> numen.v1.CompletionAnswer
-	0,  // 2: numen.v1.CompleteResponse.error:type_name -> numen.v1.CompletionErrorCode
-	5,  // 3: numen.v1.HostServiceCompleteRequest.question:type_name -> numen.v1.CompletionQuestion
-	8,  // 4: numen.v1.HostServiceCompleteResponse.answer:type_name -> numen.v1.CompletionAnswer
-	0,  // 5: numen.v1.HostServiceCompleteResponse.error:type_name -> numen.v1.CompletionErrorCode
-	6,  // 6: numen.v1.CompletionQuestion.messages:type_name -> numen.v1.CompletionMessage
-	7,  // 7: numen.v1.CompletionQuestion.hints:type_name -> numen.v1.CompletionHints
-	11, // 8: numen.v1.ListCompletionModelsResponse.models:type_name -> numen.v1.CompletionModel
-	1,  // 9: numen.v1.CompletionService.Complete:input_type -> numen.v1.CompleteRequest
-	9,  // 10: numen.v1.CompletionService.ListCompletionModels:input_type -> numen.v1.ListCompletionModelsRequest
-	3,  // 11: numen.v1.HostService.Complete:input_type -> numen.v1.HostServiceCompleteRequest
-	2,  // 12: numen.v1.CompletionService.Complete:output_type -> numen.v1.CompleteResponse
-	10, // 13: numen.v1.CompletionService.ListCompletionModels:output_type -> numen.v1.ListCompletionModelsResponse
-	4,  // 14: numen.v1.HostService.Complete:output_type -> numen.v1.HostServiceCompleteResponse
-	12, // [12:15] is the sub-list for method output_type
-	9,  // [9:12] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	3, // 0: numen.v1.HostServiceCompleteRequest.question:type_name -> numen.v1.CompletionQuestion
+	5, // 1: numen.v1.HostServiceCompleteResponse.answer:type_name -> numen.v1.CompletionAnswer
+	0, // 2: numen.v1.HostServiceCompleteResponse.error:type_name -> numen.v1.CompletionErrorCode
+	4, // 3: numen.v1.CompletionQuestion.messages:type_name -> numen.v1.CompletionMessage
+	1, // 4: numen.v1.HostService.Complete:input_type -> numen.v1.HostServiceCompleteRequest
+	2, // 5: numen.v1.HostService.Complete:output_type -> numen.v1.HostServiceCompleteResponse
+	5, // [5:6] is the sub-list for method output_type
+	4, // [4:5] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_completion_proto_init() }
@@ -790,16 +406,15 @@ func file_numen_v1_completion_proto_init() {
 	if File_numen_v1_completion_proto != nil {
 		return
 	}
-	file_numen_v1_completion_proto_msgTypes[6].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_completion_proto_rawDesc), len(file_numen_v1_completion_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   11,
+			NumMessages:   5,
 			NumExtensions: 0,
-			NumServices:   2,
+			NumServices:   1,
 		},
 		GoTypes:           file_numen_v1_completion_proto_goTypes,
 		DependencyIndexes: file_numen_v1_completion_proto_depIdxs,

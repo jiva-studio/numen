@@ -12,6 +12,7 @@ import AiSettingsSection from './AiSettingsSection.vue'
 import PluginSettingsSection from './PluginSettingsSection.vue'
 import type { PluginInfo } from '@/entities/settings'
 import { getSettingAt } from '@/entities/settings'
+import { createProgramModels } from '@/testing/installation'
 import type { Installation } from '../types'
 
 const createPlugin = (id: string, name: string, over: Partial<PluginInfo> = {}): PluginInfo => ({
@@ -24,23 +25,16 @@ const createPlugin = (id: string, name: string, over: Partial<PluginInfo> = {}):
   capabilities: [],
   secrets: [],
   storedSecrets: [],
-  models: [],
   consent: 'none',
   ...over,
 })
 
 const PLUGINS: readonly PluginInfo[] = [
   createPlugin('sample.agent-a', 'Sample Agent A', {
-    capabilities: ['ai.completion.provider'],
     secrets: ['apiKey'],
     storedSecrets: ['apiKey'],
-    models: [
-      { name: 'sample-quick', title: 'Sample quick', isDefault: true },
-      { name: 'sample-careful', title: 'Sample careful', isDefault: false },
-    ],
   }),
   createPlugin('sample.agent-b', 'Sample Agent B', {
-    capabilities: ['ai.completion.provider'],
     secrets: ['apiKey'],
   }),
   createPlugin('sample.asking', 'Sample Asking Plugin', {
@@ -57,13 +51,26 @@ const PLUGINS: readonly PluginInfo[] = [
   }),
 ]
 
+const PROGRAMS = [
+  {
+    name: 'sample-a',
+    title: 'Sample Agent A',
+    isDefault: true,
+    models: [
+      { name: 'sample-quick', title: 'Sample quick' },
+      { name: 'sample-careful', title: 'Sample careful' },
+    ],
+  },
+  { name: 'sample-b', title: 'Sample Agent B' },
+]
+
 const FILE = {
-  plugins: { 'sample.asking': { agent: { agent: 'sample.agent-a', model: 'sample-careful' } } },
+  plugins: { 'sample.asking': { agent: { agent: 'sample-a', model: 'sample-careful' } } },
 }
 
 const installation: Installation = {
   getSetting: (at) => getSettingAt(FILE, at),
-  getModels: () => [],
+  getModels: createProgramModels(PROGRAMS),
   write: fn(),
   writeSecret: fn(),
   deleteSecret: fn(),
@@ -126,7 +133,7 @@ export const TheDefaultAgentAndItsModel: Story = {
     const agent = canvas.getByRole('button', { name: 'Default agent' })
     const model = canvas.getByRole('button', { name: 'Default model' })
 
-    await expect(agent).toHaveTextContent('First installed (Sample Agent A)')
+    await expect(agent).toHaveTextContent('Agent of the panel (Sample Agent A)')
     const left = agent.getBoundingClientRect()
     const right = model.getBoundingClientRect()
     await expect(Math.round(right.right)).toBe(Math.round(left.right))

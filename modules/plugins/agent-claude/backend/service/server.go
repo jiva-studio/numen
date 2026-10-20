@@ -16,7 +16,6 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/completion"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/toolcall"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
@@ -35,13 +34,12 @@ const programTitle = "Claude Code"
 
 type agentServer struct {
 	numenv1connect.UnimplementedAgentServiceHandler
-	numenv1connect.UnimplementedCompletionServiceHandler
-	mu              sync.RWMutex
-	systemPrompt    string
-	tools           []*numenv1.AgentToolDefinition
-	registry        agentrun.Registry
-	catalogue       modelCatalogue
-	completionModel string
+	mu           sync.RWMutex
+	systemPrompt string
+	tools        []*numenv1.AgentToolDefinition
+	registry     agentrun.Registry
+	catalogue    modelCatalogue
+	defaultModel string
 
 	// environ is the variables a program of the agent is started with; nil is those of this process.
 	environ []string
@@ -60,7 +58,7 @@ func (s *agentServer) getEnvironment() []string {
 func (s *agentServer) applyConfig(values map[string]string) {
 	if model, ok := values["model"]; ok && model != "" {
 		s.mu.Lock()
-		s.completionModel = model
+		s.defaultModel = model
 		s.mu.Unlock()
 	}
 	s.catalogue.update(values)
@@ -74,7 +72,7 @@ func (s *agentServer) AskAgent(
 	msg := req.Msg
 	s.mu.RLock()
 	systemPrompt := s.systemPrompt
-	defaultModel := s.completionModel
+	defaultModel := s.defaultModel
 	s.mu.RUnlock()
 	toolNames := msg.GetTools()
 
@@ -187,7 +185,7 @@ func (s *agentServer) AskAgent(
 	if failedReason != "" {
 		stoppedReason = failedReason
 	} else if waitErr != nil {
-		stoppedReason = completion.FailureMessage(waitErr, stderrBuf.String())
+		stoppedReason = agentrun.FailureMessage(waitErr, stderrBuf.String())
 	}
 
 	return stream.Send(&numenv1.AskAgentResponse{
@@ -307,7 +305,6 @@ func Mount(s *server.Server) error {
 func mount(s *server.Server, agentSvc *agentServer) error {
 	s.SetUpdateConfig(agentSvc.applyConfig)
 	s.Register(numenv1connect.NewAgentServiceHandler(agentSvc, s.HandlerOptions()...))
-	s.Register(numenv1connect.NewCompletionServiceHandler(agentSvc, s.HandlerOptions()...))
 	s.OnClose(func() { _ = agentSvc.registry.Close() })
 	return nil
 }

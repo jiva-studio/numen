@@ -103,13 +103,13 @@ export const WORDS = {
   /** Which agent answers the plugins that ask a model, and with which model. */
   defaultAgent: 'Default agent',
   defaultAgentDetail:
-    'The agent that answers a plugin whose own setting names none. Left to itself, the installed agent with the lowest id answers.',
+    'The agent that answers a plugin whose own setting names none. Left to itself, the agent of the panel answers.',
   defaultModel: 'Default model',
   defaultModelDetail: 'Which of that agent’s models answers.',
   pluginModel: 'Model',
   agentByDefault: (name: string) => `Default (${name})`,
-  agentFirst: (name: string) => `First installed (${name})`,
-  agentNone: 'No agent is installed',
+  agentFirst: (name: string) => `Agent of the panel (${name})`,
+  agentNone: 'No agent answers',
   agentMissing: 'not installed: questions are refused, and no other agent answers',
   modelByAgent: 'Agent default',
   /** Whether a plugin may ask a model at all. */

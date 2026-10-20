@@ -67,7 +67,7 @@ func TestGetProofreaderInfoNamesTheProofreader(t *testing.T) {
 	}
 }
 
-func TestTheModelIsAskedByPurposeAloneAtZeroTemperature(t *testing.T) {
+func TestTheModelIsAskedByPurposeAloneAlone(t *testing.T) {
 	proof, h := newServer(func(string) string { return "" })
 
 	if _, err := proof.ask(t.Context(), "be careful", "the prompt"); err != nil {
@@ -85,9 +85,6 @@ func TestTheModelIsAskedByPurposeAloneAtZeroTemperature(t *testing.T) {
 		q.GetMessages()[0].GetRole() != "system" || q.GetMessages()[0].GetText() != "be careful" ||
 		q.GetMessages()[1].GetRole() != "user" || q.GetMessages()[1].GetText() != "the prompt" {
 		t.Errorf("messages %v", q.GetMessages())
-	}
-	if q.GetHints() == nil || q.GetHints().Temperature == nil || q.GetHints().GetTemperature() != 0 {
-		t.Errorf("hints %v", q.GetHints())
 	}
 }
 

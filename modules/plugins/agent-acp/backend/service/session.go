@@ -14,7 +14,6 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/completion"
 )
 
 const (
@@ -312,7 +311,7 @@ func (s *acpSession) call(method string, params any) (json.RawMessage, error) {
 	if err := s.lines.Err(); err != nil {
 		return nil, fmt.Errorf("read %s: %w", s.program, err)
 	}
-	return nil, errors.New(completion.FailureMessage(
+	return nil, errors.New(agentrun.FailureMessage(
 		fmt.Errorf("%s exited before answering %s", s.program, method), s.stderr.String()))
 }
 

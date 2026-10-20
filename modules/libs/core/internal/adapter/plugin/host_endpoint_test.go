@@ -114,9 +114,7 @@ func TestAPluginWithThePermissionIsAnswered(t *testing.T) {
 		asked = question
 		return "fixed", nil
 	}))
-	temperature := 0.25
 	request := newHostQuestion()
-	request.Msg.Question.Hints = &v1.CompletionHints{QualityPriority: 0.5, MaxTokens: 64, Temperature: &temperature}
 
 	res, err := newHostClient(t, fakeCallers, "token-a").Complete(t.Context(), request)
 	if err != nil {
@@ -126,8 +124,7 @@ func TestAPluginWithThePermissionIsAnswered(t *testing.T) {
 		t.Errorf("answered %v", res.Msg)
 	}
 	if asked.Purpose != "proofreading" || len(asked.Messages) != 1 || asked.Messages[0].Text != "fix this" ||
-		asked.Messages[0].Role != "user" || asked.Hints.QualityPriority != 0.5 || asked.Hints.MaxTokens != 64 ||
-		asked.Hints.Temperature == nil || *asked.Hints.Temperature != temperature {
+		asked.Messages[0].Role != "user" {
 		t.Errorf("the completer was asked %+v", asked)
 	}
 	if len(fakeCallers.checked) != 2 || fakeCallers.checked[0] != "md.numen.a ai:complete" || fakeCallers.checked[1] != "md.numen.a consent" {
@@ -484,5 +481,16 @@ func TestTheCallerIsTheTokensPlugin(t *testing.T) {
 	}
 	if got := res.Msg.GetAnswer().GetText(); got != "md.numen.a" {
 		t.Errorf("the completer was told the caller is %q, want md.numen.a", got)
+	}
+}
+
+// A question nothing can answer is an invalid argument, not a refusal.
+func TestAQuestionNothingCanAnswerIsAnInvalidArgument(t *testing.T) {
+	held := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
+		return "", fmt.Errorf("%w: no message", port.ErrInvalidQuestion)
+	}))
+	_, err := newHostClient(t, held, "token-a").Complete(t.Context(), newHostQuestion())
+	if got := readCode(t, err); got != connect.CodeInvalidArgument {
+		t.Errorf("code = %v, want invalid argument", got)
 	}
 }

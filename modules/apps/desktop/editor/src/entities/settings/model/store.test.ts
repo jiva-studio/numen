@@ -95,7 +95,6 @@ describe('what stands at a setting', () => {
               capabilities: [],
               secrets: [],
               storedSecrets: [],
-              models: [],
               consent: 'none',
               settings: [
                 {
@@ -135,7 +134,6 @@ describe('what stands at a setting', () => {
               capabilities: [],
               secrets: [],
               storedSecrets: [],
-              models: [],
               consent: 'none',
               settings: [
                 {

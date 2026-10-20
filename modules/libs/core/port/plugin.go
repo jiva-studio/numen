@@ -128,7 +128,6 @@ type PluginResolver interface {
 	// ResolveCapability returns the plugin for the capability. Where none answers, the error is an
 	// *UnavailableError saying whether none is installed or every one is disabled.
 	ResolveCapability(capability string) (DiscoveredPlugin, error)
-	FindPluginByCapability(capability string) (DiscoveredPlugin, bool)
 	GetPlugin(id string) (DiscoveredPlugin, bool)
 }
 

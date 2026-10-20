@@ -67,9 +67,8 @@ message PluginInfo {
   repeated string secrets = 9;
   // The names of the secrets that have a key stored. A key never travels here.
   repeated string stored_secrets = 10;
-  // The models the plugin answers completions with, as its
-  // CompletionService.ListCompletionModels lists them. Empty where it lists none.
-  repeated PluginModel models = 11;
+  reserved 11;
+  reserved "models";
   // Whether the person lets the plugin ask for model completions.
   CompletionConsent completion_consent = 12;
   // Set while the host suspends the plugin after it failed to start.
@@ -82,16 +81,6 @@ message PluginFailure {
   string reason = 1;
   // When the host gave the plugin up, in milliseconds since the Unix epoch.
   int64 failed_at_unix_ms = 2;
-}
-
-// PluginModel is one model a plugin that answers completions offers.
-message PluginModel {
-  // What a setting names the model by.
-  string name = 1;
-  // What the model is called when shown to a person.
-  string title = 2;
-  // Set on the model the plugin answers with when it is named none.
-  bool is_default = 3;
 }
 
 // CompletionConsent is whether the person lets a plugin ask for model
