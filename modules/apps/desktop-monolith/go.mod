@@ -7,7 +7,6 @@ require (
 	github.com/jiva-studio/numen/modules/libs/core v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/readers.epub v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/readers.pdf v0.0.0
-	github.com/quasilyte/go-ruleguard/dsl v0.3.23
 )
 
 require (
@@ -49,23 +48,22 @@ require (
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx v0.0.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault v0.0.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
-	github.com/jiva-studio/numen/modules/plugins/agents.numen v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/agents.acp v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/agents.antigravity v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/agents.claude v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/agents.codex v0.0.0
-	github.com/jiva-studio/numen/modules/plugins/tools.downloader v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/agents.numen v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/engines.embeddings v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/engines.ocr v0.0.0
-	github.com/jiva-studio/numen/modules/plugins/tools.proofreading v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/engines.transcription v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/tools.downloader v0.0.0
+	github.com/jiva-studio/numen/modules/plugins/tools.proofreading v0.0.0
 	github.com/jolestar/go-commons-pool/v2 v2.1.2 // indirect
 	github.com/klippa-app/go-pdfium v1.21.3 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
-	github.com/open-spaced-repetition/go-fsrs/v3 v3.3.1 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rjeczalik/notify v0.9.3 // indirect
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06 // indirect

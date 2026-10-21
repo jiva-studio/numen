@@ -4,18 +4,10 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "Proofreading and correction engine using large language models",
-  "capabilities": [
-    "proofreading"
-  ],
-  "targets": [
-    "desktop.editor"
-  ],
-  "activationEvents": [
-    "onCommand:proofread"
-  ],
-  "permissions": [
-    "ai:complete"
-  ],
+  "capabilities": ["proofreading"],
+  "targets": ["desktop.editor"],
+  "activationEvents": ["onCommand:proofread"],
+  "permissions": ["ai:complete"],
   "settings": [
     {
       "key": "agent",
@@ -50,9 +42,7 @@
       "title": "Max edit distance",
       "description": "How far a correction may stand from the line as read",
       "default": 0.3,
-      "replaces": [
-        "indexing.proofreading.max_edit_distance"
-      ]
+      "replaces": ["indexing.proofreading.max_edit_distance"]
     }
   ],
   "lifecycle": {

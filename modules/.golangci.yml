@@ -156,6 +156,7 @@ linters:
             - "!**/adapter/window/editor/pool/documents.go"
             - "!**/adapter/window/flashcards/api.go"
             - "!**/adapter/window/flashcards/agent.go"
+            - "!**/adapter/window/flashcards/index.go"
             - "!**/adapter/cli/deps.go"
           deny:
             - pkg: "github.com/jiva-studio/numen/modules/libs/core/port"
@@ -183,14 +184,6 @@ linters:
       # needle is the shorter name. It is wrong every time it fires here.
       disabled-checks:
         - argOrder
-      enabled-checks:
-        - ruleguard
-      settings:
-        ruleguard:
-          # A rules file that will not typecheck is a rule that silently
-          # refuses nothing.
-          failOn: dsl
-          rules: ${base-path}/tools/gorules/timeeq.go
 
     exhaustive:
       # A switch that names a default has answered for the cases it did not

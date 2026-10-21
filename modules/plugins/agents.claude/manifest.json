@@ -4,21 +4,10 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "Claude Code CLI agent runner and provider service",
-  "capabilities": [
-    "agent",
-    "ai.agent.provider"
-  ],
-  "targets": [
-    "desktop.editor"
-  ],
-  "activationEvents": [
-    "onCommand:askClaude"
-  ],
-  "permissions": [
-    "network:outbound",
-    "vault:read",
-    "vault:write"
-  ],
+  "capabilities": ["agent", "ai.agent.provider"],
+  "targets": ["desktop.editor"],
+  "activationEvents": ["onCommand:askClaude"],
+  "permissions": ["network:outbound", "vault:read", "vault:write"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false,

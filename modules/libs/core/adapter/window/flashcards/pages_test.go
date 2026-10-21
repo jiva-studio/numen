@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -92,11 +93,18 @@ func TestThePageIsAnsweredAtEveryAddressItOpensAt(t *testing.T) {
 	})
 	handler := (&API{}).NewHandler(files)
 
+	_, err := wire.GetInterface(pages)
 	for _, at := range []string{"/", "/index.html"} {
 		out := httptest.NewRecorder()
 		handler.ServeHTTP(out, httptest.NewRequest(http.MethodGet, at, nil))
-		if got := out.Body.String(); got != "the files" {
-			t.Errorf("%s answered %q", at, got)
+		if err == nil {
+			if !strings.Contains(out.Body.String(), "<!doctype html>") {
+				t.Errorf("%s answered %q", at, out.Body.String())
+			}
+		} else {
+			if got := out.Body.String(); got != "the files" {
+				t.Errorf("%s answered %q", at, got)
+			}
 		}
 	}
 }

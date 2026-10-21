@@ -4,12 +4,8 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "Speech-to-text audio and video transcription using native plugin backend",
-  "capabilities": [
-    "transcription"
-  ],
-  "targets": [
-    "desktop.editor"
-  ],
+  "capabilities": ["transcription"],
+  "targets": ["desktop.editor"],
   "activationEvents": [
     "onFile:*.mp3",
     "onFile:*.wav",
@@ -17,13 +13,8 @@
     "onFile:*.mp4",
     "onCommand:transcribe"
   ],
-  "permissions": [
-    "vault:read",
-    "network:outbound"
-  ],
-  "runtimes": [
-    "onnxruntime"
-  ],
+  "permissions": ["vault:read", "network:outbound"],
+  "runtimes": ["onnxruntime"],
   "lifecycle": {
     "idleTimeoutSeconds": 600,
     "keepAliveWhileVisible": false,
@@ -41,15 +32,7 @@
       "title": "Transcription Language",
       "description": "Preferred language model for audio recognition",
       "default": "auto",
-      "options": [
-        "auto",
-        "en",
-        "es",
-        "fr",
-        "de",
-        "zh",
-        "ja"
-      ],
+      "options": ["auto", "en", "es", "fr", "de", "zh", "ja"],
       "palette": true
     }
   ]

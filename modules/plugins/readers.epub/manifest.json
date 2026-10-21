@@ -4,21 +4,11 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "EPUB reflowable book reader and metadata parser",
-  "capabilities": [
-    "book"
-  ],
-  "targets": [
-    "desktop.editor"
-  ],
-  "fileExtensions": [
-    ".epub"
-  ],
-  "activationEvents": [
-    "onFile:*.epub"
-  ],
-  "permissions": [
-    "vault:read"
-  ],
+  "capabilities": ["book"],
+  "targets": ["desktop.editor"],
+  "fileExtensions": [".epub"],
+  "activationEvents": ["onFile:*.epub"],
+  "permissions": ["vault:read"],
   "lifecycle": {
     "idleTimeoutSeconds": 300,
     "keepAliveWhileVisible": true,

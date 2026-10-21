@@ -31,36 +31,47 @@ func (c Config) MigratePluginSettings() error {
 	}
 	var file map[string]any
 	if err := json.Unmarshal(raw, &file); err != nil {
-		// A file that is not JSON is read, and refused, where the settings are read.
+		//nolint:nilerr // a file that is not JSON is refused where the settings are read
 		return nil
 	}
 
-	var moved []port.Setting
-	for _, plugin := range c.PluginHost.GetPluginInfos() {
-		for _, setting := range plugin.Settings {
-			if len(setting.Replaces) == 0 || hasKeys(file, "plugins", plugin.ID, setting.Key) {
-				continue
-			}
-			for _, place := range setting.Replaces {
-				value, found := lookKeys(file, strings.Split(place, ".")...)
-				if !found {
-					continue
-				}
-				written, err := json.Marshal(value)
-				if err != nil {
-					continue
-				}
-				moved = append(moved, port.Setting{
-					Path: []string{"plugins", plugin.ID, setting.Key}, JSON: string(written),
-				})
-				break
-			}
-		}
-	}
+	moved := collectPluginSettingsMigrations(c.PluginHost.GetPluginInfos(), file)
 	if len(moved) == 0 {
 		return nil
 	}
 	return c.GetSettingsWriter()(moved)
+}
+
+func collectPluginSettingsMigrations(plugins []port.PluginInfo, file map[string]any) []port.Setting {
+	var moved []port.Setting
+	for _, plugin := range plugins {
+		for _, setting := range plugin.Settings {
+			if len(setting.Replaces) == 0 || hasKeys(file, "plugins", plugin.ID, setting.Key) {
+				continue
+			}
+			if s, ok := migrateOneSetting(plugin.ID, setting, file); ok {
+				moved = append(moved, s)
+			}
+		}
+	}
+	return moved
+}
+
+func migrateOneSetting(pluginID string, setting port.PluginSetting, file map[string]any) (port.Setting, bool) {
+	for _, place := range setting.Replaces {
+		value, found := lookKeys(file, strings.Split(place, ".")...)
+		if !found {
+			continue
+		}
+		written, err := json.Marshal(value)
+		if err != nil {
+			continue
+		}
+		return port.Setting{
+			Path: []string{"plugins", pluginID, setting.Key}, JSON: string(written),
+		}, true
+	}
+	return port.Setting{}, false
 }
 
 // lookKeys is the value at the keys of a decoded document, and whether the document holds one.

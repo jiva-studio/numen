@@ -5,13 +5,9 @@
   "protocol": 1,
   "description": "The conversation tab where the person asks the agent about the vault",
   "capabilities": [],
-  "targets": [
-    "desktop.editor"
-  ],
+  "targets": ["desktop.editor"],
   "activationEvents": [],
-  "permissions": [
-    "vault:read"
-  ],
+  "permissions": ["vault:read"],
   "frontend": {
     "entrypoint": "dist/index.js",
     "styles": "dist/styles.css"

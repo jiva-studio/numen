@@ -3,3 +3,4 @@ libs/protocol/gen/
 dist/
 coverage/
 storybook-static/
+**/testdata/**

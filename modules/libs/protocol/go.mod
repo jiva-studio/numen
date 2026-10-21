@@ -7,8 +7,6 @@ require (
 	google.golang.org/protobuf v1.36.12
 )
 
-require github.com/quasilyte/go-ruleguard/dsl v0.3.23
-
 tool (
 	connectrpc.com/connect/cmd/protoc-gen-connect-go
 	google.golang.org/protobuf/cmd/protoc-gen-go

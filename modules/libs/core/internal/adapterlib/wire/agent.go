@@ -1,3 +1,4 @@
+// Package wire translates between internal core types and protocol wire types.
 package wire
 
 import (

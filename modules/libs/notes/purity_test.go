@@ -23,9 +23,6 @@ var thirdParty = []string{"gopkg.in/yaml.v3", "golang.org/x/text/"}
 func TestNoPackageHereReachesOutsideTheVocabulary(t *testing.T) {
 	var read int
 	err := filepath.WalkDir(".", func(path string, entry fs.DirEntry, err error) error {
-		if err == nil && entry.IsDir() && entry.Name() == "gorules" {
-			return filepath.SkipDir
-		}
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
 			return err
 		}

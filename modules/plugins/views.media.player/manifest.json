@@ -4,21 +4,9 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "Audio player with waveform visualization and microphone recording",
-  "capabilities": [
-    "audio",
-    "recording"
-  ],
-  "targets": [
-    "desktop.editor"
-  ],
-  "fileExtensions": [
-    ".mp3",
-    ".m4a",
-    ".wav",
-    ".ogg",
-    ".aac",
-    ".flac"
-  ],
+  "capabilities": ["audio", "recording"],
+  "targets": ["desktop.editor"],
+  "fileExtensions": [".mp3", ".m4a", ".wav", ".ogg", ".aac", ".flac"],
   "activationEvents": [
     "onFile:*.mp3",
     "onFile:*.m4a",

@@ -4,20 +4,10 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "Media and web page downloader with transcript extraction via yt-dlp",
-  "capabilities": [
-    "downloader"
-  ],
-  "targets": [
-    "desktop.editor"
-  ],
-  "activationEvents": [
-    "onCommand:downloadMedia",
-    "onCommand:downloader.open"
-  ],
-  "permissions": [
-    "network:outbound",
-    "vault:write"
-  ],
+  "capabilities": ["downloader"],
+  "targets": ["desktop.editor"],
+  "activationEvents": ["onCommand:downloadMedia", "onCommand:downloader.open"],
+  "permissions": ["network:outbound", "vault:write"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false,
@@ -39,9 +29,7 @@
       "title": "yt-dlp",
       "description": "The path to the yt-dlp program",
       "default": "",
-      "replaces": [
-        "importing.yt_dlp"
-      ]
+      "replaces": ["importing.yt_dlp"]
     },
     {
       "key": "ffmpeg",
@@ -49,9 +37,7 @@
       "title": "ffmpeg",
       "description": "The path to the ffmpeg program",
       "default": "",
-      "replaces": [
-        "importing.ffmpeg"
-      ]
+      "replaces": ["importing.ffmpeg"]
     }
   ]
 }

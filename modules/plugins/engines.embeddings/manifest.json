@@ -4,25 +4,12 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "Vector embeddings engine for semantic search",
-  "capabilities": [
-    "embedding"
-  ],
-  "targets": [
-    "desktop.editor"
-  ],
-  "activationEvents": [
-    "*"
-  ],
-  "permissions": [
-    "vault:read",
-    "network:outbound"
-  ],
-  "runtimes": [
-    "onnxruntime"
-  ],
-  "secrets": [
-    "apiKey"
-  ],
+  "capabilities": ["embedding"],
+  "targets": ["desktop.editor"],
+  "activationEvents": ["*"],
+  "permissions": ["vault:read", "network:outbound"],
+  "runtimes": ["onnxruntime"],
+  "secrets": ["apiKey"],
   "lifecycle": {
     "idleTimeoutSeconds": 0,
     "keepAliveWhileVisible": true,
