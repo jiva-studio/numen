@@ -41,7 +41,7 @@ function createRestrictions(escapes, shared) {
           message: hostMessage,
         },
         {
-          group: ['@plugins/**'],
+          group: ['@plugins', '@plugins/**'],
           message: 'a plugin names no other plugin; share through @numen/plugin-sdk',
         },
         {
@@ -64,17 +64,17 @@ function createRestrictions(escapes, shared) {
   ]
 }
 
-/** One block per depth below plugins/: a file n directories down leaves its plugin with n or more steps up. */
+/** One block per depth below frontend/: a file n directories down leaves its directory with n+1 or more steps up. */
 function pluginImportBlocks() {
   const blocks = [
     { files: ['**/*.{ts,vue}'], rules: { 'no-restricted-imports': createRestrictions() } },
   ]
-  for (let depth = 1; depth <= 10; depth++) {
-    const dirs = '*/'.repeat(depth)
+  for (let depth = 0; depth <= 8; depth++) {
+    const subdirs = depth === 0 ? '' : '*/'.repeat(depth)
     blocks.push({
-      files: [`${dirs}*.{ts,vue}`],
-      ignores: [...fixtureReaders, ...storyHarness, ...(depth === 1 ? buildConfigs : [])],
-      rules: { 'no-restricted-imports': createRestrictions(depth) },
+      files: [`*/frontend/${subdirs}*.{ts,vue}`],
+      ignores: [...fixtureReaders, ...storyHarness],
+      rules: { 'no-restricted-imports': createRestrictions(depth + 1) },
     })
   }
   blocks.push({
