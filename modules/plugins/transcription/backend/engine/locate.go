@@ -29,9 +29,12 @@ type paths struct {
 // the folder the application was installed into, and what was downloaded. A
 // path that is written down is used as given, and its absence is an error.
 func locateModels(ctx context.Context, cfg Config) (*ort.Engine, paths, error) {
-	found := paths{from: "settings"}
-	engine, _, err := onnx.OpenAndLocate(ctx, cfg.Runtime, cfg.folder(), pinnedSums, getWantedFiles(cfg, &found))
+	engine, _, err := onnx.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
 	if err != nil {
+		return nil, paths{}, err
+	}
+	found := paths{from: "settings"}
+	if err := cfg.folder().Locate(ctx, pinnedSums, getWantedFiles(cfg, &found)); err != nil {
 		return nil, paths{}, err
 	}
 	if cfg.Dir != "" {

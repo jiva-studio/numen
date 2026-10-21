@@ -19,13 +19,16 @@ type paths struct {
 }
 
 func locateModels(ctx context.Context, cfg Config) (*ort.Engine, string, paths, error) {
+	engine, at, err := onnx.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
+	if err != nil {
+		return nil, "", paths{}, err
+	}
 	found := paths{from: "settings"}
-	engine, at, err := onnx.OpenAndLocate(ctx, cfg.Runtime, cfg.folder(), pinnedSums, []models.Wanted{
+	if err := cfg.folder().Locate(ctx, pinnedSums, []models.Wanted{
 		{Dst: &found.layout, Path: cfg.Layout.Path, Name: cfg.Layout.Name, Kind: "layout model"},
 		{Dst: &found.detect, Path: cfg.Detect.Path, Name: cfg.Detect.Name, Kind: "detect model"},
 		{Dst: &found.recognise, Path: cfg.Recognise.Path, Name: cfg.Recognise.Name, Kind: "recognise model"},
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, "", paths{}, err
 	}
 	if cfg.Dir != "" {
