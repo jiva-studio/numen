@@ -96,7 +96,7 @@ func TestAPageNothingCouldBeReadOnIsAFailure(t *testing.T) {
 	}
 }
 
-func TestOnePartThatCouldNotBeReadLeavesTheRest(t *testing.T) {
+func TestOnePartThatCouldNotBeReadPreservesTheRest(t *testing.T) {
 	page := image.NewRGBA(image.Rect(0, 0, 600, 800))
 	var request atomic.Int32
 
@@ -320,7 +320,7 @@ func TestAPartOutsideThePageIsNotRead(t *testing.T) {
 	}
 }
 
-func TestAPageWithNothingToReadSaysNothing(t *testing.T) {
+func TestAPageWithNothingToReadReturnsNothing(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	r := &Recogniser{

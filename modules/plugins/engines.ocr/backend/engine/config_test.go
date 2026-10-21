@@ -32,7 +32,7 @@ func TestExplicitThreadsAndJobsWinOverTheResolvedProfile(t *testing.T) {
 	}
 }
 
-func TestAnUnresolvedProfileTakesTheFallbackCounts(t *testing.T) {
+func TestAnUnresolvedProfileConsumesTheFallbackCounts(t *testing.T) {
 	cfg := Defaults()
 	if got, want := cfg.threads(), min(fallbackThreads, onnx.GetDefaultThreads()); got != want {
 		t.Errorf("the recogniser takes %d threads, want %d", got, want)
@@ -61,7 +61,7 @@ func TestTheDefaultsReadAtThreeHundredDPIAndFetchWhatIsMissing(t *testing.T) {
 	}
 }
 
-func TestAnUnresolvedProfileTakesFourOfEach(t *testing.T) {
+func TestAnUnresolvedProfileConsumesFourOfEach(t *testing.T) {
 	previous := runtime.GOMAXPROCS(8)
 	t.Cleanup(func() { runtime.GOMAXPROCS(previous) })
 
@@ -107,7 +107,7 @@ func TestOneThreadAndOneJobAreCountsToo(t *testing.T) {
 	}
 }
 
-func TestWhatASettingsFileLeavesOutIsTheDefaultOfTheModel(t *testing.T) {
+func TestWhatASettingsFilePreservesOutIsTheDefaultOfTheModel(t *testing.T) {
 	if got := (LayoutModel{}).minimum(); got != 0.4 {
 		t.Errorf("a part scores at least %v", got)
 	}
@@ -134,7 +134,7 @@ func TestWhatASettingsFileLeavesOutIsTheDefaultOfTheModel(t *testing.T) {
 	}
 }
 
-func TestWhatASettingsFileNamesStands(t *testing.T) {
+func TestWhatASettingsFileNamesExists(t *testing.T) {
 	if got := (LayoutModel{Minimum: 0.5}).minimum(); got != 0.5 {
 		t.Errorf("a part scores at least %v", got)
 	}
@@ -188,7 +188,7 @@ func TestANegativeNumberIsNoNumberAtAll(t *testing.T) {
 	}
 }
 
-func TestThePartsOfAPageAreTheOnesTheModelKnowsUnlessTheFileSaysOtherwise(t *testing.T) {
+func TestThePartsOfAPageAreTheOnesTheModelKnowsUnlessTheFileReturnsOtherwise(t *testing.T) {
 	labels := (LayoutModel{}).labels()
 	if len(labels) != 25 || labels[0] != "abstract" || labels[24] != "vision_footnote" {
 		t.Errorf("the model knows %v", labels)
@@ -213,13 +213,13 @@ func TestThePartsOfAPageAreTheOnesTheModelKnowsUnlessTheFileSaysOtherwise(t *tes
 	}
 }
 
-func TestTheModelsAreFoundWhereTheConfigurationSays(t *testing.T) {
-	var notified string
+func TestTheModelsAreFoundWhereTheConfigurationReturns(t *testing.T) {
+	var progressItem string
 	cfg := Config{
 		Runtime:        "lib.so",
 		Dir:            "models",
 		ShouldDownload: true,
-		Progress:       func(what string, _, _ int64) { notified = what },
+		Progress:       func(what string, _, _ int64) { progressItem = what },
 	}
 	if got := onnx.ResolveLibrary(cfg.Runtime, cfg.Dir); got != "lib.so" {
 		t.Errorf("runtime = %q, want lib.so", got)
@@ -229,7 +229,7 @@ func TestTheModelsAreFoundWhereTheConfigurationSays(t *testing.T) {
 		t.Errorf("got %+v", got)
 	}
 	got.Progress("a model", 1, 2)
-	if notified != "a model" {
+	if progressItem != "a model" {
 		t.Error("a download does not reach whoever is listening")
 	}
 }

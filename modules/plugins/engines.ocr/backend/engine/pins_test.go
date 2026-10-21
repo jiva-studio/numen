@@ -49,7 +49,7 @@ func TestAModelAPersonNamedIsNotPinned(t *testing.T) {
 	}
 }
 
-func TestIsFetchedFindsAPinnedModelUnderItsSum(t *testing.T) {
+func TestIsFetchedFindsAPinnedModelBelowItsSum(t *testing.T) {
 	pinTestModel(t, "weights")
 	dir := t.TempDir()
 	cfg := Config{Dir: dir}
@@ -78,7 +78,7 @@ func TestIsFetchedRefusesAPinnedModelWithAnotherSum(t *testing.T) {
 	}
 }
 
-func TestIsFetchedFindsAModelBesideTheApplicationOnlyWithThePinnedSum(t *testing.T) {
+func TestIsFetchedFindsAModelAdjacentTheApplicationOnlyWithThePinnedSum(t *testing.T) {
 	pinTestModel(t, "weights")
 	dir := t.TempDir()
 	cfg := Config{Dir: dir}

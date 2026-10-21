@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
-func TestTheRuntimeInTheModelsFolderComesBeforeTheOneTheHostGave(t *testing.T) {
+func TestTheRuntimeInTheModelsFolderReachesBeforeTheOneTheHostGave(t *testing.T) {
 	t.Setenv("NUMEN_ONNX_RUNTIME_LIB", "/host/libonnxruntime.so")
 	dir := t.TempDir()
 	at := filepath.Join(dir, onnx.GetLibraryName())
