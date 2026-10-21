@@ -27,35 +27,6 @@ vi.mock('@plugins/reader-pdf/frontend', async (original) => ({
   ...documentsSaid,
 }))
 
-const recordingsSaid = {
-  recordings: {
-    getSummary: async (path: string) => {
-      requests.listened.push(path)
-      const { duration, mediaUrl, mediaType } = said.transcribed
-      return { duration, mediaUrl, mediaType, url: '' }
-    },
-    getTaskStates: async (path: string) => said.carries[path] ?? { transcript: 'done' },
-    readTranscript: async () => ({
-      cues: said.transcribed.cues,
-      prose: '',
-      isEditable: said.transcribed.isEditable,
-    }),
-    readArticle: async () => ({ cues: [], prose: '', isEditable: said.transcribed.isEditable }),
-    writeTranscript: async (path: string, cues: readonly { text: string }[]) => {
-      requests.transcribed.push(`${path} ${cues.map((one) => one.text).join(' / ')}`)
-    },
-    findCueTime: async (path: string, span: { from: number }) =>
-      said.transcribed.cues.find((one) => one.from >= span.from)?.from ?? null,
-  },
-}
-
-vi.mock('@/entities/media/api/wire', () => recordingsSaid)
-
-vi.mock('@/entities/media', async (original) => ({
-  ...(await original<typeof import('@/entities/media')>()),
-  ...recordingsSaid,
-}))
-
 // The runs are answered here; what they are called is the window's own words,
 // and a test that reads one reads what the window would have shown.
 vi.mock('@/entities/artifact', async (original) => ({

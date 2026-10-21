@@ -37,8 +37,6 @@ import {
   type SettingsBounds,
 } from '@plugins/flashcards-studio/frontend/cards'
 import { AudioPlayerTab } from '@plugins/media-player/frontend'
-import { useTranscript, type Cue, type Player, type Recordings } from '@/entities/media'
-import { useTranscriptTab } from '@/entities/media'
 import {
   DocumentTab,
   useDocumentReader,
@@ -445,6 +443,12 @@ export const Stencil: Story = {
 
 /* A recording, and the words heard in it. ---------------------------------- */
 
+interface Cue {
+  readonly text: string
+  readonly from: number
+  readonly to: number
+}
+
 const cue = (from: number, to: number, text: string): Cue => ({ text, from, to })
 
 /**
@@ -515,58 +519,27 @@ const SPOKEN: readonly Cue[] = SAID.reduce<Cue[]>((cues, text) => {
 const MEDIA = 'vault://Lectures/Lecture 4.mp3'
 const RUNS = 1_842_000
 
-const PLAYER: Player = {
-  url: ref(MEDIA),
-  at: ref(47_200),
-  duration: ref(RUNS),
-  isPlaying: ref(true),
-  error: ref(''),
-  load: fn(),
-  play: fn(),
-  pause: fn(),
-  seek: fn(),
-}
-
-const createRecordings = (cues: readonly Cue[]): Recordings => ({
-  getSummary: () =>
-    Promise.resolve({
-      duration: RUNS,
-      mediaUrl: MEDIA,
-      mediaType: 'audio/mpeg',
-      url: '',
-    }),
-  getTaskStates: () => Promise.resolve({ transcript: 'done' }),
-  readTranscript: () => Promise.resolve({ cues, isEditable: true, prose: '' }),
-  readArticle: () => Promise.resolve({ cues: [], isEditable: true, prose: '' }),
-  writeTranscript: fn(() => Promise.resolve()),
-  findCueTime: () => Promise.resolve(null),
-})
-
 /** The words heard in a recording, against the moment each was said. */
 export const Recording: Story = {
   parameters: WRITING,
   render: () =>
-    window(
-      `${RECORDING}:lecture`,
-      AudioPlayerTab,
-      useTranscriptTab(
-        useTranscript(createRecordings(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }),
-        { runCommand: fn() },
-      ),
-    ),
+    window(`${RECORDING}:lecture`, AudioPlayerTab, {
+      url: MEDIA,
+      now: 47_200,
+      runs: RUNS,
+      isPlaying: true,
+      cues: SPOKEN,
+    }),
 }
 
 /** A recording nothing has written down, and the run that would. */
 export const NoTranscript: Story = {
   render: () =>
-    window(
-      `${RECORDING}:lecture`,
-      AudioPlayerTab,
-      useTranscriptTab(
-        useTranscript(createRecordings([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }),
-        { runCommand: fn() },
-      ),
-    ),
+    window(`${RECORDING}:lecture`, AudioPlayerTab, {
+      url: MEDIA,
+      runs: RUNS,
+      cues: [],
+    }),
 }
 
 /**
@@ -574,16 +547,13 @@ export const NoTranscript: Story = {
  * every other recording, and only what is below it says a run is on.
  */
 export const Transcribing: Story = {
-  render: () => {
-    const state = useTranscriptTab(
-      useTranscript(createRecordings([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }),
-      {
-        runCommand: fn(),
-      },
-    )
-    state.setWorking(true)
-    return window(`${RECORDING}:lecture`, AudioPlayerTab, state)
-  },
+  render: () =>
+    window(`${RECORDING}:lecture`, AudioPlayerTab, {
+      url: MEDIA,
+      runs: RUNS,
+      cues: [],
+      transcribable: false,
+    }),
 }
 
 /* The tree, and the runs a row can be put through. ------------------------- */
@@ -831,12 +801,13 @@ export const Transcribed: Story = {
     createMenuStory('Lectures/Lecture 4.mp3', ['Lectures', 'Physics', 'Reading', 'Sanskrit'], {
       tab: `${RECORDING}:lecture`,
       pane: AudioPlayerTab,
-      state: useTranscriptTab(
-        useTranscript(createRecordings(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }),
-        {
-          runCommand: fn(),
-        },
-      ),
+      state: {
+        url: MEDIA,
+        now: 47_200,
+        runs: RUNS,
+        isPlaying: true,
+        cues: SPOKEN,
+      },
     }),
 }
 

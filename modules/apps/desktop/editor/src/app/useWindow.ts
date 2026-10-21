@@ -10,7 +10,6 @@ import { createNoteLookup } from './editorTabs'
 import { runSupport, type CommandTarget, type NoteLookup } from '@/features/command-palette'
 import { fileOpeners, useWindowTabs } from '@/entities/tab'
 import { createMessageLog } from '@/shared/notices/messages'
-import { createMediaTypeProbe } from '@/entities/media'
 import { WORDS as words } from '@/shared/words'
 import { useTabLinks } from '@/features/tab-linking'
 import { useTabSync } from './useTabSync'
@@ -151,7 +150,6 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   const tabLinks = useTabLinks()
   const tabOpeners = fileOpeners({ ...core, reconcileTab: windowTabs.reconcileTab })
   const runs = runSupport()
-  const plays = createMediaTypeProbe()
   const pluginServices: PluginServices = {}
   const { pluginHost, pluginLoader } = createPluginSupport({
     windowTabs,
@@ -173,7 +171,6 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     tabLinks,
     tabOpeners,
     runs,
-    plays,
     pluginHost,
     pluginLoader,
     pluginServices,
@@ -263,7 +260,6 @@ function initWindowKindsAndCommands(
     tabOpeners: base.tabOpeners,
     windowTabs: base.windowTabs,
     runs: base.runs,
-    plays: base.plays,
     editing,
     settings,
     vaults: ctx.vaults,
