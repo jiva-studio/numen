@@ -1,7 +1,6 @@
 /** What the window gives the tab kinds it opens. */
 import type { CommandDeps, CommandTarget, runSupport, SearchDeps } from '@/features/command-palette'
 import type { FileOpeners, useWindowTabs } from '@/entities/tab'
-import type { createMediaTypeProbe } from '@/entities/media'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { NotePort } from '@/app/ports/notes'
 import type { FilePort } from '@/app/ports/files'
@@ -18,7 +17,6 @@ export interface WindowKindsDeps {
   tabOpeners: FileOpeners
   windowTabs: ReturnType<typeof useWindowTabs>
   runs: ReturnType<typeof runSupport>
-  plays: ReturnType<typeof createMediaTypeProbe>
   editing: ReturnType<typeof useNoteEditors>
   settings: ReturnType<typeof useSettings>
   vaults: ReturnType<typeof useVaults>

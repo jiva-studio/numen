@@ -51,19 +51,6 @@ export const said = {
   applied: 'preset:numen',
   mode: 'system' as 'system' | 'light' | 'dark',
   sizes: { interfaceScale: 1, textScale: 1 },
-  /** The recording the vault answers with, and the words written down in it. */
-  transcribed: {
-    duration: 60_000,
-    mediaUrl: 'numen://recording/talk.mp3',
-    mediaType: 'audio/mpeg',
-    cues: [{ text: 'the first thing said', from: 0, to: 4000 }] as {
-      text: string
-      from: number
-      to: number
-    }[],
-    /** False while a run writing the transcript holds it. */
-    isEditable: true,
-  },
   /**
    * What the file at each path carries, as the application answers it. A path
    * it says nothing about carries nothing.
@@ -233,13 +220,6 @@ export const forgetAnswers = () => {
   said.applied = 'preset:numen'
   said.mode = 'system'
   said.sizes = { interfaceScale: 1, textScale: 1 }
-  said.transcribed = {
-    duration: 60_000,
-    mediaUrl: 'numen://recording/talk.mp3',
-    mediaType: 'audio/mpeg',
-    cues: [{ text: 'the first thing said', from: 0, to: 4000 }],
-    isEditable: true,
-  }
   said.carries = {}
   said.carrying = true
   said.renaming = asValue({ decks: [], cards: 0, notWritten: [], at: 'a2' })

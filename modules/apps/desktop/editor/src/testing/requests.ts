@@ -25,10 +25,6 @@ export const requests = {
   pressed: [] as string[],
   /** The vaults the window asked to be shown, in the order it asked. */
   opened: [] as string[],
-  /** The recordings the window listened to, in the order it asked. */
-  listened: [] as string[],
-  /** The transcripts the window wrote, as the words each carried. */
-  transcribed: [] as string[],
   /** Every file the window asked what it carries, in the order it asked. */
   carried: [] as string[],
   /** Each run the window asked for, and each transcript it dropped. */
@@ -53,8 +49,6 @@ export const forgetRequests = () => {
   requests.measured = 0
   requests.pressed = []
   requests.opened = []
-  requests.listened = []
-  requests.transcribed = []
   requests.carried = []
   requests.ran = []
   requests.chose = 0

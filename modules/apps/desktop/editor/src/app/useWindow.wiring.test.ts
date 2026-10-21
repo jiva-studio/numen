@@ -15,7 +15,6 @@ const h = vi.hoisted(() => ({
 
 vi.mock('./vault', () => ({ core: h.core }))
 vi.mock('@/features/command-palette', () => ({ runSupport: () => ({ name: 'runs' }) }))
-vi.mock('@/entities/media', () => ({ createMediaTypeProbe: () => ({ name: 'plays' }) }))
 vi.mock('@/features/tab-linking', () => ({ useTabLinks: () => h.f.tabLinks }))
 vi.mock('@/shared/notices/messages', () => ({ createMessageLog: () => h.f.log }))
 vi.mock('@/entities/tab', () => ({
