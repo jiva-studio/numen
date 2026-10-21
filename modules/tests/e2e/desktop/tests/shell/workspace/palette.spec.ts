@@ -54,8 +54,8 @@ test.describe('Command Palette Advanced Keyboard and Pointer Interactions', () =
     await expect(items).toHaveCount(0)
 
     // Verify polite aria announcement element
-    const said = page.locator('[data-palette="said"]')
-    await expect(said).toBeAttached()
+    const response = page.locator('[data-palette="said"]')
+    await expect(response).toBeAttached()
   })
 
   test('navigates multi-step palette flows and cancels step on escape', async ({ page }) => {
