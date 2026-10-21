@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { getNames } from './naming'
+import { getNames } from './enumNames'
 
 /**
  * The reverse table is handed out as holding a key per word, and the cast that
