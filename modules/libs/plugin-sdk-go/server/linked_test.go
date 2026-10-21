@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http/httptest"
 	"slices"
+	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -49,22 +50,18 @@ func TestALinkedHandlerAnswersWithTheTokenOfItsVariables(t *testing.T) {
 func TestALinkedHandlerReadsNoTokenFromTheEnvironment(t *testing.T) {
 	t.Setenv(tokenVar, "process-token")
 	handler, err := NewLinkedHandler(map[string]string{}, func(*Server) error { return nil })
-	if err != nil {
-		t.Fatalf("NewLinkedHandler: %v", err)
+	if err == nil || handler != nil {
+		t.Fatalf("NewLinkedHandler with no token = %v, %v; want empty auth token and nil handler", handler, err)
 	}
-	web := httptest.NewServer(handler)
-	defer web.Close()
-
-	client := numenv1connect.NewPluginLifecycleServiceClient(web.Client(), web.URL)
-	if _, err := client.Ping(t.Context(), connect.NewRequest(&numenv1.PingRequest{})); err != nil {
-		t.Fatalf("Ping with no token to a server holding none = %v", err)
+	if !strings.Contains(err.Error(), "empty auth token") {
+		t.Fatalf("error = %v, want empty auth token", err)
 	}
 }
 
 // A mount that fails gives no handler.
 func TestALinkedHandlerWhoseMountFailsIsNotMade(t *testing.T) {
 	failure := errors.New("the backend cannot start")
-	handler, err := NewLinkedHandler(map[string]string{}, func(*Server) error { return failure })
+	handler, err := NewLinkedHandler(map[string]string{tokenVar: "linked-token"}, func(*Server) error { return failure })
 	if !errors.Is(err, failure) || handler != nil {
 		t.Fatalf("NewLinkedHandler = %v, %v; want the failure and no handler", handler, err)
 	}
@@ -100,7 +97,7 @@ func TestALinkedHandlerRunsItsClosersWhenTheHostShutsItDown(t *testing.T) {
 // A mount that fails runs the closers it added.
 func TestALinkedHandlerWhoseMountFailsClosesWhatItAdded(t *testing.T) {
 	closed := false
-	_, err := NewLinkedHandler(map[string]string{}, func(s *Server) error {
+	_, err := NewLinkedHandler(map[string]string{tokenVar: "linked-token"}, func(s *Server) error {
 		s.OnClose(func() { closed = true })
 		return errors.New("the backend cannot start")
 	})

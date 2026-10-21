@@ -254,7 +254,7 @@ func TestNoKeyIsInTheEnvironmentOrOnTheCommandLine(t *testing.T) {
 		t.Fatal(err)
 	}
 	env := sanitizeEnvironment(os.Environ(), vars, []string{"onnxruntime"})
-	args := getPluginArgs(4000, launchName)
+	args := getPluginArgs(4000)
 	for _, entry := range append(env, args...) {
 		assertNoKey(t, "launch entry "+entry, entry, fromKeychain, fromSettings, fromHostEnv, fromSetting)
 		if strings.HasPrefix(entry, "NUMEN_PLUGIN_CONFIG=") {

@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -25,19 +26,17 @@ import (
 const tokenVar = "NUMEN_PLUGIN_TOKEN"
 
 var (
-	flagMu           sync.Mutex
-	defaultPortFlag  int
-	defaultTokenFlag string
-	exitProcess      = os.Exit
-	exitOutput       io.Writer = os.Stderr
+	flagMu          sync.Mutex
+	defaultPortFlag int
+	exitProcess               = os.Exit
+	exitOutput      io.Writer = os.Stderr
 )
 
-func parseDefaultFlags() (int, string) {
+func parseDefaultFlags() int {
 	flagMu.Lock()
 	defer flagMu.Unlock()
 
 	var port int
-	var token string
 
 	if flag.Parsed() {
 		if f := flag.CommandLine.Lookup("port"); f != nil {
@@ -45,19 +44,12 @@ func parseDefaultFlags() (int, string) {
 				port = p
 			}
 		}
-		if f := flag.CommandLine.Lookup("token"); f != nil {
-			token = f.Value.String()
-		}
 	} else {
 		if f := flag.CommandLine.Lookup("port"); f == nil {
 			flag.IntVar(&defaultPortFlag, "port", 0, "Port to listen on")
 		}
-		if f := flag.CommandLine.Lookup("token"); f == nil {
-			flag.StringVar(&defaultTokenFlag, "token", "", "Authentication token")
-		}
 		flag.Parse()
 		port = defaultPortFlag
-		token = defaultTokenFlag
 	}
 
 	if port == 0 {
@@ -67,11 +59,8 @@ func parseDefaultFlags() (int, string) {
 			}
 		}
 	}
-	if token == "" {
-		token = os.Getenv(tokenVar)
-	}
 
-	return port, token
+	return port
 }
 
 // Option configures Server instances.
@@ -163,7 +152,7 @@ type Server struct {
 	closers   []func()
 
 	lifecycle   *LifecycleServer
-	interceptor connect.Interceptor
+	interceptor *AuthInterceptor
 	mux         *http.ServeMux
 	listener    net.Listener
 	actualPort  int
@@ -171,15 +160,19 @@ type Server struct {
 
 // New constructs a plugin server using command flags, environment variables, and options.
 func New(opts ...Option) *Server {
-	port, token := parseDefaultFlags()
-	return newServer(port, token, opts, false)
+	port := parseDefaultFlags()
+	return newServer(port, "", opts, false)
 }
 
 // NewLinkedHandler returns the handler a host that links the plugin into its own process serves it
 // through: a server with the services mount registers on it, which authenticates with the token
 // vars holds under NUMEN_PLUGIN_TOKEN and reads no flag.
 func NewLinkedHandler(vars map[string]string, mount func(*Server) error) (http.Handler, error) {
-	s := newServer(0, vars[tokenVar], nil, true)
+	token := vars[tokenVar]
+	if token == "" {
+		return nil, errors.New("empty auth token")
+	}
+	s := newServer(0, token, nil, true)
 	if err := mount(s); err != nil {
 		s.Close()
 		return nil, err
@@ -312,6 +305,20 @@ func (s *Server) Serve() error {
 // ServeContext runs the HTTP/2 server until context cancellation or shutdown is triggered.
 func (s *Server) ServeContext(ctx context.Context) error {
 	defer s.Close()
+
+	if s.token == "" && s.stdin != nil {
+		line, err := readTokenLine(s.stdin)
+		if err != nil {
+			return fmt.Errorf("read auth token: %w", err)
+		}
+		s.token = line
+		s.interceptor.SetToken(s.token)
+	}
+	if s.token == "" {
+		return errors.New("empty auth token")
+	}
+	_ = os.Setenv(tokenVar, s.token)
+
 	if _, err := s.Listen(); err != nil {
 		return err
 	}
@@ -382,4 +389,25 @@ func (s *Server) ServeContext(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func readTokenLine(r io.Reader) (string, error) {
+	var buf []byte
+	b := make([]byte, 1)
+	for {
+		n, err := r.Read(b)
+		if n > 0 {
+			if b[0] == '\n' {
+				break
+			}
+			buf = append(buf, b[0])
+		}
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return "", err
+		}
+	}
+	return strings.TrimSpace(string(buf)), nil
 }

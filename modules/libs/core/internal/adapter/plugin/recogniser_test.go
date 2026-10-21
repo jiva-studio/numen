@@ -140,3 +140,48 @@ func TestRecogniserBridgeNoPlugin(t *testing.T) {
 		t.Fatal("expected error when no plugin registered, got nil")
 	}
 }
+
+type streamAuthServer struct {
+	numenv1connect.UnimplementedAgentServiceHandler
+	gotAuth string
+}
+
+func (s *streamAuthServer) AskAgent(
+	_ context.Context,
+	req *connect.Request[v1.AskAgentRequest],
+	_ *connect.ServerStream[v1.AskAgentResponse],
+) error {
+	s.gotAuth = req.Header().Get("Authorization")
+	return nil
+}
+
+func TestAuthInterceptorAttachesTokenToStreamingRequests(t *testing.T) {
+	serverImpl := &streamAuthServer{}
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewAgentServiceHandler(serverImpl))
+
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	client := numenv1connect.NewAgentServiceClient(
+		server.Client(),
+		server.URL,
+		connect.WithInterceptors(authInterceptor("stream-secret-token")),
+	)
+
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&v1.AskAgentRequest{}))
+	if err != nil {
+		t.Fatalf("AskAgent: %v", err)
+	}
+	defer stream.Close()
+
+	for stream.Receive() {
+	}
+	if err := stream.Err(); err != nil {
+		t.Fatalf("stream error: %v", err)
+	}
+
+	if serverImpl.gotAuth != "Bearer stream-secret-token" {
+		t.Fatalf("received Authorization = %q, want Bearer stream-secret-token", serverImpl.gotAuth)
+	}
+}
