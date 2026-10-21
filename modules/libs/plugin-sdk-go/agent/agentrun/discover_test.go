@@ -19,7 +19,7 @@ func TestDiscoverOnPath(t *testing.T) {
 	}
 }
 
-func TestDiscoverInStandardPlaces(t *testing.T) {
+func TestDiscoverInExistardPlaces(t *testing.T) {
 	home, _ := isolateMachine(t)
 	want := filepath.Join(home, ".local/bin/tool")
 	writeExecutable(t, want, 0o755)
@@ -65,7 +65,7 @@ func TestDiscoverEmptyNamesNotFound(t *testing.T) {
 	}
 }
 
-func TestStandardPlaces(t *testing.T) {
+func TestExistardPlaces(t *testing.T) {
 	got := StandardPlaces("tool")
 	want := []string{
 		"~/.local/bin/tool",

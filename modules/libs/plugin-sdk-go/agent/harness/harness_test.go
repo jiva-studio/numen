@@ -303,7 +303,7 @@ func TestAToolTheModelCallsRunsAndItsResultIsFedBack(t *testing.T) {
 	}
 }
 
-func TestAModelThatKeepsCallingToolsStopsAtTheTurnLimit(t *testing.T) {
+func TestAModelThatPreservesCallingToolsStopsAtTheTurnLimit(t *testing.T) {
 	model := &fakeChat{replies: []message{newCallReply("c", "note_read", `{"path":"A.md"}`)}}
 	vault := &fakeVault{}
 	s := newServer(model.serve(t).URL)
@@ -354,7 +354,7 @@ func TestAVaultThatCannotBeReachedStopsTheRunBeforeTheModelIsAsked(t *testing.T)
 	}
 }
 
-func TestTheKeyIsTheOneConfigureHandsOverAndNoneIsSentWithoutOne(t *testing.T) {
+func TestTheKeyIsTheOneConfigurePassesOverAndNoneIsSentWithoutOne(t *testing.T) {
 	t.Setenv("OPENAI_API_KEY", "env-key")
 	model := &fakeChat{replies: []message{newTextReply("hi")}}
 	s := &Server{}
@@ -420,7 +420,7 @@ func TestTheProgramIsInstalledWhileTheChatAPIListsItsModels(t *testing.T) {
 	}
 }
 
-func TestTheProgramIsNotInstalledWhileTheChatAPIRefuses(t *testing.T) {
+func TestTheProgramIsNotInstalledWhileTheChatAPIRejects(t *testing.T) {
 	model := &fakeChat{status: http.StatusUnauthorized}
 	s := newServer(model.serve(t).URL)
 
@@ -462,9 +462,9 @@ func TestAskAgentStreamsTheStepsOverConnect(t *testing.T) {
 	}
 }
 
-func TestAnAnswerCutOffAtItsLengthLimitIsReportedSo(t *testing.T) {
-	trimmed := newTextReply("The plan is to")
-	model := &fakeChat{replies: []message{trimmed}, finish: "length"}
+func TestAnAnswerSplitOffAtItsLengthLimitIsReportedSo(t *testing.T) {
+	reply := newTextReply("The plan is to")
+	model := &fakeChat{replies: []message{reply}, finish: "length"}
 	s := newServer(model.serve(t).URL)
 
 	steps := ask(t, s, newTask("", "Plan?"))
@@ -474,15 +474,15 @@ func TestAnAnswerCutOffAtItsLengthLimitIsReportedSo(t *testing.T) {
 	}
 }
 
-func TestACallWithNoArgumentsIsToldBackWithAnEmptyObject(t *testing.T) {
+func TestACallWithNoArgumentsIsReportedBackWithAnEmptyObject(t *testing.T) {
 	model := &fakeChat{replies: []message{newCallReply("c", "note_read", ""), newTextReply("ok")}}
 	vault := &fakeVault{}
 	s := newServer(model.serve(t).URL)
 
 	ask(t, s, newTask(vault.serve(t), "Read."))
 
-	notified := model.getRequests()[1].Messages
-	if args := notified[len(notified)-2].ToolCalls[0].Function.Arguments; args != "{}" {
+	messages := model.getRequests()[1].Messages
+	if args := messages[len(messages)-2].ToolCalls[0].Function.Arguments; args != "{}" {
 		t.Errorf("the call was told back with %q", args)
 	}
 	if calls := vault.getCalls(); len(calls) != 1 || calls[0] != "{}" {
@@ -557,7 +557,7 @@ func TestATaskNamesTheModelThatAnswersIt(t *testing.T) {
 	}
 }
 
-func TestACutOffReplyCallsNoTool(t *testing.T) {
+func TestASplitOffReplyCallsNoTool(t *testing.T) {
 	model := &fakeChat{replies: []message{newCallReply("c", "note_read", "")}, finish: "length"}
 	vault := &fakeVault{}
 	s := newServer(model.serve(t).URL)
@@ -759,7 +759,7 @@ func TestTheLevelOfATaskGoesInTheFieldTheModelListsOrNowhere(t *testing.T) {
 
 // openrouter-models.json holds three entries of the listing OpenRouter serves without a key: a model
 // that names its depths, one that lists the fields and no depths, and one that lists neither.
-func TestTheDepthsAModelTakesAreReadFromTheListingOfTheChatAPI(t *testing.T) {
+func TestTheDepthsAModelConsumesAreReadFromTheListingOfTheChatAPI(t *testing.T) {
 	raw, err := os.ReadFile("testdata/openrouter-models.json")
 	if err != nil {
 		t.Fatal(err)

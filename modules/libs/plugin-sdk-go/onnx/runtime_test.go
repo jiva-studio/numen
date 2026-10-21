@@ -11,7 +11,7 @@ import (
 
 type fakeEngine struct{ at string }
 
-func TestOpenRefusesWhenTheHostGaveNoLibrary(t *testing.T) {
+func TestOpenRejectsWhenTheHostGaveNoLibrary(t *testing.T) {
 	var r Runtime[*fakeEngine]
 	_, _, err := r.Open(t.Context(), "", func(at string) (*fakeEngine, error) {
 		t.Fatal("load ran with no library")
@@ -76,7 +76,7 @@ func TestOpenTriesAgainAfterALoadFails(t *testing.T) {
 	}
 }
 
-func TestAWaiterLeavesOnItsOwnContextAndTheNextGetsTheEngine(t *testing.T) {
+func TestAWaiterPreservesOnItsOwnContextAndTheNextGetsTheEngine(t *testing.T) {
 	var r Runtime[*fakeEngine]
 	entered := make(chan struct{})
 	release := make(chan struct{})

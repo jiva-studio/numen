@@ -9,7 +9,7 @@ import (
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
-func TestToolboxKeepsTheToolsAndExtendsThePrompt(t *testing.T) {
+func TestToolboxPreservesTheToolsAndExtendsThePrompt(t *testing.T) {
 	var box agentrun.Toolbox
 	ctx := t.Context()
 

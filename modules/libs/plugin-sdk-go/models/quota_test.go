@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func TestReserveQuotaRefusesWhatTheOtherReservationsLeaveNoRoomFor(t *testing.T) {
+func TestReserveQuotaRejectsWhatTheOtherReservationsLeaveNoRoomFor(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv(EnvQuota, "100")
 
@@ -31,7 +31,7 @@ func TestReserveQuotaRefusesWhatTheOtherReservationsLeaveNoRoomFor(t *testing.T)
 	again.Release()
 }
 
-func TestReserveQuotaOfAnUnknownSizeClaimsWhatIsLeft(t *testing.T) {
+func TestReserveQuotaOfAnUnknownSizeClaimsWhatIsRemaining(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv(EnvQuota, "100")
 	if err := os.WriteFile(filepath.Join(root, "held"), make([]byte, 40), 0o644); err != nil {
@@ -103,7 +103,7 @@ func TestLockQuotaReportsAFolderItCannotCreate(t *testing.T) {
 	}
 }
 
-func TestReservationKeepsItselfAlive(t *testing.T) {
+func TestReservationPreservesItselfAlive(t *testing.T) {
 	root := t.TempDir()
 	claim, err := reserve(context.Background(), root, 10, "", 10*time.Millisecond)
 	if err != nil {

@@ -33,9 +33,9 @@ func (r *Runtime[E]) Open(ctx context.Context, at string, load func(at string) (
 	for {
 		r.mu.Lock()
 		if r.loaded.Load() {
-			engine, opened := r.engine, r.at
+			engine, openedPath := r.engine, r.at
 			r.mu.Unlock()
-			return engine, opened, nil
+			return engine, openedPath, nil
 		}
 		if pending := r.opening; pending != nil {
 			r.mu.Unlock()

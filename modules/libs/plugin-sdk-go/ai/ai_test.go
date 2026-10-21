@@ -128,7 +128,7 @@ func TestCompleteFailsWithoutHostPort(t *testing.T) {
 	}
 }
 
-func TestClientCompleteReturnsRefusalOfHost(t *testing.T) {
+func TestClientCompleteReturnsErrorOfHost(t *testing.T) {
 	cases := map[numenv1.CompletionErrorCode]error{
 		numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE:    ErrNoRoute,
 		numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE: ErrUnavailable,
@@ -145,7 +145,7 @@ func TestClientCompleteReturnsRefusalOfHost(t *testing.T) {
 	}
 }
 
-func TestReadRefusalWalksEveryCode(t *testing.T) {
+func TestReadErrorWalksEveryCode(t *testing.T) {
 	observed := map[error]numenv1.CompletionErrorCode{}
 	for value := range numenv1.CompletionErrorCode_name {
 		code := numenv1.CompletionErrorCode(value)

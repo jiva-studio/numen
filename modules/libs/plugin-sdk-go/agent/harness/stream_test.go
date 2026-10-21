@@ -13,7 +13,7 @@ import (
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
-func TestTheReplyIsSaidPieceByPieceInTheOrderItIsWritten(t *testing.T) {
+func TestTheReplyIsSaidPieceByPieceInTheOrderItIsSaved(t *testing.T) {
 	model := &fakeChat{replies: []message{newTextReply("Water the garden today.")}}
 	s := newServer(model.serve(t).URL)
 	task := newTask("", "Plan?")
@@ -32,8 +32,8 @@ func TestTheReplyIsSaidPieceByPieceInTheOrderItIsWritten(t *testing.T) {
 	if !requests[0].Stream {
 		t.Error("the request did not ask for a stream")
 	}
-	if retained := requests[1].Messages[2]; retained.Role != "assistant" || retained.Content == nil || *retained.Content != "Water the garden today." {
-		t.Errorf("the conversation kept %+v", retained)
+	if msg := requests[1].Messages[2]; msg.Role != "assistant" || msg.Content == nil || *msg.Content != "Water the garden today." {
+		t.Errorf("the conversation kept %+v", msg)
 	}
 }
 
@@ -62,19 +62,19 @@ func TestStreamedToolCallFragmentsAreAssembledByIndex(t *testing.T) {
 	if calls, want := vault.getCalls(), []string{`{"path":"A.md"}`, `{"path":"B.md"}`}; !slices.Equal(calls, want) {
 		t.Errorf("the vault was called with %v, want %v", calls, want)
 	}
-	notified := model.getRequests()[1].Messages
-	request := notified[len(notified)-3]
+	messages := model.getRequests()[1].Messages
+	request := messages[len(messages)-3]
 	if len(request.ToolCalls) != 2 || request.ToolCalls[0].ID != "c1" || request.ToolCalls[1].ID != "c2" ||
 		request.ToolCalls[1].Function.Name != "note_read" || request.ToolCalls[1].Type != "function" ||
 		request.Content == nil || *request.Content != "Reading both." {
 		t.Errorf("the model was told back %+v", request)
 	}
-	if notified[len(notified)-2].ToolCallID != "c1" || notified[len(notified)-1].ToolCallID != "c2" {
-		t.Errorf("the results were told back as %+v", notified[len(notified)-2:])
+	if messages[len(messages)-2].ToolCallID != "c1" || messages[len(messages)-1].ToolCallID != "c2" {
+		t.Errorf("the results were told back as %+v", messages[len(messages)-2:])
 	}
 }
 
-func TestAStreamedReplyCutOffAtItsLengthLimitCallsNoTool(t *testing.T) {
+func TestAStreamedReplySplitOffAtItsLengthLimitCallsNoTool(t *testing.T) {
 	model := &fakeChat{script: []string{
 		`{"choices":[{"delta":{"content":"Reading "}}]}`,
 		`{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"c1","type":"function","function":{"name":"note_read","arguments":"{\"pa"}}]}}]}`,
@@ -122,7 +122,7 @@ func TestAStreamThatEndsBeforeTheReplyStopsTheRun(t *testing.T) {
 	}
 }
 
-func TestAStreamDoneWithNoReasonToStopStopsTheRun(t *testing.T) {
+func TestAStreamCompletedWithNoReasonToStopStopsTheRun(t *testing.T) {
 	model := &fakeChat{script: []string{`{"choices":[{"delta":{"content":"The plan "}}]}`, `[DONE]`}}
 	s := newServer(model.serve(t).URL)
 
@@ -182,7 +182,7 @@ func TestAStepThatCannotBeSentEndsTheStream(t *testing.T) {
 	}
 }
 
-func TestAChatAPIThatRefusesToStreamIsAskedUnstreamed(t *testing.T) {
+func TestAChatAPIThatRejectsToStreamIsAskedUnstreamed(t *testing.T) {
 	model := &fakeChat{
 		refusesStream: true,
 		replies:       []message{newCallReply("c", "note_read", `{"path":"A.md"}`), newTextReply("Water the garden.")},

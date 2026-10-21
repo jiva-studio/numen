@@ -139,7 +139,7 @@ func TestATempDocumentIsAllowedOnlyWhenTheCallerAllowsIt(t *testing.T) {
 }
 
 // A vault root given to ValidatePathIn holds the path, whatever the environment says.
-func TestValidatePathInHoldsThePathToTheRootItIsGiven(t *testing.T) {
+func TestValidatePathInContainsThePathToTheRootItIsGiven(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv("NUMEN_VAULT_PATH", "")
 

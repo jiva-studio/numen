@@ -71,7 +71,7 @@ func TestTheEventHandlerReceivesADeliveredEvent(t *testing.T) {
 	}
 }
 
-func TestAnEventTheHandlerRefusesIsAnsweredAsARefusal(t *testing.T) {
+func TestAnEventTheHandlerRejectsIsAnsweredAsAError(t *testing.T) {
 	cases := map[string]error{
 		"a plain error":           errors.New("the index is closed"),
 		"an Unimplemented status": connect.NewError(connect.CodeUnimplemented, errors.New("the index is closed")),

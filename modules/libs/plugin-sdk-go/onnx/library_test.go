@@ -62,7 +62,7 @@ func TestFindInstalledFindsTheFilesOnTheLoaderPath(t *testing.T) {
 	}
 }
 
-func TestSortNewestFirstPutsTheHighestVersionFirst(t *testing.T) {
+func TestSortNewestFirstInsertsTheHighestVersionFirst(t *testing.T) {
 	paths := []string{
 		"/nix/store/aaaa-gcc-15.2.0-lib/lib/libstdc++.so.6",
 		"/nix/store/bbbb-gcc-16.2.0-lib/lib/libstdc++.so.6",

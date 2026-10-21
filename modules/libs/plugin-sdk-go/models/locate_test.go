@@ -27,7 +27,7 @@ func sourceIn(dir string) Source {
 	}
 }
 
-func TestAModelBesideTheApplicationIsUsedWhenItHoldsThePinnedSum(t *testing.T) {
+func TestAModelAdjacentTheApplicationIsUsedWhenItContainsThePinnedSum(t *testing.T) {
 	dir := t.TempDir()
 	at := filepath.Join(dir, "model.onnx")
 	if err := os.WriteFile(at, []byte("weights"), 0o644); err != nil {
@@ -40,7 +40,7 @@ func TestAModelBesideTheApplicationIsUsedWhenItHoldsThePinnedSum(t *testing.T) {
 	}
 }
 
-func TestAModelBesideTheApplicationWithAnotherSumIsNotUsed(t *testing.T) {
+func TestAModelAdjacentTheApplicationWithAnotherSumIsNotUsed(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "model.onnx"), []byte("another"), 0o644); err != nil {
 		t.Fatal(err)
@@ -52,7 +52,7 @@ func TestAModelBesideTheApplicationWithAnotherSumIsNotUsed(t *testing.T) {
 	}
 }
 
-func TestAModelNobodyPinnedBesideTheApplicationIsUsedAsFound(t *testing.T) {
+func TestAModelNobodyPinnedAdjacentTheApplicationIsUsedAsFound(t *testing.T) {
 	dir := t.TempDir()
 	at := filepath.Join(dir, "model.onnx")
 	if err := os.WriteFile(at, []byte("anything"), 0o644); err != nil {
@@ -65,7 +65,7 @@ func TestAModelNobodyPinnedBesideTheApplicationIsUsedAsFound(t *testing.T) {
 	}
 }
 
-func TestAFetchedModelIsAskedForUnderItsPinnedSum(t *testing.T) {
+func TestAFetchedModelIsAskedForBelowItsPinnedSum(t *testing.T) {
 	pins := pinTestModel("weights")
 	src := sourceIn(t.TempDir())
 	var gotSum string

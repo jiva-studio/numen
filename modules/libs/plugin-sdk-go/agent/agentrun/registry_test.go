@@ -55,7 +55,7 @@ func isOver(over <-chan struct{}) bool {
 }
 
 // Close returns only once every child is over, and refuses work after it.
-func TestCloseStopsEveryChildAndRefusesMore(t *testing.T) {
+func TestCloseStopsEveryChildAndRejectsMore(t *testing.T) {
 	var registry agentrun.Registry
 	_, first := start(t, &registry, "one")
 	_, second := start(t, &registry, "")
@@ -97,7 +97,7 @@ func TestEndConversationStopsOnlyThatConversation(t *testing.T) {
 }
 
 // A task that named no conversation keeps no session, and ending none is not an error.
-func TestNoConversationKeepsNoSession(t *testing.T) {
+func TestNoConversationPreservesNoSession(t *testing.T) {
 	var registry agentrun.Registry
 	registry.SetSession("", "s-lost")
 	if got := registry.GetSession(""); got != "" {

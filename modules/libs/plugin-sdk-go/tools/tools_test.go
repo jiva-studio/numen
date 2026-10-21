@@ -92,7 +92,7 @@ func TestAToolThatReturnsAnErrorRanAndRefused(t *testing.T) {
 	}
 }
 
-func TestArgumentsThatDoNotFitTheStructAreARefusal(t *testing.T) {
+func TestArgumentsThatDoNotFitTheStructAreAError(t *testing.T) {
 	answer := call(t, newRegistry(t), "greet", `{"name":3}`)
 
 	if !answer.GetResult().GetIsRefusal() {
@@ -100,7 +100,7 @@ func TestArgumentsThatDoNotFitTheStructAreARefusal(t *testing.T) {
 	}
 }
 
-func TestANameNothingWasAddedUnderAndArgumentsThatAreNoObjectAreAnsweredWithAnErrorCode(t *testing.T) {
+func TestANameNothingWasAddedBelowAndArgumentsThatAreNoObjectAreAnsweredWithAnErrorCode(t *testing.T) {
 	registry := newRegistry(t)
 
 	if got := call(t, registry, "other", `{}`).GetError(); got != numenv1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL {

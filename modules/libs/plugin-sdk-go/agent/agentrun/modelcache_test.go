@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func TestModelCacheKeepsWhatWasListedWhileTheKeyStays(t *testing.T) {
+func TestModelCachePreservesWhatWasListedWhileTheKeyStays(t *testing.T) {
 	var cache ModelCache[string]
 	request := 0
 	list := func(context.Context) ([]string, error) {
@@ -28,7 +28,7 @@ func TestModelCacheKeepsWhatWasListedWhileTheKeyStays(t *testing.T) {
 	}
 }
 
-func TestModelCacheLeavesAFailedKeyAloneForAWhile(t *testing.T) {
+func TestModelCachePreservesAFailedKeyAloneForAWhile(t *testing.T) {
 	now := time.Unix(1000, 0)
 	cache := ModelCache[string]{Now: func() time.Time { return now }}
 	failing := true
@@ -54,7 +54,7 @@ func TestModelCacheLeavesAFailedKeyAloneForAWhile(t *testing.T) {
 	}
 }
 
-func TestModelCacheKeepsNothingFromAnEndedRequest(t *testing.T) {
+func TestModelCachePreservesNothingFromAnEndedRequest(t *testing.T) {
 	var cache ModelCache[string]
 	list := func(ctx context.Context) ([]string, error) {
 		if err := ctx.Err(); err != nil {

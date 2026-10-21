@@ -133,7 +133,7 @@ func TestAWriteSendsTheBaselineAndReportsStale(t *testing.T) {
 	}
 }
 
-func TestALinkKeepsEverythingTheHostSaidOfIt(t *testing.T) {
+func TestALinkPreservesEverythingTheHostSaidOfIt(t *testing.T) {
 	links, err := clientTo(t, &answering{}).GetLinks(context.Background(), "a.md")
 
 	want := domain.ResolvedLink{
@@ -148,7 +148,7 @@ func TestALinkKeepsEverythingTheHostSaidOfIt(t *testing.T) {
 	}
 }
 
-func TestReleasingTheLockHandsItBack(t *testing.T) {
+func TestReleasingTheLockPassesItBack(t *testing.T) {
 	a := &answering{}
 
 	release, err := clientTo(t, a).Lock(context.Background())
@@ -208,7 +208,7 @@ func TestEveryKnownVaultIsListed(t *testing.T) {
 	}
 }
 
-func TestWhereTheIndexStandsComesWithItsReason(t *testing.T) {
+func TestWhereTheIndexExistsReachesWithItsReason(t *testing.T) {
 	state, err := clientTo(t, &answering{}).EnsureIndexed(context.Background())
 
 	if err != nil || state != (host.IndexState{Status: host.IndexFailed, Reason: "disk"}) {
@@ -233,7 +233,7 @@ func TestAWatchOfMovesBeginsAfterTheFirstMessage(t *testing.T) {
 	}
 }
 
-func TestAFingerprintKeepsWhatSortOfSourceTheFileIs(t *testing.T) {
+func TestAFingerprintPreservesWhatSortOfSourceTheFileIs(t *testing.T) {
 	a := &answering{}
 	baseline := domain.Fingerprint{Path: "n.md", Kind: domain.KindNote, Size: 3, ModTime: time.Unix(5, 6)}
 

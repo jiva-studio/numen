@@ -79,7 +79,7 @@ func TestLocateSkipsAFileWithoutAnExecuteBit(t *testing.T) {
 	}
 }
 
-func TestLocateTakesAnyExecuteBit(t *testing.T) {
+func TestLocateConsumesAnyExecuteBit(t *testing.T) {
 	for _, mode := range []os.FileMode{0o100, 0o010, 0o001} {
 		home, _ := isolateMachine(t)
 		at := filepath.Join(home, "tool")
@@ -171,7 +171,7 @@ func TestLocateWithNoHomeSearchesOnlyThePlacesOutsideIt(t *testing.T) {
 
 // A case-insensitive filesystem answers to a name in any case, and the program is the file held
 // under the exact name.
-func TestLocateSkipsAFileUnderAnotherCase(t *testing.T) {
+func TestLocateSkipsAFileBelowAnotherCase(t *testing.T) {
 	home, _ := isolateMachine(t)
 	writeExecutable(t, filepath.Join(home, "Applications/Tool.app/Contents/MacOS/Tool"), 0o755)
 	if got := Locate(nil, []string{"~/Applications/Tool.app/Contents/MacOS/tool"}); got != "" {

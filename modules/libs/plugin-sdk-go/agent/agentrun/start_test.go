@@ -38,7 +38,7 @@ func newSaidResponse(text string) *numenv1.AskAgentResponse {
 	return &numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Text{Text: text}}
 }
 
-func TestStartHandsJSONLinesToTheHandlerAndSaysTheOthers(t *testing.T) {
+func TestStartPassesJSONLinesToTheHandlerAndReturnsTheOthers(t *testing.T) {
 	spec := shell(`echo '{"say":"hello"}'; echo plain text; echo; echo 42`,
 		func(r *agentrun.Reader, event map[string]any) { r.Send(newSaidResponse(event["say"].(string))) })
 	var reg agentrun.Registry
@@ -115,7 +115,7 @@ func TestStartStopsTheChildAfterTheStepLimit(t *testing.T) {
 	}
 }
 
-func TestStartKeepsTheSessionOfTheConversation(t *testing.T) {
+func TestStartPreservesTheSessionOfTheConversation(t *testing.T) {
 	spec := shell(`echo '{"session":"s-1"}'`,
 		func(r *agentrun.Reader, event map[string]any) { r.SetSession(event["session"].(string)) })
 	spec.Conversation = "c-1"
@@ -132,7 +132,7 @@ func TestStartKeepsTheSessionOfTheConversation(t *testing.T) {
 	}
 }
 
-func TestStartKeepsNoSessionWithoutAConversation(t *testing.T) {
+func TestStartPreservesNoSessionWithoutAConversation(t *testing.T) {
 	spec := shell(`echo '{"session":"s-1"}'`,
 		func(r *agentrun.Reader, event map[string]any) { r.SetSession(event["session"].(string)) })
 	var reg agentrun.Registry
@@ -184,7 +184,7 @@ func TestStartCleansUpAndFailsWhenTheProgramIsMissing(t *testing.T) {
 	}
 }
 
-func TestStartRefusesWorkOnceTheRegistryIsClosed(t *testing.T) {
+func TestStartRejectsWorkOnceTheRegistryIsClosed(t *testing.T) {
 	var reg agentrun.Registry
 	_ = reg.Close()
 
@@ -203,7 +203,7 @@ func (s *recordingStream) Send(resp *numenv1.AskAgentResponse) error {
 	return s.err
 }
 
-func TestForwardResponsesSendsEveryResponseUntilTheWorkIsDone(t *testing.T) {
+func TestForwardResponsesSendsEveryResponseUntilTheWorkIsCompleted(t *testing.T) {
 	var reg agentrun.Registry
 	work, err := agentrun.Start(t.Context(), &reg, shell(`echo one; echo two`, nil))
 	if err != nil {

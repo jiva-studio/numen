@@ -6,11 +6,11 @@ import "strings"
 // its error output that starts with "error:", else the last line, or the error itself when it wrote
 // none.
 func FailureMessage(err error, said string) string {
-	trimmed := strings.TrimSpace(said)
-	if trimmed == "" {
+	clean := strings.TrimSpace(said)
+	if clean == "" {
 		return err.Error()
 	}
-	lines := strings.Split(trimmed, "\n")
+	lines := strings.Split(clean, "\n")
 	for _, line := range lines {
 		if text := strings.TrimSpace(line); len(text) > len("error:") && strings.EqualFold(text[:len("error:")], "error:") {
 			return strings.TrimSpace(text[len("error:"):])

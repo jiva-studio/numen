@@ -75,15 +75,15 @@ const (
 // ParseComputeUnits converts a string into valid ComputeUnits. The spelling is
 // the runtime's own and the match ignores case.
 func ParseComputeUnits(name string) (ComputeUnits, error) {
-	trimmed := strings.TrimSpace(name)
-	if trimmed == "" {
+	clean := strings.TrimSpace(name)
+	if clean == "" {
 		// gomutants:disable-next-line RETURN_ZERO reason="the mutant replaces only ComputeUnitsDefault with *new(ComputeUnits), the same empty string; the error value is untouched"
 		return ComputeUnitsDefault, nil
 	}
 	for _, units := range []ComputeUnits{
 		ComputeUnitsAll, ComputeUnitsCPUAndNeuralEngine, ComputeUnitsCPUAndGPU, ComputeUnitsCPUOnly,
 	} {
-		if strings.EqualFold(trimmed, string(units)) {
+		if strings.EqualFold(clean, string(units)) {
 			return units, nil
 		}
 	}

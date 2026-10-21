@@ -40,11 +40,11 @@ func request(t *testing.T, address, sum string) Request {
 	return Request{Dir: dir, Section: "indexing.test", Address: address, Sum: sum, ShouldDownload: true}
 }
 
-func TestFetchKeepsAPinnedFileUnderItsSum(t *testing.T) {
+func TestFetchPreservesAPinnedFileBelowItsSum(t *testing.T) {
 	srv := serve(t, "weights")
-	var notified bool
+	var hasProgress bool
 	r := request(t, srv.URL+"/m/model.onnx", sumOf("weights"))
-	r.Progress = func(what string, _, _ int64) { notified = notified || what == "model.onnx" }
+	r.Progress = func(what string, _, _ int64) { hasProgress = hasProgress || what == "model.onnx" }
 
 	at, err := Fetch(context.Background(), r)
 	if err != nil {
@@ -56,7 +56,7 @@ func TestFetchKeepsAPinnedFileUnderItsSum(t *testing.T) {
 	if got, _ := os.ReadFile(at); string(got) != "weights" {
 		t.Fatalf("file holds %q", got)
 	}
-	if !notified {
+	if !hasProgress {
 		t.Fatal("progress was not reported")
 	}
 	if _, err := os.Stat(at + ".part"); !os.IsNotExist(err) {
@@ -64,7 +64,7 @@ func TestFetchKeepsAPinnedFileUnderItsSum(t *testing.T) {
 	}
 }
 
-func TestFetchRefusesAFileWithAnotherSum(t *testing.T) {
+func TestFetchRejectsAFileWithAnotherSum(t *testing.T) {
 	srv := serve(t, "tampered")
 	r := request(t, srv.URL+"/model.onnx", sumOf("weights"))
 
@@ -78,7 +78,7 @@ func TestFetchRefusesAFileWithAnotherSum(t *testing.T) {
 	}
 }
 
-func TestFetchTakesAnUnpinnedFileAsNamed(t *testing.T) {
+func TestFetchConsumesAnUnpinnedFileAsNamed(t *testing.T) {
 	srv := serve(t, "anything")
 	r := request(t, srv.URL+"/model.onnx", "")
 
@@ -118,7 +118,7 @@ func TestFetchNamesTheSettingWhenDownloadsAreOff(t *testing.T) {
 	}
 }
 
-func TestFetchRefusesWhenOffline(t *testing.T) {
+func TestFetchRejectsWhenOffline(t *testing.T) {
 	srv := serve(t, "weights")
 	r := request(t, srv.URL+"/model.onnx", "")
 	t.Setenv(EnvOffline, "true")
@@ -131,14 +131,14 @@ func TestFetchRefusesWhenOffline(t *testing.T) {
 	}
 }
 
-func TestFetchRefusesAnAddressThatIsNotHTTPS(t *testing.T) {
+func TestFetchRejectsAnAddressThatIsNotHTTPS(t *testing.T) {
 	r := request(t, "http://example.invalid/model.onnx", "")
 	if _, err := Fetch(context.Background(), r); err == nil || !strings.Contains(err.Error(), "https") {
 		t.Fatalf("Fetch() error = %v", err)
 	}
 }
 
-func TestFetchRefusesADownloadPastTheQuotaByItsLength(t *testing.T) {
+func TestFetchRejectsADownloadPastTheQuotaByItsLength(t *testing.T) {
 	srv := serve(t, "0123456789")
 	r := request(t, srv.URL+"/model.onnx", "")
 	t.Setenv(EnvQuota, "4")
@@ -260,7 +260,7 @@ func TestIsAddress(t *testing.T) {
 	}
 }
 
-func TestFetchRefusesAPresentPinnedFileWithAnotherSum(t *testing.T) {
+func TestFetchRejectsAPresentPinnedFileWithAnotherSum(t *testing.T) {
 	r := request(t, "https://example.invalid/model.onnx", sumOf("weights"))
 	r.ShouldDownload = false
 	if err := os.MkdirAll(r.Dir, 0o755); err != nil {
@@ -290,7 +290,7 @@ func TestFetchCountsTheSharedFolderAgainstTheQuota(t *testing.T) {
 	}
 }
 
-func TestFetchKeepsNoTemporaryFileAfterSuccess(t *testing.T) {
+func TestFetchPreservesNoTemporaryFileAfterSuccess(t *testing.T) {
 	srv := serve(t, "weights")
 	r := request(t, srv.URL+"/model.onnx", "")
 	if _, err := Fetch(context.Background(), r); err != nil {
@@ -322,7 +322,7 @@ func TestFetchReplacesAPresentPinnedFileWithAnotherSumWhenDownloadsAreAllowed(t 
 	}
 }
 
-func TestFetchRefusesAPresentPinnedFileWithAnotherSumWhileOffline(t *testing.T) {
+func TestFetchRejectsAPresentPinnedFileWithAnotherSumWhileOffline(t *testing.T) {
 	r := request(t, "https://example.invalid/model.onnx", sumOf("weights"))
 	if err := os.MkdirAll(r.Dir, 0o755); err != nil {
 		t.Fatal(err)
