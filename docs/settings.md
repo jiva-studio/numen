@@ -203,7 +203,7 @@ A vault is filled by `indexing` and asked wherever `query` says, and both read t
 | `model.pooling` | `mean` over the tokens, or `head` from the one that opens the text. |
 | `floor` | how near a question a passage stands to be an answer, in cosine similarity. Zero takes what the search was built against. Where a model puts two pieces of text about different things is a fact about that model, so a model changed is a floor measured again. |
 
-Change any of `name`, `dimensions`, `max_tokens` or `pooling` and every stored vector is made again: they are what a vector is kept under. So is where `indexing` makes them — its `service.base_url` and `service.name`, or its `local.name`, `local.dir` and `local.file`. Nothing is thrown away, and setting them back finds the old vectors where they were.
+Change any of `name`, `dimensions`, `max_tokens` or `pooling` and every stored vector is made again: they are what a vector is kept under. Nothing is thrown away, and setting them back finds the old vectors where they were.
 
 ### pooling
 
@@ -216,7 +216,7 @@ Where a model's own output is already one vector per text, nothing is pooled and
 
 ## The two providers
 
-Each is `{"use": "local" | "service", "local": {…}, "service": {…}}`. The sections not in use are kept, so the other is a word away.
+Each is `{"use": "local" | "service"}`.
 
 Trying the other for an afternoon costs nothing under `query`. Under `indexing` it is every vector made again, and the old ones are where they were if it goes back.
 
@@ -225,54 +225,7 @@ Trying the other for an afternoon costs nothing under `query`. Under `indexing` 
 - **Filling an index** is a pass over the whole vault, once. A service does in an hour what this machine does in a day.
 - **Asking a question** is twenty tokens, all day. This machine answers in milliseconds where a network is a round trip — and answers with no network at all.
 
-Two providers are asked whether they are one model: both embed the same short text at startup, and vectors that do not land together mean the second is not used. Nothing in this file could show it — two providers name a model by whatever each of them calls it.
-
-### local
-
-```json
-{ "use": "local", "local": {
-  "name": "intfloat/multilingual-e5-small",
-  "dir": "",
-  "file": "",
-  "batch_texts": 8,
-  "engine": "",
-  "runtime": "",
-  "threads": 4,
-  "download": true
-}}
-```
-
-| | |
-| --- | --- |
-| `name` | a HuggingFace repository. |
-| `dir` | a folder holding the model and `tokenizer.json`, used as given. This is what an installation with no network names. |
-| `file` | which build inside the repository's `onnx/` folder. Empty is `model.onnx`. Naming another is how a quantised build is run in place of the full one. |
-| `batch_size` | how many texts one forward pass carries (`batch_texts` is supported as an alias). |
-| `engine` | what runs the model: `onnxruntime`, the library the host provisions, or `go`, the backend in the binary. Empty takes the runtime where this platform has one published and the Go backend where it has none. The vectors are the same either way, so the index does not record which ran. |
-| `runtime` | the ONNX Runtime shared library, when the engine is `onnxruntime`. Empty takes the library the host provisioned for the plugin. |
-| `threads` | how many threads the loaded model runs its passes on. Left out, it is the performance profile's core budget. |
-| `sessions` | how many forward passes run at once on the one loaded model. Left out, it is the performance profile's workers. A model running on an accelerator runs one pass unless this is set. |
-| `download` | fetch the model when this machine does not hold it. |
-
-What comes down is that build and what belongs to it: weights in a second file, a constant in a third, the tokeniser. The other builds in the same folder, and their weights, stay where they are.
-
-A model is fetched and compiled behind the window, and appears in the list of what is being done with the bytes of it that are here. Until it lands a question is answered by the words alone, and the pass that fills the index waits.
-
-### service
-
-```json
-{ "use": "service", "service": {
-  "base_url": "https://api.openai.com/v1",
-  "name": "text-embedding-3-small",
-  "batch_characters": 32000
-}}
-```
-
-Anything speaking the `/v1/embeddings` request shape. `base_url` is what points at one.
-
-`batch_characters` bounds one request by everything in it. A count of texts says nothing about their size: the same number of windows carries several times the tokens in transliterated Sanskrit that it does in English.
-
-The service's key is entered in the app, in the settings of the Vector Embeddings plugin, and kept in the system keychain. This file holds no key, and no environment variable is read for one. An older file that names `key` or `key_env` here loads, and both are ignored.
+Two providers are asked whether they are one model: both embed the same short text at startup, and vectors that do not land together mean the second is not used. Nothing in this file could show it — two providers name a model by whatever each of them calls it. Engine parameters like model directories, threads, and service URLs are configured on the Vector Embeddings plugin.
 
 ## Worked examples, embedding
 
@@ -285,14 +238,13 @@ What a first run does: a model on this machine, fetched on first use, no key and
   "indexing": {
     "embedding": {
       "model": {
-        "name": "intfloat/multilingual-e5-small",
+        "name": "",
         "dimensions": 384,
         "max_tokens": 256,
         "pooling": "mean"
       },
       "indexing": {
-        "use": "local",
-        "local": { "name": "intfloat/multilingual-e5-small", "batch_texts": 8, "download": true }
+        "use": "local"
       },
       "query": { "use": "" }
     }
@@ -312,60 +264,15 @@ The two names differ because that is what each place calls it — HuggingFace `B
     "embedding": {
       "model": { "name": "bge-m3", "dimensions": 1024, "max_tokens": 512, "pooling": "head" },
       "indexing": {
-        "use": "service",
-        "service": {
-          "base_url": "https://openrouter.ai/api/v1",
-          "name": "baai/bge-m3"
-        }
+        "use": "service"
       },
       "query": {
-        "use": "local",
-        "local": { "name": "BAAI/bge-m3", "download": true }
+        "use": "local"
       }
     }
   }
 }
 ```
-
-### A quantised build, to fit a smaller machine
-
-`multilingual-e5-large` at a quarter of its weight. Same width, so the vector index is not rebuilt — but a quantised model is not the model it was made from, and the vectors are made again.
-
-```json
-{
-  "indexing": {
-    "embedding": {
-      "model": { "name": "multilingual-e5-large-int8", "dimensions": 1024, "max_tokens": 512, "pooling": "mean" },
-      "indexing": {
-        "use": "local",
-        "local": {
-          "name": "intfloat/multilingual-e5-large",
-          "file": "model_qint8_avx512_vnni.onnx",
-          "download": true
-        }
-      }
-    }
-  }
-}
-```
-
-### A model already on the machine, nothing fetched
-
-```json
-{
-  "indexing": {
-    "embedding": {
-      "model": { "name": "bge-m3", "dimensions": 1024, "max_tokens": 512, "pooling": "head" },
-      "indexing": {
-        "use": "local",
-        "local": { "dir": "/opt/models/bge-m3" }
-      }
-    }
-  }
-}
-```
-
-The folder holds the model under the name `file` gives, or `model.onnx`, and `tokenizer.json` beside it.
 
 ### No model at all
 
@@ -383,7 +290,6 @@ A vault searched by its words. Nothing is fetched, nothing is asked of a network
 {
   "indexing": {
     "recognition": {
-      "detect": { "expand": 18 },
       "proofread": { "with": "", "automatically": false }
     }
   }
@@ -392,11 +298,8 @@ A vault searched by its words. Nothing is fetched, nothing is asked of a network
 
 | | |
 | --- | --- |
-| `detect.expand` | how many pixels a found line is widened by, in the image the detector reads: the part of the page scaled to the longest side it is read at. One number serves a heading and a paragraph, because that scaling brings the two to nearly one size. |
 | `proofread.with` | which profile under `indexing.proofreading.profiles` puts a recognition right. Empty proofreads nothing, and a recognition is used exactly as it was read. A name no profile carries is an error at startup. |
 | `proofread.automatically` | whether a recognition is proofread as soon as it is finished. Off leaves it to the hand: a person asks for it on the book in front of them. |
-
-The boundary the detector answers with is the text's own outline drawn inside the letters, short by a share of the line's height, and the widening is a flat number of pixels. At 10 the top of every capital and the last letter of every line were cut away. 18 is the middle of where it stops mattering, and it is a setting because it was measured on one book at one resolution — the sweep is in [Performance](performance.md).
 
 ## Listening to a recording
 
@@ -406,12 +309,8 @@ The boundary the detector answers with is the text's own outline drawn inside th
 {
   "indexing": {
     "transcribe_recordings": true,
-    "transcribe_max_mb": 300,
+    "transcribe_under_mb": 300,
     "transcription": {
-      "download": true,
-      "threads": 4,
-      "model": { "name": "parakeet-tdt-0.6b-v3-int8" },
-      "segmenter": { "name": "silero-vad", "threshold": 0.5, "silence": 500, "pad": 200, "longest": 30000, "shortest": 100, "least": 2500 },
       "proofread": { "with": "", "automatically": false }
     }
   }
@@ -421,22 +320,7 @@ The boundary the detector answers with is the text's own outline drawn inside th
 | | |
 | --- | --- |
 | `transcribe_recordings` | whether a recording the vault holds no transcript for is transcribed on its own. On. A vault of a hundred hours is a day of a machine, and turning this off leaves it to the hand — the command line's `transcribe`, and the tool an agent asks through. |
-| `transcribe_max_mb` | how large a recording may be and still be transcribed unasked, in megabytes. 300, which is a talk of a few hours. A larger one waits to be asked for by name, because a folder of albums is days of a machine. A negative number is no limit. |
-| `runtime` | the ONNX Runtime shared library. Empty takes the library in the `dir` folder, then the library the host provisioned for the plugin, downloaded at the release pinned by sha256 into the models folder. One process opens one, and both a recognition and a transcription run their models through it. |
-| `dir` | a folder holding the models. Empty takes the folder beside the application, and then the download cache. |
-| `download` | whether what is not on this machine may be fetched. A model is fetched from the address named here and checked against no sum: the runtime's address is this build's and carries one, and a model's is the person's own setting, which nobody but them could publish a sum for. A model named here is a model trusted. |
-| `threads` | how many threads one model may use. 4. |
-| `model.name` | what the transducer is called in the record kept beside a transcript. |
-| `model.from` | the folder its four files are fetched from. The encoder, the decoder, the joiner and the tokens are one model: three graphs from two exports write nothing anybody can read. |
-| `model.encoder`, `model.decoder`, `model.joiner`, `model.tokens` | the files on this machine. A path is used as given; an empty one is the file of that name under `model.from`. |
-| `segmenter.name` | what the segmenter is called in that same record. Where a segment is cut is part of what the words are, so it is named beside the model that transcribed them. |
-| `segmenter.from`, `segmenter.path` | where the segmenter is fetched from, and a file on this machine. A path is used as given; `from` is looked for in `dir` first. |
-| `segmenter.threshold` | how sure the model has to be that a window carries speech. 0.5. |
-| `segmenter.silence` | how much quiet, in milliseconds, closes a segment. 500. |
-| `segmenter.pad` | how many milliseconds are kept on each side of a segment. 200, because the model answers on the window a sound begins in, and the sound before that window is what the first letter of the word is made of. |
-| `segmenter.longest` | how many milliseconds one segment may run to. 30000. One segment is one run of the encoder, and its cost grows with its length; speech going on longer is cut at the quietest window this side of the limit. |
-| `segmenter.shortest` | how many milliseconds a segment carries to be a segment at all. 100. |
-| `segmenter.least` | how many milliseconds a segment runs to before it stands as a line of its own. 2500. A shorter one is put together with the segment after it, up to `longest`. A line of a transcript is read, so it holds a phrase; and the model transcribes a sentence better than it transcribes a word out of one. |
+| `transcribe_under_mb` | how large a recording may be and still be transcribed unasked, in megabytes. 300, which is a talk of a few hours. A larger one waits to be asked for by name, because a folder of albums is days of a machine. A negative number is no limit. |
 | `proofread.with` | which profile under `indexing.proofreading.profiles` puts a transcript right. Empty proofreads nothing, and a transcript is used exactly as it was transcribed. A name no profile carries is an error at startup. |
 | `proofread.automatically` | whether a transcript is proofread as soon as it is finished. Off leaves it to the hand: a person asks for it on the recording in front of them. |
 

@@ -45,12 +45,6 @@ func (c Config) Embedder(ctx context.Context) (port.Embedder, func() error, erro
 	return bridge, bridge.Close, nil
 }
 
-// OpenQuestionEmbedder is what embeds a question, for a run that fills no
-// index. Only the provider that answers questions is opened.
-func (c Config) OpenQuestionEmbedder(ctx context.Context) (port.Embedder, func() error, error) {
-	return c.Embedder(ctx)
-}
-
 // NewSearch is the search a question is answered by, put together the one way:
 // the passages, the vault's files, the text read out of books, and the model a
 // question is embedded by.

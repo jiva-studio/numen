@@ -226,9 +226,6 @@ type shownInstallation struct {
 func openInstallation(
 	ctx context.Context, cfg container.Config, vault string,
 ) (shownInstallation, error) {
-	if err := cfg.PrepareRecogniser(ctx); err != nil {
-		fmt.Fprintln(os.Stderr, "numen: nothing to read a scan with:", err)
-	}
 	pages, err := editor.Pages()
 	if err != nil {
 		return shownInstallation{}, err

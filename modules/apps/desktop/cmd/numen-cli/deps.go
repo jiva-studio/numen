@@ -276,7 +276,7 @@ func createSearch(
 	if err != nil {
 		return cli.Search{}, err
 	}
-	asking, closeAsking, why := cfg.OpenQuestionEmbedder(ctx)
+	asking, closeAsking, why := cfg.Embedder(ctx)
 	return cli.Search{
 		Search: cfg.NewSearch(db, asking, errorHandler),
 		Words:  why,

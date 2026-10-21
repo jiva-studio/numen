@@ -15,11 +15,6 @@ func (c Config) RecogniserReady() bool {
 	return c.hasPlugin(plugin.CapabilityRecognition)
 }
 
-// PrepareRecogniser makes the runtime this process reads a page through.
-func (c Config) PrepareRecogniser(_ context.Context) error {
-	return nil
-}
-
 // Recogniser is what reads a scanned page on this machine, opened now.
 func (c Config) Recogniser(ctx context.Context) (recogniser port.Recogniser, closer func() error, why error) {
 	host, err := c.resolvePlugin(plugin.CapabilityRecognition)

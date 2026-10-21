@@ -444,9 +444,8 @@ func TestAnInstallationNobodyConfiguredWritesItsSettingsDown(t *testing.T) {
 		t.Errorf("the model is %+v, was %+v",
 			back.Indexing.Embedding.Model, cfg.Indexing.Embedding.Model)
 	}
-	local, ok := back.Indexing.Embedding.Indexing.Local()
-	if !ok || !local.ShouldDownload {
-		t.Error("a machine with no model would fetch none")
+	if back.Indexing.Embedding.Indexing.Use != container.UseLocal {
+		t.Errorf("uses %q", back.Indexing.Embedding.Indexing.Use)
 	}
 	// A key nobody set is not a field of the file.
 	if strings.Contains(string(raw), `"key"`) {
@@ -464,29 +463,9 @@ func TestOneSettingIsAValidFile(t *testing.T) {
 	}
 	// A file that names the window must leave the embedder alone. Both are
 	// sections of one file, and the section nobody wrote about is unchanged.
-	held, _ := cfg.Indexing.Embedding.Indexing.Local()
-	offered, _ := container.DefaultEmbedding().Indexing.Local()
-	if held.Name != offered.Name {
-		t.Errorf("local model is %q", held.Name)
-	}
 	if cfg.Indexing.Embedding.Indexing.Use != container.UseLocal {
 		t.Errorf("uses %q", cfg.Indexing.Embedding.Indexing.Use)
 	}
-}
-
-// getLocalModel and asService are the halves a provider carries, whichever of them is
-// in force. The word is what puts one there, and a test reading the other says
-// so before it does.
-func getLocalModel(where container.EmbeddingProvider) container.LocalModel {
-	where.Use = container.UseLocal
-	m, _ := where.Local()
-	return m
-}
-
-func getServiceModel(where container.EmbeddingProvider) container.ServiceModel {
-	where.Use = container.UseService
-	m, _ := where.Service()
-	return m
 }
 
 // A file naming one field of one section leaves everything else alone.
@@ -507,19 +486,6 @@ func TestAFileNamingOneFieldKeepsTheDefaultsForTheRest(t *testing.T) {
 	// A field the file says nothing about keeps what the defaults set.
 	if e.Model.MaxTokens != container.DefaultEmbedding().Model.MaxTokens {
 		t.Errorf("the model cuts at %d", e.Model.MaxTokens)
-	}
-	service, _ := e.Indexing.Service()
-	if service.BaseURL != getServiceModel(container.DefaultEmbedding().Indexing).BaseURL {
-		t.Errorf("base URL is %q", service.BaseURL)
-	}
-	// The half the file is not on keeps the defaults as well, and the word is
-	// all that stands between the two.
-	if local := getLocalModel(e.Indexing); local.Name != getLocalModel(container.DefaultEmbedding().Indexing).Name {
-		t.Errorf("local model is %q", local.Name)
-	}
-	// A question is asked the way the vault was indexed.
-	if got := e.GetQueryProvider(); got.Use != container.UseService {
-		t.Errorf("questions are embedded by %+v", got)
 	}
 }
 
@@ -550,17 +516,11 @@ func TestAVaultIndexedByAServiceIsAskedOnThisMachine(t *testing.T) {
 	if e.Model.Name != "bge-m3" || e.Model.Dimensions != 1024 || e.Model.Pooling != container.PoolHead {
 		t.Errorf("the model is %+v", e.Model)
 	}
-	indexing, byService := e.Indexing.Service()
-	if !byService || indexing.Name != "baai/bge-m3" {
+	if e.Indexing.Use != container.UseService {
 		t.Errorf("indexed by %+v", e.Indexing)
 	}
-	asking, here := e.GetQueryProvider().Local()
-	if !here || asking.Name != "BAAI/bge-m3" {
-		t.Errorf("asked by %+v", e.GetQueryProvider())
-	}
-	// The section nobody wrote about keeps its default.
-	if indexing.BatchCharacters != getServiceModel(container.DefaultEmbedding().Indexing).BatchCharacters {
-		t.Errorf("batch is %d", indexing.BatchCharacters)
+	if e.Query.Use != container.UseLocal {
+		t.Errorf("asked by %+v", e.Query)
 	}
 }
 
@@ -572,9 +532,6 @@ func TestAnInstallationMayNameNoModelAtAll(t *testing.T) {
 	}
 	if got := cfg.Indexing.Embedding.Indexing.Use; got != "" {
 		t.Errorf("uses %q", got)
-	}
-	if got := cfg.Indexing.Embedding.GetQueryProvider().Use; got != "" {
-		t.Errorf("questions are embedded by %q", got)
 	}
 }
 
@@ -598,7 +555,7 @@ func TestNoEnvironmentVariableGivesTheServiceAKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := getServiceModel(cfg.Indexing.Embedding.Indexing).Name; got != "a-model" {
+	if got := cfg.Indexing.Embedding.Indexing.Use; got != container.UseService {
 		t.Errorf("the service is %q", got)
 	}
 	raw, err := json.Marshal(cfg)
