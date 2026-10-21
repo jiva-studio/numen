@@ -408,13 +408,13 @@ describe('a drag', () => {
     expect(held.emitted('move')).toStrictEqual([[['loose'], { into: 'work' }]])
   })
 
-  it('is refused into what the row holds, and does not move', async () => {
+  it('is rejected into what the row holds, and does not move', async () => {
     const held = mountTree()
     await dragTo(held, 'work', HEIGHT + 12)
     expect(held.emitted('move')).toBeUndefined()
   })
 
-  it('is refused into what any of the rows dragged holds, and does not move', async () => {
+  it('is rejected into what any of the rows dragged holds, and does not move', async () => {
     const held = mountTree({ selected: ['work', 'loose'] })
     await dragTo(held, 'loose', HEIGHT + 12)
     expect(held.emitted('move')).toBeUndefined()

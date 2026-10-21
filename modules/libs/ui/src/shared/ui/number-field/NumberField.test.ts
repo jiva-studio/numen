@@ -321,7 +321,7 @@ describe('a number set from outside', () => {
 
   // A line refused stands for no number, so a field emptied from outside is
   // emptied whatever is standing in it.
-  it('empties the field where the number is taken away under refused text', async () => {
+  it('empties the field where the number is taken away under invalid text', async () => {
     const field = mountField()
     await field.get('input').setValue('twenty')
     await field.setProps({ modelValue: null })

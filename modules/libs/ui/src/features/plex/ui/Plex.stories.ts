@@ -646,9 +646,9 @@ export const AskingForAMenu: Story = {
     const focus = canvas.getByLabelText(/, focus$/)
 
     // Read after the node has had it: a listener above sees what the node did.
-    let refused: boolean | null = null
+    let isPrevented: boolean | null = null
     const watch = (event: Event) => {
-      refused = event.defaultPrevented
+      isPrevented = event.defaultPrevented
     }
     canvasElement.addEventListener('contextmenu', watch)
     await userEvent.pointer({ keys: '[MouseRight]', target: focus })
@@ -660,7 +660,7 @@ export const AskingForAMenu: Story = {
       expect.any(Object),
       'pointer',
     )
-    await expect(refused).toBe(true)
+    await expect(isPrevented).toBe(true)
 
     // The handle sits on the trailing edge, which is where a person aims. The
     // right button over it reaches the node, and makes nothing.

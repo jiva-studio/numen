@@ -481,8 +481,8 @@ describe('marking why an item is here', () => {
 describe('which group remains where', () => {
   it('draws a group holding items once, whether or not it is working or has something to say', () => {
     const busy = group('names', [item('one')], { isWorking: true })
-    const spoken = group('text', [item('two')], { silence: 'nothing' })
-    expect(orderGroups([busy, spoken]).map((one) => one.id)).toEqual(['names', 'text'])
+    const textGroup = group('text', [item('two')], { silence: 'nothing' })
+    expect(orderGroups([busy, textGroup]).map((one) => one.id)).toEqual(['names', 'text'])
   })
 
   const holding = group('names', [item('one')])

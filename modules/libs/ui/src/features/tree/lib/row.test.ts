@@ -297,7 +297,7 @@ describe('the row a drop target puts what is retained inside', () => {
   })
 })
 
-describe('what rows being dragged are refused', () => {
+describe('what rows being dragged are rejected', () => {
   it('is one of themselves', () => {
     expect(isRefused(ROWS, ['work'], 'work')).toBe(true)
     expect(isRefused(ROWS, ['loose', 'work'], 'work')).toBe(true)

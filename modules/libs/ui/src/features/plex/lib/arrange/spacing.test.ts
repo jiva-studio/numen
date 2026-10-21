@@ -71,7 +71,7 @@ describe('a gap opens into the room the window leaves', () => {
 })
 
 describe('the gap an edge crosses opens first', () => {
-  it('places the first line further down when the width is already spoken for', () => {
+  it('places the first line further down when the width is already reserved', () => {
     // Eleven children fill this window edge to edge, so nothing opens sideways.
     // The height is untouched, and the label an edge carries is read there.
     const frame = arrangePlex(build('A node', { child: 11 }), {

@@ -322,7 +322,7 @@ describe('what a parent can ask for', () => {
     expect(view.state.selection.main.head).toBe(view.state.doc.line(3).from)
   })
 
-  it('is refused by an editor holding no text, which has no line to give', () => {
+  it('is rejected by an editor holding no text, which has no line to give', () => {
     const { exposed } = editor({ modelValue: '' })
     expect(exposed.reveal(2)).toBe(false)
   })

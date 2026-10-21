@@ -278,7 +278,7 @@ describe('measuring how fast a count moves', () => {
     expect(moving.get('model')).toEqual({ done: 0, rate: 0, at: 1000 })
   })
 
-  it('measures how fast the count is moving between two readings', () => {
+  it('measures how fast the count is moving between two samples', () => {
     const first = measureMovement(new Map(), [createFetching(0)], 1000)
     const second = measureMovement(first, [createFetching(4_000_000)], 3000)
 

@@ -1103,7 +1103,7 @@ describe('which tool answered', () => {
   ]
 
   it.each([
-    ['the model has spoken', createSaidStep('So. ')],
+    ['the model has completed', createSaidStep('So. ')],
     ['the model is asked again', createThinking()],
   ])('is known again once %s, and the one in hand stops running', async (_when, between) => {
     const { held, release } = createHold()
