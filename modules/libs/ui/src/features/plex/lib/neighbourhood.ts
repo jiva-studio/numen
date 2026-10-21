@@ -29,11 +29,11 @@ export function assertNeighbourhood(neighbourhood: PlexNeighbourhood): PlexNode 
   // relation it takes is the caller's decision; drawn twice, the edges would route
   // to whichever copy was placed last, and a movement matched by identifier
   // would be ambiguous.
-  const seen = new Set<string>()
+  const observed = new Set<string>()
   const repeated = new Set<string>()
   for (const node of neighbourhood.nodes) {
-    if (seen.has(node.id)) repeated.add(node.id)
-    seen.add(node.id)
+    if (observed.has(node.id)) repeated.add(node.id)
+    observed.add(node.id)
   }
   if (repeated.size > 0) {
     throw new Error(`A plex node appears more than once: ${[...repeated].join(', ')}`)

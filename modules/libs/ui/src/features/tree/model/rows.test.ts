@@ -87,11 +87,11 @@ describe('the keyboard put onto a row', () => {
     const { focus, drawn } = createDrawn()
     rows.setRowElement('notes', drawn)
 
-    const done = rows.focusRow('notes')
+    const isDone = rows.focusRow('notes')
     expect(focus).not.toHaveBeenCalled()
     expect(rows.here.value).toBe('notes')
 
-    await done
+    await isDone
     expect(focus).toHaveBeenCalledTimes(1)
   })
 

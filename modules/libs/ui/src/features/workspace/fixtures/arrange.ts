@@ -45,12 +45,12 @@ function place(
 
   let alongCoord = isAcross ? box.x : box.y
   node.children.forEach((child, index) => {
-    const taken = free * (sizes[index] ?? 0)
+    const acquired = free * (sizes[index] ?? 0)
     const childBox: Rect = isAcross
-      ? { x: alongCoord, y: box.y, width: taken, height: box.height }
-      : { x: box.x, y: alongCoord, width: box.width, height: taken }
+      ? { x: alongCoord, y: box.y, width: acquired, height: box.height }
+      : { x: box.x, y: alongCoord, width: box.width, height: acquired }
     // Stryker disable next-line ArithmeticOperator: depth - 1 has the parity of depth + 1, and only parity is read.
     place(child, childBox, workspace, depth + 1, gap, into)
-    alongCoord += taken + gap
+    alongCoord += acquired + gap
   })
 }

@@ -7,15 +7,15 @@ import { HIGHLIGHT, OTHER_HIGHLIGHT, highlight, unhighlight } from './highlight'
 
 /** The registry a browser that draws ranges keeps, and the ranges it holds. */
 const registry = () => {
-  const held = new Map<string, Set<unknown>>()
-  globalThis.CSS = { highlights: held } as unknown as typeof CSS
+  const target = new Map<string, Set<unknown>>()
+  globalThis.CSS = { highlights: target } as unknown as typeof CSS
   globalThis.Highlight = class {
     readonly ranges: readonly unknown[]
     constructor(...ranges: unknown[]) {
       this.ranges = ranges
     }
   } as unknown as typeof Highlight
-  return held
+  return target
 }
 
 /** A range over nothing in particular, which is all the registry asks for. */
@@ -25,11 +25,11 @@ const range = (): Range => document.createRange()
 const first = { book: 'first' }
 const second = { book: 'second' }
 const moving = { book: 'moving' }
-const kept = { book: 'kept' }
+const retained = { book: 'kept' }
 const going = { book: 'going' }
 const staying = { book: 'staying' }
 const only = { book: 'only' }
-const books = [first, second, moving, kept, going, staying, only]
+const books = [first, second, moving, retained, going, staying, only]
 
 beforeEach(() => {
   registry()
@@ -50,60 +50,60 @@ describe('the entries the names name', () => {
 
 describe('the runs of one book in one entry', () => {
   it('stand in the registry under the entry name', () => {
-    const held = registry()
+    const target = registry()
 
     highlight(HIGHLIGHT, first, [range()])
 
-    expect(held.get(HIGHLIGHT)).toBeInstanceOf(Highlight)
+    expect(target.get(HIGHLIGHT)).toBeInstanceOf(Highlight)
   })
 
   it('are the ranges of each book alongside the ranges of the others', () => {
-    const held = registry()
+    const target = registry()
     const one = range()
     const other = range()
 
     highlight(HIGHLIGHT, first, [one])
     highlight(HIGHLIGHT, second, [other])
 
-    const drawn = held.get(HIGHLIGHT) as unknown as { ranges: readonly unknown[] }
-    expect(drawn.ranges).toStrictEqual([one, other])
+    const rendered = target.get(HIGHLIGHT) as unknown as { ranges: readonly unknown[] }
+    expect(rendered.ranges).toStrictEqual([one, other])
   })
 
   it('replace what the same book had there, and leave the rest', () => {
-    const held = registry()
+    const target = registry()
     const standing = range()
     const freshRange = range()
-    highlight(HIGHLIGHT, kept, [standing])
+    highlight(HIGHLIGHT, retained, [standing])
     highlight(HIGHLIGHT, moving, [range()])
 
     highlight(HIGHLIGHT, moving, [freshRange])
 
-    const drawn = held.get(HIGHLIGHT) as unknown as { ranges: readonly unknown[] }
-    expect(drawn.ranges).toStrictEqual([standing, freshRange])
+    const rendered = target.get(HIGHLIGHT) as unknown as { ranges: readonly unknown[] }
+    expect(rendered.ranges).toStrictEqual([standing, freshRange])
   })
 
   it('are taken out of the registry where no book holds any', () => {
-    const held = registry()
+    const target = registry()
 
     highlight(HIGHLIGHT, only, [range()])
     highlight(HIGHLIGHT, only, [])
 
-    expect(held.has(HIGHLIGHT)).toBe(false)
+    expect(target.has(HIGHLIGHT)).toBe(false)
   })
 })
 
 describe('what a book took with it when it went', () => {
   it('is taken back out of every entry, and the rest is left standing', () => {
-    const held = registry()
+    const target = registry()
     highlight(HIGHLIGHT, going, [range()])
     highlight(OTHER_HIGHLIGHT, going, [range()])
     highlight(HIGHLIGHT, staying, [range()])
 
     unhighlight(going)
 
-    const drawn = held.get(HIGHLIGHT) as unknown as { ranges: readonly unknown[] }
-    expect(drawn.ranges).toHaveLength(1)
-    expect(held.has(OTHER_HIGHLIGHT)).toBe(false)
+    const rendered = target.get(HIGHLIGHT) as unknown as { ranges: readonly unknown[] }
+    expect(rendered.ranges).toHaveLength(1)
+    expect(target.has(OTHER_HIGHLIGHT)).toBe(false)
   })
 
   it('is nothing, where the book had put nothing anywhere', () => {
@@ -126,10 +126,10 @@ describe('a browser that cannot draw a range', () => {
   })
 
   it('is left alone where it has no Highlight to make', () => {
-    const held = registry()
+    const target = registry()
     Reflect.deleteProperty(globalThis, 'Highlight')
 
     expect(() => highlight(HIGHLIGHT, only, [range()])).not.toThrow()
-    expect(held.size).toBe(0)
+    expect(target.size).toBe(0)
   })
 })

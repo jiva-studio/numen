@@ -26,7 +26,7 @@ export interface NameEntryDeps<Why extends Objection> {
   /** The names already taken, which the one being typed is measured against. */
   readonly getTakenNames: (over: string) => readonly string[]
   /** The name as it would be written, and why it cannot be used. */
-  readonly checkName: (name: string, taken: readonly string[]) => NameCheckResult<Why>
+  readonly checkName: (name: string, acquired: readonly string[]) => NameCheckResult<Why>
   /** A name that may be used, committed. */
   readonly rename: (over: string, name: string) => void
 }
@@ -51,8 +51,8 @@ export function useNameEntry<Why extends Objection>(deps: NameEntryDeps<Why>): N
 
   /** What is being typed over this thing, and nothing where nothing is. */
   const getDraft = (over: string): string | null => {
-    const held = draft.value
-    return held?.over === over ? held.text : null
+    const target = draft.value
+    return target?.over === over ? target.text : null
   }
 
   const getText = (over: string): string => getDraft(over) ?? deps.getName(over)

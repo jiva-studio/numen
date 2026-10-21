@@ -18,11 +18,11 @@ const PER_CHARACTER = 7
 
 /** A canvas that measures by the character, and remembers what it was asked. */
 function stubCanvas() {
-  const asked: string[] = []
+  const request: string[] = []
   const context = {
     font: '',
     measureText(text: string) {
-      asked.push(text)
+      request.push(text)
       return { width: text.length * PER_CHARACTER } as TextMetrics
     },
   }
@@ -32,7 +32,7 @@ function stubCanvas() {
     context as unknown as CanvasRenderingContext2D,
   )
 
-  return { asked, context }
+  return { asked: request, context }
 }
 
 /** The tokens as a theme writes them, which is in whatever unit it likes. */
@@ -56,8 +56,8 @@ const inPixels = (value: string): string =>
 const resolveValue = (declaration: string): string => {
   const token = /^var\((--[a-z-]+)\)$/.exec(declaration)?.[1]
   if (!token) return declaration
-  const written = theme[token]
-  return written ? inPixels(written) : ''
+  const content = theme[token]
+  return content ? inPixels(content) : ''
 }
 
 /**

@@ -33,12 +33,12 @@ export const byHandle: ReachStrategy = {
 export const byLongPress = (after: number = LONG_PRESS_DELAY): ReachStrategy => ({
   hasHandle: false,
   listeners: (site) => {
-    const held = useLongPress(site.ready, site.reach, () => after)
+    const target = useLongPress(site.ready, site.reach, () => after)
     return {
-      pointerdown: held.onPointerDown,
-      pointermove: held.onPointerMove,
-      pointerup: held.letGo,
-      pointercancel: held.letGo,
+      pointerdown: target.onPointerDown,
+      pointermove: target.onPointerMove,
+      pointerup: target.letGo,
+      pointercancel: target.letGo,
     }
   },
 })

@@ -96,17 +96,17 @@ function createDrag(
 
 const getTabs = (workspace: Workspace) => getPanes(workspace.root).map((each) => each.tabs)
 
-let held: ReturnType<typeof createDrag> | null = null
+let target: ReturnType<typeof createDrag> | null = null
 
 const start = (options?: Parameters<typeof createDrag>[0]) => {
-  held = createDrag(options)
-  return held
+  target = createDrag(options)
+  return target
 }
 
 afterEach(() => {
-  held?.scope.stop()
-  held?.frame.remove()
-  held = null
+  target?.scope.stop()
+  target?.frame.remove()
+  target = null
   Reflect.deleteProperty(document, 'elementFromPoint')
 })
 
@@ -350,7 +350,7 @@ describe('letting go of a tab', () => {
   })
 
   it('reports a tab let go over no drop target to onTearOff with screen offset', () => {
-    let torn: { tab: string; at: { x: number; y: number } } | null = null
+    let divided: { tab: string; at: { x: number; y: number } } | null = null
     const originalScreenX = window.screenX
     const originalScreenY = window.screenY
     Object.defineProperty(window, 'screenX', { value: 100, configurable: true })
@@ -358,13 +358,13 @@ describe('letting go of a tab', () => {
 
     const { dragTo, release } = start({
       onTearOff: (tab, at) => {
-        torn = { tab, at }
+        divided = { tab, at }
       },
     })
     dragTo('plex', [350, 300], [20, 300])
     release(20, 300)
 
-    expect(torn).toStrictEqual({ tab: 'plex', at: { x: 120, y: 350 } })
+    expect(divided).toStrictEqual({ tab: 'plex', at: { x: 120, y: 350 } })
 
     Object.defineProperty(window, 'screenX', { value: originalScreenX, configurable: true })
     Object.defineProperty(window, 'screenY', { value: originalScreenY, configurable: true })

@@ -71,12 +71,12 @@ function usePointerDrag(
 
   const onPointerMove = (event: PointerEvent): void => {
     if (!area.value || !hand.holding) return
-    const stood = hand.to({ x: event.clientX, y: event.clientY })
-    if (!stood) return
+    const status = hand.to({ x: event.clientX, y: event.clientY })
+    if (!status) return
     isDragging.value = true
     onInterrupted()
-    area.value.scrollLeft = stood.x
-    area.value.scrollTop = stood.y
+    area.value.scrollLeft = status.x
+    area.value.scrollTop = status.y
     followPointer(area.value, event)
   }
 

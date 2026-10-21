@@ -95,10 +95,10 @@ describe('the share that came back', () => {
 
 describe('a day nobody answered on', () => {
   it('says so, and says nothing else', () => {
-    const drawn = account()
-    expect(drawn.get('[data-day-summary="count"]').text()).toBe('Nothing answered')
-    expect(drawn.find('[data-day-summary="four"]').exists()).toBe(false)
-    expect(drawn.find('[data-day-summary="came"]').exists()).toBe(false)
+    const rendered = account()
+    expect(rendered.get('[data-day-summary="count"]').text()).toBe('Nothing answered')
+    expect(rendered.find('[data-day-summary="four"]').exists()).toBe(false)
+    expect(rendered.find('[data-day-summary="came"]').exists()).toBe(false)
   })
 })
 
@@ -112,9 +112,9 @@ describe('a day still to come', () => {
   // A day ahead was not answered on, so the four and the share are about
   // nothing.
   it('says none of the four and no share, whatever it carries', () => {
-    const drawn = account({ isAhead: true, did: 7, again: 2, asked: 4, recalled: 3 })
-    expect(drawn.find('[data-day-summary="four"]').exists()).toBe(false)
-    expect(drawn.find('[data-day-summary="came"]').exists()).toBe(false)
+    const rendered = account({ isAhead: true, did: 7, again: 2, asked: 4, recalled: 3 })
+    expect(rendered.find('[data-day-summary="four"]').exists()).toBe(false)
+    expect(rendered.find('[data-day-summary="came"]').exists()).toBe(false)
   })
 
   it('says nothing falls on a day nothing falls on', () => {

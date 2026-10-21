@@ -225,26 +225,26 @@ describe('a title cut to the line it is set on', () => {
   })
 
   it('measures the words it carries, and no other', () => {
-    const asked: string[] = []
+    const request: string[] = []
     routeWithLabel((label) => {
-      asked.push(label)
+      request.push(label)
       return 0
     })
-    expect(asked).toStrictEqual(['the scene in the assembly'])
+    expect(request).toStrictEqual(['the scene in the assembly'])
   })
 
   it('halves in on the cut and not stepping through the label', () => {
     const label = 'a'.repeat(400)
-    const asked: string[] = []
+    const request: string[] = []
     routeEdges(
       [{ from: 'aside', to: 'focus', label }],
       byId,
       createRouting(DEFAULT_OPTIONS, (words) => {
-        asked.push(words)
+        request.push(words)
         return [...words].length
       }),
     )
-    expect(asked.length).toBeLessThan(20)
+    expect(request.length).toBeLessThan(20)
   })
 })
 

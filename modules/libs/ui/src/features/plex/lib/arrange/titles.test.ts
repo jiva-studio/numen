@@ -153,9 +153,9 @@ describe('a title finds room on its line', () => {
       order: 0,
       opacity: 1,
     }
-    const settled = separateTitles(routed, [...placed.nodes, blanket], routing)
+    const resolved = separateTitles(routed, [...placed.nodes, blanket], routing)
 
-    expect(settled[0]!.words).toBeUndefined()
+    expect(resolved[0]!.words).toBeUndefined()
   })
 
   it('gives the same neighbourhood the same offsets twice over', () => {
@@ -223,13 +223,13 @@ describe('a title finds room on its line', () => {
     const routed = routeEdges([{ from: 'here', to: 'far', label: 'see also' }], byId, routing)
     expect(getHeading(routed[0]!, MIDDLE)).toBe('against')
 
-    const settled = separateTitles(routed, [far, here, covering], routing)[0]!
-    expect(settled.words).toBe('see also')
-    expect(settled.heading).toBe('against')
-    expect(settled.wordsAt).not.toBe(MIDDLE)
+    const resolved = separateTitles(routed, [far, here, covering], routing)[0]!
+    expect(resolved.words).toBe('see also')
+    expect(resolved.heading).toBe('against')
+    expect(resolved.wordsAt).not.toBe(MIDDLE)
 
     // The place on the curve is the fraction taken the other way round.
-    expect(getHeading(settled, 1 - settled.wordsAt)).toBe('against')
+    expect(getHeading(resolved, 1 - resolved.wordsAt)).toBe('against')
   })
 
   it('keeps a title off the boxes its line crosses', () => {
@@ -253,13 +253,13 @@ describe('a title finds room on its line', () => {
       ...measured,
     })
     const named = neighbourhoods.labelledRows.edges.filter((edge) => edge.label)
-    const written = frame.edges.filter((edge) => edge.words)
+    const content = frame.edges.filter((edge) => edge.words)
 
     // Some of them are there whole, and every one that is there is either the
     // whole label or a cut of its start.
-    expect(written.length).toBeGreaterThan(0)
-    expect(written.length).toBeLessThan(named.length)
-    for (const edge of written) {
+    expect(content.length).toBeGreaterThan(0)
+    expect(content.length).toBeLessThan(named.length)
+    for (const edge of content) {
       const label = named.find((one) => one.from === edge.from && one.to === edge.to)!
       expect(label.label!.startsWith(edge.words!.replace(/…$/, ''))).toBe(true)
     }

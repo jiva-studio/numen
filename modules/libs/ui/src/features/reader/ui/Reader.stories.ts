@@ -153,8 +153,8 @@ export const Opened: Story = {
     const box = getSheet(canvasElement, 0)!.getBoundingClientRect()
     await expect(box.height).toBeLessThanOrEqual(room.height)
 
-    const asked = Number(canvasElement.querySelector('[data-wide]')?.getAttribute('data-wide'))
-    await expect(asked).toBeGreaterThanOrEqual(box.width * devicePixelRatio)
+    const query = Number(canvasElement.querySelector('[data-wide]')?.getAttribute('data-wide'))
+    await expect(query).toBeGreaterThanOrEqual(box.width * devicePixelRatio)
   },
 }
 
@@ -249,11 +249,11 @@ export const HighlightedOver: Story = {
     /** Every highlighted rectangle, as a share of the page it is drawn over. */
     const expectHighlights = async () => {
       const picture = getSheet(canvasElement, 0)!.getBoundingClientRect()
-      const drawn = [
+      const rendered = [
         ...canvasElement.querySelectorAll('.reader__page[data-page="0"] .reader__highlight'),
       ]
-      await expect(drawn).toHaveLength(HIGHLIGHTS.length)
-      for (const [index, one] of drawn.entries()) {
+      await expect(rendered).toHaveLength(HIGHLIGHTS.length)
+      for (const [index, one] of rendered.entries()) {
         const box = one.getBoundingClientRect()
         const want = HIGHLIGHTS[index]!
         await expect((box.left - picture.left) / picture.width).toBeCloseTo(want.minX, 2)

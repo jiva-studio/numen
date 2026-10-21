@@ -37,7 +37,7 @@ const createAgent = (turns: readonly Turn[]) => {
     },
     /** Every text the field has handed on, in the order it handed them on. */
     handed: (): readonly unknown[] =>
-      (wrapper.emitted('update:modelValue') ?? []).map((said) => (said as unknown[])[0]),
+      (wrapper.emitted('update:modelValue') ?? []).map((response) => (response as unknown[])[0]),
     /**
      * Written in the field and sent, the caller putting back what it is handed
      * before the key is pressed, which is what holding the field is.

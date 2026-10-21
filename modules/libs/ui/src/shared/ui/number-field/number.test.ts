@@ -62,14 +62,14 @@ describe('what the text evaluates to', () => {
 
 describe('text a number could still be typed out of', () => {
   it('lets a half-typed number stand', () => {
-    for (const said of ['', '-', '1', '1.', '1,', '.5', '12.30']) {
-      expect(isPartialNumber(said)).toBe(true)
+    for (const response of ['', '-', '1', '1.', '1,', '.5', '12.30']) {
+      expect(isPartialNumber(response)).toBe(true)
     }
   })
 
   it('says so where nothing further would make a number of it', () => {
-    for (const said of ['x', '12x', '1.2.3', '1 2', '--1']) {
-      expect(isPartialNumber(said)).toBe(false)
+    for (const response of ['x', '12x', '1.2.3', '1 2', '--1']) {
+      expect(isPartialNumber(response)).toBe(false)
     }
   })
 })

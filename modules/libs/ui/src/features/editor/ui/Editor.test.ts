@@ -21,11 +21,11 @@ Range.prototype.getClientRects = () =>
   Object.assign([], { item: () => null }) as unknown as DOMRectList
 Range.prototype.getBoundingClientRect = () => new DOMRect()
 
-const drawn: { unmount: () => void }[] = []
+const rendered: { unmount: () => void }[] = []
 
 const editor = (props: Partial<Props> = {}) => {
   const wrapper = mount(Editor, { attachTo: document.body, props })
-  drawn.push(wrapper)
+  rendered.push(wrapper)
   const view = EditorView.findFromDOM(wrapper.element as HTMLElement)
   if (!view) throw new Error('the editor drew no view')
   return { wrapper, view, exposed: wrapper.vm as unknown as EditorHandle }
@@ -66,7 +66,7 @@ const chord = (on: EventTarget, modifiers: KeyboardEventInit = { ctrlKey: true }
 }
 
 afterEach(() => {
-  while (drawn.length) drawn.pop()?.unmount()
+  while (rendered.length) rendered.pop()?.unmount()
   vi.restoreAllMocks()
   document.body.innerHTML = ''
 })
@@ -407,10 +407,10 @@ describe('a document written in one language', () => {
       attachTo: document.body,
     })
     // The language is loaded when it is first wanted.
-    const drawn = editor.get('.cm-editor').element
+    const viewElement = editor.get('.cm-editor').element
     await vi.waitFor(() => {
       // The face is the token the editor's theme names, not a family named here.
-      expect(getComputedStyle(drawn).fontFamily).toBe('var(--editor-mono)')
+      expect(getComputedStyle(viewElement).fontFamily).toBe('var(--editor-mono)')
     })
 
     editor.unmount()

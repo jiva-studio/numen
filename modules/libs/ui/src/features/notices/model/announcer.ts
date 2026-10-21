@@ -23,7 +23,7 @@ export interface Announcer {
  * Nothing is read out until the regions themselves have been drawn.
  */
 export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
-  const told = ref('')
+  const notified = ref('')
   const cried = ref('')
 
   /** The words each card was last read out by. */
@@ -42,7 +42,7 @@ export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
     waiting = [...waiting, ...unannounced]
 
     const mine = ++reading
-    told.value = ''
+    notified.value = ''
     cried.value = ''
     await nextTick()
     if (mine !== reading) return
@@ -52,7 +52,7 @@ export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
     const loud = pending.filter((one) => one.tone === 'alarm')
     const regular = pending.filter((one) => one.tone !== 'alarm')
     if (loud.length) cried.value = loud.map(getWords).join('. ')
-    if (regular.length) told.value = regular.map(getWords).join('. ')
+    if (regular.length) notified.value = regular.map(getWords).join('. ')
   }
 
   watch(getNotices, (all) => void readOut(all))
@@ -63,5 +63,5 @@ export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
     void readOut(getNotices())
   })
 
-  return { told, cried }
+  return { told: notified, cried }
 }

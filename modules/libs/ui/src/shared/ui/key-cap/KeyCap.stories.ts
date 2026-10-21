@@ -58,21 +58,21 @@ export const EveryIcon: Story = {
 
     const weights: number[] = []
     for (const cap of caps) {
-      const set = Number.parseFloat(getComputedStyle(cap).fontSize)
+      const activeSet = Number.parseFloat(getComputedStyle(cap).fontSize)
       const box = cap.getBoundingClientRect()
       const middle = box.top + box.height / 2
 
       // The line the letter is set on is the middle of the box holding it,
       // which is one line-height tall whatever the face.
       const line = cap.querySelector('span[aria-hidden="true"]')!.getBoundingClientRect()
-      await expect(Math.abs(line.top + line.height / 2 - middle) / set).toBeLessThanOrEqual(0.02)
+      await expect(Math.abs(line.top + line.height / 2 - middle) / activeSet).toBeLessThanOrEqual(0.02)
 
       // One line: an icon's ink is centred on that line, within a fiftieth of
       // the type the cap is set in. What is left over is the asymmetry of the
       // icon's own grid.
       const icon = await drawingInk(cap.querySelector('svg')!)
-      await expect(Math.abs(icon.middle - middle) / set).toBeLessThanOrEqual(0.02)
-      weights.push(icon.stroke / set)
+      await expect(Math.abs(icon.middle - middle) / activeSet).toBeLessThanOrEqual(0.02)
+      weights.push(icon.stroke / activeSet)
     }
 
     // One weight: every icon's ink is as thick as every other's, which is what
@@ -115,10 +115,10 @@ export const Dark: Story = {
     const behindColor = getComputedStyle(canvasElement.ownerDocument.documentElement).backgroundColor
     const surface = lightness(behindColor)
     for (const cap of caps) {
-      const drawn = getComputedStyle(cap)
-      const ground = lightness(drawn.backgroundColor, behindColor)
+      const rendered = getComputedStyle(cap)
+      const ground = lightness(rendered.backgroundColor, behindColor)
       await expect(Math.abs(ground - surface)).toBeGreaterThan(4)
-      await expect(lightness(drawn.color, drawn.backgroundColor)).toBeGreaterThan(ground + 24)
+      await expect(lightness(rendered.color, rendered.backgroundColor)).toBeGreaterThan(ground + 24)
     }
   },
 }
@@ -132,9 +132,9 @@ export const Announced: Story = {
     await expect(within(canvasElement).getByText('Control Shift W')).toHaveClass('sr-only')
 
     // Two icons and the letter held with them.
-    const drawn = Array.from(canvasElement.querySelectorAll('.cap > :not(.sr-only)'))
-    await expect(drawn).toHaveLength(3)
-    for (const one of drawn) {
+    const viewElement = Array.from(canvasElement.querySelectorAll('.cap > :not(.sr-only)'))
+    await expect(viewElement).toHaveLength(3)
+    for (const one of viewElement) {
       await expect(one).toHaveAttribute('aria-hidden', 'true')
     }
   },

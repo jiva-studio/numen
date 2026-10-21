@@ -46,8 +46,8 @@ export class Hand {
   private hasMoved = false
 
   /** The hand took hold, at a point, with the row standing here. */
-  take(at: Offset, stood: Offset) {
-    this.grip = { from: at, stood }
+  take(at: Offset, status: Offset) {
+    this.grip = { from: at, stood: status }
     this.hasMoved = false
   }
 

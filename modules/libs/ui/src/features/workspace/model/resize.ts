@@ -44,9 +44,9 @@ export function useBranchResize(options: BranchResizeOptions): BranchResize {
     isDragging = false
     options.getFrame()?.removeAttribute(RESIZING)
 
-    const settled = pendingShares
+    const resolved = pendingShares
     pendingShares = null
-    if (settled) options.resize(options.getBranchId(), settled)
+    if (resolved) options.resize(options.getBranchId(), resolved)
   }
 
   /**

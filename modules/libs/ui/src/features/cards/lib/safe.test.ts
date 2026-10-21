@@ -104,8 +104,8 @@ describe('safe, what does not survive', () => {
   })
 
   it('keeps an image standing in the text that is one', () => {
-    const said = 'data:image/png;base64,iVBORw0KGgo='
-    expect(safe(`<img src="${said}">`)).toBe(`<img src="${said}">`)
+    const response = 'data:image/png;base64,iVBORw0KGgo='
+    expect(safe(`<img src="${response}">`)).toBe(`<img src="${response}">`)
   })
 
   // A deck may have come from another person. A picture fetched from their
@@ -148,15 +148,15 @@ describe('safe, what does not survive', () => {
   })
 
   it('leaves no handler in what a second reading makes of the text', () => {
-    const said = '<noscript><p title="</noscript><img src=x onerror=alert(1)>">'
-    expect(attributes(said).filter((name) => name.startsWith('on'))).toEqual([])
-    expect(tags(said)).not.toContain('img')
+    const response = '<noscript><p title="</noscript><img src=x onerror=alert(1)>">'
+    expect(attributes(response).filter((name) => name.startsWith('on'))).toEqual([])
+    expect(tags(response)).not.toContain('img')
   })
 
   it('leaves no handler on anything, however the tag was closed', () => {
-    const said = '<div><p onmouseover=alert(1)>a<svg/onload=alert(2)></p></div>'
-    expect(attributes(said).filter((name) => name.startsWith('on'))).toEqual([])
-    expect(tags(said)).not.toContain('svg')
+    const response = '<div><p onmouseover=alert(1)>a<svg/onload=alert(2)></p></div>'
+    expect(attributes(response).filter((name) => name.startsWith('on'))).toEqual([])
+    expect(tags(response)).not.toContain('svg')
   })
 
   /* Nothing reads the text before this does, so what a person wrote arrives
@@ -232,8 +232,8 @@ describe('safe, a card is not markdown', () => {
     ['`code`', '`code`'],
     ['[a link](https://example.org)', '[a link](https://example.org)'],
     ['![[llama.jpg]]', '![[llama.jpg]]'],
-  ])('draws %s as the characters a person typed', (written, drawn) => {
-    expect(safe(written)).toBe(drawn)
+  ])('draws %s as the characters a person typed', (content, rendered) => {
+    expect(safe(content)).toBe(rendered)
   })
 
   it('wraps a line of prose in nothing', () => {

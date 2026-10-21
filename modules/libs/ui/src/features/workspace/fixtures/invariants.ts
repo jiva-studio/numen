@@ -5,11 +5,11 @@ import { isBranch, getPanes } from '../lib/tree'
 /** Anything that does not hold about a workspace, said in words. */
 export function getFaults(workspace: Workspace): readonly string[] {
   const faults: string[] = []
-  const seen = new Set<string>()
+  const observed = new Set<string>()
 
   const walk = (node: WorkspaceNode): void => {
-    if (seen.has(node.id)) faults.push(`two nodes are called ${node.id}`)
-    seen.add(node.id)
+    if (observed.has(node.id)) faults.push(`two nodes are called ${node.id}`)
+    observed.add(node.id)
 
     if (!isBranch(node)) return
 

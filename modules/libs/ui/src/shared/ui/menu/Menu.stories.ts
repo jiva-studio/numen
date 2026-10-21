@@ -293,10 +293,10 @@ export const NotClipped: Story = {
 export const TheOneInForce: Story = {
   args: { trigger: 'keyboard', current: 'child' },
   play: async () => {
-    const chosen = within(menuElement()!).getAllByRole('menuitemradio')
-    await expect(chosen).toHaveLength(4)
-    await expect(chosen[1]).toHaveFocus()
-    await expect(chosen.map((one) => one.getAttribute('aria-checked'))).toEqual([
+    const selected = within(menuElement()!).getAllByRole('menuitemradio')
+    await expect(selected).toHaveLength(4)
+    await expect(selected[1]).toHaveFocus()
+    await expect(selected.map((one) => one.getAttribute('aria-checked'))).toEqual([
       'false',
       'true',
       'false',

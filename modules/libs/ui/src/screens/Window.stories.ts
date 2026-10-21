@@ -319,7 +319,7 @@ const escapeHtml = (line: string) =>
 const renderPage = (page: number): string => {
   const leaf = page - BOOK_FIRST
   const lines = BOOK_PAGES[leaf] ?? []
-  const set = lines
+  const activeSet = lines
     .map((line, at) => {
       const y = FIRST + at * LEADING
       const weight = at === 0 && leaf === 0 ? ' font-weight="600" letter-spacing="1.2"' : ''
@@ -327,7 +327,7 @@ const renderPage = (page: number): string => {
     })
     .join('')
   const number = `<text x="${PAPER.wide / 2}" y="${PAPER.high - 54}" text-anchor="middle" font-family="Georgia, serif" font-size="13" fill="#5a5a5a">${page + 1}</text>`
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PAPER.wide}" height="${PAPER.high}"><rect width="100%" height="100%" fill="#fbfaf7"/>${set}${number}</svg>`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PAPER.wide}" height="${PAPER.high}"><rect width="100%" height="100%" fill="#fbfaf7"/>${activeSet}${number}</svg>`
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 
@@ -628,7 +628,7 @@ const screen = ({
 }: Screen) => ({
   components: { WorkspaceLayout, Plex, Editor, Agent, Palette, Reader, Tree, Menu },
   setup() {
-    const held = ref<State>(workspace())
+    const target = ref<State>(workspace())
     const text = ref(markdown)
     const other = ref(OTHER)
     const asking = ref('')
@@ -660,7 +660,7 @@ const screen = ({
     }
 
     return {
-      held,
+      held: target,
       text,
       other,
       asking,
@@ -792,9 +792,9 @@ const WRITING = { reach: { keeps: 'Escape hands Tab back to the page' } }
 
 /** One pane of the window, by the name it was divided under. */
 const getPane = (canvas: HTMLElement, id: string): HTMLElement => {
-  const held = canvas.querySelector<HTMLElement>(`[data-workspace-pane="${id}"]`)
-  if (!held) throw new Error(`no pane ${id}`)
-  return held
+  const element = canvas.querySelector<HTMLElement>(`[data-workspace-pane="${id}"]`)
+  if (!element) throw new Error(`no pane ${id}`)
+  return element
 }
 
 /** Whether one pane stands entirely past another's trailing edge. */
@@ -889,19 +889,19 @@ export const Nesting: Story = {
     // A hand left on the node hangs the headings of its note under the box.
     // They come in one after another, so the picture is let settle first.
     const titles = (HEADINGS['focus'] ?? []).map((heading) => heading.text)
-    const hung = () => titles.filter((words) => canvas.queryByText(words))
+    const suspended = () => titles.filter((words) => canvas.queryByText(words))
     await hoverOver(focus)
-    await waitFor(() => expect(hung().length).toBeGreaterThan(4), { timeout: 5000 })
+    await waitFor(() => expect(suspended().length).toBeGreaterThan(4), { timeout: 5000 })
 
     // As many as the panel has room for, taken from the top of the note: what
     // does not fit is wound to, not dropped from the middle.
-    const shown = hung()
-    expect(shown).toEqual(titles.slice(0, shown.length))
+    const displayed = suspended()
+    expect(displayed).toEqual(titles.slice(0, displayed.length))
 
     // They hang under the box, in the order the note sets them out. The box is
     // the node's own rectangle: the group around it has grown to hold them.
     const box = focus.querySelector('rect')!.getBoundingClientRect()
-    const tops = shown.map((words) => canvas.getByText(words).getBoundingClientRect().top)
+    const tops = displayed.map((words) => canvas.getByText(words).getBoundingClientRect().top)
     expect(Math.min(...tops)).toBeGreaterThan(box.bottom - 1)
     expect([...tops].sort((one, other) => one - other)).toEqual(tops)
   },
@@ -936,9 +936,9 @@ export const Writing: Story = {
     // Writing means somewhere to type: the note in the pane is drawn as text a
     // person may put a caret in.
     await waitFor(() => {
-      const written = canvasElement.querySelector('.cm-content')
-      expect(written).not.toBeNull()
-      expect(written?.getAttribute('contenteditable')).toBe('true')
+      const content = canvasElement.querySelector('.cm-content')
+      expect(content).not.toBeNull()
+      expect(content?.getAttribute('contenteditable')).toBe('true')
     })
   },
 }
@@ -1086,18 +1086,18 @@ export const Filing: Story = {
       name: 'The folders and files of the vault',
     })
     const rows = within(tree).getAllByRole('treeitem')
-    const chosen = rows.filter((row) => row.getAttribute('aria-selected') === 'true')
+    const selected = rows.filter((row) => row.getAttribute('aria-selected') === 'true')
 
     // The selection relies on two rows, and they are held in different
     // folders, which is the case a single run of rows would not cover.
-    expect(chosen.map((row) => row.textContent?.trim())).toEqual([
+    expect(selected.map((row) => row.textContent?.trim())).toEqual([
       'Entropy.md',
       "Landauer's principle.md",
     ])
     const folders = rows.filter((row) => within(row).queryByText(/^(Physics|Computation)$/))
     expect(folders).toHaveLength(2)
     for (const [at, folder] of folders.entries()) {
-      expect(rows.indexOf(folder)).toBeLessThan(rows.indexOf(chosen[at]!))
+      expect(rows.indexOf(folder)).toBeLessThan(rows.indexOf(selected[at]!))
     }
   },
 }

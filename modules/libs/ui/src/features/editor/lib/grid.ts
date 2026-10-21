@@ -36,18 +36,18 @@ class Grid extends WidgetType {
   }
 
   override updateDOM(frame: HTMLElement) {
-    const drawn = [...frame.querySelectorAll<HTMLElement>('.cm-cell')]
+    const viewElement = [...frame.querySelectorAll<HTMLElement>('.cm-cell')]
     const rows = getRows(this.table)
     const cells = rows.flat()
 
-    if (drawn.length !== cells.length) {
+    if (viewElement.length !== cells.length) {
       this.paint(frame)
       return true
     }
 
     span(frame, this.table)
 
-    drawn.forEach((element, index) => {
+    viewElement.forEach((element, index) => {
       const cell = cells[index]
       place(element, cell ?? null, this.isWritable)
       if (cell && element !== document.activeElement) element.textContent = readCell(cell.text)
@@ -83,10 +83,10 @@ class Grid extends WidgetType {
     })
     table.append(top, rest)
 
-    const grown = this.isWritable
+    const expanded = this.isWritable
       ? [createAddButton('cm-add-column'), createAddButton('cm-add-row')]
       : []
-    frame.replaceChildren(table, ...grown)
+    frame.replaceChildren(table, ...expanded)
     span(frame, this.table)
   }
 }

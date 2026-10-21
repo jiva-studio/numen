@@ -161,12 +161,12 @@ type Corpora = keyof typeof CORPORA
 
 /** The one card of a corpus, laid out against the stencil that cuts it. */
 const createTile = (corpus: Corpus): Tile => {
-  const laid = getGrid(
+  const arranged = getGrid(
     { cards: [corpus.card], sections: [], stencils: corpus.cut ? [corpus.cut] : [] },
     null,
   ).runs[0]?.tiles[0]
-  if (!laid) throw new Error('a corpus holding no card')
-  return laid
+  if (!arranged) throw new Error('a corpus holding no card')
+  return arranged
 }
 
 interface Knobs {
@@ -200,19 +200,19 @@ const meta: Meta<Knobs> = {
   render: (args) => ({
     components: { Card },
     setup() {
-      const held = ref<Corpus>(CORPORA[args.corpus])
+      const target = ref<Corpus>(CORPORA[args.corpus])
       const tile = ref<Tile>(createTile(CORPORA[args.corpus]))
 
       watch(
         () => args.corpus,
         (next) => {
-          held.value = CORPORA[next]
+          target.value = CORPORA[next]
           tile.value = createTile(CORPORA[next])
         },
       )
 
       const onWrite = (field: string, nth: number, text: string) => {
-        const card = held.value.card
+        const card = target.value.card
 
         // The one written is the one counted off under its own field.
         let underCount = 0
@@ -222,9 +222,9 @@ const meta: Meta<Knobs> = {
           return underCount === nth ? { field, text } : each
         })
         if (underCount < nth) filled.push({ field, text })
-        const written = { ...held.value, card: { ...card, filled } }
-        held.value = written
-        tile.value = createTile(written)
+        const content = { ...target.value, card: { ...card, filled } }
+        target.value = content
+        tile.value = createTile(content)
       }
 
       provide(DECK_CONTEXT, {
@@ -234,8 +234,8 @@ const meta: Meta<Knobs> = {
       return {
         args,
         tile,
-        wrong: () => held.value.wrong ?? [],
-        wrongUnder: () => new Map(Object.entries(held.value.wrongUnder ?? {})),
+        wrong: () => target.value.wrong ?? [],
+        wrongUnder: () => new Map(Object.entries(target.value.wrongUnder ?? {})),
       }
     },
     template: `
@@ -254,9 +254,9 @@ export default meta
 type Story = StoryObj<Knobs>
 
 const found = (canvas: HTMLElement, selector: string): HTMLElement => {
-  const held = canvas.querySelector<HTMLElement>(selector)
-  if (!held) throw new Error(`nothing matching ${selector}`)
-  return held
+  const element = canvas.querySelector<HTMLElement>(selector)
+  if (!element) throw new Error(`nothing matching ${selector}`)
+  return element
 }
 
 /**
@@ -314,18 +314,18 @@ export const ACard: Story = {
 
     // It stands in the middle of the strip, and is said more quietly than what
     // the card holds.
-    const cut = found(canvasElement, '[data-cut-of]')
+    const trimmed = found(canvasElement, '[data-cut-of]')
     const middle = (each: Element): number => {
       const box = each.getBoundingClientRect()
       return Math.round(box.left + box.width / 2)
     }
-    expect(middle(cut)).toBe(middle(header))
+    expect(middle(trimmed)).toBe(middle(header))
 
-    const said = Number.parseFloat(getComputedStyle(cut).fontSize)
-    const written = Number.parseFloat(
+    const response = Number.parseFloat(getComputedStyle(trimmed).fontSize)
+    const content = Number.parseFloat(
       getComputedStyle(found(canvasElement, '[data-value="Height"]')).fontSize,
     )
-    expect(said).toBeLessThan(written)
+    expect(response).toBeLessThan(content)
 
     const box = found(canvasElement, '[data-value="Height"]')
     await userEvent.click(box)
@@ -420,16 +420,16 @@ export const CutByNothing: Story = {
     const tile = found(canvasElement, '[data-card="w4h7p2ctm9"]')
 
     // The strip carries it, in the voice it names a stencil in.
-    const cut = found(canvasElement, '[data-cut-of]')
-    expect(cut.textContent?.trim()).toBe('Cut by no stencil')
+    const trimmed = found(canvasElement, '[data-cut-of]')
+    expect(trimmed.textContent?.trim()).toBe('Cut by no stencil')
     const label = found(canvasElement, '.card__field')
-    expect(getComputedStyle(cut).color).toBe(getComputedStyle(label).color)
+    expect(getComputedStyle(trimmed).color).toBe(getComputedStyle(label).color)
 
     // It is said once: the body carries what the vault found and nothing else.
-    const said = [...tile.querySelectorAll('.card__objections')]
-    expect(said).toHaveLength(1)
-    expect(said[0]?.textContent).toContain('not a lone wikilink')
-    expect(getComputedStyle(cut).color).not.toBe(getComputedStyle(said[0] as Element).color)
+    const response = [...tile.querySelectorAll('.card__objections')]
+    expect(response).toHaveLength(1)
+    expect(response[0]?.textContent).toContain('not a lone wikilink')
+    expect(getComputedStyle(trimmed).color).not.toBe(getComputedStyle(response[0] as Element).color)
 
     // No heading stands over a body that holds something.
     expect(tile.querySelector('.card__silence')).toBeNull()
@@ -463,10 +463,10 @@ export const WhatIsWrongWithIt: Story = {
     const boxes = [...canvasElement.querySelectorAll<HTMLTextAreaElement>('[data-value="Name"]')]
     expect(boxes.map((box) => box.value)).toEqual(['Llama', 'Alpaca'])
 
-    const said = found(canvasElement, '[data-wrong]')
-    expect(said.textContent).toContain('writes one field twice')
+    const response = found(canvasElement, '[data-wrong]')
+    expect(response.textContent).toContain('writes one field twice')
     const first = found(canvasElement, '.card__value')
-    expect(said.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+    expect(response.getBoundingClientRect().bottom).toBeLessThanOrEqual(
       first.getBoundingClientRect().top + 1,
     )
 
@@ -483,13 +483,13 @@ export const WhatIsWrongWithIt: Story = {
     const edge = (each: Element | null | undefined): number => {
       if (!each) throw new Error('nothing to measure')
       const box = each.getBoundingClientRect()
-      const drawn = getComputedStyle(each)
-      return box.left + Number.parseFloat(drawn.paddingInlineStart)
+      const rendered = getComputedStyle(each)
+      return box.left + Number.parseFloat(rendered.paddingInlineStart)
     }
     const label = found(canvasElement, '.card__value label')
     expect(Math.round(edge(underCards[0]))).toBe(Math.round(edge(boxes[1])))
     expect(Math.round(edge(label))).toBe(Math.round(edge(boxes[1])))
-    expect(Math.round(edge(said))).toBe(Math.round(edge(boxes[0])))
+    expect(Math.round(edge(response))).toBe(Math.round(edge(boxes[0])))
   },
 }
 

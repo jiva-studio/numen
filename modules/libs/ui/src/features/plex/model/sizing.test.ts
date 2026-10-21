@@ -88,8 +88,8 @@ describe('a label half again as large', () => {
   })
 
   it('carries boxes the caller chose, and not only the ones here', () => {
-    const asked = { ...DEFAULT_OPTIONS, nodeSize: { width: 200, height: 40 } }
-    expect(optionsForType(DESIGNED_TYPE * HALF_AGAIN, asked).nodeSize).toStrictEqual({
+    const request = { ...DEFAULT_OPTIONS, nodeSize: { width: 200, height: 40 } }
+    expect(optionsForType(DESIGNED_TYPE * HALF_AGAIN, request).nodeSize).toStrictEqual({
       width: 300,
       height: 60,
     })

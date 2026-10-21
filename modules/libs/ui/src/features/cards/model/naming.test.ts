@@ -153,9 +153,9 @@ describe('useNameEntry', () => {
   it('consults on a commit the objection that was drawn', () => {
     const { naming, renamed } = overFields(FIELDS)
     naming.setDraft('Height', 'Weight')
-    const drawn = naming.getObjection('Height')
+    const rendered = naming.getObjection('Height')
     naming.commit('Height')
-    expect(drawn).toBe('taken')
+    expect(rendered).toBe('taken')
     expect(naming.getObjection('Height')).toBeNull()
     expect(renamed).toEqual([])
   })

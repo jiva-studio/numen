@@ -122,21 +122,21 @@ function useNoticeDismissal(context: DismissalContext) {
 
 function watchNoticeTicker(
   sample: () => void,
-  drawn: ComputedRef<readonly Notice[]>,
+  rendered: ComputedRef<readonly Notice[]>,
   options: { getNotices: () => readonly Notice[]; away: ShallowRef<ReadonlySet<string>> },
 ): void {
   const coming = computed(() => {
-    const shown = new Set(drawn.value.map((one) => one.id))
+    const displayed = new Set(rendered.value.map((one) => one.id))
     return getReadable(options.getNotices()).some(
-      (one) => one.stay !== 'read' && !options.away.value.has(one.id) && !shown.has(one.id),
+      (one) => one.stay !== 'read' && !options.away.value.has(one.id) && !displayed.has(one.id),
     )
   })
   const timing = computed(() =>
-    drawn.value.some(
+    rendered.value.some(
       (one) => one.stay === 'read' && getNoticeDuration(one.text, one.about) !== Infinity,
     ),
   )
-  const counting = computed(() => drawn.value.some((one) => findTally(one) !== undefined))
+  const counting = computed(() => rendered.value.some((one) => findTally(one) !== undefined))
 
   watchEffect((clean) => {
     if (!coming.value && !timing.value && !counting.value) return
@@ -181,7 +181,7 @@ function useNoticeLifecycle(options: NoticeLifecycleOptions): void {
 export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
   const away = shallowRef<ReadonlySet<string>>(new Set())
   const arrived = shallowRef<ReadonlyMap<string, number>>(new Map())
-  const forgotten = new Set<string>()
+  const cleared = new Set<string>()
 
   const { now, read, beat, onPointerOver, onPointerOut, onFocusIn, onFocusOut } = useNoticeStack(
     options.stack,
@@ -195,13 +195,13 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
     getNotices: options.getNotices,
     arrived,
     away,
-    forgotten,
+    forgotten: cleared,
     read,
     sample,
     dismiss: options.dismiss,
   })
 
-  const drawn = computed(() =>
+  const rendered = computed(() =>
     getShownNotices(options.getNotices(), read.value, {
       firstSeen: arrived.value,
       away: away.value,
@@ -211,24 +211,24 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
 
   const isOpened = ref(false)
   const folds = computed(() =>
-    foldNotices(drawn.value, isOpened.value ? drawn.value.length : options.getRoom()),
+    foldNotices(rendered.value, isOpened.value ? rendered.value.length : options.getRoom()),
   )
 
-  watch(drawn, (all) => {
+  watch(rendered, (all) => {
     if (all.length <= options.getRoom()) isOpened.value = false
   })
 
-  watchNoticeTicker(sample, drawn, { getNotices: options.getNotices, away })
+  watchNoticeTicker(sample, rendered, { getNotices: options.getNotices, away })
 
   const { holdCard, dismissByHand } = useNoticeDismissal({
     folds,
     away,
-    forgotten,
+    forgotten: cleared,
     dismiss: options.dismiss,
   })
 
   return {
-    drawn,
+    drawn: rendered,
     folds,
     isOpened,
     leftOn,

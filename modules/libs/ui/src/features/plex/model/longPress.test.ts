@@ -10,8 +10,8 @@ const press = (over: Partial<PointerEvent> = {}) =>
 const createHolding = (ready = () => true) => {
   const reached = vi.fn()
   const scope = effectScope()
-  const held = scope.run(() => useLongPress(ready, reached))!
-  return { held, reached, scope }
+  const target = scope.run(() => useLongPress(ready, reached))!
+  return { held: target, reached, scope }
 }
 
 afterEach(() => {

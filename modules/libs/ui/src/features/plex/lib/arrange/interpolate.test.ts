@@ -199,8 +199,8 @@ describe('the edges follow the boxes', () => {
 
   it('keeps an edge that both pictures have at full strength throughout', () => {
     const frame = interpolatePlex(from, to, 0.5)
-    const kept = frame.edges.find((e) => e.from === 'focus' && e.to === 'a')
-    expect(kept?.opacity).toBe(1)
+    const retained = frame.edges.find((e) => e.from === 'focus' && e.to === 'a')
+    expect(retained?.opacity).toBe(1)
   })
 
   it('fades an edge in or out with the node it belongs to', () => {
@@ -225,7 +225,7 @@ describe('the title a line carries while the picture moves', () => {
   const getEdgeKey = (edge: { from: string; to: string }) => `${edge.from}->${edge.to}`
 
   it('holds the way round the words are read', () => {
-    const settled = new Map(to.edges.map((edge) => [getEdgeKey(edge), edge.heading]))
+    const resolved = new Map(to.edges.map((edge) => [getEdgeKey(edge), edge.heading]))
 
     // A child promoted to the focus swings its edge across the page, and
     // halfway over it runs the other way round from the way it ends.
@@ -235,7 +235,7 @@ describe('the title a line carries while the picture moves', () => {
 
     for (let t = 0.05; t < 1; t += 0.05) {
       for (const edge of interpolatePlex(from, to, t).edges) {
-        const heading = settled.get(getEdgeKey(edge))
+        const heading = resolved.get(getEdgeKey(edge))
         if (heading === undefined) continue
         expect(edge.heading, `${getEdgeKey(edge)} at ${t.toFixed(2)}`).toBe(heading)
       }
@@ -259,12 +259,12 @@ describe('the title a line carries while the picture moves', () => {
 
     const start = arrangeWithLabels(before)
     const end = arrangeWithLabels(after)
-    const cut = end.edges.find((e) => e.to === 'a')!.words!
-    expect(cut.endsWith('…')).toBe(true)
+    const trimmed = end.edges.find((e) => e.to === 'a')!.words!
+    expect(trimmed.endsWith('…')).toBe(true)
 
     for (let t = 0.05; t < 1; t += 0.05) {
       const edge = interpolatePlex(start, end, t).edges.find((e) => e.to === 'a')!
-      expect(edge.words, `at ${t.toFixed(2)}`).toBe(cut)
+      expect(edge.words, `at ${t.toFixed(2)}`).toBe(trimmed)
     }
   })
 
@@ -300,7 +300,7 @@ describe('the title a line carries while the picture moves', () => {
 
     const start = arrangeWithTitles(before)
     const end = arrangeWithTitles(fanned)
-    const settled = new Map(end.edges.map((edge) => [getEdgeKey(edge), edge.wordsAt]))
+    const resolved = new Map(end.edges.map((edge) => [getEdgeKey(edge), edge.wordsAt]))
 
     // Some of the lines out of one node had to move their titles to stand
     // clear, and those are the ones a movement could set crawling.
@@ -308,7 +308,7 @@ describe('the title a line carries while the picture moves', () => {
 
     for (let t = 0.05; t < 1; t += 0.05) {
       for (const edge of interpolatePlex(start, end, t).edges) {
-        const at = settled.get(getEdgeKey(edge))
+        const at = resolved.get(getEdgeKey(edge))
         if (at === undefined) continue
         expect(edge.wordsAt, `${getEdgeKey(edge)} at ${t.toFixed(2)}`).toBe(at)
       }

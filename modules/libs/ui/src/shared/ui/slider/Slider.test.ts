@@ -36,7 +36,7 @@ const handle = (control: ReturnType<typeof mountSlider>) => control.get('[role="
 
 /** Every value the control has handed on, in the order it handed them on. */
 const getEmitted = (control: ReturnType<typeof mountSlider>): readonly unknown[] =>
-  (control.emitted('update:modelValue') ?? []).map((said) => (said as unknown[])[0])
+  (control.emitted('update:modelValue') ?? []).map((response) => (response as unknown[])[0])
 
 describe('what a screen reader is told', () => {
   it('is one handle standing at a value, between the two ends', async () => {

@@ -137,15 +137,15 @@ describe('findSpacing', () => {
   })
 
   it('asks about the focus gap before either of the others', () => {
-    const asked: (keyof Spacing)[] = []
-    const set = spacingAsSet(options)
+    const request: (keyof Spacing)[] = []
+    const activeSet = spacingAsSet(options)
     findSpacing(options, (spacing) => {
       for (const key of ['focusGap', 'lineGap', 'gap'] as const) {
-        if (spacing[key] !== set[key] && !asked.includes(key)) asked.push(key)
+        if (spacing[key] !== activeSet[key] && !request.includes(key)) request.push(key)
       }
       return true
     })
-    expect(asked).toStrictEqual(['focusGap', 'lineGap', 'gap'])
+    expect(request).toStrictEqual(['focusGap', 'lineGap', 'gap'])
   })
 
   it('asks every time against the window the options give', () => {
@@ -164,36 +164,36 @@ describe('findSpacing', () => {
   })
 
   it('asks nothing at all at a spread of one', () => {
-    let asked = 0
+    let request = 0
     findSpacing({ ...options, spread: 1 }, () => {
-      asked++
+      request++
       return true
     })
-    expect(asked).toBe(0)
+    expect(request).toBe(0)
   })
 
   describe('how closely the widest opening is found', () => {
     const wideOptions = { ...options, spread: 3 }
-    const set = spacingAsSet(wideOptions)
+    const activeSet = spacingAsSet(wideOptions)
 
     /** An arrangement that fits while no gap is opened past `limit` times its setting. */
     const fitsUpTo =
       (limit: number) =>
       (spacing: Spacing): boolean =>
-        spacing.gap <= set.gap * limit &&
-        spacing.lineGap <= set.lineGap * limit &&
-        spacing.focusGap <= set.focusGap * limit
+        spacing.gap <= activeSet.gap * limit &&
+        spacing.lineGap <= activeSet.lineGap * limit &&
+        spacing.focusGap <= activeSet.focusGap * limit
 
     it('lands within a 256th of the range below the limit', () => {
       const found = findSpacing(wideOptions, fitsUpTo(1.5))
       for (const key of ['gap', 'lineGap', 'focusGap'] as const) {
-        expect(found[key]).toBeLessThanOrEqual(set[key] * 1.5)
-        expect(found[key]).toBeGreaterThanOrEqual(set[key] * (1.5 - 2 / 256))
+        expect(found[key]).toBeLessThanOrEqual(activeSet[key] * 1.5)
+        expect(found[key]).toBeGreaterThanOrEqual(activeSet[key] * (1.5 - 2 / 256))
       }
     })
 
     it('stops short of a limit that lies inside the last step', () => {
-      expect(findSpacing(wideOptions, fitsUpTo(1 + 1 / 256))).toStrictEqual(set)
+      expect(findSpacing(wideOptions, fitsUpTo(1 + 1 / 256))).toStrictEqual(activeSet)
     })
   })
 })

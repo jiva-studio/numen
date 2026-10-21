@@ -142,9 +142,9 @@ describe('asking for a menu from the keyboard', () => {
     await plex.get('[aria-label^="A node"]').trigger('keydown', press('F10', true))
     await plex.get(`[aria-label^="${A_CHILD}"]`).trigger('keydown', press('ContextMenu'))
 
-    const asked = plex.emitted('menu') as [string, unknown, unknown][]
-    expect(asked).toHaveLength(2)
-    expect(asked[0]?.[0]).toBe('focus')
+    const request = plex.emitted('menu') as [string, unknown, unknown][]
+    expect(request).toHaveLength(2)
+    expect(request[0]?.[0]).toBe('focus')
   })
 
   // A keypress has nowhere of its own to point, so it points at the middle of

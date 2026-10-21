@@ -84,9 +84,9 @@ const conversation =
         let at = 0
         tick = setInterval(() => {
           at = Math.min(reply.length, at + 3)
-          const done = at === reply.length
-          putTurn(id, reply.slice(0, at), done)
-          if (done) settle()
+          const isDone = at === reply.length
+          putTurn(id, reply.slice(0, at), isDone)
+          if (isDone) settle()
         }, 16)
       }
 

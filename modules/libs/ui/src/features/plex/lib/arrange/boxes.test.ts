@@ -41,16 +41,16 @@ describe('the room a node takes', () => {
 
 describe('the steps a title is tried in', () => {
   const record = (from: number, to: number, step: number) => {
-    const asked: [number, number][] = []
+    const request: [number, number][] = []
     const boxes = getTitleBoxes(
       (a, b) => {
-        asked.push([a, b])
+        request.push([a, b])
         return square
       },
       { from, to },
       step,
     )
-    return { asked, boxes }
+    return { asked: request, boxes }
   }
 
   it('runs from one end to the other in even steps, and no further', () => {

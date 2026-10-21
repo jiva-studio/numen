@@ -32,9 +32,9 @@ export interface Table {
 const getAlignment = (text: string): Align[] => {
   const parts = text.replace(/^\|/, '').replace(/\|$/, '').split('|')
   return parts.map((part) => {
-    const written = part.trim()
-    const start = written.startsWith(':')
-    const end = written.endsWith(':')
+    const content = part.trim()
+    const start = content.startsWith(':')
+    const end = content.endsWith(':')
     if (start && end) return 'centre'
     if (start) return 'start'
     if (end) return 'end'
@@ -128,9 +128,9 @@ export const withColumn = (source: string): string =>
     .split('\n')
     .map((line, index) => {
       const dashes = index === 1
-      const written = line.trimEnd()
-      if (!written) return line
-      const closed = written.endsWith('|') ? written : `${written}${dashes ? '|' : ' |'}`
+      const content = line.trimEnd()
+      if (!content) return line
+      const closed = content.endsWith('|') ? content : `${content}${dashes ? '|' : ' |'}`
       return dashes ? `${closed}---|` : `${closed} |`
     })
     .join('\n')

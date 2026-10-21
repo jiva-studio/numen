@@ -279,9 +279,9 @@ describe('wikilink completion in other places of a document', () => {
 
       const result = await createWikilinkSource({ search })(getContext(doc, caret))
 
-      const chosen = choose(doc, caret, result?.options[0], result!.from)
-      expect(chosen.text).toBe('First line\nSee [[Relativity]] and more')
-      expect(chosen.caret).toBe('First line\nSee [[Relativity]]'.length)
+      const selected = choose(doc, caret, result?.options[0], result!.from)
+      expect(selected.text).toBe('First line\nSee [[Relativity]] and more')
+      expect(selected.caret).toBe('First line\nSee [[Relativity]]'.length)
     })
   })
 
@@ -350,10 +350,10 @@ describe('wikilink completion in other places of a document', () => {
       const doc = 'See [[ Quantum '
       const { option, result } = await create([], doc, createNote)
 
-      const chosen = choose(doc, doc.length, option, result!.from)
+      const selected = choose(doc, doc.length, option, result!.from)
 
-      expect(chosen.text).toBe('See [[Quantum]]')
-      expect(chosen.caret).toBe('See [[Quantum]]'.length)
+      expect(selected.text).toBe('See [[Quantum]]')
+      expect(selected.caret).toBe('See [[Quantum]]'.length)
       expect(createNote).toHaveBeenCalledWith('Quantum')
     })
   })
@@ -409,9 +409,9 @@ describe('wikilink completion in other places of a document', () => {
 
       const { result } = await ask(doc, caret)
 
-      const chosen = choose(doc, caret, result?.options[0], result!.from)
-      expect(chosen.text).toBe('First line\nSee [[Quantum#Hamiltonian]] and more')
-      expect(chosen.caret).toBe('First line\nSee [[Quantum#Hamiltonian]]'.length)
+      const selected = choose(doc, caret, result?.options[0], result!.from)
+      expect(selected.text).toBe('First line\nSee [[Quantum#Hamiltonian]] and more')
+      expect(selected.caret).toBe('First line\nSee [[Quantum#Hamiltonian]]'.length)
     })
 
     it('are linked under the heading alone where the hash opens the query', async () => {

@@ -142,10 +142,10 @@ describe('Tab', () => {
   })
 
   it('leaves the answer to the focus to whatever else answers it', () => {
-    const seen = vi.fn<(event: Event) => void>()
-    const view = open({ extensions: EditorView.domEventHandlers({ focus: seen }) })
+    const observed = vi.fn<(event: Event) => void>()
+    const view = open({ extensions: EditorView.domEventHandlers({ focus: observed }) })
     focus(view)
-    expect(seen).toHaveBeenCalledTimes(1)
+    expect(observed).toHaveBeenCalledTimes(1)
   })
 
   it('makes no change of its own while the editor already holds it', () => {

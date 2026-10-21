@@ -154,7 +154,7 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
     const cameFrom = ref<TitledNode | null>(null)
 
     /** What the application would keep: what has been made, and what is new. */
-    const made = ref<PlexNode[]>([])
+    const createdItem = ref<PlexNode[]>([])
     const links = ref<PlexEdge[]>([])
 
     const neighbourhood = computed<PlexNeighbourhood>(() => {
@@ -162,7 +162,7 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
         ? buildAround(focus.value, cameFrom.value, createCounts(args))
         : start(args)
       const here = focus.value?.id ?? base.nodes.find((n) => n.relation === 'focus')?.id
-      const mine = made.value.filter((node) =>
+      const mine = createdItem.value.filter((node) =>
         links.value.some(
           (edge) =>
             (edge.from === node.id && edge.to === here) ||
@@ -176,17 +176,17 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
     })
 
     const onActivate = (id: string) => {
-      const chosen = neighbourhood.value.nodes.find((node) => node.id === id)
-      if (!chosen) return
+      const selected = neighbourhood.value.nodes.find((node) => node.id === id)
+      if (!selected) return
       const was = neighbourhood.value.nodes.find((node) => node.relation === 'focus')
       cameFrom.value = was ? { id: was.id, title: was.title } : null
-      focus.value = { id: chosen.id, title: chosen.title }
+      focus.value = { id: selected.id, title: selected.title }
     }
 
     /** A node related beside another one, linked the way that relation is written. */
     const createRelated = (from: string, title: string, relation: PlexRelation) => {
-      const id = `made/${made.value.length}`
-      made.value = [...made.value, { id, title, relation }]
+      const id = `made/${createdItem.value.length}`
+      createdItem.value = [...createdItem.value, { id, title, relation }]
       links.value = [
         ...links.value,
         relation === 'parent' || relation === 'jump'
@@ -792,9 +792,9 @@ export const TitledLines: Story = {
 
     // Words longer than their curve are cut to it and end in an ellipsis.
     await expect(title('the minutes of the meeting')).toHaveLength(0)
-    const cut = titles.filter((text) => text.textContent!.endsWith('…'))
-    await expect(cut).toHaveLength(2)
-    await expect('the minutes of the meeting'.startsWith(cut[0]!.textContent!.slice(0, -1))).toBe(
+    const trimmed = titles.filter((text) => text.textContent!.endsWith('…'))
+    await expect(trimmed).toHaveLength(2)
+    await expect('the minutes of the meeting'.startsWith(trimmed[0]!.textContent!.slice(0, -1))).toBe(
       true,
     )
 
@@ -809,11 +809,11 @@ export const TitledLines: Story = {
     // The hand on that line lifts it, and the lifted title is painted the same
     // way on a heavier halo.
     const alongHref = halo!.querySelector('textPath')!.getAttribute('href')!
-    const drawn = canvasElement
+    const viewElement = canvasElement
       .querySelector(`defs path[id="${alongHref.slice(1)}"]`)!
       .getAttribute('d')
     const band = [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-hit')].find(
-      (line) => line.getAttribute('d') === drawn,
+      (line) => line.getAttribute('d') === viewElement,
     )
     await userEvent.hover(band!)
 
@@ -900,7 +900,7 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
     await expect(Math.abs(drawnFor - svg.getBoundingClientRect().width)).toBeLessThan(1)
   })
 
-  const drawn = titles().map((text) => ({
+  const rendered = titles().map((text) => ({
     words: text.textContent,
     letters: getLetters(text),
   }))
@@ -909,8 +909,8 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
   )
 
   const piled: string[] = []
-  for (const [at, title] of drawn.entries()) {
-    for (const other of drawn.slice(at + 1)) {
+  for (const [at, title] of rendered.entries()) {
+    for (const other of rendered.slice(at + 1)) {
       const touching = title.letters.some((letter) =>
         other.letters.some((mine) => isOverlapping(letter, mine)),
       )
@@ -918,13 +918,13 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
     }
   }
 
-  const overBoxes = drawn
+  const overBoxes = rendered
     .filter((title) =>
       title.letters.some((letter) => boxes.some((box) => isOverlapping(letter, box))),
     )
     .map((title) => title.words)
 
-  await expect(drawn.length).toBeGreaterThan(0)
+  await expect(rendered.length).toBeGreaterThan(0)
   await expect(piled).toHaveLength(0)
   await expect(overBoxes).toHaveLength(0)
 }
@@ -1041,7 +1041,7 @@ export const ArrowedLines: Story = {
       ])
 
     /** A frame, after which what was arranged on the last one can be read. */
-    const frame = () => new Promise((done) => requestAnimationFrame(() => done(null)))
+    const frame = () => new Promise((isDone) => requestAnimationFrame(() => isDone(null)))
 
     // The window is measured after the first drawing, so the plex settles on
     // its second, and the picture stands still once it has.
@@ -1072,14 +1072,14 @@ export const ArrowedLines: Story = {
     const jump = getLine('Bram Doyle, jump')
     const box = canvas.getByLabelText('Bram Doyle, jump').getBoundingClientRect()
     const head = heads().find((one) => hasPoint(one.getBoundingClientRect(), jump.end))!
-    const drawn = head.getBoundingClientRect()
+    const bounds = head.getBoundingClientRect()
     await expect(
-      hasPoint(box, new DOMPoint(drawn.x + drawn.width / 2, drawn.y + drawn.height / 2)),
+      hasPoint(box, new DOMPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)),
     ).toBe(false)
 
     // The title on that line is cut short of the head, at either end of the
     // words: neither the letters nor the halo under them reach it.
-    const clear = Math.max(drawn.width, drawn.height)
+    const clear = Math.max(bounds.width, bounds.height)
     const title = [...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label')].find(
       (text) => text.textContent!.startsWith('the oldest'),
     )!

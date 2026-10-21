@@ -98,10 +98,10 @@ const strip = (element: Element): void => {
 
 /** One reading of the text, with everything not drawn with taken out of it. */
 const pass = (html: string): string => {
-  const read = new DOMParser().parseFromString(html, 'text/html')
-  stripComments(read.body)
+  const readItem = new DOMParser().parseFromString(html, 'text/html')
+  stripComments(readItem.body)
 
-  for (const element of [...read.body.querySelectorAll('*')]) {
+  for (const element of [...readItem.body.querySelectorAll('*')]) {
     const tag = element.tagName.toLowerCase()
     if (STRUCK.has(tag)) {
       element.remove()
@@ -114,7 +114,7 @@ const pass = (html: string): string => {
     strip(element)
   }
 
-  return read.body.innerHTML
+  return readItem.body.innerHTML
 }
 
 /**

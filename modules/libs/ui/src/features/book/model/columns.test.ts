@@ -106,20 +106,20 @@ describe('how tall a column is once the text is drawn', () => {
     return text
   }
 
-  const read = (box: HTMLElement, text: HTMLElement): string => {
+  const readItem = (box: HTMLElement, text: HTMLElement): string => {
     setUp(800, 600).readColumns(box, text)
     return text.style.getPropertyValue('--book-paper')
   }
 
   it('is the whole lines of a paragraph that fit the box', () => {
-    expect(read(createArea(800, 100), createText('10px', '30px'))).toBe('90px')
+    expect(readItem(createArea(800, 100), createText('10px', '30px'))).toBe('90px')
   })
 
   it('is the whole lines of the text itself where it holds no paragraph', () => {
-    expect(read(createArea(800, 100), createText('30px'))).toBe('90px')
+    expect(readItem(createArea(800, 100), createText('30px'))).toBe('90px')
   })
 
   it('is the height of the box where the lines have no height to be read', () => {
-    expect(read(createArea(800, 100), createText('normal'))).toBe('100px')
+    expect(readItem(createArea(800, 100), createText('normal'))).toBe('100px')
   })
 })

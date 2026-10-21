@@ -59,7 +59,7 @@ const meta: Meta<Knobs> = {
   render: (args) => ({
     components: { WorkspaceLayout, Plex, Agent },
     setup() {
-      const held = ref<State>(opening())
+      const target = ref<State>(opening())
       const turns = ref<Turn[]>([...OPENING])
       const text = ref('')
       const isWorking = ref(false)
@@ -85,20 +85,20 @@ const meta: Meta<Knobs> = {
         let at = 0
         tick = setInterval(() => {
           at = Math.min(reply.length, at + 3)
-          const done = at === reply.length
+          const isDone = at === reply.length
           const index = turns.value.findIndex((turn) => turn.id === id)
           if (index >= 0) {
-            turns.value[index] = done
+            turns.value[index] = isDone
               ? { id, voice: 'answered', text: reply.slice(0, at) }
               : { id, voice: 'answered', text: reply.slice(0, at), state: 'arriving' }
           }
-          if (done) settle()
+          if (isDone) settle()
         }, 16)
       }
 
       onScopeDispose(settle)
 
-      return { held, args, turns, text, isWorking, onSubmit, TABS, PLEX, AGENT }
+      return { held: target, args, turns, text, isWorking, onSubmit, TABS, PLEX, AGENT }
     },
     template: `
       <div style="height: 100vh">

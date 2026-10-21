@@ -20,13 +20,13 @@ export interface PalettePart {
 export const getParts = (text: string, at: readonly Span[] = []): readonly PalettePart[] => {
   const runs = mergeSpans(text, at)
   const out: PalettePart[] = []
-  let read = 0
+  let readItem = 0
   for (const run of runs) {
-    if (run.from > read) out.push({ text: text.slice(read, run.from), isHit: false })
+    if (run.from > readItem) out.push({ text: text.slice(readItem, run.from), isHit: false })
     out.push({ text: text.slice(run.from, run.to), isHit: true })
-    read = run.to
+    readItem = run.to
   }
-  if (read < text.length) out.push({ text: text.slice(read), isHit: false })
+  if (readItem < text.length) out.push({ text: text.slice(readItem), isHit: false })
   return out
 }
 
@@ -35,7 +35,7 @@ export const getParts = (text: string, at: readonly Span[] = []): readonly Palet
  * no two of them touching.
  */
 const mergeSpans = (text: string, at: readonly Span[]): Span[] => {
-  const kept = at
+  const retained = at
     .map((span) => ({
       from: whole(text, clampToText(text, Math.min(span.from, span.to)), -1),
       to: whole(text, clampToText(text, Math.max(span.from, span.to)), 1),
@@ -44,7 +44,7 @@ const mergeSpans = (text: string, at: readonly Span[]): Span[] => {
     .sort((one, other) => one.from - other.from)
 
   const out: Span[] = []
-  for (const span of kept) {
+  for (const span of retained) {
     const last = out[out.length - 1]
     if (last && span.from <= last.to) {
       out[out.length - 1] = { from: last.from, to: Math.max(last.to, span.to) }

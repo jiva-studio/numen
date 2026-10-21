@@ -459,15 +459,15 @@ describe('every gesture keeps the tree canonical', () => {
   ])
 
   it('through a run of them', () => {
-    const made = createIdFactory()
+    const createdItem = createIdFactory()
     let workspace = createWorkspace(start, 'horizontal', 'a')
 
     const run: readonly ((current: Workspace) => Workspace)[] = [
-      (current) => dropTab(current, { tab: 'two', onto: 'c', side: 'bottom' }, made),
+      (current) => dropTab(current, { tab: 'two', onto: 'c', side: 'bottom' }, createdItem),
       (current) => openTab(current, 'five', 'b'),
-      (current) => dropOnEdge(current, { tab: 'three', side: 'left' }, made),
+      (current) => dropOnEdge(current, { tab: 'three', side: 'left' }, createdItem),
       (current) => closeTab(current, 'four'),
-      (current) => dropTab(current, { tab: 'one', onto: 'b', side: 'center' }, made),
+      (current) => dropTab(current, { tab: 'one', onto: 'b', side: 'center' }, createdItem),
       (current) => closeTab(current, 'five'),
       (current) => closeTab(current, 'two'),
     ]

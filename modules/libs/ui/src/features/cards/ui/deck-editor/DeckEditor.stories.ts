@@ -347,8 +347,8 @@ const meta: Meta<Knobs> = {
         wrong,
         onAdd: (stencil: string) => {
           const id = `made00000${cards.value.length}`
-          const cut = cuts.value.find((each) => each.name === stencil)
-          const filled = getBlanks(getDeclaredFields(cut?.fields ?? []))
+          const trimmed = cuts.value.find((each) => each.name === stencil)
+          const filled = getBlanks(getDeclaredFields(trimmed?.fields ?? []))
           cards.value = [...cards.value, { id, section: lastSection(), stencil, filled }]
         },
         onRemove: (id: string) => {
@@ -421,15 +421,15 @@ const moveCard = (
   id: string,
   at: InsertionPoint,
 ): readonly DeckCard[] => {
-  const held = cards.find((card) => card.id === id)
-  if (!held) return cards
+  const card = cards.find((card) => card.id === id)
+  if (!card) return cards
   const left = cards.filter((card) => card.id !== id)
 
-  if (at === HEAD) return [{ ...held, section: null }, ...left]
+  if (at === HEAD) return [{ ...card, section: null }, ...left]
 
   const before = at === null ? -1 : left.findIndex((card) => card.id === at)
   if (before !== -1) {
-    const underItem = { ...held, section: left[before]?.section ?? null }
+    const underItem = { ...card, section: left[before]?.section ?? null }
     return [...left.slice(0, before), underItem, ...left.slice(before)]
   }
 
@@ -437,13 +437,13 @@ const moveCard = (
     section === null ? 0 : sections.findIndex((each) => each.id === section) + 1
 
   if (at === null) {
-    return [...left, { ...held, section: sections.at(-1)?.id ?? null }]
+    return [...left, { ...card, section: sections.at(-1)?.id ?? null }]
   }
   if (!sections.some((each) => each.id === at)) return cards
 
   const seat = left.findIndex((card) => rank(card.section) >= rank(at))
   const where = seat === -1 ? left.length : seat
-  return [...left.slice(0, where), { ...held, section: at }, ...left.slice(where)]
+  return [...left.slice(0, where), { ...card, section: at }, ...left.slice(where)]
 }
 
 export default meta
@@ -463,11 +463,11 @@ export const ADeck: Story = {
     await userEvent.click(found(canvasElement, '[data-cut="Word"]'))
 
     const tiles = [...canvasElement.querySelectorAll('[data-card]')]
-    const made = tiles[tiles.length - 1]
+    const createdItem = tiles[tiles.length - 1]
 
     // Every field the stencil declares is placed under its own name, the first
     // included, and all of them stand empty.
-    const boxes = [...(made?.querySelectorAll<HTMLTextAreaElement>('textarea') ?? [])]
+    const boxes = [...(createdItem?.querySelectorAll<HTMLTextAreaElement>('textarea') ?? [])]
     expect(boxes.map((box) => box.getAttribute('data-value'))).toEqual([
       'Word',
       'Meaning',
@@ -504,8 +504,8 @@ export const InSections: Story = {
 
     // What a person reaches for is the name and the way to be rid of it. It is
     // as wide as the two of them, and the line either side is the rule's.
-    const held = found(canvasElement, '[data-section-head="roots"] .section-heading__held')
-    expect(held.getBoundingClientRect().width).toBeLessThan(
+    const element = found(canvasElement, '[data-section-head="roots"] .section-heading__held')
+    expect(element.getBoundingClientRect().width).toBeLessThan(
       leaves.getBoundingClientRect().width / 3,
     )
 
@@ -516,7 +516,7 @@ export const InSections: Story = {
     expect(actions.getBoundingClientRect().width).toBe(0)
 
     found(canvasElement, '[data-section-head="roots"] input').focus()
-    const drawn = found(
+    const rendered = found(
       canvasElement,
       '[data-section-head="roots"] .remove-button',
     ).getBoundingClientRect()
@@ -525,8 +525,8 @@ export const InSections: Story = {
       '[data-section-head="roots"] .divider__held',
     ).getBoundingClientRect()
     expect(actions.getBoundingClientRect().width).toBeGreaterThan(0)
-    expect(drawn.right).toBeLessThanOrEqual(Math.ceil(rule.right))
-    expect(drawn.left).toBeGreaterThanOrEqual(Math.floor(rule.left))
+    expect(rendered.right).toBeLessThanOrEqual(Math.ceil(rule.right))
+    expect(rendered.left).toBeGreaterThanOrEqual(Math.floor(rule.left))
 
     // Each card is placed under the section it is in, and the ones before the
     // first stand under none.
@@ -535,9 +535,9 @@ export const InSections: Story = {
 
     // A section made at the end, under a name nothing has taken.
     await userEvent.click(found(canvasElement, '[data-add-section]'))
-    const made = [...canvasElement.querySelectorAll('[data-section-head]')]
-    expect(made).toHaveLength(3)
-    expect(made[2]?.querySelector('input')?.value).toBe('Section 1')
+    const createdItem = [...canvasElement.querySelectorAll('[data-section-head]')]
+    expect(createdItem).toHaveLength(3)
+    expect(createdItem[2]?.querySelector('input')?.value).toBe('Section 1')
 
     // Taking a section away takes away its heading and nothing else: its cards
     // stand under the heading above them now.
@@ -591,9 +591,9 @@ export const NothingAtAll: Story = {
 
     // It is a tile like the cards are: a dashed outline, drawn no smaller than
     // a card, and as wide as the column it stands in.
-    const drawn = getComputedStyle(plus)
-    expect(drawn.borderTopStyle).toBe('dashed')
-    expect(Number.parseFloat(drawn.borderTopWidth)).toBeGreaterThan(0)
+    const rendered = getComputedStyle(plus)
+    expect(rendered.borderTopStyle).toBe('dashed')
+    expect(Number.parseFloat(rendered.borderTopWidth)).toBeGreaterThan(0)
 
     const at = plus.getBoundingClientRect()
     expect(at.height).toBeGreaterThan(64)
@@ -643,9 +643,9 @@ export const WhatIsWrongWithACard: Story = {
 }
 
 const found = (canvas: HTMLElement, selector: string): HTMLElement => {
-  const held = canvas.querySelector<HTMLElement>(selector)
-  if (!held) throw new Error(`nothing matching ${selector}`)
-  return held
+  const element = canvas.querySelector<HTMLElement>(selector)
+  if (!element) throw new Error(`nothing matching ${selector}`)
+  return element
 }
 
 /** Every tile is the size of the fullest of them, and nothing inside one scrolls. */

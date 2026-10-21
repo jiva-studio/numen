@@ -77,18 +77,18 @@ const getPoint = (edge: EdgeCurve, t: number): Position => {
   const leaving = back * back * back
   const first = 3 * back * back * t
   const second = 3 * back * t * t
-  const arriving = t * t * t
+  const incoming = t * t * t
   return {
     x:
       leaving * edge.fromPoint.x +
       first * edge.control1.x +
       second * edge.control2.x +
-      arriving * edge.toPoint.x,
+      incoming * edge.toPoint.x,
     y:
       leaving * edge.fromPoint.y +
       first * edge.control1.y +
       second * edge.control2.y +
-      arriving * edge.toPoint.y,
+      incoming * edge.toPoint.y,
   }
 }
 
@@ -148,16 +148,16 @@ const getTangent = (edge: EdgeCurve, t: number): Position => {
   const back = 1 - t
   const leaving = 3 * back * back
   const middle = 6 * back * t
-  const arriving = 3 * t * t
+  const incoming = 3 * t * t
   return {
     x:
       leaving * (edge.control1.x - edge.fromPoint.x) +
       middle * (edge.control2.x - edge.control1.x) +
-      arriving * (edge.toPoint.x - edge.control2.x),
+      incoming * (edge.toPoint.x - edge.control2.x),
     y:
       leaving * (edge.control1.y - edge.fromPoint.y) +
       middle * (edge.control2.y - edge.control1.y) +
-      arriving * (edge.toPoint.y - edge.control2.y),
+      incoming * (edge.toPoint.y - edge.control2.y),
   }
 }
 

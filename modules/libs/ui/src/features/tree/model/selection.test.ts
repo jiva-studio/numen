@@ -19,13 +19,13 @@ const ROWS = ['a', 'b', 'c', 'd'].map(createRow)
 
 /** The selection the owner holds, changed only by what it is told. */
 function createOwner(initial: readonly RowId[] = []) {
-  let held = initial
+  let target = initial
   const select = vi.fn<(rows: readonly RowId[]) => void>((rows) => {
-    held = rows
+    target = rows
   })
   const state = useRowSelection(
     () => ROWS,
-    () => held,
+    () => target,
     select,
   )
   return { state, select }

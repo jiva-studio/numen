@@ -141,8 +141,8 @@ describe('a change on its way', () => {
 
 describe('a change that puts nothing in', () => {
   it('marks the stretch it takes out, and there is nothing to show', () => {
-    const gone: EditorChange = { id: 'a', from: 4, to: 8, text: '' }
-    expect(getDrawn(createMarkedState('the cat sat', gone))).toEqual([
+    const removed: EditorChange = { id: 'a', from: 4, to: 8, text: '' }
+    expect(getDrawn(createMarkedState('the cat sat', removed))).toEqual([
       { from: 4, to: 8, mark: 'cm-changing' },
     ])
   })
@@ -182,8 +182,8 @@ describe('a change whose text has arrived', () => {
   })
 
   it('goes back to the mark when the text is typed away from under it', () => {
-    const shown = getStateAt(createMarkedState(DOC, CHANGE), CHANGE, 0.4)
-    const typed = shown.update({ changes: { from: 5, to: 6, insert: 'i' } }).state
+    const displayed = getStateAt(createMarkedState(DOC, CHANGE), CHANGE, 0.4)
+    const typed = displayed.update({ changes: { from: 5, to: 6, insert: 'i' } }).state
     expect(getDrawn(typed)).toEqual([{ from: 4, to: 15, mark: 'cm-changing' }])
   })
 })
@@ -259,9 +259,9 @@ describe('the showing, setReveal by the clock', () => {
     const { world, view } = wound()
     for (const now of [0, 220, 440, 660, 880]) world.tick(now)
 
-    const settled = getDrawn(view.state)
+    const resolved = getDrawn(view.state)
     world.tick(1100)
-    expect(getDrawn(view.state)).toEqual(settled)
+    expect(getDrawn(view.state)).toEqual(resolved)
 
     view.destroy()
   })
@@ -278,14 +278,14 @@ describe('the showing, setReveal by the clock', () => {
 /** A clock that keeps every frame it was asked for, and what it was told to cancel. */
 const createLedgerClock = () => {
   const waiting = new Map<number, (now: number) => void>()
-  const asked: ((now: number) => void)[] = []
+  const request: ((now: number) => void)[] = []
   const cancelled: unknown[] = []
   const clock: Clock = {
     now: () => 0,
     schedule: (run) => {
-      asked.push(run)
-      waiting.set(asked.length, run)
-      return asked.length
+      request.push(run)
+      waiting.set(request.length, run)
+      return request.length
     },
     cancel: (handle) => {
       cancelled.push(handle)
@@ -305,7 +305,7 @@ const createLedgerClock = () => {
       run(now)
     },
     /** Hand a frame that was asked for earlier, waiting or not. */
-    fire: (index: number, now: number) => asked[index]?.(now),
+    fire: (index: number, now: number) => request[index]?.(now),
   }
 }
 

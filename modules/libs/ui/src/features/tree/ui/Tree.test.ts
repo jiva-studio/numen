@@ -136,35 +136,35 @@ describe('what is drawn', () => {
   })
 
   it('is nothing a shut row holds', () => {
-    const held = mountTree({ open: [] })
-    expect(getDrawnRows(held)).toStrictEqual(['work', 'empty', 'loose'])
-    expect(held.text()).not.toContain('Plans')
+    const target = mountTree({ open: [] })
+    expect(getDrawnRows(target)).toStrictEqual(['work', 'empty', 'loose'])
+    expect(target.text()).not.toContain('Plans')
   })
 
   it('says how deep each row remains, and whether it is open', () => {
-    const held = mountTree()
-    expect(getRow(held, 'plans').attributes('aria-level')).toBe('2')
-    expect(getRow(held, 'work').attributes('aria-expanded')).toBe('true')
-    expect(getRow(held, 'plans').attributes('aria-expanded')).toBe('false')
+    const target = mountTree()
+    expect(getRow(target, 'plans').attributes('aria-level')).toBe('2')
+    expect(getRow(target, 'work').attributes('aria-expanded')).toBe('true')
+    expect(getRow(target, 'plans').attributes('aria-expanded')).toBe('false')
   })
 
   it('says nothing about opening a row that cannot hold', () => {
-    const held = mountTree()
-    expect(getRow(held, 'loose').attributes('aria-expanded')).toBeUndefined()
+    const target = mountTree()
+    expect(getRow(target, 'loose').attributes('aria-expanded')).toBeUndefined()
   })
 
   it('says it holds a selection of several, and which rows are in it', () => {
-    const held = mountTree({ selected: ['work', 'notes'] })
+    const target = mountTree({ selected: ['work', 'notes'] })
 
-    expect(held.get('[role="tree"]').attributes('aria-multiselectable')).toBe('true')
-    expect(getRow(held, 'work').attributes('aria-selected')).toBe('true')
-    expect(getRow(held, 'notes').attributes('aria-selected')).toBe('true')
-    expect(getRow(held, 'plans').attributes('aria-selected')).toBe('false')
+    expect(target.get('[role="tree"]').attributes('aria-multiselectable')).toBe('true')
+    expect(getRow(target, 'work').attributes('aria-selected')).toBe('true')
+    expect(getRow(target, 'notes').attributes('aria-selected')).toBe('true')
+    expect(getRow(target, 'plans').attributes('aria-selected')).toBe('false')
   })
 
   it('offers the keyboard one row of the tree', () => {
-    const held = mountTree({ selected: ['notes'] })
-    const reachable = held
+    const target = mountTree({ selected: ['notes'] })
+    const reachable = target
       .findAll('[data-tree-row]')
       .filter((row) => row.attributes('tabindex') === '0')
     expect(reachable).toHaveLength(1)
@@ -172,69 +172,69 @@ describe('what is drawn', () => {
   })
 
   it('is what the caller says when there is nothing to draw', () => {
-    const held = mountTree({ rows: [] }, { silence: '<i class="mine">No rows</i>' })
-    expect(getDrawnRows(held)).toStrictEqual([])
-    expect(held.find('.mine').text()).toBe('No rows')
+    const target = mountTree({ rows: [] }, { silence: '<i class="mine">No rows</i>' })
+    expect(getDrawnRows(target)).toStrictEqual([])
+    expect(target.find('.mine').text()).toBe('No rows')
   })
 })
 
 describe('a press', () => {
   it('selects the row', async () => {
-    const held = mountTree()
-    await press(held, 'notes')
-    expect(held.emitted('select')).toStrictEqual([[['notes']]])
+    const target = mountTree()
+    await press(target, 'notes')
+    expect(target.emitted('select')).toStrictEqual([[['notes']]])
   })
 
   it('selects nothing where the row is the selection already', async () => {
-    const held = mountTree({ selected: ['notes'] })
-    await press(held, 'notes')
-    expect(held.emitted('select')).toBeUndefined()
+    const target = mountTree({ selected: ['notes'] })
+    await press(target, 'notes')
+    expect(target.emitted('select')).toBeUndefined()
   })
 
   it('collapses a selection of several onto the row it landed on', async () => {
-    const held = mountTree({ selected: ['work', 'notes'] })
-    await press(held, 'notes')
-    expect(held.emitted('select')).toStrictEqual([[['notes']]])
+    const target = mountTree({ selected: ['work', 'notes'] })
+    await press(target, 'notes')
+    expect(target.emitted('select')).toStrictEqual([[['notes']]])
   })
 
   it('takes a row into the selection, joined', async () => {
-    const held = mountTree({ selected: ['work'] })
-    await press(held, 'notes', { ctrlKey: true })
-    expect(held.emitted('select')).toStrictEqual([[['work', 'notes']]])
+    const target = mountTree({ selected: ['work'] })
+    await press(target, 'notes', { ctrlKey: true })
+    expect(target.emitted('select')).toStrictEqual([[['work', 'notes']]])
   })
 
   it('takes a row out of the selection it remains in, joined', async () => {
-    const held = mountTree({ selected: ['work', 'notes'] })
-    await press(held, 'notes', { metaKey: true })
-    expect(held.emitted('select')).toStrictEqual([[['work']]])
+    const target = mountTree({ selected: ['work', 'notes'] })
+    await press(target, 'notes', { metaKey: true })
+    expect(target.emitted('select')).toStrictEqual([[['work']]])
   })
 
   it('reaches from where the last plain press landed', async () => {
-    const held = mountTree()
-    await press(held, 'work')
-    await press(held, 'notes', { shiftKey: true })
+    const target = mountTree()
+    await press(target, 'work')
+    await press(target, 'notes', { shiftKey: true })
 
-    expect(held.emitted('select')?.at(-1)).toStrictEqual([['work', 'plans', 'notes']])
+    expect(target.emitted('select')?.at(-1)).toStrictEqual([['work', 'plans', 'notes']])
   })
 
   it('says the selection once for a press with a modifier', async () => {
-    const held = mountTree({ selected: ['work'] })
-    await press(held, 'notes', { ctrlKey: true })
-    expect(held.emitted('select')).toHaveLength(1)
+    const target = mountTree({ selected: ['work'] })
+    await press(target, 'notes', { ctrlKey: true })
+    expect(target.emitted('select')).toHaveLength(1)
   })
 
   it('twice on a row that holds turns it', async () => {
-    const held = mountTree()
-    await getRow(held, 'plans').trigger('dblclick')
+    const target = mountTree()
+    await getRow(target, 'plans').trigger('dblclick')
 
-    expect(held.emitted('open')).toStrictEqual([['plans']])
+    expect(target.emitted('open')).toStrictEqual([['plans']])
   })
 
   it('twice on an open row shuts it', async () => {
-    const held = mountTree()
-    await getRow(held, 'work').trigger('dblclick')
+    const target = mountTree()
+    await getRow(target, 'work').trigger('dblclick')
 
-    expect(held.emitted('close')).toStrictEqual([['work']])
+    expect(target.emitted('close')).toStrictEqual([['work']])
   })
 })
 
@@ -243,299 +243,299 @@ describe('the keyboard', () => {
     getRow(wrapper, row).trigger('keydown', { key, ...over })
 
   it('moves the selection a row at a time', async () => {
-    const held = mountTree({ selected: ['work'] })
-    await pressKey(held, 'work', 'ArrowDown')
-    expect(held.emitted('select')).toStrictEqual([[['plans']]])
+    const target = mountTree({ selected: ['work'] })
+    await pressKey(target, 'work', 'ArrowDown')
+    expect(target.emitted('select')).toStrictEqual([[['plans']]])
   })
 
   it('extends the selection from the anchor with an arrow retained down', async () => {
-    const held = mountTree({ selected: ['work'] })
-    await press(held, 'work')
-    await pressKey(held, 'work', 'ArrowDown', { shiftKey: true })
+    const target = mountTree({ selected: ['work'] })
+    await press(target, 'work')
+    await pressKey(target, 'work', 'ArrowDown', { shiftKey: true })
 
-    expect(held.emitted('select')?.at(-1)).toStrictEqual([['work', 'plans']])
+    expect(target.emitted('select')?.at(-1)).toStrictEqual([['work', 'plans']])
   })
 
   it('opens a shut row with the right arrow, and moves the selection nowhere', async () => {
-    const held = mountTree({ selected: ['plans'] })
-    await pressKey(held, 'plans', 'ArrowRight')
+    const target = mountTree({ selected: ['plans'] })
+    await pressKey(target, 'plans', 'ArrowRight')
 
-    expect(held.emitted('open')).toStrictEqual([['plans']])
-    expect(held.emitted('select')).toBeUndefined()
+    expect(target.emitted('open')).toStrictEqual([['plans']])
+    expect(target.emitted('select')).toBeUndefined()
   })
 
   it('shuts an open row with the left arrow', async () => {
-    const held = mountTree({ selected: ['work'] })
-    await pressKey(held, 'work', 'ArrowLeft')
-    expect(held.emitted('close')).toStrictEqual([['work']])
+    const target = mountTree({ selected: ['work'] })
+    await pressKey(target, 'work', 'ArrowLeft')
+    expect(target.emitted('close')).toStrictEqual([['work']])
   })
 
   it('climbs to the holder from a row that is shut', async () => {
-    const held = mountTree({ selected: ['notes'] })
-    await pressKey(held, 'notes', 'ArrowLeft')
+    const target = mountTree({ selected: ['notes'] })
+    await pressKey(target, 'notes', 'ArrowLeft')
 
-    expect(held.emitted('select')).toStrictEqual([[['work']]])
-    expect(held.emitted('close')).toBeUndefined()
+    expect(target.emitted('select')).toStrictEqual([[['work']]])
+    expect(target.emitted('close')).toBeUndefined()
   })
 
   it('selects every row that is drawn', async () => {
-    const held = mountTree()
-    await pressKey(held, 'notes', 'a', { ctrlKey: true })
+    const target = mountTree()
+    await pressKey(target, 'notes', 'a', { ctrlKey: true })
 
-    expect(held.emitted('select')).toStrictEqual([[['work', 'plans', 'notes', 'empty', 'loose']]])
+    expect(target.emitted('select')).toStrictEqual([[['work', 'plans', 'notes', 'empty', 'loose']]])
   })
 
   it('asks for the whole selection to go', async () => {
-    const held = mountTree({ selected: ['work', 'notes'] })
-    await pressKey(held, 'notes', 'Delete')
-    await pressKey(held, 'notes', 'Backspace')
+    const target = mountTree({ selected: ['work', 'notes'] })
+    await pressKey(target, 'notes', 'Delete')
+    await pressKey(target, 'notes', 'Backspace')
 
-    expect(held.emitted('remove')).toStrictEqual([[['work', 'notes']], [['work', 'notes']]])
+    expect(target.emitted('remove')).toStrictEqual([[['work', 'notes']], [['work', 'notes']]])
   })
 
   it('asks for nothing to go while nothing is selected', async () => {
-    const held = mountTree()
-    await pressKey(held, 'notes', 'Delete')
-    expect(held.emitted('remove')).toBeUndefined()
+    const target = mountTree()
+    await pressKey(target, 'notes', 'Delete')
+    expect(target.emitted('remove')).toBeUndefined()
   })
 
   it('puts the row the keyboard relies on into the selection', async () => {
-    const held = mountTree({ selected: ['work'] })
-    await getRow(held, 'notes').trigger('focus')
-    await pressKey(held, 'notes', ' ')
+    const target = mountTree({ selected: ['work'] })
+    await getRow(target, 'notes').trigger('focus')
+    await pressKey(target, 'notes', ' ')
 
-    expect(held.emitted('select')).toStrictEqual([[['work', 'notes']]])
+    expect(target.emitted('select')).toStrictEqual([[['work', 'notes']]])
   })
 
   it('takes that row out again where it already stood in it', async () => {
-    const held = mountTree({ selected: ['work', 'notes'] })
-    await getRow(held, 'notes').trigger('focus')
-    await pressKey(held, 'notes', ' ')
+    const target = mountTree({ selected: ['work', 'notes'] })
+    await getRow(target, 'notes').trigger('focus')
+    await pressKey(target, 'notes', ' ')
 
-    expect(held.emitted('select')).toStrictEqual([[['work']]])
+    expect(target.emitted('select')).toStrictEqual([[['work']]])
   })
 
   // A space the tree lets by is a space the pane it stands in scrolls under.
   it('keeps the space to itself', () => {
-    const held = mountTree({ selected: ['work'] })
+    const target = mountTree({ selected: ['work'] })
     const press = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })
-    getRow(held, 'notes').element.dispatchEvent(press)
+    getRow(target, 'notes').element.dispatchEvent(press)
 
     expect(press.defaultPrevented).toBe(true)
   })
 
   it('acts on a row that cannot hold, and opens nothing', async () => {
-    const held = mountTree({ selected: ['notes'] })
-    await pressKey(held, 'notes', 'Enter')
+    const target = mountTree({ selected: ['notes'] })
+    await pressKey(target, 'notes', 'Enter')
 
-    expect(held.emitted('activate')).toStrictEqual([['notes']])
-    expect(held.emitted('open')).toBeUndefined()
+    expect(target.emitted('activate')).toStrictEqual([['notes']])
+    expect(target.emitted('open')).toBeUndefined()
   })
 
   it('turns a row that holds as it acts on it', async () => {
-    const held = mountTree({ selected: ['plans'] })
-    await pressKey(held, 'plans', 'Enter')
+    const target = mountTree({ selected: ['plans'] })
+    await pressKey(target, 'plans', 'Enter')
 
-    expect(held.emitted('activate')).toStrictEqual([['plans']])
-    expect(held.emitted('open')).toStrictEqual([['plans']])
+    expect(target.emitted('activate')).toStrictEqual([['plans']])
+    expect(target.emitted('open')).toStrictEqual([['plans']])
   })
 
   it('reaches the menu the pointer reaches', async () => {
-    const held = mountTree({ selected: ['notes'] })
-    await pressKey(held, 'notes', 'F10', { shiftKey: true })
+    const target = mountTree({ selected: ['notes'] })
+    await pressKey(target, 'notes', 'F10', { shiftKey: true })
 
-    expect(held.emitted('menu')).toStrictEqual([['notes', { x: 0, y: 3 * HEIGHT }]])
+    expect(target.emitted('menu')).toStrictEqual([['notes', { x: 0, y: 3 * HEIGHT }]])
   })
 })
 
 describe('a menu requested for', () => {
   it('is requested for on the row, and the selection relies on it', async () => {
-    const held = mountTree()
-    await getRow(held, 'notes').trigger('contextmenu', { clientX: 40, clientY: 60 })
+    const target = mountTree()
+    await getRow(target, 'notes').trigger('contextmenu', { clientX: 40, clientY: 60 })
 
-    expect(held.emitted('select')).toStrictEqual([[['notes']]])
-    expect(held.emitted('menu')).toStrictEqual([['notes', { x: 40, y: 60 }]])
+    expect(target.emitted('select')).toStrictEqual([[['notes']]])
+    expect(target.emitted('menu')).toStrictEqual([['notes', { x: 40, y: 60 }]])
   })
 
   it('leaves a selection of several alone where the row remains in it', async () => {
-    const held = mountTree({ selected: ['work', 'notes'] })
-    await getRow(held, 'notes').trigger('contextmenu', { clientX: 40, clientY: 60 })
+    const target = mountTree({ selected: ['work', 'notes'] })
+    await getRow(target, 'notes').trigger('contextmenu', { clientX: 40, clientY: 60 })
 
-    expect(held.emitted('select')).toBeUndefined()
+    expect(target.emitted('select')).toBeUndefined()
   })
 
   it('names no row at all, requested off every row', async () => {
-    const held = mountTree()
-    await held.get('.tree').trigger('contextmenu', { clientX: 4, clientY: 8 })
+    const target = mountTree()
+    await target.get('.tree').trigger('contextmenu', { clientX: 4, clientY: 8 })
 
-    expect(held.emitted('menu')).toStrictEqual([[null, { x: 4, y: 8 }]])
+    expect(target.emitted('menu')).toStrictEqual([[null, { x: 4, y: 8 }]])
   })
 
   it('names no row at all where there is nothing to draw', async () => {
-    const held = mountTree({ rows: [] })
-    await held.get('.tree').trigger('contextmenu', { clientX: 4, clientY: 8 })
+    const target = mountTree({ rows: [] })
+    await target.get('.tree').trigger('contextmenu', { clientX: 4, clientY: 8 })
 
-    expect(held.emitted('menu')).toStrictEqual([[null, { x: 4, y: 8 }]])
+    expect(target.emitted('menu')).toStrictEqual([[null, { x: 4, y: 8 }]])
   })
 })
 
 describe('a drag', () => {
   it('moves a row into one that holds', async () => {
-    const held = mountTree()
-    await dragTo(held, 'loose', 12)
-    expect(held.emitted('move')).toStrictEqual([[['loose'], { into: 'work' }]])
+    const target = mountTree()
+    await dragTo(target, 'loose', 12)
+    expect(target.emitted('move')).toStrictEqual([[['loose'], { into: 'work' }]])
   })
 
   it('moves a row between two others', async () => {
-    const held = mountTree()
-    await dragTo(held, 'loose', 2)
-    expect(held.emitted('move')).toStrictEqual([[['loose'], { before: 'work' }]])
+    const target = mountTree()
+    await dragTo(target, 'loose', 2)
+    expect(target.emitted('move')).toStrictEqual([[['loose'], { before: 'work' }]])
   })
 
   it('drags the whole selection, off a row standing in it', async () => {
-    const held = mountTree({ selected: ['notes', 'loose'] })
-    await dragTo(held, 'loose', 12)
+    const target = mountTree({ selected: ['notes', 'loose'] })
+    await dragTo(target, 'loose', 12)
 
-    expect(held.emitted('move')).toStrictEqual([[['notes', 'loose'], { into: 'work' }]])
-    expect(held.emitted('select')).toBeUndefined()
+    expect(target.emitted('move')).toStrictEqual([[['notes', 'loose'], { into: 'work' }]])
+    expect(target.emitted('select')).toBeUndefined()
   })
 
   it('selects a row standing outside the selection, and drags it alone', async () => {
-    const held = mountTree({ selected: ['notes'] })
-    await dragTo(held, 'loose', 12)
+    const target = mountTree({ selected: ['notes'] })
+    await dragTo(target, 'loose', 12)
 
-    expect(held.emitted('select')).toStrictEqual([[['loose']]])
-    expect(held.emitted('move')).toStrictEqual([[['loose'], { into: 'work' }]])
+    expect(target.emitted('select')).toStrictEqual([[['loose']]])
+    expect(target.emitted('move')).toStrictEqual([[['loose'], { into: 'work' }]])
   })
 
   it('is rejected into what the row holds, and does not move', async () => {
-    const held = mountTree()
-    await dragTo(held, 'work', HEIGHT + 12)
-    expect(held.emitted('move')).toBeUndefined()
+    const target = mountTree()
+    await dragTo(target, 'work', HEIGHT + 12)
+    expect(target.emitted('move')).toBeUndefined()
   })
 
   it('is rejected into what any of the rows dragged holds, and does not move', async () => {
-    const held = mountTree({ selected: ['work', 'loose'] })
-    await dragTo(held, 'loose', HEIGHT + 12)
-    expect(held.emitted('move')).toBeUndefined()
+    const target = mountTree({ selected: ['work', 'loose'] })
+    await dragTo(target, 'loose', HEIGHT + 12)
+    expect(target.emitted('move')).toBeUndefined()
   })
 
   it('takes a row to the top level, let go past the last row', async () => {
-    const held = mountTree()
-    await dragTo(held, 'work', 5 * HEIGHT - 2)
-    expect(held.emitted('move')).toStrictEqual([[['work'], { into: null }]])
+    const target = mountTree()
+    await dragTo(target, 'work', 5 * HEIGHT - 2)
+    expect(target.emitted('move')).toStrictEqual([[['work'], { into: null }]])
   })
 
   // The pointer is caught on the window, so a row let go over another pane is
   // let go somewhere the tree does not answer for.
   it('does not move let go alongside the tree', async () => {
-    const held = mountTree()
-    const from = getRow(held, 'work').element
+    const target = mountTree()
+    const from = getRow(target, 'work').element
 
-    pointer('pointerdown', getMiddle(held, 'work'), from)
+    pointer('pointerdown', getMiddle(target, 'work'), from)
     pointer('pointermove', 2 * HEIGHT, window, { clientX: 400 })
     pointer('pointerup', 2 * HEIGHT, window, { clientX: 400 })
-    await held.vm.$nextTick()
+    await target.vm.$nextTick()
 
-    expect(held.emitted('move')).toBeUndefined()
+    expect(target.emitted('move')).toBeUndefined()
   })
 
   it('does not move let go below the tree', async () => {
-    const held = mountTree()
-    await dragTo(held, 'work', 9 * HEIGHT)
+    const target = mountTree()
+    await dragTo(target, 'work', 9 * HEIGHT)
 
-    expect(held.emitted('move')).toBeUndefined()
+    expect(target.emitted('move')).toBeUndefined()
   })
 
   it('does not move where the pointer did not travel far enough', async () => {
-    const held = mountTree()
-    pointer('pointerdown', 108, getRow(held, 'loose').element)
+    const target = mountTree()
+    pointer('pointerdown', 108, getRow(target, 'loose').element)
     pointer('pointermove', 110)
     pointer('pointerup', 110)
-    await held.vm.$nextTick()
+    await target.vm.$nextTick()
 
-    expect(held.emitted('move')).toBeUndefined()
+    expect(target.emitted('move')).toBeUndefined()
   })
 
   it('leaves the press that follows it standing down', async () => {
     const world = stubClock()
-    const held = mountTree({ selected: ['loose'], clock: world.clock })
+    const target = mountTree({ selected: ['loose'], clock: world.clock })
 
-    await dragTo(held, 'loose', 12)
-    await getRow(held, 'notes').trigger('click')
+    await dragTo(target, 'loose', 12)
+    await getRow(target, 'notes').trigger('click')
 
-    expect(held.emitted('select')).toBeUndefined()
+    expect(target.emitted('select')).toBeUndefined()
 
     world.run()
-    await getRow(held, 'notes').trigger('click')
-    expect(held.emitted('select')).toStrictEqual([[['notes']]])
+    await getRow(target, 'notes').trigger('click')
+    expect(target.emitted('select')).toStrictEqual([[['notes']]])
   })
 })
 
 describe('rows dragged out of the tree', () => {
   it('says which rows are being dragged, once for the whole drag', async () => {
-    const held = mountTree({ selected: ['notes', 'loose'] })
-    const from = getRow(held, 'loose').element
+    const target = mountTree({ selected: ['notes', 'loose'] })
+    const from = getRow(target, 'loose').element
 
-    pointer('pointerdown', getMiddle(held, 'loose'), from)
+    pointer('pointerdown', getMiddle(target, 'loose'), from)
     pointer('pointermove', 3 * HEIGHT)
     pointer('pointermove', 4 * HEIGHT)
-    await held.vm.$nextTick()
+    await target.vm.$nextTick()
 
-    expect(held.emitted('drag')).toStrictEqual([[['notes', 'loose']]])
+    expect(target.emitted('drag')).toStrictEqual([[['notes', 'loose']]])
   })
 
   it('says so for a drag over another pane, where nothing in the tree is landed on', async () => {
-    const held = mountTree()
-    const from = getRow(held, 'work').element
+    const target = mountTree()
+    const from = getRow(target, 'work').element
 
-    pointer('pointerdown', getMiddle(held, 'work'), from)
+    pointer('pointerdown', getMiddle(target, 'work'), from)
     pointer('pointermove', 2 * HEIGHT, window, { clientX: 400 })
     pointer('pointerup', 2 * HEIGHT, window, { clientX: 400 })
-    await held.vm.$nextTick()
+    await target.vm.$nextTick()
 
-    expect(held.emitted('drag')).toStrictEqual([[['work']]])
-    expect(held.emitted('drop')).toStrictEqual([[]])
-    expect(held.emitted('move')).toBeUndefined()
+    expect(target.emitted('drag')).toStrictEqual([[['work']]])
+    expect(target.emitted('drop')).toStrictEqual([[]])
+    expect(target.emitted('move')).toBeUndefined()
   })
 
   it('says it has let go after saying where the rows landed', async () => {
-    const held = mountTree()
-    await dragTo(held, 'loose', 12)
+    const target = mountTree()
+    await dragTo(target, 'loose', 12)
 
-    expect(held.emitted('move')).toStrictEqual([[['loose'], { into: 'work' }]])
-    expect(held.emitted('drop')).toStrictEqual([[]])
+    expect(target.emitted('move')).toStrictEqual([[['loose'], { into: 'work' }]])
+    expect(target.emitted('drop')).toStrictEqual([[]])
   })
 
   it('drags nothing where the pointer did not travel far enough', async () => {
-    const held = mountTree()
-    pointer('pointerdown', 108, getRow(held, 'loose').element)
+    const target = mountTree()
+    pointer('pointerdown', 108, getRow(target, 'loose').element)
     pointer('pointermove', 110)
     pointer('pointerup', 110)
-    await held.vm.$nextTick()
+    await target.vm.$nextTick()
 
-    expect(held.emitted('drag')).toBeUndefined()
-    expect(held.emitted('drop')).toBeUndefined()
+    expect(target.emitted('drag')).toBeUndefined()
+    expect(target.emitted('drop')).toBeUndefined()
   })
 })
 
 describe('what follows the pointer', () => {
   it('says the name of the one row being dragged', async () => {
-    const held = mountTree()
-    pointer('pointerdown', 108, getRow(held, 'loose').element)
+    const target = mountTree()
+    pointer('pointerdown', 108, getRow(target, 'loose').element)
     pointer('pointermove', 60)
-    await held.vm.$nextTick()
+    await target.vm.$nextTick()
 
-    expect(findDragged(held).text()).toBe('Loose')
+    expect(findDragged(target).text()).toBe('Loose')
   })
 
   it('says how many are being dragged, where there are several', async () => {
-    const held = mountTree({ selected: ['notes', 'loose'] })
-    pointer('pointerdown', 108, getRow(held, 'loose').element)
+    const target = mountTree({ selected: ['notes', 'loose'] })
+    pointer('pointerdown', 108, getRow(target, 'loose').element)
     pointer('pointermove', 60)
-    await held.vm.$nextTick()
+    await target.vm.$nextTick()
 
-    expect(findDragged(held).text()).toBe('2 rows')
+    expect(findDragged(target).text()).toBe('2 rows')
   })
 
   it('says it in the words the caller gave for how many', async () => {

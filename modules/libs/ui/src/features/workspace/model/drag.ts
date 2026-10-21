@@ -93,9 +93,9 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
   const hasMoved = computed(() => dragging.value?.hasMoved === true)
   const overlay = computed(() => (hasMoved.value ? (dropTarget.value?.box ?? null) : null))
   const label = computed(() => {
-    const held = dragging.value
-    if (!held?.hasMoved) return null
-    return options.getTab(held.item.tab)?.title ?? held.item.tab
+    const target = dragging.value
+    if (!target?.hasMoved) return null
+    return options.getTab(target.item.tab)?.title ?? target.item.tab
   })
 
   function press(tab: TabId, at: PointerEvent): void {

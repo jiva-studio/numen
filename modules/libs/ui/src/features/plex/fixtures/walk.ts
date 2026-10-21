@@ -50,13 +50,13 @@ const getChildren = (id: string): string[] =>
 
 /** The other children of my parents. Worked out here, never by the plex. */
 const getSiblings = (id: string): string[] => {
-  const seen = new Set<string>()
+  const observed = new Set<string>()
   for (const parent of getParents(id)) {
     for (const child of getChildren(parent)) {
-      if (child !== id) seen.add(child)
+      if (child !== id) observed.add(child)
     }
   }
-  return [...seen]
+  return [...observed]
 }
 
 /** Everything that points at me by association, and everything I point at. */
@@ -80,7 +80,7 @@ export function createNeighbourhood(id: string): PlexNeighbourhood {
   // A node reachable two ways takes one relation, first match wins. The plex
   // refuses a neighbourhood that holds the same node twice.
   const related: PlexNode[] = []
-  const taken = new Set<string>([id])
+  const acquired = new Set<string>([id])
   for (const group of [
     createRelated(getParents(id), 'parent'),
     createRelated(getChildren(id), 'child'),
@@ -88,8 +88,8 @@ export function createNeighbourhood(id: string): PlexNeighbourhood {
     createRelated(getSiblings(id), 'sibling'),
   ]) {
     for (const node of group) {
-      if (taken.has(node.id)) continue
-      taken.add(node.id)
+      if (acquired.has(node.id)) continue
+      acquired.add(node.id)
       related.push(node)
     }
   }

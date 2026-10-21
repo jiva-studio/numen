@@ -56,29 +56,29 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
   }
 
   function drag(event: PointerEvent): void {
-    const held = dragging.value!
+    const target = dragging.value!
 
     const now: Position = { x: event.clientX, y: event.clientY }
     const hasMoved =
-      held.hasMoved ||
+      target.hasMoved ||
       Math.abs(now.x - start.x) > press.getThreshold() ||
       Math.abs(now.y - start.y) > press.getThreshold()
 
-    dragging.value = { item: held.item, hasMoved }
+    dragging.value = { item: target.item, hasMoved }
     position.value = hasMoved ? now : null
-    at.value = hasMoved ? press.getDropTargetAt(held.item, now) : null
+    at.value = hasMoved ? press.getDropTargetAt(target.item, now) : null
 
-    if (hasMoved && !held.hasMoved) press.begin?.(held.item)
+    if (hasMoved && !target.hasMoved) press.begin?.(target.item)
   }
 
   function drop(): void {
-    const held = dragging.value!
+    const target = dragging.value!
     const found = at.value
 
     detach()
     at.value = null
     position.value = null
-    if (held.hasMoved) press.commit(held.item, found)
+    if (target.hasMoved) press.commit(target.item, found)
     // Held one frame longer: the click that follows the release reads it and
     // stands down.
     press.getClock().schedule(() => {

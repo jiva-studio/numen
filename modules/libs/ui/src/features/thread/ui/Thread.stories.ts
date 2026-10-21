@@ -196,7 +196,7 @@ const dragAcross = async (from: Position, to: Position): Promise<string | null> 
     mapToFrame(from),
     mapToFrame(to),
   )
-  await new Promise((done) => setTimeout(done, 16))
+  await new Promise((isDone) => setTimeout(isDone, 16))
 
   return String(window.getSelection() ?? '')
 }
@@ -218,16 +218,16 @@ export const Selecting: Story = {
   ]),
   play: async ({ canvasElement }) => {
     const turns = canvasElement.querySelectorAll('.thread__turn')
-    const taken = await dragAcross(
+    const acquired = await dragAcross(
       getWordPosition(turns[1]!, 'damped'),
       getWordPosition(turns[3]!, 'vault'),
     )
-    if (taken === null) return
+    if (acquired === null) return
 
-    await expect(taken).toContain('the driven one')
-    await expect(taken).toContain('Then drop the rest')
-    await expect(taken).toContain('Nine notes are left in the')
-    await expect(taken).not.toContain('the harmonic one')
-    await expect(taken).not.toContain('worth keeping')
+    await expect(acquired).toContain('the driven one')
+    await expect(acquired).toContain('Then drop the rest')
+    await expect(acquired).toContain('Nine notes are left in the')
+    await expect(acquired).not.toContain('the harmonic one')
+    await expect(acquired).not.toContain('worth keeping')
   },
 }

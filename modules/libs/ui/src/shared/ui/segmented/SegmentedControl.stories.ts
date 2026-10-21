@@ -51,8 +51,8 @@ const meta: Meta<Knobs> = {
             text,
           })),
       )
-      const chosen = ref(args.chosen)
-      return { args, choices, chosen }
+      const selected = ref(args.chosen)
+      return { args, choices, chosen: selected }
     },
     template: `
       <div :style="{ padding: '2rem', inlineSize: args.width }">
@@ -215,9 +215,9 @@ export const Dark: Story = {
     const slotBg = getComputedStyle(
       canvasElement.querySelector('[data-slot="segmented"]') as HTMLElement,
     ).backgroundColor
-    const chosen = getComputedStyle(medium as HTMLElement)
-    const ground = lightness(chosen.backgroundColor, slotBg)
-    const ink = lightness(chosen.color, chosen.backgroundColor)
+    const selected = getComputedStyle(medium as HTMLElement)
+    const ground = lightness(selected.backgroundColor, slotBg)
+    const ink = lightness(selected.color, selected.backgroundColor)
 
     for (const other of [small, large]) {
       const unchosen = getComputedStyle(other as HTMLElement)

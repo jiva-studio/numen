@@ -56,10 +56,10 @@ export interface PalettePlacesOptions {
 export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesState {
   const { groups, typed } = options
   /** What is drawn, and in what order: a group holding nothing stands at the foot. */
-  const shown = computed(() => orderGroups(groups()))
+  const displayed = computed(() => orderGroups(groups()))
 
-  const places = computed(() => flatten(shown.value))
-  const placed = computed(() => placePalette(shown.value))
+  const places = computed(() => flatten(displayed.value))
+  const placed = computed(() => placePalette(displayed.value))
 
   /**
    * What is read out of a search. A group that answered with rows is read out by
@@ -67,23 +67,23 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
    * land on, so what it says in place of one is read out instead. A group still
    * working has answered nothing yet and is left alone.
    */
-  const said = computed(() =>
-    shown.value
+  const response = computed(() =>
+    displayed.value
       .filter((group) => !group.isWorking && group.items.length === 0 && group.silence)
       .map((group) => group.silence)
       .join('. '),
   )
 
   /** The item the keyboard is on, by its identity. */
-  const held = ref('')
+  const target = ref('')
 
-  const here = computed(() => places.value.findIndex((place) => place.item.id === held.value))
+  const here = computed(() => places.value.findIndex((place) => place.item.id === target.value))
 
   const lit = computed(() => places.value[here.value]?.item)
-  const offered = computed(() => lit.value?.actions ?? [])
+  const proposed = computed(() => lit.value?.actions ?? [])
 
   const goTo = (at: number): void => {
-    held.value = places.value[at]?.item.id ?? ''
+    target.value = places.value[at]?.item.id ?? ''
   }
 
   /**
@@ -102,7 +102,7 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
 
   /** A fresh question is a fresh list, and nothing in it is lit until it fills. */
   watch(typed, () => {
-    held.value = ''
+    target.value = ''
   })
 
   /**
@@ -110,18 +110,18 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
    * on. A pointer that has moved lights an item, so this is said for a pointer
    * crossing the list too.
    */
-  watch(held, (now) => options.tellLit(now), { flush: 'post' })
+  watch(target, (now) => options.tellLit(now), { flush: 'post' })
 
   /**
    * Where the pointer was. Only a pointer that has actually moved lights what
    * it is over: a list scrolling under a pointer standing still reports a move
    * too.
    */
-  let stood = { x: -1, y: -1 }
+  let status = { x: -1, y: -1 }
 
   const lightAt = (at: number, event: PointerEvent): void => {
-    if (event.clientX === stood.x && event.clientY === stood.y) return
-    stood = { x: event.clientX, y: event.clientY }
+    if (event.clientX === status.x && event.clientY === status.y) return
+    status = { x: event.clientX, y: event.clientY }
     // An item the keyboard steps over is one the pointer passes over.
     const item = places.value[at]?.item
     if (item && canChoose(item)) goTo(at)
@@ -134,5 +134,5 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
     options.tellChoice(item.id, action)
   }
 
-  return { placed, places, said, here, lit, offered, goTo, held, lightAt, chooseAt }
+  return { placed, places, said: response, here, lit, offered: proposed, goTo, held: target, lightAt, chooseAt }
 }

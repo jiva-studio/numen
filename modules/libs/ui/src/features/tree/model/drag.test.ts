@@ -39,9 +39,9 @@ afterEach(() => {
 })
 
 const setup = (measure: () => TreeMetrics | null = () => METRICS) => {
-  const told: unknown[][] = []
+  const notified: unknown[][] = []
   const tell: RowDragTell = (...args: unknown[]) => {
-    told.push(args)
+    notified.push(args)
   }
   const world = stubClock()
   scope = effectScope()
@@ -56,7 +56,7 @@ const setup = (measure: () => TreeMetrics | null = () => METRICS) => {
       tell,
     }),
   ) as RowDragState
-  return { drag, told }
+  return { drag, told: notified }
 }
 
 const pointer = (kind: string, x: number, y: number): void => {

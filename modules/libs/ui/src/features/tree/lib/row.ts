@@ -63,14 +63,14 @@ export interface ShownRow {
  * viewport is a slice of it.
  */
 export function flatten(rows: readonly Row[], open: ReadonlySet<RowId>): readonly ShownRow[] {
-  const shown: ShownRow[] = []
+  const displayed: ShownRow[] = []
 
   const walk = (children: readonly Row[], parent: RowId | null, level: number): void => {
     children.forEach((row, at) => {
       const inside = row.rows ?? []
       const isOpened = row.hasChildren && open.has(row.id)
 
-      shown.push({
+      displayed.push({
         id: row.id,
         name: row.name,
         hasChildren: row.hasChildren,
@@ -86,5 +86,5 @@ export function flatten(rows: readonly Row[], open: ReadonlySet<RowId>): readonl
   }
 
   walk(rows, null, 1)
-  return shown
+  return displayed
 }

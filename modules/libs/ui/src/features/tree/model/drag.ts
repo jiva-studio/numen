@@ -97,23 +97,23 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
 
   /** Where the pointer is, read off the drawing: the rows are one height each. */
   function getDropTargetAt(rows: readonly RowId[], where: Position): RowDropTarget | null {
-    const drawn = options.measure()
-    if (!drawn) return null
+    const rendered = options.measure()
+    if (!rendered) return null
 
     // A pointer that has left the tree is taking what it holds somewhere else.
-    const { over } = drawn
+    const { over } = rendered
     const inside =
       where.x >= over.left && where.x <= over.right && where.y >= over.top && where.y <= over.bottom
     if (!inside) return null
 
-    const shown = options.getShownRows()
-    const found = getRowDropTarget(shown, rows, {
-      y: where.y - drawn.top,
-      height: drawn.height,
+    const displayed = options.getShownRows()
+    const found = getRowDropTarget(displayed, rows, {
+      y: where.y - rendered.top,
+      height: rendered.height,
     })
     if (!found) return null
 
-    return isRefused(options.getRows(), rows, findHolder(shown, found)) ? null : found
+    return isRefused(options.getRows(), rows, findHolder(displayed, found)) ? null : found
   }
 
   return { into, before, lifted, label, hasMoved, at, lift }

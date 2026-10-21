@@ -139,15 +139,15 @@ export function getCardFieldValues(
   values: readonly FieldValue[],
   fields: readonly string[],
 ): readonly CardFieldValue[] {
-  const stood = getDeclaredFields(fields).flatMap((field) => {
-    const written = values.filter((each) => each.field === field)
-    if (!written.length) return [{ field, text: '', isDeclared: true }]
-    return written.map((each) => ({ field, text: each.text, isDeclared: true }))
+  const status = getDeclaredFields(fields).flatMap((field) => {
+    const content = values.filter((each) => each.field === field)
+    if (!content.length) return [{ field, text: '', isDeclared: true }]
+    return content.map((each) => ({ field, text: each.text, isDeclared: true }))
   })
   const stray = values
     .filter((each) => !fields.includes(each.field))
     .map((each) => ({ field: each.field, text: each.text, isDeclared: false }))
-  return [...stood, ...stray]
+  return [...status, ...stray]
 }
 
 /** The empty values a stencil's slots make, for a card nobody has typed into. */

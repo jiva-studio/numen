@@ -22,7 +22,7 @@ const NODE: PlacedNode = {
 
 /** A press on a node, and the site its reaching strategy was handed. */
 function createPress(gestureRole: GestureRole = 'open', middle: Position | null = { x: 5, y: 7 }) {
-  const said = {
+  const response = {
     activate: vi.fn<NodePressSaid['activate']>(),
     show: vi.fn<NodePressSaid['show']>(),
     reach: vi.fn<NodePressSaid['reach']>(),
@@ -31,8 +31,8 @@ function createPress(gestureRole: GestureRole = 'open', middle: Position | null 
   let site!: ReachSite
   const reaching: ReachStrategy = {
     hasHandle: false,
-    listeners: (given) => {
-      site = given
+    listeners: (provided) => {
+      site = provided
       return {}
     },
   }
@@ -41,8 +41,8 @@ function createPress(gestureRole: GestureRole = 'open', middle: Position | null 
     gestureRole,
     behaviour: { reaching, showing: byDoubleClick },
   }
-  const press = useNodePress(props, () => middle, said)
-  return { press, said, site }
+  const press = useNodePress(props, () => middle, response)
+  return { press, said: response, site }
 }
 
 const key = (name: string, over: KeyboardEventInit = {}) =>

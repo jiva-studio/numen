@@ -36,17 +36,17 @@ export function useMenuKeys(
   const here = ref(-1)
 
   /** Each item as it is drawn, each under the item it stands for. */
-  const drawn = new Map<string, RowHandle | null>()
+  const rendered = new Map<string, RowHandle | null>()
 
   const holdRow = (item: string, row: unknown): void => {
-    drawn.set(item, row as RowHandle | null)
+    rendered.set(item, row as RowHandle | null)
   }
 
   const goTo = (at: number): void => {
     here.value = at
     const item = items()[at]
-    const chosen = item ? drawn.get(item.id) : undefined
-    if (chosen) chosen.focus()
+    const selected = item ? rendered.get(item.id) : undefined
+    if (selected) selected.focus()
     else menu.value?.focus()
   }
 

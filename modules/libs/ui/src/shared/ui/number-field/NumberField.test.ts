@@ -18,7 +18,7 @@ const mountField = (props: Partial<FieldProps> = {}) =>
 
 /** Every number the field has handed on, in the order it handed them on. */
 const getEmitted = (field: ReturnType<typeof mountField>): readonly unknown[] =>
-  (field.emitted('update:modelValue') ?? []).map((said) => (said as unknown[])[0])
+  (field.emitted('update:modelValue') ?? []).map((response) => (response as unknown[])[0])
 
 describe('what is typed', () => {
   it('remains as it was typed while it is being typed', async () => {
@@ -227,7 +227,7 @@ describe('the other keys a spin button answers', () => {
 describe('leaving the field', () => {
   /** Every number the field has come to rest at, in the order it rested at them. */
   const getCommits = (field: ReturnType<typeof mountField>): readonly unknown[] =>
-    (field.emitted('commit') ?? []).map((said) => (said as unknown[])[0])
+    (field.emitted('commit') ?? []).map((response) => (response as unknown[])[0])
 
   it('says nothing where nothing was typed into it', async () => {
     const field = mountField()

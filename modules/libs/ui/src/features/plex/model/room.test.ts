@@ -154,10 +154,10 @@ describe('the headings a node hangs', () => {
   it('are requested for by the node that hangs them', () => {
     const headings = vi.fn<(id: string) => typeof HEADINGS>(() => HEADINGS)
     const { room } = mountRoom({ headings })
-    const hung = room.hung.value?.(NODE)
+    const suspended = room.hung.value?.(NODE)
     expect(headings).toHaveBeenCalledWith('one')
-    expect(hung?.headings.map((heading) => heading.id)).toStrictEqual(['a'])
-    expect(hung?.headingHeight).toBe(OPTIONS.headingHeight)
+    expect(suspended?.headings.map((heading) => heading.id)).toStrictEqual(['a'])
+    expect(suspended?.headingHeight).toBe(OPTIONS.headingHeight)
   })
 
   it('are as wide as the measuring says their words are', () => {

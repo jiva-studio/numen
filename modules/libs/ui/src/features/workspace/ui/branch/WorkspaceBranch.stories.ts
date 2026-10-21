@@ -74,11 +74,11 @@ const meta: Meta<Knobs> = {
   render: (args) => ({
     components: { WorkspaceBranch, TabStub },
     setup() {
-      const held = ref<Branch>(ARRANGEMENTS[args.arrangement]())
+      const target = ref<Branch>(ARRANGEMENTS[args.arrangement]())
 
       /** The shares the last handle settled on, written where a story can read them. */
       const resize = (branch: NodeId, sizes: readonly number[]) => {
-        held.value = resizeBranch(held.value, branch, sizes)
+        target.value = resizeBranch(target.value, branch, sizes)
       }
 
       provide(
@@ -98,7 +98,7 @@ const meta: Meta<Knobs> = {
         })),
       )
 
-      return { held, args }
+      return { held: target, args }
     },
     template: `
       <div :style="{ height: '100vh', inlineSize: args.room, padding: 0 }">

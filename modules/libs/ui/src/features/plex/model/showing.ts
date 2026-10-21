@@ -106,10 +106,10 @@ export const byDoubleTap = (within: number = TAP): ShowStrategy => ({
  * the order they were given.
  */
 export function mergeListeners(
-  ...held: Record<string, (event: PointerEvent) => void>[]
+  ...target: Record<string, (event: PointerEvent) => void>[]
 ): Record<string, (event: PointerEvent) => void> {
   const all: Record<string, ((event: PointerEvent) => void)[]> = {}
-  for (const one of held) {
+  for (const one of target) {
     for (const [name, listener] of Object.entries(one)) {
       ;(all[name] ??= []).push(listener)
     }

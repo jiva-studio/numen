@@ -122,9 +122,9 @@ describe('faceRows', () => {
   })
 
   it('carries the identity and the name each face was handed in under', () => {
-    const drawn = faceRows(FACES, FIELDS, SAMPLE)
-    expect(drawn.map((each) => each.id)).toEqual(['recognise', 'name-it'])
-    expect(drawn.map((each) => each.name)).toEqual(['Recognise', 'Name it'])
+    const rendered = faceRows(FACES, FIELDS, SAMPLE)
+    expect(rendered.map((each) => each.id)).toEqual(['recognise', 'name-it'])
+    expect(rendered.map((each) => each.name)).toEqual(['Recognise', 'Name it'])
   })
 })
 
@@ -140,9 +140,9 @@ describe('panes', () => {
     fields: readonly string[],
     sample: readonly FieldValue[],
   ) => {
-    const drawn = faceRows([face], fields, sample)[0]
-    if (!drawn) throw new Error('no face')
-    return drawn
+    const rendered = faceRows([face], fields, sample)[0]
+    if (!rendered) throw new Error('no face')
+    return rendered
   }
 
   const getFacePanes = (face: StencilFace) => getPanes(createFace(face, FIELDS, SAMPLE))
@@ -192,9 +192,9 @@ describe('panes', () => {
 
   it('calls a part blank where what is written fills out to nothing', () => {
     const face: StencilFace = { id: 'one', name: 'One', front: '{{Blank}}', back: '' }
-    const drawn = getPanes(createFace(face, ['Blank'], [{ field: 'Blank', text: '' }]))
-    expect(drawn[0]?.isBlank).toBe(false)
-    expect(drawn[1]?.isBlank).toBe(true)
+    const rendered = getPanes(createFace(face, ['Blank'], [{ field: 'Blank', text: '' }]))
+    expect(rendered[0]?.isBlank).toBe(false)
+    expect(rendered[1]?.isBlank).toBe(true)
   })
 
   it('says a stray slot under the markup naming it, and not under the preview', () => {
@@ -203,12 +203,12 @@ describe('panes', () => {
   })
 
   it('draws every part with the words it was handed', () => {
-    const drawn = getPanes(createFace(FULL, FIELDS, SAMPLE), {
+    const rendered = getPanes(createFace(FULL, FIELDS, SAMPLE), {
       ...STENCIL_WORDS,
       front: 'Recto',
       back: 'Verso',
       preview: 'As read',
     })
-    expect(drawn.map((pane) => pane.said)).toEqual(['Recto', 'As read', 'Verso', 'As read'])
+    expect(rendered.map((pane) => pane.said)).toEqual(['Recto', 'As read', 'Verso', 'As read'])
   })
 })

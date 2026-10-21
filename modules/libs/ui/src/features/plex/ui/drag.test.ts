@@ -164,9 +164,9 @@ describe('letting go of something dragged in', () => {
     // down as soon as it hears one. This has to have answered by then.
     const plex = mountPlex({ dragged: [] })
 
-    let answered: boolean | null = null
+    let reply: boolean | null = null
     const dragger = () => {
-      answered = plex.emitted('bring') !== undefined
+      reply = plex.emitted('bring') !== undefined
     }
     // Listening from before the plex was given anything, as anyone dragging
     // something here has been.
@@ -181,7 +181,7 @@ describe('letting go of something dragged in', () => {
     await plex.vm.$nextTick()
 
     expect(plex.emitted('bring')).toStrictEqual([[DRAGGED, 'parent']])
-    expect(answered).toBe(true)
+    expect(reply).toBe(true)
   })
 
   it('joins what it was handed, whatever the caller says it is dragging by then', async () => {
@@ -205,12 +205,12 @@ describe('letting go of something dragged in', () => {
     await escaped.vm.$nextTick()
     expect(escaped.emitted('bring')).toBeUndefined()
 
-    const lost = mountPlex()
+    const missing = mountPlex()
     window.dispatchEvent(pointer('pointermove', 600, 40))
     window.dispatchEvent(pointer('pointercancel', 600, 40))
     window.dispatchEvent(pointer('pointerup', 600, 40))
-    await lost.vm.$nextTick()
-    expect(lost.emitted('bring')).toBeUndefined()
+    await missing.vm.$nextTick()
+    expect(missing.emitted('bring')).toBeUndefined()
   })
 })
 
@@ -291,10 +291,10 @@ describe('what a drag leaves on the window', () => {
     const added = vi.spyOn(window, 'addEventListener')
     const removed = vi.spyOn(window, 'removeEventListener')
     return () => {
-      const gone = removed.mock.calls
+      const removedCalls = removed.mock.calls
       return added.mock.calls
         .filter(([type]) => TYPES.includes(type))
-        .filter(([type, listener]) => !gone.some(([t, l]) => t === type && l === listener))
+        .filter(([type, listener]) => !removedCalls.some(([t, l]) => t === type && l === listener))
         .map(([type]) => type)
         .sort()
     }

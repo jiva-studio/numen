@@ -66,11 +66,11 @@ export function useDrag<At extends InsertionPoint | undefined>(drag: DragDeps<At
   }
 
   const drop = (): void => {
-    const held = dragged.value
+    const target = dragged.value
     const lands = at.value
     release()
-    if (held === null || lands === undefined) return
-    if (drag.isMoved(held, lands)) drag.move(held, lands)
+    if (target === null || lands === undefined) return
+    if (drag.isMoved(target, lands)) drag.move(target, lands)
   }
 
   const step = (what: string, direction: StepDirection, press: KeyboardEvent): void => {

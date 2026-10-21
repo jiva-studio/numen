@@ -424,16 +424,16 @@ export const Dark: Story = {
     ])
 
     for (const card of cards) {
-      const drawn = getComputedStyle(card)
-      const ground = lightness(drawn.backgroundColor)
-      const ink = lightness(drawn.color)
+      const rendered = getComputedStyle(card)
+      const ground = lightness(rendered.backgroundColor)
+      const ink = lightness(rendered.color)
       // Whatever its tone, a card is written in ink standing above its own
       // ground, which is the way round the dark set is written.
       await expect(ink).toBeGreaterThan(ground + 40)
 
       // The frame is that ink, thinned: it lies between the two, and is a step
       // away from the ground and not lost in it.
-      const frame = lightness(drawn.borderTopColor, drawn.backgroundColor)
+      const frame = lightness(rendered.borderTopColor, rendered.backgroundColor)
       await expect(frame).toBeGreaterThan(Math.min(ink, ground))
       await expect(frame).toBeLessThan(Math.max(ink, ground))
       await expect(Math.abs(frame - ground)).toBeGreaterThan(2)

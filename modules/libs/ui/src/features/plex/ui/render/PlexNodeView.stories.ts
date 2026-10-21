@@ -235,8 +235,8 @@ export const Reaching: Story = {
 
     // Its disc and its cross are sized by CSS geometry properties, so a token
     // that never arrives is a handle of no size and not a default one.
-    const drawn = handle()!.getBoundingClientRect()
-    await expect(drawn.width).toBeGreaterThan(0)
+    const bounds = handle()!.getBoundingClientRect()
+    await expect(bounds.width).toBeGreaterThan(0)
     await expect(
       canvasElement.querySelector('.plex__handle-mark')!.getBoundingClientRect().width,
     ).toBeGreaterThan(0)

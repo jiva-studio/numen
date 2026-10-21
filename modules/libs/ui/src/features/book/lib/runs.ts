@@ -125,10 +125,10 @@ const rangeOver = (runs: readonly Run[], span: Span): Range | undefined => {
 
 /** The stretches that fall in the drawn document, as ranges over its nodes. */
 export function rangesOver(runs: readonly Run[], spans: readonly Span[]): Range[] {
-  const drawn: Range[] = []
+  const rendered: Range[] = []
   for (const span of spans) {
     const range = rangeOver(runs, span)
-    if (range) drawn.push(range)
+    if (range) rendered.push(range)
   }
-  return drawn
+  return rendered
 }

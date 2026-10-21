@@ -44,9 +44,9 @@ const moveRows = (
   dragIds: readonly RowId[],
   at: RowDropTarget,
 ): readonly Row[] => {
-  const held = dragIds.map((row) => found(rows, row)).filter((row): row is Row => row !== null)
+  const target = dragIds.map((row) => found(rows, row)).filter((row): row is Row => row !== null)
   const left = dragIds.reduce((rest, row) => removeRow(rest, row), rows)
-  return held.length ? put(left, at, held) : rows
+  return target.length ? put(left, at, target) : rows
 }
 
 /** The application's part again: rows taken out of the tree. */
@@ -305,9 +305,9 @@ export const Several: Story = { args: { selected: ['work', 'notes', 'loose'] } }
 export const AcrossAFolder: Story = { args: { selected: ['plans', 'notes', 'empty'] } }
 
 const getRow = (canvas: HTMLElement, row: string) => {
-  const held = canvas.querySelector<HTMLElement>(`[data-tree-row="${row}"]`)
-  if (!held) throw new Error(`no row called ${row}`)
-  return held
+  const element = canvas.querySelector<HTMLElement>(`[data-tree-row="${row}"]`)
+  if (!element) throw new Error(`no row called ${row}`)
+  return element
 }
 
 const getDrawnRows = (canvas: HTMLElement) =>

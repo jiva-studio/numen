@@ -62,8 +62,8 @@ export const NO_UNRESOLVED: readonly string[] = Object.freeze([])
 const placedByTurn = new WeakMap<Turn, PlacedTurn>()
 
 const placeTurn = (turn: Turn): PlacedTurn => {
-  const known = placedByTurn.get(turn)
-  if (known) return known
+  const recognized = placedByTurn.get(turn)
+  if (recognized) return recognized
   const placed: PlacedTurn = {
     turn,
     voice: VOICES[turn.voice],

@@ -24,20 +24,20 @@ const book = (pages: number): Page[] =>
 
 describe('the row a document makes', () => {
   it('draws a whole page in the viewport', () => {
-    const laid = row(book(4), VIEWPORT, 1)
+    const arranged = row(book(4), VIEWPORT, 1)
 
-    expect(laid.height).toBeLessThanOrEqual(VIEWPORT.height)
-    expect(laid.widths[0]).toBe(Math.round((laid.height * 612) / 792))
+    expect(arranged.height).toBeLessThanOrEqual(VIEWPORT.height)
+    expect(arranged.widths[0]).toBe(Math.round((arranged.height * 612) / 792))
   })
 
   it('puts every page after the one before it, with a gap', () => {
-    const laid = row(book(4), VIEWPORT, 1)
+    const arranged = row(book(4), VIEWPORT, 1)
 
-    expect(laid.starts[0]).toBe(GAP)
+    expect(arranged.starts[0]).toBe(GAP)
     for (let page = 1; page < 4; page++) {
-      expect(laid.starts[page]).toBe(laid.starts[page - 1]! + laid.widths[page - 1]! + GAP)
+      expect(arranged.starts[page]).toBe(arranged.starts[page - 1]! + arranged.widths[page - 1]! + GAP)
     }
-    expect(laid.length).toBe(laid.starts[3]! + laid.widths[3]! + GAP)
+    expect(arranged.length).toBe(arranged.starts[3]! + arranged.widths[3]! + GAP)
   })
 
   it('keeps each page its own shape', () => {
@@ -48,18 +48,18 @@ describe('the row a document makes', () => {
       { width: 1224, height: 792 },
       { width: 612, height: 792 },
     ]
-    const laid = row(pages, VIEWPORT, 1)
+    const arranged = row(pages, VIEWPORT, 1)
 
     // Within a pixel: each width is rounded on its own.
-    expect(laid.widths[1]).toBeCloseTo(laid.widths[0]! * 2, -0.5)
-    expect(laid.widths[2]).toBe(laid.widths[0])
+    expect(arranged.widths[1]).toBeCloseTo(arranged.widths[0]! * 2, -0.5)
+    expect(arranged.widths[2]).toBe(arranged.widths[0])
   })
 
   it('lays out a page whose size nothing returned', () => {
     // A page the document could not measure stands here all the same, and the
     // pages after it are still where they were. A page at no width at all is a
     // row that jumps once its size is known.
-    const laid = row(
+    const arranged = row(
       [
         { width: 612, height: 792 },
         { width: 0, height: 0 },
@@ -69,9 +69,9 @@ describe('the row a document makes', () => {
       1,
     )
 
-    expect(laid.starts[1]).toBeGreaterThan(laid.starts[0]!)
-    expect(laid.starts[2]).toBeGreaterThan(laid.starts[1]!)
-    expect(laid.widths.every((wide) => wide > 0)).toBe(true)
+    expect(arranged.starts[1]).toBeGreaterThan(arranged.starts[0]!)
+    expect(arranged.starts[2]).toBeGreaterThan(arranged.starts[1]!)
+    expect(arranged.widths.every((wide) => wide > 0)).toBe(true)
   })
 
   describe('a page whose size is unusable', () => {
@@ -85,15 +85,15 @@ describe('the row a document makes', () => {
     ]
 
     it.each(broken)('takes the first page size when it has %s', (_, page) => {
-      const laid = row([landscapePage, page], VIEWPORT, 1)
+      const arranged = row([landscapePage, page], VIEWPORT, 1)
 
-      expect(laid.widths).toEqual([getWidth(landscapePage), getWidth(landscapePage)])
+      expect(arranged.widths).toEqual([getWidth(landscapePage), getWidth(landscapePage)])
     })
 
     it.each(broken)('takes an upright page when the first page has %s too', (_, page) => {
-      const laid = row([page, page], VIEWPORT, 1)
+      const arranged = row([page, page], VIEWPORT, 1)
 
-      expect(laid.widths).toEqual([upright, upright])
+      expect(arranged.widths).toEqual([upright, upright])
     })
   })
 
@@ -109,41 +109,41 @@ describe('the row a document makes', () => {
 
 describe('which pages are drawn', () => {
   it('draws the pages in the viewport and a little either side', () => {
-    const laid = row(book(500), VIEWPORT, 1)
+    const arranged = row(book(500), VIEWPORT, 1)
 
-    const shown = getPagesWithin(laid, VIEWPORT, 0)
+    const displayed = getPagesWithin(arranged, VIEWPORT, 0)
 
-    expect(shown[0]).toBe(0)
-    expect(shown.length).toBeLessThan(500)
+    expect(displayed[0]).toBe(0)
+    expect(displayed.length).toBeLessThan(500)
     // Wide enough for the viewport, and for the reach beyond it on the far side.
-    const isAcross = Math.ceil(VIEWPORT.width / laid.widths[0]!)
-    expect(shown.length).toBeGreaterThan(isAcross)
+    const isAcross = Math.ceil(VIEWPORT.width / arranged.widths[0]!)
+    expect(displayed.length).toBeGreaterThan(isAcross)
   })
 
   it('draws around wherever the row has been scrolled to', () => {
-    const laid = row(book(500), VIEWPORT, 1)
+    const arranged = row(book(500), VIEWPORT, 1)
     const at = 300
 
-    const shown = getPagesWithin(laid, VIEWPORT, laid.starts[at]!)
+    const displayed = getPagesWithin(arranged, VIEWPORT, arranged.starts[at]!)
 
-    expect(shown).toContain(at)
-    expect(shown).not.toContain(0)
-    expect(shown.length).toBeLessThan(500)
+    expect(displayed).toContain(at)
+    expect(displayed).not.toContain(0)
+    expect(displayed.length).toBeLessThan(500)
   })
 
   it('draws a page just left behind, in case the hand arrives back', () => {
-    const laid = row(book(500), VIEWPORT, 1)
+    const arranged = row(book(500), VIEWPORT, 1)
     const at = 300
 
-    const shown = getPagesWithin(laid, VIEWPORT, laid.starts[at]!)
+    const displayed = getPagesWithin(arranged, VIEWPORT, arranged.starts[at]!)
 
-    expect(shown).toContain(at - 1)
+    expect(displayed).toContain(at - 1)
   })
 
   it('draws exactly the pages that touch the reach either side of the viewport', () => {
     // The reach is 1.5 viewports before the left edge and 1.5 after the right one.
     const viewport: Size = { width: 100, height: 100 }
-    const laid = {
+    const arranged = {
       height: 50,
       starts: [0, 700, 1000, 1250, 1251],
       widths: [100, 150, 10, 10, 10],
@@ -151,7 +151,7 @@ describe('which pages are drawn', () => {
     }
 
     // Page 1 ends on the near bound (850) and page 3 begins on the far one (1250).
-    expect(getPagesWithin(laid, viewport, 1000)).toEqual([1, 2, 3])
+    expect(getPagesWithin(arranged, viewport, 1000)).toEqual([1, 2, 3])
   })
 
   it('draws nothing for a document with no pages', () => {
@@ -161,48 +161,48 @@ describe('which pages are drawn', () => {
 
 describe('which page is in front', () => {
   it('is the one under the middle of the viewport', () => {
-    const laid = row(book(20), VIEWPORT, 1)
+    const arranged = row(book(20), VIEWPORT, 1)
 
     // A page scrolled halfway off is not the one being read: the middle of the
     // viewport is over the page after it.
-    const half = laid.starts[4]! - laid.widths[4]! / 2
+    const half = arranged.starts[4]! - arranged.widths[4]! / 2
 
-    expect(inFront(laid, VIEWPORT, laid.starts[4]!)).toBe(4)
-    expect(inFront(laid, { width: laid.widths[0]!, height: VIEWPORT.height }, half)).toBe(4)
+    expect(inFront(arranged, VIEWPORT, arranged.starts[4]!)).toBe(4)
+    expect(inFront(arranged, { width: arranged.widths[0]!, height: VIEWPORT.height }, half)).toBe(4)
   })
 
   it('is the last page at the end of the row', () => {
-    const laid = row(book(20), VIEWPORT, 1)
+    const arranged = row(book(20), VIEWPORT, 1)
 
-    expect(inFront(laid, VIEWPORT, laid.length)).toBe(19)
+    expect(inFront(arranged, VIEWPORT, arranged.length)).toBe(19)
   })
 
   it('is the first page at the beginning of the row', () => {
-    const laid = row(book(20), VIEWPORT, 1)
+    const arranged = row(book(20), VIEWPORT, 1)
 
-    expect(inFront(laid, VIEWPORT, 0)).toBe(0)
+    expect(inFront(arranged, VIEWPORT, 0)).toBe(0)
   })
 })
 
 describe('where the row remains', () => {
   it('puts the page requested for against the left edge', () => {
-    const laid = row(book(20), VIEWPORT, 1)
+    const arranged = row(book(20), VIEWPORT, 1)
 
-    expect(findPageScroll(laid, 5)).toBe(laid.starts[5]! - GAP)
+    expect(findPageScroll(arranged, 5)).toBe(arranged.starts[5]! - GAP)
   })
 
   it('says nothing about a page the document does not have', () => {
-    const laid = row(book(4), VIEWPORT, 1)
+    const arranged = row(book(4), VIEWPORT, 1)
 
-    expect(findPageScroll(laid, 9)).toBeUndefined()
+    expect(findPageScroll(arranged, 9)).toBeUndefined()
   })
 
   it('holds the scroll inside the row, so the last page stops at the end of it', () => {
-    const laid = row(book(20), VIEWPORT, 1)
+    const arranged = row(book(20), VIEWPORT, 1)
 
-    expect(getScrollTarget(laid, VIEWPORT, 0)).toBe(0)
-    expect(getScrollTarget(laid, VIEWPORT, 19)).toBe(laid.length - VIEWPORT.width)
-    expect(getScrollTarget(laid, VIEWPORT, 5)).toBe(laid.starts[5]! - GAP)
+    expect(getScrollTarget(arranged, VIEWPORT, 0)).toBe(0)
+    expect(getScrollTarget(arranged, VIEWPORT, 19)).toBe(arranged.length - VIEWPORT.width)
+    expect(getScrollTarget(arranged, VIEWPORT, 5)).toBe(arranged.starts[5]! - GAP)
   })
 
   it('scrolls nowhere for a page the row does not hold', () => {
@@ -241,20 +241,20 @@ describe('a viewport nothing has been measured in', () => {
   it('makes no row at all', () => {
     // Until something has been measured there is no width to draw a page at,
     // and a page drawn at a made-up one is a page drawn and thrown away.
-    const laid = row(book(8), { width: 0, height: 0 }, 1)
+    const arranged = row(book(8), { width: 0, height: 0 }, 1)
 
-    expect(laid.height).toBe(0)
-    expect(laid.starts).toEqual([])
-    expect(laid.widths).toEqual([])
-    expect(laid.length).toBe(0)
-    expect(getPagesWithin(laid, { width: 0, height: 0 }, 0)).toEqual([])
+    expect(arranged.height).toBe(0)
+    expect(arranged.starts).toEqual([])
+    expect(arranged.widths).toEqual([])
+    expect(arranged.length).toBe(0)
+    expect(getPagesWithin(arranged, { width: 0, height: 0 }, 0)).toEqual([])
   })
 
   it('makes no row in a viewport too short to stand a page in', () => {
-    const laid = row(book(8), { width: 900, height: 2 * GAP }, 1)
+    const arranged = row(book(8), { width: 900, height: 2 * GAP }, 1)
 
-    expect(laid.starts).toEqual([])
-    expect(laid.widths).toEqual([])
+    expect(arranged.starts).toEqual([])
+    expect(arranged.widths).toEqual([])
   })
 })
 

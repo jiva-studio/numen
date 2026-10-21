@@ -80,9 +80,9 @@ function tweenNodes(from: PlexFrame, to: PlexFrame, timing: NodeTiming): PlacedN
 
   // Departures stay put and fade; moving them too would be a third thing
   // travelling in a picture meant to be followed by eye.
-  for (const gone of from.nodes) {
-    if (will.has(gone.id)) continue
-    nodes.push({ ...gone, opacity: timing.exit })
+  for (const removed of from.nodes) {
+    if (will.has(removed.id)) continue
+    nodes.push({ ...removed, opacity: timing.exit })
   }
 
   return nodes
@@ -116,13 +116,13 @@ function tweenEdges(from: PlexFrame, to: PlexFrame, context: EdgeTweenContext): 
   // round they are read and where along the line they sit come from where the
   // edge is going, or from where it is leaving for an edge that only rests
   // there. A title held this way stays put for the length of a movement.
-  const settled = new Map<string, Title>()
-  for (const edge of from.edges) settled.set(edgeKey(edge), createTitle(edge))
-  for (const edge of to.edges) settled.set(edgeKey(edge), createTitle(edge))
+  const resolved = new Map<string, Title>()
+  for (const edge of from.edges) resolved.set(edgeKey(edge), createTitle(edge))
+  for (const edge of to.edges) resolved.set(edgeKey(edge), createTitle(edge))
 
   return routeEdges(both, byId, { routing, opacity: edgeOpacity }).map((edge) => ({
     ...edge,
-    ...settled.get(edgeKey(edge)),
+    ...resolved.get(edgeKey(edge)),
   }))
 }
 
@@ -144,10 +144,10 @@ export function interpolatePlex(
 
   const resolved = resolveOptions(options)
   const { arriveAfter, leaveBefore } = resolved.motion
-  const arriving = clamp01((t - arriveAfter) / (1 - arriveAfter))
+  const incoming = clamp01((t - arriveAfter) / (1 - arriveAfter))
   const leaving = 1 - clamp01(t / leaveBefore)
 
-  const nodes = tweenNodes(from, to, { t, entry: arriving, exit: leaving })
+  const nodes = tweenNodes(from, to, { t, entry: incoming, exit: leaving })
   const byId = new Map(nodes.map((node) => [node.id, node]))
 
   return {
@@ -155,7 +155,7 @@ export function interpolatePlex(
     edges: tweenEdges(from, to, {
       byId,
       routing: createRouting(resolved),
-      entryOpacity: arriving,
+      entryOpacity: incoming,
       exitOpacity: leaving,
     }),
     extent: lerpExtent(from.extent, to.extent, t),

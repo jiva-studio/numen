@@ -11,8 +11,8 @@ const mountDueCount = (props: Record<string, unknown> = {}) =>
 
 describe('a figure still on its way', () => {
   it('is read out as being counted, and carries a role to be read out by', () => {
-    const held = mountDueCount({ due: null })
-    const pill = held.get('.due-count')
+    const target = mountDueCount({ due: null })
+    const pill = target.get('.due-count')
 
     expect(pill.attributes('role')).toBe('status')
     expect(pill.attributes('aria-label')).toBe('still being counted')

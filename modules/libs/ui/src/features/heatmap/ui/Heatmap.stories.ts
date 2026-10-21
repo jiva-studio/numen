@@ -49,16 +49,16 @@ function createYear(): Map<string, Tally> {
     on.setDate(on.getDate() - back)
     // Sundays off, and the rest a hand of cards.
     if (on.getDay() === 0) continue
-    const answered = ((back * 7) % 60) + 1
+    const reply = ((back * 7) % 60) + 1
     const again = back % 5 === 0 ? 2 : 0
     out.set(getDayName(on), {
-      answered,
+      answered: reply,
       again,
       hard: 1,
-      good: Math.max(0, answered - again - 2),
+      good: Math.max(0, reply - again - 2),
       easy: 1,
-      asked: Math.max(0, answered - 1),
-      recalled: Math.max(0, answered - 1 - again),
+      asked: Math.max(0, reply - 1),
+      recalled: Math.max(0, reply - 1 - again),
     })
   }
   return out
@@ -75,9 +75,9 @@ export const AYear: Story = {
     template: '<div style="inline-size: 640px"><Heatmap v-bind="args" /></div>',
   }),
   play: async ({ canvasElement }) => {
-    const drawn = cells(canvasElement)
-    await expect(drawn.length % ROWS).toBe(0)
-    await expect(drawn.length).toBeGreaterThan(ROWS * 20)
+    const viewElement = cells(canvasElement)
+    await expect(viewElement.length % ROWS).toBe(0)
+    await expect(viewElement.length).toBeGreaterThan(ROWS * 20)
     // Today is ringed, and there is one of it.
     await expect(canvasElement.querySelectorAll('[data-today]')).toHaveLength(1)
   },
@@ -96,10 +96,10 @@ export const Narrow: Story = {
     template: '<div style="inline-size: 240px"><Heatmap v-bind="args" /></div>',
   }),
   play: async ({ canvasElement }) => {
-    const drawn = cells(canvasElement)
-    await expect(drawn.length % ROWS).toBe(0)
+    const viewElement = cells(canvasElement)
+    await expect(viewElement.length % ROWS).toBe(0)
 
-    const one = drawn[0] as SVGRectElement | undefined
+    const one = viewElement[0] as SVGRectElement | undefined
     await expect(one?.getAttribute('width')).toBe('11')
 
     // The grid reaches the far edge, and not ending short of it.
@@ -152,9 +152,9 @@ export const Nothing: Story = {
     template: '<div style="inline-size: 480px"><Heatmap v-bind="args" /></div>',
   }),
   play: async ({ canvasElement }) => {
-    const drawn = [...cells(canvasElement)]
-    await expect(drawn.length).toBeGreaterThan(0)
-    for (const one of drawn) {
+    const viewElement = [...cells(canvasElement)]
+    await expect(viewElement.length).toBeGreaterThan(0)
+    for (const one of viewElement) {
       await expect(one.getAttribute('data-weight')).toBe('0')
     }
   },
@@ -186,9 +186,9 @@ const pointsAtToday = async (canvas: HTMLElement): Promise<HTMLElement> => {
   const today = canvas.querySelector('[data-today]')
   await expect(today).not.toBeNull()
   await userEvent.hover(today as Element)
-  const said = canvas.querySelector('[data-day-summary="account"]')
-  await expect(said).not.toBeNull()
-  return said as HTMLElement
+  const response = canvas.querySelector('[data-day-summary="account"]')
+  await expect(response).not.toBeNull()
+  return response as HTMLElement
 }
 
 /**
@@ -214,25 +214,25 @@ export const ADayReviewed: Story = {
   },
   render: createRoom,
   play: async ({ canvasElement }) => {
-    const said = await pointsAtToday(canvasElement)
-    await expect(said.querySelector('[data-day-summary="day"]')?.textContent).toBe(TODAY)
-    await expect(said.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe(
+    const response = await pointsAtToday(canvasElement)
+    await expect(response.querySelector('[data-day-summary="day"]')?.textContent).toBe(TODAY)
+    await expect(response.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe(
       '26 answered',
     )
 
-    const four = [...said.querySelectorAll('[data-day-summary="four"] li')].map(
+    const four = [...response.querySelectorAll('[data-day-summary="four"] li')].map(
       (one) => one.textContent,
     )
     await expect(four).toEqual(['Again2', 'Hard3', 'Good18', 'Easy3'])
 
-    const came = said.querySelector('[data-day-summary="came"]') as HTMLElement
+    const came = response.querySelector('[data-day-summary="came"]') as HTMLElement
     await expect(came.textContent?.trim()).toBe('83% of cards you are reviewing came back')
 
     // 8rem is the least the panel is drawn at and not the most, so the panel
     // takes the width of its longest line and the share relies on one line.
     const box = came.getBoundingClientRect()
     await expect(box.height).toBeLessThan(2 * Number.parseFloat(getComputedStyle(came).lineHeight))
-    await expect(Math.round(box.width)).toBe(Math.round(said.getBoundingClientRect().width))
+    await expect(Math.round(box.width)).toBe(Math.round(response.getBoundingClientRect().width))
   },
 }
 
@@ -248,12 +248,12 @@ export const ADayOfNewCards: Story = {
   },
   render: createRoom,
   play: async ({ canvasElement }) => {
-    const said = await pointsAtToday(canvasElement)
-    await expect(said.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe(
+    const response = await pointsAtToday(canvasElement)
+    await expect(response.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe(
       '12 answered',
     )
-    await expect(said.querySelectorAll('[data-day-summary="four"] li')).toHaveLength(3)
-    await expect(said.querySelector('[data-day-summary="came"]')).toBeNull()
+    await expect(response.querySelectorAll('[data-day-summary="four"] li')).toHaveLength(3)
+    await expect(response.querySelector('[data-day-summary="came"]')).toBeNull()
   },
 }
 
@@ -262,12 +262,12 @@ export const ADayOfNothing: Story = {
   args: { did: new Map<string, Tally>(), now, words },
   render: createRoom,
   play: async ({ canvasElement }) => {
-    const said = await pointsAtToday(canvasElement)
-    await expect(said.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe(
+    const response = await pointsAtToday(canvasElement)
+    await expect(response.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe(
       'Nothing answered',
     )
-    await expect(said.querySelector('[data-day-summary="four"]')).toBeNull()
-    await expect(said.querySelector('[data-day-summary="came"]')).toBeNull()
+    await expect(response.querySelector('[data-day-summary="four"]')).toBeNull()
+    await expect(response.querySelector('[data-day-summary="came"]')).toBeNull()
   },
 }
 
@@ -281,7 +281,7 @@ const CORNERS = [
   {
     name: 'top right',
     pin: { insetBlockStart: '0px', insetInlineEnd: '0px' },
-    cell: (drawn: number) => drawn - ROWS,
+    cell: (rendered: number) => rendered - ROWS,
   },
   {
     name: 'bottom left',
@@ -291,7 +291,7 @@ const CORNERS = [
   {
     name: 'bottom right',
     pin: { insetBlockEnd: '0px', insetInlineEnd: '0px' },
-    cell: (drawn: number) => drawn - 1,
+    cell: (rendered: number) => rendered - 1,
   },
 ]
 
@@ -318,8 +318,8 @@ export const AtEveryEdge: Story = {
   }),
   play: async ({ canvasElement }) => {
     const pinned = canvasElement.querySelector('[data-pinned]') as HTMLElement
-    const drawn = [...cells(canvasElement)]
-    await expect(drawn.length).toBeGreaterThan(ROWS)
+    const viewElement = [...cells(canvasElement)]
+    await expect(viewElement.length).toBeGreaterThan(ROWS)
 
     for (const corner of CORNERS) {
       Object.assign(pinned.style, {
@@ -330,15 +330,15 @@ export const AtEveryEdge: Story = {
         ...corner.pin,
       })
 
-      const cell = drawn[corner.cell(drawn.length)] as Element
+      const cell = viewElement[corner.cell(viewElement.length)] as Element
       await userEvent.hover(cell)
 
       await waitFor(() => {
-        const said = canvasElement.querySelector('[role="tooltip"]')
-        expect(said, corner.name).not.toBeNull()
+        const response = canvasElement.querySelector('[role="tooltip"]')
+        expect(response, corner.name).not.toBeNull()
 
         // The whole of it is on the screen, on every side.
-        const box = (said as HTMLElement).getBoundingClientRect()
+        const box = (response as HTMLElement).getBoundingClientRect()
         expect(box.left, corner.name).toBeGreaterThanOrEqual(0)
         expect(box.top, corner.name).toBeGreaterThanOrEqual(0)
         expect(box.right, corner.name).toBeLessThanOrEqual(window.innerWidth)

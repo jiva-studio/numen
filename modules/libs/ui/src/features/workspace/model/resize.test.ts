@@ -11,11 +11,11 @@ import { RESIZING, isSameShares, useBranchResize } from './resize'
 const create = (shares: readonly number[] = [0.5, 0.5]) => {
   const resize = vi.fn<(branch: string, shares: readonly number[]) => void>()
   const frame = document.createElement('div')
-  const held: { resize?: ReturnType<typeof useBranchResize> } = {}
+  const target: { resize?: ReturnType<typeof useBranchResize> } = {}
   const wrapper = mount(
     defineComponent({
       setup() {
-        held.resize = useBranchResize({
+        target.resize = useBranchResize({
           getBranchId: () => 'root',
           getShares: () => shares,
           getFrame: () => frame,
@@ -25,7 +25,7 @@ const create = (shares: readonly number[] = [0.5, 0.5]) => {
       },
     }),
   )
-  return { wrapper, resize, frame, ...held.resize! }
+  return { wrapper, resize, frame, ...target.resize! }
 }
 
 describe('shares compared', () => {

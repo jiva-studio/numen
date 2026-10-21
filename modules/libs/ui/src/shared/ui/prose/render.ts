@@ -52,8 +52,8 @@ const nodes = (tokens: readonly Token[], deadAddresses: BrokenAddresses): VNode[
       continue
     }
     if (token.nesting === -1) {
-      const done = stack.pop()!
-      top().push(h(done.tag, done.attrs, done.children))
+      const isDone = stack.pop()!
+      top().push(h(isDone.tag, isDone.attrs, isDone.children))
       continue
     }
 
@@ -100,8 +100,8 @@ const inline = (
       continue
     }
     if (token.nesting === -1) {
-      const done = stack.pop()!
-      top().push(h(done.tag, done.attrs, done.children))
+      const isDone = stack.pop()!
+      top().push(h(isDone.tag, isDone.attrs, isDone.children))
       continue
     }
 
@@ -145,10 +145,10 @@ const words = (text: string, next: () => number): (VNode | string)[] =>
     .map((piece) => (/^\s+$/.test(piece) ? piece : h('span', { key: next(), class: WORD }, piece)))
 
 const attrs = (token: Token, deadAddresses: BrokenAddresses = NONE): Record<string, string> => {
-  const written: Record<string, string> = Object.fromEntries(
+  const content: Record<string, string> = Object.fromEntries(
     (token.attrs ?? []).map(([name, value]) => [name, String(value)]),
   )
-  const href = written.href
-  if (href !== undefined && deadAddresses.has(href)) written[REACHES] = 'nothing'
-  return written
+  const href = content.href
+  if (href !== undefined && deadAddresses.has(href)) content[REACHES] = 'nothing'
+  return content
 }

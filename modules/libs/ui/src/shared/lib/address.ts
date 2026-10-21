@@ -39,8 +39,8 @@ export const parseAddress = (raw: string): Address => {
   if (fragment >= 0) target = target.slice(0, fragment)
   target = target.trim()
 
-  const split = SCHEMED.exec(target)
-  if (split) return { scheme: split[1] as string, value: split[2] as string }
+  const divided = SCHEMED.exec(target)
+  if (divided) return { scheme: divided[1] as string, value: divided[2] as string }
   return { scheme: NAME, value: target }
 }
 

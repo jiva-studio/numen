@@ -246,16 +246,16 @@ describe('a label is as long as its words', () => {
     arrangePlex(labelled, { measureLabel }).edges[0]!.words
 
   it('asks the measurer for the words a line carries, and for no others', () => {
-    const asked: string[] = []
+    const request: string[] = []
     arrangePlex(labelled, {
       measureLabel: (label) => {
-        asked.push(label)
+        request.push(label)
         return 0
       },
     })
 
     // Once to cut the words to the line, and once to find them room along it.
-    expect(asked).toStrictEqual(['the scene in the assembly', 'the scene in the assembly'])
+    expect(request).toStrictEqual(['the scene in the assembly', 'the scene in the assembly'])
   })
 
   it('cuts words too long for their line', () => {

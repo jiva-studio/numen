@@ -68,11 +68,11 @@ describe('one list drawn in groups', () => {
   })
 
   it('gives the drawing the same numbers the keyboard counts in', () => {
-    const drawn = placePalette(SECTIONS).flatMap((placed) => placed.items)
+    const rendered = placePalette(SECTIONS).flatMap((placed) => placed.items)
     const walked = flatten(SECTIONS)
 
-    expect(drawn.map((placed) => placed.at)).toEqual(walked.map((_, at) => at))
-    expect(drawn.map((placed) => placed.item.id)).toEqual(walked.map((p) => p.item.id))
+    expect(rendered.map((placed) => placed.at)).toEqual(walked.map((_, at) => at))
+    expect(rendered.map((placed) => placed.item.id)).toEqual(walked.map((p) => p.item.id))
   })
 
   it('splits every line it draws, so the view works nothing out', () => {
@@ -508,9 +508,9 @@ describe('which group remains where', () => {
   })
 
   it('draws a group that answered with nothing nowhere', () => {
-    const answered = group('text', [])
-    expect(orderGroups([holding, answered]).map((one) => one.id)).toEqual(['names'])
-    expect(orderGroups([answered]).map((one) => one.id)).toEqual([])
+    const reply = group('text', [])
+    expect(orderGroups([holding, reply]).map((one) => one.id)).toEqual(['names'])
+    expect(orderGroups([reply]).map((one) => one.id)).toEqual([])
   })
 
   it('draws a group holding nothing while it is still working', () => {

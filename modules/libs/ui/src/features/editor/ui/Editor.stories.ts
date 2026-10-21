@@ -141,21 +141,21 @@ export const Steady: Story = {
     /** The block the editor drew for a line, measured at its current position. */
     const getHeight = (line: number) => {
       const row = view.state.doc.line(line)
-      const drawn = Array.from(view.contentDOM.children).find((block) => {
+      const viewElement = Array.from(view.contentDOM.children).find((block) => {
         const at = view.posAtDOM(block)
         return at >= row.from && at <= row.to
       })
-      if (!drawn) throw new Error(`nothing is drawn for line ${line}`)
-      return drawn.getBoundingClientRect().height
+      if (!viewElement) throw new Error(`nothing is drawn for line ${line}`)
+      return viewElement.getBoundingClientRect().height
     }
 
     await loadFaces()
     // A face the machine cannot cut pins nothing.
     await expect(reach(TALL.name) > reach(LOW.name)).toBe(true)
 
-    for (const chosen of [null, ...FACES]) {
-      const face = chosen ? chosen.name : 'the machine'
-      if (chosen) view.dom.style.setProperty('--numen-font-sans', `'${chosen.name}'`)
+    for (const selected of [null, ...FACES]) {
+      const face = selected ? selected.name : 'the machine'
+      if (selected) view.dom.style.setProperty('--numen-font-sans', `'${selected.name}'`)
       else view.dom.style.removeProperty('--numen-font-sans')
       await nextFrame()
 
@@ -210,11 +210,11 @@ export const Steady: Story = {
 
       // The task's box stands inside the line it marks.
       const box = canvasElement.querySelector('.cm-box') as HTMLElement
-      const held = box.getBoundingClientRect()
+      const element = box.getBoundingClientRect()
       const aroundRect = (box.closest('.cm-line') as HTMLElement).getBoundingClientRect()
       await expect({
         face,
-        inside: held.top >= aroundRect.top && held.bottom <= aroundRect.bottom,
+        inside: element.top >= aroundRect.top && element.bottom <= aroundRect.bottom,
       }).toEqual({ face, inside: true })
     }
   },
@@ -428,7 +428,7 @@ const getView = (canvas: HTMLElement): EditorView => {
   return view
 }
 
-const nextFrame = () => new Promise((done) => requestAnimationFrame(() => done(null)))
+const nextFrame = () => new Promise((isDone) => requestAnimationFrame(() => isDone(null)))
 
 /** The line at the top of what can be seen. */
 const topmost = (view: EditorView): number => {
@@ -514,11 +514,11 @@ export const TenOpenTabs: Story = {
     // Nine more of what a pane holds out of sight, in the page that already
     // has one, so the difference is the tabs and not the page.
     const more = Array.from({ length: 9 }, () => {
-      const held = document.createElement('div')
-      held.style.display = 'none'
-      room.append(held)
+      const element = document.createElement('div')
+      element.style.display = 'none'
+      room.append(element)
       const app = createApp(Editor, { modelValue: MARKED_UP })
-      app.mount(held)
+      app.mount(element)
       return app
     })
     await nextFrame()
@@ -548,15 +548,15 @@ export const ShownAgain: Story = {
   render: () => ({
     components: { Editor, WorkspacePane },
     setup: () => {
-      const held = ref(pane('main', [NOTE_TAB, BESIDE], NOTE_TAB))
+      const heldTab = ref(pane('main', [NOTE_TAB, BESIDE], NOTE_TAB))
       const editors = new Map<string, { measure: () => void }>()
       return {
-        held,
+        held: heldTab,
         NOTE_TAB,
         text: BEFORE,
         titles: { [NOTE_TAB]: 'Note', [BESIDE]: 'Beside' },
         choose: (tab: string) => {
-          held.value = pane('main', [NOTE_TAB, BESIDE], tab)
+          heldTab.value = pane('main', [NOTE_TAB, BESIDE], tab)
         },
         drew: (editor: unknown) => {
           if (editor) editors.set(NOTE_TAB, editor as { measure: () => void })
@@ -616,16 +616,16 @@ export const Kept: Story = {
   render: () => ({
     components: { Editor },
     setup: () => {
-      const asked = ref(0)
-      const answered = ref('')
+      const request = ref(0)
+      const reply = ref('')
       return {
         text: MARKED_UP,
-        asked,
-        answered,
-        kept: () => (asked.value += 1),
+        asked: request,
+        answered: reply,
+        kept: () => (request.value += 1),
         watch: (key: KeyboardEvent) => {
           if (key.key === 's' && (key.ctrlKey || key.metaKey)) {
-            answered.value = key.defaultPrevented ? 'answered' : 'left for the page'
+            reply.value = key.defaultPrevented ? 'answered' : 'left for the page'
           }
         },
       }
@@ -693,8 +693,8 @@ export const LeftByTheKeyboard: Story = {
     const stop = (which: string) => canvasElement.querySelector(`[${which}]`) as HTMLElement
 
     // What a reader is told on arrival is the way back out.
-    const told = document.getElementById(view.contentDOM.getAttribute('aria-describedby') ?? '')
-    await expect(told?.textContent).toContain('Escape')
+    const notified = document.getElementById(view.contentDOM.getAttribute('aria-describedby') ?? '')
+    await expect(notified?.textContent).toContain('Escape')
 
     stop('data-before').focus()
     await userEvent.tab()
@@ -741,8 +741,8 @@ const renderWithChange =
   () => ({
     components: { Editor },
     setup: () => {
-      const held = ref(text)
-      return { held, change, make: () => (held.value = applyChange(text, change)) }
+      const target = ref(text)
+      return { held: target, change, make: () => (target.value = applyChange(text, change)) }
     },
     template: `
       <div class="numen flex h-screen flex-col bg-surface">

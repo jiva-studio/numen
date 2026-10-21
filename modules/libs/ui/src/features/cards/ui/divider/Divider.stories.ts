@@ -53,9 +53,9 @@ export default meta
 type Story = StoryObj<Knobs>
 
 const found = (canvas: HTMLElement, selector: string): HTMLElement => {
-  const held = canvas.querySelector<HTMLElement>(selector)
-  if (!held) throw new Error(`nothing matching ${selector}`)
-  return held
+  const element = canvas.querySelector<HTMLElement>(selector)
+  if (!element) throw new Error(`nothing matching ${selector}`)
+  return element
 }
 
 /** How wide each side of the line is drawn, which is the divider's own decoration. */

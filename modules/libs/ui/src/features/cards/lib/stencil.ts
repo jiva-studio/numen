@@ -114,11 +114,11 @@ export function fieldRows(
   fields: readonly string[],
   dragField: string | null,
 ): readonly FieldRow[] {
-  const stood = getDeclaredFields(fields)
-  return stood.map((field, index) => ({
+  const status = getDeclaredFields(fields)
+  return status.map((field, index) => ({
     field,
     at: index + 1,
-    of: stood.length,
+    of: status.length,
     hasNames: index === 0,
     isDragged: field === dragField,
   }))
@@ -201,26 +201,26 @@ export interface Pane {
  */
 export function getPanes(face: FaceRow, words: StencilWords = STENCIL_WORDS): readonly Pane[] {
   return HALVES.flatMap((half): readonly Pane[] => {
-    const said = half === 'front' ? words.front : words.back
-    const written = half === 'front' ? face.front : face.back
-    const shown = half === 'front' ? face.frontPreview : face.backPreview
+    const saidText = half === 'front' ? words.front : words.back
+    const content = half === 'front' ? face.front : face.back
+    const displayed = half === 'front' ? face.frontPreview : face.backPreview
     return [
       {
         half,
         mode: 'written',
-        said,
-        named: said,
-        text: written,
-        isBlank: written.trim() === '',
+        said: saidText,
+        named: saidText,
+        text: content,
+        isBlank: content.trim() === '',
         stray: half === 'front' ? face.frontStray : face.backStray,
       },
       {
         half,
         mode: 'preview',
         said: words.preview,
-        named: `${words.preview}: ${face.name} ${said}`,
-        text: shown,
-        isBlank: shown.trim() === '',
+        named: `${words.preview}: ${face.name} ${saidText}`,
+        text: displayed,
+        isBlank: displayed.trim() === '',
         stray: [],
       },
     ]

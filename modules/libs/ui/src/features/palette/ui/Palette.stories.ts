@@ -788,11 +788,11 @@ export const TooLong: Story = {
     const panel = document.body.querySelector<HTMLElement>('[data-palette="panel"]')!
     const overElement = document.body.querySelector<HTMLElement>('[data-palette="ground"]')!
     const clear = Number.parseFloat(getComputedStyle(overElement).paddingInlineStart)
-    const drawn = panel.getBoundingClientRect()
+    const bounds = panel.getBoundingClientRect()
     const room = overElement.getBoundingClientRect()
 
-    await expect(drawn.left).toBeGreaterThanOrEqual(room.left + clear - 1)
-    await expect(drawn.right).toBeLessThanOrEqual(room.right - clear + 1)
+    await expect(bounds.left).toBeGreaterThanOrEqual(room.left + clear - 1)
+    await expect(bounds.right).toBeLessThanOrEqual(room.right - clear + 1)
     for (const option of options()) {
       await expect(option.scrollWidth).toBeLessThanOrEqual(option.clientWidth + 1)
     }
@@ -861,10 +861,10 @@ export const SomeCameBackEmpty: Story = {
   play: async () => {
     await waitFor(() => expect(lit()).not.toBeNull())
 
-    const drawn = Array.from(document.body.querySelectorAll('[data-palette="title"]')).map(
+    const viewElement = Array.from(document.body.querySelectorAll('[data-palette="title"]')).map(
       (group) => group.textContent?.trim(),
     )
-    await expect(drawn).toEqual(['Text', 'Meaning', 'Names'])
+    await expect(viewElement).toEqual(['Text', 'Meaning', 'Names'])
     await expect(lit()?.textContent).toContain('Heat engines')
   },
 }

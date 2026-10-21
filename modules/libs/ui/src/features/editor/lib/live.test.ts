@@ -25,8 +25,8 @@ const ELSEWHERE = '\n\nelsewhere'
 
 const collectDrawn = (state: EditorState): Drawn[] => {
   const found: Drawn[] = []
-  const collect = (set: ReturnType<typeof getMarks>) =>
-    set.between(
+  const collect = (activeSet: ReturnType<typeof getMarks>) =>
+    activeSet.between(
       0,
       state.doc.length,
       (from, to, deco) => void found.push({ from, to, spec: deco.spec ?? {} }),
@@ -43,8 +43,8 @@ const getDrawn = (doc: string, caret?: number): Drawn[] => {
 }
 
 /** The stretch is drawn as something else, wherever the selection stands. */
-const isHidden = (drawn: readonly Drawn[], from: number, to: number) =>
-  drawn.some((deco) => deco.from === from && deco.to === to && !deco.spec.class)
+const isHidden = (rendered: readonly Drawn[], from: number, to: number) =>
+  rendered.some((deco) => deco.from === from && deco.to === to && !deco.spec.class)
 
 /** A state whose selection is a caret at each of `carets`, and which is read-only if asked. */
 const createCaretState = (doc: string, carets: number[], isReadOnly = false): EditorState => {
@@ -199,10 +199,10 @@ describe('the text itself', () => {
 describe('what is shown as written', () => {
   it('is a construct any one of the carets remains in', () => {
     const doc = '**a** and **b**' + ELSEWHERE
-    const drawn = collectDrawn(createCaretState(doc, [3, 20]))
-    expect(isHidden(drawn, 0, 2)).toBe(false)
-    expect(isHidden(drawn, 3, 5)).toBe(false)
-    expect(isHidden(drawn, 10, 12)).toBe(true)
+    const rendered = collectDrawn(createCaretState(doc, [3, 20]))
+    expect(isHidden(rendered, 0, 2)).toBe(false)
+    expect(isHidden(rendered, 3, 5)).toBe(false)
+    expect(isHidden(rendered, 10, 12)).toBe(true)
   })
 
   it('is a mark of quotation only under a caret in the quotation', () => {
@@ -221,9 +221,9 @@ describe('the space after a mark', () => {
   })
 
   it('is not made up when there is none', () => {
-    const drawn = getDrawn('>said')
-    expect(isHidden(drawn, 0, 1)).toBe(true)
-    expect(isHidden(drawn, 0, 2)).toBe(false)
+    const rendered = getDrawn('>said')
+    expect(isHidden(rendered, 0, 1)).toBe(true)
+    expect(isHidden(rendered, 0, 2)).toBe(false)
   })
 })
 
@@ -496,11 +496,11 @@ describe('the marks drawn for the lines on screen', () => {
   }
 
   const isDrawnAt = (view: EditorView, from: number, to: number) => {
-    let hidden = false
+    let concealed = false
     getPlugin(view).decorations.between(from, to, (start, end, deco) => {
-      if (start === from && end === to && !(deco.spec as { class?: string }).class) hidden = true
+      if (start === from && end === to && !(deco.spec as { class?: string }).class) concealed = true
     })
-    return hidden
+    return concealed
   }
 
   it('reach a margin past the lines on screen, and no further', () => {
@@ -639,17 +639,17 @@ describe('the marks drawn for the lines on screen', () => {
   it('are drawn again where the parser is swapped without the text changing', () => {
     const doc = '~~a~~ b\n'
     const { view, language } = open(doc, [{ from: 0, to: 3 }])
-    const struck = () => {
+    const struckVal = () => {
       let found = false
       getPlugin(view).decorations.between(0, doc.length, (_f, _t, deco) => {
         if ((deco.spec as { class?: string }).class === 'cm-strike') found = true
       })
       return found
     }
-    expect(struck()).toBe(true)
+    expect(struckVal()).toBe(true)
 
     view.dispatch({ effects: language.reconfigure(markdown()) })
-    expect(struck()).toBe(false)
+    expect(struckVal()).toBe(false)
     view.destroy()
   })
 })

@@ -49,7 +49,7 @@ describe('a card face', () => {
     }
 
     const named = new Set<string>()
-    let laid = 0
+    let arranged = 0
     let changed = 0
     for (const { name, construct, face, fields, values, laid: want } of corpus.faces) {
       if (name === '' || construct === '') {
@@ -58,14 +58,14 @@ describe('a card face', () => {
       if (named.has(name)) throw new Error(`two faces of the table are called "${name}"`)
       named.add(name)
 
-      laid += 1
+      arranged += 1
       if (want !== face) changed += 1
 
-      const said = { name, construct, laid: want }
-      expect({ name, construct, laid: renderPreview(face, values, fields) }).toStrictEqual(said)
+      const response = { name, construct, laid: want }
+      expect({ name, construct, laid: renderPreview(face, values, fields) }).toStrictEqual(response)
     }
 
-    expect(laid).toBe(corpus.count)
+    expect(arranged).toBe(corpus.count)
     expect(changed).toBe(corpus.changed)
   })
 })
@@ -192,9 +192,9 @@ describe('insert', () => {
   })
 
   it('lands the caret past the closing brace', () => {
-    const done = insert('one two', 3, 'Life span')
-    expect(done.text).toBe('one{{Life span}} two')
-    expect(done.text.slice(0, done.caret)).toBe('one{{Life span}}')
+    const isDone = insert('one two', 3, 'Life span')
+    expect(isDone.text).toBe('one{{Life span}} two')
+    expect(isDone.text.slice(0, isDone.caret)).toBe('one{{Life span}}')
   })
 
   it('takes a caret past the end to the end, the caret with it', () => {

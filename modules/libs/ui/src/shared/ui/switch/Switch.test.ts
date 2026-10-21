@@ -12,7 +12,7 @@ const mountSwitch = (props: Partial<SwitchProps> = {}) =>
 
 /** Every answer the switch has handed on, in the order it handed them on. */
 const getEmitted = (control: ReturnType<typeof mountSwitch>): readonly unknown[] =>
-  (control.emitted('update:modelValue') ?? []).map((said) => (said as unknown[])[0])
+  (control.emitted('update:modelValue') ?? []).map((response) => (response as unknown[])[0])
 
 describe('Switch', () => {
   it('is announced as a switch, and says which way it is', () => {

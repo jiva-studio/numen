@@ -126,11 +126,11 @@ export const NoTitle: Story = {
 export const PartWayThere: Story = {
   args: { opacity: 0.3 },
   play: async ({ canvasElement }) => {
-    const drawn = canvasElement.querySelectorAll(
+    const viewElement = canvasElement.querySelectorAll(
       '[data-edge="resting"] path, [data-edge="resting"] text',
     )
-    expect(drawn).toHaveLength(4)
-    for (const one of drawn) expect(one.getAttribute('opacity')).toBe('0.3')
+    expect(viewElement).toHaveLength(4)
+    for (const one of viewElement) expect(one.getAttribute('opacity')).toBe('0.3')
   },
 }
 
@@ -184,9 +184,9 @@ export const Dark: Story = {
       getDistanceFrom(getComputedStyle(resting.letters).fill) + 2,
     )
     for (const halo of [resting.halo, lifted.halo]) {
-      const drawn = getComputedStyle(halo)
-      await expect(getDistanceFrom(drawn.stroke)).toBeLessThan(2)
-      await expect(Number.parseFloat(drawn.strokeWidth)).toBeGreaterThan(0)
+      const rendered = getComputedStyle(halo)
+      await expect(getDistanceFrom(rendered.stroke)).toBeLessThan(2)
+      await expect(Number.parseFloat(rendered.strokeWidth)).toBeGreaterThan(0)
     }
     await expect(Number.parseFloat(getComputedStyle(lifted.halo).strokeWidth)).toBeGreaterThan(
       Number.parseFloat(getComputedStyle(resting.halo).strokeWidth),

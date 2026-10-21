@@ -145,12 +145,12 @@ interface Captured {
 /** Pointer capture on the element, which jsdom does not have. */
 const createCapture = (element: HTMLElement, holds = false): Captured => {
   const has = vi.fn<(id: number) => boolean>(() => holds)
-  const set = vi.fn<(id: number) => void>()
+  const activeSet = vi.fn<(id: number) => void>()
   const release = vi.fn<(id: number) => void>()
   element.hasPointerCapture = has
-  element.setPointerCapture = set
+  element.setPointerCapture = activeSet
   element.releasePointerCapture = release
-  return { has, set, release }
+  return { has, set: activeSet, release }
 }
 
 const createPointer = (clientX: number, clientY: number, button = 0): PointerEvent =>

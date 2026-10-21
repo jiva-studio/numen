@@ -391,15 +391,15 @@ export const VerseSetInAPreElement: Story = {
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
-    const set = getPaper(canvasElement).querySelector('pre')!
-    await expect(set.scrollHeight).toBeLessThanOrEqual(set.clientHeight + 1)
-    await expect(set.scrollWidth).toBeLessThanOrEqual(set.clientWidth + 1)
+    const activeSet = getPaper(canvasElement).querySelector('pre')!
+    await expect(activeSet.scrollHeight).toBeLessThanOrEqual(activeSet.clientHeight + 1)
+    await expect(activeSet.scrollWidth).toBeLessThanOrEqual(activeSet.clientWidth + 1)
 
     // It relies on the paper the rest of the text does. The typography dresses
     // a pre as a block of code, and a title page is not one.
-    const drawn = getComputedStyle(set)
-    await expect(drawn.backgroundColor).toBe('rgba(0, 0, 0, 0)')
-    await expect(drawn.color).toBe(getComputedStyle(getPaper(canvasElement)).color)
+    const rendered = getComputedStyle(activeSet)
+    await expect(rendered.backgroundColor).toBe('rgba(0, 0, 0, 0)')
+    await expect(rendered.color).toBe(getComputedStyle(getPaper(canvasElement)).color)
 
     // It ran on into columns of its own and not stopping at the first.
     const area = getArea(canvasElement)
@@ -482,11 +482,11 @@ export const SetLarger: Story = {
     })
     const before = getFrontOffset(canvasElement)
 
-    const set = getComputedStyle(getRunsOf(canvasElement)[0]!).fontSize
+    const activeSet = getComputedStyle(getRunsOf(canvasElement)[0]!).fontSize
     await userEvent.click(canvas.getByLabelText('Larger'))
     await waitFor(
       async () =>
-        await expect(getComputedStyle(getRunsOf(canvasElement)[0]!).fontSize).not.toBe(set),
+        await expect(getComputedStyle(getRunsOf(canvasElement)[0]!).fontSize).not.toBe(activeSet),
       { timeout: ITS_OWN_PACE },
     )
 

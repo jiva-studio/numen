@@ -45,15 +45,15 @@ const getFocusedTab = () => document.activeElement?.getAttribute('data-workspace
 
 describe('what the strip is', () => {
   it('is a list of tabs, each standing over a panel', () => {
-    const held = mountPane()
+    const target = mountPane()
 
-    expect(held.find('[role="tablist"]').exists()).toBe(true)
-    expect(strip(held)).toHaveLength(3)
-    expect(panels(held)).toHaveLength(3)
+    expect(target.find('[role="tablist"]').exists()).toBe(true)
+    expect(strip(target)).toHaveLength(3)
+    expect(panels(target)).toHaveLength(3)
 
-    for (const [at, tab] of strip(held).entries()) {
-      expect(tab.attributes('aria-controls')).toBe(panels(held)[at]?.attributes('id'))
-      expect(panels(held)[at]?.attributes('aria-labelledby')).toBe(tab.attributes('id'))
+    for (const [at, tab] of strip(target).entries()) {
+      expect(tab.attributes('aria-controls')).toBe(panels(target)[at]?.attributes('id'))
+      expect(panels(target)[at]?.attributes('aria-labelledby')).toBe(tab.attributes('id'))
     }
   })
 
@@ -68,10 +68,10 @@ describe('what the strip is', () => {
   })
 
   it('passes each tab what that tab is carrying', () => {
-    const held = mountPane({ marks: { chat: 'unsaved' } })
-    const marks = strip(held).map((tab) => {
-      const drawn = tab.find('.tab__mark')
-      return drawn.exists() ? drawn.attributes('aria-label') : null
+    const target = mountPane({ marks: { chat: 'unsaved' } })
+    const marks = strip(target).map((tab) => {
+      const rendered = tab.find('.tab__mark')
+      return rendered.exists() ? rendered.attributes('aria-label') : null
     })
 
     expect(marks).toStrictEqual([null, 'unsaved', null])
@@ -99,10 +99,10 @@ describe('a pane holding nothing', () => {
   })
 
   it('is filled by what the caller draws', () => {
-    const held = mountEmptyPane({ silence: '<p class="welcome">Welcome</p>' })
+    const target = mountEmptyPane({ silence: '<p class="welcome">Welcome</p>' })
 
-    expect(held.find('.welcome').exists()).toBe(true)
-    expect(held.text()).not.toContain('Nothing open')
+    expect(target.find('.welcome').exists()).toBe(true)
+    expect(target.text()).not.toContain('Nothing open')
   })
 
   it('remains over no panel', () => {
@@ -112,35 +112,35 @@ describe('a pane holding nothing', () => {
 
 describe('walking the strip', () => {
   it('steps along with the arrows, and shows what it reaches', async () => {
-    const held = mountPane()
-    await strip(held)[1]?.trigger('keydown', { key: 'ArrowRight' })
+    const target = mountPane()
+    await strip(target)[1]?.trigger('keydown', { key: 'ArrowRight' })
 
-    expect(held.emitted('choose')).toStrictEqual([['notes']])
+    expect(target.emitted('choose')).toStrictEqual([['notes']])
     expect(getFocusedTab()).toBe('notes')
   })
 
   it('meets its own ends', async () => {
-    const held = mountPane({ pane: pane('main', ['plex', 'chat', 'notes'], 'plex') })
-    await strip(held)[0]?.trigger('keydown', { key: 'ArrowLeft' })
+    const target = mountPane({ pane: pane('main', ['plex', 'chat', 'notes'], 'plex') })
+    await strip(target)[0]?.trigger('keydown', { key: 'ArrowLeft' })
 
-    expect(held.emitted('choose')).toStrictEqual([['notes']])
+    expect(target.emitted('choose')).toStrictEqual([['notes']])
     expect(getFocusedTab()).toBe('notes')
   })
 
   it('goes to either end by Home and End', async () => {
-    const held = mountPane()
-    await strip(held)[1]?.trigger('keydown', { key: 'Home' })
-    await strip(held)[0]?.trigger('keydown', { key: 'End' })
+    const target = mountPane()
+    await strip(target)[1]?.trigger('keydown', { key: 'Home' })
+    await strip(target)[0]?.trigger('keydown', { key: 'End' })
 
-    expect(held.emitted('choose')).toStrictEqual([['plex'], ['notes']])
+    expect(target.emitted('choose')).toStrictEqual([['plex'], ['notes']])
   })
 
   it('leaves every other key to whatever else wants it', async () => {
-    const held = mountPane()
-    await strip(held)[1]?.trigger('keydown', { key: 'ArrowDown' })
-    await strip(held)[1]?.trigger('keydown', { key: 'a' })
+    const target = mountPane()
+    await strip(target)[1]?.trigger('keydown', { key: 'ArrowDown' })
+    await strip(target)[1]?.trigger('keydown', { key: 'a' })
 
-    expect(held.emitted('choose')).toBeUndefined()
+    expect(target.emitted('choose')).toBeUndefined()
   })
 })
 
@@ -148,8 +148,8 @@ describe('the way out of a panel', () => {
   const inside = '<button class="inside">inside</button>'
 
   it('is Escape, which lands on the tab the panel is retained under', async () => {
-    const held = mountPane({}, { tab: inside })
-    const first = held.findAll<HTMLButtonElement>('.inside')[1]
+    const tab = mountPane({}, { tab: inside })
+    const first = tab.findAll<HTMLButtonElement>('.inside')[1]
 
     first?.element.focus()
     await first?.trigger('keydown', { key: 'Escape' })
@@ -160,10 +160,10 @@ describe('the way out of a panel', () => {
   // A tab closed ahead of the one showing hands it a place in the strip it did
   // not have, and the way out lands on the tab and not on the place.
   it('lands on the tab the panel is retained under after a tab before it closed', async () => {
-    const held = mountPane({}, { tab: inside })
-    await held.setProps({ pane: pane('main', ['chat', 'notes'], 'chat') })
+    const tab = mountPane({}, { tab: inside })
+    await tab.setProps({ pane: pane('main', ['chat', 'notes'], 'chat') })
 
-    const first = held.findAll<HTMLButtonElement>('.inside')[0]
+    const first = tab.findAll<HTMLButtonElement>('.inside')[0]
     first?.element.focus()
     await first?.trigger('keydown', { key: 'Escape' })
 
@@ -171,8 +171,8 @@ describe('the way out of a panel', () => {
   })
 
   it('leaves Escape alone where the panel has already acted on it', async () => {
-    const held = mountPane({}, { tab: inside })
-    const first = held.findAll<HTMLButtonElement>('.inside')[1]
+    const tab = mountPane({}, { tab: inside })
+    const first = tab.findAll<HTMLButtonElement>('.inside')[1]
 
     first?.element.addEventListener('keydown', (event) => event.preventDefault())
     first?.element.focus()
@@ -188,10 +188,10 @@ describe('the tab that is showing', () => {
   })
 
   it('is returned again when another tab takes its place', async () => {
-    const held = mountPane()
-    await held.setProps({ pane: pane('main', ['plex', 'chat', 'notes'], 'notes') })
+    const target = mountPane()
+    await target.setProps({ pane: pane('main', ['plex', 'chat', 'notes'], 'notes') })
 
-    expect(held.emitted('show')).toStrictEqual([['chat'], ['notes']])
+    expect(target.emitted('show')).toStrictEqual([['chat'], ['notes']])
   })
 
   it('is returned once the panel it remains over is on screen', async () => {
@@ -202,8 +202,8 @@ describe('the tab that is showing', () => {
       onScreen.push(panel?.hasAttribute('data-showing') ?? false)
     }
 
-    const held = mountPane({ pane: pane('later', ['plex', 'chat', 'notes'], 'chat'), onShow })
-    await held.setProps({ pane: pane('later', ['plex', 'chat', 'notes'], 'notes') })
+    const target = mountPane({ pane: pane('later', ['plex', 'chat', 'notes'], 'chat'), onShow })
+    await target.setProps({ pane: pane('later', ['plex', 'chat', 'notes'], 'notes') })
 
     expect(onScreen).toStrictEqual([true, true])
   })

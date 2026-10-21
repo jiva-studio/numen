@@ -124,10 +124,10 @@ export function checkHeadingName(
  * alone is not one of them, so every name made this way carries a number.
  */
 export function getFreeName(names: readonly string[], stem: string): string {
-  const held = new Set(names.map((name) => name.trim()))
+  const target = new Set(names.map((name) => name.trim()))
   for (let at = 1; ; at += 1) {
     const tried = `${stem} ${at}`
-    if (!held.has(tried)) return tried
+    if (!target.has(tried)) return tried
   }
 }
 

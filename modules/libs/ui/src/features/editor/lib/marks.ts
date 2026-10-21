@@ -144,8 +144,8 @@ class MarkBuilder {
       }
 
       case 'TaskMarker': {
-        const done = this.doc.sliceString(node.from, node.to).toLowerCase() === '[x]'
-        const box = new Box(done, !this.state.readOnly)
+        const isDone = this.doc.sliceString(node.from, node.to).toLowerCase() === '[x]'
+        const box = new Box(isDone, !this.state.readOnly)
         this.found.push(Decoration.replace({ widget: box }).range(node.from, node.to))
         return false
       }

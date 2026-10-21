@@ -138,16 +138,16 @@ const meta: Meta<Knobs> = {
   render: (args) => ({
     components: { Stencil },
     setup() {
-      const held = getCorpus(args.corpus)
-      const fields = ref<readonly string[]>(held.fields)
-      const faces = ref<readonly StencilFace[]>(held.faces)
+      const target = getCorpus(args.corpus)
+      const fields = ref<readonly string[]>(target.fields)
+      const faces = ref<readonly StencilFace[]>(target.faces)
 
       watch(
         () => args.corpus,
         (next) => {
-          const held = getCorpus(next)
-          fields.value = held.fields
-          faces.value = held.faces
+          const target = getCorpus(next)
+          fields.value = target.fields
+          faces.value = target.faces
         },
       )
 
@@ -233,17 +233,17 @@ const getBox = (canvas: HTMLElement, id: string, half: Half) => {
 }
 
 const found = (canvas: HTMLElement, selector: string): HTMLElement => {
-  const held = canvas.querySelector<HTMLElement>(selector)
-  if (!held) throw new Error(`nothing matching ${selector}`)
-  return held
+  const element = canvas.querySelector<HTMLElement>(selector)
+  if (!element) throw new Error(`nothing matching ${selector}`)
+  return element
 }
 
 const buttonSaying = (canvas: HTMLElement, text: string) => {
-  const held = [...canvas.querySelectorAll<HTMLElement>('button')].find(
+  const element = [...canvas.querySelectorAll<HTMLElement>('button')].find(
     (each) => each.textContent?.trim() === text,
   )
-  if (!held) throw new Error(`no button saying ${text}`)
-  return held
+  if (!element) throw new Error(`no button saying ${text}`)
+  return element
 }
 
 const getDrawnFields = (canvas: HTMLElement): readonly (string | null)[] =>
@@ -269,9 +269,9 @@ export const AStencil: Story = {
 
     // The row carries the line and the ground, and what stands inside carries
     // neither.
-    const drawn = getComputedStyle(row)
-    expect(Number.parseFloat(drawn.borderTopWidth)).toBeGreaterThan(0)
-    expect(drawn.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
+    const rendered = getComputedStyle(row)
+    expect(Number.parseFloat(rendered.borderTopWidth)).toBeGreaterThan(0)
+    expect(rendered.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
     const inside = getComputedStyle(box)
     expect(Number.parseFloat(inside.borderTopWidth)).toBe(0)
     expect(inside.backgroundColor).toBe('rgba(0, 0, 0, 0)')
@@ -302,8 +302,8 @@ export const AStencil: Story = {
       ?.dispatchEvent(new DragEvent('dragstart', { bubbles: true }))
     first.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true }))
     first.dispatchEvent(new DragEvent('drop', { bubbles: true }))
-    await new Promise((settled) => {
-      setTimeout(settled, 0)
+    await new Promise((resolved) => {
+      setTimeout(resolved, 0)
     })
     expect(getDrawnFields(canvasElement)).toEqual(['Name', 'Height', 'Weight', 'Life span'])
 

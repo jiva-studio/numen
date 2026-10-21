@@ -10,10 +10,10 @@ const COUNTS = { parent: 3, child: 6, jump: 3, sibling: 3 }
 
 /** Choose a node and hand back the neighbourhood around it, as a story does. */
 function step(current: ReturnType<typeof build>, id: string) {
-  const chosen = current.nodes.find((node) => node.id === id)!
+  const selected = current.nodes.find((node) => node.id === id)!
   const was = current.nodes.find((node) => node.relation === 'focus')!
   const from: TitledNode = { id: was.id, title: was.title }
-  return buildAround({ id: chosen.id, title: chosen.title }, from, COUNTS)
+  return buildAround({ id: selected.id, title: selected.title }, from, COUNTS)
 }
 
 describe('walking', () => {

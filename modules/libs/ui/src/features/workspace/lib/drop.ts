@@ -48,15 +48,15 @@ export function getSide(at: Position, box: Rect, options: Partial<DropOptions> =
     ['bottom', downZone > 0 ? (box.height - y) / downZone : Infinity],
   ]
 
-  let chosen: Side = 'center'
+  let selected: Side = 'center'
   let deepest = 1
   for (const [side, reach] of reaches) {
     if (reach < deepest) {
-      chosen = side
+      selected = side
       deepest = reach
     }
   }
-  return chosen
+  return selected
 }
 
 /** The part of a box a side would take, for the overlay that shows it. */

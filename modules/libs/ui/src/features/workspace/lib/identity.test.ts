@@ -29,9 +29,9 @@ describe('the identities a workspace gives its nodes', () => {
   })
 
   it('come from the machine where it has them', () => {
-    const made = browserRandomness.uuid()
+    const createdItem = browserRandomness.uuid()
 
-    expect(made === null || made.length > 0).toBe(true)
+    expect(createdItem === null || createdItem.length > 0).toBe(true)
   })
 })
 

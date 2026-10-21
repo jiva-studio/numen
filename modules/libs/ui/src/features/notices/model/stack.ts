@@ -39,7 +39,7 @@ export function useNoticeStack(
   /** How long it has been held for. */
   const heldFor = ref(0)
 
-  const read = computed(() => now.value - heldFor.value)
+  const readItem = computed(() => now.value - heldFor.value)
 
   /** The card a pointer is on, for as long as that card is still there. */
   let on: Element | null = null
@@ -83,5 +83,5 @@ export function useNoticeStack(
     focused.value = false
   }
 
-  return { now, read, beat, onPointerOver, onPointerOut, onFocusIn, onFocusOut }
+  return { now, read: readItem, beat, onPointerOver, onPointerOut, onFocusIn, onFocusOut }
 }

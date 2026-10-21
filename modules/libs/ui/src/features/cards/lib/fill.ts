@@ -60,12 +60,12 @@ export function renderPreview(
  * they stand.
  */
 export function getUndeclaredSlots(template: string, fields: readonly string[]): readonly string[] {
-  const seen = new Set<string>()
+  const observed = new Set<string>()
   for (const slot of getSlots(template)) {
     if (fields.includes(slot.field)) continue
-    seen.add(slot.field)
+    observed.add(slot.field)
   }
-  return [...seen]
+  return [...observed]
 }
 
 /** A field put into a face: the text it evaluates to, and where the caret lands. */
@@ -80,10 +80,10 @@ export interface InsertResult {
  */
 export function insert(template: string, at: number, field: string): InsertResult {
   const where = Math.max(0, Math.min(at, template.length))
-  const written = braceField(field)
+  const content = braceField(field)
   return {
-    text: template.slice(0, where) + written + template.slice(where),
-    caret: where + written.length,
+    text: template.slice(0, where) + content + template.slice(where),
+    caret: where + content.length,
   }
 }
 

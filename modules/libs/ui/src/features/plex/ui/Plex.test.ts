@@ -60,8 +60,8 @@ describe('asking for a node on its own', () => {
     const plex = mountPlex()
     await plex.get('[aria-label^="Hexagonal architecture"]').trigger('dblclick')
 
-    const asked = plex.emitted('show') as [string, string][]
-    expect(asked[0]?.[1]).toBe('here')
+    const request = plex.emitted('show') as [string, string][]
+    expect(request[0]?.[1]).toBe('here')
     expect(plex.emitted('activate')).toBeUndefined()
   })
 

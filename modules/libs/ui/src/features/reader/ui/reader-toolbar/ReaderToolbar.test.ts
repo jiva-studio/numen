@@ -27,7 +27,7 @@ const createToolbar = (zoom = FURTHEST) => {
     button,
     /** Every zoom it has handed on, in the order it handed them on. */
     handed: (): readonly unknown[] =>
-      (controls.emitted('update:zoom') ?? []).map((said) => (said as unknown[])[0]),
+      (controls.emitted('update:zoom') ?? []).map((response) => (response as unknown[])[0]),
     press: async (label: string) => {
       await button(label).trigger('click')
       const last = controls.emitted('update:zoom')?.at(-1)
