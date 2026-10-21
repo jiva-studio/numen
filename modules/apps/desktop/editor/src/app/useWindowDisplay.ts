@@ -157,7 +157,7 @@ export function useWindowDisplay(
 
   const streams = useWindowStreams({
     core,
-    listening: isListening,
+    listening: abortController,
     isOpen: () => open,
     setLost: (response) => {
       display.lost.value = response

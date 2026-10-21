@@ -225,22 +225,22 @@ function useSessionOpener(deps: {
     deck: string,
     preset?: string | undefined,
   ): Promise<Report | null> => {
-    const openedTab = await openSession({
+    const startedSession = await openSession({
       cards: deps.cardsClient,
       reportError: deps.reportError,
       id,
       deck,
       ...(preset !== undefined ? { preset } : {}),
     })
-    if (!openedTab) return null
+    if (!startedSession) return null
     deps.vault.value = id
-    deps.run.value = openedTab.run
-    deps.cards.asked.value = openedTab.cards
+    deps.run.value = startedSession.run
+    deps.cards.asked.value = startedSession.cards
     deps.cards.at.value = 0
     deps.cards.shown.value = false
     deps.cards.answers.value = []
     deps.setPut(deps.now())
-    return openedTab.report
+    return startedSession.report
   }
 
   const forget = () => {

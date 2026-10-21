@@ -62,7 +62,7 @@ export function useAgentPanel(deps: AgentPanelDeps) {
   const about = computed(() => card.value?.card ?? null)
 
   /** How many conversations this window has opened, which names the next. */
-  let openedTab = 0
+  let conversationCounter = 0
 
   const turns = computed<Turn[]>(() => card.value?.conversation.turns.value ?? [])
   const isWorking = computed(() => card.value?.conversation.isWorking.value ?? false)
@@ -71,7 +71,7 @@ export function useAgentPanel(deps: AgentPanelDeps) {
   const startTalk = (targetCard: CardFace) => {
     if (card.value?.card.mark === targetCard.mark && card.value.card.face === targetCard.face) return
     endConversation()
-    const conversation = createCardConversation(deps.agent(targetCard), `card-${openedTab++}`, deps.paint)
+    const conversation = createCardConversation(deps.agent(targetCard), `card-${conversationCounter++}`, deps.paint)
     card.value = { card: targetCard, conversation }
   }
 
