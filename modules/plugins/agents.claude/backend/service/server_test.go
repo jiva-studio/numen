@@ -389,7 +389,7 @@ func TestFinishingAConversationStopsItsRun(t *testing.T) {
 }
 
 // A program nowhere to be found is told to the person, and the run ends.
-func TestAskAgentSaysWhenTheProgramIsNotInstalled(t *testing.T) {
+func TestAskAgent_NotInstalled(t *testing.T) {
 	withoutClaudeAnywhere(t)
 	client := startAgent(t, &agentServer{})
 
@@ -404,7 +404,7 @@ func TestAskAgentSaysWhenTheProgramIsNotInstalled(t *testing.T) {
 }
 
 // A closed agent takes no task.
-func TestAClosedAgentTakesNoTask(t *testing.T) {
+func TestAskAgent_ClosedAgent(t *testing.T) {
 	agentSvc := &agentServer{}
 	_ = agentSvc.registry.Close()
 	client := startAgent(t, agentSvc)
@@ -424,7 +424,7 @@ func TestAClosedAgentTakesNoTask(t *testing.T) {
 
 // A command line the installation set counts as the program being installed, wherever the program
 // relies on this machine.
-func TestTheProgramIsInstalledUnderTheCommandLineTheInstallationSet(t *testing.T) {
+func TestGetAgentPrograms_ExplicitCommandInstallation(t *testing.T) {
 	withoutClaudeAnywhere(t)
 	t.Setenv("ANTHROPIC_API_KEY", "")
 	client := startAgent(t, &agentServer{})
@@ -577,7 +577,7 @@ func TestAskAgentAppendsSystemPrompt(t *testing.T) {
 	assertPair(t, argv, "--append-system-prompt", "task instructions\nvault prompt")
 }
 
-func TestAskAgentFailsWhenMcpConfigCannotBeWritten(t *testing.T) {
+func TestAskAgent_McpConfigWriteFailure(t *testing.T) {
 	script := writeScript(t, "mock-claude.sh", "echo '{\"type\":\"result\",\"is_error\":false}'\n")
 	t.Setenv("TMPDIR", "/dev/null/nowhere")
 	client := startAgent(t, &agentServer{})

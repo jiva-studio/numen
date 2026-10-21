@@ -123,8 +123,8 @@ func parseStreamWithClock(
 			return "canceled"
 		}
 		line, err := scanner.ReadString('\n')
-		if trimmed := strings.TrimSpace(line); trimmed != "" {
-			p.parseLine(ctx, trimmed)
+		if content := strings.TrimSpace(line); content != "" {
+			p.parseLine(ctx, content)
 		}
 		if err != nil {
 			return p.reason

@@ -153,7 +153,7 @@ func TestChangesCloserThanTheIntervalAreReportedOnce(t *testing.T) {
 	}
 }
 
-func TestSaysWhenTheVaultDidNotReachTheAgent(t *testing.T) {
+func TestParseLines_VaultMcpFailure(t *testing.T) {
 	cases := map[string]string{
 		`{"type":"system","subtype":"init","mcp_servers":[{"name":"numen","status":"failed"}]}`:         "the agent could not reach this vault",
 		`{"type":"system","subtype":"init","mcp_servers":[]}`:                                           "the agent was started without this vault",
@@ -168,7 +168,7 @@ func TestSaysWhenTheVaultDidNotReachTheAgent(t *testing.T) {
 	}
 }
 
-func TestAnErrorResultIsPutIntoWords(t *testing.T) {
+func TestParseLines_ErrorResultFormatting(t *testing.T) {
 	cases := map[string]string{
 		`{"type":"result","is_error":true,"subtype":"error_max_turns"}`:                            "the agent reached the limit of steps without finishing",
 		`{"type":"result","is_error":true,"subtype":"error_context_length_exceeded"}`:              "the conversation is too long for the model",
@@ -184,7 +184,7 @@ func TestAnErrorResultIsPutIntoWords(t *testing.T) {
 	}
 }
 
-func TestTheFirstReasonHolds(t *testing.T) {
+func TestParseLines_FirstErrorPriority(t *testing.T) {
 	_, reason := parseLines(t, nil,
 		`{"type":"result","is_error":true,"subtype":"error_rate_limit"}`,
 		`{"type":"result","is_error":true,"subtype":"error_overloaded"}`)
@@ -193,7 +193,7 @@ func TestTheFirstReasonHolds(t *testing.T) {
 	}
 }
 
-func TestTheAgentReadsNothingThisMachineHoldsForItByDefault(t *testing.T) {
+func TestBuildClaudeArguments_SettingSources(t *testing.T) {
 	args := buildClaudeArguments(claudeArguments{configuration: "cfg.json", tools: []string{"note_read"}})
 	assertPair(t, args, "--setting-sources", "")
 	args = buildClaudeArguments(claudeArguments{configuration: "cfg.json", tools: []string{"note_read"}, mayReadHooks: true})
@@ -224,7 +224,7 @@ func assertPair(t *testing.T, args []string, flag, want string) {
 	t.Errorf("%s absent from %v", flag, args)
 }
 
-func TestTheChildIsNotToldAboutSomebodyElsesSession(t *testing.T) {
+func TestBuildEnvironment_SessionSanitization(t *testing.T) {
 	got := buildEnvironment([]string{"PATH=/bin", "CLAUDECODE=1", "CLAUDE_CODE_SESSION_ID=x", "HOME=/h"})
 	if strings.Join(got, ",") != "PATH=/bin,HOME=/h" {
 		t.Fatalf("got %v", got)
