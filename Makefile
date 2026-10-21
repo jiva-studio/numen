@@ -415,8 +415,8 @@ tool_icon_build: ## cut application icons
 tool_stories_check: ## verify story references
 	cd $(STORIES) && npm run check
 
-.PHONY: check_layers
-check_layers: ## validate architectural layer boundaries (usage: make check_layers [target=libs|plugins|apps|<module>])
+.PHONY: check_layers tool_layers_check
+check_layers tool_layers_check: ## validate architectural layer boundaries (usage: make check_layers [target=libs|plugins|apps|<module>])
 	node $(LAYERS)/check.mjs $(target)
 
 # ---------------------------------- Plugins -----------------------------------
