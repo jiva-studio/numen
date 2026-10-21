@@ -36,8 +36,75 @@ func TestValidatePath(t *testing.T) {
 	}
 
 	t.Setenv("NUMEN_VAULT_PATH", "")
-	if clean, err := ValidatePath("relative.pdf"); err != nil || clean != "relative.pdf" {
-		t.Errorf("no vault root: got %q, err %v", clean, err)
+	if _, err := ValidatePath("relative.pdf"); !errors.Is(err, ErrEmptyVault) {
+		t.Errorf("empty vault root: err = %v, want ErrEmptyVault", err)
+	}
+}
+
+func TestValidatePathAcceptsDoubleDotInFilename(t *testing.T) {
+	vaultDir := t.TempDir()
+	t.Setenv("NUMEN_VAULT_PATH", vaultDir)
+
+	clean, err := ValidatePath("a..b.pdf")
+	if err != nil {
+		t.Fatalf("legitimate double-dot filename rejected: %v", err)
+	}
+	want := filepath.Join(vaultDir, "a..b.pdf")
+	if clean != want {
+		t.Errorf("got %q, want %q", clean, want)
+	}
+}
+
+func TestValidatePathRejectsTraversal(t *testing.T) {
+	vaultDir := t.TempDir()
+	t.Setenv("NUMEN_VAULT_PATH", vaultDir)
+
+	for _, p := range []string{
+		"../escape.pdf",
+		"foo/../../etc/passwd",
+		"sub/../..",
+		"..",
+	} {
+		if _, err := ValidatePath(p); !errors.Is(err, ErrPathTraversal) {
+			t.Errorf("path %q: expected ErrPathTraversal, got %v", p, err)
+		}
+	}
+}
+
+func TestValidatePathRejectsSymlinkEscapes(t *testing.T) {
+	vaultDir := t.TempDir()
+	outsideDir := t.TempDir()
+	t.Setenv("NUMEN_VAULT_PATH", vaultDir)
+
+	// Symlink pointing to nonexistent outside target.
+	brokenLink := filepath.Join(vaultDir, "broken_link.pdf")
+	if err := os.Symlink(filepath.Join(outsideDir, "nonexistent.pdf"), brokenLink); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ValidatePath("broken_link.pdf"); !errors.Is(err, ErrPathTraversal) {
+		t.Errorf("symlink to missing outside target: expected ErrPathTraversal, got %v", err)
+	}
+
+	// Symlink pointing to existing outside target.
+	outsideFile := filepath.Join(outsideDir, "secret.pdf")
+	if err := os.WriteFile(outsideFile, []byte("secret"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	realLink := filepath.Join(vaultDir, "real_link.pdf")
+	if err := os.Symlink(outsideFile, realLink); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ValidatePath("real_link.pdf"); !errors.Is(err, ErrPathTraversal) {
+		t.Errorf("symlink to existing outside target: expected ErrPathTraversal, got %v", err)
+	}
+
+	// Symlink directory pointing outside.
+	symDir := filepath.Join(vaultDir, "sym_dir")
+	if err := os.Symlink(outsideDir, symDir); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ValidatePath("sym_dir/missing.pdf"); !errors.Is(err, ErrPathTraversal) {
+		t.Errorf("missing file in outside symlinked dir: expected ErrPathTraversal, got %v", err)
 	}
 }
 
@@ -55,6 +122,20 @@ func TestATempDocumentIsAllowedOnlyWhenTheCallerAllowsIt(t *testing.T) {
 	if _, err := ValidatePath(other, IsTempDocument); !errors.Is(err, ErrOutsideVault) {
 		t.Errorf("other temp file: err = %v", err)
 	}
+
+	// Planted symlink in temp directory pointing outside.
+	outsideTarget := filepath.Join(t.TempDir(), "secret.pdf")
+	if err := os.WriteFile(outsideTarget, []byte("data"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	plantedSymlink := filepath.Join(os.TempDir(), "numen-doc-planted")
+	_ = os.Remove(plantedSymlink)
+	if err := os.Symlink(outsideTarget, plantedSymlink); err == nil {
+		defer os.Remove(plantedSymlink)
+		if IsTempDocument(plantedSymlink) {
+			t.Errorf("planted symlink in temp directory was accepted")
+		}
+	}
 }
 
 // A vault root given to ValidatePathIn holds the path, whatever the environment says.
@@ -68,5 +149,8 @@ func TestValidatePathInHoldsThePathToTheRootItIsGiven(t *testing.T) {
 	}
 	if _, err := ValidatePathIn(root, filepath.Join(t.TempDir(), "b.md")); !errors.Is(err, ErrOutsideVault) {
 		t.Errorf("a path outside the root = %v, want ErrOutsideVault", err)
+	}
+	if _, err := ValidatePathIn("", "notes/a.md"); !errors.Is(err, ErrEmptyVault) {
+		t.Errorf("empty vault root = %v, want ErrEmptyVault", err)
 	}
 }

@@ -126,7 +126,7 @@ func (s *transcriptionServer) OpenRecording(
 		var err error
 		data, err = s.readAudioFile(path)
 		if err != nil {
-			if errors.Is(err, vault.ErrOutsideVault) || errors.Is(err, vault.ErrPathTraversal) {
+			if errors.Is(err, vault.ErrOutsideVault) || errors.Is(err, vault.ErrPathTraversal) || errors.Is(err, vault.ErrEmptyVault) {
 				return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read audio %s: %w", path, err))
 			}
 			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("read audio %s: %w", path, err))

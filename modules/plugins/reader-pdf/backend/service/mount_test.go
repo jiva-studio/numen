@@ -13,16 +13,19 @@ import (
 // The handler a host that links the plugin in serves answers the document service with the token
 // it was given.
 func TestTheLinkedHandlerAnswersTheDocumentService(t *testing.T) {
-	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token"})
+	path, err := filepath.Abs(filepath.Join("..", "pdf", "testdata", "tiny.pdf"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler, err := NewHandler(map[string]string{
+		"NUMEN_PLUGIN_TOKEN": "linked-token",
+		"NUMEN_VAULT_PATH":   filepath.Dir(path),
+	})
 	if err != nil {
 		t.Fatalf("NewHandler: %v", err)
 	}
 	web := httptest.NewServer(handler)
 	defer web.Close()
-	path, err := filepath.Abs(filepath.Join("..", "pdf", "testdata", "tiny.pdf"))
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	client := numenv1connect.NewDocumentServiceClient(web.Client(), web.URL)
 	req := connect.NewRequest(&numenv1.GetDocumentRequest{Path: path})

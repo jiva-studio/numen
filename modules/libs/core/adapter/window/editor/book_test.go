@@ -427,3 +427,45 @@ func TestAPathTheVaultDoesNotHoldIsNoBook(t *testing.T) {
 		t.Error("the plugin was asked for a path the vault does not hold")
 	}
 }
+
+// GetBook and ReadBookMarkup refuse a path that leaves the vault or that the
+// vault does not hold.
+func TestGetBookAndReadBookMarkupRejectPathsOutsideVault(t *testing.T) {
+	client := newBookClient()
+	api, _ := readFrom(t, client)
+
+	for _, path := range []string{"../outside.epub", "/etc/passwd", "library/nothing.epub"} {
+		t.Run(path, func(t *testing.T) {
+			_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: path}))
+			if err == nil {
+				t.Errorf("GetBook(%q) succeeded, want error", path)
+			}
+			_, err = api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{Path: path}))
+			if err == nil {
+				t.Errorf("ReadBookMarkup(%q) succeeded, want error", path)
+			}
+		})
+	}
+	if client.book != "" {
+		t.Errorf("client was asked for book: %s", client.book)
+	}
+	if client.markup != nil {
+		t.Errorf("client was asked for markup: %v", client.markup)
+	}
+}
+
+// A window without a shown vault refuses GetBook and ReadBookMarkup.
+func TestGetBookAndReadBookMarkupWithoutShownVault(t *testing.T) {
+	client := newBookClient()
+	api, _ := readFrom(t, client)
+	api.state.setVault(domain.Vault{})
+
+	_, err := api.Book.GetBook(t.Context(), connect.NewRequest(&v1.GetBookRequest{Path: reflowed}))
+	if code := connect.CodeOf(err); code != connect.CodeFailedPrecondition {
+		t.Errorf("GetBook without vault = %v, want CodeFailedPrecondition", code)
+	}
+	_, err = api.Book.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{Path: reflowed}))
+	if code := connect.CodeOf(err); code != connect.CodeFailedPrecondition {
+		t.Errorf("ReadBookMarkup without vault = %v, want CodeFailedPrecondition", code)
+	}
+}

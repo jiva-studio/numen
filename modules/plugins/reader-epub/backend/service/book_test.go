@@ -116,4 +116,38 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
 		t.Fatalf("expected CodePermissionDenied for ReadBookMarkup path traversal, got %v", err)
 	}
+
+	// 6. Double dot in legitimate filename inside vault -> Success
+	dotPath := filepath.Join(vaultDir, "a..b.epub")
+	_ = os.WriteFile(dotPath, data, 0o644)
+	resp, err = server.GetBook(ctx, connect.NewRequest(&numenv1.GetBookRequest{
+		Path: dotPath,
+	}))
+	if err != nil {
+		t.Fatalf("expected success for double-dot filename inside vault, got %v", err)
+	}
+	if resp.Msg.GetTitle() != "Test Book" {
+		t.Fatalf("expected title 'Test Book', got %q", resp.Msg.GetTitle())
+	}
+
+	// 7. Symlink pointing outside vault rejected even when target does not exist -> PermissionDenied
+	brokenLink := filepath.Join(vaultDir, "broken.epub")
+	if err := os.Symlink(filepath.Join(outsideDir, "missing.epub"), brokenLink); err != nil {
+		t.Fatal(err)
+	}
+	_, err = server.GetBook(ctx, connect.NewRequest(&numenv1.GetBookRequest{
+		Path: brokenLink,
+	}))
+	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("expected CodePermissionDenied for broken outside symlink, got %v", err)
+	}
+
+	// 8. Empty vault root -> PermissionDenied
+	emptyServer := NewBookServerIn("")
+	_, err = emptyServer.GetBook(ctx, connect.NewRequest(&numenv1.GetBookRequest{
+		Path: insidePath,
+	}))
+	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("expected CodePermissionDenied for empty vault root, got %v", err)
+	}
 }

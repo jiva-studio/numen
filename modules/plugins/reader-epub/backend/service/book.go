@@ -55,7 +55,7 @@ func (s *BookServer) GetBook(
 	}
 	raw, err := s.readBookFile(path)
 	if err != nil {
-		if errors.Is(err, vault.ErrOutsideVault) || errors.Is(err, vault.ErrPathTraversal) {
+		if errors.Is(err, vault.ErrOutsideVault) || errors.Is(err, vault.ErrPathTraversal) || errors.Is(err, vault.ErrEmptyVault) {
 			return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
 		}
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
@@ -113,7 +113,7 @@ func (s *BookServer) ReadBookMarkup(
 	}
 	raw, err := s.readBookFile(path)
 	if err != nil {
-		if errors.Is(err, vault.ErrOutsideVault) || errors.Is(err, vault.ErrPathTraversal) {
+		if errors.Is(err, vault.ErrOutsideVault) || errors.Is(err, vault.ErrPathTraversal) || errors.Is(err, vault.ErrEmptyVault) {
 			return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
 		}
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))

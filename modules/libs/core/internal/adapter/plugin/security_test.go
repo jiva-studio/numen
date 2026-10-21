@@ -68,6 +68,56 @@ func TestVaultPathValidator(t *testing.T) {
 			t.Fatal("expected error for empty vault root")
 		}
 	})
+
+	t.Run("legitimate filename with double dots accepted", func(t *testing.T) {
+		got, err := validator.ValidatePath(vaultDir, "a..b.pdf")
+		if err != nil {
+			t.Fatalf("unexpected error for double-dot filename: %v", err)
+		}
+		want := filepath.Join(vaultDir, "a..b.pdf")
+		if got != want {
+			t.Fatalf("got %s, want %s", got, want)
+		}
+	})
+
+	t.Run("symlink pointing outside rejected when target does not exist", func(t *testing.T) {
+		outsideDir := t.TempDir()
+		brokenLink := filepath.Join(vaultDir, "broken_link.pdf")
+		if err := os.Symlink(filepath.Join(outsideDir, "missing.pdf"), brokenLink); err != nil {
+			t.Fatal(err)
+		}
+		_, err := validator.ValidatePath(vaultDir, "broken_link.pdf")
+		if !errors.Is(err, port.ErrPathTraversal) {
+			t.Fatalf("expected ErrPathTraversal for broken outside symlink, got %v", err)
+		}
+	})
+
+	t.Run("symlink pointing outside rejected when target exists", func(t *testing.T) {
+		outsideDir := t.TempDir()
+		outsideFile := filepath.Join(outsideDir, "real.pdf")
+		if err := os.WriteFile(outsideFile, []byte("secret"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		link := filepath.Join(vaultDir, "real_link.pdf")
+		if err := os.Symlink(outsideFile, link); err != nil {
+			t.Fatal(err)
+		}
+		_, err := validator.ValidatePath(vaultDir, "real_link.pdf")
+		if !errors.Is(err, port.ErrPathTraversal) {
+			t.Fatalf("expected ErrPathTraversal for outside symlink, got %v", err)
+		}
+	})
+
+	t.Run("missing target inside vault accepted", func(t *testing.T) {
+		got, err := validator.ValidatePath(vaultDir, "nonexistent.pdf")
+		if err != nil {
+			t.Fatalf("unexpected error for missing target in vault: %v", err)
+		}
+		want := filepath.Join(vaultDir, "nonexistent.pdf")
+		if got != want {
+			t.Fatalf("got %s, want %s", got, want)
+		}
+	})
 }
 
 func TestSupervisorPermissionsAndPathValidation(t *testing.T) {

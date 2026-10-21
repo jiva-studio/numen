@@ -4,7 +4,12 @@ import (
 	"context"
 	"image"
 	"io"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
+
+// VaultReaders reads the files of a vault.
+type VaultReaders = port.VaultReaders
 
 // Scan is a document held open, for the length of one call.
 type Scan interface {

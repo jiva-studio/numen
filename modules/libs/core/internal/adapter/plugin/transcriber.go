@@ -151,8 +151,8 @@ func (b *TranscriberBridge) OpenSource(ctx context.Context, source any) (port.Re
 }
 
 func (b *TranscriberBridge) resolveNamedPath(rawPath string) (string, error) {
-	if b.host == nil || b.host.GetVaultPath() == "" {
-		return rawPath, nil
+	if b.host == nil {
+		return "", errEmptyVaultRoot
 	}
 	return b.host.ValidatePluginPath(b.pluginID, rawPath)
 }

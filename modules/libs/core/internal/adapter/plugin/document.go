@@ -335,8 +335,8 @@ func (d *remoteDocument) Close() {
 }
 
 func (b *DocumentBridge) resolveNamedPath(rawPath string) (string, error) {
-	if b.host == nil || b.host.GetVaultPath() == "" {
-		return rawPath, nil
+	if b.host == nil {
+		return "", errEmptyVaultRoot
 	}
 	return b.host.ValidatePluginPath(b.pluginID, rawPath)
 }

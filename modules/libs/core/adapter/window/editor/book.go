@@ -21,6 +21,7 @@ type bookHandler struct {
 
 	state          *State
 	viewer         *viewer
+	readers        document.VaultReaders
 	getBook        *document.GetBook
 	readBookMarkup *document.ReadBookMarkup
 	getBookPicture *document.GetBookPicture
@@ -42,6 +43,20 @@ func (h *bookHandler) GetBook(
 	if h.getBook == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 	}
+	showing, err := h.state.getShownVault()
+	if err != nil {
+		return nil, convertBookError(err)
+	}
+	patience := openTimeout
+	if h.viewer != nil && h.viewer.patience > 0 {
+		patience = h.viewer.patience
+	}
+	ctx, cancel := context.WithTimeout(ctx, patience)
+	defer cancel()
+
+	if err := h.validatePath(ctx, showing, r.Msg.GetPath()); err != nil {
+		return nil, convertBookError(err)
+	}
 	shape, err := h.getBook.Execute(ctx, r.Msg.GetPath())
 	if err != nil {
 		return nil, convertBookError(err)
@@ -61,6 +76,20 @@ func (h *bookHandler) ReadBookMarkup(
 	if h.readBookMarkup == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 	}
+	showing, err := h.state.getShownVault()
+	if err != nil {
+		return nil, convertBookError(err)
+	}
+	patience := openTimeout
+	if h.viewer != nil && h.viewer.patience > 0 {
+		patience = h.viewer.patience
+	}
+	ctx, cancel := context.WithTimeout(ctx, patience)
+	defer cancel()
+
+	if err := h.validatePath(ctx, showing, r.Msg.GetPath()); err != nil {
+		return nil, convertBookError(err)
+	}
 	var baseline *domain.Fingerprint
 	if named := r.Msg.GetBaseline(); named != nil {
 		baseline = &domain.Fingerprint{Path: named.GetPath(), Size: named.GetSize(), ModTime: instant(named.GetMtime())}
@@ -70,6 +99,18 @@ func (h *bookHandler) ReadBookMarkup(
 		return nil, convertBookError(err)
 	}
 	return connect.NewResponse(&v1.ReadBookMarkupResponse{Markup: markup}), nil
+}
+
+func (h *bookHandler) validatePath(ctx context.Context, v domain.Vault, path string) error {
+	if h.readers == nil {
+		return nil
+	}
+	reader, err := h.readers.Open(v)
+	if err != nil {
+		return err
+	}
+	_, err = reader.GetFingerprint(ctx, path)
+	return err
 }
 
 // newWireBook is the shape of a book as the schema carries it.

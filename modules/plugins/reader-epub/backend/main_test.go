@@ -117,6 +117,7 @@ func createMinimalEpub(t *testing.T) []byte {
 
 func TestBookServerGetBookAndMarkup(t *testing.T) {
 	tempDir := t.TempDir()
+	t.Setenv("NUMEN_VAULT_PATH", tempDir)
 	epubBytes := createMinimalEpub(t)
 	epubPath := filepath.Join(tempDir, "test.epub")
 	if err := os.WriteFile(epubPath, epubBytes, 0o644); err != nil {

@@ -62,6 +62,37 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
 		t.Fatalf("expected CodePermissionDenied for GetHighlights outside vault, got %v", err)
 	}
+
+	// 6. Double-dot filename inside vault -> check passes (does not return PermissionDenied)
+	dotPath := filepath.Join(vaultDir, "a..b.pdf")
+	_ = os.WriteFile(dotPath, []byte("%PDF-1.4 dummy"), 0o644)
+	_, err = server.GetDocument(ctx, connect.NewRequest(&numenv1.GetDocumentRequest{
+		Path: dotPath,
+	}))
+	if connect.CodeOf(err) == connect.CodePermissionDenied {
+		t.Fatalf("expected double-dot filename not to be PermissionDenied, got %v", err)
+	}
+
+	// 7. Broken symlink pointing outside vault -> PermissionDenied
+	brokenLink := filepath.Join(vaultDir, "broken.pdf")
+	if err := os.Symlink(filepath.Join(outsideDir, "missing.pdf"), brokenLink); err != nil {
+		t.Fatal(err)
+	}
+	_, err = server.GetDocument(ctx, connect.NewRequest(&numenv1.GetDocumentRequest{
+		Path: brokenLink,
+	}))
+	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("expected CodePermissionDenied for broken outside symlink, got %v", err)
+	}
+
+	// 8. Empty vault root -> PermissionDenied
+	emptyServer := NewDocumentServerIn("")
+	_, err = emptyServer.GetDocument(ctx, connect.NewRequest(&numenv1.GetDocumentRequest{
+		Path: insidePath,
+	}))
+	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("expected CodePermissionDenied for empty vault root, got %v", err)
+	}
 }
 
 func TestDocumentServerEmptyPath(t *testing.T) {
