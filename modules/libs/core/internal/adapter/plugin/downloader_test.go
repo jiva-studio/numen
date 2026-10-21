@@ -103,7 +103,7 @@ func createTestDownloaderPluginTree(t *testing.T, dir string) {
 		"name": "Media Downloader Plugin",
 		"version": "1.0.0",
 		"description": "Media Downloader",
-		"capabilities": ["downloader", "media.download"],
+		"capabilities": ["downloader"],
 		"targets": ["desktop.editor"],
 		"permissions": ["network:outbound", "vault:write"],
 		"lifecycle": {

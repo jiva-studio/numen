@@ -75,86 +75,6 @@ func (ProofreadKind) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{0}
 }
 
-type GetProofreaderInfoRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetProofreaderInfoRequest) Reset() {
-	*x = GetProofreaderInfoRequest{}
-	mi := &file_numen_v1_proofreading_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetProofreaderInfoRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetProofreaderInfoRequest) ProtoMessage() {}
-
-func (x *GetProofreaderInfoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_proofreading_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetProofreaderInfoRequest.ProtoReflect.Descriptor instead.
-func (*GetProofreaderInfoRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{0}
-}
-
-type GetProofreaderInfoResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetProofreaderInfoResponse) Reset() {
-	*x = GetProofreaderInfoResponse{}
-	mi := &file_numen_v1_proofreading_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetProofreaderInfoResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetProofreaderInfoResponse) ProtoMessage() {}
-
-func (x *GetProofreaderInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_proofreading_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetProofreaderInfoResponse.ProtoReflect.Descriptor instead.
-func (*GetProofreaderInfoResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *GetProofreaderInfoResponse) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
 // ProofreadLine is one numbered run of words.
 type ProofreadLine struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -166,7 +86,7 @@ type ProofreadLine struct {
 
 func (x *ProofreadLine) Reset() {
 	*x = ProofreadLine{}
-	mi := &file_numen_v1_proofreading_proto_msgTypes[2]
+	mi := &file_numen_v1_proofreading_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -178,7 +98,7 @@ func (x *ProofreadLine) String() string {
 func (*ProofreadLine) ProtoMessage() {}
 
 func (x *ProofreadLine) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_proofreading_proto_msgTypes[2]
+	mi := &file_numen_v1_proofreading_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -191,7 +111,7 @@ func (x *ProofreadLine) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProofreadLine.ProtoReflect.Descriptor instead.
 func (*ProofreadLine) Descriptor() ([]byte, []int) {
-	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{2}
+	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ProofreadLine) GetNumber() int32 {
@@ -220,7 +140,7 @@ type ProofreadGroup struct {
 
 func (x *ProofreadGroup) Reset() {
 	*x = ProofreadGroup{}
-	mi := &file_numen_v1_proofreading_proto_msgTypes[3]
+	mi := &file_numen_v1_proofreading_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -232,7 +152,7 @@ func (x *ProofreadGroup) String() string {
 func (*ProofreadGroup) ProtoMessage() {}
 
 func (x *ProofreadGroup) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_proofreading_proto_msgTypes[3]
+	mi := &file_numen_v1_proofreading_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -245,7 +165,7 @@ func (x *ProofreadGroup) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProofreadGroup.ProtoReflect.Descriptor instead.
 func (*ProofreadGroup) Descriptor() ([]byte, []int) {
-	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ProofreadGroup) GetNumber() int32 {
@@ -274,7 +194,7 @@ type ProofreadScanOptions struct {
 
 func (x *ProofreadScanOptions) Reset() {
 	*x = ProofreadScanOptions{}
-	mi := &file_numen_v1_proofreading_proto_msgTypes[4]
+	mi := &file_numen_v1_proofreading_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -286,7 +206,7 @@ func (x *ProofreadScanOptions) String() string {
 func (*ProofreadScanOptions) ProtoMessage() {}
 
 func (x *ProofreadScanOptions) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_proofreading_proto_msgTypes[4]
+	mi := &file_numen_v1_proofreading_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -299,7 +219,7 @@ func (x *ProofreadScanOptions) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProofreadScanOptions.ProtoReflect.Descriptor instead.
 func (*ProofreadScanOptions) Descriptor() ([]byte, []int) {
-	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ProofreadScanOptions) GetMaxEditDistance() float64 {
@@ -327,7 +247,7 @@ type ProofreadSpeechOptions struct {
 
 func (x *ProofreadSpeechOptions) Reset() {
 	*x = ProofreadSpeechOptions{}
-	mi := &file_numen_v1_proofreading_proto_msgTypes[5]
+	mi := &file_numen_v1_proofreading_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -339,7 +259,7 @@ func (x *ProofreadSpeechOptions) String() string {
 func (*ProofreadSpeechOptions) ProtoMessage() {}
 
 func (x *ProofreadSpeechOptions) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_proofreading_proto_msgTypes[5]
+	mi := &file_numen_v1_proofreading_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -352,7 +272,7 @@ func (x *ProofreadSpeechOptions) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProofreadSpeechOptions.ProtoReflect.Descriptor instead.
 func (*ProofreadSpeechOptions) Descriptor() ([]byte, []int) {
-	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ProofreadSpeechOptions) GetSize() int32 {
@@ -401,7 +321,7 @@ type ProofreadTextRequest struct {
 
 func (x *ProofreadTextRequest) Reset() {
 	*x = ProofreadTextRequest{}
-	mi := &file_numen_v1_proofreading_proto_msgTypes[6]
+	mi := &file_numen_v1_proofreading_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -413,7 +333,7 @@ func (x *ProofreadTextRequest) String() string {
 func (*ProofreadTextRequest) ProtoMessage() {}
 
 func (x *ProofreadTextRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_proofreading_proto_msgTypes[6]
+	mi := &file_numen_v1_proofreading_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -426,7 +346,7 @@ func (x *ProofreadTextRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProofreadTextRequest.ProtoReflect.Descriptor instead.
 func (*ProofreadTextRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ProofreadTextRequest) GetKind() ProofreadKind {
@@ -498,7 +418,7 @@ type ProofreadCorrection struct {
 
 func (x *ProofreadCorrection) Reset() {
 	*x = ProofreadCorrection{}
-	mi := &file_numen_v1_proofreading_proto_msgTypes[7]
+	mi := &file_numen_v1_proofreading_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -510,7 +430,7 @@ func (x *ProofreadCorrection) String() string {
 func (*ProofreadCorrection) ProtoMessage() {}
 
 func (x *ProofreadCorrection) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_proofreading_proto_msgTypes[7]
+	mi := &file_numen_v1_proofreading_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -523,7 +443,7 @@ func (x *ProofreadCorrection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProofreadCorrection.ProtoReflect.Descriptor instead.
 func (*ProofreadCorrection) Descriptor() ([]byte, []int) {
-	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ProofreadCorrection) GetNumber() int32 {
@@ -563,7 +483,7 @@ type ProofreadTextResponse struct {
 
 func (x *ProofreadTextResponse) Reset() {
 	*x = ProofreadTextResponse{}
-	mi := &file_numen_v1_proofreading_proto_msgTypes[8]
+	mi := &file_numen_v1_proofreading_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -575,7 +495,7 @@ func (x *ProofreadTextResponse) String() string {
 func (*ProofreadTextResponse) ProtoMessage() {}
 
 func (x *ProofreadTextResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_proofreading_proto_msgTypes[8]
+	mi := &file_numen_v1_proofreading_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -588,7 +508,7 @@ func (x *ProofreadTextResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProofreadTextResponse.ProtoReflect.Descriptor instead.
 func (*ProofreadTextResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_proofreading_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ProofreadTextResponse) GetCorrections() []*ProofreadCorrection {
@@ -623,10 +543,7 @@ var File_numen_v1_proofreading_proto protoreflect.FileDescriptor
 
 const file_numen_v1_proofreading_proto_rawDesc = "" +
 	"\n" +
-	"\x1bnumen/v1/proofreading.proto\x12\bnumen.v1\"\x1b\n" +
-	"\x19GetProofreaderInfoRequest\"0\n" +
-	"\x1aGetProofreaderInfoResponse\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\";\n" +
+	"\x1bnumen/v1/proofreading.proto\x12\bnumen.v1\";\n" +
 	"\rProofreadLine\x12\x16\n" +
 	"\x06number\x18\x01 \x01(\x05R\x06number\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\"W\n" +
@@ -659,9 +576,8 @@ const file_numen_v1_proofreading_proto_rawDesc = "" +
 	"\rProofreadKind\x12\x1e\n" +
 	"\x1aPROOFREAD_KIND_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13PROOFREAD_KIND_SCAN\x10\x01\x12\x19\n" +
-	"\x15PROOFREAD_KIND_SPEECH\x10\x022\xc8\x01\n" +
-	"\x13ProofreadingService\x12_\n" +
-	"\x12GetProofreaderInfo\x12#.numen.v1.GetProofreaderInfoRequest\x1a$.numen.v1.GetProofreaderInfoResponse\x12P\n" +
+	"\x15PROOFREAD_KIND_SPEECH\x10\x022g\n" +
+	"\x13ProofreadingService\x12P\n" +
 	"\rProofreadText\x12\x1e.numen.v1.ProofreadTextRequest\x1a\x1f.numen.v1.ProofreadTextResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
@@ -677,32 +593,28 @@ func file_numen_v1_proofreading_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_proofreading_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_proofreading_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_numen_v1_proofreading_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_numen_v1_proofreading_proto_goTypes = []any{
-	(ProofreadKind)(0),                 // 0: numen.v1.ProofreadKind
-	(*GetProofreaderInfoRequest)(nil),  // 1: numen.v1.GetProofreaderInfoRequest
-	(*GetProofreaderInfoResponse)(nil), // 2: numen.v1.GetProofreaderInfoResponse
-	(*ProofreadLine)(nil),              // 3: numen.v1.ProofreadLine
-	(*ProofreadGroup)(nil),             // 4: numen.v1.ProofreadGroup
-	(*ProofreadScanOptions)(nil),       // 5: numen.v1.ProofreadScanOptions
-	(*ProofreadSpeechOptions)(nil),     // 6: numen.v1.ProofreadSpeechOptions
-	(*ProofreadTextRequest)(nil),       // 7: numen.v1.ProofreadTextRequest
-	(*ProofreadCorrection)(nil),        // 8: numen.v1.ProofreadCorrection
-	(*ProofreadTextResponse)(nil),      // 9: numen.v1.ProofreadTextResponse
+	(ProofreadKind)(0),             // 0: numen.v1.ProofreadKind
+	(*ProofreadLine)(nil),          // 1: numen.v1.ProofreadLine
+	(*ProofreadGroup)(nil),         // 2: numen.v1.ProofreadGroup
+	(*ProofreadScanOptions)(nil),   // 3: numen.v1.ProofreadScanOptions
+	(*ProofreadSpeechOptions)(nil), // 4: numen.v1.ProofreadSpeechOptions
+	(*ProofreadTextRequest)(nil),   // 5: numen.v1.ProofreadTextRequest
+	(*ProofreadCorrection)(nil),    // 6: numen.v1.ProofreadCorrection
+	(*ProofreadTextResponse)(nil),  // 7: numen.v1.ProofreadTextResponse
 }
 var file_numen_v1_proofreading_proto_depIdxs = []int32{
-	3, // 0: numen.v1.ProofreadGroup.lines:type_name -> numen.v1.ProofreadLine
+	1, // 0: numen.v1.ProofreadGroup.lines:type_name -> numen.v1.ProofreadLine
 	0, // 1: numen.v1.ProofreadTextRequest.kind:type_name -> numen.v1.ProofreadKind
-	4, // 2: numen.v1.ProofreadTextRequest.groups:type_name -> numen.v1.ProofreadGroup
-	5, // 3: numen.v1.ProofreadTextRequest.scan:type_name -> numen.v1.ProofreadScanOptions
-	6, // 4: numen.v1.ProofreadTextRequest.speech:type_name -> numen.v1.ProofreadSpeechOptions
-	8, // 5: numen.v1.ProofreadTextResponse.corrections:type_name -> numen.v1.ProofreadCorrection
-	1, // 6: numen.v1.ProofreadingService.GetProofreaderInfo:input_type -> numen.v1.GetProofreaderInfoRequest
-	7, // 7: numen.v1.ProofreadingService.ProofreadText:input_type -> numen.v1.ProofreadTextRequest
-	2, // 8: numen.v1.ProofreadingService.GetProofreaderInfo:output_type -> numen.v1.GetProofreaderInfoResponse
-	9, // 9: numen.v1.ProofreadingService.ProofreadText:output_type -> numen.v1.ProofreadTextResponse
-	8, // [8:10] is the sub-list for method output_type
-	6, // [6:8] is the sub-list for method input_type
+	2, // 2: numen.v1.ProofreadTextRequest.groups:type_name -> numen.v1.ProofreadGroup
+	3, // 3: numen.v1.ProofreadTextRequest.scan:type_name -> numen.v1.ProofreadScanOptions
+	4, // 4: numen.v1.ProofreadTextRequest.speech:type_name -> numen.v1.ProofreadSpeechOptions
+	6, // 5: numen.v1.ProofreadTextResponse.corrections:type_name -> numen.v1.ProofreadCorrection
+	5, // 6: numen.v1.ProofreadingService.ProofreadText:input_type -> numen.v1.ProofreadTextRequest
+	7, // 7: numen.v1.ProofreadingService.ProofreadText:output_type -> numen.v1.ProofreadTextResponse
+	7, // [7:8] is the sub-list for method output_type
+	6, // [6:7] is the sub-list for method input_type
 	6, // [6:6] is the sub-list for extension type_name
 	6, // [6:6] is the sub-list for extension extendee
 	0, // [0:6] is the sub-list for field type_name
@@ -713,7 +625,7 @@ func file_numen_v1_proofreading_proto_init() {
 	if File_numen_v1_proofreading_proto != nil {
 		return
 	}
-	file_numen_v1_proofreading_proto_msgTypes[6].OneofWrappers = []any{
+	file_numen_v1_proofreading_proto_msgTypes[4].OneofWrappers = []any{
 		(*ProofreadTextRequest_Scan)(nil),
 		(*ProofreadTextRequest_Speech)(nil),
 	}
@@ -723,7 +635,7 @@ func file_numen_v1_proofreading_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_proofreading_proto_rawDesc), len(file_numen_v1_proofreading_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   9,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

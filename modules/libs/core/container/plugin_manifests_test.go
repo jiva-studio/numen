@@ -478,17 +478,7 @@ var sdkCapabilities = map[string]bool{
 
 // capabilityMarkers are explicit capability markers declared by plugins.
 var capabilityMarkers = map[string]bool{
-	"agent":           true,
-	"cards.deck":      true,
-	"cards.preset":    true,
-	"cards.stencil":   true,
-	"editor.markdown": true,
-	"media.download":  true,
-	"reader.markdown": true,
-	"ui.view":         true,
-	"view.agent-chat": true,
-	"view.file-tree":  true,
-	"view.plex-graph": true,
+	"agent": true,
 }
 
 func isResolvedCapability(capability string) bool {
@@ -524,14 +514,13 @@ func TestWhatTheCapabilityRuleRefuses(t *testing.T) {
 			refused = append(refused, capability)
 		}
 	}
-	want := []string{"unknown.capability", "unresolved"}
+	want := []string{"view.agent-chat", "unknown.capability", "unresolved"}
 	if !slices.Equal(refused, want) {
 		t.Errorf("the capability rule refuses %v, want %v", refused, want)
 	}
 }
 
-// isEmittedActivationEvent answers whether an activation event is one the host emits
-// or an explicit lifecycle or view marker.
+// isEmittedActivationEvent answers whether an activation event is one the host emits.
 func isEmittedActivationEvent(event string) bool {
 	switch {
 	case event == "*":
@@ -540,10 +529,6 @@ func isEmittedActivationEvent(event string) bool {
 		return len(strings.TrimPrefix(event, "onFile:")) > 0
 	case strings.HasPrefix(event, "onCommand:"):
 		return len(strings.TrimPrefix(event, "onCommand:")) > 0
-	case event == "onStartupFinished":
-		return true
-	case strings.HasPrefix(event, "onView:"):
-		return len(strings.TrimPrefix(event, "onView:")) > 0
 	default:
 		return false
 	}
@@ -582,9 +567,8 @@ func TestWhatTheActivationEventRuleRefuses(t *testing.T) {
 			refused = append(refused, event)
 		}
 	}
-	want := []string{"unsupportedEvent", "onFile:", "onCommand:", "onView:"}
+	want := []string{"onStartupFinished", "onView:agent", "unsupportedEvent", "onFile:", "onCommand:", "onView:"}
 	if !slices.Equal(refused, want) {
 		t.Errorf("the activation event rule refuses %v, want %v", refused, want)
 	}
 }
-

@@ -39,12 +39,13 @@ func TestTheRemoteServiceIsAskedOnlyWithTheKeyConfigureHandsOver(t *testing.T) {
 	}
 
 	configure(map[string]string{server.SecretAPIKey: "host-key"})
-	res, err := emb.EmbedText(t.Context(), connect.NewRequest(&numenv1.EmbedTextRequest{Text: "a fixture sentence"}))
+	res, err := emb.EmbedBatch(t.Context(), connect.NewRequest(&numenv1.EmbedBatchRequest{Texts: []string{"a fixture sentence"}}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := res.Msg.GetVector(); len(got) != 2 || got[0] != 0.5 {
-		t.Errorf("vector = %v, want the one the service answered", got)
+	vectors := res.Msg.GetVectors()
+	if len(vectors) != 1 || len(vectors[0].GetValues()) != 2 || vectors[0].GetValues()[0] != 0.5 {
+		t.Errorf("vectors = %v, want the one the service answered", vectors)
 	}
 	if len(auth) != 1 || auth[0] != "Bearer host-key" {
 		t.Errorf("the service was asked with %v, want only the key Configure handed over", auth)

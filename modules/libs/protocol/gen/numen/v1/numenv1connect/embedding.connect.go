@@ -36,9 +36,6 @@ const (
 	// EmbeddingServiceGetEmbeddingModelProcedure is the fully-qualified name of the EmbeddingService's
 	// GetEmbeddingModel RPC.
 	EmbeddingServiceGetEmbeddingModelProcedure = "/numen.v1.EmbeddingService/GetEmbeddingModel"
-	// EmbeddingServiceEmbedTextProcedure is the fully-qualified name of the EmbeddingService's
-	// EmbedText RPC.
-	EmbeddingServiceEmbedTextProcedure = "/numen.v1.EmbeddingService/EmbedText"
 	// EmbeddingServiceEmbedBatchProcedure is the fully-qualified name of the EmbeddingService's
 	// EmbedBatch RPC.
 	EmbeddingServiceEmbedBatchProcedure = "/numen.v1.EmbeddingService/EmbedBatch"
@@ -48,8 +45,6 @@ const (
 type EmbeddingServiceClient interface {
 	// GetEmbeddingModel returns identity and configuration of the active embedding model.
 	GetEmbeddingModel(context.Context, *connect.Request[v1.GetEmbeddingModelRequest]) (*connect.Response[v1.GetEmbeddingModelResponse], error)
-	// EmbedText computes vector embedding for a single text.
-	EmbedText(context.Context, *connect.Request[v1.EmbedTextRequest]) (*connect.Response[v1.EmbedTextResponse], error)
 	// EmbedBatch computes vector embeddings for a list of texts.
 	EmbedBatch(context.Context, *connect.Request[v1.EmbedBatchRequest]) (*connect.Response[v1.EmbedBatchResponse], error)
 }
@@ -71,12 +66,6 @@ func NewEmbeddingServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(embeddingServiceMethods.ByName("GetEmbeddingModel")),
 			connect.WithClientOptions(opts...),
 		),
-		embedText: connect.NewClient[v1.EmbedTextRequest, v1.EmbedTextResponse](
-			httpClient,
-			baseURL+EmbeddingServiceEmbedTextProcedure,
-			connect.WithSchema(embeddingServiceMethods.ByName("EmbedText")),
-			connect.WithClientOptions(opts...),
-		),
 		embedBatch: connect.NewClient[v1.EmbedBatchRequest, v1.EmbedBatchResponse](
 			httpClient,
 			baseURL+EmbeddingServiceEmbedBatchProcedure,
@@ -89,18 +78,12 @@ func NewEmbeddingServiceClient(httpClient connect.HTTPClient, baseURL string, op
 // embeddingServiceClient implements EmbeddingServiceClient.
 type embeddingServiceClient struct {
 	getEmbeddingModel *connect.Client[v1.GetEmbeddingModelRequest, v1.GetEmbeddingModelResponse]
-	embedText         *connect.Client[v1.EmbedTextRequest, v1.EmbedTextResponse]
 	embedBatch        *connect.Client[v1.EmbedBatchRequest, v1.EmbedBatchResponse]
 }
 
 // GetEmbeddingModel calls numen.v1.EmbeddingService.GetEmbeddingModel.
 func (c *embeddingServiceClient) GetEmbeddingModel(ctx context.Context, req *connect.Request[v1.GetEmbeddingModelRequest]) (*connect.Response[v1.GetEmbeddingModelResponse], error) {
 	return c.getEmbeddingModel.CallUnary(ctx, req)
-}
-
-// EmbedText calls numen.v1.EmbeddingService.EmbedText.
-func (c *embeddingServiceClient) EmbedText(ctx context.Context, req *connect.Request[v1.EmbedTextRequest]) (*connect.Response[v1.EmbedTextResponse], error) {
-	return c.embedText.CallUnary(ctx, req)
 }
 
 // EmbedBatch calls numen.v1.EmbeddingService.EmbedBatch.
@@ -112,8 +95,6 @@ func (c *embeddingServiceClient) EmbedBatch(ctx context.Context, req *connect.Re
 type EmbeddingServiceHandler interface {
 	// GetEmbeddingModel returns identity and configuration of the active embedding model.
 	GetEmbeddingModel(context.Context, *connect.Request[v1.GetEmbeddingModelRequest]) (*connect.Response[v1.GetEmbeddingModelResponse], error)
-	// EmbedText computes vector embedding for a single text.
-	EmbedText(context.Context, *connect.Request[v1.EmbedTextRequest]) (*connect.Response[v1.EmbedTextResponse], error)
 	// EmbedBatch computes vector embeddings for a list of texts.
 	EmbedBatch(context.Context, *connect.Request[v1.EmbedBatchRequest]) (*connect.Response[v1.EmbedBatchResponse], error)
 }
@@ -131,12 +112,6 @@ func NewEmbeddingServiceHandler(svc EmbeddingServiceHandler, opts ...connect.Han
 		connect.WithSchema(embeddingServiceMethods.ByName("GetEmbeddingModel")),
 		connect.WithHandlerOptions(opts...),
 	)
-	embeddingServiceEmbedTextHandler := connect.NewUnaryHandler(
-		EmbeddingServiceEmbedTextProcedure,
-		svc.EmbedText,
-		connect.WithSchema(embeddingServiceMethods.ByName("EmbedText")),
-		connect.WithHandlerOptions(opts...),
-	)
 	embeddingServiceEmbedBatchHandler := connect.NewUnaryHandler(
 		EmbeddingServiceEmbedBatchProcedure,
 		svc.EmbedBatch,
@@ -147,8 +122,6 @@ func NewEmbeddingServiceHandler(svc EmbeddingServiceHandler, opts ...connect.Han
 		switch r.URL.Path {
 		case EmbeddingServiceGetEmbeddingModelProcedure:
 			embeddingServiceGetEmbeddingModelHandler.ServeHTTP(w, r)
-		case EmbeddingServiceEmbedTextProcedure:
-			embeddingServiceEmbedTextHandler.ServeHTTP(w, r)
 		case EmbeddingServiceEmbedBatchProcedure:
 			embeddingServiceEmbedBatchHandler.ServeHTTP(w, r)
 		default:
@@ -162,10 +135,6 @@ type UnimplementedEmbeddingServiceHandler struct{}
 
 func (UnimplementedEmbeddingServiceHandler) GetEmbeddingModel(context.Context, *connect.Request[v1.GetEmbeddingModelRequest]) (*connect.Response[v1.GetEmbeddingModelResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.EmbeddingService.GetEmbeddingModel is not implemented"))
-}
-
-func (UnimplementedEmbeddingServiceHandler) EmbedText(context.Context, *connect.Request[v1.EmbedTextRequest]) (*connect.Response[v1.EmbedTextResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.EmbeddingService.EmbedText is not implemented"))
 }
 
 func (UnimplementedEmbeddingServiceHandler) EmbedBatch(context.Context, *connect.Request[v1.EmbedBatchRequest]) (*connect.Response[v1.EmbedBatchResponse], error) {

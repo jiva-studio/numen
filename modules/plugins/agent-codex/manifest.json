@@ -6,7 +6,7 @@
   "description": "OpenAI Codex CLI agent runner and provider service",
   "capabilities": ["agent", "ai.agent.provider"],
   "targets": ["desktop.editor"],
-  "activationEvents": ["onCommand:askCodex", "onView:agent"],
+  "activationEvents": ["onCommand:askCodex"],
   "permissions": ["network:outbound", "vault:read", "vault:write"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,

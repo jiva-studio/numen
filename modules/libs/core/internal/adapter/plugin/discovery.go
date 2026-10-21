@@ -139,13 +139,3 @@ func FilterPluginsByTarget(plugins []DiscoveredPlugin, target string) []Discover
 	}
 	return matched
 }
-
-// FindPluginByCapability returns the first plugin providing the specified capability.
-func FindPluginByCapability(plugins []DiscoveredPlugin, capability string) (DiscoveredPlugin, bool) {
-	for _, p := range plugins {
-		if p.Manifest.HasCapability(capability) {
-			return p, true
-		}
-	}
-	return emptyDiscoveredPlugin(), false
-}

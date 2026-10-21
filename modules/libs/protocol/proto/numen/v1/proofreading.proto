@@ -8,19 +8,10 @@ option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/nume
 // proofreader owns the prompts, the batches and the rules a reply must meet;
 // the caller owns the lines and what is done with the corrections.
 service ProofreadingService {
-  // GetProofreaderInfo returns the name the proofreader goes under.
-  rpc GetProofreaderInfo(GetProofreaderInfoRequest) returns (GetProofreaderInfoResponse);
-
   // ProofreadText proofreads numbered lines of one kind of text and returns the
   // corrections the proofreader stands behind. It fails with code unavailable
   // where nothing is routed to answer for the proofreading.
   rpc ProofreadText(ProofreadTextRequest) returns (ProofreadTextResponse);
-}
-
-message GetProofreaderInfoRequest {}
-
-message GetProofreaderInfoResponse {
-  string name = 1;
 }
 
 // ProofreadKind is what is being proofread. The proofreader chooses its own

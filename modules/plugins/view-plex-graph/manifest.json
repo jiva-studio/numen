@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "Modular knowledge graph visualizer and plexus network explorer",
-  "capabilities": ["view.plex-graph", "ui.view"],
+  "capabilities": [],
   "targets": ["desktop.editor"],
-  "activationEvents": ["onStartupFinished", "onView:plex"],
+  "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
   "frontend": {
     "entrypoint": "dist/index.js",

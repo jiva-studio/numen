@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "Modular file tree explorer and vault navigator",
-  "capabilities": ["view.file-tree", "ui.view"],
+  "capabilities": [],
   "targets": ["desktop.editor"],
-  "activationEvents": ["onStartupFinished", "onView:file-tree"],
+  "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
   "frontend": {
     "entrypoint": "dist/index.js",

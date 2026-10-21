@@ -36,15 +36,6 @@ type mockProofreadingServer struct {
 	failure  error
 }
 
-func (s *mockProofreadingServer) GetProofreaderInfo(
-	_ context.Context,
-	_ *connect.Request[v1.GetProofreaderInfoRequest],
-) (*connect.Response[v1.GetProofreaderInfoResponse], error) {
-	return connect.NewResponse(&v1.GetProofreaderInfoResponse{
-		Name: "test-proofreader-model",
-	}), nil
-}
-
 func (s *mockProofreadingServer) ProofreadText(
 	_ context.Context,
 	req *connect.Request[v1.ProofreadTextRequest],

@@ -39,13 +39,6 @@ func (s *mockEmbeddingServer) GetEmbeddingModel(
 	}), nil
 }
 
-func (s *mockEmbeddingServer) EmbedText(
-	_ context.Context,
-	_ *connect.Request[v1.EmbedTextRequest],
-) (*connect.Response[v1.EmbedTextResponse], error) {
-	return connect.NewResponse(&v1.EmbedTextResponse{Vector: []float32{0.1}}), nil
-}
-
 func (s *mockEmbeddingServer) EmbedBatch(
 	_ context.Context,
 	_ *connect.Request[v1.EmbedBatchRequest],

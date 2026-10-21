@@ -33,9 +33,6 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// ProofreadingServiceGetProofreaderInfoProcedure is the fully-qualified name of the
-	// ProofreadingService's GetProofreaderInfo RPC.
-	ProofreadingServiceGetProofreaderInfoProcedure = "/numen.v1.ProofreadingService/GetProofreaderInfo"
 	// ProofreadingServiceProofreadTextProcedure is the fully-qualified name of the
 	// ProofreadingService's ProofreadText RPC.
 	ProofreadingServiceProofreadTextProcedure = "/numen.v1.ProofreadingService/ProofreadText"
@@ -43,8 +40,6 @@ const (
 
 // ProofreadingServiceClient is a client for the numen.v1.ProofreadingService service.
 type ProofreadingServiceClient interface {
-	// GetProofreaderInfo returns the name the proofreader goes under.
-	GetProofreaderInfo(context.Context, *connect.Request[v1.GetProofreaderInfoRequest]) (*connect.Response[v1.GetProofreaderInfoResponse], error)
 	// ProofreadText proofreads numbered lines of one kind of text and returns the
 	// corrections the proofreader stands behind. It fails with code unavailable
 	// where nothing is routed to answer for the proofreading.
@@ -62,12 +57,6 @@ func NewProofreadingServiceClient(httpClient connect.HTTPClient, baseURL string,
 	baseURL = strings.TrimRight(baseURL, "/")
 	proofreadingServiceMethods := v1.File_numen_v1_proofreading_proto.Services().ByName("ProofreadingService").Methods()
 	return &proofreadingServiceClient{
-		getProofreaderInfo: connect.NewClient[v1.GetProofreaderInfoRequest, v1.GetProofreaderInfoResponse](
-			httpClient,
-			baseURL+ProofreadingServiceGetProofreaderInfoProcedure,
-			connect.WithSchema(proofreadingServiceMethods.ByName("GetProofreaderInfo")),
-			connect.WithClientOptions(opts...),
-		),
 		proofreadText: connect.NewClient[v1.ProofreadTextRequest, v1.ProofreadTextResponse](
 			httpClient,
 			baseURL+ProofreadingServiceProofreadTextProcedure,
@@ -79,13 +68,7 @@ func NewProofreadingServiceClient(httpClient connect.HTTPClient, baseURL string,
 
 // proofreadingServiceClient implements ProofreadingServiceClient.
 type proofreadingServiceClient struct {
-	getProofreaderInfo *connect.Client[v1.GetProofreaderInfoRequest, v1.GetProofreaderInfoResponse]
-	proofreadText      *connect.Client[v1.ProofreadTextRequest, v1.ProofreadTextResponse]
-}
-
-// GetProofreaderInfo calls numen.v1.ProofreadingService.GetProofreaderInfo.
-func (c *proofreadingServiceClient) GetProofreaderInfo(ctx context.Context, req *connect.Request[v1.GetProofreaderInfoRequest]) (*connect.Response[v1.GetProofreaderInfoResponse], error) {
-	return c.getProofreaderInfo.CallUnary(ctx, req)
+	proofreadText *connect.Client[v1.ProofreadTextRequest, v1.ProofreadTextResponse]
 }
 
 // ProofreadText calls numen.v1.ProofreadingService.ProofreadText.
@@ -95,8 +78,6 @@ func (c *proofreadingServiceClient) ProofreadText(ctx context.Context, req *conn
 
 // ProofreadingServiceHandler is an implementation of the numen.v1.ProofreadingService service.
 type ProofreadingServiceHandler interface {
-	// GetProofreaderInfo returns the name the proofreader goes under.
-	GetProofreaderInfo(context.Context, *connect.Request[v1.GetProofreaderInfoRequest]) (*connect.Response[v1.GetProofreaderInfoResponse], error)
 	// ProofreadText proofreads numbered lines of one kind of text and returns the
 	// corrections the proofreader stands behind. It fails with code unavailable
 	// where nothing is routed to answer for the proofreading.
@@ -110,12 +91,6 @@ type ProofreadingServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewProofreadingServiceHandler(svc ProofreadingServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	proofreadingServiceMethods := v1.File_numen_v1_proofreading_proto.Services().ByName("ProofreadingService").Methods()
-	proofreadingServiceGetProofreaderInfoHandler := connect.NewUnaryHandler(
-		ProofreadingServiceGetProofreaderInfoProcedure,
-		svc.GetProofreaderInfo,
-		connect.WithSchema(proofreadingServiceMethods.ByName("GetProofreaderInfo")),
-		connect.WithHandlerOptions(opts...),
-	)
 	proofreadingServiceProofreadTextHandler := connect.NewUnaryHandler(
 		ProofreadingServiceProofreadTextProcedure,
 		svc.ProofreadText,
@@ -124,8 +99,6 @@ func NewProofreadingServiceHandler(svc ProofreadingServiceHandler, opts ...conne
 	)
 	return "/numen.v1.ProofreadingService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case ProofreadingServiceGetProofreaderInfoProcedure:
-			proofreadingServiceGetProofreaderInfoHandler.ServeHTTP(w, r)
 		case ProofreadingServiceProofreadTextProcedure:
 			proofreadingServiceProofreadTextHandler.ServeHTTP(w, r)
 		default:
@@ -136,10 +109,6 @@ func NewProofreadingServiceHandler(svc ProofreadingServiceHandler, opts ...conne
 
 // UnimplementedProofreadingServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedProofreadingServiceHandler struct{}
-
-func (UnimplementedProofreadingServiceHandler) GetProofreaderInfo(context.Context, *connect.Request[v1.GetProofreaderInfoRequest]) (*connect.Response[v1.GetProofreaderInfoResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ProofreadingService.GetProofreaderInfo is not implemented"))
-}
 
 func (UnimplementedProofreadingServiceHandler) ProofreadText(context.Context, *connect.Request[v1.ProofreadTextRequest]) (*connect.Response[v1.ProofreadTextResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ProofreadingService.ProofreadText is not implemented"))
