@@ -23,8 +23,8 @@ export function createHeightStore(
   return {
     read() {
       try {
-        const retained = Number(getStorage().getItem(KEY))
-        return retained >= LEAST ? retained : null
+        const savedHeight = Number(getStorage().getItem(KEY))
+        return savedHeight >= LEAST ? savedHeight : null
       } catch {
         // A browser that keeps nothing for this page has no height to give back.
         return null

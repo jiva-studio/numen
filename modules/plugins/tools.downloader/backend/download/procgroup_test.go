@@ -147,7 +147,7 @@ func TestSetProcessGroupSetsWaitDelay(t *testing.T) {
 }
 
 // Cancelling a process that has already finished reports that it is done.
-func TestCancellingAlreadyFinishedProcessReportsDone(t *testing.T) {
+func TestSetProcessGroup_CancelFinishedProcess(t *testing.T) {
 	cmd := exec.CommandContext(t.Context(), "true")
 	setProcessGroup(cmd)
 	if err := cmd.Run(); err != nil {

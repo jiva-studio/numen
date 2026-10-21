@@ -133,8 +133,8 @@ func run(ctx context.Context, tool program, into io.Writer, arguments ...string)
 		running.Stdout = into
 	}
 	if err := running.Run(); err != nil {
-		if stopped := ctx.Err(); stopped != nil {
-			return nil, stopped
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, ctxErr
 		}
 		return nil, fmt.Errorf("%w: %s", err, getLastLine(response.String()))
 	}
