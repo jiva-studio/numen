@@ -14,11 +14,11 @@ export function usePlexHeadings(
   ...[deps, nodeIdMap]: [deps: PlexTabDeps, nodeIdMap: NodeIdMap]
 ) {
   const headings = shallowRef<ReadonlyMap<string, readonly PlexHeading[]>>(new Map())
-  const reading = createAnswerGuard()
+  const guard = createAnswerGuard()
 
   const readHeadings = async () => {
     const notes = paths.value.filter((path) => (types.value.get(path) ?? 'note') === 'note')
-    const mine = reading.ask()
+    const mine = guard.ask()
     if (!deps.isNesting.value || notes.length === 0) {
       headings.value = new Map()
       return

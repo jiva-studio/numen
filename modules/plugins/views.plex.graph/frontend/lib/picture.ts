@@ -49,7 +49,7 @@ export function convertNeighbourhood(
 
   const nodes: PlexNode[] = [focus]
   // Stryker disable ArrayDeclaration: an entry that is not a note with a relation has no relation, and no edge is drawn for it.
-  const placed: {
+  const items: {
     id: string
     relation: NoteRelation
     label: string
@@ -58,12 +58,12 @@ export function convertNeighbourhood(
   }[] = []
   // Stryker restore ArrayDeclaration
   /** The path of every note this picture draws, the note in focus included. */
-  const displayed = new Set<string>([neighbourhood.focus.path])
+  const visiblePaths = new Set<string>([neighbourhood.focus.path])
   for (const related of neighbourhood.related) {
     const id = ticket(related.path)
-    displayed.add(related.path)
+    visiblePaths.add(related.path)
     nodes.push({ id, title: related.title, relation: related.relation })
-    placed.push({
+    items.push({
       id,
       relation: related.relation,
       // What the person wrote on the link. A line with nothing written on it
@@ -75,7 +75,7 @@ export function convertNeighbourhood(
     })
   }
 
-  const edges: PlexEdge[] = placed.flatMap(({ id, relation, label, through, isMutual }) => {
+  const edges: PlexEdge[] = items.flatMap(({ id, relation, label, through, isMutual }) => {
     const line = label ? { label } : {}
     const arrow = getEdgeArrow(relation, isMutual)
     const head = arrow ? { arrow } : {}
@@ -86,7 +86,7 @@ export function convertNeighbourhood(
     if (relation === 'child') {
       return [{ from: focus.id, to: id, ...line, ...head }]
     }
-    return displayed.has(through) ? [{ from: ticket(through), to: id, ...line }] : []
+    return visiblePaths.has(through) ? [{ from: ticket(through), to: id, ...line }] : []
   })
 
   return { nodes, edges }

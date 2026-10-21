@@ -116,8 +116,8 @@ function onCreateAction() {
 function submitHighlighted() {
   if (highlightedIndex.value < results.value.length) {
     const selectedItem = results.value[highlightedIndex.value]
-    if (chosen) {
-      onSelectResult(chosen.path)
+    if (selectedItem) {
+      onSelectResult(selectedItem.path)
     }
   } else if (showCreateOption.value) {
     onCreateAction()

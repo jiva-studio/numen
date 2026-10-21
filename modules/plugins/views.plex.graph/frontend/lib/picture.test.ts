@@ -25,7 +25,7 @@ const createNeighbourhood = (focus: string, rows: NeighbourRow[]): Neighbourhood
  * The picture, and the note each node ID in it stands for. Every note here is
  * one carrying no identifier, which is the note the picture has to draw.
  */
-const drawing = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
+const renderPicture = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
   const map = createNodeIdMap()
   return { plex: convertNeighbourhood(neighbourhood, map.getNodeId), note: map.getNodePath }
 }
@@ -35,7 +35,7 @@ const drawing = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
  * nothing, so an edge drawn under anything else says so here.
  */
 const getEdges = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
-  const { plex, note } = drawing(neighbourhood)
+  const { plex, note } = renderPicture(neighbourhood)
   return plex.edges.map(
     (edge) => `${note(edge.from)} -> ${note(edge.to)}${edge.label ? ` (${edge.label})` : ''}`,
   )
@@ -56,7 +56,7 @@ describe('what the plex is handed', () => {
 
   it('writes nothing on a line the person wrote nothing on', () => {
     // A line carries only the word the person put on it.
-    const [line] = drawing(createNeighbourhood('Here', [['Below', 'child', '', '']])).plex.edges
+    const [line] = renderPicture(createNeighbourhood('Here', [['Below', 'child', '', '']])).plex.edges
     expect(line?.label).toBeUndefined()
   })
 
@@ -101,7 +101,7 @@ describe('what the plex is handed', () => {
   })
 
   it('places every note it was given', () => {
-    const { plex, note } = drawing(
+    const { plex, note } = renderPicture(
       createNeighbourhood('Here', [
         ['Above', 'parent', 'part of', ''],
         ['Below', 'child', '', ''],
@@ -133,7 +133,7 @@ describe('what a note is drawn under', () => {
   })
 
   it('calls every note of one picture something different from every other', () => {
-    const { plex } = drawing(target)
+    const { plex } = renderPicture(target)
 
     expect(new Set(plex.nodes.map((node) => node.id)).size).toBe(plex.nodes.length)
   })
@@ -166,7 +166,7 @@ describe('what a note is drawn under', () => {
 
 /** Every edge as the end its arrow is drawn at, and the pair it joins. */
 const arrows = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
-  const { plex, note } = drawing(neighbourhood)
+  const { plex, note } = renderPicture(neighbourhood)
   return plex.edges.map(
     (edge) => `${note(edge.from)} -> ${note(edge.to)}: ${edge.arrow ?? 'no arrow'}`,
   )
@@ -282,7 +282,7 @@ describe('what each note of a neighbourhood is', () => {
       ],
     }
 
-    expect([...getNoteTypes(around)]).toStrictEqual([
+    expect([...getNoteTypes(neighbourhood)]).toStrictEqual([
       ['Words.md', 'deck'],
       ['Faces.md', 'stencil'],
     ])
@@ -291,7 +291,7 @@ describe('what each note of a neighbourhood is', () => {
   it('is empty for a focus with no path', () => {
     const neighbourhood: Neighbourhood = { focus: { path: '', title: '' }, focusType: 'deck', related: [] }
 
-    expect(getNoteTypes(around).size).toBe(0)
+    expect(getNoteTypes(neighbourhood).size).toBe(0)
   })
 })
 

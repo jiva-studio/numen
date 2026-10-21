@@ -13,9 +13,9 @@ describe('a note being drawn', () => {
 
   it('holds an ID no other note in the picture holds', () => {
     const map = createNodeIdMap()
-    const rendered = ['Root.md', 'physics/Entropy.md', 'Heat.md'].map(map.getNodeId)
+    const nodeIds = ['Root.md', 'physics/Entropy.md', 'Heat.md'].map(map.getNodeId)
 
-    expect(new Set(rendered).size).toBe(3)
+    expect(new Set(nodeIds).size).toBe(3)
   })
 
   it('holds IDs counting up from 1', () => {
@@ -110,12 +110,12 @@ describe('a node ID handed back', () => {
 describe('the notes one picture drew', () => {
   it('are kept, and every other note is release', () => {
     const map = createNodeIdMap()
-    const retained = map.getNodeId('Root.md')
+    const keptId = map.getNodeId('Root.md')
     const removed = map.getNodeId('Heat.md')
 
-    map.retainNodeIds([retained])
+    map.retainNodeIds([keptId])
 
-    expect(map.getNodePath(retained)).toBe('Root.md')
+    expect(map.getNodePath(keptId)).toBe('Root.md')
     expect(map.getNodePath(removed)).toBe('')
   })
 
@@ -140,7 +140,7 @@ describe('the notes one picture drew', () => {
       const focus = map.getNodeId(`Note${step}.md`)
       const siblingNodeId = map.getNodeId(`Beside${step}.md`)
       map.retainNodeIds([focus, siblingNodeId])
-      minted.push(focus, beside)
+      minted.push(focus, siblingNodeId)
     }
 
     expect(minted.filter((id) => map.getNodePath(id))).toHaveLength(2)

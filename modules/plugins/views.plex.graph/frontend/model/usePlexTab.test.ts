@@ -24,7 +24,7 @@ const tab = (
 ) => {
   const plex = viewOn(at, neighbours, types)
   const vault = createVault(takes)
-  const opened: [string, string, string][] = []
+  const openedCalls: [string, string, string][] = []
   const request: string[] = []
   const ran: [string, string, string][] = []
   const messages: string[] = []
@@ -48,7 +48,7 @@ const tab = (
     isNesting,
     headings: ref(6),
     openNote: (path, options) => {
-      opened.push([path, options?.title ?? '', options?.showing ?? 'here'])
+      openedCalls.push([path, options?.title ?? '', options?.showing ?? 'here'])
       if (options?.line !== undefined) entered.push([path, options.line])
     },
     // The vault answers about the notes it was asked about and no others.
@@ -79,7 +79,7 @@ const tab = (
     wrote,
     went: plex.went,
     ...vault,
-    opened,
+    opened: openedCalls,
     entered,
     divides,
     isNesting,
@@ -634,29 +634,29 @@ const getNoteTitle = (path: string) => (path.split('/').pop() ?? path).replace(/
  * another editor. A move renames its files and is told to the plex as a change
  * arriving tells it.
  */
-const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
-  let aroundVal = beside.map(([path, relation, through]) => ({
+const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[] = []) => {
+  let relatedItems = initialNeighbours.map(([path, relation, through]) => ({
     path,
     relation,
     through: through ?? '',
   }))
   /** An answer the vault is holding back, and what lets it go. */
-  let holding: Promise<void> | null = null
+  let pendingGate: Promise<void> | null = null
   let release = () => {}
   /** Every note the vault was asked about, in the order it was asked. */
   const request: string[] = []
   const vault = createVault()
-  const opened: [string, string, string][] = []
+  const openedCalls: [string, string, string][] = []
   const ran: [string, string, string][] = []
 
   const view = viewing({
     neighbourhood: async (path) => {
       request.push(path)
-      if (holding) await holding
+      if (pendingGate) await pendingGate
       return {
         focus: { path, title: getNoteTitle(path) },
         focusType: 'note' as const,
-        related: around.map((one) => ({
+        related: relatedItems.map((one) => ({
           path: one.path,
           title: getNoteTitle(one.path),
           type: 'note' as const,
@@ -674,7 +674,7 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
     isNesting: ref(true),
     headings: ref(6),
     openNote: (path, options) =>
-      opened.push([path, options?.title ?? '', options?.showing ?? 'here']),
+      openedCalls.push([path, options?.title ?? '', options?.showing ?? 'here']),
     readHeadings: async () => new Map(),
     askAgent: () => {},
     runCommand: (id, path, title) => ran.push([id, path, title]),
@@ -698,7 +698,7 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
 
   /** Files moved in the vault, and the plex told what went where. */
   const moveFiles = (...renamed: readonly PathRename[]) => {
-    around = around.map((one) => ({
+    relatedItems = relatedItems.map((one) => ({
       ...one,
       path: getRenamedPath(renamed, one.path) || one.path,
       through: getRenamedPath(renamed, one.through) || one.through,
@@ -712,7 +712,7 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
   }
   /** The person travels to another note, which is a picture of its own. */
   const goToNote = async (path: string, ...now: readonly NeighbourRow[]) => {
-    around = now.map(([at, relation, through]) => ({ path: at, relation, through: through ?? '' }))
+    relatedItems = now.map(([at, relation, through]) => ({ path: at, relation, through: through ?? '' }))
     await view.go(path)
   }
 
@@ -727,13 +727,13 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
     moveFilesAndReload,
     goToNote,
     asked: request,
-    opened,
+    opened: openedCalls,
     ran,
     made: vault.made,
     joined: vault.joined,
     /** The vault holds every answer back until it is release. */
     holdAnswers: () => {
-      holding = new Promise<void>((wake) => (release = wake))
+      pendingGate = new Promise<void>((wake) => (release = wake))
     },
     answers: () => release(),
   }
@@ -836,8 +836,8 @@ describe('a note whose file moved', () => {
 
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
-    const rendered = one.picture()?.nodes.map((node) => node.id) ?? []
-    expect(new Set(rendered).size).toBe(4)
+    const nodeIds = one.picture()?.nodes.map((node) => node.id) ?? []
+    expect(new Set(nodeIds).size).toBe(4)
   })
 })
 
@@ -913,18 +913,18 @@ describe('a gesture the plex reports', () => {
 describe('a plex that travelled', () => {
   it('calls the notes it arrives at nothing it called the ones it left', async () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
-    const remainingNodeIds = one.picture()?.nodes.map((node) => node.id) ?? []
+    const initialNodeIds = one.picture()?.nodes.map((node) => node.id) ?? []
 
     await one.goToNote('Cold.md', ['Ice.md', 'child'])
 
-    const arrived = one.picture()?.nodes.map((node) => node.id) ?? []
-    expect(arrived).toHaveLength(2)
-    expect(arrived.filter((id) => left.includes(id))).toStrictEqual([])
+    const nextNodeIds = one.picture()?.nodes.map((node) => node.id) ?? []
+    expect(nextNodeIds).toHaveLength(2)
+    expect(nextNodeIds.filter((id) => initialNodeIds.includes(id))).toStrictEqual([])
 
     // A node stands for nothing once a navigation has passed it by twice, so
     // a gesture dragging one asks the vault about nothing.
     await one.goToNote('Warm.md', ['Fire.md', 'child'])
-    for (const node of left) one.state.activate(node)
+    for (const node of initialNodeIds) one.state.activate(node)
     expect(one.asked.at(-1)).toBe('Warm.md')
   })
 
@@ -959,10 +959,10 @@ describe('a plex that travelled', () => {
     // The vault is asked about the note where it was, and the file moves while
     // that answer is on its way.
     one.holdAnswers()
-    const asking = one.view.go('One.md')
+    const nav = one.view.go('One.md')
     one.moveFiles({ from: 'One.md', to: 'moved/One.md' }, { from: 'Heat.md', to: 'moved/Heat.md' })
     one.answers()
-    await asking
+    await nav
     one.picture()
 
     await one.view.go(one.view.here.value)

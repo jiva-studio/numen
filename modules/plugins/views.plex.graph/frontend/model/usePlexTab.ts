@@ -83,7 +83,7 @@ function usePlexPicture(
 
   const getType = (node: string): NoteType => types.value.get(map.getNodePath(node)) ?? 'note'
 
-  const rendered = computed<readonly string[]>(() => {
+  const activePaths = computed<readonly string[]>(() => {
     const neighbourhood = view.neighbourhood.value
     if (!neighbourhood) return []
     const paths = [neighbourhood.focus.path]
@@ -91,7 +91,7 @@ function usePlexPicture(
     return paths.filter(Boolean)
   })
 
-  return { picture, empty, dragged, types, getType, drawn: rendered }
+  return { picture, empty, dragged, types, getType, drawn: activePaths }
 }
 
 function usePlexNodeActions(options: {

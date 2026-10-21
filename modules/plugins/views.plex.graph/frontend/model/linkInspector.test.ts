@@ -55,14 +55,14 @@ describe('linkInspector helper module', () => {
 
   describe('findPairNeighbour', () => {
     it('finds the neighbour at the end of the pair that is not the focus, whichever end is requested first', () => {
-      const nh = around({ path: 'Other.md' }, { path: 'Third.md' })
+      const nh = neighbourhood({ path: 'Other.md' }, { path: 'Third.md' })
 
       expect(findPairNeighbour(nh, 'Focus.md', 'Other.md')?.path).toBe('Other.md')
       expect(findPairNeighbour(nh, 'Other.md', 'Focus.md')?.path).toBe('Other.md')
     })
 
     it('finds a sibling by the pair of its parent and itself, and not the parent', () => {
-      const nh = around(
+      const nh = neighbourhood(
         { path: 'Parent.md', relation: 'parent' },
         { path: 'Sibling.md', relation: 'sibling', through: 'Parent.md' },
       )
@@ -71,7 +71,7 @@ describe('linkInspector helper module', () => {
     })
 
     it('finds nothing in a pair the neighbourhood does not draw', () => {
-      expect(findPairNeighbour(around({ path: 'Other.md' }), 'Focus.md', 'Gone.md')).toBeUndefined()
+      expect(findPairNeighbour(neighbourhood({ path: 'Other.md' }), 'Focus.md', 'Gone.md')).toBeUndefined()
       expect(findPairNeighbour(null, 'Focus.md', 'Other.md')).toBeUndefined()
     })
   })
@@ -79,7 +79,7 @@ describe('linkInspector helper module', () => {
   describe('createInspectorLinks', () => {
     it('shows one link written in the focus, with the label the core reports', () => {
       const links = createInspectorLinks(
-        around({ relation: 'parent', label: 'depends on' }),
+        neighbourhood({ relation: 'parent', label: 'depends on' }),
         'Focus.md',
         'Other.md',
       )
@@ -97,7 +97,7 @@ describe('linkInspector helper module', () => {
     })
 
     it('reads the same link as running in reverse when the pair is requested the other way', () => {
-      const links = createInspectorLinks(around({ relation: 'child' }), 'Other.md', 'Focus.md')
+      const links = createInspectorLinks(neighbourhood({ relation: 'child' }), 'Other.md', 'Focus.md')
 
       expect(links).toHaveLength(1)
       expect(links[0]).toMatchObject({ from: 'Focus.md', to: 'Other.md', direction: 'reverse' })
@@ -105,7 +105,7 @@ describe('linkInspector helper module', () => {
 
     it('shows both links of a mutual relationship, each with the words its note wrote', () => {
       const links = createInspectorLinks(
-        around({ relation: 'child', isMutual: true, label: 'owns', reverseLabel: 'belongs to' }),
+        neighbourhood({ relation: 'child', isMutual: true, label: 'owns', reverseLabel: 'belongs to' }),
         'Focus.md',
         'Other.md',
       )
@@ -118,7 +118,7 @@ describe('linkInspector helper module', () => {
 
     it('lists the link written in the first note first', () => {
       const links = createInspectorLinks(
-        around({ relation: 'jump', isMutual: true, label: 'a', reverseLabel: 'b' }),
+        neighbourhood({ relation: 'jump', isMutual: true, label: 'a', reverseLabel: 'b' }),
         'Other.md',
         'Focus.md',
       )
@@ -129,7 +129,7 @@ describe('linkInspector helper module', () => {
 
     it('shows a sibling as its own link up to the parent it shares', () => {
       const links = createInspectorLinks(
-        around(
+        neighbourhood(
           { path: 'Parent.md', relation: 'parent' },
           { path: 'Sibling.md', relation: 'sibling', through: 'Parent.md', label: 'next to' },
         ),
@@ -150,7 +150,7 @@ describe('linkInspector helper module', () => {
     })
 
     it('shows nothing for a pair the core reports no link for', () => {
-      expect(createInspectorLinks(around(), 'Focus.md', 'Gone.md')).toEqual([])
+      expect(createInspectorLinks(neighbourhood(), 'Focus.md', 'Gone.md')).toEqual([])
       expect(createInspectorLinks(null, 'Focus.md', 'Other.md')).toEqual([])
     })
   })
@@ -212,9 +212,9 @@ describe('linkInspector helper module', () => {
     })
 
     it('lists the link written in the first note first when the one kept runs from the second', () => {
-      const retained = row({ id: 'B.md->A.md', from: 'B.md', to: 'A.md', direction: 'reverse' })
+      const existing = row({ id: 'B.md->A.md', from: 'B.md', to: 'A.md', direction: 'reverse' })
 
-      const added = addReverseLink([retained], [], 'A.md', 'B.md')
+      const added = addReverseLink([existing], [], 'A.md', 'B.md')
 
       expect(added.map((one) => one.from)).toEqual(['A.md', 'B.md'])
       expect(added.map((one) => one.direction)).toEqual(['forward', 'reverse'])
