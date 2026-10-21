@@ -344,9 +344,9 @@ export const TheBacklogKeepsItsRoom: Story = {
     const backlogBox = backlogRoom(answered!)
     const empty = backlogRoom(waiting!)
     expect(backlogBox.width).toBeGreaterThan(0)
-    expect(empty.width).toBeCloseTo(rendered.width, 0)
-    expect(empty.height).toBeCloseTo(rendered.height, 0)
-    expect(rendered.width / rendered.height).toBeCloseTo(PLOT_WIDTH / BACKLOG_PLOT_HEIGHT, 1)
+    expect(empty.width).toBeCloseTo(backlogBox.width, 0)
+    expect(empty.height).toBeCloseTo(backlogBox.height, 0)
+    expect(backlogBox.width / backlogBox.height).toBeCloseTo(PLOT_WIDTH / BACKLOG_PLOT_HEIGHT, 1)
   },
 }
 

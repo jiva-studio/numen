@@ -59,7 +59,7 @@ describe('what an agent tab is called', () => {
     const one = window()
     const state = one.open()
     one.conversations[0]!.said.value = [
-      turn('a', 'said', 'an answer'),
+      turn('a', 'answered', 'an answer'),
       turn('b', 'asked', 'the question'),
     ]
 
