@@ -29,7 +29,7 @@ const canLinkTo = (url: string): boolean => {
  * tells whoever wrote the deck that it was read, and from where.
  */
 const canShow = (url: string): boolean => {
-  const cleaned = bare(url)
+  const cleaned = stripControls(url)
   if (scheme(cleaned) === 'data:') return INLINE_IMAGE.test(cleaned)
   // An address opening with two slashes names a host and keeps the window's
   // own scheme, so it names no scheme and reaches off the machine all the same.

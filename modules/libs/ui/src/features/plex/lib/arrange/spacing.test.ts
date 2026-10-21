@@ -193,7 +193,7 @@ describe('findSpacing', () => {
     })
 
     it('stops short of a limit that lies inside the last step', () => {
-      expect(findSpacing(wide, fitsUpTo(1 + 1 / 256))).toStrictEqual(set)
+      expect(findSpacing(wideOptions, fitsUpTo(1 + 1 / 256))).toStrictEqual(set)
     })
   })
 })
