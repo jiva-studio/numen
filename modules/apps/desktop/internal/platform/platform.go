@@ -12,6 +12,24 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
+var isDev bool
+
+func init() {
+	if os.Getenv("NUMEN_DEV") == "1" || os.Getenv("NUMEN_DEV") == "true" {
+		isDev = true
+	}
+}
+
+// IsDev reports whether plugins are discovered from development directories.
+func IsDev() bool {
+	return isDev
+}
+
+// SetDev sets whether plugins are discovered from development directories.
+func SetDev(v bool) {
+	isDev = v
+}
+
 // The windows a plugin names as the places it works in.
 const (
 	// TargetEditor is the window a person writes in.
@@ -64,8 +82,10 @@ func getPluginsDirs() []string {
 		addDir(filepath.Join(execDir, "..", "share", "numen", "plugins"))
 	}
 
-	addDir("modules/plugins")
-	addDir("plugins")
+	if IsDev() {
+		addDir("modules/plugins")
+		addDir("plugins")
+	}
 
 	configDir, err := os.UserConfigDir()
 	if err == nil {

@@ -154,5 +154,50 @@ func validateExecutablePath(pluginDir, entrypoint string) (string, error) {
 		return "", errProhibitedTempDir
 	}
 
+	realDir := cleanDir
+	if evalDir, err := filepath.EvalSymlinks(cleanDir); err == nil {
+		realDir = evalDir
+	}
+
+	return validateExecutableSymlink(realDir, cleanBin)
+}
+
+func validateExecutableSymlink(realDir, cleanBin string) (string, error) {
+	realBin, err := filepath.EvalSymlinks(cleanBin)
+	if err == nil {
+		if isSystemTempDir(realBin) {
+			return "", errProhibitedTempDir
+		}
+		relReal, errRel := filepath.Rel(realDir, realBin)
+		if errRel != nil || relReal == ".." || strings.HasPrefix(relReal, ".."+string(filepath.Separator)) {
+			return "", errEntrypointEscape
+		}
+		return realBin, nil
+	}
+
+	fi, lerr := os.Lstat(cleanBin)
+	if lerr == nil && fi.Mode()&os.ModeSymlink != 0 {
+		return validateBrokenExecutableSymlink(realDir, cleanBin, err)
+	}
+
 	return cleanBin, nil
+}
+
+func validateBrokenExecutableSymlink(realDir, cleanBin string, evalErr error) (string, error) {
+	target, rerr := os.Readlink(cleanBin)
+	if rerr != nil {
+		return "", fmt.Errorf("resolve entrypoint symlink: %w", evalErr)
+	}
+	if !filepath.IsAbs(target) {
+		target = filepath.Join(filepath.Dir(cleanBin), target)
+	}
+	cleanTarget, _ := filepath.Abs(filepath.Clean(target))
+	if isSystemTempDir(cleanTarget) {
+		return "", errProhibitedTempDir
+	}
+	relTarget, errRel := filepath.Rel(realDir, cleanTarget)
+	if errRel != nil || relTarget == ".." || strings.HasPrefix(relTarget, ".."+string(filepath.Separator)) {
+		return "", errEntrypointEscape
+	}
+	return "", fmt.Errorf("resolve entrypoint symlink: %w", evalErr)
 }
