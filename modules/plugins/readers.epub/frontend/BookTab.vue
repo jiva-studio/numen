@@ -5,7 +5,7 @@
 import { ref, useTemplateRef, watchEffect } from 'vue'
 import { Waiting } from '@numen/ui'
 import BookContent from './BookContent.vue'
-import { BookListing } from './book-listing'
+import { BookListing } from './book-contents'
 import { WORDS as words } from './words'
 import { books } from './api/wire'
 import { useBookReader } from './model/useBookReader'

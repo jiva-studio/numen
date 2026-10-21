@@ -1,1 +1,3 @@
-export { default as BookListing } from './BookListing.vue'
+export { default as BookContentsPanel } from './BookContentsPanel.vue'
+export { default as BookListing } from './BookContentsPanel.vue'
+
