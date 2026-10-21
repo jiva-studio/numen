@@ -68,11 +68,11 @@ const asking = shallowRef<string | null>(null)
 const { dragged, at, lift, hover, release, drop, step } = useDrag<InsertionPoint | undefined>({
   order: () => [HEAD, ...props.cards.map((card) => card.id)],
   nowhere: undefined,
-  isMoved: (held: string, at: InsertionPoint): boolean => isMoved(shown.value.runs, held, at),
+  isMoved: (held: string, at: InsertionPoint): boolean => isMoved(grid.value.runs, held, at),
   move: (held, at) => emit('move', held, at),
 })
 
-const shown = computed(() => getGrid(props, dragged.value))
+const grid = computed(() => getGrid(props, dragged.value))
 
 provide(DECK_CONTEXT, {
   write: (card, target, text) => emit('write', card, target.field, target.nth, text),
@@ -140,11 +140,11 @@ function onAddSection(): void {
     @drop="onDrop"
   >
     <DeckRun
-      v-for="run in shown.runs"
+      v-for="run in grid.runs"
       :key="run.id"
       :run="run"
       :stencils="stencils"
-      :of="shown.of"
+      :of="grid.of"
       :wrong="wrong"
       :at="at"
       :is-asking="asking === run.id"

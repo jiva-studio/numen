@@ -37,33 +37,33 @@ const hunt = useTemplateRef<HTMLInputElement>('hunt')
 const hunted = ref('')
 
 /** The action the panel is on, by its identity. */
-const held = ref('')
+const activeActionId = ref('')
 
 const actions = computed(() => placeActions(props.offered, hunted.value))
 
 /** Which row that action relies on, counted over the actions the words left. */
-const here = computed(() => actions.value.findIndex((one) => one.action.id === held.value))
+const here = computed(() => actions.value.findIndex((one) => one.action.id === activeActionId.value))
 
 const goTo = (to: number) => {
-  held.value = actions.value[to]?.action.id ?? ''
+  activeActionId.value = actions.value[to]?.action.id ?? ''
 }
 
 /**
  * Where the pointer was. Only a pointer that has actually moved lights what it
  * is over: a list scrolling under a pointer standing still reports a move too.
  */
-let stood = { x: -1, y: -1 }
+let pointerPosition = { x: -1, y: -1 }
 
 const onRowPointerMove = (to: number, event: PointerEvent) => {
-  if (event.clientX === stood.x && event.clientY === stood.y) return
-  stood = { x: event.clientX, y: event.clientY }
+  if (event.clientX === pointerPosition.x && event.clientY === pointerPosition.y) return
+  pointerPosition = { x: event.clientX, y: event.clientY }
   goTo(to)
 }
 
 /** What is lit is brought into sight. Only a key does this. */
 const reveal = async () => {
   await nextTick()
-  drawn.get(held.value)?.element?.scrollIntoView?.({ block: 'nearest' })
+  actionRows.get(activeActionId.value)?.element?.scrollIntoView?.({ block: 'nearest' })
 }
 
 /** A row standing now, which carries the element it is drawn as. */
@@ -72,23 +72,23 @@ interface RowHandle {
 }
 
 /** The rows as they are drawn, each under the action it stands for. */
-const drawn = new Map<string, RowHandle>()
+const actionRows = new Map<string, RowHandle>()
 
 const hold = (action: string, row: unknown): void => {
-  if (row) drawn.set(action, row as RowHandle)
-  else drawn.delete(action)
+  if (row) actionRows.set(action, row as RowHandle)
+  else actionRows.delete(action)
 }
 
 const run = (to: number) => {
-  const chosen = actions.value[to]
-  if (!chosen) return
-  emit('choose', chosen.action.id)
+  const selectedAction = actions.value[to]
+  if (!selectedAction) return
+  emit('choose', selectedAction.action.id)
   open.value = false
 }
 
 /** A fresh list keeps the action the panel was on, wherever the words put it. */
 watch(actions, (now) => {
-  if (open.value) goTo(findKeptAction(now, held.value))
+  if (open.value) goTo(findKeptAction(now, activeActionId.value))
 })
 
 // It opens on the first action there is, with an empty field and the keyboard
@@ -97,7 +97,7 @@ watch(
   open,
   async (now) => {
     if (!now) {
-      held.value = ''
+      activeActionId.value = ''
       return
     }
     hunted.value = ''

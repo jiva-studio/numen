@@ -22,8 +22,8 @@ import brackets from '../../../../protocol/testdata/wikilinks.json'
 describe('an address', () => {
   it('is read the way the schema says it is', () => {
     expect(corpus.length).toBeGreaterThan(0)
-    for (const { written, scheme, value } of corpus) {
-      expect({ written, ...parseAddress(written) }).toStrictEqual({ written, scheme, value })
+    for (const { written: rawText, scheme, value } of corpus) {
+      expect({ written: rawText, ...parseAddress(rawText) }).toStrictEqual({ written: rawText, scheme, value })
     }
   })
 

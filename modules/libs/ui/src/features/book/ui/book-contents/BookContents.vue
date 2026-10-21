@@ -45,7 +45,7 @@ const typed = ref('')
 /** The lines as they are drawn, which the list is brought along by. */
 const lines = useTemplateRef<HTMLElement[]>('lines')
 
-const shown = computed(() => findEntries(props.entries, typed.value))
+const visibleEntries = computed(() => findEntries(props.entries, typed.value))
 
 /** The line the person is reading, and none where they stand before the first. */
 const standing = computed(() => props.entries[findLineAt(props.entries, props.at)])
@@ -61,7 +61,7 @@ const DEEPEST = 4
 // without looking for it.
 watch(standing, (one) => {
   if (!one || typed.value !== '') return
-  const line = lines.value?.find((drawn) => drawn.dataset['at'] === String(one.at))
+  const line = lines.value?.find((lineEl) => lineEl.dataset['at'] === String(one.at))
   line?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
 })
 
@@ -84,8 +84,8 @@ const lineStyle = (level: number) => ({ '--level': depth(level) })
       />
     </div>
 
-    <ol v-if="shown.length !== 0" class="contents__list">
-      <li v-for="one in shown" :key="one.at">
+    <ol v-if="visibleEntries.length !== 0" class="contents__list">
+      <li v-for="one in visibleEntries" :key="one.at">
         <button
           ref="lines"
           type="button"

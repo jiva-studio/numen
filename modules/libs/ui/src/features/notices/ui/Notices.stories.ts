@@ -290,9 +290,9 @@ export const MoreThanThereIsRoomFor: Story = {
 
     // What folds is what has gone right. Trouble and work are what the corner
     // is for.
-    const left = [...cards()].map((card) => card.textContent ?? '')
-    await expect(left.some((words) => words.includes('not in the catalogue'))).toBe(true)
-    await expect(left.some((words) => words.includes('Reading the vault'))).toBe(true)
+    const remainingCards = [...cards()].map((card) => card.textContent ?? '')
+    await expect(remainingCards.some((words) => words.includes('not in the catalogue'))).toBe(true)
+    await expect(remainingCards.some((words) => words.includes('Reading the vault'))).toBe(true)
 
     await userEvent.click(getFoldedCard()!)
 

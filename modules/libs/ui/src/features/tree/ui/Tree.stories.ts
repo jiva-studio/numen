@@ -28,9 +28,9 @@ const found = (rows: readonly Row[], id: RowId): Row | null => {
 }
 
 /** Rows put where a drop target says, in the order they were dragged. */
-const put = (rows: readonly Row[], at: RowDropTarget, dragRows: readonly Row[]): readonly Row[] =>
+const insertRows = (rows: readonly Row[], at: RowDropTarget, dragRows: readonly Row[]): readonly Row[] =>
   rows.flatMap((row) => {
-    const below = row.rows ? { ...row, rows: put(row.rows, at, dragRows) } : row
+    const below = row.rows ? { ...row, rows: insertRows(row.rows, at, dragRows) } : row
     if ('before' in at && row.id === at.before) return [...dragRows, below]
     if ('into' in at && row.id === at.into) {
       return [{ ...below, rows: [...(below.rows ?? []), ...dragRows] }]
@@ -45,8 +45,8 @@ const moveRows = (
   at: RowDropTarget,
 ): readonly Row[] => {
   const target = dragIds.map((row) => found(rows, row)).filter((row): row is Row => row !== null)
-  const left = dragIds.reduce((rest, row) => removeRow(rest, row), rows)
-  return target.length ? put(left, at, target) : rows
+  const remainingRows = dragIds.reduce((rest, row) => removeRow(rest, row), rows)
+  return target.length ? insertRows(remainingRows, at, target) : rows
 }
 
 /** The application's part again: rows taken out of the tree. */

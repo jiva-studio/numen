@@ -91,9 +91,9 @@ describe('edges', () => {
     expect(edge).toBeDefined()
     expect(edge!.label).toBe('contains')
 
-    const left = layout.nodes.find((n) => n.id === 'parent-0')!
+    const leftNode = layout.nodes.find((n) => n.id === 'parent-0')!
     const right = layout.nodes.find((n) => n.id === 'parent-1')!
-    expect(edge!.fromPoint).toStrictEqual({ x: left.x + left.width / 2, y: left.y })
+    expect(edge!.fromPoint).toStrictEqual({ x: leftNode.x + leftNode.width / 2, y: leftNode.y })
     expect(edge!.toPoint).toStrictEqual({ x: right.x - right.width / 2, y: right.y })
     expect(edge!.control1.x).toBeGreaterThan(edge!.fromPoint.x)
     expect(edge!.control2.x).toBeLessThan(edge!.toPoint.x)

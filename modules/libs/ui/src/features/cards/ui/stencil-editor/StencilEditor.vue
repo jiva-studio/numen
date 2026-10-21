@@ -68,7 +68,7 @@ const emit = defineEmits<{
 }>()
 
 /** The fields a card is asked for, a name declared twice naming one field. */
-const asked = computed(() => getDeclaredFields(props.fields))
+const declaredFields = computed(() => getDeclaredFields(props.fields))
 
 /**
  * The face under the pointer's hand, and where letting go would put it. The
@@ -91,10 +91,10 @@ const {
 })
 
 /** What a preview stands in the slots, which is each field under its own name. */
-const sample = computed(() => sampleValues(asked.value))
+const sample = computed(() => sampleValues(declaredFields.value))
 
 /** The faces as they are drawn. */
-const drawn = computed(() => faceRows(props.faces, asked.value, sample.value))
+const renderedFaces = computed(() => faceRows(props.faces, declaredFields.value, sample.value))
 
 /** What is wrong with one face, and nothing where nothing is. */
 const wrongWithFace = (id: string): readonly string[] => props.wrong.at.get(id) ?? []
@@ -117,7 +117,7 @@ const addFace = (): void => {
     :aria-label="name"
   >
     <Fields
-      :fields="asked"
+      :fields="declaredFields"
       :wrong="wrong.fields"
       :words="words"
       @add="(name: string) => emit('add-field', name)"
@@ -134,12 +134,12 @@ const addFace = (): void => {
     >
       <h2 class="stencil__heading caps-numen text-small text-hushed m-0">{{ words.faces }}</h2>
 
-      <p v-if="!drawn.length" class="stencil__silence caps-numen text-small text-hushed m-0">
+      <p v-if="!renderedFaces.length" class="stencil__silence caps-numen text-small text-hushed m-0">
         {{ words.noFaces }}
       </p>
 
       <Face
-        v-for="one in drawn"
+        v-for="one in renderedFaces"
         :key="one.id"
         class="stencil__face caret-above"
         :face="one"

@@ -132,7 +132,7 @@ export const Steady: Story = {
   play: async ({ canvasElement }) => {
     const view = getView(canvasElement)
 
-    const put = async (line: number, column: number) => {
+    const setCaret = async (line: number, column: number) => {
       view.dispatch({ selection: EditorSelection.single(view.state.doc.line(line).from + column) })
       await nextFrame()
       await nextFrame()
@@ -161,9 +161,9 @@ export const Steady: Story = {
 
       for (const text of CONCEALED) {
         const line = getLineOf(text)
-        await put(PARKED, 0)
+        await setCaret(PARKED, 0)
         const concealed = getHeight(line)
-        await put(line, 2)
+        await setCaret(line, 2)
         await expect({ face, text, height: getHeight(line) }).toEqual({
           face,
           text,
@@ -173,9 +173,9 @@ export const Steady: Story = {
 
       for (const text of REDRAWN) {
         const line = getLineOf(text)
-        await put(PARKED, 0)
+        await setCaret(PARKED, 0)
         const concealed = getHeight(line)
-        await put(line, 2)
+        await setCaret(line, 2)
         await expect({ face, text, same: getHeight(line) === concealed }).toEqual({
           face,
           text,
@@ -185,7 +185,7 @@ export const Steady: Story = {
 
       // Either side of what stands in place of a mark there is somewhere for
       // the caret to be drawn, and a click there lands on that line.
-      await put(PARKED, 0)
+      await setCaret(PARKED, 0)
       for (const [text, column] of [
         ['# Heading one', 0],
         ['# Heading one', 2],
@@ -326,7 +326,7 @@ export const TableGrown: Story = {
    chooses a pack. */
 const FENCED = [
   '```javascript',
-  'const answered = 42',
+  'const answerVal = 42',
   '```',
   '',
   '```python',
@@ -368,7 +368,7 @@ export const FencedInEveryLanguage: Story = {
     }
 
     // The pack lands and paints the block it was fetched for.
-    await waitFor(() => expect(getColouredSpans(found('const answered')).length).toBeGreaterThan(0))
+    await waitFor(() => expect(getColouredSpans(found('const answerVal')).length).toBeGreaterThan(0))
     await waitFor(() => expect(getColouredSpans(found('answered_here')).length).toBeGreaterThan(0))
 
     // A word no pack answers to leaves the block plain, and leaves the text

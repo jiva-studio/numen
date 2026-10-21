@@ -160,7 +160,7 @@ function useConversationTurns() {
   const locations = new Map<string, SourceLocation>()
   let next = 0
 
-  const put = (turn: Turn) => {
+  const saveTurn = (turn: Turn) => {
     const at = turns.value.findIndex((other) => other.id === turn.id)
     if (at < 0) turns.value.push(turn)
     else turns.value[at] = turn
@@ -172,7 +172,7 @@ function useConversationTurns() {
 
   const nextId = () => `${next++}`
 
-  return { turns, locations, put, drop, nextId }
+  return { turns, locations, put: saveTurn, drop, nextId }
 }
 
 function useFlightState() {

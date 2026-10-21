@@ -98,12 +98,12 @@ const list = useTemplateRef<HTMLElement>('list')
 /** What the tree takes up on screen: a drop lands only over it. */
 const box = useTemplateRef<HTMLElement>('box')
 
-const shown = computed(() => flatten(props.rows, new Set(props.open)))
+const visibleRows = computed(() => flatten(props.rows, new Set(props.open)))
 
-const virtual = useVirtualTree(box, () => shown.value.length, getRowHeight)
+const virtual = useVirtualTree(box, () => visibleRows.value.length, getRowHeight)
 
 const virtualRows = computed(() =>
-  shown.value.slice(virtual.window.value.startIndex, virtual.window.value.endIndex),
+  visibleRows.value.slice(virtual.window.value.startIndex, virtual.window.value.endIndex),
 )
 
 const rowsStyle = computed(() => ({
@@ -113,7 +113,7 @@ const rowsStyle = computed(() => ({
 }))
 
 const rows = useDrawnRows(
-  () => shown.value,
+  () => visibleRows.value,
   () => props.selected,
   (index) => virtual.scrollToRow(index),
 )
@@ -121,7 +121,7 @@ const { tabbed, setRowElement } = rows
 const { getRef: getRowRef } = useRefRegistry<RowId>(setRowElement)
 
 const selection = useRowSelection(
-  () => shown.value,
+  () => visibleRows.value,
   () => props.selected,
   (chosen) => emit('select', chosen),
 )
@@ -129,14 +129,14 @@ const { picked } = selection
 
 const drag = useRowDrag({
   getRows: () => props.rows,
-  getShownRows: () => shown.value,
+  getShownRows: () => visibleRows.value,
   measure: () => {
-    const drawn = list.value
+    const listEl = list.value
     const overBox = box.value?.getBoundingClientRect()
-    if (!drawn || !overBox) return null
-    const anyRow = drawn.querySelector('[data-tree-row]')
+    if (!listEl || !overBox) return null
+    const anyRow = listEl.querySelector('[data-tree-row]')
     const rowHeight = anyRow ? anyRow.getBoundingClientRect().height : 24
-    return { over: overBox, top: drawn.getBoundingClientRect().top, height: rowHeight }
+    return { over: overBox, top: listEl.getBoundingClientRect().top, height: rowHeight }
   },
   getThreshold: () => props.threshold,
   getClock: () => props.clock,
@@ -157,7 +157,7 @@ const {
   onFieldBlur,
   onKeyDown,
 } = useTreeGestures({
-  getShownRows: () => shown.value,
+  getShownRows: () => visibleRows.value,
   getSelected: () => props.selected,
   renamingPath,
   rows,
@@ -189,8 +189,8 @@ onBeforeUnmount(() => {
 
 /* -------------------------------- Helpers --------------------------------- */
 function getRowHeight(): number {
-  const drawn = list.value
-  const anyRow = drawn?.querySelector('[data-tree-row]')
+  const listEl = list.value
+  const anyRow = listEl?.querySelector('[data-tree-row]')
   const height = anyRow?.getBoundingClientRect().height
   return height && height > 0 ? height : 24
 }
@@ -240,7 +240,7 @@ function getRowHeight(): number {
       </TreeRow>
     </div>
 
-    <p v-if="!shown.length" class="tree__silence p-inset text-hushed">
+    <p v-if="!visibleRows.length" class="tree__silence p-inset text-hushed">
       <slot name="silence">Nothing here</slot>
     </p>
 

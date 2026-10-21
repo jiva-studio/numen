@@ -19,12 +19,12 @@ export function orderNames(
 ): readonly string[] {
   if (!names.includes(dragEntry)) return names
 
-  const left = names.filter((name) => name !== dragEntry)
-  if (at === null) return [...left, dragEntry]
+  const remaining = names.filter((name) => name !== dragEntry)
+  if (at === null) return [...remaining, dragEntry]
 
-  const before = left.indexOf(at)
+  const before = remaining.indexOf(at)
   if (before === -1) return names
-  return [...left.slice(0, before), dragEntry, ...left.slice(before)]
+  return [...remaining.slice(0, before), dragEntry, ...remaining.slice(before)]
 }
 
 /**
@@ -73,7 +73,7 @@ export function getStepInsertionPoint(
   return names[at + 2] ?? null
 }
 
-/** The order a dragged field lands in, with the first field left where it is. */
+/** The order a dragged field lands in, with the first field remaining where it is. */
 export const reorderFields = (
   fields: readonly string[],
   dragEntry: string,

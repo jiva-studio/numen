@@ -316,13 +316,13 @@ describe('where the headings slide to at the edges of the window', () => {
 
 describe('a node with little room under it', () => {
   /** The same node, dropped so much of the window is left beneath it. */
-  const low = (left: number): PlacedNode => ({
+  const low = (roomOffset: number): PlacedNode => ({
     ...NODE,
-    y: DEPS.viewport.height / 2 - DEPS.margin - NODE.height / 2 - left,
+    y: DEPS.viewport.height / 2 - DEPS.margin - NODE.height / 2 - roomOffset,
   })
 
-  const hangWithRoom = (left: number, items = headings(MOST + 3)) =>
-    getNodeHeadings(low(left), items, SIZES, DEPS)
+  const hangWithRoom = (roomOffset: number, items = headings(MOST + 3)) =>
+    getNodeHeadings(low(roomOffset), items, SIZES, DEPS)
 
   it('hangs nothing where there is depth for not one heading', () => {
     expect(hangWithRoom(SIZES.headingHeight)).toBeNull()
@@ -345,10 +345,10 @@ describe('a node with little room under it', () => {
   })
 
   it('keeps every heading it does hang inside the window', () => {
-    for (const left of [60, 90, 140, 200, 400]) {
-      const resolved = hangWithRoom(left)
+    for (const roomOffset of [60, 90, 140, 200, 400]) {
+      const resolved = hangWithRoom(roomOffset)
       if (!resolved) continue
-      const bottom = low(left).y + resolved.top + resolved.height
+      const bottom = low(roomOffset).y + resolved.top + resolved.height
       expect(bottom).toBeLessThanOrEqual(DEPS.viewport.height / 2 - DEPS.margin)
     }
   })

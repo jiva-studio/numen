@@ -99,8 +99,8 @@ const { onLayout, onHold: onSplitterHold } = useBranchResize({
       :branch-view="branchView"
       @hold="onSplitterHold"
     >
-      <template v-for="name in passed" #[name]="bound">
-        <slot :name="name" v-bind="getSlotProps(bound)" />
+      <template v-for="name in passed" #[name]="slotProps">
+        <slot :name="name" v-bind="getSlotProps(slotProps)" />
       </template>
     </BranchPanel>
   </SplitterGroup>

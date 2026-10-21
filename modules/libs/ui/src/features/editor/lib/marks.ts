@@ -12,7 +12,7 @@ import { Decoration, type DecorationSet, type WidgetType } from '@codemirror/vie
 import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common'
 import { findChild } from './address'
 import { getGrid } from './grid'
-import { BULLET, HEADING, hidden, INLINE, line, mark, SHY } from './styles'
+import { BULLET, HEADING, HIDDEN, INLINE, line, mark, SHY } from './styles'
 import { Box, Bullet, Picture, Rule } from './widgets'
 
 /** The block nodes that hold other blocks; a Table or a HorizontalRule is allowed only in these. */
@@ -71,7 +71,7 @@ class MarkBuilder {
 
   private hide(start: number, end: number): void {
     const after = this.doc.sliceString(end, end + 1) === ' ' ? end + 1 : end
-    this.found.push(hidden.range(start, after))
+    this.found.push(HIDDEN.range(start, after))
   }
 
   private eachLine(
@@ -168,13 +168,13 @@ class MarkBuilder {
 
   takeShy(node: SyntaxNodeRef): boolean | null {
     if (SHY.has(node.name)) {
-      if (!this.isParentSelected(node)) this.found.push(hidden.range(node.from, node.to))
+      if (!this.isParentSelected(node)) this.found.push(HIDDEN.range(node.from, node.to))
       return false
     }
 
     if (node.name === 'CodeMark') {
       if (node.node.parent?.name === 'InlineCode' && !this.isParentSelected(node))
-        this.found.push(hidden.range(node.from, node.to))
+        this.found.push(HIDDEN.range(node.from, node.to))
       return false
     }
 

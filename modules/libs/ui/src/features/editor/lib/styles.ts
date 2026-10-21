@@ -28,7 +28,7 @@ export const INLINE = new Map([
 ])
 
 /** What takes a mark out of the drawing. */
-export const hidden = Decoration.replace({})
+export const HIDDEN = Decoration.replace({})
 
 const lines = new Map<string, Decoration>()
 const named = new Map<string, Decoration>()

@@ -484,7 +484,7 @@ describe('the arrow on a line', () => {
     })
 
   /** Where an arrowhead was put, and the turn it was given. */
-  const put = (transform: string) => {
+  const parseTransform = (transform: string) => {
     const [x, y, angle] = transform.match(/-?\d+(?:\.\d+)?/g)!.map(Number)
     return { x: x!, y: y!, angle: angle! }
   }
@@ -498,7 +498,7 @@ describe('the arrow on a line', () => {
     const rendered = view.findAll('.plex__edge-arrow')
 
     for (const [at, edge] of [frame.edges[0]!, frame.edges[1]!].entries()) {
-      const head = put(rendered[at]!.attributes('transform')!)
+      const head = parseTransform(rendered[at]!.attributes('transform')!)
       expect(head.x).toBeCloseTo(edge.arrowhead!.at.x)
       expect(head.y).toBeCloseTo(edge.arrowhead!.at.y)
       expect(head.angle).toBeCloseTo(edge.arrowhead!.angle)
@@ -506,8 +506,8 @@ describe('the arrow on a line', () => {
 
     // The two ends of one picture: one arrow points down out of the focus and
     // the other back up out of it.
-    expect(put(rendered[0]!.attributes('transform')!).angle).toBeCloseTo(90)
-    expect(put(rendered[1]!.attributes('transform')!).angle).toBeCloseTo(-90)
+    expect(parseTransform(rendered[0]!.attributes('transform')!).angle).toBeCloseTo(90)
+    expect(parseTransform(rendered[1]!.attributes('transform')!).angle).toBeCloseTo(-90)
   })
 
   it('fades an arrow with the line it is drawn on', () => {

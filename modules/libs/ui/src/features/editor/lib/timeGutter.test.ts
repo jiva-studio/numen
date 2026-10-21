@@ -274,8 +274,8 @@ describe('an editor drawn a second time', () => {
     const was = again.dispatch.bind(again)
     again.dispatch = ((...specs: Parameters<EditorView['dispatch']>) => {
       for (const one of specs) {
-        const put = one && typeof one === 'object' && 'effects' in one ? one.effects : null
-        if (Array.isArray(put) && put.length > 1) effects++
+        const effectsList = one && typeof one === 'object' && 'effects' in one ? one.effects : null
+        if (Array.isArray(effectsList) && effectsList.length > 1) effects++
       }
       return was(...specs)
     }) as EditorView['dispatch']
@@ -300,8 +300,8 @@ describe('an editor drawn again while the recording remains still', () => {
     const was = again.dispatch.bind(again)
     again.dispatch = ((...specs: Parameters<EditorView['dispatch']>) => {
       for (const one of specs) {
-        const put = one && typeof one === 'object' && 'effects' in one ? one.effects : null
-        if (Array.isArray(put) && put.length > 1) effects++
+        const effectsList = one && typeof one === 'object' && 'effects' in one ? one.effects : null
+        if (Array.isArray(effectsList) && effectsList.length > 1) effects++
       }
       return was(...specs)
     }) as EditorView['dispatch']

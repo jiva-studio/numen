@@ -702,17 +702,17 @@ describe('the keys the tree takes', () => {
 
   it('leaves A alone while nothing is retained down', () => {
     const wrapper = mountTree()
-    const left = sendKeyOn(wrapper, 'notes', 'a')
+    const keyResult = sendKeyOn(wrapper, 'notes', 'a')
 
-    expect(left.defaultPrevented).toBe(false)
+    expect(keyResult.defaultPrevented).toBe(false)
     expect(wrapper.emitted('select')).toBeUndefined()
   })
 
   it('leaves another key alone with Ctrl retained down', () => {
     const wrapper = mountTree()
-    const left = sendKeyOn(wrapper, 'notes', 'b', { ctrlKey: true })
+    const keyResult = sendKeyOn(wrapper, 'notes', 'b', { ctrlKey: true })
 
-    expect(left.defaultPrevented).toBe(false)
+    expect(keyResult.defaultPrevented).toBe(false)
     expect(wrapper.emitted('select')).toBeUndefined()
   })
 
@@ -743,9 +743,9 @@ describe('the keys the tree takes', () => {
 
   it('takes F10 only with Shift', () => {
     const wrapper = mountTree({ selected: ['notes'] })
-    const left = sendKeyOn(wrapper, 'notes', 'F10')
+    const keyResult = sendKeyOn(wrapper, 'notes', 'F10')
 
-    expect(left.defaultPrevented).toBe(false)
+    expect(keyResult.defaultPrevented).toBe(false)
     expect(wrapper.emitted('menu')).toBeUndefined()
   })
 
@@ -760,25 +760,25 @@ describe('the keys the tree takes', () => {
 
   it('leaves any other key alone', () => {
     const wrapper = mountTree({ selected: ['notes'] })
-    const left = sendKeyOn(wrapper, 'notes', 'x')
+    const keyResult = sendKeyOn(wrapper, 'notes', 'x')
 
-    expect(left.defaultPrevented).toBe(false)
+    expect(keyResult.defaultPrevented).toBe(false)
     expect(wrapper.emitted('select')).toBeUndefined()
   })
 
   it('leaves the arrows alone while there is nothing to draw', () => {
     const wrapper = mountTree({ rows: [] })
-    const left = sendKey(wrapper.get('[role="tree"]').element, 'ArrowDown')
+    const keyResult = sendKey(wrapper.get('[role="tree"]').element, 'ArrowDown')
 
-    expect(left.defaultPrevented).toBe(false)
+    expect(keyResult.defaultPrevented).toBe(false)
     expect(wrapper.emitted('select')).toBeUndefined()
   })
 
   it('leaves Enter alone while there is nothing to draw', () => {
     const wrapper = mountTree({ rows: [] })
-    const left = sendKey(wrapper.get('[role="tree"]').element, 'Enter')
+    const keyResult = sendKey(wrapper.get('[role="tree"]').element, 'Enter')
 
-    expect(left.defaultPrevented).toBe(false)
+    expect(keyResult.defaultPrevented).toBe(false)
     expect(wrapper.emitted('activate')).toBeUndefined()
   })
 })
@@ -808,9 +808,9 @@ describe('a press on a row', () => {
 
   it('is left alone with any other button', () => {
     const wrapper = mountTree()
-    const left = sendPress(wrapper, 'notes', 2)
+    const keyResult = sendPress(wrapper, 'notes', 2)
 
-    expect(left.defaultPrevented).toBe(false)
+    expect(keyResult.defaultPrevented).toBe(false)
     expect(document.activeElement).not.toBe(getRow(wrapper, 'notes').element)
     expect(wrapper.emitted('select')).toBeUndefined()
   })

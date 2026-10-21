@@ -32,11 +32,11 @@ const createStream = <T>(...response: readonly T[]) =>
 describe('a stream that ends', () => {
   it('is taken up again, after a wait each time', async () => {
     const one = window(2)
-    const heard: string[] = []
+    const received: string[] = []
 
-    await one.follows(createStream('a change'), (response) => void heard.push(response))
+    await one.follows(createStream('a change'), (response) => void received.push(response))
 
-    expect(heard.length).toBeGreaterThanOrEqual(2)
+    expect(received.length).toBeGreaterThanOrEqual(2)
     expect(one.waits).toStrictEqual([AGAIN, AGAIN, AGAIN])
   })
 
@@ -93,24 +93,24 @@ describe('a stream that fails', () => {
 describe('a window that has closed', () => {
   it('follows nothing, and waits for nothing', async () => {
     const closed = createFollower({ isOpen: () => false, setLost: () => {}, wait: async () => {} })
-    const heard: string[] = []
+    const received: string[] = []
 
-    await closed(createStream('a change'), (response) => void heard.push(response))
+    await closed(createStream('a change'), (response) => void received.push(response))
 
-    expect(heard).toStrictEqual([])
+    expect(received).toStrictEqual([])
   })
 
   it('drops what arrives after it closed', async () => {
     let open = true
-    const heard: string[] = []
+    const received: string[] = []
     const follows = createFollower({ isOpen: () => open, setLost: () => {}, wait: async () => {} })
 
     await follows(createStream('one', 'two'), (response) => {
-      heard.push(response)
+      received.push(response)
       open = false
     })
 
-    expect(heard).toStrictEqual(['one'])
+    expect(received).toStrictEqual(['one'])
   })
 })
 

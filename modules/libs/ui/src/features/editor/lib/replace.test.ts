@@ -10,15 +10,15 @@ const SEVERAL = EditorState.allowMultipleSelections.of(true)
 /** Where every end of every range lands, as a line and a column. */
 const replaceIn = (doc: string, selection: EditorSelection, fresh: string) => {
   const state = EditorState.create({ doc, selection, extensions: [SEVERAL] })
-  const put = state.update(replace(state, fresh)).state
+  const updatedState = state.update(replace(state, fresh)).state
   const place = (at: number) => {
-    const line = put.doc.lineAt(at)
+    const line = updatedState.doc.lineAt(at)
     return [line.number, at - line.from]
   }
   return {
-    text: put.doc.toString(),
-    ranges: put.selection.ranges.map((range) => [place(range.anchor), place(range.head)]),
-    main: put.selection.mainIndex,
+    text: updatedState.doc.toString(),
+    ranges: updatedState.selection.ranges.map((range) => [place(range.anchor), place(range.head)]),
+    main: updatedState.selection.mainIndex,
   }
 }
 
@@ -137,8 +137,8 @@ describe('a selection', () => {
       1,
     )
 
-    const put = replaceIn(DOC, selection, 'one and more\ntwo\nthree and more\nfour')
-    expect(put.ranges).toEqual([
+    const replacedDoc = replaceIn(DOC, selection, 'one and more\ntwo\nthree and more\nfour')
+    expect(replacedDoc.ranges).toEqual([
       [
         [1, 1],
         [1, 2],
@@ -152,7 +152,7 @@ describe('a selection', () => {
         [4, 2],
       ],
     ])
-    expect(put.main).toBe(1)
+    expect(replacedDoc.main).toBe(1)
   })
 
   it('holds ranges that fell together to one place', () => {

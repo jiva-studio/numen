@@ -46,10 +46,10 @@ const items = computed<readonly MenuItem[]>(() =>
 )
 
 /** The choice in force, and none where the value is none of them. */
-const chosen = computed(() => props.choices.find((one) => one.id === model.value))
+const selectedChoice = computed(() => props.choices.find((one) => one.id === model.value))
 
 /** What is written on the line: the choice, the value itself, or the stand-in. */
-const reading = computed(() => chosen.value?.text || model.value || props.placeholder)
+const reading = computed(() => selectedChoice.value?.text || model.value || props.placeholder)
 
 const element = useTemplateRef<HTMLButtonElement>('element')
 
@@ -114,7 +114,7 @@ defineExpose({
   >
     <span
       class="select__reading min-w-0"
-      :class="{ 'text-hushed': !chosen && !model }"
+      :class="{ 'text-hushed': !selectedChoice && !model }"
       :title="reading"
     >
       {{ reading }}

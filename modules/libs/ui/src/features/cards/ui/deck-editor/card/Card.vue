@@ -49,7 +49,7 @@ const uid = useId()
 const called = computed(() => `${props.words.cardStem} ${props.tile.at}`)
 
 /** What the strip says cut the card, and where nothing cut it, that nothing did. */
-const cut = computed(() => props.tile.stencil ?? props.words.unknown(null))
+const stencilTitle = computed(() => props.tile.stencil ?? props.words.unknown(null))
 
 const boxId = (value: PlacedFieldValue): string => `${uid}-${encodeURIComponent(value.key)}`
 
@@ -84,7 +84,7 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
         :aria-label="words.cut"
         data-cut-of
       >
-        {{ cut }}
+        {{ stencilTitle }}
       </p>
 
       <template #actions>

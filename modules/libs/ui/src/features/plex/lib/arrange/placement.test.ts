@@ -86,10 +86,10 @@ describe('a row', () => {
 
   it('is centred on the focus', () => {
     const row = of(place({ child: createNodes('child', 3) }), 'child')
-    const left = row[0]!.x - row[0]!.width / 2
+    const leftCoord = row[0]!.x - row[0]!.width / 2
     const right = row[2]!.x + row[2]!.width / 2
 
-    expect(left).toBeCloseTo(-right)
+    expect(leftCoord).toBeCloseTo(-right)
   })
 
   it('remains one gap between neighbours', () => {

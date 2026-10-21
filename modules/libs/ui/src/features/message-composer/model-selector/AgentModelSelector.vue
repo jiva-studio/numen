@@ -89,8 +89,8 @@ function onToggle() {
 
 function onChoose(id: string) {
   isOpen.value = false
-  const chosen = props.options.find((one) => `${one.agentId}:${one.modelId}` === id)
-  if (chosen) emit('select', chosen)
+  const selectedOption = props.options.find((one) => `${one.agentId}:${one.modelId}` === id)
+  if (selectedOption) emit('select', selectedOption)
 }
 
 function onDismiss() {

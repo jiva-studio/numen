@@ -112,8 +112,8 @@ function useNoticeDismissal(context: DismissalContext) {
     context.dismiss(id)
     if (!hadFocus || at < 0) return
     await nextTick()
-    const left = context.folds.value.shown
-    const next = left[Math.min(at, left.length - 1)]
+    const remainingFolds = context.folds.value.shown
+    const next = remainingFolds[Math.min(at, remainingFolds.length - 1)]
     if (next) cards.get(next.id)?.way?.focus()
   }
 

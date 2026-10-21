@@ -15,14 +15,14 @@ describe('the refs of a loop', () => {
   })
 
   it('notifies of an element as it is set, and of null as it goes', () => {
-    const heard: [string, unknown][] = []
-    const { getRef } = useRefRegistry<string>((key, element) => heard.push([key, element]))
+    const calls: [string, unknown][] = []
+    const { getRef } = useRefRegistry<string>((key, element) => calls.push([key, element]))
     const element = {}
 
     getRef('a')(element)
     getRef('a')(null)
 
-    expect(heard).toStrictEqual([
+    expect(calls).toStrictEqual([
       ['a', element],
       ['a', null],
     ])

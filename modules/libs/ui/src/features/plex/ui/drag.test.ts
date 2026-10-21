@@ -305,42 +305,42 @@ describe('what a drag leaves on the window', () => {
   })
 
   it('is four listeners while the drag is followed', () => {
-    const left = spyOnWindowListeners()
+    const listeners = spyOnWindowListeners()
     mountPlex()
 
-    expect(left()).toStrictEqual(TYPES)
+    expect(listeners()).toStrictEqual(TYPES)
   })
 
   it('is nothing once the drag is release', async () => {
-    const left = spyOnWindowListeners()
+    const listeners = spyOnWindowListeners()
     const plex = mountPlex()
     await letGo(plex, 600, 40)
 
-    expect(left()).toStrictEqual([])
+    expect(listeners()).toStrictEqual([])
   })
 
   it('is nothing after Escape', () => {
-    const left = spyOnWindowListeners()
+    const listeners = spyOnWindowListeners()
     mountPlex()
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
 
-    expect(left()).toStrictEqual([])
+    expect(listeners()).toStrictEqual([])
   })
 
   it('is nothing after the pointer is taken away', () => {
-    const left = spyOnWindowListeners()
+    const listeners = spyOnWindowListeners()
     mountPlex()
     window.dispatchEvent(pointer('pointercancel', 600, 40))
 
-    expect(left()).toStrictEqual([])
+    expect(listeners()).toStrictEqual([])
   })
 
   it('is nothing once the plex has gone', () => {
-    const left = spyOnWindowListeners()
+    const listeners = spyOnWindowListeners()
     const plex = mountPlex()
     plex.unmount()
 
-    expect(left()).toStrictEqual([])
+    expect(listeners()).toStrictEqual([])
   })
 
   it('draws nothing for a pointer that moves after the release', async () => {

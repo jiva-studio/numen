@@ -423,27 +423,27 @@ const moveCard = (
 ): readonly DeckCard[] => {
   const card = cards.find((card) => card.id === id)
   if (!card) return cards
-  const left = cards.filter((card) => card.id !== id)
+  const remainingCards = cards.filter((card) => card.id !== id)
 
-  if (at === HEAD) return [{ ...card, section: null }, ...left]
+  if (at === HEAD) return [{ ...card, section: null }, ...remainingCards]
 
-  const before = at === null ? -1 : left.findIndex((card) => card.id === at)
+  const before = at === null ? -1 : remainingCards.findIndex((card) => card.id === at)
   if (before !== -1) {
-    const underItem = { ...card, section: left[before]?.section ?? null }
-    return [...left.slice(0, before), underItem, ...left.slice(before)]
+    const underItem = { ...card, section: remainingCards[before]?.section ?? null }
+    return [...remainingCards.slice(0, before), underItem, ...remainingCards.slice(before)]
   }
 
   const rank = (section: string | null): number =>
     section === null ? 0 : sections.findIndex((each) => each.id === section) + 1
 
   if (at === null) {
-    return [...left, { ...card, section: sections.at(-1)?.id ?? null }]
+    return [...remainingCards, { ...card, section: sections.at(-1)?.id ?? null }]
   }
   if (!sections.some((each) => each.id === at)) return cards
 
-  const seat = left.findIndex((card) => rank(card.section) >= rank(at))
-  const where = seat === -1 ? left.length : seat
-  return [...left.slice(0, where), { ...card, section: at }, ...left.slice(where)]
+  const seat = remainingCards.findIndex((card) => rank(card.section) >= rank(at))
+  const where = seat === -1 ? remainingCards.length : seat
+  return [...remainingCards.slice(0, where), { ...card, section: at }, ...remainingCards.slice(where)]
 }
 
 export default meta

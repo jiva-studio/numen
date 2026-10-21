@@ -43,8 +43,8 @@ describe('walking', () => {
   })
 
   it('gives every node a name from the pool and not a number', () => {
-    const built = build('A node', COUNTS)
-    for (const node of built.nodes) {
+    const builtNode = build('A node', COUNTS)
+    for (const node of builtNode.nodes) {
       expect(node.title).not.toMatch(/^(Parent|Child|Jump|Sibling) \d+$/)
     }
   })

@@ -36,7 +36,7 @@ const emit = defineEmits<{
 const WORKED = 'input, textarea, button, a, select, [contenteditable]'
 
 /** It is taken hold of. A press on something worked lets that thing have it. */
-const held = shallowRef(true)
+const isDraggable = shallowRef(true)
 
 /**
  * The press is over, wherever it was let go. A press that began on something
@@ -44,14 +44,14 @@ const held = shallowRef(true)
  * where every gesture ends.
  */
 const release = (): void => {
-  held.value = true
+  isDraggable.value = true
   window.removeEventListener('pointerup', release)
   window.removeEventListener('pointercancel', release)
 }
 
 const press = (event: PointerEvent): void => {
   if ((event.target as HTMLElement | null)?.closest?.(WORKED) == null) return
-  held.value = false
+  isDraggable.value = false
   window.addEventListener('pointerup', release)
   window.addEventListener('pointercancel', release)
 }
@@ -71,7 +71,7 @@ const step = (event: KeyboardEvent): void => {
     tone="header"
     class="card-header"
     data-grip
-    :draggable="held"
+    :draggable="isDraggable"
     :title="drag"
     @dragstart="emit('dragstart', $event)"
     @dragend="emit('dragend', $event)"

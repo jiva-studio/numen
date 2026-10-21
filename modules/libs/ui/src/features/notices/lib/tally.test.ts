@@ -96,8 +96,8 @@ describe('getRemainingWord', () => {
     { left: 300, rate: 5, want: '1:00' },
     { left: 36000, rate: 3, want: '3:20:00' },
     { left: 400000, rate: 3, want: '37:02:13' },
-  ])('says $want for $left at $rate a second', ({ left, rate, want }) => {
-    expect(getRemainingWord(left, rate)).toBe(want)
+  ])('says $want for $left at $rate a second', ({ left: remaining, rate, want }) => {
+    expect(getRemainingWord(remaining, rate)).toBe(want)
   })
 })
 

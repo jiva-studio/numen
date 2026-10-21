@@ -198,11 +198,11 @@ const sweep = async (from: Position, to: Position): Promise<void> => {
 
 /** The cursor the splitter puts over the whole page while it has the pointer. */
 function getCursor(): string | null {
-  const put = '*{cursor:'
+  const cursorPrefix = '*{cursor:'
 
   for (const style of document.head.querySelectorAll('style')) {
     const text = (style.textContent ?? '').trim()
-    if (text.startsWith(put)) return text.slice(put.length, text.indexOf('!')).trim()
+    if (text.startsWith(cursorPrefix)) return text.slice(cursorPrefix.length, text.indexOf('!')).trim()
   }
   return null
 }

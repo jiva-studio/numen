@@ -130,8 +130,8 @@ export const TwoPanes: Story = {
     const panes = canvasElement.querySelectorAll('[data-workspace-pane]')
     await expect(panes).toHaveLength(2)
 
-    const [left, right] = [...panes].map((pane) => pane.getBoundingClientRect().width)
-    await expect(left).toBeGreaterThan(right!)
+    const [leftWidth, rightWidth] = [...panes].map((pane) => pane.getBoundingClientRect().width)
+    await expect(leftWidth).toBeGreaterThan(rightWidth!)
   },
 }
 

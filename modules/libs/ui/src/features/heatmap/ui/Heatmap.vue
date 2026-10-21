@@ -41,14 +41,14 @@ const props = withDefaults(
 const root = useTemplateRef<HTMLElement>('root')
 const room = useWidth(root)
 
-const laid = computed(() => measureGrid({ width: room.value, cell: props.cell, gap: props.gap }))
-const shown = computed(() =>
-  getDays(laid.value.columns, props.now, { did: props.did, due: props.due }),
+const grid = computed(() => measureGrid({ width: room.value, cell: props.cell, gap: props.gap }))
+const visibleDays = computed(() =>
+  getDays(grid.value.columns, props.now, { did: props.did, due: props.due }),
 )
 
-const height = computed(() => getGridHeight(laid.value))
+const height = computed(() => getGridHeight(grid.value))
 
-const cells = computed(() => getCells(laid.value, shown.value))
+const cells = computed(() => getCells(grid.value, visibleDays.value))
 
 /** The day a person is pointing at, and the cell on the page it is drawn in. */
 const pointed = ref<{ day: Day; at: Box } | null>(null)

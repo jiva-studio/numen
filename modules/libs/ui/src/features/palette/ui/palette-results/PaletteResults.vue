@@ -50,12 +50,12 @@ defineSlots<{
 }>()
 
 /** The groups as they are drawn, each holding the rows it was given. */
-const shown = useTemplateRef<PaletteGroupHandle[]>('group')
+const groupRefs = useTemplateRef<PaletteGroupHandle[]>('group')
 
 /** One item brought into sight, once whatever moved has been drawn. */
 const reveal = async (item: string): Promise<void> => {
   await nextTick()
-  for (const group of shown.value ?? []) group.reveal(item)
+  for (const group of groupRefs.value ?? []) group.reveal(item)
 }
 
 defineExpose({ reveal })

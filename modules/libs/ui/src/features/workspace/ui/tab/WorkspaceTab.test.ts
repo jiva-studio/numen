@@ -103,14 +103,14 @@ describe('picking a tab up', () => {
   })
 
   it('leaves the press to the pane under it', () => {
-    const heard: Event[] = []
-    const listen = (event: Event) => heard.push(event)
+    const events: Event[] = []
+    const listen = (event: Event) => events.push(event)
     document.addEventListener('pointerdown', listen)
 
     const press = pressOn(mountTab(), 0)
     document.removeEventListener('pointerdown', listen)
 
-    expect(heard).toContain(press)
+    expect(events).toContain(press)
   })
 
   it('lets a press of any other button be answered elsewhere', () => {

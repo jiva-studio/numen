@@ -191,9 +191,9 @@ describe('a box is as wide as its title needs', () => {
       expect(node.x - node.width / 2 - (before.x + before.width / 2)).toBeCloseTo(gap)
     }
 
-    const left = Math.min(...children.map((node) => node.x - node.width / 2))
+    const minLeft = Math.min(...children.map((node) => node.x - node.width / 2))
     const right = Math.max(...children.map((node) => node.x + node.width / 2))
-    expect(left + right).toBeCloseTo(0)
+    expect(minLeft + right).toBeCloseTo(0)
   })
 
   it('turns one edge of a column towards the focus, whatever the widths', () => {

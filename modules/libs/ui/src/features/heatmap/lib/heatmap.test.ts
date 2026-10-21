@@ -41,7 +41,7 @@ const createTallies = (days: [string, number][]) =>
   new Map(
     days.map(([day, reply]) => [
       day,
-      { ...NOTHING, reply, good: reply, asked: reply, recalled: reply },
+      { ...NOTHING, answered: reply, good: reply, asked: reply, recalled: reply },
     ]),
   )
 

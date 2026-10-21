@@ -83,18 +83,18 @@ const isFocused = (pane: Pane): boolean =>
  * following it. A box nothing has been typed in holds no caret, so the field
  * goes after what is written there.
  */
-const put = async (field: string): Promise<void> => {
+const onPut = async (field: string): Promise<void> => {
   const half = focusedHalf.value
   const target = getBox(half)
   if (!target) return
 
   const caret = (aim.value === null ? null : target.selectionStart) ?? target.value.length
-  const done = insert(target.value, caret, field)
-  emit('write', half, done.text)
+  const insertResult = insert(target.value, caret, field)
+  emit('write', half, insertResult.text)
   await nextTick()
   const again = getBox(half)
   again?.focus()
-  again?.setSelectionRange(done.caret, done.caret)
+  again?.setSelectionRange(insertResult.caret, insertResult.caret)
 }
 </script>
 
@@ -111,7 +111,7 @@ const put = async (field: string): Promise<void> => {
         :wrong="wrong"
         :words="words"
         @rename="(name) => emit('rename', name)"
-        @put="put"
+        @put="onPut"
       />
 
       <template #actions>
@@ -125,7 +125,7 @@ const put = async (field: string): Promise<void> => {
       <FacePane
         v-for="pane in divided"
         :key="`${pane.half}-${pane.mode}`"
-        :ref="(held) => setBox(pane, held)"
+        :ref="(el) => setBox(pane, el)"
         :pane="pane"
         :is-focused="isFocused(pane)"
         :words="words"

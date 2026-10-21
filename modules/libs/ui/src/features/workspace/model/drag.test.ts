@@ -57,11 +57,11 @@ function createDrag(
   const state = {
     under: (x: number, y: number): Element | null => {
       const tabs = [plex, chat, notes]
-      const hit = tabs.find((tab) => {
+      const targetTab = tabs.find((tab) => {
         const box = tab.getBoundingClientRect()
         return x >= box.left && x < box.right && y >= box.top && y < box.bottom
       })
-      return hit ?? (x < 600 ? main : aside)
+      return targetTab ?? (x < 600 ? main : aside)
     },
   }
   document.elementFromPoint = (x: number, y: number) => state.under(x, y)
@@ -302,10 +302,10 @@ describe('letting go of a tab', () => {
 
   it('counts the pane it was pressed in as the focus where the press is over no pane', () => {
     const { workspace, state, drag, release } = start()
-    const hit = state.under
+    const origUnder = state.under
     state.under = () => null
     drag.press('plex', pointer('pointerdown', 150, 60))
-    state.under = hit
+    state.under = origUnder
     window.dispatchEvent(pointer('pointermove', 610, 60))
     release(610, 60)
 

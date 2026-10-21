@@ -37,7 +37,7 @@ defineOptions({ inheritAttrs: false })
 /** Which day is being given a level, what it stands at, and where its chip is. */
 const asking = ref<{ day: string; level: number; at: Position; from: HTMLElement } | null>(null)
 
-const offered = computed(() =>
+const availableLevels = computed(() =>
   getOfferedLevels(props.levels, asking.value?.level ?? null).map((level) => ({
     id: `${level}`,
     text: getFillPercent(level),
@@ -115,7 +115,7 @@ const getFillStyle = (level: number) => {
 
   <Menu
     v-if="asking"
-    :items="offered"
+    :items="availableLevels"
     :at="asking.at"
     :from="asking.from"
     :current="current"
