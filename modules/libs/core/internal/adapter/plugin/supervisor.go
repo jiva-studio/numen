@@ -15,6 +15,8 @@ import (
 var (
 	errProcessNotRunning = errors.New("plugin process is not running")
 	errNilProcess        = errors.New("process handle is nil")
+	// ErrMemoryExceeded indicates the plugin process exceeded its memory limit.
+	ErrMemoryExceeded = errors.New("plugin exceeded memory limit")
 )
 
 // ProcessState represents the lifecycle phase of a managed plugin process.
@@ -35,25 +37,26 @@ const (
 
 // Supervisor monitors and controls the execution lifecycle of a single plugin process.
 type Supervisor struct {
-	mu             sync.Mutex
-	state          ProcessState
-	process        *os.Process
-	inProcess      bool
-	teardownBegun  bool
-	failures       int
-	failure        error
-	failed         bool
-	failedAt       time.Time
-	retryAt        time.Time
-	lastActiveTime time.Time
-	activeRefCount int
-	permissions    []string
-	validator      VaultPathValidator
-	exitCh         chan struct{}
-	onExit         func()
-	activatingCh   chan struct{}
-	activationErr  error
-	cleanupErr     error
+	mu               sync.Mutex
+	state            ProcessState
+	process          *os.Process
+	inProcess        bool
+	teardownBegun    bool
+	failures         int
+	failure          error
+	failed           bool
+	failedAt         time.Time
+	retryAt          time.Time
+	activationPolicy ActivationPolicy
+	lastActiveTime   time.Time
+	activeRefCount   int
+	permissions      []string
+	validator        VaultPathValidator
+	exitCh           chan struct{}
+	onExit           func()
+	activatingCh     chan struct{}
+	activationErr    error
+	cleanupErr       error
 
 	memoryLimitBytes  uint64
 	monitorInterval   time.Duration
@@ -77,6 +80,7 @@ func NewSupervisor() *Supervisor {
 		failed:            false,
 		failedAt:          time.Time{},
 		retryAt:           time.Time{},
+		activationPolicy:  DefaultActivationPolicy(),
 		lastActiveTime:    time.Time{},
 		activeRefCount:    0,
 		permissions:       nil,
@@ -93,6 +97,20 @@ func NewSupervisor() *Supervisor {
 		monitorStopCh:     nil,
 		rssReader:         readProcessRSS,
 	}
+}
+
+// SetActivationPolicy sets the retry and backoff policy applied when activation fails or memory is exceeded.
+func (s *Supervisor) SetActivationPolicy(policy ActivationPolicy) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.activationPolicy = policy
+}
+
+// GetActivationPolicy returns the configured activation policy.
+func (s *Supervisor) GetActivationPolicy() ActivationPolicy {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.activationPolicy
 }
 
 // SetOnExit sets a callback invoked when the plugin process terminates.
@@ -498,6 +516,7 @@ func (s *Supervisor) inspectMemoryExceeded(proc *os.Process) (func(context.Conte
 }
 
 func (s *Supervisor) evictForMemory(rpc func(context.Context) error, gracePeriod time.Duration, onExceeded func()) {
+	s.RecordActivationFailure(time.Now(), s.activationPolicy, fmt.Errorf("%w: %d bytes", ErrMemoryExceeded, s.memoryLimitBytes))
 	if onExceeded != nil {
 		onExceeded()
 	}

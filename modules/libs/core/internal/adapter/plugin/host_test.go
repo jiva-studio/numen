@@ -918,6 +918,64 @@ func TestHostEvictMemoryExceeded(t *testing.T) {
 	}
 }
 
+func TestHostMemoryEvictionReportsErrorAndBacksOff(t *testing.T) {
+	tmp := t.TempDir()
+	createTestPluginTree(t, tmp)
+
+	host := NewHost("desktop.editor", tmp)
+	var reportedErrors []error
+	host.SetErrorHandler(func(err error) {
+		reportedErrors = append(reportedErrors, err)
+	})
+	if err := host.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+
+	cmd := exec.Command("sleep", "60")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("failed to start mock process: %v", err)
+	}
+	defer func() {
+		_ = cmd.Process.Kill()
+		_, _ = cmd.Process.Wait()
+	}()
+
+	now := time.Now()
+	ctx := t.Context()
+
+	host.mu.Lock()
+	sup := host.supervisors["md.numen.ocr"]
+	_ = sup.Attach(cmd.Process, now)
+	host.endpoints["md.numen.ocr"] = Endpoint{Host: "127.0.0.1", Port: 8080, Token: "test-token"}
+	host.mu.Unlock()
+
+	sup.SetMemoryLimit(100 * 1024 * 1024)
+	sup.SetRSSReader(func(_ int) (uint64, error) {
+		return 200 * 1024 * 1024, nil
+	})
+
+	evicted := host.EvictMemoryExceeded(ctx, 100*time.Millisecond)
+	if len(evicted) != 1 || evicted[0] != "md.numen.ocr" {
+		t.Fatalf("expected md.numen.ocr evicted, got %v", evicted)
+	}
+
+	if len(reportedErrors) == 0 {
+		t.Fatal("expected error to be reported for memory eviction")
+	}
+	if !strings.Contains(reportedErrors[0].Error(), "md.numen.ocr was stopped") {
+		t.Fatalf("expected memory limit error message, got %v", reportedErrors[0])
+	}
+
+	// Next EnsureActive should refuse activation with backoff
+	_, err := host.EnsureActive(ctx, "md.numen.ocr")
+	if err == nil {
+		t.Fatal("expected EnsureActive to fail due to backoff after memory eviction")
+	}
+	if !errors.Is(err, errActivationBackoff) {
+		t.Fatalf("expected errActivationBackoff, got %v", err)
+	}
+}
+
 func TestHostTeardownAllSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	tmp := t.TempDir()
 	createTestPluginTree(t, tmp)
