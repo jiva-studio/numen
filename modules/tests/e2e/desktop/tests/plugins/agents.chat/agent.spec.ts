@@ -10,9 +10,9 @@ test.describe('Agent Plugin and Interface', () => {
     await page.getByText('Agent').first().click()
 
     // Verify Agent panel interface
-    const input = page.getByRole('textbox', { name: 'Ask about the vault' })
+    const input = page.getByRole('textbox', { name: 'Ask about the vault' }).first()
     await expect(input).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByText('Nothing said yet')).toBeVisible()
+    await expect(page.getByText('Nothing said yet').first()).toBeVisible()
   })
 
   test('inspects agent model and provider selector button', async ({ page }) => {
@@ -29,7 +29,7 @@ test.describe('Agent Plugin and Interface', () => {
       await expect(providerBtn.first()).toBeVisible({ timeout: 10_000 })
       await expect(providerBtn.first()).toBeEnabled()
     } else {
-      await expect(page.locator('.agent__composer')).toBeVisible({ timeout: 10_000 })
+      await expect(page.locator('.agent__composer').first()).toBeVisible({ timeout: 10_000 })
     }
   })
 
@@ -41,11 +41,11 @@ test.describe('Agent Plugin and Interface', () => {
     // Switch to Agent tab
     await page.getByText('Agent').first().click()
 
-    const input = page.getByRole('textbox', { name: 'Ask about the vault' })
+    const input = page.getByRole('textbox', { name: 'Ask about the vault' }).first()
     await expect(input).toBeVisible({ timeout: 10_000 })
 
     // Send button starts disabled when input is empty
-    const sendBtn = page.getByRole('button', { name: 'Send' })
+    const sendBtn = page.getByRole('button', { name: 'Send' }).first()
     await expect(sendBtn).toBeDisabled()
 
     // Fill query
@@ -56,7 +56,7 @@ test.describe('Agent Plugin and Interface', () => {
     await sendBtn.click()
 
     // Verify query is submitted into the conversation thread
-    await expect(page.getByText('Summarize thermodynamics principles')).toBeVisible({
+    await expect(page.getByText('Summarize thermodynamics principles').first()).toBeVisible({
       timeout: 10_000,
     })
   })
