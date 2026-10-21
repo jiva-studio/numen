@@ -1,7 +1,7 @@
 /**
  * The commands offered over the file in front, on what has been made from it.
  */
-import { createArtifactOffer, isArtifactMissing } from './offered'
+import { createArtifactOffer, isArtifactMissing } from './availability'
 import type { Command, CommandTarget, RunSupport } from '../types'
 import type { Words } from '../words'
 

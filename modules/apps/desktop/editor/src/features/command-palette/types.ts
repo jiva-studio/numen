@@ -2,7 +2,7 @@
  * What a command is, and what it is asked over.
  *
  * Nothing here decides anything: the table of commands is `lib/table.ts`, when
- * each is offered is `lib/offered.ts`, the words they are drawn in are `words.ts`,
+ * each is offered is `lib/availability.ts`, the words they are drawn in are `words.ts`,
  * and what the window offers one being carried out is `model/deps.ts`.
  */
 import type { PaletteKeys, PlexDestination } from '@numen/ui'

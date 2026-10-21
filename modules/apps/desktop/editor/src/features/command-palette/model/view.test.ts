@@ -9,7 +9,7 @@ import { WORDS as words } from '@/shared/words'
 import { createCommands } from '../lib/commands'
 import type { PendingStep } from '../lib/step'
 import type { Command, CommandTarget, PaletteLists } from '../types'
-import { runSupport } from './runs'
+import { runSupport } from './runSupport'
 import { getPaletteView } from './view'
 
 const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({

@@ -2,7 +2,7 @@
  * The commands offered over the note in front.
  */
 import { createRowKeys } from './chords'
-import { isNoteOpen } from './offered'
+import { isNoteOpen } from './availability'
 import type { Command } from '../types'
 import type { Words } from '../words'
 

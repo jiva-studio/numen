@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { createCommands } from '../lib/commands'
-import { runSupport } from './runs'
+import { runSupport } from './runSupport'
 import { createInvocation } from '../lib/invocation'
 import { createNotes } from '../lib/notes'
 import type { VaultRef } from '../types'
